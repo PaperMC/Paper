@@ -18,4 +18,11 @@ public interface Server {
      * @return version of this server implementation
      */
     public String getVersion();
+
+    /**
+     * Gets a list of all currently logged in players
+     *
+     * @return An array of Players that are currently online
+     */
+    public Player[] getOnlinePlayers();
 }
