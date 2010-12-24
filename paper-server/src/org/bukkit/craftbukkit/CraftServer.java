@@ -30,7 +30,7 @@ public final class CraftServer implements Server {
         pluginManager.RegisterInterface(JavaPluginLoader.class);
         
         try {
-            pluginManager.loadPlugin(new File("sample.jar"));
+            pluginManager.loadPlugin(new File("SamplePlugin.jar"));
         } catch (InvalidPluginException ex) {
             Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, null, ex);
         } catch (Throwable ex) {
