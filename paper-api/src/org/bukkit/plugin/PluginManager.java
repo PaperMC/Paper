@@ -26,8 +26,9 @@ public final class PluginManager {
      * Registers the specified plugin loader
      *
      * @param loader Class name of the PluginLoader to register
+     * @throws IllegalArgumentException Thrown when the given Class is not a valid PluginLoader
      */
-    public void RegisterInterface(Class loader) {
+    public void RegisterInterface(Class loader) throws IllegalArgumentException {
         PluginLoader instance;
 
         if (PluginLoader.class.isAssignableFrom(loader)) {
