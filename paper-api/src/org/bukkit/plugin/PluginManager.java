@@ -2,6 +2,7 @@
 package org.bukkit.plugin;
 
 import java.io.File;
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,13 +25,29 @@ public final class PluginManager {
     /**
      * Registers the specified plugin loader
      *
-     * @param loader PluginLoader to register
+     * @param loader Class name of the PluginLoader to register
      */
-    public void RegisterInterface(PluginLoader loader) {
-        Pattern[] patterns = loader.getPluginFileFilters();
+    public void RegisterInterface(Class loader) {
+        PluginLoader instance;
+
+        if (PluginLoader.class.isAssignableFrom(loader)) {
+            Constructor constructor;
+            try {
+                constructor = loader.getConstructor(Server.class);
+                instance = (PluginLoader) constructor.newInstance(server);
+            } catch (NoSuchMethodException ex) {
+                throw new IllegalArgumentException(String.format("Class %s does not have a public %s(Server) constructor", loader.getName()), ex);
+            } catch (Exception ex) {
+                throw new IllegalArgumentException(String.format("Unexpected exception %s while attempting to construct a new instance of %s", ex.getClass().getName(), loader.getName()), ex);
+            }
+        } else {
+            throw new IllegalArgumentException(String.format("Class %s does not implement interface PluginLoader", loader.getName()));
+        }
+
+        Pattern[] patterns = instance.getPluginFileFilters();
 
         for (Pattern pattern : patterns) {
-            fileAssociations.put(pattern, loader);
+            fileAssociations.put(pattern, instance);
         }
     }
 
