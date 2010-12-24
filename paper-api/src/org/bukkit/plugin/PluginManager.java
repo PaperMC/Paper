@@ -6,6 +6,7 @@ import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -18,8 +19,9 @@ import java.util.regex.Pattern;
  */
 public final class PluginManager {
     private final Server server;
-    private final HashMap<Pattern, PluginLoader> fileAssociations = new HashMap<Pattern, PluginLoader>();
+    private final Map<Pattern, PluginLoader> fileAssociations = new HashMap<Pattern, PluginLoader>();
     private final List<Plugin> plugins = new ArrayList<Plugin>();
+    private final Map<String, Plugin> lookupNames = new HashMap<String, Plugin>();
 
     public PluginManager(Server instance) {
         server = instance;
@@ -107,9 +109,50 @@ public final class PluginManager {
 
         if (result != null) {
             plugins.add(result);
+            lookupNames.put(result.getDescription().getName(), result);
             result.onInitialize();
         }
 
         return result;
+    }
+    
+    /**
+     * Checks if the given plugin is loaded and returns it when applicable
+     *
+     * Please note that the name of the plugin is case-sensitive
+     *
+     * @param name Name of the plugin to check
+     * @return Plugin if it exists, otherwise null
+     */
+    public Plugin getPlugin(String name) {
+        return lookupNames.get(name);
+    }
+
+    /**
+     * Checks if the given plugin is enabled or not
+     *
+     * Please note that the name of the plugin is case-sensitive.
+     *
+     * @param name Name of the plugin to check
+     * @return true if the plugin is enabled, otherwise false
+     */
+    public boolean isPluginEnabled(String name) {
+        Plugin plugin = getPlugin(name);
+
+        return isPluginEnabled(plugin);
+    }
+
+    /**
+     * Checks if the given plugin is enabled or not
+     *
+     * @param plugin Plugin to check
+     * @return true if the plugin is enabled, otherwise false
+     */
+    public boolean isPluginEnabled(Plugin plugin) {
+        if ((plugin != null) && (plugins.contains(plugin))) {
+            return plugin.isEnabled();
+        } else {
+            return false;
+        }
     }
 }

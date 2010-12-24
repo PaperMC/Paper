@@ -5,38 +5,10 @@ import java.io.File;
 import java.util.regex.Pattern;
 
 /**
- * Represents a plugin loader, which provides access and management for all plugins
- * currently loaded on a server instance
+ * Represents a plugin loader, which handles direct access to specific types
+ * of plugins
  */
 public interface PluginLoader {
-    /**
-     * Checks if the given plugin is loaded and returns it when applicable
-     *
-     * Please note that the name of the plugin is case-sensitive
-     *
-     * @param name Name of the plugin to check
-     * @return Plugin if it exists, otherwise null
-     */
-    public Plugin getPlugin(String name);
-    
-    /**
-     * Checks if the given plugin is enabled or not
-     *
-     * Please note that the name of the plugin is case-sensitive.
-     *
-     * @param name Name of the plugin to check
-     * @return true if the plugin is enabled, otherwise false
-     */
-    public boolean isPluginEnabled(String name);
-
-    /**
-     * Checks if the given plugin is enabled or not
-     *
-     * @param plugin Plugin to check
-     * @return true if the plugin is enabled, otherwise false
-     */
-    public boolean isPluginEnabled(Plugin plugin);
-
     /**
      * Loads the plugin contained in the specified file
      *

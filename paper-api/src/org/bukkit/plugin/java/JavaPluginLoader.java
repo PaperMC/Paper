@@ -4,11 +4,8 @@ package org.bukkit.plugin.java;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.lang.reflect.Constructor;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginLoader;
 import java.util.regex.Pattern;
@@ -29,18 +26,6 @@ public final class JavaPluginLoader implements PluginLoader {
         server = instance;
     }
     
-    public Plugin getPlugin(String name) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    public boolean isPluginEnabled(String name) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    public boolean isPluginEnabled(Plugin plugin) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
     public Plugin loadPlugin(File file) throws InvalidPluginException {
         JavaPlugin result = null;
         PluginDescriptionFile description = new PluginDescriptionFile("Sample Plugin", "org.bukkit.plugin.sample.main");
