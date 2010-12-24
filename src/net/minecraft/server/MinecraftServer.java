@@ -40,6 +40,13 @@ public class MinecraftServer
         new cn(this);
     }
 
+    // CraftBukkit: Decompiler might miss this method, your IDE won't complain but you
+    // can't run without it!
+    public static boolean a(MinecraftServer minecraftserver)
+    {
+        return minecraftserver.o;
+    }
+
     private boolean d() {
         cl localcl = new cl(this);
 
