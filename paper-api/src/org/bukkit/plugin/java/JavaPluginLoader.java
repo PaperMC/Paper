@@ -28,7 +28,7 @@ public final class JavaPluginLoader implements PluginLoader {
     
     public Plugin loadPlugin(File file) throws InvalidPluginException {
         JavaPlugin result = null;
-        PluginDescriptionFile description = new PluginDescriptionFile("Sample Plugin", "org.bukkit.plugin.sample.main");
+        PluginDescriptionFile description = new PluginDescriptionFile("Sample Plugin", "com.dinnerbone.bukkit.sample.SamplePlugin");
 
         if (!file.exists()) {
             throw new InvalidPluginException(new FileNotFoundException(String.format("%s does not exist", file.getPath())));
@@ -36,7 +36,7 @@ public final class JavaPluginLoader implements PluginLoader {
 
         try {
             ClassLoader loader = URLClassLoader.newInstance(new URL[]{file.toURI().toURL()}, getClass().getClassLoader());
-            Class<?> jarClass = Class.forName(description.getMain());
+            Class<?> jarClass = Class.forName(description.getMain(), true, loader);
             Class<? extends JavaPlugin> plugin = jarClass.asSubclass(JavaPlugin.class);
             Constructor<? extends JavaPlugin> constructor = plugin.getConstructor(PluginLoader.class, Server.class, PluginDescriptionFile.class, File.class, ClassLoader.class);
 

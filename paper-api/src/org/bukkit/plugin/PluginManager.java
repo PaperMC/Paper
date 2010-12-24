@@ -110,7 +110,6 @@ public final class PluginManager {
         if (result != null) {
             plugins.add(result);
             lookupNames.put(result.getDescription().getName(), result);
-            result.onInitialize();
         }
 
         return result;

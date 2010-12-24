@@ -44,9 +44,4 @@ public interface Plugin {
      * Called when this plugin is enabled
      */
     public void onEnable();
-
-    /**
-     * Called when this plugin is first initialized
-     */
-    public void onInitialize();
 }

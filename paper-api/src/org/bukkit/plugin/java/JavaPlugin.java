@@ -27,7 +27,7 @@ public abstract class JavaPlugin implements Plugin {
      * @param plugin File containing this plugin
      * @param cLoader ClassLoader which holds this plugin
      */
-    protected JavaPlugin(PluginLoader pluginLoader, Server instance, PluginDescriptionFile desc, File plugin, ClassLoader cLoader) {
+    public JavaPlugin(PluginLoader pluginLoader, Server instance, PluginDescriptionFile desc, File plugin, ClassLoader cLoader) {
         loader = pluginLoader;
         server = instance;
         file = plugin;
