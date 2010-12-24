@@ -1,6 +1,8 @@
 
 package org.bukkit;
 
+import org.bukkit.plugin.PluginManager;
+
 /**
  * Represents a server implementation
  */
@@ -25,4 +27,11 @@ public interface Server {
      * @return An array of Players that are currently online
      */
     public Player[] getOnlinePlayers();
+
+    /**
+     * Gets the PluginManager for interfacing with plugins
+     *
+     * @return PluginManager for this Server instance
+     */
+    public PluginManager getPluginManager();
 }

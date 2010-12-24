@@ -18,6 +18,7 @@ public interface PluginLoader {
      * @return Plugin if it exists, otherwise null
      */
     public Plugin getPlugin(String name);
+    
     /**
      * Checks if the given plugin is enabled or not
      *
@@ -42,8 +43,9 @@ public interface PluginLoader {
      * @param file File to attempt to load
      * @return Plugin that was contained in the specified file, or null if
      * unsuccessful
+     * @throws InvalidPluginException Thrown when the specified file is not a plugin
      */
-    public Plugin loadPlugin(File file);
+    public Plugin loadPlugin(File file) throws InvalidPluginException;
 
     /**
      * Returns a list of all filename filters expected by this PluginLoader

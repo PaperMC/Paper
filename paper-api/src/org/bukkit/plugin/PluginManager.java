@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import org.bukkit.Server;
 import java.util.regex.Pattern;
@@ -17,6 +19,7 @@ import java.util.regex.Pattern;
 public final class PluginManager {
     private final Server server;
     private final HashMap<Pattern, PluginLoader> fileAssociations = new HashMap<Pattern, PluginLoader>();
+    private final List<Plugin> plugins = new ArrayList<Plugin>();
 
     public PluginManager(Server instance) {
         server = instance;
@@ -63,7 +66,13 @@ public final class PluginManager {
         File[] files = directory.listFiles();
 
         for (File file : files) {
-            Plugin plugin = loadPlugin(file);
+            Plugin plugin = null;
+
+            try {
+                plugin = loadPlugin(file);
+            } catch (InvalidPluginException ex) {
+                Logger.getLogger(PluginManager.class.getName()).log(Level.SEVERE, "Could not load " + file.getPath() + " in " + directory.getPath(), ex);
+            }
             
             if (plugin != null) {
                 result.add(plugin);
@@ -80,8 +89,9 @@ public final class PluginManager {
      *
      * @param file File containing the plugin to load
      * @return The Plugin loaded, or null if it was invalid
+     * @throws InvalidPluginException Thrown when the specified file is not a valid plugin
      */
-    public Plugin loadPlugin(File file) {
+    public Plugin loadPlugin(File file) throws InvalidPluginException {
         Set<Pattern> filters = fileAssociations.keySet();
         Plugin result = null;
 
@@ -93,6 +103,11 @@ public final class PluginManager {
                 PluginLoader loader = fileAssociations.get(filter);
                 result = loader.loadPlugin(file);
             }
+        }
+
+        if (result != null) {
+            plugins.add(result);
+            result.onInitialize();
         }
 
         return result;

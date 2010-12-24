@@ -53,6 +53,24 @@ public final class PluginDescriptionFile {
         yaml.dump(saveMap(), writer);
     }
 
+    /**
+     * Returns the name of a plugin
+     *
+     * @return String name
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * Returns the main class for a plugin
+     *
+     * @return Java classpath
+     */
+    public String getMain() {
+        return main;
+    }
+
     private void loadMap(Map<String, Object> map) throws ClassCastException {
         name = (String)map.get("name");
         main = (String)map.get("main");

@@ -2,24 +2,24 @@
 package org.bukkit.plugin;
 
 /**
- * Thrown when attempting to load an invalid PluginDescriptionFile
+ * Thrown when attempting to load an invalid Plugin file
  */
-public class InvalidDescriptionException extends Exception {
+public class InvalidPluginException extends Exception {
     private final Throwable cause;
 
     /**
-     * Constructs a new InvalidDescriptionException based on the given Exception
+     * Constructs a new InvalidPluginException based on the given Exception
      *
      * @param throwable Exception that triggered this Exception
      */
-    public InvalidDescriptionException(Throwable throwable) {
+    public InvalidPluginException(Throwable throwable) {
         cause = throwable;
     }
 
     /**
-     * Constructs a new InvalidDescriptionException
+     * Constructs a new InvalidPluginException
      */
-    public InvalidDescriptionException() {
+    public InvalidPluginException() {
         cause = null;
     }
 
