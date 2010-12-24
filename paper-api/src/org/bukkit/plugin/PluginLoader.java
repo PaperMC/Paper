@@ -2,6 +2,7 @@
 package org.bukkit.plugin;
 
 import java.io.File;
+import java.util.regex.Pattern;
 
 /**
  * Represents a plugin loader, which provides access and management for all plugins
@@ -38,11 +39,14 @@ public interface PluginLoader {
     /**
      * Loads the plugin contained in the specified file
      *
-     * File must be a .jar and contain a valid plugin.yaml file
-     *
      * @param file File to attempt to load
      * @return Plugin that was contained in the specified file, or null if
      * unsuccessful
      */
     public Plugin loadPlugin(File file);
+
+    /**
+     * Returns a list of all filename filters expected by this PluginLoader
+     */
+    public Pattern[] getPluginFileFilters();
 }
