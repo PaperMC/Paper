@@ -28,13 +28,16 @@ public final class CraftServer implements Server {
         server = console.f;
 
         pluginManager.RegisterInterface(JavaPluginLoader.class);
-        
-        try {
-            pluginManager.loadPlugin(new File("SamplePlugin.jar"));
-        } catch (InvalidPluginException ex) {
-            Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (Throwable ex) {
-            Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, "(Did you extract the lib folder?)", ex);
+
+        File pluginFolder = new File("plugins");
+        if (pluginFolder.exists()) {
+            try {
+                pluginManager.loadPlugins(pluginFolder);
+            } catch (Throwable ex) {
+                Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, "(Did you extract the lib folder?)", ex);
+            }
+        } else {
+            pluginFolder.mkdir();
         }
     }
 
