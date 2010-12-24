@@ -81,7 +81,7 @@ public final class PluginManager {
             }
         }
 
-        return (Plugin[])result.toArray();
+        return result.toArray(new Plugin[result.size()]);
     }
 
     /**

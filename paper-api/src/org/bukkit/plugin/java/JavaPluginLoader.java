@@ -3,13 +3,18 @@ package org.bukkit.plugin.java;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginLoader;
 import java.util.regex.Pattern;
 import org.bukkit.Server;
+import org.bukkit.plugin.InvalidDescriptionException;
 import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.PluginDescriptionFile;
 
@@ -28,10 +33,28 @@ public final class JavaPluginLoader implements PluginLoader {
     
     public Plugin loadPlugin(File file) throws InvalidPluginException {
         JavaPlugin result = null;
-        PluginDescriptionFile description = new PluginDescriptionFile("Sample Plugin", "com.dinnerbone.bukkit.sample.SamplePlugin");
+        PluginDescriptionFile description = null;
 
         if (!file.exists()) {
             throw new InvalidPluginException(new FileNotFoundException(String.format("%s does not exist", file.getPath())));
+        }
+        try {
+            JarFile jar = new JarFile(file);
+            JarEntry entry = jar.getJarEntry("plugin.yml");
+
+            if (entry == null) {
+                throw new InvalidPluginException(new FileNotFoundException("Jar does not contain plugin.yml"));
+            }
+
+            InputStream stream = jar.getInputStream(entry);
+            description = new PluginDescriptionFile(stream);
+
+            stream.close();
+            jar.close();
+        } catch (IOException ex) {
+            throw new InvalidPluginException(ex);
+        } catch (InvalidDescriptionException ex) {
+            throw new InvalidPluginException(ex);
         }
 
         try {
