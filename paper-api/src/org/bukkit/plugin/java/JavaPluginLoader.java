@@ -41,7 +41,7 @@ public final class JavaPluginLoader implements PluginLoader {
             Constructor<? extends JavaPlugin> constructor = plugin.getConstructor(PluginLoader.class, Server.class, PluginDescriptionFile.class, File.class, ClassLoader.class);
 
             result = constructor.newInstance(this, server, description, file, loader);
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
             throw new InvalidPluginException(ex);
         }
 
