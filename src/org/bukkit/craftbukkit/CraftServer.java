@@ -8,15 +8,15 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.bukkit.*;
 import net.minecraft.server.*;
-import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.SimplePluginManager;
 import org.bukkit.plugin.java.JavaPluginLoader;
 
 public final class CraftServer implements Server {
     private final String serverName = "Craftbukkit";
     private final String serverVersion;
     private final HashMap<String, Player> playerCache = new HashMap<String, Player>();
-    private final PluginManager pluginManager = new PluginManager(this);
+    private final PluginManager pluginManager = new SimplePluginManager(this);
 
     protected final MinecraftServer console;
     protected final hl server;
