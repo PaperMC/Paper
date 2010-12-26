@@ -14,7 +14,10 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import org.bukkit.Server;
 import java.util.regex.Pattern;
+import org.bukkit.event.Event.Priority;
+import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerEvent;
+import org.bukkit.event.player.PlayerListener;
 
 /**
  * Handles all plugin management from the Server
@@ -177,5 +180,30 @@ public final class SimplePluginManager implements PluginManager {
                 }
             }
         }
+    }
+
+    /**
+     * Registers the given player event to the specified listener
+     *
+     * @param type EventType to register
+     * @param listener PlayerListener to register
+     * @param priority Priority of this event
+     * @param plugin Plugin to register
+     */
+    public void registerEvent(PlayerEvent.EventType type, PlayerListener listener, Priority priority, Plugin plugin) {
+        List<RegisteredListener> listeners = playerListeners.get(type);
+        int position = 0;
+
+        if (listeners != null) {
+            for (RegisteredListener registration : listeners) {
+                if (registration.getPriority().compareTo(priority) < 0) {
+                    break;
+                }
+                
+                position++;
+            }
+        }
+
+        listeners.add(position, new RegisteredListener(listener, priority, plugin));
     }
 }
