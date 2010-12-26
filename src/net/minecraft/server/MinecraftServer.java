@@ -15,14 +15,14 @@ import java.util.logging.Logger;
 import org.bukkit.craftbukkit.CraftServer;
 
 public class MinecraftServer
-        implements fn, Runnable {
+        implements ICommandListener, Runnable {
 
     public static Logger a = Logger.getLogger("Minecraft");
     public static HashMap<String, Integer> b = new HashMap<String, Integer>();
-    public eh c;
-    public dt d;
-    public fm e;
-    public hl f;
+    public NetworkListenThread c;
+    public PropertyManager d;
+    public WorldServer e;
+    public ServerConfigurationManager f;
     private boolean o = true;
     public boolean g = false;
     int h = 0;
@@ -30,14 +30,14 @@ public class MinecraftServer
     public int j;
     private List p = new ArrayList();
     private List q = Collections.synchronizedList(new ArrayList());
-    public hp k;
+    public EntityTracker k;
     public boolean l;
     public boolean m;
     public boolean n;
     public CraftServer server; // CraftBukkit
 
     public MinecraftServer() {
-        new cn(this);
+        new ThreadSleepForever(this);
     }
 
     // CraftBukkit: Decompiler might miss this method, your IDE won't complain but you
@@ -47,14 +47,14 @@ public class MinecraftServer
         return minecraftserver.o;
     }
 
-    private boolean d() {
-        cl localcl = new cl(this);
+    private boolean d() throws UnknownHostException {
+        ThreadCommandReader localThreadCommandReader = new ThreadCommandReader(this);
 
-        localcl.setDaemon(true);
-        localcl.start();
+        localThreadCommandReader.setDaemon(true);
+        localThreadCommandReader.start();
 
-        hb.a();
-        a.info("Starting minecraft server version Beta 1.1");
+        ConsoleLogManager.a();
+        a.info("Starting minecraft server version Beta 1.1_02");
 
         if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
             a.warning("**** NOT ENOUGH RAM!");
@@ -62,7 +62,7 @@ public class MinecraftServer
         }
 
         a.info("Loading properties");
-        this.d = new dt(new File("server.properties"));
+        this.d = new PropertyManager(new File("server.properties"));
         String str1 = this.d.a("server-ip", "");
 
         this.l = this.d.a("online-mode", true);
@@ -71,17 +71,13 @@ public class MinecraftServer
 
         InetAddress localInetAddress = null;
         if (str1.length() > 0) {
-            try {
-                localInetAddress = InetAddress.getByName(str1);
-            } catch (UnknownHostException ex) {
-                Logger.getLogger(MinecraftServer.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            localInetAddress = InetAddress.getByName(str1);
         }
         int i1 = this.d.a("server-port", 25565);
 
         a.info("Starting Minecraft server on " + (str1.length() == 0 ? "*" : str1) + ":" + i1);
         try {
-            this.c = new eh(this, localInetAddress, i1);
+            this.c = new NetworkListenThread(this, localInetAddress, i1);
         } catch (Throwable localIOException) {
             a.warning("**** FAILED TO BIND TO PORT!");
             a.log(Level.WARNING, "The exception was: " + localIOException.toString());
@@ -96,10 +92,10 @@ public class MinecraftServer
             a.warning("To change this, set \"online-mode\" to \"true\" in the server.settings file.");
         }
 
-        this.f = new hl(this);
-        this.k = new hp(this);
-
         server = new CraftServer(this, "1.1"); // CraftBukkit
+
+        this.f = new ServerConfigurationManager(this);
+        this.k = new EntityTracker(this);
 
         String str2 = this.d.a("level-name", "world");
         a.info("Preparing level \"" + str2 + "\"");
@@ -111,8 +107,8 @@ public class MinecraftServer
 
     private void c(String paramString) {
         a.info("Preparing start region");
-        this.e = new fm(this, new File("."), paramString, this.d.a("hellworld", false) ? -1 : 0);
-        this.e.a(new fj(this));
+        this.e = new WorldServer(this, new File("."), paramString, this.d.a("hellworld", false) ? -1 : 0);
+        this.e.a(new WorldManager(this));
         this.e.k = (this.d.a("spawn-monsters", true) ? 1 : 0);
         this.f.a(this.e);
         int i1 = 10;
@@ -226,12 +222,12 @@ public class MinecraftServer
             b.remove(localArrayList.get(i1));
         }
 
-        el.a();
-        bn.a();
+        AxisAlignedBB.a();
+        Vec3D.a();
         this.h += 1;
 
         if (this.h % 20 == 0) {
-            this.f.a(new hc(this.e.e));
+            this.f.a(new Packet4UpdateTime(this.e.e));
         }
 
         this.e.f();
@@ -242,7 +238,7 @@ public class MinecraftServer
         this.k.a();
 
         for (int i1 = 0; i1 < this.p.size(); i1++) {
-            ((fc) this.p.get(i1)).a();
+            ((IUpdatePlayerListBox) this.p.get(i1)).a();
         }
         try {
             b();
@@ -251,39 +247,39 @@ public class MinecraftServer
         }
     }
 
-    public void a(String paramString, fn paramfn) {
-        this.q.add(new at(paramString, paramfn));
+    public void a(String paramString, ICommandListener paramICommandListener) {
+        this.q.add(new ServerCommand(paramString, paramICommandListener));
     }
 
     public void b() {
         while (this.q.size() > 0) {
-            at localat = (at) this.q.remove(0);
-            String str1 = localat.a;
-            fn localfn = localat.b;
-            String str2 = localfn.c();
+            ServerCommand localServerCommand = (ServerCommand) this.q.remove(0);
+            String str1 = localServerCommand.a;
+            ICommandListener localICommandListener = localServerCommand.b;
+            String str2 = localICommandListener.c();
             if ((str1.toLowerCase().startsWith("help")) || (str1.toLowerCase().startsWith("?"))) {
-                localfn.b("To run the server without a gui, start it like this:");
-                localfn.b("   java -Xmx1024M -Xms1024M -jar minecraft_server.jar nogui");
-                localfn.b("Console commands:");
-                localfn.b("   help  or  ?               shows this message");
-                localfn.b("   kick <player>             removes a player from the server");
-                localfn.b("   ban <player>              bans a player from the server");
-                localfn.b("   pardon <player>           pardons a banned player so that they can connect again");
-                localfn.b("   ban-ip <ip>               bans an IP address from the server");
-                localfn.b("   pardon-ip <ip>            pardons a banned IP address so that they can connect again");
-                localfn.b("   op <player>               turns a player into an op");
-                localfn.b("   deop <player>             removes op status from a player");
-                localfn.b("   tp <player1> <player2>    moves one player to the same location as another player");
-                localfn.b("   give <player> <id> [num]  gives a player a resource");
-                localfn.b("   tell <player> <message>   sends a private message to a player");
-                localfn.b("   stop                      gracefully stops the server");
-                localfn.b("   save-all                  forces a server-wide level save");
-                localfn.b("   save-off                  disables terrain saving (useful for backup scripts)");
-                localfn.b("   save-on                   re-enables terrain saving");
-                localfn.b("   list                      lists all currently connected players");
-                localfn.b("   say <message>             broadcasts a message to all players");
+                localICommandListener.b("To run the server without a gui, start it like this:");
+                localICommandListener.b("   java -Xmx1024M -Xms1024M -jar minecraft_server.jar nogui");
+                localICommandListener.b("Console commands:");
+                localICommandListener.b("   help  or  ?               shows this message");
+                localICommandListener.b("   kick <player>             removes a player from the server");
+                localICommandListener.b("   ban <player>              bans a player from the server");
+                localICommandListener.b("   pardon <player>           pardons a banned player so that they can connect again");
+                localICommandListener.b("   ban-ip <ip>               bans an IP address from the server");
+                localICommandListener.b("   pardon-ip <ip>            pardons a banned IP address so that they can connect again");
+                localICommandListener.b("   op <player>               turns a player into an op");
+                localICommandListener.b("   deop <player>             removes op status from a player");
+                localICommandListener.b("   tp <player1> <player2>    moves one player to the same location as another player");
+                localICommandListener.b("   give <player> <id> [num]  gives a player a resource");
+                localICommandListener.b("   tell <player> <message>   sends a private message to a player");
+                localICommandListener.b("   stop                      gracefully stops the server");
+                localICommandListener.b("   save-all                  forces a server-wide level save");
+                localICommandListener.b("   save-off                  disables terrain saving (useful for backup scripts)");
+                localICommandListener.b("   save-on                   re-enables terrain saving");
+                localICommandListener.b("   list                      lists all currently connected players");
+                localICommandListener.b("   say <message>             broadcasts a message to all players");
             } else if (str1.toLowerCase().startsWith("list")) {
-                localfn.b("Connected players: " + this.f.c());
+                localICommandListener.b("Connected players: " + this.f.c());
             } else if (str1.toLowerCase().startsWith("stop")) {
                 a(str2, "Stopping the server..");
                 this.o = false;
@@ -327,7 +323,7 @@ public class MinecraftServer
                         localObject2 = this.f.h((String) localObject1);
 
                         if (localObject2 != null) {
-                            ((fi) localObject2).a.a("Banned by admin");
+                            ((EntityPlayerMP) localObject2).a.a("Banned by admin");
                         }
 
                     } else if (str1.toLowerCase().startsWith("pardon ")) {
@@ -338,36 +334,36 @@ public class MinecraftServer
                         localObject1 = str1.substring(str1.indexOf(" ")).trim();
                         localObject2 = null;
                         for (int i1 = 0; i1 < this.f.b.size(); i1++) {
-                            fi localfi2 = (fi) this.f.b.get(i1);
-                            if (localfi2.aw.equalsIgnoreCase((String) localObject1)) {
-                                localObject2 = localfi2;
+                            EntityPlayerMP localEntityPlayerMP2 = (EntityPlayerMP) this.f.b.get(i1);
+                            if (localEntityPlayerMP2.aw.equalsIgnoreCase((String) localObject1)) {
+                                localObject2 = localEntityPlayerMP2;
                             }
                         }
 
                         if (localObject2 != null) {
-                            ((fi) localObject2).a.a("Kicked by admin");
-                            a(str2, "Kicking " + ((fi) localObject2).aw);
+                            ((EntityPlayerMP) localObject2).a.a("Kicked by admin");
+                            a(str2, "Kicking " + ((EntityPlayerMP) localObject2).aw);
                         } else {
-                            localfn.b("Can't find user " + (String) localObject1 + ". No kick.");
+                            localICommandListener.b("Can't find user " + (String) localObject1 + ". No kick.");
                         }
                     } else {
-                        fi localfi1;
+                        EntityPlayerMP localEntityPlayerMP1;
                         if (str1.toLowerCase().startsWith("tp ")) {
                             String[] split = str1.split(" ");
                             if (split.length == 3) {
                                 localObject2 = this.f.h(split[1]);
-                                localfi1 = this.f.h(split[2]);
+                                localEntityPlayerMP1 = this.f.h(split[2]);
 
                                 if (localObject2 == null) {
-                                    localfn.b("Can't find user " + split[1] + ". No tp.");
-                                } else if (localfi1 == null) {
-                                    localfn.b("Can't find user " + split[2] + ". No tp.");
+                                    localICommandListener.b("Can't find user " + split[1] + ". No tp.");
+                                } else if (localEntityPlayerMP1 == null) {
+                                    localICommandListener.b("Can't find user " + split[2] + ". No tp.");
                                 } else {
-                                    ((fi) localObject2).a.a(localfi1.p, localfi1.q, localfi1.r, localfi1.v, localfi1.w);
+                                    ((EntityPlayerMP) localObject2).a.a(localEntityPlayerMP1.p, localEntityPlayerMP1.q, localEntityPlayerMP1.r, localEntityPlayerMP1.v, localEntityPlayerMP1.w);
                                     a(str2, "Teleporting " + split[1] + " to " + split[2] + ".");
                                 }
                             } else {
-                                localfn.b("Syntax error, please provice a source and a target.");
+                                localICommandListener.b("Syntax error, please provice a source and a target.");
                             }
                         } else if (str1.toLowerCase().startsWith("give ")) {
                             String[] split = str1.split(" ");
@@ -376,13 +372,13 @@ public class MinecraftServer
                             }
 
                             localObject2 = split[1];
-                            localfi1 = this.f.h((String) localObject2);
+                            localEntityPlayerMP1 = this.f.h((String) localObject2);
 
-                            if (localfi1 != null) {
+                            if (localEntityPlayerMP1 != null) {
                                 try {
                                     int i2 = Integer.parseInt(split[2]);
-                                    if (gm.c[i2] != null) {
-                                        a(str2, "Giving " + localfi1.aw + " some " + i2);
+                                    if (Item.c[i2] != null) {
+                                        a(str2, "Giving " + localEntityPlayerMP1.aw + " some " + i2);
                                         int i3 = 1;
                                         if (split.length > 3) {
                                             i3 = b(split[3], 1);
@@ -393,20 +389,20 @@ public class MinecraftServer
                                         if (i3 > 64) {
                                             i3 = 64;
                                         }
-                                        localfi1.b(new il(i2, i3));
+                                        localEntityPlayerMP1.b(new ItemStack(i2, i3));
                                     } else {
-                                        localfn.b("There's no item with id " + i2);
+                                        localICommandListener.b("There's no item with id " + i2);
                                     }
                                 } catch (NumberFormatException localNumberFormatException) {
-                                    localfn.b("There's no item with id " + split[2]);
+                                    localICommandListener.b("There's no item with id " + split[2]);
                                 }
                             } else {
-                                localfn.b("Can't find user " + (String) localObject2);
+                                localICommandListener.b("Can't find user " + (String) localObject2);
                             }
                         } else if (str1.toLowerCase().startsWith("say ")) {
                             str1 = str1.substring(str1.indexOf(" ")).trim();
                             a.info("[" + str2 + "] " + str1);
-                            this.f.a(new br("§d[Server] " + str1));
+                            this.f.a(new Packet3Chat("§d[Server] " + str1));
                         } else if (str1.toLowerCase().startsWith("tell ")) {
                             String[] split = str1.split(" ");
                             if (split.length >= 3) {
@@ -416,8 +412,8 @@ public class MinecraftServer
                                 a.info("[" + str2 + "->" + split[1] + "] " + str1);
                                 str1 = "§7" + str2 + " whispers " + str1;
                                 a.info(str1);
-                                if (!this.f.a(split[1], new br(str1))) {
-                                    localfn.b("There's no player by that name online.");
+                                if (!this.f.a(split[1], new Packet3Chat(str1))) {
+                                    localICommandListener.b("There's no player by that name online.");
                                 }
                             }
                         } else {
@@ -443,8 +439,8 @@ public class MinecraftServer
         return paramInt;
     }
 
-    public void a(fc paramfc) {
-        this.p.add(paramfc);
+    public void a(IUpdatePlayerListBox paramIUpdatePlayerListBox) {
+        this.p.add(paramIUpdatePlayerListBox);
     }
 
     public static void main(String[] paramArrayOfString) {
@@ -452,10 +448,10 @@ public class MinecraftServer
             MinecraftServer localMinecraftServer = new MinecraftServer();
 
             if ((!GraphicsEnvironment.isHeadless()) && ((paramArrayOfString.length <= 0) || (!paramArrayOfString[0].equals("nogui")))) {
-                hg.a(localMinecraftServer);
+                ServerGUI.a(localMinecraftServer);
             }
 
-            new cj("Server thread", localMinecraftServer).start();
+            new ThreadServerApplication("Server thread", localMinecraftServer).start();
         } catch (Exception localException) {
             a.log(Level.SEVERE, "Failed to start the minecraft server", localException);
         }
