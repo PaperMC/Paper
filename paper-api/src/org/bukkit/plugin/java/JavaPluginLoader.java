@@ -8,18 +8,17 @@ import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginLoader;
 import java.util.regex.Pattern;
 import org.bukkit.Server;
-import org.bukkit.plugin.InvalidDescriptionException;
-import org.bukkit.plugin.InvalidPluginException;
-import org.bukkit.plugin.PluginDescriptionFile;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.*;
+import org.bukkit.plugin.*;
 
 /**
- * Represents a Java plugin loader, allowing plugins in the form of .jars
+ * Represents a Java plugin loader, allowing plugins in the form of .jar
  */
 public final class JavaPluginLoader implements PluginLoader {
     private final Server server;
@@ -75,4 +74,20 @@ public final class JavaPluginLoader implements PluginLoader {
         return fileFilters;
     }
 
+    public void callEvent(RegisteredListener registration, PlayerEvent.EventType type, PlayerEvent event) {
+        Listener listener = registration.getListener();
+
+        if (listener instanceof PlayerListener) {
+            PlayerListener trueListener = (PlayerListener)listener;
+
+            switch (type) {
+                case Join:
+                    trueListener.onPlayerJoin((PlayerJoinEvent)event);
+                    break;
+                case Quit:
+                    trueListener.onPlayerQuit((PlayerQuitEvent)event);
+                    break;
+            }
+        }
+    }
 }

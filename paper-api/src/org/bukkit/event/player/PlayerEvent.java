@@ -16,7 +16,25 @@ public abstract class PlayerEvent extends Event {
         player = who;
     }
 
+    /**
+     * Returns the player involved in this event
+     * @return Player who is involved in this event
+     */
     public final Player getPlayer() {
         return player;
+    }
+
+    /**
+     * Represents the different types of events
+     */
+    public enum EventType {
+        /**
+         * A player joins a server
+         */
+        Join,
+        /**
+         * A player leaves a server
+         */
+        Quit
     }
 }

@@ -4,6 +4,7 @@ package org.bukkit.plugin;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +14,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import org.bukkit.Server;
 import java.util.regex.Pattern;
+import org.bukkit.event.player.PlayerEvent;
 
 /**
  * Handles all plugin management from the Server
@@ -22,6 +24,7 @@ public final class SimplePluginManager implements PluginManager {
     private final Map<Pattern, PluginLoader> fileAssociations = new HashMap<Pattern, PluginLoader>();
     private final List<Plugin> plugins = new ArrayList<Plugin>();
     private final Map<String, Plugin> lookupNames = new HashMap<String, Plugin>();
+    private final Map<PlayerEvent.EventType, List<RegisteredListener>> playerListeners = new EnumMap<PlayerEvent.EventType, List<RegisteredListener>>(PlayerEvent.EventType.class);
 
     public SimplePluginManager(Server instance) {
         server = instance;
@@ -152,6 +155,27 @@ public final class SimplePluginManager implements PluginManager {
             return plugin.isEnabled();
         } else {
             return false;
+        }
+    }
+
+    /**
+     * Calls a player related event with the given details
+     *
+     * @param type Type of player related event to call
+     * @param event Event details
+     */
+    public void callEvent(PlayerEvent.EventType type, PlayerEvent event) {
+        List<RegisteredListener> listeners = playerListeners.get(type);
+
+        if (listeners != null) {
+            for (RegisteredListener registration : listeners) {
+                Plugin plugin = registration.getPlugin();
+                PluginLoader loader = plugin.getPluginLoader();
+
+                if (plugin.isEnabled()) {
+                    loader.callEvent(registration, type, event);
+                }
+            }
         }
     }
 }

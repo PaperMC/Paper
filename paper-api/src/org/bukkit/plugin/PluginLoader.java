@@ -3,6 +3,7 @@ package org.bukkit.plugin;
 
 import java.io.File;
 import java.util.regex.Pattern;
+import org.bukkit.event.player.PlayerEvent;
 
 /**
  * Represents a plugin loader, which handles direct access to specific types
@@ -23,4 +24,13 @@ public interface PluginLoader {
      * Returns a list of all filename filters expected by this PluginLoader
      */
     public Pattern[] getPluginFileFilters();
+
+    /**
+     * Calls a player related event with the given details
+     *
+     * @param registration Registered information on the plugin to call about this event
+     * @param type Type of player related event to call
+     * @param event Event details
+     */
+    public void callEvent(RegisteredListener registration, PlayerEvent.EventType type, PlayerEvent event);
 }
