@@ -21,6 +21,6 @@ public class PlayerListener implements Listener {
      * Called when a player leaves a server
      * @param event Relevant event details
      */
-    public void onPlayerQuit(PlayerQuitEvent event) {
+    public void onPlayerQuit(PlayerEvent event) {
     }
 }
