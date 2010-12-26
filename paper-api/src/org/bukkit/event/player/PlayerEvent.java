@@ -8,10 +8,10 @@ import org.bukkit.event.Event;
 /**
  * Represents a player related event
  */
-public abstract class PlayerEvent extends Event {
+public class PlayerEvent extends Event {
     private final Player player;
 
-    protected PlayerEvent(final Server server, final Player who) {
+    public PlayerEvent(final Server server, final Player who) {
         super(server);
         player = who;
     }

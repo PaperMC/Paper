@@ -15,7 +15,6 @@ import java.util.regex.Matcher;
 import org.bukkit.Server;
 import java.util.regex.Pattern;
 import org.bukkit.event.Event.Priority;
-import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.event.player.PlayerListener;
 
@@ -202,6 +201,9 @@ public final class SimplePluginManager implements PluginManager {
                 
                 position++;
             }
+        } else {
+            listeners = new ArrayList<RegisteredListener>();
+            playerListeners.put(type, listeners);
         }
 
         listeners.add(position, new RegisteredListener(listener, priority, plugin));

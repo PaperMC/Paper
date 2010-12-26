@@ -11,7 +11,7 @@ import org.bukkit.plugin.PluginLoader;
  * Represents a Java plugin
  */
 public abstract class JavaPlugin implements Plugin {
-    private boolean isEnabled = false;
+    private boolean isEnabled = true;
     private final PluginLoader loader;
     private final Server server;
     private final File file;
