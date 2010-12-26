@@ -8,6 +8,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.bukkit.*;
 import net.minecraft.server.*;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.SimplePluginManager;
 import org.bukkit.plugin.java.JavaPluginLoader;
@@ -19,7 +20,7 @@ public final class CraftServer implements Server {
     private final PluginManager pluginManager = new SimplePluginManager(this);
 
     protected final MinecraftServer console;
-    protected final hl server;
+    protected final ServerConfigurationManager server;
 
     public CraftServer(MinecraftServer instance, String ver) {
         serverVersion = ver;
@@ -50,7 +51,7 @@ public final class CraftServer implements Server {
     }
 
     public Player[] getOnlinePlayers() {
-        List<fi> online = server.b;
+        List<EntityPlayerMP> online = server.b;
         Player[] players = new Player[online.size()];
 
         for (int i = 0; i < players.length; i++) {
@@ -65,6 +66,17 @@ public final class CraftServer implements Server {
         }
 
         return players;
+    }
+
+    public Player getPlayer(EntityPlayerMP entity) {
+        Player result = playerCache.get(entity.aw);
+
+        if (result == null) {
+            result = new CraftPlayer(this, entity);
+            playerCache.put(entity.aw, result);
+        }
+
+        return result;
     }
 
     public PluginManager getPluginManager() {

@@ -1,15 +1,15 @@
 
 package org.bukkit.craftbukkit;
 
-import net.minecraft.server.fi;
+import net.minecraft.server.EntityPlayerMP;
 import org.bukkit.Player;
 
 public class CraftPlayer implements Player {
-    private fi player;
+    private EntityPlayerMP player;
     private final String name;
     private final CraftServer server;
 
-    public CraftPlayer(CraftServer serv, fi handle) {
+    public CraftPlayer(CraftServer serv, EntityPlayerMP handle) {
         player = handle;
         name = player.aw;
         server = serv;
