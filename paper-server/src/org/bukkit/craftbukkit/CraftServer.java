@@ -6,9 +6,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import net.minecraft.server.EntityPlayerMP;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.ServerConfigurationManager;
+import net.minecraft.server.WorldServer;
 import org.bukkit.*;
-import net.minecraft.server.*;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.SimplePluginManager;
 import org.bukkit.plugin.java.JavaPluginLoader;
@@ -17,6 +19,7 @@ public final class CraftServer implements Server {
     private final String serverName = "Craftbukkit";
     private final String serverVersion;
     private final HashMap<String, Player> playerCache = new HashMap<String, Player>();
+    private final HashMap<WorldServer, World> worldCache = new HashMap<WorldServer, World>();
     private final PluginManager pluginManager = new SimplePluginManager(this);
 
     protected final MinecraftServer console;
@@ -81,5 +84,20 @@ public final class CraftServer implements Server {
 
     public PluginManager getPluginManager() {
         return pluginManager;
+    }
+
+    public World[] getWorlds() {
+        return new World[] { getWorld(console.e) };
+    }
+
+    public World getWorld(WorldServer world) {
+        World result = worldCache.get(world);
+
+        if (result == null) {
+            result = new CraftWorld(world);
+            worldCache.put(world, result);
+        }
+
+        return result;
     }
 }
