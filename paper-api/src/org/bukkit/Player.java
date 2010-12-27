@@ -19,4 +19,18 @@ public interface Player {
      * @return true if they are online
      */
     public boolean isOnline();
+
+    /**
+     * Gets the players current position in the world
+     *
+     * @return Location of this player
+     */
+    public Location getLocation();
+
+    /**
+     * Gets the current world this player is on
+     *
+     * @return World
+     */
+    public World getWorld();
 }

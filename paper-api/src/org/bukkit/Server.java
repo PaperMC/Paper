@@ -34,4 +34,11 @@ public interface Server {
      * @return PluginManager for this Server instance
      */
     public PluginManager getPluginManager();
+
+    /**
+     * Gets a list of all worlds on this server
+     *
+     * @return An array of worlds
+     */
+    public World[] getWorlds();
 }
