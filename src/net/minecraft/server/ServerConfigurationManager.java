@@ -10,11 +10,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
-import org.bukkit.Server;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.event.player.PlayerEvent.EventType;
-import org.bukkit.event.player.PlayerQuitEvent;
 
 public class ServerConfigurationManager {
 
@@ -84,7 +82,7 @@ public class ServerConfigurationManager {
         this.d.b(paramEntityPlayerMP);
 
         // Craftbukkit
-        server.getPluginManager().callEvent(EventType.Quit, new PlayerQuitEvent(server, server.getPlayer(paramEntityPlayerMP), PlayerQuitEvent.PlayerQuitReason.Disconnected));
+        server.getPluginManager().callEvent(EventType.Quit, new PlayerEvent(server, server.getPlayer(paramEntityPlayerMP)));
     }
 
     public EntityPlayerMP a(NetLoginHandler paramNetLoginHandler, String paramString1, String paramString2) {
