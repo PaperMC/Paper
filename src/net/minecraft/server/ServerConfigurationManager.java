@@ -5,7 +5,9 @@ import java.util.*;
 import java.util.logging.Logger;
 
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.event.Event.Type;
 import org.bukkit.event.player.PlayerEvent;
+import org.bukkit.event.player.PlayerLoginEvent;
 
 
 public class ServerConfigurationManager {
@@ -82,22 +84,32 @@ public class ServerConfigurationManager {
     }
 
     public EntityPlayerMP a(NetLoginHandler netloginhandler, String s, String s1) {
-        if (f.contains(s.trim().toLowerCase())) {
-            netloginhandler.a("You are banned from this server!");
-            return null;
-        }
-        String s2 = netloginhandler.b.b().toString();
+        // Craftbukkit note: this entire method needs to be changed
+        // Instead of kicking then returning, we need to store the kick reason
+        // in the event, check with plugins to see if it's ok, and THEN kick
+        // depending on the outcome.
 
+        EntityPlayerMP entity = new EntityPlayerMP(c, c.e, s, new ItemInWorldManager(c.e));
+        PlayerLoginEvent event = new PlayerLoginEvent(Type.PLAYER_LOGIN, server.getPlayer(entity));
+
+        String s2 = netloginhandler.b.b().toString();
         s2 = s2.substring(s2.indexOf("/") + 1);
         s2 = s2.substring(0, s2.indexOf(":"));
-        if (g.contains(s2)) {
-            netloginhandler.a("Your IP address is banned from this server!");
+
+        if (f.contains(s.trim().toLowerCase())) {
+            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, "You are banned from this server!");
+        } else if (g.contains(s2)) {
+            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, "Your IP address is banned from this server!");
+        } else if (b.size() >= e) {
+            event.disallow(PlayerLoginEvent.Result.KICK_FULL, "The server is full!");
+        }
+        
+        server.getPluginManager().callEvent(event);
+        if (event.getResult() != PlayerLoginEvent.Result.ALLOWED) {
+            netloginhandler.a(event.getKickMessage());
             return null;
         }
-        if (b.size() >= e) {
-            netloginhandler.a("The server is full!");
-            return null;
-        }
+
         for (int i1 = 0; i1 < b.size(); i1++) {
             EntityPlayerMP entityplayermp = (EntityPlayerMP) b.get(i1);
 
@@ -106,7 +118,7 @@ public class ServerConfigurationManager {
             }
         }
 
-        return new EntityPlayerMP(c, c.e, s, new ItemInWorldManager(c.e));
+        return entity;
     }
 
     public EntityPlayerMP d(EntityPlayerMP entityplayermp) {
