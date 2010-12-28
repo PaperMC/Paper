@@ -32,4 +32,8 @@ public class CraftPlayer implements Player {
     public World getWorld() {
         return server.getWorld(player.b.e);
     }
+
+    public EntityPlayerMP getEntity() {
+        return player;
+    }
 }
