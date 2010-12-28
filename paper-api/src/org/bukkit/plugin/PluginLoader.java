@@ -3,7 +3,8 @@ package org.bukkit.plugin;
 
 import java.io.File;
 import java.util.regex.Pattern;
-import org.bukkit.event.player.PlayerEvent;
+
+import org.bukkit.event.Event;
 
 /**
  * Represents a plugin loader, which handles direct access to specific types
@@ -32,5 +33,5 @@ public interface PluginLoader {
      * @param type Type of player related event to call
      * @param event Event details
      */
-    public void callEvent(RegisteredListener registration, PlayerEvent.EventType type, PlayerEvent event);
+    public void callEvent(RegisteredListener registration, Event event);
 }

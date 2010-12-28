@@ -11,8 +11,8 @@ import org.bukkit.event.Event;
 public class PlayerEvent extends Event {
     private final Player player;
 
-    public PlayerEvent(final Server server, final Player who) {
-        super(server);
+    public PlayerEvent(final Server server, Event.Type type, final Player who) {
+        super(server, type);
         player = who;
     }
 
@@ -22,19 +22,5 @@ public class PlayerEvent extends Event {
      */
     public final Player getPlayer() {
         return player;
-    }
-
-    /**
-     * Represents the different types of events
-     */
-    public enum EventType {
-        /**
-         * A player joins a server
-         */
-        Join,
-        /**
-         * A player leaves a server
-         */
-        Quit
     }
 }

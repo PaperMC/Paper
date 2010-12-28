@@ -2,9 +2,10 @@
 package org.bukkit.plugin;
 
 import java.io.File;
+
+import org.bukkit.event.Event;
 import org.bukkit.event.Event.Priority;
-import org.bukkit.event.player.PlayerEvent;
-import org.bukkit.event.player.PlayerListener;
+import org.bukkit.event.Listener;
 
 /**
  * Handles all plugin management from the Server
@@ -72,15 +73,15 @@ public interface PluginManager {
      * @param type Type of player related event to call
      * @param event Event details
      */
-    public void callEvent(PlayerEvent.EventType type, PlayerEvent event);
+    public void callEvent(Event event);
 
     /**
      * Registers the given player event to the specified listener
      *
      * @param type EventType to register
-     * @param listener PlayerListener to register
+     * @param listener Listener to register
      * @param priority Priority of this event
      * @param plugin Plugin to register
      */
-    public void registerEvent(PlayerEvent.EventType type, PlayerListener listener, Priority priority, Plugin plugin);
+    public void registerEvent(Event.Type type, Listener listener, Priority priority, Plugin plugin);
 }

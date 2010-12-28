@@ -13,6 +13,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 import org.bukkit.Server;
+import org.bukkit.event.Event;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.*;
 import org.bukkit.plugin.*;
@@ -74,17 +75,17 @@ public final class JavaPluginLoader implements PluginLoader {
         return fileFilters;
     }
 
-    public void callEvent(RegisteredListener registration, PlayerEvent.EventType type, PlayerEvent event) {
+    public void callEvent(RegisteredListener registration, Event event) {
         Listener listener = registration.getListener();
 
         if (listener instanceof PlayerListener) {
             PlayerListener trueListener = (PlayerListener)listener;
 
-            switch (type) {
-                case Join:
+            switch (event.getType()) {
+                case JOIN:
                     trueListener.onPlayerJoin((PlayerEvent)event);
                     break;
-                case Quit:
+                case QUIT:
                     trueListener.onPlayerQuit((PlayerEvent)event);
                     break;
             }

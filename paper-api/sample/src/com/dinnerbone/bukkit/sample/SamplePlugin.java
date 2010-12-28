@@ -4,7 +4,7 @@ package com.dinnerbone.bukkit.sample;
 import java.io.File;
 import org.bukkit.Server;
 import org.bukkit.event.Event.Priority;
-import org.bukkit.event.player.PlayerEvent.EventType;
+import org.bukkit.event.Event;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoader;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -34,7 +34,7 @@ public class SamplePlugin extends JavaPlugin {
     }
 
     private void registerEvents() {
-        getServer().getPluginManager().registerEvent(EventType.Join, playerListener, Priority.Normal, this);
-        getServer().getPluginManager().registerEvent(EventType.Quit, playerListener, Priority.Normal, this);
+        getServer().getPluginManager().registerEvent(Event.Type.JOIN, playerListener, Priority.Normal, this);
+        getServer().getPluginManager().registerEvent(Event.Type.QUIT, playerListener, Priority.Normal, this);
     }
 }

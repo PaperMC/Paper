@@ -14,9 +14,10 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import org.bukkit.Server;
 import java.util.regex.Pattern;
+
+import org.bukkit.event.Event;
 import org.bukkit.event.Event.Priority;
-import org.bukkit.event.player.PlayerEvent;
-import org.bukkit.event.player.PlayerListener;
+import org.bukkit.event.Listener;
 
 /**
  * Handles all plugin management from the Server
@@ -26,7 +27,7 @@ public final class SimplePluginManager implements PluginManager {
     private final Map<Pattern, PluginLoader> fileAssociations = new HashMap<Pattern, PluginLoader>();
     private final List<Plugin> plugins = new ArrayList<Plugin>();
     private final Map<String, Plugin> lookupNames = new HashMap<String, Plugin>();
-    private final Map<PlayerEvent.EventType, List<RegisteredListener>> playerListeners = new EnumMap<PlayerEvent.EventType, List<RegisteredListener>>(PlayerEvent.EventType.class);
+    private final Map<Event.Type, List<RegisteredListener>> listeners = new EnumMap<Event.Type, List<RegisteredListener>>(Event.Type.class);
 
     public SimplePluginManager(Server instance) {
         server = instance;
@@ -166,16 +167,16 @@ public final class SimplePluginManager implements PluginManager {
      * @param type Type of player related event to call
      * @param event Event details
      */
-    public void callEvent(PlayerEvent.EventType type, PlayerEvent event) {
-        List<RegisteredListener> listeners = playerListeners.get(type);
+    public void callEvent(Event event) {
+        List<RegisteredListener> eventListeners = listeners.get(event.getType());
 
         if (listeners != null) {
-            for (RegisteredListener registration : listeners) {
+            for (RegisteredListener registration : eventListeners) {
                 Plugin plugin = registration.getPlugin();
                 PluginLoader loader = plugin.getPluginLoader();
 
                 if (plugin.isEnabled()) {
-                    loader.callEvent(registration, type, event);
+                    loader.callEvent(registration, event);
                 }
             }
         }
@@ -189,12 +190,12 @@ public final class SimplePluginManager implements PluginManager {
      * @param priority Priority of this event
      * @param plugin Plugin to register
      */
-    public void registerEvent(PlayerEvent.EventType type, PlayerListener listener, Priority priority, Plugin plugin) {
-        List<RegisteredListener> listeners = playerListeners.get(type);
+    public void registerEvent(Event.Type type, Listener listener, Priority priority, Plugin plugin) {
+        List<RegisteredListener> eventListeners = listeners.get(type);
         int position = 0;
 
         if (listeners != null) {
-            for (RegisteredListener registration : listeners) {
+            for (RegisteredListener registration : eventListeners) {
                 if (registration.getPriority().compareTo(priority) < 0) {
                     break;
                 }
@@ -202,10 +203,10 @@ public final class SimplePluginManager implements PluginManager {
                 position++;
             }
         } else {
-            listeners = new ArrayList<RegisteredListener>();
-            playerListeners.put(type, listeners);
+            eventListeners = new ArrayList<RegisteredListener>();
+            listeners.put(type, eventListeners);
         }
 
-        listeners.add(position, new RegisteredListener(listener, priority, plugin));
+        eventListeners.add(position, new RegisteredListener(listener, priority, plugin));
     }
 }
