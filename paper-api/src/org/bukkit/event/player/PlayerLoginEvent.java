@@ -10,6 +10,12 @@ public class PlayerLoginEvent extends PlayerEvent {
     private Result result;
     private String message;
 
+    public PlayerLoginEvent(final Type type, final Player player) {
+        super(type, player);
+        this.result = Result.ALLOWED;
+        this.message = "";
+    }
+
     public PlayerLoginEvent(final Type type, final Player player, final Result result, final String message) {
         super(type, player);
         this.result = result;
