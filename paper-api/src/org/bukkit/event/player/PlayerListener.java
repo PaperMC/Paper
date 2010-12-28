@@ -41,4 +41,20 @@ public class PlayerListener implements Listener {
      */
     public void onPlayerCommand(PlayerChatEvent event) {
     }
+
+    /**
+     * Called when a player attempts to move location in a world
+     *
+     * @param event Relevant event details
+     */
+    public void onPlayerMove(PlayerMoveEvent event) {
+    }
+
+    /**
+     * Called when a player attempts to teleport to a new location in a world
+     *
+     * @param event Relevant event details
+     */
+    public void onPlayerTeleport(PlayerMoveEvent event) {
+    }
 }

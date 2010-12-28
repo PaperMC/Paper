@@ -93,6 +93,12 @@ public final class JavaPluginLoader implements PluginLoader {
                 case PLAYER_CHAT:
                     trueListener.onPlayerChat((PlayerChatEvent)event);
                     break;
+                case PLAYER_MOVE:
+                    trueListener.onPlayerMove((PlayerMoveEvent)event);
+                    break;
+                case PLAYER_TELEPORT:
+                    trueListener.onPlayerTeleport((PlayerMoveEvent)event);
+                    break;
             }
         }
     }

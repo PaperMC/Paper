@@ -9,12 +9,20 @@ public class Location {
     private double x;
     private double y;
     private double z;
+    private float pitch;
+    private float yaw;
 
     public Location(final World world, final double x, final double y, final double z) {
+        this(world, x, y, z, 0, 0);
+    }
+
+    public Location(final World world, final double x, final double y, final double z, final float pitch, final float yaw) {
         this.world = world;
         this.x = x;
         this.y = y;
         this.z = z;
+        this.pitch = pitch;
+        this.yaw = yaw;
     }
 
     /**
@@ -89,6 +97,42 @@ public class Location {
         return z;
     }
 
+    /**
+     * Sets the yaw of this location
+     *
+     * @param yaw New yaw
+     */
+    public void setYaw(float yaw) {
+        this.yaw = yaw;
+    }
+
+    /**
+     * Gets the yaw of this location
+     *
+     * @return Yaw
+     */
+    public float getYaw() {
+        return yaw;
+    }
+
+    /**
+     * Sets the pitch of this location
+     *
+     * @param pitch New pitch
+     */
+    public void setPitch(float pitch) {
+        this.pitch = pitch;
+    }
+
+    /**
+     * Gets the pitch of this location
+     *
+     * @return Pitch
+     */
+    public float getPitch() {
+        return pitch;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {
@@ -110,15 +154,29 @@ public class Location {
         if (Double.doubleToLongBits(this.z) != Double.doubleToLongBits(other.z)) {
             return false;
         }
+        if (Float.floatToIntBits(this.pitch) != Float.floatToIntBits(other.pitch)) {
+            return false;
+        }
+        if (Float.floatToIntBits(this.yaw) != Float.floatToIntBits(other.yaw)) {
+            return false;
+        }
         return true;
     }
 
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 23 * hash + (int) (Double.doubleToLongBits(this.x) ^ (Double.doubleToLongBits(this.x) >>> 32));
-        hash = 23 * hash + (int) (Double.doubleToLongBits(this.y) ^ (Double.doubleToLongBits(this.y) >>> 32));
-        hash = 23 * hash + (int) (Double.doubleToLongBits(this.z) ^ (Double.doubleToLongBits(this.z) >>> 32));
+        int hash = 3;
+        hash = 19 * hash + (this.world != null ? this.world.hashCode() : 0);
+        hash = 19 * hash + (int) (Double.doubleToLongBits(this.x) ^ (Double.doubleToLongBits(this.x) >>> 32));
+        hash = 19 * hash + (int) (Double.doubleToLongBits(this.y) ^ (Double.doubleToLongBits(this.y) >>> 32));
+        hash = 19 * hash + (int) (Double.doubleToLongBits(this.z) ^ (Double.doubleToLongBits(this.z) >>> 32));
+        hash = 19 * hash + Float.floatToIntBits(this.pitch);
+        hash = 19 * hash + Float.floatToIntBits(this.yaw);
         return hash;
+    }
+
+    @Override
+    public String toString() {
+        return "Location{" + "world=" + world + "x=" + x + "y=" + y + "z=" + z + "pitch=" + pitch + "yaw=" + yaw + '}';
     }
 }
