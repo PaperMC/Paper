@@ -57,4 +57,12 @@ public class PlayerListener implements Listener {
      */
     public void onPlayerTeleport(PlayerMoveEvent event) {
     }
+
+    /**
+     * Called when a player attempts to log in to the server
+     *
+     * @param event Relevant event details
+     */
+    public void onPlayerLogin(PlayerLoginEvent event) {
+    }
 }
