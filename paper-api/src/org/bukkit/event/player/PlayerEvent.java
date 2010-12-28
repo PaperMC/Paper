@@ -8,7 +8,7 @@ import org.bukkit.event.Event;
  * Represents a player related event
  */
 public class PlayerEvent extends Event {
-    private final Player player;
+    protected Player player;
 
     public PlayerEvent(final Event.Type type, final Player who) {
         super(type);

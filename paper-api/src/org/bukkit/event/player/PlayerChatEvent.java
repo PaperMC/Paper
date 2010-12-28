@@ -52,4 +52,14 @@ public class PlayerChatEvent extends PlayerEvent {
     public void setMessage(String message) {
         this.message = message;
     }
+
+    /**
+     * Sets the player that this message will display as, or command will be
+     * executed as
+     *
+     * @param player New player which this event will execute as
+     */
+    public void setPlayer(final Player player) {
+        this.player = player;
+    }
 }
