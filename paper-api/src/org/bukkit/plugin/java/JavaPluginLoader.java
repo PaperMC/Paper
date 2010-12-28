@@ -82,10 +82,10 @@ public final class JavaPluginLoader implements PluginLoader {
             PlayerListener trueListener = (PlayerListener)listener;
 
             switch (event.getType()) {
-                case JOIN:
+                case PLAYER_JOIN:
                     trueListener.onPlayerJoin((PlayerEvent)event);
                     break;
-                case QUIT:
+                case PLAYER_QUIT:
                     trueListener.onPlayerQuit((PlayerEvent)event);
                     break;
             }
