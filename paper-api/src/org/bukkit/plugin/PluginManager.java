@@ -76,7 +76,7 @@ public interface PluginManager {
     public void callEvent(Event event);
 
     /**
-     * Registers the given player event to the specified listener
+     * Registers the given event to the specified listener
      *
      * @param type EventType to register
      * @param listener Listener to register

@@ -8,7 +8,6 @@ import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
@@ -87,6 +86,12 @@ public final class JavaPluginLoader implements PluginLoader {
                     break;
                 case PLAYER_QUIT:
                     trueListener.onPlayerQuit((PlayerEvent)event);
+                    break;
+                case PLAYER_COMMAND:
+                    trueListener.onPlayerCommand((PlayerChatEvent)event);
+                    break;
+                case PLAYER_CHAT:
+                    trueListener.onPlayerChat((PlayerChatEvent)event);
                     break;
             }
         }

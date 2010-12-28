@@ -183,7 +183,7 @@ public final class SimplePluginManager implements PluginManager {
     }
 
     /**
-     * Registers the given player event to the specified listener
+     * Registers the given event to the specified listener
      *
      * @param type EventType to register
      * @param listener PlayerListener to register
