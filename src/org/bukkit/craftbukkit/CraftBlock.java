@@ -9,8 +9,8 @@ public class CraftBlock implements Block {
     private final int x;
     private final int y;
     private final int z;
-    private int type;
-    private byte data;
+    protected int type;
+    protected byte data;
 
     protected CraftBlock(final World world, final int x, final int y, final int z, final int type, final byte data) {
         this.world = world;

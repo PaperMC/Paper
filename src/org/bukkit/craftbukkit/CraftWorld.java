@@ -49,6 +49,23 @@ public class CraftWorld implements World {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    public Block updateBlock(int x, int y, int z) {
+        BlockCoordinate loc = new BlockCoordinate(x, y, z);
+        CraftBlock block = (CraftBlock)blockCache.get(loc);
+        final int type = world.a(x, y, z);
+        final byte data = (byte)world.b(x, y, z);
+
+        if (block == null) {
+            block = new CraftBlock(this, x, y, z, type, data);
+            blockCache.put(loc, block);
+        } else {
+            block.type = type;
+            block.data = data;
+        }
+
+        return block;
+    }
+
     private final class ChunkCoordinate {
         public final int x;
         public final int z;
