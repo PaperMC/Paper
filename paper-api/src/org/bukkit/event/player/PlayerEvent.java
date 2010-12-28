@@ -2,7 +2,6 @@
 package org.bukkit.event.player;
 
 import org.bukkit.Player;
-import org.bukkit.Server;
 import org.bukkit.event.Event;
 
 /**
@@ -11,8 +10,8 @@ import org.bukkit.event.Event;
 public class PlayerEvent extends Event {
     private final Player player;
 
-    public PlayerEvent(final Server server, Event.Type type, final Player who) {
-        super(server, type);
+    public PlayerEvent(final Event.Type type, final Player who) {
+        super(type);
         player = who;
     }
 

@@ -1,28 +1,14 @@
 
 package org.bukkit.event;
 
-import org.bukkit.Player;
-import org.bukkit.Server;
-import org.bukkit.event.player.PlayerEvent;
-
 /**
  * Represents an event
  */
 public abstract class Event {
-    private final Server server;
     private final Type type;
 
-    protected Event(final Server instance, final Type type) {
-        server = instance;
+    protected Event(final Type type) {
         this.type = type;
-    }
-
-    /**
-     * Gets the Server instance that triggered this event
-     * @return Server which this event was triggered on
-     */
-    public final Server getServer() {
-        return server;
     }
 
     /**
@@ -79,21 +65,17 @@ public abstract class Event {
     	/** 
     	 * Player Events
     	 */
-        LOGINCHECK (Category.PLAYER),
-        JOIN (Category.PLAYER),
-        CHAT (Category.PLAYER),
-        COMMAND (Category.PLAYER),
-        SERVERCOMMAND (Category.PLAYER),
-        BAN (Category.PLAYER),
-        IPBAN (Category.PLAYER),
-        KICK (Category.PLAYER),
-        QUIT (Category.PLAYER),
+        PLAYER_JOIN (Category.PLAYER),
+        PLAYER_LOGIN (Category.PLAYER),
+        PLAYER_CHAT (Category.PLAYER),
+        PLAYER_COMMAND (Category.PLAYER),
+        PLAYER_QUIT (Category.PLAYER),
         PLAYER_MOVE (Category.PLAYER),
-        ARM_SWING (Category.PLAYER),
-        TELEPORT (Category.PLAYER),
+        PLAYER_ANIMATION (Category.PLAYER),
+        PLAYER_TELEPORT (Category.PLAYER);
         /** 
     	 * Block Events
-    	 */
+    	 
         BLOCK_DESTROYED (Category.BLOCK),
         BLOCK_BROKEN (Category.BLOCK),
         BLOCK_PLACE (Category.BLOCK),
@@ -102,27 +84,27 @@ public abstract class Event {
         BLOCK_PHYSICS (Category.BLOCK),
         /** 
     	 * Item Events
-    	 */
+    	 
         ITEM_DROP (Category.ITEM),
         ITEM_PICK_UP (Category.ITEM),
         ITEM_USE (Category.ITEM),
         /** 
     	 * Environment Events
-    	 */
+    	 
         IGNITE (Category.ENVIRONMENT),
         FLOW (Category.ENVIRONMENT),
         EXPLODE (Category.ENVIRONMENT),
         LIQUID_DESTROY (Category.ENVIRONMENT),
         /** 
     	 * Non-player Entity Events
-    	 */
+    	 
         MOB_SPAWN (Category.ENTITY),
         DAMAGE (Category.ENTITY),
         HEALTH_CHANGE (Category.ENTITY),
         ATTACK (Category.ENTITY), // Need to look into this category more
         /** 
     	 * Vehicle Events
-    	 */
+    	 
         VEHICLE_CREATE (Category.VEHICLE),
         VEHICLE_UPDATE (Category.VEHICLE),
         VEHICLE_DAMAGE (Category.VEHICLE),
@@ -132,17 +114,14 @@ public abstract class Event {
         VEHICLE_POSITIONCHANGE (Category.VEHICLE),
         /** 
     	 * Inventory Events
-    	 */
+    	 
         OPEN_INVENTORY (Category.INVENTORY),
         /** 
     	 * Sign Events (Item events??)
-    	 */
+    	 
         SIGN_SHOW (Category.SIGN),
-        SIGN_CHANGE (Category.SIGN),
-        /** 
-    	 * Custom Event Placeholder?
-    	 */
-        CUSTOM_EVENT (Category.CUSTOM);
+        SIGN_CHANGE (Category.SIGN);
+         */
         
         private Category category;
         
