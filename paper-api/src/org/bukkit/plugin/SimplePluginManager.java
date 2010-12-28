@@ -170,7 +170,7 @@ public final class SimplePluginManager implements PluginManager {
     public void callEvent(Event event) {
         List<RegisteredListener> eventListeners = listeners.get(event.getType());
 
-        if (listeners != null) {
+        if (eventListeners != null) {
             for (RegisteredListener registration : eventListeners) {
                 Plugin plugin = registration.getPlugin();
                 PluginLoader loader = plugin.getPluginLoader();

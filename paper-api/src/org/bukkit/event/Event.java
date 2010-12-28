@@ -71,17 +71,18 @@ public abstract class Event {
         PLAYER_COMMAND (Category.PLAYER),
         PLAYER_QUIT (Category.PLAYER),
         PLAYER_MOVE (Category.PLAYER),
-        PLAYER_ANIMATION (Category.PLAYER),
-        PLAYER_TELEPORT (Category.PLAYER);
+        //PLAYER_ANIMATION (Category.PLAYER),
+        PLAYER_TELEPORT (Category.PLAYER),
         /** 
     	 * Block Events
-    	 
-        BLOCK_DESTROYED (Category.BLOCK),
-        BLOCK_BROKEN (Category.BLOCK),
-        BLOCK_PLACE (Category.BLOCK),
+    	 */
+        BLOCK_DAMAGED (Category.BLOCK),
+        BLOCK_PLACED (Category.BLOCK),
         BLOCK_RIGHTCLICKED (Category.BLOCK),
-        REDSTONE_CHANGE (Category.BLOCK),
         BLOCK_PHYSICS (Category.BLOCK),
+        REDSTONE_CHANGE (Category.BLOCK),
+        BLOCK_IGNITE (Category.BLOCK),
+        BLOCK_FLOW (Category.BLOCK);
         /** 
     	 * Item Events
     	 
