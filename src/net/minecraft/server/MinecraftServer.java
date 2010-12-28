@@ -1,6 +1,6 @@
 package net.minecraft.server;
 
-import java.awt.GraphicsEnvironment;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -9,83 +9,84 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.bukkit.craftbukkit.CraftServer;
+
 
 public class MinecraftServer
         implements ICommandListener, Runnable {
 
     public static Logger a = Logger.getLogger("Minecraft");
-    public static HashMap<String, Integer> b = new HashMap<String, Integer>();
+    public static HashMap b = new HashMap();
     public NetworkListenThread c;
     public PropertyManager d;
     public WorldServer e;
     public ServerConfigurationManager f;
-    private boolean o = true;
-    public boolean g = false;
-    int h = 0;
+    private boolean o;
+    public boolean g;
+    int h;
     public String i;
     public int j;
-    private List p = new ArrayList();
-    private List q = Collections.synchronizedList(new ArrayList());
+    private List p;
+    private List q;
     public EntityTracker k;
     public boolean l;
     public boolean m;
     public boolean n;
+
     public CraftServer server; // CraftBukkit
 
     public MinecraftServer() {
+        o = true;
+        g = false;
+        h = 0;
+        p = new ArrayList();
+        q = Collections.synchronizedList(new ArrayList());
         new ThreadSleepForever(this);
     }
 
-    // CraftBukkit: Decompiler might miss this method, your IDE won't complain but you
-    // can't run without it!
-    public static boolean a(MinecraftServer minecraftserver)
-    {
-        return minecraftserver.o;
-    }
-
+    // CraftBukkit: added throws UnknownHostException
     private boolean d() throws UnknownHostException {
-        ThreadCommandReader localThreadCommandReader = new ThreadCommandReader(this);
+        ThreadCommandReader threadcommandreader = new ThreadCommandReader(this);
 
-        localThreadCommandReader.setDaemon(true);
-        localThreadCommandReader.start();
-
+        threadcommandreader.setDaemon(true);
+        threadcommandreader.start();
         ConsoleLogManager.a();
         a.info("Starting minecraft server version Beta 1.1_02");
-
         if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
             a.warning("**** NOT ENOUGH RAM!");
             a.warning("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
         }
-
         a.info("Loading properties");
-        this.d = new PropertyManager(new File("server.properties"));
-        String str1 = this.d.a("server-ip", "");
+        d = new PropertyManager(new File("server.properties"));
+        String s = d.a("server-ip", "");
 
-        this.l = this.d.a("online-mode", true);
-        this.m = this.d.a("spawn-animals", true);
-        this.n = this.d.a("pvp", true);
+        l = d.a("online-mode", true);
+        m = d.a("spawn-animals", true);
+        n = d.a("pvp", true);
+        InetAddress inetaddress = null;
 
-        InetAddress localInetAddress = null;
-        if (str1.length() > 0) {
-            localInetAddress = InetAddress.getByName(str1);
+        if (s.length() > 0) {
+            inetaddress = InetAddress.getByName(s);
         }
-        int i1 = this.d.a("server-port", 25565);
+        int i1 = d.a("server-port", 25565);
 
-        a.info("Starting Minecraft server on " + (str1.length() == 0 ? "*" : str1) + ":" + i1);
+        a.info((new StringBuilder()).append("Starting Minecraft server on ").append(s.length() != 0 ? s : "*").append(":").append(i1).toString());
         try {
-            this.c = new NetworkListenThread(this, localInetAddress, i1);
-        } catch (Throwable localIOException) {
+            c = new NetworkListenThread(this, inetaddress, i1);
+        // CraftBukkit: Be more generic; IOException -> Throwable
+        } catch (Throwable ioexception) {
             a.warning("**** FAILED TO BIND TO PORT!");
-            a.log(Level.WARNING, "The exception was: " + localIOException.toString());
+            a.log(Level.WARNING, (new StringBuilder()).append("The exception was: ").append(ioexception.toString()).toString());
             a.warning("Perhaps a server is already running on that port?");
             return false;
         }
-
-        if (!this.l) {
+        if (!l) {
             a.warning("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
             a.warning("The server will make no attempt to authenticate usernames. Beware.");
             a.warning("While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.");
@@ -94,64 +95,66 @@ public class MinecraftServer
 
         server = new CraftServer(this, "1.1"); // CraftBukkit
 
-        this.f = new ServerConfigurationManager(this);
-        this.k = new EntityTracker(this);
+        f = new ServerConfigurationManager(this);
+        k = new EntityTracker(this);
+        String s1 = d.a("level-name", "world");
 
-        String str2 = this.d.a("level-name", "world");
-        a.info("Preparing level \"" + str2 + "\"");
-        c(str2);
+        a.info((new StringBuilder()).append("Preparing level \"").append(s1).append("\"").toString());
+        c(s1);
         a.info("Done! For help, type \"help\" or \"?\"");
-
         return true;
     }
 
-    private void c(String paramString) {
+    private void c(String s) {
         a.info("Preparing start region");
-        this.e = new WorldServer(this, new File("."), paramString, this.d.a("hellworld", false) ? -1 : 0);
-        this.e.a(new WorldManager(this));
-        this.e.k = (this.d.a("spawn-monsters", true) ? 1 : 0);
-        this.f.a(this.e);
-        int i1 = 10;
-        for (int i2 = -i1; i2 <= i1; i2++) {
-            a("Preparing spawn area", (i2 + i1) * 100 / (i1 + i1 + 1));
-            for (int i3 = -i1; i3 <= i1; i3++) {
-                if (!this.o) {
+        e = new WorldServer(this, new File("."), s, d.a("hellworld", false) ? -1 : 0);
+        e.a(new WorldManager(this));
+        e.k = d.a("spawn-monsters", true) ? 1 : 0;
+        f.a(e);
+        byte byte0 = 10;
+
+        for (int i1 = -byte0; i1 <= byte0; i1++) {
+            a("Preparing spawn area", ((i1 + byte0) * 100) / (byte0 + byte0 + 1));
+            for (int j1 = -byte0; j1 <= byte0; j1++) {
+                if (!o) {
                     return;
                 }
-                this.e.A.d((this.e.m >> 4) + i2, (this.e.o >> 4) + i3);
+                e.A.d((e.m >> 4) + i1, (e.o >> 4) + j1);
             }
+
         }
+
         e();
     }
 
-    private void a(String paramString, int paramInt) {
-        this.i = paramString;
-        this.j = paramInt;
-        System.out.println(paramString + ": " + paramInt + "%");
+    private void a(String s, int i1) {
+        i = s;
+        j = i1;
+        System.out.println((new StringBuilder()).append(s).append(": ").append(i1).append("%").toString());
     }
 
     private void e() {
-        this.i = null;
-        this.j = 0;
+        i = null;
+        j = 0;
     }
 
     private void f() {
         a.info("Saving chunks");
-        this.e.a(true, null);
+        e.a(true, null);
     }
 
     private void g() {
         a.info("Stopping server");
-        if (this.f != null) {
-            this.f.d();
+        if (f != null) {
+            f.d();
         }
-        if (this.e != null) {
+        if (e != null) {
             f();
         }
     }
 
     public void a() {
-        this.o = false;
+        o = false;
     }
 
     public void run() {
@@ -159,9 +162,11 @@ public class MinecraftServer
             if (d()) {
                 long l1 = System.currentTimeMillis();
                 long l2 = 0L;
-                while (this.o) {
+
+                while (o) {
                     long l3 = System.currentTimeMillis();
                     long l4 = l3 - l1;
+
                     if (l4 > 2000L) {
                         a.warning("Can't keep up! Did the system time change, or is the server overloaded?");
                         l4 = 2000L;
@@ -172,300 +177,311 @@ public class MinecraftServer
                     }
                     l2 += l4;
                     l1 = l3;
-
                     while (l2 > 50L) {
                         l2 -= 50L;
                         h();
                     }
-
                     Thread.sleep(1L);
                 }
             } else {
-                while (this.o) {
+                while (o) {
                     b();
                     try {
                         Thread.sleep(10L);
-                    } catch (InterruptedException localInterruptedException1) {
-                        localInterruptedException1.printStackTrace();
+                    } catch (InterruptedException interruptedexception) {
+                        interruptedexception.printStackTrace();
                     }
                 }
             }
-        } catch (Exception localException) {
-            localException.printStackTrace();
-            a.log(Level.SEVERE, "Unexpected exception", localException);
-            while (this.o) {
+        } catch (Exception exception) {
+            exception.printStackTrace();
+            a.log(Level.SEVERE, "Unexpected exception", exception);
+            while (o) {
                 b();
                 try {
                     Thread.sleep(10L);
-                } catch (InterruptedException localInterruptedException2) {
-                    localInterruptedException2.printStackTrace();
+                } catch (InterruptedException interruptedexception1) {
+                    interruptedexception1.printStackTrace();
                 }
             }
         } finally {
             g();
-            this.g = true;
+            g = true;
             System.exit(0);
         }
     }
 
     private void h() {
-        ArrayList localArrayList = new ArrayList();
-        for (String str : b.keySet()) {
-            int i2 = ((Integer) b.get(str)).intValue();
-            if (i2 > 0) {
-                b.put(str, Integer.valueOf(i2 - 1));
+        ArrayList arraylist = new ArrayList();
+
+        for (Iterator iterator = b.keySet().iterator(); iterator.hasNext();) {
+            String s = (String) iterator.next();
+            int k1 = ((Integer) b.get(s)).intValue();
+
+            if (k1 > 0) {
+                b.put(s, Integer.valueOf(k1 - 1));
             } else {
-                localArrayList.add(str);
+                arraylist.add(s);
             }
         }
-        for (int i1 = 0; i1 < localArrayList.size(); i1++) {
-            b.remove(localArrayList.get(i1));
+
+        for (int i1 = 0; i1 < arraylist.size(); i1++) {
+            b.remove(arraylist.get(i1));
         }
 
         AxisAlignedBB.a();
         Vec3D.a();
-        this.h += 1;
-
-        if (this.h % 20 == 0) {
-            this.f.a(new Packet4UpdateTime(this.e.e));
+        h++;
+        if (h % 20 == 0) {
+            f.a(new Packet4UpdateTime(e.e));
+        }
+        e.f();
+        while (e.d()) {
+            ;
+        }
+        e.c();
+        c.a();
+        f.b();
+        k.a();
+        for (int j1 = 0; j1 < p.size(); j1++) {
+            ((IUpdatePlayerListBox) p.get(j1)).a();
         }
 
-        this.e.f();
-        while (this.e.d());
-        this.e.c();
-        this.c.a();
-        this.f.b();
-        this.k.a();
-
-        for (int i1 = 0; i1 < this.p.size(); i1++) {
-            ((IUpdatePlayerListBox) this.p.get(i1)).a();
-        }
         try {
             b();
-        } catch (Exception localException) {
-            a.log(Level.WARNING, "Unexpected exception while parsing console command", localException);
+        } catch (Exception exception) {
+            a.log(Level.WARNING, "Unexpected exception while parsing console command", exception);
         }
     }
 
-    public void a(String paramString, ICommandListener paramICommandListener) {
-        this.q.add(new ServerCommand(paramString, paramICommandListener));
+    public void a(String s, ICommandListener icommandlistener) {
+        q.add(new ServerCommand(s, icommandlistener));
     }
 
     public void b() {
-        while (this.q.size() > 0) {
-            ServerCommand localServerCommand = (ServerCommand) this.q.remove(0);
-            String str1 = localServerCommand.a;
-            ICommandListener localICommandListener = localServerCommand.b;
-            String str2 = localICommandListener.c();
-            if ((str1.toLowerCase().startsWith("help")) || (str1.toLowerCase().startsWith("?"))) {
-                localICommandListener.b("To run the server without a gui, start it like this:");
-                localICommandListener.b("   java -Xmx1024M -Xms1024M -jar minecraft_server.jar nogui");
-                localICommandListener.b("Console commands:");
-                localICommandListener.b("   help  or  ?               shows this message");
-                localICommandListener.b("   kick <player>             removes a player from the server");
-                localICommandListener.b("   ban <player>              bans a player from the server");
-                localICommandListener.b("   pardon <player>           pardons a banned player so that they can connect again");
-                localICommandListener.b("   ban-ip <ip>               bans an IP address from the server");
-                localICommandListener.b("   pardon-ip <ip>            pardons a banned IP address so that they can connect again");
-                localICommandListener.b("   op <player>               turns a player into an op");
-                localICommandListener.b("   deop <player>             removes op status from a player");
-                localICommandListener.b("   tp <player1> <player2>    moves one player to the same location as another player");
-                localICommandListener.b("   give <player> <id> [num]  gives a player a resource");
-                localICommandListener.b("   tell <player> <message>   sends a private message to a player");
-                localICommandListener.b("   stop                      gracefully stops the server");
-                localICommandListener.b("   save-all                  forces a server-wide level save");
-                localICommandListener.b("   save-off                  disables terrain saving (useful for backup scripts)");
-                localICommandListener.b("   save-on                   re-enables terrain saving");
-                localICommandListener.b("   list                      lists all currently connected players");
-                localICommandListener.b("   say <message>             broadcasts a message to all players");
-            } else if (str1.toLowerCase().startsWith("list")) {
-                localICommandListener.b("Connected players: " + this.f.c());
-            } else if (str1.toLowerCase().startsWith("stop")) {
-                a(str2, "Stopping the server..");
-                this.o = false;
-            } else if (str1.toLowerCase().startsWith("save-all")) {
-                a(str2, "Forcing save..");
-                this.e.a(true, null);
-                a(str2, "Save complete.");
-            } else if (str1.toLowerCase().startsWith("save-off")) {
-                a(str2, "Disabling level saving..");
-                this.e.C = true;
-            } else if (str1.toLowerCase().startsWith("save-on")) {
-                a(str2, "Enabling level saving..");
-                this.e.C = false;
-            } else {
-                Object localObject1;
-                if (str1.toLowerCase().startsWith("op ")) {
-                    localObject1 = str1.substring(str1.indexOf(" ")).trim();
-                    this.f.e((String) localObject1);
-                    a(str2, "Opping " + (String) localObject1);
-                    this.f.a((String) localObject1, "§eYou are now op!");
-                } else if (str1.toLowerCase().startsWith("deop ")) {
-                    localObject1 = str1.substring(str1.indexOf(" ")).trim();
-                    this.f.f((String) localObject1);
-                    this.f.a((String) localObject1, "§eYou are no longer op!");
-                    a(str2, "De-opping " + (String) localObject1);
-                } else if (str1.toLowerCase().startsWith("ban-ip ")) {
-                    localObject1 = str1.substring(str1.indexOf(" ")).trim();
-                    this.f.c((String) localObject1);
-                    a(str2, "Banning ip " + (String) localObject1);
-                } else if (str1.toLowerCase().startsWith("pardon-ip ")) {
-                    localObject1 = str1.substring(str1.indexOf(" ")).trim();
-                    this.f.d((String) localObject1);
-                    a(str2, "Pardoning ip " + (String) localObject1);
-                } else {
-                    Object localObject2;
-                    if (str1.toLowerCase().startsWith("ban ")) {
-                        localObject1 = str1.substring(str1.indexOf(" ")).trim();
-                        this.f.a((String) localObject1);
-                        a(str2, "Banning " + (String) localObject1);
+        do {
+            if (q.size() <= 0) {
+                break;
+            }
+            ServerCommand servercommand = (ServerCommand) q.remove(0);
+            String s = servercommand.a;
+            ICommandListener icommandlistener = servercommand.b;
+            String s1 = icommandlistener.c();
 
-                        localObject2 = this.f.h((String) localObject1);
+            if (s.toLowerCase().startsWith("help") || s.toLowerCase().startsWith("?")) {
+                icommandlistener.b("To run the server without a gui, start it like this:");
+                icommandlistener.b("   java -Xmx1024M -Xms1024M -jar minecraft_server.jar nogui");
+                icommandlistener.b("Console commands:");
+                icommandlistener.b("   help  or  ?               shows this message");
+                icommandlistener.b("   kick <player>             removes a player from the server");
+                icommandlistener.b("   ban <player>              bans a player from the server");
+                icommandlistener.b("   pardon <player>           pardons a banned player so that they can connect again");
+                icommandlistener.b("   ban-ip <ip>               bans an IP address from the server");
+                icommandlistener.b("   pardon-ip <ip>            pardons a banned IP address so that they can connect again");
+                icommandlistener.b("   op <player>               turns a player into an op");
+                icommandlistener.b("   deop <player>             removes op status from a player");
+                icommandlistener.b("   tp <player1> <player2>    moves one player to the same location as another player");
+                icommandlistener.b("   give <player> <id> [num]  gives a player a resource");
+                icommandlistener.b("   tell <player> <message>   sends a private message to a player");
+                icommandlistener.b("   stop                      gracefully stops the server");
+                icommandlistener.b("   save-all                  forces a server-wide level save");
+                icommandlistener.b("   save-off                  disables terrain saving (useful for backup scripts)");
+                icommandlistener.b("   save-on                   re-enables terrain saving");
+                icommandlistener.b("   list                      lists all currently connected players");
+                icommandlistener.b("   say <message>             broadcasts a message to all players");
+            } else if (s.toLowerCase().startsWith("list")) {
+                icommandlistener.b((new StringBuilder()).append("Connected players: ").append(f.c()).toString());
+            } else if (s.toLowerCase().startsWith("stop")) {
+                a(s1, "Stopping the server..");
+                o = false;
+            } else if (s.toLowerCase().startsWith("save-all")) {
+                a(s1, "Forcing save..");
+                e.a(true, null);
+                a(s1, "Save complete.");
+            } else if (s.toLowerCase().startsWith("save-off")) {
+                a(s1, "Disabling level saving..");
+                e.C = true;
+            } else if (s.toLowerCase().startsWith("save-on")) {
+                a(s1, "Enabling level saving..");
+                e.C = false;
+            } else if (s.toLowerCase().startsWith("op ")) {
+                String s2 = s.substring(s.indexOf(" ")).trim();
 
-                        if (localObject2 != null) {
-                            ((EntityPlayerMP) localObject2).a.a("Banned by admin");
-                        }
+                f.e(s2);
+                a(s1, (new StringBuilder()).append("Opping ").append(s2).toString());
+                f.a(s2, "\247eYou are now op!");
+            } else if (s.toLowerCase().startsWith("deop ")) {
+                String s3 = s.substring(s.indexOf(" ")).trim();
 
-                    } else if (str1.toLowerCase().startsWith("pardon ")) {
-                        localObject1 = str1.substring(str1.indexOf(" ")).trim();
-                        this.f.b((String) localObject1);
-                        a(str2, "Pardoning " + (String) localObject1);
-                    } else if (str1.toLowerCase().startsWith("kick ")) {
-                        localObject1 = str1.substring(str1.indexOf(" ")).trim();
-                        localObject2 = null;
-                        for (int i1 = 0; i1 < this.f.b.size(); i1++) {
-                            EntityPlayerMP localEntityPlayerMP2 = (EntityPlayerMP) this.f.b.get(i1);
-                            if (localEntityPlayerMP2.aw.equalsIgnoreCase((String) localObject1)) {
-                                localObject2 = localEntityPlayerMP2;
-                            }
-                        }
+                f.f(s3);
+                f.a(s3, "\247eYou are no longer op!");
+                a(s1, (new StringBuilder()).append("De-opping ").append(s3).toString());
+            } else if (s.toLowerCase().startsWith("ban-ip ")) {
+                String s4 = s.substring(s.indexOf(" ")).trim();
 
-                        if (localObject2 != null) {
-                            ((EntityPlayerMP) localObject2).a.a("Kicked by admin");
-                            a(str2, "Kicking " + ((EntityPlayerMP) localObject2).aw);
-                        } else {
-                            localICommandListener.b("Can't find user " + (String) localObject1 + ". No kick.");
-                        }
-                    } else {
-                        EntityPlayerMP localEntityPlayerMP1;
-                        if (str1.toLowerCase().startsWith("tp ")) {
-                            String[] split = str1.split(" ");
-                            if (split.length == 3) {
-                                localObject2 = this.f.h(split[1]);
-                                localEntityPlayerMP1 = this.f.h(split[2]);
+                f.c(s4);
+                a(s1, (new StringBuilder()).append("Banning ip ").append(s4).toString());
+            } else if (s.toLowerCase().startsWith("pardon-ip ")) {
+                String s5 = s.substring(s.indexOf(" ")).trim();
 
-                                if (localObject2 == null) {
-                                    localICommandListener.b("Can't find user " + split[1] + ". No tp.");
-                                } else if (localEntityPlayerMP1 == null) {
-                                    localICommandListener.b("Can't find user " + split[2] + ". No tp.");
-                                } else {
-                                    ((EntityPlayerMP) localObject2).a.a(localEntityPlayerMP1.p, localEntityPlayerMP1.q, localEntityPlayerMP1.r, localEntityPlayerMP1.v, localEntityPlayerMP1.w);
-                                    a(str2, "Teleporting " + split[1] + " to " + split[2] + ".");
-                                }
-                            } else {
-                                localICommandListener.b("Syntax error, please provice a source and a target.");
-                            }
-                        } else if (str1.toLowerCase().startsWith("give ")) {
-                            String[] split = str1.split(" ");
-                            if ((split.length != 3) && (split.length != 4)) {
-                                return;
-                            }
+                f.d(s5);
+                a(s1, (new StringBuilder()).append("Pardoning ip ").append(s5).toString());
+            } else if (s.toLowerCase().startsWith("ban ")) {
+                String s6 = s.substring(s.indexOf(" ")).trim();
 
-                            localObject2 = split[1];
-                            localEntityPlayerMP1 = this.f.h((String) localObject2);
+                f.a(s6);
+                a(s1, (new StringBuilder()).append("Banning ").append(s6).toString());
+                EntityPlayerMP entityplayermp = f.h(s6);
 
-                            if (localEntityPlayerMP1 != null) {
-                                try {
-                                    int i2 = Integer.parseInt(split[2]);
-                                    if (Item.c[i2] != null) {
-                                        a(str2, "Giving " + localEntityPlayerMP1.aw + " some " + i2);
-                                        int i3 = 1;
-                                        if (split.length > 3) {
-                                            i3 = b(split[3], 1);
-                                        }
-                                        if (i3 < 1) {
-                                            i3 = 1;
-                                        }
-                                        if (i3 > 64) {
-                                            i3 = 64;
-                                        }
-                                        localEntityPlayerMP1.b(new ItemStack(i2, i3));
-                                    } else {
-                                        localICommandListener.b("There's no item with id " + i2);
-                                    }
-                                } catch (NumberFormatException localNumberFormatException) {
-                                    localICommandListener.b("There's no item with id " + split[2]);
-                                }
-                            } else {
-                                localICommandListener.b("Can't find user " + (String) localObject2);
-                            }
-                        } else if (str1.toLowerCase().startsWith("say ")) {
-                            str1 = str1.substring(str1.indexOf(" ")).trim();
-                            a.info("[" + str2 + "] " + str1);
-                            this.f.a(new Packet3Chat("§d[Server] " + str1));
-                        } else if (str1.toLowerCase().startsWith("tell ")) {
-                            String[] split = str1.split(" ");
-                            if (split.length >= 3) {
-                                str1 = str1.substring(str1.indexOf(" ")).trim();
-                                str1 = str1.substring(str1.indexOf(" ")).trim();
+                if (entityplayermp != null) {
+                    entityplayermp.a.a("Banned by admin");
+                }
+            } else if (s.toLowerCase().startsWith("pardon ")) {
+                String s7 = s.substring(s.indexOf(" ")).trim();
 
-                                a.info("[" + str2 + "->" + split[1] + "] " + str1);
-                                str1 = "§7" + str2 + " whispers " + str1;
-                                a.info(str1);
-                                if (!this.f.a(split[1], new Packet3Chat(str1))) {
-                                    localICommandListener.b("There's no player by that name online.");
-                                }
-                            }
-                        } else {
-                            a.info("Unknown console command. Type \"help\" for help.");
-                        }
+                f.b(s7);
+                a(s1, (new StringBuilder()).append("Pardoning ").append(s7).toString());
+            } else if (s.toLowerCase().startsWith("kick ")) {
+                String s8 = s.substring(s.indexOf(" ")).trim();
+                EntityPlayerMP entityplayermp1 = null;
+
+                for (int i1 = 0; i1 < f.b.size(); i1++) {
+                    EntityPlayerMP entityplayermp5 = (EntityPlayerMP) f.b.get(i1);
+
+                    if (entityplayermp5.aw.equalsIgnoreCase(s8)) {
+                        entityplayermp1 = entityplayermp5;
                     }
                 }
+
+                if (entityplayermp1 != null) {
+                    entityplayermp1.a.a("Kicked by admin");
+                    a(s1, (new StringBuilder()).append("Kicking ").append(entityplayermp1.aw).toString());
+                } else {
+                    icommandlistener.b((new StringBuilder()).append("Can't find user ").append(s8).append(". No kick.").toString());
+                }
+            } else if (s.toLowerCase().startsWith("tp ")) {
+                String as[] = s.split(" ");
+
+                if (as.length == 3) {
+                    EntityPlayerMP entityplayermp2 = f.h(as[1]);
+                    EntityPlayerMP entityplayermp3 = f.h(as[2]);
+
+                    if (entityplayermp2 == null) {
+                        icommandlistener.b((new StringBuilder()).append("Can't find user ").append(as[1]).append(". No tp.").toString());
+                    } else if (entityplayermp3 == null) {
+                        icommandlistener.b((new StringBuilder()).append("Can't find user ").append(as[2]).append(". No tp.").toString());
+                    } else {
+                        entityplayermp2.a.a(entityplayermp3.p, entityplayermp3.q, entityplayermp3.r, entityplayermp3.v, entityplayermp3.w);
+                        a(s1, (new StringBuilder()).append("Teleporting ").append(as[1]).append(" to ").append(as[2]).append(".").toString());
+                    }
+                } else {
+                    icommandlistener.b("Syntax error, please provice a source and a target.");
+                }
+            } else if (s.toLowerCase().startsWith("give ")) {
+                String as1[] = s.split(" ");
+
+                if (as1.length != 3 && as1.length != 4) {
+                    return;
+                }
+                String s9 = as1[1];
+                EntityPlayerMP entityplayermp4 = f.h(s9);
+
+                if (entityplayermp4 != null) {
+                    try {
+                        int j1 = Integer.parseInt(as1[2]);
+
+                        if (Item.c[j1] != null) {
+                            a(s1, (new StringBuilder()).append("Giving ").append(entityplayermp4.aw).append(" some ").append(j1).toString());
+                            int k1 = 1;
+
+                            if (as1.length > 3) {
+                                k1 = b(as1[3], 1);
+                            }
+                            if (k1 < 1) {
+                                k1 = 1;
+                            }
+                            if (k1 > 64) {
+                                k1 = 64;
+                            }
+                            entityplayermp4.b(new ItemStack(j1, k1));
+                        } else {
+                            icommandlistener.b((new StringBuilder()).append("There's no item with id ").append(j1).toString());
+                        }
+                    } catch (NumberFormatException numberformatexception) {
+                        icommandlistener.b((new StringBuilder()).append("There's no item with id ").append(as1[2]).toString());
+                    }
+                } else {
+                    icommandlistener.b((new StringBuilder()).append("Can't find user ").append(s9).toString());
+                }
+            } else if (s.toLowerCase().startsWith("say ")) {
+                s = s.substring(s.indexOf(" ")).trim();
+                a.info((new StringBuilder()).append("[").append(s1).append("] ").append(s).toString());
+                f.a(new Packet3Chat((new StringBuilder()).append("\247d[Server] ").append(s).toString()));
+            } else if (s.toLowerCase().startsWith("tell ")) {
+                String as2[] = s.split(" ");
+
+                if (as2.length >= 3) {
+                    s = s.substring(s.indexOf(" ")).trim();
+                    s = s.substring(s.indexOf(" ")).trim();
+                    a.info((new StringBuilder()).append("[").append(s1).append("->").append(as2[1]).append("] ").append(s).toString());
+                    s = (new StringBuilder()).append("\2477").append(s1).append(" whispers ").append(s).toString();
+                    a.info(s);
+                    if (!f.a(as2[1], new Packet3Chat(s))) {
+                        icommandlistener.b("There's no player by that name online.");
+                    }
+                }
+            } else {
+                a.info("Unknown console command. Type \"help\" for help.");
             }
+        } while (true);
+    }
+
+    private void a(String s, String s1) {
+        String s2 = (new StringBuilder()).append(s).append(": ").append(s1).toString();
+
+        f.i((new StringBuilder()).append("\2477(").append(s2).append(")").toString());
+        a.info(s2);
+    }
+
+    private int b(String s, int i1) {
+        try {
+            return Integer.parseInt(s);
+        } catch (NumberFormatException numberformatexception) {
+            return i1;
         }
     }
 
-    private void a(String paramString1, String paramString2) {
-        String str = paramString1 + ": " + paramString2;
-        this.f.i("§7(" + str + ")");
-        a.info(str);
+    public void a(IUpdatePlayerListBox iupdateplayerlistbox) {
+        p.add(iupdateplayerlistbox);
     }
 
-    private int b(String paramString, int paramInt) {
+    public static void main(String args[]) {
         try {
-            return Integer.parseInt(paramString);
-        } catch (NumberFormatException localNumberFormatException) {
-        }
-        return paramInt;
-    }
+            MinecraftServer minecraftserver = new MinecraftServer();
 
-    public void a(IUpdatePlayerListBox paramIUpdatePlayerListBox) {
-        this.p.add(paramIUpdatePlayerListBox);
-    }
-
-    public static void main(String[] paramArrayOfString) {
-        try {
-            MinecraftServer localMinecraftServer = new MinecraftServer();
-
-            if ((!GraphicsEnvironment.isHeadless()) && ((paramArrayOfString.length <= 0) || (!paramArrayOfString[0].equals("nogui")))) {
-                ServerGUI.a(localMinecraftServer);
+            if (!java.awt.GraphicsEnvironment.isHeadless() && (args.length <= 0 || !args[0].equals("nogui"))) {
+                ServerGUI.a(minecraftserver);
             }
-
-            new ThreadServerApplication("Server thread", localMinecraftServer).start();
-        } catch (Exception localException) {
-            a.log(Level.SEVERE, "Failed to start the minecraft server", localException);
+            (new ThreadServerApplication("Server thread", minecraftserver)).start();
+        } catch (Exception exception) {
+            a.log(Level.SEVERE, "Failed to start the minecraft server", exception);
         }
     }
 
-    public File a(String paramString) {
-        return new File(paramString);
+    public File a(String s) {
+        return new File(s);
     }
 
-    public void b(String paramString) {
-        a.info(paramString);
+    public void b(String s) {
+        a.info(s);
     }
 
     public String c() {
         return "CONSOLE";
     }
+
+    public static boolean a(MinecraftServer minecraftserver) {
+        return minecraftserver.o;
+    }
+
 }

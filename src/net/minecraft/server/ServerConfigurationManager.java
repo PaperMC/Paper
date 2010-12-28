@@ -1,44 +1,42 @@
 package net.minecraft.server;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.io.*;
+import java.util.*;
 import java.util.logging.Logger;
+
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.event.Event.Type;
 import org.bukkit.event.player.PlayerEvent;
+
 
 public class ServerConfigurationManager {
 
     public static Logger a = Logger.getLogger("Minecraft");
-    public List b = new ArrayList();
+    public List b;
     private MinecraftServer c;
     private PlayerManager d;
     private int e;
-    private Set<String> f = new HashSet<String>();
-    private Set<String> g = new HashSet<String>();
-    private Set<String> h = new HashSet<String>();
+    private Set f;
+    private Set g;
+    private Set h;
     private File i;
     private File j;
     private File k;
     private PlayerNBTManager l;
     private CraftServer server; // Craftbukkit
 
-    public ServerConfigurationManager(MinecraftServer paramMinecraftServer) {
-        server = paramMinecraftServer.server; // Craftbukkit
+    public ServerConfigurationManager(MinecraftServer minecraftserver) {
+        server = minecraftserver.server; // Craftbukkit
 
-        this.c = paramMinecraftServer;
-        this.i = paramMinecraftServer.a("banned-players.txt");
-        this.j = paramMinecraftServer.a("banned-ips.txt");
-        this.k = paramMinecraftServer.a("ops.txt");
-        this.d = new PlayerManager(paramMinecraftServer);
-        this.e = paramMinecraftServer.d.a("max-players", 20);
+        b = new ArrayList();
+        f = new HashSet();
+        g = new HashSet();
+        h = new HashSet();
+        c = minecraftserver;
+        i = minecraftserver.a("banned-players.txt");
+        j = minecraftserver.a("banned-ips.txt");
+        k = minecraftserver.a("ops.txt");
+        d = new PlayerManager(minecraftserver);
+        e = minecraftserver.d.a("max-players", 20);
         e();
         g();
         i();
@@ -47,289 +45,312 @@ public class ServerConfigurationManager {
         j();
     }
 
-    public void a(WorldServer paramWorldServer) {
-        this.l = new PlayerNBTManager(new File(paramWorldServer.t, "players"));
+    public void a(WorldServer worldserver) {
+        l = new PlayerNBTManager(new File(worldserver.t, "players"));
     }
 
     public int a() {
-        return this.d.b();
+        return d.b();
     }
 
-    public void a(EntityPlayerMP paramEntityPlayerMP) {
-        this.b.add(paramEntityPlayerMP);
-        this.l.b(paramEntityPlayerMP);
-
-        this.c.e.A.d((int) paramEntityPlayerMP.p >> 4, (int) paramEntityPlayerMP.r >> 4);
-
-        while (this.c.e.a(paramEntityPlayerMP, paramEntityPlayerMP.z).size() != 0) {
-            paramEntityPlayerMP.a(paramEntityPlayerMP.p, paramEntityPlayerMP.q + 1.0D, paramEntityPlayerMP.r);
+    public void a(EntityPlayerMP entityplayermp) {
+        b.add(entityplayermp);
+        l.b(entityplayermp);
+        c.e.A.d((int) entityplayermp.p >> 4, (int) entityplayermp.r >> 4);
+        for (; c.e.a(entityplayermp, entityplayermp.z).size() != 0; entityplayermp.a(entityplayermp.p, entityplayermp.q + 1.0D, entityplayermp.r)) {
+            ;
         }
-        this.c.e.a(paramEntityPlayerMP);
-        this.d.a(paramEntityPlayerMP);
+        c.e.a(entityplayermp);
+        d.a(entityplayermp);
 
         // Craftbukkit
-        server.getPluginManager().callEvent(new PlayerEvent(Type.PLAYER_JOIN, server.getPlayer(paramEntityPlayerMP)));
+        server.getPluginManager().callEvent(new PlayerEvent(PlayerEvent.Type.PLAYER_JOIN, server.getPlayer(entityplayermp)));
     }
 
-    public void b(EntityPlayerMP paramEntityPlayerMP) {
-        this.d.c(paramEntityPlayerMP);
+    public void b(EntityPlayerMP entityplayermp) {
+        d.c(entityplayermp);
     }
 
-    public void c(EntityPlayerMP paramEntityPlayerMP) {
-        this.l.a(paramEntityPlayerMP);
-        this.c.e.d(paramEntityPlayerMP);
-        this.b.remove(paramEntityPlayerMP);
-        this.d.b(paramEntityPlayerMP);
+    public void c(EntityPlayerMP entityplayermp) {
+        l.a(entityplayermp);
+        c.e.d(entityplayermp);
+        b.remove(entityplayermp);
+        d.b(entityplayermp);
 
         // Craftbukkit
-        server.getPluginManager().callEvent(new PlayerEvent(Type.PLAYER_QUIT, server.getPlayer(paramEntityPlayerMP)));
+        server.getPluginManager().callEvent(new PlayerEvent(PlayerEvent.Type.PLAYER_QUIT, server.getPlayer(entityplayermp)));
     }
 
-    public EntityPlayerMP a(NetLoginHandler paramNetLoginHandler, String paramString1, String paramString2) {
-        if (this.f.contains(paramString1.trim().toLowerCase())) {
-            paramNetLoginHandler.a("You are banned from this server!");
+    public EntityPlayerMP a(NetLoginHandler netloginhandler, String s, String s1) {
+        if (f.contains(s.trim().toLowerCase())) {
+            netloginhandler.a("You are banned from this server!");
             return null;
         }
-        String str = paramNetLoginHandler.b.b().toString();
-        str = str.substring(str.indexOf("/") + 1);
-        str = str.substring(0, str.indexOf(":"));
-        if (this.g.contains(str)) {
-            paramNetLoginHandler.a("Your IP address is banned from this server!");
+        String s2 = netloginhandler.b.b().toString();
+
+        s2 = s2.substring(s2.indexOf("/") + 1);
+        s2 = s2.substring(0, s2.indexOf(":"));
+        if (g.contains(s2)) {
+            netloginhandler.a("Your IP address is banned from this server!");
             return null;
         }
-        if (this.b.size() >= this.e) {
-            paramNetLoginHandler.a("The server is full!");
+        if (b.size() >= e) {
+            netloginhandler.a("The server is full!");
             return null;
         }
-        for (int m = 0; m < this.b.size(); m++) {
-            EntityPlayerMP localEntityPlayerMP = (EntityPlayerMP) this.b.get(m);
-            if (localEntityPlayerMP.aw.equalsIgnoreCase(paramString1)) {
-                localEntityPlayerMP.a.a("You logged in from another location");
+        for (int i1 = 0; i1 < b.size(); i1++) {
+            EntityPlayerMP entityplayermp = (EntityPlayerMP) b.get(i1);
+
+            if (entityplayermp.aw.equalsIgnoreCase(s)) {
+                entityplayermp.a.a("You logged in from another location");
             }
         }
-        return new EntityPlayerMP(this.c, this.c.e, paramString1, new ItemInWorldManager(this.c.e));
+
+        return new EntityPlayerMP(c, c.e, s, new ItemInWorldManager(c.e));
     }
 
-    public EntityPlayerMP d(EntityPlayerMP paramEntityPlayerMP) {
-        this.c.k.a(paramEntityPlayerMP);
-        this.c.k.b(paramEntityPlayerMP);
-        this.d.b(paramEntityPlayerMP);
-        this.b.remove(paramEntityPlayerMP);
-        this.c.e.e(paramEntityPlayerMP);
+    public EntityPlayerMP d(EntityPlayerMP entityplayermp) {
+        c.k.a(entityplayermp);
+        c.k.b(entityplayermp);
+        d.b(entityplayermp);
+        b.remove(entityplayermp);
+        c.e.e(entityplayermp);
+        EntityPlayerMP entityplayermp1 = new EntityPlayerMP(c, c.e, entityplayermp.aw, new ItemInWorldManager(c.e));
 
-        EntityPlayerMP localEntityPlayerMP = new EntityPlayerMP(this.c, this.c.e, paramEntityPlayerMP.aw, new ItemInWorldManager(this.c.e));
-        localEntityPlayerMP.g = paramEntityPlayerMP.g;
-        localEntityPlayerMP.a = paramEntityPlayerMP.a;
-
-        this.c.e.A.d((int) localEntityPlayerMP.p >> 4, (int) localEntityPlayerMP.r >> 4);
-
-        while (this.c.e.a(localEntityPlayerMP, localEntityPlayerMP.z).size() != 0) {
-            localEntityPlayerMP.a(localEntityPlayerMP.p, localEntityPlayerMP.q + 1.0D, localEntityPlayerMP.r);
+        entityplayermp1.g = entityplayermp.g;
+        entityplayermp1.a = entityplayermp.a;
+        c.e.A.d((int) entityplayermp1.p >> 4, (int) entityplayermp1.r >> 4);
+        for (; c.e.a(entityplayermp1, entityplayermp1.z).size() != 0; entityplayermp1.a(entityplayermp1.p, entityplayermp1.q + 1.0D, entityplayermp1.r)) {
+            ;
         }
-
-        localEntityPlayerMP.a.b(new Packet9());
-        localEntityPlayerMP.a.a(localEntityPlayerMP.p, localEntityPlayerMP.q, localEntityPlayerMP.r, localEntityPlayerMP.v, localEntityPlayerMP.w);
-
-        this.d.a(localEntityPlayerMP);
-        this.c.e.a(localEntityPlayerMP);
-        this.b.add(localEntityPlayerMP);
-
-        localEntityPlayerMP.k();
-        return localEntityPlayerMP;
+        entityplayermp1.a.b(new Packet9());
+        entityplayermp1.a.a(entityplayermp1.p, entityplayermp1.q, entityplayermp1.r, entityplayermp1.v, entityplayermp1.w);
+        d.a(entityplayermp1);
+        c.e.a(entityplayermp1);
+        b.add(entityplayermp1);
+        entityplayermp1.k();
+        return entityplayermp1;
     }
 
     public void b() {
-        this.d.a();
+        d.a();
     }
 
-    public void a(int paramInt1, int paramInt2, int paramInt3) {
-        this.d.a(paramInt1, paramInt2, paramInt3);
+    public void a(int i1, int j1, int k1) {
+        d.a(i1, j1, k1);
     }
 
-    public void a(Packet paramPacket) {
-        for (int m = 0; m < this.b.size(); m++) {
-            EntityPlayerMP localEntityPlayerMP = (EntityPlayerMP) this.b.get(m);
-            localEntityPlayerMP.a.b(paramPacket);
+    public void a(Packet packet) {
+        for (int i1 = 0; i1 < b.size(); i1++) {
+            EntityPlayerMP entityplayermp = (EntityPlayerMP) b.get(i1);
+
+            entityplayermp.a.b(packet);
         }
+
     }
 
     public String c() {
-        String str = "";
-        for (int m = 0; m < this.b.size(); m++) {
-            if (m > 0) {
-                str = str + ", ";
+        String s = "";
+
+        for (int i1 = 0; i1 < b.size(); i1++) {
+            if (i1 > 0) {
+                s = (new StringBuilder()).append(s).append(", ").toString();
             }
-            str = str + ((EntityPlayerMP) this.b.get(m)).aw;
+            s = (new StringBuilder()).append(s).append(((EntityPlayerMP) b.get(i1)).aw).toString();
         }
-        return str;
+
+        return s;
     }
 
-    public void a(String paramString) {
-        this.f.add(paramString.toLowerCase());
+    public void a(String s) {
+        f.add(s.toLowerCase());
         f();
     }
 
-    public void b(String paramString) {
-        this.f.remove(paramString.toLowerCase());
+    public void b(String s) {
+        f.remove(s.toLowerCase());
         f();
     }
 
     private void e() {
         try {
-            this.f.clear();
-            BufferedReader localBufferedReader = new BufferedReader(new FileReader(this.i));
-            String str = "";
-            while ((str = localBufferedReader.readLine()) != null) {
-                this.f.add(str.trim().toLowerCase());
+            f.clear();
+            BufferedReader bufferedreader = new BufferedReader(new FileReader(i));
+
+            for (String s = ""; (s = bufferedreader.readLine()) != null;) {
+                f.add(s.trim().toLowerCase());
             }
-            localBufferedReader.close();
-        } catch (Exception localException) {
-            a.warning("Failed to load ban list: " + localException);
+
+            bufferedreader.close();
+        } catch (Exception exception) {
+            a.warning((new StringBuilder()).append("Failed to load ban list: ").append(exception).toString());
         }
     }
 
     private void f() {
         try {
-            PrintWriter localPrintWriter = new PrintWriter(new FileWriter(this.i, false));
-            for (String str : this.f) {
-                localPrintWriter.println(str);
+            PrintWriter printwriter = new PrintWriter(new FileWriter(i, false));
+            String s;
+
+            for (Iterator iterator = f.iterator(); iterator.hasNext(); printwriter.println(s)) {
+                s = (String) iterator.next();
             }
-            localPrintWriter.close();
-        } catch (Exception localException) {
-            a.warning("Failed to save ban list: " + localException);
+
+            printwriter.close();
+        } catch (Exception exception) {
+            a.warning((new StringBuilder()).append("Failed to save ban list: ").append(exception).toString());
         }
     }
 
-    public void c(String paramString) {
-        this.g.add(paramString.toLowerCase());
+    public void c(String s) {
+        g.add(s.toLowerCase());
         h();
     }
 
-    public void d(String paramString) {
-        this.g.remove(paramString.toLowerCase());
+    public void d(String s) {
+        g.remove(s.toLowerCase());
         h();
     }
 
     private void g() {
         try {
-            this.g.clear();
-            BufferedReader localBufferedReader = new BufferedReader(new FileReader(this.j));
-            String str = "";
-            while ((str = localBufferedReader.readLine()) != null) {
-                this.g.add(str.trim().toLowerCase());
+            g.clear();
+            BufferedReader bufferedreader = new BufferedReader(new FileReader(j));
+
+            for (String s = ""; (s = bufferedreader.readLine()) != null;) {
+                g.add(s.trim().toLowerCase());
             }
-            localBufferedReader.close();
-        } catch (Exception localException) {
-            a.warning("Failed to load ip ban list: " + localException);
+
+            bufferedreader.close();
+        } catch (Exception exception) {
+            a.warning((new StringBuilder()).append("Failed to load ip ban list: ").append(exception).toString());
         }
     }
 
     private void h() {
         try {
-            PrintWriter localPrintWriter = new PrintWriter(new FileWriter(this.j, false));
-            for (String str : this.g) {
-                localPrintWriter.println(str);
+            PrintWriter printwriter = new PrintWriter(new FileWriter(j, false));
+            String s;
+
+            for (Iterator iterator = g.iterator(); iterator.hasNext(); printwriter.println(s)) {
+                s = (String) iterator.next();
             }
-            localPrintWriter.close();
-        } catch (Exception localException) {
-            a.warning("Failed to save ip ban list: " + localException);
+
+            printwriter.close();
+        } catch (Exception exception) {
+            a.warning((new StringBuilder()).append("Failed to save ip ban list: ").append(exception).toString());
         }
     }
 
-    public void e(String paramString) {
-        this.h.add(paramString.toLowerCase());
+    public void e(String s) {
+        h.add(s.toLowerCase());
         j();
     }
 
-    public void f(String paramString) {
-        this.h.remove(paramString.toLowerCase());
+    public void f(String s) {
+        h.remove(s.toLowerCase());
         j();
     }
 
     private void i() {
         try {
-            this.h.clear();
-            BufferedReader localBufferedReader = new BufferedReader(new FileReader(this.k));
-            String str = "";
-            while ((str = localBufferedReader.readLine()) != null) {
-                this.h.add(str.trim().toLowerCase());
+            h.clear();
+            BufferedReader bufferedreader = new BufferedReader(new FileReader(k));
+
+            for (String s = ""; (s = bufferedreader.readLine()) != null;) {
+                h.add(s.trim().toLowerCase());
             }
-            localBufferedReader.close();
-        } catch (Exception localException) {
-            a.warning("Failed to load ip ban list: " + localException);
+
+            bufferedreader.close();
+        } catch (Exception exception) {
+            a.warning((new StringBuilder()).append("Failed to load ip ban list: ").append(exception).toString());
         }
     }
 
     private void j() {
         try {
-            PrintWriter localPrintWriter = new PrintWriter(new FileWriter(this.k, false));
-            for (String str : this.h) {
-                localPrintWriter.println(str);
+            PrintWriter printwriter = new PrintWriter(new FileWriter(k, false));
+            String s;
+
+            for (Iterator iterator = h.iterator(); iterator.hasNext(); printwriter.println(s)) {
+                s = (String) iterator.next();
             }
-            localPrintWriter.close();
-        } catch (Exception localException) {
-            a.warning("Failed to save ip ban list: " + localException);
+
+            printwriter.close();
+        } catch (Exception exception) {
+            a.warning((new StringBuilder()).append("Failed to save ip ban list: ").append(exception).toString());
         }
     }
 
-    public boolean g(String paramString) {
-        return this.h.contains(paramString.trim().toLowerCase());
+    public boolean g(String s) {
+        return h.contains(s.trim().toLowerCase());
     }
 
-    public EntityPlayerMP h(String paramString) {
-        for (int m = 0; m < this.b.size(); m++) {
-            EntityPlayerMP localEntityPlayerMP = (EntityPlayerMP) this.b.get(m);
-            if (localEntityPlayerMP.aw.equalsIgnoreCase(paramString)) {
-                return localEntityPlayerMP;
+    public EntityPlayerMP h(String s) {
+        for (int i1 = 0; i1 < b.size(); i1++) {
+            EntityPlayerMP entityplayermp = (EntityPlayerMP) b.get(i1);
+
+            if (entityplayermp.aw.equalsIgnoreCase(s)) {
+                return entityplayermp;
             }
         }
+
         return null;
     }
 
-    public void a(String paramString1, String paramString2) {
-        EntityPlayerMP localEntityPlayerMP = h(paramString1);
-        if (localEntityPlayerMP != null) {
-            localEntityPlayerMP.a.b(new Packet3Chat(paramString2));
+    public void a(String s, String s1) {
+        EntityPlayerMP entityplayermp = h(s);
+
+        if (entityplayermp != null) {
+            entityplayermp.a.b(new Packet3Chat(s1));
         }
     }
 
-    public void a(double paramDouble1, double paramDouble2, double paramDouble3, double paramDouble4, Packet paramPacket) {
-        for (int m = 0; m < this.b.size(); m++) {
-            EntityPlayerMP localEntityPlayerMP = (EntityPlayerMP) this.b.get(m);
-            double d1 = paramDouble1 - localEntityPlayerMP.p;
-            double d2 = paramDouble2 - localEntityPlayerMP.q;
-            double d3 = paramDouble3 - localEntityPlayerMP.r;
-            if (d1 * d1 + d2 * d2 + d3 * d3 < paramDouble4 * paramDouble4) {
-                localEntityPlayerMP.a.b(paramPacket);
+    public void a(double d1, double d2, double d3, double d4, Packet packet) {
+        for (int i1 = 0; i1 < b.size(); i1++) {
+            EntityPlayerMP entityplayermp = (EntityPlayerMP) b.get(i1);
+            double d5 = d1 - entityplayermp.p;
+            double d6 = d2 - entityplayermp.q;
+            double d7 = d3 - entityplayermp.r;
+
+            if (d5 * d5 + d6 * d6 + d7 * d7 < d4 * d4) {
+                entityplayermp.a.b(packet);
             }
         }
+
     }
 
-    public void i(String paramString) {
-        Packet3Chat localPacket3Chat = new Packet3Chat(paramString);
-        for (int m = 0; m < this.b.size(); m++) {
-            EntityPlayerMP localEntityPlayerMP = (EntityPlayerMP) this.b.get(m);
-            if (g(localEntityPlayerMP.aw)) {
-                localEntityPlayerMP.a.b(localPacket3Chat);
+    public void i(String s) {
+        Packet3Chat packet3chat = new Packet3Chat(s);
+
+        for (int i1 = 0; i1 < b.size(); i1++) {
+            EntityPlayerMP entityplayermp = (EntityPlayerMP) b.get(i1);
+
+            if (g(entityplayermp.aw)) {
+                entityplayermp.a.b(packet3chat);
             }
         }
+
     }
 
-    public boolean a(String paramString, Packet paramPacket) {
-        EntityPlayerMP localEntityPlayerMP = h(paramString);
-        if (localEntityPlayerMP != null) {
-            localEntityPlayerMP.a.b(paramPacket);
+    public boolean a(String s, Packet packet) {
+        EntityPlayerMP entityplayermp = h(s);
+
+        if (entityplayermp != null) {
+            entityplayermp.a.b(packet);
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     public void d() {
-        for (int m = 0; m < this.b.size(); m++) {
-            this.l.a((EntityPlayerMP) this.b.get(m));
+        for (int i1 = 0; i1 < b.size(); i1++) {
+            l.a((EntityPlayerMP) b.get(i1));
         }
+
     }
 
-    public void a(int paramInt1, int paramInt2, int paramInt3, TileEntity paramTileEntity) {
-    }
+    public void a(int i1, int j1, int k1, TileEntity tileentity) {}
+
 }
