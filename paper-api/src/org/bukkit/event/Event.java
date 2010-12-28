@@ -154,33 +154,4 @@ public abstract class Event {
         	return category;
         }
     }
-    
-    public static Event eventFactory(Server server, Event.Type type, Object[] data) throws EventException {
-    	switch (type.getCategory()) {
-	    	case PLAYER:
-	    		if (data.length < 1 || !(data[0] instanceof Player)) {
-	    			throw new EventException("Data is not a Player!");
-	    		}
-	    		return new PlayerEvent(server, type, (Player) data[0]);
-//			TODO: IMPLEMENT ME
-	    	case BLOCK:
-	    		return null;
-	    	case ITEM:
-	    		return null;
-	    	case ENVIRONMENT:
-	    		return null;
-	    	case ENTITY:
-	    		return null;
-	    	case VEHICLE:
-	    		return null;
-	    	case INVENTORY:
-	    		return null;
-	    	case SIGN:
-	    		return null;
-	    	case CUSTOM:
-	    		return null;
-	    	default:
-	    		return null;
-    	}
-    }
 }
