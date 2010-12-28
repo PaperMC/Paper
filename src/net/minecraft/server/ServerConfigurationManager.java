@@ -11,8 +11,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.event.Event.Type;
 import org.bukkit.event.player.PlayerEvent;
-import org.bukkit.event.player.PlayerEvent.EventType;
 
 public class ServerConfigurationManager {
 
@@ -68,7 +68,7 @@ public class ServerConfigurationManager {
         this.d.a(paramEntityPlayerMP);
 
         // Craftbukkit
-        server.getPluginManager().callEvent(EventType.Join, new PlayerEvent(server, server.getPlayer(paramEntityPlayerMP)));
+        server.getPluginManager().callEvent(new PlayerEvent(Type.PLAYER_JOIN, server.getPlayer(paramEntityPlayerMP)));
     }
 
     public void b(EntityPlayerMP paramEntityPlayerMP) {
@@ -82,7 +82,7 @@ public class ServerConfigurationManager {
         this.d.b(paramEntityPlayerMP);
 
         // Craftbukkit
-        server.getPluginManager().callEvent(EventType.Quit, new PlayerEvent(server, server.getPlayer(paramEntityPlayerMP)));
+        server.getPluginManager().callEvent(new PlayerEvent(Type.PLAYER_QUIT, server.getPlayer(paramEntityPlayerMP)));
     }
 
     public EntityPlayerMP a(NetLoginHandler paramNetLoginHandler, String paramString1, String paramString2) {
