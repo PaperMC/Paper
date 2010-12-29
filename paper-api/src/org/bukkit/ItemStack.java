@@ -1,51 +1,86 @@
 
 package org.bukkit;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Represents a stack of items
  */
-public interface ItemStack {
+public class ItemStack {
+    private int type;
+    private int amount = 0;
+
+    public ItemStack(final int type) {
+        this.type = type;
+    }
+
+    public ItemStack(final Type type) {
+        this(type.getID());
+    }
+
+    public ItemStack(final int type, final int amount) {
+        this.type = type;
+        this.amount = amount;
+    }
+
+    public ItemStack(final Type type, final int amount) {
+        this(type.getID(), amount);
+    }
+
     /**
      * Gets the type of this item
      *
      * @return Type of the items in this stack
      */
-    public Type getType();
+    public Type getType() {
+        return Type.getType(type);
+    }
 
     /**
      * Sets the type of this item
      *
      * @param type New type to set the items in this stack to
      */
-    public void setType(Type type);
+    public void setType(Type type) {
+        this.type = type.getID();
+    }
 
     /**
      * Gets the type ID of this item
      *
      * @return Type ID of the items in this stack
      */
-    public int getTypeID();
+    public int getTypeID() {
+        return type;
+    }
 
     /**
      * Sets the type ID of this item
      *
      * @param type New type ID to set the items in this stack to
      */
-    public void setTypeID(int type);
+    public void setTypeID(int type) {
+        this.type = type;
+    }
 
     /**
      * Gets the amount of items in this stack
      *
      * @return Amount of items in this stick
      */
-    public int getAmount();
+    public int getAmount() {
+        return amount;
+    }
 
     /**
      * Sets the amount of items in this stack
      *
      * @param amount New amount of items in this stack
      */
-    public void setAmount(int amount);
+    public void setAmount(int amount) {
+        this.amount = amount;
+    }
 
     /**
      * An enum of all type IDs accepted by the official server + client
@@ -227,6 +262,7 @@ public interface ItemStack {
         GreenRecord(2257);
 
         private final int id;
+        private final static Map<Integer, Type> lookup = new HashMap<Integer, Type>();
 
         private Type(final int id) {
             this.id = id;
@@ -234,6 +270,16 @@ public interface ItemStack {
 
         public int getID() {
             return id;
+        }
+        
+        public static Type getType(final int id) {
+            return lookup.get(id);
+        }
+
+        static {
+            for (Type type : values()) {
+                lookup.put(type.getID(), type);
+            }
         }
     }
 }
