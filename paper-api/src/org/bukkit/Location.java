@@ -4,7 +4,7 @@ package org.bukkit;
 /**
  * Represents a 3-dimensional position in a world
  */
-public class Location {
+public class Location implements Cloneable {
     private World world;
     private double x;
     private double y;
@@ -178,5 +178,10 @@ public class Location {
     @Override
     public String toString() {
         return "Location{" + "world=" + world + "x=" + x + "y=" + y + "z=" + z + "pitch=" + pitch + "yaw=" + yaw + '}';
+    }
+
+    @Override
+    protected Location clone() {
+        return new Location(world, x, y, z, yaw, pitch);
     }
 }
