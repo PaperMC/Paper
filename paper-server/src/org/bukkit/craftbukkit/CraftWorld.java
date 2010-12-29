@@ -66,6 +66,10 @@ public class CraftWorld implements World {
         return block;
     }
 
+    public WorldServer getHandle() {
+        return world;
+    }
+
     private final class ChunkCoordinate {
         public final int x;
         public final int z;

@@ -4,22 +4,22 @@ package org.bukkit.craftbukkit;
 import org.bukkit.*;
 
 public class CraftBlock implements Block {
-    private final World world;
-    private final Chunk chunk;
+    private final CraftWorld world;
+    private final CraftChunk chunk;
     private final int x;
     private final int y;
     private final int z;
     protected int type;
     protected byte data;
 
-    protected CraftBlock(final World world, final int x, final int y, final int z, final int type, final byte data) {
+    protected CraftBlock(final CraftWorld world, final int x, final int y, final int z, final int type, final byte data) {
         this.world = world;
         this.x = x;
         this.y = y;
         this.z = z;
         this.type = type;
         this.data = data;
-        this.chunk = world.getChunkAt(x << 4, z << 4);
+        this.chunk = (CraftChunk)world.getChunkAt(x << 4, z << 4);
     }
 
     /**
@@ -74,6 +74,7 @@ public class CraftBlock implements Block {
      */
     public void setData(final byte data) {
         this.data = data;
+        world.getHandle().c(x, y, z, data);
     }
 
     /**
@@ -92,6 +93,7 @@ public class CraftBlock implements Block {
      */
     public void setType(final int type) {
         this.type = type;
+        world.getHandle().d(x, y, z, type);
     }
 
     /**
