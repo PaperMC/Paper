@@ -4,11 +4,13 @@ package net.minecraft.server;
 import java.io.PrintStream;
 import java.util.*;
 import java.util.logging.Logger;
+import org.bukkit.Location;
 import org.bukkit.Player;
 import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.player.PlayerChatEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 
 
 public class NetServerHandler extends NetHandler
@@ -63,6 +65,24 @@ public class NetServerHandler extends NetHandler
                 j = true;
             }
         }
+
+        // CraftBukkit start
+        Player player = server.getPlayer(e);
+        Location from = new Location(player.getWorld(), g, h, i, e.v, e.w);
+        Location to = player.getLocation();
+        PlayerMoveEvent event = new PlayerMoveEvent(Type.PLAYER_MOVE, player, from, to);
+        server.getPluginManager().callEvent(event);
+
+        from = event.getFrom();
+        to = event.isCancelled() ? from : event.getTo();
+
+        e.p = to.getX();
+        e.q = to.getY();
+        e.r = to.getZ();
+        e.v = to.getYaw();
+        e.w = to.getPitch();
+        // CraftBukkit end
+
         if (j) {
             if (e.k != null) {
                 float f1 = e.v;
@@ -172,6 +192,24 @@ public class NetServerHandler extends NetHandler
 
     public void a(double d1, double d2, double d3, float f1,
             float f2) {
+
+        // CraftBukkit start
+        Player player = server.getPlayer(e);
+        Location from = player.getLocation();
+        Location to = new Location(player.getWorld(), d1, d2, d3, f1, f2);
+        PlayerMoveEvent event = new PlayerMoveEvent(Type.PLAYER_TELEPORT, player, from, to);
+        server.getPluginManager().callEvent(event);
+
+        from = event.getFrom();
+        to = event.isCancelled() ? from : event.getTo();
+
+        d1 = to.getX();
+        d2 = to.getY();
+        d3 = to.getZ();
+        f1 = to.getYaw();
+        f2 = to.getPitch();
+        // CraftBukkit end
+
         j = false;
         g = d1;
         h = d2;
