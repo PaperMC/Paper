@@ -62,23 +62,24 @@ public class EntityPlayerMP extends EntityPlayer
     }
     
     /**
-     * Craftbukkit: Overloaded version of b(double,double,double,float)
+     * Craftbukkit: Overloaded version of b(double,double,double,float, float)
      * 
      * Enables monitoring of PLAYER_MOVE events.
      */
     public void b(double x, double y, double z, float rotation, float pitch) {
-        super.b(x,y,z,pitch,rotation);
-
-        // Only send an event if player position has changed.
-        if (x == oldLocation.getX() && y == oldLocation.getY() && z == oldLocation.getZ())
-            return;
-
         Location newLocation = new Location(server.getWorld(b.e),x,y,z);
-        PlayerMoveEvent pm = new PlayerMoveEvent(Event.Type.PLAYER_MOVE, server.getPlayer(this), 
-                oldLocation, newLocation);
-
-        server.getPluginManager().callEvent(pm);
+        
+        // Only send an event if player position has changed.
+        if (x != oldLocation.getX() || y != oldLocation.getY() || z != oldLocation.getZ()) {
+            PlayerMoveEvent pm = new PlayerMoveEvent(Event.Type.PLAYER_MOVE, server.getPlayer(this), 
+                    oldLocation, newLocation);
+            
+            server.getPluginManager().callEvent(pm);
+            if (pm.isCancelled())
+                newLocation = pm.getFrom();
+        }
         oldLocation = newLocation;
+        super.b(newLocation.getX(),newLocation.getY(),newLocation.getZ(),rotation, pitch);
     }
 
     public void k() {
