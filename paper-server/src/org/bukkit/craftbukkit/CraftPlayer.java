@@ -26,7 +26,7 @@ public class CraftPlayer implements Player {
     }
 
     public Location getLocation() {
-        return new Location(getWorld(), player.p, player.q, player.r);
+        return new Location(getWorld(), player.p, player.q, player.r, player.v, player.w);
     }
 
     public World getWorld() {
