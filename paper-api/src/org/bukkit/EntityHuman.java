@@ -4,7 +4,7 @@ package org.bukkit;
 /**
  * Represents a human entity, such as an NPC or a player
  */
-public interface EntityHuman {
+public interface EntityHuman extends LivingEntity {
     /**
      * Gets the item this entity has currently selected, which will be shown in
      * their hand
