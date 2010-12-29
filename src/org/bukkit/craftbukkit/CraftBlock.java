@@ -124,4 +124,9 @@ public class CraftBlock implements Block {
     public Block getRelative(final int modX, final int modY, final int modZ) {
         return getWorld().getBlockAt(getX() + modX, getY() + modY, getZ() + modZ);
     }
+
+    @Override
+    public String toString() {
+        return "CraftBlock{" + "world=" + world + "x=" + x + "y=" + y + "z=" + z + "type=" + type + "data=" + data + '}';
+    }
 }
