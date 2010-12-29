@@ -194,7 +194,7 @@ public final class SimplePluginManager implements PluginManager {
         List<RegisteredListener> eventListeners = listeners.get(type);
         int position = 0;
 
-        if (listeners != null) {
+        if (eventListeners != null) {
             for (RegisteredListener registration : eventListeners) {
                 if (registration.getPriority().compareTo(priority) < 0) {
                     break;
