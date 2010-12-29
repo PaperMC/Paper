@@ -36,4 +36,9 @@ public class CraftPlayer implements Player {
     public EntityPlayerMP getEntity() {
         return player;
     }
+
+    @Override
+    public String toString() {
+        return "CraftPlayer{" + "name=" + name + '}';
+    }
 }

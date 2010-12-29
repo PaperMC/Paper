@@ -29,4 +29,9 @@ public class CraftChunk implements Chunk {
     public int getZ() {
         return z;
     }
+
+    @Override
+    public String toString() {
+        return "CraftChunk{" + "x=" + x + "z=" + z + '}';
+    }
 }
