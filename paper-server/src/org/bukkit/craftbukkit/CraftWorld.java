@@ -13,7 +13,7 @@ public class CraftWorld implements World {
     private final Map<BlockCoordinate, Block> blockCache = new HashMap<BlockCoordinate, Block>();
     private final WorldServer world;
 
-    protected CraftWorld(WorldServer world) {
+    public CraftWorld(WorldServer world) {
         this.world = world;
     }
     

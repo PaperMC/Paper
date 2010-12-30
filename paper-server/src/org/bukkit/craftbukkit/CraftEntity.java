@@ -20,7 +20,7 @@ public class CraftEntity implements org.bukkit.Entity {
     }
 
     public World getWorld() {
-        return server.getWorld((WorldServer)entity.l);
+        return ((WorldServer)entity.l).getWorld();
     }
 
     public void teleportTo(Location location) {
