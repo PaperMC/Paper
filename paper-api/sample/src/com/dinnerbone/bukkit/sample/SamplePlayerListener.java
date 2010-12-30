@@ -6,6 +6,7 @@ import org.bukkit.Player;
 import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.event.player.PlayerListener;
+import org.bukkit.event.player.PlayerMoveEvent;
 
 /**
  * Handle events for all Player related events
@@ -54,5 +55,13 @@ public class SamplePlayerListener extends PlayerListener {
 
             event.setCancelled(true);
         }
+    }
+
+    @Override
+    public void onPlayerMove(PlayerMoveEvent event) {
+        Location from = event.getFrom();
+        Location to = event.getTo();
+
+        System.out.println(String.format("From %2$f,%2$f,%2$f to %2$f,%2$f,%2$f", from.getX(), from.getY(), from.getZ(), to.getX(), to.getY(), to.getZ()));
     }
 }

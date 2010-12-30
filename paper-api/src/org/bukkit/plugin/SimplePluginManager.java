@@ -176,7 +176,11 @@ public final class SimplePluginManager implements PluginManager {
                 PluginLoader loader = plugin.getPluginLoader();
 
                 if (plugin.isEnabled()) {
-                    loader.callEvent(registration, event);
+                    try {
+                        loader.callEvent(registration, event);
+                    } catch (Throwable ex) {
+                        Logger.getLogger(SimplePluginManager.class.getName()).log(Level.SEVERE, "Could not pass event " + event.getType() + " to " + plugin.getDescription().getName(), ex);
+                    }
                 }
             }
         }
