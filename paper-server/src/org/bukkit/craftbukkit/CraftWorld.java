@@ -70,6 +70,11 @@ public class CraftWorld implements World {
         return world;
     }
 
+    @Override
+    public String toString() {
+        return "CraftWorld";
+    }
+
     private final class ChunkCoordinate {
         public final int x;
         public final int z;

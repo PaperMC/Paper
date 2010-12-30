@@ -8,7 +8,7 @@ import org.bukkit.World;
 
 public class CraftEntity implements org.bukkit.Entity {
     protected final CraftServer server;
-    private final Entity entity;
+    private Entity entity;
 
     public CraftEntity(final CraftServer server, final Entity entity) {
         this.server = server;
@@ -33,6 +33,10 @@ public class CraftEntity implements org.bukkit.Entity {
 
     public Entity getHandle() {
         return entity;
+    }
+
+    public void setHandle(final Entity entity) {
+        this.entity = entity;
     }
 
     @Override

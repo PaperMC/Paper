@@ -1,11 +1,12 @@
 
 package org.bukkit.craftbukkit;
 
+import net.minecraft.server.Entity;
 import net.minecraft.server.EntityLiving;
 import org.bukkit.LivingEntity;
 
 public class CraftLivingEntity extends CraftEntity implements LivingEntity {
-    private final EntityLiving entity;
+    private EntityLiving entity;
     
     public CraftLivingEntity(final CraftServer server, final EntityLiving entity) {
         super(server, entity);
@@ -27,6 +28,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public EntityLiving getHandle() {
         return entity;
+    }
+
+    public void setHandle(final EntityLiving entity) {
+        super.setHandle((Entity)entity);
+        this.entity = entity;
     }
 
     @Override
