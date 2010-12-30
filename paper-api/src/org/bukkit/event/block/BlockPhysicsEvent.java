@@ -11,6 +11,7 @@ import org.bukkit.event.Event;
 public class BlockPhysicsEvent extends BlockEvent {
     private final Block block;
     private final int changed;
+    private boolean cancel = false;
 
     public BlockPhysicsEvent(final Event.Type type, final Block block, final int changed) {
         super(type);
@@ -43,5 +44,25 @@ public class BlockPhysicsEvent extends BlockEvent {
      */
     public ItemStack.Type getChangedType() {
         return ItemStack.Type.getType(changed); // TODO: Move type to its own file
+    }
+
+    /**
+     * Gets the cancellation state of this event. A cancelled event will not
+     * be executed in the server, but will still pass to other plugins
+     *
+     * @return true if this event is cancelled
+     */
+    public boolean isCancelled() {
+        return cancel;
+    }
+
+    /**
+     * Sets the cancellation state of this event. A cancelled event will not
+     * be executed in the server, but will still pass to other plugins
+     *
+     * @param cancel true if you wish to cancel this event
+     */
+    public void setCancelled(boolean cancel) {
+        this.cancel = cancel;
     }
 }
