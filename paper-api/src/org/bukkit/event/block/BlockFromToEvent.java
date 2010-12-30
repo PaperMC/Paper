@@ -1,17 +1,18 @@
 package org.bukkit.event.block;
 
 import org.bukkit.Block;
+import org.bukkit.BlockFace;
 import org.bukkit.event.Event;
 
 /**
  * Holds information for events with a source block and a destination block
  */
 public class BlockFromToEvent extends BlockEvent {
-    protected Block from;
+    protected BlockFace face;
 
-    public BlockFromToEvent(final Event.Type type, final Block from, final Block to) {
-        super(type, to);
-        this.from = from;
+    public BlockFromToEvent(final Event.Type type, final Block block, final BlockFace face) {
+        super(type, block);
+        this.face = face;
     }
 
     /**
@@ -19,16 +20,7 @@ public class BlockFromToEvent extends BlockEvent {
      *
      * @return Block the block is event originated from
      */
-    public Block getFrom() {
-        return from;
-    }
-
-    /**
-     * Gets the target block of this event
-     *
-     * @return Block the block containing this event
-     */
-    public Block getTo() {
-        return getBlock();
+    public BlockFace getFace() {
+        return face;
     }
 }
