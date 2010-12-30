@@ -2,6 +2,7 @@
 package org.bukkit.craftbukkit;
 
 import net.minecraft.server.EntityPlayerMP;
+import net.minecraft.server.Packet3Chat;
 import org.bukkit.Player;
 
 public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -24,5 +25,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public String toString() {
         return "CraftPlayer{" + "name=" + getName() + '}';
+    }
+
+    public void sendMessage(String message) {
+        entity.a.b(new Packet3Chat(message));
     }
 }
