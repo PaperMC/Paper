@@ -77,12 +77,14 @@ public abstract class Event {
     	 * Block Events
     	 */
         BLOCK_DAMAGED (Category.BLOCK),
+        BLOCK_FLOW (Category.BLOCK),
+        BLOCK_IGNITE (Category.BLOCK),
+        BLOCK_PHYSICS (Category.BLOCK),
         BLOCK_PLACED (Category.BLOCK),
         BLOCK_RIGHTCLICKED (Category.BLOCK),
-        BLOCK_PHYSICS (Category.BLOCK),
-        REDSTONE_CHANGE (Category.BLOCK),
-        BLOCK_IGNITE (Category.BLOCK),
-        BLOCK_FLOW (Category.BLOCK);
+        REDSTONE_CHANGE (Category.BLOCK);
+        
+        
         /** 
     	 * Item Events
     	 
