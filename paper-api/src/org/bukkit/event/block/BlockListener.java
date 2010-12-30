@@ -3,12 +3,15 @@ package org.bukkit.event.block;
 import org.bukkit.event.Listener;
 
 /**
- * Handles all events thrown in relation to a Block
+ * Handles all events thrown in relation to Blocks
  * 
  * @author durron597
  */
 public class BlockListener implements Listener {
-    public BlockListener() {
+	/**
+	 * Default Constructor
+	 */
+	public BlockListener() {
     }
     
     /**
@@ -66,6 +69,6 @@ public class BlockListener implements Listener {
      *
      * @param event Relevant event details
      */
-    public void onRedstoneChange(BlockFromToEvent event) {
+    public void onRedstoneChange(BlockFromToEvent event) {    	
     }
 }
