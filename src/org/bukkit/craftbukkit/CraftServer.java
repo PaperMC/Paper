@@ -18,7 +18,6 @@ import org.bukkit.plugin.java.JavaPluginLoader;
 public final class CraftServer implements Server {
     private final String serverName = "Craftbukkit";
     private final String serverVersion;
-    private final HashMap<String, Player> playerCache = new HashMap<String, Player>();
     private final PluginManager pluginManager = new SimplePluginManager(this);
 
     protected final MinecraftServer console;
@@ -57,28 +56,14 @@ public final class CraftServer implements Server {
         Player[] players = new Player[online.size()];
 
         for (int i = 0; i < players.length; i++) {
-            String name = online.get(i).aw;
-            
-            if (playerCache.containsKey(name)) {
-                players[i] = playerCache.get(name);
-            } else {
-                players[i] = new CraftPlayer(this, online.get(i));
-                playerCache.put(name, players[i]);
-            }
+            players[i] = online.get(i).a.getPlayer();
         }
 
         return players;
     }
 
-    public Player getPlayer(EntityPlayerMP entity) {
-        Player result = playerCache.get(entity.aw);
-
-        if (result == null) {
-            result = new CraftPlayer(this, entity);
-            playerCache.put(entity.aw, result);
-        }
-
-        return result;
+    public Player getPlayer(final EntityPlayerMP entity) {
+        return entity.a.getPlayer();
     }
 
     public PluginManager getPluginManager() {

@@ -3,6 +3,7 @@ package net.minecraft.server;
 import java.io.*;
 import java.util.*;
 import java.util.logging.Logger;
+import org.bukkit.craftbukkit.CraftPlayer;
 
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.Event.Type;
@@ -90,7 +91,7 @@ public class ServerConfigurationManager {
         // depending on the outcome.
 
         EntityPlayerMP entity = new EntityPlayerMP(c, c.e, s, new ItemInWorldManager(c.e));
-        PlayerLoginEvent event = new PlayerLoginEvent(Type.PLAYER_LOGIN, server.getPlayer(entity));
+        PlayerLoginEvent event = new PlayerLoginEvent(Type.PLAYER_LOGIN, new CraftPlayer(server, entity));
 
         String s2 = netloginhandler.b.b().toString();
         s2 = s2.substring(s2.indexOf("/") + 1);

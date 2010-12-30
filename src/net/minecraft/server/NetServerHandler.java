@@ -27,7 +27,10 @@ public class NetServerHandler extends NetHandler
     private double i;
     private boolean j;
     private Map k;
-    private final CraftServer server; // CraftBukkit
+
+    // CraftBukkit - next 2 lines
+    private final CraftServer server;
+    private final CraftPlayer player;
 
     public NetServerHandler(MinecraftServer minecraftserver, NetworkManager networkmanager, EntityPlayerMP entityplayermp) {
         c = false;
@@ -39,8 +42,17 @@ public class NetServerHandler extends NetHandler
         networkmanager.a(this);
         e = entityplayermp;
         entityplayermp.a = this;
-        server = minecraftserver.server; // CraftBukkit
+
+        // CraftBukkit - next 2 lines
+        server = minecraftserver.server;
+        player = new CraftPlayer(server, e);
     }
+
+    // CraftBukkit start
+    public CraftPlayer getPlayer() {
+        return player;
+    }
+    // CraftBukkit end
 
     public void a() {
         b.a();
@@ -67,7 +79,6 @@ public class NetServerHandler extends NetHandler
         }
 
         // CraftBukkit start
-        Player player = server.getPlayer(e);
         Location from = new Location(player.getWorld(), g, h, i, e.v, e.w);
         Location to = player.getLocation();
         PlayerMoveEvent event = new PlayerMoveEvent(Type.PLAYER_MOVE, player, from, to);
@@ -194,7 +205,6 @@ public class NetServerHandler extends NetHandler
             float f2) {
 
         // CraftBukkit start
-        Player player = server.getPlayer(e);
         Location from = player.getLocation();
         Location to = new Location(player.getWorld(), d1, d2, d3, f1, f2);
         PlayerMoveEvent event = new PlayerMoveEvent(Type.PLAYER_TELEPORT, player, from, to);
@@ -378,7 +388,7 @@ public class NetServerHandler extends NetHandler
             c(s);
         } else {
             // CraftBukkit start
-            PlayerChatEvent event = new PlayerChatEvent(Type.PLAYER_CHAT, server.getPlayer(e), s);
+            PlayerChatEvent event = new PlayerChatEvent(Type.PLAYER_CHAT, player, s);
             server.getPluginManager().callEvent(event);
             s = (new StringBuilder()).append("<").append(event.getPlayer().getName()).append("> ").append(event.getMessage()).toString();
             // CraftBukkit stop
@@ -390,7 +400,7 @@ public class NetServerHandler extends NetHandler
 
     private void c(String s) {
         // CraftBukkit start
-        PlayerChatEvent event = new PlayerChatEvent(Type.PLAYER_COMMAND, server.getPlayer(e), s);
+        PlayerChatEvent event = new PlayerChatEvent(Type.PLAYER_COMMAND, player, s);
         server.getPluginManager().callEvent(event);
         if (event.isCancelled()) return;
         s = event.getMessage();
