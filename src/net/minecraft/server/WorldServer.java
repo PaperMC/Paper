@@ -20,7 +20,7 @@ public class WorldServer extends World {
         B = false;
         E = new MCHashTable();
         D = minecraftserver;
-        world = (CraftWorld)D.server.getWorld(this); // CraftBukkit
+        world = new CraftWorld(this); // CraftBukkit
     }
 
     // CraftBukkit start
@@ -36,6 +36,10 @@ public class WorldServer extends World {
         boolean result = super.d(i1, j1, k1, l1);
         world.updateBlock(i1, j1, k1);
         return result;
+    }
+
+    public CraftWorld getWorld() {
+        return world;
     }
     // CraftBukkit stop
 
