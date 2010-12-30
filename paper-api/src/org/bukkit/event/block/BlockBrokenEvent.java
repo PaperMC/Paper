@@ -1,12 +1,13 @@
 package org.bukkit.event.block;
 
-import org.bukkit.event.Event;
+import org.bukkit.Block;
 
-public class BlockBrokenEvent extends Event {
+/**
+ * Not implemented yet
+ */
+public class BlockBrokenEvent extends BlockEvent {
 
-	public BlockBrokenEvent(Type type) {
-		super(type);
-		// TODO Auto-generated constructor stub
+	public BlockBrokenEvent(Type type, Block block ) {
+		super(type, block);
 	}
-
 }

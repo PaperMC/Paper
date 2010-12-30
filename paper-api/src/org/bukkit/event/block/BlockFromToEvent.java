@@ -23,4 +23,13 @@ public class BlockFromToEvent extends BlockEvent {
     public BlockFace getFace() {
         return face;
     }
+    
+    /**
+     * Convenience method for getting the faced block
+     * 
+     * @return Block the faced block
+     */
+    public Block getFacedBlock() {
+    	return block.getRelative(face.getModX(), face.getModY(), face.getModZ());
+    }
 }

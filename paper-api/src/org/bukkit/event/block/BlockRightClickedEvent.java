@@ -6,8 +6,7 @@ package org.bukkit.event.block;
 import org.bukkit.Block;
 
 /**
- * @author jmartin
- *
+ * Not implemented yet
  */
 public class BlockRightClickedEvent extends BlockEvent {
 

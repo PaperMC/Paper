@@ -27,7 +27,7 @@ public class BlockListener implements Listener {
      *
      * @param event Relevant event details
      */
-    public void onBlockFlow(BlockFromToEvent event) {
+    public void onBlockFlow(BlockFlowEvent event) {
     }
 
     /**
@@ -55,6 +55,16 @@ public class BlockListener implements Listener {
     }
 
     /**
+     * Called when redstone changes
+     * From: the source of the redstone change
+     * To: The redstone dust that changed
+     *
+     * @param event Relevant event details
+     */
+    public void onBlockRedstoneChange(BlockFromToEvent event) {    	
+    }
+    
+    /**
      * Called when a player right clicks a block
      *
      * @param event Relevant event details
@@ -62,13 +72,4 @@ public class BlockListener implements Listener {
     public void onBlockRightClicked(BlockRightClickedEvent event) {
     }
 
-    /**
-     * Called when redstone changes
-     * From: the source of the redstone change
-     * To: The redstone dust that changed
-     *
-     * @param event Relevant event details
-     */
-    public void onRedstoneChange(BlockFromToEvent event) {    	
-    }
 }
