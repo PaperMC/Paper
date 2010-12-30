@@ -100,4 +100,8 @@ public final class CraftServer implements Server {
 
         return result;
     }
+
+    public ServerConfigurationManager getHandle() {
+        return server;
+    }
 }
