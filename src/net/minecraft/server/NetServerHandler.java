@@ -395,7 +395,7 @@ public class NetServerHandler extends NetHandler
         if (event.isCancelled()) return;
         s = event.getMessage();
         CraftPlayer player = (CraftPlayer)event.getPlayer();
-        EntityPlayerMP e = player.getEntity();
+        EntityPlayerMP e = player.getHandle();
         // CraftBukkit stop
 
         if (s.toLowerCase().startsWith("/me ")) {

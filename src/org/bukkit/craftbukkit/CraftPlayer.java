@@ -2,19 +2,16 @@
 package org.bukkit.craftbukkit;
 
 import net.minecraft.server.EntityPlayerMP;
-import org.bukkit.Location;
 import org.bukkit.Player;
-import org.bukkit.World;
 
-public class CraftPlayer implements Player {
-    private EntityPlayerMP player;
+public class CraftPlayer extends CraftHumanEntity implements Player {
+    private final EntityPlayerMP entity;
     private final String name;
-    private final CraftServer server;
 
-    public CraftPlayer(CraftServer serv, EntityPlayerMP handle) {
-        player = handle;
-        name = player.aw;
-        server = serv;
+    public CraftPlayer(CraftServer server, EntityPlayerMP entity) {
+        super(server, entity);
+        this.entity = entity;
+        name = entity.aw;
     }
 
     public String getName() {
@@ -22,19 +19,12 @@ public class CraftPlayer implements Player {
     }
 
     public boolean isOnline() {
-        return server.server.g(name);
+        return server.getHandle().g(name);
     }
 
-    public Location getLocation() {
-        return new Location(getWorld(), player.p, player.q, player.r, player.v, player.w);
-    }
-
-    public World getWorld() {
-        return server.getWorld(player.b.e);
-    }
-
-    public EntityPlayerMP getEntity() {
-        return player;
+    @Override
+    public EntityPlayerMP getHandle() {
+        return entity;
     }
 
     @Override
