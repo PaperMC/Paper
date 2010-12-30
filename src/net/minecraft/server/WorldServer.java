@@ -3,7 +3,11 @@ package net.minecraft.server;
 
 import java.io.File;
 import java.util.*;
+import org.bukkit.craftbukkit.CraftBlock;
+import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.event.Event.Type;
+import org.bukkit.event.block.BlockPhysicsEvent;
 
 
 public class WorldServer extends World {
@@ -14,6 +18,7 @@ public class WorldServer extends World {
     private MinecraftServer D;
     private MCHashTable E;
     private final CraftWorld world; // CraftBukkit
+    private final CraftServer server; // CraftBukkit
 
     public WorldServer(MinecraftServer minecraftserver, File file, String s, int i) {
         super(file, s, (new Random()).nextLong(), WorldProvider.a(i));
@@ -21,6 +26,7 @@ public class WorldServer extends World {
         E = new MCHashTable();
         D = minecraftserver;
         world = new CraftWorld(this); // CraftBukkit
+        server = minecraftserver.server; // CraftBukkit
     }
 
     // CraftBukkit start
@@ -40,6 +46,38 @@ public class WorldServer extends World {
 
     public CraftWorld getWorld() {
         return world;
+    }
+    // CraftBukkit stop
+
+    // CraftBukkit start - note: the following methods are straight from the
+    // World.java with tweaks as noted. KEEP THEM UPDATED!
+    @Override
+    public void g(int i1, int j1, int k1, int l1) {
+        k(i1 - 1, j1, k1, l1);
+        k(i1 + 1, j1, k1, l1);
+        k(i1, j1 - 1, k1, l1);
+        k(i1, j1 + 1, k1, l1);
+        k(i1, j1, k1 - 1, l1);
+        k(i1, j1, k1 + 1, l1);
+    }
+
+    private void k(int i1, int j1, int k1, int l1) {
+        if (i || z) {
+            return;
+        }
+        Block block = Block.m[a(i1, j1, k1)];
+
+        if (block != null) {
+            // CraftBukkit start
+            BlockPhysicsEvent event = new BlockPhysicsEvent(Type.BLOCK_PHYSICS, world.getBlockAt(f, y, f), l1);
+            server.getPluginManager().callEvent(event);
+            if (event.isCancelled()) {
+                return;
+            }
+            // CraftBukkit stop
+
+            block.b(this, i1, j1, k1, l1);
+        }
     }
     // CraftBukkit stop
 
