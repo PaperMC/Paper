@@ -7,7 +7,7 @@ import org.bukkit.HumanEntity;
 import org.bukkit.ItemStack;
 
 public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
-    private final EntityPlayer entity;
+    private EntityPlayer entity;
 
     public CraftHumanEntity(final CraftServer server, final EntityPlayer entity) {
         super(server, entity);
@@ -27,6 +27,11 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     @Override
     public EntityPlayer getHandle() {
         return entity;
+    }
+
+    public void setHandle(final EntityPlayer entity) {
+        super.setHandle((EntityPlayer)entity);
+        this.entity = entity;
     }
 
     @Override

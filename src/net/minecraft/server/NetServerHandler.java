@@ -81,17 +81,19 @@ public class NetServerHandler extends NetHandler
         // CraftBukkit start
         Location from = new Location(player.getWorld(), g, h, i, e.v, e.w);
         Location to = player.getLocation();
-        PlayerMoveEvent event = new PlayerMoveEvent(Type.PLAYER_MOVE, player, from, to);
-        server.getPluginManager().callEvent(event);
+        if (!from.equals(to)) {
+            PlayerMoveEvent event = new PlayerMoveEvent(Type.PLAYER_MOVE, player, from, to);
+            server.getPluginManager().callEvent(event);
 
-        from = event.getFrom();
-        to = event.isCancelled() ? from : event.getTo();
+            from = event.getFrom();
+            to = event.isCancelled() ? from : event.getTo();
 
-        e.p = to.getX();
-        e.q = to.getY();
-        e.r = to.getZ();
-        e.v = to.getYaw();
-        e.w = to.getPitch();
+            e.p = to.getX();
+            e.q = to.getY();
+            e.r = to.getZ();
+            e.v = to.getYaw();
+            e.w = to.getPitch();
+        }
         // CraftBukkit end
 
         if (j) {
@@ -481,6 +483,7 @@ public class NetServerHandler extends NetHandler
             return;
         } else {
             e = d.f.d(e);
+            player.setHandle(e); // CraftBukkit
             return;
         }
     }
