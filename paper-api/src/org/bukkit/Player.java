@@ -5,7 +5,7 @@ package org.bukkit;
  * Represents a player, connected or not
  * 
  */
-public interface Player extends EntityHuman {
+public interface Player extends HumanEntity {
     /**
      * Returns the name of this player
      *
