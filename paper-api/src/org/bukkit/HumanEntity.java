@@ -6,6 +6,13 @@ package org.bukkit;
  */
 public interface HumanEntity extends LivingEntity {
     /**
+     * Returns the name of this player
+     *
+     * @return Player name
+     */
+    public String getName();
+    
+    /**
      * Gets the item this entity has currently selected, which will be shown in
      * their hand
      *

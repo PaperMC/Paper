@@ -7,13 +7,6 @@ package org.bukkit;
  */
 public interface Player extends HumanEntity {
     /**
-     * Returns the name of this player
-     *
-     * @return Player name
-     */
-    public String getName();
-
-    /**
      * Checks if this player is currently online
      *
      * @return true if they are online
