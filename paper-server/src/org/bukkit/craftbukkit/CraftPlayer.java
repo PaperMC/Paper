@@ -6,20 +6,14 @@ import org.bukkit.Player;
 
 public class CraftPlayer extends CraftHumanEntity implements Player {
     private final EntityPlayerMP entity;
-    private final String name;
 
     public CraftPlayer(CraftServer server, EntityPlayerMP entity) {
         super(server, entity);
         this.entity = entity;
-        name = entity.aw;
-    }
-
-    public String getName() {
-        return name;
     }
 
     public boolean isOnline() {
-        return server.getHandle().g(name);
+        return server.getHandle().g(getName());
     }
 
     @Override
@@ -29,6 +23,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public String toString() {
-        return "CraftPlayer{" + "name=" + name + '}';
+        return "CraftPlayer{" + "name=" + getName() + '}';
     }
 }
