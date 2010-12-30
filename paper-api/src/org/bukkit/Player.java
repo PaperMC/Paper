@@ -12,4 +12,11 @@ public interface Player extends HumanEntity {
      * @return true if they are online
      */
     public boolean isOnline();
+
+    /**
+     * Sends this player a message, which will be displayed in their chat
+     *
+     * @param message Message to be displayed
+     */
+    public void sendMessage(String message);
 }
