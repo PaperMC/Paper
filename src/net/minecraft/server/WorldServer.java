@@ -6,7 +6,7 @@ import java.util.*;
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.event.Event.Type;
+import org.bukkit.event.Event;
 import org.bukkit.event.block.BlockPhysicsEvent;
 
 
@@ -47,6 +47,10 @@ public class WorldServer extends World {
     public CraftWorld getWorld() {
         return world;
     }
+    
+    public void callHook(Event event) {
+    	server.getPluginManager().callEvent(event);
+    }
     // CraftBukkit stop
 
     // CraftBukkit start - note: the following methods are straight from the
@@ -69,7 +73,7 @@ public class WorldServer extends World {
 
         if (block != null) {
             // CraftBukkit start
-            BlockPhysicsEvent event = new BlockPhysicsEvent(Type.BLOCK_PHYSICS, world.getBlockAt(i1, j1, k1), l1);
+            BlockPhysicsEvent event = new BlockPhysicsEvent(Event.Type.BLOCK_PHYSICS, world.getBlockAt(i1, j1, k1), l1);
             server.getPluginManager().callEvent(event);
             if (event.isCancelled()) {
                 return;
