@@ -9,7 +9,8 @@ public enum BlockFace {
     South(1, 0, 0),
     West(0, 0, 1),
     Up(0, 1, 0),
-    Down(0, -1, 0);
+    Down(0, -1, 0),
+    Self(0, 0, 0);
 
     private final int modX;
     private final int modY;
