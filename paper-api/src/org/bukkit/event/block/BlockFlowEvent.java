@@ -1,6 +1,8 @@
 package org.bukkit.event.block;
 
 import java.util.HashSet;
+import java.util.List;
+
 import org.bukkit.Block;
 import org.bukkit.BlockFace;
 import org.bukkit.event.Event;
@@ -9,7 +11,7 @@ import org.bukkit.event.Event;
  * Holds information for events with a source block and a destination block
  */
 public class BlockFlowEvent extends BlockEvent {
-    protected HashSet<BlockFlow> faceList;
+    protected final HashSet<BlockFlow> faceList;
 
     public BlockFlowEvent(final Event.Type type, final Block block, BlockFace... faces) {
         super(type, block);
@@ -20,14 +22,25 @@ public class BlockFlowEvent extends BlockEvent {
         	}
         }
     }
+    
+    public BlockFlowEvent(final Event.Type type, final Block block, List<BlockFace> faces) {
+        super(type, block);
+        this.faceList = new HashSet<BlockFlow>();
+        if (faces != null && faces.size() > 0) {
+        	for (BlockFace theFace : faces) {
+        		faceList.add(new BlockFlow(theFace));
+        	}
+        }
+    }
 
     /**
-     * Gets the location this player moved to
+     * We don't want plugins changing the eligible flowing faces
+     * therefore give them a new HashSet instance
      *
      * @return Block the block is event originated from
      */
     public HashSet<BlockFlow> getFaces() {
-        return faceList;
+        return new HashSet<BlockFlow>(faceList);
     }
     
     /**
