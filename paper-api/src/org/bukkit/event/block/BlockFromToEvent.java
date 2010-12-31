@@ -8,11 +8,13 @@ import org.bukkit.event.Event;
  * Holds information for events with a source block and a destination block
  */
 public class BlockFromToEvent extends BlockEvent {
-    protected BlockFace face;
+    protected Block from;
+	protected BlockFace face;
 
     public BlockFromToEvent(final Event.Type type, final Block block, final BlockFace face) {
         super(type, block);
         this.face = face;
+        this.from = block.getRelative(face.getModX(), face.getModY(), face.getModZ());
     }
 
     /**
@@ -29,7 +31,7 @@ public class BlockFromToEvent extends BlockEvent {
      * 
      * @return Block the faced block
      */
-    public Block getFacedBlock() {
-    	return block.getRelative(face.getModX(), face.getModY(), face.getModZ());
+    public Block getFromBlock() {
+    	return from; 
     }
 }
