@@ -4,6 +4,7 @@ package net.minecraft.server;
 import java.io.File;
 import java.util.*;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.event.Event;
 
 
 public class WorldServer extends World {
@@ -40,6 +41,10 @@ public class WorldServer extends World {
 
     public CraftWorld getWorld() {
         return world;
+    }
+    
+    public void callHook(Event event) {
+    	D.server.getPluginManager().callEvent(event);
     }
     // CraftBukkit stop
 
