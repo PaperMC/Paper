@@ -69,7 +69,7 @@ public class WorldServer extends World {
 
         if (block != null) {
             // CraftBukkit start
-            BlockPhysicsEvent event = new BlockPhysicsEvent(Type.BLOCK_PHYSICS, world.getBlockAt(f, y, f), l1);
+            BlockPhysicsEvent event = new BlockPhysicsEvent(Type.BLOCK_PHYSICS, world.getBlockAt(i1, j1, k1), l1);
             server.getPluginManager().callEvent(event);
             if (event.isCancelled()) {
                 return;
