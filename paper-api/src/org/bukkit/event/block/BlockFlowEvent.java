@@ -74,7 +74,7 @@ public class BlockFlowEvent extends BlockEvent {
     	}
     	
     	public boolean equals(BlockFlow flow) {
-    		return flow.flowDirection.equals(flow);
+    		return flowDirection.equals(flow.flowDirection);
     	}
     	
     	@Override
