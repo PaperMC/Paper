@@ -16,7 +16,7 @@ public abstract class Event {
      * @return Server which this event was triggered on
      */
     public Type getType() {
-        return type;
+    	return type;
     }
 
     /**
@@ -48,23 +48,23 @@ public abstract class Event {
          */
         Lowest
     }
-
+    
     public enum Category {
-        PLAYER,
-        BLOCK,
-        ITEM,
-        ENVIRONMENT,
-        ENTITY,
-        VEHICLE,
-        INVENTORY,
-        SIGN,
-        CUSTOM;
+    	PLAYER,
+    	BLOCK,
+    	ITEM,
+    	ENVIRONMENT,
+    	ENTITY,
+    	VEHICLE,
+    	INVENTORY,
+    	SIGN,
+    	CUSTOM;
     }
-
+    
     public enum Type {
-        /** 
-         * Player Events
-         */
+    	/** 
+    	 * Player Events
+    	 */
         PLAYER_JOIN (Category.PLAYER),
         PLAYER_LOGIN (Category.PLAYER),
         PLAYER_CHAT (Category.PLAYER),
@@ -74,8 +74,8 @@ public abstract class Event {
         //PLAYER_ANIMATION (Category.PLAYER),
         PLAYER_TELEPORT (Category.PLAYER),
         /** 
-         * Block Events
-         */
+    	 * Block Events
+    	 */
         BLOCK_BROKEN (Category.BLOCK),
         BLOCK_CANBUILD (Category.BLOCK),
         BLOCK_FLOW (Category.BLOCK),
@@ -84,31 +84,31 @@ public abstract class Event {
         BLOCK_PLACED (Category.BLOCK),
         BLOCK_RIGHTCLICKED (Category.BLOCK),
         REDSTONE_CHANGE (Category.BLOCK);
-
-
+        
+        
         /** 
-         * Item Events
-
+    	 * Item Events
+    	 
         ITEM_DROP (Category.ITEM),
         ITEM_PICK_UP (Category.ITEM),
         ITEM_USE (Category.ITEM),
         /** 
-         * Environment Events
-
+    	 * Environment Events
+    	 
         IGNITE (Category.ENVIRONMENT),
         FLOW (Category.ENVIRONMENT),
         EXPLODE (Category.ENVIRONMENT),
         LIQUID_DESTROY (Category.ENVIRONMENT),
         /** 
-         * Non-player Entity Events
-
+    	 * Non-player Entity Events
+    	 
         MOB_SPAWN (Category.ENTITY),
         DAMAGE (Category.ENTITY),
         HEALTH_CHANGE (Category.ENTITY),
         ATTACK (Category.ENTITY), // Need to look into this category more
         /** 
-         * Vehicle Events
-
+    	 * Vehicle Events
+    	 
         VEHICLE_CREATE (Category.VEHICLE),
         VEHICLE_UPDATE (Category.VEHICLE),
         VEHICLE_DAMAGE (Category.VEHICLE),
@@ -117,24 +117,24 @@ public abstract class Event {
         VEHICLE_ENTERED (Category.VEHICLE),
         VEHICLE_POSITIONCHANGE (Category.VEHICLE),
         /** 
-         * Inventory Events
-
+    	 * Inventory Events
+    	 
         OPEN_INVENTORY (Category.INVENTORY),
         /** 
-         * Sign Events (Item events??)
-
+    	 * Sign Events (Item events??)
+    	 
         SIGN_SHOW (Category.SIGN),
         SIGN_CHANGE (Category.SIGN);
          */
-
+        
         private Category category;
-
+        
         private Type(Category category) {
-            this.category = category;
+        	this.category = category;
         }
-
+        
         public Category getCategory() {
-            return category;
+        	return category;
         }
     }
 }

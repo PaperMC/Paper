@@ -8,12 +8,12 @@ import org.bukkit.event.Listener;
  * @author durron597
  */
 public class BlockListener implements Listener {
-    /**
-     * Default Constructor
-     */
-    public BlockListener() {
+	/**
+	 * Default Constructor
+	 */
+	public BlockListener() {
     }
-
+    
     /**
      * Called when a block is broken (or destroyed)
      *
@@ -27,7 +27,7 @@ public class BlockListener implements Listener {
      */
     public void onBlockCanBuild(BlockCanBuildEvent event) {
     }
-
+    
     /**
      * Called when a block flows (water/lava)
      *
@@ -43,7 +43,7 @@ public class BlockListener implements Listener {
      */
     public void onBlockIgnite(BlockIgniteEvent event) {
     }
-
+    
     /**
      * Called when block physics occurs
      *
@@ -51,7 +51,7 @@ public class BlockListener implements Listener {
      */
     public void onBlockPhysics(BlockPhysicsEvent event) {
     }
-
+    
     /**
      * Called when a player places a block
      *
@@ -69,7 +69,7 @@ public class BlockListener implements Listener {
      */
     public void onBlockRedstoneChange(BlockFromToEvent event) {    	
     }
-
+    
     /**
      * Called when a player right clicks a block
      *

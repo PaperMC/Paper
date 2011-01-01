@@ -7,7 +7,7 @@ import org.bukkit.Block;
  */
 public class BlockBrokenEvent extends BlockEvent {
 
-    public BlockBrokenEvent(Type type, Block block ) {
-        super(type, block);
-    }
+	public BlockBrokenEvent(Type type, Block block ) {
+		super(type, block);
+	}
 }

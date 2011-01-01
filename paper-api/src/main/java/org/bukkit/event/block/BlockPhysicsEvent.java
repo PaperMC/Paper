@@ -1,6 +1,7 @@
 package org.bukkit.event.block;
 
 import org.bukkit.Block;
+import org.bukkit.ItemStack;
 import org.bukkit.Material;
 import org.bukkit.event.Event;
 

@@ -181,7 +181,7 @@ public enum Material {
     CookedFish(350),
     GoldRecord(2256),
     GreenRecord(2257);
-
+    
     private final int id;
     private static final Map<Integer, Material> lookup = new HashMap<Integer, Material>();
 
