@@ -2,11 +2,14 @@ package net.minecraft.server;
 
 
 import java.io.File;
-import java.util.*;
-import org.bukkit.craftbukkit.CraftBlock;
+import java.util.Random;
+import java.util.ArrayList;
+import java.util.List;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.Event;
+import org.bukkit.event.Event.Type;
+import org.bukkit.event.block.BlockCanBuildEvent;
 import org.bukkit.event.block.BlockPhysicsEvent;
 
 
@@ -85,6 +88,16 @@ public class WorldServer extends World {
     }
     // CraftBukkit stop
 
+    // CraftBukkit start
+    @Override
+    public boolean a(int i1, int j1, int k1, int l1, boolean flag) {	
+    	BlockCanBuildEvent event = new BlockCanBuildEvent(Type.BLOCK_CANBUILD, getWorld().getBlockAt(j1, k1, l1), super.a(i1, j1, k1, l1, flag));
+    	server.getPluginManager().callEvent(event);
+    	
+    	return event.isCancelled();
+    }
+    // CraftBukkit stop
+    
     public void f() {
         super.f();
     }
