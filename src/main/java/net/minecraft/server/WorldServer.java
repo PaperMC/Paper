@@ -90,15 +90,39 @@ public class WorldServer extends World {
     @Override
     // XXX: the following method is straight from the World.java with tweaks as noted. KEEP THEM UPDATED!
     public boolean a(int i1, int j1, int k1, int l1, boolean flag) {
-        boolean superResult = super.a(i1, j1, k1, l1, flag); 
+        int i2 = a(j1, k1, l1);
+        Block block = Block.m[i2];
+        Block block1 = Block.m[i1];
+        AxisAlignedBB axisalignedbb = block1.d(this, j1, k1, l1);
 
+        // Craftbukkit - We dont want to allow the user to override the bounding box check
+        if (flag) {
+            axisalignedbb = null;
+        }
+        if (axisalignedbb != null && !a(axisalignedbb)) {
+            return false;
+        }
+
+        // Craftbukkit - check this first as we dont want to allow the user to override this either
+        // Notch checks it after the check to see if block is water, lava, fire, portal
+        if (!(i1 > 0 && block == null)) return false;
+        
+        boolean defaultReturn;
+        
+        if (block == Block.A || block == Block.B || block == Block.C || block == Block.D || block == Block.ar || block == Block.aS) {
+            defaultReturn = true;
+        } else {
+            defaultReturn = block1.a(this, j1, k1, l1);
+        }
+        
+        // Craftbukkit - If flag is true, it's natural, not user placement. Don't hook. 
         if (!flag) {
-            BlockCanBuildEvent event = new BlockCanBuildEvent(Type.BLOCK_CANBUILD, getWorld().getBlockAt(j1, k1, l1), i1, superResult);
+            BlockCanBuildEvent event = new BlockCanBuildEvent(Type.BLOCK_CANBUILD, getWorld().getBlockAt(j1, k1, l1), i1, defaultReturn);
             server.getPluginManager().callEvent(event);
 
             return event.isBuildable();
         } else {
-            return superResult;
+            return defaultReturn;
         }
     }
     // CraftBukkit stop
