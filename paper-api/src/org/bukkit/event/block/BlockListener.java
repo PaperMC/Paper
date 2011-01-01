@@ -25,7 +25,7 @@ public class BlockListener implements Listener {
     /**
      * Called when we try to place a block, to see if we can build it
      */
-    public void canBuild(BlockCanBuildEvent event) {
+    public void onBlockCanBuild(BlockCanBuildEvent event) {
     }
     
     /**
