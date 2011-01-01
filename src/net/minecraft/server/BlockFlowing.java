@@ -1,12 +1,10 @@
 package net.minecraft.server;
 
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Random;
 
 import org.bukkit.BlockFace;
 import org.bukkit.event.Event.Type;
-import org.bukkit.event.block.BlockFlowEvent;
+import org.bukkit.event.block.BlockFromToEvent;
 
 public class BlockFlowing extends BlockFluids
 {
@@ -90,18 +88,15 @@ public class BlockFlowing extends BlockFluids
         if(l(world, i1, j1 - 1, k1))
         {	
         	// Craftbucket send "down" to the server
-        	BlockFlowEvent bfe = new BlockFlowEvent(Type.BLOCK_FLOW, source, BlockFace.Down);
-            ((WorldServer) world).callHook(bfe);
+        	BlockFromToEvent blockFlow = new BlockFromToEvent(Type.BLOCK_FLOW, source, BlockFace.Down);
+            ((WorldServer) world).callHook(blockFlow);
             
-            for (BlockFlowEvent.BlockFlow bf : bfe.getFaces()) {
-	        	if (bf.getFlowDirection().equals(BlockFace.Down) && !bf.isCancelled()) {
-		            if(l1 >= 8)
-		                world.b(i1, j1 - 1, k1, bh, l1);
-		            else
-		                world.b(i1, j1 - 1, k1, bh, l1 + 8);
-	        	}
-	        	break;
-            }
+        	if (!blockFlow.isCancelled()) {
+	            if(l1 >= 8)
+	                world.b(i1, j1 - 1, k1, bh, l1);
+	            else
+	                world.b(i1, j1 - 1, k1, bh, l1 + 8);
+        	}
         } else
         if(l1 >= 0 && (l1 == 0 || k(world, i1, j1 - 1, k1)))
         {
@@ -111,22 +106,18 @@ public class BlockFlowing extends BlockFluids
                 k2 = 1;
             if(k2 >= 8)
                 return;
-            // Craftbukkit start
-            List<BlockFace> faces = new LinkedList<BlockFace>();
-            if(aflag[0])
-                faces.add(BlockFace.North);
-            if(aflag[1])
-            	faces.add(BlockFace.South);
-            if(aflag[2])
-            	faces.add(BlockFace.East);
-            if(aflag[3])
-            	faces.add(BlockFace.West);
             
-            BlockFlowEvent bfe = new BlockFlowEvent(Type.BLOCK_FLOW, source, faces);
-            ((WorldServer) world).callHook(bfe);
-            for (BlockFlowEvent.BlockFlow bf : bfe.getFaces()) {
-                if (!bf.isCancelled())
-                	f(world, i1 + bf.getFlowDirection().getModX(), j1, k1 + bf.getFlowDirection().getModZ(), k2);
+            // Craftbukkit start
+            BlockFace[] faces = new BlockFace[]{ BlockFace.North, BlockFace.South, BlockFace.East, BlockFace.West };
+            for (BlockFace currentFace : faces) {
+            	int index = 0;
+            	if (aflag[index]) {
+	            	BlockFromToEvent event = new BlockFromToEvent(Type.BLOCK_FLOW, source, currentFace);
+	            	((WorldServer) world).callHook(event);
+	            	if (!event.isCancelled())
+	            		f(world, i1 + currentFace.getModX(), j1, k1 + currentFace.getModZ(), k2);
+            	}
+            	index++;
             }
             // Craftbukkit stop
         }
