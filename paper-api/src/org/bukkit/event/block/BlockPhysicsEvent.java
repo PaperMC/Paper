@@ -32,8 +32,8 @@ public class BlockPhysicsEvent extends BlockEvent {
      *
      * @return Changed block's type
      */
-    public ItemStack.Type getChangedType() {
-        return ItemStack.Type.getType(changed); // TODO: Move type to its own file
+    public Material getChangedType() {
+        return Material.getType(changed); // TODO: Move type to its own file
     }
 
     /**

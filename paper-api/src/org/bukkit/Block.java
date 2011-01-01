@@ -18,7 +18,7 @@ public interface Block {
      * @param face Face of this block to return
      * @return Block at the given face
      */
-    Block getFace(final BlockFace face);
+    Block getFace(BlockFace face);
 
     /**
      * Gets the block at the given offsets
@@ -28,14 +28,21 @@ public interface Block {
      * @param modZ Z-coordinate offset
      * @return Block at the given offsets
      */
-    Block getRelative(final int modX, final int modY, final int modZ);
+    Block getRelative(int modX, int modY, int modZ);
+
+    /**
+     * Gets the type of this block
+     *
+     * @return block type
+     */
+    Material getType();
 
     /**
      * Gets the type-ID of this block
      *
      * @return block type-ID
      */
-    int getType();
+    int getTypeID();
 
     /**
      * Gets the world which contains this Block
@@ -77,12 +84,19 @@ public interface Block {
      *
      * @param data New block specific metadata
      */
-    void setData(final byte data);
+    void setData(byte data);
+
+    /**
+     * Sets the type of this block
+     *
+     * @param type Material to change this block to
+     */
+    void setType(Material type);
 
     /**
      * Sets the type-ID of this block
      *
      * @param type Type-ID to change this block to
      */
-    void setType(final int type);
+    void setTypeID(int type);
 }
