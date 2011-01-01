@@ -2,6 +2,7 @@ package org.bukkit.event.block;
 
 import org.bukkit.Block;
 import org.bukkit.ItemStack;
+import org.bukkit.Material;
 import org.bukkit.event.Event;
 
 /**
@@ -33,7 +34,7 @@ public class BlockPhysicsEvent extends BlockEvent {
      * @return Changed block's type
      */
     public Material getChangedType() {
-        return Material.getType(changed); // TODO: Move type to its own file
+        return Material.getMaterial(changed);
     }
 
     /**
