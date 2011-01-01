@@ -11,11 +11,13 @@ import org.bukkit.event.Event;
 public class BlockFromToEvent extends BlockEvent implements Cancellable {
     protected Block from;
 	protected BlockFace face;
-
+	protected boolean cancel;
+	
     public BlockFromToEvent(final Event.Type type, final Block block, final BlockFace face) {
         super(type, block);
         this.face = face;
         this.from = block.getRelative(face.getModX(), face.getModY(), face.getModZ());
+        this.cancel = false;
     }
 
     /**
@@ -38,13 +40,11 @@ public class BlockFromToEvent extends BlockEvent implements Cancellable {
 
 	@Override
 	public boolean isCancelled() {
-		// TODO Auto-generated method stub
-		return false;
+		return cancel;
 	}
 
 	@Override
 	public void setCancelled(boolean cancel) {
-		// TODO Auto-generated method stub
-		
+		this.cancel = cancel;
 	}
 }
