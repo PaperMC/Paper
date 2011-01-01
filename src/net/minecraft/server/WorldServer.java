@@ -1,6 +1,5 @@
 package net.minecraft.server;
 
-
 import java.io.File;
 import java.util.Random;
 import java.util.ArrayList;
@@ -90,11 +89,17 @@ public class WorldServer extends World {
 
     // CraftBukkit start
     @Override
-    public boolean a(int i1, int j1, int k1, int l1, boolean flag) {	
-    	BlockCanBuildEvent event = new BlockCanBuildEvent(Type.BLOCK_CANBUILD, getWorld().getBlockAt(j1, k1, l1), super.a(i1, j1, k1, l1, flag));
-    	server.getPluginManager().callEvent(event);
+    public boolean a(int i1, int j1, int k1, int l1, boolean flag) {
+    	boolean superResult = super.a(i1, j1, k1, l1, flag); 
     	
-    	return event.isCancelled();
+    	if (!flag) {
+	    	BlockCanBuildEvent event = new BlockCanBuildEvent(Type.BLOCK_CANBUILD, getWorld().getBlockAt(j1, k1, l1), !superResult);
+	    	server.getPluginManager().callEvent(event);
+	    	
+	    	return !event.isCancelled();
+    	} else {
+    		return superResult;
+    	}
     }
     // CraftBukkit stop
     
