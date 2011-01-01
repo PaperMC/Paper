@@ -16,7 +16,7 @@ public class CraftWorld implements World {
     public CraftWorld(WorldServer world) {
         this.world = world;
     }
-    
+
     public Block getBlockAt(int x, int y, int z) {
         BlockCoordinate loc = new BlockCoordinate(x, y, z);
         Block block = blockCache.get(loc);
@@ -78,7 +78,7 @@ public class CraftWorld implements World {
     private final class ChunkCoordinate {
         public final int x;
         public final int z;
-        
+
         public ChunkCoordinate(final int x, final int z) {
             this.x = x;
             this.z = z;
@@ -115,7 +115,7 @@ public class CraftWorld implements World {
         public final int x;
         public final int y;
         public final int z;
-        
+
         public BlockCoordinate(final int x, final int y, final int z) {
             this.x = x;
             this.y = y;

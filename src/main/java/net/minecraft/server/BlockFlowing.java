@@ -56,8 +56,8 @@ public class BlockFlowing extends BlockFluids
                 if(world.d(i1, j1 - 1, k1))
                     j2 = 0;
                 else
-                if(world.c(i1, j1 - 1, k1) == bs && world.b(i1, j1, k1) == 0)
-                    j2 = 0;
+                    if(world.c(i1, j1 - 1, k1) == bs && world.b(i1, j1, k1) == 0)
+                        j2 = 0;
             if(bs == Material.g && l1 < 8 && j2 < 8 && j2 > l1 && random.nextInt(4) != 0)
             {
                 j2 = l1;
@@ -76,52 +76,52 @@ public class BlockFlowing extends BlockFluids
                     world.g(i1, j1, k1, bh);
                 }
             } else
-            if(flag)
-                i(world, i1, j1, k1);
+                if(flag)
+                    i(world, i1, j1, k1);
         } else
         {
             i(world, i1, j1, k1);
         }
-    	
+
         // Craftbukkit start
         CraftBlock source = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i1, j1, k1);
-        
+
         if(l(world, i1, j1 - 1, k1))
         {	
-        	// Craftbucket send "down" to the server
-        	BlockFromToEvent blockFlow = new BlockFromToEvent(Type.BLOCK_FLOW, source, BlockFace.Down);
+            // Craftbucket send "down" to the server
+            BlockFromToEvent blockFlow = new BlockFromToEvent(Type.BLOCK_FLOW, source, BlockFace.Down);
             ((WorldServer) world).getServer().getPluginManager().callEvent(blockFlow);
-            
-        	if (!blockFlow.isCancelled()) {
-	            if(l1 >= 8)
-	                world.b(i1, j1 - 1, k1, bh, l1);
-	            else
-	                world.b(i1, j1 - 1, k1, bh, l1 + 8);
-        	}
-        } else
-        if(l1 >= 0 && (l1 == 0 || k(world, i1, j1 - 1, k1)))
-        {
-            boolean aflag[] = j(world, i1, j1, k1);
-            int k2 = l1 + byte0;
-            if(l1 >= 8)
-                k2 = 1;
-            if(k2 >= 8)
-                return;
-            
-            // Craftbukkit start
-            BlockFace[] faces = new BlockFace[]{ BlockFace.North, BlockFace.South, BlockFace.East, BlockFace.West };
-            for (BlockFace currentFace : faces) {
-            	int index = 0;
-            	if (aflag[index]) {
-	            	BlockFromToEvent event = new BlockFromToEvent(Type.BLOCK_FLOW, source, currentFace);
-	            	((WorldServer) world).getServer().getPluginManager().callEvent(event);
-	            	if (!event.isCancelled())
-	            		f(world, i1 + currentFace.getModX(), j1, k1 + currentFace.getModZ(), k2);
-            	}
-            	index++;
+
+            if (!blockFlow.isCancelled()) {
+                if(l1 >= 8)
+                    world.b(i1, j1 - 1, k1, bh, l1);
+                else
+                    world.b(i1, j1 - 1, k1, bh, l1 + 8);
             }
-            // Craftbukkit stop
-        }
+        } else
+            if(l1 >= 0 && (l1 == 0 || k(world, i1, j1 - 1, k1)))
+            {
+                boolean aflag[] = j(world, i1, j1, k1);
+                int k2 = l1 + byte0;
+                if(l1 >= 8)
+                    k2 = 1;
+                if(k2 >= 8)
+                    return;
+
+                // Craftbukkit start
+                BlockFace[] faces = new BlockFace[]{ BlockFace.North, BlockFace.South, BlockFace.East, BlockFace.West };
+                for (BlockFace currentFace : faces) {
+                    int index = 0;
+                    if (aflag[index]) {
+                        BlockFromToEvent event = new BlockFromToEvent(Type.BLOCK_FLOW, source, currentFace);
+                        ((WorldServer) world).getServer().getPluginManager().callEvent(event);
+                        if (!event.isCancelled())
+                            f(world, i1 + currentFace.getModX(), j1, k1 + currentFace.getModZ(), k2);
+                    }
+                    index++;
+                }
+                // Craftbukkit stop
+            }
     }
 
     private void f(World world, int i1, int j1, int k1, int l1)

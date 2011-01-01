@@ -104,7 +104,7 @@ public class ServerConfigurationManager {
         } else if (b.size() >= e) {
             event.disallow(PlayerLoginEvent.Result.KICK_FULL, "The server is full!");
         }
-        
+
         server.getPluginManager().callEvent(event);
         if (event.getResult() != PlayerLoginEvent.Result.ALLOWED) {
             netloginhandler.a(event.getKickMessage());

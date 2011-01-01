@@ -19,7 +19,7 @@ import org.bukkit.craftbukkit.CraftServer;
 
 
 public class MinecraftServer
-        implements ICommandListener, Runnable {
+implements ICommandListener, Runnable {
 
     public static Logger a = Logger.getLogger("Minecraft");
     public static HashMap b = new HashMap();
@@ -79,7 +79,7 @@ public class MinecraftServer
         a.info((new StringBuilder()).append("Starting Minecraft server on ").append(s.length() != 0 ? s : "*").append(":").append(i1).toString());
         try {
             c = new NetworkListenThread(this, inetaddress, i1);
-        // CraftBukkit: Be more generic; IOException -> Throwable
+            // CraftBukkit: Be more generic; IOException -> Throwable
         } catch (Throwable ioexception) {
             a.warning("**** FAILED TO BIND TO PORT!");
             a.log(Level.WARNING, (new StringBuilder()).append("The exception was: ").append(ioexception.toString()).toString());

@@ -14,7 +14,7 @@ import org.bukkit.event.player.PlayerMoveEvent;
 
 
 public class NetServerHandler extends NetHandler
-        implements ICommandListener {
+implements ICommandListener {
 
     public static Logger a = Logger.getLogger("Minecraft");
     public NetworkManager b;
@@ -394,7 +394,7 @@ public class NetServerHandler extends NetHandler
             server.getPluginManager().callEvent(event);
             s = (new StringBuilder()).append("<").append(event.getPlayer().getName()).append("> ").append(event.getMessage()).toString();
             // CraftBukkit stop
-            
+
             a.info(s);
             d.f.a(new Packet3Chat(s));
         }
