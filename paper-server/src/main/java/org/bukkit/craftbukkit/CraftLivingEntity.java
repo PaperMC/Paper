@@ -7,7 +7,7 @@ import org.bukkit.LivingEntity;
 
 public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     private EntityLiving entity;
-    
+
     public CraftLivingEntity(final CraftServer server, final EntityLiving entity) {
         super(server, entity);
         this.entity = entity;

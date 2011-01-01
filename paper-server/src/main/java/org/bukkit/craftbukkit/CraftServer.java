@@ -1,15 +1,12 @@
-
 package org.bukkit.craftbukkit;
 
 import java.io.File;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.minecraft.server.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ServerConfigurationManager;
-import net.minecraft.server.WorldServer;
 import org.bukkit.*;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.SimplePluginManager;
