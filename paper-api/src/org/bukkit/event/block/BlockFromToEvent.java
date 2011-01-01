@@ -2,12 +2,13 @@ package org.bukkit.event.block;
 
 import org.bukkit.Block;
 import org.bukkit.BlockFace;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 
 /**
  * Holds information for events with a source block and a destination block
  */
-public class BlockFromToEvent extends BlockEvent {
+public class BlockFromToEvent extends BlockEvent implements Cancellable {
     protected Block from;
 	protected BlockFace face;
 
@@ -34,4 +35,16 @@ public class BlockFromToEvent extends BlockEvent {
     public Block getFromBlock() {
     	return from; 
     }
+
+	@Override
+	public boolean isCancelled() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void setCancelled(boolean cancel) {
+		// TODO Auto-generated method stub
+		
+	}
 }

@@ -27,7 +27,7 @@ public class BlockListener implements Listener {
      *
      * @param event Relevant event details
      */
-    public void onBlockFlow(BlockFlowEvent event) {
+    public void onBlockFlow(BlockFromToEvent event) {
     }
 
     /**
