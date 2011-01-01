@@ -35,7 +35,7 @@ public class SampleBlockListener extends BlockListener {
     	Block block = event.getBlock();
     	
     	if (block.getType() == 81) {
-    		event.setCancelled(true);
+    		event.setCancelled(false);
     	}
     }
 }
