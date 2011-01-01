@@ -3,6 +3,7 @@ package com.dinnerbone.bukkit.sample;
 
 import org.bukkit.Block;
 import org.bukkit.BlockFace;
+import org.bukkit.Material;
 import org.bukkit.event.block.BlockCanBuildEvent;
 import org.bukkit.event.block.BlockListener;
 import org.bukkit.event.block.BlockPhysicsEvent;
@@ -22,9 +23,9 @@ public class SampleBlockListener extends BlockListener {
     public void onBlockPhysics(BlockPhysicsEvent event) {
         Block block = event.getBlock();
 
-        if ((block.getType() == 12) || (block.getType() == 13)) {
+        if ((block.getType() == Material.Sand) || (block.getType() == Material.Gravel)) {
             Block above = block.getFace(BlockFace.Up);
-            if (above.getType() == 42) {
+            if (above.getType() == Material.IronBlock) {
                 event.setCancelled(true);
             }
         }
@@ -34,7 +35,7 @@ public class SampleBlockListener extends BlockListener {
     public void onBlockCanBuild(BlockCanBuildEvent event) {
     	Block block = event.getBlock();
     	
-    	if (block.getType() == 81) {
+    	if (block.getType() == Material.Cactus) {
     		event.setCancelled(false);
     	}
     }
