@@ -12,12 +12,12 @@ import org.bukkit.event.Cancellable;
  */
 public class BlockCanBuildEvent extends BlockEvent {
 	protected boolean buildable;
-	protected Material material;
+	protected int material;
 	
-	public BlockCanBuildEvent(Type type, Block block, Material mat, boolean canBuild) {
+	public BlockCanBuildEvent(Type type, Block block, int id, boolean canBuild) {
 		super(type, block);
 		buildable = canBuild;
-		material = mat;
+		material = id;
 	}
 
 	/**
@@ -38,10 +38,10 @@ public class BlockCanBuildEvent extends BlockEvent {
 	}
 	
 	public Material getMaterial() {
-		return material;
+		return Material.getMaterial(material);
 	}
 	
 	public int getMaterialID() {
-		return material.getID();
+		return material;
 	}
 }
