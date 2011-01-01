@@ -8,12 +8,12 @@ import org.bukkit.event.Event;
  */
 public class BlockIgniteEvent extends Event {
 
-	/**
-	 * @param type
-	 */
-	public BlockIgniteEvent(Type type) {
-		super(type);
-		// TODO Auto-generated constructor stub
-	}
+    /**
+     * @param type
+     */
+    public BlockIgniteEvent(Type type) {
+        super(type);
+        // TODO Auto-generated constructor stub
+    }
 
 }

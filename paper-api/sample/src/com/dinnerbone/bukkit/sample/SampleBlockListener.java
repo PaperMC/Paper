@@ -30,13 +30,13 @@ public class SampleBlockListener extends BlockListener {
             }
         }
     }
-    
+
     @Override
     public void onBlockCanBuild(BlockCanBuildEvent event) {
-    	Material mat = event.getMaterial();
-    	
-    	if (mat.equals(Material.Cactus)) {
-    		event.setBuildable(true);
-    	}
+        Material mat = event.getMaterial();
+
+        if (mat.equals(Material.Cactus)) {
+            event.setBuildable(true);
+        }
     }
 }
