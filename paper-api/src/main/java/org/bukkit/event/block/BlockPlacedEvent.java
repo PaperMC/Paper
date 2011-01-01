@@ -18,13 +18,11 @@ public class BlockPlacedEvent extends BlockEvent implements Cancellable {
 		cancel = false;
 	}
 
-	@Override
 	public boolean isCancelled() {
 		// TODO Auto-generated method stub
 		return cancel;
 	}
 
-	@Override
 	public void setCancelled(boolean cancel) {
 		this.cancel = cancel;
 	}
