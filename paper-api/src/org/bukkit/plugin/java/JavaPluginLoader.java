@@ -14,8 +14,7 @@ import java.util.regex.Pattern;
 import org.bukkit.Server;
 import org.bukkit.event.Event;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockListener;
-import org.bukkit.event.block.BlockPhysicsEvent;
+import org.bukkit.event.block.*;
 import org.bukkit.event.player.*;
 import org.bukkit.plugin.*;
 
@@ -112,6 +111,12 @@ public final class JavaPluginLoader implements PluginLoader {
                 case BLOCK_PHYSICS:
                     trueListener.onBlockPhysics((BlockPhysicsEvent)event);
                     break;
+                case BLOCK_CANBUILD:
+                	trueListener.onBlockCanBuild((BlockCanBuildEvent)event);
+                	break;
+                case BLOCK_FLOW:
+                	trueListener.onBlockFlow((BlockFromToEvent)event);
+                	break;
             }
         }
     }

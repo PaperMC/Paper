@@ -76,7 +76,8 @@ public abstract class Event {
         /** 
     	 * Block Events
     	 */
-        BLOCK_DAMAGED (Category.BLOCK),
+        BLOCK_BROKEN (Category.BLOCK),
+        BLOCK_CANBUILD (Category.BLOCK),
         BLOCK_FLOW (Category.BLOCK),
         BLOCK_IGNITE (Category.BLOCK),
         BLOCK_PHYSICS (Category.BLOCK),

@@ -3,12 +3,13 @@ package org.bukkit.event.player;
 
 import org.bukkit.Location;
 import org.bukkit.Player;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 
 /**
  * Holds information for player movement and teleportation events
  */
-public class PlayerMoveEvent extends PlayerEvent {
+public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
     private boolean cancel = false;
     private Location from;
     private Location to;

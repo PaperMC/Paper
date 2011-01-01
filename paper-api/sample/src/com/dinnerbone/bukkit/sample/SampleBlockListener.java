@@ -3,6 +3,7 @@ package com.dinnerbone.bukkit.sample;
 
 import org.bukkit.Block;
 import org.bukkit.BlockFace;
+import org.bukkit.event.block.BlockCanBuildEvent;
 import org.bukkit.event.block.BlockListener;
 import org.bukkit.event.block.BlockPhysicsEvent;
 
@@ -27,5 +28,14 @@ public class SampleBlockListener extends BlockListener {
                 event.setCancelled(true);
             }
         }
+    }
+    
+    @Override
+    public void onBlockCanBuild(BlockCanBuildEvent event) {
+    	Block block = event.getBlock();
+    	
+    	if (block.getType() == 81) {
+    		event.setCancelled(false);
+    	}
     }
 }

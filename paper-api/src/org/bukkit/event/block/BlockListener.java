@@ -23,11 +23,17 @@ public class BlockListener implements Listener {
     }
 
     /**
+     * Called when we try to place a block, to see if we can build it
+     */
+    public void onBlockCanBuild(BlockCanBuildEvent event) {
+    }
+    
+    /**
      * Called when a block flows (water/lava)
      *
      * @param event Relevant event details
      */
-    public void onBlockFlow(BlockFlowEvent event) {
+    public void onBlockFlow(BlockFromToEvent event) {
     }
 
     /**
