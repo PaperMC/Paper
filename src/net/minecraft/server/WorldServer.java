@@ -4,6 +4,8 @@ import java.io.File;
 import java.util.Random;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.bukkit.Material;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.Event;
@@ -93,10 +95,10 @@ public class WorldServer extends World {
     	boolean superResult = super.a(i1, j1, k1, l1, flag); 
     	
     	if (!flag) {
-	    	BlockCanBuildEvent event = new BlockCanBuildEvent(Type.BLOCK_CANBUILD, getWorld().getBlockAt(j1, k1, l1), !superResult);
+	    	BlockCanBuildEvent event = new BlockCanBuildEvent(Type.BLOCK_CANBUILD, getWorld().getBlockAt(j1, k1, l1), Material.getMaterial(i1), superResult);
 	    	server.getPluginManager().callEvent(event);
 	    	
-	    	return !event.isCancelled();
+	    	return event.isBuildable();
     	} else {
     		return superResult;
     	}
