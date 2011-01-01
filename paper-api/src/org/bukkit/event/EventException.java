@@ -1,7 +1,8 @@
 package org.bukkit.event;
 
 public class EventException extends Exception {
-    private final Throwable cause;
+	private static final long serialVersionUID = 3532808232324183999L;
+	private final Throwable cause;
 
     /**
      * Constructs a new EventException based on the given Exception
