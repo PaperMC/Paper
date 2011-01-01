@@ -4,18 +4,20 @@
 package org.bukkit.event.block;
 
 import org.bukkit.Block;
+import org.bukkit.Material;
 import org.bukkit.event.Cancellable;
 
 /**
  * @author durron597
  */
-public class BlockCanBuildEvent extends BlockEvent implements Cancellable {
-	protected boolean cancel;
+public class BlockCanBuildEvent extends BlockEvent {
+	protected boolean buildable;
+	protected Material material;
 	
-	public BlockCanBuildEvent(Type type, Block block, boolean canBuild) {
+	public BlockCanBuildEvent(Type type, Block block, Material mat, boolean canBuild) {
 		super(type, block);
-		
-		cancel = canBuild;
+		buildable = canBuild;
+		material = mat;
 	}
 
 	/**
@@ -24,16 +26,22 @@ public class BlockCanBuildEvent extends BlockEvent implements Cancellable {
 	 * 
 	 * @return boolean whether or not the block can be built
 	 */
-	@Override
-	public boolean isCancelled() {
-		return cancel;
+	public boolean isBuildable() {
+		return buildable;
 	}
 	
 	/**
 	 * Set whether the block can be built here.
 	 */
-	@Override
-	public void setCancelled(boolean cancel) {
-		this.cancel = cancel;
+	public void setBuildable(boolean cancel) {
+		this.buildable = cancel;
+	}
+	
+	public Material getMaterial() {
+		return material;
+	}
+	
+	public int getMaterialID() {
+		return material.getID();
 	}
 }
