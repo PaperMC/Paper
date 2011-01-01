@@ -25,7 +25,7 @@ public interface Entity {
      * @param location New location to teleport this entity to
      */
     public void teleportTo(Location location);
-    
+
     /**
      * Returns a unique ID for this entity
      * 

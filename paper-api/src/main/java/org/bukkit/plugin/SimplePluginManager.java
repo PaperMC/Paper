@@ -81,7 +81,7 @@ public final class SimplePluginManager implements PluginManager {
             } catch (InvalidPluginException ex) {
                 Logger.getLogger(SimplePluginManager.class.getName()).log(Level.SEVERE, "Could not load " + file.getPath() + " in " + directory.getPath(), ex);
             }
-            
+
             if (plugin != null) {
                 result.add(plugin);
             }
@@ -120,7 +120,7 @@ public final class SimplePluginManager implements PluginManager {
 
         return result;
     }
-    
+
     /**
      * Checks if the given plugin is loaded and returns it when applicable
      *
@@ -203,7 +203,7 @@ public final class SimplePluginManager implements PluginManager {
                 if (registration.getPriority().compareTo(priority) < 0) {
                     break;
                 }
-                
+
                 position++;
             }
         } else {

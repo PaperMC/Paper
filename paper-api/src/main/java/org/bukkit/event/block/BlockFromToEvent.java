@@ -10,9 +10,9 @@ import org.bukkit.event.Event;
  */
 public class BlockFromToEvent extends BlockEvent implements Cancellable {
     protected Block from;
-	protected BlockFace face;
-	protected boolean cancel;
-	
+    protected BlockFace face;
+    protected boolean cancel;
+
     public BlockFromToEvent(final Event.Type type, final Block block, final BlockFace face) {
         super(type, block);
         this.face = face;
@@ -28,21 +28,21 @@ public class BlockFromToEvent extends BlockEvent implements Cancellable {
     public BlockFace getFace() {
         return face;
     }
-    
+
     /**
      * Convenience method for getting the faced block
      * 
      * @return Block the faced block
      */
     public Block getFromBlock() {
-    	return from; 
+        return from; 
     }
 
-	public boolean isCancelled() {
-		return cancel;
-	}
+    public boolean isCancelled() {
+        return cancel;
+    }
 
-	public void setCancelled(boolean cancel) {
-		this.cancel = cancel;
-	}
+    public void setCancelled(boolean cancel) {
+        this.cancel = cancel;
+    }
 }

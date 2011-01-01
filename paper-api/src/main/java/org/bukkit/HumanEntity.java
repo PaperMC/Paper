@@ -11,7 +11,7 @@ public interface HumanEntity extends LivingEntity {
      * @return Player name
      */
     public String getName();
-    
+
     /**
      * Gets the item this entity has currently selected, which will be shown in
      * their hand
