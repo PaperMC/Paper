@@ -55,10 +55,8 @@ public class WorldServer extends World {
     public CraftServer getServer() {
         return server;
     }
-    // CraftBukkit stop
 
-    // CraftBukkit start - note: the following methods are straight from the
-    // World.java with tweaks as noted. KEEP THEM UPDATED!
+    // XXX: the following method is straight from the World.java with tweaks as noted. KEEP THEM UPDATED!
     @Override
     public void g(int i1, int j1, int k1, int l1) {
         k(i1 - 1, j1, k1, l1);
@@ -69,6 +67,7 @@ public class WorldServer extends World {
         k(i1, j1, k1 + 1, l1);
     }
 
+    // XXX: the following method is straight from the World.java with tweaks as noted. KEEP THEM UPDATED!
     private void k(int i1, int j1, int k1, int l1) {
         if (i || z) {
             return;
@@ -87,10 +86,9 @@ public class WorldServer extends World {
             block.b(this, i1, j1, k1, l1);
         }
     }
-    // CraftBukkit stop
 
-    // CraftBukkit start
     @Override
+    // XXX: the following method is straight from the World.java with tweaks as noted. KEEP THEM UPDATED!
     public boolean a(int i1, int j1, int k1, int l1, boolean flag) {
         boolean superResult = super.a(i1, j1, k1, l1, flag); 
 
