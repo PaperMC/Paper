@@ -95,7 +95,7 @@ public class WorldServer extends World {
     	boolean superResult = super.a(i1, j1, k1, l1, flag); 
     	
     	if (!flag) {
-	    	BlockCanBuildEvent event = new BlockCanBuildEvent(Type.BLOCK_CANBUILD, getWorld().getBlockAt(j1, k1, l1), Material.getMaterial(i1), superResult);
+	    	BlockCanBuildEvent event = new BlockCanBuildEvent(Type.BLOCK_CANBUILD, getWorld().getBlockAt(j1, k1, l1), i1, superResult);
 	    	server.getPluginManager().callEvent(event);
 	    	
 	    	return event.isBuildable();
