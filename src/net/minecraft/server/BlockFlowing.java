@@ -3,6 +3,7 @@ package net.minecraft.server;
 import java.util.Random;
 
 import org.bukkit.BlockFace;
+import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockFromToEvent;
 
@@ -83,13 +84,13 @@ public class BlockFlowing extends BlockFluids
         }
     	
         // Craftbukkit start
-        org.bukkit.Block source = ((WorldServer) world).getWorld().getBlockAt(i1, j1, k1);
+        CraftBlock source = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i1, j1, k1);
         
         if(l(world, i1, j1 - 1, k1))
         {	
         	// Craftbucket send "down" to the server
         	BlockFromToEvent blockFlow = new BlockFromToEvent(Type.BLOCK_FLOW, source, BlockFace.Down);
-            ((WorldServer) world).callHook(blockFlow);
+            ((WorldServer) world).getServer().getPluginManager().callEvent(blockFlow);
             
         	if (!blockFlow.isCancelled()) {
 	            if(l1 >= 8)
@@ -113,7 +114,7 @@ public class BlockFlowing extends BlockFluids
             	int index = 0;
             	if (aflag[index]) {
 	            	BlockFromToEvent event = new BlockFromToEvent(Type.BLOCK_FLOW, source, currentFace);
-	            	((WorldServer) world).callHook(event);
+	            	((WorldServer) world).getServer().getPluginManager().callEvent(event);
 	            	if (!event.isCancelled())
 	            		f(world, i1 + currentFace.getModX(), j1, k1 + currentFace.getModZ(), k2);
             	}

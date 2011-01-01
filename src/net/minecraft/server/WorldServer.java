@@ -48,8 +48,8 @@ public class WorldServer extends World {
         return world;
     }
     
-    public void callHook(Event event) {
-    	server.getPluginManager().callEvent(event);
+    public CraftServer getServer() {
+    	return server;
     }
     // CraftBukkit stop
 
