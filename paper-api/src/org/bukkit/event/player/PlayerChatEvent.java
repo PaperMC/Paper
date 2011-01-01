@@ -2,11 +2,12 @@
 package org.bukkit.event.player;
 
 import org.bukkit.Player;
+import org.bukkit.event.Cancellable;
 
 /**
  * Holds information for player chat and commands
  */
-public class PlayerChatEvent extends PlayerEvent {
+public class PlayerChatEvent extends PlayerEvent implements Cancellable {
     private boolean cancel = false;
     private String message;
 
