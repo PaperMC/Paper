@@ -8,9 +8,9 @@ package org.bukkit;
 public class Vector implements Cloneable {
     private static final long serialVersionUID = -2657651106777219169L;
     
-    private double x;
-    private double y;
-    private double z;
+    protected double x;
+    protected double y;
+    protected double z;
     
     public Vector(int x, int y, int z) {
         this.x = x;
