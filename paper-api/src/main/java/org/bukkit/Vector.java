@@ -85,7 +85,9 @@ public class Vector implements Cloneable {
     /**
      * Gets the magnitude of the vector, defined as sqrt(x^2+y^2+z^2). The value
      * of this method is not cached and uses a costly square-root function, so
-     * do not repeatedly call this method to get the vector's magnitude.
+     * do not repeatedly call this method to get the vector's magnitude. NaN
+     * will be returned if the inner result of the sqrt() function overflows,
+     * which will be caused if the length is too long.
      * 
      * @return the magnitude
      */
@@ -96,7 +98,9 @@ public class Vector implements Cloneable {
     /**
      * Get the distance between this vector and another.  The value
      * of this method is not cached and uses a costly square-root function, so
-     * do not repeatedly call this method to get the vector's magnitude.
+     * do not repeatedly call this method to get the vector's magnitude. NaN
+     * will be returned if the inner result of the sqrt() function overflows,
+     * which will be caused if the distance is too long.
      * 
      * @return the distance
      */
@@ -224,19 +228,52 @@ public class Vector implements Cloneable {
      * @return whether this vector is in the sphere
      */
     public boolean isInSphere(Vector origin, double radius) {
-        return origin.clone().subtract(this).length() <= radius;
+        return (Math.pow(origin.x - x, 2)
+                + Math.pow(origin.y - y, 2)
+                + Math.pow(origin.z - z, 2))
+                <= Math.pow(radius, 2);
     }
     
     public double getX() {
         return x;
     }
     
+    /**
+     * Gets the floored value of the X component, indicating the block that
+     * this vector is contained with.
+     * 
+     * @return block X
+     */
+    public int getBlockX() {
+        return (int)Math.floor(x);
+    }
+    
     public double getY() {
         return y;
+    }
+
+    /**
+     * Gets the floored value of the Y component, indicating the block that
+     * this vector is contained with.
+     * 
+     * @return block y
+     */
+    public int getBlockY() {
+        return (int)Math.floor(y);
     }
     
     public double getZ() {
         return z;
+    }
+
+    /**
+     * Gets the floored value of the Z component, indicating the block that
+     * this vector is contained with.
+     * 
+     * @return block z
+     */
+    public int getBlockZ() {
+        return (int)Math.floor(z);
     }
     
     public Vector setX(int x) {

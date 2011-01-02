@@ -60,6 +60,16 @@ public class Location implements Cloneable {
     public double getX() {
         return x;
     }
+    
+    /**
+     * Gets the floored value of the X component, indicating the block that
+     * this location is contained with.
+     * 
+     * @return block X
+     */
+    public int getBlockX() {
+        return (int)Math.floor(x);
+    }
 
     /**
      * Sets the y-coordinate of this location
@@ -80,6 +90,16 @@ public class Location implements Cloneable {
     }
 
     /**
+     * Gets the floored value of the Y component, indicating the block that
+     * this location is contained with.
+     * 
+     * @return block y
+     */
+    public int getBlockY() {
+        return (int)Math.floor(y);
+    }
+
+    /**
      * Sets the z-coordinate of this location
      *
      * @param z z-coordinate
@@ -95,6 +115,16 @@ public class Location implements Cloneable {
      */
     public double getZ() {
         return z;
+    }
+
+    /**
+     * Gets the floored value of the Z component, indicating the block that
+     * this location is contained with.
+     * 
+     * @return block z
+     */
+    public int getBlockZ() {
+        return (int)Math.floor(z);
     }
 
     /**
