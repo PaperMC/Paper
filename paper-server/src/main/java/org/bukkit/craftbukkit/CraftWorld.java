@@ -75,7 +75,6 @@ public class CraftWorld implements World {
         return world;
     }
 
-    @Override
     public ArrowEntity spawnArrow(Location loc, Vector velocity, float speed,
             float spread) {
         EntityArrow arrow = new EntityArrow(world);
