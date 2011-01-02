@@ -15,4 +15,16 @@ public interface World {
     public Chunk getChunkAt(Block block);
 
     public boolean isChunkLoaded();
+    
+    /**
+     * Spawns an arrow.
+     * 
+     * @param loc
+     * @param velocity velocity vector
+     * @param speed a reasonable speed is 0.6
+     * @param spread a reasonable spread is 12
+     * @return the arrow entity
+     */
+    public ArrowEntity spawnArrow(Location loc, Vector velocity,
+            float speed, float spread);
 }
