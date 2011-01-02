@@ -5,7 +5,6 @@ import java.util.Random;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bukkit.Material;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.Event;
@@ -149,8 +148,8 @@ public class WorldServer extends World {
         return A;
     }
 
-    public List d(int i, int j, int k, int l, int i1, int j1) {
-        ArrayList arraylist = new ArrayList();
+    public List<TileEntity> d(int i, int j, int k, int l, int i1, int j1) {
+        ArrayList<TileEntity> arraylist = new ArrayList<TileEntity>();
 
         for (int k1 = 0; k1 < c.size(); k1++) {
             TileEntity tileentity = (TileEntity) c.get(k1);

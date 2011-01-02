@@ -1,11 +1,9 @@
 package net.minecraft.server;
 
 
-import java.io.PrintStream;
 import java.util.*;
 import java.util.logging.Logger;
 import org.bukkit.Location;
-import org.bukkit.Player;
 import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.Event.Type;
@@ -26,7 +24,7 @@ implements ICommandListener {
     private double h;
     private double i;
     private boolean j;
-    private Map k;
+    private Map<Integer, Short> k;
 
     // CraftBukkit - next 2 lines
     private final CraftServer server;
@@ -36,7 +34,7 @@ implements ICommandListener {
         c = false;
         f = 0;
         j = true;
-        k = new HashMap();
+        k = new HashMap<Integer, Short>();
         d = minecraftserver;
         b = networkmanager;
         networkmanager.a(this);
@@ -506,7 +504,7 @@ implements ICommandListener {
                 k.put(Integer.valueOf(e.ap.f), Short.valueOf(packet102.d));
                 e.a.b(new Packet106(packet102.a, packet102.d, false));
                 e.ap.a(e, false);
-                ArrayList arraylist = new ArrayList();
+                ArrayList<ItemStack> arraylist = new ArrayList<ItemStack>();
 
                 for (int l = 0; l < e.ap.e.size(); l++) {
                     arraylist.add(((Slot) e.ap.e.get(l)).c());

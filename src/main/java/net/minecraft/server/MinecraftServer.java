@@ -2,8 +2,6 @@ package net.minecraft.server;
 
 
 import java.io.File;
-import java.io.IOException;
-import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -11,7 +9,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,7 +19,7 @@ public class MinecraftServer
 implements ICommandListener, Runnable {
 
     public static Logger a = Logger.getLogger("Minecraft");
-    public static HashMap b = new HashMap();
+    public static HashMap<String, Integer> b = new HashMap<String, Integer>();
     public NetworkListenThread c;
     public PropertyManager d;
     public WorldServer e;
@@ -32,8 +29,8 @@ implements ICommandListener, Runnable {
     int h;
     public String i;
     public int j;
-    private List p;
-    private List q;
+    private List<IUpdatePlayerListBox> p;
+    private List<ServerCommand> q;
     public EntityTracker k;
     public boolean l;
     public boolean m;
@@ -45,8 +42,8 @@ implements ICommandListener, Runnable {
         o = true;
         g = false;
         h = 0;
-        p = new ArrayList();
-        q = Collections.synchronizedList(new ArrayList());
+        p = new ArrayList<IUpdatePlayerListBox>();
+        q = Collections.synchronizedList(new ArrayList<ServerCommand>());
         new ThreadSleepForever(this);
     }
 
@@ -212,9 +209,9 @@ implements ICommandListener, Runnable {
     }
 
     private void h() {
-        ArrayList arraylist = new ArrayList();
+        ArrayList<String> arraylist = new ArrayList<String>();
 
-        for (Iterator iterator = b.keySet().iterator(); iterator.hasNext();) {
+        for (Iterator<String> iterator = b.keySet().iterator(); iterator.hasNext();) {
             String s = (String) iterator.next();
             int k1 = ((Integer) b.get(s)).intValue();
 
