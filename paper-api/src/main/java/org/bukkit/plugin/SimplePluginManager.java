@@ -39,11 +39,11 @@ public final class SimplePluginManager implements PluginManager {
      * @param loader Class name of the PluginLoader to register
      * @throws IllegalArgumentException Thrown when the given Class is not a valid PluginLoader
      */
-    public void RegisterInterface(Class<? extends ClassLoader> loader) throws IllegalArgumentException {
+    public void RegisterInterface(Class<? extends PluginLoader> loader) throws IllegalArgumentException {
         PluginLoader instance;
 
         if (PluginLoader.class.isAssignableFrom(loader)) {
-            Constructor<? extends ClassLoader> constructor;
+            Constructor<? extends PluginLoader> constructor;
             try {
                 constructor = loader.getConstructor(Server.class);
                 instance = (PluginLoader) constructor.newInstance(server);
