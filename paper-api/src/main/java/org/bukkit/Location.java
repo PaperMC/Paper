@@ -179,6 +179,10 @@ public class Location implements Cloneable {
     public String toString() {
         return "Location{" + "world=" + world + "x=" + x + "y=" + y + "z=" + z + "pitch=" + pitch + "yaw=" + yaw + '}';
     }
+    
+    public Vector toVector() {
+        return new Vector(x, y, z);
+    }
 
     @Override
     protected Location clone() {
