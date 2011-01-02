@@ -47,29 +47,38 @@ public abstract class Event {
      */
     public enum Priority {
         /**
-         * Event is critical and must be called near-first
+         * Event call is of very low importance and should be ran first, to allow
+         * other plugins to further customise the outcome
          */
-        Highest,
+        Lowest,
 
         /**
-         * Event is of high importance
-         */
-        High,
-
-        /**
-         * Event is neither important or unimportant, and may be ran normally
-         */
-        Normal,
-
-        /**
-         * Event is of low importance
+         * Event call is of low importance
          */
         Low,
 
         /**
-         * Event is of extremely low importance, most likely just to monitor events, and must be run near-last
+         * Event call is neither important or unimportant, and may be ran normally
          */
-        Lowest
+        Normal,
+
+        /**
+         * Event call is of high importance
+         */
+        High,
+
+        /**
+         * Event call is critical and must have the final say in what happens
+         * to the event
+         */
+        Highest,
+
+        /**
+         * Event is listened to purely for monitoring the outcome of an event.
+         *
+         * No modifications to the event should be made under this priority
+         */
+        Monitor
     }
 
     public enum Category {
