@@ -12,6 +12,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 import org.bukkit.Server;
+import org.bukkit.event.CustomEventListener;
 import org.bukkit.event.Event;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
@@ -118,6 +119,9 @@ public final class JavaPluginLoader implements PluginLoader {
                 trueListener.onBlockFlow((BlockFromToEvent)event);
                 break;
             }
+        } else if(listener instanceof CustomEventListener) {
+            if(event.getType()==Event.Type.CUSTOM_EVENT) 
+                ((CustomEventListener)listener).onCustomEvent(event);
         }
     }
 }

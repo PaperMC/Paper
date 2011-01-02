@@ -6,17 +6,40 @@ package org.bukkit.event;
  */
 public abstract class Event {
     private final Type type;
+    private final String name;
 
     protected Event(final Type type) {
+        exAssert(type != null, "type is null");
+        exAssert(type != Type.CUSTOM_EVENT, "use Event(String) to make custom events");
         this.type = type;
+        this.name = null;
     }
-
+    
+    protected Event(final String name) {
+        exAssert(name != null, "name is null");
+        this.type = Type.CUSTOM_EVENT;
+        this.name = name;
+    }
+    
     /**
      * Gets the Type of this event
-     * @return Server which this event was triggered on
+     * @return Event type that this object represents
      */
-    public Type getType() {
+    public final Type getType() {
         return type;
+    }
+    
+    private void exAssert(boolean b, String s) {
+        if(!b) throw new IllegalArgumentException(s);
+    }
+    
+    /**
+     * Gets the event's name. Should only be used if getType returns null.
+     * @return 
+     */
+    public final String getEventName() {
+        if(type!=Type.CUSTOM_EVENT) return type.toString();
+        else return name;
     }
 
     /**
@@ -83,7 +106,7 @@ public abstract class Event {
         BLOCK_PHYSICS (Category.BLOCK),
         BLOCK_PLACED (Category.BLOCK),
         BLOCK_RIGHTCLICKED (Category.BLOCK),
-        REDSTONE_CHANGE (Category.BLOCK);
+        REDSTONE_CHANGE (Category.BLOCK),
 
 
         /** 
@@ -124,11 +147,13 @@ public abstract class Event {
          * Sign Events (Item events??)
 
         SIGN_SHOW (Category.SIGN),
-        SIGN_CHANGE (Category.SIGN);
+        SIGN_CHANGE (Category.SIGN)
          */
+        
+        CUSTOM_EVENT (Category.CUSTOM);
 
-        private Category category;
-
+        private final Category category;
+        
         private Type(Category category) {
             this.category = category;
         }
