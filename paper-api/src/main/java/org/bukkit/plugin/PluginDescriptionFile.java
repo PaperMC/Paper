@@ -17,6 +17,7 @@ public final class PluginDescriptionFile {
     private String name = null;
     private String main = null;
 
+    @SuppressWarnings("unchecked")
     public PluginDescriptionFile(final InputStream stream) throws InvalidDescriptionException {
         try {
             loadMap((Map<String, Object>)yaml.load(stream));
@@ -29,10 +30,11 @@ public final class PluginDescriptionFile {
      * Loads a PluginDescriptionFile from the specified reader
      * @param reader
      */
+    @SuppressWarnings("unchecked")
     public PluginDescriptionFile(final Reader reader) {
         loadMap((Map<String, Object>)yaml.load(reader));
     }
-
+ 
     /**
      * Creates a new PluginDescriptionFile with the given detailed
      *
