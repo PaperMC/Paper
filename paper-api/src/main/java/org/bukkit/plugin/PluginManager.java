@@ -18,7 +18,7 @@ public interface PluginManager {
      * @param loader Class name of the PluginLoader to register
      * @throws IllegalArgumentException Thrown when the given Class is not a valid PluginLoader
      */
-    public void RegisterInterface(Class loader) throws IllegalArgumentException;
+    public void RegisterInterface(Class<? extends ClassLoader> loader) throws IllegalArgumentException;
 
     /**
      * Checks if the given plugin is loaded and returns it when applicable
