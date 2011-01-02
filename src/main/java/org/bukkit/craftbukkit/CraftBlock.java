@@ -149,4 +149,29 @@ public class CraftBlock implements Block {
     public String toString() {
         return "CraftBlock{" + "world=" + world + "x=" + x + "y=" + y + "z=" + z + "type=" + type + "data=" + data + '}';
     }
+    
+    /**
+     * Notch uses a 0-5 to mean Down, Up, East, West, North, South
+     * in that order all over. This method is convience to convert for us.
+     * 
+     * @return BlockFace the BlockFace represented by this number
+     */
+    public static BlockFace notchToBlockFace(int notch) {
+        switch (notch) {
+        case 0:
+            return BlockFace.Down;
+        case 1:
+            return BlockFace.Up;
+        case 2:
+            return BlockFace.East;
+        case 3:
+            return BlockFace.West;
+        case 4:
+            return BlockFace.North;
+        case 5:
+            return BlockFace.South;
+        default:
+            return BlockFace.Self;
+        }
+    }
 }
