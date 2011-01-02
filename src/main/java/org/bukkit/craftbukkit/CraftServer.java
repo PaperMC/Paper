@@ -49,7 +49,7 @@ public final class CraftServer implements Server {
     }
 
     public Player[] getOnlinePlayers() {
-        List<EntityPlayerMP> online = server.b;
+		List<EntityPlayerMP> online = server.b;
         Player[] players = new Player[online.size()];
 
         for (int i = 0; i < players.length; i++) {

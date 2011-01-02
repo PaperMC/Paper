@@ -14,13 +14,13 @@ import org.bukkit.event.player.PlayerLoginEvent;
 public class ServerConfigurationManager {
 
     public static Logger a = Logger.getLogger("Minecraft");
-    public List b;
+    public List<EntityPlayerMP> b;
     private MinecraftServer c;
     private PlayerManager d;
     private int e;
-    private Set f;
-    private Set g;
-    private Set h;
+    private Set<String> f;
+    private Set<String> g;
+    private Set<String> h;
     private File i;
     private File j;
     private File k;
@@ -30,10 +30,10 @@ public class ServerConfigurationManager {
     public ServerConfigurationManager(MinecraftServer minecraftserver) {
         server = minecraftserver.server; // Craftbukkit
 
-        b = new ArrayList();
-        f = new HashSet();
-        g = new HashSet();
-        h = new HashSet();
+        b = new ArrayList<EntityPlayerMP>();
+        f = new HashSet<String>();
+        g = new HashSet<String>();
+        h = new HashSet<String>();
         c = minecraftserver;
         i = minecraftserver.a("banned-players.txt");
         j = minecraftserver.a("banned-ips.txt");
@@ -205,7 +205,7 @@ public class ServerConfigurationManager {
             PrintWriter printwriter = new PrintWriter(new FileWriter(i, false));
             String s;
 
-            for (Iterator iterator = f.iterator(); iterator.hasNext(); printwriter.println(s)) {
+            for (Iterator<String> iterator = f.iterator(); iterator.hasNext(); printwriter.println(s)) {
                 s = (String) iterator.next();
             }
 
@@ -245,7 +245,7 @@ public class ServerConfigurationManager {
             PrintWriter printwriter = new PrintWriter(new FileWriter(j, false));
             String s;
 
-            for (Iterator iterator = g.iterator(); iterator.hasNext(); printwriter.println(s)) {
+            for (Iterator<String> iterator = g.iterator(); iterator.hasNext(); printwriter.println(s)) {
                 s = (String) iterator.next();
             }
 
@@ -285,7 +285,7 @@ public class ServerConfigurationManager {
             PrintWriter printwriter = new PrintWriter(new FileWriter(k, false));
             String s;
 
-            for (Iterator iterator = h.iterator(); iterator.hasNext(); printwriter.println(s)) {
+            for (Iterator<String> iterator = h.iterator(); iterator.hasNext(); printwriter.println(s)) {
                 s = (String) iterator.next();
             }
 
