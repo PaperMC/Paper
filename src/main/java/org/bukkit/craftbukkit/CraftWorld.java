@@ -4,8 +4,13 @@ package org.bukkit.craftbukkit;
 import java.util.HashMap;
 import java.util.Map;
 import net.minecraft.server.WorldServer;
+import net.minecraft.server.EntityArrow;
+
+import org.bukkit.ArrowEntity;
 import org.bukkit.Block;
 import org.bukkit.Chunk;
+import org.bukkit.Location;
+import org.bukkit.Vector;
 import org.bukkit.World;
 
 public class CraftWorld implements World {
@@ -68,6 +73,16 @@ public class CraftWorld implements World {
 
     public WorldServer getHandle() {
         return world;
+    }
+
+    @Override
+    public ArrowEntity spawnArrow(Location loc, Vector velocity, float speed,
+            float spread) {
+        EntityArrow arrow = new EntityArrow(world);
+        arrow.c(loc.getX(), loc.getY(), loc.getZ());
+        world.a(arrow);
+        arrow.a(velocity.getX(), velocity.getY(), velocity.getZ(), speed, spread);
+        return new CraftArrowEntity(world.getServer(), arrow);
     }
 
     @Override
