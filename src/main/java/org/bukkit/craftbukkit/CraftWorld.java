@@ -54,8 +54,8 @@ public class CraftWorld implements World {
         return getChunkAt(block.getX() << 4, block.getZ() << 4);
     }
 
-    public boolean isChunkLoaded() {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public boolean isChunkLoaded(Chunk chunk) {
+        return world.A.a(chunk.getX(), chunk.getZ());
     }
 
     public Block updateBlock(int x, int y, int z) {
