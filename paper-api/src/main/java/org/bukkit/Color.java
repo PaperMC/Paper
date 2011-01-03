@@ -37,7 +37,7 @@ public enum Color {
 
     @Override
     public String toString() {
-        return "\u00A7" + code;
+        return String.format("\u00A7%x", code);
     }
 
     static {
