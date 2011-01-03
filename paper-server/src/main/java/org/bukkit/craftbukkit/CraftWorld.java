@@ -8,7 +8,7 @@ import net.minecraft.server.WorldGenBigTree;
 import net.minecraft.server.WorldGenTrees;
 import net.minecraft.server.WorldServer;
 import net.minecraft.server.EntityArrow;
-import org.bukkit.ArrowEntity;
+import org.bukkit.Arrow;
 import org.bukkit.Block;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
@@ -79,13 +79,13 @@ public class CraftWorld implements World {
         return world;
     }
 
-    public ArrowEntity spawnArrow(Location loc, Vector velocity, float speed,
+    public Arrow spawnArrow(Location loc, Vector velocity, float speed,
             float spread) {
         EntityArrow arrow = new EntityArrow(world);
         arrow.c(loc.getX(), loc.getY(), loc.getZ());
         world.a(arrow);
         arrow.a(velocity.getX(), velocity.getY(), velocity.getZ(), speed, spread);
-        return new CraftArrowEntity(world.getServer(), arrow);
+        return new CraftArrow(world.getServer(), arrow);
     }
     
     public boolean generateTree(Location loc) {
