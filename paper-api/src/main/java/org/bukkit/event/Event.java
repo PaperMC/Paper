@@ -1,7 +1,4 @@
-
 package org.bukkit.event;
-
-import com.sun.org.apache.bcel.internal.generic.AALOAD;
 
 /**
  * Represents an event
