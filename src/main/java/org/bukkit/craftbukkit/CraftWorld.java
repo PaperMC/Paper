@@ -3,9 +3,11 @@ package org.bukkit.craftbukkit;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
+import net.minecraft.server.WorldGenBigTree;
+import net.minecraft.server.WorldGenTrees;
 import net.minecraft.server.WorldServer;
 import net.minecraft.server.EntityArrow;
-
 import org.bukkit.ArrowEntity;
 import org.bukkit.Block;
 import org.bukkit.Chunk;
@@ -17,6 +19,8 @@ public class CraftWorld implements World {
     private final Map<ChunkCoordinate, Chunk> chunkCache = new HashMap<ChunkCoordinate, Chunk>();
     private final Map<BlockCoordinate, Block> blockCache = new HashMap<BlockCoordinate, Block>();
     private final WorldServer world;
+    
+    private static final Random rand = new Random();
 
     public CraftWorld(WorldServer world) {
         this.world = world;
@@ -82,6 +86,18 @@ public class CraftWorld implements World {
         world.a(arrow);
         arrow.a(velocity.getX(), velocity.getY(), velocity.getZ(), speed, spread);
         return new CraftArrowEntity(world.getServer(), arrow);
+    }
+    
+    public boolean generateTree(Location loc) {
+        WorldGenTrees treeGen = new WorldGenTrees();
+        return treeGen.a(world, rand,
+                loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+    }
+    
+    public boolean generateBigTree(Location loc) {
+        WorldGenBigTree treeGen = new WorldGenBigTree();
+        return treeGen.a(world, rand,
+                loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
     }
 
     @Override
