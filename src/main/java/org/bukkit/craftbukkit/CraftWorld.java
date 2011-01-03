@@ -9,6 +9,7 @@ import java.util.Random;
 import net.minecraft.server.WorldGenBigTree;
 import net.minecraft.server.WorldServer;
 import net.minecraft.server.EntityArrow;
+import net.minecraft.server.WorldGenTrees;
 import org.bukkit.Arrow;
 import org.bukkit.Block;
 import org.bukkit.Chunk;
