@@ -38,7 +38,6 @@ public class CraftMinecart extends CraftVehicle implements Minecart {
         minecart = entity;
     }
 
-    @Override
     public Vector getVelocity() {
         return new Vector(minecart.s, minecart.t, minecart.u);
     }
