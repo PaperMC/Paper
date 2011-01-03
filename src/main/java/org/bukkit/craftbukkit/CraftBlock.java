@@ -11,6 +11,7 @@ public class CraftBlock implements Block {
     private final int z;
     protected int type;
     protected byte data;
+    protected byte light;
 
     protected CraftBlock(final CraftWorld world, final int x, final int y, final int z, final int type, final byte data) {
         this.world = world;
@@ -19,6 +20,19 @@ public class CraftBlock implements Block {
         this.z = z;
         this.type = type;
         this.data = data;
+        this.light = (byte)world.getHandle().i(x, y, z);
+        this.chunk = (CraftChunk)world.getChunkAt(x << 4, z << 4);
+    }
+
+    protected CraftBlock(final CraftWorld world, final int x, final int y,
+            final int z, final int type, final byte data, final byte light) {
+        this.world = world;
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.type = type;
+        this.data = data;
+        this.light = light;
         this.chunk = (CraftChunk)world.getChunkAt(x << 4, z << 4);
     }
 
@@ -121,6 +135,15 @@ public class CraftBlock implements Block {
      */
     public int getTypeID() {
         return type;
+    }
+    
+    /**
+     * Gets the light level between 0-15
+     * 
+     * @return light level
+     */
+    public byte getLightLevel() {
+        return light;
     }
 
     /**
