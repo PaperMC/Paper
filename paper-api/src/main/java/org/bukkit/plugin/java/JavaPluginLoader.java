@@ -19,6 +19,7 @@ import org.bukkit.event.block.*;
 import org.bukkit.event.player.*;
 import org.bukkit.event.server.PluginEvent;
 import org.bukkit.event.server.ServerListener;
+import org.bukkit.event.vehicle.*;
 import org.bukkit.plugin.*;
 
 /**
@@ -130,6 +131,32 @@ public final class JavaPluginLoader implements PluginLoader {
                     break;
                 case PLUGIN_DISABLE:
                     trueListener.onPluginDisabled((PluginEvent)event);
+                    break;
+            }
+        } else if (listener instanceof VehicleListener) {
+            VehicleListener trueListener = (VehicleListener)listener;
+
+            switch (event.getType()) {
+                case VEHICLE_PLACE:
+                    trueListener.onVehiclePlace((VehiclePlaceEvent)event);
+                    break;
+                case VEHICLE_DAMAGE:
+                    trueListener.onVehicleDamage((VehicleDamageEvent)event);
+                    break;
+                case VEHICLE_COLLISION_BLOCK:
+                    trueListener.onVehicleBlockCollision((VehicleBlockCollisionEvent)event);
+                    break;
+                case VEHICLE_COLLISION_ENTITY:
+                    trueListener.onVehicleEntityCollision((VehicleEntityCollisionEvent)event);
+                    break;
+                case VEHICLE_ENTER:
+                    trueListener.onVehicleEnter((VehicleEnterEvent)event);
+                    break;
+                case VEHICLE_EXIT:
+                    trueListener.onVehicleExit((VehicleExitEvent)event);
+                    break;
+                case VEHICLE_MOVE:
+                    trueListener.onVehicleMove((VehicleMoveEvent)event);
                     break;
             }
         } else if(listener instanceof CustomEventListener) {

@@ -337,12 +337,12 @@ public abstract class Event {
         /** 
          * Called when a vehicle is placed by a player
          */
-        VEHICLE_PLACED (Category.VEHICLE),
+        VEHICLE_PLACE (Category.VEHICLE),
 
         /**
          * Called when a vehicle is damaged by a LivingEntity
          */
-        VEHICLE_DAMAGED (Category.VEHICLE),
+        VEHICLE_DAMAGE (Category.VEHICLE),
 
         /**
          * Called when a vehicle collides with an Entity
@@ -357,12 +357,12 @@ public abstract class Event {
         /**
          * Called when a vehicle is entered by a LivingEntity
          */
-        VEHICLE_ENTERED (Category.VEHICLE),
+        VEHICLE_ENTER (Category.VEHICLE),
 
         /**
          * Called when a vehicle is exited by a LivingEntity
          */
-        VEHICLE_EXITED (Category.VEHICLE),
+        VEHICLE_EXIT (Category.VEHICLE),
 
         /**
          * Called when a vehicle moves position in the world
