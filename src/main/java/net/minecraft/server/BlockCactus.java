@@ -4,7 +4,9 @@ import org.bukkit.LivingEntity;
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.CraftEntity;
 import org.bukkit.craftbukkit.CraftLivingEntity;
+import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.event.entity.EntityDamagedByBlockEvent;
+import org.bukkit.event.entity.EntityDamagedEvent;
 
 import java.util.Random;
 
@@ -93,13 +95,16 @@ public class BlockCactus extends Block {
     public void a(World world, int i, int j, int k, Entity entity) {
         // Craftbukkit: ENTITY_DAMAGEBY_BLOCK event
         CraftEntity toPassIn = null;
-        if(entity instanceof EntityLiving)
+        if(entity instanceof EntityPlayerMP)
+        {
+            toPassIn = new CraftPlayer(((WorldServer)world).getServer(), (EntityPlayerMP)entity);
+        } else if(entity instanceof EntityLiving)
         {
             toPassIn = new CraftLivingEntity(((WorldServer)world).getServer(), (EntityLiving)entity);
         }
         if(toPassIn != null)
         {
-            EntityDamagedByBlockEvent edbbe = new EntityDamagedByBlockEvent(((WorldServer)world).getWorld().getBlockAt(i, j, k), toPassIn, 1);
+            EntityDamagedByBlockEvent edbbe = new EntityDamagedByBlockEvent(((WorldServer)world).getWorld().getBlockAt(i, j, k), toPassIn, EntityDamagedEvent.DamageCause.CONTACT, 1);
             ((WorldServer)world).getServer().getPluginManager().callEvent(edbbe);
             if(edbbe.isCancelled()) return;
         }
