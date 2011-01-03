@@ -152,7 +152,7 @@ public class CraftBlock implements Block {
     
     /**
      * Notch uses a 0-5 to mean Down, Up, East, West, North, South
-     * in that order all over. This method is convience to convert for us.
+     * in that order all over. This method is convenience to convert for us.
      * 
      * @return BlockFace the BlockFace represented by this number
      */
