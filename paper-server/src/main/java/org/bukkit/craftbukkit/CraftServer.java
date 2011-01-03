@@ -59,6 +59,18 @@ public final class CraftServer implements Server {
         return players;
     }
 
+    public Player getPlayer(final String name) {
+        Player[] players = getOnlinePlayers();
+
+        for (Player player : players) {
+            if (player.getName().equalsIgnoreCase(name)) {
+                return player;
+            }
+        }
+
+        return null;
+    }
+
     public Player getPlayer(final EntityPlayerMP entity) {
         return entity.a.getPlayer();
     }
