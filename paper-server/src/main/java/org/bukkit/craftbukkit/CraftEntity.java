@@ -6,7 +6,7 @@ import net.minecraft.server.WorldServer;
 import org.bukkit.Location;
 import org.bukkit.World;
 
-public class CraftEntity implements org.bukkit.Entity {
+public abstract class CraftEntity implements org.bukkit.Entity {
     protected final CraftServer server;
     private Entity entity;
 
