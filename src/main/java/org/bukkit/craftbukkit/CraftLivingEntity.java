@@ -2,8 +2,13 @@
 package org.bukkit.craftbukkit;
 
 import net.minecraft.server.Entity;
+import net.minecraft.server.EntityEgg;
 import net.minecraft.server.EntityLiving;
+import net.minecraft.server.EntitySnowball;
+
+import org.bukkit.Egg;
 import org.bukkit.LivingEntity;
+import org.bukkit.Snowball;
 
 public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     private EntityLiving entity;
@@ -38,5 +43,21 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public String toString() {
         return "CraftLivingEntity{" + "id=" + getEntityID() + '}';
+    }
+
+    @Override
+    public Egg throwEgg() {
+        net.minecraft.server.World world = ((CraftWorld)getWorld()).getHandle();
+        EntityEgg egg = new EntityEgg(world, entity);
+        world.a(egg);
+        return new CraftEgg(server, egg);
+    }
+
+    @Override
+    public Snowball throwSnowball() {
+        net.minecraft.server.World world = ((CraftWorld)getWorld()).getHandle();
+        EntitySnowball snowball = new EntitySnowball(world, entity);
+        world.a(snowball);
+        return new CraftSnowball(server, snowball);
     }
 }
