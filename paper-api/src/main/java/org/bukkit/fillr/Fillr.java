@@ -7,7 +7,6 @@ import org.bukkit.plugin.java.*;
 import org.bukkit.event.*;
 
 import java.io.File;
-import java.util.logging.Logger;
 import org.bukkit.event.player.PlayerListener;
 
 public class Fillr extends JavaPlugin {
