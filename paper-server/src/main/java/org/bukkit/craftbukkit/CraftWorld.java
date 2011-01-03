@@ -3,15 +3,20 @@ package org.bukkit.craftbukkit;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import net.minecraft.server.EntityMinecart;
 import java.util.Random;
 import net.minecraft.server.WorldGenBigTree;
-import net.minecraft.server.WorldGenTrees;
 import net.minecraft.server.WorldServer;
 import net.minecraft.server.EntityArrow;
-import org.bukkit.ArrowEntity;
+import net.minecraft.server.WorldGenTrees;
+import org.bukkit.Arrow;
 import org.bukkit.Block;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
+import org.bukkit.Minecart;
+import org.bukkit.PoweredMinecart;
+import org.bukkit.StorageMinecart;
 import org.bukkit.Vector;
 import org.bukkit.World;
 
@@ -79,13 +84,40 @@ public class CraftWorld implements World {
         return world;
     }
 
-    public ArrowEntity spawnArrow(Location loc, Vector velocity, float speed,
+    public Arrow spawnArrow(Location loc, Vector velocity, float speed,
             float spread) {
         EntityArrow arrow = new EntityArrow(world);
         arrow.c(loc.getX(), loc.getY(), loc.getZ());
         world.a(arrow);
         arrow.a(velocity.getX(), velocity.getY(), velocity.getZ(), speed, spread);
-        return new CraftArrowEntity(world.getServer(), arrow);
+        return new CraftArrow(world.getServer(), arrow);
+    }
+    
+    public Minecart spawnMinecart(Location loc) {
+        EntityMinecart minecart = new EntityMinecart(
+                world,
+                loc.getX(), loc.getY(), loc.getZ(),
+                CraftMinecart.Type.Minecart.getID());
+        world.a(minecart);
+        return new CraftMinecart(world.getServer(), minecart);
+    }
+    
+    public StorageMinecart spawnStorageMinecart(Location loc) {
+        EntityMinecart minecart = new EntityMinecart(
+                world,
+                loc.getX(), loc.getY(), loc.getZ(),
+                CraftMinecart.Type.StorageMinecart.getID());
+        world.a(minecart);
+        return new CraftStorageMinecart(world.getServer(), minecart);
+    }
+    
+    public PoweredMinecart spawnPoweredMinecart(Location loc) {
+        EntityMinecart minecart = new EntityMinecart(
+                world,
+                loc.getX(), loc.getY(), loc.getZ(),
+                CraftMinecart.Type.PoweredMinecart.getID());
+        world.a(minecart);
+        return new CraftPoweredMinecart(world.getServer(), minecart);
     }
     
     public boolean generateTree(Location loc) {
