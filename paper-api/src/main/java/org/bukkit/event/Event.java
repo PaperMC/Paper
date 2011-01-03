@@ -326,6 +326,11 @@ public abstract class Event {
         ENTITY_DAMAGEDBY_ENTITY (Category.LIVING_ENTITY),
 
         /**
+         * Called when a LivingEntity is damaged with no source.
+         */
+        ENTITY_DAMAGED(Category.LIVING_ENTITY),
+
+        /**
          * Called when a LivingEntity dies
          */
         ENTITY_DEATH (Category.LIVING_ENTITY),
