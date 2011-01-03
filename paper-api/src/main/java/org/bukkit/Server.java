@@ -29,6 +29,16 @@ public interface Server {
     public Player[] getOnlinePlayers();
 
     /**
+     * Gets a player object by the given username
+     *
+     * This method may not return objects for offline players
+     *
+     * @param name Name to look up
+     * @return Player if it was found, otherwise null
+     */
+    public Player getPlayer(String name);
+
+    /**
      * Gets the PluginManager for interfacing with plugins
      *
      * @return PluginManager for this Server instance
