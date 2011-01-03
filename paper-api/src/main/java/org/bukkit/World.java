@@ -27,4 +27,20 @@ public interface World {
      */
     public ArrowEntity spawnArrow(Location loc, Vector velocity,
             float speed, float spread);
+    
+    /**
+     * Spawns a tree at a location.
+     * 
+     * @param loc
+     * @return whether the tree was created
+     */
+    public boolean generateTree(Location loc);
+    
+    /**
+     * Spawns a big tree at a location.
+     * 
+     * @param loc
+     * @return whether the tree was created
+     */
+    public boolean generateBigTree(Location loc);
 }
