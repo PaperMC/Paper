@@ -15,7 +15,7 @@ public class EntityDamagedByBlockEvent extends EntityEvent implements Cancellabl
     private int damage;
     private boolean cancelled;
 
-    public EntityDamagedByBlockEvent(Block damager, LivingEntity damagee, int damage)
+    public EntityDamagedByBlockEvent(Block damager, Entity damagee, int damage)
     {
         super(Event.Type.ENTITY_DAMAGEDBY_BLOCK, damagee);
         this.damager = damager;

@@ -1,25 +1,26 @@
 package org.bukkit.event.entity;
 
+import org.bukkit.Entity;
 import org.bukkit.LivingEntity;
 import org.bukkit.event.Event;
 
 /**
- * Represents an LivingEntity-related event
+ * Represents an Entity-related event
  */
 public class EntityEvent extends Event {
-    protected LivingEntity entity;
+    protected Entity entity;
 
-    public EntityEvent(final Event.Type type, final LivingEntity what)
+    public EntityEvent(final Event.Type type, final Entity what)
     {
         super(type);
         entity = what;
     }
 
     /**
-     * Returns the LivingEntity involved in this event
-     * @return LivingEntity who is involved in this event
+     * Returns the Entity involved in this event
+     * @return Entity who is involved in this event
      */
-    public final LivingEntity getEntity()
+    public final Entity getEntity()
     {
         return entity;
     }

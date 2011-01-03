@@ -11,11 +11,11 @@ import org.bukkit.event.Event;
  */
 public class EntityDamagedByEntityEvent extends EntityEvent implements Cancellable {
 
-    private LivingEntity damager;
+    private Entity damager;
     private int damage;
     private boolean cancelled;
 
-    public EntityDamagedByEntityEvent(LivingEntity damager, LivingEntity damagee, int damage)
+    public EntityDamagedByEntityEvent(Entity damager, Entity damagee, int damage)
     {
         super(Event.Type.ENTITY_DAMAGEDBY_ENTITY, damagee);
         this.damager = damager;
@@ -49,9 +49,9 @@ public class EntityDamagedByEntityEvent extends EntityEvent implements Cancellab
 
     /**
      * Returns the entity that damaged the player.
-     * @return LivingEntity that damaged the player
+     * @return Entity that damaged the player
      */
-    public LivingEntity getDamager()
+    public Entity getDamager()
     {
         return damager;
     }
