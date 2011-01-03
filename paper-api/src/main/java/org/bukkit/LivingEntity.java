@@ -18,4 +18,14 @@ public interface LivingEntity extends Entity {
      * @param health New health represented from 0-20
      */
     public void setHealth(int health);
+    
+    /**
+     * Throws an egg from the entity.
+     */
+    public Egg throwEgg();
+    
+    /**
+     * Throws a snowball from the entity.
+     */
+    public Snowball throwSnowball();
 }
