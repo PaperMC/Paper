@@ -65,5 +65,24 @@ public class CraftMinecart extends CraftVehicle implements Minecart {
     public int getDamage() {
         return minecart.a;
     }
+    
+    /**
+     * Internal function to convert an MC entity to an appropriate CraftBukkit
+     * entity.
+     * 
+     * @param server
+     * @param minecart
+     * @return
+     */
+    public static CraftMinecart getCraftMinecart(CraftServer server,
+            EntityMinecart minecart) {
+        if (minecart.d == Type.StorageMinecart.getID()) {
+            return new CraftStorageMinecart(server, minecart);
+        } else if (minecart.d == Type.PoweredMinecart.getID()) {
+            return new CraftPoweredMinecart(server, minecart);
+        } else {
+            return new CraftMinecart(server, minecart);
+        }
+    }
 
 }
