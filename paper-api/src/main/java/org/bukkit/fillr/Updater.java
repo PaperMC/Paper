@@ -89,7 +89,7 @@ public class Updater {
 		}
 	}
 
-	private void enablePlugin(FillReader update) {
+	void enablePlugin(FillReader update) {
 		final String name = update.getName();
 		//TODO again with the implicit jar support...
 		File plugin = new File(directory, name + ".jar");
