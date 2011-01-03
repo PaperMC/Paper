@@ -53,7 +53,7 @@ public interface World {
      * @param spread a reasonable spread is 12
      * @return the arrow entity
      */
-    public ArrowEntity spawnArrow(Location loc, Vector velocity,
+    public Arrow spawnArrow(Location loc, Vector velocity,
             float speed, float spread);
     
     /**

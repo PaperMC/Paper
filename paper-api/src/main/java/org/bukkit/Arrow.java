@@ -5,5 +5,5 @@ package org.bukkit;
  * 
  * @author sk89q
  */
-public interface ArrowEntity extends Entity {
+public interface Arrow extends Entity {
 }
