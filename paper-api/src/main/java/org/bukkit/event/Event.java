@@ -318,12 +318,12 @@ public abstract class Event {
          * Called when a LivingEntity is damaged by the environment (for example,
          * falling or lava)
          */
-        ENTITY_DAMAGED_ENVIRONMENT (Category.LIVING_ENTITY),
+        ENTITY_DAMAGEDBY_BLOCK (Category.LIVING_ENTITY),
 
         /**
          * Called when a LivingEntity is damaged by another LivingEntity
          */
-        ENTITY_DAMAGED (Category.LIVING_ENTITY),
+        ENTITY_DAMAGEDBY_ENTITY (Category.LIVING_ENTITY),
 
         /**
          * Called when a LivingEntity dies

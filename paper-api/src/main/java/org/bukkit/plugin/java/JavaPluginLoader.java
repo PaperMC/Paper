@@ -16,6 +16,9 @@ import org.bukkit.event.CustomEventListener;
 import org.bukkit.event.Event;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
+import org.bukkit.event.entity.EntityDamagedByBlockEvent;
+import org.bukkit.event.entity.EntityDamagedByEntityEvent;
+import org.bukkit.event.entity.EntityListener;
 import org.bukkit.event.player.*;
 import org.bukkit.event.server.PluginEvent;
 import org.bukkit.event.server.ServerListener;
@@ -131,6 +134,20 @@ public final class JavaPluginLoader implements PluginLoader {
                     break;
                 case PLUGIN_DISABLE:
                     trueListener.onPluginDisabled((PluginEvent)event);
+                    break;
+            }
+        } else if(listener instanceof EntityListener) {
+            EntityListener trueListener = (EntityListener) listener;
+            switch(event.getType())
+            {
+                case ENTITY_DAMAGEDBY_BLOCK:
+                    trueListener.onEntityDamagedByBlock((EntityDamagedByBlockEvent)event);
+                    break;
+                case ENTITY_DAMAGEDBY_ENTITY:
+                    trueListener.onEntityDamagedByEntity((EntityDamagedByEntityEvent)event);
+                    break;
+                case ENTITY_DEATH:
+                    // TODO: ENTITY_DEATH hook
                     break;
             }
         } else if (listener instanceof VehicleListener) {
