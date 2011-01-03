@@ -161,6 +161,18 @@ public final class SimplePluginManager implements PluginManager {
         }
     }
 
+    public void enablePlugin(final Plugin plugin) {
+        if (!plugin.isEnabled()) {
+            plugin.getPluginLoader().enablePlugin(plugin);
+        }
+    }
+
+    public void disablePlugin(final Plugin plugin) {
+        if (plugin.isEnabled()) {
+            plugin.getPluginLoader().disablePlugin(plugin);
+        }
+    }
+
     /**
      * Calls a player related event with the given details
      *

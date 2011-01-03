@@ -138,4 +138,32 @@ public final class JavaPluginLoader implements PluginLoader {
             }
         }
     }
+
+    public void enablePlugin(final Plugin plugin) {
+        if (!(plugin instanceof JavaPlugin)) {
+            throw new IllegalArgumentException("Plugin is not associated with this PluginLoader");
+        }
+
+        if (plugin.isEnabled()) {
+            JavaPlugin jPlugin = (JavaPlugin)plugin;
+
+            server.getPluginManager().callEvent(new PluginEvent(Event.Type.PLUGIN_ENABLE, plugin));
+            
+            jPlugin.setEnabled(true);
+        }
+    }
+
+    public void disablePlugin(Plugin plugin) {
+        if (!(plugin instanceof JavaPlugin)) {
+            throw new IllegalArgumentException("Plugin is not associated with this PluginLoader");
+        }
+
+        if (!plugin.isEnabled()) {
+            JavaPlugin jPlugin = (JavaPlugin)plugin;
+
+            server.getPluginManager().callEvent(new PluginEvent(Event.Type.PLUGIN_DISABLE, plugin));
+
+            jPlugin.setEnabled(false);
+        }
+    }
 }

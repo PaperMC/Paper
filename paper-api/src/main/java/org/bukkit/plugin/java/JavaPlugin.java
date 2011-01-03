@@ -88,4 +88,21 @@ public abstract class JavaPlugin implements Plugin {
     protected ClassLoader getClassLoader() {
         return classLoader;
     }
+
+    /**
+     * Sets the enabled state of this plugin
+     *
+     * @param enabled true if enabled, otherwise false
+     */
+    protected void setEnabled(final boolean enabled) {
+        if (isEnabled != enabled) {
+            isEnabled = enabled;
+
+            if (isEnabled) {
+                onEnable();
+            }  else {
+                onDisable();
+            }
+        }
+    }
 }

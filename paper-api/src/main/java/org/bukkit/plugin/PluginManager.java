@@ -84,4 +84,22 @@ public interface PluginManager {
      * @param plugin Plugin to register
      */
     public void registerEvent(Event.Type type, Listener listener, Priority priority, Plugin plugin);
+
+    /**
+     * Enables the specified plugin
+     *
+     * Attempting to enable a plugin that is already enabled will have no effect
+     *
+     * @param plugin Plugin to enable
+     */
+    public void enablePlugin(Plugin plugin);
+
+    /**
+     * Disables the specified plugin
+     *
+     * Attempting to disable a plugin that is not enabled will have no effect
+     *
+     * @param plugin Plugin to disable
+     */
+    public void disablePlugin(Plugin plugin);
 }
