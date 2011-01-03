@@ -19,7 +19,7 @@ public class Downloader {
 	 * @param url
 	 *            The url to download from
 	 */
-	public static void downloadJar(String url) throws Exception {
+	static void downloadJar(String url) throws Exception {
 		int index = url.lastIndexOf('/');
 		String name = url.substring(index + 1);
 
@@ -37,14 +37,14 @@ public class Downloader {
 	}
 
 	/**
-	 * Downloads the file for a given plugin (if it's updatr file exists);
+	 * Downloads the file for a given plugin 
 	 * 
 	 * @param name
 	 *            The name of the plugin to download
 	 * @param player
 	 *            The player to send info to
 	 */
-	public void downloadFile(String name, Player player) throws Exception {
+	void downloadFile(String name, Player player) throws Exception {
 		File file = new File(directory, name + ".jar");
 		if (file.exists()) {
 			player.sendMessage("Downloading " + name + "'s file");
@@ -58,7 +58,7 @@ public class Downloader {
 	}
 
 	/**
-	 * Downloads the file to the Updatr/downloads directory
+	 * Downloads the file to the plugin/downloads directory
 	 * 
 	 * @param u
 	 *            The url of the file to download
@@ -130,7 +130,7 @@ public class Downloader {
 	 *            OutputStream
 	 * @throws IOException
 	 */
-	public static final void copyInputStream(InputStream in, OutputStream out)
+	private static final void copyInputStream(InputStream in, OutputStream out)
 			throws IOException {
 		byte[] buffer = new byte[1024];
 		int len;
@@ -142,18 +142,6 @@ public class Downloader {
 		out.close();
 	}
 
-	/**
-	 * Downloads the new updatr file
-	 * 
-	 * @param url
-	 *            The url pointing to the updatr file
-	 * @param name
-	 *            The name of the plugin
-	 */
-	public static void downloadUpdatr(String url, String name) throws Exception {
-		// try {
-		download(new URL(url), name + ".updatr", Fillr.directory);
-	}
 
 	/**
 	 * Moves the file to the backup folder.
@@ -161,7 +149,7 @@ public class Downloader {
 	 * @param file
 	 *            The file to backup
 	 */
-	public static void backupFile(File file) {
+	private static void backupFile(File file) {
 		if (file.exists()) {
 			System.out.println("Backing up old file: " + file.getName());
 			if (!new File(backup).exists())

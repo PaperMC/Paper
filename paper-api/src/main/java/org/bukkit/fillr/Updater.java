@@ -12,17 +12,17 @@ public class Updater {
 	public static String directory = Fillr.directory;
 	private final Server server;
 	
-	public Updater(Server server) {
+	Updater(Server server) {
 		this.server = server;
 	}
 
 	/**
-	 * Checks and updates the plugins with updatr files
+	 * Checks and updates the plugins
 	 * 
 	 * @param player
 	 *            The player to send info to
 	 */
-	public void updateAll(Player player) { 
+	void updateAll(Player player) { 
 		File folder = new File(directory);
 		File[] files = folder.listFiles(new PluginFilter());
 		if (files.length == 0) {
@@ -48,7 +48,7 @@ public class Updater {
 	 * @param player
 	 *            The player to send info to
 	 */
-	public void update(String string, Player player) {
+	void update(String string, Player player) {
 		//TODO so much .jars
 		File file = new File(directory, string + ".jar");
 		if (file.exists()) {
@@ -68,9 +68,10 @@ public class Updater {
 	 * Downloads the plugin specified by the URLReader
 	 * 
 	 * @param update
-	 *            The URLReader representing the online .updatr file
+	 *            The FillReader with all the plugin info
+	 * @param player The player to send info to
 	 */
-	public void update(FillReader update, Player player) {
+	private void update(FillReader update, Player player) {
 		disablePlugin(update);
 		player.sendMessage("Disabling " + update.getName() + " for update");
 		player.sendMessage("Downloading " + update.getName() + " "
