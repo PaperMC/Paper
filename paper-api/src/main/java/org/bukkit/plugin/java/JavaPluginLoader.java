@@ -17,6 +17,8 @@ import org.bukkit.event.Event;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
 import org.bukkit.event.player.*;
+import org.bukkit.event.server.PluginEvent;
+import org.bukkit.event.server.ServerListener;
 import org.bukkit.plugin.*;
 
 /**
@@ -83,45 +85,57 @@ public final class JavaPluginLoader implements PluginLoader {
             PlayerListener trueListener = (PlayerListener)listener;
 
             switch (event.getType()) {
-            case PLAYER_JOIN:
-                trueListener.onPlayerJoin((PlayerEvent)event);
-                break;
-            case PLAYER_QUIT:
-                trueListener.onPlayerQuit((PlayerEvent)event);
-                break;
-            case PLAYER_COMMAND:
-                trueListener.onPlayerCommand((PlayerChatEvent)event);
-                break;
-            case PLAYER_CHAT:
-                trueListener.onPlayerChat((PlayerChatEvent)event);
-                break;
-            case PLAYER_MOVE:
-                trueListener.onPlayerMove((PlayerMoveEvent)event);
-                break;
-            case PLAYER_TELEPORT:
-                trueListener.onPlayerTeleport((PlayerMoveEvent)event);
-                break;
-            case PLAYER_LOGIN:
-                trueListener.onPlayerLogin((PlayerLoginEvent)event);
-                break;
+                case PLAYER_JOIN:
+                    trueListener.onPlayerJoin((PlayerEvent)event);
+                    break;
+                case PLAYER_QUIT:
+                    trueListener.onPlayerQuit((PlayerEvent)event);
+                    break;
+                case PLAYER_COMMAND:
+                    trueListener.onPlayerCommand((PlayerChatEvent)event);
+                    break;
+                case PLAYER_CHAT:
+                    trueListener.onPlayerChat((PlayerChatEvent)event);
+                    break;
+                case PLAYER_MOVE:
+                    trueListener.onPlayerMove((PlayerMoveEvent)event);
+                    break;
+                case PLAYER_TELEPORT:
+                    trueListener.onPlayerTeleport((PlayerMoveEvent)event);
+                    break;
+                case PLAYER_LOGIN:
+                    trueListener.onPlayerLogin((PlayerLoginEvent)event);
+                    break;
             }
         } else if (listener instanceof BlockListener) {
             BlockListener trueListener = (BlockListener)listener;
 
             switch (event.getType()) {
-            case BLOCK_PHYSICS:
-                trueListener.onBlockPhysics((BlockPhysicsEvent)event);
-                break;
-            case BLOCK_CANBUILD:
-                trueListener.onBlockCanBuild((BlockCanBuildEvent)event);
-                break;
-            case BLOCK_FLOW:
-                trueListener.onBlockFlow((BlockFromToEvent)event);
-                break;
+                case BLOCK_PHYSICS:
+                    trueListener.onBlockPhysics((BlockPhysicsEvent)event);
+                    break;
+                case BLOCK_CANBUILD:
+                    trueListener.onBlockCanBuild((BlockCanBuildEvent)event);
+                    break;
+                case BLOCK_FLOW:
+                    trueListener.onBlockFlow((BlockFromToEvent)event);
+                    break;
+            }
+        } else if(listener instanceof ServerListener) {
+            ServerListener trueListener = (ServerListener)listener;
+
+            switch (event.getType()) {
+                case PLUGIN_ENABLE:
+                    trueListener.onPluginEnabled((PluginEvent)event);
+                    break;
+                case PLUGIN_DISABLE:
+                    trueListener.onPluginDisabled((PluginEvent)event);
+                    break;
             }
         } else if(listener instanceof CustomEventListener) {
-            if(event.getType()==Event.Type.CUSTOM_EVENT) 
+            if(event.getType()==Event.Type.CUSTOM_EVENT) {
                 ((CustomEventListener)listener).onCustomEvent(event);
+            }
         }
     }
 }
