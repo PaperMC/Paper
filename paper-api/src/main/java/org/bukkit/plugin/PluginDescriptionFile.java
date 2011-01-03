@@ -16,6 +16,7 @@ public final class PluginDescriptionFile {
     private static final Yaml yaml = new Yaml(new SafeConstructor());
     private String name = null;
     private String main = null;
+    private String version = null;
 
     @SuppressWarnings("unchecked")
     public PluginDescriptionFile(final InputStream stream) throws InvalidDescriptionException {
@@ -41,8 +42,9 @@ public final class PluginDescriptionFile {
      * @param pluginName Name of this plugin
      * @param mainClass Full location of the main class of this plugin
      */
-    public PluginDescriptionFile(final String pluginName, final String mainClass) {
+    public PluginDescriptionFile(final String pluginName, final String pluginVersion, final String mainClass) {
         name = pluginName;
+        version = pluginVersion;
         main = mainClass;
     }
 
@@ -63,6 +65,15 @@ public final class PluginDescriptionFile {
     public String getName() {
         return name;
     }
+    
+    /**
+     * Returns the version of a plugin
+     *
+     * @return String name
+     */
+    public String getVersion() {
+        return version;
+    }
 
     /**
      * Returns the main class for a plugin
@@ -76,14 +87,14 @@ public final class PluginDescriptionFile {
     private void loadMap(Map<String, Object> map) throws ClassCastException {
         name = (String)map.get("name");
         main = (String)map.get("main");
+        version = (String)map.get("version");
     }
 
     private Map<String, Object> saveMap() {
         Map<String, Object> map = new HashMap<String, Object>();
-
         map.put("name", name);
         map.put("main", main);
-
+        map.put("version", version);
         return map;
     }
 }
