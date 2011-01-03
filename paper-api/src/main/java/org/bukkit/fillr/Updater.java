@@ -10,6 +10,11 @@ import java.util.jar.*;
 
 public class Updater {
 	public static String directory = Fillr.directory;
+	private final Server server;
+	
+	public Updater(Server server) {
+		this.server = server;
+	}
 
 	/**
 	 * Checks and updates the plugins with updatr files
@@ -88,7 +93,7 @@ public class Updater {
 		//TODO again with the implicit jar support...
 		File plugin = new File(directory, name + ".jar");
 		try {
-			Fillr.getInstance().server.getPluginManager().loadPlugin(plugin);
+			server.getPluginManager().loadPlugin(plugin);
 		} catch (InvalidPluginException e) {
 			e.printStackTrace();
 		}
@@ -96,7 +101,7 @@ public class Updater {
 
 	private void disablePlugin(FillReader update) {
 		String name = update.getName();
-		Plugin plugin = Fillr.getInstance().server.getPluginManager().getPlugin(name);
-		Fillr.getInstance().server.getPluginManager().disablePlugin(plugin);
+		Plugin plugin = server.getPluginManager().getPlugin(name);
+		server.getPluginManager().disablePlugin(plugin);
 	}
 }
