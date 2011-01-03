@@ -36,7 +36,7 @@ public final class CraftServer implements Server {
                 Plugin[] plugins = plugins = pluginManager.loadPlugins(pluginFolder);
 
                 for (Plugin plugin : plugins) {
-                    plugin.getPluginLoader().enablePlugin(plugin);
+                    pluginManager.enablePlugin(plugin);
                 }
             } catch (Throwable ex) {
                 Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, "(Is it up to date?)", ex);
