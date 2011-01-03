@@ -1,12 +1,19 @@
 package org.bukkit;
 
+import java.util.Random;
+
 /**
- * Represents a mutable vector.
+ * Represents a mutable vector. Because the components of Vectors are mutable,
+ * storing Vectors long term may be dangerous if passing code modifies the
+ * Vector later. If you want to keep around a Vector, it may be wise to call
+ * <code>clone()</code> in order to get a copy.
  * 
  * @author sk89q
  */
 public class Vector implements Cloneable {
     private static final long serialVersionUID = -2657651106777219169L;
+    
+    private static Random random = new Random();
     
     /**
      * Threshold for fuzzy equals().
@@ -17,18 +24,48 @@ public class Vector implements Cloneable {
     protected double y;
     protected double z;
     
+    /**
+     * Construct the vector with all components as 0.
+     */
+    public Vector() {
+        this.x = 0;
+        this.y = 0;
+        this.z = 0;
+    }
+    
+    /**
+     * Construct the vector with provided integer components.
+     * 
+     * @param x
+     * @param y
+     * @param z
+     */
     public Vector(int x, int y, int z) {
         this.x = x;
         this.y = y;
         this.z = z;
     }
-    
+
+    /**
+     * Construct the vector with provided double components.
+     * 
+     * @param x
+     * @param y
+     * @param z
+     */
     public Vector(double x, double y, double z) {
         this.x = x;
         this.y = y;
         this.z = z;
     }
-    
+
+    /**
+     * Construct the vector with provided float components.
+     * 
+     * @param x
+     * @param y
+     * @param z
+     */
     public Vector(float x, float y, float z) {
         this.x = x;
         this.y = y;
@@ -146,7 +183,6 @@ public class Vector implements Cloneable {
     
     /**
      * Sets this vector to the midpoint between this vector and another.
-     * You may want to use Vector.clone() to keep the old vector unchanged.
      * 
      * @param other
      * @return this same vector (now a midpoint)
@@ -156,6 +192,19 @@ public class Vector implements Cloneable {
         y = (y + other.y) / 2;
         z = (z + other.z) / 2;
         return this;
+    }
+    
+    /**
+     * Gets a new midpoint vector between this vector and another.
+     * 
+     * @param other
+     * @return a new midpoint vector
+     */
+    public Vector getMidpoint(Vector other) {
+        x = (x + other.x) / 2;
+        y = (y + other.y) / 2;
+        z = (z + other.z) / 2;
+        return new Vector(x, y, z);
     }
     
     /**
@@ -245,6 +294,18 @@ public class Vector implements Cloneable {
     }
     
     /**
+     * Zero this vector's components.
+     * 
+     * @return the same vector
+     */
+    public Vector zero() {
+        x = 0;
+        y = 0;
+        z = 0;
+        return this;
+    }
+    
+    /**
      * Returns whether this vector is in an axis-aligned bounding box.
      * The minimum and maximum vectors given must be truly the minimum and
      * maximum X, Y and Z components.
@@ -273,6 +334,11 @@ public class Vector implements Cloneable {
                 <= Math.pow(radius, 2);
     }
     
+    /**
+     * Gets the X component.
+     * 
+     * @return
+     */
     public double getX() {
         return x;
     }
@@ -287,6 +353,11 @@ public class Vector implements Cloneable {
         return (int)Math.floor(x);
     }
     
+    /**
+     * Gets the Y component.
+     * 
+     * @return
+     */
     public double getY() {
         return y;
     }
@@ -301,6 +372,11 @@ public class Vector implements Cloneable {
         return (int)Math.floor(y);
     }
     
+    /**
+     * Gets the Z component.
+     * 
+     * @return
+     */
     public double getZ() {
         return z;
     }
@@ -315,54 +391,111 @@ public class Vector implements Cloneable {
         return (int)Math.floor(z);
     }
     
+    /**
+     * Set the X component.
+     * 
+     * @param x
+     * @return x
+     */
     public Vector setX(int x) {
         this.x = x;
         return this;
     }
-    
+
+    /**
+     * Set the X component.
+     * 
+     * @param x
+     * @return x
+     */
     public Vector setX(double x) {
         this.x = x;
         return this;
     }
-    
+
+    /**
+     * Set the X component.
+     * 
+     * @param x
+     * @return x
+     */
     public Vector setX(float x) {
         this.x = x;
         return this;
     }
-    
+
+    /**
+     * Set the Y component.
+     * 
+     * @param y
+     * @return y
+     */
     public Vector setY(int y) {
         this.y = y;
         return this;
     }
-    
+
+    /**
+     * Set the Y component.
+     * 
+     * @param y
+     * @return y
+     */
     public Vector setY(double y) {
         this.y = y;
         return this;
     }
-    
+
+    /**
+     * Set the Y component.
+     * 
+     * @param y
+     * @return y
+     */
     public Vector setY(float y) {
         this.y = y;
         return this;
     }
-    
+
+    /**
+     * Set the Z component.
+     * 
+     * @param z
+     * @return z
+     */
     public Vector setZ(int z) {
         this.z = z;
         return this;
     }
-    
+
+    /**
+     * Set the Z component.
+     * 
+     * @param z
+     * @return z
+     */
     public Vector setZ(double z) {
         this.z = z;
         return this;
     }
-    
+
+    /**
+     * Set the Z component.
+     * 
+     * @param z
+     * @return z
+     */
     public Vector setZ(float z) {
         this.z = z;
         return this;
     }
 
     /**
-     * Checks to see if two objects are equal. Only two Vectors can ever
-     * return true
+     * Checks to see if two objects are equal.
+     * 
+     * Only two Vectors can ever return true. This method uses a fuzzy match
+     * to account for floating point errors. The epsilon can be retrieved
+     * with epsilon. 
      */
     @Override
     public boolean equals(Object obj) {
@@ -377,6 +510,12 @@ public class Vector implements Cloneable {
                 && Math.abs(z - other.z) < epsilon;
     }
 
+    /**
+     * Returns a hash code for this vector. Due to floating point errors, this
+     * hash code should not be used in hash tables of any sort.
+     * 
+     * @return hash code
+     */
     @Override
     public int hashCode() {
         return ((int)Double.doubleToLongBits(x) >> 13) ^
@@ -384,20 +523,41 @@ public class Vector implements Cloneable {
                 (int)Double.doubleToLongBits(z);
     }
 
+    /**
+     * Get a new vector.
+     * 
+     * @return vector
+     */
     @Override
     public Vector clone() {
         return new Vector(x, y, z);
     }
 
+    /**
+     * Returns this vector's components as x,y,z.
+     * 
+     */
     @Override
     public String toString() {
         return x + "," + y + "," + z;
     }
     
+    /**
+     * Gets a Location version of this vector with yaw and pitch being 0.
+     * 
+     * @param world
+     * @return the location
+     */
     public Location toLocation(World world) {
         return new Location(world, x, y, z);
     }
-    
+
+    /**
+     * Gets a Location version of this vector.
+     * 
+     * @param world
+     * @return the location
+     */
     public Location toLocation(World world, float yaw, float pitch) {
         return new Location(world, x, y, z, yaw, pitch);
     }
@@ -437,5 +597,18 @@ public class Vector implements Cloneable {
                 Math.max(v1.x, v2.x),
                 Math.max(v1.y, v2.y),
                 Math.max(v1.z, v2.z));
+    }
+    
+    /**
+     * Gets a random vector with components having a random value between
+     * 0 and 1.
+     * 
+     * @return
+     */
+    public static Vector getRandom() {
+        return new Vector(
+                random.nextDouble(),
+                random.nextDouble(),
+                random.nextDouble());
     }
 }
