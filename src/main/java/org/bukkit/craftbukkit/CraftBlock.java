@@ -138,11 +138,11 @@ public class CraftBlock implements Block {
     }
     
     /**
-     * Gets the light level between 0-15.
+     * Gets the light level between 0-15
      * 
      * @return light level
      */
-    public int getLightLevel() {
+    public byte getLightLevel() {
         return light;
     }
 
