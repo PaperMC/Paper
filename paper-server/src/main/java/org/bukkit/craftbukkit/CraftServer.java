@@ -8,6 +8,7 @@ import net.minecraft.server.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ServerConfigurationManager;
 import org.bukkit.*;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.SimplePluginManager;
 import org.bukkit.plugin.java.JavaPluginLoader;
@@ -29,11 +30,16 @@ public final class CraftServer implements Server {
         pluginManager.RegisterInterface(JavaPluginLoader.class);
 
         File pluginFolder = new File("plugins");
+
         if (pluginFolder.exists()) {
             try {
-                pluginManager.loadPlugins(pluginFolder);
+                Plugin[] plugins = plugins = pluginManager.loadPlugins(pluginFolder);
+
+                for (Plugin plugin : plugins) {
+                    plugin.getPluginLoader().enablePlugin(plugin);
+                }
             } catch (Throwable ex) {
-                Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, "(Did you extract the lib folder?)", ex);
+                Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, "(Is it up to date?)", ex);
             }
         } else {
             pluginFolder.mkdir();
