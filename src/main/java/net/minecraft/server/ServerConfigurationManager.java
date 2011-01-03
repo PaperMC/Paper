@@ -28,6 +28,7 @@ public class ServerConfigurationManager {
     private CraftServer server; // Craftbukkit
 
     public ServerConfigurationManager(MinecraftServer minecraftserver) {
+        minecraftserver.server = new CraftServer(minecraftserver, this); // CraftBukkit
         server = minecraftserver.server; // Craftbukkit
 
         b = new ArrayList<EntityPlayerMP>();

@@ -90,8 +90,6 @@ implements ICommandListener, Runnable {
             a.warning("To change this, set \"online-mode\" to \"true\" in the server.settings file.");
         }
 
-        server = new CraftServer(this, "1.1"); // CraftBukkit
-
         f = new ServerConfigurationManager(this);
         k = new EntityTracker(this);
         String s1 = d.a("level-name", "world");
