@@ -45,7 +45,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         return "CraftLivingEntity{" + "id=" + getEntityID() + '}';
     }
 
-    @Override
     public Egg throwEgg() {
         net.minecraft.server.World world = ((CraftWorld)getWorld()).getHandle();
         EntityEgg egg = new EntityEgg(world, entity);
@@ -53,7 +52,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         return new CraftEgg(server, egg);
     }
 
-    @Override
     public Snowball throwSnowball() {
         net.minecraft.server.World world = ((CraftWorld)getWorld()).getHandle();
         EntitySnowball snowball = new EntitySnowball(world, entity);
