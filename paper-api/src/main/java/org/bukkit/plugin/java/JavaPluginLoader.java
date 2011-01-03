@@ -137,8 +137,8 @@ public final class JavaPluginLoader implements PluginLoader {
             VehicleListener trueListener = (VehicleListener)listener;
 
             switch (event.getType()) {
-                case VEHICLE_PLACE:
-                    trueListener.onVehiclePlace((VehiclePlaceEvent)event);
+                case VEHICLE_CREATE:
+                    trueListener.onVehicleCreate((VehicleCreateEvent)event);
                     break;
                 case VEHICLE_DAMAGE:
                     trueListener.onVehicleDamage((VehicleDamageEvent)event);

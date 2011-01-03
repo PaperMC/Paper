@@ -7,11 +7,12 @@ package org.bukkit.event.vehicle;
  */
 public class VehicleListener {
     /**
-     * Called when a vehicle is placed by a player.
+     * Called when a vehicle is created by a player. This hook will be called
+     * for all vehicles created.
      * 
      * @param event
      */
-    public void onVehiclePlace(VehiclePlaceEvent event) {
+    public void onVehicleCreate(VehicleCreateEvent event) {
     }
     
     /**

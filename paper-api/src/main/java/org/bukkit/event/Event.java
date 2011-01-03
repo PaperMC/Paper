@@ -337,7 +337,7 @@ public abstract class Event {
         /** 
          * Called when a vehicle is placed by a player
          */
-        VEHICLE_PLACE (Category.VEHICLE),
+        VEHICLE_CREATE (Category.VEHICLE),
 
         /**
          * Called when a vehicle is damaged by a LivingEntity
