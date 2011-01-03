@@ -101,6 +101,15 @@ public class Vector implements Cloneable {
     }
     
     /**
+     * Gets the magnitude of the vector squared.
+     * 
+     * @return the magnitude
+     */
+    public double lengthSquared() {
+        return Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2);
+    }
+    
+    /**
      * Get the distance between this vector and another.  The value
      * of this method is not cached and uses a costly square-root function, so
      * do not repeatedly call this method to get the vector's magnitude. NaN
@@ -112,6 +121,41 @@ public class Vector implements Cloneable {
     public double distance(Vector o) {
         return Math.sqrt(Math.pow(x - o.x, 2) + Math.pow(y - o.y, 2)
                 + Math.pow(z - o.z, 2));
+    }
+    
+    /**
+     * Get the squared distance between this vector and another.
+     * 
+     * @return the distance
+     */
+    public double distanceSquared(Vector o) {
+        return Math.pow(x - o.x, 2) + Math.pow(y - o.y, 2)
+                + Math.pow(z - o.z, 2);
+    }
+    
+    /**
+     * Gets the angle between this vector and another in radians.
+     * 
+     * @param other
+     * @return angle in radians
+     */
+    public float angle(Vector other) {
+        double dot = dot(other) / (length() * other.length());
+        return (float)Math.acos(dot);
+    }
+    
+    /**
+     * Sets this vector to the midpoint between this vector and another.
+     * You may want to use Vector.clone() to keep the old vector unchanged.
+     * 
+     * @param other
+     * @return this same vector (now a midpoint)
+     */
+    public Vector midpoint(Vector other) {
+        x = (x + other.x) / 2;
+        y = (y + other.y) / 2;
+        z = (z + other.z) / 2;
+        return this;
     }
     
     /**
@@ -160,7 +204,7 @@ public class Vector implements Cloneable {
      * @param other
      * @return dot product
      */
-    public double getDotProduct(Vector other) {
+    public double dot(Vector other) {
         return x * other.x + y * other.y + z * other.z;
     }
     
@@ -190,7 +234,7 @@ public class Vector implements Cloneable {
      * 
      * @return the same vector
      */
-    public Vector unitVector() {
+    public Vector normalize() {
         double length = length();
         
         x /= length;
@@ -201,25 +245,15 @@ public class Vector implements Cloneable {
     }
     
     /**
-     * Gets a unit vector of this vector. This vector will not be chagned.
-     * 
-     * @return a brand new vector
-     */
-    public Vector getUnitVector() {
-        double length = length();
-        return new Vector(x / length, y / length, z / length);
-    }
-    
-    /**
-     * Returns whether this vector is in a cuboid. The minimum and maximum
-     * vectors given must be truly the minimum and maximum X, Y and Z
-     * components.
+     * Returns whether this vector is in an axis-aligned bounding box.
+     * The minimum and maximum vectors given must be truly the minimum and
+     * maximum X, Y and Z components.
      * 
      * @param min
      * @param max
-     * @return whether this vector is in the cuboid
+     * @return whether this vector is in the AABB
      */
-    public boolean isInCuboid(Vector min, Vector max) {
+    public boolean isInAABB(Vector min, Vector max) {
         return x >= min.x && x <= max.x
                 && y >= min.y && y <= max.y
                 && z >= min.z && z <= max.z;
