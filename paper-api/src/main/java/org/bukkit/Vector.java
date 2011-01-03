@@ -8,6 +8,11 @@ package org.bukkit;
 public class Vector implements Cloneable {
     private static final long serialVersionUID = -2657651106777219169L;
     
+    /**
+     * Threshold for fuzzy equals().
+     */
+    private static final double epsilon = 0.000001;
+    
     protected double x;
     protected double y;
     protected double z;
@@ -321,6 +326,10 @@ public class Vector implements Cloneable {
         return this;
     }
 
+    /**
+     * Checks to see if two objects are equal. Only two Vectors can ever
+     * return true
+     */
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof Vector)) {
@@ -329,9 +338,9 @@ public class Vector implements Cloneable {
         
         Vector other = (Vector)obj;
         
-        return Double.doubleToLongBits(x) == Double.doubleToLongBits(other.x)
-            && Double.doubleToLongBits(y) == Double.doubleToLongBits(other.y)
-            && Double.doubleToLongBits(z) == Double.doubleToLongBits(other.z);
+        return Math.abs(x - other.x) < epsilon
+                && Math.abs(y - other.y) < epsilon
+                && Math.abs(z - other.z) < epsilon;
     }
 
     @Override
@@ -357,6 +366,15 @@ public class Vector implements Cloneable {
     
     public Location toLocation(World world, float yaw, float pitch) {
         return new Location(world, x, y, z, yaw, pitch);
+    }
+    
+    /**
+     * Get the threshold used for equals().
+     * 
+     * @return
+     */
+    public static double getEpsilon() {
+        return epsilon;
     }
     
     /**
