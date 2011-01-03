@@ -15,17 +15,15 @@ import org.bukkit.plugin.java.JavaPluginLoader;
 
 public final class CraftServer implements Server {
     private final String serverName = "Craftbukkit";
-    private final String serverVersion;
+    private final String serverVersion = "1.1";
     private final PluginManager pluginManager = new SimplePluginManager(this);
 
     protected final MinecraftServer console;
     protected final ServerConfigurationManager server;
 
-    public CraftServer(MinecraftServer instance, String ver) {
-        serverVersion = ver;
-
-        console = instance;
-        server = console.f;
+    public CraftServer(MinecraftServer console, ServerConfigurationManager server) {
+        this.console = console;
+        this.server = server;
 
         pluginManager.RegisterInterface(JavaPluginLoader.class);
 
@@ -55,7 +53,7 @@ public final class CraftServer implements Server {
     }
 
     public Player[] getOnlinePlayers() {
-		List<EntityPlayerMP> online = server.b;
+        List<EntityPlayerMP> online = server.b;
         Player[] players = new Player[online.size()];
 
         for (int i = 0; i < players.length; i++) {
