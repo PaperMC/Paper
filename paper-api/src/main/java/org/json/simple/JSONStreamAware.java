@@ -8,8 +8,8 @@ import java.io.Writer;
  * @author FangYidong<fangyidong@yahoo.com.cn>
  */
 public interface JSONStreamAware {
-	/**
-	 * write JSON string to out.
-	 */
-	void writeJSONString(Writer out) throws IOException;
+    /**
+     * write JSON string to out.
+     */
+    void writeJSONString(Writer out) throws IOException;
 }
