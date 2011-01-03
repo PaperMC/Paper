@@ -21,6 +21,14 @@ public interface World {
     public Block getBlockAt(int x, int y, int z);
 
     /**
+     * Gets the highest non-air coordinate at the given (x,z) location
+     * @param x X-coordinate of the blocks
+     * @param z Z-coordinate of the blocks
+     * @return Y-coordinate of the highest non-air block
+     */
+    public int getHighestBlockYAt(int x, int z);
+
+    /**
      * Gets the chunk at the given location
      *
      * @param x X-coordinate of the chunk
