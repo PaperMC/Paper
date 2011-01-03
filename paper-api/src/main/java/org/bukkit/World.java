@@ -63,7 +63,7 @@ public interface World {
      * @return whether the tree was created
      */
     public boolean generateTree(Location loc);
-    
+
     /**
      * Spawns a big tree at a location.
      * 
@@ -71,4 +71,28 @@ public interface World {
      * @return whether the tree was created
      */
     public boolean generateBigTree(Location loc);
+
+    /**
+     * Spawns a regular passenger minecart.
+     * 
+     * @param loc
+     * @return
+     */
+    public Minecart spawnMinecart(Location loc);
+
+    /**
+     * Spawns a storage minecart.
+     * 
+     * @param loc
+     * @return
+     */
+    public StorageMinecart spawnStorageMinecart(Location loc);
+
+    /**
+     * Spawns a powered minecart.
+     * 
+     * @param loc
+     * @return
+     */
+    public PoweredMinecart spawnPoweredMinecart(Location loc);
 }
