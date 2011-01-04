@@ -52,7 +52,7 @@ public class CraftWorld implements World {
         Chunk chunk = chunkCache.get(loc);
 
         if (chunk == null) {
-            chunk = new CraftChunk(x, z);
+            chunk = new CraftChunk(this, x, z);
             chunkCache.put(loc, chunk);
         }
 
