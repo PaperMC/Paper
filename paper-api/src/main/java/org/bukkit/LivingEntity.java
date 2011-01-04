@@ -28,4 +28,11 @@ public interface LivingEntity extends Entity {
      * Throws a snowball from the entity.
      */
     public Snowball throwSnowball();
+    
+    /**
+     * Shoots an arrow from the entity.
+     * 
+     * @return
+     */
+    public Arrow shootArrow();
 }
