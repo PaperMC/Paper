@@ -35,6 +35,11 @@ public class Main {
                         .ofType(String.class)
                         .describedAs("Hostname or IP");
 
+                acceptsAll(asList("w", "world", "level-name"), "World directory")
+                        .withRequiredArg()
+                        .ofType(String.class)
+                        .describedAs("World dir");
+
                 acceptsAll(asList("p", "port", "server-port"), "Port to listen on")
                         .withRequiredArg()
                         .ofType(Integer.class)
