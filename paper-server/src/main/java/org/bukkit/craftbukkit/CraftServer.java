@@ -87,6 +87,14 @@ public final class CraftServer implements Server {
         return new World[] { console.e.getWorld() };
     }
 
+    public long getTime() {
+        return console.e.e;
+    }
+
+    public void setTime(long time) {
+        console.e.e = time;
+    }
+
     public ServerConfigurationManager getHandle() {
         return server;
     }
