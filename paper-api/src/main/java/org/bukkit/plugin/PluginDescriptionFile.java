@@ -35,7 +35,7 @@ public final class PluginDescriptionFile {
     public PluginDescriptionFile(final Reader reader) {
         loadMap((Map<String, Object>)yaml.load(reader));
     }
- 
+
     /**
      * Creates a new PluginDescriptionFile with the given detailed
      *
@@ -65,7 +65,7 @@ public final class PluginDescriptionFile {
     public String getName() {
         return name;
     }
-    
+
     /**
      * Returns the version of a plugin
      *
@@ -85,9 +85,9 @@ public final class PluginDescriptionFile {
     }
 
     private void loadMap(Map<String, Object> map) throws ClassCastException {
-        name = (String)map.get("name");
-        main = (String)map.get("main");
-        version = (String)map.get("version");
+        name = map.get("name").toString();
+        main = map.get("main").toString();
+        version = map.get("version").toString();
     }
 
     private Map<String, Object> saveMap() {
