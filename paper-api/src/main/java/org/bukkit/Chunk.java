@@ -20,4 +20,10 @@ public interface Chunk {
      */
     int getZ();
 
+    /**
+     * Gets the world containing this chunk
+     *
+     * @return Parent World
+     */
+    World getWorld();
 }

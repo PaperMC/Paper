@@ -1,28 +1,17 @@
-package org.bukkit.event.block;
 
-import org.bukkit.Block;
-import org.bukkit.Player;
+package org.bukkit.event.world;
+
+import org.bukkit.Chunk;
 import org.bukkit.event.Cancellable;
 
 /**
- * Not implemented yet
+ * Called when a chunk is unloaded
  */
-public class BlockPlacedEvent extends BlockEvent implements Cancellable {
-    private boolean cancel;
-    private Player player;
+public class ChunkUnloadedEvent extends ChunkLoadedEvent implements Cancellable {
+    private boolean cancel = false;
 
-    public BlockPlacedEvent(Type type, Block theBlock) {
-        super(type, theBlock);
-        cancel = false;
-    }
-
-    /**
-     * Gets the player who placed this block
-     *
-     * @return Player who placed the block
-     */
-    public Player getPlayer() {
-        return player;
+    public ChunkUnloadedEvent(final Type type, final Chunk chunk) {
+        super(type, chunk);
     }
 
     /**
@@ -44,5 +33,4 @@ public class BlockPlacedEvent extends BlockEvent implements Cancellable {
     public void setCancelled(boolean cancel) {
         this.cancel = cancel;
     }
-
 }
