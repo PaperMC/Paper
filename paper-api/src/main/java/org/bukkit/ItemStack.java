@@ -26,6 +26,16 @@ public class ItemStack {
         this(type.getID(), amount);
     }
 
+    public ItemStack(final int type, final int amount, final byte damage) {
+        this.type = type;
+        this.amount = amount;
+        this.damage = damage;
+    }
+
+    public ItemStack(final Material type, final int amount, final byte damage) {
+        this(type.getID(), amount, damage);
+    }
+
     /**
      * Gets the type of this item
      *
