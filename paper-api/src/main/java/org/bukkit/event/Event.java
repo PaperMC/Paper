@@ -217,9 +217,9 @@ public abstract class Event {
         BLOCK_PLACED (Category.BLOCK),
 
         /**
-         * Called when a specific block is being sent to a player
+         * Called when leaves are decaying naturally
          */
-        BLOCK_SENT (Category.BLOCK),
+        LEAVES_DECAY (Category.BLOCK),
 
         /**
          * Called when a liquid attempts to flow into a block which already

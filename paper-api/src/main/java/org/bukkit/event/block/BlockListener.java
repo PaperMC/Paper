@@ -78,4 +78,12 @@ public class BlockListener implements Listener {
     public void onBlockRightClicked(BlockRightClickedEvent event) {
     }
 
+    /**
+     * Called when leaves are decaying naturally
+     *
+     * @param event Relevant event details
+     */
+    public void onLeavesDecay(LeavesDecayEvent event) {
+    }
+
 }
