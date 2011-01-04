@@ -101,17 +101,13 @@ public class WorldServer extends World {
         if (axisalignedbb != null && !a(axisalignedbb)) {
             return false;
         }
-
-        // Craftbukkit - check this first as we dont want to allow the user to override this either
-        // Notch checks it after the check to see if block is water, lava, fire, portal
-        if (!(i1 > 0 && block == null)) return false;
         
         boolean defaultReturn;
         
         if (block == Block.A || block == Block.B || block == Block.C || block == Block.D || block == Block.ar || block == Block.aS) {
             defaultReturn = true;
         } else {
-            defaultReturn = block1.a(this, j1, k1, l1);
+            defaultReturn = (i1 > 0) && (block == null) && (block1.a(this, j1, k1, l1));
         }
         
         // Craftbukkit - If flag is true, it's natural, not user placement. Don't hook. 
