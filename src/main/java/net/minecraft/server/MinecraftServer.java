@@ -11,6 +11,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import joptsimple.OptionSet;
 
 import org.bukkit.craftbukkit.CraftServer;
 
@@ -37,14 +38,18 @@ implements ICommandListener, Runnable {
     public boolean n;
 
     public CraftServer server; // CraftBukkit
+    public OptionSet options; // CraftBukkit
 
-    public MinecraftServer() {
+    // CraftBukkit: Added arg "OptionSet options"
+    public MinecraftServer(final OptionSet options) {
         o = true;
         g = false;
         h = 0;
         p = new ArrayList<IUpdatePlayerListBox>();
         q = Collections.synchronizedList(new ArrayList<ServerCommand>());
         new ThreadSleepForever(this);
+
+        this.options = options; // CraftBukkit
     }
 
     // CraftBukkit: added throws UnknownHostException
@@ -60,7 +65,7 @@ implements ICommandListener, Runnable {
             a.warning("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
         }
         a.info("Loading properties");
-        d = new PropertyManager(new File("server.properties"));
+        d = new PropertyManager(options); // Craftbukkit
         String s = d.a("server-ip", "");
 
         l = d.a("online-mode", true);
@@ -450,18 +455,17 @@ implements ICommandListener, Runnable {
         p.add(iupdateplayerlistbox);
     }
 
-    public static void main(String args[]) {
+    // Craftbukkit start - replaces main(String args[])
+    public static void main(final OptionSet options) {
         try {
-            MinecraftServer minecraftserver = new MinecraftServer();
+            MinecraftServer minecraftserver = new MinecraftServer(options);
 
-            if (!java.awt.GraphicsEnvironment.isHeadless() && (args.length <= 0 || !args[0].equals("nogui"))) {
-                ServerGUI.a(minecraftserver);
-            }
             (new ThreadServerApplication("Server thread", minecraftserver)).start();
         } catch (Exception exception) {
             a.log(Level.SEVERE, "Failed to start the minecraft server", exception);
         }
     }
+    // Craftbukkit end
 
     public File a(String s) {
         return new File(s);
