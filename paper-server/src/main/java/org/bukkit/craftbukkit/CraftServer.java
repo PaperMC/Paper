@@ -27,7 +27,7 @@ public final class CraftServer implements Server {
 
         pluginManager.RegisterInterface(JavaPluginLoader.class);
 
-        File pluginFolder = new File("plugins");
+        File pluginFolder = (File)console.options.valueOf("plugins");
 
         if (pluginFolder.exists()) {
             try {
