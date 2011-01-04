@@ -7,6 +7,7 @@ package org.bukkit;
 public class ItemStack {
     private int type;
     private int amount = 0;
+    private byte damage = 0;
 
     public ItemStack(final int type) {
         this.type = type;
@@ -77,5 +78,31 @@ public class ItemStack {
      */
     public void setAmount(int amount) {
         this.amount = amount;
+    }
+
+    /**
+     * Sets the damage of this item<br /><br />
+     *
+     * 0x00 represents an item which cannot be damaged<br />
+     * 0x01 represents an item at maximum health<br />
+     * 0x32 represents an item with no health left
+     *
+     * @param damage Damage of this item
+     */
+    public void setDamage(final byte damage) {
+        this.damage = damage;
+    }
+
+    /**
+     * Gets the damage of this item<br /><br />
+     *
+     * 0x00 represents an item which cannot be damaged<br />
+     * 0x01 represents an item at maximum health<br />
+     * 0x32 represents an item with no health left
+     *
+     * @return Damage of this item
+     */
+    public byte getDamage() {
+        return damage;
     }
 }
