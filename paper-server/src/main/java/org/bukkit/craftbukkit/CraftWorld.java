@@ -21,8 +21,8 @@ import org.bukkit.Vector;
 import org.bukkit.World;
 
 public class CraftWorld implements World {
-    private final Map<ChunkCoordinate, Chunk> chunkCache = new HashMap<ChunkCoordinate, Chunk>();
-    private final Map<BlockCoordinate, Block> blockCache = new HashMap<BlockCoordinate, Block>();
+    private final Map<ChunkCoordinate, CraftChunk> chunkCache = new HashMap<ChunkCoordinate, CraftChunk>();
+    private final Map<BlockCoordinate, CraftBlock> blockCache = new HashMap<BlockCoordinate, CraftBlock>();
     private final WorldServer world;
     
     private static final Random rand = new Random();
@@ -33,7 +33,7 @@ public class CraftWorld implements World {
 
     public Block getBlockAt(int x, int y, int z) {
         BlockCoordinate loc = new BlockCoordinate(x, y, z);
-        Block block = blockCache.get(loc);
+        CraftBlock block = blockCache.get(loc);
 
         if (block == null) {
             block = new CraftBlock(this, x, y, z, world.a(x, y, z), (byte)world.b(x, y, z));
@@ -49,7 +49,7 @@ public class CraftWorld implements World {
 
     public Chunk getChunkAt(int x, int z) {
         ChunkCoordinate loc = new ChunkCoordinate(x, z);
-        Chunk chunk = chunkCache.get(loc);
+        CraftChunk chunk = chunkCache.get(loc);
 
         if (chunk == null) {
             chunk = new CraftChunk(this, x, z);
@@ -82,6 +82,20 @@ public class CraftWorld implements World {
         }
 
         return block;
+    }
+
+    public CraftChunk updateChunk(int x, int z) {
+        ChunkCoordinate loc = new ChunkCoordinate(x, z);
+        CraftChunk chunk = chunkCache.get(loc);
+
+        if (chunk == null) {
+            chunk = new CraftChunk(this, x, z);
+            chunkCache.put(loc, chunk);
+        } else {
+            // TODO: Chunk stuff
+        }
+
+        return chunk;
     }
 
     public WorldServer getHandle() {
