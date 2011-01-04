@@ -51,4 +51,18 @@ public interface Server {
      * @return An array of worlds
      */
     public World[] getWorlds();
+
+    /**
+     * Gets the in-game time on the server (in hours*1000)
+     *
+     * @return The current time in hours*1000
+     */
+    public long getTime();
+
+    /**
+     * Sets the in-game time on the server (in hours*1000)
+     *
+     * @param time The time to set the in-game time to (in hours*1000)
+     */
+    public void setTime(long time);
 }
