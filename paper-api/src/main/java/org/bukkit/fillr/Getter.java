@@ -1,8 +1,11 @@
 package org.bukkit.fillr;
 
 import java.io.File;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.bukkit.*;
+import org.bukkit.plugin.InvalidDescriptionException;
 import org.bukkit.plugin.InvalidPluginException;
 
 public class Getter {
@@ -25,8 +28,8 @@ public class Getter {
             player.sendMessage("Finished Download!");
             enablePlugin(reader);
             player.sendMessage("Loading " + reader.getName());
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception ex) {
+            Logger.getLogger(Getter.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -36,8 +39,10 @@ public class Getter {
         File plugin = new File(directory, name + ".jar");
         try {
             server.getPluginManager().loadPlugin(plugin);
-        } catch (InvalidPluginException e) {
-            e.printStackTrace();
+        } catch (InvalidPluginException ex) {
+            Logger.getLogger(Getter.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InvalidDescriptionException ex) {
+            Logger.getLogger(Getter.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 }
