@@ -37,7 +37,7 @@ public final class CraftServer implements Server {
                     pluginManager.enablePlugin(plugin);
                 }
             } catch (Throwable ex) {
-                Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, "(Is it up to date?)", ex);
+                Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, ex.getMessage() + " (Is it up to date?)", ex);
             }
         } else {
             pluginFolder.mkdir();
