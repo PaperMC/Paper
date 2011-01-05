@@ -79,7 +79,9 @@ public final class SimplePluginManager implements PluginManager {
             try {
                 plugin = loadPlugin(file);
             } catch (InvalidPluginException ex) {
-                Logger.getLogger(SimplePluginManager.class.getName()).log(Level.SEVERE, "Could not load " + file.getPath() + " in " + directory.getPath(), ex);
+                Logger.getLogger(SimplePluginManager.class.getName()).log(Level.SEVERE, "Could not load " + file.getPath() + " in " + directory.getPath() + ": " + ex.getMessage(), ex);
+            } catch (InvalidDescriptionException ex) {
+                Logger.getLogger(SimplePluginManager.class.getName()).log(Level.SEVERE, "Could not load " + file.getPath() + " in " + directory.getPath() + ": " + ex.getMessage(), ex);
             }
 
             if (plugin != null) {
@@ -98,8 +100,9 @@ public final class SimplePluginManager implements PluginManager {
      * @param file File containing the plugin to load
      * @return The Plugin loaded, or null if it was invalid
      * @throws InvalidPluginException Thrown when the specified file is not a valid plugin
+     * @throws InvalidDescriptionException Thrown when the specified file contains an invalid description
      */
-    public Plugin loadPlugin(File file) throws InvalidPluginException {
+    public Plugin loadPlugin(File file) throws InvalidPluginException, InvalidDescriptionException {
         Set<Pattern> filters = fileAssociations.keySet();
         Plugin result = null;
 

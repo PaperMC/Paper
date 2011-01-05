@@ -57,6 +57,6 @@ public class InvalidDescriptionException extends Exception {
 
     @Override
     public String getMessage() {
-        return super.getMessage();
+        return message;
     }
 }

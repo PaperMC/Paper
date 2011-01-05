@@ -81,10 +81,6 @@ public final class PluginDescriptionFile {
     }
 
     private void loadMap(Map<String, Object> map) throws InvalidDescriptionException {
-        if (name == null) {
-            throw new InvalidDescriptionException("Name is not defined");
-        }
-
         try {
             name = map.get("name").toString();
         } catch (NullPointerException ex) {
