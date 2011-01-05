@@ -51,7 +51,7 @@ public class ItemStack {
      * @param type New type to set the items in this stack to
      */
     public void setType(Material type) {
-        this.type = type.getID();
+        setTypeID(type.getID());
     }
 
     /**
