@@ -1,9 +1,9 @@
 package net.minecraft.server;
 
-
 import java.util.*;
 import java.util.logging.Logger;
 import org.bukkit.Location;
+import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.Event.Type;
@@ -289,11 +289,39 @@ implements ICommandListener {
         }
         d.e.B = false;
     }
+    
+    // Craftbukkit start
+    CraftBlock lastRightClicked;
+    // Craftbukkit stop
 
     public void a(Packet15Place packet15place) {
         ItemStack itemstack = e.an.e();
         boolean flag = d.e.B = d.f.g(e.aw);
 
+        // Craftbukkit start
+        CraftBlock blockClicked = null;
+        CraftBlock blockPlaced = null;
+        
+        if (packet15place.d == 255) {
+            // ITEM_USE -- if we have a lastRightClicked then it could be a usable location
+            blockClicked = lastRightClicked;
+            lastRightClicked = null;
+        } else {
+            // RIGHTCLICK or BLOCK_PLACE .. or nothing
+            blockClicked = (CraftBlock) d.e.getWorld().getBlockAt(packet15place.a, packet15place.b, packet15place.c);
+            // TODO: we don't have "faceclicked" concept in bukkit
+            // blockClicked.setFaceClicked(Block.Face.fromId(paramgt.d));
+            lastRightClicked = blockClicked;
+        }
+
+        // If we clicked on something then we also have a location to place the block
+        if (blockClicked != null && itemstack != null) {
+            blockPlaced = (CraftBlock) blockClicked.getFace(CraftBlock.notchToBlockFace(packet15place.d));
+            // TODO: in hMod we've set the new type already. We haven't yet here.
+            // blockPlaced = new Block( localil.c, blockClicked.getX(), blockClicked.getY(), blockClicked.getZ());
+        }
+        // Craftbukkit stop
+        
         if (packet15place.d == 255) {
             if (itemstack == null) {
                 return;
