@@ -113,6 +113,12 @@ public class EntityMinecart extends Entity
         // CraftBukkit end
     }
 
+    // CraftBukkit start
+    public ItemStack[] getContents() {
+        return this.ak;
+    }
+    // CraftBukkit end
+
     public AxisAlignedBB d(Entity entity) {
         return entity.z;
     }

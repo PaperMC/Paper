@@ -36,14 +36,14 @@ public class WorldServer extends World {
     @Override
     public boolean c(int i1, int j1, int k1, int l1) {
         boolean result = super.c(i1, j1, k1, l1);
-        world.updateBlock(i1, j1, k1);
+        if (world != null) world.updateBlock(i1, j1, k1);
         return result;
     }
 
     @Override
     public boolean d(int i1, int j1, int k1, int l1) {
         boolean result = super.d(i1, j1, k1, l1);
-        world.updateBlock(i1, j1, k1);
+        if (world != null) world.updateBlock(i1, j1, k1);
         return result;
     }
 
@@ -75,10 +75,12 @@ public class WorldServer extends World {
 
         if (block != null) {
             // CraftBukkit start
-            BlockPhysicsEvent event = new BlockPhysicsEvent(Event.Type.BLOCK_PHYSICS, world.getBlockAt(i1, j1, k1), l1);
-            server.getPluginManager().callEvent(event);
-            if (event.isCancelled()) {
-                return;
+            if (world != null) {
+                BlockPhysicsEvent event = new BlockPhysicsEvent(Event.Type.BLOCK_PHYSICS, world.getBlockAt(i1, j1, k1), l1);
+                server.getPluginManager().callEvent(event);
+                if (event.isCancelled()) {
+                    return;
+                }
             }
             // CraftBukkit stop
 
@@ -101,17 +103,13 @@ public class WorldServer extends World {
         if (axisalignedbb != null && !a(axisalignedbb)) {
             return false;
         }
-
-        // Craftbukkit - check this first as we dont want to allow the user to override this either
-        // Notch checks it after the check to see if block is water, lava, fire, portal
-        if (!(i1 > 0 && block == null)) return false;
         
         boolean defaultReturn;
         
         if (block == Block.A || block == Block.B || block == Block.C || block == Block.D || block == Block.ar || block == Block.aS) {
             defaultReturn = true;
         } else {
-            defaultReturn = block1.a(this, j1, k1, l1);
+            defaultReturn = (i1 > 0) && (block == null) && (block1.a(this, j1, k1, l1));
         }
         
         // Craftbukkit - If flag is true, it's natural, not user placement. Don't hook. 
