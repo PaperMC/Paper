@@ -113,13 +113,14 @@ public class BlockFlowing extends BlockFluids {
             }
             // Craftbukkit all four cardinal directions. Do not change the order!
             BlockFace[] faces = new BlockFace[]{ BlockFace.North, BlockFace.South, BlockFace.East, BlockFace.West };
+            int index = 0;
             for (BlockFace currentFace : faces) {
-                int index = 0;
                 if (aflag[index]) {
                     BlockFromToEvent event = new BlockFromToEvent(Type.BLOCK_FLOW, source, currentFace);
                     ((WorldServer) world).getServer().getPluginManager().callEvent(event);
-                    if (!event.isCancelled())
+                    if (!event.isCancelled()) {
                         f(world, i1 + currentFace.getModX(), j1, k1 + currentFace.getModZ(), k2);
+                    }
                 }
                 index++;
             }
