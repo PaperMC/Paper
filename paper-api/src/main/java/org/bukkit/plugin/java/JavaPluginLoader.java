@@ -41,7 +41,7 @@ public final class JavaPluginLoader implements PluginLoader {
         server = instance;
     }
 
-    public Plugin loadPlugin(File file) throws InvalidPluginException {
+    public Plugin loadPlugin(File file) throws InvalidPluginException, InvalidDescriptionException {
         JavaPlugin result = null;
         PluginDescriptionFile description = null;
 
@@ -62,8 +62,6 @@ public final class JavaPluginLoader implements PluginLoader {
             stream.close();
             jar.close();
         } catch (IOException ex) {
-            throw new InvalidPluginException(ex);
-        } catch (InvalidDescriptionException ex) {
             throw new InvalidPluginException(ex);
         }
 
