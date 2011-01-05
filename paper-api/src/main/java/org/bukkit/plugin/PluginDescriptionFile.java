@@ -20,11 +20,7 @@ public final class PluginDescriptionFile {
 
     @SuppressWarnings("unchecked")
     public PluginDescriptionFile(final InputStream stream) throws InvalidDescriptionException {
-        try {
-            loadMap((Map<String, Object>)yaml.load(stream));
-        } catch (ClassCastException ex) {
-            throw new InvalidDescriptionException(ex);
-        }
+        loadMap((Map<String, Object>)yaml.load(stream));
     }
 
     /**
@@ -32,7 +28,7 @@ public final class PluginDescriptionFile {
      * @param reader
      */
     @SuppressWarnings("unchecked")
-    public PluginDescriptionFile(final Reader reader) {
+    public PluginDescriptionFile(final Reader reader) throws InvalidDescriptionException {
         loadMap((Map<String, Object>)yaml.load(reader));
     }
 
@@ -84,10 +80,34 @@ public final class PluginDescriptionFile {
         return main;
     }
 
-    private void loadMap(Map<String, Object> map) throws ClassCastException {
-        name = map.get("name").toString();
-        main = map.get("main").toString();
-        version = map.get("version").toString();
+    private void loadMap(Map<String, Object> map) throws InvalidDescriptionException {
+        if (name == null) {
+            throw new InvalidDescriptionException("Name is not defined");
+        }
+
+        try {
+            name = map.get("name").toString();
+        } catch (NullPointerException ex) {
+            throw new InvalidDescriptionException(ex, "name is not defined");
+        } catch (ClassCastException ex) {
+            throw new InvalidDescriptionException(ex, "name is of wrong type");
+        }
+
+        try {
+            version = map.get("version").toString();
+        } catch (NullPointerException ex) {
+            throw new InvalidDescriptionException(ex, "version is not defined");
+        } catch (ClassCastException ex) {
+            throw new InvalidDescriptionException(ex, "version is of wrong type");
+        }
+
+        try {
+            main = map.get("main").toString();
+        } catch (NullPointerException ex) {
+            throw new InvalidDescriptionException(ex, "main is not defined");
+        } catch (ClassCastException ex) {
+            throw new InvalidDescriptionException(ex, "main is of wrong type");
+        }
     }
 
     private Map<String, Object> saveMap() {
