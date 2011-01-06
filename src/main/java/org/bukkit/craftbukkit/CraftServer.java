@@ -80,6 +80,30 @@ public final class CraftServer implements Server {
     public Player getPlayer(final EntityPlayerMP entity) {
         return entity.a.getPlayer();
     }
+    
+    public Player matchPlayer(String wantedPlayerName) {
+        Player wantedPlayer = null;
+     
+        for (Player iterPlayer : this.getOnlinePlayers()) {
+            String iterPlayerName = iterPlayer.getName();
+
+            if (wantedPlayerName.equalsIgnoreCase(iterPlayerName)) {
+                // Exact match
+                wantedPlayer = this.getPlayer(wantedPlayerName);
+                break;
+            }
+            if (wantedPlayerName.toLowerCase().indexOf(iterPlayerName.toLowerCase()) != -1) {
+                // Partial match
+                if (wantedPlayer != null) {
+                    // Multiple matches
+                    return null;
+                }
+                wantedPlayer = iterPlayer;
+            }
+        }
+
+        return wantedPlayer;
+    }
 
     public PluginManager getPluginManager() {
         return pluginManager;
