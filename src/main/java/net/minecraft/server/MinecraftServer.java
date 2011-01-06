@@ -136,6 +136,8 @@ implements ICommandListener, Runnable {
     private void e() {
         i = null;
         j = 0;
+        
+        server.loadPlugins();
     }
 
     private void f() {
