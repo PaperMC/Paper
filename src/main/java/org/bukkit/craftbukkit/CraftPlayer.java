@@ -1,4 +1,3 @@
-
 package org.bukkit.craftbukkit;
 
 import net.minecraft.server.EntityPlayer;
@@ -8,6 +7,7 @@ import org.bukkit.Location;
 import org.bukkit.Player;
 
 public class CraftPlayer extends CraftHumanEntity implements Player {
+
     private EntityPlayerMP entity;
 
     public CraftPlayer(CraftServer server, EntityPlayerMP entity) {
@@ -15,8 +15,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         this.entity = entity;
     }
 
-    public boolean isOnline() {
+    public boolean isOp() {
         return server.getHandle().g(getName());
+    }
+
+    public boolean isOnline() {
+        for (EntityPlayerMP player : server.getHandle().b) {
+            if (player.aw.equalsIgnoreCase(getName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -25,7 +34,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void setHandle(final EntityPlayerMP entity) {
-        super.setHandle((EntityPlayer)entity);
+        super.setHandle((EntityPlayer) entity);
         this.entity = entity;
     }
 
