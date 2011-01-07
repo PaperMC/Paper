@@ -24,27 +24,12 @@ import org.bukkit.event.Cancellable;
 public class PlayerBlockItemEvent extends PlayerItemEvent implements Cancellable {
     protected Block blockClicked;
     protected BlockFace direction;
-    protected boolean cancel;
+    protected boolean canBuild; 
     
-    public PlayerBlockItemEvent(Type type, Player who, ItemStack item, Block blockClicked, BlockFace direction) {
+    public PlayerBlockItemEvent(Type type, Player who, ItemStack item, Block blockClicked, BlockFace direction, boolean canBuild) {
         super(type, who, item);
         this.blockClicked = blockClicked;
-        cancel = false;
-    }
-
-    /**
-     * Gets the cancellation state of this event. Set to true if you
-     * want to prevent buckets from placing water, from a block from being
-     * placed
-     * 
-     * @return boolean cancellation state
-     */
-    public boolean isCancelled() {
-        return cancel;
-    }
-
-    public void setCancelled(boolean cancel) {
-        this.cancel = cancel;
+        this.canBuild = canBuild;
     }
     
     /**
@@ -75,5 +60,26 @@ public class PlayerBlockItemEvent extends PlayerItemEvent implements Cancellable
      */
     public BlockFace getBlockFace() {
         return direction;
+    }
+    
+    /**
+     * Gets the value whether the player would be allowed to build here.
+     * Defaults to spawn if the server was going to stop them (such as, the
+     * player is in Spawn). Note that this is an entirely different check
+     * than BLOCK_CANBUILD, as this refers to a player, not universe-physics
+     * rule like cactus on dirt.
+     * 
+     * @return boolean whether the server would allow a player to build here
+     */
+    public boolean canBuild() {
+        return this.canBuild;
+    }
+    
+    /**
+     * Sets the canBuild state of this event. Set to true if you want the
+     * player to be able to build.  
+     */
+    public void setBuild(boolean canBuild) {
+        this.canBuild = canBuild;
     }
 }
