@@ -1,7 +1,12 @@
 package org.bukkit;
 
+import org.bukkit.block.BlockState;
+
 /**
- * Represents a block
+ * Represents a block. This is a live object, and only one Block may exist for
+ * any given location in a world. The state of the block may change concurrently
+ * to your own handling of it; use block.getState() to get a snapshot state of a
+ * block which will not be modified.
  */
 public interface Block {
     /**
@@ -143,4 +148,15 @@ public interface Block {
      * @return BlockFace of this block which has the requested block, or null
      */
     BlockFace getFace(Block block);
+
+    /**
+     * Captures the current state of this block. You may then cast that state
+     * into any accepted type, such as Furnace or Sign.
+     *
+     * The returned object will never be updated, and you are not guaranteed that
+     * (for example) a sign is still a sign after you capture its state.
+     *
+     * @return BlockState with the current state of this block.
+     */
+    BlockState getState();
 }

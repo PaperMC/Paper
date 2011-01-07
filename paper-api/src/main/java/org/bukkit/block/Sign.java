@@ -1,12 +1,10 @@
 
 package org.bukkit.block;
 
-import org.bukkit.Block;
-
 /**
  * Represents either a SignPost or a WallSign
  */
-public interface Sign extends Block {
+public interface Sign extends BlockState {
     /**
      * Gets all the lines of text currently on this sign.
      *
