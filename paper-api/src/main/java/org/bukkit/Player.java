@@ -38,5 +38,5 @@ public interface Player extends HumanEntity {
      *
      * @return String containing a color formatted name to display for this player
      */
-    public void getDisplayName(String name);
+    public void setDisplayName(String name);
 }
