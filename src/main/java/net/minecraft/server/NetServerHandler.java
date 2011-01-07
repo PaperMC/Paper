@@ -432,7 +432,7 @@ implements ICommandListener {
             // CraftBukkit start
             PlayerChatEvent event = new PlayerChatEvent(Type.PLAYER_CHAT, player, s);
             server.getPluginManager().callEvent(event);
-            s = (new StringBuilder()).append("<").append(event.getPlayer().getName()).append("> ").append(event.getMessage()).toString();
+            s = (new StringBuilder()).append("<").append(event.getPlayer().getDisplayName()).append("> ").append(event.getMessage()).toString();
             if (event.isCancelled()) return;
             // CraftBukkit stop
 
