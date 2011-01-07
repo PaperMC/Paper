@@ -2,10 +2,12 @@
 package org.bukkit.craftbukkit;
 
 import net.minecraft.server.Entity;
+import net.minecraft.server.EntityArrow;
 import net.minecraft.server.EntityEgg;
 import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntitySnowball;
 
+import org.bukkit.Arrow;
 import org.bukkit.Egg;
 import org.bukkit.LivingEntity;
 import org.bukkit.Snowball;
@@ -57,5 +59,13 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         EntitySnowball snowball = new EntitySnowball(world, entity);
         world.a(snowball);
         return new CraftSnowball(server, snowball);
+    }
+
+    @Override
+    public Arrow shootArrow() {
+        net.minecraft.server.World world = ((CraftWorld)getWorld()).getHandle();
+        EntityArrow snowball = new EntityArrow(world, entity);
+        world.a(snowball);
+        return new CraftArrow(server, snowball);
     }
 }
