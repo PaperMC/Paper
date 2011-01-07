@@ -52,7 +52,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         return name;
     }
 
-    public void getDisplayName(final String name) {
+    public void setDisplayName(final String name) {
         this.name = name;
     }
 
