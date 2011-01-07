@@ -143,4 +143,20 @@ public class CraftBlockState implements BlockState {
     public Block getBlock() {
         return world.getBlockAt(x, y, z);
     }
+
+    public boolean update() {
+        return update(false);
+    }
+
+    public boolean update(boolean force) { // TODO
+        Block block = getBlock();
+
+        synchronized (block) {
+            if (block.getType() != this.getType()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }
