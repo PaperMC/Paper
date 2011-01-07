@@ -2,6 +2,8 @@
 package org.bukkit.craftbukkit;
 
 import org.bukkit.*;
+import org.bukkit.block.BlockState;
+import org.bukkit.craftbukkit.block.CraftBlockState;
 
 public class CraftBlock implements Block {
     private final CraftWorld world;
@@ -248,5 +250,9 @@ public class CraftBlock implements Block {
         default:
             return BlockFace.Self;
         }
+    }
+
+    public BlockState getState() {
+        return new CraftBlockState(world, x, y, z, type, data);
     }
 }
