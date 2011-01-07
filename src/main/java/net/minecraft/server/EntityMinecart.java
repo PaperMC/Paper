@@ -2,6 +2,8 @@ package net.minecraft.server;
 
 import java.util.List;
 
+import org.bukkit.Location;
+import org.bukkit.Vector;
 import org.bukkit.craftbukkit.CraftMinecart;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.Event.Type;
@@ -10,8 +12,7 @@ import org.bukkit.event.vehicle.*;
 public class EntityMinecart extends Entity
         implements IInventory {
 
-    private CraftServer server;
-    private CraftMinecart minecart;
+    public CraftMinecart minecart;
     
     private ItemStack ak[];
     public int a;
@@ -91,6 +92,14 @@ public class EntityMinecart extends Entity
     private double aq;
     private double ar;
     private double as;
+    
+    private boolean slowWhenEmpty = true;
+    private double derailedX = 0.5;
+    private double derailedY = 0.5;
+    private double derailedZ = 0.5;
+    private double flyingX = 0.94999998807907104;
+    private double flyingY = 0.94999998807907104;
+    private double flyingZ = 0.94999998807907104;
 
     public EntityMinecart(World world) {
         super(world);
@@ -105,11 +114,7 @@ public class EntityMinecart extends Entity
         M = false;
         
         // CraftBukkit start
-        server = ((WorldServer) world).getServer();
-        minecart = CraftMinecart.getCraftMinecart(server, this);
-        VehicleCreateEvent event = new VehicleCreateEvent(Type.VEHICLE_CREATE,
-                minecart);
-        server.getPluginManager().callEvent(event);
+        handleMinecartCreation(world);
         // CraftBukkit end
     }
 
@@ -144,13 +149,36 @@ public class EntityMinecart extends Entity
         d = i;
         
         // CraftBukkit start
-        server = ((WorldServer) world).getServer();
-        minecart = CraftMinecart.getCraftMinecart(server, this);
-        VehicleCreateEvent event = new VehicleCreateEvent(Type.VEHICLE_CREATE,
-                minecart);
-        server.getPluginManager().callEvent(event);
+        handleMinecartCreation(world);
         // CraftBukkit end
     }
+
+    // CraftBukkit start
+    private void handleMinecartCreation(World world) {
+        Vector derailedVelocityVector =
+                new Vector(derailedX, derailedY, derailedZ);
+        Vector flyingVelocityVector = new Vector(flyingX, flyingY, flyingZ);
+        
+        CraftServer server = ((WorldServer) world).getServer();
+        minecart = CraftMinecart.getCraftMinecart(server, this);
+        VehicleCreateEvent event = new VehicleCreateEvent(
+                Type.VEHICLE_CREATE, minecart, slowWhenEmpty,
+                derailedVelocityVector, flyingVelocityVector);
+        server.getPluginManager().callEvent(event);
+        
+        slowWhenEmpty = event.shouldSlowWhenEmpty();
+        
+        Vector vec = event.getDerailedVelocityFactor();
+        derailedX = vec.getX();
+        derailedY = vec.getY();
+        derailedZ = vec.getZ();
+        
+        vec = event.getFlyingVelocityFactor();
+        flyingX = vec.getX();
+        flyingY = vec.getY();
+        flyingZ = vec.getZ();
+    }
+    // CraftBukkit end
 
     public double j() {
         return (double) J * 0.0D - 0.30000001192092896D;
@@ -159,16 +187,14 @@ public class EntityMinecart extends Entity
     public boolean a(Entity entity, int i) {
         // CraftBukkit start
         VehicleDamageEvent event = new VehicleDamageEvent(
-                Type.VEHICLE_DAMAGE,
-                minecart,
-                null, // @TODO: Needs to be written
-                i);
-        server.getPluginManager().callEvent(event);
-        // CraftBukkit end
+                Type.VEHICLE_DAMAGE, minecart,
+                ((WorldServer)l).getWorld().toCraftEntity(entity), i);
+        ((WorldServer)l).getServer().getPluginManager().callEvent(event);
         
         if (event.isCancelled()) {
             return true;
         }
+        // CraftBukkit end
         
         i = event.getDamage();
         
@@ -231,6 +257,12 @@ public class EntityMinecart extends Entity
     }
 
     public void b_() {
+        double prevX = p;
+        double prevY = q;
+        double prevZ = r;
+        float prevYaw = v;
+        float prevPitch = w;
+        
         if (b > 0) {
             b--;
         }
@@ -359,7 +391,7 @@ public class EntityMinecart extends Entity
             } else if (ai[1][1] != 0 && MathHelper.b(p) - i == ai[1][0] && MathHelper.b(r) - i1 == ai[1][2]) {
                 a(p, q + (double) ai[1][1], r);
             }
-            if (j != null) {
+            if (j != null || !slowWhenEmpty) {
                 s *= 0.99699997901916504D;
                 t *= 0.0D;
                 u *= 0.99699997901916504D;
@@ -438,17 +470,28 @@ public class EntityMinecart extends Entity
                 u = d6;
             }
             if (A) {
-                s *= 0.5D;
-                t *= 0.5D;
-                u *= 0.5D;
+                s *= derailedX;
+                t *= derailedY;
+                u *= derailedZ;
             }
             c(s, t, u);
             if (!A) {
-                s *= 0.94999998807907104D;
-                t *= 0.94999998807907104D;
-                u *= 0.94999998807907104D;
+                s *= flyingX;
+                t *= flyingY;
+                u *= flyingZ;
             }
         }
+
+        // CraftBukkit start
+        CraftServer server = ((WorldServer)l).getServer();
+        VehicleMoveEvent event = new VehicleMoveEvent(
+                Type.VEHICLE_MOVE,
+                minecart,
+                new Location(((WorldServer)l).getWorld(), prevX, prevY, prevZ, prevYaw, prevPitch),
+                new Location(((WorldServer)l).getWorld(), p, q, r, v, w));
+        server.getPluginManager().callEvent(event);
+        // CraftBukkit end
+        
         w = 0.0F;
         double d28 = m - p;
         double d29 = o - r;
@@ -605,21 +648,36 @@ public class EntityMinecart extends Entity
         }
 
         // CraftBukkit start
-        VehicleEntityCollisionEvent event = new VehicleEntityCollisionEvent(
-                Type.VEHICLE_COLLISION_ENTITY,
-                minecart,
-                null); // @TODO: Needs to be written
-        server.getPluginManager().callEvent(event);
-        // CraftBukkit end        
+        CraftServer server = ((WorldServer)l).getServer();
+        VehicleEntityCollisionEvent collsionEvent = new VehicleEntityCollisionEvent(
+                Type.VEHICLE_COLLISION_ENTITY, minecart,
+                ((WorldServer)l).getWorld().toCraftEntity(entity));
+        server.getPluginManager().callEvent(collsionEvent);
         
-        if ((entity instanceof EntityLiving) && !(entity instanceof EntityPlayer) && d == 0 && s * s + u * u > 0.01D && j == null && entity.k == null) {
-            entity.e(this);
+        if (collsionEvent.isCancelled()) {
+            return;
+        }
+        // CraftBukkit end
+        
+        if (!collsionEvent.isPickupCancelled()
+                && (entity instanceof EntityLiving) && !(entity instanceof EntityPlayer)
+                && d == 0 && s * s + u * u > 0.01D && j == null && entity.k == null) {
+            // CraftBukkit start
+            VehicleEnterEvent enterEvent = new VehicleEnterEvent(
+                    Type.VEHICLE_ENTER, minecart,
+                    ((WorldServer)l).getWorld().toCraftEntity(entity));
+            server.getPluginManager().callEvent(enterEvent);
+            // CraftBukkit end
+            
+            if (!enterEvent.isCancelled()) {
+                entity.e(this);
+            }
         }
         double d1 = entity.p - p;
         double d2 = entity.r - r;
         double d3 = d1 * d1 + d2 * d2;
 
-        if (d3 >= 9.9999997473787516E-005D) {
+        if (!collsionEvent.isCollisionCancelled() && d3 >= 9.9999997473787516E-005D) {
             d3 = MathHelper.a(d3);
             d1 /= d3;
             d2 /= d3;
@@ -714,6 +772,19 @@ public class EntityMinecart extends Entity
     public void d() {}
 
     public boolean a(EntityPlayer entityplayer) {
+        // CraftBukkit start
+        CraftServer server = ((WorldServer)l).getServer();
+        VehicleEnterEvent event = new VehicleEnterEvent(
+                Type.VEHICLE_ENTER,
+                minecart,
+                ((WorldServer)l).getWorld().toCraftEntity(entityplayer));
+        server.getPluginManager().callEvent(event);
+        
+        if (event.isCancelled()) {
+            return true;
+        }
+        // CraftBukkit end
+        
         if (d == 0) {
             if (j != null && (j instanceof EntityPlayer) && j != entityplayer) {
                 return true;
