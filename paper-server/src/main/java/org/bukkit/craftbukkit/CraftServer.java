@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -81,28 +82,24 @@ public final class CraftServer implements Server {
         return entity.a.getPlayer();
     }
     
-    public Player matchPlayer(String wantedPlayerName) {
-        Player wantedPlayer = null;
-     
+    public List<Player> matchPlayer(String partialName) {
+        List<Player> matchedPlayers = new ArrayList<Player>();
+        
         for (Player iterPlayer : this.getOnlinePlayers()) {
             String iterPlayerName = iterPlayer.getName();
 
-            if (wantedPlayerName.equalsIgnoreCase(iterPlayerName)) {
+            if (partialName.equalsIgnoreCase(iterPlayerName)) {
                 // Exact match
-                wantedPlayer = this.getPlayer(wantedPlayerName);
-                break;
-            }
-            if (wantedPlayerName.toLowerCase().indexOf(iterPlayerName.toLowerCase()) != -1) {
-                // Partial match
-                if (wantedPlayer != null) {
-                    // Multiple matches
-                    return null;
-                }
-                wantedPlayer = iterPlayer;
+            	matchedPlayers.add(iterPlayer);
+            	break;
+            }	
+            if (iterPlayerName.toLowerCase().indexOf(partialName.toLowerCase()) != -1) {
+            	// Partial match
+                matchedPlayers.add(iterPlayer);
             }
         }
 
-        return wantedPlayer;
+        return matchedPlayers;
     }
 
     public PluginManager getPluginManager() {
