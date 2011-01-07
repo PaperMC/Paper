@@ -6,9 +6,15 @@ import java.util.Map;
 
 import net.minecraft.server.EntityMinecart;
 import java.util.Random;
+
+import net.minecraft.server.EntityEgg;
+import net.minecraft.server.EntityLiving;
+import net.minecraft.server.EntityPlayerMP;
+import net.minecraft.server.EntitySnowball;
+import net.minecraft.server.EntityArrow;
+import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.WorldGenBigTree;
 import net.minecraft.server.WorldServer;
-import net.minecraft.server.EntityArrow;
 import net.minecraft.server.WorldGenTrees;
 import org.bukkit.Arrow;
 import org.bukkit.Block;
@@ -148,6 +154,32 @@ public class CraftWorld implements World {
         WorldGenBigTree treeGen = new WorldGenBigTree();
         return treeGen.a(world, rand,
                 loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+    }
+    
+    public CraftEntity toCraftEntity(net.minecraft.server.Entity entity) {
+        if (entity instanceof EntityArrow) {
+            return new CraftArrow(world.getServer(), (EntityArrow)entity);
+        } else if (entity instanceof EntityEgg) {
+            return new CraftEgg(world.getServer(), (EntityEgg)entity);
+        } else if (entity instanceof EntityPlayerMP) {
+            return new CraftPlayer(world.getServer(), (EntityPlayerMP)entity);
+        } else if (entity instanceof EntitySnowball) {
+            return new CraftSnowball(world.getServer(), (EntitySnowball)entity);
+        } else if (entity instanceof EntityMinecart) {
+            EntityMinecart minecart = (EntityMinecart)entity;
+            if (minecart.minecart != null) {
+                return minecart.minecart;
+            }
+            
+            return CraftMinecart.getCraftMinecart(world.getServer(),
+                    (EntityMinecart)entity);
+        } else if (entity instanceof EntityPlayer) {
+            return new CraftHumanEntity(world.getServer(), (EntityPlayer)entity);
+        } else if (entity instanceof EntityLiving) {
+            return new CraftLivingEntity(world.getServer(), (EntityLiving)entity);
+        } else {
+            return null;
+        }
     }
 
     @Override
