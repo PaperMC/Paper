@@ -105,4 +105,34 @@ public interface BlockState {
      * @param type Type-ID to change this block to
      */
     void setTypeID(int type);
+
+    /**
+     * Attempts to update the block represented by this state, setting it to the
+     * new values as defined by this state. <br />
+     * <br />
+     * This has the same effect as calling update(false). That is to say,
+     * this will not modify the state of a block if it is no longer the same
+     * type as it was when this state was taken. It will return false in this
+     * eventuality.
+     *
+     * @return true if the update was successful, otherwise false
+     * @see BlockState.update(boolean force)
+     */
+    boolean update();
+
+    /**
+     * Attempts to update the block represented by this state, setting it to the
+     * new values as defined by this state. <br />
+     * <br />
+     * Unless force is true, this will not modify the state of a block if it is
+     * no longer the same type as it was when this state was taken. It will return
+     * false in this eventuality.<br />
+     * <br />
+     * If force is true, it will set the type of the block to match the new state,
+     * set the state data and then return true.
+     *
+     * @param force true to forcefully set the state
+     * @return true if the update was successful, otherwise false
+     */
+    boolean update(boolean force);
 }
