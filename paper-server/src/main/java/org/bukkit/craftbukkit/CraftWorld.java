@@ -166,7 +166,9 @@ public class CraftWorld implements World {
     }
     
     public CraftEntity toCraftEntity(net.minecraft.server.Entity entity) {
-        if (entity instanceof EntityArrow) {
+        if (entity instanceof CraftMappable) {
+            return ((CraftMappable)entity).getCraftEntity();
+        } else if (entity instanceof EntityArrow) {
             return new CraftArrow(world.getServer(), (EntityArrow)entity);
         } else if (entity instanceof EntityEgg) {
             return new CraftEgg(world.getServer(), (EntityEgg)entity);
@@ -178,8 +180,6 @@ public class CraftWorld implements World {
             return new CraftHumanEntity(world.getServer(), (EntityPlayer)entity);
         } else if (entity instanceof EntityLiving) {
             return new CraftLivingEntity(world.getServer(), (EntityLiving)entity);
-        } else if (entity instanceof CraftMappable) {
-            return ((CraftMappable)entity).getCraftEntity();
         } else {
             return null;
         }
