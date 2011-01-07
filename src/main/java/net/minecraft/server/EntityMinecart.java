@@ -155,28 +155,11 @@ public class EntityMinecart extends Entity
 
     // CraftBukkit start
     private void handleMinecartCreation(World world) {
-        Vector derailedVelocityVector =
-                new Vector(derailedX, derailedY, derailedZ);
-        Vector flyingVelocityVector = new Vector(flyingX, flyingY, flyingZ);
-        
         CraftServer server = ((WorldServer) world).getServer();
         minecart = CraftMinecart.getCraftMinecart(server, this);
         VehicleCreateEvent event = new VehicleCreateEvent(
-                Type.VEHICLE_CREATE, minecart, slowWhenEmpty,
-                derailedVelocityVector, flyingVelocityVector);
+                Type.VEHICLE_CREATE, minecart);
         server.getPluginManager().callEvent(event);
-        
-        slowWhenEmpty = event.shouldSlowWhenEmpty();
-        
-        Vector vec = event.getDerailedVelocityFactor();
-        derailedX = vec.getX();
-        derailedY = vec.getY();
-        derailedZ = vec.getZ();
-        
-        vec = event.getFlyingVelocityFactor();
-        flyingX = vec.getX();
-        flyingY = vec.getY();
-        flyingZ = vec.getZ();
     }
     // CraftBukkit end
 
