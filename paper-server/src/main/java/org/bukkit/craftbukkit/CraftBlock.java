@@ -157,6 +157,26 @@ public class CraftBlock implements Block {
     }
 
     /**
+     * Gets the block at the given distance of the given face<br />
+     * <br />
+     * For example, the following method places water at 100,102,100; two blocks
+     * above 100,100,100.
+     * <pre>
+     * Block block = world.getBlockAt(100,100,100);
+     * Block shower = block.getFace(BlockFace.Up, 2);
+     * shower.setType(Material.WATER);
+     * </pre>
+     *
+     * @param face Face of this block to return
+     * @param distance Distance to get the block at
+     * @return Block at the given face
+     */
+    public Block getFace(final BlockFace face, final int distance) {
+        return getRelative(face.getModX() * distance, face.getModY() * distance,
+                face.getModZ() * distance);
+    }
+
+    /**
      * Gets the block at the given offsets
      *
      * @param modX X-coordinate offset
@@ -166,6 +186,38 @@ public class CraftBlock implements Block {
      */
     public Block getRelative(final int modX, final int modY, final int modZ) {
         return getWorld().getBlockAt(getX() + modX, getY() + modY, getZ() + modZ);
+    }
+
+    /**
+     * Gets the face relation of this block compared to the given block<br />
+     * <br />
+     * For example:
+     * <pre>
+     * Block current = world.getBlockAt(100, 100, 100);
+     * Block target = world.getBlockAt(100, 101, 100);
+     *
+     * current.getFace(target) == BlockFace.Up;
+     * </pre>
+     * <br />
+     * If the given block is not connected to this block, null may be returned
+     *
+     * @param block Block to compare against this block
+     * @return BlockFace of this block which has the requested block, or null
+     */
+    public BlockFace getFace(final Block block) {
+        BlockFace[] values = BlockFace.values();
+
+        for (BlockFace face : values) {
+            if (
+                    (this.getX() + face.getModX() == block.getX()) &&
+                    (this.getY() + face.getModY() == block.getY()) &&
+                    (this.getZ() + face.getModZ() == block.getZ())
+                ) {
+                return face;
+            }
+        }
+
+        return null;
     }
 
     @Override
