@@ -1,0 +1,27 @@
+
+package org.bukkit.event.world;
+
+import org.bukkit.World;
+import org.bukkit.event.Event;
+
+/**
+ * Represents events within a world
+ */
+public class WorldEvent extends Event {
+    private final World world;
+
+    public WorldEvent(final Type type, final World world) {
+        super(type);
+
+        this.world = world;
+    }
+
+    /**
+     * Gets the world primarily involved with this event
+     *
+     * @return World which caused this event
+     */
+    public World getWorld() {
+        return world;
+    }
+}

@@ -10,6 +10,7 @@ import org.bukkit.event.Cancellable;
 public class PlayerChatEvent extends PlayerEvent implements Cancellable {
     private boolean cancel = false;
     private String message;
+    private String format = "<%1$s> %2$s";
 
     public PlayerChatEvent(final Type type, final Player player, final String message) {
         super(type, player);
@@ -62,5 +63,23 @@ public class PlayerChatEvent extends PlayerEvent implements Cancellable {
      */
     public void setPlayer(final Player player) {
         this.player = player;
+    }
+
+    /**
+     * Gets the format to use to display this chat message
+     *
+     * @return String.Format compatible format string
+     */
+    public String getFormat() {
+        return format;
+    }
+
+    /**
+     * Sets the format to use to display this chat message
+     *
+     * @param format String.Format compatible format string
+     */
+    public void setFormat(final String format) {
+        this.format = format;
     }
 }

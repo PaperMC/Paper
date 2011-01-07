@@ -4,6 +4,8 @@ import org.bukkit.*;
 import org.bukkit.plugin.*;
 
 import java.io.File;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Updater {
     public static String directory = Fillr.directory;
@@ -95,8 +97,10 @@ public class Updater {
         File plugin = new File(directory, name + ".jar");
         try {
             server.getPluginManager().loadPlugin(plugin);
-        } catch (InvalidPluginException e) {
-            e.printStackTrace();
+        } catch (InvalidPluginException ex) {
+            Logger.getLogger(Getter.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InvalidDescriptionException ex) {
+            Logger.getLogger(Getter.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 

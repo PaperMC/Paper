@@ -171,6 +171,33 @@ public abstract class Event {
         PLAYER_ANIMATION (Category.PLAYER),
 
         /**
+         * Always called when a player uses an item while pointing at a block
+         * Sometimes, cancelling this event doesn't do anything.
+         * 
+         * This is the event that is called on block placement. Cancel this
+         * to prevent block placement. This will ALWAYS be called, even if
+         * universe physics prevents the block from being placed. This allows
+         * you to add functionality to rightclicking with block items even
+         * if the universe won't allow them to get placed. Use BLOCK_CANBUILD
+         * to override notch's block placement rules.
+         * 
+         * Example: This event is also called, for example when redstone is
+         * placed, when a sign is placed, when minecarts are placed on a track,
+         * when boats are placed (in both water and air)
+         */
+        PLAYER_BLOCKITEM (Category.PLAYER),
+        
+        /**
+         * Called when a player uses an item while pointing at the air
+         * This can also be additionally called while pointing at the ground
+         * 
+         * Example: all food will also call this event while pointing at the
+         * ground, bows/snowballs/eggs will all call this while pointing at
+         * the ground, buckets call this event.
+         */
+        PLAYER_ITEM (Category.PLAYER),
+        
+        /**
          * Called when a player teleports from one position to another
          */
         PLAYER_TELEPORT (Category.PLAYER),
@@ -185,7 +212,8 @@ public abstract class Event {
         BLOCK_DAMAGED (Category.BLOCK),
 
         /**
-         * Called when a block is undergoing a check on whether it can be built
+         * Called when a block is undergoing a universe physics
+         * check on whether it can be built
          *
          * For example, cacti cannot be built on grass unless overridden here
          */
@@ -210,16 +238,16 @@ public abstract class Event {
          * type
          */
         BLOCK_PHYSICS (Category.BLOCK),
-
+        
         /**
          * Called when a player is attempting to place a block
          */
         BLOCK_PLACED (Category.BLOCK),
 
         /**
-         * Called when a specific block is being sent to a player
+         * Called when leaves are decaying naturally
          */
-        BLOCK_SENT (Category.BLOCK),
+        LEAVES_DECAY (Category.BLOCK),
 
         /**
          * Called when a liquid attempts to flow into a block which already

@@ -19,7 +19,7 @@ public interface PluginLoader {
      * unsuccessful
      * @throws InvalidPluginException Thrown when the specified file is not a plugin
      */
-    public Plugin loadPlugin(File file) throws InvalidPluginException;
+    public Plugin loadPlugin(File file) throws InvalidPluginException, InvalidDescriptionException;
 
     /**
      * Returns a list of all filename filters expected by this PluginLoader

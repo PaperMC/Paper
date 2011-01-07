@@ -5,5 +5,5 @@ package org.bukkit;
  * 
  * @author sk89q
  */
-public interface StorageMinecart extends Minecart {
+public interface StorageMinecart extends Minecart, Inventory {
 }
