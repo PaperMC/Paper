@@ -48,15 +48,6 @@ public class CraftMinecart extends CraftVehicle implements Minecart {
         minecart.u = vel.getZ();
     }
 
-    public LivingEntity getPassenger() {
-        // @TODO: Implement
-        return null;
-    }
-
-    public boolean isEmpty() {
-        return minecart.j == null;
-    }
-
     public void setDamage(int damage) {
         minecart.a = damage;
     }
