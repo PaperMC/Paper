@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit;
 
-import net.minecraft.server.Entity;
-
+import org.bukkit.Entity;
 import org.bukkit.Vehicle;
 
 /**
@@ -10,7 +9,15 @@ import org.bukkit.Vehicle;
  * @author sk89q
  */
 public abstract class CraftVehicle extends CraftEntity implements Vehicle {
-    public CraftVehicle(CraftServer server, Entity entity) {
+    public CraftVehicle(CraftServer server, net.minecraft.server.Entity entity) {
         super(server, entity);
+    }
+
+    public Entity getPassenger() {
+        return ((CraftWorld)getWorld()).toCraftEntity(getHandle().j);
+    }
+
+    public boolean isEmpty() {
+        return getHandle().j == null;
     }
 }
