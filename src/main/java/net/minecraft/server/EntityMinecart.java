@@ -114,7 +114,7 @@ public class EntityMinecart extends Entity
         M = false;
         
         // CraftBukkit start
-        handleMinecartCreation(world);
+        handleCreation(world);
         // CraftBukkit end
     }
 
@@ -149,12 +149,12 @@ public class EntityMinecart extends Entity
         d = i;
         
         // CraftBukkit start
-        handleMinecartCreation(world);
+        handleCreation(world);
         // CraftBukkit end
     }
 
     // CraftBukkit start
-    private void handleMinecartCreation(World world) {
+    private void handleCreation(World world) {
         CraftServer server = ((WorldServer) world).getServer();
         minecart = CraftMinecart.getCraftMinecart(server, this);
         VehicleCreateEvent event = new VehicleCreateEvent(
@@ -464,16 +464,6 @@ public class EntityMinecart extends Entity
                 u *= flyingZ;
             }
         }
-
-        // CraftBukkit start
-        CraftServer server = ((WorldServer)l).getServer();
-        VehicleMoveEvent event = new VehicleMoveEvent(
-                Type.VEHICLE_MOVE,
-                minecart,
-                new Location(((WorldServer)l).getWorld(), prevX, prevY, prevZ, prevYaw, prevPitch),
-                new Location(((WorldServer)l).getWorld(), p, q, r, v, w));
-        server.getPluginManager().callEvent(event);
-        // CraftBukkit end
         
         w = 0.0F;
         double d28 = m - p;
@@ -498,6 +488,16 @@ public class EntityMinecart extends Entity
             al = !al;
         }
         b(v, w);
+
+        // CraftBukkit start
+        CraftServer server = ((WorldServer)l).getServer();
+        VehicleMoveEvent event = new VehicleMoveEvent(
+                Type.VEHICLE_MOVE, minecart,
+                new Location(((WorldServer)l).getWorld(), prevX, prevY, prevZ, prevYaw, prevPitch),
+                new Location(((WorldServer)l).getWorld(), p, q, r, v, w));
+        server.getPluginManager().callEvent(event);
+        // CraftBukkit end
+        
         List list = l.b(this, z.b(0.20000000298023224D, 0.0D, 0.20000000298023224D));
 
         if (list != null && list.size() > 0) {
@@ -754,25 +754,25 @@ public class EntityMinecart extends Entity
 
     public void d() {}
 
-    public boolean a(EntityPlayer entityplayer) {
-        // CraftBukkit start
-        CraftServer server = ((WorldServer)l).getServer();
-        VehicleEnterEvent event = new VehicleEnterEvent(
-                Type.VEHICLE_ENTER,
-                minecart,
-                ((WorldServer)l).getWorld().toCraftEntity(entityplayer));
-        server.getPluginManager().callEvent(event);
-        
-        if (event.isCancelled()) {
-            return true;
-        }
-        // CraftBukkit end
-        
+    public boolean a(EntityPlayer entityplayer) {        
         if (d == 0) {
             if (j != null && (j instanceof EntityPlayer) && j != entityplayer) {
                 return true;
             }
             if (!l.z) {
+                // CraftBukkit start
+                CraftServer server = ((WorldServer)l).getServer();
+                VehicleEnterEvent event = new VehicleEnterEvent(
+                        Type.VEHICLE_ENTER,
+                        minecart,
+                        ((WorldServer)l).getWorld().toCraftEntity(entityplayer));
+                server.getPluginManager().callEvent(event);
+                
+                if (event.isCancelled()) {
+                    return true;
+                }
+                // CraftBukkit end
+                
                 entityplayer.e(this);
             }
         } else if (d == 1) {
