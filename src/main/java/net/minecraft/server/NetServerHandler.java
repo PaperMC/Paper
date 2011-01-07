@@ -4,10 +4,13 @@ import java.util.*;
 import java.util.logging.Logger;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftBlock;
+import org.bukkit.craftbukkit.CraftItemStack;
 import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.Event.Type;
+import org.bukkit.event.player.PlayerBlockItemEvent;
 import org.bukkit.event.player.PlayerChatEvent;
+import org.bukkit.event.player.PlayerItemEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 
 
@@ -290,43 +293,33 @@ implements ICommandListener {
         d.e.B = false;
     }
     
-    // Craftbukkit start
-    CraftBlock lastRightClicked;
-    // Craftbukkit stop
-
     public void a(Packet15Place packet15place) {
         ItemStack itemstack = e.an.e();
         boolean flag = d.e.B = d.f.g(e.aw);
-
-        // Craftbukkit start
-        CraftBlock blockClicked = null;
-        CraftBlock blockPlaced = null;
-        
-        if (packet15place.d == 255) {
-            // ITEM_USE -- if we have a lastRightClicked then it could be a usable location
-            blockClicked = lastRightClicked;
-            lastRightClicked = null;
-        } else {
-            // RIGHTCLICK or BLOCK_PLACE .. or nothing
-            blockClicked = (CraftBlock) d.e.getWorld().getBlockAt(packet15place.a, packet15place.b, packet15place.c);
-            // TODO: we don't have "faceclicked" concept in bukkit
-            // blockClicked.setFaceClicked(Block.Face.fromId(paramgt.d));
-            lastRightClicked = blockClicked;
-        }
-
-        // If we clicked on something then we also have a location to place the block
-        if (blockClicked != null && itemstack != null) {
-            blockPlaced = (CraftBlock) blockClicked.getFace(CraftBlock.notchToBlockFace(packet15place.d));
-            // TODO: in hMod we've set the new type already. We haven't yet here.
-            // blockPlaced = new Block( localil.c, blockClicked.getX(), blockClicked.getY(), blockClicked.getZ());
-        }
-        // Craftbukkit stop
+    
+        // Craftbukkit if rightclick decremented the item, always send the update packet.
+        // this is not here for Craftbukkit's own functionality; rather it is to fix
+        // a notch bug where the item doesn't update correctly.
+        boolean always = false;
         
         if (packet15place.d == 255) {
             if (itemstack == null) {
                 return;
             }
-            e.c.a(e, d.e, itemstack);
+            
+            CraftItemStack craftItem = new CraftItemStack(itemstack);
+            CraftPlayer player = new CraftPlayer(server, e);
+            PlayerItemEvent pie = new PlayerItemEvent(Type.PLAYER_ITEM, player, craftItem);
+            
+            // We still call this event even in spawn protection.
+            server.getPluginManager().callEvent(pie);
+            
+            if (!pie.isCancelled()) {
+                int itemstackAmount = itemstack.a;
+                e.c.a(e, d.e, itemstack);
+                // Craftbukkit notch decrements the counter by 1 in the above method with food, snowballs and so forth
+                always = (itemstack.a != itemstackAmount);
+            }
         } else {
             int l = packet15place.a;
             int i1 = packet15place.b;
@@ -338,29 +331,50 @@ implements ICommandListener {
             if (l1 > i2) {
                 i2 = l1;
             }
-            if (i2 > 16 || flag) {
-                e.c.a(e, d.e, itemstack, l, i1, j1, k1);
+            
+            // Craftbukkit start
+            CraftItemStack craftItem = new CraftItemStack(itemstack);
+            CraftPlayer player = new CraftPlayer(server, e);
+            CraftBlock blockClicked = (CraftBlock) d.e.getWorld().getBlockAt(l, i1, j1);
+            boolean canBuild = (i2 > 16) || flag;
+            PlayerBlockItemEvent pbie = new PlayerBlockItemEvent(Type.PLAYER_BLOCKITEM, player, craftItem, blockClicked, CraftBlock.notchToBlockFace(k1), canBuild);
+
+            // We still call this event even in spawn protection.
+            server.getPluginManager().callEvent(pbie);
+            
+            if (!pbie.isCancelled()) {
+                // Note: this is the spawn protection check
+                if (pbie.canBuild()) {
+                    e.c.a(e, d.e, itemstack, l, i1, j1, k1);
+                } else {
+                    // Craftbukkit This fixes another notch bug. No point in
+                    // sending the block update packets when you weren't allowed to place!
+                    d.e.B = false;
+                    return;
+                }
+                
+                // These are the response packets back to the client
+                e.a.b(new Packet53BlockChange(l, i1, j1, d.e));
+                if (k1 == 0) {
+                    i1--;
+                }
+                if (k1 == 1) {
+                    i1++;
+                }
+                if (k1 == 2) {
+                    j1--;
+                }
+                if (k1 == 3) {
+                    j1++;
+                }
+                if (k1 == 4) {
+                    l--;
+                }
+                if (k1 == 5) {
+                    l++;
+                }
+                e.a.b(new Packet53BlockChange(l, i1, j1, d.e));
             }
-            e.a.b(new Packet53BlockChange(l, i1, j1, d.e));
-            if (k1 == 0) {
-                i1--;
-            }
-            if (k1 == 1) {
-                i1++;
-            }
-            if (k1 == 2) {
-                j1--;
-            }
-            if (k1 == 3) {
-                j1++;
-            }
-            if (k1 == 4) {
-                l--;
-            }
-            if (k1 == 5) {
-                l++;
-            }
-            e.a.b(new Packet53BlockChange(l, i1, j1, d.e));
         }
         if (itemstack != null && itemstack.a == 0) {
             e.an.a[e.an.c] = null;
@@ -371,12 +385,12 @@ implements ICommandListener {
 
         e.ap.a();
         e.am = false;
-        if (!ItemStack.a(e.an.e(), packet15place.e)) {
+        if (always || !ItemStack.a(e.an.e(), packet15place.e)) {
             b(new Packet103(e.ap.f, slot.c, e.an.e()));
         }
         d.e.B = false;
     }
-
+    
     public void a(String s, Object aobj[]) {
         a.info((new StringBuilder()).append(e.aw).append(" lost connection: ").append(s).toString());
         d.f.a(new Packet3Chat((new StringBuilder()).append("\247e").append(e.aw).append(" left the game.").toString()));
