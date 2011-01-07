@@ -10,6 +10,10 @@ public enum BlockFace {
     West(0, 0, 1),
     Up(0, 1, 0),
     Down(0, -1, 0),
+    NorthEast(North, East),
+    NorthWest(North, West),
+    SouthEast(South, East),
+    SouthWest(South, West),
     Self(0, 0, 0);
 
     private final int modX;
@@ -20,6 +24,12 @@ public enum BlockFace {
         this.modX = modX;
         this.modY = modY;
         this.modZ = modZ;
+    }
+
+    private BlockFace(final BlockFace face1, final BlockFace face2) {
+        this.modX = face1.getModX() + face2.getModX();
+        this.modY = face1.getModY() + face2.getModY();
+        this.modZ = face1.getModZ() + face2.getModZ();
     }
 
     /**
