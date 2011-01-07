@@ -7,11 +7,12 @@ import org.bukkit.Location;
 import org.bukkit.Player;
 
 public class CraftPlayer extends CraftHumanEntity implements Player {
-
     private EntityPlayerMP entity;
+    private String name;
 
     public CraftPlayer(CraftServer server, EntityPlayerMP entity) {
         super(server, entity);
+        this.name = getName();
         this.entity = entity;
     }
 
@@ -45,6 +46,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public void teleportTo(Location location) {
         entity.a.a(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+    }
+
+    public String getDisplayName() {
+        return name;
+    }
+
+    public void getDisplayName(final String name) {
+        this.name = name;
     }
 
     @Override
