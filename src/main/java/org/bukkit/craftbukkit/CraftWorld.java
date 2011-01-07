@@ -7,6 +7,7 @@ import java.util.Map;
 import net.minecraft.server.EntityMinecart;
 import java.util.Random;
 
+import net.minecraft.server.EntityBoat;
 import net.minecraft.server.EntityEgg;
 import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntityPlayerMP;
@@ -18,6 +19,7 @@ import net.minecraft.server.WorldServer;
 import net.minecraft.server.WorldGenTrees;
 import org.bukkit.Arrow;
 import org.bukkit.Block;
+import org.bukkit.Boat;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Minecart;
@@ -144,6 +146,13 @@ public class CraftWorld implements World {
         return new CraftPoweredMinecart(world.getServer(), minecart);
     }
     
+    public Boat spawnBoat(Location loc) {
+        EntityBoat boat =
+            new EntityBoat(world, loc.getX(), loc.getY(), loc.getZ());
+        world.a(boat);
+        return new CraftBoat(world.getServer(), boat);
+    }
+    
     public boolean generateTree(Location loc) {
         WorldGenTrees treeGen = new WorldGenTrees();
         return treeGen.a(world, rand,
@@ -165,18 +174,12 @@ public class CraftWorld implements World {
             return new CraftPlayer(world.getServer(), (EntityPlayerMP)entity);
         } else if (entity instanceof EntitySnowball) {
             return new CraftSnowball(world.getServer(), (EntitySnowball)entity);
-        } else if (entity instanceof EntityMinecart) {
-            EntityMinecart minecart = (EntityMinecart)entity;
-            if (minecart.minecart != null) {
-                return minecart.minecart;
-            }
-            
-            return CraftMinecart.getCraftMinecart(world.getServer(),
-                    (EntityMinecart)entity);
         } else if (entity instanceof EntityPlayer) {
             return new CraftHumanEntity(world.getServer(), (EntityPlayer)entity);
         } else if (entity instanceof EntityLiving) {
             return new CraftLivingEntity(world.getServer(), (EntityLiving)entity);
+        } else if (entity instanceof CraftMappable) {
+            return ((CraftMappable)entity).getCraftEntity();
         } else {
             return null;
         }

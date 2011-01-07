@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftBoat;
+import org.bukkit.craftbukkit.CraftEntity;
+import org.bukkit.craftbukkit.CraftMappable;
 import org.bukkit.craftbukkit.CraftMinecart;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.Event.Type;
@@ -13,9 +15,9 @@ import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.event.vehicle.VehicleEntityCollisionEvent;
 import org.bukkit.event.vehicle.VehicleMoveEvent;
 
-public class EntityBoat extends Entity {
+public class EntityBoat extends Entity implements CraftMappable {
 
-    public CraftBoat boat;
+    private CraftBoat boat;
 
     public int a;
     public int b;
@@ -26,6 +28,10 @@ public class EntityBoat extends Entity {
     private double aj;
     private double ak;
     private double al;
+
+    public CraftEntity getCraftEntity() {
+        return boat;
+    }
 
     public EntityBoat(World world) {
         super(world);

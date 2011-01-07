@@ -4,15 +4,17 @@ import java.util.List;
 
 import org.bukkit.Location;
 import org.bukkit.Vector;
+import org.bukkit.craftbukkit.CraftEntity;
+import org.bukkit.craftbukkit.CraftMappable;
 import org.bukkit.craftbukkit.CraftMinecart;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.vehicle.*;
 
 public class EntityMinecart extends Entity
-        implements IInventory {
+        implements IInventory, CraftMappable {
 
-    public CraftMinecart minecart;
+    private CraftMinecart minecart;
     
     private ItemStack ak[];
     public int a;
@@ -100,6 +102,10 @@ public class EntityMinecart extends Entity
     private double flyingX = 0.94999998807907104;
     private double flyingY = 0.94999998807907104;
     private double flyingZ = 0.94999998807907104;
+
+    public CraftEntity getCraftEntity() {
+        return minecart;
+    }
 
     public EntityMinecart(World world) {
         super(world);
