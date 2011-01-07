@@ -153,7 +153,7 @@ public class CraftBlock implements Block {
      * @return Block at the given face
      */
     public Block getFace(final BlockFace face) {
-        return getRelative(face.getModX(), face.getModY(), face.getModZ());
+        return getFace(face, 1);
     }
 
     /**
