@@ -71,14 +71,6 @@ public class BlockListener implements Listener {
     }
 
     /**
-     * Called when a player right clicks a block
-     *
-     * @param event Relevant event details
-     */
-    public void onBlockRightClicked(BlockRightClickedEvent event) {
-    }
-
-    /**
      * Called when leaves are decaying naturally
      *
      * @param event Relevant event details
