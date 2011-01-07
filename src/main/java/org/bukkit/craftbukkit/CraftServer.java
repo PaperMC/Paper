@@ -90,6 +90,7 @@ public final class CraftServer implements Server {
 
             if (partialName.equalsIgnoreCase(iterPlayerName)) {
                 // Exact match
+            	matchedPlayers.clear();
             	matchedPlayers.add(iterPlayer);
             	break;
             }	
