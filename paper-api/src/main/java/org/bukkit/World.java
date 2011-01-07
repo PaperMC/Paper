@@ -103,4 +103,12 @@ public interface World {
      * @return
      */
     public PoweredMinecart spawnPoweredMinecart(Location loc);
+    
+    /**
+     * Spawn a boat.
+     * 
+     * @param loc
+     * @return
+     */
+    public Boat spawnBoat(Location loc);
 }
