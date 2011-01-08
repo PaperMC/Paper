@@ -215,7 +215,7 @@ public class Location implements Cloneable {
     }
 
     @Override
-    protected Location clone() {
+    public Location clone() {
         return new Location(world, x, y, z, yaw, pitch);
     }
 }
