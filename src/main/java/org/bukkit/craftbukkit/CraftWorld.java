@@ -9,6 +9,7 @@ import java.util.Random;
 
 import net.minecraft.server.EntityBoat;
 import net.minecraft.server.EntityEgg;
+import net.minecraft.server.EntityItem;
 import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntityPlayerMP;
 import net.minecraft.server.EntitySnowball;
@@ -22,6 +23,8 @@ import org.bukkit.Arrow;
 import org.bukkit.Block;
 import org.bukkit.Boat;
 import org.bukkit.Chunk;
+import org.bukkit.ItemDrop;
+import org.bukkit.ItemStack;
 import org.bukkit.Location;
 import org.bukkit.Minecart;
 import org.bukkit.PoweredMinecart;
@@ -110,6 +113,28 @@ public class CraftWorld implements World {
     public WorldServer getHandle() {
         return world;
     }
+    
+    public ItemDrop dropItem(Location loc, ItemStack item) {
+        net.minecraft.server.ItemStack stack =
+                new net.minecraft.server.ItemStack(
+                        item.getTypeID(), item.getAmount(), item.getDamage());
+        EntityItem entity = new EntityItem(world, loc.getX(), loc.getY(),
+                loc.getZ(), stack);
+        entity.c = 10;
+        world.a(entity);
+        return new CraftItemDrop(world.getServer(), entity);
+    }
+    
+    public ItemDrop dropItemNaturally(Location loc, ItemStack item) {
+        double xs = world.l.nextFloat() * 0.7F + (1.0F - 0.7F) * 0.5D;
+        double ys = world.l.nextFloat() * 0.7F + (1.0F - 0.7F) * 0.5D;
+        double zs = world.l.nextFloat() * 0.7F + (1.0F - 0.7F) * 0.5D;
+        loc = loc.clone();
+        loc.setX(loc.getX() + xs);
+        loc.setX(loc.getY() + ys);
+        loc.setX(loc.getZ() + zs);
+        return dropItem(loc, item);
+    }
 
     public Arrow spawnArrow(Location loc, Vector velocity, float speed,
             float spread) {
@@ -169,6 +194,8 @@ public class CraftWorld implements World {
     public CraftEntity toCraftEntity(net.minecraft.server.Entity entity) {
         if (entity instanceof CraftMappable) {
             return ((CraftMappable)entity).getCraftEntity();
+        } else if (entity instanceof EntityItem) {
+            return new CraftItemDrop(world.getServer(), (EntityItem)entity);
         } else if (entity instanceof EntityArrow) {
             return new CraftArrow(world.getServer(), (EntityArrow)entity);
         } else if (entity instanceof EntityEgg) {
