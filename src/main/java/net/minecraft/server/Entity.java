@@ -829,7 +829,10 @@ public abstract class Entity {
         return (double) J * 0.75D;
     }
 
-    public void e(Entity entity) {
+    public void setPassengerOf(Entity entity) {
+        // e(null) doesn't really fly for overloaded methods,
+        // so this method is needed
+        
         d = 0.0D;
         e = 0.0D;
         if (entity == null) {
@@ -854,6 +857,10 @@ public abstract class Entity {
         }
         k = entity;
         entity.j = this;
+    }
+    
+    public void e(Entity entity) {
+        setPassengerOf(entity);
     }
 
     public Vec3D C() {

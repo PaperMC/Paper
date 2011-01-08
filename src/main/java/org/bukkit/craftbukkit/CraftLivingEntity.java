@@ -11,6 +11,7 @@ import org.bukkit.Arrow;
 import org.bukkit.Egg;
 import org.bukkit.LivingEntity;
 import org.bukkit.Snowball;
+import org.bukkit.Vehicle;
 
 public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     private EntityLiving entity;
@@ -61,11 +62,36 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         return new CraftSnowball(server, snowball);
     }
 
-    @Override
     public Arrow shootArrow() {
         net.minecraft.server.World world = ((CraftWorld)getWorld()).getHandle();
         EntityArrow snowball = new EntityArrow(world, entity);
         world.a(snowball);
         return new CraftArrow(server, snowball);
+    }
+
+    public boolean isInsideVehicle() {
+        return entity.k != null;
+    }
+
+    public boolean leaveVehicle() {
+        if (entity.k == null) {
+            return false;
+        }
+        
+        entity.setPassengerOf(null);
+        return true;
+    }
+
+    public Vehicle getVehicle() {
+        if (entity.k == null) {
+            return null;
+        }
+        
+        org.bukkit.Entity vehicle = ((CraftWorld)getWorld()).toCraftEntity(entity.k);
+        if (vehicle instanceof Vehicle) {
+            return (Vehicle)vehicle;
+        }
+        
+        return null;
     }
 }

@@ -5,6 +5,7 @@ import net.minecraft.server.Entity;
 import net.minecraft.server.WorldServer;
 import org.bukkit.Location;
 import org.bukkit.Vector;
+import org.bukkit.Vehicle;
 import org.bukkit.World;
 
 public abstract class CraftEntity implements org.bukkit.Entity {
