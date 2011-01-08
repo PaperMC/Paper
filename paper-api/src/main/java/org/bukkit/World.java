@@ -111,4 +111,20 @@ public interface World {
      * @return
      */
     public Boat spawnBoat(Location loc);
+
+    /**
+     * Gets the name of this world. This is not guaranteed to be unique.
+     *
+     * @return Name of this world
+     */
+    public String getName();
+
+    /**
+     * Gets a semi-unique identifier for this world. While it is highly unlikely
+     * that this may be shared with another World, it is not guaranteed to be
+     * unique.
+     *
+     * @return Id of this world
+     */
+    public long getId();
 }
