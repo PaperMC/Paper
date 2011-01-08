@@ -190,6 +190,14 @@ public class CraftWorld implements World {
         return world.l(x, y, z);
     }
 
+    public String getName() {
+        return world.w;
+    }
+
+    public long getId() {
+        return world.u;
+    }
+
     @Override
     public String toString() {
         return "CraftWorld";
