@@ -39,6 +39,10 @@ public abstract class CraftEntity implements org.bukkit.Entity {
         entity.b(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
     }
 
+    public void teleportTo(org.bukkit.Entity destination) {
+        teleportTo(destination.getLocation());
+    }
+
     public int getEntityID() {
         return entity.g;
     }
