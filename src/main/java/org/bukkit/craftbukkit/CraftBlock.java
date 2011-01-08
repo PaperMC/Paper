@@ -1,6 +1,7 @@
 
 package org.bukkit.craftbukkit;
 
+import net.minecraft.server.MobSpawnerBase;
 import org.bukkit.*;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.block.CraftBlockState;
@@ -264,5 +265,38 @@ public class CraftBlock implements Block {
             default:
                 return new CraftBlockState(this);
         }
+    }
+
+    public Biome getBiome() {
+        // TODO: This may not be 100% accurate; investigate into getting per-block instead of per-chunk
+        MobSpawnerBase base = world.getHandle().a().a(chunk.getX(), chunk.getZ());
+
+        if (base == MobSpawnerBase.a) {
+            return Biome.RAINFOREST;
+        } else if (base == MobSpawnerBase.b) {
+            return Biome.SWAMPLAND;
+        } else if (base == MobSpawnerBase.c) {
+            return Biome.SEASONAL_FOREST;
+        } else if (base == MobSpawnerBase.d) {
+            return Biome.FOREST;
+        } else if (base == MobSpawnerBase.e) {
+            return Biome.SAVANNA;
+        } else if (base == MobSpawnerBase.f) {
+            return Biome.SHRUBLAND;
+        } else if (base == MobSpawnerBase.g) {
+            return Biome.TAIGA;
+        } else if (base == MobSpawnerBase.h) {
+            return Biome.DESERT;
+        } else if (base == MobSpawnerBase.i) {
+            return Biome.PLAINS;
+        } else if (base == MobSpawnerBase.j) {
+            return Biome.ICE_DESERT;
+        } else if (base == MobSpawnerBase.k) {
+            return Biome.TUNDRA;
+        } else if (base == MobSpawnerBase.l) {
+            return Biome.HELL;
+        }
+
+        return null;
     }
 }
