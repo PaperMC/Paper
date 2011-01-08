@@ -1,11 +1,16 @@
 package org.bukkit.event.vehicle;
 
+import org.bukkit.event.Listener;
+
 /**
  * Listener for vehicle events.
  * 
  * @author sk89q
  */
-public class VehicleListener {
+public class VehicleListener implements Listener {
+    public VehicleListener() {
+    }
+    
     /**
      * Called when a vehicle is created by a player. This hook will be called
      * for all vehicles created.
