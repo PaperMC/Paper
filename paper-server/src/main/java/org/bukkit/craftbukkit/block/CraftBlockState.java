@@ -19,15 +19,15 @@ public class CraftBlockState implements BlockState {
     protected byte data;
     protected byte light;
 
-    public CraftBlockState(final CraftWorld world, final int x, final int y, final int z, final int type, final byte data) {
-        this.world = world;
-        this.x = x;
-        this.y = y;
-        this.z = z;
-        this.type = type;
-        this.data = data;
-        this.light = (byte)world.getHandle().i(x, y, z);
-        this.chunk = (CraftChunk)world.getChunkAt(x << 4, z << 4);
+    public CraftBlockState(final Block block) {
+        this.world = (CraftWorld)block.getWorld();
+        this.x = block.getX();
+        this.y = block.getY();
+        this.z = block.getZ();
+        this.type = block.getTypeID();
+        this.data = block.getData();
+        this.light = block.getLightLevel();
+        this.chunk = (CraftChunk)block.getChunk();
     }
 
     /**
@@ -153,8 +153,14 @@ public class CraftBlockState implements BlockState {
 
         synchronized (block) {
             if (block.getType() != this.getType()) {
-                return false;
+                if (force) {
+                    block.setTypeID(this.getTypeID());
+                } else {
+                    return false;
+                }
             }
+
+            block.setData(data);
         }
 
         return true;

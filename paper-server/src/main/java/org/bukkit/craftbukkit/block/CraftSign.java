@@ -1,27 +1,42 @@
 
 package org.bukkit.craftbukkit.block;
 
+import net.minecraft.server.TileEntitySign;
 import org.bukkit.Block;
-import org.bukkit.Chunk;
-import org.bukkit.Material;
-import org.bukkit.World;
 import org.bukkit.block.Sign;
 import org.bukkit.craftbukkit.CraftWorld;
 
 public class CraftSign extends CraftBlockState implements Sign {
-    public CraftSign(final CraftWorld world, final int x, final int y, final int z, final int type, final byte data) {
-        super(world, x, y, z, type, data);
+    private final CraftWorld world;
+    private final TileEntitySign sign;
+
+    public CraftSign(final Block block) {
+        super(block);
+
+        world = (CraftWorld)block.getWorld();
+        sign = (TileEntitySign)world.getTileEntityAt(getX(), getY(), getZ());
     }
 
     public String[] getLines() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return sign.e;
     }
 
     public String getLine(int index) throws IndexOutOfBoundsException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return sign.e[index];
     }
 
     public void setLine(int index, String line) throws IndexOutOfBoundsException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        sign.e[index] = line;
+    }
+
+    @Override
+    public boolean update(boolean force) {
+        boolean result = super.update(force);
+
+        if (result) {
+            sign.d();
+        }
+
+        return result;
     }
 }
