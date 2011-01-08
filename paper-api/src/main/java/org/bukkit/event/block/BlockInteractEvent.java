@@ -1,7 +1,7 @@
 package org.bukkit.event.block;
 
 import org.bukkit.Block;
-import org.bukkit.Entity;
+import org.bukkit.LivingEntity;
 import org.bukkit.Player;
 import org.bukkit.event.Cancellable;
 
@@ -17,14 +17,14 @@ import org.bukkit.event.Cancellable;
  */
 public class BlockInteractEvent extends BlockEvent implements Cancellable {
     protected boolean cancel;
-    protected Entity theEntity;
+    protected LivingEntity theEntity;
     
     /**
      * @param type The type of this event
      * @param interactedBlock the block that was interacted with
      * @param who The entity that interacted with 
      */
-    public BlockInteractEvent(Type type, Block interactedBlock, Entity who) {
+    public BlockInteractEvent(Type type, Block interactedBlock, LivingEntity who) {
         super(type, interactedBlock);
         theEntity = who;
     }
@@ -54,7 +54,7 @@ public class BlockInteractEvent extends BlockEvent implements Cancellable {
      * 
      * @return Entity the entity that triggered this event
      */
-    public Entity getEntity() {
+    public LivingEntity getEntity() {
         return theEntity;
     }
     
