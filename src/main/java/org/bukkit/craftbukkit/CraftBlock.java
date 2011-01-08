@@ -4,6 +4,7 @@ package org.bukkit.craftbukkit;
 import org.bukkit.*;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.block.CraftBlockState;
+import org.bukkit.craftbukkit.block.CraftSign;
 
 public class CraftBlock implements Block {
     private final CraftWorld world;
@@ -253,6 +254,15 @@ public class CraftBlock implements Block {
     }
 
     public BlockState getState() {
-        return new CraftBlockState(world, x, y, z, type, data);
+        Material material = getType();
+
+        switch (material) {
+            case Sign:
+            case SignPost:
+            case WallSign:
+                return new CraftSign(this);
+            default:
+                return new CraftBlockState(this);
+        }
     }
 }

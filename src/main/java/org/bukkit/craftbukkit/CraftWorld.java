@@ -14,6 +14,7 @@ import net.minecraft.server.EntityPlayerMP;
 import net.minecraft.server.EntitySnowball;
 import net.minecraft.server.EntityArrow;
 import net.minecraft.server.EntityPlayer;
+import net.minecraft.server.TileEntity;
 import net.minecraft.server.WorldGenBigTree;
 import net.minecraft.server.WorldServer;
 import net.minecraft.server.WorldGenTrees;
@@ -183,6 +184,10 @@ public class CraftWorld implements World {
         } else {
             return null;
         }
+    }
+
+    public TileEntity getTileEntityAt(final int x, final int y, final int z) {
+        return world.l(x, y, z);
     }
 
     @Override
