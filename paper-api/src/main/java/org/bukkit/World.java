@@ -53,6 +53,24 @@ public interface World {
     public boolean isChunkLoaded(Chunk chunk);
     
     /**
+     * Drop an item exactly at the specified location.
+     * 
+     * @param loc
+     * @param item
+     * @return dropped item entity
+     */
+    public ItemDrop dropItem(Location loc, ItemStack item);
+    
+    /**
+     * Drop an item as if it was mined (randomly placed).
+     * 
+     * @param loc
+     * @param item
+     * @return dropped item entity
+     */
+    public ItemDrop dropItemNaturally(Location loc, ItemStack item);
+    
+    /**
      * Spawns an arrow.
      * 
      * @param loc
