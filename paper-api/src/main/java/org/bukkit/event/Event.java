@@ -169,31 +169,9 @@ public abstract class Event {
          * Called when a player undergoes an animation, such as arm swinging
          */
         PLAYER_ANIMATION (Category.PLAYER),
-
-        /**
-         * Always called when a player uses an item while pointing at a block
-         * Sometimes, cancelling this event doesn't do anything.
-         * 
-         * This is the event that is called on block placement. Cancel this
-         * to prevent block placement. This will ALWAYS be called, even if
-         * universe physics prevents the block from being placed. This allows
-         * you to add functionality to rightclicking with block items even
-         * if the universe won't allow them to get placed. Use BLOCK_CANBUILD
-         * to override notch's block placement rules.
-         * 
-         * Example: This event is also called, for example when redstone is
-         * placed, when a sign is placed, when minecarts are placed on a track,
-         * when boats are placed (in both water and air)
-         */
-        PLAYER_BLOCKITEM (Category.PLAYER),
         
         /**
-         * Called when a player uses an item while pointing at the air
-         * This can also be additionally called while pointing at the ground
-         * 
-         * Example: all food will also call this event while pointing at the
-         * ground, bows/snowballs/eggs will all call this while pointing at
-         * the ground, buckets call this event.
+         * Called when a player uses an item
          */
         PLAYER_ITEM (Category.PLAYER),
         
@@ -242,8 +220,18 @@ public abstract class Event {
         /**
          * Called when a player is attempting to place a block
          */
+        BLOCK_RIGHTCLICKED (Category.BLOCK),
+        
+        /**
+         * Called when a player is attempting to place a block
+         */
         BLOCK_PLACED (Category.BLOCK),
 
+        /**
+         * Called when an entity interacts with a block (lever, door, pressure plate, chest, furnace)
+         */
+        BLOCK_INTERACT (Category.BLOCK),
+        
         /**
          * Called when leaves are decaying naturally
          */

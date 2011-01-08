@@ -1,5 +1,7 @@
 package org.bukkit.event.player;
 
+import org.bukkit.Block;
+import org.bukkit.BlockFace;
 import org.bukkit.ItemStack;
 import org.bukkit.Material;
 import org.bukkit.Player;
@@ -13,11 +15,15 @@ import org.bukkit.event.Cancellable;
 public class PlayerItemEvent extends PlayerEvent implements Cancellable {
     protected ItemStack item;
     protected boolean cancel;
+    protected Block blockClicked;
+    protected BlockFace blockFace;
     
-    public PlayerItemEvent(Type type, Player who, ItemStack item) {
+    public PlayerItemEvent(Type type, Player who, ItemStack item, Block blockClicked, BlockFace blockFace) {
         super(type, who);
         this.item = item;
         cancel = false;
+        this.blockClicked = blockClicked;
+        this.blockFace = blockFace;
     }
 
     /**
@@ -63,5 +69,35 @@ public class PlayerItemEvent extends PlayerEvent implements Cancellable {
         if (this.item == null) return Material.Air;
         
         return item.getType();
+    }
+    
+    /**
+     * Convenience method to inform the user whether this was a block placement
+     * event.
+     * 
+     * @return boolean true if the item in hand was a block
+     */
+    public boolean isBlock() {
+        if (item == null) return false;
+        
+        return item.getType().isBlock();
+    }
+    
+    /**
+     * Returns the clicked block
+     * 
+     * @return Block returns the block clicked with this item.
+     */
+    public Block getBlockClicked() {
+        return blockClicked;
+    }
+    
+    /**
+     * Returns the face of the block that was clicked
+     * 
+     * @return BlockFace returns the face of the block that was clicked
+     */
+    public BlockFace getBlockFace() {
+        return blockFace;
     }
 }

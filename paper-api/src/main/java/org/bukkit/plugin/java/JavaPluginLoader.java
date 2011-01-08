@@ -108,6 +108,9 @@ public final class JavaPluginLoader implements PluginLoader {
                 case PLAYER_TELEPORT:
                     trueListener.onPlayerTeleport((PlayerMoveEvent)event);
                     break;
+                case PLAYER_ITEM:
+                    trueListener.onPlayerItem((PlayerItemEvent)event);
+                    break;
                 case PLAYER_LOGIN:
                     trueListener.onPlayerLogin((PlayerLoginEvent)event);
                     break;
@@ -121,6 +124,15 @@ public final class JavaPluginLoader implements PluginLoader {
                     break;
                 case BLOCK_CANBUILD:
                     trueListener.onBlockCanBuild((BlockCanBuildEvent)event);
+                    break;
+                case BLOCK_RIGHTCLICKED:
+                    trueListener.onBlockRightClicked((BlockRightClickedEvent) event);
+                    break;
+                case BLOCK_PLACED:
+                    trueListener.onBlockPlaced((BlockPlacedEvent)event);
+                    break;
+                case BLOCK_INTERACT:
+                    trueListener.onBlockInteracted((BlockInteractEvent)event);
                     break;
                 case BLOCK_FLOW:
                     trueListener.onBlockFlow((BlockFromToEvent)event);
