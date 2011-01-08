@@ -117,10 +117,11 @@ public class CraftBlock implements Block {
      * Sets the type-ID of this block
      *
      * @param type Type-ID to change this block to
+     * @return whether the block was changed
      */
-    public void setTypeID(final int type) {
+    public boolean setTypeID(final int type) {
         this.type = type;
-        world.getHandle().d(x, y, z, type);
+        return world.getHandle().d(x, y, z, type);
     }
 
     /**
