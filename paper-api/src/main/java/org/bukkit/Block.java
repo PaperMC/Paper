@@ -128,8 +128,9 @@ public interface Block {
      * Sets the type-ID of this block
      *
      * @param type Type-ID to change this block to
+     * @return whether the block was changed
      */
-    void setTypeID(int type);
+    boolean setTypeID(int type);
 
     /**
      * Gets the face relation of this block compared to the given block<br />
