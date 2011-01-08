@@ -159,4 +159,11 @@ public interface Block {
      * @return BlockState with the current state of this block.
      */
     BlockState getState();
+
+    /**
+     * Returns the biome that this block resides in
+     *
+     * @return Biome type containing this block
+     */
+    Biome getBiome();
 }
