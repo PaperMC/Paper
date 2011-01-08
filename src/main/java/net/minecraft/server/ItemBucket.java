@@ -1,8 +1,5 @@
 package net.minecraft.server;
 
-
-import java.util.Random;
-
 import org.bukkit.BlockFace;
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.CraftItemStack;
@@ -65,6 +62,7 @@ public class ItemBucket extends Item {
             if (a == 0) {
                 if (world.c(i, j, k) == Material.f && world.b(i, j, k) == 0) {
                     PlayerItemEvent pie = new PlayerItemEvent(Type.PLAYER_ITEM, thePlayer, itemInHand, blockClicked, direction);
+                    ((WorldServer) world).getServer().getPluginManager().callEvent(pie);
                     
                     if (!pie.isCancelled()) { 
                         world.d(i, j, k, 0);
@@ -75,6 +73,7 @@ public class ItemBucket extends Item {
                 }
                 if (world.c(i, j, k) == Material.g && world.b(i, j, k) == 0) {
                     PlayerItemEvent pie = new PlayerItemEvent(Type.PLAYER_ITEM, thePlayer, itemInHand, blockClicked, direction);
+                    ((WorldServer) world).getServer().getPluginManager().callEvent(pie);
                     
                     if (!pie.isCancelled()) {
                         world.d(i, j, k, 0);    

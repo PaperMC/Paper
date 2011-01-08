@@ -76,6 +76,7 @@ public class ItemBlock extends Item {
                 boolean canBuild = distanceFromSpawn > 16 || thePlayer.isOp();
                 
                 BlockPlacedEvent bpe = new BlockPlacedEvent(Type.BLOCK_PLACED, placedBlock, blockClicked, itemInHand, thePlayer, canBuild);
+                ((WorldServer) world).getServer().getPluginManager().callEvent(bpe);
                 
                 if (bpe.isCancelled() || !bpe.canBuild()) {
                     // Craftbukkit Undo!

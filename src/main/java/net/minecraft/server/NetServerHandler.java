@@ -342,6 +342,7 @@ implements ICommandListener {
             CraftItemStack craftItem = new CraftItemStack(itemstack);
             CraftPlayer player = new CraftPlayer(server, e);
             PlayerItemEvent pie = new PlayerItemEvent(Type.PLAYER_ITEM, player, craftItem, blockClicked, blockFace);
+            server.getPluginManager().callEvent(pie);
             
             // Craftbukkit We still call this event even in spawn protection.
             // Don't call this event if using Buckets / signs
