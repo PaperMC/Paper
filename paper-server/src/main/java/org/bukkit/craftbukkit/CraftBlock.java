@@ -1,7 +1,11 @@
 
 package org.bukkit.craftbukkit;
 
+import net.minecraft.server.MobSpawnerBase;
 import org.bukkit.*;
+import org.bukkit.block.BlockState;
+import org.bukkit.craftbukkit.block.CraftBlockState;
+import org.bukkit.craftbukkit.block.CraftSign;
 
 public class CraftBlock implements Block {
     private final CraftWorld world;
@@ -113,10 +117,11 @@ public class CraftBlock implements Block {
      * Sets the type-ID of this block
      *
      * @param type Type-ID to change this block to
+     * @return whether the block was changed
      */
-    public void setTypeID(final int type) {
+    public boolean setTypeID(final int type) {
         this.type = type;
-        world.getHandle().d(x, y, z, type);
+        return world.getHandle().d(x, y, z, type);
     }
 
     /**
@@ -153,7 +158,27 @@ public class CraftBlock implements Block {
      * @return Block at the given face
      */
     public Block getFace(final BlockFace face) {
-        return getRelative(face.getModX(), face.getModY(), face.getModZ());
+        return getFace(face, 1);
+    }
+
+    /**
+     * Gets the block at the given distance of the given face<br />
+     * <br />
+     * For example, the following method places water at 100,102,100; two blocks
+     * above 100,100,100.
+     * <pre>
+     * Block block = world.getBlockAt(100,100,100);
+     * Block shower = block.getFace(BlockFace.Up, 2);
+     * shower.setType(Material.WATER);
+     * </pre>
+     *
+     * @param face Face of this block to return
+     * @param distance Distance to get the block at
+     * @return Block at the given face
+     */
+    public Block getFace(final BlockFace face, final int distance) {
+        return getRelative(face.getModX() * distance, face.getModY() * distance,
+                face.getModZ() * distance);
     }
 
     /**
@@ -166,6 +191,38 @@ public class CraftBlock implements Block {
      */
     public Block getRelative(final int modX, final int modY, final int modZ) {
         return getWorld().getBlockAt(getX() + modX, getY() + modY, getZ() + modZ);
+    }
+
+    /**
+     * Gets the face relation of this block compared to the given block<br />
+     * <br />
+     * For example:
+     * <pre>
+     * Block current = world.getBlockAt(100, 100, 100);
+     * Block target = world.getBlockAt(100, 101, 100);
+     *
+     * current.getFace(target) == BlockFace.Up;
+     * </pre>
+     * <br />
+     * If the given block is not connected to this block, null may be returned
+     *
+     * @param block Block to compare against this block
+     * @return BlockFace of this block which has the requested block, or null
+     */
+    public BlockFace getFace(final Block block) {
+        BlockFace[] values = BlockFace.values();
+
+        for (BlockFace face : values) {
+            if (
+                    (this.getX() + face.getModX() == block.getX()) &&
+                    (this.getY() + face.getModY() == block.getY()) &&
+                    (this.getZ() + face.getModZ() == block.getZ())
+                ) {
+                return face;
+            }
+        }
+
+        return null;
     }
 
     @Override
@@ -196,5 +253,51 @@ public class CraftBlock implements Block {
         default:
             return BlockFace.Self;
         }
+    }
+
+    public BlockState getState() {
+        Material material = getType();
+
+        switch (material) {
+            case Sign:
+            case SignPost:
+            case WallSign:
+                return new CraftSign(this);
+            default:
+                return new CraftBlockState(this);
+        }
+    }
+
+    public Biome getBiome() {
+        // TODO: This may not be 100% accurate; investigate into getting per-block instead of per-chunk
+        MobSpawnerBase base = world.getHandle().a().a(chunk.getX(), chunk.getZ());
+
+        if (base == MobSpawnerBase.a) {
+            return Biome.RAINFOREST;
+        } else if (base == MobSpawnerBase.b) {
+            return Biome.SWAMPLAND;
+        } else if (base == MobSpawnerBase.c) {
+            return Biome.SEASONAL_FOREST;
+        } else if (base == MobSpawnerBase.d) {
+            return Biome.FOREST;
+        } else if (base == MobSpawnerBase.e) {
+            return Biome.SAVANNA;
+        } else if (base == MobSpawnerBase.f) {
+            return Biome.SHRUBLAND;
+        } else if (base == MobSpawnerBase.g) {
+            return Biome.TAIGA;
+        } else if (base == MobSpawnerBase.h) {
+            return Biome.DESERT;
+        } else if (base == MobSpawnerBase.i) {
+            return Biome.PLAINS;
+        } else if (base == MobSpawnerBase.j) {
+            return Biome.ICE_DESERT;
+        } else if (base == MobSpawnerBase.k) {
+            return Biome.TUNDRA;
+        } else if (base == MobSpawnerBase.l) {
+            return Biome.HELL;
+        }
+
+        return null;
     }
 }

@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,7 +27,9 @@ public final class CraftServer implements Server {
         this.server = server;
 
         pluginManager.RegisterInterface(JavaPluginLoader.class);
-
+    }
+    
+    public void loadPlugins() {
         File pluginFolder = (File)console.options.valueOf("plugins");
 
         if (pluginFolder.exists()) {
@@ -77,6 +80,27 @@ public final class CraftServer implements Server {
 
     public Player getPlayer(final EntityPlayerMP entity) {
         return entity.a.getPlayer();
+    }
+    
+    public List<Player> matchPlayer(String partialName) {
+        List<Player> matchedPlayers = new ArrayList<Player>();
+        
+        for (Player iterPlayer : this.getOnlinePlayers()) {
+            String iterPlayerName = iterPlayer.getName();
+
+            if (partialName.equalsIgnoreCase(iterPlayerName)) {
+                // Exact match
+            	matchedPlayers.clear();
+            	matchedPlayers.add(iterPlayer);
+            	break;
+            }	
+            if (iterPlayerName.toLowerCase().indexOf(partialName.toLowerCase()) != -1) {
+            	// Partial match
+                matchedPlayers.add(iterPlayer);
+            }
+        }
+
+        return matchedPlayers;
     }
 
     public PluginManager getPluginManager() {
