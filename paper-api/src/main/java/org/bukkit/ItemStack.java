@@ -127,6 +127,11 @@ public class ItemStack {
     }
 
     @Override
+    public String toString() {
+        return "ItemStack{"+getType().name()+" x "+getAmount()+"}";
+    }
+
+    @Override
     public boolean equals(Object object) {
         return false;
     }

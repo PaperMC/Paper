@@ -1,7 +1,5 @@
 package org.bukkit;
 
-import java.util.ArrayList;
-
 /**
  * Includes interface to the 4 armor slots
  */
@@ -11,7 +9,7 @@ public interface PlayerInventory extends Inventory {
      * 
      * @return All the ItemStacks from the armor slots
      */
-    public ArrayList<ItemStack> getArmorContents();
+    public ItemStack[] getArmorContents();
 
     /**
      * Return the ItemStack from the helmet slot
