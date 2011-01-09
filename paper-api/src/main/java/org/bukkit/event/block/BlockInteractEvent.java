@@ -27,6 +27,7 @@ public class BlockInteractEvent extends BlockEvent implements Cancellable {
     public BlockInteractEvent(Type type, Block interactedBlock, LivingEntity who) {
         super(type, interactedBlock);
         theEntity = who;
+        cancel = false;
     }
 
     /**
