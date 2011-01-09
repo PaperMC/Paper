@@ -15,11 +15,11 @@ public class BlockListener implements Listener {
     }
 
     /**
-     * Called when a block is broken (or destroyed)
+     * Called when a block is damaged (or broken)
      *
      * @param event Relevant event details
      */
-    public void onBlockBroken(BlockBrokenEvent event) {
+    public void onBlockDamaged(BlockDamagedEvent event) {
     }
 
     /**
