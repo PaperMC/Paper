@@ -1,7 +1,5 @@
 package org.bukkit.craftbukkit;
 
-import java.util.ArrayList;
-
 import net.minecraft.server.InventoryPlayer;
 
 import org.bukkit.ItemStack;
@@ -16,36 +14,34 @@ public class CraftInventoryPlayer extends CraftInventory implements PlayerInvent
         return (InventoryPlayer) inventory;
     }
 
-    public ArrayList<ItemStack> getArmorContents() {
-        ArrayList<ItemStack> items = new ArrayList<ItemStack>();
-        for (net.minecraft.server.ItemStack item : getInventory().getArmorContents()) {
-            ItemStack i = null;
-            if (item != null) {
-                i = new CraftItemStack(item);
-            }
-            items.add(i);
+    public CraftItemStack[] getArmorContents() {
+        net.minecraft.server.ItemStack[] mcItems = getInventory().getArmorContents();
+        CraftItemStack[] items = new CraftItemStack[mcItems.length];
+
+        for (int i = 0; i < mcItems.length; i++ ) {
+            items[i] = new CraftItemStack(mcItems[i]);
         }
 
         return items;
     }
 
-    public ItemStack getItemInHand() {
+    public CraftItemStack getItemInHand() {
         return new CraftItemStack( getInventory().e() );
     }
 
-    public ItemStack getHelmet() {
+    public CraftItemStack getHelmet() {
         return getItem( getSize() - 4 );
     }
 
-    public ItemStack getChestplate() {
+    public CraftItemStack getChestplate() {
         return getItem( getSize() - 3 );
     }
 
-    public ItemStack getLeggings() {
+    public CraftItemStack getLeggings() {
         return getItem( getSize() - 2 );
     }
 
-    public ItemStack getBoots() {
+    public CraftItemStack getBoots() {
         return getItem( getSize() - 1 );
     }
 

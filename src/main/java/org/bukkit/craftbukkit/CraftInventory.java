@@ -26,12 +26,12 @@ public class CraftInventory implements org.bukkit.Inventory {
         return getInventory().b();
     }
 
-    public ItemStack getItem(int index) {
+    public CraftItemStack getItem(int index) {
         return new CraftItemStack(getInventory().a(index));
     }
 
-    public ItemStack[] getContents() {
-        ItemStack[] items = new ItemStack[getSize()];
+    public CraftItemStack[] getContents() {
+        CraftItemStack[] items = new CraftItemStack[getSize()];
         net.minecraft.server.ItemStack[] mcItems = getInventory().getContents();
 
         for (int i = 0; i < mcItems.length; i++ ) {
@@ -127,7 +127,8 @@ public class CraftInventory implements org.bukkit.Inventory {
     public int firstPartial(int materialId) {
         ItemStack[] inventory = getContents();
         for (int i = 0; i < inventory.length; i++) {
-            if (inventory[i].getAmount() <= inventory[i].getMaxStackSize()) {
+            ItemStack item = inventory[i];
+            if (item != null && item.getTypeID() == materialId && item.getAmount() < item.getMaxStackSize()) {
                 return i;
             }
         }
@@ -141,8 +142,8 @@ public class CraftInventory implements org.bukkit.Inventory {
     public int firstPartial(ItemStack item) {
         return firstPartial(item.getTypeID());
     }
-
-    public HashMap<Integer,ItemStack> addItem(ItemStack... items) {
+    
+    public HashMap<Integer, ItemStack> addItem(ItemStack... items) {
         HashMap<Integer,ItemStack> leftover = new HashMap<Integer,ItemStack>();
 
         /* TODO: some optimization
@@ -165,31 +166,43 @@ public class CraftInventory implements org.bukkit.Inventory {
                     if (firstFree == -1) {
                         // No space at all!
                         leftover.put(i, item);
+                        break;
                     } else {
-                        // Just store it
-                        setItem( firstFree, item );
+                        // More than a single stack!
+                        if (item.getAmount() > getMaxItemStack()) {
+                            setItem( firstFree, new ItemStack(item.getTypeID(), getMaxItemStack()));
+                            item.setAmount(item.getAmount() - getMaxItemStack());
+                        } else {
+                            // Just store it
+                            setItem( firstFree, item );
+                            break;
+                        }
                     }
-                    break;
+                } else {
+                    // So, apparently it might only partially fit, well lets do just that
+                    ItemStack partialItem = getItem(firstPartial);
+
+                    int amount = item.getAmount();
+                    int partialAmount = partialItem.getAmount();
+                    int maxAmount = partialItem.getMaxStackSize();
+    
+                    // Check if it fully fits
+                    if (amount + partialAmount <= maxAmount) {
+                        partialItem.setAmount( amount + partialAmount );
+                        break;
+                    }
+    
+                    // It fits partially
+                    partialItem.setAmount( maxAmount );
+                    item.setAmount( amount + partialAmount - maxAmount );
                 }
-
-                // So, apparently it might only partially fit, well lets do just that
-                ItemStack partialItem = getItem(firstPartial);
-
-                int amount = item.getAmount();
-                int partialAmount = partialItem.getAmount();
-                int maxAmount = partialItem.getMaxStackSize();
-
-                // Check if it fully fits
-                if (amount + partialAmount <= maxAmount) {
-                    partialItem.setAmount( amount + partialAmount );
-                    break;
-                }
-
-                // It fits partially
-                partialItem.setAmount( maxAmount );
-                item.setAmount( amount + partialAmount - maxAmount );
             }
         }
         return leftover;
     }
+
+    private int getMaxItemStack() {
+        return getInventory().c();
+    }
+
 }
