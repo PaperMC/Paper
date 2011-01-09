@@ -12,7 +12,7 @@ public class CraftItemStack extends ItemStack {
     }
 
     /*
-     * Unsure if we have to syn before each of these calls the values in 'item'
+     * Unsure if we have to sync before each of these calls the values in 'item'
      * are all public.
      */
 
@@ -82,4 +82,8 @@ public class CraftItemStack extends ItemStack {
         }
     }
 
+    @Override
+    public int getMaxStackSize() {
+        return item.a().b();
+    }
 }
