@@ -113,6 +113,7 @@ public class ItemBucket extends Item {
                     } else {
                         // Craftbukkit bucket empty.
                         PlayerItemEvent pie = new PlayerItemEvent(Type.PLAYER_ITEM, thePlayer, itemInHand, blockClicked, direction);
+                        ((WorldServer) world).getServer().getPluginManager().callEvent(pie);
                         
                         if (!pie.isCancelled()) {
                             world.b(i, j, k, a, 0);
