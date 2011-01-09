@@ -28,7 +28,8 @@ public class BlockDoor extends Block {
     }
 
     public AxisAlignedBB d(World world, int i, int j, int k) {
-        a(world, i, j, k);
+        // Craftbukkit - Downcast necessary for doors to work
+        a((IBlockAccess) world, i, j, k);
         return super.d(world, i, j, k);
     }
 
