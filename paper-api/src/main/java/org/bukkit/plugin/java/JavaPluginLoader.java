@@ -16,6 +16,7 @@ import org.bukkit.event.CustomEventListener;
 import org.bukkit.event.Event;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
+import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamagedByBlockEvent;
 import org.bukkit.event.entity.EntityDamagedByEntityEvent;
 import org.bukkit.event.entity.EntityListener;
@@ -178,6 +179,9 @@ public final class JavaPluginLoader implements PluginLoader {
                     break;
                 case ENTITY_DEATH:
                     // TODO: ENTITY_DEATH hook
+                    break;
+                case ENTITY_COMBUST:
+                    trueListener.onEntityCombust((EntityCombustEvent)event);
                     break;
             }
         } else if (listener instanceof VehicleListener) {

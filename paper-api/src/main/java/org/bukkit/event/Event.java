@@ -423,6 +423,13 @@ public abstract class Event {
          * @todo: add javadoc see comment
          */
         ENTITY_DEATH (Category.LIVING_ENTITY),
+        
+        /**
+         * Called when a Skeleton or Zombie catch fire due to the sun
+         * 
+         * @todo: add javadoc see comment
+         */
+        ENTITY_COMBUST (Category.LIVING_ENTITY),
 
         /**
          * VEHICLE EVENTS

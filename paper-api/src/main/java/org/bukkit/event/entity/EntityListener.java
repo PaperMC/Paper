@@ -14,4 +14,7 @@ public class EntityListener implements Listener {
 
     public void onEntityDamagedByEntity(EntityDamagedByEntityEvent event) {
     }
+    
+    public void onEntityCombust(EntityCombustEvent event) {
+    }
 }
