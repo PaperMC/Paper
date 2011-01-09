@@ -1,5 +1,7 @@
 package org.bukkit.craftbukkit;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityPlayerMP;
 import net.minecraft.server.Packet3Chat;
@@ -26,6 +28,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             }
         }
         return false;
+    }
+
+    public InetSocketAddress getAddress() {
+        SocketAddress addr = entity.a.b.b();
+        if (addr instanceof InetSocketAddress) {
+            return (InetSocketAddress) addr;
+        } else {
+            return null;
+        }
     }
 
     @Override
