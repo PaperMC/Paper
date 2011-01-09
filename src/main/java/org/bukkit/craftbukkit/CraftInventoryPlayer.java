@@ -25,39 +25,43 @@ public class CraftInventoryPlayer extends CraftInventory implements PlayerInvent
         return items;
     }
 
+    public int getSize() {
+        return super.getSize() - 4;
+    }
+
     public CraftItemStack getItemInHand() {
         return new CraftItemStack( getInventory().e() );
     }
 
     public CraftItemStack getHelmet() {
-        return getItem( getSize() - 4 );
+        return getItem( getSize() + 0 );
     }
 
     public CraftItemStack getChestplate() {
-        return getItem( getSize() - 3 );
+        return getItem( getSize() + 1 );
     }
 
     public CraftItemStack getLeggings() {
-        return getItem( getSize() - 2 );
+        return getItem( getSize() + 2 );
     }
 
     public CraftItemStack getBoots() {
-        return getItem( getSize() - 1 );
+        return getItem( getSize() + 3 );
     }
 
     public void setHelmet(ItemStack helmet) {
-        setItem( getSize() - 4, helmet );
+        setItem( getSize() + 0, helmet );
     }
 
     public void setChestplate(ItemStack chestplate) {
-        setItem( getSize() - 3, chestplate );
+        setItem( getSize() + 1, chestplate );
     }
 
     public void setLeggings(ItemStack leggings) {
-        setItem( getSize() - 2, leggings );
+        setItem( getSize() + 2, leggings );
     }
 
     public void setBoots(ItemStack boots) {
-        setItem( getSize() - 1, boots );
+        setItem( getSize() + 3, boots );
     }
 }
