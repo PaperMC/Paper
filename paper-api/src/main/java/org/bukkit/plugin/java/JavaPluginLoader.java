@@ -140,6 +140,9 @@ public final class JavaPluginLoader implements PluginLoader {
                 case LEAVES_DECAY:
                     trueListener.onLeavesDecay((LeavesDecayEvent)event);
                     break;
+                case BLOCK_IGNITE:
+                    trueListener.onBlockIgnite((BlockIgniteEvent)event);
+                    break;
             }
         } else if(listener instanceof ServerListener) {
             ServerListener trueListener = (ServerListener)listener;

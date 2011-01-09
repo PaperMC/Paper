@@ -1,19 +1,98 @@
 package org.bukkit.event.block;
 
+import org.bukkit.Block;
+import org.bukkit.Player;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 
 /**
- * @author durron597
+ * @author SpeaKeasY
  *
+ * Represents a block ignite event.
  */
-public class BlockIgniteEvent extends Event {
+public class BlockIgniteEvent extends BlockEvent implements Cancellable {
+
+    private IgniteCause cause;
+    private boolean cancel;
+    private Player thePlayer;
+    private Block theBlock;
 
     /**
-     * @param type
+     * @param Block, IgniteCause, Player or null.
      */
-    public BlockIgniteEvent(Type type) {
-        super(type);
-        // TODO Auto-generated constructor stub
+    public BlockIgniteEvent(Block theBlock, IgniteCause cause, Player thePlayer) {
+        super(Event.Type.BLOCK_IGNITE, theBlock);
+        this.cause = cause;
+        this.theBlock = theBlock;
+        this.thePlayer = thePlayer;
+        this.cancel = false;
+    }
+
+    /**
+     * Gets the cancellation state of this event. A cancelled event will not
+     * be executed in the server, but will still pass to other plugins.
+     *
+     * If an ignite event is cancelled, the block will not be ignited.
+     * This will not fire an event.
+     *
+     * @return true if this event is cancelled
+     */
+    public boolean isCancelled() {
+        return cancel;
+    }
+
+    /**
+     * Sets the cancellation state of this event. A cancelled event will not
+     * be executed in the server, but will still pass to other plugins.
+     *
+     * If an ignite event is cancelled, the block will not be ignited.
+     * This will not fire an event.
+     *
+     * @param cancel true if you wish to cancel this event
+     */
+    public void setCancelled(boolean cancel) {
+        this.cancel = cancel;
+    }
+
+    /**
+     * Gets the cause of block ignite.
+     * @return An IgniteCause value detailing the cause of block ignition.
+     */
+    public IgniteCause getCause()
+    {
+        return cause;
+    }
+
+    /**
+     * Gets the player who ignited this block
+     *
+     * @return Player who placed the block, if not ignited by player returns null.
+     */
+    public Player getPlayer() {
+        return thePlayer;
+    }
+
+    /**
+     * An enum to specify the cause of the ignite
+     */
+    public enum IgniteCause {
+        /**
+         * Block ignition caused by lava.
+         */
+        LAVA,
+        /**
+         * Block ignition caused by player using flint-and-steel.
+         */
+        FLINT_AND_STEEL,
+        /**
+         * Block ignition caused by dynamic spreading of fire.
+         */
+        SPREAD,
+        /**
+         * Block ignition caused by VERY SLOW dynamic spreading of fire.
+         */
+        SLOW_SPREAD
+
     }
 
 }
