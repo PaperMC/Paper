@@ -48,7 +48,7 @@ public class CraftItemStack extends ItemStack {
     @Override
     public int getAmount() {
         super.setAmount(item != null ? item.a : 0); // sync, needed?
-        return item.a;
+        return (item != null ? item.a : 0);
     }
 
     @Override
