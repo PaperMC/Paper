@@ -8,7 +8,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Updater {
-    public static String directory = Fillr.directory;
+    public static String DIRECTORY = Fillr.DIRECTORY;
     private final Server server;
 
     Updater(Server server) {
@@ -22,7 +22,7 @@ public class Updater {
      *            The player to send info to
      */
     void updateAll(Player player) {
-        File folder = new File(directory);
+        File folder = new File(DIRECTORY);
         File[] files = folder.listFiles(new PluginFilter());
         if (files.length == 0) {
             player.sendMessage("No plugins to update.");
@@ -52,7 +52,7 @@ public class Updater {
      */
     void update(String string, Player player) {
         //TODO so much .jars
-        File file = new File(directory, string + ".jar");
+        File file = new File(DIRECTORY, string + ".jar");
         if (file.exists()) {
             PluginDescriptionFile pdfFile = Checker.getPDF(file);
             FillReader reader = Checker.needsUpdate(pdfFile);
@@ -94,7 +94,7 @@ public class Updater {
     void enablePlugin(FillReader update) {
         final String name = update.getName();
         //TODO again with the implicit jar support...
-        File plugin = new File(directory, name + ".jar");
+        File plugin = new File(DIRECTORY, name + ".jar");
         try {
             server.getPluginManager().loadPlugin(plugin);
         } catch (InvalidPluginException ex) {

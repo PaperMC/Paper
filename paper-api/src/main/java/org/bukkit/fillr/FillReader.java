@@ -13,7 +13,7 @@ import org.json.simple.parser.ParseException;
  */
 public class FillReader {
     //TODO change this to what it will actually be...
-    private static String baseUrl = "http://taylorkelly.me/pnfo.php";
+    private static final String BASE_URL = "http://taylorkelly.me/pnfo.php";
     private String currVersion;
     private String file;
     private String name;
@@ -24,8 +24,8 @@ public class FillReader {
         try {
             String result = "";
             try {
-                URL url = new URL(baseUrl + "?name=" + name);
-                System.out.println(baseUrl + "?name=" + name);
+                URL url = new URL(BASE_URL + "?name=" + name);
+                System.out.println(BASE_URL + "?name=" + name);
                 URLConnection conn = url.openConnection();
                 StringBuilder buf = new StringBuilder();
                 BufferedReader rd = new BufferedReader(new InputStreamReader(
