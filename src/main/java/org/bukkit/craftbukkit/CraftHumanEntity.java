@@ -2,22 +2,18 @@
 package org.bukkit.craftbukkit;
 
 import net.minecraft.server.EntityPlayer;
-import net.minecraft.server.InventoryPlayer;
 import org.bukkit.HumanEntity;
 import org.bukkit.ItemStack;
+import org.bukkit.PlayerInventory;
 
 public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     private EntityPlayer entity;
+    private CraftInventoryPlayer inventory;
 
     public CraftHumanEntity(final CraftServer server, final EntityPlayer entity) {
         super(server, entity);
         this.entity = entity;
-    }
-
-    public ItemStack getSelectedItem() {
-        // TODO: Implement inventories
-        final InventoryPlayer inventory = entity.an;
-        return new ItemStack(inventory.e().c, inventory.e().a);
+        this.inventory = new CraftInventoryPlayer( entity.an );
     }
 
     public String getName() {
@@ -32,6 +28,14 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     public void setHandle(final EntityPlayer entity) {
         super.setHandle((EntityPlayer)entity);
         this.entity = entity;
+    }
+
+    public PlayerInventory getInventory() {
+        return inventory;
+    }
+
+    public ItemStack getItemInHand() {
+        return getInventory().getItemInHand();
     }
 
     @Override

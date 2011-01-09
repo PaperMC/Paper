@@ -4,6 +4,8 @@ package org.bukkit.craftbukkit;
 import net.minecraft.server.Entity;
 import net.minecraft.server.WorldServer;
 import org.bukkit.Location;
+import org.bukkit.Vector;
+import org.bukkit.Vehicle;
 import org.bukkit.World;
 
 public abstract class CraftEntity implements org.bukkit.Entity {
@@ -19,12 +21,26 @@ public abstract class CraftEntity implements org.bukkit.Entity {
         return new Location(getWorld(), entity.p, entity.q, entity.r, entity.v, entity.w);
     }
 
+    public Vector getVelocity() {
+        return new Vector(entity.s, entity.t, entity.u);
+    }
+
+    public void setVelocity(Vector vel) {
+        entity.s = vel.getX();
+        entity.t = vel.getY();
+        entity.u = vel.getZ();
+    }
+
     public World getWorld() {
         return ((WorldServer)entity.l).getWorld();
     }
 
     public void teleportTo(Location location) {
         entity.b(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+    }
+
+    public void teleportTo(org.bukkit.Entity destination) {
+        teleportTo(destination.getLocation());
     }
 
     public int getEntityID() {

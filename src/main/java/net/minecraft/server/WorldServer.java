@@ -36,15 +36,21 @@ public class WorldServer extends World {
     @Override
     public boolean c(int i1, int j1, int k1, int l1) {
         boolean result = super.c(i1, j1, k1, l1);
-        if (world != null) world.updateBlock(i1, j1, k1);
+        if ((result) && (world != null)) world.updateBlock(i1, j1, k1);
         return result;
     }
 
     @Override
-    public boolean d(int i1, int j1, int k1, int l1) {
-        boolean result = super.d(i1, j1, k1, l1);
-        if (world != null) world.updateBlock(i1, j1, k1);
+    public boolean a(int i1, int j1, int k1, int l1) {
+        boolean result = super.a(i1, j1, k1, l1);
+        if ((result) && (world != null)) world.updateBlock(i1, j1, k1);
         return result;
+    }
+
+    @Override
+    public void a(int i1, int j1, int k1, TileEntity tileentity) {
+        super.a(i1, j1, k1, tileentity);
+        if (world != null) world.updateBlock(i1, j1, k1);
     }
 
     public CraftWorld getWorld() {

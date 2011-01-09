@@ -1,9 +1,7 @@
 package org.bukkit.craftbukkit;
 
 import net.minecraft.server.EntityMinecart;
-import org.bukkit.LivingEntity;
 import org.bukkit.Minecart;
-import org.bukkit.Vector;
 
 /**
  * A minecart.
@@ -36,25 +34,6 @@ public class CraftMinecart extends CraftVehicle implements Minecart {
     public CraftMinecart(CraftServer server, EntityMinecart entity) {
         super(server, entity);
         minecart = entity;
-    }
-
-    public Vector getVelocity() {
-        return new Vector(minecart.s, minecart.t, minecart.u);
-    }
-
-    public void setVelocity(Vector vel) {
-        minecart.s = vel.getX();
-        minecart.t = vel.getY();
-        minecart.u = vel.getZ();
-    }
-
-    public LivingEntity getPassenger() {
-        // @TODO: Implement
-        return null;
-    }
-
-    public boolean isEmpty() {
-        return minecart.j == null;
     }
 
     public void setDamage(int damage) {
