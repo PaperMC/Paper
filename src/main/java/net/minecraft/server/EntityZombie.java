@@ -23,14 +23,14 @@ public class EntityZombie extends EntityMobs {
             float f1 = b(1.0F);
 
             if (f1 > 0.5F && l.h(MathHelper.b(p), MathHelper.b(q), MathHelper.b(r)) && W.nextFloat() * 30F < (f1 - 0.4F) * 2.0F) {
-            	//Craftbukkit start
-				CraftServer server = ((WorldServer) l).getServer();
-				EntityCombustEvent event = new EntityCombustEvent(Type.ENTITY_COMBUST, new CraftLivingEntity(server, (EntityLiving) this));
-				server.getPluginManager().callEvent(event);
-				if (!event.isCancelled()) {
-					Z = 300;
-				}
-				//Craftbukkit stop
+                //Craftbukkit start
+                CraftServer server = ((WorldServer) l).getServer();
+                EntityCombustEvent event = new EntityCombustEvent(Type.ENTITY_COMBUST, new CraftLivingEntity(server, (EntityLiving) this));
+                server.getPluginManager().callEvent(event);
+                if (!event.isCancelled()) {
+                    Z = 300;
+                }
+                //Craftbukkit stop
             }
         }
         super.G();

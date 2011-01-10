@@ -3,17 +3,15 @@ package net.minecraft.server;
 
 public class ItemInWorldManager {
 
-    private World b; //currWorld
-    public EntityPlayer a; //currPlayer
-    private float c; // not used?
-    //Craftbukkit start
-    public float d; // blockDamage (0 up to 1) //Craftbukkit - Made public to get damage
-    //Craftbukkit stop
-    private int e; // funny counter
-    private float f; // blockHits
-    private int g; //posX
-    private int h; //posY
-    private int i; //posZ
+    private World b;
+    public EntityPlayer a;
+    private float c;
+    public float d; // CraftBukkit private -> public
+    private int e;
+    private float f;
+    private int g;
+    private int h;
+    private int i;
 
     public ItemInWorldManager(World world) {
         d = 0.0F;

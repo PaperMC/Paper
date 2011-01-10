@@ -51,7 +51,7 @@ public class EntityPlayerMP extends EntityPlayer
     }
 
     public void k() {
-    	// CraftBukkit: Downcast to make it work.
+        // CraftBukkit: Downcast to make it work.
         ap.a((ICrafting)this);
     }
 
@@ -223,7 +223,7 @@ public class EntityPlayerMP extends EntityPlayer
         a.b(new Packet100(bH, 1, "Crafting", 9));
         ap = new CraftingInventoryWorkbenchCB(an, this.l, i, j, l);
         ap.f = bH;
-    	// CraftBukkit: Downcast to make it work.
+        // CraftBukkit: Downcast to make it work.
         ap.a((ICrafting)this);
     }
 
@@ -232,7 +232,7 @@ public class EntityPlayerMP extends EntityPlayer
         a.b(new Packet100(bH, 0, iinventory.b(), iinventory.a()));
         ap = new CraftingInventoryChestCB(an, iinventory);
         ap.f = bH;
-    	// CraftBukkit: Downcast to make it work.
+        // CraftBukkit: Downcast to make it work.
         ap.a((ICrafting)this);
     }
 
@@ -241,7 +241,7 @@ public class EntityPlayerMP extends EntityPlayer
         a.b(new Packet100(bH, 2, tileentityfurnace.b(), tileentityfurnace.a()));
         ap = new CraftingInventoryFurnaceCB(an, tileentityfurnace);
         ap.f = bH;
-    	// CraftBukkit: Downcast to make it work.
+        // CraftBukkit: Downcast to make it work.
         ap.a((ICrafting)this);
     }
 
@@ -283,7 +283,7 @@ public class EntityPlayerMP extends EntityPlayer
     }
 
     public void K() {
-    	// CraftBukkit: Downcast to make it work.
+        // CraftBukkit: Downcast to make it work.
         ap.a((ICrafting)this);
         ap = ao;
     }
