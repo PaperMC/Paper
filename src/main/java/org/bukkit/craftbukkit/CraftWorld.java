@@ -139,7 +139,7 @@ public class CraftWorld implements World {
     public Arrow spawnArrow(Location loc, Vector velocity, float speed,
             float spread) {
         EntityArrow arrow = new EntityArrow(world);
-        arrow.c(loc.getX(), loc.getY(), loc.getZ());
+        arrow.c(loc.getX(), loc.getY(), loc.getZ(), 0, 0);
         world.a(arrow);
         arrow.a(velocity.getX(), velocity.getY(), velocity.getZ(), speed, spread);
         return new CraftArrow(world.getServer(), arrow);
