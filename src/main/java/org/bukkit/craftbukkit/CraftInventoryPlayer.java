@@ -15,17 +15,6 @@ public class CraftInventoryPlayer extends CraftInventory implements PlayerInvent
         return (InventoryPlayer) inventory;
     }
 
-    public ArrayList<ItemStack> getArmorContents() {
-        net.minecraft.server.ItemStack[] mcItems = getInventory().getArmorContents();
-        ArrayList<ItemStack> ret = new ArrayList<ItemStack>();
-
-        for (int i = 0; i < mcItems.length; i++ ) {
-            ret.add(new CraftItemStack(mcItems[i]));
-        }
-
-        return ret;
-    }
-
     public int getSize() {
         return super.getSize() - 4;
     }
@@ -64,5 +53,15 @@ public class CraftInventoryPlayer extends CraftInventory implements PlayerInvent
 
     public void setBoots(ItemStack boots) {
         setItem( getSize() + 3, boots );
+    }
+
+    public ItemStack[] getArmorContents() {
+        net.minecraft.server.ItemStack[] mcItems = getInventory().getArmorContents();
+        ItemStack[] ret = new ItemStack[mcItems.length];
+
+        for (int i = 0; i < mcItems.length; i++ ) {
+            ret[i] = new CraftItemStack(mcItems[i]);
+        }
+        return ret;
     }
 }
