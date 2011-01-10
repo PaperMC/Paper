@@ -233,6 +233,13 @@ public class NetServerHandler extends NetHandler
         e.a.b(new Packet13PlayerLookMove(d1, d2 + 1.6200000047683716D, d2, d3, f1, f2, false));
     }
 
+    // CraftBukkit start
+    // Get position of last block hit for BlockDamageLevel.STOPPED
+    private int lastX;
+    private int lastY;
+    private int lastZ;
+    // Craftbukkit stop
+
     public void a(Packet14BlockDig packet14blockdig) {
         if (packet14blockdig.e == 4) {
             e.L();
@@ -296,6 +303,9 @@ public class NetServerHandler extends NetHandler
                 }
             }
         } else if (packet14blockdig.e == 2) {
+            // Get last block that the player hit
+            // Otherwise the block is a Bedrock @(0,0,0)
+            block = (CraftBlock) player.getWorld().getBlockAt(lastX, lastY, lastZ);
             BlockDamagedEvent event = new BlockDamagedEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.STOPPED, player);
             server.getPluginManager().callEvent(event);
             if (!event.isCancelled()) {
@@ -326,8 +336,11 @@ public class NetServerHandler extends NetHandler
                 e.a.b(new Packet53BlockChange(l, i1, j1, d.e));
             }
         }
+        lastX = l;
+        lastY = i1;
+        lastZ = j1;
         // Craftbukkit stop
-        
+
         d.e.B = false;
     }
     // Craftbukkit start - store the last block right clicked and what type it was
