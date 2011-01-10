@@ -2,6 +2,7 @@ package net.minecraft.server;
 
 import java.util.*;
 import java.util.logging.Logger;
+import org.bukkit.BlockDamageLevel;
 
 import org.bukkit.BlockFace;
 import org.bukkit.Location;
@@ -10,14 +11,14 @@ import org.bukkit.craftbukkit.CraftItemStack;
 import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.Event.Type;
+import org.bukkit.event.block.BlockDamagedEvent;
 import org.bukkit.event.block.BlockRightClickedEvent;
 import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerItemEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 
-
 public class NetServerHandler extends NetHandler
-implements ICommandListener {
+        implements ICommandListener {
 
     public static Logger a = Logger.getLogger("Minecraft");
     public NetworkManager b;
@@ -30,7 +31,6 @@ implements ICommandListener {
     private double i;
     private boolean j;
     private Map<Integer, Short> k;
-
     // CraftBukkit - next 2 lines
     private final CraftServer server;
     private final CraftPlayer player;
@@ -272,15 +272,49 @@ implements ICommandListener {
         if (l1 > i2) {
             i2 = l1;
         }
+
+        // Craftbukkit start
+        CraftBlock block = (CraftBlock) player.getWorld().getBlockAt(l, i1, j1);
+        int blockID = block.getTypeID();
+        float damage = Block.m[blockID].a(player.getHandle()); //Get amount of damage going to block
+        
         if (packet14blockdig.e == 0) {
             if (i2 > 16 || flag) {
-                e.c.a(l, i1, j1);
+                if(blockID > 0) {
+                    BlockDamagedEvent event;
+                    // If the amount of damage that the player is going to do to the block
+                    // is >= 1, then the block is going to break (eg, flowers, torches)
+                    if(damage >= 1.0F) {
+                        event = new BlockDamagedEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.BROKEN, player);
+                    } else {
+                        event = new BlockDamagedEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.STARTED, player);
+                    }
+                    server.getPluginManager().callEvent(event);
+                    if (!event.isCancelled()) {
+                        e.c.a(l, i1, j1);
+                    }
+                }
             }
         } else if (packet14blockdig.e == 2) {
-            e.c.a();
+            BlockDamagedEvent event = new BlockDamagedEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.STOPPED, player);
+            server.getPluginManager().callEvent(event);
+            if (!event.isCancelled()) {
+                e.c.a();
+            }
         } else if (packet14blockdig.e == 1) {
             if (i2 > 16 || flag) {
-                e.c.a(l, i1, j1, k1);
+                BlockDamagedEvent event;
+                // If the amount of damage going to the block plus the current amount
+                // of damage is greater than 1, the block is going to break.
+                if (e.c.d + damage  >= 1.0F) {
+                    event = new BlockDamagedEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.BROKEN, player);
+                } else {
+                    event = new BlockDamagedEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.DIGGING, player);
+                }
+                server.getPluginManager().callEvent(event);
+                if (!event.isCancelled()) {
+                    e.c.a(l, i1, j1, k1);
+                }
             }
         } else if (packet14blockdig.e == 3) {
             double d6 = e.p - ((double) l + 0.5D);
@@ -292,21 +326,22 @@ implements ICommandListener {
                 e.a.b(new Packet53BlockChange(l, i1, j1, d.e));
             }
         }
+        // Craftbukkit stop
+        
         d.e.B = false;
     }
-    
     // Craftbukkit start - store the last block right clicked and what type it was
     CraftBlock lastRightClicked;
     int lastMaterial;
-    
+
     public void a(Packet15Place packet15place) {
         ItemStack itemstack = e.an.e();
         // Craftbukkit we don't check spawn protection here anymore
-        /* boolean flag = */d.e.B = d.f.g(e.aw);
-    
+        /* boolean flag = */        d.e.B = d.f.g(e.aw);
+
         CraftBlock blockClicked = null;
         BlockFace blockFace = null;
-        
+
         if (packet15place.d == 255) {
             // Craftbukkit ITEM_USE -- if we have a lastRightClicked then it could be a usable location
             if (packet15place.e != null && packet15place.e.c == lastMaterial) {
@@ -322,37 +357,37 @@ implements ICommandListener {
             lastRightClicked = blockClicked;
             lastMaterial = (packet15place.e == null) ? 0 : packet15place.e.c;
         }
-        
+
         if (blockClicked != null && itemstack != null) {
-            blockFace = CraftBlock.notchToBlockFace(packet15place.d); 
+            blockFace = CraftBlock.notchToBlockFace(packet15place.d);
         } else {
             blockFace = BlockFace.Self;
         }
-        
+
         // Craftbukkit if rightclick decremented the item, always send the update packet.
         // this is not here for Craftbukkit's own functionality; rather it is to fix
         // a notch bug where the item doesn't update correctly.
         boolean always = false;
-        
+
         if (packet15place.d == 255) {
             if (itemstack == null) {
                 return;
             }
-            
+
             CraftItemStack craftItem = new CraftItemStack(itemstack);
             CraftPlayer player = new CraftPlayer(server, e);
             PlayerItemEvent pie = new PlayerItemEvent(Type.PLAYER_ITEM, player, craftItem, blockClicked, blockFace);
-            
+
             // Craftbukkit We still call this event even in spawn protection.
             // Don't call this event if using Buckets / signs
             switch (craftItem.getType()) {
-            case Sign:
-            case Bucket:
-            case WaterBucket:
-            case LavaBucket:
-                break;
-            default:
-                server.getPluginManager().callEvent(pie);
+                case Sign:
+                case Bucket:
+                case WaterBucket:
+                case LavaBucket:
+                    break;
+                default:
+                    server.getPluginManager().callEvent(pie);
             }
 
             if (!pie.isCancelled()) {
@@ -374,17 +409,17 @@ implements ICommandListener {
             if (l1 > i2) {
                 i2 = l1;
             }
-            
+
             // Craftbukkit start
             CraftItemStack craftItem = new CraftItemStack(itemstack);
             CraftPlayer player = new CraftPlayer(server, e);
 //            boolean canBuild = (i2 > 16) || flag;
             BlockRightClickedEvent brce = new BlockRightClickedEvent(Type.BLOCK_RIGHTCLICKED, blockClicked, blockFace, craftItem, player);
             server.getPluginManager().callEvent(brce);
-            
+
             // Craftbukkit WE HAVE MOVED THE SPAWN PROTECTION CHECK DOWN INTO CLASS ItemBlock!!!
             e.c.a(e, d.e, itemstack, l, i1, j1, k1);
-            
+
             // These are the response packets back to the client
             e.a.b(new Packet53BlockChange(l, i1, j1, d.e));
             if (k1 == 0) {
@@ -421,7 +456,7 @@ implements ICommandListener {
         }
         d.e.B = false;
     }
-    
+
     public void a(String s, Object aobj[]) {
         a.info((new StringBuilder()).append(e.aw).append(" lost connection: ").append(s).toString());
         d.f.a(new Packet3Chat((new StringBuilder()).append("\247e").append(e.aw).append(" left the game.").toString()));
@@ -464,7 +499,9 @@ implements ICommandListener {
             PlayerChatEvent event = new PlayerChatEvent(Type.PLAYER_CHAT, player, s);
             server.getPluginManager().callEvent(event);
             s = String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage());
-            if (event.isCancelled()) return;
+            if (event.isCancelled()) {
+                return;
+            }
             // CraftBukkit stop
 
             a.info(s);
@@ -476,9 +513,11 @@ implements ICommandListener {
         // CraftBukkit start
         PlayerChatEvent event = new PlayerChatEvent(Type.PLAYER_COMMAND, player, s);
         server.getPluginManager().callEvent(event);
-        if (event.isCancelled()) return;
+        if (event.isCancelled()) {
+            return;
+        }
         s = event.getMessage();
-        CraftPlayer player = (CraftPlayer)event.getPlayer();
+        CraftPlayer player = (CraftPlayer) event.getPlayer();
         EntityPlayerMP e = player.getHandle();
         // CraftBukkit stop
 
@@ -634,6 +673,4 @@ implements ICommandListener {
             }
         }
     }
-
 }
-
