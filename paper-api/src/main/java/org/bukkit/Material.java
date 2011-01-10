@@ -183,7 +183,8 @@ public enum Material {
     GreenRecord(2257);
 
     private final int id;
-    private static final Map<Integer, Material> lookup = new HashMap<Integer, Material>();
+    private static final Map<Integer, Material> lookupId = new HashMap<Integer, Material>();
+    private static final Map<String, Material> lookupName = new HashMap<String, Material>();
 
     private Material(final int id) {
         this.id = id;
@@ -194,12 +195,18 @@ public enum Material {
     }
 
     public static Material getMaterial(final int id) {
-        return lookup.get(id);
+        return lookupId.get(id);
+    }
+
+    public static Material getMaterial(final String name) {
+        return lookupName.get(name);
     }
 
     static {
         for (Material material : values()) {
-            lookup.put(material.getID(), material);
+            lookupId.put(material.getID(), material);
+            lookupName.put(material.name(), material);
         }
     }
+    
 }
