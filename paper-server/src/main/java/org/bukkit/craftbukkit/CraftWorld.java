@@ -56,7 +56,7 @@ public class CraftWorld implements World {
     }
     
     public int getHighestBlockYAt(int x, int z) {
-    	return world.d(x, z);
+        return world.d(x, z);
     }
 
     public Chunk getChunkAt(int x, int z) {

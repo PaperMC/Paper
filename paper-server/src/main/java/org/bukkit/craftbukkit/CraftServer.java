@@ -90,12 +90,12 @@ public final class CraftServer implements Server {
 
             if (partialName.equalsIgnoreCase(iterPlayerName)) {
                 // Exact match
-            	matchedPlayers.clear();
-            	matchedPlayers.add(iterPlayer);
-            	break;
-            }	
+                matchedPlayers.clear();
+                matchedPlayers.add(iterPlayer);
+                break;
+            }
             if (iterPlayerName.toLowerCase().indexOf(partialName.toLowerCase()) != -1) {
-            	// Partial match
+                // Partial match
                 matchedPlayers.add(iterPlayer);
             }
         }
