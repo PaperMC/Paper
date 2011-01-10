@@ -21,14 +21,12 @@ public final class CraftServer implements Server {
 
     protected final MinecraftServer console;
     protected final ServerConfigurationManager server;
-    protected CraftScheduler scheduler;
 
     public CraftServer(MinecraftServer console, ServerConfigurationManager server) {
         this.console = console;
         this.server = server;
 
         pluginManager.RegisterInterface(JavaPluginLoader.class);
-	scheduler = new CraftScheduler(this);
     }
     
     public void loadPlugins() {
@@ -119,10 +117,6 @@ public final class CraftServer implements Server {
 
     public void setTime(long time) {
         console.e.e = time;
-    }
-    
-    public CraftScheduler getScheduler() {
-        return scheduler;
     }
 
     public ServerConfigurationManager getHandle() {

@@ -123,9 +123,6 @@ implements ICommandListener, Runnable {
             }
 
         }
-	
-	a.info("Starting timer event scheduler");
-	server.getScheduler().start();
 
         e();
     }
@@ -150,10 +147,6 @@ implements ICommandListener, Runnable {
 
     private void g() {
         a.info("Stopping server");
-	    
-	a.info("Starting timer event scheduler");
-	server.getScheduler().disable();
-	    
         if (f != null) {
             f.d();
         }
