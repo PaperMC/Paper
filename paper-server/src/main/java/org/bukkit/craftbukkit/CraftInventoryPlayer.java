@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit;
 
+import java.util.ArrayList;
 import net.minecraft.server.InventoryPlayer;
 
 import org.bukkit.ItemStack;
@@ -14,15 +15,15 @@ public class CraftInventoryPlayer extends CraftInventory implements PlayerInvent
         return (InventoryPlayer) inventory;
     }
 
-    public CraftItemStack[] getArmorContents() {
+    public ArrayList<ItemStack> getArmorContents() {
         net.minecraft.server.ItemStack[] mcItems = getInventory().getArmorContents();
-        CraftItemStack[] items = new CraftItemStack[mcItems.length];
+        ArrayList<ItemStack> ret = new ArrayList<ItemStack>();
 
         for (int i = 0; i < mcItems.length; i++ ) {
-            items[i] = new CraftItemStack(mcItems[i]);
+            ret.add(new CraftItemStack(mcItems[i]));
         }
 
-        return items;
+        return ret;
     }
 
     public int getSize() {
