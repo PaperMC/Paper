@@ -53,6 +53,24 @@ public interface World {
     public boolean isChunkLoaded(Chunk chunk);
     
     /**
+     * Drop an item exactly at the specified location.
+     * 
+     * @param loc
+     * @param item
+     * @return dropped item entity
+     */
+    public ItemDrop dropItem(Location loc, ItemStack item);
+    
+    /**
+     * Drop an item as if it was mined (randomly placed).
+     * 
+     * @param loc
+     * @param item
+     * @return dropped item entity
+     */
+    public ItemDrop dropItemNaturally(Location loc, ItemStack item);
+    
+    /**
      * Spawns an arrow.
      * 
      * @param loc
@@ -103,4 +121,28 @@ public interface World {
      * @return
      */
     public PoweredMinecart spawnPoweredMinecart(Location loc);
+    
+    /**
+     * Spawn a boat.
+     * 
+     * @param loc
+     * @return
+     */
+    public Boat spawnBoat(Location loc);
+
+    /**
+     * Gets the name of this world. This is not guaranteed to be unique.
+     *
+     * @return Name of this world
+     */
+    public String getName();
+
+    /**
+     * Gets a semi-unique identifier for this world. While it is highly unlikely
+     * that this may be shared with another World, it is not guaranteed to be
+     * unique.
+     *
+     * @return Id of this world
+     */
+    public long getId();
 }

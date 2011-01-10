@@ -1,6 +1,7 @@
 package org.bukkit.event.block;
 
 import org.bukkit.Block;
+import org.bukkit.ItemStack;
 import org.bukkit.Player;
 import org.bukkit.event.Cancellable;
 
@@ -8,21 +9,19 @@ import org.bukkit.event.Cancellable;
  * Not implemented yet
  */
 public class BlockPlacedEvent extends BlockEvent implements Cancellable {
-    private boolean cancel;
-    private Player player;
+    protected boolean cancel;
+    protected boolean canBuild;
+    protected Block placedAgainst;
+    protected ItemStack itemInHand;
+    protected Player player;
 
-    public BlockPlacedEvent(Type type, Block theBlock) {
-        super(type, theBlock);
+    public BlockPlacedEvent(Type type, Block placedBlock, Block placedAgainst, ItemStack itemInHand, Player thePlayer, boolean canBuild) {
+        super(type, placedBlock);
+        this.placedAgainst = placedAgainst;
+        this.itemInHand = itemInHand;
+        this.player = thePlayer;
+        this.canBuild = canBuild;
         cancel = false;
-    }
-
-    /**
-     * Gets the player who placed this block
-     *
-     * @return Player who placed the block
-     */
-    public Player getPlayer() {
-        return player;
     }
 
     /**
@@ -45,4 +44,62 @@ public class BlockPlacedEvent extends BlockEvent implements Cancellable {
         this.cancel = cancel;
     }
 
+    /**
+     * Gets the player who placed this block
+     *
+     * @return Player who placed the block
+     */
+    public Player getPlayer() {
+        return player;
+    }
+    
+    /**
+     * Clarity method for getting the placed block. Not really needed
+     * except for reasons of clarity
+     * 
+     * @return Block the block that was placed
+     */
+    public Block getBlockPlaced() {
+        return getBlock();
+    }
+    
+
+    /**
+     * Get the block that this block was placed against
+     * 
+     * @return Block the block that the new block was placed against
+     */
+    public Block getBlockAgainst() {
+        return placedAgainst;
+    }
+    
+    /**
+     * Returns the item in your hand when you placed the block
+     * 
+     * @return ItemStack the item in your hand when placing the block
+     */
+    public ItemStack getItemInHand() {
+        return itemInHand;
+    }
+
+    /**
+     * Gets the value whether the player would be allowed to build here.
+     * Defaults to spawn if the server was going to stop them (such as, the
+     * player is in Spawn). Note that this is an entirely different check
+     * than BLOCK_CANBUILD, as this refers to a player, not universe-physics
+     * rule like cactus on dirt.
+     * 
+     * @return boolean whether the server would allow a player to build here
+     */
+    public boolean canBuild() {
+        return this.canBuild;
+    }
+    
+    /**
+     * Sets the canBuild state of this event. Set to true if you want the
+     * player to be able to build.  
+     */
+    public void setBuild(boolean canBuild) {
+        this.canBuild = canBuild;
+    }
 }

@@ -1,6 +1,3 @@
-/**
- * 
- */
 package org.bukkit.event.block;
 
 import org.bukkit.Block;
@@ -9,45 +6,54 @@ import org.bukkit.ItemStack;
 import org.bukkit.Player;
 
 /**
- * @author durron597
+ * Not implemented yet
  */
-public class BlockRightClickedEvent extends BlockEvent {
-    protected Player clicker;
+public class BlockRightClickedEvent extends BlockEvent  {
+    protected Block clickedBlock;
     protected BlockFace direction;
-    protected ItemStack clickedWith;
+    protected ItemStack itemInHand;
+    protected Player player;
 
-    /**
-     * @param type The type of event this is
-     * @param theBlock The clicked block
-     * @param direction The face we clicked from
-     * @param clicker The player who clicked a block
-     * @param clickedWith Item in player's hand
-     */
-    public BlockRightClickedEvent(Type type, Block theBlock, BlockFace direction, Player clicker, ItemStack clickedWith) {
-        super(type, theBlock);
+    public BlockRightClickedEvent(Type type, Block placedAgainst, BlockFace direction, ItemStack itemInHand, Player thePlayer) {
+        super(type, placedAgainst);
+        this.clickedBlock = placedAgainst;
         this.direction = direction;
-        this.clicker = clicker;
-        this.clickedWith = clickedWith;
+        this.itemInHand = itemInHand;
+        this.player = thePlayer;
     }
 
     /**
-     * @return the clicker
+     * Gets the player who placed this block
+     *
+     * @return Player who placed the block
      */
-    public Player getClicker() {
-        return clicker;
+    public Player getPlayer() {
+        return player;
     }
+    
 
     /**
-     * @return the direction
+     * Get the block that this block was placed against
+     * 
+     * @return Block the block that the new block was placed against
+     */
+    public Block getBlockAgainst() {
+        return clickedBlock;
+    }
+    
+    /**
+     * @return BlockFace the direction this block was clicked
      */
     public BlockFace getDirection() {
         return direction;
     }
 
     /**
-     * @return the clickedWith
+     * Returns the item in your hand when you placed the block
+     * 
+     * @return ItemStack the item in your hand when placing the block
      */
-    public ItemStack getClickedWith() {
-        return clickedWith;
+    public ItemStack getItemInHand() {
+        return itemInHand;
     }
 }

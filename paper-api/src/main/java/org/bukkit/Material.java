@@ -194,6 +194,10 @@ public enum Material {
         return id;
     }
 
+    public boolean isBlock() {
+        return id < 256; 
+    }
+    
     public static Material getMaterial(final int id) {
         return lookupId.get(id);
     }
@@ -201,7 +205,7 @@ public enum Material {
     public static Material getMaterial(final String name) {
         return lookupName.get(name);
     }
-
+    
     static {
         for (Material material : values()) {
             lookupId.put(material.getID(), material);

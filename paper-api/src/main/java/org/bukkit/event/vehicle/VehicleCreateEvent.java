@@ -9,7 +9,7 @@ import org.bukkit.Vehicle;
  */
 public class VehicleCreateEvent extends VehicleEvent {
     public VehicleCreateEvent(Type type, Vehicle vehicle) {
+        
         super(type, vehicle);
     }
-
 }

@@ -1,7 +1,6 @@
 package org.bukkit.event.entity;
 
 import org.bukkit.Entity;
-import org.bukkit.LivingEntity;
 import org.bukkit.event.Event;
 
 /**

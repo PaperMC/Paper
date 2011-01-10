@@ -15,11 +15,11 @@ public class BlockListener implements Listener {
     }
 
     /**
-     * Called when a block is broken (or destroyed)
+     * Called when a block is damaged (or broken)
      *
      * @param event Relevant event details
      */
-    public void onBlockBroken(BlockBrokenEvent event) {
+    public void onBlockDamaged(BlockDamagedEvent event) {
     }
 
     /**
@@ -59,6 +59,22 @@ public class BlockListener implements Listener {
      */
     public void onBlockPlaced(BlockPlacedEvent event) {
     }
+    
+    /**
+     * Called when a block is interacted with
+     * 
+     * @param event Relevant event details
+     */
+    public void onBlockInteracted(BlockInteractEvent event) {
+    }
+
+    /**
+     * Called when a player right clicks a block
+     *
+     * @param event Relevant event details
+     */
+    public void onBlockRightClicked(BlockRightClickedEvent event) {
+    }
 
     /**
      * Called when redstone changes
@@ -68,14 +84,6 @@ public class BlockListener implements Listener {
      * @param event Relevant event details
      */
     public void onBlockRedstoneChange(BlockFromToEvent event) {    	
-    }
-
-    /**
-     * Called when a player right clicks a block
-     *
-     * @param event Relevant event details
-     */
-    public void onBlockRightClicked(BlockRightClickedEvent event) {
     }
 
     /**

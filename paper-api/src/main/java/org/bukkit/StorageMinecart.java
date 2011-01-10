@@ -5,5 +5,11 @@ package org.bukkit;
  * 
  * @author sk89q
  */
-public interface StorageMinecart extends Minecart, Inventory {
+public interface StorageMinecart extends Minecart {
+    /**
+     * Return the inventory object for this StorageMinecart.
+     * 
+     * @return The inventory for this Minecart
+     */
+    public Inventory getInventory();
 }

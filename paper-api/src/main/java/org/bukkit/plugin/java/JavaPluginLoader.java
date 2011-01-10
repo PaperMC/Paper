@@ -16,6 +16,7 @@ import org.bukkit.event.CustomEventListener;
 import org.bukkit.event.Event;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
+import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamagedByBlockEvent;
 import org.bukkit.event.entity.EntityDamagedByEntityEvent;
 import org.bukkit.event.entity.EntityListener;
@@ -108,6 +109,9 @@ public final class JavaPluginLoader implements PluginLoader {
                 case PLAYER_TELEPORT:
                     trueListener.onPlayerTeleport((PlayerMoveEvent)event);
                     break;
+                case PLAYER_ITEM:
+                    trueListener.onPlayerItem((PlayerItemEvent)event);
+                    break;
                 case PLAYER_LOGIN:
                     trueListener.onPlayerLogin((PlayerLoginEvent)event);
                     break;
@@ -122,11 +126,26 @@ public final class JavaPluginLoader implements PluginLoader {
                 case BLOCK_CANBUILD:
                     trueListener.onBlockCanBuild((BlockCanBuildEvent)event);
                     break;
+                case BLOCK_RIGHTCLICKED:
+                    trueListener.onBlockRightClicked((BlockRightClickedEvent) event);
+                    break;
+                case BLOCK_PLACED:
+                    trueListener.onBlockPlaced((BlockPlacedEvent)event);
+                    break;
+                case BLOCK_DAMAGED:
+                    trueListener.onBlockDamaged((BlockDamagedEvent)event);
+                    break;
+                case BLOCK_INTERACT:
+                    trueListener.onBlockInteracted((BlockInteractEvent)event);
+                    break;
                 case BLOCK_FLOW:
                     trueListener.onBlockFlow((BlockFromToEvent)event);
                     break;
                 case LEAVES_DECAY:
                     trueListener.onLeavesDecay((LeavesDecayEvent)event);
+                    break;
+                case BLOCK_IGNITE:
+                    trueListener.onBlockIgnite((BlockIgniteEvent)event);
                     break;
             }
         } else if(listener instanceof ServerListener) {
@@ -163,6 +182,9 @@ public final class JavaPluginLoader implements PluginLoader {
                     break;
                 case ENTITY_DEATH:
                     // TODO: ENTITY_DEATH hook
+                    break;
+                case ENTITY_COMBUST:
+                    trueListener.onEntityCombust((EntityCombustEvent)event);
                     break;
             }
         } else if (listener instanceof VehicleListener) {

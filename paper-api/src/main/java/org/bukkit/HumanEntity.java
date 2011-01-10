@@ -13,10 +13,34 @@ public interface HumanEntity extends LivingEntity {
     public String getName();
 
     /**
-     * Gets the item this entity has currently selected, which will be shown in
-     * their hand
+     * Get the player's inventory.
      *
-     * @return ItemStack containing details on the item this entity has selected
+     * @return The inventory of the player, this also contains the armor slots.
      */
-    public ItemStack getSelectedItem();
+    public PlayerInventory getInventory();
+
+    /**
+     * Returns the ItemStack currently in your hand, can be empty.
+     * 
+     * @return The ItemStack of the item you are currently holding.
+     */
+    public ItemStack getItemInHand();
+
+    
+    /** TODO: This probably won't work ;(
+     * Sets the item to the given ItemStack, this will replace whatever the
+     * user was holding.
+     * 
+     * @param item The ItemStack which will end up in the hand
+     * @return 
+     *
+    public void setItemInHand( ItemStack item );
+
+     **
+     * Changes the item in hand to another of your 'action slots'.
+     * 
+     * @param index The new index to use, only valid ones are 0-8.
+     * 
+    public void selectItemInHand( int index );
+    */
 }

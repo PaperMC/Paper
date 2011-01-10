@@ -115,4 +115,28 @@ public class ItemStack {
     public byte getDamage() {
         return damage;
     }
+
+    /**
+     * Get the maximum stacksize for the material hold in this ItemStack
+     * Returns -1 if it has no idea.
+     * 
+     * @return The maximum you can stack this material to.
+     */
+    public int getMaxStackSize() {
+        return -1;
+    }
+
+    @Override
+    public String toString() {
+        return "ItemStack{"+getType().name()+" x "+getAmount()+"}";
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        return false;
+    }
+
+    public boolean equals(ItemStack item) {
+        return item.getAmount() == getAmount() && item.getTypeID() == getTypeID();
+    }
 }

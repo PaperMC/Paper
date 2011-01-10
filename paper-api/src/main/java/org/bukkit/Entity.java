@@ -21,10 +21,17 @@ public interface Entity {
 
     /**
      * Teleports this entity to the given location
-     * 
+     *
      * @param location New location to teleport this entity to
      */
     public void teleportTo(Location location);
+
+    /**
+     * Teleports this entity to the target Entity
+     *
+     * @param destination Entity to teleport this entity to
+     */
+    public void teleportTo(Entity destination);
 
     /**
      * Returns a unique ID for this entity

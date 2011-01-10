@@ -24,9 +24,17 @@ public interface Vehicle extends Entity {
      * Gets the primary passenger of a vehicle. For vehicles that could have
      * multiple passengers, this will only return the primary passenger.
      * 
-     * @return a living entity
+     * @return an entity
      */
-    public LivingEntity getPassenger();
+    public Entity getPassenger();
+    
+    /**
+     * Set the passenger of a vehicle.
+     * 
+     * @param passenger
+     * @return false if it could not be done for whatever reason
+     */
+    public boolean setPassenger(Entity passenger);
     
     /**
      * Returns true if the vehicle has no passengers.
@@ -34,4 +42,11 @@ public interface Vehicle extends Entity {
      * @return
      */
     public boolean isEmpty();
+    
+    /**
+     * Eject any passenger. True if there was a passenger.
+     * 
+     * @return
+     */
+    public boolean eject();
 }

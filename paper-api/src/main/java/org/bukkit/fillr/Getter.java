@@ -10,7 +10,7 @@ import org.bukkit.plugin.InvalidPluginException;
 
 public class Getter {
     private Server server;
-    private static String directory = Fillr.directory;
+    private static String DIRECTORY = Fillr.DIRECTORY;
 
     public Getter(Server server) {
         this.server = server;
@@ -36,7 +36,7 @@ public class Getter {
     private void enablePlugin(FillReader update) {
         final String name = update.getName();
         //TODO again with the implicit jar support...
-        File plugin = new File(directory, name + ".jar");
+        File plugin = new File(DIRECTORY, name + ".jar");
         try {
             server.getPluginManager().loadPlugin(plugin);
         } catch (InvalidPluginException ex) {
