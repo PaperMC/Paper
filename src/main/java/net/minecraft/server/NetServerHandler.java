@@ -282,10 +282,9 @@ public class NetServerHandler extends NetHandler
 
         // Craftbukkit start
         CraftBlock block = (CraftBlock) player.getWorld().getBlockAt(l, i1, j1);
-        int blockID = 0;
+        int blockID = block.getTypeID();
         float damage = 0;
-        if(block != null) {
-            blockID = block.getTypeID();
+        if(Block.m[blockID] != null) {
             damage = Block.m[blockID].a(player.getHandle()); //Get amount of damage going to block
         }
 
