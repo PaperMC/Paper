@@ -5,6 +5,7 @@ import org.bukkit.craftbukkit.CraftItemStack;
 import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.player.PlayerItemEvent;
+import org.bukkit.event.block.BlockIgniteEvent;
 
 
 public class ItemFlintAndSteel extends Item {
@@ -46,12 +47,16 @@ public class ItemFlintAndSteel extends Item {
             CraftItemStack itemInHand = new CraftItemStack(itemstack);
             CraftPlayer thePlayer = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entityplayer);
             PlayerItemEvent pie = new PlayerItemEvent(Type.PLAYER_ITEM, thePlayer, itemInHand, blockClicked, CraftBlock.notchToBlockFace(l));
-            
             ((WorldServer) world).getServer().getPluginManager().callEvent(pie);
             
+            org.bukkit.Block pblock = (((WorldServer) world).getWorld().getBlockAt(i, j, k));
+            BlockIgniteEvent bie = new BlockIgniteEvent((org.bukkit.Block) pblock, BlockIgniteEvent.IgniteCause.FLINT_AND_STEEL, thePlayer);
+            ((WorldServer) world).getServer().getPluginManager().callEvent(bie);
+
             boolean preventLighter = pie.isCancelled();
+            boolean preventFire = bie.isCancelled();
             
-            if (preventLighter) {
+            if (preventLighter || preventFire) {
                 return false;
             } else {
                 world.a((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "fire.ignite", 1.0F, b.nextFloat() * 0.4F + 0.8F);
