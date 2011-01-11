@@ -136,6 +136,10 @@ public final class SimplePluginManager implements PluginManager {
         return lookupNames.get(name);
     }
 
+    public Plugin[] getPlugins() {
+        return plugins.toArray(new Plugin[0]);
+    }
+
     /**
      * Checks if the given plugin is enabled or not
      *

@@ -31,6 +31,13 @@ public interface PluginManager {
     public Plugin getPlugin(String name);
 
     /**
+     * Gets a list of all currently loaded plugins
+     *
+     * @return Array of Plugins
+     */
+    public Plugin[] getPlugins();
+
+    /**
      * Checks if the given plugin is enabled or not
      *
      * Please note that the name of the plugin is case-sensitive.
