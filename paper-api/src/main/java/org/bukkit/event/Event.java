@@ -342,16 +342,6 @@ public abstract class Event {
          * SERVER EVENTS
          */
 
-	/**
-	 * Called when a timer has expired
-	 */
-	TIMER_EXPIRED(Category.SERVER),
-
-	/**
-	 * Called when a timer has been removed from the server.
-	 */
-	TIMER_UNREGISTERED(Category.SERVER),
-
         /**
          * Called when a plugin is enabled
          *
