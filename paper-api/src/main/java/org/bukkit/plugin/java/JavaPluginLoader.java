@@ -8,6 +8,8 @@ import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
@@ -37,6 +39,7 @@ public final class JavaPluginLoader implements PluginLoader {
     private final Pattern[] fileFilters = new Pattern[] {
             Pattern.compile("\\.jar$"),
     };
+    private final Map<String, Class<?>> classes = new HashMap<String, Class<?>>();
 
     public JavaPluginLoader(Server instance) {
         server = instance;
@@ -67,7 +70,7 @@ public final class JavaPluginLoader implements PluginLoader {
         }
 
         try {
-            ClassLoader loader = URLClassLoader.newInstance(new URL[]{file.toURI().toURL()}, getClass().getClassLoader());
+            ClassLoader loader = new PluginClassLoader(this, new URL[]{file.toURI().toURL()}, getClass().getClassLoader());
             Class<?> jarClass = Class.forName(description.getMain(), true, loader);
             Class<? extends JavaPlugin> plugin = jarClass.asSubclass(JavaPlugin.class);
             Constructor<? extends JavaPlugin> constructor = plugin.getConstructor(PluginLoader.class, Server.class, PluginDescriptionFile.class, File.class, ClassLoader.class);
@@ -82,6 +85,14 @@ public final class JavaPluginLoader implements PluginLoader {
 
     public Pattern[] getPluginFileFilters() {
         return fileFilters;
+    }
+
+    public Class<?> getClassByName(final String name) {
+        return classes.get(name);
+    }
+
+    public void setClass(final String name, final Class<?> clazz) {
+        classes.put(name, clazz);
     }
 
     public void callEvent(RegisteredListener registration, Event event) {
