@@ -327,6 +327,8 @@ public class NetServerHandler extends NetHandler
                 server.getPluginManager().callEvent(event);
                 if (!event.isCancelled()) {
                     e.c.a(l, i1, j1, k1);
+                } else {
+                    e.c.d = 0; // Reset the amount of damage if stopping break.
                 }
             }
         } else if (packet14blockdig.e == 3) {
