@@ -1,11 +1,14 @@
 package net.minecraft.server;
 
+import java.util.Random;
+
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.CraftItemStack;
 import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.player.PlayerItemEvent;
-
+// CraftBukkit end
 
 public class ItemHoe extends Item {
 
@@ -20,17 +23,17 @@ public class ItemHoe extends Item {
         Material material = world.c(i, j + 1, k);
 
         if (!material.a() && i1 == Block.u.bh || i1 == Block.v.bh) {
-            // Craftbukkit start
-            // Hoes
+            // CraftBukkit start - Hoes
             CraftBlock blockClicked = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
             CraftItemStack itemInHand = new CraftItemStack(itemstack);
             CraftPlayer thePlayer = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entityplayer);
             PlayerItemEvent pie = new PlayerItemEvent(Type.PLAYER_ITEM, thePlayer, itemInHand, blockClicked, CraftBlock.notchToBlockFace(l));
-            
+
             ((WorldServer) world).getServer().getPluginManager().callEvent(pie);
-            
+
             if (pie.isCancelled()) return false;
-            
+            // CraftBukkit end
+
             Block block = Block.aA;
 
             world.a((float) i + 0.5F, (float) j + 0.5F, (float) k + 0.5F, block.bq.c(), (block.bq.a() + 1.0F) / 2.0F, block.bq.b() * 0.8F);
@@ -50,9 +53,8 @@ public class ItemHoe extends Item {
                     EntityItem entityitem = new EntityItem(world, (float) i + f1, (float) j + f2, (float) k + f3, new ItemStack(Item.Q));
 
                     entityitem.c = 10;
-                    world.a(entityitem);
+                    world.a(((Entity) (entityitem)));
                 }
-
             }
             return true;
         } else {
@@ -60,4 +62,3 @@ public class ItemHoe extends Item {
         }
     }
 }
-

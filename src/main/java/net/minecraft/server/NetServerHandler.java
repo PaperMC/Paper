@@ -1,10 +1,12 @@
 package net.minecraft.server;
 
+import java.io.PrintStream;
 import java.util.*;
 import java.util.logging.Logger;
-import org.bukkit.BlockDamageLevel;
 
+// CraftBukkit start
 import org.bukkit.BlockFace;
+import org.bukkit.BlockDamageLevel;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.CraftItemStack;
@@ -16,9 +18,9 @@ import org.bukkit.event.block.BlockRightClickedEvent;
 import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerItemEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+// CraftBukkit end
 
-public class NetServerHandler extends NetHandler
-        implements ICommandListener {
+public class NetServerHandler extends NetHandler implements ICommandListener {
 
     public static Logger a = Logger.getLogger("Minecraft");
     public NetworkManager b;
@@ -30,19 +32,25 @@ public class NetServerHandler extends NetHandler
     private double h;
     private double i;
     private boolean j;
-    private Map<Integer, Short> k;
-    // CraftBukkit - next 2 lines
+    private Map k;
+
+    // CraftBukkit start - next 2 lines
     private final CraftServer server;
     private final CraftPlayer player;
+
+    public CraftPlayer getPlayer() {
+        return player;
+    }
+    // CraftBukkit end
 
     public NetServerHandler(MinecraftServer minecraftserver, NetworkManager networkmanager, EntityPlayerMP entityplayermp) {
         c = false;
         f = 0;
         j = true;
-        k = new HashMap<Integer, Short>();
+        k = ((Map) (new HashMap()));
         d = minecraftserver;
         b = networkmanager;
-        networkmanager.a(this);
+        networkmanager.a(((NetHandler) (this)));
         e = entityplayermp;
         entityplayermp.a = this;
 
@@ -51,23 +59,17 @@ public class NetServerHandler extends NetHandler
         player = new CraftPlayer(server, e);
     }
 
-    // CraftBukkit start
-    public CraftPlayer getPlayer() {
-        return player;
-    }
-    // CraftBukkit end
-
     public void a() {
         b.a();
         if (f++ % 20 == 0) {
-            b.a(new Packet0KeepAlive());
+            b.a(((Packet) (new Packet0KeepAlive())));
         }
     }
 
     public void a(String s) {
-        b.a(new Packet255KickDisconnect(s));
+        b.a(((Packet) (new Packet255KickDisconnect(s))));
         b.c();
-        d.f.a(new Packet3Chat((new StringBuilder()).append("\247e").append(e.aw).append(" left the game.").toString()));
+        d.f.a(((Packet) (new Packet3Chat((new StringBuilder()).append("\247e").append(e.aw).append(" left the game.").toString()))));
         d.f.c(e);
         c = true;
     }
@@ -135,7 +137,7 @@ public class NetServerHandler extends NetHandler
                 g = e.p;
                 h = e.q;
                 i = e.r;
-                d.e.f(e);
+                d.e.f(((Entity) (e)));
                 return;
             }
             double d2 = e.q;
@@ -175,7 +177,7 @@ public class NetServerHandler extends NetHandler
             double d13 = d6 - e.q;
             double d14 = d8 - e.r;
             float f5 = 0.0625F;
-            boolean flag = d.e.a(e, e.z.b().e(f5, f5, f5)).size() == 0;
+            boolean flag = d.e.a(((Entity) (e)), e.z.b().e(f5, f5, f5)).size() == 0;
 
             e.c(d12, d13, d14);
             d12 = d4 - e.p;
@@ -194,7 +196,7 @@ public class NetServerHandler extends NetHandler
                 System.out.println((new StringBuilder()).append("Expected ").append(e.p).append(", ").append(e.q).append(", ").append(e.r).toString());
             }
             e.b(d4, d6, d8, f3, f4);
-            boolean flag2 = d.e.a(e, e.z.b().e(f5, f5, f5)).size() == 0;
+            boolean flag2 = d.e.a(((Entity) (e)), e.z.b().e(f5, f5, f5)).size() == 0;
 
             if (flag && (flag1 || !flag2)) {
                 a(g, h, i, f3, f4);
@@ -206,9 +208,7 @@ public class NetServerHandler extends NetHandler
         }
     }
 
-    public void a(double d1, double d2, double d3, float f1,
-            float f2) {
-
+    public void a(double d1, double d2, double d3, float f1, float f2) {
         // CraftBukkit start
         Location from = player.getLocation();
         Location to = new Location(player.getWorld(), d1, d2, d3, f1, f2);
@@ -230,7 +230,7 @@ public class NetServerHandler extends NetHandler
         h = d2;
         i = d3;
         e.b(d1, d2, d3, f1, f2);
-        e.a.b(new Packet13PlayerLookMove(d1, d2 + 1.6200000047683716D, d2, d3, f1, f2, false));
+        e.a.b(((Packet) (new Packet13PlayerLookMove(d1, d2 + 1.6200000047683716D, d2, d3, f1, f2, false))));
     }
 
     // CraftBukkit start
@@ -238,7 +238,7 @@ public class NetServerHandler extends NetHandler
     private int lastX;
     private int lastY;
     private int lastZ;
-    // Craftbukkit stop
+    // CraftBukkit end
 
     public void a(Packet14BlockDig packet14blockdig) {
         if (packet14blockdig.e == 4) {
@@ -280,7 +280,7 @@ public class NetServerHandler extends NetHandler
             i2 = l1;
         }
 
-        // Craftbukkit start
+        // CraftBukkit start
         CraftBlock block = (CraftBlock) player.getWorld().getBlockAt(l, i1, j1);
         int blockID = block.getTypeID();
         float damage = 0;
@@ -294,7 +294,7 @@ public class NetServerHandler extends NetHandler
                     BlockDamagedEvent event;
                     // If the amount of damage that the player is going to do to the block
                     // is >= 1, then the block is going to break (eg, flowers, torches)
-                    if(damage >= 1.0F) {
+                    if (damage >= 1.0F) {
                         event = new BlockDamagedEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.BROKEN, player);
                     } else {
                         event = new BlockDamagedEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.STARTED, player);
@@ -306,7 +306,7 @@ public class NetServerHandler extends NetHandler
                 }
             }
         } else if (packet14blockdig.e == 2) {
-            // Get last block that the player hit
+            // CraftBukkit start - Get last block that the player hit
             // Otherwise the block is a Bedrock @(0,0,0)
             block = (CraftBlock) player.getWorld().getBlockAt(lastX, lastY, lastZ);
             BlockDamagedEvent event = new BlockDamagedEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.STOPPED, player);
@@ -314,8 +314,10 @@ public class NetServerHandler extends NetHandler
             if (!event.isCancelled()) {
                 e.c.a();
             }
+            // CraftBukkit end
         } else if (packet14blockdig.e == 1) {
             if (i2 > 16 || flag) {
+                // CraftBukkit start
                 BlockDamagedEvent event;
                 // If the amount of damage going to the block plus the current amount
                 // of damage is greater than 1, the block is going to break.
@@ -330,6 +332,7 @@ public class NetServerHandler extends NetHandler
                 } else {
                     e.c.d = 0; // Reset the amount of damage if stopping break.
                 }
+                // CraftBukkit end
             }
         } else if (packet14blockdig.e == 3) {
             double d6 = e.p - ((double) l + 0.5D);
@@ -338,30 +341,33 @@ public class NetServerHandler extends NetHandler
             double d9 = d6 * d6 + d7 * d7 + d8 * d8;
 
             if (d9 < 256D) {
-                e.a.b(new Packet53BlockChange(l, i1, j1, d.e));
+                e.a.b(((Packet) (new Packet53BlockChange(l, i1, j1, ((World) (d.e))))));
             }
         }
+
+        // CraftBukkit start
         lastX = l;
         lastY = i1;
         lastZ = j1;
-        // Craftbukkit stop
+        // CraftBukkit end
 
         d.e.B = false;
     }
-    // Craftbukkit start - store the last block right clicked and what type it was
+
+    // CraftBukkit start - store the last block right clicked and what type it was
     CraftBlock lastRightClicked;
     int lastMaterial;
 
     public void a(Packet15Place packet15place) {
         ItemStack itemstack = e.an.e();
-        // Craftbukkit we don't check spawn protection here anymore
-        /* boolean flag = */        d.e.B = d.f.g(e.aw);
+        boolean flag = d.e.B = d.f.g(e.aw);
 
+        // CraftBukkit start
         CraftBlock blockClicked = null;
         BlockFace blockFace = null;
 
         if (packet15place.d == 255) {
-            // Craftbukkit ITEM_USE -- if we have a lastRightClicked then it could be a usable location
+            // CraftBukkit ITEM_USE -- if we have a lastRightClicked then it could be a usable location
             if (packet15place.e != null && packet15place.e.c == lastMaterial) {
                 blockClicked = lastRightClicked;
             } else if (lastMaterial == 0) {
@@ -370,7 +376,7 @@ public class NetServerHandler extends NetHandler
             lastRightClicked = null;
             lastMaterial = 0;
         } else {
-            // Craftbukkit RIGHTCLICK or BLOCK_PLACE .. or nothing
+            // CraftBukkit RIGHTCLICK or BLOCK_PLACE .. or nothing
             blockClicked = (CraftBlock) d.e.getWorld().getBlockAt(packet15place.a, packet15place.b, packet15place.c);
             lastRightClicked = blockClicked;
             lastMaterial = (packet15place.e == null) ? 0 : packet15place.e.c;
@@ -382,21 +388,23 @@ public class NetServerHandler extends NetHandler
             blockFace = BlockFace.Self;
         }
 
-        // Craftbukkit if rightclick decremented the item, always send the update packet.
-        // this is not here for Craftbukkit's own functionality; rather it is to fix
+        // CraftBukkit if rightclick decremented the item, always send the update packet.
+        // this is not here for CraftBukkit's own functionality; rather it is to fix
         // a notch bug where the item doesn't update correctly.
         boolean always = false;
+        // CraftBukkit end
 
         if (packet15place.d == 255) {
             if (itemstack == null) {
                 return;
             }
 
+            // CraftBukkit start
             CraftItemStack craftItem = new CraftItemStack(itemstack);
             CraftPlayer player = new CraftPlayer(server, e);
             PlayerItemEvent pie = new PlayerItemEvent(Type.PLAYER_ITEM, player, craftItem, blockClicked, blockFace);
 
-            // Craftbukkit We still call this event even in spawn protection.
+            // CraftBukkit We still call this event even in spawn protection.
             // Don't call this event if using Buckets / signs
             switch (craftItem.getType()) {
                 case Sign:
@@ -410,12 +418,13 @@ public class NetServerHandler extends NetHandler
 
             if (!pie.isCancelled()) {
                 int itemstackAmount = itemstack.a;
-                e.c.a(e, d.e, itemstack);
-                // Craftbukkit notch decrements the counter by 1 in the above method with food,
+                e.c.a(((EntityPlayer) (e)), ((World) (d.e)), itemstack);
+                // CraftBukkit notch decrements the counter by 1 in the above method with food,
                 // snowballs and so forth, but he does it in a place that doesnt cause the
                 // inventory update packet to get sent
                 always = (itemstack.a != itemstackAmount);
             }
+            // CraftBukkit end
         } else {
             int l = packet15place.a;
             int i1 = packet15place.b;
@@ -427,19 +436,16 @@ public class NetServerHandler extends NetHandler
             if (l1 > i2) {
                 i2 = l1;
             }
-
-            // Craftbukkit start
+            // CraftBukkit start - spawn proection moved to ItemBlock!!!
             CraftItemStack craftItem = new CraftItemStack(itemstack);
             CraftPlayer player = new CraftPlayer(server, e);
-//            boolean canBuild = (i2 > 16) || flag;
             BlockRightClickedEvent brce = new BlockRightClickedEvent(Type.BLOCK_RIGHTCLICKED, blockClicked, blockFace, craftItem, player);
             server.getPluginManager().callEvent(brce);
 
-            // Craftbukkit WE HAVE MOVED THE SPAWN PROTECTION CHECK DOWN INTO CLASS ItemBlock!!!
-            e.c.a(e, d.e, itemstack, l, i1, j1, k1);
+            e.c.a(((EntityPlayer) (e)), ((World) (d.e)), itemstack, l, i1, j1, k1);
+            // CraftBukkit end
 
-            // These are the response packets back to the client
-            e.a.b(new Packet53BlockChange(l, i1, j1, d.e));
+            e.a.b(((Packet) (new Packet53BlockChange(l, i1, j1, ((World) (d.e))))));
             if (k1 == 0) {
                 i1--;
             }
@@ -458,32 +464,33 @@ public class NetServerHandler extends NetHandler
             if (k1 == 5) {
                 l++;
             }
-            e.a.b(new Packet53BlockChange(l, i1, j1, d.e));
+            e.a.b(((Packet) (new Packet53BlockChange(l, i1, j1, ((World) (d.e))))));
         }
         if (itemstack != null && itemstack.a == 0) {
             e.an.a[e.an.c] = null;
         }
         e.am = true;
         e.an.a[e.an.c] = ItemStack.a(e.an.a[e.an.c]);
-        Slot slot = e.ap.a(e.an, e.an.c);
+        Slot slot = e.ap.a(((IInventory) (e.an)), e.an.c);
 
         e.ap.a();
         e.am = false;
-        if (always || !ItemStack.a(e.an.e(), packet15place.e)) {
-            b(new Packet103(e.ap.f, slot.c, e.an.e()));
+        // CraftBukkit - Boolean flag
+        if (!ItemStack.a(e.an.e(), packet15place.e) || always) {
+            b(((Packet) (new Packet103(e.ap.f, slot.c, e.an.e()))));
         }
         d.e.B = false;
     }
 
     public void a(String s, Object aobj[]) {
         a.info((new StringBuilder()).append(e.aw).append(" lost connection: ").append(s).toString());
-        d.f.a(new Packet3Chat((new StringBuilder()).append("\247e").append(e.aw).append(" left the game.").toString()));
+        d.f.a(((Packet) (new Packet3Chat((new StringBuilder()).append("\247e").append(e.aw).append(" left the game.").toString()))));
         d.f.c(e);
         c = true;
     }
 
     public void a(Packet packet) {
-        a.warning((new StringBuilder()).append(getClass()).append(" wasn't prepared to deal with a ").append(packet.getClass()).toString());
+        a.warning((new StringBuilder()).append((((this).getClass()))).append(" wasn't prepared to deal with a ").append(((((packet)).getClass()))).toString());
         a("Protocol error, unexpected packet");
     }
 
@@ -504,7 +511,7 @@ public class NetServerHandler extends NetHandler
         }
         s = s.trim();
         for (int l = 0; l < s.length(); l++) {
-            if (FontAllowedCharacters.a.indexOf(s.charAt(l)) < 0) {
+            if (FontAllowedCharacters.a.indexOf(((int) (s.charAt(l)))) < 0) {
                 a("Illegal characters in chat");
                 return;
             }
@@ -520,10 +527,10 @@ public class NetServerHandler extends NetHandler
             if (event.isCancelled()) {
                 return;
             }
-            // CraftBukkit stop
+            // CraftBukkit end
 
             a.info(s);
-            d.f.a(new Packet3Chat(s));
+            d.f.a(((Packet) (new Packet3Chat(s))));
         }
     }
 
@@ -542,9 +549,9 @@ public class NetServerHandler extends NetHandler
         if (s.toLowerCase().startsWith("/me ")) {
             s = (new StringBuilder()).append("* ").append(e.aw).append(" ").append(s.substring(s.indexOf(" ")).trim()).toString();
             a.info(s);
-            d.f.a(new Packet3Chat(s));
+            d.f.a(((Packet) (new Packet3Chat(s))));
         } else if (s.toLowerCase().startsWith("/kill")) {
-            e.a(null, 1000);
+            e.a(((Entity) (null)), 1000);
         } else if (s.toLowerCase().startsWith("/tell ")) {
             String as[] = s.split(" ");
 
@@ -553,15 +560,15 @@ public class NetServerHandler extends NetHandler
                 s = s.substring(s.indexOf(" ")).trim();
                 s = (new StringBuilder()).append("\2477").append(e.aw).append(" whispers ").append(s).toString();
                 a.info((new StringBuilder()).append(s).append(" to ").append(as[1]).toString());
-                if (!d.f.a(as[1], new Packet3Chat(s))) {
-                    b(new Packet3Chat("\247cThere's no player by that name online."));
+                if (!d.f.a(as[1], ((Packet) (new Packet3Chat(s))))) {
+                    b(((Packet) (new Packet3Chat("\247cThere's no player by that name online."))));
                 }
             }
         } else if (d.f.g(e.aw)) {
             String s1 = s.substring(1);
 
             a.info((new StringBuilder()).append(e.aw).append(" issued server command: ").append(s1).toString());
-            d.a(s1, this);
+            d.a(s1, ((ICommandListener) (this)));
         } else {
             String s2 = s.substring(1);
 
@@ -622,35 +629,35 @@ public class NetServerHandler extends NetHandler
     }
 
     public void a(Packet102 packet102) {
-        if (e.ap.f == packet102.a && e.ap.c(e)) {
-            ItemStack itemstack = e.ap.a(packet102.b, packet102.c, e);
+        if (e.ap.f == packet102.a && e.ap.c(((EntityPlayer) (e)))) {
+            ItemStack itemstack = e.ap.a(packet102.b, packet102.c, ((EntityPlayer) (e)));
 
             if (ItemStack.a(packet102.e, itemstack)) {
-                e.a.b(new Packet106(packet102.a, packet102.d, true));
+                e.a.b(((Packet) (new Packet106(packet102.a, packet102.d, true))));
                 e.am = true;
                 e.ap.a();
                 e.J();
                 e.am = false;
             } else {
-                k.put(Integer.valueOf(e.ap.f), Short.valueOf(packet102.d));
-                e.a.b(new Packet106(packet102.a, packet102.d, false));
-                e.ap.a(e, false);
-                ArrayList<ItemStack> arraylist = new ArrayList<ItemStack>();
+                k.put(((Integer.valueOf(e.ap.f))), ((Short.valueOf(packet102.d))));
+                e.a.b(((Packet) (new Packet106(packet102.a, packet102.d, false))));
+                e.ap.a(((EntityPlayer) (e)), false);
+                ArrayList arraylist = new ArrayList();
 
                 for (int l = 0; l < e.ap.e.size(); l++) {
-                    arraylist.add(((Slot) e.ap.e.get(l)).c());
+                    ((List) (arraylist)).add(((((Slot) e.ap.e.get(l)).c())));
                 }
 
-                e.a(e.ap, arraylist);
+                e.a(e.ap, ((List) (arraylist)));
             }
         }
     }
 
     public void a(Packet106 packet106) {
-        Short short1 = (Short) k.get(Integer.valueOf(e.ap.f));
+        Short short1 = (Short) k.get(((Integer.valueOf(e.ap.f))));
 
-        if (short1 != null && packet106.b == short1.shortValue() && e.ap.f == packet106.a && !e.ap.c(e)) {
-            e.ap.a(e, true);
+        if (short1 != null && packet106.b == short1.shortValue() && e.ap.f == packet106.a && !e.ap.c(((EntityPlayer) (e)))) {
+            e.ap.a(((EntityPlayer) (e)), true);
         }
     }
 
@@ -665,7 +672,7 @@ public class NetServerHandler extends NetHandler
                     flag = false;
                 } else {
                     for (int k1 = 0; k1 < packet130.d[l].length(); k1++) {
-                        if (FontAllowedCharacters.a.indexOf(packet130.d[l].charAt(k1)) < 0) {
+                        if (FontAllowedCharacters.a.indexOf(((int) (packet130.d[l].charAt(k1)))) < 0) {
                             flag = false;
                         }
                     }

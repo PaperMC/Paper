@@ -1,12 +1,11 @@
 package net.minecraft.server;
 
-
 import java.io.*;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import joptsimple.OptionSet;
 
+import joptsimple.OptionSet; // CraftBukkit
 
 public class PropertyManager {
 
@@ -14,25 +13,25 @@ public class PropertyManager {
     private Properties b;
     private File c;
 
-    private OptionSet options = null; // Craftbukkit
-
     public PropertyManager(File file) {
         b = new Properties();
         c = file;
         if (file.exists()) {
             try {
-                b.load(new FileInputStream(file));
+                b.load(((java.io.InputStream) (new FileInputStream(file))));
             } catch (Exception exception) {
-                a.log(Level.WARNING, (new StringBuilder()).append("Failed to load ").append(file).toString(), exception);
+                a.log(Level.WARNING, (new StringBuilder()).append("Failed to load ").append(((file))).toString(), ((Throwable) (exception)));
                 a();
             }
         } else {
-            a.log(Level.WARNING, (new StringBuilder()).append(file).append(" does not exist").toString());
+            a.log(Level.WARNING, (new StringBuilder()).append(((file))).append(" does not exist").toString());
             a();
         }
     }
 
     // Craftbukkit start
+    private OptionSet options = null;
+
     public PropertyManager(final OptionSet options) {
         this((File)options.valueOf("config"));
 
@@ -55,15 +54,15 @@ public class PropertyManager {
 
     public void b() {
         try {
-            b.store(new FileOutputStream(c), "Minecraft server properties");
+            b.store(((java.io.OutputStream) (new FileOutputStream(c))), "Minecraft server properties");
         } catch (Exception exception) {
-            a.log(Level.WARNING, (new StringBuilder()).append("Failed to save ").append(c).toString(), exception);
+            a.log(Level.WARNING, (new StringBuilder()).append("Failed to save ").append(((c))).toString(), ((Throwable) (exception)));
             a();
         }
     }
 
     public String a(String s, String s1) {
-        if (!b.containsKey(s)) {
+        if (!b.containsKey(((s)))) {
             b.setProperty(s, getOverride(s, s1)); // Craftbukkit
             b();
         }
@@ -87,6 +86,4 @@ public class PropertyManager {
         }
         return getOverride(s, flag); // Craftbukkit
     }
-
 }
-

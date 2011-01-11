@@ -1,5 +1,8 @@
 package net.minecraft.server;
 
+import java.util.Random;
+
+// CraftBukkit start
 import org.bukkit.BlockFace;
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.CraftItemStack;
@@ -7,7 +10,7 @@ import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.player.PlayerItemEvent;
-
+// CraftBukkit end
 
 public class ItemBucket extends Item {
 
@@ -50,37 +53,39 @@ public class ItemBucket extends Item {
             if (!world.a(entityplayer, i, j, k)) {
                 return itemstack;
             }
-            
-            // Craftbukkit start
-            // Craftbukkit Click == placed when handling an empty bucket!
+
+            // CraftBukkit start - Click == placed when handling an empty bucket!
             CraftWorld theWorld = ((WorldServer) world).getWorld();
             CraftBlock blockClicked = (CraftBlock) theWorld.getBlockAt(i, j, k);
             BlockFace direction = CraftBlock.notchToBlockFace(movingobjectposition.e);
             CraftPlayer thePlayer = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entityplayer);
             CraftItemStack itemInHand = new CraftItemStack(itemstack);
-            
+            // CraftBukkit end
+
             if (a == 0) {
                 if (world.c(i, j, k) == Material.f && world.b(i, j, k) == 0) {
+                    // CraftBukkit start
                     PlayerItemEvent pie = new PlayerItemEvent(Type.PLAYER_ITEM, thePlayer, itemInHand, blockClicked, direction);
                     ((WorldServer) world).getServer().getPluginManager().callEvent(pie);
-                    
-                    if (!pie.isCancelled()) { 
-                        world.d(i, j, k, 0);
-                        return new ItemStack(Item.av);
-                    } else {
+
+                    if (pie.isCancelled()) {
                         return itemstack;
                     }
+                    // CraftBukkit end
+                    world.d(i, j, k, 0);
+                    return new ItemStack(Item.av);
                 }
                 if (world.c(i, j, k) == Material.g && world.b(i, j, k) == 0) {
+                    // CraftBukkit start
                     PlayerItemEvent pie = new PlayerItemEvent(Type.PLAYER_ITEM, thePlayer, itemInHand, blockClicked, direction);
                     ((WorldServer) world).getServer().getPluginManager().callEvent(pie);
-                    
-                    if (!pie.isCancelled()) {
-                        world.d(i, j, k, 0);    
-                        return new ItemStack(Item.aw);
-                    } else {
+
+                    if (pie.isCancelled()) {
                         return itemstack;
                     }
+                    // CraftBukkit end
+                    world.d(i, j, k, 0);
+                    return new ItemStack(Item.aw);
                 }
             } else {
                 if (a < 0) {
@@ -111,15 +116,15 @@ public class ItemBucket extends Item {
                             world.a("largesmoke", (double) i + Math.random(), (double) j + Math.random(), (double) k + Math.random(), 0.0D, 0.0D, 0.0D);
                         }
                     } else {
-                        // Craftbukkit bucket empty.
+                        // CraftBukkit start - bucket empty.
                         PlayerItemEvent pie = new PlayerItemEvent(Type.PLAYER_ITEM, thePlayer, itemInHand, blockClicked, direction);
                         ((WorldServer) world).getServer().getPluginManager().callEvent(pie);
-                        
-                        if (!pie.isCancelled()) {
-                            world.b(i, j, k, a, 0);
-                        } else {
+
+                        if (pie.isCancelled()) {
                             return itemstack;
                         }
+                        // CraftBukkit end
+                        world.b(i, j, k, a, 0);
                     }
                     return new ItemStack(Item.au);
                 }
@@ -130,4 +135,3 @@ public class ItemBucket extends Item {
         return itemstack;
     }
 }
-

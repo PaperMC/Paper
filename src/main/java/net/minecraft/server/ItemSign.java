@@ -1,11 +1,12 @@
 package net.minecraft.server;
 
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.CraftItemStack;
 import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.player.PlayerItemEvent;
-
+// CraftBukkit end
 
 public class ItemSign extends Item {
 
@@ -22,10 +23,10 @@ public class ItemSign extends Item {
         if (!world.c(i, j, k).a()) {
             return false;
         }
-        
-        // Craftbukkit - store the clicked block
+
+        // CraftBukkit - store the clicked block
         CraftBlock blockClicked = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
-        
+
         if (l == 1) {
             j++;
         }
@@ -44,17 +45,18 @@ public class ItemSign extends Item {
         if (!Block.aD.a(world, i, j, k)) {
             return false;
         }
-        
-        // Craftbukkit start
+
+        // CraftBukkit start
         // Signs
         CraftItemStack itemInHand = new CraftItemStack(itemstack);
         CraftPlayer thePlayer = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entityplayer);
         PlayerItemEvent pie = new PlayerItemEvent(Type.PLAYER_ITEM, thePlayer, itemInHand, blockClicked, CraftBlock.notchToBlockFace(l));
-        
+
         ((WorldServer) world).getServer().getPluginManager().callEvent(pie);
-        
+
         if (pie.isCancelled()) return false;
-        
+        // CraftBukkit end
+
         if (l == 1) {
             world.b(i, j, k, Block.aD.bh, MathHelper.b((double) (((entityplayer.v + 180F) * 16F) / 360F) + 0.5D) & 0xf);
         } else {
@@ -69,4 +71,3 @@ public class ItemSign extends Item {
         return true;
     }
 }
-

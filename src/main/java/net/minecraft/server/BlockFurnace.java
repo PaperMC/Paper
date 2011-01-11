@@ -1,13 +1,13 @@
 package net.minecraft.server;
 
-
 import java.util.Random;
 
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockInteractEvent;
-
+// CraftBukkit end
 
 public class BlockFurnace extends BlockContainer {
 
@@ -47,7 +47,7 @@ public class BlockFurnace extends BlockContainer {
         if (Block.o[k1] && !Block.o[j1]) {
             byte0 = 4;
         }
-        world.b(i, j, k, byte0);
+        world.b(i, j, k, ((int) (byte0)));
     }
 
     public int a(int i) {
@@ -68,15 +68,16 @@ public class BlockFurnace extends BlockContainer {
         if (world.z) {
             return true;
         } else {
-            // Craftbukkit start - Interact Furnace
+            // CraftBukkit start - Interact Furnace
             CraftBlock block = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
             CraftPlayer player = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entityplayer);
             BlockInteractEvent bie = new BlockInteractEvent(Type.BLOCK_INTERACT, block, player);
-            
+
             ((WorldServer) world).getServer().getPluginManager().callEvent(bie);
-            
+
             if (bie.isCancelled()) return true;
-            
+            // CraftBukkit end
+
             TileEntityFurnace tileentityfurnace = (TileEntityFurnace) world.l(i, j, k);
 
             entityplayer.a(tileentityfurnace);
@@ -98,7 +99,7 @@ public class BlockFurnace extends BlockContainer {
     }
 
     protected TileEntity a_() {
-        return new TileEntityFurnace();
+        return ((TileEntity) (new TileEntityFurnace()));
     }
 
     public void a(World world, int i, int j, int k, EntityLiving entityliving) {
@@ -118,4 +119,3 @@ public class BlockFurnace extends BlockContainer {
         }
     }
 }
-

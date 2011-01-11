@@ -1,17 +1,17 @@
 package net.minecraft.server;
 
-
 import java.io.IOException;
 import java.util.*;
+
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftChunk;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.world.ChunkLoadedEvent;
+// CraftBukkit end
 
-
-public class ChunkProviderServer
-        implements IChunkProvider {
+public class ChunkProviderServer implements IChunkProvider {
 
     private Set a;
     private Chunk b;
@@ -22,10 +22,10 @@ public class ChunkProviderServer
     private WorldServer g;
 
     public ChunkProviderServer(WorldServer worldserver, IChunkLoader ichunkloader, IChunkProvider ichunkprovider) {
-        a = new HashSet();
-        e = new HashMap();
-        f = new ArrayList();
-        b = new Chunk(worldserver, new byte[32768], 0, 0);
+        a = ((Set) (new HashSet()));
+        e = ((Map) (new HashMap()));
+        f = ((List) (new ArrayList()));
+        b = new Chunk(((World) (worldserver)), new byte[32768], 0, 0);
         b.q = true;
         b.p = true;
         g = worldserver;
@@ -36,7 +36,7 @@ public class ChunkProviderServer
     public boolean a(int i, int j) {
         ChunkCoordinates chunkcoordinates = new ChunkCoordinates(i, j);
 
-        return e.containsKey(chunkcoordinates);
+        return e.containsKey(((chunkcoordinates)));
     }
 
     public void c(int i, int j) {
@@ -45,15 +45,15 @@ public class ChunkProviderServer
         char c1 = '\200';
 
         if (k < -c1 || k > c1 || l < -c1 || l > c1) {
-            a.add(new ChunkCoordinates(i, j));
+            a.add(((new ChunkCoordinates(i, j))));
         }
     }
 
     public Chunk d(int i, int j) {
         ChunkCoordinates chunkcoordinates = new ChunkCoordinates(i, j);
 
-        a.remove(new ChunkCoordinates(i, j));
-        Chunk chunk = (Chunk) e.get(chunkcoordinates);
+        a.remove(((new ChunkCoordinates(i, j))));
+        Chunk chunk = (Chunk) e.get(((chunkcoordinates)));
 
         if (chunk == null) {
             chunk = e(i, j);
@@ -64,14 +64,14 @@ public class ChunkProviderServer
                     chunk = c.b(i, j);
                 }
             }
-            e.put(chunkcoordinates, chunk);
-            f.add(chunk);
+            e.put(((chunkcoordinates)), ((chunk)));
+            f.add(((chunk)));
             chunk.c();
             if (chunk != null) {
                 chunk.d();
             }
 
-            // Craftbukkit start
+            // CraftBukkit start
             CraftServer server = g.getServer();
             if (server != null) {
                 /*
@@ -83,19 +83,19 @@ public class ChunkProviderServer
                 CraftChunk cchunk = world.updateChunk(i, j);
                 server.getPluginManager().callEvent(new ChunkLoadedEvent(Type.CHUNK_LOADED, cchunk));
             }
-            // Craftbukkit end
+            // CraftBukkit end
 
             if (!chunk.n && a(i + 1, j + 1) && a(i, j + 1) && a(i + 1, j)) {
-                a(this, i, j);
+                a(((IChunkProvider) (this)), i, j);
             }
             if (a(i - 1, j) && !b(i - 1, j).n && a(i - 1, j + 1) && a(i, j + 1) && a(i - 1, j)) {
-                a(this, i - 1, j);
+                a(((IChunkProvider) (this)), i - 1, j);
             }
             if (a(i, j - 1) && !b(i, j - 1).n && a(i + 1, j - 1) && a(i, j - 1) && a(i + 1, j)) {
-                a(this, i, j - 1);
+                a(((IChunkProvider) (this)), i, j - 1);
             }
             if (a(i - 1, j - 1) && !b(i - 1, j - 1).n && a(i - 1, j - 1) && a(i, j - 1) && a(i - 1, j)) {
-                a(this, i - 1, j - 1);
+                a(((IChunkProvider) (this)), i - 1, j - 1);
             }
         }
         return chunk;
@@ -103,7 +103,7 @@ public class ChunkProviderServer
 
     public Chunk b(int i, int j) {
         ChunkCoordinates chunkcoordinates = new ChunkCoordinates(i, j);
-        Chunk chunk = (Chunk) e.get(chunkcoordinates);
+        Chunk chunk = (Chunk) e.get(((chunkcoordinates)));
 
         if (chunk == null) {
             if (g.x) {
@@ -121,7 +121,7 @@ public class ChunkProviderServer
             return null;
         }
         try {
-            Chunk chunk = d.a(g, i, j);
+            Chunk chunk = d.a(((World) (g)), i, j);
 
             if (chunk != null) {
                 chunk.s = g.e;
@@ -138,7 +138,7 @@ public class ChunkProviderServer
             return;
         }
         try {
-            d.b(g, chunk);
+            d.b(((World) (g)), chunk);
         } catch (Exception exception) {
             exception.printStackTrace();
         }
@@ -150,8 +150,8 @@ public class ChunkProviderServer
         }
         try {
             chunk.s = g.e;
-            d.a(g, chunk);
-        } catch (Throwable ioexception) { // Craftbukkit: Cast down to compile
+            d.a(((World) (g)), chunk);
+        } catch (Throwable ioexception) { // CraftBukkit -- downcast to work
             ioexception.printStackTrace();
         }
     }
@@ -206,9 +206,9 @@ public class ChunkProviderServer
                     chunk.e();
                     b(chunk);
                     a(chunk);
-                    a.remove(chunkcoordinates);
-                    e.remove(chunkcoordinates);
-                    f.remove(chunk);
+                    a.remove(((chunkcoordinates)));
+                    e.remove(((chunkcoordinates)));
+                    f.remove(((chunk)));
                 }
             }
 
@@ -223,4 +223,3 @@ public class ChunkProviderServer
         return !g.C;
     }
 }
-

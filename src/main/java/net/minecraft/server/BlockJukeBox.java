@@ -1,11 +1,11 @@
 package net.minecraft.server;
 
-
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockInteractEvent;
-
+// CraftBukkit end
 
 public class BlockJukeBox extends Block {
 
@@ -21,15 +21,16 @@ public class BlockJukeBox extends Block {
         int l = world.b(i, j, k);
 
         if (l > 0) {
-            // Craftbukkit start - Interact Jukebox
+            // CraftBukkit start - Interact Jukebox
             CraftBlock block = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
             CraftPlayer player = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entityplayer);
             BlockInteractEvent bie = new BlockInteractEvent(Type.BLOCK_INTERACT, block, player);
-            
+
             ((WorldServer) world).getServer().getPluginManager().callEvent(bie);
-            
+
             if (bie.isCancelled()) return true;
-            
+            // CraftBukkit end
+
             f(world, i, j, k, l);
             return true;
         } else {
@@ -38,7 +39,7 @@ public class BlockJukeBox extends Block {
     }
 
     public void f(World world, int i, int j, int k, int l) {
-        world.a((String) null, i, j, k);
+        world.a(((String) (null)), i, j, k);
         world.b(i, j, k, 0);
         int i1 = (Item.aU.aW + l) - 1;
         float f1 = 0.7F;
@@ -48,7 +49,7 @@ public class BlockJukeBox extends Block {
         EntityItem entityitem = new EntityItem(world, (double) i + d, (double) j + d1, (double) k + d2, new ItemStack(i1));
 
         entityitem.c = 10;
-        world.a(entityitem);
+        world.a(((Entity) (entityitem)));
     }
 
     public void a(World world, int i, int j, int k, int l, float f1) {
@@ -61,4 +62,3 @@ public class BlockJukeBox extends Block {
         super.a(world, i, j, k, l, f1);
     }
 }
-

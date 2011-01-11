@@ -1,17 +1,16 @@
 package net.minecraft.server;
 
-
-public class InventoryCrafting
-        implements IInventory {
+public class InventoryCrafting implements IInventory {
 
     private ItemStack a[];
     private int b;
     private CraftingInventoryCB c;
 
-    //CraftBukkit
+    // CraftBukkit start
     public ItemStack[] getContents() {
         return a;
     }
+    // CraftBukkit end
 
     public InventoryCrafting(CraftingInventoryCB craftinginventorycb, int i, int j) {
         b = i * j;
@@ -37,7 +36,7 @@ public class InventoryCrafting
                 ItemStack itemstack = a[i];
 
                 a[i] = null;
-                c.a(this);
+                c.a(((IInventory) (this)));
                 return itemstack;
             }
             ItemStack itemstack1 = a[i].a(j);
@@ -45,7 +44,7 @@ public class InventoryCrafting
             if (a[i].a == 0) {
                 a[i] = null;
             }
-            c.a(this);
+            c.a(((IInventory) (this)));
             return itemstack1;
         } else {
             return null;
@@ -54,7 +53,7 @@ public class InventoryCrafting
 
     public void a(int i, ItemStack itemstack) {
         a[i] = itemstack;
-        c.a(this);
+        c.a(((IInventory) (this)));
     }
 
     public int c() {

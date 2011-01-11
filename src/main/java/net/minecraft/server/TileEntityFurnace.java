@@ -1,8 +1,6 @@
 package net.minecraft.server;
 
-
-public class TileEntityFurnace extends TileEntity
-        implements IInventory {
+public class TileEntityFurnace extends TileEntity implements IInventory {
 
     private ItemStack h[];
     public int e;
@@ -13,7 +11,7 @@ public class TileEntityFurnace extends TileEntity
     public ItemStack[] getContents() {
         return h;
     }
-    // CraftBukkit end 
+    // CraftBukkit end
 
     public TileEntityFurnace() {
         h = new ItemStack[3];
@@ -74,8 +72,8 @@ public class TileEntityFurnace extends TileEntity
             }
         }
 
-        e = nbttagcompound.c("BurnTime");
-        g = nbttagcompound.c("CookTime");
+        e = ((int) (nbttagcompound.c("BurnTime")));
+        g = ((int) (nbttagcompound.c("CookTime")));
         f = a(h[1]);
     }
 
@@ -91,11 +89,11 @@ public class TileEntityFurnace extends TileEntity
 
                 nbttagcompound1.a("Slot", (byte) j);
                 h[j].a(nbttagcompound1);
-                nbttaglist.a(nbttagcompound1);
+                nbttaglist.a(((NBTBase) (nbttagcompound1)));
             }
         }
 
-        nbttagcompound.a("Items", nbttaglist);
+        nbttagcompound.a("Items", ((NBTBase) (nbttaglist)));
     }
 
     public int c() {

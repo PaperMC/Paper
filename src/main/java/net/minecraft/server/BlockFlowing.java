@@ -1,12 +1,13 @@
 package net.minecraft.server;
 
-
 import java.util.Random;
 
+// CraftBukkit start
 import org.bukkit.BlockFace;
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockFromToEvent;
+// CraftBukkit end
 
 public class BlockFlowing extends BlockFluids {
 
@@ -86,8 +87,8 @@ public class BlockFlowing extends BlockFluids {
         } else {
             i(world, i1, j1, k1);
         }
-        
-        // Craftbukkit start
+
+        // CraftBukkit start
         CraftBlock source = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i1, j1, k1);
         if (l(world, i1, j1 - 1, k1)) {
             // Craftbucket send "down" to the server
@@ -101,6 +102,7 @@ public class BlockFlowing extends BlockFluids {
                     world.b(i1, j1 - 1, k1, bh, l1 + 8);
                 }
             }
+        // CraftBukkit end
         } else if (l1 >= 0 && (l1 == 0 || k(world, i1, j1 - 1, k1))) {
             boolean aflag[] = j(world, i1, j1, k1);
             int k2 = l1 + byte0;
@@ -111,10 +113,10 @@ public class BlockFlowing extends BlockFluids {
             if (k2 >= 8) {
                 return;
             }
-            // Craftbukkit all four cardinal directions. Do not change the order!
+            // CraftBukkit start - all four cardinal directions. Do not change the order!
             BlockFace[] faces = new BlockFace[]{ BlockFace.North, BlockFace.South, BlockFace.East, BlockFace.West };
             int index = 0;
-            for (BlockFace currentFace : faces) {
+            for (BlockFace currentFace: faces) {
                 if (aflag[index]) {
                     BlockFromToEvent event = new BlockFromToEvent(Type.BLOCK_FLOW, source, currentFace);
                     ((WorldServer) world).getServer().getPluginManager().callEvent(event);
@@ -124,8 +126,8 @@ public class BlockFlowing extends BlockFluids {
                 }
                 index++;
             }
+            // CraftBukkit end
         }
-        // Craftbukkit stop
     }
 
     private void f(World world, int i1, int j1, int k1, int l1) {
@@ -278,4 +280,3 @@ public class BlockFlowing extends BlockFluids {
         }
     }
 }
-

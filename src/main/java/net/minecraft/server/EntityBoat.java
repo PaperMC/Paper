@@ -1,12 +1,13 @@
 package net.minecraft.server;
 
 import java.util.List;
+import java.util.Random;
 
+// CraftBukkit start
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftBoat;
 import org.bukkit.craftbukkit.CraftEntity;
 import org.bukkit.craftbukkit.CraftMappable;
-import org.bukkit.craftbukkit.CraftMinecart;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.vehicle.VehicleCreateEvent;
@@ -14,10 +15,9 @@ import org.bukkit.event.vehicle.VehicleDamageEvent;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.event.vehicle.VehicleEntityCollisionEvent;
 import org.bukkit.event.vehicle.VehicleMoveEvent;
+// CraftBukkit end
 
-public class EntityBoat extends Entity implements CraftMappable {
-
-    private CraftBoat boat;
+public class EntityBoat extends Entity implements CraftMappable { // CraftBukkit
 
     public int a;
     public int b;
@@ -29,9 +29,13 @@ public class EntityBoat extends Entity implements CraftMappable {
     private double ak;
     private double al;
 
+    // CraftBukkit start
+    private CraftBoat boat;
+
     public CraftEntity getCraftEntity() {
         return boat;
     }
+    // CraftBukkit end
 
     public EntityBoat(World world) {
         super(world);
@@ -42,10 +46,8 @@ public class EntityBoat extends Entity implements CraftMappable {
         a(1.5F, 0.6F);
         H = J / 2.0F;
         M = false;
-        
-        // CraftBukkit start
-        handleCreation(world);
-        // CraftBukkit end
+
+        handleCreation(world); // CraftBukkit
     }
 
     public AxisAlignedBB d(Entity entity) {
@@ -70,17 +72,14 @@ public class EntityBoat extends Entity implements CraftMappable {
         n = d2;
         o = d3;
 
-        // CraftBukkit start
-        handleCreation(world);
-        // CraftBukkit end
+        handleCreation(world); // CraftBukkit
     }
 
     // CraftBukkit start
     private void handleCreation(World world) {
         CraftServer server = ((WorldServer) world).getServer();
         boat = new CraftBoat(server, this);
-        VehicleCreateEvent event = new VehicleCreateEvent(
-                Type.VEHICLE_CREATE, boat);
+        VehicleCreateEvent event = new VehicleCreateEvent( Type.VEHICLE_CREATE, boat);
         server.getPluginManager().callEvent(event);
     }
     // CraftBukkit end
@@ -91,16 +90,14 @@ public class EntityBoat extends Entity implements CraftMappable {
 
     public boolean a(Entity entity, int i) {
         // CraftBukkit start
-        VehicleDamageEvent event = new VehicleDamageEvent(
-                Type.VEHICLE_DAMAGE, boat,
-                ((WorldServer)l).getWorld().toCraftEntity(entity), i);
-        ((WorldServer)l).getServer().getPluginManager().callEvent(event);
-        
+        VehicleDamageEvent event = new VehicleDamageEvent( Type.VEHICLE_DAMAGE, boat, ((WorldServer)l).getWorld().toCraftEntity(entity), i);
+        ((WorldServer) l).getServer().getPluginManager().callEvent(event);
+
         if (event.isCancelled()) {
             return true;
         }
         // CraftBukkit end
-        
+
         if (this.l.z || G) {
             return true;
         }
@@ -127,12 +124,14 @@ public class EntityBoat extends Entity implements CraftMappable {
     }
 
     public void b_() {
+        // CraftBukkit start
         double prevX = p;
         double prevY = q;
         double prevZ = r;
         float prevYaw = v;
         float prevPitch = w;
-        
+        // CraftBukkit end
+
         super.b_();
         if (b > 0) {
             b--;
@@ -169,8 +168,8 @@ public class EntityBoat extends Entity implements CraftMappable {
                 for (; d13 >= 180D; d13 -= 360D) {
                     ;
                 }
-                v += d13 / (double) d;
-                w += (al - (double) w) / (double) d;
+                v += ((float) (d13 / (double) d));
+                w += ((float) ((al - (double) w) / (double) d));
                 d--;
                 a(d4, d7, d10);
                 b(v, w);
@@ -252,7 +251,6 @@ public class EntityBoat extends Entity implements CraftMappable {
                 for (int j1 = 0; j1 < 2; j1++) {
                     a(Item.B.aW, 1, 0.0F);
                 }
-
             }
         } else {
             s *= 0.99000000953674316D;
@@ -281,29 +279,30 @@ public class EntityBoat extends Entity implements CraftMappable {
         if (d25 < -20D) {
             d25 = -20D;
         }
-        v += d25;
+        v += ((float) (d25));
         b(v, w);
-        
+
         // CraftBukkit start
         CraftServer server = ((WorldServer)l).getServer();
         VehicleMoveEvent event = new VehicleMoveEvent(
-                Type.VEHICLE_MOVE, boat,
-                new Location(((WorldServer)l).getWorld(), prevX, prevY, prevZ, prevYaw, prevPitch),
-                new Location(((WorldServer)l).getWorld(), p, q, r, v, w));
+            Type.VEHICLE_MOVE,
+            boat,
+            new Location(((WorldServer)l).getWorld(), prevX, prevY, prevZ, prevYaw, prevPitch),
+            new Location(((WorldServer)l).getWorld(), p, q, r, v, w)
+        );
         server.getPluginManager().callEvent(event);
         // CraftBukkit end
-        
-        List list = this.l.b(this, z.b(0.20000000298023224D, 0.0D, 0.20000000298023224D));
+
+        List list = this.l.b(((Entity) (this)), z.b(0.20000000298023224D, 0.0D, 0.20000000298023224D));
 
         if (list != null && list.size() > 0) {
             for (int k1 = 0; k1 < list.size(); k1++) {
                 Entity entity = (Entity) list.get(k1);
 
                 if (entity != j && entity.v() && (entity instanceof EntityBoat)) {
-                    entity.c(this);
+                    entity.c(((Entity) (this)));
                 }
             }
-
         }
         if (j != null && j.G) {
             j = null;
@@ -322,21 +321,19 @@ public class EntityBoat extends Entity implements CraftMappable {
         }
     }
 
+    // CraftBukkit start
     public void c(Entity entity) {
-        // CraftBukkit start
         CraftServer server = ((WorldServer)l).getServer();
-        VehicleEntityCollisionEvent collsionEvent = new VehicleEntityCollisionEvent(
-                Type.VEHICLE_COLLISION_ENTITY, boat,
-                ((WorldServer)l).getWorld().toCraftEntity(entity));
+        VehicleEntityCollisionEvent collsionEvent = new VehicleEntityCollisionEvent( Type.VEHICLE_COLLISION_ENTITY, boat, ((WorldServer)l).getWorld().toCraftEntity(entity));
         server.getPluginManager().callEvent(collsionEvent);
-        
+
         if (collsionEvent.isCancelled()) {
             return;
         }
-        // CraftBukkit end
-        
+
         super.c(entity);
     }
+    // CraftBukkit end
 
     protected void a(NBTTagCompound nbttagcompound) {}
 
@@ -349,20 +346,16 @@ public class EntityBoat extends Entity implements CraftMappable {
         if (!l.z) {
             // CraftBukkit start
             CraftServer server = ((WorldServer)l).getServer();
-            VehicleEnterEvent event = new VehicleEnterEvent(
-                    Type.VEHICLE_ENTER,
-                    boat,
-                    ((WorldServer)l).getWorld().toCraftEntity(entityplayer));
+            VehicleEnterEvent event = new VehicleEnterEvent( Type.VEHICLE_ENTER, boat, ((WorldServer)l).getWorld().toCraftEntity(entityplayer));
             server.getPluginManager().callEvent(event);
-            
+
             if (event.isCancelled()) {
                 return true;
             }
             // CraftBukkit end
-            
-            entityplayer.e(this);
+
+            entityplayer.e(((Entity) (this)));
         }
         return true;
     }
 }
-

@@ -1,6 +1,5 @@
 package net.minecraft.server;
 
-
 public class ItemInWorldManager {
 
     private World b;

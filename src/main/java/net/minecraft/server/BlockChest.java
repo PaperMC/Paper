@@ -1,13 +1,13 @@
 package net.minecraft.server;
 
-
 import java.util.Random;
 
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockInteractEvent;
-
+// CraftBukkit end
 
 public class BlockChest extends BlockContainer {
 
@@ -83,8 +83,8 @@ public class BlockChest extends BlockContainer {
         TileEntityChest tileentitychest = (TileEntityChest) world.l(i, j, k);
 
         label0:
-        for (int l = 0; l < tileentitychest.a(); l++) {
-            ItemStack itemstack = tileentitychest.a(l);
+        for (int l = 0; l < ((IInventory) (tileentitychest)).a(); l++) {
+            ItemStack itemstack = ((IInventory) (tileentitychest)).a(l);
 
             if (itemstack == null) {
                 continue;
@@ -109,7 +109,7 @@ public class BlockChest extends BlockContainer {
                 entityitem.s = (float) a.nextGaussian() * f3;
                 entityitem.t = (float) a.nextGaussian() * f3 + 0.2F;
                 entityitem.u = (float) a.nextGaussian() * f3;
-                world.a(entityitem);
+                world.a(((Entity) (entityitem)));
             } while (true);
         }
 
@@ -117,7 +117,7 @@ public class BlockChest extends BlockContainer {
     }
 
     public boolean a(World world, int i, int j, int k, EntityPlayer entityplayer) {
-        Object obj = (TileEntityChest) world.l(i, j, k);
+        Object obj = (((TileEntityChest) world.l(i, j, k)));
 
         if (world.d(i, j + 1, k)) {
             return true;
@@ -135,35 +135,36 @@ public class BlockChest extends BlockContainer {
             return true;
         }
         if (world.a(i - 1, j, k) == bh) {
-            obj = new InventoryLargeChest("Large chest", (TileEntityChest) world.l(i - 1, j, k), ((IInventory) (obj)));
+            obj = ((new InventoryLargeChest("Large chest", ((IInventory) ((TileEntityChest) world.l(i - 1, j, k))), ((IInventory) (obj)))));
         }
         if (world.a(i + 1, j, k) == bh) {
-            obj = new InventoryLargeChest("Large chest", ((IInventory) (obj)), (TileEntityChest) world.l(i + 1, j, k));
+            obj = ((new InventoryLargeChest("Large chest", ((IInventory) (obj)), ((IInventory) ((TileEntityChest) world.l(i + 1, j, k))))));
         }
         if (world.a(i, j, k - 1) == bh) {
-            obj = new InventoryLargeChest("Large chest", (TileEntityChest) world.l(i, j, k - 1), ((IInventory) (obj)));
+            obj = ((new InventoryLargeChest("Large chest", ((IInventory) ((TileEntityChest) world.l(i, j, k - 1))), ((IInventory) (obj)))));
         }
         if (world.a(i, j, k + 1) == bh) {
-            obj = new InventoryLargeChest("Large chest", ((IInventory) (obj)), (TileEntityChest) world.l(i, j, k + 1));
+            obj = ((new InventoryLargeChest("Large chest", ((IInventory) (obj)), ((IInventory) ((TileEntityChest) world.l(i, j, k + 1))))));
         }
         if (world.z) {
             return true;
         } else {
-            // Craftbukkit start - Interact Chest
+            // CraftBukkit start - Interact Chest
             CraftBlock block = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
             CraftPlayer player = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entityplayer);
             BlockInteractEvent bie = new BlockInteractEvent(Type.BLOCK_INTERACT, block, player);
-            
+
             ((WorldServer) world).getServer().getPluginManager().callEvent(bie);
-            
-            if (!bie.isCancelled()) entityplayer.a(((IInventory) (obj)));
-            
+
+            if (bie.isCancelled()) return true;
+            // CraftBukkit end
+
+            entityplayer.a(((IInventory) (obj)));
             return true;
         }
     }
 
     protected TileEntity a_() {
-        return new TileEntityChest();
+        return ((TileEntity) (new TileEntityChest()));
     }
 }
-

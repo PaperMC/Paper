@@ -1,6 +1,5 @@
 package net.minecraft.server;
 
-
 public interface IInventory {
 
     public abstract int a();
@@ -21,4 +20,3 @@ public interface IInventory {
 
     public abstract ItemStack[] getContents(); // CraftBukkit
 }
-

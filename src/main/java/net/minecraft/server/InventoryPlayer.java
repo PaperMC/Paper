@@ -1,8 +1,6 @@
 package net.minecraft.server;
 
-
-public class InventoryPlayer
-        implements IInventory {
+public class InventoryPlayer implements IInventory {
 
     public ItemStack a[];
     public ItemStack b[];
@@ -11,7 +9,7 @@ public class InventoryPlayer
     private ItemStack f;
     public boolean d;
 
-    // CraftBukket start
+    // CraftBukkit start
     public ItemStack[] getContents() {
         return a;
     }
@@ -19,7 +17,7 @@ public class InventoryPlayer
     public ItemStack[] getArmorContents() {
         return b;
     }
-    // CraftBukket end
+    // CraftBukkit end
 
     public InventoryPlayer(EntityPlayer entityplayer) {
         a = new ItemStack[36];
@@ -183,7 +181,7 @@ public class InventoryPlayer
 
                 nbttagcompound.a("Slot", (byte) k);
                 a[k].a(nbttagcompound);
-                nbttaglist.a(nbttagcompound);
+                nbttaglist.a(((NBTBase) (nbttagcompound)));
             }
         }
 
@@ -193,7 +191,7 @@ public class InventoryPlayer
 
                 nbttagcompound1.a("Slot", (byte) (l + 100));
                 b[l].a(nbttagcompound1);
-                nbttaglist.a(nbttagcompound1);
+                nbttaglist.a(((NBTBase) (nbttagcompound1)));
             }
         }
 
@@ -218,7 +216,6 @@ public class InventoryPlayer
                 b[l - 100] = itemstack;
             }
         }
-
     }
 
     public int a() {
@@ -320,7 +317,6 @@ public class InventoryPlayer
                 b[l] = null;
             }
         }
-
     }
 
     public void d() {
@@ -340,6 +336,6 @@ public class InventoryPlayer
         if (e.G) {
             return false;
         }
-        return entityplayer.b((Entity)e) <= 64D; // CraftBukkit: downcast to Entity
+        return entityplayer.b(((Entity) (e))) <= 64D;
     }
 }

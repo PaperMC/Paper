@@ -1,11 +1,12 @@
 package net.minecraft.server;
 
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.CraftItemStack;
 import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.player.PlayerItemEvent;
-
+// CraftBukkit end
 
 public class ItemBoat extends Item {
 
@@ -42,22 +43,21 @@ public class ItemBoat extends Item {
             int k = movingobjectposition.d;
 
             if (!world.z) {
-                // Craftbukkit start
-                // Boat placement
+                // CraftBukkit start - Boat placement
                 CraftBlock blockClicked = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
                 CraftItemStack itemInHand = new CraftItemStack(itemstack);
                 CraftPlayer thePlayer = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entityplayer);
                 PlayerItemEvent pie = new PlayerItemEvent(Type.PLAYER_ITEM, thePlayer, itemInHand, blockClicked, CraftBlock.notchToBlockFace(movingobjectposition.e));
-                
+
                 ((WorldServer) world).getServer().getPluginManager().callEvent(pie);
-                
+
                 if (pie.isCancelled()) return itemstack;
-                
-                world.a(new EntityBoat(world, (float) i + 0.5F, (float) j + 1.5F, (float) k + 0.5F));
+                // CraftBukkit end
+
+                world.a(((Entity) (new EntityBoat(world, (float) i + 0.5F, (float) j + 1.5F, (float) k + 0.5F))));
             }
             itemstack.a--;
         }
         return itemstack;
     }
 }
-

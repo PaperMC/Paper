@@ -1,13 +1,13 @@
 package net.minecraft.server;
 
-
 import java.util.Random;
 
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockInteractEvent;
-
+// CraftBukkit end
 
 public class BlockButton extends Block {
 
@@ -136,15 +136,16 @@ public class BlockButton extends Block {
     }
 
     public boolean a(World world, int i, int j, int k, EntityPlayer entityplayer) {
-        // Craftbukkit start - Interact Button
+        // CraftBukkit start - Interact Button
         CraftBlock block = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
         CraftPlayer player = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entityplayer);
         BlockInteractEvent bie = new BlockInteractEvent(Type.BLOCK_INTERACT, block, player);
-        
+
         ((WorldServer) world).getServer().getPluginManager().callEvent(bie);
-        
+
         if (bie.isCancelled()) return true;
-        
+        // CraftBukkit end
+
         if (world.z) {
             return true;
         }
@@ -255,4 +256,3 @@ public class BlockButton extends Block {
         world.b(i, j, k, i, j, k);
     }
 }
-

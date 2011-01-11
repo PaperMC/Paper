@@ -1,15 +1,14 @@
 package net.minecraft.server;
 
-
-public class InventoryCraftResult
-        implements IInventory {
+public class InventoryCraftResult implements IInventory {
 
     private ItemStack a[];
 
-    // CraftBukkit
+    // CraftBukkit start
     public ItemStack[] getContents() {
         return a;
     }
+    // CraftBukkit end
 
     public InventoryCraftResult() {
         a = new ItemStack[1];

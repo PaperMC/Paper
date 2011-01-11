@@ -1,6 +1,6 @@
 package net.minecraft.server;
 
-
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftEntity;
 import org.bukkit.craftbukkit.CraftLivingEntity;
 import org.bukkit.craftbukkit.CraftPlayer;
@@ -8,9 +8,9 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.entity.EntityDamagedByBlockEvent;
 import org.bukkit.event.entity.EntityDamagedByEntityEvent;
 import org.bukkit.event.entity.EntityDamagedEvent;
+// CraftBukkit end
 
 import java.util.*;
-
 
 public class Explosion {
 
@@ -27,7 +27,7 @@ public class Explosion {
     public Explosion(World world, Entity entity, double d1, double d2, double d3, float f1) {
         a = false;
         h = new Random();
-        g = new HashSet();
+        g = ((Set) (new HashSet()));
         i = world;
         e = entity;
         f = f1;
@@ -74,7 +74,7 @@ public class Explosion {
                             f2 -= (Block.m[i3].a(e) + 0.3F) * f3;
                         }
                         if (f2 > 0.0F) {
-                            g.add(new ChunkPosition(j2, k2, l2));
+                            g.add(((new ChunkPosition(j2, k2, l2))));
                         }
                         d5 += d1 * (double) f3;
                         d7 += d2 * (double) f3;
@@ -82,7 +82,6 @@ public class Explosion {
                         f2 -= f3 * 0.75F;
                     } while (true);
                 }
-
             }
 
         }
@@ -113,37 +112,37 @@ public class Explosion {
                 double d13 = i.a(vec3d, entity.z);
                 double d14 = (1.0D - d11) * d13;
 
-                // Craftbukkit: explosion damage hook
+                // CraftBukkit start - explosion damage hook
                 int damage = (int) (((d14 * d14 + d14) / 2D) * 8D * (double) f + 1.0D);
-                CraftServer servr = ((WorldServer)i).getServer();
+                CraftServer servr = ((WorldServer) i).getServer();
                 CraftEntity damagee = null;
-                if(entity instanceof EntityPlayerMP)
-                {
-                    damagee = new CraftPlayer(servr, (EntityPlayerMP)entity);
-                } else if(entity instanceof EntityLiving)
-                {
-                    damagee = new CraftLivingEntity(servr, (EntityLiving)entity);
+                if (entity instanceof EntityPlayerMP) {
+                    damagee = new CraftPlayer(servr, (EntityPlayerMP) entity);
+                } else if(entity instanceof EntityLiving) {
+                    damagee = new CraftLivingEntity(servr, (EntityLiving) entity);
                 }
-                if(e == null) { // Block explosion
+
+                if (e == null) { // Block explosion
                     // Craftbukkit TODO: get the x/y/z of the tnt block?
                     EntityDamagedByBlockEvent edbbe = new EntityDamagedByBlockEvent(null, damagee, EntityDamagedEvent.DamageCause.BLOCK_EXPLOSION, damage);
                     servr.getPluginManager().callEvent(edbbe);
                     if(!edbbe.isCancelled()) entity.a(e, damage);
                 } else {
                     CraftEntity damager = null;
-                    if(e instanceof EntityPlayerMP)
-                    {
+                    if (e instanceof EntityPlayerMP) {
                         // not possible in normal operations
-                        damager = new CraftPlayer(servr, (EntityPlayerMP)e);
-                    } else if(e instanceof EntityLiving)
-                    {
+                        damager = new CraftPlayer(servr, (EntityPlayerMP) e);
+                    } else if (e instanceof EntityLiving) {
                         damager = new CraftLivingEntity(servr, (EntityLiving) e);
                     }
                     EntityDamagedByEntityEvent edbbe = new EntityDamagedByEntityEvent(damager, damagee, EntityDamagedEvent.DamageCause.ENTITY_EXPLOSION, damage);
                     servr.getPluginManager().callEvent(edbbe);
-                    if(!edbbe.isCancelled()) entity.a(e, damage);
+
+                    if (!edbbe.isCancelled()) {
+                        entity.a(e, damage);
+                    }
                 }
-                // Craftbukkit: end
+                // Craftbukkit end
 
                 double d15 = d14;
 
@@ -156,10 +155,10 @@ public class Explosion {
         f = f1;
         ArrayList arraylist = new ArrayList();
 
-        arraylist.addAll(g);
+        ((List) (arraylist)).addAll(((java.util.Collection) (g)));
         if (a) {
-            for (int j4 = arraylist.size() - 1; j4 >= 0; j4--) {
-                ChunkPosition chunkposition = (ChunkPosition) arraylist.get(j4);
+            for (int j4 = ((List) (arraylist)).size() - 1; j4 >= 0; j4--) {
+                ChunkPosition chunkposition = (ChunkPosition) ((List) (arraylist)).get(j4);
                 int i2 = chunkposition.a;
                 int k4 = chunkposition.b;
                 int l4 = chunkposition.c;
@@ -170,7 +169,6 @@ public class Explosion {
                     i.d(i2, k4, l4, Block.ar.bh);
                 }
             }
-
         }
     }
 
@@ -178,9 +176,9 @@ public class Explosion {
         i.a(b, c, d, "random.explode", 4F, (1.0F + (i.l.nextFloat() - i.l.nextFloat()) * 0.2F) * 0.7F);
         ArrayList arraylist = new ArrayList();
 
-        arraylist.addAll(g);
-        for (int j = arraylist.size() - 1; j >= 0; j--) {
-            ChunkPosition chunkposition = (ChunkPosition) arraylist.get(j);
+        ((List) (arraylist)).addAll(((java.util.Collection) (g)));
+        for (int j = ((List) (arraylist)).size() - 1; j >= 0; j--) {
+            ChunkPosition chunkposition = (ChunkPosition) ((List) (arraylist)).get(j);
             int k = chunkposition.a;
             int l = chunkposition.b;
             int i1 = chunkposition.c;
@@ -217,4 +215,3 @@ public class Explosion {
 
     }
 }
-

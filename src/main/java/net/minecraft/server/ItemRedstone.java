@@ -1,11 +1,12 @@
 package net.minecraft.server;
 
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.CraftItemStack;
 import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.player.PlayerItemEvent;
-
+// CraftBukkit end
 
 public class ItemRedstone extends Item {
 
@@ -14,9 +15,9 @@ public class ItemRedstone extends Item {
     }
 
     public boolean a(ItemStack itemstack, EntityPlayer entityplayer, World world, int i, int j, int k, int l) {
-        // Craftbukkit start get the clicked block
+        // CraftBukkit - get the clicked block
         CraftBlock blockClicked = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
-        
+
         if (l == 0) {
             j--;
         }
@@ -39,20 +40,19 @@ public class ItemRedstone extends Item {
             return false;
         }
         if (Block.av.a(world, i, j, k)) {
-            // Craftbukkit start
-            // Redstone
+            // CraftBukkit start - Redstone
             CraftItemStack itemInHand = new CraftItemStack(itemstack);
             CraftPlayer thePlayer = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entityplayer);
             PlayerItemEvent pie = new PlayerItemEvent(Type.PLAYER_ITEM, thePlayer, itemInHand, blockClicked, CraftBlock.notchToBlockFace(l));
-            
+
             ((WorldServer) world).getServer().getPluginManager().callEvent(pie);
-            
+
             if (pie.isCancelled()) return false;
-            
+            // CraftBukkit end
+
             itemstack.a--;
             world.d(i, j, k, Block.av.bh);
         }
         return true;
     }
 }
-

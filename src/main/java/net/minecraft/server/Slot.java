@@ -1,6 +1,5 @@
 package net.minecraft.server;
 
-
 public class Slot {
 
     public final int a; // CraftBukkit: private -> public
@@ -8,7 +7,7 @@ public class Slot {
     public int c;
     public int d;
     public int e;
-    
+
     public Slot(IInventory iinventory, int i, int j, int k) {
         b = iinventory;
         a = i;

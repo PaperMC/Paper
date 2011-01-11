@@ -23,7 +23,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public boolean isOnline() {
-        for (EntityPlayerMP player : server.getHandle().b) {
+        for (Object obj: server.getHandle().b) {
+            EntityPlayerMP player = (EntityPlayerMP) obj;
             if (player.aw.equalsIgnoreCase(getName())) {
                 return true;
             }

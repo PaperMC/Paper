@@ -1,15 +1,15 @@
 package net.minecraft.server;
 
-
 import java.util.List;
 import java.util.Random;
 
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.CraftLivingEntity;
 import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockInteractEvent;
-
+// CraftBukkit end
 
 public class BlockPressurePlate extends Block {
 
@@ -73,22 +73,24 @@ public class BlockPressurePlate extends Block {
         if (world.b(i, j, k) == 1) {
             return;
         } else {
+            // CraftBukkit start - Interact Pressure Plate
             if (entity instanceof EntityLiving) {
-                // Craftbukkit start - Interact Pressure Plate
                 CraftBlock block = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
                 CraftLivingEntity craftEntity = null;
+
                 if (entity instanceof EntityPlayerMP) {
                     craftEntity = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entity);
                 } else {
                     craftEntity = new CraftLivingEntity(((WorldServer) world).getServer(), (EntityLiving) entity);
                 }
                 BlockInteractEvent bie = new BlockInteractEvent(Type.BLOCK_INTERACT, block, craftEntity);
-                
+
                 ((WorldServer) world).getServer().getPluginManager().callEvent(bie);
-                
+
                 if (bie.isCancelled()) return;
             }
-            
+            // CraftBukkit end
+
             g(world, i, j, k);
             return;
         }
@@ -101,7 +103,7 @@ public class BlockPressurePlate extends Block {
         List list = null;
 
         if (a == EnumMobType.a) {
-            list = world.b(null, AxisAlignedBB.b((float) i + f, j, (float) k + f, (float) (i + 1) - f, (double) j + 0.25D, (float) (k + 1) - f));
+            list = world.b(((Entity) (null)), AxisAlignedBB.b((float) i + f, j, (float) k + f, (float) (i + 1) - f, (double) j + 0.25D, (float) (k + 1) - f));
         }
         if (a == EnumMobType.b) {
             list = world.a(net.minecraft.server.EntityLiving.class, AxisAlignedBB.b((float) i + f, j, (float) k + f, (float) (i + 1) - f, (double) j + 0.25D, (float) (k + 1) - f));
@@ -168,4 +170,3 @@ public class BlockPressurePlate extends Block {
         return true;
     }
 }
-

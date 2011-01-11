@@ -1,10 +1,11 @@
 package net.minecraft.server;
 
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockInteractEvent;
-
+// CraftBukkit end
 
 public class BlockWorkbench extends Block {
 
@@ -31,18 +32,18 @@ public class BlockWorkbench extends Block {
         if (world.z) {
             return true;
         } else {
-            // Craftbukkit start - Interact Workbench
+            // CraftBukkit start - Interact Workbench
             CraftBlock block = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
             CraftPlayer player = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entityplayer);
             BlockInteractEvent bie = new BlockInteractEvent(Type.BLOCK_INTERACT, block, player);
-            
+
             ((WorldServer) world).getServer().getPluginManager().callEvent(bie);
-            
+
             if (bie.isCancelled()) return true;
-            
+            // CraftBukkit end
+
             entityplayer.a(i, j, k);
             return true;
         }
     }
 }
-

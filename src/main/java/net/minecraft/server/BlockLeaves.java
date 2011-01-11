@@ -1,12 +1,13 @@
 package net.minecraft.server;
 
-
 import java.util.Random;
+
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.LeavesDecayEvent;
-
+// CraftBukkit end
 
 public class BlockLeaves extends BlockLeavesBase {
 
@@ -33,11 +34,8 @@ public class BlockLeaves extends BlockLeavesBase {
                             world.c(i + j1, j + k1, k + l1, 7);
                         }
                     }
-
                 }
-
             }
-
         }
     }
 
@@ -71,9 +69,7 @@ public class BlockLeaves extends BlockLeavesBase {
                                 b[(k1 + j1) * i1 + (j2 + j1) * byte1 + (l2 + j1)] = -1;
                             }
                         }
-
                     }
-
                 }
 
                 for (int l1 = 1; l1 <= 4; l1++) {
@@ -102,13 +98,9 @@ public class BlockLeaves extends BlockLeavesBase {
                                     b[(k2 + j1) * i1 + (i3 + j1) * byte1 + (k3 + j1 + 1)] = l1;
                                 }
                             }
-
                         }
-
                     }
-
                 }
-
             }
             int i2 = b[j1 * i1 + j1 * byte1 + j1];
 
@@ -121,16 +113,14 @@ public class BlockLeaves extends BlockLeavesBase {
     }
 
     private void g(World world, int i, int j, int k) {
-        // Craftbukkit start
-        CraftServer server = ((WorldServer)world).getServer();
-        CraftWorld cworld = ((WorldServer)world).getWorld();
+        // CraftBukkit start
+        CraftServer server = ((WorldServer) world).getServer();
+        CraftWorld cworld = ((WorldServer) world).getWorld();
         LeavesDecayEvent event = new LeavesDecayEvent(Type.LEAVES_DECAY, cworld.getBlockAt(i, j, k));
         server.getPluginManager().callEvent(event);
-        
-        if (event.isCancelled()) {
-            return;
-        }
-        // Craftbukkit end
+
+        if (event.isCancelled()) return;
+        // CraftBukkit end
 
         a_(world, i, j, k, world.b(i, j, k));
         world.d(i, j, k, 0);
@@ -152,4 +142,3 @@ public class BlockLeaves extends BlockLeavesBase {
         super.b(world, i, j, k, entity);
     }
 }
-

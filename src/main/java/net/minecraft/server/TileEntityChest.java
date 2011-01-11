@@ -1,8 +1,6 @@
 package net.minecraft.server;
 
-
-public class TileEntityChest extends TileEntity
-        implements IInventory {
+public class TileEntityChest extends TileEntity implements IInventory {
 
     private ItemStack e[];
 
@@ -70,7 +68,6 @@ public class TileEntityChest extends TileEntity
                 e[j] = new ItemStack(nbttagcompound1);
             }
         }
-
     }
 
     public void b(NBTTagCompound nbttagcompound) {
@@ -83,11 +80,11 @@ public class TileEntityChest extends TileEntity
 
                 nbttagcompound1.a("Slot", (byte) i);
                 e[i].a(nbttagcompound1);
-                nbttaglist.a(nbttagcompound1);
+                nbttaglist.a(((NBTBase) (nbttagcompound1)));
             }
         }
 
-        nbttagcompound.a("Items", nbttaglist);
+        nbttagcompound.a("Items", ((NBTBase) (nbttaglist)));
     }
 
     public int c() {

@@ -1,12 +1,13 @@
 package net.minecraft.server;
 
+// CraftBukkit start
 import org.bukkit.BlockFace;
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.CraftItemStack;
 import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockPlacedEvent;
-
+// CraftBukkit end
 
 public class ItemBlock extends Item {
 
@@ -19,16 +20,17 @@ public class ItemBlock extends Item {
     }
 
     public boolean a(ItemStack itemstack, EntityPlayer entityplayer, World world, int i, int j, int k, int l) {
-        // Craftbukkit start
+        // CraftBukkit start
         // Bail if we have nothing of the item in hand
         if (itemstack.a == 0) {
             return false;
         }
-        
-        // Craftbukkit store info of the clicked block
+
+        // CraftBukkit store info of the clicked block
         CraftBlock blockClicked = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
         BlockFace faceClicked = CraftBlock.notchToBlockFace(l);
-        
+        // CraftBukkit end
+
         if (world.a(i, j, k) == Block.aS.bh) {
             l = 0;
         } else {
@@ -51,11 +53,11 @@ public class ItemBlock extends Item {
                 i++;
             }
         }
-        
-        // CraftBukkit store the old data so we can undo it
+
+        // CraftBukkit start - store the old data so we can undo it
         int oldMaterial = world.a(i, j, k);
         int oldData = world.b(i, j, k);
-        
+
         if (world.a(a, i, j, k, false)) {
             Block block = Block.m[a];
 
@@ -64,23 +66,23 @@ public class ItemBlock extends Item {
                 CraftBlock placedBlock = (CraftBlock) blockClicked.getFace(faceClicked) ;
                 CraftItemStack itemInHand = new CraftItemStack(itemstack);
                 CraftPlayer thePlayer = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entityplayer);
-                
+
                 int xFromSpawn = (int) MathHelper.e(i - world.m);
                 int distanceFromSpawn = (int) MathHelper.e(k - world.o);
 
                 if (xFromSpawn > distanceFromSpawn) {
                     distanceFromSpawn = xFromSpawn;
                 }
-                
-                // Craftbukkit hardcoded Spawn distance for now
+
+                // CraftBukkit hardcoded Spawn distance for now
                 boolean canBuild = distanceFromSpawn > 16 || thePlayer.isOp();
-                
+
                 BlockPlacedEvent bpe = new BlockPlacedEvent(Type.BLOCK_PLACED, placedBlock, blockClicked, itemInHand, thePlayer, canBuild);
                 ((WorldServer) world).getServer().getPluginManager().callEvent(bpe);
-                
+
                 if (bpe.isCancelled() || !bpe.canBuild()) {
-                    // Craftbukkit Undo!
-                    
+                    // CraftBukkit Undo!
+
                     // Specialcase iceblocks, replace with 'glass' first (so it doesn't explode into water)
                     if (this.a == 79) {
                         world.a(i, j, k, 20);
@@ -90,15 +92,15 @@ public class ItemBlock extends Item {
                 } else {
                     world.g(i, j, k);
                     world.g(i, j, k, this.a);
-                    
+
                     Block.m[a].c(world, i, j, k, l);
-                    // Craftbukkit Decompiler doesn't record the downcast. Oops.
-                    Block.m[a].a(world, i, j, k, (EntityLiving) entityplayer);
+                    Block.m[a].a(world, i, j, k, ((EntityLiving) (entityplayer)));
                     world.a((float) i + 0.5F, (float) j + 0.5F, (float) k + 0.5F, block.bq.c(), (block.bq.a() + 1.0F) / 2.0F, block.bq.b() * 0.8F);
                     itemstack.a--;
                 }
             }
         }
+        // CraftBukkit end
         return true;
     }
 
@@ -106,4 +108,3 @@ public class ItemBlock extends Item {
         return Block.m[a].e();
     }
 }
-

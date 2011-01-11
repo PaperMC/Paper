@@ -1,11 +1,8 @@
 package net.minecraft.server;
 
-
 import java.util.*;
 
-
-public class EntityPlayerMP extends EntityPlayer
-        implements ICrafting {
+public class EntityPlayerMP extends EntityPlayer implements ICrafting {
 
     public NetServerHandler a;
     public MinecraftServer b;
@@ -26,8 +23,8 @@ public class EntityPlayerMP extends EntityPlayer
 
     public EntityPlayerMP(MinecraftServer minecraftserver, World world, String s1, ItemInWorldManager iteminworldmanager) {
         super(world);
-        f = new LinkedList();
-        aj = new HashSet();
+        f = ((List) (new LinkedList()));
+        aj = ((Set) (new HashSet()));
         al = false;
         bE = 0xfa0a1f01;
         bF = 60;
@@ -44,15 +41,14 @@ public class EntityPlayerMP extends EntityPlayer
         c((double) i + 0.5D, l, (double) j + 0.5D, 0.0F, 0.0F);
         b = minecraftserver;
         S = 0.0F;
-        iteminworldmanager.a = this;
+        iteminworldmanager.a = ((EntityPlayer) (this));
         aw = s1;
         c = iteminworldmanager;
         H = 0.0F;
     }
 
     public void k() {
-        // CraftBukkit: Downcast to make it work.
-        ap.a((ICrafting)this);
+        ap.a(((ICrafting) (this)));
     }
 
     public int[] E() {
@@ -66,7 +62,7 @@ public class EntityPlayerMP extends EntityPlayer
             int j = a(i);
 
             if (j != bG[i]) {
-                b.k.a(this, new Packet5PlayerInventory(g, i, j));
+                b.k.a(((Entity) (this)), ((Packet) (new Packet5PlayerInventory(g, i, j))));
                 bG[i] = j;
             }
         }
@@ -123,11 +119,11 @@ public class EntityPlayerMP extends EntityPlayer
 
         for (int i = 0; i < f.size(); i++) {
             ChunkCoordIntPair chunkcoordintpair1 = (ChunkCoordIntPair) f.get(i);
-            double d2 = chunkcoordintpair1.a(this);
+            double d2 = chunkcoordintpair1.a(((Entity) (this)));
 
             if (i == 0 || d2 < d1) {
                 chunkcoordintpair = chunkcoordintpair1;
-                d1 = chunkcoordintpair1.a(this);
+                d1 = chunkcoordintpair1.a(((Entity) (this)));
             }
         }
 
@@ -141,18 +137,17 @@ public class EntityPlayerMP extends EntityPlayer
                 flag = true;
             }
             if (flag) {
-                f.remove(chunkcoordintpair);
-                a.b(new Packet51MapChunk(chunkcoordintpair.a * 16, 0, chunkcoordintpair.b * 16, 16, 128, 16, b.e));
+                f.remove(((chunkcoordintpair)));
+                a.b(((Packet) (new Packet51MapChunk(chunkcoordintpair.a * 16, 0, chunkcoordintpair.b * 16, 16, 128, 16, ((World) (b.e))))));
                 List list = b.e.d(chunkcoordintpair.a * 16, 0, chunkcoordintpair.b * 16, chunkcoordintpair.a * 16 + 16, 128, chunkcoordintpair.b * 16 + 16);
 
                 for (int j = 0; j < list.size(); j++) {
                     a((TileEntity) list.get(j));
                 }
-
             }
         }
         if (ba != bE) {
-            a.b(new Packet8(ba));
+            a.b(((Packet) (new Packet8(ba))));
             bE = ba;
         }
     }
@@ -176,10 +171,10 @@ public class EntityPlayerMP extends EntityPlayer
     public void c(Entity entity, int i) {
         if (!entity.G) {
             if (entity instanceof EntityItem) {
-                b.k.a(entity, new Packet22Collect(entity.g, g));
+                b.k.a(entity, ((Packet) (new Packet22Collect(entity.g, g))));
             }
             if (entity instanceof EntityArrow) {
-                b.k.a(entity, new Packet22Collect(entity.g, g));
+                b.k.a(entity, ((Packet) (new Packet22Collect(entity.g, g))));
             }
         }
         super.c(entity, i);
@@ -190,7 +185,7 @@ public class EntityPlayerMP extends EntityPlayer
         if (!au) {
             av = -1;
             au = true;
-            b.k.a(this, new Packet18ArmAnimation(this, 1));
+            b.k.a(((Entity) (this)), ((Packet) (new Packet18ArmAnimation(((Entity) (this)), 1))));
         }
     }
 
@@ -200,7 +195,7 @@ public class EntityPlayerMP extends EntityPlayer
 
     public void e(Entity entity) {
         super.e(entity);
-        a.b(new Packet39(this, k));
+        a.b(((Packet) (new Packet39(((Entity) (this)), k))));
         a.a(p, q, r, v, w);
     }
 
@@ -220,29 +215,26 @@ public class EntityPlayerMP extends EntityPlayer
 
     public void a(int i, int j, int l) {
         R();
-        a.b(new Packet100(bH, 1, "Crafting", 9));
-        ap = new CraftingInventoryWorkbenchCB(an, this.l, i, j, l);
+        a.b(((Packet) (new Packet100(bH, 1, "Crafting", 9))));
+        ap = ((CraftingInventoryCB) (new CraftingInventoryWorkbenchCB(an, this.l, i, j, l)));
         ap.f = bH;
-        // CraftBukkit: Downcast to make it work.
-        ap.a((ICrafting)this);
+        ap.a(((ICrafting) (this)));
     }
 
     public void a(IInventory iinventory) {
         R();
-        a.b(new Packet100(bH, 0, iinventory.b(), iinventory.a()));
-        ap = new CraftingInventoryChestCB(an, iinventory);
+        a.b(((Packet) (new Packet100(bH, 0, iinventory.b(), iinventory.a()))));
+        ap = ((CraftingInventoryCB) (new CraftingInventoryChestCB(((IInventory) (an)), iinventory)));
         ap.f = bH;
-        // CraftBukkit: Downcast to make it work.
-        ap.a((ICrafting)this);
+        ap.a(((ICrafting) (this)));
     }
 
     public void a(TileEntityFurnace tileentityfurnace) {
         R();
-        a.b(new Packet100(bH, 2, tileentityfurnace.b(), tileentityfurnace.a()));
-        ap = new CraftingInventoryFurnaceCB(an, tileentityfurnace);
+        a.b(((Packet) (new Packet100(bH, 2, tileentityfurnace.b(), tileentityfurnace.a()))));
+        ap = ((CraftingInventoryCB) (new CraftingInventoryFurnaceCB(((IInventory) (an)), tileentityfurnace)));
         ap.f = bH;
-        // CraftBukkit: Downcast to make it work.
-        ap.a((ICrafting)this);
+        ap.a(((ICrafting) (this)));
     }
 
     public void a(CraftingInventoryCB craftinginventorycb, int i, ItemStack itemstack) {
@@ -252,24 +244,24 @@ public class EntityPlayerMP extends EntityPlayer
         if (am) {
             return;
         } else {
-            a.b(new Packet103(craftinginventorycb.f, i, itemstack));
+            a.b(((Packet) (new Packet103(craftinginventorycb.f, i, itemstack))));
             return;
         }
     }
 
     public void a(CraftingInventoryCB craftinginventorycb, List list) {
-        a.b(new Packet104(craftinginventorycb.f, list));
-        a.b(new Packet103(-1, -1, an.i()));
+        a.b(((Packet) (new Packet104(craftinginventorycb.f, list))));
+        a.b(((Packet) (new Packet103(-1, -1, an.i()))));
     }
 
     public void a(CraftingInventoryCB craftinginventorycb, int i, int j) {
-        a.b(new Packet105(craftinginventorycb.f, i, j));
+        a.b(((Packet) (new Packet105(craftinginventorycb.f, i, j))));
     }
 
     public void a(ItemStack itemstack) {}
 
     public void I() {
-        a.b(new Packet101(ap.f));
+        a.b(((Packet) (new Packet101(ap.f))));
         K();
     }
 
@@ -277,15 +269,13 @@ public class EntityPlayerMP extends EntityPlayer
         if (am) {
             return;
         } else {
-            a.b(new Packet103(-1, -1, an.i()));
+            a.b(((Packet) (new Packet103(-1, -1, an.i()))));
             return;
         }
     }
 
     public void K() {
-        // CraftBukkit: Downcast to make it work.
-        ap.a((ICrafting)this);
+        ap.a(((EntityPlayer) (this)));
         ap = ao;
     }
 }
-

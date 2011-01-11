@@ -1,13 +1,13 @@
 package net.minecraft.server;
 
-
 import java.util.Random;
 
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockInteractEvent;
-
+// CraftBukkit end
 
 public class BlockDoor extends Block {
 
@@ -28,8 +28,7 @@ public class BlockDoor extends Block {
     }
 
     public AxisAlignedBB d(World world, int i, int j, int k) {
-        // Craftbukkit - Downcast necessary for doors to work
-        a((IBlockAccess) world, i, j, k);
+        a(((IBlockAccess) (world)), i, j, k);
         return super.d(world, i, j, k);
     }
 
@@ -71,14 +70,14 @@ public class BlockDoor extends Block {
             }
             return true;
         }
-        
-        // Craftbukkit start - Interact Door
+
+        // CraftBukkit start - Interact Door
         CraftBlock block = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
         CraftPlayer player = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entityplayer);
         BlockInteractEvent bie = new BlockInteractEvent(Type.BLOCK_INTERACT, block, player);
-        
+
         ((WorldServer) world).getServer().getPluginManager().callEvent(bie);
-        
+
         // Craftbukkit the client updates the doors before the server does it's thing.
         // Forcibly send correct data.
         if (bie.isCancelled()) {
@@ -86,7 +85,8 @@ public class BlockDoor extends Block {
             ((EntityPlayerMP) entityplayer).a.b(new Packet53BlockChange(i, j + 1, k, (WorldServer) world));
             return true;
         }
-        
+        // CraftBukkit end
+
         if (world.a(i, j + 1, k) == bh) {
             world.b(i, j + 1, k, (l ^ 4) + 8);
         }
@@ -192,4 +192,3 @@ public class BlockDoor extends Block {
         }
     }
 }
-

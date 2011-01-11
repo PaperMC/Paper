@@ -1,15 +1,15 @@
 package net.minecraft.server;
 
-
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftEntity;
 import org.bukkit.craftbukkit.CraftLivingEntity;
 import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.entity.EntityDamagedEvent;
+// CraftBukkit end
 
 import java.util.List;
 import java.util.Random;
-
 
 public abstract class Entity {
 
@@ -185,7 +185,6 @@ public abstract class Entity {
 
                     l.a("splash", p + (double) f4, f2 + 1.0F, r + (double) f6, s, t, u);
                 }
-
             }
             N = 0.0F;
             ab = true;
@@ -280,7 +279,6 @@ public abstract class Entity {
                     d3 += d9;
                 }
             }
-
         }
         List list = l.a(this, z.a(d1, d2, d3));
 
@@ -377,7 +375,7 @@ public abstract class Entity {
         double d13 = r - d5;
 
         if (M && !flag) {
-            L += (double) MathHelper.a(d11 * d11 + d13 * d13) * 0.59999999999999998D;
+            L += ((float) ((double) MathHelper.a(d11 * d11 + d13 * d13) * 0.59999999999999998D));
             int k3 = MathHelper.b(p);
             int i4 = MathHelper.b(q - 0.20000000298023224D - (double) H);
             int l1 = MathHelper.b(r);
@@ -412,9 +410,7 @@ public abstract class Entity {
                         Block.m[l5].a(l, i5, j5, k5, this);
                     }
                 }
-
             }
-
         }
 
         R *= 0.4F;
@@ -444,7 +440,7 @@ public abstract class Entity {
                 N = 0.0F;
             }
         } else if (d1 < 0.0D) {
-            N -= d1;
+            N -= ((float) (d1));
         }
     }
 
@@ -458,20 +454,23 @@ public abstract class Entity {
 
     protected void b(int i1) {
         if (!ae) {
-            if(this instanceof EntityLiving)
-            {
+            // CraftBukkit start
+            if(this instanceof EntityLiving) {
                 CraftEntity defender = null;
                 CraftServer server = ((WorldServer)l).getServer();
-                if(this instanceof EntityPlayerMP)
-                {
+
+                if (this instanceof EntityPlayerMP) {
                     defender = new CraftPlayer(server, (EntityPlayerMP)this);
                 } else {
                     defender = new CraftLivingEntity(server, (EntityLiving)this);
                 }
+
                 EntityDamagedEvent ede = new EntityDamagedEvent(defender, EntityDamagedEvent.DamageCause.FIRE, i1);
                 server.getPluginManager().callEvent(ede);
-                if(ede.isCancelled()) return;
+
+                if (ede.isCancelled()) return;
             }
+            // CraftBukkit end
             a(((Entity) (null)), i1);
         }
     }
@@ -535,8 +534,7 @@ public abstract class Entity {
         return l.k(i1, j1, k1);
     }
 
-    public void b(double d1, double d2, double d3, float f1,
-            float f2) {
+    public void b(double d1, double d2, double d3, float f1, float f2) {
         m = p = d1;
         n = q = d2;
         o = r = d3;
@@ -555,8 +553,7 @@ public abstract class Entity {
         b(f1, f2);
     }
 
-    public void c(double d1, double d2, double d3, float f1,
-            float f2) {
+    public void c(double d1, double d2, double d3, float f1, float f2) {
         m = p = d1;
         n = q = d2 + (double) H;
         o = r = d3;
@@ -665,15 +662,15 @@ public abstract class Entity {
     }
 
     public void d(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("Pos", a(new double[] {
+        nbttagcompound.a("Pos", ((NBTBase) (a(new double[] {
             p, q, r
-        }));
-        nbttagcompound.a("Motion", a(new double[] {
+        }))));
+        nbttagcompound.a("Motion", ((NBTBase) (a(new double[] {
             s, t, u
-        }));
-        nbttagcompound.a("Rotation", a(new float[] {
+        }))));
+        nbttagcompound.a("Rotation", ((NBTBase) (a(new float[] {
             v, w
-        }));
+        }))));
         nbttagcompound.a("FallDistance", N);
         nbttagcompound.a("Fire", (short) Z);
         nbttagcompound.a("Air", (short) ad);
@@ -696,8 +693,8 @@ public abstract class Entity {
         x = v = ((NBTTagFloat) nbttaglist2.a(0)).a;
         y = w = ((NBTTagFloat) nbttaglist2.a(1)).a;
         N = nbttagcompound.f("FallDistance");
-        Z = nbttagcompound.c("Fire");
-        ad = nbttagcompound.c("Air");
+        Z = ((int) (nbttagcompound.c("Fire")));
+        ad = ((int) (nbttagcompound.c("Air")));
         A = nbttagcompound.l("OnGround");
         a(p, q, r);
         b(nbttagcompound);
@@ -719,7 +716,7 @@ public abstract class Entity {
         for (int j1 = 0; j1 < i1; j1++) {
             double d1 = ad2[j1];
 
-            nbttaglist.a(new NBTTagDouble(d1));
+            nbttaglist.a(((NBTBase) (new NBTTagDouble(d1))));
         }
 
         return nbttaglist;
@@ -733,7 +730,7 @@ public abstract class Entity {
         for (int j1 = 0; j1 < i1; j1++) {
             float f1 = af2[j1];
 
-            nbttaglist.a(new NBTTagFloat(f1));
+            nbttaglist.a(((NBTBase) (new NBTTagFloat(f1))));
         }
 
         return nbttaglist;
@@ -747,7 +744,7 @@ public abstract class Entity {
         EntityItem entityitem = new EntityItem(l, p, q + (double) f1, r, new ItemStack(i1, j1));
 
         entityitem.c = 10;
-        l.a(entityitem);
+        l.a(((Entity) (entityitem)));
         return entityitem;
     }
 
@@ -813,8 +810,8 @@ public abstract class Entity {
         }
         e -= d1;
         d -= d2;
-        v += d1;
-        w += d2;
+        v += ((float) (d1));
+        w += ((float) (d2));
     }
 
     public void A() {
@@ -829,10 +826,17 @@ public abstract class Entity {
         return (double) J * 0.75D;
     }
 
+    public void e(Entity entity) {
+        // CraftBukkit start
+        setPassengerOf(entity);
+    }
+
     public void setPassengerOf(Entity entity) {
         // e(null) doesn't really fly for overloaded methods,
         // so this method is needed
-        
+
+        //CraftBukkit end
+
         d = 0.0D;
         e = 0.0D;
         if (entity == null) {
@@ -858,10 +862,6 @@ public abstract class Entity {
         k = entity;
         entity.j = this;
     }
-    
-    public void e(Entity entity) {
-        setPassengerOf(entity);
-    }
 
     public Vec3D C() {
         return null;
@@ -872,6 +872,4 @@ public abstract class Entity {
     public int[] E() {
         return null;
     }
-
 }
-

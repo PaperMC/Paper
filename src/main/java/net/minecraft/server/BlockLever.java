@@ -1,10 +1,11 @@
 package net.minecraft.server;
 
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockInteractEvent;
-
+// CraftBukkit end
 
 public class BlockLever extends Block {
 
@@ -138,21 +139,22 @@ public class BlockLever extends Block {
         if (world.z) {
             return true;
         }
-        
-        // Craftbukkit start - Interact Lever
+
+        // CraftBukkit start - Interact Lever
         CraftBlock block = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
         CraftPlayer player = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entityplayer);
         BlockInteractEvent bie = new BlockInteractEvent(Type.BLOCK_INTERACT, block, player);
-        
+
         ((WorldServer) world).getServer().getPluginManager().callEvent(bie);
-        
+
         // Craftbukkit the client updates the doors before the server does it's thing.
         // Forcibly send correct data.
         if (bie.isCancelled()) {
             ((EntityPlayerMP) entityplayer).a.b(new Packet53BlockChange(i, j, k, (WorldServer) world));
             return true;
         }
-        
+        // CraftBukkit end
+
         int l = world.b(i, j, k);
         int i1 = l & 7;
         int j1 = 8 - (l & 8);
@@ -228,4 +230,3 @@ public class BlockLever extends Block {
         return true;
     }
 }
-

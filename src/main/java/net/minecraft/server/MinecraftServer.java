@@ -1,26 +1,28 @@
 package net.minecraft.server;
 
-
 import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+// CraftBukkit start
+import java.net.UnknownHostException;
 import joptsimple.OptionSet;
-
 import org.bukkit.craftbukkit.CraftServer;
+// CraftBukkit end
 
-
-public class MinecraftServer
-implements ICommandListener, Runnable {
+public class MinecraftServer implements ICommandListener, Runnable {
 
     public static Logger a = Logger.getLogger("Minecraft");
-    public static HashMap<String, Integer> b = new HashMap<String, Integer>();
+    public static HashMap b = new HashMap();
     public NetworkListenThread c;
     public PropertyManager d;
     public WorldServer e;
@@ -30,8 +32,8 @@ implements ICommandListener, Runnable {
     int h;
     public String i;
     public int j;
-    private List<IUpdatePlayerListBox> p;
-    private List<ServerCommand> q;
+    private List p;
+    private List q;
     public EntityTracker k;
     public boolean l;
     public boolean m;
@@ -45,8 +47,8 @@ implements ICommandListener, Runnable {
         o = true;
         g = false;
         h = 0;
-        p = new ArrayList<IUpdatePlayerListBox>();
-        q = Collections.synchronizedList(new ArrayList<ServerCommand>());
+        p = ((List) (new ArrayList()));
+        q = Collections.synchronizedList(((List) (new ArrayList())));
         new ThreadSleepForever(this);
 
         this.options = options; // CraftBukkit
@@ -56,8 +58,8 @@ implements ICommandListener, Runnable {
     private boolean d() throws UnknownHostException {
         ThreadCommandReader threadcommandreader = new ThreadCommandReader(this);
 
-        threadcommandreader.setDaemon(true);
-        threadcommandreader.start();
+        ((Thread) (threadcommandreader)).setDaemon(true);
+        ((Thread) (threadcommandreader)).start();
         ConsoleLogManager.a();
         a.info("Starting minecraft server version Beta 1.1_02");
         if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
@@ -65,7 +67,7 @@ implements ICommandListener, Runnable {
             a.warning("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
         }
         a.info("Loading properties");
-        d = new PropertyManager(options); // Craftbukkit
+        d = new PropertyManager(new File("server.properties"));
         String s = d.a("server-ip", "");
 
         l = d.a("online-mode", true);
@@ -94,7 +96,6 @@ implements ICommandListener, Runnable {
             a.warning("While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.");
             a.warning("To change this, set \"online-mode\" to \"true\" in the server.settings file.");
         }
-
         f = new ServerConfigurationManager(this);
         k = new EntityTracker(this);
         String s1 = d.a("level-name", "world");
@@ -108,7 +109,7 @@ implements ICommandListener, Runnable {
     private void c(String s) {
         a.info("Preparing start region");
         e = new WorldServer(this, new File("."), s, d.a("hellworld", false) ? -1 : 0);
-        e.a(new WorldManager(this));
+        e.a(((IWorldAccess) (new WorldManager(this))));
         e.k = d.a("spawn-monsters", true) ? 1 : 0;
         f.a(e);
         byte byte0 = 10;
@@ -121,7 +122,6 @@ implements ICommandListener, Runnable {
                 }
                 e.A.d((e.m >> 4) + i1, (e.o >> 4) + j1);
             }
-
         }
 
         e();
@@ -136,13 +136,13 @@ implements ICommandListener, Runnable {
     private void e() {
         i = null;
         j = 0;
-        
-        server.loadPlugins();
+
+        server.loadPlugins(); // CraftBukkit
     }
 
     private void f() {
         a.info("Saving chunks");
-        e.a(true, null);
+        e.a(true, ((IProgressUpdate) (null)));
     }
 
     private void g() {
@@ -197,7 +197,7 @@ implements ICommandListener, Runnable {
             }
         } catch (Exception exception) {
             exception.printStackTrace();
-            a.log(Level.SEVERE, "Unexpected exception", exception);
+            a.log(Level.SEVERE, "Unexpected exception", ((Throwable) (exception)));
             while (o) {
                 b();
                 try {
@@ -214,28 +214,28 @@ implements ICommandListener, Runnable {
     }
 
     private void h() {
-        ArrayList<String> arraylist = new ArrayList<String>();
+        ArrayList arraylist = new ArrayList();
 
-        for (Iterator<String> iterator = b.keySet().iterator(); iterator.hasNext();) {
+        for (Iterator iterator = b.keySet().iterator(); iterator.hasNext();) {
             String s = (String) iterator.next();
-            int k1 = ((Integer) b.get(s)).intValue();
+            int k1 = ((Integer) b.get(((s)))).intValue();
 
             if (k1 > 0) {
-                b.put(s, Integer.valueOf(k1 - 1));
+                b.put(((s)), ((Integer.valueOf(k1 - 1))));
             } else {
-                arraylist.add(s);
+                ((List) (arraylist)).add(((s)));
             }
         }
 
-        for (int i1 = 0; i1 < arraylist.size(); i1++) {
-            b.remove(arraylist.get(i1));
+        for (int i1 = 0; i1 < ((List) (arraylist)).size(); i1++) {
+            b.remove(((List) (arraylist)).get(i1));
         }
 
         AxisAlignedBB.a();
         Vec3D.a();
         h++;
         if (h % 20 == 0) {
-            f.a(new Packet4UpdateTime(e.e));
+            f.a(((Packet) (new Packet4UpdateTime(e.e))));
         }
         e.f();
         while (e.d()) {
@@ -252,12 +252,12 @@ implements ICommandListener, Runnable {
         try {
             b();
         } catch (Exception exception) {
-            a.log(Level.WARNING, "Unexpected exception while parsing console command", exception);
+            a.log(Level.WARNING, "Unexpected exception while parsing console command", ((Throwable) (exception)));
         }
     }
 
     public void a(String s, ICommandListener icommandlistener) {
-        q.add(new ServerCommand(s, icommandlistener));
+        q.add(((new ServerCommand(s, icommandlistener))));
     }
 
     public void b() {
@@ -298,7 +298,7 @@ implements ICommandListener, Runnable {
                 o = false;
             } else if (s.toLowerCase().startsWith("save-all")) {
                 a(s1, "Forcing save..");
-                e.a(true, null);
+                e.a(true, ((IProgressUpdate) (null)));
                 a(s1, "Save complete.");
             } else if (s.toLowerCase().startsWith("save-off")) {
                 a(s1, "Disabling level saving..");
@@ -418,7 +418,7 @@ implements ICommandListener, Runnable {
             } else if (s.toLowerCase().startsWith("say ")) {
                 s = s.substring(s.indexOf(" ")).trim();
                 a.info((new StringBuilder()).append("[").append(s1).append("] ").append(s).toString());
-                f.a(new Packet3Chat((new StringBuilder()).append("\247d[Server] ").append(s).toString()));
+                f.a(((Packet) (new Packet3Chat((new StringBuilder()).append("\247d[Server] ").append(s).toString()))));
             } else if (s.toLowerCase().startsWith("tell ")) {
                 String as2[] = s.split(" ");
 
@@ -428,7 +428,7 @@ implements ICommandListener, Runnable {
                     a.info((new StringBuilder()).append("[").append(s1).append("->").append(as2[1]).append("] ").append(s).toString());
                     s = (new StringBuilder()).append("\2477").append(s1).append(" whispers ").append(s).toString();
                     a.info(s);
-                    if (!f.a(as2[1], new Packet3Chat(s))) {
+                    if (!f.a(as2[1], ((Packet) (new Packet3Chat(s))))) {
                         icommandlistener.b("There's no player by that name online.");
                     }
                 }
@@ -454,20 +454,20 @@ implements ICommandListener, Runnable {
     }
 
     public void a(IUpdatePlayerListBox iupdateplayerlistbox) {
-        p.add(iupdateplayerlistbox);
+        p.add(((iupdateplayerlistbox)));
     }
 
     // Craftbukkit start - replaces main(String args[])
     public static void main(final OptionSet options) {
         try {
+            // CraftBukkit - remove gui
             MinecraftServer minecraftserver = new MinecraftServer(options);
 
             (new ThreadServerApplication("Server thread", minecraftserver)).start();
         } catch (Exception exception) {
-            a.log(Level.SEVERE, "Failed to start the minecraft server", exception);
+            a.log(Level.SEVERE, "Failed to start the minecraft server", ((Throwable) (exception)));
         }
     }
-    // Craftbukkit end
 
     public File a(String s) {
         return new File(s);
@@ -484,5 +484,4 @@ implements ICommandListener, Runnable {
     public static boolean a(MinecraftServer minecraftserver) {
         return minecraftserver.o;
     }
-
 }
