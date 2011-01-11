@@ -1,9 +1,12 @@
 package net.minecraft.server;
 
-
 import java.util.List;
 import java.util.Random;
-
+import org.bukkit.MobType;
+import org.bukkit.craftbukkit.CraftPlayer;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.event.Event.Type;
+import org.bukkit.event.player.PlayerEggThrowEvent;
 
 public class EntityEgg extends Entity {
 
@@ -54,7 +57,7 @@ public class EntityEgg extends Entity {
         a(s, t, u, 1.5F, 1.0F);
     }
 
-    public void a(double d1, double d2, double d3, float f1, 
+    public void a(double d1, double d2, double d3, float f1,
             float f2) {
         float f3 = MathHelper.a(d1 * d1 + d2 * d2 + d3 * d3);
 
@@ -150,20 +153,69 @@ public class EntityEgg extends Entity {
                     ;
                 }
             }
-            if (!this.l.z && W.nextInt(8) == 0) {
-                byte byte0 = 1;
 
-                if (W.nextInt(32) == 0) {
-                    byte0 = 4;
-                }
-                for (int k = 0; k < byte0; k++) {
-                    EntityChicken entitychicken = new EntityChicken(this.l);
-
-                    entitychicken.c(p, q, r, v, 0.0F);
-                    this.l.a(entitychicken);
-                }
-
+            // Craftbukkit start
+            boolean hatching = !this.l.z && W.nextInt(8) == 0;
+            byte numHatching = (hatching && W.nextInt(32) == 0) ? (byte) 4 : (byte) 1;
+            if (!hatching) {
+                numHatching = 0;
             }
+            MobType type = MobType.CHICKEN;
+
+            if (aj instanceof EntityPlayerMP) {
+                CraftServer server = ((WorldServer) l).getServer();
+                CraftPlayer player = new CraftPlayer(server, (EntityPlayerMP) aj);
+                PlayerEggThrowEvent event = new PlayerEggThrowEvent(Type.PLAYER_EGG_THROW, player, hatching, numHatching, type);
+                server.getPluginManager().callEvent(event);
+                hatching = event.isHatching();
+                numHatching = event.getNumHatches();
+                type = event.getHatchType();
+            }
+
+            if (hatching) {
+                for (int k = 0; k < numHatching; k++) {
+                    Entity entity = null;
+                    switch (type) {
+                        case CHICKEN:
+                            entity = new EntityChicken(this.l);
+                            break;
+                        case COW:
+                            entity = new EntityCow(this.l);
+                            break;
+                        case CREEPER:
+                            entity = new EntityCreeper(this.l);
+                            break;
+                        case GHAST:
+                            entity = new EntityGhast(this.l);
+                            break;
+                        case PIG:
+                            entity = new EntityPig(this.l);
+                            break;
+                        case PIG_ZOMBIE:
+                            entity = new EntityPigZombie(this.l);
+                            break;
+                        case SHEEP:
+                            entity = new EntitySheep(this.l);
+                            break;
+                        case SKELETON:
+                            entity = new EntitySkeleton(this.l);
+                            break;
+                        case SPIDER:
+                            entity = new EntitySpider(this.l);
+                            break;
+                        case ZOMBIE:
+                            entity = new EntityZombie(this.l);
+                            break;
+                        default:
+                            entity = new EntityChicken(this.l);
+                            break;
+                    }
+                    entity.c(p, q, r, v, 0.0F);
+                    this.l.a(entity);
+                }
+            }
+            // Craftbukkit stop
+
             for (int j = 0; j < 8; j++) {
                 this.l.a("snowballpoof", p, q, r, 0.0D, 0.0D, 0.0D);
             }
@@ -235,4 +287,3 @@ public class EntityEgg extends Entity {
         }
     }
 }
-
