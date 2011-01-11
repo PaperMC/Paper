@@ -34,7 +34,7 @@ public final class CraftServer implements Server {
 
         if (pluginFolder.exists()) {
             try {
-                Plugin[] plugins = plugins = pluginManager.loadPlugins(pluginFolder);
+                Plugin[] plugins = pluginManager.loadPlugins(pluginFolder);
 
                 for (Plugin plugin : plugins) {
                     pluginManager.enablePlugin(plugin);
