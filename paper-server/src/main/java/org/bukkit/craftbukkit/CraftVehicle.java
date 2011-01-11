@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit;
 
 import org.bukkit.Entity;
-import org.bukkit.Vector;
 import org.bukkit.Vehicle;
 
 /**
