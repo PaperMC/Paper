@@ -73,4 +73,12 @@ public class PlayerListener implements Listener {
      */
     public void onPlayerLogin(PlayerLoginEvent event) {
     }
+
+    /**
+     * Called when a player throws an egg and it might hatch
+     *
+     * @param event Relevant event details
+     */
+    public void onPlayerEggThrow(PlayerEggThrowEvent event) {
+    }
 }

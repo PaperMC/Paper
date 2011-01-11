@@ -126,6 +126,9 @@ public final class JavaPluginLoader implements PluginLoader {
                 case PLAYER_LOGIN:
                     trueListener.onPlayerLogin((PlayerLoginEvent)event);
                     break;
+                case PLAYER_EGG_THROW:
+                    trueListener.onPlayerEggThrow((PlayerEggThrowEvent)event);
+                    break;
             }
         } else if (listener instanceof BlockListener) {
             BlockListener trueListener = (BlockListener)listener;
