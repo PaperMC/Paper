@@ -13,13 +13,13 @@ public abstract class Event {
         this.type = type;
         this.name = null;
     }
-    
+
     protected Event(final String name) {
         exAssert(name != null, "name is null");
         this.type = Type.CUSTOM_EVENT;
         this.name = name;
     }
-    
+
     /**
      * Gets the Type of this event
      * @return Event type that this object represents
@@ -27,11 +27,11 @@ public abstract class Event {
     public final Type getType() {
         return type;
     }
-    
+
     private void exAssert(boolean b, String s) {
         if(!b) throw new IllegalArgumentException(s);
     }
-    
+
     /**
      * Gets the event's name. Should only be used if getType() == Type.CUSTOM
      *
@@ -129,7 +129,7 @@ public abstract class Event {
 
     /**
      * Provides a lookup for all core events
-     * 
+     *
      * @see org.bukkit.event.
      */
     public enum Type {
@@ -137,65 +137,72 @@ public abstract class Event {
          * PLAYER EVENTS
          */
 
-        /** 
+        /**
          * Called when a player joins a server
-         * 
+         *
          * @see org.bukkit.event.player.PlayerEvent
          */
         PLAYER_JOIN (Category.PLAYER),
 
         /**
          * Called when a player is attempting to join a server
-         * 
+         *
          * @see org.bukkit.event.player.PlayerLoginEvent
          */
         PLAYER_LOGIN (Category.PLAYER),
 
         /**
          * Called when a player sends a chat message
-         * 
+         *
          * @see org.bukkit.event.player.PlayerChatEvent
          */
         PLAYER_CHAT (Category.PLAYER),
 
         /**
          * Called when a player attempts to use a command
-         * 
+         *
          * @see org.bukkit.event.player.PlayerChatEvent
          */
         PLAYER_COMMAND (Category.PLAYER),
 
         /**
          * Called when a player leaves a server
-         * 
+         *
          * @see org.bukkit.event.player.PlayerEvent
          */
         PLAYER_QUIT (Category.PLAYER),
 
         /**
          * Called when a player moves position in the world
-         * 
+         *
          * @see org.bukkit.event.player.PlayerMoveEvent
          */
         PLAYER_MOVE (Category.PLAYER),
 
         /**
          * Called when a player undergoes an animation, such as arm swinging
-         * 
+         *
          * @todo: add javadoc see comment
          */
         PLAYER_ANIMATION (Category.PLAYER),
-        
+
         /**
          * Called when a player uses an item
-         * 
+         *
          * @see org.bukkit.event.player.PlayerItemEvent
          */
         PLAYER_ITEM (Category.PLAYER),
-        
+
+        /**
+         * Called when a player throws an egg and it might hatch
+         *
+         * @see org.bukkit.event.player.PlayerEggThrowEvent
+         */
+        PLAYER_EGG_THROW (Category.PLAYER),
+
         /**
          * Called when a player teleports from one position to another
-         * 
+         *
          * @see org.bukkit.event.player.PlayerMoveEvent
          */
         PLAYER_TELEPORT (Category.PLAYER),
@@ -204,9 +211,10 @@ public abstract class Event {
          * BLOCK EVENTS
          */
 
-        /** 
+        /**
          * Called when a block is damaged (hit by a player)
-         * @todo: Add Javadoc see note here.
+         *
+         * @see org.bukkit.event.block.BlockDamagedEvent
          */
         BLOCK_DAMAGED (Category.BLOCK),
 
@@ -215,7 +223,7 @@ public abstract class Event {
          * check on whether it can be built
          *
          * For example, cacti cannot be built on grass unless overridden here
-         * 
+         *
          * @see org.bukkit.event.block.BlockCanBuildEvent
          */
         BLOCK_CANBUILD (Category.BLOCK),
@@ -223,7 +231,7 @@ public abstract class Event {
         /**
          * Called when a block of water or lava attempts to flow into another
          * block
-         * 
+         *
          * @see org.bukkit.event.block.BlockFromToEvent
          */
         BLOCK_FLOW (Category.BLOCK),
@@ -231,7 +239,7 @@ public abstract class Event {
         /**
          * Called when a block is being set on fire from another block, such as
          * an adjacent block of fire attempting to set fire to wood
-         * 
+         *
          * @see org.bukkit.event.block.BlockIgniteEvent
          */
         BLOCK_IGNITE (Category.BLOCK),
@@ -241,35 +249,35 @@ public abstract class Event {
          *
          * A physics check is commonly called when an adjacent block changes
          * type
-         * 
+         *
          * @see org.bukkit.event.block.BlockPhysicsEvent
          */
         BLOCK_PHYSICS (Category.BLOCK),
-        
+
         /**
          * Called when a player is attempting to place a block
-         * 
+         *
          * @see org.bukkit.event.block.BlockRightClickedEvent
          */
         BLOCK_RIGHTCLICKED (Category.BLOCK),
-        
+
         /**
          * Called when a player is attempting to place a block
-         * 
+         *
          * @see org.bukkit.event.block.BlockPlacedEvent
          */
         BLOCK_PLACED (Category.BLOCK),
 
         /**
          * Called when an entity interacts with a block (lever, door, pressure plate, chest, furnace)
-         * 
+         *
          * @see org.bukkit.event.block.BlockInteractEvent
          */
         BLOCK_INTERACT (Category.BLOCK),
-        
+
         /**
          * Called when leaves are decaying naturally
-         * 
+         *
          * @see org.bukkit.event.block.LeavesDecayEvent
          */
         LEAVES_DECAY (Category.BLOCK),
@@ -277,7 +285,7 @@ public abstract class Event {
         /**
          * Called when a liquid attempts to flow into a block which already
          * contains a "breakable" block, such as redstone wire
-         * 
+         *
          * @todo: add javadoc see comment
          */
         LIQUID_DESTROY (Category.BLOCK),
@@ -286,7 +294,7 @@ public abstract class Event {
          * Called when a block changes redstone current. Only triggered on blocks
          * that are actually capable of transmitting or carrying a redstone
          * current
-         * 
+         *
          * @see org.bukkit.event.block.BlockFromToEvent
          */
         REDSTONE_CHANGE (Category.BLOCK),
@@ -295,37 +303,37 @@ public abstract class Event {
          * INVENTORY EVENTS
          */
 
-        /** 
+        /**
          * Called when a player opens an inventory
-         * 
+         *
          * @todo: add javadoc see comment
          */
         INVENTORY_OPEN (Category.INVENTORY),
 
         /**
          * Called when a player closes an inventory
-         * 
+         *
          * @todo: add javadoc see comment
          */
         INVENTORY_CLOSE (Category.INVENTORY),
 
         /**
          * Called when a player clicks on an inventory slot
-         * 
+         *
          * @todo: add javadoc see comment
          */
         INVENTORY_CLICK (Category.INVENTORY),
 
         /**
          * Called when an inventory slot changes values or type
-         * 
+         *
          * @todo: add javadoc see comment
          */
         INVENTORY_CHANGE (Category.INVENTORY),
 
         /**
          * Called when a player is attempting to perform an inventory transaction
-         * 
+         *
          * @todo: add javadoc see comment
          */
         INVENTORY_TRANSACTION (Category.INVENTORY),
@@ -334,16 +342,26 @@ public abstract class Event {
          * SERVER EVENTS
          */
 
+	/**
+	 * Called when a timer has expired
+	 */
+	TIMER_EXPIRED(Category.SERVER),
+
+	/**
+	 * Called when a timer has been removed from the server.
+	 */
+	TIMER_UNREGISTERED(Category.SERVER),
+
         /**
          * Called when a plugin is enabled
-         * 
+         *
          * @see org.bukkit.event.server.PluginEvent
          */
         PLUGIN_ENABLE (Category.SERVER),
 
         /**
          * Called when a plugin is disabled
-         * 
+         *
          * @see org.bukkit.event.server.PluginEvent
          */
         PLUGIN_DISABLE (Category.SERVER),
@@ -357,28 +375,28 @@ public abstract class Event {
          *
          * If a new chunk is being generated for loading, it will call
          * Type.CHUNK_GENERATION and then Type.CHUNK_LOADED upon completion
-         * 
+         *
          * @see org.bukkit.event.world.ChunkLoadedEvent
          */
         CHUNK_LOADED (Category.WORLD),
 
         /**
          * Called when a chunk is unloaded
-         * 
+         *
          * @see org.bukkit.event.world.ChunkUnloadedEvent
          */
         CHUNK_UNLOADED (Category.WORLD),
 
         /**
          * Called when a chunk needs to be generated
-         * 
+         *
          * @todo: add javadoc see comment
          */
         CHUNK_GENERATION (Category.WORLD),
 
         /**
          * Called when an ItemEntity spawns in the world
-         * 
+         *
          * @todo: add javadoc see comment
          */
         ITEM_SPAWN (Category.WORLD),
@@ -387,10 +405,10 @@ public abstract class Event {
          * LIVING_ENTITY EVENTS
          */
 
-        /** 
+        /**
          * Called when a creature, either hostile or neutral, attempts to spawn
          * in the world "naturally"
-         * 
+         *
          * @todo: add javadoc see comment
          */
         CREATURE_SPAWN (Category.LIVING_ENTITY),
@@ -398,35 +416,35 @@ public abstract class Event {
         /**
          * Called when a LivingEntity is damaged by the environment (for example,
          * falling or lava)
-         * 
+         *
          * @see org.bukkit.event.entity.EntityDamagedByBlockEvent
          */
         ENTITY_DAMAGEDBY_BLOCK (Category.LIVING_ENTITY),
 
         /**
          * Called when a LivingEntity is damaged by another LivingEntity
-         * 
+         *
          * @see org.bukkit.event.entity.EntityDamagedByEntityEvent
          */
         ENTITY_DAMAGEDBY_ENTITY (Category.LIVING_ENTITY),
 
         /**
          * Called when a LivingEntity is damaged with no source.
-         * 
+         *
          * @see org.bukkit.event.entity.EntityDamagedEvent
          */
         ENTITY_DAMAGED(Category.LIVING_ENTITY),
 
         /**
          * Called when a LivingEntity dies
-         * 
+         *
          * @todo: add javadoc see comment
          */
         ENTITY_DEATH (Category.LIVING_ENTITY),
-        
+
         /**
          * Called when a Skeleton or Zombie catch fire due to the sun
-         * 
+         *
          * @todo: add javadoc see comment
          */
         ENTITY_COMBUST (Category.LIVING_ENTITY),
@@ -435,51 +453,51 @@ public abstract class Event {
          * VEHICLE EVENTS
          */
 
-        /** 
+        /**
          * Called when a vehicle is placed by a player
-         * 
+         *
          * @see org.bukkit.event.vehicle.VehicleCreateEvent
          */
         VEHICLE_CREATE (Category.VEHICLE),
 
         /**
          * Called when a vehicle is damaged by a LivingEntity
-         * 
+         *
          * @see org.bukkit.event.vehicle.VehicleDamageEvent
          */
         VEHICLE_DAMAGE (Category.VEHICLE),
 
         /**
          * Called when a vehicle collides with an Entity
-         * 
+         *
          * @see org.bukkit.event.vehicle.VehicleCollisionEvent
          */
         VEHICLE_COLLISION_ENTITY (Category.VEHICLE),
 
         /**
          * Called when a vehicle collides with a Block
-         * 
+         *
          * @see org.bukkit.event.vehicle.VehicleBlockCollisionEvent
          */
         VEHICLE_COLLISION_BLOCK (Category.VEHICLE),
 
         /**
          * Called when a vehicle is entered by a LivingEntity
-         * 
+         *
          * @see org.bukkit.event.vehicle.VehicleEnterEvent
          */
         VEHICLE_ENTER (Category.VEHICLE),
 
         /**
          * Called when a vehicle is exited by a LivingEntity
-         * 
+         *
          * @see org.bukkit.event.vehicle.VehicleExitEvent
          */
         VEHICLE_EXIT (Category.VEHICLE),
 
         /**
          * Called when a vehicle moves position in the world
-         * 
+         *
          * @see org.bukkit.event.vehicle.VehicleMoveEvent
          */
         VEHICLE_MOVE (Category.VEHICLE),
@@ -494,7 +512,7 @@ public abstract class Event {
         CUSTOM_EVENT (Category.MISCELLANEOUS);
 
         private final Category category;
-        
+
         private Type(Category category) {
             this.category = category;
         }
