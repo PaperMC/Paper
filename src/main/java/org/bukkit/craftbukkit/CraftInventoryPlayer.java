@@ -1,6 +1,5 @@
 package org.bukkit.craftbukkit;
 
-import java.util.ArrayList;
 import net.minecraft.server.InventoryPlayer;
 
 import org.bukkit.ItemStack;
