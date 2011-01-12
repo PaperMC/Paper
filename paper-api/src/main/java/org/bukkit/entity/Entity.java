@@ -9,7 +9,7 @@ import org.bukkit.World;
  */
 public interface Entity {
     /**
-     * Gets the entitys current position
+     * Gets the entity's current position
      *
      * @return Location containing the position of this entity
      */
