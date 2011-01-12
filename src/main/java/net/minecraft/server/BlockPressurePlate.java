@@ -4,11 +4,12 @@ import java.util.List;
 import java.util.Random;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.CraftBlock;
+import org.bukkit.BlockFace;import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.CraftLivingEntity;
 import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockInteractEvent;
+import org.bukkit.event.block.BlockRedstoneEvent;
 // CraftBukkit end
 
 public class BlockPressurePlate extends Block {
@@ -40,7 +41,8 @@ public class BlockPressurePlate extends Block {
         return world.d(i, j - 1, k);
     }
 
-    public void e(World world, int i, int j, int k) {}
+    public void e(World world, int i, int j, int k) {
+    }
 
     public void b(World world, int i, int j, int k, int l) {
         boolean flag = false;
@@ -87,7 +89,9 @@ public class BlockPressurePlate extends Block {
 
                 ((WorldServer) world).getServer().getPluginManager().callEvent(bie);
 
-                if (bie.isCancelled()) return;
+                if (bie.isCancelled()) {
+                    return;
+                }
             }
             // CraftBukkit end
 
@@ -114,6 +118,10 @@ public class BlockPressurePlate extends Block {
         if (list.size() > 0) {
             flag1 = true;
         }
+        CraftBlock block = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
+        BlockRedstoneEvent bre = new BlockRedstoneEvent(block, BlockFace.Self, flag ? 15 : 0, flag1 ? 15 : 0);
+        ((WorldServer) world).getServer().getPluginManager().callEvent(bre);
+        flag1 = bre.getNewCurrent() > 0;
         if (flag1 && !flag) {
             world.b(i, j, k, 1);
             world.g(i, j, k, bh);

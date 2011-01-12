@@ -3,10 +3,12 @@ package net.minecraft.server;
 import java.util.Random;
 
 // CraftBukkit start
+import org.bukkit.BlockFace;
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockInteractEvent;
+import org.bukkit.event.block.BlockRedstoneEvent;
 // CraftBukkit end
 
 public class BlockButton extends Block {
@@ -143,8 +145,11 @@ public class BlockButton extends Block {
 
         ((WorldServer) world).getServer().getPluginManager().callEvent(bie);
 
-        if (bie.isCancelled()) return true;
+        if (bie.isCancelled()) {
+            return true;
+        }
         // CraftBukkit end
+
 
         if (world.z) {
             return true;
@@ -156,22 +161,30 @@ public class BlockButton extends Block {
         if (j1 == 0) {
             return true;
         }
-        world.b(i, j, k, i1 + j1);
-        world.b(i, j, k, i, j, k);
-        world.a((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.click", 0.3F, 0.6F);
-        world.g(i, j, k, bh);
-        if (i1 == 1) {
-            world.g(i - 1, j, k, bh);
-        } else if (i1 == 2) {
-            world.g(i + 1, j, k, bh);
-        } else if (i1 == 3) {
-            world.g(i, j, k - 1, bh);
-        } else if (i1 == 4) {
-            world.g(i, j, k + 1, bh);
-        } else {
-            world.g(i, j - 1, k, bh);
+
+        //Allow the lever to change the current
+        int old = (j1 != 8) ? 1 : 0;
+        int current = (j1 == 8) ? 1 : 0;
+        BlockRedstoneEvent bre = new BlockRedstoneEvent(block, BlockFace.Self, old, current);
+        ((WorldServer) world).getServer().getPluginManager().callEvent(bre);
+        if ((bre.getNewCurrent() > 0) == (k == 8)) {
+            world.b(i, j, k, i1 + j1);
+            world.b(i, j, k, i, j, k);
+            world.a((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.click", 0.3F, 0.6F);
+            world.g(i, j, k, bh);
+            if (i1 == 1) {
+                world.g(i - 1, j, k, bh);
+            } else if (i1 == 2) {
+                world.g(i + 1, j, k, bh);
+            } else if (i1 == 3) {
+                world.g(i, j, k - 1, bh);
+            } else if (i1 == 4) {
+                world.g(i, j, k + 1, bh);
+            } else {
+                world.g(i, j - 1, k, bh);
+            }
+            world.h(i, j, k, bh);
         }
-        world.h(i, j, k, bh);
         return true;
     }
 

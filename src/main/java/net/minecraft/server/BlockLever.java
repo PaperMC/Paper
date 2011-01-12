@@ -1,10 +1,12 @@
 package net.minecraft.server;
 
 // CraftBukkit start
+import org.bukkit.BlockFace;
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockInteractEvent;
+import org.bukkit.event.block.BlockRedstoneEvent;
 // CraftBukkit end
 
 public class BlockLever extends Block {
@@ -159,20 +161,27 @@ public class BlockLever extends Block {
         int i1 = l & 7;
         int j1 = 8 - (l & 8);
 
-        world.b(i, j, k, i1 + j1);
-        world.b(i, j, k, i, j, k);
-        world.a((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.click", 0.3F, j1 <= 0 ? 0.5F : 0.6F);
-        world.g(i, j, k, bh);
-        if (i1 == 1) {
-            world.g(i - 1, j, k, bh);
-        } else if (i1 == 2) {
-            world.g(i + 1, j, k, bh);
-        } else if (i1 == 3) {
-            world.g(i, j, k - 1, bh);
-        } else if (i1 == 4) {
-            world.g(i, j, k + 1, bh);
-        } else {
-            world.g(i, j - 1, k, bh);
+        //Allow the lever to change the current
+        int old = (j1 != 8) ? 1 : 0;
+        int current = (j1 == 8) ? 1 : 0;
+        BlockRedstoneEvent bre = new BlockRedstoneEvent(block, BlockFace.Self, old, current);
+        ((WorldServer) world).getServer().getPluginManager().callEvent(bre);
+        if ((bre.getNewCurrent() > 0) == (k == 8)) {
+            world.b(i, j, k, i1 + j1);
+            world.b(i, j, k, i, j, k);
+            world.a((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.click", 0.3F, j1 <= 0 ? 0.5F : 0.6F);
+            world.g(i, j, k, bh);
+            if (i1 == 1) {
+                world.g(i - 1, j, k, bh);
+            } else if (i1 == 2) {
+                world.g(i + 1, j, k, bh);
+            } else if (i1 == 3) {
+                world.g(i, j, k - 1, bh);
+            } else if (i1 == 4) {
+                world.g(i, j, k + 1, bh);
+            } else {
+                world.g(i, j - 1, k, bh);
+            }
         }
         return true;
     }
