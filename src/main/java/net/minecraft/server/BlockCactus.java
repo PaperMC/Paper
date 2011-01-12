@@ -6,6 +6,7 @@ import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 // CraftBukkit end
@@ -96,21 +97,19 @@ public class BlockCactus extends Block {
 
     public void a(World world, int i, int j, int k, Entity entity) {
         // CraftBukkit start - ENTITY_DAMAGEBY_BLOCK event
-        CraftEntity toPassIn = null;
-        if (entity instanceof EntityPlayerMP) {
-            toPassIn = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entity);
-        } else if (entity instanceof EntityLiving) {
-            toPassIn = new CraftLivingEntity(((WorldServer) world).getServer(), (EntityLiving) entity);
-        }
 
-        if(toPassIn != null) {
+        if(entity instanceof EntityLiving) {
+            CraftServer server = ((WorldServer) world).getServer();
+            CraftEntity toPassIn = new CraftLivingEntity(server, (EntityLiving) entity);
             EntityDamageByBlockEvent edbbe = new EntityDamageByBlockEvent(((WorldServer) world).getWorld().getBlockAt(i, j, k), toPassIn, EntityDamageEvent.DamageCause.CONTACT, 1);
-            ((WorldServer) world).getServer().getPluginManager().callEvent(edbbe);
+            server.getPluginManager().callEvent(edbbe);
 
-            if (edbbe.isCancelled())
-                return;
+            if (!edbbe.isCancelled()){
+                entity.a(((Entity) (null)), edbbe.getDamage());
+            }
+            return;
         }
-        // CraftBukkit end TODO: Other entities (when their respective classes are added) hitting a Cactus
+        // CraftBukkit end
         entity.a(((Entity) (null)), 1);
     }
 }

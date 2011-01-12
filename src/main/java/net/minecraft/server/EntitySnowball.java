@@ -3,20 +3,16 @@ package net.minecraft.server;
 import java.util.List;
 import java.util.Random;
 
-// CraftBukkit start
-import org.bukkit.entity.MobType;
-import org.bukkit.craftbukkit.entity.CraftEgg;
+//CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
-import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.event.Event.Type;
+import org.bukkit.craftbukkit.entity.CraftSnowball;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.player.PlayerEggThrowEvent;
-// CraftBukkit end
+//CraftBukkit end
 
-public class EntityEgg extends Entity {
+public class EntitySnowball extends Entity {
 
     private int b;
     private int c;
@@ -28,7 +24,7 @@ public class EntityEgg extends Entity {
     private int al;
     private int am;
 
-    public EntityEgg(World world) {
+    public EntitySnowball(World world) {
         super(world);
         b = -1;
         c = -1;
@@ -42,7 +38,7 @@ public class EntityEgg extends Entity {
 
     protected void a() {}
 
-    public EntityEgg(World world, EntityLiving entityliving) {
+    public EntitySnowball(World world, EntityLiving entityliving) {
         super(world);
         b = -1;
         c = -1;
@@ -67,7 +63,7 @@ public class EntityEgg extends Entity {
         a(s, t, u, 1.5F, 1.0F);
     }
 
-    public EntityEgg(World world, double d1, double d2, double d3) {
+    public EntitySnowball(World world, double d1, double d2, double d3) {
         super(world);
         b = -1;
         c = -1;
@@ -146,8 +142,8 @@ public class EntityEgg extends Entity {
             List list = this.l.b(((Entity) (this)), z.a(s, t, u).b(1.0D, 1.0D, 1.0D));
             double d1 = 0.0D;
 
-            for (int l = 0; l < list.size(); l++) {
-                Entity entity1 = (Entity) list.get(l);
+            for (int k = 0; k < list.size(); k++) {
+                Entity entity1 = (Entity) list.get(k);
 
                 if (!entity1.c_() || entity1 == ak && am < 5) {
                     continue;
@@ -179,17 +175,17 @@ public class EntityEgg extends Entity {
                     CraftServer server = ((WorldServer) this.l).getServer();
                     CraftEntity damagee = new CraftLivingEntity(server, (EntityLiving) movingobjectposition.g);
                     CraftEntity damager = new CraftLivingEntity(server, ak);
-                    CraftEntity projectile = new CraftEgg(server, (EntityEgg) this);
+                    CraftEntity projectile = new CraftSnowball(server, (EntitySnowball) this);
 
                     //TODO @see EntityArrow#162
                     EntityDamageByProjectileEvent edbpe = new EntityDamageByProjectileEvent( damager, damagee, projectile, EntityDamageEvent.DamageCause.ENTITY_ATTACK, 0);
 
                     server.getPluginManager().callEvent(edbpe);
                     if(!edbpe.isCancelled()) {
-                        // this function returns if the egg should stick or not, i.e. !bounce
+                        // this function returns if the snowball should stick or not, i.e. !bounce
                         bounce = !movingobjectposition.g.a(((Entity) (ak)), edbpe.getDamage());
                     } else {
-                        // event was cancelled, get if the egg should bounce or not
+                        // event was cancelled, get if the snowball should bounce or not
                         bounce = edbpe.getBounce();
                     }
                 } else {
@@ -200,69 +196,6 @@ public class EntityEgg extends Entity {
                     ;
                 }
             }
-
-            // Craftbukkit start
-            boolean hatching = !this.l.z && W.nextInt(8) == 0;
-            byte numHatching = (hatching && W.nextInt(32) == 0) ? (byte) 4 : (byte) 1;
-            if (!hatching) {
-                numHatching = 0;
-            }
-            MobType type = MobType.CHICKEN;
-
-            if (ak instanceof EntityPlayerMP) {
-                CraftServer server = ((WorldServer) l).getServer();
-                CraftPlayer player = new CraftPlayer(server, (EntityPlayerMP) ak);
-                PlayerEggThrowEvent event = new PlayerEggThrowEvent(Type.PLAYER_EGG_THROW, player, hatching, numHatching, type);
-                server.getPluginManager().callEvent(event);
-                hatching = event.isHatching();
-                numHatching = event.getNumHatches();
-                type = event.getHatchType();
-            }
-
-            if (hatching) {
-                for (int k = 0; k < numHatching; k++) {
-                    Entity entity = null;
-                    switch (type) {
-                        case CHICKEN:
-                            entity = new EntityChicken(this.l);
-                            break;
-                        case COW:
-                            entity = new EntityCow(this.l);
-                            break;
-                        case CREEPER:
-                            entity = new EntityCreeper(this.l);
-                            break;
-                        case GHAST:
-                            entity = new EntityGhast(this.l);
-                            break;
-                        case PIG:
-                            entity = new EntityPig(this.l);
-                            break;
-                        case PIG_ZOMBIE:
-                            entity = new EntityPigZombie(this.l);
-                            break;
-                        case SHEEP:
-                            entity = new EntitySheep(this.l);
-                            break;
-                        case SKELETON:
-                            entity = new EntitySkeleton(this.l);
-                            break;
-                        case SPIDER:
-                            entity = new EntitySpider(this.l);
-                            break;
-                        case ZOMBIE:
-                            entity = new EntityZombie(this.l);
-                            break;
-                        default:
-                            entity = new EntityChicken(this.l);
-                            break;
-                    }
-                    entity.c(p, q, r, v, 0.0F);
-                    this.l.a(entity);
-                }
-            }
-            // CraftBukkit end
-
             for (int j = 0; j < 8; j++) {
                 this.l.a("snowballpoof", p, q, r, 0.0D, 0.0D, 0.0D);
             }
@@ -293,7 +226,7 @@ public class EntityEgg extends Entity {
         float f5 = 0.03F;
 
         if (v()) {
-            for (int i1 = 0; i1 < 4; i1++) {
+            for (int l = 0; l < 4; l++) {
                 float f3 = 0.25F;
 
                 this.l.a("bubble", p - s * (double) f3, q - t * (double) f3, r - u * (double) f3, s, t, u);

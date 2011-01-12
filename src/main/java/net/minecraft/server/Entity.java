@@ -5,6 +5,9 @@ import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.event.Event.Type;
+import org.bukkit.event.entity.EntityCombustEvent;
+import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 // CraftBukkit end
 
@@ -212,7 +215,21 @@ public abstract class Entity {
                 }
             } else {
                 if (Z % 20 == 0) {
-                    a(((Entity) (null)), 1);
+                    // CraftBukkit start
+                    if(this instanceof EntityLiving) {
+                        CraftServer server = ((WorldServer)l).getServer();
+                        CraftEntity damagee = new CraftLivingEntity(server, (EntityLiving)this);
+
+                        EntityDamageEvent ede = new EntityDamageEvent(damagee, EntityDamageEvent.DamageCause.DROWNING, 1);
+                        server.getPluginManager().callEvent(ede);
+
+                        if (!ede.isCancelled()){
+                            a(((Entity) (null)), ede.getDamage());
+                        }
+                    } else {
+                        a(((Entity) (null)), 1);
+                    }
+                    // CraftBukkit end
                 }
                 Z--;
             }
@@ -232,8 +249,27 @@ public abstract class Entity {
 
     protected void s() {
         if (!ae) {
-            a(((Entity) (null)), 4);
-            Z = 600;
+            // CraftBukkit start
+            if(this instanceof EntityLiving) {
+                CraftServer server = ((WorldServer)l).getServer();
+                CraftEntity defender = new CraftLivingEntity(server, (EntityLiving) this);
+
+                EntityDamageByBlockEvent ede = new EntityDamageByBlockEvent(null, defender, EntityDamageEvent.DamageCause.LAVA, 4);
+                server.getPluginManager().callEvent(ede);
+                if (!ede.isCancelled()){
+                    a(((Entity) (null)), ede.getDamage());
+                }
+
+                EntityCombustEvent ece = new EntityCombustEvent(Type.ENTITY_COMBUST, defender);
+                server.getPluginManager().callEvent(ece);
+                if (!ece.isCancelled()){
+                    Z = 600;
+                }
+            } else {
+                a(((Entity) (null)), 4);
+                Z = 600;
+            }
+            // CraftBukkit end
         }
     }
 
@@ -479,7 +515,10 @@ public abstract class Entity {
                 EntityDamageEvent ede = new EntityDamageEvent(defender, EntityDamageEvent.DamageCause.FIRE, i1);
                 server.getPluginManager().callEvent(ede);
 
-                if (ede.isCancelled()) return;
+                if (!ede.isCancelled()){
+                    a(((Entity) (null)), ede.getDamage());
+                }
+                return;
             }
             // CraftBukkit end
             a(((Entity) (null)), i1);

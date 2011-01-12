@@ -125,7 +125,7 @@ public class Explosion {
                     // Craftbukkit TODO: get the x/y/z of the tnt block?
                     EntityDamageByBlockEvent edbbe = new EntityDamageByBlockEvent(null, damagee, EntityDamageEvent.DamageCause.BLOCK_EXPLOSION, damage);
                     servr.getPluginManager().callEvent(edbbe);
-                    if(!edbbe.isCancelled()) entity.a(e, damage);
+                    if(!edbbe.isCancelled()) entity.a(e, edbbe.getDamage());
                 } else {
                     CraftEntity damager = null;
                     if (e instanceof EntityPlayerMP) {
@@ -138,7 +138,7 @@ public class Explosion {
                     servr.getPluginManager().callEvent(edbbe);
 
                     if (!edbbe.isCancelled()) {
-                        entity.a(e, damage);
+                        entity.a(e, edbbe.getDamage());
                     }
                 }
                 // Craftbukkit end
@@ -211,6 +211,5 @@ public class Explosion {
                 Block.m[j1].a_(i, k, l, i1);
             }
         }
-
     }
 }
