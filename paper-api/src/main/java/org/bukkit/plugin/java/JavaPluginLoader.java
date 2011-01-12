@@ -358,6 +358,11 @@ public final class JavaPluginLoader implements PluginLoader {
                     ((EntityListener)listener).onEntityTarget( (EntityTargetEvent)event );
                 }
             };
+        case CREATURE_SPAWN:
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
+                    ((EntityListener)listener).onCreatureSpawn( (CreatureSpawnEvent)event );
+                }
+            };
 
         // Vehicle Events
         case VEHICLE_CREATE:
