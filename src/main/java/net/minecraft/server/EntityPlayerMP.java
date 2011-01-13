@@ -194,7 +194,16 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
     }
 
     public void e(Entity entity) {
-        super.e(entity);
+        // CraftBukkit start
+        setPassengerOf(entity);
+    }
+
+    public void setPassengerOf(Entity entity) {
+        // e(null) doesn't really fly for overloaded methods,
+        // so this method is needed
+
+        //CraftBukkit end
+        super.setPassengerOf(entity);
         a.b(((Packet) (new Packet39(((Entity) (this)), k))));
         a.a(p, q, r, v, w);
     }
