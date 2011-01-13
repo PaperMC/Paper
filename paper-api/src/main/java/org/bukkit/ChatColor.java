@@ -4,9 +4,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * All supported color values
+ * All supported color values for chat
  */
-public enum Color {
+public enum ChatColor {
     BLACK(0x0),
     DARK_BLUE(0x1),
     DARK_GREEN(0x2),
@@ -17,17 +17,17 @@ public enum Color {
     GRAY(0x7),
     DARK_GRAY(0x8),
     BLUE(0x9),
-    GREEN(0xa),
-    AQUA(0xb),
-    RED(0xc),
-    LIGHT_PURPLE(0xd),
-    YELLOW(0xe),
-    WHITE(0xf);
+    GREEN(0xA),
+    AQUA(0xB),
+    RED(0xC),
+    LIGHT_PURPLE(0xD),
+    YELLOW(0xE),
+    WHITE(0xF);
 
     private final int code;
-    private final static Map<Integer, Color> colors = new HashMap<Integer, Color>();
+    private final static Map<Integer, ChatColor> colors = new HashMap<Integer, ChatColor>();
 
-    private Color(final int code) {
+    private ChatColor(final int code) {
         this.code = code;
     }
 
@@ -41,7 +41,7 @@ public enum Color {
     }
 
     static {
-        for (Color color : Color.values()) {
+        for (ChatColor color : ChatColor.values()) {
             colors.put(color.getCode(), color);
         }
     }
