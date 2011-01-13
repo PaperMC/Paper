@@ -66,7 +66,7 @@ public class PlayerItemEvent extends PlayerEvent implements Cancellable {
      * @return Material the material of the item used
      */
     public Material getMaterial() {
-        if (this.item == null) return Material.Air;
+        if (this.item == null) return Material.AIR;
         
         return item.getType();
     }
