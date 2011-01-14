@@ -40,6 +40,10 @@ public enum ChatColor {
         return String.format("\u00A7%x", code);
     }
 
+    public static ChatColor getByCode(final int code) {
+        return colors.get(code);
+    }
+
     static {
         for (ChatColor color : ChatColor.values()) {
             colors.put(color.getCode(), color);

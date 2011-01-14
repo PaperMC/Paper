@@ -6,7 +6,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.bukkit.material.Dye;
 import org.bukkit.material.MaterialData;
+import org.bukkit.material.Wool;
 
 /**
  * An enum of all material IDs accepted by the official server + client
@@ -38,7 +40,7 @@ public enum Material {
     DISPENSER(23),
     SANDSTONE(24),
     NOTE_BLOCK(25),
-    CLOTH(35),
+    WOOL(35, Wool.class),
     YELLOW_FLOWER(37),
     RED_ROSE(38),
     BROWN_MUSHROOM(39),
@@ -190,7 +192,7 @@ public enum Material {
     GLOWSTONE_DUST(348),
     RAW_FISH(349),
     COOKED_FISH(350),
-    INK_SACK(351),
+    INK_SACK(351, Dye.class),
     BONE(352),
     SUGAR(353),
     CAKE(354),
@@ -198,7 +200,7 @@ public enum Material {
     GREEN_RECORD(2257);
 
     private final int id;
-    private final Class<MaterialData> data;
+    private final Class<? extends MaterialData> data;
     private static final Map<Integer, Material> lookupId = new HashMap<Integer, Material>();
     private static final Map<String, Material> lookupName = new HashMap<String, Material>();
 
@@ -206,7 +208,7 @@ public enum Material {
         this(id, null);
     }
 
-    private Material(final int id, final Class<MaterialData> data) {
+    private Material(final int id, final Class<? extends MaterialData> data) {
         this.id = id;
         this.data = data;
     }
@@ -215,7 +217,7 @@ public enum Material {
         return id;
     }
 
-    public Class<MaterialData> getData() {
+    public Class<? extends MaterialData> getData() {
         return data;
     }
 
@@ -225,7 +227,7 @@ public enum Material {
         }
 
         try {
-            Constructor<MaterialData> ctor = data.getConstructor(int.class, byte.class);
+            Constructor<? extends MaterialData> ctor = data.getConstructor(int.class, byte.class);
             return ctor.newInstance(id, raw);
         } catch (InstantiationException ex) {
             Logger.getLogger(Material.class.getName()).log(Level.SEVERE, null, ex);
