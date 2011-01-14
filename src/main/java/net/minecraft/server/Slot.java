@@ -41,7 +41,7 @@ public class Slot {
     }
 
     public ItemStack a(int i) {
-        return b.a(a, i);
+        return b.b(a, i);
     }
 
     public boolean a(IInventory iinventory, int i) {

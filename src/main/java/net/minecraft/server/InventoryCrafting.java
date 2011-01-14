@@ -13,24 +13,40 @@ public class InventoryCrafting implements IInventory {
     // CraftBukkit end
 
     public InventoryCrafting(CraftingInventoryCB craftinginventorycb, int i, int j) {
-        b = i * j;
-        a = new ItemStack[b];
+        int k = i * j;
+
+        a = new ItemStack[k];
         c = craftinginventorycb;
+        b = i;
     }
 
-    public int a() {
-        return b;
+    public int h_() {
+        return a.length;
     }
 
     public ItemStack a(int i) {
-        return a[i];
+        if (i >= h_()) {
+            return null;
+        } else {
+            return a[i];
+        }
+    }
+
+    public ItemStack a(int i, int j) {
+        if (i < 0 || i >= b) {
+            return null;
+        } else {
+            int k = i + j * b;
+
+            return a(k);
+        }
     }
 
     public String b() {
         return "Crafting";
     }
 
-    public ItemStack a(int i, int j) {
+    public ItemStack b(int i, int j) {
         if (a[i] != null) {
             if (a[i].a <= j) {
                 ItemStack itemstack = a[i];

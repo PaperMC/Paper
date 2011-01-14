@@ -20,7 +20,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         g = 0;
     }
 
-    public int a() {
+    public int h_() {
         return h.length;
     }
 
@@ -28,7 +28,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         return h[j];
     }
 
-    public ItemStack a(int j, int k) {
+    public ItemStack b(int j, int k) {
         if (h[j] != null) {
             if (h[j].a <= k) {
                 ItemStack itemstack = h[j];
@@ -62,7 +62,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         super.a(nbttagcompound);
         NBTTagList nbttaglist = nbttagcompound.k("Items");
 
-        h = new ItemStack[a()];
+        h = new ItemStack[h_()];
         for (int j = 0; j < nbttaglist.b(); j++) {
             NBTTagCompound nbttagcompound1 = (NBTTagCompound) nbttaglist.a(j);
             byte byte0 = nbttagcompound1.b("Slot");
@@ -100,11 +100,11 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         return 64;
     }
 
-    public boolean g() {
+    public boolean e() {
         return e > 0;
     }
 
-    public void e() {
+    public void f() {
         boolean flag = e > 0;
         boolean flag1 = false;
 
@@ -124,7 +124,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
                     }
                 }
             }
-            if (g() && i()) {
+            if (e() && i()) {
                 g++;
                 if (g == 200) {
                     g = 0;
@@ -148,32 +148,32 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         if (h[0] == null) {
             return false;
         }
-        int j = b(h[0].a().aW);
+        ItemStack itemstack = FurnaceRecipes.a().a(h[0].a().ba);
 
-        if (j < 0) {
+        if (itemstack == null) {
             return false;
         }
         if (h[2] == null) {
             return true;
         }
-        if (h[2].c != j) {
+        if (!h[2].a(itemstack)) {
             return false;
         }
         if (h[2].a < c() && h[2].a < h[2].b()) {
             return true;
         }
-        return h[2].a < Item.c[j].b();
+        return h[2].a < itemstack.b();
     }
 
     public void h() {
         if (!i()) {
             return;
         }
-        int j = b(h[0].a().aW);
+        ItemStack itemstack = FurnaceRecipes.a().a(h[0].a().ba);
 
         if (h[2] == null) {
-            h[2] = new ItemStack(j, 1);
-        } else if (h[2].c == j) {
+            h[2] = itemstack.j();
+        } else if (h[2].c == itemstack.c) {
             h[2].a++;
         }
         h[0].a--;
@@ -182,55 +182,26 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         }
     }
 
-    private int b(int j) {
-        if (j == Block.H.bh) {
-            return Item.m.aW;
-        }
-        if (j == Block.G.bh) {
-            return Item.n.aW;
-        }
-        if (j == Block.aw.bh) {
-            return Item.l.aW;
-        }
-        if (j == Block.E.bh) {
-            return Block.M.bh;
-        }
-        if (j == Item.ao.aW) {
-            return Item.ap.aW;
-        }
-        if (j == Item.aS.aW) {
-            return Item.aT.aW;
-        }
-        if (j == Block.w.bh) {
-            return Block.t.bh;
-        }
-        if (j == Item.aG.aW) {
-            return Item.aF.aW;
-        } else {
-            return -1;
-        }
-    }
-
     private int a(ItemStack itemstack) {
         if (itemstack == null) {
             return 0;
         }
-        int j = itemstack.a().aW;
+        int j = itemstack.a().ba;
 
-        if (j < 256 && Block.m[j].bs == Material.c) {
+        if (j < 256 && Block.m[j].bt == Material.c) {
             return 300;
         }
-        if (j == Item.B.aW) {
+        if (j == Item.B.ba) {
             return 100;
         }
-        if (j == Item.k.aW) {
+        if (j == Item.k.ba) {
             return 1600;
         }
-        return j != Item.aw.aW ? 0 : 20000;
+        return j != Item.aw.ba ? 0 : 20000;
     }
 
     public boolean a_(EntityPlayer entityplayer) {
-        if (a.l(b, c, d) != this) {
+        if (a.m(b, c, d) != this) {
             return false;
         }
         return entityplayer.d((double) b + 0.5D, (double) c + 0.5D, (double) d + 0.5D) <= 64D;

@@ -15,26 +15,26 @@ public class EntitySkeleton extends EntityMobs {
 
     public EntitySkeleton(World world) {
         super(world);
-        aQ = "/mob/skeleton.png";
-    }
-
-    protected String d() {
-        return "mob.skeleton";
+        aP = "/mob/skeleton.png";
     }
 
     protected String e() {
-        return "mob.skeletonhurt";
+        return "mob.skeleton";
     }
 
     protected String f() {
         return "mob.skeletonhurt";
     }
 
-    public void G() {
+    protected String g() {
+        return "mob.skeletonhurt";
+    }
+
+    public void o() {
         if (l.b()) {
             float f1 = b(1.0F);
 
-            if (f1 > 0.5F && l.h(MathHelper.b(p), MathHelper.b(q), MathHelper.b(r)) && W.nextFloat() * 30F < (f1 - 0.4F) * 2.0F) {
+            if (f1 > 0.5F && l.i(MathHelper.b(p), MathHelper.b(q), MathHelper.b(r)) && W.nextFloat() * 30F < (f1 - 0.4F) * 2.0F) {
                 // CraftBukkit start
                 CraftServer server = ((WorldServer) l).getServer();
                 EntityCombustEvent event = new EntityCombustEvent(Type.ENTITY_COMBUST, new CraftLivingEntity(server, (EntityLiving) this));
@@ -45,28 +45,28 @@ public class EntitySkeleton extends EntityMobs {
                 // CraftBukkit end
             }
         }
-        super.G();
+        super.o();
     }
 
     protected void a(Entity entity, float f1) {
         if (f1 < 10F) {
-            double d1 = entity.p - p;
-            double d2 = entity.r - r;
+            double d = entity.p - p;
+            double d1 = entity.r - r;
 
-            if (bg == 0) {
+            if (bf == 0) {
                 EntityArrow entityarrow = new EntityArrow(l, ((EntityLiving) (this)));
 
                 entityarrow.q += 1.3999999761581421D;
-                double d3 = entity.q - 0.20000000298023224D - entityarrow.q;
-                float f2 = MathHelper.a(d1 * d1 + d2 * d2) * 0.2F;
+                double d2 = entity.q - 0.20000000298023224D - entityarrow.q;
+                float f2 = MathHelper.a(d * d + d1 * d1) * 0.2F;
 
                 l.a(((Entity) (this)), "random.bow", 1.0F, 1.0F / (W.nextFloat() * 0.4F + 0.8F));
                 l.a(((Entity) (entityarrow)));
-                entityarrow.a(d1, d3 + (double) f2, d2, 0.6F, 12F);
-                bg = 30;
+                entityarrow.a(d, d2 + (double) f2, d1, 0.6F, 12F);
+                bf = 30;
             }
-            v = (float) ((Math.atan2(d2, d1) * 180D) / 3.1415927410125732D) - 90F;
-            ak = true;
+            v = (float) ((Math.atan2(d1, d) * 180D) / 3.1415927410125732D) - 90F;
+            e = true;
         }
     }
 
@@ -78,8 +78,21 @@ public class EntitySkeleton extends EntityMobs {
         super.b(nbttagcompound);
     }
 
-    protected int g() {
-        return Item.j.aW;
+    protected int h() {
+        return Item.j.ba;
+    }
+
+    protected void g_() {
+        int i = W.nextInt(3);
+
+        for (int j = 0; j < i; j++) {
+            a(Item.j.ba, 1);
+        }
+
+        i = W.nextInt(3);
+        for (int k = 0; k < i; k++) {
+            a(Item.aV.ba, 1);
+        }
     }
 
     static {

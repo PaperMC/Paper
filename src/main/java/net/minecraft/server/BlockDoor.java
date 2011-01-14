@@ -13,9 +13,9 @@ public class BlockDoor extends Block {
 
     protected BlockDoor(int i, Material material) {
         super(i, material);
-        bg = 97;
+        bh = 97;
         if (material == Material.e) {
-            bg++;
+            bh++;
         }
         float f = 0.5F;
         float f1 = 1.0F;
@@ -33,10 +33,10 @@ public class BlockDoor extends Block {
     }
 
     public void a(IBlockAccess iblockaccess, int i, int j, int k) {
-        b(d(iblockaccess.b(i, j, k)));
+        c(d(iblockaccess.b(i, j, k)));
     }
 
-    public void b(int i) {
+    public void c(int i) {
         float f = 0.1875F;
 
         a(0.0F, 0.0F, 0.0F, 1.0F, 2.0F, 1.0F);
@@ -59,13 +59,13 @@ public class BlockDoor extends Block {
     }
 
     public boolean a(World world, int i, int j, int k, EntityPlayer entityplayer) {
-        if (bs == Material.e) {
+        if (bt == Material.e) {
             return true;
         }
         int l = world.b(i, j, k);
 
         if ((l & 8) != 0) {
-            if (world.a(i, j - 1, k) == bh) {
+            if (world.a(i, j - 1, k) == bi) {
                 a(world, i, j - 1, k, entityplayer);
             }
             return true;
@@ -87,10 +87,10 @@ public class BlockDoor extends Block {
         }
         // CraftBukkit end
 
-        if (world.a(i, j + 1, k) == bh) {
-            world.b(i, j + 1, k, (l ^ 4) + 8);
+        if (world.a(i, j + 1, k) == bi) {
+            world.c(i, j + 1, k, (l ^ 4) + 8);
         }
-        world.b(i, j, k, l ^ 4);
+        world.c(i, j, k, l ^ 4);
         world.b(i, j - 1, k, i, j, k);
         if (Math.random() < 0.5D) {
             world.a((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.door_open", 1.0F, world.l.nextFloat() * 0.1F + 0.9F);
@@ -104,7 +104,7 @@ public class BlockDoor extends Block {
         int l = world.b(i, j, k);
 
         if ((l & 8) != 0) {
-            if (world.a(i, j - 1, k) == bh) {
+            if (world.a(i, j - 1, k) == bi) {
                 a(world, i, j - 1, k, flag);
             }
             return;
@@ -114,10 +114,10 @@ public class BlockDoor extends Block {
         if (flag1 == flag) {
             return;
         }
-        if (world.a(i, j + 1, k) == bh) {
-            world.b(i, j + 1, k, (l ^ 4) + 8);
+        if (world.a(i, j + 1, k) == bi) {
+            world.c(i, j + 1, k, (l ^ 4) + 8);
         }
-        world.b(i, j, k, l ^ 4);
+        world.c(i, j, k, l ^ 4);
         world.b(i, j - 1, k, i, j, k);
         if (Math.random() < 0.5D) {
             world.a((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.door_open", 1.0F, world.l.nextFloat() * 0.1F + 0.9F);
@@ -130,8 +130,8 @@ public class BlockDoor extends Block {
         int i1 = world.b(i, j, k);
 
         if ((i1 & 8) != 0) {
-            if (world.a(i, j - 1, k) != bh) {
-                world.d(i, j, k, 0);
+            if (world.a(i, j - 1, k) != bi) {
+                world.e(i, j, k, 0);
             }
             if (l > 0 && Block.m[l].c()) {
                 b(world, i, j - 1, k, l);
@@ -139,21 +139,21 @@ public class BlockDoor extends Block {
         } else {
             boolean flag = false;
 
-            if (world.a(i, j + 1, k) != bh) {
-                world.d(i, j, k, 0);
+            if (world.a(i, j + 1, k) != bi) {
+                world.e(i, j, k, 0);
                 flag = true;
             }
             if (!world.d(i, j - 1, k)) {
-                world.d(i, j, k, 0);
+                world.e(i, j, k, 0);
                 flag = true;
-                if (world.a(i, j + 1, k) == bh) {
-                    world.d(i, j + 1, k, 0);
+                if (world.a(i, j + 1, k) == bi) {
+                    world.e(i, j + 1, k, 0);
                 }
             }
             if (flag) {
                 a_(world, i, j, k, i1);
             } else if (l > 0 && Block.m[l].c()) {
-                boolean flag1 = world.o(i, j, k) || world.o(i, j + 1, k);
+                boolean flag1 = world.p(i, j, k) || world.p(i, j + 1, k);
 
                 a(world, i, j, k, flag1);
             }
@@ -164,10 +164,10 @@ public class BlockDoor extends Block {
         if ((i & 8) != 0) {
             return 0;
         }
-        if (bs == Material.e) {
-            return Item.az.aW;
+        if (bt == Material.e) {
+            return Item.az.ba;
         } else {
-            return Item.at.aW;
+            return Item.at.ba;
         }
     }
 

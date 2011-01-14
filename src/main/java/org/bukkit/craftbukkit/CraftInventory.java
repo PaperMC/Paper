@@ -19,7 +19,7 @@ public class CraftInventory implements org.bukkit.Inventory {
     }
 
     public int getSize() {
-        return getInventory().a();
+        return getInventory().h_();
     }
 
     public String getName() {
@@ -42,7 +42,7 @@ public class CraftInventory implements org.bukkit.Inventory {
     }
 
     public void setItem(int index, ItemStack item) {
-        getInventory().a( index, new net.minecraft.server.ItemStack( item.getTypeID(), item.getAmount()));
+        getInventory().a( index, new net.minecraft.server.ItemStack( item.getTypeID(), item.getAmount(), 0));
     }
 
     public boolean contains(int materialId) {
@@ -121,7 +121,7 @@ public class CraftInventory implements org.bukkit.Inventory {
     }
 
     public int firstEmpty() {
-        return first(Material.Air);
+        return first(Material.AIR);
     }
 
     public int firstPartial(int materialId) {

@@ -148,7 +148,7 @@ public class ServerConfigurationManager {
         d.a(entityplayermp1);
         c.e.a(((Entity) (entityplayermp1)));
         b.add(((entityplayermp1)));
-        entityplayermp1.k();
+        entityplayermp1.l();
         return entityplayermp1;
     }
 

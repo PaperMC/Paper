@@ -61,7 +61,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
         ((Thread) (threadcommandreader)).setDaemon(true);
         ((Thread) (threadcommandreader)).start();
         ConsoleLogManager.a();
-        a.info("Starting minecraft server version Beta 1.1_02");
+        a.info("Starting minecraft server version Beta 1.2");
         if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
             a.warning("**** NOT ENOUGH RAM!");
             a.warning("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
@@ -111,16 +111,29 @@ public class MinecraftServer implements ICommandListener, Runnable {
         e = new WorldServer(this, new File("."), s, d.a("hellworld", false) ? -1 : 0);
         e.a(((IWorldAccess) (new WorldManager(this))));
         e.k = d.a("spawn-monsters", true) ? 1 : 0;
+        e.a(d.a("spawn-monsters", true), m);
         f.a(e);
-        byte byte0 = 10;
+        char c1 = '\304';
+        long l1 = System.currentTimeMillis();
 
-        for (int i1 = -byte0; i1 <= byte0; i1++) {
-            a("Preparing spawn area", ((i1 + byte0) * 100) / (byte0 + byte0 + 1));
-            for (int j1 = -byte0; j1 <= byte0; j1++) {
-                if (!o) {
-                    return;
+        for (int i1 = -c1; i1 <= c1 && o; i1 += 16) {
+            for (int j1 = -c1; j1 <= c1 && o; j1 += 16) {
+                long l2 = System.currentTimeMillis();
+
+                if (l2 < l1) {
+                    l1 = l2;
                 }
-                e.A.d((e.m >> 4) + i1, (e.o >> 4) + j1);
+                if (l2 > l1 + 1000L) {
+                    int k1 = (c1 * 2 + 1) * (c1 * 2 + 1);
+                    int i2 = (i1 + c1) * (c1 * 2 + 1) + (j1 + 1);
+
+                    a("Preparing spawn area", (i2 * 100) / k1);
+                    l1 = l2;
+                }
+                e.A.d(e.m + i1 >> 4, e.o + j1 >> 4);
+                while (e.d() && o) {
+                    ;
+                }
             }
         }
 
@@ -207,9 +220,12 @@ public class MinecraftServer implements ICommandListener, Runnable {
                 }
             }
         } finally {
-            g();
-            g = true;
-            System.exit(0);
+            try {
+                g();
+                g = true;
+            } finally {
+                System.exit(0);
+            }
         }
     }
 
@@ -405,7 +421,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
                             if (k1 > 64) {
                                 k1 = 64;
                             }
-                            entityplayermp4.b(new ItemStack(j1, k1));
+                            entityplayermp4.b(new ItemStack(j1, k1, 0));
                         } else {
                             icommandlistener.b((new StringBuilder()).append("There's no item with id ").append(j1).toString());
                         }

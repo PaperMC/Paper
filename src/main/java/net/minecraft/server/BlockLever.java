@@ -59,20 +59,20 @@ public class BlockLever extends Block {
         if (l == 5 && world.d(i - 1, j, k)) {
             i1 = 1;
         }
-        world.b(i, j, k, i1 + j1);
+        world.c(i, j, k, i1 + j1);
     }
 
     public void e(World world, int i, int j, int k) {
         if (world.d(i - 1, j, k)) {
-            world.b(i, j, k, 1);
+            world.c(i, j, k, 1);
         } else if (world.d(i + 1, j, k)) {
-            world.b(i, j, k, 2);
+            world.c(i, j, k, 2);
         } else if (world.d(i, j, k - 1)) {
-            world.b(i, j, k, 3);
+            world.c(i, j, k, 3);
         } else if (world.d(i, j, k + 1)) {
-            world.b(i, j, k, 4);
+            world.c(i, j, k, 4);
         } else if (world.d(i, j - 1, k)) {
-            world.b(i, j, k, 5 + world.l.nextInt(2));
+            world.c(i, j, k, 5 + world.l.nextInt(2));
         }
         g(world, i, j, k);
     }
@@ -99,7 +99,7 @@ public class BlockLever extends Block {
             }
             if (flag) {
                 a_(world, i, j, k, world.b(i, j, k));
-                world.d(i, j, k, 0);
+                world.e(i, j, k, 0);
             }
         }
     }
@@ -107,7 +107,7 @@ public class BlockLever extends Block {
     private boolean g(World world, int i, int j, int k) {
         if (!a(world, i, j, k)) {
             a_(world, i, j, k, world.b(i, j, k));
-            world.d(i, j, k, 0);
+            world.e(i, j, k, 0);
             return false;
         } else {
             return true;
@@ -161,26 +161,28 @@ public class BlockLever extends Block {
         int i1 = l & 7;
         int j1 = 8 - (l & 8);
 
-        //Allow the lever to change the current
+        // Craftbukkit start
         int old = (j1 != 8) ? 1 : 0;
         int current = (j1 == 8) ? 1 : 0;
         BlockRedstoneEvent bre = new BlockRedstoneEvent(block, BlockFace.Self, old, current);
         ((WorldServer) world).getServer().getPluginManager().callEvent(bre);
+        // Craftbukkit end
+
         if ((bre.getNewCurrent() > 0) == (k == 8)) {
-            world.b(i, j, k, i1 + j1);
+            world.c(i, j, k, i1 + j1);
             world.b(i, j, k, i, j, k);
             world.a((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.click", 0.3F, j1 <= 0 ? 0.5F : 0.6F);
-            world.g(i, j, k, bh);
+            world.h(i, j, k, bi);
             if (i1 == 1) {
-                world.g(i - 1, j, k, bh);
+                world.h(i - 1, j, k, bi);
             } else if (i1 == 2) {
-                world.g(i + 1, j, k, bh);
+                world.h(i + 1, j, k, bi);
             } else if (i1 == 3) {
-                world.g(i, j, k - 1, bh);
+                world.h(i, j, k - 1, bi);
             } else if (i1 == 4) {
-                world.g(i, j, k + 1, bh);
+                world.h(i, j, k + 1, bi);
             } else {
-                world.g(i, j - 1, k, bh);
+                world.h(i, j - 1, k, bi);
             }
         }
         return true;
@@ -190,19 +192,19 @@ public class BlockLever extends Block {
         int l = world.b(i, j, k);
 
         if ((l & 8) > 0) {
-            world.g(i, j, k, bh);
+            world.h(i, j, k, bi);
             int i1 = l & 7;
 
             if (i1 == 1) {
-                world.g(i - 1, j, k, bh);
+                world.h(i - 1, j, k, bi);
             } else if (i1 == 2) {
-                world.g(i + 1, j, k, bh);
+                world.h(i + 1, j, k, bi);
             } else if (i1 == 3) {
-                world.g(i, j, k - 1, bh);
+                world.h(i, j, k - 1, bi);
             } else if (i1 == 4) {
-                world.g(i, j, k + 1, bh);
+                world.h(i, j, k + 1, bi);
             } else {
-                world.g(i, j - 1, k, bh);
+                world.h(i, j - 1, k, bi);
             }
         }
         super.b(world, i, j, k);

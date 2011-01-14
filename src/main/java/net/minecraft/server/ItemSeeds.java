@@ -23,7 +23,7 @@ public class ItemSeeds extends Item {
         }
         int i1 = world.a(i, j, k);
 
-        if (i1 == Block.aA.bh) {
+        if (i1 == Block.aA.bi && world.e(i, j + 1, k)) {
             // CraftBukkit start - Seeds
             CraftBlock blockClicked = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
             CraftItemStack itemInHand = new CraftItemStack(itemstack);
@@ -37,7 +37,7 @@ public class ItemSeeds extends Item {
             }
             // CraftBukkit end
 
-            world.d(i, j + 1, k, a);
+            world.e(i, j + 1, k, a);
             itemstack.a--;
             return true;
         } else {

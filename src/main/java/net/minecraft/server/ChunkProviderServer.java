@@ -25,9 +25,7 @@ public class ChunkProviderServer implements IChunkProvider {
         a = ((Set) (new HashSet()));
         e = ((Map) (new HashMap()));
         f = ((List) (new ArrayList()));
-        b = new Chunk(((World) (worldserver)), new byte[32768], 0, 0);
-        b.q = true;
-        b.p = true;
+        b = ((Chunk) (new EmptyChunk(((World) (worldserver)), new byte[32768], 0, 0)));
         g = worldserver;
         d = ichunkloader;
         c = ichunkprovider;
@@ -66,8 +64,8 @@ public class ChunkProviderServer implements IChunkProvider {
             }
             e.put(((chunkcoordinates)), ((chunk)));
             f.add(((chunk)));
-            chunk.c();
             if (chunk != null) {
+                chunk.c();
                 chunk.d();
             }
 
@@ -124,7 +122,7 @@ public class ChunkProviderServer implements IChunkProvider {
             Chunk chunk = d.a(((World) (g)), i, j);
 
             if (chunk != null) {
-                chunk.s = g.e;
+                chunk.r = g.e;
             }
             return chunk;
         } catch (Exception exception) {
@@ -149,7 +147,7 @@ public class ChunkProviderServer implements IChunkProvider {
             return;
         }
         try {
-            chunk.s = g.e;
+            chunk.r = g.e;
             d.a(((World) (g)), chunk);
         } catch (Throwable ioexception) { // CraftBukkit -- downcast to work
             ioexception.printStackTrace();

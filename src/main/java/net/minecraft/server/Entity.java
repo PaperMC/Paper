@@ -67,12 +67,13 @@ public abstract class Entity {
     public int ad;
     private boolean c;
     protected boolean ae;
+    protected DataWatcher af;
     private double d;
     private double e;
-    public boolean af;
-    public int ag;
+    public boolean ag;
     public int ah;
     public int ai;
+    public int aj;
 
     public Entity(World world) {
         g = a++;
@@ -106,9 +107,18 @@ public abstract class Entity {
         ad = 300;
         c = true;
         ae = false;
-        af = false;
+        af = new DataWatcher();
+        ag = false;
         l = world;
         a(0.0D, 0.0D, 0.0D);
+        af.a(0, ((Byte.valueOf((byte) 0))));
+        a();
+    }
+
+    protected abstract void a();
+
+    public DataWatcher p() {
+        return af;
     }
 
     public boolean equals(Object obj) {
@@ -123,7 +133,7 @@ public abstract class Entity {
         return g;
     }
 
-    public void l() {
+    public void q() {
         G = true;
     }
 
@@ -148,10 +158,10 @@ public abstract class Entity {
     }
 
     public void b_() {
-        m();
+        r();
     }
 
-    public void m() {
+    public void r() {
         if (k != null && k.G) {
             k = null;
         }
@@ -162,7 +172,7 @@ public abstract class Entity {
         o = r;
         y = w;
         x = v;
-        if (r()) {
+        if (v()) {
             if (!ab && !c) {
                 float f1 = MathHelper.a(s * s * 0.20000000298023224D + t * t + u * u * 0.20000000298023224D) * 0.2F;
 
@@ -207,24 +217,28 @@ public abstract class Entity {
                 Z--;
             }
         }
-        if (t()) {
-            n();
+        if (x()) {
+            s();
         }
         if (q < -64D) {
-            o();
+            t();
+        }
+        if (!l.z) {
+            a(0, Z > 0);
+            a(2, k != null);
         }
         c = false;
     }
 
-    protected void n() {
+    protected void s() {
         if (!ae) {
             a(((Entity) (null)), 4);
             Z = 600;
         }
     }
 
-    protected void o() {
-        l();
+    protected void t() {
+        q();
     }
 
     public boolean b(double d1, double d2, double d3) {
@@ -251,7 +265,7 @@ public abstract class Entity {
         double d7 = d2;
         double d8 = d3;
         AxisAlignedBB axisalignedbb = z.b();
-        boolean flag = A && p();
+        boolean flag = A && J();
 
         if (flag) {
             double d9 = 0.050000000000000003D;
@@ -383,12 +397,12 @@ public abstract class Entity {
 
             if (L > (float) b && i3 > 0) {
                 b++;
-                StepSound stepsound = Block.m[i3].bq;
+                StepSound stepsound = Block.m[i3].br;
 
-                if (l.a(k3, i4 + 1, l1) == Block.aS.bh) {
-                    stepsound = Block.aS.bq;
+                if (l.a(k3, i4 + 1, l1) == Block.aS.bi) {
+                    stepsound = Block.aS.br;
                     l.a(this, stepsound.c(), stepsound.a() * 0.15F, stepsound.b());
-                } else if (!Block.m[i3].bs.d()) {
+                } else if (!Block.m[i3].bt.d()) {
                     l.a(this, stepsound.c(), stepsound.a() * 0.15F, stepsound.b());
                 }
                 Block.m[i3].b(l, k3, i4, l1, this);
@@ -401,20 +415,21 @@ public abstract class Entity {
         int k4 = MathHelper.b(z.e);
         int l4 = MathHelper.b(z.f);
 
-        for (int i5 = l3; i5 <= j3; i5++) {
-            for (int j5 = j4; j5 <= k4; j5++) {
-                for (int k5 = i2; k5 <= l4; k5++) {
-                    int l5 = l.a(i5, j5, k5);
+        if (l.a(l3, j4, i2, j3, k4, l4)) {
+            for (int i5 = l3; i5 <= j3; i5++) {
+                for (int j5 = j4; j5 <= k4; j5++) {
+                    for (int k5 = i2; k5 <= l4; k5++) {
+                        int l5 = l.a(i5, j5, k5);
 
-                    if (l5 > 0) {
-                        Block.m[l5].a(l, i5, j5, k5, this);
+                        if (l5 > 0) {
+                            Block.m[l5].a(l, i5, j5, k5, this);
+                        }
                     }
                 }
             }
         }
-
         R *= 0.4F;
-        boolean flag2 = r();
+        boolean flag2 = v();
 
         if (l.c(z)) {
             b(1);
@@ -444,11 +459,7 @@ public abstract class Entity {
         }
     }
 
-    public boolean p() {
-        return false;
-    }
-
-    public AxisAlignedBB q() {
+    public AxisAlignedBB u() {
         return null;
     }
 
@@ -477,19 +488,19 @@ public abstract class Entity {
 
     protected void a(float f1) {}
 
-    public boolean r() {
+    public boolean v() {
         return l.a(z.b(0.0D, -0.40000000596046448D, 0.0D), Material.f, this);
     }
 
     public boolean a(Material material) {
-        double d1 = q + (double) s();
+        double d1 = q + (double) w();
         int i1 = MathHelper.b(p);
         int j1 = MathHelper.d(MathHelper.b(d1));
         int k1 = MathHelper.b(r);
         int l1 = l.a(i1, j1, k1);
 
-        if (l1 != 0 && Block.m[l1].bs == material) {
-            float f1 = BlockFluids.b(l.b(i1, j1, k1)) - 0.1111111F;
+        if (l1 != 0 && Block.m[l1].bt == material) {
+            float f1 = BlockFluids.c(l.b(i1, j1, k1)) - 0.1111111F;
             float f2 = (float) (j1 + 1) - f1;
 
             return d1 < (double) f2;
@@ -498,12 +509,12 @@ public abstract class Entity {
         }
     }
 
-    public float s() {
+    public float w() {
         return 0.0F;
     }
 
-    public boolean t() {
-        return l.a(z.b(0.0D, -0.40000000596046448D, 0.0D), Material.g);
+    public boolean x() {
+        return l.a(z.b(-0.10000000149011612D, -0.40000000596046448D, -0.10000000149011612D), Material.g);
     }
 
     public void a(float f1, float f2, float f3) {
@@ -531,7 +542,11 @@ public abstract class Entity {
         int j1 = MathHelper.b((q - (double) H) + d1);
         int k1 = MathHelper.b(r);
 
-        return l.k(i1, j1, k1);
+        if (l.a(MathHelper.b(z.a), MathHelper.b(z.b), MathHelper.b(z.c), MathHelper.b(z.d), MathHelper.b(z.e), MathHelper.b(z.f))) {
+            return l.l(i1, j1, k1);
+        } else {
+            return 0.0F;
+        }
     }
 
     public void b(double d1, double d2, double d3, float f1, float f2) {
@@ -554,9 +569,9 @@ public abstract class Entity {
     }
 
     public void c(double d1, double d2, double d3, float f1, float f2) {
-        m = p = d1;
-        n = q = d2 + (double) H;
-        o = r = d3;
+        O = m = p = d1;
+        P = n = q = d2 + (double) H;
+        Q = o = r = d3;
         v = f1;
         w = f2;
         a(p, q, r);
@@ -630,12 +645,12 @@ public abstract class Entity {
         u += d3;
     }
 
-    protected void u() {
+    protected void y() {
         E = true;
     }
 
     public boolean a(Entity entity, int i1) {
-        u();
+        y();
         return false;
     }
 
@@ -643,14 +658,14 @@ public abstract class Entity {
         return false;
     }
 
-    public boolean v() {
+    public boolean z() {
         return false;
     }
 
     public void b(Entity entity, int i1) {}
 
     public boolean c(NBTTagCompound nbttagcompound) {
-        String s1 = w();
+        String s1 = A();
 
         if (G || s1 == null) {
             return false;
@@ -700,7 +715,7 @@ public abstract class Entity {
         b(nbttagcompound);
     }
 
-    protected final String w() {
+    protected final String A() {
         return EntityList.b(this);
     }
 
@@ -736,25 +751,29 @@ public abstract class Entity {
         return nbttaglist;
     }
 
-    public EntityItem b(int i1, int j1) {
+    public EntityItem a(int i1, int j1) {
         return a(i1, j1, 0.0F);
     }
 
     public EntityItem a(int i1, int j1, float f1) {
-        EntityItem entityitem = new EntityItem(l, p, q + (double) f1, r, new ItemStack(i1, j1));
+        return a(new ItemStack(i1, j1, 0), f1);
+    }
+
+    public EntityItem a(ItemStack itemstack, float f1) {
+        EntityItem entityitem = new EntityItem(l, p, q + (double) f1, r, itemstack);
 
         entityitem.c = 10;
         l.a(((Entity) (entityitem)));
         return entityitem;
     }
 
-    public boolean x() {
+    public boolean B() {
         return !G;
     }
 
-    public boolean y() {
+    public boolean C() {
         int i1 = MathHelper.b(p);
-        int j1 = MathHelper.b(q + (double) s());
+        int j1 = MathHelper.b(q + (double) w());
         int k1 = MathHelper.b(r);
 
         return l.d(i1, j1, k1);
@@ -768,7 +787,7 @@ public abstract class Entity {
         return null;
     }
 
-    public void z() {
+    public void D() {
         if (k.G) {
             k = null;
             return;
@@ -777,7 +796,7 @@ public abstract class Entity {
         t = 0.0D;
         u = 0.0D;
         b_();
-        k.A();
+        k.E();
         e += k.v - k.x;
         d += k.w - k.y;
         for (; e >= 180D; e -= 360D) {
@@ -814,15 +833,15 @@ public abstract class Entity {
         w += ((float) (d2));
     }
 
-    public void A() {
-        j.a(p, q + j() + j.B(), r);
+    public void E() {
+        j.a(p, q + k() + j.F(), r);
     }
 
-    public double B() {
+    public double F() {
         return (double) H;
     }
 
-    public double j() {
+    public double k() {
         return (double) J * 0.75D;
     }
 
@@ -863,13 +882,35 @@ public abstract class Entity {
         entity.j = this;
     }
 
-    public Vec3D C() {
+    public Vec3D G() {
         return null;
     }
 
-    public void D() {}
+    public void H() {}
 
-    public int[] E() {
+    public ItemStack[] I() {
         return null;
+    }
+
+    public boolean J() {
+        return c(1);
+    }
+
+    public void b(boolean flag) {
+        a(1, flag);
+    }
+
+    protected boolean c(int i1) {
+        return (af.a(0) & 1 << i1) != 0;
+    }
+
+    protected void a(int i1, boolean flag) {
+        byte byte0 = af.a(0);
+
+        if (flag) {
+            af.b(0, ((Byte.valueOf((byte) (byte0 | 1 << i1)))));
+        } else {
+            af.b(0, ((Byte.valueOf((byte) (byte0 & ~(1 << i1))))));
+        }
     }
 }

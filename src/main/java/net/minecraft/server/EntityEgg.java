@@ -16,9 +16,9 @@ public class EntityEgg extends Entity {
     private int e;
     private boolean f;
     public int a;
-    private EntityLiving aj;
-    private int ak;
+    private EntityLiving ak;
     private int al;
+    private int am;
 
     public EntityEgg(World world) {
         super(world);
@@ -28,9 +28,11 @@ public class EntityEgg extends Entity {
         e = 0;
         f = false;
         a = 0;
-        al = 0;
+        am = 0;
         a(0.25F, 0.25F);
     }
+
+    protected void a() {}
 
     public EntityEgg(World world, EntityLiving entityliving) {
         super(world);
@@ -40,10 +42,10 @@ public class EntityEgg extends Entity {
         e = 0;
         f = false;
         a = 0;
-        al = 0;
-        aj = entityliving;
+        am = 0;
+        ak = entityliving;
         a(0.25F, 0.25F);
-        c(entityliving.p, entityliving.q + (double) entityliving.s(), entityliving.r, entityliving.v, entityliving.w);
+        c(entityliving.p, entityliving.q + (double) entityliving.w(), entityliving.r, entityliving.v, entityliving.w);
         p -= MathHelper.b((v / 180F) * 3.141593F) * 0.16F;
         q -= 0.10000000149011612D;
         r -= MathHelper.a((v / 180F) * 3.141593F) * 0.16F;
@@ -57,8 +59,22 @@ public class EntityEgg extends Entity {
         a(s, t, u, 1.5F, 1.0F);
     }
 
-    public void a(double d1, double d2, double d3, float f1,
-            float f2) {
+    public EntityEgg(World world, double d1, double d2, double d3) {
+        super(world);
+        b = -1;
+        c = -1;
+        d = -1;
+        e = 0;
+        f = false;
+        a = 0;
+        am = 0;
+        al = 0;
+        a(0.25F, 0.25F);
+        a(d1, d2, d3);
+        H = 0.0F;
+    }
+
+    public void a(double d1, double d2, double d3, float f1, float f2) {
         float f3 = MathHelper.a(d1 * d1 + d2 * d2 + d3 * d3);
 
         d1 /= f3;
@@ -77,7 +93,7 @@ public class EntityEgg extends Entity {
 
         x = v = (float) ((Math.atan2(d1, d3) * 180D) / 3.1415927410125732D);
         y = w = (float) ((Math.atan2(d2, f4) * 180D) / 3.1415927410125732D);
-        ak = 0;
+        al = 0;
     }
 
     public void b_() {
@@ -96,17 +112,17 @@ public class EntityEgg extends Entity {
                 s *= W.nextFloat() * 0.2F;
                 t *= W.nextFloat() * 0.2F;
                 u *= W.nextFloat() * 0.2F;
-                ak = 0;
                 al = 0;
+                am = 0;
             } else {
-                ak++;
-                if (ak == 1200) {
-                    l();
+                al++;
+                if (al == 1200) {
+                    q();
                 }
                 return;
             }
         } else {
-            al++;
+            am++;
         }
         Vec3D vec3d = Vec3D.b(p, q, r);
         Vec3D vec3d1 = Vec3D.b(p + s, q + t, r + u);
@@ -119,13 +135,13 @@ public class EntityEgg extends Entity {
         }
         if (!this.l.z) {
             Entity entity = null;
-            List list = this.l.b(this, z.a(s, t, u).b(1.0D, 1.0D, 1.0D));
+            List list = this.l.b(((Entity) (this)), z.a(s, t, u).b(1.0D, 1.0D, 1.0D));
             double d1 = 0.0D;
 
             for (int l = 0; l < list.size(); l++) {
                 Entity entity1 = (Entity) list.get(l);
 
-                if (!entity1.c_() || entity1 == aj && al < 5) {
+                if (!entity1.c_() || entity1 == ak && am < 5) {
                     continue;
                 }
                 float f4 = 0.3F;
@@ -149,7 +165,7 @@ public class EntityEgg extends Entity {
         }
         if (movingobjectposition != null) {
             if (movingobjectposition.g != null) {
-                if (!movingobjectposition.g.a(aj, 0)) {
+                if (!movingobjectposition.g.a(((Entity) (ak)), 0)) {
                     ;
                 }
             }
@@ -162,9 +178,9 @@ public class EntityEgg extends Entity {
             }
             MobType type = MobType.CHICKEN;
 
-            if (aj instanceof EntityPlayerMP) {
+            if (ak instanceof EntityPlayerMP) {
                 CraftServer server = ((WorldServer) l).getServer();
-                CraftPlayer player = new CraftPlayer(server, (EntityPlayerMP) aj);
+                CraftPlayer player = new CraftPlayer(server, (EntityPlayerMP) ak);
                 PlayerEggThrowEvent event = new PlayerEggThrowEvent(Type.PLAYER_EGG_THROW, player, hatching, numHatching, type);
                 server.getPluginManager().callEvent(event);
                 hatching = event.isHatching();
@@ -220,7 +236,7 @@ public class EntityEgg extends Entity {
                 this.l.a("snowballpoof", p, q, r, 0.0D, 0.0D, 0.0D);
             }
 
-            l();
+            q();
         }
         p += s;
         q += t;
@@ -245,7 +261,7 @@ public class EntityEgg extends Entity {
         float f2 = 0.99F;
         float f5 = 0.03F;
 
-        if (r()) {
+        if (v()) {
             for (int i1 = 0; i1 < 4; i1++) {
                 float f3 = 0.25F;
 
@@ -271,19 +287,19 @@ public class EntityEgg extends Entity {
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        b = nbttagcompound.c("xTile");
-        c = nbttagcompound.c("yTile");
-        d = nbttagcompound.c("zTile");
+        b = ((int) (nbttagcompound.c("xTile")));
+        c = ((int) (nbttagcompound.c("yTile")));
+        d = ((int) (nbttagcompound.c("zTile")));
         e = nbttagcompound.b("inTile") & 0xff;
         a = nbttagcompound.b("shake") & 0xff;
         f = nbttagcompound.b("inGround") == 1;
     }
 
     public void b(EntityPlayer entityplayer) {
-        if (f && aj == entityplayer && a <= 0 && entityplayer.an.a(new ItemStack(Item.j.aW, 1))) {
-            l.a(this, "random.pop", 0.2F, ((W.nextFloat() - W.nextFloat()) * 0.7F + 1.0F) * 2.0F);
-            entityplayer.c(this, 1);
-            l();
+        if (f && ak == entityplayer && a <= 0 && entityplayer.an.a(new ItemStack(Item.j, 1))) {
+            l.a(((Entity) (this)), "random.pop", 0.2F, ((W.nextFloat() - W.nextFloat()) * 0.7F + 1.0F) * 2.0F);
+            entityplayer.c(((Entity) (this)), 1);
+            q();
         }
     }
 }

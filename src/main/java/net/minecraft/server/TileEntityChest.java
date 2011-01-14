@@ -14,7 +14,7 @@ public class TileEntityChest extends TileEntity implements IInventory {
         e = new ItemStack[36];
     }
 
-    public int a() {
+    public int h_() {
         return 27;
     }
 
@@ -22,7 +22,7 @@ public class TileEntityChest extends TileEntity implements IInventory {
         return e[i];
     }
 
-    public ItemStack a(int i, int j) {
+    public ItemStack b(int i, int j) {
         if (e[i] != null) {
             if (e[i].a <= j) {
                 ItemStack itemstack = e[i];
@@ -59,7 +59,7 @@ public class TileEntityChest extends TileEntity implements IInventory {
         super.a(nbttagcompound);
         NBTTagList nbttaglist = nbttagcompound.k("Items");
 
-        e = new ItemStack[a()];
+        e = new ItemStack[h_()];
         for (int i = 0; i < nbttaglist.b(); i++) {
             NBTTagCompound nbttagcompound1 = (NBTTagCompound) nbttaglist.a(i);
             int j = nbttagcompound1.b("Slot") & 0xff;
@@ -92,7 +92,7 @@ public class TileEntityChest extends TileEntity implements IInventory {
     }
 
     public boolean a_(EntityPlayer entityplayer) {
-        if (a.l(b, c, d) != this) {
+        if (a.m(b, c, d) != this) {
             return false;
         }
         return entityplayer.d((double) b + 0.5D, (double) c + 0.5D, (double) d + 0.5D) <= 64D;

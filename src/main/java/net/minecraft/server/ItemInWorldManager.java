@@ -70,7 +70,7 @@ public class ItemInWorldManager {
     public boolean b(int j, int k, int l) {
         Block block = Block.m[b.a(j, k, l)];
         int i1 = b.b(j, k, l);
-        boolean flag = b.d(j, k, l, 0);
+        boolean flag = b.e(j, k, l, 0);
 
         if (block != null && flag) {
             block.a(b, j, k, l, i1);
@@ -82,13 +82,13 @@ public class ItemInWorldManager {
         int i1 = b.a(j, k, l);
         int j1 = b.b(j, k, l);
         boolean flag = b(j, k, l);
-        ItemStack itemstack = a.M();
+        ItemStack itemstack = a.P();
 
         if (itemstack != null) {
             itemstack.a(i1, j, k, l);
             if (itemstack.a == 0) {
                 itemstack.a(a);
-                a.N();
+                a.Q();
             }
         }
         if (flag && a.b(Block.m[i1])) {

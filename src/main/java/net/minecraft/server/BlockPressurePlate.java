@@ -41,8 +41,7 @@ public class BlockPressurePlate extends Block {
         return world.d(i, j - 1, k);
     }
 
-    public void e(World world, int i, int j, int k) {
-    }
+    public void e(World world, int i, int j, int k) {}
 
     public void b(World world, int i, int j, int k, int l) {
         boolean flag = false;
@@ -52,7 +51,7 @@ public class BlockPressurePlate extends Block {
         }
         if (flag) {
             a_(world, i, j, k, world.b(i, j, k));
-            world.d(i, j, k, 0);
+            world.e(i, j, k, 0);
         }
     }
 
@@ -118,26 +117,30 @@ public class BlockPressurePlate extends Block {
         if (list.size() > 0) {
             flag1 = true;
         }
+
+        // Craftbukkit start
         CraftBlock block = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
         BlockRedstoneEvent bre = new BlockRedstoneEvent(block, BlockFace.Self, flag ? 15 : 0, flag1 ? 15 : 0);
         ((WorldServer) world).getServer().getPluginManager().callEvent(bre);
         flag1 = bre.getNewCurrent() > 0;
+        // Craftbukkit end
+
         if (flag1 && !flag) {
-            world.b(i, j, k, 1);
-            world.g(i, j, k, bh);
-            world.g(i, j - 1, k, bh);
+            world.c(i, j, k, 1);
+            world.h(i, j, k, bi);
+            world.h(i, j - 1, k, bi);
             world.b(i, j, k, i, j, k);
             world.a((double) i + 0.5D, (double) j + 0.10000000000000001D, (double) k + 0.5D, "random.click", 0.3F, 0.6F);
         }
         if (!flag1 && flag) {
-            world.b(i, j, k, 0);
-            world.g(i, j, k, bh);
-            world.g(i, j - 1, k, bh);
+            world.c(i, j, k, 0);
+            world.h(i, j, k, bi);
+            world.h(i, j - 1, k, bi);
             world.b(i, j, k, i, j, k);
             world.a((double) i + 0.5D, (double) j + 0.10000000000000001D, (double) k + 0.5D, "random.click", 0.3F, 0.5F);
         }
         if (flag1) {
-            world.h(i, j, k, bh);
+            world.i(i, j, k, bi);
         }
     }
 
@@ -145,8 +148,8 @@ public class BlockPressurePlate extends Block {
         int l = world.b(i, j, k);
 
         if (l > 0) {
-            world.g(i, j, k, bh);
-            world.g(i, j - 1, k, bh);
+            world.h(i, j, k, bi);
+            world.h(i, j - 1, k, bi);
         }
         super.b(world, i, j, k);
     }

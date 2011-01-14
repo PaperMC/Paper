@@ -12,7 +12,7 @@ public class ItemBoat extends Item {
 
     public ItemBoat(int i) {
         super(i);
-        aX = 1;
+        bb = 1;
     }
 
     public ItemStack a(ItemStack itemstack, World world, EntityPlayer entityplayer) {
@@ -37,7 +37,7 @@ public class ItemBoat extends Item {
         if (movingobjectposition == null) {
             return itemstack;
         }
-        if (movingobjectposition.a == 0) {
+        if (movingobjectposition.a == EnumMovingObjectType.a) {
             int i = movingobjectposition.b;
             int j = movingobjectposition.c;
             int k = movingobjectposition.d;

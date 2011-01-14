@@ -12,8 +12,8 @@ public class ItemSign extends Item {
 
     public ItemSign(int i) {
         super(i);
-        aY = 64;
-        aX = 1;
+        bc = 64;
+        bb = 1;
     }
 
     public boolean a(ItemStack itemstack, EntityPlayer entityplayer, World world, int i, int j, int k, int l) {
@@ -58,12 +58,12 @@ public class ItemSign extends Item {
         // CraftBukkit end
 
         if (l == 1) {
-            world.b(i, j, k, Block.aD.bh, MathHelper.b((double) (((entityplayer.v + 180F) * 16F) / 360F) + 0.5D) & 0xf);
+            world.b(i, j, k, Block.aD.bi, MathHelper.b((double) (((entityplayer.v + 180F) * 16F) / 360F) + 0.5D) & 0xf);
         } else {
-            world.b(i, j, k, Block.aI.bh, l);
+            world.b(i, j, k, Block.aI.bi, l);
         }
         itemstack.a--;
-        TileEntitySign tileentitysign = (TileEntitySign) world.l(i, j, k);
+        TileEntitySign tileentitysign = (TileEntitySign) world.m(i, j, k);
 
         if (tileentitysign != null) {
             entityplayer.a(tileentitysign);

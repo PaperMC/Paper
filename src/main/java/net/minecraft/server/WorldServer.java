@@ -34,8 +34,8 @@ public class WorldServer extends World {
     }
 
     public void a(Entity entity, boolean flag) {
-        if (!D.m && (entity instanceof EntityAnimals)) {
-            entity.l();
+        if (!D.m && ((entity instanceof EntityAnimals) || (entity instanceof EntityWaterMob))) {
+            entity.q();
         }
         if (entity.j == null || !(entity.j instanceof EntityPlayer)) {
             super.a(entity, flag);
@@ -107,15 +107,15 @@ public class WorldServer extends World {
     private final CraftServer server;
 
     @Override
-    public boolean c(int i1, int j1, int k1, int l1) {
-        boolean result = super.c(i1, j1, k1, l1);
+    public boolean d(int i1, int j1, int k1, int l1) {
+        boolean result = super.d(i1, j1, k1, l1);
         if ((result) && (world != null)) world.updateBlock(i1, j1, k1);
         return result;
     }
 
     @Override
-    public boolean a(int i1, int j1, int k1, int l1) {
-        boolean result = super.a(i1, j1, k1, l1);
+    public boolean b(int i1, int j1, int k1, int l1) {
+        boolean result = super.b(i1, j1, k1, l1);
         if ((result) && (world != null)) world.updateBlock(i1, j1, k1);
         return result;
     }
@@ -138,17 +138,17 @@ public class WorldServer extends World {
     // XXX: the following method is straight from the World.java with tweaks as noted. KEEP THEM UPDATED!
     // XXX: done because it calls private k()
     @Override
-    public void g(int i1, int j1, int k1, int l1) {
-        k(i1 - 1, j1, k1, l1);
-        k(i1 + 1, j1, k1, l1);
-        k(i1, j1 - 1, k1, l1);
-        k(i1, j1 + 1, k1, l1);
-        k(i1, j1, k1 - 1, l1);
-        k(i1, j1, k1 + 1, l1);
+    public void h(int i1, int j1, int k1, int l1) {
+        l(i1 - 1, j1, k1, l1);
+        l(i1 + 1, j1, k1, l1);
+        l(i1, j1 - 1, k1, l1);
+        l(i1, j1 + 1, k1, l1);
+        l(i1, j1, k1 - 1, l1);
+        l(i1, j1, k1 + 1, l1);
     }
 
     // XXX: the following method is straight from the World.java with tweaks as noted. KEEP THEM UPDATED!
-    private void k(int i1, int j1, int k1, int l1) {
+    private void l(int i1, int j1, int k1, int l1) {
         if (i || z) {
             return;
         }

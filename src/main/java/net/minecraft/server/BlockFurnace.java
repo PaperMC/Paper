@@ -16,11 +16,11 @@ public class BlockFurnace extends BlockContainer {
     protected BlockFurnace(int i, boolean flag) {
         super(i, Material.d);
         a = flag;
-        bg = 45;
+        bh = 45;
     }
 
     public int a(int i, Random random) {
-        return Block.aB.bh;
+        return Block.aB.bi;
     }
 
     public void e(World world, int i, int j, int k) {
@@ -47,20 +47,20 @@ public class BlockFurnace extends BlockContainer {
         if (Block.o[k1] && !Block.o[j1]) {
             byte0 = 4;
         }
-        world.b(i, j, k, ((int) (byte0)));
+        world.c(i, j, k, ((int) (byte0)));
     }
 
     public int a(int i) {
         if (i == 1) {
-            return Block.t.bh;
+            return bh + 17;
         }
         if (i == 0) {
-            return Block.t.bh;
+            return bh + 17;
         }
         if (i == 3) {
-            return bg - 1;
+            return bh - 1;
         } else {
-            return bg;
+            return bh;
         }
     }
 
@@ -78,7 +78,7 @@ public class BlockFurnace extends BlockContainer {
             if (bie.isCancelled()) return true;
             // CraftBukkit end
 
-            TileEntityFurnace tileentityfurnace = (TileEntityFurnace) world.l(i, j, k);
+            TileEntityFurnace tileentityfurnace = (TileEntityFurnace) world.m(i, j, k);
 
             entityplayer.a(tileentityfurnace);
             return true;
@@ -87,14 +87,14 @@ public class BlockFurnace extends BlockContainer {
 
     public static void a(boolean flag, World world, int i, int j, int k) {
         int l = world.b(i, j, k);
-        TileEntity tileentity = world.l(i, j, k);
+        TileEntity tileentity = world.m(i, j, k);
 
         if (flag) {
-            world.d(i, j, k, Block.aC.bh);
+            world.e(i, j, k, Block.aC.bi);
         } else {
-            world.d(i, j, k, Block.aB.bh);
+            world.e(i, j, k, Block.aB.bi);
         }
-        world.b(i, j, k, l);
+        world.c(i, j, k, l);
         world.a(i, j, k, tileentity);
     }
 
@@ -106,16 +106,16 @@ public class BlockFurnace extends BlockContainer {
         int l = MathHelper.b((double) ((entityliving.v * 4F) / 360F) + 0.5D) & 3;
 
         if (l == 0) {
-            world.b(i, j, k, 2);
+            world.c(i, j, k, 2);
         }
         if (l == 1) {
-            world.b(i, j, k, 5);
+            world.c(i, j, k, 5);
         }
         if (l == 2) {
-            world.b(i, j, k, 3);
+            world.c(i, j, k, 3);
         }
         if (l == 3) {
-            world.b(i, j, k, 4);
+            world.c(i, j, k, 4);
         }
     }
 }

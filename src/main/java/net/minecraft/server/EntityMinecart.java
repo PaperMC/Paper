@@ -16,16 +16,16 @@ import org.bukkit.event.vehicle.*;
 
 public class EntityMinecart extends Entity implements IInventory, CraftMappable { // CraftBukkit
 
-    private ItemStack ak[];
+    private ItemStack al[];
     public int a;
     public int b;
     public int c;
-    private boolean al;
+    private boolean am;
     public int d;
     public int e;
     public double f;
-    public double aj;
-    private static final int am[][][] = {
+    public double ak;
+    private static final int an[][][] = {
         {
             {
                 0, 0, -1
@@ -88,12 +88,12 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
             }
         }
     };
-    private int an;
-    private double ao;
+    private int ao;
     private double ap;
     private double aq;
     private double ar;
     private double as;
+    private double at;
 
     // CraftBukkit start
     private CraftMinecart minecart;
@@ -111,17 +111,17 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
     }
 
     public ItemStack[] getContents() {
-        return this.ak;
+        return this.al;
     }
     // CraftBukkit end
 
     public EntityMinecart(World world) {
         super(world);
-        ak = new ItemStack[36];
+        al = new ItemStack[36];
         a = 0;
         b = 0;
         c = 1;
-        al = false;
+        am = false;
         i = true;
         a(0.98F, 0.7F);
         H = J / 2.0F;
@@ -130,15 +130,17 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
         handleCreation(world); // CraftBukkit
     }
 
+    protected void a() {}
+
     public AxisAlignedBB d(Entity entity) {
         return entity.z;
     }
 
-    public AxisAlignedBB q() {
+    public AxisAlignedBB u() {
         return null;
     }
 
-    public boolean v() {
+    public boolean z() {
         return true;
     }
 
@@ -165,7 +167,7 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
     }
     // CraftBukkit end
 
-    public double j() {
+    public double l() {
         return (double) J * 0.0D - 0.30000001192092896D;
     }
 
@@ -185,16 +187,16 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
         }
         c = -c;
         b = 10;
-        u();
+        y();
         a += i * 10;
         if (a > 40) {
-            a(Item.ax.aW, 1, 0.0F);
+            a(Item.ax.ba, 1, 0.0F);
             if (d == 1) {
-                a(Block.au.bh, 1, 0.0F);
+                a(Block.au.bi, 1, 0.0F);
             } else if (d == 2) {
-                a(Block.aB.bh, 1, 0.0F);
+                a(Block.aB.bi, 1, 0.0F);
             }
-            l();
+            q();
         }
         return true;
     }
@@ -203,9 +205,9 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
         return !G;
     }
 
-    public void l() {
+    public void q() {
         label0:
-        for (int i = 0; i < a(); i++) {
+        for (int i = 0; i < h_(); i++) {
             ItemStack itemstack = a(i);
 
             if (itemstack == null) {
@@ -219,13 +221,13 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
                 if (itemstack.a <= 0) {
                     continue label0;
                 }
-                int k = W.nextInt(21) + 10;
+                int j = W.nextInt(21) + 10;
 
-                if (k > itemstack.a) {
-                    k = itemstack.a;
+                if (j > itemstack.a) {
+                    j = itemstack.a;
                 }
-                itemstack.a -= k;
-                EntityItem entityitem = new EntityItem(l, p + (double) f1, q + (double) f2, r + (double) f3, new ItemStack(itemstack.c, k, itemstack.d));
+                itemstack.a -= j;
+                EntityItem entityitem = new EntityItem(l, p + (double) f1, q + (double) f2, r + (double) f3, new ItemStack(itemstack.c, j, itemstack.h()));
                 float f4 = 0.05F;
 
                 entityitem.s = (float) W.nextGaussian() * f4;
@@ -235,7 +237,7 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
             } while (true);
         }
 
-        super.l();
+        super.q();
     }
 
     public void b_() {
@@ -252,22 +254,22 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
         if (a > 0) {
             a--;
         }
-        if (l.z && an > 0) {
-            if (an > 0) {
-                double d1 = p + (ao - p) / (double) an;
-                double d2 = q + (ap - q) / (double) an;
-                double d3 = r + (aq - r) / (double) an;
+        if (this.l.z && ao > 0) {
+            if (ao > 0) {
+                double d1 = p + (ap - p) / (double) ao;
+                double d2 = q + (aq - q) / (double) ao;
+                double d3 = r + (ar - r) / (double) ao;
                 double d4;
 
-                for (d4 = ar - (double) v; d4 < -180D; d4 += 360D) {
+                for (d4 = as - (double) v; d4 < -180D; d4 += 360D) {
                     ;
                 }
                 for (; d4 >= 180D; d4 -= 360D) {
                     ;
                 }
-                v += ((float) (d4 / (double) an));
-                w += ((float) ((as - (double) w) / (double) an));
-                an--;
+                v += ((float) (d4 / (double) ao));
+                w += ((float) ((at - (double) w) / (double) ao));
+                ao--;
                 a(d1, d2, d3);
                 b(v, w);
             } else {
@@ -281,37 +283,37 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
         o = r;
         t -= 0.039999999105930328D;
         int i = MathHelper.b(p);
-        int k = MathHelper.b(q);
-        int i1 = MathHelper.b(r);
+        int j = MathHelper.b(q);
+        int l = MathHelper.b(r);
 
-        if (l.a(i, k - 1, i1) == Block.aG.bh) {
-            k--;
+        if (this.l.a(i, j - 1, l) == Block.aG.bi) {
+            j--;
         }
         double d6 = 0.40000000000000002D;
         boolean flag = false;
         double d5 = 0.0078125D;
 
-        if (l.a(i, k, i1) == Block.aG.bh) {
+        if (this.l.a(i, j, l) == Block.aG.bi) {
             Vec3D vec3d = g(p, q, r);
-            int j1 = l.b(i, k, i1);
+            int i1 = this.l.b(i, j, l);
 
-            q = k;
-            if (j1 >= 2 && j1 <= 5) {
-                q = k + 1;
+            q = j;
+            if (i1 >= 2 && i1 <= 5) {
+                q = j + 1;
             }
-            if (j1 == 2) {
+            if (i1 == 2) {
                 s -= d5;
             }
-            if (j1 == 3) {
+            if (i1 == 3) {
                 s += d5;
             }
-            if (j1 == 4) {
+            if (i1 == 4) {
                 u += d5;
             }
-            if (j1 == 5) {
+            if (i1 == 5) {
                 u -= d5;
             }
-            int ai[][] = am[j1];
+            int ai[][] = an[i1];
             double d7 = ai[1][0] - ai[0][0];
             double d8 = ai[1][2] - ai[0][2];
             double d9 = Math.sqrt(d7 * d7 + d8 * d8);
@@ -327,17 +329,17 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
             u = (d11 * d8) / d9;
             double d14 = 0.0D;
             double d15 = (double) i + 0.5D + (double) ai[0][0] * 0.5D;
-            double d16 = (double) i1 + 0.5D + (double) ai[0][2] * 0.5D;
+            double d16 = (double) l + 0.5D + (double) ai[0][2] * 0.5D;
             double d17 = (double) i + 0.5D + (double) ai[1][0] * 0.5D;
-            double d18 = (double) i1 + 0.5D + (double) ai[1][2] * 0.5D;
+            double d18 = (double) l + 0.5D + (double) ai[1][2] * 0.5D;
 
             d7 = d17 - d15;
             d8 = d18 - d16;
             if (d7 == 0.0D) {
                 p = (double) i + 0.5D;
-                d14 = r - (double) i1;
+                d14 = r - (double) l;
             } else if (d8 == 0.0D) {
-                r = (double) i1 + 0.5D;
+                r = (double) l + 0.5D;
                 d14 = p - (double) i;
             } else {
                 double d19 = p - d15;
@@ -352,7 +354,7 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
             double d20 = s;
             double d22 = u;
 
-            if (j != null) {
+            if (this.j != null) {
                 d20 *= 0.75D;
                 d22 *= 0.75D;
             }
@@ -369,31 +371,30 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
                 d22 = d6;
             }
             c(d20, 0.0D, d22);
-            if (ai[0][1] != 0 && MathHelper.b(p) - i == ai[0][0] && MathHelper.b(r) - i1 == ai[0][2]) {
+            if (ai[0][1] != 0 && MathHelper.b(p) - i == ai[0][0] && MathHelper.b(r) - l == ai[0][2]) {
                 a(p, q + (double) ai[0][1], r);
-            } else if (ai[1][1] != 0 && MathHelper.b(p) - i == ai[1][0] && MathHelper.b(r) - i1 == ai[1][2]) {
+            } else if (ai[1][1] != 0 && MathHelper.b(p) - i == ai[1][0] && MathHelper.b(r) - l == ai[1][2]) {
                 a(p, q + (double) ai[1][1], r);
             }
-            // CraftBukkit
-            if (j != null || !slowWhenEmpty) {
+            if (this.j != null || !slowWhenEmpty) { // CraftBukkit
                 s *= 0.99699997901916504D;
                 t *= 0.0D;
                 u *= 0.99699997901916504D;
             } else {
                 if (d == 2) {
-                    double d24 = MathHelper.a(f * f + aj * aj);
+                    double d24 = MathHelper.a(f * f + ak * ak);
 
                     if (d24 > 0.01D) {
                         flag = true;
                         f /= d24;
-                        aj /= d24;
+                        ak /= d24;
                         double d25 = 0.040000000000000001D;
 
                         s *= 0.80000001192092896D;
                         t *= 0.0D;
                         u *= 0.80000001192092896D;
                         s += f * d25;
-                        u += aj * d25;
+                        u += ak * d25;
                     } else {
                         s *= 0.89999997615814209D;
                         t *= 0.0D;
@@ -416,27 +417,27 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
                 }
                 a(p, vec3d1.b, r);
             }
-            int k1 = MathHelper.b(p);
-            int l1 = MathHelper.b(r);
+            int j1 = MathHelper.b(p);
+            int k1 = MathHelper.b(r);
 
-            if (k1 != i || l1 != i1) {
+            if (j1 != i || k1 != l) {
                 double d13 = Math.sqrt(s * s + u * u);
 
-                s = d13 * (double) (k1 - i);
-                u = d13 * (double) (l1 - i1);
+                s = d13 * (double) (j1 - i);
+                u = d13 * (double) (k1 - l);
             }
             if (d == 2) {
-                double d27 = MathHelper.a(f * f + aj * aj);
+                double d27 = MathHelper.a(f * f + ak * ak);
 
                 if (d27 > 0.01D && s * s + u * u > 0.001D) {
                     f /= d27;
-                    aj /= d27;
-                    if (f * s + aj * u < 0.0D) {
+                    ak /= d27;
+                    if (f * s + ak * u < 0.0D) {
                         f = 0.0D;
-                        aj = 0.0D;
+                        ak = 0.0D;
                     } else {
                         f = s;
-                        aj = u;
+                        ak = u;
                     }
                 }
             }
@@ -475,7 +476,7 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
 
         if (d28 * d28 + d29 * d29 > 0.001D) {
             v = (float) ((Math.atan2(d29, d28) * 180D) / 3.1415926535897931D);
-            if (al) {
+            if (am) {
                 v += 180F;
             }
         }
@@ -489,76 +490,76 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
         }
         if (d30 < -170D || d30 >= 170D) {
             v += 180F;
-            al = !al;
+            am = !am;
         }
         b(v, w);
 
         // CraftBukkit start
-        CraftServer server = ((WorldServer)l).getServer();
+        CraftServer server = ((WorldServer)this.l).getServer();
         VehicleMoveEvent event = new VehicleMoveEvent(
             Type.VEHICLE_MOVE,
             minecart,
-            new Location(((WorldServer)l).getWorld(), prevX, prevY, prevZ, prevYaw, prevPitch),
-            new Location(((WorldServer)l).getWorld(), p, q, r, v, w)
+            new Location(((WorldServer)this.l).getWorld(), prevX, prevY, prevZ, prevYaw, prevPitch),
+            new Location(((WorldServer)this.l).getWorld(), p, q, r, v, w)
         );
         server.getPluginManager().callEvent(event);
         // CraftBukkit end
 
-        List list = l.b(((Entity) (this)), z.b(0.20000000298023224D, 0.0D, 0.20000000298023224D));
+        List list = this.l.b(((Entity) (this)), z.b(0.20000000298023224D, 0.0D, 0.20000000298023224D));
 
         if (list != null && list.size() > 0) {
-            for (int i2 = 0; i2 < list.size(); i2++) {
-                Entity entity = (Entity) list.get(i2);
+            for (int l1 = 0; l1 < list.size(); l1++) {
+                Entity entity = (Entity) list.get(l1);
 
-                if (entity != j && entity.v() && (entity instanceof EntityMinecart)) {
+                if (entity != this.j && entity.z() && (entity instanceof EntityMinecart)) {
                     entity.c(((Entity) (this)));
                 }
             }
         }
-        if (j != null && j.G) {
-            j = null;
+        if (this.j != null && this.j.G) {
+            this.j = null;
         }
         if (flag && W.nextInt(4) == 0) {
             e--;
             if (e < 0) {
-                f = aj = 0.0D;
+                f = ak = 0.0D;
             }
-            l.a("largesmoke", p, q + 0.80000000000000004D, r, 0.0D, 0.0D, 0.0D);
+            this.l.a("largesmoke", p, q + 0.80000000000000004D, r, 0.0D, 0.0D, 0.0D);
         }
     }
 
     public Vec3D g(double d1, double d2, double d3) {
         int i = MathHelper.b(d1);
-        int k = MathHelper.b(d2);
-        int i1 = MathHelper.b(d3);
+        int j = MathHelper.b(d2);
+        int l = MathHelper.b(d3);
 
-        if (l.a(i, k - 1, i1) == Block.aG.bh) {
-            k--;
+        if (this.l.a(i, j - 1, l) == Block.aG.bi) {
+            j--;
         }
-        if (l.a(i, k, i1) == Block.aG.bh) {
-            int j1 = l.b(i, k, i1);
+        if (this.l.a(i, j, l) == Block.aG.bi) {
+            int i1 = this.l.b(i, j, l);
 
-            d2 = k;
-            if (j1 >= 2 && j1 <= 5) {
-                d2 = k + 1;
+            d2 = j;
+            if (i1 >= 2 && i1 <= 5) {
+                d2 = j + 1;
             }
-            int ai[][] = am[j1];
+            int ai[][] = an[i1];
             double d4 = 0.0D;
             double d5 = (double) i + 0.5D + (double) ai[0][0] * 0.5D;
-            double d6 = (double) k + 0.5D + (double) ai[0][1] * 0.5D;
-            double d7 = (double) i1 + 0.5D + (double) ai[0][2] * 0.5D;
+            double d6 = (double) j + 0.5D + (double) ai[0][1] * 0.5D;
+            double d7 = (double) l + 0.5D + (double) ai[0][2] * 0.5D;
             double d8 = (double) i + 0.5D + (double) ai[1][0] * 0.5D;
-            double d9 = (double) k + 0.5D + (double) ai[1][1] * 0.5D;
-            double d10 = (double) i1 + 0.5D + (double) ai[1][2] * 0.5D;
+            double d9 = (double) j + 0.5D + (double) ai[1][1] * 0.5D;
+            double d10 = (double) l + 0.5D + (double) ai[1][2] * 0.5D;
             double d11 = d8 - d5;
             double d12 = (d9 - d6) * 2D;
             double d13 = d10 - d7;
 
             if (d11 == 0.0D) {
                 d1 = (double) i + 0.5D;
-                d4 = d3 - (double) i1;
+                d4 = d3 - (double) l;
             } else if (d13 == 0.0D) {
-                d3 = (double) i1 + 0.5D;
+                d3 = (double) l + 0.5D;
                 d4 = d1 - (double) i;
             } else {
                 double d14 = d1 - d5;
@@ -586,17 +587,17 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
         nbttagcompound.a("Type", d);
         if (d == 2) {
             nbttagcompound.a("PushX", f);
-            nbttagcompound.a("PushZ", aj);
+            nbttagcompound.a("PushZ", ak);
             nbttagcompound.a("Fuel", (short) e);
         } else if (d == 1) {
             NBTTagList nbttaglist = new NBTTagList();
 
-            for (int i = 0; i < ak.length; i++) {
-                if (ak[i] != null) {
+            for (int i = 0; i < al.length; i++) {
+                if (al[i] != null) {
                     NBTTagCompound nbttagcompound1 = new NBTTagCompound();
 
                     nbttagcompound1.a("Slot", (byte) i);
-                    ak[i].a(nbttagcompound1);
+                    al[i].a(nbttagcompound1);
                     nbttaglist.a(((NBTBase) (nbttagcompound1)));
                 }
             }
@@ -609,18 +610,18 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
         d = nbttagcompound.d("Type");
         if (d == 2) {
             f = nbttagcompound.g("PushX");
-            aj = nbttagcompound.g("PushZ");
+            ak = nbttagcompound.g("PushZ");
             e = ((int) (nbttagcompound.c("Fuel")));
         } else if (d == 1) {
             NBTTagList nbttaglist = nbttagcompound.k("Items");
 
-            ak = new ItemStack[a()];
+            al = new ItemStack[h_()];
             for (int i = 0; i < nbttaglist.b(); i++) {
                 NBTTagCompound nbttagcompound1 = (NBTTagCompound) nbttaglist.a(i);
-                int k = nbttagcompound1.b("Slot") & 0xff;
+                int j = nbttagcompound1.b("Slot") & 0xff;
 
-                if (k >= 0 && k < ak.length) {
-                    ak[k] = new ItemStack(nbttagcompound1);
+                if (j >= 0 && j < al.length) {
+                    al[j] = new ItemStack(nbttagcompound1);
                 }
             }
         }
@@ -710,26 +711,26 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
         }
     }
 
-    public int a() {
+    public int h_() {
         return 27;
     }
 
     public ItemStack a(int i) {
-        return ak[i];
+        return al[i];
     }
 
-    public ItemStack a(int i, int k) {
-        if (ak[i] != null) {
-            if (ak[i].a <= k) {
-                ItemStack itemstack = ak[i];
+    public ItemStack b(int i, int j) {
+        if (al[i] != null) {
+            if (al[i].a <= j) {
+                ItemStack itemstack = al[i];
 
-                ak[i] = null;
+                al[i] = null;
                 return itemstack;
             }
-            ItemStack itemstack1 = ak[i].a(k);
+            ItemStack itemstack1 = al[i].a(j);
 
-            if (ak[i].a == 0) {
-                ak[i] = null;
+            if (al[i].a == 0) {
+                al[i] = null;
             }
             return itemstack1;
         } else {
@@ -738,7 +739,7 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
     }
 
     public void a(int i, ItemStack itemstack) {
-        ak[i] = itemstack;
+        al[i] = itemstack;
         if (itemstack != null && itemstack.a > c()) {
             itemstack.a = c();
         }
@@ -779,14 +780,14 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
         } else if (d == 2) {
             ItemStack itemstack = entityplayer.an.e();
 
-            if (itemstack != null && itemstack.c == Item.k.aW) {
+            if (itemstack != null && itemstack.c == Item.k.ba) {
                 if (--itemstack.a == 0) {
                     entityplayer.an.a(entityplayer.an.c, ((ItemStack) (null)));
                 }
                 e += 1200;
             }
             f = p - entityplayer.p;
-            aj = r - entityplayer.r;
+            ak = r - entityplayer.r;
         }
         return true;
     }

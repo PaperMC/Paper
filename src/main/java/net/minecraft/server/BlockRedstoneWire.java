@@ -1,6 +1,10 @@
 package net.minecraft.server;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import org.bukkit.BlockFace;
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.event.block.BlockRedstoneEvent;
@@ -9,10 +13,12 @@ import org.bukkit.plugin.PluginLoader;
 public class BlockRedstoneWire extends Block {
 
     private boolean a;
+    private Set b;
 
     public BlockRedstoneWire(int i, int j) {
         super(i, j, Material.n);
         a = true;
+        b = ((Set) (new HashSet()));
         a(0.0F, 0.0F, 0.0F, 1.0F, 0.0625F, 1.0F);
     }
 
@@ -29,115 +35,142 @@ public class BlockRedstoneWire extends Block {
     }
 
     private void g(World world, int i, int j, int k) {
-        int l = world.b(i, j, k);
-        int i1 = 0;
+        a(world, i, j, k, i, j, k);
+        ArrayList arraylist = new ArrayList(((java.util.Collection) (b)));
+
+        b.clear();
+        for (int l = 0; l < ((List) (arraylist)).size(); l++) {
+            ChunkPosition chunkposition = (ChunkPosition) ((List) (arraylist)).get(l);
+
+            world.h(chunkposition.a, chunkposition.b, chunkposition.c, bi);
+        }
+    }
+
+    private void a(World world, int i, int j, int k, int l, int i1, int j1) {
+        int k1 = world.b(i, j, k);
+        int l1 = 0;
 
         a = false;
-        boolean flag = world.o(i, j, k);
+        boolean flag = world.p(i, j, k);
 
         a = true;
         if (flag) {
-            i1 = 15;
+            l1 = 15;
         } else {
-            for (int j1 = 0; j1 < 4; j1++) {
-                int l1 = i;
-                int j2 = k;
+            for (int i2 = 0; i2 < 4; i2++) {
+                int k2 = i;
+                int i3 = k;
 
-                if (j1 == 0) {
-                    l1--;
-                }
-                if (j1 == 1) {
-                    l1++;
-                }
-                if (j1 == 2) {
-                    j2--;
-                }
-                if (j1 == 3) {
-                    j2++;
-                }
-                i1 = f(world, l1, j, j2, i1);
-                if (world.d(l1, j, j2) && !world.d(i, j + 1, k)) {
-                    i1 = f(world, l1, j + 1, j2, i1);
-                    continue;
-                }
-                if (!world.d(l1, j, j2)) {
-                    i1 = f(world, l1, j - 1, j2, i1);
-                }
-            }
-
-            if (i1 > 0) {
-                i1--;
-            } else {
-                i1 = 0;
-            }
-        }
-        //Allow redstone wire current changes
-        if (l != i1) {
-            CraftBlock block = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
-            BlockRedstoneEvent bre = new BlockRedstoneEvent(block, BlockFace.Self, l, i1);
-            ((WorldServer) world).getServer().getPluginManager().callEvent(bre);
-            i1 = bre.getNewCurrent();
-        }
-        if (l != i1) {
-            world.b(i, j, k, i1);
-            world.b(i, j, k, i, j, k);
-            if (i1 > 0) {
-                i1--;
-            }
-            for (int k1 = 0; k1 < 4; k1++) {
-                int i2 = i;
-                int k2 = k;
-                int l2 = j - 1;
-
-                if (k1 == 0) {
-                    i2--;
-                }
-                if (k1 == 1) {
-                    i2++;
-                }
-                if (k1 == 2) {
+                if (i2 == 0) {
                     k2--;
                 }
-                if (k1 == 3) {
+                if (i2 == 1) {
                     k2++;
                 }
-                if (world.d(i2, j, k2)) {
-                    l2 += 2;
+                if (i2 == 2) {
+                    i3--;
                 }
-                int i3 = f(world, i2, j, k2, -1);
-
-                if (i3 >= 0 && i3 != i1) {
-                    g(world, i2, j, k2);
+                if (i2 == 3) {
+                    i3++;
                 }
-                i3 = f(world, i2, l2, k2, -1);
-                if (i3 >= 0 && i3 != i1) {
-                    g(world, i2, l2, k2);
+                if (k2 != l || j != i1 || i3 != j1) {
+                    l1 = f(world, k2, j, i3, l1);
+                }
+                if (world.d(k2, j, i3) && !world.d(i, j + 1, k)) {
+                    if (k2 != l || j + 1 != i1 || i3 != j1) {
+                        l1 = f(world, k2, j + 1, i3, l1);
+                    }
+                    continue;
+                }
+                if (!world.d(k2, j, i3) && (k2 != l || j - 1 != i1 || i3 != j1)) {
+                    l1 = f(world, k2, j - 1, i3, l1);
                 }
             }
 
-            if (l == 0 || i1 == 0) {
-                world.g(i, j, k, bh);
-                world.g(i - 1, j, k, bh);
-                world.g(i + 1, j, k, bh);
-                world.g(i, j, k - 1, bh);
-                world.g(i, j, k + 1, bh);
-                world.g(i, j - 1, k, bh);
-                world.g(i, j + 1, k, bh);
+            if (l1 > 0) {
+                l1--;
+            } else {
+                l1 = 0;
+            }
+        }
+
+        // Craftbukkit start
+        if (k1 != l1) {
+            CraftBlock block = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
+            BlockRedstoneEvent bre = new BlockRedstoneEvent(block, BlockFace.Self, k1, l1);
+            ((WorldServer) world).getServer().getPluginManager().callEvent(bre);
+            l1 = bre.getNewCurrent();
+        }
+        // Craftbukkit end
+        
+        if (k1 != l1) {
+            world.i = true;
+            world.c(i, j, k, l1);
+            world.b(i, j, k, i, j, k);
+            world.i = false;
+            for (int j2 = 0; j2 < 4; j2++) {
+                int l2 = i;
+                int j3 = k;
+                int k3 = j - 1;
+
+                if (j2 == 0) {
+                    l2--;
+                }
+                if (j2 == 1) {
+                    l2++;
+                }
+                if (j2 == 2) {
+                    j3--;
+                }
+                if (j2 == 3) {
+                    j3++;
+                }
+                if (world.d(l2, j, j3)) {
+                    k3 += 2;
+                }
+                int l3 = 0;
+
+                l3 = f(world, l2, j, j3, -1);
+                l1 = world.b(i, j, k);
+                if (l1 > 0) {
+                    l1--;
+                }
+                if (l3 >= 0 && l3 != l1) {
+                    a(world, l2, j, j3, i, j, k);
+                }
+                l3 = f(world, l2, k3, j3, -1);
+                l1 = world.b(i, j, k);
+                if (l1 > 0) {
+                    l1--;
+                }
+                if (l3 >= 0 && l3 != l1) {
+                    a(world, l2, k3, j3, i, j, k);
+                }
+            }
+
+            if (k1 == 0 || l1 == 0) {
+                b.add(((new ChunkPosition(i, j, k))));
+                b.add(((new ChunkPosition(i - 1, j, k))));
+                b.add(((new ChunkPosition(i + 1, j, k))));
+                b.add(((new ChunkPosition(i, j - 1, k))));
+                b.add(((new ChunkPosition(i, j + 1, k))));
+                b.add(((new ChunkPosition(i, j, k - 1))));
+                b.add(((new ChunkPosition(i, j, k + 1))));
             }
         }
     }
 
     private void h(World world, int i, int j, int k) {
-        if (world.a(i, j, k) != bh) {
+        if (world.a(i, j, k) != bi) {
             return;
         } else {
-            world.g(i, j, k, bh);
-            world.g(i - 1, j, k, bh);
-            world.g(i + 1, j, k, bh);
-            world.g(i, j, k - 1, bh);
-            world.g(i, j, k + 1, bh);
-            world.g(i, j - 1, k, bh);
-            world.g(i, j + 1, k, bh);
+            world.h(i, j, k, bi);
+            world.h(i - 1, j, k, bi);
+            world.h(i + 1, j, k, bi);
+            world.h(i, j, k - 1, bi);
+            world.h(i, j, k + 1, bi);
+            world.h(i, j - 1, k, bi);
+            world.h(i, j + 1, k, bi);
             return;
         }
     }
@@ -148,8 +181,8 @@ public class BlockRedstoneWire extends Block {
             return;
         }
         g(world, i, j, k);
-        world.g(i, j + 1, k, bh);
-        world.g(i, j - 1, k, bh);
+        world.h(i, j + 1, k, bi);
+        world.h(i, j - 1, k, bi);
         h(world, i - 1, j, k);
         h(world, i + 1, j, k);
         h(world, i, j, k - 1);
@@ -181,8 +214,8 @@ public class BlockRedstoneWire extends Block {
         if (world.z) {
             return;
         }
-        world.g(i, j + 1, k, bh);
-        world.g(i, j - 1, k, bh);
+        world.h(i, j + 1, k, bi);
+        world.h(i, j - 1, k, bi);
         g(world, i, j, k);
         h(world, i - 1, j, k);
         h(world, i + 1, j, k);
@@ -211,7 +244,7 @@ public class BlockRedstoneWire extends Block {
     }
 
     private int f(World world, int i, int j, int k, int l) {
-        if (world.a(i, j, k) != bh) {
+        if (world.a(i, j, k) != bi) {
             return l;
         }
         int i1 = world.b(i, j, k);
@@ -232,7 +265,7 @@ public class BlockRedstoneWire extends Block {
 
         if (!flag) {
             a_(world, i, j, k, i1);
-            world.d(i, j, k, 0);
+            world.e(i, j, k, 0);
         } else {
             g(world, i, j, k);
         }
@@ -240,7 +273,7 @@ public class BlockRedstoneWire extends Block {
     }
 
     public int a(int i, Random random) {
-        return Item.aA.aW;
+        return Item.aA.ba;
     }
 
     public boolean d(World world, int i, int j, int k, int l) {
@@ -302,7 +335,7 @@ public class BlockRedstoneWire extends Block {
     public static boolean b(IBlockAccess iblockaccess, int i, int j, int k) {
         int l = iblockaccess.a(i, j, k);
 
-        if (l == Block.av.bh) {
+        if (l == Block.av.bi) {
             return true;
         }
         if (l == 0) {

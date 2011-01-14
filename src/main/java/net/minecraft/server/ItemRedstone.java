@@ -51,7 +51,7 @@ public class ItemRedstone extends Item {
             // CraftBukkit end
 
             itemstack.a--;
-            world.d(i, j, k, Block.av.bh);
+            world.e(i, j, k, Block.av.bi);
         }
         return true;
     }

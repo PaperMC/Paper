@@ -10,78 +10,67 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
     public double d;
     public double e;
     public List f;
-    public Set aj;
-    public double ak;
-    public boolean al;
+    public Set ak;
+    public double al;
+    private int bD;
     private int bE;
-    private int bF;
-    private int bG[] = {
-        -1, -1, -1, -1, -1
+    private ItemStack bF[] = {
+        null, null, null, null, null
     };
-    private int bH;
+    private int bG;
     public boolean am;
 
-    public EntityPlayerMP(MinecraftServer minecraftserver, World world, String s1, ItemInWorldManager iteminworldmanager) {
+    public EntityPlayerMP(MinecraftServer minecraftserver, World world, String s, ItemInWorldManager iteminworldmanager) {
         super(world);
         f = ((List) (new LinkedList()));
-        aj = ((Set) (new HashSet()));
-        al = false;
-        bE = 0xfa0a1f01;
-        bF = 60;
-        bH = 0;
+        ak = ((Set) (new HashSet()));
+        bD = 0xfa0a1f01;
+        bE = 60;
+        bG = 0;
         int i = world.m;
         int j = world.o;
-        int l = world.n;
+        int k = world.n;
 
         if (!world.q.e) {
             i += W.nextInt(20) - 10;
-            l = world.e(i, j);
+            k = world.e(i, j);
             j += W.nextInt(20) - 10;
         }
-        c((double) i + 0.5D, l, (double) j + 0.5D, 0.0F, 0.0F);
+        c((double) i + 0.5D, k, (double) j + 0.5D, 0.0F, 0.0F);
         b = minecraftserver;
         S = 0.0F;
         iteminworldmanager.a = ((EntityPlayer) (this));
-        aw = s1;
+        aw = s;
         c = iteminworldmanager;
         H = 0.0F;
     }
 
-    public void k() {
+    public void l() {
         ap.a(((ICrafting) (this)));
     }
 
-    public int[] E() {
-        return bG;
+    public ItemStack[] I() {
+        return bF;
     }
 
     public void b_() {
-        bF--;
+        bE--;
         ap.a();
         for (int i = 0; i < 5; i++) {
-            int j = a(i);
+            ItemStack itemstack = a(i);
 
-            if (j != bG[i]) {
-                b.k.a(((Entity) (this)), ((Packet) (new Packet5PlayerInventory(g, i, j))));
-                bG[i] = j;
+            if (itemstack != bF[i]) {
+                b.k.a(((Entity) (this)), ((Packet) (new Packet5PlayerInventory(g, i, itemstack))));
+                bF[i] = itemstack;
             }
         }
-
     }
 
-    public int a(int i) {
+    public ItemStack a(int i) {
         if (i == 0) {
-            return c(an.e());
+            return an.e();
         } else {
-            return c(an.b[i - 1]);
-        }
-    }
-
-    private int c(ItemStack itemstack) {
-        if (itemstack == null) {
-            return -1;
-        } else {
-            return itemstack.c;
+            return an.b[i - 1];
         }
     }
 
@@ -90,7 +79,7 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
     }
 
     public boolean a(Entity entity, int i) {
-        if (bF > 0) {
+        if (bE > 0) {
             return false;
         }
         if (!b.n) {
@@ -108,11 +97,11 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
         return super.a(entity, i);
     }
 
-    public void c(int i) {
-        super.c(i);
+    public void d(int i) {
+        super.d(i);
     }
 
-    public void F() {
+    public void n() {
         super.b_();
         ChunkCoordIntPair chunkcoordintpair = null;
         double d1 = 0.0D;
@@ -146,15 +135,15 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
                 }
             }
         }
-        if (ba != bE) {
-            a.b(((Packet) (new Packet8(ba))));
-            bE = ba;
+        if (aZ != bD) {
+            a.b(((Packet) (new Packet8(aZ))));
+            bD = aZ;
         }
     }
 
     private void a(TileEntity tileentity) {
         if (tileentity != null) {
-            Packet packet = tileentity.f();
+            Packet packet = tileentity.g();
 
             if (packet != null) {
                 a.b(packet);
@@ -162,10 +151,10 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
         }
     }
 
-    public void G() {
+    public void o() {
         s = t = u = 0.0D;
-        bB = false;
-        super.G();
+        bA = false;
+        super.o();
     }
 
     public void c(Entity entity, int i) {
@@ -181,7 +170,7 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
         ap.a();
     }
 
-    public void H() {
+    public void K() {
         if (!au) {
             av = -1;
             au = true;
@@ -189,7 +178,7 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
         }
     }
 
-    public float s() {
+    public float w() {
         return 1.62F;
     }
 
@@ -214,35 +203,39 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
         super.a(d1, flag);
     }
 
-    public boolean p() {
-        return al;
+    private void U() {
+        bG = bG % 100 + 1;
     }
 
-    private void R() {
-        bH = bH % 100 + 1;
-    }
-
-    public void a(int i, int j, int l) {
-        R();
-        a.b(((Packet) (new Packet100(bH, 1, "Crafting", 9))));
-        ap = ((CraftingInventoryCB) (new CraftingInventoryWorkbenchCB(an, this.l, i, j, l)));
-        ap.f = bH;
+    public void a(int i, int j, int k) {
+        U();
+        a.b(((Packet) (new Packet100(bG, 1, "Crafting", 9))));
+        ap = ((CraftingInventoryCB) (new CraftingInventoryWorkbenchCB(an, l, i, j, k)));
+        ap.f = bG;
         ap.a(((ICrafting) (this)));
     }
 
     public void a(IInventory iinventory) {
-        R();
-        a.b(((Packet) (new Packet100(bH, 0, iinventory.b(), iinventory.a()))));
+        U();
+        a.b(((Packet) (new Packet100(bG, 0, iinventory.b(), iinventory.h_()))));
         ap = ((CraftingInventoryCB) (new CraftingInventoryChestCB(((IInventory) (an)), iinventory)));
-        ap.f = bH;
+        ap.f = bG;
         ap.a(((ICrafting) (this)));
     }
 
     public void a(TileEntityFurnace tileentityfurnace) {
-        R();
-        a.b(((Packet) (new Packet100(bH, 2, tileentityfurnace.b(), tileentityfurnace.a()))));
+        U();
+        a.b(((Packet) (new Packet100(bG, 2, tileentityfurnace.b(), tileentityfurnace.h_()))));
         ap = ((CraftingInventoryCB) (new CraftingInventoryFurnaceCB(((IInventory) (an)), tileentityfurnace)));
-        ap.f = bH;
+        ap.f = bG;
+        ap.a(((ICrafting) (this)));
+    }
+
+    public void a(TileEntityDispenser tileentitydispenser) {
+        U();
+        a.b(((Packet) (new Packet100(bG, 3, tileentitydispenser.b(), tileentitydispenser.h_()))));
+        ap = ((CraftingInventoryCB) (new CraftingInventoryDispenserCB(((IInventory) (an)), tileentitydispenser)));
+        ap.f = bG;
         ap.a(((ICrafting) (this)));
     }
 
@@ -269,12 +262,12 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
 
     public void a(ItemStack itemstack) {}
 
-    public void I() {
+    public void L() {
         a.b(((Packet) (new Packet101(ap.f))));
-        K();
+        N();
     }
 
-    public void J() {
+    public void M() {
         if (am) {
             return;
         } else {
@@ -283,7 +276,7 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
         }
     }
 
-    public void K() {
+    public void N() {
         ap.a(((EntityPlayer) (this)));
         ap = ao;
     }
