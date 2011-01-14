@@ -167,7 +167,7 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
     }
     // CraftBukkit end
 
-    public double l() {
+    public double k() {
         return (double) J * 0.0D - 0.30000001192092896D;
     }
 

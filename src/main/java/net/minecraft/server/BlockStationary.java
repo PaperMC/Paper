@@ -28,7 +28,7 @@ public class BlockStationary extends BlockFluids {
         world.i = true;
         world.a(k, l, i1, bi - 1, j1);
         world.b(k, l, i1, k, l, i1);
-        world.h(k, l, i1, bi - 1);
+        world.i(k, l, i1, bi - 1);
         world.i = false;
     }
 

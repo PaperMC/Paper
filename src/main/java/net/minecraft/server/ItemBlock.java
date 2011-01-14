@@ -54,6 +54,10 @@ public class ItemBlock extends Item {
             }
         }
 
+        if (itemstack.a == 0) {
+            return false;
+        }
+
         // CraftBukkit start - store the old data so we can undo it
         int oldMaterial = world.a(i, j, k);
         int oldData = world.b(i, j, k);

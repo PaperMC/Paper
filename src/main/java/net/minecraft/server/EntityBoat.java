@@ -86,7 +86,7 @@ public class EntityBoat extends Entity implements CraftMappable { // CraftBukkit
     }
     // CraftBukkit end
 
-    public double l() {
+    public double k() {
         return (double) J * 0.0D - 0.30000001192092896D;
     }
 
@@ -317,7 +317,7 @@ public class EntityBoat extends Entity implements CraftMappable { // CraftBukkit
             double d1 = Math.cos(((double) v * 3.1415926535897931D) / 180D) * 0.40000000000000002D;
             double d2 = Math.sin(((double) v * 3.1415926535897931D) / 180D) * 0.40000000000000002D;
 
-            j.a(p + d1, q + l() + j.F(), r + d2);
+            j.a(p + d1, q + k() + j.F(), r + d2);
             return;
         }
     }
