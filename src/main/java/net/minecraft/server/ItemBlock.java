@@ -85,13 +85,12 @@ public class ItemBlock extends Item {
 
                     // Specialcase iceblocks, replace with 'glass' first (so it doesn't explode into water)
                     if (this.a == 79) {
-                        world.a(i, j, k, 20);
+                        world.b(i, j, k, 20);
                     }
                     world.b(i, j, k, oldMaterial);
                     world.d(i, j, k, oldData);
                 } else {
-                    world.g(i, j, k);
-                    world.h(i, j, k, this.a);
+                    world.b(i, j, k, a, a(itemstack.h()));
 
                     Block.m[a].c(world, i, j, k, l);
                     Block.m[a].a(world, i, j, k, ((EntityLiving) (entityplayer)));
