@@ -16,7 +16,7 @@ import org.bukkit.plugin.java.JavaPluginLoader;
 
 public final class CraftServer implements Server {
     private final String serverName = "Craftbukkit";
-    private final String serverVersion = "1.1";
+    private final String serverVersion = "1.2_01";
     private final PluginManager pluginManager = new SimplePluginManager(this);
 
     protected final MinecraftServer console;
