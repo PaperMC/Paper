@@ -213,7 +213,7 @@ public class CraftWorld implements World {
     }
 
     public TileEntity getTileEntityAt(final int x, final int y, final int z) {
-        return world.l(x, y, z);
+        return world.m(x, y, z);
     }
 
     public String getName() {

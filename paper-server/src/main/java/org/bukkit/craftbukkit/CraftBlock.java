@@ -24,7 +24,7 @@ public class CraftBlock implements Block {
         this.z = z;
         this.type = type;
         this.data = data;
-        this.light = (byte)world.getHandle().i(x, y, z);
+        this.light = (byte)world.getHandle().j(x, y, z);
         this.chunk = (CraftChunk)world.getChunkAt(x << 4, z << 4);
     }
 
@@ -121,7 +121,7 @@ public class CraftBlock implements Block {
      */
     public boolean setTypeID(final int type) {
         this.type = type;
-        return world.getHandle().d(x, y, z, type);
+        return world.getHandle().e(x, y, z, type);
     }
 
     /**
@@ -259,9 +259,9 @@ public class CraftBlock implements Block {
         Material material = getType();
 
         switch (material) {
-            case Sign:
-            case SignPost:
-            case WallSign:
+            case SIGN:
+            case SIGN_POST:
+            case WALL_SIGN:
                 return new CraftSign(this);
             default:
                 return new CraftBlockState(this);

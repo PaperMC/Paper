@@ -36,7 +36,7 @@ public class CraftItemStack extends ItemStack {
             item = null;
         } else {
             if (item == null) {
-                item = new net.minecraft.server.ItemStack(type);
+                item = new net.minecraft.server.ItemStack(type, 1, 0);
                 super.setAmount(1);
             } else {
                 item.c = type;
