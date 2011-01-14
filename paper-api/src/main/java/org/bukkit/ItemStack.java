@@ -93,7 +93,7 @@ public class ItemStack {
     public void setTypeID(int type) {
         this.type = type;
 
-        Material mat = getType();
+        Material mat = Material.getMaterial(type);
 
         if (mat == null) {
             data = new MaterialData(type, (byte)0);
