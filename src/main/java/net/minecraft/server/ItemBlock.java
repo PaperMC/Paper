@@ -87,8 +87,8 @@ public class ItemBlock extends Item {
                     if (this.a == 79) {
                         world.a(i, j, k, 20);
                     }
-                    world.a(i, j, k, oldMaterial);
-                    world.c(i, j, k, oldData);
+                    world.b(i, j, k, oldMaterial);
+                    world.d(i, j, k, oldData);
                 } else {
                     world.g(i, j, k);
                     world.h(i, j, k, this.a);
