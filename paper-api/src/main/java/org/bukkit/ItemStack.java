@@ -1,25 +1,27 @@
 
 package org.bukkit;
 
+import org.bukkit.material.MaterialData;
+
 /**
  * Represents a stack of items
  */
 public class ItemStack {
     private int type;
     private int amount = 0;
+    private MaterialData data = null;
     private byte damage = 0;
 
     public ItemStack(final int type) {
-        this.type = type;
+        this(type, 0);
     }
 
     public ItemStack(final Material type) {
-        this(type.getID());
+        this(type, 0);
     }
 
     public ItemStack(final int type, final int amount) {
-        this.type = type;
-        this.amount = amount;
+        this(type, amount, (byte) 0);
     }
 
     public ItemStack(final Material type, final int amount) {
@@ -27,13 +29,29 @@ public class ItemStack {
     }
 
     public ItemStack(final int type, final int amount, final byte damage) {
-        this.type = type;
-        this.amount = amount;
-        this.damage = damage;
+        this(type, amount, damage, (byte) 0);
     }
 
     public ItemStack(final Material type, final int amount, final byte damage) {
         this(type.getID(), amount, damage);
+    }
+
+    public ItemStack(final int type, final int amount, final byte damage, final byte data) {
+        this.type = type;
+        this.amount = amount;
+        this.damage = damage;
+
+        Material mat = Material.getMaterial(type);
+
+        if (mat == null) {
+            this.data = new MaterialData(type, data);
+        } else {
+            this.data = mat.getNewData(data);
+        }
+    }
+
+    public ItemStack(final Material type, final int amount, final byte damage, final byte data) {
+        this(type.getID(), amount, damage, data);
     }
 
     /**
@@ -46,7 +64,9 @@ public class ItemStack {
     }
 
     /**
-     * Sets the type of this item
+     * Sets the type of this item<br />
+     * <br />
+     * Note that in doing so you will reset the MaterialData for this stack
      *
      * @param type New type to set the items in this stack to
      */
@@ -64,12 +84,22 @@ public class ItemStack {
     }
 
     /**
-     * Sets the type ID of this item
+     * Sets the type ID of this item<br />
+     * <br />
+     * Note that in doing so you will reset the MaterialData for this stack
      *
      * @param type New type ID to set the items in this stack to
      */
     public void setTypeID(int type) {
         this.type = type;
+
+        Material mat = getType();
+
+        if (mat == null) {
+            data = new MaterialData(type, (byte)0);
+        } else {
+            data = mat.getNewData((byte)0);
+        }
     }
 
     /**
@@ -88,6 +118,35 @@ public class ItemStack {
      */
     public void setAmount(int amount) {
         this.amount = amount;
+    }
+
+    /**
+     * Gets the MaterialData for this stack of items
+     *
+     * @return MaterialData for this item
+     */
+    public MaterialData getData() {
+        return data;
+    }
+
+    /**
+     * Sets the MaterialData for this stack of items
+     *
+     * @param amount New MaterialData for this item
+     */
+    public void setData(MaterialData data) {
+        Material mat = getType();
+
+        if ((mat == null) || (mat.getData() == null)) {
+            this.data = data;
+        } else {
+            if ((data.getClass() == mat.getData()) || (data.getClass() == MaterialData.class)) {
+                this.data = data;
+            } else {
+                throw new IllegalArgumentException("Provided data is not of type "
+                        + mat.getData().getName() + ", found " + data.getClass().getName());
+            }
+        }
     }
 
     /**
