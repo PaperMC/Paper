@@ -19,6 +19,7 @@ public abstract class JavaPlugin implements Plugin {
     private final PluginDescriptionFile description;
     private final File dataFolder;
     private final ClassLoader classLoader;
+    private final Configuration config;
 
     /**
      * Constructs a new Java plugin instance
@@ -39,6 +40,8 @@ public abstract class JavaPlugin implements Plugin {
         description = desc;
         dataFolder = folder;
         classLoader = cLoader;
+        config = new Configuration(new File(dataFolder, "config.yml"));
+        config.load();
     }
 
     /**
@@ -105,9 +108,6 @@ public abstract class JavaPlugin implements Plugin {
      * @return
      */
     public Configuration getConfiguration() {
-        Configuration config =
-                new Configuration(new File(dataFolder, "config.yml"));
-        config.load();
         return config;
     }
 
