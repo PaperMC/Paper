@@ -29,6 +29,14 @@ public interface Server {
      * @return An array of Players that are currently online
      */
     public Player[] getOnlinePlayers();
+    
+    /**
+     * Broadcast a message to all players.
+     * 
+     * @param message the message
+     * @return the number of players
+     */
+    public int broadcastMessage(String message);
 
     /**
      * Gets a player object by the given username
