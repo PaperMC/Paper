@@ -96,7 +96,10 @@ public abstract class JavaPlugin implements Plugin {
     }
     
     /**
-     * Returns the main configuration file. It will be loaded.
+     * Returns the main configuration located at
+     * <plugin name>/config.yml and loads the file. If the configuration file
+     * does not exist and it cannot be loaded, no error will be emitted and
+     * the configuration file will have no values.
      * 
      * @return
      */
