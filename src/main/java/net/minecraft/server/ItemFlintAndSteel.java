@@ -50,8 +50,8 @@ public class ItemFlintAndSteel extends Item {
             PlayerItemEvent pie = new PlayerItemEvent(Type.PLAYER_ITEM, thePlayer, itemInHand, blockClicked, CraftBlock.notchToBlockFace(l));
             ((WorldServer) world).getServer().getPluginManager().callEvent(pie);
 
-            org.bukkit.Block pblock = (((WorldServer) world).getWorld().getBlockAt(i, j, k));
-            BlockIgniteEvent bie = new BlockIgniteEvent((org.bukkit.Block) pblock, BlockIgniteEvent.IgniteCause.FLINT_AND_STEEL, thePlayer);
+            org.bukkit.block.Block pblock = (((WorldServer) world).getWorld().getBlockAt(i, j, k));
+            BlockIgniteEvent bie = new BlockIgniteEvent((org.bukkit.block.Block) pblock, BlockIgniteEvent.IgniteCause.FLINT_AND_STEEL, thePlayer);
             ((WorldServer) world).getServer().getPluginManager().callEvent(bie);
 
             boolean preventLighter = pie.isCancelled();

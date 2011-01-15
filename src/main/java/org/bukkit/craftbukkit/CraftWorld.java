@@ -31,7 +31,7 @@ import net.minecraft.server.WorldGenBigTree;
 import net.minecraft.server.WorldServer;
 import net.minecraft.server.WorldGenTrees;
 import org.bukkit.entity.Arrow;
-import org.bukkit.Block;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Boat;
 import org.bukkit.Chunk;
 import org.bukkit.entity.ItemDrop;

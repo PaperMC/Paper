@@ -5,8 +5,8 @@ import java.util.*;
 import java.util.logging.Logger;
 
 // CraftBukkit start
-import org.bukkit.BlockFace;
-import org.bukkit.BlockDamageLevel;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.BlockDamageLevel;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;

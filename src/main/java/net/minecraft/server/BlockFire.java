@@ -86,8 +86,8 @@ public class BlockFire extends Block {
                         // CraftBukkit: Call to stop spead of fire.
                         CraftServer server = ((WorldServer)world).getServer();
                         CraftWorld cworld = ((WorldServer) world).getWorld();
-                        org.bukkit.Block bblock = (cworld.getBlockAt(i1, k1, j1));
-                        BlockIgniteEvent event = new BlockIgniteEvent((org.bukkit.Block) bblock, BlockIgniteEvent.IgniteCause.SPREAD, null);
+                        org.bukkit.block.Block bblock = (cworld.getBlockAt(i1, k1, j1));
+                        BlockIgniteEvent event = new BlockIgniteEvent((org.bukkit.block.Block) bblock, BlockIgniteEvent.IgniteCause.SPREAD, null);
                         server.getPluginManager().callEvent(event);
                         if (event.isCancelled()) {
                             return;
@@ -111,8 +111,8 @@ public class BlockFire extends Block {
                 // CraftBukkit: Call to stop very slow spread of fire.
                 CraftServer server = ((WorldServer)world).getServer();
                 CraftWorld cworld = ((WorldServer)world).getWorld();
-                org.bukkit.Block sbblock = (cworld.getBlockAt(i, j, k));
-                BlockIgniteEvent event = new BlockIgniteEvent((org.bukkit.Block) sbblock, BlockIgniteEvent.IgniteCause.SLOW_SPREAD, null);
+                org.bukkit.block.Block sbblock = (cworld.getBlockAt(i, j, k));
+                BlockIgniteEvent event = new BlockIgniteEvent((org.bukkit.block.Block) sbblock, BlockIgniteEvent.IgniteCause.SLOW_SPREAD, null);
                 server.getPluginManager().callEvent(event);
                 if (event.isCancelled()) {
                     return;

@@ -1,7 +1,7 @@
 package net.minecraft.server;
 
 import java.util.*;
-import org.bukkit.BlockFace;
+import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.event.block.BlockRedstoneEvent;
 

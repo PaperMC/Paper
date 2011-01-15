@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-import org.bukkit.BlockFace;
+import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.plugin.PluginLoader;

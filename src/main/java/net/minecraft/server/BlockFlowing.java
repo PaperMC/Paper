@@ -3,7 +3,7 @@ package net.minecraft.server;
 import java.util.Random;
 
 // CraftBukkit start
-import org.bukkit.BlockFace;
+import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockFromToEvent;

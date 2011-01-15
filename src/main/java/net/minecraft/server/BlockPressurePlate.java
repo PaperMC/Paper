@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Random;
 
 // CraftBukkit start
-import org.bukkit.BlockFace;import org.bukkit.craftbukkit.CraftBlock;
+import org.bukkit.block.BlockFace;import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.event.Event.Type;

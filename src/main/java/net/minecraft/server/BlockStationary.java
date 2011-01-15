@@ -39,8 +39,8 @@ public class BlockStationary extends BlockFluids {
             // Craftbukkit start: prevent lava putting something on fire.
             CraftServer server = ((WorldServer)world).getServer();
             CraftWorld cworld = ((WorldServer)world).getWorld();
-            org.bukkit.Block bblock = (cworld.getBlockAt(k, l, i1));
-            BlockIgniteEvent event = new BlockIgniteEvent((org.bukkit.Block) bblock, BlockIgniteEvent.IgniteCause.LAVA, null);
+            org.bukkit.block.Block bblock = (cworld.getBlockAt(k, l, i1));
+            BlockIgniteEvent event = new BlockIgniteEvent((org.bukkit.block.Block) bblock, BlockIgniteEvent.IgniteCause.LAVA, null);
             server.getPluginManager().callEvent(event);
             if (event.isCancelled()) {
                 return;
