@@ -71,12 +71,7 @@ public class ItemBlock extends Item {
                 CraftItemStack itemInHand = new CraftItemStack(itemstack);
                 CraftPlayer thePlayer = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entityplayer);
 
-                int xFromSpawn = (int) MathHelper.e(i - world.m);
-                int distanceFromSpawn = (int) MathHelper.e(k - world.o);
-
-                if (xFromSpawn > distanceFromSpawn) {
-                    distanceFromSpawn = xFromSpawn;
-                }
+                int distanceFromSpawn = (int) Math.max(Math.abs(i - world.m), Math.abs(k - world.o));
 
                 // CraftBukkit hardcoded Spawn distance for now
                 boolean canBuild = distanceFromSpawn > 16 || thePlayer.isOp();
