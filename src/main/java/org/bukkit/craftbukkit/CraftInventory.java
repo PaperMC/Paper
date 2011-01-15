@@ -42,12 +42,12 @@ public class CraftInventory implements org.bukkit.Inventory {
     }
 
     public void setItem(int index, ItemStack item) {
-        getInventory().a( index, new net.minecraft.server.ItemStack( item.getTypeID(), item.getAmount(), 0));
+        getInventory().a( index, new net.minecraft.server.ItemStack( item.getTypeId(), item.getAmount(), 0));
     }
 
     public boolean contains(int materialId) {
         for (ItemStack item: getContents()) {
-            if (item.getTypeID() == materialId) {
+            if (item.getTypeId() == materialId) {
                 return true;
             }
         }
@@ -55,7 +55,7 @@ public class CraftInventory implements org.bukkit.Inventory {
     }
 
     public boolean contains(Material material) {
-        return contains(material.getID());
+        return contains(material.getId());
     }
 
     public boolean contains(ItemStack item) {
@@ -73,7 +73,7 @@ public class CraftInventory implements org.bukkit.Inventory {
         ItemStack[] inventory = getContents();
         for (int i = 0; i < inventory.length; i++) {
             ItemStack item = inventory[i];
-            if (item.getTypeID() == materialId) {
+            if (item.getTypeId() == materialId) {
                 slots.put( i, item );
             }
         }
@@ -81,7 +81,7 @@ public class CraftInventory implements org.bukkit.Inventory {
     }
 
     public HashMap<Integer, ItemStack> all(Material material) {
-        return all(material.getID());
+        return all(material.getId());
     }
 
     public HashMap<Integer, ItemStack> all(ItemStack item) {
@@ -99,7 +99,7 @@ public class CraftInventory implements org.bukkit.Inventory {
     public int first(int materialId) {
         ItemStack[] inventory = getContents();
         for (int i = 0; i < inventory.length; i++) {
-            if (inventory[i].getTypeID() == materialId) {
+            if (inventory[i].getTypeId() == materialId) {
                 return i;
             }
         }
@@ -107,7 +107,7 @@ public class CraftInventory implements org.bukkit.Inventory {
     }
 
     public int first(Material material) {
-        return first(material.getID());
+        return first(material.getId());
     }
 
     public int first(ItemStack item) {
@@ -128,7 +128,7 @@ public class CraftInventory implements org.bukkit.Inventory {
         ItemStack[] inventory = getContents();
         for (int i = 0; i < inventory.length; i++) {
             ItemStack item = inventory[i];
-            if (item != null && item.getTypeID() == materialId && item.getAmount() < item.getMaxStackSize()) {
+            if (item != null && item.getTypeId() == materialId && item.getAmount() < item.getMaxStackSize()) {
                 return i;
             }
         }
@@ -136,11 +136,11 @@ public class CraftInventory implements org.bukkit.Inventory {
     }
 
     public int firstPartial(Material material) {
-        return firstPartial(material.getID());
+        return firstPartial(material.getId());
     }
 
     public int firstPartial(ItemStack item) {
-        return firstPartial(item.getTypeID());
+        return firstPartial(item.getTypeId());
     }
     
     public HashMap<Integer, ItemStack> addItem(ItemStack... items) {
@@ -156,7 +156,7 @@ public class CraftInventory implements org.bukkit.Inventory {
             ItemStack item = items[i];
             while (true) {
                 // Do we already have a stack of it?
-                int firstPartial = firstPartial( item.getTypeID() );
+                int firstPartial = firstPartial( item.getTypeId() );
 
                 // Drat! no partial stack
                 if (firstPartial == -1) {
@@ -170,7 +170,7 @@ public class CraftInventory implements org.bukkit.Inventory {
                     } else {
                         // More than a single stack!
                         if (item.getAmount() > getMaxItemStack()) {
-                            setItem( firstFree, new ItemStack(item.getTypeID(), getMaxItemStack()));
+                            setItem( firstFree, new ItemStack(item.getTypeId(), getMaxItemStack()));
                             item.setAmount(item.getAmount() - getMaxItemStack());
                         } else {
                             // Just store it

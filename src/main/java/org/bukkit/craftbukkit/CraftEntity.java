@@ -41,7 +41,7 @@ public abstract class CraftEntity implements org.bukkit.Entity {
         teleportTo(destination.getLocation());
     }
 
-    public int getEntityID() {
+    public int getEntityId() {
         return entity.g;
     }
 
@@ -81,6 +81,6 @@ public abstract class CraftEntity implements org.bukkit.Entity {
 
     @Override
     public String toString() {
-        return "CraftEntity{" + "id=" + getEntityID() + '}';
+        return "CraftEntity{" + "id=" + getEntityId() + '}';
     }
 }

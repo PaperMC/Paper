@@ -45,7 +45,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public String toString() {
-        return "CraftLivingEntity{" + "id=" + getEntityID() + '}';
+        return "CraftLivingEntity{" + "id=" + getEntityId() + '}';
     }
 
     public Egg throwEgg() {

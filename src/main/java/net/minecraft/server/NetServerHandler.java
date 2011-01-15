@@ -282,15 +282,15 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
         // CraftBukkit start
         CraftBlock block = (CraftBlock) player.getWorld().getBlockAt(l, i1, j1);
-        int blockID = block.getTypeID();
+        int blockId = block.getTypeId();
         float damage = 0;
-        if(Block.m[blockID] != null) {
-            damage = Block.m[blockID].a(player.getHandle()); //Get amount of damage going to block
+        if(Block.m[blockId] != null) {
+            damage = Block.m[blockId].a(player.getHandle()); //Get amount of damage going to block
         }
 
         if (packet14blockdig.e == 0) {
             if (i2 > 16 || flag) {
-                if(blockID > 0) {
+                if(blockId > 0) {
                     BlockDamagedEvent event;
                     // If the amount of damage that the player is going to do to the block
                     // is >= 1, then the block is going to break (eg, flowers, torches)

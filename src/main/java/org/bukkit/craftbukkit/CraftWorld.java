@@ -114,11 +114,12 @@ public class CraftWorld implements World {
     }
     
     public ItemDrop dropItem(Location loc, ItemStack item) {
-        net.minecraft.server.ItemStack stack =
-                new net.minecraft.server.ItemStack(
-                        item.getTypeID(), item.getAmount(), item.getDamage());
-        EntityItem entity = new EntityItem(world, loc.getX(), loc.getY(),
-                loc.getZ(), stack);
+        net.minecraft.server.ItemStack stack = new net.minecraft.server.ItemStack(
+            item.getTypeId(),
+            item.getAmount(),
+            item.getDamage()
+        );
+        EntityItem entity = new EntityItem(world, loc.getX(), loc.getY(), loc.getZ(), stack);
         entity.c = 10;
         world.a(entity);
         return new CraftItemDrop(world.getServer(), entity);
@@ -135,8 +136,7 @@ public class CraftWorld implements World {
         return dropItem(loc, item);
     }
 
-    public Arrow spawnArrow(Location loc, Vector velocity, float speed,
-            float spread) {
+    public Arrow spawnArrow(Location loc, Vector velocity, float speed, float spread) {
         EntityArrow arrow = new EntityArrow(world);
         arrow.c(loc.getX(), loc.getY(), loc.getZ(), 0, 0);
         world.a(arrow);
@@ -146,48 +146,54 @@ public class CraftWorld implements World {
     
     public Minecart spawnMinecart(Location loc) {
         EntityMinecart minecart = new EntityMinecart(
-                world,
-                loc.getX(), loc.getY(), loc.getZ(),
-                CraftMinecart.Type.Minecart.getID());
+            world,
+            loc.getX(),
+            loc.getY(),
+            loc.getZ(),
+            CraftMinecart.Type.Minecart.getId()
+        );
         world.a(minecart);
         return new CraftMinecart(world.getServer(), minecart);
     }
     
     public StorageMinecart spawnStorageMinecart(Location loc) {
         EntityMinecart minecart = new EntityMinecart(
-                world,
-                loc.getX(), loc.getY(), loc.getZ(),
-                CraftMinecart.Type.StorageMinecart.getID());
+            world,
+            loc.getX(),
+            loc.getY(),
+            loc.getZ(),
+            CraftMinecart.Type.StorageMinecart.getId()
+        );
         world.a(minecart);
         return new CraftStorageMinecart(world.getServer(), minecart);
     }
     
     public PoweredMinecart spawnPoweredMinecart(Location loc) {
         EntityMinecart minecart = new EntityMinecart(
-                world,
-                loc.getX(), loc.getY(), loc.getZ(),
-                CraftMinecart.Type.PoweredMinecart.getID());
+            world,
+            loc.getX(),
+            loc.getY(),
+            loc.getZ(),
+            CraftMinecart.Type.PoweredMinecart.getId()
+        );
         world.a(minecart);
         return new CraftPoweredMinecart(world.getServer(), minecart);
     }
     
     public Boat spawnBoat(Location loc) {
-        EntityBoat boat =
-            new EntityBoat(world, loc.getX(), loc.getY(), loc.getZ());
+        EntityBoat boat = new EntityBoat(world, loc.getX(), loc.getY(), loc.getZ());
         world.a(boat);
         return new CraftBoat(world.getServer(), boat);
     }
     
     public boolean generateTree(Location loc) {
         WorldGenTrees treeGen = new WorldGenTrees();
-        return treeGen.a(world, rand,
-                loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+        return treeGen.a(world, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
     }
     
     public boolean generateBigTree(Location loc) {
         WorldGenBigTree treeGen = new WorldGenBigTree();
-        return treeGen.a(world, rand,
-                loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+        return treeGen.a(world, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
     }
     
     public CraftEntity toCraftEntity(net.minecraft.server.Entity entity) {

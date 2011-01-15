@@ -40,6 +40,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public String toString() {
-        return "CraftHumanEntity{" + "id=" + getEntityID() + "name=" + getName() + '}';
+        return "CraftHumanEntity{" + "id=" + getEntityId() + "name=" + getName() + '}';
     }
 }

@@ -18,20 +18,20 @@ public class CraftItemStack extends ItemStack {
 
     @Override
     public Material getType() {
-        super.setTypeID(item != null ? item.c : 0); // sync, needed?
+        super.setTypeId(item != null ? item.c : 0); // sync, needed?
         return super.getType();
     }
 
     @Override
-    public int getTypeID() {
-        super.setTypeID(item != null ? item.c : 0); // sync, needed?
+    public int getTypeId() {
+        super.setTypeId(item != null ? item.c : 0); // sync, needed?
         return item != null ? item.c : 0;
     }
 
     @Override
-    public void setTypeID(int type) {
+    public void setTypeId(int type) {
         if (type == 0) {
-            super.setTypeID(0);
+            super.setTypeId(0);
             super.setAmount(0);
             item = null;
         } else {
@@ -40,7 +40,7 @@ public class CraftItemStack extends ItemStack {
                 super.setAmount(1);
             } else {
                 item.c = type;
-                super.setTypeID(item.c);
+                super.setTypeId(item.c);
             }
         }
     }
@@ -54,7 +54,7 @@ public class CraftItemStack extends ItemStack {
     @Override
     public void setAmount(int amount) {
         if (amount == 0) {
-            super.setTypeID(0);
+            super.setTypeId(0);
             super.setAmount(0);
             item = null;
         } else {
