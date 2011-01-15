@@ -205,4 +205,35 @@ public class CraftInventory implements org.bukkit.Inventory {
         return getInventory().c();
     }
 
+    public void remove(int materialId) {
+        ItemStack[] items = getContents();
+        for (int i = 0; i < items.length; i++) {
+            if (items[i].getTypeId() == materialId) {
+                clear(i);
+            }
+        }
+    }
+
+    public void remove(Material material) {
+        remove(material.getId());
+    }
+
+    public void remove(ItemStack item) {
+        ItemStack[] items = getContents();
+        for (int i = 0; i < items.length; i++) {
+            if (items[i].equals(item)) {
+                clear(i);
+            }
+        }
+    }
+
+    public void clear(int index) {
+        setItem(index, null);
+    }
+
+    public void clear() {
+        for (int i = 0; i < getSize(); i++) {
+            clear(i);
+        }
+    }
 }
