@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit;
 
+import org.bukkit.craftbukkit.entity.CraftPoweredMinecart;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftEgg;
 import org.bukkit.craftbukkit.entity.CraftBoat;
