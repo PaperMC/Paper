@@ -2,7 +2,7 @@ package net.minecraft.server;
 
 import java.util.*;
 import org.bukkit.block.BlockFace;
-import org.bukkit.craftbukkit.CraftBlock;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.event.block.BlockRedstoneEvent;
 
 public class BlockRedstoneTorch extends BlockTorch {

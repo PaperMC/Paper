@@ -8,7 +8,7 @@ import java.util.logging.Logger;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockDamageLevel;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.CraftBlock;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.CraftServer;
