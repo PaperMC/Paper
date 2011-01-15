@@ -1,6 +1,7 @@
-package org.bukkit;
+package org.bukkit.inventory;
 
 import java.util.HashMap;
+import org.bukkit.Material;
 
 /**
  * Interface to the various inventories

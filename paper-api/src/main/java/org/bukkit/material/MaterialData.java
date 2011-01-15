@@ -1,7 +1,7 @@
 
 package org.bukkit.material;
 
-import org.bukkit.ItemStack;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.Material;
 
 /**

@@ -1,8 +1,8 @@
 
 package org.bukkit.entity;
 
-import org.bukkit.ItemStack;
-import org.bukkit.PlayerInventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 
 /**
  * Represents a human entity, such as an NPC or a player

@@ -1,4 +1,4 @@
-package org.bukkit;
+package org.bukkit.inventory;
 
 /**
  * Includes interface to the 4 armor slots

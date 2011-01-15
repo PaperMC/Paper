@@ -2,7 +2,7 @@ package org.bukkit.event.block;
 
 import org.bukkit.Block;
 import org.bukkit.BlockFace;
-import org.bukkit.ItemStack;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.entity.Player;
 
 /**

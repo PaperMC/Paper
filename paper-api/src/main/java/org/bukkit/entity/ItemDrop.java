@@ -1,6 +1,6 @@
 package org.bukkit.entity;
 
-import org.bukkit.ItemStack;
+import org.bukkit.inventory.ItemStack;
 
 /**
  * Represents a dropped item.

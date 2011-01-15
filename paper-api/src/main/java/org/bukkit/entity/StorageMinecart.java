@@ -1,6 +1,6 @@
 package org.bukkit.entity;
 
-import org.bukkit.Inventory;
+import org.bukkit.inventory.Inventory;
 
 /**
  * Represents a storage minecart.

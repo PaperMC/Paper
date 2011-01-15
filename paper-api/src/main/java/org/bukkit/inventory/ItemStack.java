@@ -1,6 +1,7 @@
 
-package org.bukkit;
+package org.bukkit.inventory;
 
+import org.bukkit.Material;
 import org.bukkit.material.MaterialData;
 
 /**
