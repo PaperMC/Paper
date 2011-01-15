@@ -50,6 +50,10 @@ public class CraftWorld implements World {
     public int getHighestBlockYAt(int x, int z) {
         return world.d(x, z);
     }
+    
+    public Location getSpawnLocation() {
+        return new Location(this, world.m, world.e(world.m, world.o), world.o);
+    }
 
     public Chunk getChunkAt(int x, int z) {
         ChunkCoordinate loc = new ChunkCoordinate(x, z);
