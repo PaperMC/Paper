@@ -165,4 +165,8 @@ public interface World {
      * @return Id of this world
      */
     public long getId();
+    /**
+     * Gets the default spawn location.
+     */
+    public Location getSpawnLocation();
 }
