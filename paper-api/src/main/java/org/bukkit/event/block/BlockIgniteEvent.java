@@ -1,7 +1,7 @@
 package org.bukkit.event.block;
 
 import org.bukkit.Block;
-import org.bukkit.Player;
+import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 

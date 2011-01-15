@@ -1,5 +1,5 @@
 
-package org.bukkit;
+package org.bukkit.entity;
 
 /**
  * Represents a living entity, such as a monster or player

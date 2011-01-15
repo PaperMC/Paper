@@ -1,7 +1,7 @@
 package org.bukkit.event.player;
 
-import org.bukkit.MobType;
-import org.bukkit.Player;
+import org.bukkit.entity.MobType;
+import org.bukkit.entity.Player;
 
 
 /**

@@ -1,6 +1,7 @@
 
 package org.bukkit;
 
+import org.bukkit.entity.Player;
 import java.util.List;
 import org.bukkit.plugin.PluginManager;
 

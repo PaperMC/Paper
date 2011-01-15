@@ -1,5 +1,6 @@
 package org.bukkit.fillr;
 
+import org.bukkit.entity.Player;
 import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;

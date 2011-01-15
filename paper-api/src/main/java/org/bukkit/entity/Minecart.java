@@ -1,4 +1,4 @@
-package org.bukkit;
+package org.bukkit.entity;
 
 /**
  * Represents a minecart entity.

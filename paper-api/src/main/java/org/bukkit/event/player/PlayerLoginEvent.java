@@ -1,7 +1,7 @@
 
 package org.bukkit.event.player;
 
-import org.bukkit.Player;
+import org.bukkit.entity.Player;
 
 /**
  * Stores details for players attempting to log in

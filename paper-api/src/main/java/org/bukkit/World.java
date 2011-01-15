@@ -1,6 +1,13 @@
 
 package org.bukkit;
 
+import org.bukkit.entity.ItemDrop;
+import org.bukkit.entity.PoweredMinecart;
+import org.bukkit.entity.Minecart;
+import org.bukkit.entity.StorageMinecart;
+import org.bukkit.entity.Arrow;
+import org.bukkit.entity.Boat;
+
 /**
  * Represents a world.
  *

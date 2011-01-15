@@ -1,5 +1,6 @@
 package org.bukkit.fillr;
 
+import org.bukkit.entity.Player;
 import org.bukkit.*;
 import org.bukkit.plugin.PluginDescriptionFile;
 

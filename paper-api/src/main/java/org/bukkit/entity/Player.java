@@ -1,5 +1,5 @@
 
-package org.bukkit;
+package org.bukkit.entity;
 
 import java.net.InetSocketAddress;
 

@@ -1,7 +1,7 @@
 
 package org.bukkit.event.player;
 
-import org.bukkit.Player;
+import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 
 /**

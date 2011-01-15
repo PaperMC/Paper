@@ -1,7 +1,7 @@
 package org.bukkit.event.vehicle;
 
-import org.bukkit.LivingEntity;
-import org.bukkit.Vehicle;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Vehicle;
 import org.bukkit.event.Cancellable;
 
 /**

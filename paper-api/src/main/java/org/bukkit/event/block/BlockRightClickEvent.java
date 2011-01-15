@@ -3,7 +3,7 @@ package org.bukkit.event.block;
 import org.bukkit.Block;
 import org.bukkit.BlockFace;
 import org.bukkit.ItemStack;
-import org.bukkit.Player;
+import org.bukkit.entity.Player;
 
 /**
  * Not implemented yet

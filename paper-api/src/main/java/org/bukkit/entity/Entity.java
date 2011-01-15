@@ -1,5 +1,8 @@
 
-package org.bukkit;
+package org.bukkit.entity;
+
+import org.bukkit.Location;
+import org.bukkit.World;
 
 /**
  * Represents a base entity in the world
