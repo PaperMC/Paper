@@ -21,6 +21,16 @@ public interface World {
     public Block getBlockAt(int x, int y, int z);
 
     /**
+     * Gets the block type-id at the given location
+     *
+     * @param x X-coordinate of the block
+     * @param y Y-coordinate of the block
+     * @param z Z-coordinate of the block
+     * @return TypeId of the block at the given location
+     */
+    public int getBlockTypeIdAt(int x, int y, int z);
+
+    /**
      * Gets the highest non-air coordinate at the given (x,z) location
      * @param x X-coordinate of the blocks
      * @param z Z-coordinate of the blocks
