@@ -79,7 +79,7 @@ public enum Material {
     GLOWING_REDSTONE_ORE(74),
     REDSTONE_TORCH_OFF(75, RedstoneTorch.class),
     REDSTONE_TORCH_ON(76, RedstoneTorch.class),
-    STONE_BUTTON(77),
+    STONE_BUTTON(77, Button.class),
     SNOW(78),
     ICE(79),
     SNOW_BLOCK(80),
