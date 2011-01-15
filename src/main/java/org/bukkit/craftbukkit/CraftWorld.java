@@ -53,7 +53,11 @@ public class CraftWorld implements World {
 
         return block;
     }
-    
+
+    public int getBlockTypeIdAt(int x, int y, int z) {
+        return world.a(x, y, z);
+    }
+
     public int getHighestBlockYAt(int x, int z) {
         return world.d(x, z);
     }
