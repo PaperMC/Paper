@@ -257,7 +257,7 @@ public abstract class Event {
         /**
          * Called when a player is attempting to place a block
          *
-         * @see org.bukkit.event.block.BlockRightClickeEvent
+         * @see org.bukkit.event.block.BlockRightClickEvent
          */
         BLOCK_RIGHTCLICKED (Category.BLOCK),
 
@@ -366,14 +366,14 @@ public abstract class Event {
          * If a new chunk is being generated for loading, it will call
          * Type.CHUNK_GENERATION and then Type.CHUNK_LOADED upon completion
          *
-         * @see org.bukkit.event.world.ChunkLoadeEvent
+         * @see org.bukkit.event.world.ChunkLoadEvent
          */
         CHUNK_LOADED (Category.WORLD),
 
         /**
          * Called when a chunk is unloaded
          *
-         * @see org.bukkit.event.world.ChunkUnloadeEvent
+         * @see org.bukkit.event.world.ChunkUnloadEvent
          */
         CHUNK_UNLOADED (Category.WORLD),
 
