@@ -41,8 +41,28 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
         return items;
     }
 
+    public void setContents(ItemStack[] items) {
+        if (getInventory().getContents().length != items.length) {
+            throw new IllegalArgumentException("Invalid inventory size; expected "
+                    + getInventory().getContents().length);
+        }
+
+        net.minecraft.server.ItemStack[] mcItems = getInventory().getContents();
+
+        for (int i = 0; i < items.length; i++ ) {
+            ItemStack item = items[i];
+            if (item == null) {
+                mcItems[i] = null;
+            } else {
+                mcItems[i] = new net.minecraft.server.ItemStack(
+                        item.getTypeId(), item.getAmount(), item.getDamage());
+            }
+        }
+    }
+
     public void setItem(int index, ItemStack item) {
-        getInventory().a( index, new net.minecraft.server.ItemStack( item.getTypeId(), item.getAmount(), 0));
+        getInventory().a(index, new net.minecraft.server.ItemStack(
+                item.getTypeId(), item.getAmount(), item.getDamage()));
     }
 
     public boolean contains(int materialId) {
