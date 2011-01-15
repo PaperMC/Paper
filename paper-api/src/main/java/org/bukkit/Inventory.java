@@ -132,4 +132,38 @@ public interface Inventory {
      * @return The first empty Slot found.
      */
     public int firstEmpty();
+
+    /**
+     * Remove all stacks in the inventory matching the given materialId.
+     * 
+     * @param materialId The material to remove
+     */
+    public void remove(int materialId);
+
+    /**
+     * Remove all stacks in the inventory matching the given material.
+     * 
+     * @param material The material to remove
+     */
+    public void remove(Material material);
+
+    /**
+     * Remove all stacks in the inventory matching the given stack.
+     * This will only match a slot if both the type and the amount of the stack match
+     * 
+     * @param item The ItemStack to match against
+     */
+    public void remove(ItemStack item);
+
+    /**
+     * Clear out a particular slot in the index
+     * 
+     * @param index The index to empty.
+     */
+    public void clear(int index);
+
+    /**
+     * Clear out the whole index
+     */
+    public void clear();
 }
