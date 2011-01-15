@@ -209,7 +209,6 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
 
     public void a(int i, int j, int k) {
         U();
-        System.out.println("OPEN_WINDOW for WorkBench");
         a.b(((Packet) (new Packet100(bG, 1, "Crafting", 9))));
         ap = ((CraftingInventoryCB) (new CraftingInventoryWorkbenchCB(an, l, i, j, k)));
         ap.f = bG;
@@ -218,7 +217,6 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
 
     public void a(IInventory iinventory) {
         U();
-        System.out.println("OPEN_WINDOW for Chest");
         a.b(((Packet) (new Packet100(bG, 0, iinventory.b(), iinventory.h_()))));
         ap = ((CraftingInventoryCB) (new CraftingInventoryChestCB(((IInventory) (an)), iinventory)));
         ap.f = bG;
@@ -227,7 +225,6 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
 
     public void a(TileEntityFurnace tileentityfurnace) {
         U();
-        System.out.println("OPEN_WINDOW for Furnace");
         a.b(((Packet) (new Packet100(bG, 2, tileentityfurnace.b(), tileentityfurnace.h_()))));
         ap = ((CraftingInventoryCB) (new CraftingInventoryFurnaceCB(((IInventory) (an)), tileentityfurnace)));
         ap.f = bG;
@@ -236,7 +233,6 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
 
     public void a(TileEntityDispenser tileentitydispenser) {
         U();
-        System.out.println("OPEN_WINDOW for Dispenser");
         a.b(((Packet) (new Packet100(bG, 3, tileentitydispenser.b(), tileentitydispenser.h_()))));
         ap = ((CraftingInventoryCB) (new CraftingInventoryDispenserCB(((IInventory) (an)), tileentitydispenser)));
         ap.f = bG;
@@ -247,26 +243,20 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
         if (craftinginventorycb.a(i) instanceof SlotCrafting) {
             return;
         }
-        System.out.print("SET_SLOT for window: "+craftinginventorycb.f+" index: "+i+"and stack: "+itemstack);
         if (am) {
-            System.out.println(" -- NOT SEND!");
             return;
         } else {
-            System.out.println(" -- SEND!");
             a.b(((Packet) (new Packet103(craftinginventorycb.f, i, itemstack))));
             return;
         }
     }
 
     public void a(CraftingInventoryCB craftinginventorycb, List list) {
-        System.out.println("WINDOW_SLOTS for window: "+craftinginventorycb.f );
         a.b(((Packet) (new Packet104(craftinginventorycb.f, list))));
-        System.out.println("SET_SLOT for item in hand: "+i+"and stack: "+an.i());
         a.b(((Packet) (new Packet103(-1, -1, an.i()))));
     }
 
     public void a(CraftingInventoryCB craftinginventorycb, int i, int j) {
-        System.out.println(String.format("UPDATE_PROGRESS_BAR for window: %d [%d;%d]", craftinginventorycb.f, i, j));
         a.b(((Packet) (new Packet105(craftinginventorycb.f, i, j))));
     }
 
