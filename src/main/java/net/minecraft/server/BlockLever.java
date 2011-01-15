@@ -164,7 +164,7 @@ public class BlockLever extends Block {
         // Craftbukkit start
         int old = (j1 != 8) ? 1 : 0;
         int current = (j1 == 8) ? 1 : 0;
-        BlockRedstoneEvent bre = new BlockRedstoneEvent(block, BlockFace.Self, old, current);
+        BlockRedstoneEvent bre = new BlockRedstoneEvent(block, BlockFace.SELF, old, current);
         ((WorldServer) world).getServer().getPluginManager().callEvent(bre);
         // Craftbukkit end
 

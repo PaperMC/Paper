@@ -92,7 +92,7 @@ public class BlockFlowing extends BlockFluids {
         CraftBlock source = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i1, j1, k1);
         if (l(world, i1, j1 - 1, k1)) {
             // Craftbucket send "down" to the server
-            BlockFromToEvent blockFlow = new BlockFromToEvent(Type.BLOCK_FLOW, source, BlockFace.Down);
+            BlockFromToEvent blockFlow = new BlockFromToEvent(Type.BLOCK_FLOW, source, BlockFace.DOWN);
             ((WorldServer) world).getServer().getPluginManager().callEvent(blockFlow);
 
             if (!blockFlow.isCancelled()) {
@@ -114,7 +114,7 @@ public class BlockFlowing extends BlockFluids {
                 return;
             }
             // CraftBukkit start - all four cardinal directions. Do not change the order!
-            BlockFace[] faces = new BlockFace[]{ BlockFace.North, BlockFace.South, BlockFace.East, BlockFace.West };
+            BlockFace[] faces = new BlockFace[]{ BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST };
             int index = 0;
             for (BlockFace currentFace: faces) {
                 if (aflag[index]) {

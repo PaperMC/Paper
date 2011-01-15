@@ -168,7 +168,7 @@ public class CraftBlock implements Block {
      * above 100,100,100.
      * <pre>
      * Block block = world.getBlockAt(100,100,100);
-     * Block shower = block.getFace(BlockFace.Up, 2);
+     * Block shower = block.getFace(BlockFace.UP, 2);
      * shower.setType(Material.WATER);
      * </pre>
      *
@@ -201,7 +201,7 @@ public class CraftBlock implements Block {
      * Block current = world.getBlockAt(100, 100, 100);
      * Block target = world.getBlockAt(100, 101, 100);
      *
-     * current.getFace(target) == BlockFace.Up;
+     * current.getFace(target) == BlockFace.UP;
      * </pre>
      * <br />
      * If the given block is not connected to this block, null may be returned
@@ -231,7 +231,7 @@ public class CraftBlock implements Block {
     }
     
     /**
-     * Notch uses a 0-5 to mean Down, Up, East, West, North, South
+     * Notch uses a 0-5 to mean DOWN, UP, EAST, WEST, NORTH, SOUTH
      * in that order all over. This method is convenience to convert for us.
      * 
      * @return BlockFace the BlockFace represented by this number
@@ -239,19 +239,19 @@ public class CraftBlock implements Block {
     public static BlockFace notchToBlockFace(int notch) {
         switch (notch) {
         case 0:
-            return BlockFace.Down;
+            return BlockFace.DOWN;
         case 1:
-            return BlockFace.Up;
+            return BlockFace.UP;
         case 2:
-            return BlockFace.East;
+            return BlockFace.EAST;
         case 3:
-            return BlockFace.West;
+            return BlockFace.WEST;
         case 4:
-            return BlockFace.North;
+            return BlockFace.NORTH;
         case 5:
-            return BlockFace.South;
+            return BlockFace.SOUTH;
         default:
-            return BlockFace.Self;
+            return BlockFace.SELF;
         }
     }
 

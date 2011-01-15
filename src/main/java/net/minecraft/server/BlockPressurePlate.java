@@ -120,7 +120,7 @@ public class BlockPressurePlate extends Block {
 
         // Craftbukkit start
         CraftBlock block = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
-        BlockRedstoneEvent bre = new BlockRedstoneEvent(block, BlockFace.Self, flag ? 15 : 0, flag1 ? 15 : 0);
+        BlockRedstoneEvent bre = new BlockRedstoneEvent(block, BlockFace.SELF, flag ? 15 : 0, flag1 ? 15 : 0);
         ((WorldServer) world).getServer().getPluginManager().callEvent(bre);
         flag1 = bre.getNewCurrent() > 0;
         // Craftbukkit end

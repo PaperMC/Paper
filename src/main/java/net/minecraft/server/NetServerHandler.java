@@ -385,7 +385,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         if (blockClicked != null && itemstack != null) {
             blockFace = CraftBlock.notchToBlockFace(packet15place.d);
         } else {
-            blockFace = BlockFace.Self;
+            blockFace = BlockFace.SELF;
         }
 
         // CraftBukkit if rightclick decremented the item, always send the update packet.
