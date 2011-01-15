@@ -1,8 +1,10 @@
-package org.bukkit.craftbukkit;
+package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntityItem;
 import org.bukkit.entity.ItemDrop;
 import org.bukkit.ItemStack;
+import org.bukkit.craftbukkit.CraftItemStack;
+import org.bukkit.craftbukkit.CraftServer;
 
 /**
  * Represents an item drop.

@@ -1,5 +1,7 @@
 package org.bukkit.craftbukkit;
 
+import org.bukkit.craftbukkit.entity.CraftEntity;
+
 /**
  * Indicates that an object has a method to get its CraftBukkit-equivalent
  * CraftEntity object from its Minecraft net.minecraft.server.Entity object.

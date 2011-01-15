@@ -1,11 +1,13 @@
 
-package org.bukkit.craftbukkit;
+package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.Entity;
 import net.minecraft.server.EntityArrow;
 import net.minecraft.server.EntityEgg;
 import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntitySnowball;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
 
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Egg;

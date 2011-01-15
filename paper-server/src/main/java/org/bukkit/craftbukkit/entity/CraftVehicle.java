@@ -1,5 +1,7 @@
-package org.bukkit.craftbukkit;
+package org.bukkit.craftbukkit.entity;
 
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Vehicle;
 
