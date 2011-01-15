@@ -1,36 +1,12 @@
 package org.bukkit.craftbukkit;
 
 import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.craftbukkit.entity.CraftPoweredMinecart;
-import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.craftbukkit.entity.CraftEgg;
-import org.bukkit.craftbukkit.entity.CraftBoat;
-import org.bukkit.craftbukkit.entity.CraftLivingEntity;
-import org.bukkit.craftbukkit.entity.CraftSnowball;
-import org.bukkit.craftbukkit.entity.CraftHumanEntity;
-import org.bukkit.craftbukkit.entity.CraftPlayer;
-import org.bukkit.craftbukkit.entity.CraftArrow;
-import org.bukkit.craftbukkit.entity.CraftMinecart;
-import org.bukkit.craftbukkit.entity.CraftStorageMinecart;
-import org.bukkit.craftbukkit.entity.CraftItemDrop;
+import org.bukkit.craftbukkit.entity.*;
+import org.bukkit.entity.*;
 import java.util.HashMap;
 import java.util.Map;
-
-import net.minecraft.server.EntityMinecart;
 import java.util.Random;
-
-import net.minecraft.server.EntityBoat;
-import net.minecraft.server.EntityEgg;
-import net.minecraft.server.EntityItem;
-import net.minecraft.server.EntityLiving;
-import net.minecraft.server.EntityPlayerMP;
-import net.minecraft.server.EntitySnowball;
-import net.minecraft.server.EntityArrow;
-import net.minecraft.server.EntityPlayer;
-import net.minecraft.server.TileEntity;
-import net.minecraft.server.WorldGenBigTree;
-import net.minecraft.server.WorldServer;
-import net.minecraft.server.WorldGenTrees;
+import net.minecraft.server.*;
 import org.bukkit.entity.Arrow;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Boat;
@@ -39,9 +15,6 @@ import org.bukkit.entity.ItemDrop;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 import org.bukkit.Location;
-import org.bukkit.entity.Minecart;
-import org.bukkit.entity.PoweredMinecart;
-import org.bukkit.entity.StorageMinecart;
 import org.bukkit.World;
 
 public class CraftWorld implements World {
@@ -105,8 +78,7 @@ public class CraftWorld implements World {
             block = new CraftBlock(this, x, y, z, type, data);
             blockCache.put(loc, block);
         } else {
-            block.type = type;
-            block.data = data;
+            block.update();
         }
 
         return block;
