@@ -1,5 +1,5 @@
 
-package org.bukkit.craftbukkit;
+package org.bukkit.craftbukkit.block;
 
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Biome;
@@ -7,6 +7,8 @@ import org.bukkit.block.Block;
 import net.minecraft.server.MobSpawnerBase;
 import org.bukkit.*;
 import org.bukkit.block.BlockState;
+import org.bukkit.craftbukkit.CraftChunk;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.block.CraftSign;
 
