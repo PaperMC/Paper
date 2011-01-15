@@ -6,9 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.bukkit.material.Dye;
-import org.bukkit.material.MaterialData;
-import org.bukkit.material.Wool;
+import org.bukkit.material.*;
 
 /**
  * An enum of all material ids accepted by the official server + client
@@ -54,12 +52,12 @@ public enum Material {
     BOOKSHELF(47),
     MOSSY_COBBLESTONE(48),
     OBSIDIAN(49),
-    TORCH(50),
+    TORCH(50, Torch.class),
     FIRE(51),
     MOB_SPAWNER(52),
     WOOD_STAIRS(53),
     CHEST(54),
-    REDSTONE_WIRE(55),
+    REDSTONE_WIRE(55, RedstoneWire.class),
     DIAMOND_ORE(56),
     DIAMOND_BLOCK(57),
     WORKBENCH(58),
@@ -79,8 +77,8 @@ public enum Material {
     WOOD_PLATE(72),
     REDSTONE_ORE(73),
     GLOWING_REDSTONE_ORE(74),
-    REDSTONE_TORCH_OFF(75),
-    REDSTONE_TORCH_ON(76),
+    REDSTONE_TORCH_OFF(75, RedstoneTorch.class),
+    REDSTONE_TORCH_ON(76, RedstoneTorch.class),
     STONE_BUTTON(77),
     SNOW(78),
     ICE(79),
@@ -172,7 +170,7 @@ public enum Material {
     MINECART(328),
     SADDLE(329),
     IRON_DOOR(330),
-    REDSTONE(331),
+    REDSTONE(331, RedstoneWire.class),
     SNOW_BALL(332),
     BOAT(333),
     LEATHER(334),
