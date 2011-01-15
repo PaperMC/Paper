@@ -42,7 +42,8 @@ public abstract class JavaPlugin implements Plugin {
     }
 
     /**
-     * Returns the folder that the plugin data's files are located in.
+     * Returns the folder that the plugin data's files are located in. The
+     * folder may not yet exist.
      * 
      * @return
      */

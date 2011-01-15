@@ -100,7 +100,7 @@ public final class JavaPluginLoader implements PluginLoader {
             dataFolder = new File(file.getParentFile(), filename + "_");
         }
         
-        dataFolder.mkdirs();
+        //dataFolder.mkdirs();
         
         return dataFolder;
     }
