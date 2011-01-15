@@ -28,13 +28,8 @@ import org.yaml.snakeyaml.reader.UnicodeReader;
  *     fire:
  *         spread: false
  *         blocks: [cloth, rock, glass]
- * craftbook:
- *     midi: true
  * sturmeh:
  *     cool: false
- *     lame: true
- *     likes:
- *         cuteasianboys: true
  *     eats:
  *         babies: true</pre>
  * 
