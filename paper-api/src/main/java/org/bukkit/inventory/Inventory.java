@@ -53,6 +53,13 @@ public interface Inventory {
     public ItemStack[] getContents();
 
     /**
+     * Set the inventory's contents
+     * 
+     * @return All the ItemStacks from all slots
+     */
+    public void setContents(ItemStack[] items);
+
+    /**
      * Check if the inventory contains any ItemStacks with the given materialId
      * 
      * @param materialId The materialId to check for
