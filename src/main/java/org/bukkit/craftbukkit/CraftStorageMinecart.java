@@ -3,7 +3,7 @@ package org.bukkit.craftbukkit;
 import net.minecraft.server.EntityMinecart;
 
 import org.bukkit.Inventory;
-import org.bukkit.StorageMinecart;
+import org.bukkit.entity.StorageMinecart;
 
 /**
  * A storage minecart.

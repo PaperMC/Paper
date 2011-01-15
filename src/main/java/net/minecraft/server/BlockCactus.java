@@ -1,7 +1,7 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import org.bukkit.LivingEntity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.CraftEntity;
 import org.bukkit.craftbukkit.CraftLivingEntity;

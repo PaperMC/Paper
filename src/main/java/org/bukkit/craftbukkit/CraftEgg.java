@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit;
 
 import net.minecraft.server.EntityEgg;
-import org.bukkit.Egg;
+import org.bukkit.entity.Egg;
 
 /**
  * An egg.

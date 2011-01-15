@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit;
 
-import org.bukkit.Arrow;
+import org.bukkit.entity.Arrow;
 import net.minecraft.server.EntityArrow;
 
 /**

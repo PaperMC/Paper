@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit;
 
-import org.bukkit.Entity;
-import org.bukkit.Vehicle;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Vehicle;
 
 /**
  * A vehicle.

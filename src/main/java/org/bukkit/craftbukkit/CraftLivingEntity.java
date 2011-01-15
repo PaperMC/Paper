@@ -7,11 +7,11 @@ import net.minecraft.server.EntityEgg;
 import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntitySnowball;
 
-import org.bukkit.Arrow;
-import org.bukkit.Egg;
-import org.bukkit.LivingEntity;
-import org.bukkit.Snowball;
-import org.bukkit.Vehicle;
+import org.bukkit.entity.Arrow;
+import org.bukkit.entity.Egg;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Snowball;
+import org.bukkit.entity.Vehicle;
 
 public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     private EntityLiving entity;
@@ -87,7 +87,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             return null;
         }
         
-        org.bukkit.Entity vehicle = ((CraftWorld)getWorld()).toCraftEntity(entity.k);
+        org.bukkit.entity.Entity vehicle = ((CraftWorld)getWorld()).toCraftEntity(entity.k);
         if (vehicle instanceof Vehicle) {
             return (Vehicle)vehicle;
         }

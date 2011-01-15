@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit;
 
 import net.minecraft.server.EntityItem;
-import org.bukkit.ItemDrop;
+import org.bukkit.entity.ItemDrop;
 import org.bukkit.ItemStack;
 
 /**

@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit;
 
 import net.minecraft.server.EntitySnowball;
-import org.bukkit.Snowball;
+import org.bukkit.entity.Snowball;
 
 /**
  * A snowball.

@@ -6,7 +6,7 @@ import org.bukkit.Location;
 import org.bukkit.Vector;
 import org.bukkit.World;
 
-public abstract class CraftEntity implements org.bukkit.Entity {
+public abstract class CraftEntity implements org.bukkit.entity.Entity {
     protected final CraftServer server;
     private Entity entity;
 
@@ -37,7 +37,7 @@ public abstract class CraftEntity implements org.bukkit.Entity {
         entity.b(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
     }
 
-    public void teleportTo(org.bukkit.Entity destination) {
+    public void teleportTo(org.bukkit.entity.Entity destination) {
         teleportTo(destination.getLocation());
     }
 
