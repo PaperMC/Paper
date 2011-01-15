@@ -148,8 +148,8 @@ public class CraftWorld implements World {
         double zs = world.l.nextFloat() * 0.7F + (1.0F - 0.7F) * 0.5D;
         loc = loc.clone();
         loc.setX(loc.getX() + xs);
-        loc.setX(loc.getY() + ys);
-        loc.setX(loc.getZ() + zs);
+        loc.setY(loc.getY() + ys);
+        loc.setZ(loc.getZ() + zs);
         return dropItem(loc, item);
     }
 
