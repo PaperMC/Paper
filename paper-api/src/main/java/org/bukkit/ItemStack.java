@@ -25,7 +25,7 @@ public class ItemStack {
     }
 
     public ItemStack(final Material type, final int amount) {
-        this(type.getID(), amount);
+        this(type.getId(), amount);
     }
 
     public ItemStack(final int type, final int amount, final byte damage) {
@@ -33,7 +33,7 @@ public class ItemStack {
     }
 
     public ItemStack(final Material type, final int amount, final byte damage) {
-        this(type.getID(), amount, damage);
+        this(type.getId(), amount, damage);
     }
 
     public ItemStack(final int type, final int amount, final byte damage, final byte data) {
@@ -44,7 +44,7 @@ public class ItemStack {
     }
 
     public ItemStack(final Material type, final int amount, final byte damage, final byte data) {
-        this(type.getID(), amount, damage, data);
+        this(type.getId(), amount, damage, data);
     }
 
     /**
@@ -64,26 +64,26 @@ public class ItemStack {
      * @param type New type to set the items in this stack to
      */
     public void setType(Material type) {
-        setTypeID(type.getID());
+        setTypeId(type.getId());
     }
 
     /**
-     * Gets the type ID of this item
+     * Gets the type id of this item
      *
-     * @return Type ID of the items in this stack
+     * @return Type Id of the items in this stack
      */
-    public int getTypeID() {
+    public int getTypeId() {
         return type;
     }
 
     /**
-     * Sets the type ID of this item<br />
+     * Sets the type id of this item<br />
      * <br />
      * Note that in doing so you will reset the MaterialData for this stack
      *
-     * @param type New type ID to set the items in this stack to
+     * @param type New type id to set the items in this stack to
      */
-    public void setTypeID(int type) {
+    public void setTypeId(int type) {
         this.type = type;
         createData((byte)0);
     }
@@ -191,6 +191,6 @@ public class ItemStack {
     }
 
     public boolean equals(ItemStack item) {
-        return item.getAmount() == getAmount() && item.getTypeID() == getTypeID();
+        return item.getAmount() == getAmount() && item.getTypeId() == getTypeId();
     }
 }

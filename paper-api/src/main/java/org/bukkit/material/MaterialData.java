@@ -25,7 +25,7 @@ public class MaterialData {
     }
 
     public MaterialData(final Material type, final byte data) {
-        this(type.getID(), data);
+        this(type.getId(), data);
     }
 
     /**
@@ -56,9 +56,9 @@ public class MaterialData {
     }
 
     /**
-     * Gets the Material ID that this MaterialData represents
+     * Gets the Material Id that this MaterialData represents
      *
-     * @return Material ID represented by this MaterialData
+     * @return Material Id represented by this MaterialData
      */
     public int getItemTypeId() {
         return type;

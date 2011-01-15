@@ -40,7 +40,7 @@ public class BlockCanBuildEvent extends BlockEvent {
         return Material.getMaterial(material);
     }
 
-    public int getMaterialID() {
+    public int getMaterialId() {
         return material;
     }
 }

@@ -34,9 +34,9 @@ public interface Entity {
     public void teleportTo(Entity destination);
 
     /**
-     * Returns a unique ID for this entity
+     * Returns a unique id for this entity
      * 
-     * @return Entity ID
+     * @return Entity id
      */
-    public int getEntityID();
+    public int getEntityId();
 }

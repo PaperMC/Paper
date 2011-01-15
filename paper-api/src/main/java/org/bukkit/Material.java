@@ -11,7 +11,7 @@ import org.bukkit.material.MaterialData;
 import org.bukkit.material.Wool;
 
 /**
- * An enum of all material IDs accepted by the official server + client
+ * An enum of all material ids accepted by the official server + client
  */
 public enum Material {
     AIR(0),
@@ -213,7 +213,7 @@ public enum Material {
         this.data = data;
     }
 
-    public int getID() {
+    public int getId() {
         return id;
     }
 
@@ -260,9 +260,8 @@ public enum Material {
     
     static {
         for (Material material : values()) {
-            lookupId.put(material.getID(), material);
+            lookupId.put(material.getId(), material);
             lookupName.put(material.name(), material);
         }
     }
-    
 }

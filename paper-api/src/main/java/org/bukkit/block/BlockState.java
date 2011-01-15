@@ -38,11 +38,11 @@ public interface BlockState {
     Material getType();
 
     /**
-     * Gets the type-ID of this block
+     * Gets the type-id of this block
      *
-     * @return block type-ID
+     * @return block type-id
      */
-    int getTypeID();
+    int getTypeId();
 
     /**
      * Gets the light level between 0-15
@@ -101,11 +101,11 @@ public interface BlockState {
     void setType(Material type);
 
     /**
-     * Sets the type-ID of this block
+     * Sets the type-id of this block
      *
-     * @param type Type-ID to change this block to
+     * @param type Type-Id to change this block to
      */
-    void setTypeID(int type);
+    void setTypeId(int type);
 
     /**
      * Attempts to update the block represented by this state, setting it to the
