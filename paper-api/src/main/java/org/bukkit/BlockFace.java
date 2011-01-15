@@ -4,17 +4,17 @@ package org.bukkit;
  * Represents the face of a block
  */
 public enum BlockFace {
-    North(-1, 0, 0),
-    East(0, 0, -1),
-    South(1, 0, 0),
-    West(0, 0, 1),
-    Up(0, 1, 0),
-    Down(0, -1, 0),
-    NorthEast(North, East),
-    NorthWest(North, West),
-    SouthEast(South, East),
-    SouthWest(South, West),
-    Self(0, 0, 0);
+    NORTH(-1, 0, 0),
+    EAST(0, 0, -1),
+    SOUTH(1, 0, 0),
+    WEST(0, 0, 1),
+    UP(0, 1, 0),
+    DOWN(0, -1, 0),
+    NORTH_EAST(NORTH, EAST),
+    NORTH_WEST(NORTH, WEST),
+    SOUTH_EAST(SOUTH, EAST),
+    SOUTH_WEST(SOUTH, WEST),
+    SELF(0, 0, 0);
 
     private final int modX;
     private final int modY;
