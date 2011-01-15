@@ -47,4 +47,11 @@ public interface Player extends HumanEntity {
      * @return the player's address
      */
     public InetSocketAddress getAddress();
+
+    /**
+     * Kicks player with custom kick message.
+     *
+     * @return
+     */
+    public void kickPlayer(String message);
 }
