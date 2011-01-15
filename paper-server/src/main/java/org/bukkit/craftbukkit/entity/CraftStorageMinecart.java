@@ -2,7 +2,7 @@ package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntityMinecart;
 
-import org.bukkit.Inventory;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.craftbukkit.CraftInventory;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.StorageMinecart;

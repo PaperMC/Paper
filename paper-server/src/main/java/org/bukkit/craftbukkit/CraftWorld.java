@@ -34,7 +34,7 @@ import org.bukkit.Block;
 import org.bukkit.entity.Boat;
 import org.bukkit.Chunk;
 import org.bukkit.entity.ItemDrop;
-import org.bukkit.ItemStack;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.Location;
 import org.bukkit.entity.Minecart;
 import org.bukkit.entity.PoweredMinecart;

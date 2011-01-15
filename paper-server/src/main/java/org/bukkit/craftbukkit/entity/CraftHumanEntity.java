@@ -3,8 +3,8 @@ package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntityPlayer;
 import org.bukkit.entity.HumanEntity;
-import org.bukkit.ItemStack;
-import org.bukkit.PlayerInventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.craftbukkit.CraftInventoryPlayer;
 import org.bukkit.craftbukkit.CraftServer;
 

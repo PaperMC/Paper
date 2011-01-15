@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit;
 
-import org.bukkit.ItemStack;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.Material;
 
 public class CraftItemStack extends ItemStack {

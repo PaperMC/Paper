@@ -2,8 +2,8 @@ package org.bukkit.craftbukkit;
 
 import net.minecraft.server.InventoryPlayer;
 
-import org.bukkit.ItemStack;
-import org.bukkit.PlayerInventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 
 public class CraftInventoryPlayer extends CraftInventory implements PlayerInventory {
     public CraftInventoryPlayer(net.minecraft.server.InventoryPlayer inventory) {
