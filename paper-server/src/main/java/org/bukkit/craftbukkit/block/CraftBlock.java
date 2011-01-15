@@ -22,7 +22,7 @@ public class CraftBlock implements Block {
     protected byte data;
     protected byte light;
 
-    protected CraftBlock(final CraftWorld world, final int x, final int y, final int z, final int type, final byte data) {
+    public CraftBlock(final CraftWorld world, final int x, final int y, final int z, final int type, final byte data) {
         this.world = world;
         this.x = x;
         this.y = y;
@@ -304,5 +304,10 @@ public class CraftBlock implements Block {
         }
 
         return null;
+    }
+
+    public void update() {
+        type = world.getHandle().a(x, y, z);
+        data = (byte)world.getHandle().b(x, y, z);
     }
 }
