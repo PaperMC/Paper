@@ -4,10 +4,10 @@ import java.util.HashMap;
 
 import net.minecraft.server.IInventory;
 
-import org.bukkit.ItemStack;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.Material;
 
-public class CraftInventory implements org.bukkit.Inventory {
+public class CraftInventory implements org.bukkit.inventory.Inventory {
     protected IInventory inventory;
 
     public CraftInventory(IInventory inventory) {
