@@ -8,6 +8,7 @@ import org.bukkit.World;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.CraftChunk;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.material.MaterialData;
 
 public class CraftBlockState implements BlockState {
     private final CraftWorld world;
@@ -16,7 +17,7 @@ public class CraftBlockState implements BlockState {
     private final int y;
     private final int z;
     protected int type;
-    protected byte data;
+    protected MaterialData data;
     protected byte light;
 
     public CraftBlockState(final Block block) {
@@ -25,9 +26,10 @@ public class CraftBlockState implements BlockState {
         this.y = block.getY();
         this.z = block.getZ();
         this.type = block.getTypeID();
-        this.data = block.getData();
         this.light = block.getLightLevel();
         this.chunk = (CraftChunk)block.getChunk();
+
+        createData(block.getData());
     }
 
     /**
@@ -80,9 +82,21 @@ public class CraftBlockState implements BlockState {
      *
      * @param data New block specific metadata
      */
-    public void setData(final byte data) {
-        this.data = data;
-        world.getHandle().c(x, y, z, data);
+    public void setData(final MaterialData data) {
+        world.getHandle().c(x, y, z, data.getData());
+
+        Material mat = getType();
+
+        if ((mat == null) || (mat.getData() == null)) {
+            this.data = data;
+        } else {
+            if ((data.getClass() == mat.getData()) || (data.getClass() == MaterialData.class)) {
+                this.data = data;
+            } else {
+                throw new IllegalArgumentException("Provided data is not of type "
+                        + mat.getData().getName() + ", found " + data.getClass().getName());
+            }
+        }
     }
 
     /**
@@ -90,7 +104,7 @@ public class CraftBlockState implements BlockState {
      *
      * @return block specific metadata
      */
-    public byte getData() {
+    public MaterialData getData() {
         return data;
     }
 
@@ -111,6 +125,8 @@ public class CraftBlockState implements BlockState {
     public void setTypeID(final int type) {
         this.type = type;
         world.getHandle().e(x, y, z, type);
+        
+        createData((byte)0);
     }
 
     /**
@@ -148,7 +164,7 @@ public class CraftBlockState implements BlockState {
         return update(false);
     }
 
-    public boolean update(boolean force) { // TODO
+    public boolean update(boolean force) {
         Block block = getBlock();
 
         synchronized (block) {
@@ -160,9 +176,18 @@ public class CraftBlockState implements BlockState {
                 }
             }
 
-            block.setData(data);
+            block.setData(data.getData());
         }
 
         return true;
+    }
+
+    private void createData(final byte data) {
+        Material mat = Material.getMaterial(type);
+        if (mat == null) {
+            this.data = new MaterialData(type, data);
+        } else {
+            this.data = mat.getNewData(data);
+        }
     }
 }
