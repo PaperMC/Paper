@@ -94,4 +94,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         hash = 97 * hash + (this.getName() != null ? this.getName().hashCode() : 0);
         return hash;
     }
+
+    public void kickPlayer(String message) {
+        entity.a.a(message);
+    }
+
 }
