@@ -6,6 +6,7 @@ import org.bukkit.Server;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoader;
+import org.bukkit.util.config.Configuration;
 
 /**
  * Represents a Java plugin
@@ -16,6 +17,7 @@ public abstract class JavaPlugin implements Plugin {
     private final Server server;
     private final File file;
     private final PluginDescriptionFile description;
+    private final File dataFolder;
     private final ClassLoader classLoader;
 
     /**
@@ -24,15 +26,28 @@ public abstract class JavaPlugin implements Plugin {
      * @param pluginLoader PluginLoader that is responsible for this plugin
      * @param instance Server instance that is running this plugin
      * @param desc PluginDescriptionFile containing metadata on this plugin
+     * @param folder Folder containing the plugin's data
      * @param plugin File containing this plugin
      * @param cLoader ClassLoader which holds this plugin
      */
-    public JavaPlugin(PluginLoader pluginLoader, Server instance, PluginDescriptionFile desc, File plugin, ClassLoader cLoader) {
+    public JavaPlugin(PluginLoader pluginLoader, Server instance,
+            PluginDescriptionFile desc, File folder, File plugin,
+            ClassLoader cLoader) {
         loader = pluginLoader;
         server = instance;
         file = plugin;
         description = desc;
+        dataFolder = folder;
         classLoader = cLoader;
+    }
+
+    /**
+     * Returns the folder that the plugin data's files are located in.
+     * 
+     * @return
+     */
+    public File getDataFolder() {
+        return dataFolder;
     }
 
     /**
@@ -78,6 +93,18 @@ public abstract class JavaPlugin implements Plugin {
      */
     public PluginDescriptionFile getDescription() {
         return description;
+    }
+    
+    /**
+     * Returns the main configuration file. It will be loaded.
+     * 
+     * @return
+     */
+    public Configuration getConfiguration() {
+        Configuration config =
+                new Configuration(new File(dataFolder, "config.yaml"));
+        config.load();
+        return config;
     }
 
     /**

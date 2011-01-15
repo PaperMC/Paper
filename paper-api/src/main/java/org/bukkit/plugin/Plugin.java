@@ -1,18 +1,34 @@
 
 package org.bukkit.plugin;
 
+import java.io.File;
 import org.bukkit.Server;
+import org.bukkit.util.config.Configuration;
 
 /**
  * Represents a Plugin
  */
 public interface Plugin {
     /**
+     * Returns the folder that the plugin data's files are located in.
+     * 
+     * @return
+     */
+    public File getDataFolder();
+    
+    /**
      * Returns the plugin.yaml file containing the details for this plugin
      *
      * @return Contents of the plugin.yaml file
      */
     public PluginDescriptionFile getDescription();
+    
+    /**
+     * Returns the main configuration file. It should be loaded.
+     * 
+     * @return
+     */
+    public Configuration getConfiguration();
 
     /**
      * Gets the associated PluginLoader responsible for this plugin
