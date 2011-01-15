@@ -2,7 +2,7 @@
 package org.bukkit.craftbukkit.block;
 
 import net.minecraft.server.TileEntitySign;
-import org.bukkit.Block;
+import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.craftbukkit.CraftWorld;
 

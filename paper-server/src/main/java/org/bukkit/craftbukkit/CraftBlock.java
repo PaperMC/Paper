@@ -1,6 +1,9 @@
 
 package org.bukkit.craftbukkit;
 
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.Biome;
+import org.bukkit.block.Block;
 import net.minecraft.server.MobSpawnerBase;
 import org.bukkit.*;
 import org.bukkit.block.BlockState;
