@@ -1,6 +1,8 @@
-package org.bukkit;
+package org.bukkit.util;
 
 import java.util.Random;
+import org.bukkit.Location;
+import org.bukkit.World;
 
 /**
  * Represents a mutable vector. Because the components of Vectors are mutable,

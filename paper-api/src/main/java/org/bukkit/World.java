@@ -3,6 +3,7 @@ package org.bukkit;
 
 import org.bukkit.block.Block;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.Vector;
 import org.bukkit.entity.ItemDrop;
 import org.bukkit.entity.PoweredMinecart;
 import org.bukkit.entity.Minecart;

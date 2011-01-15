@@ -1,6 +1,8 @@
 
 package org.bukkit;
 
+import org.bukkit.util.Vector;
+
 /**
  * Represents a 3-dimensional position in a world
  */

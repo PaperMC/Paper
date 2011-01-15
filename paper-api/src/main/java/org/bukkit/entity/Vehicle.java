@@ -1,6 +1,6 @@
 package org.bukkit.entity;
 
-import org.bukkit.Vector;
+import org.bukkit.util.Vector;
 
 /**
  * Represents a vehicle entity.
