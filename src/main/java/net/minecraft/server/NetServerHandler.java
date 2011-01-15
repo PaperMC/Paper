@@ -13,8 +13,8 @@ import org.bukkit.craftbukkit.CraftItemStack;
 import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.Event.Type;
-import org.bukkit.event.block.BlockDamagedEvent;
-import org.bukkit.event.block.BlockRightClickedEvent;
+import org.bukkit.event.block.BlockDamageEvent;
+import org.bukkit.event.block.BlockRightClickEvent;
 import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerItemEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -291,13 +291,13 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         if (packet14blockdig.e == 0) {
             if (i2 > 16 || flag) {
                 if(blockId > 0) {
-                    BlockDamagedEvent event;
+                    BlockDamageEvent event;
                     // If the amount of damage that the player is going to do to the block
                     // is >= 1, then the block is going to break (eg, flowers, torches)
                     if (damage >= 1.0F) {
-                        event = new BlockDamagedEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.BROKEN, player);
+                        event = new BlockDamageEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.BROKEN, player);
                     } else {
-                        event = new BlockDamagedEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.STARTED, player);
+                        event = new BlockDamageEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.STARTED, player);
                     }
                     server.getPluginManager().callEvent(event);
                     if (!event.isCancelled()) {
@@ -309,7 +309,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             // CraftBukkit start - Get last block that the player hit
             // Otherwise the block is a Bedrock @(0,0,0)
             block = (CraftBlock) player.getWorld().getBlockAt(lastX, lastY, lastZ);
-            BlockDamagedEvent event = new BlockDamagedEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.STOPPED, player);
+            BlockDamageEvent event = new BlockDamageEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.STOPPED, player);
             server.getPluginManager().callEvent(event);
             if (!event.isCancelled()) {
                 e.c.a();
@@ -318,13 +318,13 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         } else if (packet14blockdig.e == 1) {
             if (i2 > 16 || flag) {
                 // CraftBukkit start
-                BlockDamagedEvent event;
+                BlockDamageEvent event;
                 // If the amount of damage going to the block plus the current amount
                 // of damage is greater than 1, the block is going to break.
                 if (e.c.d + damage  >= 1.0F) {
-                    event = new BlockDamagedEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.BROKEN, player);
+                    event = new BlockDamageEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.BROKEN, player);
                 } else {
-                    event = new BlockDamagedEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.DIGGING, player);
+                    event = new BlockDamageEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.DIGGING, player);
                 }
                 server.getPluginManager().callEvent(event);
                 if (!event.isCancelled()) {
@@ -439,7 +439,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             // CraftBukkit start - spawn proection moved to ItemBlock!!!
             CraftItemStack craftItem = new CraftItemStack(itemstack);
             CraftPlayer player = new CraftPlayer(server, e);
-            BlockRightClickedEvent brce = new BlockRightClickedEvent(Type.BLOCK_RIGHTCLICKED, blockClicked, blockFace, craftItem, player);
+            BlockRightClickEvent brce = new BlockRightClickEvent(Type.BLOCK_RIGHTCLICKED, blockClicked, blockFace, craftItem, player);
             server.getPluginManager().callEvent(brce);
 
             e.c.a(((EntityPlayer) (e)), ((World) (d.e)), itemstack, l, i1, j1, k1);

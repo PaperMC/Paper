@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.CraftEntity;
 import org.bukkit.craftbukkit.CraftLivingEntity;
 import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.event.entity.EntityDamagedEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 // CraftBukkit end
 
 import java.util.List;
@@ -476,7 +476,7 @@ public abstract class Entity {
                     defender = new CraftLivingEntity(server, (EntityLiving)this);
                 }
 
-                EntityDamagedEvent ede = new EntityDamagedEvent(defender, EntityDamagedEvent.DamageCause.FIRE, i1);
+                EntityDamageEvent ede = new EntityDamageEvent(defender, EntityDamageEvent.DamageCause.FIRE, i1);
                 server.getPluginManager().callEvent(ede);
 
                 if (ede.isCancelled()) return;

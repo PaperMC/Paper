@@ -5,9 +5,9 @@ import org.bukkit.craftbukkit.CraftEntity;
 import org.bukkit.craftbukkit.CraftLivingEntity;
 import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.event.entity.EntityDamagedByBlockEvent;
-import org.bukkit.event.entity.EntityDamagedByEntityEvent;
-import org.bukkit.event.entity.EntityDamagedEvent;
+import org.bukkit.event.entity.EntityDamageByBlockEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 // CraftBukkit end
 
 import java.util.*;
@@ -123,7 +123,7 @@ public class Explosion {
 
                 if (e == null) { // Block explosion
                     // Craftbukkit TODO: get the x/y/z of the tnt block?
-                    EntityDamagedByBlockEvent edbbe = new EntityDamagedByBlockEvent(null, damagee, EntityDamagedEvent.DamageCause.BLOCK_EXPLOSION, damage);
+                    EntityDamageByBlockEvent edbbe = new EntityDamageByBlockEvent(null, damagee, EntityDamageEvent.DamageCause.BLOCK_EXPLOSION, damage);
                     servr.getPluginManager().callEvent(edbbe);
                     if(!edbbe.isCancelled()) entity.a(e, damage);
                 } else {
@@ -134,7 +134,7 @@ public class Explosion {
                     } else if (e instanceof EntityLiving) {
                         damager = new CraftLivingEntity(servr, (EntityLiving) e);
                     }
-                    EntityDamagedByEntityEvent edbbe = new EntityDamagedByEntityEvent(damager, damagee, EntityDamagedEvent.DamageCause.ENTITY_EXPLOSION, damage);
+                    EntityDamageByEntityEvent edbbe = new EntityDamageByEntityEvent(damager, damagee, EntityDamageEvent.DamageCause.ENTITY_EXPLOSION, damage);
                     servr.getPluginManager().callEvent(edbbe);
 
                     if (!edbbe.isCancelled()) {

@@ -6,7 +6,7 @@ import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.CraftItemStack;
 import org.bukkit.craftbukkit.CraftPlayer;
 import org.bukkit.event.Event.Type;
-import org.bukkit.event.block.BlockPlacedEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 // CraftBukkit end
 
 public class ItemBlock extends Item {
@@ -81,7 +81,7 @@ public class ItemBlock extends Item {
                 // CraftBukkit hardcoded Spawn distance for now
                 boolean canBuild = distanceFromSpawn > 16 || thePlayer.isOp();
 
-                BlockPlacedEvent bpe = new BlockPlacedEvent(Type.BLOCK_PLACED, placedBlock, blockClicked, itemInHand, thePlayer, canBuild);
+                BlockPlaceEvent bpe = new BlockPlaceEvent(Type.BLOCK_PLACED, placedBlock, blockClicked, itemInHand, thePlayer, canBuild);
                 ((WorldServer) world).getServer().getPluginManager().callEvent(bpe);
 
                 if (bpe.isCancelled() || !bpe.canBuild()) {

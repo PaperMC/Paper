@@ -8,7 +8,7 @@ import org.bukkit.craftbukkit.CraftChunk;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.Event.Type;
-import org.bukkit.event.world.ChunkLoadedEvent;
+import org.bukkit.event.world.ChunkLoadEvent;
 // CraftBukkit end
 
 public class ChunkProviderServer implements IChunkProvider {
@@ -79,7 +79,7 @@ public class ChunkProviderServer implements IChunkProvider {
                  */
                 CraftWorld world = g.getWorld();
                 CraftChunk cchunk = world.updateChunk(i, j);
-                server.getPluginManager().callEvent(new ChunkLoadedEvent(Type.CHUNK_LOADED, cchunk));
+                server.getPluginManager().callEvent(new ChunkLoadEvent(Type.CHUNK_LOADED, cchunk));
             }
             // CraftBukkit end
 
