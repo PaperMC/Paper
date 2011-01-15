@@ -5,8 +5,8 @@
 
 package org.bukkit.event.block;
 
-import org.bukkit.Block;
-import org.bukkit.BlockFace;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 
 /**
  *

@@ -1,6 +1,6 @@
 package org.bukkit.event.block;
 
-import org.bukkit.Block;
+import org.bukkit.block.Block;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;

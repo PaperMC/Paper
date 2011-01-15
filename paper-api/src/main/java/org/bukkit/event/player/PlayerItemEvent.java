@@ -1,7 +1,7 @@
 package org.bukkit.event.player;
 
-import org.bukkit.Block;
-import org.bukkit.BlockFace;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;

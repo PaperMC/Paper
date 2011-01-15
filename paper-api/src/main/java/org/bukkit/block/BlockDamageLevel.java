@@ -1,4 +1,4 @@
-package org.bukkit;
+package org.bukkit.block;
 
 public enum BlockDamageLevel {
     STARTED(0), DIGGING(1), BROKEN(3), STOPPED(2);

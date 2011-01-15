@@ -1,7 +1,6 @@
 
 package org.bukkit.block;
 
-import org.bukkit.Block;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.World;

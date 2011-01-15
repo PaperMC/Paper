@@ -1,7 +1,7 @@
 
 package org.bukkit.material;
 
-import org.bukkit.BlockFace;
+import org.bukkit.block.BlockFace;
 
 /**
  * Indicates that a block can be attached to another block

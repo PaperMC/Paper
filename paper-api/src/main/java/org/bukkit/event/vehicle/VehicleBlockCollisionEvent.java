@@ -1,6 +1,6 @@
 package org.bukkit.event.vehicle;
 
-import org.bukkit.Block;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Vehicle;
 
 /**

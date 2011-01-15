@@ -1,4 +1,4 @@
-package org.bukkit;
+package org.bukkit.block;
 
 /**
  * Represents the face of a block

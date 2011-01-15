@@ -1,7 +1,7 @@
 package org.bukkit.event.block;
 
-import org.bukkit.Block;
-import org.bukkit.BlockDamageLevel;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockDamageLevel;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 

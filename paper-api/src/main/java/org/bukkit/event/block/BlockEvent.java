@@ -1,6 +1,6 @@
 package org.bukkit.event.block;
 
-import org.bukkit.Block;
+import org.bukkit.block.Block;
 import org.bukkit.event.Event;
 
 /**
