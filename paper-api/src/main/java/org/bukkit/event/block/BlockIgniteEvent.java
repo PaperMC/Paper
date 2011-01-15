@@ -15,7 +15,6 @@ public class BlockIgniteEvent extends BlockEvent implements Cancellable {
     private IgniteCause cause;
     private boolean cancel;
     private Player thePlayer;
-    private Block theBlock;
 
     /**
      * @param Block, IgniteCause, Player or null.
@@ -23,7 +22,6 @@ public class BlockIgniteEvent extends BlockEvent implements Cancellable {
     public BlockIgniteEvent(Block theBlock, IgniteCause cause, Player thePlayer) {
         super(Event.Type.BLOCK_IGNITE, theBlock);
         this.cause = cause;
-        this.theBlock = theBlock;
         this.thePlayer = thePlayer;
         this.cancel = false;
     }
