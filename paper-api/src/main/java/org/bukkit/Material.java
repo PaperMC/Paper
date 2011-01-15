@@ -67,7 +67,7 @@ public enum Material {
     BURNING_FURNACE(62),
     SIGN_POST(63),
     WOODEN_DOOR(64),
-    LADDER(65),
+    LADDER(65, Ladder.class),
     RAILS(66),
     COBBLESTONE_STAIRS(67),
     WALL_SIGN(68),
