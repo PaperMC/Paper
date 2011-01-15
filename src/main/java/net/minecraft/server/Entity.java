@@ -1,9 +1,9 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.CraftEntity;
-import org.bukkit.craftbukkit.CraftLivingEntity;
-import org.bukkit.craftbukkit.CraftPlayer;
+import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.entity.EntityDamageEvent;
 // CraftBukkit end

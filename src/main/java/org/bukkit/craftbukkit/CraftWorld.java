@@ -1,5 +1,16 @@
 package org.bukkit.craftbukkit;
 
+import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.craftbukkit.entity.CraftEgg;
+import org.bukkit.craftbukkit.entity.CraftBoat;
+import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.entity.CraftSnowball;
+import org.bukkit.craftbukkit.entity.CraftHumanEntity;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.entity.CraftArrow;
+import org.bukkit.craftbukkit.entity.CraftMinecart;
+import org.bukkit.craftbukkit.entity.CraftStorageMinecart;
+import org.bukkit.craftbukkit.entity.CraftItemDrop;
 import java.util.HashMap;
 import java.util.Map;
 

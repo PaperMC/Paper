@@ -6,7 +6,7 @@ import java.util.Random;
 import org.bukkit.BlockFace;
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.CraftItemStack;
-import org.bukkit.craftbukkit.CraftPlayer;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.player.PlayerItemEvent;

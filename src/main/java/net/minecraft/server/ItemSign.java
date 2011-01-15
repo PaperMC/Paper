@@ -3,7 +3,7 @@ package net.minecraft.server;
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftBlock;
 import org.bukkit.craftbukkit.CraftItemStack;
-import org.bukkit.craftbukkit.CraftPlayer;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.player.PlayerItemEvent;
 // CraftBukkit end

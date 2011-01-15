@@ -1,7 +1,8 @@
-package org.bukkit.craftbukkit;
+package org.bukkit.craftbukkit.entity;
 
 import org.bukkit.entity.Arrow;
 import net.minecraft.server.EntityArrow;
+import org.bukkit.craftbukkit.CraftServer;
 
 /**
  * Represents an arrow.
@@ -9,7 +10,7 @@ import net.minecraft.server.EntityArrow;
  * @author sk89q
  */
 public class CraftArrow extends CraftEntity implements Arrow {
-    CraftArrow(CraftServer server, EntityArrow entity) {
+    public CraftArrow(CraftServer server, EntityArrow entity) {
         super(server, entity);
     }
 }

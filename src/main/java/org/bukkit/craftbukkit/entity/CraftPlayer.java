@@ -1,4 +1,4 @@
-package org.bukkit.craftbukkit;
+package org.bukkit.craftbukkit.entity;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -6,6 +6,7 @@ import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityPlayerMP;
 import net.minecraft.server.Packet3Chat;
 import org.bukkit.Location;
+import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Player;
 
 public class CraftPlayer extends CraftHumanEntity implements Player {

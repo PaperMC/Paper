@@ -5,8 +5,8 @@ import java.util.Random;
 
 // CraftBukkit start
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.CraftBoat;
-import org.bukkit.craftbukkit.CraftEntity;
+import org.bukkit.craftbukkit.entity.CraftBoat;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.CraftMappable;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.Event.Type;

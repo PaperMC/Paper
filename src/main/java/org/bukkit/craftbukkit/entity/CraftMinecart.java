@@ -1,6 +1,8 @@
-package org.bukkit.craftbukkit;
+package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntityMinecart;
+import org.bukkit.craftbukkit.CraftPoweredMinecart;
+import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Minecart;
 
 /**

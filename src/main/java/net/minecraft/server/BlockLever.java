@@ -3,7 +3,7 @@ package net.minecraft.server;
 // CraftBukkit start
 import org.bukkit.BlockFace;
 import org.bukkit.craftbukkit.CraftBlock;
-import org.bukkit.craftbukkit.CraftPlayer;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockInteractEvent;
 import org.bukkit.event.block.BlockRedstoneEvent;

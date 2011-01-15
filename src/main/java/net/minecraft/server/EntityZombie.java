@@ -3,7 +3,7 @@ package net.minecraft.server;
 import java.util.Random;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.CraftLivingEntity;
+import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.entity.EntityCombustEvent;
