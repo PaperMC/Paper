@@ -71,7 +71,7 @@ public enum Material {
     RAILS(66),
     COBBLESTONE_STAIRS(67),
     WALL_SIGN(68),
-    LEVER(69),
+    LEVER(69, Lever.class),
     STONE_PLATE(70),
     IRON_DOOR_BLOCK(71),
     WOOD_PLATE(72),
