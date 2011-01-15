@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit;
 
 import net.minecraft.server.EntityBoat;
-import org.bukkit.Boat;
+import org.bukkit.entity.Boat;
 
 /**
  * A minecart.

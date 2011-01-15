@@ -6,7 +6,7 @@ import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityPlayerMP;
 import net.minecraft.server.Packet3Chat;
 import org.bukkit.Location;
-import org.bukkit.Player;
+import org.bukkit.entity.Player;
 
 public class CraftPlayer extends CraftHumanEntity implements Player {
     private EntityPlayerMP entity;

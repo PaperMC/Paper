@@ -2,7 +2,7 @@
 package org.bukkit.craftbukkit;
 
 import net.minecraft.server.EntityPlayer;
-import org.bukkit.HumanEntity;
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.ItemStack;
 import org.bukkit.PlayerInventory;
 

@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit;
 
 import net.minecraft.server.EntityMinecart;
-import org.bukkit.PoweredMinecart;
+import org.bukkit.entity.PoweredMinecart;
 
 /**
  * A powered minecart.
