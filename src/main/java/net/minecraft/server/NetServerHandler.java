@@ -9,7 +9,7 @@ import org.bukkit.BlockFace;
 import org.bukkit.BlockDamageLevel;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftBlock;
-import org.bukkit.craftbukkit.CraftItemStack;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.Event.Type;

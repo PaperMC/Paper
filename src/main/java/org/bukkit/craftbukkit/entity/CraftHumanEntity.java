@@ -5,7 +5,7 @@ import net.minecraft.server.EntityPlayer;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
-import org.bukkit.craftbukkit.CraftInventoryPlayer;
+import org.bukkit.craftbukkit.inventory.CraftInventoryPlayer;
 import org.bukkit.craftbukkit.CraftServer;
 
 public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
