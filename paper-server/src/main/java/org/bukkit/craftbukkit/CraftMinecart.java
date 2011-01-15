@@ -10,7 +10,7 @@ import org.bukkit.Minecart;
  */
 public class CraftMinecart extends CraftVehicle implements Minecart {
     /**
-     * Stores the minecart type ID, which is used by Minecraft to differentiate
+     * Stores the minecart type id, which is used by Minecraft to differentiate
      * minecart types. Here we use subclasses.
      */
     public enum Type {
@@ -24,7 +24,7 @@ public class CraftMinecart extends CraftVehicle implements Minecart {
             this.id = id;
         }
         
-        public int getID() {
+        public int getId() {
             return id;
         }
     }
@@ -54,9 +54,9 @@ public class CraftMinecart extends CraftVehicle implements Minecart {
      */
     public static CraftMinecart getCraftMinecart(CraftServer server,
             EntityMinecart minecart) {
-        if (minecart.d == Type.StorageMinecart.getID()) {
+        if (minecart.d == Type.StorageMinecart.getId()) {
             return new CraftStorageMinecart(server, minecart);
-        } else if (minecart.d == Type.PoweredMinecart.getID()) {
+        } else if (minecart.d == Type.PoweredMinecart.getId()) {
             return new CraftPoweredMinecart(server, minecart);
         } else {
             return new CraftMinecart(server, minecart);

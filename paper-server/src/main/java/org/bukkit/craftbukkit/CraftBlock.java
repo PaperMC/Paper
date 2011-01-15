@@ -110,16 +110,16 @@ public class CraftBlock implements Block {
      * @param type Material to change this block to
      */
     public void setType(final Material type) {
-        setTypeID(type.getID());
+        setTypeId(type.getId());
     }
 
     /**
-     * Sets the type-ID of this block
+     * Sets the type-id of this block
      *
-     * @param type Type-ID to change this block to
+     * @param type Type-Id to change this block to
      * @return whether the block was changed
      */
-    public boolean setTypeID(final int type) {
+    public boolean setTypeId(final int type) {
         this.type = type;
         return world.getHandle().e(x, y, z, type);
     }
@@ -130,15 +130,15 @@ public class CraftBlock implements Block {
      * @return block type
      */
     public Material getType() {
-        return Material.getMaterial(getTypeID());
+        return Material.getMaterial(getTypeId());
     }
 
     /**
-     * Gets the type-ID of this block
+     * Gets the type-id of this block
      *
-     * @return block type-ID
+     * @return block type-id
      */
-    public int getTypeID() {
+    public int getTypeId() {
         return type;
     }
     

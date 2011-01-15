@@ -25,7 +25,7 @@ public class CraftBlockState implements BlockState {
         this.x = block.getX();
         this.y = block.getY();
         this.z = block.getZ();
-        this.type = block.getTypeID();
+        this.type = block.getTypeId();
         this.light = block.getLightLevel();
         this.chunk = (CraftChunk)block.getChunk();
 
@@ -114,15 +114,15 @@ public class CraftBlockState implements BlockState {
      * @param type Material to change this block to
      */
     public void setType(final Material type) {
-        setTypeID(type.getID());
+        setTypeId(type.getId());
     }
 
     /**
-     * Sets the type-ID of this block
+     * Sets the type-id of this block
      *
-     * @param type Type-ID to change this block to
+     * @param type Type-Id to change this block to
      */
-    public void setTypeID(final int type) {
+    public void setTypeId(final int type) {
         this.type = type;
         world.getHandle().e(x, y, z, type);
         
@@ -135,15 +135,15 @@ public class CraftBlockState implements BlockState {
      * @return block type
      */
     public Material getType() {
-        return Material.getMaterial(getTypeID());
+        return Material.getMaterial(getTypeId());
     }
 
     /**
-     * Gets the type-ID of this block
+     * Gets the type-id of this block
      *
-     * @return block type-ID
+     * @return block type-id
      */
-    public int getTypeID() {
+    public int getTypeId() {
         return type;
     }
 
@@ -170,7 +170,7 @@ public class CraftBlockState implements BlockState {
         synchronized (block) {
             if (block.getType() != this.getType()) {
                 if (force) {
-                    block.setTypeID(this.getTypeID());
+                    block.setTypeId(this.getTypeId());
                 } else {
                     return false;
                 }
