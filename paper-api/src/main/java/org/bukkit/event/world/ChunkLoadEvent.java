@@ -6,10 +6,10 @@ import org.bukkit.Chunk;
 /**
  * Called when a chunk is loaded
  */
-public class ChunkLoadedEvent extends WorldEvent {
+public class ChunkLoadEvent extends WorldEvent {
     private final Chunk chunk;
 
-    public ChunkLoadedEvent(final Type type, final Chunk chunk) {
+    public ChunkLoadEvent(final Type type, final Chunk chunk) {
         super(type, chunk.getWorld());
 
         this.chunk = chunk;

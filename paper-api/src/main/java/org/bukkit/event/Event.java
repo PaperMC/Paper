@@ -214,7 +214,7 @@ public abstract class Event {
         /**
          * Called when a block is damaged (hit by a player)
          *
-         * @see org.bukkit.event.block.BlockDamagedEvent
+         * @see org.bukkit.event.block.BlockDamageEvent
          */
         BLOCK_DAMAGED (Category.BLOCK),
 
@@ -257,14 +257,14 @@ public abstract class Event {
         /**
          * Called when a player is attempting to place a block
          *
-         * @see org.bukkit.event.block.BlockRightClickedEvent
+         * @see org.bukkit.event.block.BlockRightClickeEvent
          */
         BLOCK_RIGHTCLICKED (Category.BLOCK),
 
         /**
          * Called when a player is attempting to place a block
          *
-         * @see org.bukkit.event.block.BlockPlacedEvent
+         * @see org.bukkit.event.block.BlockPlaceEvent
          */
         BLOCK_PLACED (Category.BLOCK),
 
@@ -366,14 +366,14 @@ public abstract class Event {
          * If a new chunk is being generated for loading, it will call
          * Type.CHUNK_GENERATION and then Type.CHUNK_LOADED upon completion
          *
-         * @see org.bukkit.event.world.ChunkLoadedEvent
+         * @see org.bukkit.event.world.ChunkLoadeEvent
          */
         CHUNK_LOADED (Category.WORLD),
 
         /**
          * Called when a chunk is unloaded
          *
-         * @see org.bukkit.event.world.ChunkUnloadedEvent
+         * @see org.bukkit.event.world.ChunkUnloadeEvent
          */
         CHUNK_UNLOADED (Category.WORLD),
 
@@ -407,21 +407,21 @@ public abstract class Event {
          * Called when a LivingEntity is damaged by the environment (for example,
          * falling or lava)
          *
-         * @see org.bukkit.event.entity.EntityDamagedByBlockEvent
+         * @see org.bukkit.event.entity.EntityDamageByBlockEvent
          */
         ENTITY_DAMAGEDBY_BLOCK (Category.LIVING_ENTITY),
 
         /**
          * Called when a LivingEntity is damaged by another LivingEntity
          *
-         * @see org.bukkit.event.entity.EntityDamagedByEntityEvent
+         * @see org.bukkit.event.entity.EntityDamageByEntityEvent
          */
         ENTITY_DAMAGEDBY_ENTITY (Category.LIVING_ENTITY),
 
         /**
          * Called when a LivingEntity is damaged with no source.
          *
-         * @see org.bukkit.event.entity.EntityDamagedEvent
+         * @see org.bukkit.event.entity.EntityDamageEvent
          */
         ENTITY_DAMAGED(Category.LIVING_ENTITY),
 

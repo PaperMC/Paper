@@ -7,20 +7,20 @@ import org.bukkit.event.Event;
 /**
  * Stores data for damage events
  */
-public class EntityDamagedEvent extends EntityEvent implements Cancellable {
+public class EntityDamageEvent extends EntityEvent implements Cancellable {
 
     private int damage;
     private boolean cancelled;
     private DamageCause cause;
 
-    public EntityDamagedEvent(Entity damagee, DamageCause cause, int damage)
+    public EntityDamageEvent(Entity damagee, DamageCause cause, int damage)
     {
         super(Event.Type.ENTITY_DAMAGED, damagee);
         this.cause = cause;
         this.damage = damage;
     }
 
-    protected EntityDamagedEvent(Event.Type type, Entity damagee, DamageCause cause, int damage)
+    protected EntityDamageEvent(Event.Type type, Entity damagee, DamageCause cause, int damage)
     {
         super(type, damagee);
         this.cause = cause;

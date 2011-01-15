@@ -8,13 +8,13 @@ import org.bukkit.Player;
 /**
  * Not implemented yet
  */
-public class BlockRightClickedEvent extends BlockEvent  {
+public class BlockRightClickEvent extends BlockEvent  {
     protected Block clickedBlock;
     protected BlockFace direction;
     protected ItemStack itemInHand;
     protected Player player;
 
-    public BlockRightClickedEvent(Type type, Block placedAgainst, BlockFace direction, ItemStack itemInHand, Player thePlayer) {
+    public BlockRightClickEvent(Type type, Block placedAgainst, BlockFace direction, ItemStack itemInHand, Player thePlayer) {
         super(type, placedAgainst);
         this.clickedBlock = placedAgainst;
         this.direction = direction;

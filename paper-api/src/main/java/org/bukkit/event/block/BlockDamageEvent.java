@@ -8,12 +8,12 @@ import org.bukkit.event.Cancellable;
 /**
  * @author tkelly
  */
-public class BlockDamagedEvent extends BlockEvent implements Cancellable {
+public class BlockDamageEvent extends BlockEvent implements Cancellable {
     private Player player;
     private BlockDamageLevel damageLevel;
     private boolean cancel;
 
-    public BlockDamagedEvent(Type type, Block block, BlockDamageLevel level, Player player) {
+    public BlockDamageEvent(Type type, Block block, BlockDamageLevel level, Player player) {
         super(type, block);
         this.damageLevel = level;
         this.player = player;

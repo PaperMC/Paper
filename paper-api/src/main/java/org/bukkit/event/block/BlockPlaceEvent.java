@@ -8,14 +8,14 @@ import org.bukkit.event.Cancellable;
 /**
  * Not implemented yet
  */
-public class BlockPlacedEvent extends BlockEvent implements Cancellable {
+public class BlockPlaceEvent extends BlockEvent implements Cancellable {
     protected boolean cancel;
     protected boolean canBuild;
     protected Block placedAgainst;
     protected ItemStack itemInHand;
     protected Player player;
 
-    public BlockPlacedEvent(Type type, Block placedBlock, Block placedAgainst, ItemStack itemInHand, Player thePlayer, boolean canBuild) {
+    public BlockPlaceEvent(Type type, Block placedBlock, Block placedAgainst, ItemStack itemInHand, Player thePlayer, boolean canBuild) {
         super(type, placedBlock);
         this.placedAgainst = placedAgainst;
         this.itemInHand = itemInHand;

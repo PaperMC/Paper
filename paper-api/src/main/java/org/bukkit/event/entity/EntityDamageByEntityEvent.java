@@ -7,11 +7,11 @@ import org.bukkit.event.Event;
 /**
  * Stores details for damage events where the damager is a block
  */
-public class EntityDamagedByEntityEvent extends EntityDamagedEvent implements Cancellable {
+public class EntityDamageByEntityEvent extends EntityDamageEvent implements Cancellable {
 
     private Entity damager;
 
-    public EntityDamagedByEntityEvent(Entity damager, Entity damagee, DamageCause cause, int damage)
+    public EntityDamageByEntityEvent(Entity damager, Entity damagee, DamageCause cause, int damage)
     {
         super(Event.Type.ENTITY_DAMAGEDBY_ENTITY, damagee, cause, damage);
         this.damager = damager;

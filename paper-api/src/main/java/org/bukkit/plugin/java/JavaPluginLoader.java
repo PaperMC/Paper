@@ -19,15 +19,15 @@ import org.bukkit.event.Event;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityCombustEvent;
-import org.bukkit.event.entity.EntityDamagedByBlockEvent;
-import org.bukkit.event.entity.EntityDamagedByEntityEvent;
+import org.bukkit.event.entity.EntityDamageByBlockEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityListener;
 import org.bukkit.event.player.*;
 import org.bukkit.event.server.PluginEvent;
 import org.bukkit.event.server.ServerListener;
 import org.bukkit.event.vehicle.*;
-import org.bukkit.event.world.ChunkLoadedEvent;
-import org.bukkit.event.world.ChunkUnloadedEvent;
+import org.bukkit.event.world.ChunkLoadEvent;
+import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.event.world.WorldListener;
 import org.bukkit.plugin.*;
 
@@ -163,13 +163,13 @@ public final class JavaPluginLoader implements PluginLoader {
                     trueListener.onBlockCanBuild((BlockCanBuildEvent)event);
                     break;
                 case BLOCK_RIGHTCLICKED:
-                    trueListener.onBlockRightClicked((BlockRightClickedEvent) event);
+                    trueListener.onBlockRightClicked((BlockRightClickEvent) event);
                     break;
                 case BLOCK_PLACED:
-                    trueListener.onBlockPlaced((BlockPlacedEvent)event);
+                    trueListener.onBlockPlaced((BlockPlaceEvent)event);
                     break;
                 case BLOCK_DAMAGED:
-                    trueListener.onBlockDamaged((BlockDamagedEvent)event);
+                    trueListener.onBlockDamaged((BlockDamageEvent)event);
                     break;
                 case BLOCK_INTERACT:
                     trueListener.onBlockInteracted((BlockInteractEvent)event);
@@ -200,10 +200,10 @@ public final class JavaPluginLoader implements PluginLoader {
 
             switch (event.getType()) {
                 case CHUNK_LOADED:
-                    trueListener.onChunkLoaded((ChunkLoadedEvent)event);
+                    trueListener.onChunkLoaded((ChunkLoadEvent)event);
                     break;
                 case CHUNK_UNLOADED:
-                    trueListener.onChunkUnloaded((ChunkUnloadedEvent)event);
+                    trueListener.onChunkUnloaded((ChunkUnloadEvent)event);
                     break;
             }
         } else if(listener instanceof EntityListener) {
@@ -211,10 +211,10 @@ public final class JavaPluginLoader implements PluginLoader {
             switch(event.getType())
             {
                 case ENTITY_DAMAGEDBY_BLOCK:
-                    trueListener.onEntityDamagedByBlock((EntityDamagedByBlockEvent)event);
+                    trueListener.onEntityDamageByBlock((EntityDamageByBlockEvent)event);
                     break;
                 case ENTITY_DAMAGEDBY_ENTITY:
-                    trueListener.onEntityDamagedByEntity((EntityDamagedByEntityEvent)event);
+                    trueListener.onEntityDamageByEntity((EntityDamageByEntityEvent)event);
                     break;
                 case ENTITY_DEATH:
                     // TODO: ENTITY_DEATH hook
