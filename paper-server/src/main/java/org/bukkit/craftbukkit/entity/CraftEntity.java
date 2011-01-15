@@ -3,9 +3,9 @@ package org.bukkit.craftbukkit.entity;
 import net.minecraft.server.Entity;
 import net.minecraft.server.WorldServer;
 import org.bukkit.Location;
-import org.bukkit.Vector;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.util.Vector;
 
 public abstract class CraftEntity implements org.bukkit.entity.Entity {
     protected final CraftServer server;
