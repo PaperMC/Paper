@@ -78,6 +78,16 @@ public final class CraftServer implements Server {
 
         return null;
     }
+    
+    public int broadcastMessage(String message) {
+        Player[] players = getOnlinePlayers();
+
+        for (Player player : players) {
+            player.sendMessage(message);
+        }
+
+        return players.length;
+    }
 
     public Player getPlayer(final EntityPlayerMP entity) {
         return entity.a.getPlayer();
