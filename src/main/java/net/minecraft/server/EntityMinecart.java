@@ -5,7 +5,6 @@ import java.util.Random;
 
 // CraftBukkit start
 import org.bukkit.Location;
-import org.bukkit.Vector;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.CraftMappable;
 import org.bukkit.craftbukkit.entity.CraftMinecart;

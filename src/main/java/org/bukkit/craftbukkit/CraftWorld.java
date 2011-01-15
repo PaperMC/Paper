@@ -37,11 +37,11 @@ import org.bukkit.entity.Boat;
 import org.bukkit.Chunk;
 import org.bukkit.entity.ItemDrop;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.Vector;
 import org.bukkit.Location;
 import org.bukkit.entity.Minecart;
 import org.bukkit.entity.PoweredMinecart;
 import org.bukkit.entity.StorageMinecart;
-import org.bukkit.Vector;
 import org.bukkit.World;
 
 public class CraftWorld implements World {
