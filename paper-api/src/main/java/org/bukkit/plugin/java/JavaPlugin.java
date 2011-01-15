@@ -102,7 +102,7 @@ public abstract class JavaPlugin implements Plugin {
      */
     public Configuration getConfiguration() {
         Configuration config =
-                new Configuration(new File(dataFolder, "config.yaml"));
+                new Configuration(new File(dataFolder, "config.yml"));
         config.load();
         return config;
     }
