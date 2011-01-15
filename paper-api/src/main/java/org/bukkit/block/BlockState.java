@@ -5,6 +5,7 @@ import org.bukkit.Block;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.material.MaterialData;
 
 /**
  * Represents a captured state of a block, which will not change automatically.
@@ -27,7 +28,7 @@ public interface BlockState {
      *
      * @return block specific metadata
      */
-    byte getData();
+    MaterialData getData();
 
     /**
      * Gets the type of this block
@@ -90,7 +91,7 @@ public interface BlockState {
      *
      * @param data New block specific metadata
      */
-    void setData(byte data);
+    void setData(MaterialData data);
 
     /**
      * Sets the type of this block

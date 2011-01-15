@@ -40,14 +40,7 @@ public class ItemStack {
         this.type = type;
         this.amount = amount;
         this.damage = damage;
-
-        Material mat = Material.getMaterial(type);
-
-        if (mat == null) {
-            this.data = new MaterialData(type, data);
-        } else {
-            this.data = mat.getNewData(data);
-        }
+        createData(data);
     }
 
     public ItemStack(final Material type, final int amount, final byte damage, final byte data) {
@@ -92,14 +85,7 @@ public class ItemStack {
      */
     public void setTypeID(int type) {
         this.type = type;
-
-        Material mat = Material.getMaterial(type);
-
-        if (mat == null) {
-            data = new MaterialData(type, (byte)0);
-        } else {
-            data = mat.getNewData((byte)0);
-        }
+        createData((byte)0);
     }
 
     /**
@@ -183,6 +169,15 @@ public class ItemStack {
      */
     public int getMaxStackSize() {
         return -1;
+    }
+
+    private void createData(final byte data) {
+        Material mat = Material.getMaterial(type);
+        if (mat == null) {
+            this.data = new MaterialData(type, data);
+        } else {
+            this.data = mat.getNewData(data);
+        }
     }
 
     @Override
