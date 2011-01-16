@@ -149,6 +149,25 @@ public abstract class ConfigurationNode {
             return o;
         }
     }
+    
+    /**
+     * Get a list of keys at a location. If the map at the particular location
+     * does not exist or it is not a map, null will be returned.
+     * 
+     * @param path path to node (dot notation)
+     * @return list of keys
+     */
+    @SuppressWarnings("unchecked")
+    public List<String> getKeys(String path) {
+        Object o = getProperty(path);
+        if (o == null) {
+            return null;
+        } else if (o instanceof Map) {
+            return new ArrayList<String>(((Map<String,Object>)o).keySet());
+        } else {
+            return null;
+        }
+    }
 
     /**
      * Gets a list of objects at a location. If the list is not defined,
