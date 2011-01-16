@@ -58,6 +58,14 @@ public interface Block {
     Block getRelative(int modX, int modY, int modZ);
 
     /**
+     * Gets the block at the given offsets
+     *
+     * @param face face
+     * @return Block at the given offsets
+     */
+    Block getRelative(BlockFace face);
+
+    /**
      * Gets the type of this block
      *
      * @return block type
