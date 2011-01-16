@@ -43,8 +43,7 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
 
     public void setContents(ItemStack[] items) {
         if (getInventory().getContents().length != items.length) {
-            throw new IllegalArgumentException("Invalid inventory size; expected "
-                    + getInventory().getContents().length);
+            throw new IllegalArgumentException("Invalid inventory size; expected " + getInventory().getContents().length);
         }
 
         net.minecraft.server.ItemStack[] mcItems = getInventory().getContents();
@@ -54,15 +53,13 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
             if (item == null) {
                 mcItems[i] = null;
             } else {
-                mcItems[i] = new net.minecraft.server.ItemStack(
-                        item.getTypeId(), item.getAmount(), item.getDamage());
+                mcItems[i] = new net.minecraft.server.ItemStack( item.getTypeId(), item.getAmount(), item.getDamage());
             }
         }
     }
 
     public void setItem(int index, ItemStack item) {
-        getInventory().a(index, new net.minecraft.server.ItemStack(
-                item.getTypeId(), item.getAmount(), item.getDamage()));
+        getInventory().a(index, (item == null ? null : new net.minecraft.server.ItemStack( item.getTypeId(), item.getAmount(), item.getDamage())));
     }
 
     public boolean contains(int materialId) {
