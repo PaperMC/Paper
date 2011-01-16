@@ -38,12 +38,26 @@ public interface Inventory {
      public void setItem(int index, ItemStack item);
 
     /**
-     * Stores the given ItemStacks in the inventory 
+     * Stores the given ItemStacks in the inventory.
+     * 
+     * This will try to fill existing stacks and empty slots as good as it can.
+     * It will return a HashMap of what it couldn't fit.
      * 
      * @param items The ItemStacks to add
      * @return 
      */
      public HashMap<Integer, ItemStack> addItem(ItemStack... items);
+
+    /**
+     * Removes the given ItemStacks from the inventory.
+     * 
+     * It will try to remove 'as much as possible' from the types and amounts you
+     * give as arguments. It will return a HashMap of what it couldn't remove.
+     * 
+     * @param items The ItemStacks to remove
+     * @return 
+     */
+     public HashMap<Integer, ItemStack> removeItem(ItemStack... items);
 
     /**
      * Get all ItemStacks from the inventory
