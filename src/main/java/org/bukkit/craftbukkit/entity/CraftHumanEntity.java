@@ -40,6 +40,10 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         return getInventory().getItemInHand();
     }
 
+    public void setItemInHand(ItemStack item) {
+        getInventory().setItemInHand(item);
+    }
+
     @Override
     public String toString() {
         return "CraftHumanEntity{" + "id=" + getEntityId() + "name=" + getName() + '}';
