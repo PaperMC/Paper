@@ -50,7 +50,7 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
 
         for (int i = 0; i < items.length; i++ ) {
             ItemStack item = items[i];
-            if (item == null) {
+            if (item == null || item.getTypeId() <= 0) {
                 mcItems[i] = null;
             } else {
                 mcItems[i] = new net.minecraft.server.ItemStack( item.getTypeId(), item.getAmount(), item.getDamage());
