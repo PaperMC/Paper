@@ -29,17 +29,16 @@ public interface HumanEntity extends LivingEntity {
      */
     public ItemStack getItemInHand();
 
-    
-    /** TODO: This probably won't work ;(
+    /**
      * Sets the item to the given ItemStack, this will replace whatever the
      * user was holding.
      * 
      * @param item The ItemStack which will end up in the hand
      * @return 
-     *
-    public void setItemInHand( ItemStack item );
+     */
+    public void setItemInHand(ItemStack item);
 
-     **
+    /**
      * Changes the item in hand to another of your 'action slots'.
      * 
      * @param index The new index to use, only valid ones are 0-8.

@@ -77,4 +77,18 @@ public interface PlayerInventory extends Inventory {
      * @return The currently holded ItemStack
      */
     public ItemStack getItemInHand();
+
+    /**
+     * Sets the item in hand
+     * 
+    * @param stack Stack to set
+     */
+    public void setItemInHand(ItemStack stack);
+
+    /**
+     * Get the slot number of the currently held item
+     * 
+     * @return Held item slot number
+     */
+    public int getHeldItemSlot();
 }
