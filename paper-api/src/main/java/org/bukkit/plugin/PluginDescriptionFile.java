@@ -17,6 +17,7 @@ public final class PluginDescriptionFile {
     private String name = null;
     private String main = null;
     private String version = null;
+    private Object commands = null;
 
     @SuppressWarnings("unchecked")
     public PluginDescriptionFile(final InputStream stream) throws InvalidDescriptionException {
@@ -79,6 +80,10 @@ public final class PluginDescriptionFile {
     public String getMain() {
         return main;
     }
+    
+    public Object getCommands() {
+        return commands;
+    }
 
     private void loadMap(Map<String, Object> map) throws InvalidDescriptionException {
         try {
@@ -104,6 +109,14 @@ public final class PluginDescriptionFile {
         } catch (ClassCastException ex) {
             throw new InvalidDescriptionException(ex, "main is of wrong type");
         }
+        
+        try {
+            commands = map.get("commands");
+        } catch (NullPointerException ex) {
+            throw new InvalidDescriptionException(ex, "command is not defined");
+        } catch (ClassCastException ex) {
+            throw new InvalidDescriptionException(ex, "command is of wrong type");
+        }
     }
 
     private Map<String, Object> saveMap() {
@@ -111,6 +124,7 @@ public final class PluginDescriptionFile {
         map.put("name", name);
         map.put("main", main);
         map.put("version", version);
+        map.put("command", commands);
         return map;
     }
 }
