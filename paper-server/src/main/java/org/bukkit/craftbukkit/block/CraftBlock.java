@@ -199,6 +199,16 @@ public class CraftBlock implements Block {
     }
 
     /**
+     * Gets the block at the given offsets
+     *
+     * @param face face
+     * @return Block at the given offsets
+     */
+    public Block getRelative(BlockFace face) {
+        return getRelative(face.getModX(), face.getModY(), face.getModZ());
+    }
+
+    /**
      * Gets the face relation of this block compared to the given block<br />
      * <br />
      * For example:
