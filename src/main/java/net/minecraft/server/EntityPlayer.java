@@ -51,6 +51,10 @@ public abstract class EntityPlayer extends EntityLiving {
         aR = 180F;
         Y = 20;
         aP = "/mob/char.png";
+        //CraftBukkit start
+        CraftServer server = ((WorldServer) this.l).getServer();
+        this.bukkitEntity = new CraftLivingEntity(server, this);
+        //CraftBukkit end
     }
 
     public void b_() {

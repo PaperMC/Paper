@@ -2,6 +2,11 @@ package net.minecraft.server;
 
 import java.util.*;
 
+//CraftBukkit start
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
+//CraftBukkit end
+
 public class EntityPlayerMP extends EntityPlayer implements ICrafting {
 
     public NetServerHandler a;
@@ -43,6 +48,10 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
         aw = s;
         c = iteminworldmanager;
         H = 0.0F;
+        //CraftBukkit start
+        CraftServer server = ((WorldServer) this.l).getServer();
+        this.bukkitEntity = new CraftPlayer(server, this);
+        //CraftBukkit end
     }
 
     public void l() {

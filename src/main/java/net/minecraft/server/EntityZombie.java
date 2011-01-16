@@ -16,6 +16,10 @@ public class EntityZombie extends EntityMobs {
         aP = "/mob/zombie.png";
         bC = 0.5F;
         c = 5;
+        //CraftBukkit start
+        CraftServer server = ((WorldServer) this.l).getServer();
+        this.bukkitEntity = new CraftLivingEntity(server, this);
+        //CraftBukkit end
     }
 
     public void o() {

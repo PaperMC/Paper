@@ -7,9 +7,7 @@ import java.util.Random;
 import org.bukkit.craftbukkit.entity.CraftArrow;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
-import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 //CraftBukkit end
@@ -25,7 +23,7 @@ public class EntityArrow extends Entity {
     public EntityLiving b;
     private int al;
     private int am;
-
+    
     public EntityArrow(World world) {
         super(world);
         c = -1;
@@ -36,6 +34,11 @@ public class EntityArrow extends Entity {
         a = 0;
         am = 0;
         a(0.5F, 0.5F);
+        
+        //CraftBukkit start
+        CraftServer server = ((WorldServer) this.l).getServer();
+        this.bukkitEntity = new CraftArrow(server, this);
+        //CraftBukkit end
     }
 
     public EntityArrow(World world, double d1, double d2, double d3) {

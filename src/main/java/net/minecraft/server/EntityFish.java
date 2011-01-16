@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Random;
 
 // CraftBukkit start
+import org.bukkit.craftbukkit.entity.CraftEgg;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftFireball;
 import org.bukkit.craftbukkit.entity.CraftFish;
@@ -45,6 +46,10 @@ public class EntityFish extends Entity {
         ao = 0;
         c = null;
         a(0.25F, 0.25F);
+        //CraftBukkit start
+        CraftServer server = ((WorldServer) this.l).getServer();
+        this.bukkitEntity = new CraftFish(server, this);
+        //CraftBukkit end
     }
 
     protected void a() {}

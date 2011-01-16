@@ -77,6 +77,8 @@ public abstract class Entity {
     public int ah;
     public int ai;
     public int aj;
+    
+    protected org.bukkit.entity.Entity bukkitEntity; //CraftBukkit
 
     public Entity(World world) {
         g = a++;
@@ -116,6 +118,8 @@ public abstract class Entity {
         a(0.0D, 0.0D, 0.0D);
         af.a(0, ((Byte.valueOf((byte) 0))));
         a();
+        
+        bukkitEntity = null; //CraftBukkit
     }
 
     protected abstract void a();
@@ -952,4 +956,10 @@ public abstract class Entity {
             af.b(0, ((Byte.valueOf((byte) (byte0 & ~(1 << i1))))));
         }
     }
+    
+    //CraftBukkit start
+    public org.bukkit.entity.Entity getBukkitEntity(){
+        return this.bukkitEntity;
+    }
+    //CraftBukkit end
 }

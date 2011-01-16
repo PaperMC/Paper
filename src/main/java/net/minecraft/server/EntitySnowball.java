@@ -34,6 +34,10 @@ public class EntitySnowball extends Entity {
         a = 0;
         am = 0;
         a(0.25F, 0.25F);
+        //CraftBukkit start
+        CraftServer server = ((WorldServer) this.l).getServer();
+        this.bukkitEntity = new CraftSnowball(server, this);
+        //CraftBukkit end
     }
 
     protected void a() {}

@@ -5,6 +5,7 @@ import java.util.Random;
 
 // CraftBukkit start
 import org.bukkit.Location;
+import org.bukkit.craftbukkit.entity.CraftEgg;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.CraftMappable;
 import org.bukkit.craftbukkit.entity.CraftMinecart;
@@ -104,7 +105,6 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
     private double flyingX = 0.94999998807907104;
     private double flyingY = 0.94999998807907104;
     private double flyingZ = 0.94999998807907104;
-
     public CraftEntity getCraftEntity() {
         return minecart;
     }
@@ -127,6 +127,11 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
         M = false;
 
         handleCreation(world); // CraftBukkit
+        //CraftBukkit start
+        //TODO need to handle powered and storage minecarts
+        CraftServer server = ((WorldServer) this.l).getServer();
+        this.bukkitEntity = new CraftMinecart(server, this);
+        //CraftBukkit end
     }
 
     protected void a() {}

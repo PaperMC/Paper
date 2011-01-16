@@ -16,6 +16,10 @@ public class EntitySkeleton extends EntityMobs {
     public EntitySkeleton(World world) {
         super(world);
         aP = "/mob/skeleton.png";
+        //CraftBukkit start
+        CraftServer server = ((WorldServer) this.l).getServer();
+        this.bukkitEntity = new CraftLivingEntity(server, this);
+        //CraftBukkit end
     }
 
     protected String e() {

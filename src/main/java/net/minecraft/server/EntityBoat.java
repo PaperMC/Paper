@@ -5,6 +5,7 @@ import java.util.Random;
 
 // CraftBukkit start
 import org.bukkit.Location;
+import org.bukkit.craftbukkit.entity.CraftArrow;
 import org.bukkit.craftbukkit.entity.CraftBoat;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.CraftMappable;
@@ -48,6 +49,10 @@ public class EntityBoat extends Entity implements CraftMappable { // CraftBukkit
         M = false;
 
         handleCreation(world); // CraftBukkit
+        //CraftBukkit start
+        CraftServer server = ((WorldServer) this.l).getServer();
+        this.bukkitEntity = new CraftBoat(server, this);
+        //CraftBukkit end
     }
 
     protected void a() {}

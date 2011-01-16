@@ -5,6 +5,7 @@ import java.util.Random;
 
 // CraftBukkit start
 import org.bukkit.entity.MobType;
+import org.bukkit.craftbukkit.entity.CraftArrow;
 import org.bukkit.craftbukkit.entity.CraftEgg;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
@@ -38,6 +39,10 @@ public class EntityEgg extends Entity {
         a = 0;
         am = 0;
         a(0.25F, 0.25F);
+        //CraftBukkit start
+        CraftServer server = ((WorldServer) this.l).getServer();
+        this.bukkitEntity = new CraftEgg(server, this);
+        //CraftBukkit end
     }
 
     protected void a() {}

@@ -5,6 +5,7 @@ import java.util.Random;
 //CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.entity.CraftMinecart;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -19,6 +20,10 @@ public class EntityMobs extends EntityCreature implements IMobs {
         super(world);
         c = 2;
         aZ = 20;
+        //CraftBukkit start
+        CraftServer server = ((WorldServer) this.l).getServer();
+        this.bukkitEntity = new CraftLivingEntity(server, this);
+        //CraftBukkit end
     }
 
     public void o() {
