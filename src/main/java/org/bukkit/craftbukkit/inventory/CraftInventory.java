@@ -218,6 +218,47 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
         return leftover;
     }
 
+    public HashMap<Integer, ItemStack> removeItem(ItemStack... items) {
+        HashMap<Integer,ItemStack> leftover = new HashMap<Integer,ItemStack>();
+
+        // TODO: optimization
+
+        for (int i = 0; i < items.length; i++) {
+            ItemStack item = items[i];
+            int toDelete = item.getAmount();
+
+            while (true) {
+                int first = first(item.getType());
+
+                // Drat! we don't have this type in the inventory
+                if (first == -1) {
+                    item.setAmount( toDelete );
+                    leftover.put(i, item);
+                } else {
+                    ItemStack itemStack = getItem(first);
+                    int amount = itemStack.getAmount();
+
+                    if (amount <= toDelete) {
+                        toDelete -= amount;
+                        // clear the slot, all used up
+                        clear( i );
+                    } else {
+                        // split the stack and store
+                        itemStack.setAmount( amount - toDelete );
+                        setItem( i, itemStack );
+                        toDelete = 0;
+                    }
+                }
+
+                // Bail when done
+                if (toDelete <= 0) {
+                    break;
+                }
+            }
+        }
+        return leftover;
+    }
+
     private int getMaxItemStack() {
         return getInventory().c();
     }
