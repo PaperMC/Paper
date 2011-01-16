@@ -16,8 +16,16 @@ public class CommandParserYaml {
         
         if (map != null) {
             for(Entry<String, Map<String, Object>> entry : map.entrySet()) {
-                String description = entry.getValue().get("description").toString();
-                String usageText = entry.getValue().get("usage").toString();
+                Object d = entry.getValue().get("description");
+                Object u = entry.getValue().get("usage");
+                String description = "";
+                String usageText = "";
+                
+                if (d != null)
+                    description = d.toString();
+                
+                if (u != null)
+                    usageText = u.toString();
     
                 cmds.add(new Command(entry.getKey(), description, usageText, plugin));
             }
