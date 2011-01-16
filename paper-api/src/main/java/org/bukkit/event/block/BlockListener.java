@@ -19,7 +19,7 @@ public class BlockListener implements Listener {
      *
      * @param event Relevant event details
      */
-    public void onBlockDamaged(BlockDamageEvent event) {
+    public void onBlockDamage(BlockDamageEvent event) {
     }
 
     /**
@@ -57,7 +57,7 @@ public class BlockListener implements Listener {
      *
      * @param event Relevant event details
      */
-    public void onBlockPlaced(BlockPlaceEvent event) {
+    public void onBlockPlace(BlockPlaceEvent event) {
     }
     
     /**
@@ -65,7 +65,7 @@ public class BlockListener implements Listener {
      * 
      * @param event Relevant event details
      */
-    public void onBlockInteracted(BlockInteractEvent event) {
+    public void onBlockInteract(BlockInteractEvent event) {
     }
 
     /**
@@ -73,7 +73,7 @@ public class BlockListener implements Listener {
      *
      * @param event Relevant event details
      */
-    public void onBlockRightClicked(BlockRightClickEvent event) {
+    public void onBlockRightClick(BlockRightClickEvent event) {
     }
 
     /**
