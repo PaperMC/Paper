@@ -22,6 +22,14 @@ public class CraftInventoryPlayer extends CraftInventory implements PlayerInvent
         return new CraftItemStack( getInventory().e() );
     }
 
+    public void setItemInHand(ItemStack stack) {
+        setItem( getHeldItemSlot(), stack );
+    }
+
+    public int getHeldItemSlot() {
+        return getInventory().c;
+    }
+
     public CraftItemStack getHelmet() {
         return getItem( getSize() + 0 );
     }
