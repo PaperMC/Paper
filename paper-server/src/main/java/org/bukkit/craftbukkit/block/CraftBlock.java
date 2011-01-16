@@ -319,5 +319,6 @@ public class CraftBlock implements Block {
     public void update() {
         type = world.getHandle().a(x, y, z);
         data = (byte)world.getHandle().b(x, y, z);
+        light = (byte)world.getHandle().j(x, y, z);
     }
 }

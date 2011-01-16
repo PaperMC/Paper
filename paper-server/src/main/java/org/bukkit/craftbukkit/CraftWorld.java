@@ -35,6 +35,8 @@ public class CraftWorld implements World {
         if (block == null) {
             block = new CraftBlock(this, x, y, z, world.a(x, y, z), (byte)world.b(x, y, z));
             blockCache.put(loc, block);
+        } else {
+            block.update();
         }
 
         return block;
