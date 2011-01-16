@@ -31,6 +31,11 @@ public class BlockFlowing extends BlockFluids {
     }
 
     public void a(World world, int i1, int j1, int k1, Random random) {
+        // CraftBukkit start
+        // skedit: Moved up to make sure that it is accurate
+        CraftBlock source = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i1, j1, k1);
+        // CraftBukkit end
+        
         int l1 = g(world, i1, j1, k1);
         byte byte0 = 1;
 
@@ -87,10 +92,9 @@ public class BlockFlowing extends BlockFluids {
         } else {
             i(world, i1, j1, k1);
         }
-
-        // CraftBukkit start
-        CraftBlock source = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i1, j1, k1);
+        
         if (l(world, i1, j1 - 1, k1)) {
+            // CraftBukkit start
             // Craftbucket send "down" to the server
             BlockFromToEvent blockFlow = new BlockFromToEvent(Type.BLOCK_FLOW, source, BlockFace.DOWN);
             ((WorldServer) world).getServer().getPluginManager().callEvent(blockFlow);
