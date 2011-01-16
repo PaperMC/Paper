@@ -18,6 +18,7 @@ import org.bukkit.event.block.BlockRightClickEvent;
 import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerItemEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.plugin.Plugin;
 // CraftBukkit end
 
 public class NetServerHandler extends NetHandler implements ICommandListener {
@@ -536,6 +537,11 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
     private void c(String s) {
         // CraftBukkit start
+        boolean targetPluginFound = server.dispatchCommand(player, s);
+        if (targetPluginFound) {
+            return;
+        }
+        
         PlayerChatEvent event = new PlayerChatEvent(Type.PLAYER_COMMAND, player, s);
         server.getPluginManager().callEvent(event);
         if (event.isCancelled()) {

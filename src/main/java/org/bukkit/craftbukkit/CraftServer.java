@@ -10,8 +10,10 @@ import net.minecraft.server.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ServerConfigurationManager;
 import org.bukkit.*;
+import org.bukkit.plugin.CommandManager;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.SimpleCommandManager;
 import org.bukkit.plugin.SimplePluginManager;
 import org.bukkit.plugin.java.JavaPluginLoader;
 
@@ -19,6 +21,7 @@ public final class CraftServer implements Server {
     private final String serverName = "Craftbukkit";
     private final String serverVersion = "1.2_01";
     private final PluginManager pluginManager = new SimplePluginManager(this);
+    private final CommandManager commandManager = new SimpleCommandManager();
 
     protected final MinecraftServer console;
     protected final ServerConfigurationManager server;
@@ -38,7 +41,11 @@ public final class CraftServer implements Server {
                 Plugin[] plugins = pluginManager.loadPlugins(pluginFolder);
 
                 for (Plugin plugin : plugins) {
-                    pluginManager.enablePlugin(plugin);
+                    if (commandManager.registerCommands(plugin)) {
+                        pluginManager.enablePlugin(plugin);       
+                    } else {
+                        Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, "Plugin " + plugin.getDescription().getName() + " failed to load. Reason: Requested commands already in use.");
+                    }
                 }
             } catch (Throwable ex) {
                 Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, ex.getMessage() + " (Is it up to date?)", ex);
@@ -132,5 +139,9 @@ public final class CraftServer implements Server {
 
     public ServerConfigurationManager getHandle() {
         return server;
+    }
+
+    public boolean dispatchCommand(Player player, String cmd) {
+        return commandManager.dispatchCommand(player, cmd);
     }
 }
