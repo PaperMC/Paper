@@ -234,18 +234,19 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
                 if (first == -1) {
                     item.setAmount( toDelete );
                     leftover.put(i, item);
+                    break;
                 } else {
-                    ItemStack itemStack = getItem(first);
+                    CraftItemStack itemStack = getItem(first);
                     int amount = itemStack.getAmount();
 
                     if (amount <= toDelete) {
                         toDelete -= amount;
                         // clear the slot, all used up
-                        clear( i );
+                        clear( first );
                     } else {
                         // split the stack and store
                         itemStack.setAmount( amount - toDelete );
-                        setItem( i, itemStack );
+                        setItem( first, itemStack );
                         toDelete = 0;
                     }
                 }
