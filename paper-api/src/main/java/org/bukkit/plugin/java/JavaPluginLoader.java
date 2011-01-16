@@ -163,16 +163,16 @@ public final class JavaPluginLoader implements PluginLoader {
                     trueListener.onBlockCanBuild((BlockCanBuildEvent)event);
                     break;
                 case BLOCK_RIGHTCLICKED:
-                    trueListener.onBlockRightClicked((BlockRightClickEvent) event);
+                    trueListener.onBlockRightClick((BlockRightClickEvent) event);
                     break;
                 case BLOCK_PLACED:
-                    trueListener.onBlockPlaced((BlockPlaceEvent)event);
+                    trueListener.onBlockPlace((BlockPlaceEvent)event);
                     break;
                 case BLOCK_DAMAGED:
-                    trueListener.onBlockDamaged((BlockDamageEvent)event);
+                    trueListener.onBlockDamage((BlockDamageEvent)event);
                     break;
                 case BLOCK_INTERACT:
-                    trueListener.onBlockInteracted((BlockInteractEvent)event);
+                    trueListener.onBlockInteract((BlockInteractEvent)event);
                     break;
                 case BLOCK_FLOW:
                     trueListener.onBlockFlow((BlockFromToEvent)event);
