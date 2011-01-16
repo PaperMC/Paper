@@ -1,4 +1,3 @@
-
 package org.bukkit.plugin.java;
 
 import java.io.File;
@@ -7,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.jar.JarEntry;

@@ -1,9 +1,7 @@
-
 package org.bukkit.plugin.java;
 
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.security.AccessController;
 import java.util.HashMap;
 import java.util.Map;
 
