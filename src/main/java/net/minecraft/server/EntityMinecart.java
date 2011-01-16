@@ -7,6 +7,8 @@ import java.util.Random;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.entity.CraftEgg;
 import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.craftbukkit.entity.CraftPoweredMinecart;
+import org.bukkit.craftbukkit.entity.CraftStorageMinecart;
 import org.bukkit.craftbukkit.CraftMappable;
 import org.bukkit.craftbukkit.entity.CraftMinecart;
 import org.bukkit.craftbukkit.CraftServer;
@@ -96,6 +98,8 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
     private double at;
 
     // CraftBukkit start
+    protected org.bukkit.entity.Entity bukkitPoweredMinecart; //CraftBukkit
+    protected org.bukkit.entity.Entity bukkitStorageMinecart; //CraftBukkit
     private CraftMinecart minecart;
 
     private boolean slowWhenEmpty = true;
@@ -128,9 +132,10 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
 
         handleCreation(world); // CraftBukkit
         //CraftBukkit start
-        //TODO need to handle powered and storage minecarts
         CraftServer server = ((WorldServer) this.l).getServer();
         this.bukkitEntity = new CraftMinecart(server, this);
+        this.bukkitPoweredMinecart = new CraftPoweredMinecart(server, this);
+        this.bukkitStorageMinecart = new CraftStorageMinecart(server, this);
         //CraftBukkit end
     }
 
@@ -802,4 +807,17 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
         }
         return entityplayer.b(((Entity) (this))) <= 64D;
     }
+    
+    //CraftBukkit start
+    @Override
+    public org.bukkit.entity.Entity getBukkitEntity(){
+        if (this.d == CraftMinecart.Type.StorageMinecart.getId()) {
+            return this.bukkitStorageMinecart;
+        } else if (this.d == CraftMinecart.Type.PoweredMinecart.getId()) {
+            return this.bukkitPoweredMinecart;
+        } else {
+            return this.bukkitEntity;
+        }
+    }
+    //CraftBukkit end
 }
