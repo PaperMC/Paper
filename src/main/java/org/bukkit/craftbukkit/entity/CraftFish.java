@@ -6,12 +6,12 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Fish;
 
 /**
- * An egg.
+ * A Fish.
  * 
  * @author Cogito
  */
 public class CraftFish extends CraftEntity implements Fish {
-    public CraftFish(CraftServer server, EntityFish ent) {
-        super(server, ent);
+    public CraftFish(CraftServer server, EntityFish entity) {
+        super(server, entity);
     }
 }

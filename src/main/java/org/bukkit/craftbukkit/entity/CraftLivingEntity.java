@@ -54,21 +54,21 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         net.minecraft.server.World world = ((CraftWorld)getWorld()).getHandle();
         EntityEgg egg = new EntityEgg(world, entity);
         world.a(egg);
-        return new CraftEgg(server, egg);
+        return (Egg) egg.getBukkitEntity();
     }
 
     public Snowball throwSnowball() {
         net.minecraft.server.World world = ((CraftWorld)getWorld()).getHandle();
         EntitySnowball snowball = new EntitySnowball(world, entity);
         world.a(snowball);
-        return new CraftSnowball(server, snowball);
+        return (Snowball) snowball.getBukkitEntity();
     }
 
     public Arrow shootArrow() {
         net.minecraft.server.World world = ((CraftWorld)getWorld()).getHandle();
-        EntityArrow snowball = new EntityArrow(world, entity);
-        world.a(snowball);
-        return new CraftArrow(server, snowball);
+        EntityArrow arrow = new EntityArrow(world, entity);
+        world.a(arrow);
+        return (Arrow) arrow.getBukkitEntity();
     }
 
     public boolean isInsideVehicle() {

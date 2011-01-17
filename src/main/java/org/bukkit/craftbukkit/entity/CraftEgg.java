@@ -10,7 +10,7 @@ import org.bukkit.entity.Egg;
  * @author sk89q
  */
 public class CraftEgg extends CraftEntity implements Egg {
-    public CraftEgg(CraftServer server, EntityEgg ent) {
-        super(server, ent);
+    public CraftEgg(CraftServer server, EntityEgg entity) {
+        super(server, entity);
     }
 }
