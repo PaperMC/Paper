@@ -8,9 +8,11 @@ import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.entity.CraftMinecart;
 import org.bukkit.craftbukkit.entity.CraftMonster;
 import org.bukkit.craftbukkit.CraftServer;
+
 import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 //CraftBukkit end
 
 public class EntityMobs extends EntityCreature implements IMobs {
@@ -73,8 +75,12 @@ public class EntityMobs extends EntityCreature implements IMobs {
             // CraftBukkit start
             if(entity instanceof EntityLiving) {
                 CraftServer server = ((WorldServer) l).getServer();
+                org.bukkit.entity.Entity damager = this.getBukkitEntity();
+                org.bukkit.entity.Entity damagee = entity.getBukkitEntity();
+                DamageCause damageType = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
+                int damageDone = c;
 
-                EntityDamageByEntityEvent edbee = new EntityDamageByEntityEvent(entity.getBukkitEntity(), this.getBukkitEntity(), EntityDamageEvent.DamageCause.ENTITY_ATTACK, c);
+                EntityDamageByEntityEvent edbee = new EntityDamageByEntityEvent(damager, damagee, damageType, damageDone);
                 server.getPluginManager().callEvent(edbee);
 
                 if (!edbee.isCancelled()){

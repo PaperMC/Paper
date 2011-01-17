@@ -8,9 +8,13 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
+
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+
 // CraftBukkit end
 
 import java.util.*;
@@ -115,32 +119,36 @@ public class Explosion {
                 double d14 = (1.0D - d11) * d13;
 
                 // CraftBukkit start - explosion damage hook
-                int damage = (int) (((d14 * d14 + d14) / 2D) * 8D * (double) f + 1.0D);
-                CraftServer servr = ((WorldServer) i).getServer();
-                CraftEntity damagee = null;
-                if (entity instanceof EntityPlayerMP) {
-                    damagee = new CraftPlayer(servr, (EntityPlayerMP) entity);
-                } else if (entity instanceof EntityLiving) {
-                    damagee = new CraftLivingEntity(servr, (EntityLiving) entity);
+                CraftServer server = ((WorldServer) i).getServer();
+                org.bukkit.entity.Entity damagee = null;
+                DamageCause damageType;
+                int damageDone = (int) (((d14 * d14 + d14) / 2D) * 8D * (double) f + 1.0D);
+                
+                if(entity instanceof EntityLiving) {
+                    damagee = entity.getBukkitEntity();
                 }
 
                 if (e == null) { // Block explosion
                     // Craftbukkit TODO: get the x/y/z of the tnt block?
-                    EntityDamageByBlockEvent edbbe = new EntityDamageByBlockEvent(null, damagee, EntityDamageEvent.DamageCause.BLOCK_EXPLOSION, damage);
-                    servr.getPluginManager().callEvent(edbbe);
+                    damageType = EntityDamageEvent.DamageCause.BLOCK_EXPLOSION;
+                    EntityDamageByBlockEvent edbbe = new EntityDamageByBlockEvent(null, damagee, damageType, damageDone);
+                    server.getPluginManager().callEvent(edbbe);
                     if (!edbbe.isCancelled()) {
                         entity.a(e, edbbe.getDamage());
                     }
                 } else {
                     CraftEntity damager = null;
+                    //TODO org.bukkit.entity.Entity damager = e.getBukkitEntity();
                     if (e instanceof EntityPlayerMP) {
                         // not possible in normal operations
-                        damager = new CraftPlayer(servr, (EntityPlayerMP) e);
+                        damager = new CraftPlayer(server, (EntityPlayerMP) e);
                     } else if (e instanceof EntityLiving) {
-                        damager = new CraftLivingEntity(servr, (EntityLiving) e);
+                        damager = new CraftLivingEntity(server, (EntityLiving) e);
                     }
-                    EntityDamageByEntityEvent edbbe = new EntityDamageByEntityEvent(damager, damagee, EntityDamageEvent.DamageCause.ENTITY_EXPLOSION, damage);
-                    servr.getPluginManager().callEvent(edbbe);
+                    damageType = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
+                                        
+                    EntityDamageByEntityEvent edbbe = new EntityDamageByEntityEvent(damager, damagee, damageType, damageDone);
+                    server.getPluginManager().callEvent(edbbe);
 
                     if (!edbbe.isCancelled()) {
                         entity.a(e, edbbe.getDamage());
