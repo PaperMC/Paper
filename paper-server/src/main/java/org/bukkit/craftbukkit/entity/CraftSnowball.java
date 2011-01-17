@@ -10,7 +10,7 @@ import org.bukkit.entity.Snowball;
  * @author sk89q
  */
 public class CraftSnowball extends CraftEntity implements Snowball {
-    public CraftSnowball(CraftServer server, EntitySnowball ent) {
-        super(server, ent);
+    public CraftSnowball(CraftServer server, EntitySnowball entity) {
+        super(server, entity);
     }
 }

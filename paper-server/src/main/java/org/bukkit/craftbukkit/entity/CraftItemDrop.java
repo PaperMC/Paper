@@ -14,9 +14,9 @@ import org.bukkit.craftbukkit.CraftServer;
 public class CraftItemDrop extends CraftEntity implements ItemDrop {
     private EntityItem item;
     
-    public CraftItemDrop(CraftServer server, EntityItem ent) {
-        super(server, ent);
-        this.item = ent;
+    public CraftItemDrop(CraftServer server, EntityItem entity) {
+        super(server, entity);
+        this.item = entity;
     }
 
     public ItemStack getItemStack() {
