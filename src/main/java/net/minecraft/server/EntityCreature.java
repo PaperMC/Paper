@@ -2,6 +2,9 @@ package net.minecraft.server;
 
 import java.util.Random;
 
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftCreature;
+
 public class EntityCreature extends EntityLiving {
 
     private PathEntity a;
@@ -11,6 +14,10 @@ public class EntityCreature extends EntityLiving {
     public EntityCreature(World world) {
         super(world);
         e = false;
+        //CraftBukkit start
+        CraftServer server = ((WorldServer) this.l).getServer();
+        this.bukkitEntity = new CraftCreature(server, this);
+        //CraftBukkit end
     }
 
     protected void d() {

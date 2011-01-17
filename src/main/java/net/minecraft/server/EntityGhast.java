@@ -3,6 +3,10 @@ package net.minecraft.server;
 import java.util.List;
 import java.util.Random;
 
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftAnimals;
+import org.bukkit.craftbukkit.entity.CraftGhast;
+
 public class EntityGhast extends EntityFlying implements IMobs {
 
     public int a;
@@ -24,6 +28,10 @@ public class EntityGhast extends EntityFlying implements IMobs {
         aP = "/mob/ghast.png";
         a(4F, 4F);
         ae = true;
+        //CraftBukkit start
+        CraftServer server = ((WorldServer) this.l).getServer();
+        this.bukkitEntity = new CraftGhast(server, this);
+        //CraftBukkit end
     }
 
     protected void d() {

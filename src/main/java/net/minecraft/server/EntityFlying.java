@@ -1,9 +1,16 @@
 package net.minecraft.server;
 
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftFlying;
+
 public class EntityFlying extends EntityLiving {
 
     public EntityFlying(World world) {
         super(world);
+      //CraftBukkit start
+        CraftServer server = ((WorldServer) this.l).getServer();
+        this.bukkitEntity = new CraftFlying(server, this);
+        //CraftBukkit end
     }
 
     protected void a(float f) {}

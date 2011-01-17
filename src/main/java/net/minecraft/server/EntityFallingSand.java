@@ -1,5 +1,8 @@
 package net.minecraft.server;
 
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftFallingSand;
+
 public class EntityFallingSand extends Entity {
 
     public int a;
@@ -25,6 +28,10 @@ public class EntityFallingSand extends Entity {
         m = d;
         n = d1;
         o = d2;
+        //CraftBukkit start
+        CraftServer server = ((WorldServer) this.l).getServer();
+        this.bukkitEntity = new CraftFallingSand(server, this);
+        //CraftBukkit end
     }
 
     protected void a() {}

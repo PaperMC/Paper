@@ -2,6 +2,10 @@ package net.minecraft.server;
 
 import java.util.Random;
 
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftSkeleton;
+import org.bukkit.craftbukkit.entity.CraftSlime;
+
 public class EntitySlime extends EntityLiving implements IMobs {
 
     public float a;
@@ -18,6 +22,10 @@ public class EntitySlime extends EntityLiving implements IMobs {
         H = 0.0F;
         d = W.nextInt(20) + 10;
         a(c);
+        //CraftBukkit start
+        CraftServer server = ((WorldServer) this.l).getServer();
+        this.bukkitEntity = new CraftSlime(server, this);
+        //CraftBukkit end
     }
 
     public void a(int j) {

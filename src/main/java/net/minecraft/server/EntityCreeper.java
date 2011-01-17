@@ -2,6 +2,9 @@ package net.minecraft.server;
 
 import java.util.Random;
 
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftCreeper;
+
 public class EntityCreeper extends EntityMobs {
 
     int a;
@@ -10,6 +13,10 @@ public class EntityCreeper extends EntityMobs {
     public EntityCreeper(World world) {
         super(world);
         aP = "/mob/creeper.png";
+        //CraftBukkit start
+        CraftServer server = ((WorldServer) this.l).getServer();
+        this.bukkitEntity = new CraftCreeper(server, this);
+        //CraftBukkit end
     }
 
     protected void a() {

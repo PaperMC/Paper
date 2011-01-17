@@ -3,6 +3,10 @@ package net.minecraft.server;
 import java.util.List;
 import java.util.Random;
 
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftAnimals;
+import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+
 public abstract class EntityLiving extends Entity {
 
     public int aF;
@@ -93,6 +97,10 @@ public abstract class EntityLiving extends Entity {
         aG = (float) Math.random() * 12398F;
         v = (float) (Math.random() * 3.1415927410125732D * 2D);
         S = 0.5F;
+        //CraftBukkit start
+        CraftServer server = ((WorldServer) this.l).getServer();
+        this.bukkitEntity = new CraftLivingEntity(server, this);
+        //CraftBukkit end
     }
 
     protected void a() {}

@@ -3,6 +3,9 @@ package net.minecraft.server;
 import java.util.List;
 import java.util.Random;
 
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftPigZombie;
+
 public class EntityPigZombie extends EntityZombie {
 
     private int a;
@@ -17,6 +20,10 @@ public class EntityPigZombie extends EntityZombie {
         bC = 0.5F;
         c = 5;
         ae = true;
+        //CraftBukkit start
+        CraftServer server = ((WorldServer) this.l).getServer();
+        this.bukkitEntity = new CraftPigZombie(server, this);
+        //CraftBukkit end
     }
 
     public void b_() {

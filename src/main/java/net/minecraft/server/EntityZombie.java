@@ -1,9 +1,6 @@
 package net.minecraft.server;
 
-import java.util.Random;
-
-// CraftBukkit start
-import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.entity.CraftZombie;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.entity.EntityCombustEvent;
@@ -18,7 +15,7 @@ public class EntityZombie extends EntityMobs {
         c = 5;
         //CraftBukkit start
         CraftServer server = ((WorldServer) this.l).getServer();
-        this.bukkitEntity = new CraftLivingEntity(server, this);
+        this.bukkitEntity = new CraftZombie(server, this);
         //CraftBukkit end
     }
 

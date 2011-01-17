@@ -1,11 +1,18 @@
 package net.minecraft.server;
 
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftPig;
+
 public class EntityPig extends EntityAnimals {
 
     public EntityPig(World world) {
         super(world);
         aP = "/mob/pig.png";
         a(0.9F, 0.9F);
+        //CraftBukkit start
+        CraftServer server = ((WorldServer) this.l).getServer();
+        this.bukkitEntity = new CraftPig(server, this);
+        //CraftBukkit end
     }
 
     protected void a() {

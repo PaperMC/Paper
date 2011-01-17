@@ -2,6 +2,10 @@ package net.minecraft.server;
 
 import java.util.Random;
 
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftAnimals;
+import org.bukkit.craftbukkit.entity.CraftItem;
+
 public class EntityItem extends Entity {
 
     public ItemStack a;
@@ -25,6 +29,10 @@ public class EntityItem extends Entity {
         t = 0.20000000298023224D;
         u = (float) (Math.random() * 0.20000000298023224D - 0.10000000149011612D);
         M = false;
+        //CraftBukkit start
+        CraftServer server = ((WorldServer) this.l).getServer();
+        this.bukkitEntity = new CraftItem(server, this);
+        //CraftBukkit end
     }
 
     public EntityItem(World world) {

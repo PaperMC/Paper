@@ -1,5 +1,9 @@
 package net.minecraft.server;
 
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftSkeleton;
+import org.bukkit.craftbukkit.entity.CraftTNTPrimed;
+
 public class EntityTNTPrimed extends Entity {
 
     public int a;
@@ -10,6 +14,10 @@ public class EntityTNTPrimed extends Entity {
         i = true;
         a(0.98F, 0.98F);
         H = J / 2.0F;
+        //CraftBukkit start
+        CraftServer server = ((WorldServer) this.l).getServer();
+        this.bukkitEntity = new CraftTNTPrimed(server, this);
+        //CraftBukkit end
     }
 
     public EntityTNTPrimed(World world, double d1, double d2, double d3) {

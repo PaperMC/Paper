@@ -3,9 +3,7 @@ package net.minecraft.server;
 import java.util.List;
 import java.util.Random;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -53,7 +51,7 @@ public abstract class EntityPlayer extends EntityLiving {
         aP = "/mob/char.png";
         //CraftBukkit start
         CraftServer server = ((WorldServer) this.l).getServer();
-        this.bukkitEntity = new CraftLivingEntity(server, this);
+        this.bukkitEntity = new CraftHumanEntity(server, this);
         //CraftBukkit end
     }
 

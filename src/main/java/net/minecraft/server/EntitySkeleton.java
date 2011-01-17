@@ -2,8 +2,7 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.entity.CraftSkeleton;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.entity.EntityCombustEvent;
@@ -18,7 +17,7 @@ public class EntitySkeleton extends EntityMobs {
         aP = "/mob/skeleton.png";
         //CraftBukkit start
         CraftServer server = ((WorldServer) this.l).getServer();
-        this.bukkitEntity = new CraftLivingEntity(server, this);
+        this.bukkitEntity = new CraftSkeleton(server, this);
         //CraftBukkit end
     }
 
