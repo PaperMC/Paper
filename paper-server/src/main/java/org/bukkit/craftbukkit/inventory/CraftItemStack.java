@@ -7,9 +7,45 @@ public class CraftItemStack extends ItemStack {
     protected net.minecraft.server.ItemStack item;
 
     public CraftItemStack(net.minecraft.server.ItemStack item) {
-        super(item != null ? item.c : 0, item != null ? item.a : 0,
-                (byte)(item != null ? item.d : 0));
+        super(
+            item != null ? item.c : 0,
+            item != null ? item.a : 0,
+            (byte)(item != null ? item.d : 0)
+        );
         this.item = item;
+    }
+
+    /* 'Overwritten' constructors from ItemStack, yay for Java sucking */
+    public CraftItemStack(final int type) {
+        this(type, 0);
+    }
+
+    public CraftItemStack(final Material type) {
+        this(type, 0);
+    }
+
+    public CraftItemStack(final int type, final int amount) {
+        this(type, amount, (byte) 0);
+    }
+
+    public CraftItemStack(final Material type, final int amount) {
+        this(type.getId(), amount);
+    }
+
+    public CraftItemStack(final int type, final int amount, final byte damage) {
+        this(type, amount, damage, null);
+    }
+
+    public CraftItemStack(final Material type, final int amount, final byte damage) {
+        this(type.getId(), amount, damage);
+    }
+
+    public CraftItemStack(final Material type, final int amount, final byte damage, final Byte data) {
+        this(type.getId(), amount, damage, data);
+    }
+
+    public CraftItemStack(int type, int amount, byte damage, Byte data) {
+        this(new net.minecraft.server.ItemStack(type, amount, data != null ? data : damage));
     }
 
     /*
