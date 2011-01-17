@@ -6,6 +6,7 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.craftbukkit.inventory.CraftInventoryPlayer;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.CraftServer;
 
 public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
@@ -30,13 +31,14 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     public void setHandle(final EntityPlayer entity) {
         super.setHandle((EntityPlayer)entity);
         this.entity = entity;
+        this.inventory = new CraftInventoryPlayer( entity.an );
     }
 
-    public PlayerInventory getInventory() {
+    public CraftInventoryPlayer getInventory() {
         return inventory;
     }
 
-    public ItemStack getItemInHand() {
+    public CraftItemStack getItemInHand() {
         return getInventory().getItemInHand();
     }
 
