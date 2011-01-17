@@ -8,6 +8,9 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.block.CraftBlock;
 // CraftBukkit end
 
 import java.util.*;
@@ -117,7 +120,7 @@ public class Explosion {
                 CraftEntity damagee = null;
                 if (entity instanceof EntityPlayerMP) {
                     damagee = new CraftPlayer(servr, (EntityPlayerMP) entity);
-                } else if(entity instanceof EntityLiving) {
+                } else if (entity instanceof EntityLiving) {
                     damagee = new CraftLivingEntity(servr, (EntityLiving) entity);
                 }
 
@@ -125,7 +128,9 @@ public class Explosion {
                     // Craftbukkit TODO: get the x/y/z of the tnt block?
                     EntityDamageByBlockEvent edbbe = new EntityDamageByBlockEvent(null, damagee, EntityDamageEvent.DamageCause.BLOCK_EXPLOSION, damage);
                     servr.getPluginManager().callEvent(edbbe);
-                    if(!edbbe.isCancelled()) entity.a(e, edbbe.getDamage());
+                    if (!edbbe.isCancelled()) {
+                        entity.a(e, edbbe.getDamage());
+                    }
                 } else {
                     CraftEntity damager = null;
                     if (e instanceof EntityPlayerMP) {
@@ -176,40 +181,66 @@ public class Explosion {
         ArrayList arraylist = new ArrayList();
 
         ((List) (arraylist)).addAll(((java.util.Collection) (g)));
+
+        // Craftbukkit start
+        CraftServer servr = ((WorldServer) i).getServer();
+        CraftWorld wrld = ((WorldServer) i).getWorld();
+        org.bukkit.entity.Entity splode;
+        if (this.e instanceof EntityCreeper) {
+            splode = new CraftLivingEntity(servr, (EntityLiving) e);
+        } else {
+            splode = (org.bukkit.entity.Entity) this.e;
+        }
+        ArrayList blocklist = new ArrayList();
         for (int j = ((List) (arraylist)).size() - 1; j >= 0; j--) {
-            ChunkPosition chunkposition = (ChunkPosition) ((List) (arraylist)).get(j);
-            int k = chunkposition.a;
-            int l = chunkposition.b;
-            int i1 = chunkposition.c;
-            int j1 = i.a(k, l, i1);
-
-            for (int k1 = 0; k1 < 1; k1++) {
-                double d1 = (float) k + i.l.nextFloat();
-                double d2 = (float) l + i.l.nextFloat();
-                double d3 = (float) i1 + i.l.nextFloat();
-                double d4 = d1 - b;
-                double d5 = d2 - c;
-                double d6 = d3 - d;
-                double d7 = MathHelper.a(d4 * d4 + d5 * d5 + d6 * d6);
-
-                d4 /= d7;
-                d5 /= d7;
-                d6 /= d7;
-                double d8 = 0.5D / (d7 / (double) f + 0.10000000000000001D);
-
-                d8 *= i.l.nextFloat() * i.l.nextFloat() + 0.3F;
-                d4 *= d8;
-                d5 *= d8;
-                d6 *= d8;
-                i.a("explode", (d1 + b * 1.0D) / 2D, (d2 + c * 1.0D) / 2D, (d3 + d * 1.0D) / 2D, d4, d5, d6);
-                i.a("smoke", d1, d2, d3, d4, d5, d6);
-            }
-
-            if (j1 > 0) {
-                Block.m[j1].a(i, k, l, i1, i.b(k, l, i1), 0.3F);
-                i.e(k, l, i1, 0);
-                Block.m[j1].a_(i, k, l, i1);
+            ChunkPosition cpos = (ChunkPosition) ((List) (arraylist)).get(j);
+            org.bukkit.craftbukkit.block.CraftBlock blox = new org.bukkit.craftbukkit.block.CraftBlock(wrld, cpos.a, cpos.b, cpos.c, wrld.getBlockTypeIdAt(cpos.a, cpos.b, cpos.c), wrld.getBlockAt(cpos.a, cpos.b, cpos.c).getData());
+            if (!blox.getType().equals(org.bukkit.Material.AIR)) {
+                blocklist.add(blox);
             }
         }
+
+        EntityExplodeEvent eee = new EntityExplodeEvent(EntityExplodeEvent.Type.ENTITY_EXPLODE, splode, blocklist);
+        servr.getPluginManager().callEvent(eee);
+        if (!(eee.isCancelled())) {
+            // Notch start
+            for (int j = ((List) (arraylist)).size() - 1; j >= 0; j--) {
+                ChunkPosition chunkposition = (ChunkPosition) ((List) (arraylist)).get(j);
+                int k = chunkposition.a;
+                int l = chunkposition.b;
+                int i1 = chunkposition.c;
+                int j1 = i.a(k, l, i1);
+
+                for (int k1 = 0; k1 < 1; k1++) {
+                    double d1 = (float) k + i.l.nextFloat();
+                    double d2 = (float) l + i.l.nextFloat();
+                    double d3 = (float) i1 + i.l.nextFloat();
+                    double d4 = d1 - b;
+                    double d5 = d2 - c;
+                    double d6 = d3 - d;
+                    double d7 = MathHelper.a(d4 * d4 + d5 * d5 + d6 * d6);
+
+                    d4 /= d7;
+                    d5 /= d7;
+                    d6 /= d7;
+                    double d8 = 0.5D / (d7 / (double) f + 0.10000000000000001D);
+
+                    d8 *= i.l.nextFloat() * i.l.nextFloat() + 0.3F;
+                    d4 *= d8;
+                    d5 *= d8;
+                    d6 *= d8;
+                    i.a("explode", (d1 + b * 1.0D) / 2D, (d2 + c * 1.0D) / 2D, (d3 + d * 1.0D) / 2D, d4, d5, d6);
+                    i.a("smoke", d1, d2, d3, d4, d5, d6);
+                }
+
+                if (j1 > 0) {
+                    Block.m[j1].a(i, k, l, i1, i.b(k, l, i1), 0.3F);
+                    i.e(k, l, i1, 0);
+                    Block.m[j1].a_(i, k, l, i1);
+                }
+            }
+            // Notch end
+        }
+        //Craftbukkit end
     }
 }
