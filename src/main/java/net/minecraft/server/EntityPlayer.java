@@ -345,7 +345,7 @@ public abstract class EntityPlayer extends EntityLiving {
                 server.getPluginManager().callEvent(edbee);
 
                 if (!edbee.isCancelled()){
-                    entity.a(((Entity) (null)), edbee.getDamage());
+                    entity.a(((Entity) this), edbee.getDamage());
                 } else {
                     return;
                 }
