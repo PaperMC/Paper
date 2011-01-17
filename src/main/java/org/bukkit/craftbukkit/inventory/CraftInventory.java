@@ -84,12 +84,12 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
         return false;
     }
 
-    public HashMap<Integer, ItemStack> all(int materialId) {
-        HashMap<Integer, ItemStack> slots = new HashMap<Integer, ItemStack>();
+    public HashMap<Integer, CraftItemStack> all(int materialId) {
+        HashMap<Integer, CraftItemStack> slots = new HashMap<Integer, CraftItemStack>();
 
-        ItemStack[] inventory = getContents();
+        CraftItemStack[] inventory = getContents();
         for (int i = 0; i < inventory.length; i++) {
-            ItemStack item = inventory[i];
+            CraftItemStack item = inventory[i];
             if (item.getTypeId() == materialId) {
                 slots.put( i, item );
             }
@@ -97,24 +97,24 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
         return slots;
     }
 
-    public HashMap<Integer, ItemStack> all(Material material) {
+    public HashMap<Integer, CraftItemStack> all(Material material) {
         return all(material.getId());
     }
 
-    public HashMap<Integer, ItemStack> all(ItemStack item) {
-        HashMap<Integer, ItemStack> slots = new HashMap<Integer, ItemStack>();
+    public HashMap<Integer, CraftItemStack> all(ItemStack item) {
+        HashMap<Integer, CraftItemStack> slots = new HashMap<Integer, CraftItemStack>();
 
-        ItemStack[] inventory = getContents();
+        CraftItemStack[] inventory = getContents();
         for (int i = 0; i < inventory.length; i++) {
             if (item.equals(inventory[i])) {
-                slots.put( i, item );
+                slots.put( i, inventory[i] );
             }
         }
         return slots;
     }
 
     public int first(int materialId) {
-        ItemStack[] inventory = getContents();
+        CraftItemStack[] inventory = getContents();
         for (int i = 0; i < inventory.length; i++) {
             if (inventory[i].getTypeId() == materialId) {
                 return i;
@@ -128,7 +128,7 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
     }
 
     public int first(ItemStack item) {
-        ItemStack[] inventory = getContents();
+        CraftItemStack[] inventory = getContents();
         for (int i = 0; i < inventory.length; i++) {
             if (item.equals(inventory[i])) {
                 return i;
@@ -142,9 +142,9 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
     }
 
     public int firstPartial(int materialId) {
-        ItemStack[] inventory = getContents();
+        CraftItemStack[] inventory = getContents();
         for (int i = 0; i < inventory.length; i++) {
-            ItemStack item = inventory[i];
+            CraftItemStack item = inventory[i];
             if (item != null && item.getTypeId() == materialId && item.getAmount() < item.getMaxStackSize()) {
                 return i;
             }
@@ -161,7 +161,7 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
     }
     
     public HashMap<Integer, ItemStack> addItem(ItemStack... items) {
-        HashMap<Integer,ItemStack> leftover = new HashMap<Integer,ItemStack>();
+        HashMap<Integer, ItemStack> leftover = new HashMap<Integer, ItemStack>();
 
         /* TODO: some optimization
          *  - Create a 'firstPartial' with a 'fromIndex'
@@ -187,7 +187,7 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
                     } else {
                         // More than a single stack!
                         if (item.getAmount() > getMaxItemStack()) {
-                            setItem( firstFree, new ItemStack(item.getTypeId(), getMaxItemStack()));
+                            setItem( firstFree, new CraftItemStack(item.getTypeId(), getMaxItemStack()));
                             item.setAmount(item.getAmount() - getMaxItemStack());
                         } else {
                             // Just store it
@@ -197,7 +197,7 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
                     }
                 } else {
                     // So, apparently it might only partially fit, well lets do just that
-                    ItemStack partialItem = getItem(firstPartial);
+                    CraftItemStack partialItem = getItem(firstPartial);
 
                     int amount = item.getAmount();
                     int partialAmount = partialItem.getAmount();
