@@ -24,15 +24,15 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public int getHealth() {
-        return entity.ba;
+        return entity.aZ;
     }
 
     public void setHealth(int health) {
-        if ((health < 0) || (health > 20)) {
-            throw new IllegalArgumentException("Health must be between 0 and 20");
+        if ((health < 0) || (health > 200)) {
+            throw new IllegalArgumentException("Health must be between 0 and 200");
         }
 
-        entity.ba = health;
+        entity.aZ = health;
     }
 
     @Override
