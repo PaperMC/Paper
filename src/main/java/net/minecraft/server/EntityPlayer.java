@@ -8,6 +8,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 // CraftBukkit end
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 
 public abstract class EntityPlayer extends EntityLiving {
 
@@ -340,8 +341,12 @@ public abstract class EntityPlayer extends EntityLiving {
             // CraftBukkit start
             if(entity instanceof EntityLiving) {
                 CraftServer server = ((WorldServer) l).getServer();
-
-                EntityDamageByEntityEvent edbee = new EntityDamageByEntityEvent(entity.getBukkitEntity(), this.getBukkitEntity(), EntityDamageEvent.DamageCause.ENTITY_ATTACK, i);
+                org.bukkit.entity.Entity damager = this.getBukkitEntity();
+                org.bukkit.entity.Entity damagee = entity.getBukkitEntity();
+                DamageCause damageType = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
+                int damageDone = i;
+                
+                EntityDamageByEntityEvent edbee = new EntityDamageByEntityEvent(damager, damagee, damageType, damageDone);
                 server.getPluginManager().callEvent(edbee);
 
                 if (!edbee.isCancelled()){
