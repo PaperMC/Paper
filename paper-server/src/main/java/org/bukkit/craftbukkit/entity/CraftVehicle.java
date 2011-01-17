@@ -16,7 +16,7 @@ public abstract class CraftVehicle extends CraftEntity implements Vehicle {
     }
 
     public Entity getPassenger() {
-        return ((CraftWorld)getWorld()).toCraftEntity(getHandle().j);
+        return (getHandle().j.getBukkitEntity());
     }
     
     public boolean setPassenger(Entity passenger) {

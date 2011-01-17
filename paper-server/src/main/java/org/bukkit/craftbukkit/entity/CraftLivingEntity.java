@@ -89,7 +89,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             return null;
         }
         
-        org.bukkit.entity.Entity vehicle = ((CraftWorld)getWorld()).toCraftEntity(entity.k);
+        org.bukkit.entity.Entity vehicle = (entity.k.getBukkitEntity());
         if (vehicle instanceof Vehicle) {
             return (Vehicle)vehicle;
         }
