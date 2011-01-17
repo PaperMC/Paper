@@ -286,7 +286,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
             ICommandListener icommandlistener = servercommand.b;
             String s1 = icommandlistener.c();
 
-            if (s.toLowerCase().startsWith("help") || s.toLowerCase().startsWith("?")) {
+            if (s.toLowerCase().startsWith("#help") || s.toLowerCase().startsWith("?")) {
                 icommandlistener.b("To run the server without a gui, start it like this:");
                 icommandlistener.b("   java -Xmx1024M -Xms1024M -jar minecraft_server.jar nogui");
                 icommandlistener.b("Console commands:");
@@ -307,44 +307,44 @@ public class MinecraftServer implements ICommandListener, Runnable {
                 icommandlistener.b("   save-on                   re-enables terrain saving");
                 icommandlistener.b("   list                      lists all currently connected players");
                 icommandlistener.b("   say <message>             broadcasts a message to all players");
-            } else if (s.toLowerCase().startsWith("list")) {
+            } else if (s.toLowerCase().startsWith("#list")) {
                 icommandlistener.b((new StringBuilder()).append("Connected players: ").append(f.c()).toString());
-            } else if (s.toLowerCase().startsWith("stop")) {
+            } else if (s.toLowerCase().startsWith("#stop")) {
                 a(s1, "Stopping the server..");
                 o = false;
-            } else if (s.toLowerCase().startsWith("save-all")) {
+            } else if (s.toLowerCase().startsWith("#save-all")) {
                 a(s1, "Forcing save..");
                 e.a(true, ((IProgressUpdate) (null)));
                 a(s1, "Save complete.");
-            } else if (s.toLowerCase().startsWith("save-off")) {
+            } else if (s.toLowerCase().startsWith("#save-off")) {
                 a(s1, "Disabling level saving..");
                 e.C = true;
-            } else if (s.toLowerCase().startsWith("save-on")) {
+            } else if (s.toLowerCase().startsWith("#save-on")) {
                 a(s1, "Enabling level saving..");
                 e.C = false;
-            } else if (s.toLowerCase().startsWith("op ")) {
+            } else if (s.toLowerCase().startsWith("#op ")) {
                 String s2 = s.substring(s.indexOf(" ")).trim();
 
                 f.e(s2);
                 a(s1, (new StringBuilder()).append("Opping ").append(s2).toString());
                 f.a(s2, "\247eYou are now op!");
-            } else if (s.toLowerCase().startsWith("deop ")) {
+            } else if (s.toLowerCase().startsWith("#deop ")) {
                 String s3 = s.substring(s.indexOf(" ")).trim();
 
                 f.f(s3);
                 f.a(s3, "\247eYou are no longer op!");
                 a(s1, (new StringBuilder()).append("De-opping ").append(s3).toString());
-            } else if (s.toLowerCase().startsWith("ban-ip ")) {
+            } else if (s.toLowerCase().startsWith("#ban-ip ")) {
                 String s4 = s.substring(s.indexOf(" ")).trim();
 
                 f.c(s4);
                 a(s1, (new StringBuilder()).append("Banning ip ").append(s4).toString());
-            } else if (s.toLowerCase().startsWith("pardon-ip ")) {
+            } else if (s.toLowerCase().startsWith("#pardon-ip ")) {
                 String s5 = s.substring(s.indexOf(" ")).trim();
 
                 f.d(s5);
                 a(s1, (new StringBuilder()).append("Pardoning ip ").append(s5).toString());
-            } else if (s.toLowerCase().startsWith("ban ")) {
+            } else if (s.toLowerCase().startsWith("#ban ")) {
                 String s6 = s.substring(s.indexOf(" ")).trim();
 
                 f.a(s6);
@@ -354,12 +354,12 @@ public class MinecraftServer implements ICommandListener, Runnable {
                 if (entityplayermp != null) {
                     entityplayermp.a.a("Banned by admin");
                 }
-            } else if (s.toLowerCase().startsWith("pardon ")) {
+            } else if (s.toLowerCase().startsWith("#pardon ")) {
                 String s7 = s.substring(s.indexOf(" ")).trim();
 
                 f.b(s7);
                 a(s1, (new StringBuilder()).append("Pardoning ").append(s7).toString());
-            } else if (s.toLowerCase().startsWith("kick ")) {
+            } else if (s.toLowerCase().startsWith("#kick ")) {
                 String s8 = s.substring(s.indexOf(" ")).trim();
                 EntityPlayerMP entityplayermp1 = null;
 
@@ -377,7 +377,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
                 } else {
                     icommandlistener.b((new StringBuilder()).append("Can't find user ").append(s8).append(". No kick.").toString());
                 }
-            } else if (s.toLowerCase().startsWith("tp ")) {
+            } else if (s.toLowerCase().startsWith("#tp ")) {
                 String as[] = s.split(" ");
 
                 if (as.length == 3) {
@@ -395,7 +395,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
                 } else {
                     icommandlistener.b("Syntax error, please provice a source and a target.");
                 }
-            } else if (s.toLowerCase().startsWith("give ")) {
+            } else if (s.toLowerCase().startsWith("#give ")) {
                 String as1[] = s.split(" ");
 
                 if (as1.length != 3 && as1.length != 4) {
@@ -431,11 +431,11 @@ public class MinecraftServer implements ICommandListener, Runnable {
                 } else {
                     icommandlistener.b((new StringBuilder()).append("Can't find user ").append(s9).toString());
                 }
-            } else if (s.toLowerCase().startsWith("say ")) {
+            } else if (s.toLowerCase().startsWith("#say ")) {
                 s = s.substring(s.indexOf(" ")).trim();
                 a.info((new StringBuilder()).append("[").append(s1).append("] ").append(s).toString());
                 f.a(((Packet) (new Packet3Chat((new StringBuilder()).append("\247d[Server] ").append(s).toString()))));
-            } else if (s.toLowerCase().startsWith("tell ")) {
+            } else if (s.toLowerCase().startsWith("#tell ")) {
                 String as2[] = s.split(" ");
 
                 if (as2.length >= 3) {
@@ -449,7 +449,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
                     }
                 }
             } else {
-                a.info("Unknown console command. Type \"help\" for help.");
+                a.info("Unknown console command. Type \"#help\" for help.");
             }
         } while (true);
     }
