@@ -17,12 +17,12 @@ import org.bukkit.plugin.SimpleCommandManager;
 import org.bukkit.plugin.SimplePluginManager;
 import org.bukkit.plugin.java.JavaPluginLoader;
 
-public final class CraftServer implements Server {
+public final class CraftServer implements Server
+{
     private final String serverName = "Craftbukkit";
     private final String serverVersion = "1.2_01";
     private final PluginManager pluginManager = new SimplePluginManager(this);
     private final CommandManager commandManager = new SimpleCommandManager();
-
     protected final MinecraftServer console;
     protected final ServerConfigurationManager server;
 
@@ -32,9 +32,9 @@ public final class CraftServer implements Server {
 
         pluginManager.RegisterInterface(JavaPluginLoader.class);
     }
-    
+
     public void loadPlugins() {
-        File pluginFolder = (File)console.options.valueOf("plugins");
+        File pluginFolder = (File) console.options.valueOf("plugins");
 
         if (pluginFolder.exists()) {
             try {
@@ -42,7 +42,7 @@ public final class CraftServer implements Server {
 
                 for (Plugin plugin : plugins) {
                     if (commandManager.registerCommands(plugin)) {
-                        pluginManager.enablePlugin(plugin);       
+                        pluginManager.enablePlugin(plugin);
                     } else {
                         Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, "Plugin " + plugin.getDescription().getName() + " failed to load. Reason: Requested commands already in use.");
                     }
@@ -77,15 +77,22 @@ public final class CraftServer implements Server {
     public Player getPlayer(final String name) {
         Player[] players = getOnlinePlayers();
 
+        Player found = null;
+        String lowerName = name.toLowerCase();
+        int delta = Integer.MAX_VALUE;
         for (Player player : players) {
-            if (player.getName().equalsIgnoreCase(name)) {
-                return player;
+            if (player.getName().toLowerCase().startsWith(lowerName)) {
+                int curDelta = player.getName().length() - lowerName.length();
+                if(curDelta == 0) break;
+                if (curDelta < delta) {
+                    found = player;
+                    delta = curDelta;
+                }
             }
         }
-
-        return null;
+        return found;
     }
-    
+
     public int broadcastMessage(String message) {
         Player[] players = getOnlinePlayers();
 
@@ -99,10 +106,10 @@ public final class CraftServer implements Server {
     public Player getPlayer(final EntityPlayerMP entity) {
         return entity.a.getPlayer();
     }
-    
+
     public List<Player> matchPlayer(String partialName) {
         List<Player> matchedPlayers = new ArrayList<Player>();
-        
+
         for (Player iterPlayer : this.getOnlinePlayers()) {
             String iterPlayerName = iterPlayer.getName();
 
@@ -126,7 +133,7 @@ public final class CraftServer implements Server {
     }
 
     public World[] getWorlds() {
-        return new World[] { console.e.getWorld() };
+        return new World[]{console.e.getWorld()};
     }
 
     public long getTime() {
