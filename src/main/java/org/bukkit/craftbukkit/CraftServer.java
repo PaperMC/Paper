@@ -83,11 +83,11 @@ public final class CraftServer implements Server
         for (Player player : players) {
             if (player.getName().toLowerCase().startsWith(lowerName)) {
                 int curDelta = player.getName().length() - lowerName.length();
-                if(curDelta == 0) break;
                 if (curDelta < delta) {
                     found = player;
                     delta = curDelta;
                 }
+                if(curDelta == 0) break;
             }
         }
         return found;
