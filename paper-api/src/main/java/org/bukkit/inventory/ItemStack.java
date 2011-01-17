@@ -30,21 +30,21 @@ public class ItemStack {
     }
 
     public ItemStack(final int type, final int amount, final byte damage) {
-        this(type, amount, damage, (byte) 0);
+        this(type, amount, damage, null);
     }
 
     public ItemStack(final Material type, final int amount, final byte damage) {
         this(type.getId(), amount, damage);
     }
 
-    public ItemStack(final int type, final int amount, final byte damage, final byte data) {
+    public ItemStack(final int type, final int amount, final byte damage, final Byte data) {
         this.type = type;
         this.amount = amount;
         this.damage = damage;
-        createData(data);
+        if (data != null) createData(data);
     }
 
-    public ItemStack(final Material type, final int amount, final byte damage, final byte data) {
+    public ItemStack(final Material type, final int amount, final byte damage, final Byte data) {
         this(type.getId(), amount, damage, data);
     }
 

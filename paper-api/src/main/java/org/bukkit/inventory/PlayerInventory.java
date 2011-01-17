@@ -74,7 +74,7 @@ public interface PlayerInventory extends Inventory {
     /**
      * Returns the ItemStack currently hold
      * 
-     * @return The currently holded ItemStack
+     * @return The currently held ItemStack
      */
     public ItemStack getItemInHand();
 
