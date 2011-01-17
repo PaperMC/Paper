@@ -445,6 +445,13 @@ public abstract class Event {
          * @todo: add javadoc see comment
          */
         ENTITY_COMBUST (Category.LIVING_ENTITY),
+        
+        /**
+         * Called when an entity explodes, either TNT, Creeper, or Ghast Fireball
+         *
+         * @todo: add javadoc see comment
+         */
+        ENTITY_EXPLODE (Category.LIVING_ENTITY),
 
         /**
          * VEHICLE EVENTS
