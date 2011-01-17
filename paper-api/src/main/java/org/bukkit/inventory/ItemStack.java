@@ -41,7 +41,10 @@ public class ItemStack {
         this.type = type;
         this.amount = amount;
         this.damage = damage;
-        if (data != null) createData(data);
+        if (data != null) {
+            createData(data);
+            this.damage = data;
+        }
     }
 
     public ItemStack(final Material type, final int amount, final byte damage, final Byte data) {
