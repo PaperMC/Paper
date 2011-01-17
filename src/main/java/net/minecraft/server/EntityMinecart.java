@@ -12,6 +12,7 @@ import org.bukkit.craftbukkit.entity.CraftStorageMinecart;
 import org.bukkit.craftbukkit.CraftMappable;
 import org.bukkit.craftbukkit.entity.CraftMinecart;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.Vehicle;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.vehicle.*;
 // CraftBukkit end
@@ -100,6 +101,7 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
     // CraftBukkit start
     protected org.bukkit.entity.Entity bukkitPoweredMinecart; //CraftBukkit
     protected org.bukkit.entity.Entity bukkitStorageMinecart; //CraftBukkit
+    /**@deprecated*/
     private CraftMinecart minecart;
 
     private boolean slowWhenEmpty = true;
@@ -109,6 +111,7 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
     private double flyingX = 0.94999998807907104;
     private double flyingY = 0.94999998807907104;
     private double flyingZ = 0.94999998807907104;
+    /**@deprecated*/
     public CraftEntity getCraftEntity() {
         return minecart;
     }
@@ -170,8 +173,7 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
     // CraftBukkit start
     private void handleCreation(World world) {
         CraftServer server = ((WorldServer) world).getServer();
-        minecart = CraftMinecart.getCraftMinecart(server, this);
-        VehicleCreateEvent event = new VehicleCreateEvent( Type.VEHICLE_CREATE, minecart);
+        VehicleCreateEvent event = new VehicleCreateEvent(Type.VEHICLE_CREATE, (Vehicle) this.getBukkitEntity());
         server.getPluginManager().callEvent(event);
     }
     // CraftBukkit end
@@ -182,7 +184,7 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
 
     public boolean a(Entity entity, int i) {
         // CraftBukkit start
-        VehicleDamageEvent event = new VehicleDamageEvent( Type.VEHICLE_DAMAGE, minecart, ((WorldServer)l).getWorld().toCraftEntity(entity), i);
+        VehicleDamageEvent event = new VehicleDamageEvent(Type.VEHICLE_DAMAGE, (Vehicle) this.getBukkitEntity(), entity.getBukkitEntity(), i);
         ((WorldServer)l).getServer().getPluginManager().callEvent(event);
 
         if (event.isCancelled()) {
@@ -505,12 +507,7 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
 
         // CraftBukkit start
         CraftServer server = ((WorldServer)this.l).getServer();
-        VehicleMoveEvent event = new VehicleMoveEvent(
-            Type.VEHICLE_MOVE,
-            minecart,
-            new Location(((WorldServer)this.l).getWorld(), prevX, prevY, prevZ, prevYaw, prevPitch),
-            new Location(((WorldServer)this.l).getWorld(), p, q, r, v, w)
-        );
+        VehicleMoveEvent event = new VehicleMoveEvent(Type.VEHICLE_MOVE, (Vehicle) this.getBukkitEntity(), new Location(((WorldServer)this.l).getWorld(), prevX, prevY, prevZ, prevYaw, prevPitch), new Location(((WorldServer)this.l).getWorld(), p, q, r, v, w));
         server.getPluginManager().callEvent(event);
         // CraftBukkit end
 
@@ -646,7 +643,7 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
 
         // CraftBukkit start
         CraftServer server = ((WorldServer)l).getServer();
-        VehicleEntityCollisionEvent collsionEvent = new VehicleEntityCollisionEvent( Type.VEHICLE_COLLISION_ENTITY, minecart, ((WorldServer)l).getWorld().toCraftEntity(entity));
+        VehicleEntityCollisionEvent collsionEvent = new VehicleEntityCollisionEvent(Type.VEHICLE_COLLISION_ENTITY, (Vehicle) this.getBukkitEntity(), entity.getBukkitEntity());
         server.getPluginManager().callEvent(collsionEvent);
 
         if (collsionEvent.isCancelled()) {
@@ -655,7 +652,7 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
 
         if ((entity instanceof EntityLiving) && !(entity instanceof EntityPlayer) && d == 0 && s * s + u * u > 0.01D && j == null && entity.k == null) {
             if (!collsionEvent.isPickupCancelled()) {
-                VehicleEnterEvent enterEvent = new VehicleEnterEvent( Type.VEHICLE_ENTER, minecart, ((WorldServer)l).getWorld().toCraftEntity(entity));
+                VehicleEnterEvent enterEvent = new VehicleEnterEvent(Type.VEHICLE_ENTER, (Vehicle) this.getBukkitEntity(), entity.getBukkitEntity());
                 server.getPluginManager().callEvent(enterEvent);
 
                 if (!enterEvent.isCancelled()) {
@@ -772,7 +769,7 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
             if (!l.z) {
                 // CraftBukkit start
                 CraftServer server = ((WorldServer) l).getServer();
-                VehicleEnterEvent event = new VehicleEnterEvent( Type.VEHICLE_ENTER, minecart, ((WorldServer)l).getWorld().toCraftEntity(entityplayer));
+                VehicleEnterEvent event = new VehicleEnterEvent(Type.VEHICLE_ENTER, (Vehicle) this.getBukkitEntity(), entityplayer.getBukkitEntity());
                 server.getPluginManager().callEvent(event);
 
                 if (event.isCancelled()) {

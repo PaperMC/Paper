@@ -5,6 +5,7 @@ import java.util.Random;
 
 // CraftBukkit start
 import org.bukkit.entity.MobType;
+import org.bukkit.entity.Player;
 import org.bukkit.craftbukkit.entity.CraftArrow;
 import org.bukkit.craftbukkit.entity.CraftEgg;
 import org.bukkit.craftbukkit.entity.CraftEntity;
@@ -182,12 +183,9 @@ public class EntityEgg extends Entity {
                 boolean bounce;
                 if (movingobjectposition.g instanceof EntityLiving) {
                     CraftServer server = ((WorldServer) this.l).getServer();
-                    CraftEntity damagee = new CraftLivingEntity(server, (EntityLiving) movingobjectposition.g);
-                    CraftEntity damager = new CraftLivingEntity(server, ak);
-                    CraftEntity projectile = new CraftEgg(server, (EntityEgg) this);
 
                     //TODO @see EntityArrow#162
-                    EntityDamageByProjectileEvent edbpe = new EntityDamageByProjectileEvent( damager, damagee, projectile, EntityDamageEvent.DamageCause.ENTITY_ATTACK, 0);
+                    EntityDamageByProjectileEvent edbpe = new EntityDamageByProjectileEvent( ak.getBukkitEntity(), movingobjectposition.g.getBukkitEntity(), this.getBukkitEntity(), EntityDamageEvent.DamageCause.ENTITY_ATTACK, 0);
 
                     server.getPluginManager().callEvent(edbpe);
                     if(!edbpe.isCancelled()) {
@@ -216,8 +214,7 @@ public class EntityEgg extends Entity {
 
             if (ak instanceof EntityPlayerMP) {
                 CraftServer server = ((WorldServer) l).getServer();
-                CraftPlayer player = new CraftPlayer(server, (EntityPlayerMP) ak);
-                PlayerEggThrowEvent event = new PlayerEggThrowEvent(Type.PLAYER_EGG_THROW, player, hatching, numHatching, type);
+                PlayerEggThrowEvent event = new PlayerEggThrowEvent(Type.PLAYER_EGG_THROW, (Player) ak.getBukkitEntity(), hatching, numHatching, type);
                 server.getPluginManager().callEvent(event);
                 hatching = event.isHatching();
                 numHatching = event.getNumHatches();

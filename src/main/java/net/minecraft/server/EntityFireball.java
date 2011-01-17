@@ -140,12 +140,9 @@ public class EntityFireball extends Entity {
                 boolean bounce;
                 if (movingobjectposition.g instanceof EntityLiving) {
                     CraftServer server = ((WorldServer) this.l).getServer();
-                    CraftEntity damagee = new CraftLivingEntity(server, (EntityLiving) movingobjectposition.g);
-                    CraftEntity damager = new CraftLivingEntity(server, an);
-                    CraftEntity projectile = new CraftFireball(server, (EntityFireball) this);
 
                     //TODO @see EntityArrow#162
-                    EntityDamageByProjectileEvent edbpe = new EntityDamageByProjectileEvent( damager, damagee, projectile, EntityDamageEvent.DamageCause.ENTITY_ATTACK, 0);
+                    EntityDamageByProjectileEvent edbpe = new EntityDamageByProjectileEvent( an.getBukkitEntity(), movingobjectposition.g.getBukkitEntity(), this.getBukkitEntity(), EntityDamageEvent.DamageCause.ENTITY_ATTACK, 0);
 
                     server.getPluginManager().callEvent(edbpe);
                     if(!edbpe.isCancelled()) {

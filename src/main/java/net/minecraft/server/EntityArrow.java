@@ -176,14 +176,10 @@ public class EntityArrow extends Entity {
                 boolean bounce;
                 if (entity instanceof EntityLiving) {
                     CraftServer server = ((WorldServer) this.l).getServer();
-                    CraftEntity damagee = new CraftLivingEntity(server, (EntityLiving) entity);
-                    CraftEntity damager = new CraftLivingEntity(server, b);
-                    CraftEntity projectile = new CraftArrow(server, (EntityArrow) this);
 
                     //TODO decide if we should create DamageCause.ARROW, DamageCause.PROJECTILE
                     // or leave as DamageCause.ENTITY_ATTACK
-                    EntityDamageByProjectileEvent edbpe = new EntityDamageByProjectileEvent(
-                            damager, damagee, projectile, EntityDamageEvent.DamageCause.ENTITY_ATTACK, 4);
+                    EntityDamageByProjectileEvent edbpe = new EntityDamageByProjectileEvent(b.getBukkitEntity(), entity.getBukkitEntity(), this.getBukkitEntity(), EntityDamageEvent.DamageCause.ENTITY_ATTACK, 4);
 
                     server.getPluginManager().callEvent(edbpe);
                     if(!edbpe.isCancelled()) {

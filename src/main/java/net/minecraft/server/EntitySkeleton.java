@@ -41,7 +41,7 @@ public class EntitySkeleton extends EntityMobs {
             if (f1 > 0.5F && l.i(MathHelper.b(p), MathHelper.b(q), MathHelper.b(r)) && W.nextFloat() * 30F < (f1 - 0.4F) * 2.0F) {
                 // CraftBukkit start
                 CraftServer server = ((WorldServer) l).getServer();
-                EntityCombustEvent event = new EntityCombustEvent(Type.ENTITY_COMBUST, new CraftLivingEntity(server, (EntityLiving) this));
+                EntityCombustEvent event = new EntityCombustEvent(Type.ENTITY_COMBUST, this.getBukkitEntity());
                 server.getPluginManager().callEvent(event);
                 if (!event.isCancelled()) {
                     Z = 300;

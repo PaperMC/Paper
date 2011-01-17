@@ -342,10 +342,8 @@ public abstract class EntityPlayer extends EntityLiving {
             // CraftBukkit start
             if(entity instanceof EntityLiving) {
                 CraftServer server = ((WorldServer) l).getServer();
-                CraftEntity damagee = new CraftLivingEntity(server, (EntityLiving) entity);
-                CraftEntity damager = new CraftLivingEntity(server, this);
 
-                EntityDamageByEntityEvent edbee = new EntityDamageByEntityEvent(damager, damagee, EntityDamageEvent.DamageCause.ENTITY_ATTACK, i);
+                EntityDamageByEntityEvent edbee = new EntityDamageByEntityEvent(entity.getBukkitEntity(), this.getBukkitEntity(), EntityDamageEvent.DamageCause.ENTITY_ATTACK, i);
                 server.getPluginManager().callEvent(edbee);
 
                 if (!edbee.isCancelled()){

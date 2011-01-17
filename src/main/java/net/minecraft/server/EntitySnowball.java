@@ -177,12 +177,9 @@ public class EntitySnowball extends Entity {
                 boolean bounce;
                 if (movingobjectposition.g instanceof EntityLiving) {
                     CraftServer server = ((WorldServer) this.l).getServer();
-                    CraftEntity damagee = new CraftLivingEntity(server, (EntityLiving) movingobjectposition.g);
-                    CraftEntity damager = new CraftLivingEntity(server, ak);
-                    CraftEntity projectile = new CraftSnowball(server, (EntitySnowball) this);
 
                     //TODO @see EntityArrow#162
-                    EntityDamageByProjectileEvent edbpe = new EntityDamageByProjectileEvent( damager, damagee, projectile, EntityDamageEvent.DamageCause.ENTITY_ATTACK, 0);
+                    EntityDamageByProjectileEvent edbpe = new EntityDamageByProjectileEvent( ak.getBukkitEntity(), movingobjectposition.g.getBukkitEntity(), this.getBukkitEntity(), EntityDamageEvent.DamageCause.ENTITY_ATTACK, 0);
 
                     server.getPluginManager().callEvent(edbpe);
                     if(!edbpe.isCancelled()) {

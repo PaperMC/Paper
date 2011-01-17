@@ -222,9 +222,8 @@ public abstract class Entity {
                     // CraftBukkit start
                     if(this instanceof EntityLiving) {
                         CraftServer server = ((WorldServer)l).getServer();
-                        CraftEntity damagee = new CraftLivingEntity(server, (EntityLiving)this);
 
-                        EntityDamageEvent ede = new EntityDamageEvent(damagee, EntityDamageEvent.DamageCause.DROWNING, 1);
+                        EntityDamageEvent ede = new EntityDamageEvent(this.getBukkitEntity(), EntityDamageEvent.DamageCause.DROWNING, 1);
                         server.getPluginManager().callEvent(ede);
 
                         if (!ede.isCancelled()){
@@ -256,15 +255,14 @@ public abstract class Entity {
             // CraftBukkit start
             if(this instanceof EntityLiving) {
                 CraftServer server = ((WorldServer)l).getServer();
-                CraftEntity defender = new CraftLivingEntity(server, (EntityLiving) this);
 
-                EntityDamageByBlockEvent ede = new EntityDamageByBlockEvent(null, defender, EntityDamageEvent.DamageCause.LAVA, 4);
+                EntityDamageByBlockEvent ede = new EntityDamageByBlockEvent(null, this.getBukkitEntity(), EntityDamageEvent.DamageCause.LAVA, 4);
                 server.getPluginManager().callEvent(ede);
                 if (!ede.isCancelled()){
                     a(((Entity) (null)), ede.getDamage());
                 }
 
-                EntityCombustEvent ece = new EntityCombustEvent(Type.ENTITY_COMBUST, defender);
+                EntityCombustEvent ece = new EntityCombustEvent(Type.ENTITY_COMBUST, this.getBukkitEntity());
                 server.getPluginManager().callEvent(ece);
                 if (!ece.isCancelled()){
                     Z = 600;
@@ -507,16 +505,9 @@ public abstract class Entity {
         if (!ae) {
             // CraftBukkit start
             if(this instanceof EntityLiving) {
-                CraftEntity defender = null;
                 CraftServer server = ((WorldServer)l).getServer();
 
-                if (this instanceof EntityPlayerMP) {
-                    defender = new CraftPlayer(server, (EntityPlayerMP)this);
-                } else {
-                    defender = new CraftLivingEntity(server, (EntityLiving)this);
-                }
-
-                EntityDamageEvent ede = new EntityDamageEvent(defender, EntityDamageEvent.DamageCause.FIRE, i1);
+                EntityDamageEvent ede = new EntityDamageEvent(this.getBukkitEntity(), EntityDamageEvent.DamageCause.FIRE, i1);
                 server.getPluginManager().callEvent(ede);
 
                 if (!ede.isCancelled()){

@@ -10,6 +10,7 @@ import org.bukkit.craftbukkit.entity.CraftBoat;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.CraftMappable;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.Vehicle;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.vehicle.VehicleCreateEvent;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
@@ -31,8 +32,9 @@ public class EntityBoat extends Entity implements CraftMappable { // CraftBukkit
     private double am;
 
     // CraftBukkit start
+    /**@deprecated*/
     private CraftBoat boat;
-
+    /**@deprecated*/
     public CraftEntity getCraftEntity() {
         return boat;
     }
@@ -85,8 +87,7 @@ public class EntityBoat extends Entity implements CraftMappable { // CraftBukkit
     // CraftBukkit start
     private void handleCreation(World world) {
         CraftServer server = ((WorldServer) world).getServer();
-        boat = new CraftBoat(server, this);
-        VehicleCreateEvent event = new VehicleCreateEvent( Type.VEHICLE_CREATE, boat);
+        VehicleCreateEvent event = new VehicleCreateEvent( Type.VEHICLE_CREATE, (Vehicle) this.getBukkitEntity());
         server.getPluginManager().callEvent(event);
     }
     // CraftBukkit end
@@ -97,7 +98,7 @@ public class EntityBoat extends Entity implements CraftMappable { // CraftBukkit
 
     public boolean a(Entity entity, int i) {
         // CraftBukkit start
-        VehicleDamageEvent event = new VehicleDamageEvent( Type.VEHICLE_DAMAGE, boat, ((WorldServer)l).getWorld().toCraftEntity(entity), i);
+        VehicleDamageEvent event = new VehicleDamageEvent( Type.VEHICLE_DAMAGE, (Vehicle) this.getBukkitEntity(), entity.getBukkitEntity(), i);
         ((WorldServer) l).getServer().getPluginManager().callEvent(event);
 
         if (event.isCancelled()) {
@@ -290,12 +291,7 @@ public class EntityBoat extends Entity implements CraftMappable { // CraftBukkit
 
         // CraftBukkit start
         CraftServer server = ((WorldServer)l).getServer();
-        VehicleMoveEvent event = new VehicleMoveEvent(
-            Type.VEHICLE_MOVE,
-            boat,
-            new Location(((WorldServer)l).getWorld(), prevX, prevY, prevZ, prevYaw, prevPitch),
-            new Location(((WorldServer)l).getWorld(), p, q, r, v, w)
-        );
+        VehicleMoveEvent event = new VehicleMoveEvent(Type.VEHICLE_MOVE, (Vehicle) this.getBukkitEntity(), new Location(((WorldServer)l).getWorld(), prevX, prevY, prevZ, prevYaw, prevPitch), new Location(((WorldServer)l).getWorld(), p, q, r, v, w));
         server.getPluginManager().callEvent(event);
         // CraftBukkit end
 
@@ -330,7 +326,7 @@ public class EntityBoat extends Entity implements CraftMappable { // CraftBukkit
     // CraftBukkit start
     public void c(Entity entity) {
         CraftServer server = ((WorldServer)l).getServer();
-        VehicleEntityCollisionEvent collsionEvent = new VehicleEntityCollisionEvent( Type.VEHICLE_COLLISION_ENTITY, boat, ((WorldServer)l).getWorld().toCraftEntity(entity));
+        VehicleEntityCollisionEvent collsionEvent = new VehicleEntityCollisionEvent( Type.VEHICLE_COLLISION_ENTITY, (Vehicle) this.getBukkitEntity(), entity.getBukkitEntity());
         server.getPluginManager().callEvent(collsionEvent);
 
         if (collsionEvent.isCancelled()) {
@@ -352,7 +348,7 @@ public class EntityBoat extends Entity implements CraftMappable { // CraftBukkit
         if (!l.z) {
             // CraftBukkit start
             CraftServer server = ((WorldServer)l).getServer();
-            VehicleEnterEvent event = new VehicleEnterEvent( Type.VEHICLE_ENTER, boat, ((WorldServer)l).getWorld().toCraftEntity(entityplayer));
+            VehicleEnterEvent event = new VehicleEnterEvent( Type.VEHICLE_ENTER, (Vehicle) this.getBukkitEntity(), entityplayer.getBukkitEntity());
             server.getPluginManager().callEvent(event);
 
             if (event.isCancelled()) {
