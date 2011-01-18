@@ -1,9 +1,13 @@
 package net.minecraft.server;
 
+// CraftBukkit start
+import org.bukkit.Server;
+import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockIgniteEvent;
-import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.event.block.BlockIgniteEvent.IgniteCause;
 import org.bukkit.craftbukkit.CraftWorld;
 import java.util.Random;
+// CraftBukkit end
 
 public class BlockStationary extends BlockFluids {
 
@@ -36,17 +40,6 @@ public class BlockStationary extends BlockFluids {
         if (bt == Material.g) {
             int j1 = random.nextInt(3);
 
-            // Craftbukkit start: prevent lava putting something on fire.
-            CraftServer server = ((WorldServer)world).getServer();
-            CraftWorld cworld = ((WorldServer)world).getWorld();
-            org.bukkit.block.Block bblock = (cworld.getBlockAt(k, l, i1));
-            BlockIgniteEvent event = new BlockIgniteEvent((org.bukkit.block.Block) bblock, BlockIgniteEvent.IgniteCause.LAVA, null);
-            server.getPluginManager().callEvent(event);
-            if (event.isCancelled()) {
-                return;
-            }
-            // Craftbukkit end
-
             for (int k1 = 0; k1 < j1; k1++) {
                 k += random.nextInt(3) - 1;
                 l++;
@@ -54,7 +47,25 @@ public class BlockStationary extends BlockFluids {
                 int l1 = world.a(k, l, i1);
 
                 if (l1 == 0) {
+                    // this checks if an adjacent block is flammable before lighting this block.
+                    // perhaps we can reduce spam by checking this earlier.
                     if (j(world, k - 1, l, i1) || j(world, k + 1, l, i1) || j(world, k, l, i1 - 1) || j(world, k, l, i1 + 1) || j(world, k, l - 1, i1) || j(world, k, l + 1, i1)) {
+                        // CraftBukkit start: prevent lava putting something on fire.
+                        Server server = ((WorldServer)world).getServer();
+                        CraftWorld cworld = ((WorldServer)world).getWorld();
+                        
+                        org.bukkit.block.Block theBlock = cworld.getBlockAt(k, l, i1);
+                        IgniteCause igniteCause = BlockIgniteEvent.IgniteCause.LAVA;
+                        Player thePlayer = null;
+                        
+                        if (theBlock.getTypeId() != Block.ar.bi){
+                            BlockIgniteEvent event = new BlockIgniteEvent(theBlock, igniteCause, thePlayer);
+                            server.getPluginManager().callEvent(event);
+                            if (event.isCancelled()) {
+                                continue;
+                            }
+                        }
+                        // CraftBukkit end
                         world.e(k, l, i1, Block.ar.bi);
                         return;
                     }

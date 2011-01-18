@@ -1,13 +1,13 @@
 package net.minecraft.server;
 
+// CraftBukkit start
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockIgniteEvent;
 import org.bukkit.event.block.BlockIgniteEvent.IgniteCause;
-import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import java.util.Random;
-
+// CraftBukkit end
 
 public class BlockFire extends Block {
 
@@ -86,20 +86,22 @@ public class BlockFire extends Block {
                         }
                         int i2 = h(world, i1, k1, j1);
 
-                        //CraftBukkit start: Call to stop spead of fire.
+                        // CraftBukkit start: Call to stop spread of fire.
                         Server server = ((WorldServer)world).getServer();
                         CraftWorld cworld = ((WorldServer)world).getWorld();
                         
                         org.bukkit.block.Block theBlock = (cworld.getBlockAt(i1, j1, k1));
+                        IgniteCause igniteCause = BlockIgniteEvent.IgniteCause.SPREAD;
+                        Player thePlayer = null;
                         
                         if (theBlock.getTypeId() != Block.ar.bi){
-                            BlockIgniteEvent event = new BlockIgniteEvent(theBlock, BlockIgniteEvent.IgniteCause.SPREAD, null);
+                            BlockIgniteEvent event = new BlockIgniteEvent(theBlock, igniteCause, thePlayer);
                             server.getPluginManager().callEvent(event);
                             if (event.isCancelled()) {
                                 return;
                             }
                         }
-                        //CraftBukkit end
+                        // CraftBukkit end
                         if (i2 > 0 && random.nextInt(l1) <= i2) {
                             world.e(i1, k1, j1, bi);
                         }
@@ -121,15 +123,17 @@ public class BlockFire extends Block {
                 CraftWorld cworld = ((WorldServer)world).getWorld();
                 
                 org.bukkit.block.Block theBlock = (cworld.getBlockAt(i, j, k));
+                IgniteCause igniteCause = BlockIgniteEvent.IgniteCause.SLOW_SPREAD;
+                Player thePlayer = null;
                 
                 if (theBlock.getTypeId() != Block.ar.bi){
-                    BlockIgniteEvent event = new BlockIgniteEvent(theBlock, BlockIgniteEvent.IgniteCause.SLOW_SPREAD, null);
+                    BlockIgniteEvent event = new BlockIgniteEvent(theBlock, igniteCause, thePlayer);
                     server.getPluginManager().callEvent(event);
                     if (event.isCancelled()) {
                         return;
                     }
                 }
-                //CraftBukkit end
+                // CraftBukkit end
                 world.e(i, j, k, bi);
             } else {
                 world.e(i, j, k, 0);

@@ -3,12 +3,16 @@ package net.minecraft.server;
 import java.util.Random;
 
 // CraftBukkit start
+import org.bukkit.Server;
+import org.bukkit.block.BlockFace;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.entity.Player;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.player.PlayerItemEvent;
 import org.bukkit.event.block.BlockIgniteEvent;
+import org.bukkit.event.block.BlockIgniteEvent.IgniteCause;
 // CraftBukkit end
 
 public class ItemFlintAndSteel extends Item {
@@ -20,9 +24,6 @@ public class ItemFlintAndSteel extends Item {
     }
 
     public boolean a(ItemStack itemstack, EntityPlayer entityplayer, World world, int i, int j, int k, int l) {
-        // CraftBukkit - get the clicked block
-        CraftBlock blockClicked = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
-
         if (l == 0) {
             j--;
         }
@@ -45,17 +46,26 @@ public class ItemFlintAndSteel extends Item {
 
         if (i1 == 0) {
             // CraftBukkit start - Flint and steel
-            CraftItemStack itemInHand = new CraftItemStack(itemstack);
-            CraftPlayer thePlayer = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entityplayer);
-            PlayerItemEvent pie = new PlayerItemEvent(Type.PLAYER_ITEM, thePlayer, itemInHand, blockClicked, CraftBlock.notchToBlockFace(l));
-            ((WorldServer) world).getServer().getPluginManager().callEvent(pie);
+            Server server = ((WorldServer)world).getServer();
+            CraftWorld cworld = ((WorldServer)world).getWorld();
 
-            org.bukkit.block.Block pblock = (((WorldServer) world).getWorld().getBlockAt(i, j, k));
-            BlockIgniteEvent bie = new BlockIgniteEvent((org.bukkit.block.Block) pblock, BlockIgniteEvent.IgniteCause.FLINT_AND_STEEL, thePlayer);
-            ((WorldServer) world).getServer().getPluginManager().callEvent(bie);
+            Type eventType = Type.PLAYER_ITEM;
+            Player thePlayer = (Player) entityplayer.getBukkitEntity();
+            CraftItemStack itemInHand = new CraftItemStack(itemstack);
+            org.bukkit.block.Block blockClicked = cworld.getBlockAt(i, j, k);
+            BlockFace blockFace = CraftBlock.notchToBlockFace(l);
+            
+            PlayerItemEvent pie = new PlayerItemEvent(eventType, thePlayer, itemInHand, blockClicked, blockFace);
+            server.getPluginManager().callEvent(pie);
 
             boolean preventLighter = pie.isCancelled();
-            boolean preventFire = bie.isCancelled();
+            boolean preventFire = false;
+            if (blockClicked.getTypeId() != Block.ar.bi){
+                IgniteCause igniteCause = BlockIgniteEvent.IgniteCause.FLINT_AND_STEEL;
+                BlockIgniteEvent bie = new BlockIgniteEvent(blockClicked, igniteCause, thePlayer);
+                server.getPluginManager().callEvent(bie);
+                preventFire = bie.isCancelled();
+            }
 
             if (preventLighter || preventFire) {
                 return false;
