@@ -15,6 +15,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.block.BlockRightClickEvent;
+import org.bukkit.event.player.PlayerAnimationEvent;
 import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerItemEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -584,6 +585,11 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
     public void a(Packet18ArmAnimation packet18armanimation) {
         if (packet18armanimation.b == 1) {
+        	
+        	// Craftbukkit: Arm swing animation
+        	PlayerAnimationEvent event = new PlayerAnimationEvent(Type.PLAYER_ANIMATION, player);
+            server.getPluginManager().callEvent(event);
+            
             e.K();
         }
     }
