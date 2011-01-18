@@ -2,9 +2,10 @@ package net.minecraft.server;
 
 import java.util.Random;
 
+//CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.entity.CraftAnimals;
 import org.bukkit.craftbukkit.entity.CraftChicken;
+//CraftBukkit end
 
 public class EntityChicken extends EntityAnimals {
 

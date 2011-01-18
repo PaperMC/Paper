@@ -2,6 +2,7 @@ package net.minecraft.server;
 
 import java.util.Random;
 
+//CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftSkeleton;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.Event.Type;

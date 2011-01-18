@@ -1,7 +1,9 @@
 package net.minecraft.server;
 
+//CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftCow;
+//CraftBukkit end
 
 public class EntityCow extends EntityAnimals {
 

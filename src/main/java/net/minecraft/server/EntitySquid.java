@@ -2,8 +2,10 @@ package net.minecraft.server;
 
 import java.util.Random;
 
+//CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftSquid;
+//CraftBukkit stop
 
 public class EntitySquid extends EntityWaterMob {
 

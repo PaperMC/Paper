@@ -1,7 +1,9 @@
 package net.minecraft.server;
 
+//CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftAnimals;
+//CraftBukkit end
 
 public abstract class EntityAnimals extends EntityCreature implements IAnimals {
 
