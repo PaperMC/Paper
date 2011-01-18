@@ -33,13 +33,11 @@ public final class SimpleCommandMap implements CommandMap {
      * {@inheritDoc}
      */
     public boolean register(String name, String fallbackPrefix, Command command) {
-        boolean nameInUse = (knownCommands.get(command.getName()) != null);
+        boolean nameInUse = (knownCommands.get(name) != null);
         if (nameInUse)
             name = fallbackPrefix + ":" + name;
         
         knownCommands.put(name, command);
-        System.out.println("Adding cmd: " + name + " for plugin " + fallbackPrefix);
-        
         return !nameInUse;
     }
 
