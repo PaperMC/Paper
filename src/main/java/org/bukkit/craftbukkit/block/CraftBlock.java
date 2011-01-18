@@ -30,7 +30,7 @@ public class CraftBlock implements Block {
         this.type = type;
         this.data = data;
         this.light = (byte)world.getHandle().j(x, y, z);
-        this.chunk = (CraftChunk)world.getChunkAt(x << 4, z << 4);
+        this.chunk = (CraftChunk)world.getChunkAt(x >> 4, z >> 4);
     }
 
     protected CraftBlock(final CraftWorld world, final int x, final int y,
@@ -42,7 +42,7 @@ public class CraftBlock implements Block {
         this.type = type;
         this.data = data;
         this.light = light;
-        this.chunk = (CraftChunk)world.getChunkAt(x << 4, z << 4);
+        this.chunk = (CraftChunk)world.getChunkAt(x >> 4, z >> 4);
     }
 
     /**

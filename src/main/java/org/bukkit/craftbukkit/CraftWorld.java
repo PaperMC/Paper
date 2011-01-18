@@ -64,7 +64,7 @@ public class CraftWorld implements World {
     }
 
     public Chunk getChunkAt(Block block) {
-        return getChunkAt(block.getX() << 4, block.getZ() << 4);
+        return getChunkAt(block.getX() >> 4, block.getZ() >> 4);
     }
 
     public boolean isChunkLoaded(Chunk chunk) {
