@@ -152,6 +152,9 @@ public final class JavaPluginLoader implements PluginLoader {
                 case PLAYER_EGG_THROW:
                     trueListener.onPlayerEggThrow((PlayerEggThrowEvent)event);
                     break;
+                case PLAYER_ANIMATION:
+                    trueListener.onPlayerAnimation((PlayerAnimationEvent)event);
+                    break;                    
             }
         } else if (listener instanceof BlockListener) {
             BlockListener trueListener = (BlockListener)listener;

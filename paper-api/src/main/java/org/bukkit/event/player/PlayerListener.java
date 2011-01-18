@@ -81,4 +81,12 @@ public class PlayerListener implements Listener {
      */
     public void onPlayerEggThrow(PlayerEggThrowEvent event) {
     }
+    
+    /**
+     * Called when a player plays an animation, such as an arm swing
+     * 
+     * @param event Relevant event details
+     */
+    public void onPlayerAnimation(PlayerAnimationEvent event) {
+    }
 }
