@@ -90,12 +90,10 @@ public class BlockFire extends Block {
                         Server server = ((WorldServer)world).getServer();
                         CraftWorld cworld = ((WorldServer)world).getWorld();
                         
-                        org.bukkit.block.Block theBlock = (cworld.getBlockAt(i, j, k));
-                        IgniteCause igniteCause = BlockIgniteEvent.IgniteCause.SPREAD;
-                        Player thePlayer = null;
+                        org.bukkit.block.Block theBlock = (cworld.getBlockAt(i1, j1, k1));
                         
                         if (theBlock.getTypeId() != Block.ar.bi){
-                            BlockIgniteEvent event = new BlockIgniteEvent(theBlock, igniteCause, thePlayer);
+                            BlockIgniteEvent event = new BlockIgniteEvent(theBlock, BlockIgniteEvent.IgniteCause.SPREAD, null);
                             server.getPluginManager().callEvent(event);
                             if (event.isCancelled()) {
                                 return;
@@ -123,11 +121,9 @@ public class BlockFire extends Block {
                 CraftWorld cworld = ((WorldServer)world).getWorld();
                 
                 org.bukkit.block.Block theBlock = (cworld.getBlockAt(i, j, k));
-                IgniteCause igniteCause = BlockIgniteEvent.IgniteCause.SLOW_SPREAD;
-                Player thePlayer = null;
                 
                 if (theBlock.getTypeId() != Block.ar.bi){
-                    BlockIgniteEvent event = new BlockIgniteEvent(theBlock, igniteCause, thePlayer);
+                    BlockIgniteEvent event = new BlockIgniteEvent(theBlock, BlockIgniteEvent.IgniteCause.SLOW_SPREAD, null);
                     server.getPluginManager().callEvent(event);
                     if (event.isCancelled()) {
                         return;
