@@ -1,5 +1,9 @@
 package org.bukkit.craftbukkit;
 
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandMap;
+import org.bukkit.command.SimpleCommandMap;
+import org.bukkit.command.PluginCommandYamlParser;
 import org.bukkit.entity.Player;
 import java.io.File;
 import java.util.ArrayList;
@@ -10,10 +14,8 @@ import net.minecraft.server.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ServerConfigurationManager;
 import org.bukkit.*;
-import org.bukkit.plugin.CommandManager;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
-import org.bukkit.plugin.SimpleCommandManager;
 import org.bukkit.plugin.SimplePluginManager;
 import org.bukkit.plugin.java.JavaPluginLoader;
 
@@ -22,7 +24,7 @@ public final class CraftServer implements Server
     private final String serverName = "Craftbukkit";
     private final String serverVersion = "1.2_01";
     private final PluginManager pluginManager = new SimplePluginManager(this);
-    private final CommandManager commandManager = new SimpleCommandManager();
+    private final CommandMap commandMap = new SimpleCommandMap();
     protected final MinecraftServer console;
     protected final ServerConfigurationManager server;
 
@@ -34,18 +36,13 @@ public final class CraftServer implements Server
     }
 
     public void loadPlugins() {
-        File pluginFolder = (File) console.options.valueOf("plugins");
+        File pluginFolder = (File)console.options.valueOf("plugins");
 
         if (pluginFolder.exists()) {
             try {
                 Plugin[] plugins = pluginManager.loadPlugins(pluginFolder);
-
                 for (Plugin plugin : plugins) {
-                    if (commandManager.registerCommands(plugin)) {
-                        pluginManager.enablePlugin(plugin);
-                    } else {
-                        Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, "Plugin " + plugin.getDescription().getName() + " failed to load. Reason: Requested commands already in use.");
-                    }
+                    loadPlugin(plugin);
                 }
             } catch (Throwable ex) {
                 Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, ex.getMessage() + " (Is it up to date?)", ex);
@@ -53,6 +50,14 @@ public final class CraftServer implements Server
         } else {
             pluginFolder.mkdir();
         }
+    }
+
+    private void loadPlugin(Plugin plugin) {
+        List<Command> pluginCommands = PluginCommandYamlParser.parse(plugin);
+        if (!pluginCommands.isEmpty()) {
+            commandMap.registerAll(plugin.getDescription().getName(), pluginCommands);
+        }
+        pluginManager.enablePlugin(plugin);
     }
 
     public String getName() {
@@ -148,7 +153,7 @@ public final class CraftServer implements Server
         return server;
     }
 
-    public boolean dispatchCommand(Player player, String cmd) {
-        return commandManager.dispatchCommand(player, cmd);
+    public boolean dispatchCommand(Player player, String commandLine) {
+        return commandMap.dispatch(player, commandLine);
     }
 }
