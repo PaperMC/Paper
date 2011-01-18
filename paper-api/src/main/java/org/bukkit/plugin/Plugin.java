@@ -3,6 +3,7 @@ package org.bukkit.plugin;
 
 import java.io.File;
 import org.bukkit.Server;
+import org.bukkit.command.Command;
 import org.bukkit.entity.Player;
 import org.bukkit.util.config.Configuration;
 
@@ -65,6 +66,8 @@ public interface Plugin {
     
     /**
      * Called when a command registered by this plugin is received.
+     * @param commandLabel 
+     * @return TODO
      */
-    public void onCommand(Player player, String command, String[] args);
+    public boolean onCommand(Player player, Command command, String commandLabel, String[] args);
 }

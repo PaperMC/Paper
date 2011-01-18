@@ -3,6 +3,7 @@ package org.bukkit.plugin.java;
 
 import java.io.File;
 import org.bukkit.Server;
+import org.bukkit.command.Command;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
@@ -141,7 +142,7 @@ public abstract class JavaPlugin implements Plugin {
     /**
      * Called when a command registered by this plugin is received.
      */
-    public void onCommand(Player player, String command, String[] args) {
-        // default implementation:  do nothing!
+    public boolean onCommand(Player player, Command cmd, String commandLabel, String[] args) {
+        return false; // default implementation:  do nothing!
     }
 }
