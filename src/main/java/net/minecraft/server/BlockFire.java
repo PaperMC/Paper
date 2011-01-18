@@ -1,6 +1,9 @@
 package net.minecraft.server;
 
+import org.bukkit.Server;
+import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockIgniteEvent;
+import org.bukkit.event.block.BlockIgniteEvent.IgniteCause;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import java.util.Random;
@@ -83,15 +86,22 @@ public class BlockFire extends Block {
                         }
                         int i2 = h(world, i1, k1, j1);
 
-                        // CraftBukkit: Call to stop spead of fire.
-                        CraftServer server = ((WorldServer)world).getServer();
-                        CraftWorld cworld = ((WorldServer) world).getWorld();
-                        org.bukkit.block.Block bblock = (cworld.getBlockAt(i1, k1, j1));
-                        BlockIgniteEvent event = new BlockIgniteEvent((org.bukkit.block.Block) bblock, BlockIgniteEvent.IgniteCause.SPREAD, null);
-                        server.getPluginManager().callEvent(event);
-                        if (event.isCancelled()) {
-                            return;
+                        //CraftBukkit start: Call to stop spead of fire.
+                        Server server = ((WorldServer)world).getServer();
+                        CraftWorld cworld = ((WorldServer)world).getWorld();
+                        
+                        org.bukkit.block.Block theBlock = (cworld.getBlockAt(i, j, k));
+                        IgniteCause igniteCause = BlockIgniteEvent.IgniteCause.SPREAD;
+                        Player thePlayer = null;
+                        
+                        if (theBlock.getTypeId() != Block.ar.bi){
+                            BlockIgniteEvent event = new BlockIgniteEvent(theBlock, igniteCause, thePlayer);
+                            server.getPluginManager().callEvent(event);
+                            if (event.isCancelled()) {
+                                return;
+                            }
                         }
+                        //CraftBukkit end
                         if (i2 > 0 && random.nextInt(l1) <= i2) {
                             world.e(i1, k1, j1, bi);
                         }
@@ -108,15 +118,22 @@ public class BlockFire extends Block {
             boolean flag = world.a(i, j, k) == Block.am.bi;
 
             if (random.nextInt(2) == 0) {
-                // CraftBukkit: Call to stop very slow spread of fire.
-                CraftServer server = ((WorldServer)world).getServer();
+                // CraftBukkit start: Call to stop very slow spread of fire.
+                Server server = ((WorldServer)world).getServer();
                 CraftWorld cworld = ((WorldServer)world).getWorld();
-                org.bukkit.block.Block sbblock = (cworld.getBlockAt(i, j, k));
-                BlockIgniteEvent event = new BlockIgniteEvent((org.bukkit.block.Block) sbblock, BlockIgniteEvent.IgniteCause.SLOW_SPREAD, null);
-                server.getPluginManager().callEvent(event);
-                if (event.isCancelled()) {
-                    return;
+                
+                org.bukkit.block.Block theBlock = (cworld.getBlockAt(i, j, k));
+                IgniteCause igniteCause = BlockIgniteEvent.IgniteCause.SLOW_SPREAD;
+                Player thePlayer = null;
+                
+                if (theBlock.getTypeId() != Block.ar.bi){
+                    BlockIgniteEvent event = new BlockIgniteEvent(theBlock, igniteCause, thePlayer);
+                    server.getPluginManager().callEvent(event);
+                    if (event.isCancelled()) {
+                        return;
+                    }
                 }
+                //CraftBukkit end
                 world.e(i, j, k, bi);
             } else {
                 world.e(i, j, k, 0);
@@ -194,6 +211,7 @@ public class BlockFire extends Block {
     }
 
     public void e(World world, int i, int j, int k) {
+        //TODO this section deals with lighting a block on fire too
         if (world.a(i, j - 1, k) == Block.ap.bi && Block.be.b_(world, i, j, k)) {
             return;
         }
