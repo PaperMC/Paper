@@ -3,12 +3,13 @@ package net.minecraft.server;
 import java.util.List;
 import java.util.Random;
 
+//CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-// CraftBukkit end
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+//CraftBukkit end
 
 public abstract class EntityPlayer extends EntityLiving {
 

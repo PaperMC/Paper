@@ -3,9 +3,10 @@ package net.minecraft.server;
 import java.util.List;
 import java.util.Random;
 
+//CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.entity.CraftAnimals;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+//CraftBukkit end
 
 public abstract class EntityLiving extends Entity {
 

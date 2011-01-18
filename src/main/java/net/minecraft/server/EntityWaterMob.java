@@ -1,7 +1,9 @@
 package net.minecraft.server;
 
+//CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftWaterMob;
+//CraftBukkit stop
 
 public class EntityWaterMob extends EntityCreature implements IAnimals {
 

@@ -4,8 +4,6 @@ import java.util.List;
 import java.util.Random;
 
 //CraftBukkit start
-import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftSnowball;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;

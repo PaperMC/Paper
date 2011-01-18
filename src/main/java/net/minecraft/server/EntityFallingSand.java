@@ -1,7 +1,9 @@
 package net.minecraft.server;
 
+//CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftFallingSand;
+//CraftBukkit end
 
 public class EntityFallingSand extends Entity {
 

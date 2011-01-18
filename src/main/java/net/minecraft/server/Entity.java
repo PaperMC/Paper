@@ -1,15 +1,13 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.craftbukkit.entity.CraftLivingEntity;
-import org.bukkit.craftbukkit.entity.CraftPlayer;
+//CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-// CraftBukkit end
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+//CraftBukkit end
 
 import java.util.List;
 import java.util.Random;
@@ -221,9 +219,12 @@ public abstract class Entity {
                 if (Z % 20 == 0) {
                     // CraftBukkit start
                     if(this instanceof EntityLiving) {
-                        CraftServer server = ((WorldServer)l).getServer();
+                        CraftServer server = ((WorldServer) l).getServer();
+                        org.bukkit.entity.Entity damagee = this.getBukkitEntity();
+                        DamageCause damageType = EntityDamageEvent.DamageCause.DROWNING;
+                        int damageDone = 1;
 
-                        EntityDamageEvent ede = new EntityDamageEvent(this.getBukkitEntity(), EntityDamageEvent.DamageCause.DROWNING, 1);
+                        EntityDamageEvent ede = new EntityDamageEvent(damagee, damageType, damageDone);
                         server.getPluginManager().callEvent(ede);
 
                         if (!ede.isCancelled()){
@@ -254,19 +255,31 @@ public abstract class Entity {
         if (!ae) {
             // CraftBukkit start
             if(this instanceof EntityLiving) {
-                CraftServer server = ((WorldServer)l).getServer();
+                CraftServer server = ((WorldServer) l).getServer();
+                org.bukkit.block.Block damager = null;//((WorldServer) l).getWorld().getBlockAt(i, j, k);
+                org.bukkit.entity.Entity damagee = this.getBukkitEntity();
+                DamageCause damageType = EntityDamageEvent.DamageCause.LAVA;
+                int damageDone = 4;
 
-                EntityDamageByBlockEvent ede = new EntityDamageByBlockEvent(null, this.getBukkitEntity(), EntityDamageEvent.DamageCause.LAVA, 4);
+                EntityDamageByBlockEvent ede = new EntityDamageByBlockEvent(damager, damagee, damageType, damageDone);
                 server.getPluginManager().callEvent(ede);
                 if (!ede.isCancelled()){
                     a(((Entity) (null)), ede.getDamage());
                 }
 
-                EntityCombustEvent ece = new EntityCombustEvent(Type.ENTITY_COMBUST, this.getBukkitEntity());
-                server.getPluginManager().callEvent(ece);
-                if (!ece.isCancelled()){
+                if(Z <= 0){
+                    // not on fire yet
+                    Type eventType = Type.ENTITY_COMBUST;
+                    EntityCombustEvent ece = new EntityCombustEvent(eventType, damagee);
+                    server.getPluginManager().callEvent(ece);
+                    if (!ece.isCancelled()){
+                        Z = 600;
+                    }
+                } else {
+                    // reset fire level back to max
                     Z = 600;
                 }
+                
             } else {
                 a(((Entity) (null)), 4);
                 Z = 600;
@@ -473,9 +486,24 @@ public abstract class Entity {
             b(1);
             if (!flag2) {
                 Z++;
-                if (Z == 0) {
+                //CraftBukkit start
+                if(Z <= 0){
+                    // not on fire yet
+                    CraftServer server = ((WorldServer) l).getServer();
+                    org.bukkit.entity.Entity damagee = this.getBukkitEntity();
+                    Type eventType = Type.ENTITY_COMBUST;
+                    
+                    EntityCombustEvent ece = new EntityCombustEvent(eventType, damagee);
+                    server.getPluginManager().callEvent(ece);
+                    
+                    if (!ece.isCancelled()){
+                        Z = 300;
+                    }
+                } else {
+                    // reset fire level back to max
                     Z = 300;
                 }
+                //CraftBukkit end
             }
         } else if (Z <= 0) {
             Z = -Y;
@@ -505,9 +533,12 @@ public abstract class Entity {
         if (!ae) {
             // CraftBukkit start
             if(this instanceof EntityLiving) {
-                CraftServer server = ((WorldServer)l).getServer();
+                CraftServer server = ((WorldServer) l).getServer();
+                org.bukkit.entity.Entity damagee = this.getBukkitEntity();
+                DamageCause damageType = EntityDamageEvent.DamageCause.FIRE;
+                int damageDone = i1;
 
-                EntityDamageEvent ede = new EntityDamageEvent(this.getBukkitEntity(), EntityDamageEvent.DamageCause.FIRE, i1);
+                EntityDamageEvent ede = new EntityDamageEvent(damagee, damageType, damageDone);
                 server.getPluginManager().callEvent(ede);
 
                 if (!ede.isCancelled()){

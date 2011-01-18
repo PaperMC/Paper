@@ -2,8 +2,10 @@ package net.minecraft.server;
 
 import java.util.*;
 
+//CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftPainting;
+//CraftBukkit end
 
 public class EntityPainting extends Entity {
 

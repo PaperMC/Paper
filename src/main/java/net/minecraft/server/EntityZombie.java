@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+//CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftZombie;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.Event.Type;

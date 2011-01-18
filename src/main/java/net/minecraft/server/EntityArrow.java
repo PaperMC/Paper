@@ -1,12 +1,9 @@
 package net.minecraft.server;
 
 import java.util.List;
-import java.util.Random;
 
 //CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftArrow;
-import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
