@@ -256,11 +256,12 @@ public abstract class Entity {
             // CraftBukkit start
             if(this instanceof EntityLiving) {
                 CraftServer server = ((WorldServer) l).getServer();
+                org.bukkit.block.Block damager = null;//((WorldServer) l).getWorld().getBlockAt(i, j, k);
                 org.bukkit.entity.Entity damagee = this.getBukkitEntity();
                 DamageCause damageType = EntityDamageEvent.DamageCause.LAVA;
                 int damageDone = 4;
 
-                EntityDamageByBlockEvent ede = new EntityDamageByBlockEvent(null, damagee, damageType, damageDone);
+                EntityDamageByBlockEvent ede = new EntityDamageByBlockEvent(damager, damagee, damageType, damageDone);
                 server.getPluginManager().callEvent(ede);
                 if (!ede.isCancelled()){
                     a(((Entity) (null)), ede.getDamage());
