@@ -3,7 +3,6 @@ package net.minecraft.server;
 import java.util.Random;
 
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.entity.CraftAnimals;
 import org.bukkit.craftbukkit.entity.CraftItem;
 
 public class EntityItem extends Entity {
