@@ -16,7 +16,7 @@ public abstract class CraftVehicle extends CraftEntity implements Vehicle {
     }
 
     public Entity getPassenger() {
-        return (getHandle().j.getBukkitEntity());
+        return isEmpty()?null:(getHandle().j.getBukkitEntity());
     }
     
     public boolean setPassenger(Entity passenger) {
