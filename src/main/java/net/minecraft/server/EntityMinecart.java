@@ -183,7 +183,11 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
 
     public boolean a(Entity entity, int i) {
         // CraftBukkit start
-        VehicleDamageEvent event = new VehicleDamageEvent(Type.VEHICLE_DAMAGE, (Vehicle) this.getBukkitEntity(), entity.getBukkitEntity(), i);
+        org.bukkit.entity.Entity passenger = null;
+        if ((EntityLiving)entity != null) {
+            passenger = entity.getBukkitEntity();
+        }
+        VehicleDamageEvent event = new VehicleDamageEvent(Type.VEHICLE_DAMAGE, (Vehicle) this.getBukkitEntity(), passenger, i);
         ((WorldServer)l).getServer().getPluginManager().callEvent(event);
 
         if (event.isCancelled()) {

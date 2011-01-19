@@ -178,9 +178,7 @@ public class EntityArrow extends Entity {
                     // or leave as DamageCause.ENTITY_ATTACK
                     org.bukkit.entity.Entity shooter = null;
                     if ((EntityLiving)b != null) {
-                        shooter = new org.bukkit.craftbukkit.entity.CraftLivingEntity(server, b);
-                    } else if ((Entity)b != null) {
-                        shooter = (org.bukkit.entity.Entity) b.getBukkitEntity();
+                        shooter = b.getBukkitEntity();
                     }
                     EntityDamageByProjectileEvent edbpe = new EntityDamageByProjectileEvent(shooter, entity.getBukkitEntity(), this.getBukkitEntity(), EntityDamageEvent.DamageCause.ENTITY_ATTACK, 4);
 
