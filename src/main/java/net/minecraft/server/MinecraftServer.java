@@ -449,7 +449,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
                     }
                 }
             } else {
-                a.info("Unknown console command. Type \"#help\" for help.");
+                a.info("Unknown console command. Type \"help\" for help.");
             }
         } while (true);
     }
