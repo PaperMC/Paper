@@ -16,6 +16,13 @@ public interface Player extends HumanEntity {
     public boolean isOnline();
 
     /**
+     * Checks if this player is currently op
+     *
+     * @return true if they are online
+     */
+    public boolean isOp();
+
+    /**
      * Sends this player a message, which will be displayed in their chat
      *
      * @param message Message to be displayed
