@@ -59,15 +59,20 @@ public class ItemFlintAndSteel extends Item {
             server.getPluginManager().callEvent(pie);
 
             boolean preventLighter = pie.isCancelled();
-            boolean preventFire = false;
-            if (blockClicked.getTypeId() != Block.ar.bi){
-                IgniteCause igniteCause = BlockIgniteEvent.IgniteCause.FLINT_AND_STEEL;
-                BlockIgniteEvent bie = new BlockIgniteEvent(blockClicked, igniteCause, thePlayer);
-                server.getPluginManager().callEvent(bie);
-                preventFire = bie.isCancelled();
-            }
+            
+            
+            IgniteCause igniteCause = BlockIgniteEvent.IgniteCause.FLINT_AND_STEEL;
+            BlockIgniteEvent bie = new BlockIgniteEvent(blockClicked, igniteCause, thePlayer);
+            server.getPluginManager().callEvent(bie);
+            boolean preventFire = bie.isCancelled();
 
-            if (preventLighter || preventFire) {
+
+            if (preventLighter) {
+                return false;
+            }
+            
+            if (preventFire) {
+                itemstack.b(1);
                 return false;
             }
             // CraftBukkit end
