@@ -80,7 +80,7 @@ public class EntityMobs extends EntityCreature implements IMobs {
                 server.getPluginManager().callEvent(edbee);
 
                 if (!edbee.isCancelled()){
-                    entity.a(((Entity) (null)), edbee.getDamage());
+                    entity.a(((Entity) (this)), edbee.getDamage());
                 }
             } else {
                 entity.a(((Entity) (this)), c);
