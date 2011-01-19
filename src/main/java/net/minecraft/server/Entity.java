@@ -218,6 +218,7 @@ public abstract class Entity {
             } else {
                 if (Z % 20 == 0) {
                     // CraftBukkit start
+                    // TODO: this event spams!
                     if(this instanceof EntityLiving) {
                         CraftServer server = ((WorldServer) l).getServer();
                         org.bukkit.entity.Entity damagee = this.getBukkitEntity();
@@ -254,8 +255,10 @@ public abstract class Entity {
     protected void s() {
         if (!ae) {
             // CraftBukkit start
+            // TODO: this event spams!
             if(this instanceof EntityLiving) {
                 CraftServer server = ((WorldServer) l).getServer();
+                // TODO: shouldn't be sending null for the block.
                 org.bukkit.block.Block damager = null;//((WorldServer) l).getWorld().getBlockAt(i, j, k);
                 org.bukkit.entity.Entity damagee = this.getBukkitEntity();
                 DamageCause damageType = EntityDamageEvent.DamageCause.LAVA;
