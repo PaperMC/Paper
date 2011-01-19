@@ -176,7 +176,13 @@ public class EntityArrow extends Entity {
 
                     //TODO decide if we should create DamageCause.ARROW, DamageCause.PROJECTILE
                     // or leave as DamageCause.ENTITY_ATTACK
-                    EntityDamageByProjectileEvent edbpe = new EntityDamageByProjectileEvent(b.getBukkitEntity(), entity.getBukkitEntity(), this.getBukkitEntity(), EntityDamageEvent.DamageCause.ENTITY_ATTACK, 4);
+                    org.bukkit.entity.Entity shooter = null;
+                    if ((EntityLiving)b != null) {
+                        shooter = new org.bukkit.craftbukkit.entity.CraftLivingEntity(server, b);
+                    } else if ((Entity)b != null) {
+                        shooter = (org.bukkit.entity.Entity) b.getBukkitEntity();
+                    }
+                    EntityDamageByProjectileEvent edbpe = new EntityDamageByProjectileEvent(shooter, entity.getBukkitEntity(), this.getBukkitEntity(), EntityDamageEvent.DamageCause.ENTITY_ATTACK, 4);
 
                     server.getPluginManager().callEvent(edbpe);
                     if(!edbpe.isCancelled()) {
