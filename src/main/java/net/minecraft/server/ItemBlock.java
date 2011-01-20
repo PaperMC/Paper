@@ -66,7 +66,7 @@ public class ItemBlock extends Item {
             Block block = Block.m[a];
 
             // This executes the placement of the block
-            if (world.e(i, j, k, a)) {
+            if (world.b(i, j, k, a)) {
                 CraftBlock placedBlock = (CraftBlock) blockClicked.getFace(faceClicked) ;
                 CraftItemStack itemInHand = new CraftItemStack(itemstack);
                 CraftPlayer thePlayer = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entityplayer);
@@ -82,14 +82,18 @@ public class ItemBlock extends Item {
                 if (bpe.isCancelled() || !bpe.canBuild()) {
                     // CraftBukkit Undo!
 
-                    // Specialcase iceblocks, replace with 'glass' first (so it doesn't explode into water)
                     if (this.a == 79) {
+                        // Ice will explode if we set straight to 0
                         world.b(i, j, k, 20);
+                    } else if ((this.a == 44) && (world.a(i, j - 1, k) == 43) && (world.a(i, j, k) == 0)) {
+                        // Half steps automatically set the block below to a double
+                        world.b(i, j - 1, k, 44);
                     }
+
                     world.b(i, j, k, oldMaterial);
                     world.d(i, j, k, oldData);
                 } else {
-                    world.b(i, j, k, a, a(itemstack.h()));
+                    world.c(i, j, k, a(itemstack.h()));
 
                     Block.m[a].c(world, i, j, k, l);
                     Block.m[a].a(world, i, j, k, ((EntityLiving) (entityplayer)));
