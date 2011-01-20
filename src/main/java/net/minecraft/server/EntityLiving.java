@@ -141,7 +141,17 @@ public abstract class EntityLiving extends Entity {
             }
         }
         if (B() && C()) {
-            a(((Entity) (null)), 1);
+            // CraftBukkit start
+            CraftServer server = ((WorldServer) l).getServer();
+            org.bukkit.entity.Entity victim = this.getBukkitEntity();
+            DamageCause damageType = EntityDamageEvent.DamageCause.SUFFOCATION;
+            EntityDamageEvent evt = new EntityDamageEvent(victim, damageType, 1);
+            server.getPluginManager().callEvent(evt);
+            
+            if (!evt.isCancelled()){
+                a(((Entity) (null)), 1);
+            }
+            // CraftBukkit end
         }
         if (ae || this.l.z) {
             Z = 0;
