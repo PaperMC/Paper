@@ -67,7 +67,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
             a.warning("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
         }
         a.info("Loading properties");
-        d = new PropertyManager(new File("server.properties"));
+        d = new PropertyManager(options);
         String s = d.a("server-ip", "");
 
         l = d.a("online-mode", true);
