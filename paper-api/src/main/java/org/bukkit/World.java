@@ -71,6 +71,12 @@ public interface World {
      * @return true if the chunk is loaded, otherwise false
      */
     public boolean isChunkLoaded(Chunk chunk);
+
+    /**
+     * Checks if the specified chunk is loaded
+     *
+     */
+    public void loadChunk(Chunk chunk);
     
     /**
      * Drop an item exactly at the specified location.
