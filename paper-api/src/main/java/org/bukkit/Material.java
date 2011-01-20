@@ -65,12 +65,12 @@ public enum Material {
     SOIL(60),
     FURNACE(61),
     BURNING_FURNACE(62),
-    SIGN_POST(63, Sign.class),
+    SIGN_POST(63, 1, Sign.class),
     WOODEN_DOOR(64),
     LADDER(65, Ladder.class),
     RAILS(66),
     COBBLESTONE_STAIRS(67),
-    WALL_SIGN(68, Sign.class),
+    WALL_SIGN(68, 1, Sign.class),
     LEVER(69, Lever.class),
     STONE_PLATE(70),
     IRON_DOOR_BLOCK(71),
@@ -94,85 +94,85 @@ public enum Material {
     GLOWSTONE(89),
     PORTAL(90),
     JACK_O_LANTERN(91),
-    CAKE_BLOCK(92),
+    CAKE_BLOCK(92, 1),
     IRON_SPADE(256),
     IRON_PICKAXE(257),
     IRON_AXE(258),
-    FLINT_AND_STEEL(259),
-    APPLE(260),
-    BOW(261),
+    FLINT_AND_STEEL(259, 1),
+    APPLE(260, 1),
+    BOW(261, 1),
     ARROW(262),
     COAL(263),
     DIAMOND(264),
     IRON_INGOT(265),
     GOLD_INGOT(266),
-    IRON_SWORD(267),
-    WOOD_SWORD(268),
-    WOOD_SPADE(269),
-    WOOD_PICKAXE(270),
-    WOOD_AXE(271),
-    STONE_SWORD(272),
-    STONE_SPADE(273),
-    STONE_PICKAXE(274),
-    STONE_AXE(275),
-    DIAMOND_SWORD(276),
-    DIAMOND_SPADE(277),
-    DIAMOND_PICKAXE(278),
-    DIAMOND_AXE(279),
+    IRON_SWORD(267, 1),
+    WOOD_SWORD(268, 1),
+    WOOD_SPADE(269, 1),
+    WOOD_PICKAXE(270, 1),
+    WOOD_AXE(271, 1),
+    STONE_SWORD(272, 1),
+    STONE_SPADE(273, 1),
+    STONE_PICKAXE(274, 1),
+    STONE_AXE(275, 1),
+    DIAMOND_SWORD(276, 1),
+    DIAMOND_SPADE(277, 1),
+    DIAMOND_PICKAXE(278, 1),
+    DIAMOND_AXE(279, 1),
     STICK(280),
     BOWL(281),
-    MUSHROOM_SOUP(282),
-    GOLD_SWORD(283),
-    GOLD_SPADE(284),
-    GOLD_PICKAXE(285),
-    GOLD_AXE(286),
+    MUSHROOM_SOUP(282, 1),
+    GOLD_SWORD(283, 1),
+    GOLD_SPADE(284, 1),
+    GOLD_PICKAXE(285, 1),
+    GOLD_AXE(286, 1),
     STRING(287),
     FEATHER(288),
     SULPHUR(289),
-    WOOD_HOE(290),
-    STONE_HOE(291),
-    IRON_HOE(292),
-    DIAMOND_HOE(293),
-    GOLD_HOE(294),
+    WOOD_HOE(290, 1),
+    STONE_HOE(291, 1),
+    IRON_HOE(292, 1),
+    DIAMOND_HOE(293, 1),
+    GOLD_HOE(294, 1),
     SEEDS(295),
     WHEAT(296),
-    BREAD(297),
-    LEATHER_HELMET(298),
-    LEATHER_CHESTPLATE(299),
-    LEATHER_LEGGINGS(300),
-    LEATHER_BOOTS(301),
-    CHAINMAIL_HELMET(302),
-    CHAINMAIL_CHESTPLATE(303),
-    CHAINMAIL_LEGGINGS(304),
-    CHAINMAIL_BOOTS(305),
-    IRON_HELMET(306),
-    IRON_CHESTPLATE(307),
-    IRON_LEGGINGS(308),
-    IRON_BOOTS(309),
-    DIAMOND_HELMET(310),
-    DIAMOND_CHESTPLATE(311),
-    DIAMOND_LEGGINGS(312),
-    DIAMOND_BOOTS(313),
-    GOLD_HELMET(314),
-    GOLD_CHESTPLATE(315),
-    GOLD_LEGGINGS(316),
-    GOLD_BOOTS(317),
+    BREAD(297, 1),
+    LEATHER_HELMET(298, 1),
+    LEATHER_CHESTPLATE(299, 1),
+    LEATHER_LEGGINGS(300, 1),
+    LEATHER_BOOTS(301, 1),
+    CHAINMAIL_HELMET(302, 1),
+    CHAINMAIL_CHESTPLATE(303, 1),
+    CHAINMAIL_LEGGINGS(304, 1),
+    CHAINMAIL_BOOTS(305, 1),
+    IRON_HELMET(306, 1),
+    IRON_CHESTPLATE(307, 1),
+    IRON_LEGGINGS(308, 1),
+    IRON_BOOTS(309, 1),
+    DIAMOND_HELMET(310, 1),
+    DIAMOND_CHESTPLATE(311, 1),
+    DIAMOND_LEGGINGS(312, 1),
+    DIAMOND_BOOTS(313, 1),
+    GOLD_HELMET(314, 1),
+    GOLD_CHESTPLATE(315, 1),
+    GOLD_LEGGINGS(316, 1),
+    GOLD_BOOTS(317, 1),
     FLINT(318),
-    PORK(319),
-    GRILLED_PORK(320),
+    PORK(319, 1),
+    GRILLED_PORK(320, 1),
     PAINTING(321),
-    GOLDEN_APPLE(322),
-    SIGN(323, Sign.class),
-    WOOD_DOOR(324),
-    BUCKET(325),
-    WATER_BUCKET(326),
-    LAVA_BUCKET(327),
-    MINECART(328),
-    SADDLE(329),
-    IRON_DOOR(330),
+    GOLDEN_APPLE(322, 1),
+    SIGN(323, 1, Sign.class),
+    WOOD_DOOR(324, 1),
+    BUCKET(325, 1),
+    WATER_BUCKET(326, 1),
+    LAVA_BUCKET(327, 1),
+    MINECART(328, 1),
+    SADDLE(329, 1),
+    IRON_DOOR(330, 1),
     REDSTONE(331, RedstoneWire.class),
-    SNOW_BALL(332),
-    BOAT(333),
+    SNOW_BALL(332, 16),
+    BOAT(333, 1),
     LEATHER(334),
     MILK_BUCKET(335),
     CLAY_BRICK(336),
@@ -181,9 +181,9 @@ public enum Material {
     PAPER(339),
     BOOK(340),
     SLIME_BALL(341),
-    STORAGE_MINECART(342),
-    POWERED_MINECART(343),
-    EGG(344),
+    STORAGE_MINECART(342, 1),
+    POWERED_MINECART(343, 1),
+    EGG(344, 16),
     COMPASS(345),
     FISHING_ROD(346),
     WATCH(347),
@@ -193,32 +193,68 @@ public enum Material {
     INK_SACK(351, Dye.class),
     BONE(352),
     SUGAR(353),
-    CAKE(354),
-    GOLD_RECORD(2256),
-    GREEN_RECORD(2257);
+    CAKE(354, 1),
+    GOLD_RECORD(2256, 1),
+    GREEN_RECORD(2257, 1);
 
     private final int id;
     private final Class<? extends MaterialData> data;
     private static final Map<Integer, Material> lookupId = new HashMap<Integer, Material>();
     private static final Map<String, Material> lookupName = new HashMap<String, Material>();
+    private final int maxStack;
 
     private Material(final int id) {
-        this(id, null);
+        this(id, 64);
+    }
+
+    private Material(final int id, final int stack) {
+        this(id, stack, null);
     }
 
     private Material(final int id, final Class<? extends MaterialData> data) {
-        this.id = id;
-        this.data = data;
+        this(id, 64, data);
     }
 
+    private Material(final int id, final int stack, final Class<? extends MaterialData> data) {
+        this.id = id;
+        this.data = data;
+        this.maxStack = stack;
+    }
+
+    /**
+     * Gets the item ID or block ID of this Material
+     *
+     * @return ID of this material
+     */
     public int getId() {
         return id;
     }
 
+    /**
+     * Gets the maximum amount of this material that can be held in a stack
+     *
+     * @return Maximum stack size for this material
+     */
+    public int getMaxStackSize() {
+        return maxStack;
+    }
+
+    /**
+     * Gets the MaterialData class associated with this Material
+     *
+     * @return MaterialData associated with this Material
+     */
     public Class<? extends MaterialData> getData() {
         return data;
     }
 
+    /**
+     * Constructs a new MaterialData relevant for this Material, with the given
+     * initial data
+     *
+     * @param raw Initial data to construct the MaterialData with
+     * @return New MaterialData with the given data
+     */
     public MaterialData getNewData(final byte raw) {
         if (data == null) {
             return null;
@@ -244,6 +280,11 @@ public enum Material {
         return null;
     }
 
+    /**
+     * Checks if this Material is a placable block
+     *
+     * @return true if this material is a block
+     */
     public boolean isBlock() {
         return id < 256; 
     }
