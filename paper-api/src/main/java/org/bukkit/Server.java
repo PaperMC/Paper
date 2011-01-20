@@ -88,4 +88,9 @@ public interface Server {
      * @param time The time to set the in-game time to (in hours*1000)
      */
     public void setTime(long time);
+
+    /**
+     * Reloads the server, refreshing settings and plugin information
+     */
+    public void reload();
 }
