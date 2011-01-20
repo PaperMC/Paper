@@ -7,6 +7,9 @@ import java.util.Random;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 //CraftBukkit end
+import org.bukkit.event.entity.EntityDamageByBlockEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 
 public abstract class EntityLiving extends Entity {
 
@@ -420,7 +423,18 @@ public abstract class EntityLiving extends Entity {
         int k = (int) Math.ceil(f1 - 3F);
 
         if (k > 0) {
-            a(((Entity) (null)), k);
+            // CraftBukkit start
+            CraftServer server = ((WorldServer) l).getServer();
+            org.bukkit.entity.Entity victim = this.getBukkitEntity();
+            DamageCause damageType = EntityDamageEvent.DamageCause.FALL;
+            EntityDamageEvent evt = new EntityDamageEvent(victim, damageType, k);
+            server.getPluginManager().callEvent(evt);
+            // CraftBukkit end
+            
+            if (!evt.isCancelled()){
+                a(((Entity) (null)), k);
+            }
+            
             int l = this.l.a(MathHelper.b(p), MathHelper.b(q - 0.20000000298023224D - (double) H), MathHelper.b(r));
 
             if (l > 0) {
