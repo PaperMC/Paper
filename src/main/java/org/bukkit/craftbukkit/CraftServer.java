@@ -12,6 +12,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.minecraft.server.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.PropertyManager;
 import net.minecraft.server.ServerConfigurationManager;
 import org.bukkit.*;
 import org.bukkit.plugin.Plugin;
@@ -19,12 +20,11 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.SimplePluginManager;
 import org.bukkit.plugin.java.JavaPluginLoader;
 
-public final class CraftServer implements Server
-{
+public final class CraftServer implements Server {
     private final String serverName = "Craftbukkit";
     private final String serverVersion = "1.2_01";
     private final PluginManager pluginManager = new SimplePluginManager(this);
-    private final CommandMap commandMap = new SimpleCommandMap();
+    private final CommandMap commandMap = new SimpleCommandMap(this);
     protected final MinecraftServer console;
     protected final ServerConfigurationManager server;
 
@@ -155,5 +155,21 @@ public final class CraftServer implements Server
 
     public boolean dispatchCommand(Player player, String commandLine) {
         return commandMap.dispatch(player, commandLine);
+    }
+
+    public void reload() {
+        PropertyManager config = new PropertyManager(console.options);
+
+        console.d = config;
+        
+        boolean animals = config.a("spawn-monsters", console.m);
+        boolean monsters = config.a("spawn-monsters", console.e.k > 0);
+
+        console.l = config.a("online-mode", console.l);
+        console.m = config.a("spawn-animals", console.m);
+        console.n = config.a("pvp", console.n);
+
+        console.e.k = monsters ? 1 : 0;
+        console.e.a(monsters, animals);
     }
 }
