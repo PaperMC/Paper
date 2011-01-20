@@ -1,7 +1,5 @@
 package org.bukkit.command;
 
-import java.awt.Color;
-
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -17,7 +15,7 @@ public final class PluginCommand extends Command {
 
     public boolean execute(Player player, String commandLabel, String[] args) {
         boolean cmdSuccess = owningPlugin.onCommand(player, this, commandLabel, args);
-        if (!cmdSuccess && usageMessage != "") {
+        if (!cmdSuccess && !usageMessage.isEmpty()) {
             String tmpMsg = usageMessage.replace("<command>", commandLabel);
             String[] usageLines = tmpMsg.split("\\n");
             for(String line: usageLines) {

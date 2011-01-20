@@ -217,7 +217,6 @@ public final class SimplePluginManager implements PluginManager {
      */
     public void registerEvent(Event.Type type, Listener listener, Priority priority, Plugin plugin) {
         PriorityQueue<RegisteredListener> eventListeners = listeners.get(type);
-        int position = 0;
 
         if (eventListeners == null) {
             eventListeners = new PriorityQueue<RegisteredListener>(11,
