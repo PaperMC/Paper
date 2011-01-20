@@ -4,7 +4,9 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityPlayerMP;
+import net.minecraft.server.Packet;
 import net.minecraft.server.Packet3Chat;
+import net.minecraft.server.Packet6SpawnPosition;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Player;
@@ -98,6 +100,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public void kickPlayer(String message) {
         entity.a.a(message);
+    }
+
+    public void setCompassTarget(Location loc) {
+        entity.a.b(((Packet) (new Packet6SpawnPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()))));
     }
 
 }
