@@ -429,11 +429,11 @@ public abstract class EntityLiving extends Entity {
             DamageCause damageType = EntityDamageEvent.DamageCause.FALL;
             EntityDamageEvent evt = new EntityDamageEvent(victim, damageType, k);
             server.getPluginManager().callEvent(evt);
-            // CraftBukkit end
             
             if (!evt.isCancelled()){
                 a(((Entity) (null)), k);
             }
+            // CraftBukkit end
             
             int l = this.l.a(MathHelper.b(p), MathHelper.b(q - 0.20000000298023224D - (double) H), MathHelper.b(r));
 
