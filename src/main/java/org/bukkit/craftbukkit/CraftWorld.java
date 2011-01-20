@@ -75,6 +75,11 @@ public class CraftWorld implements World {
         return world.A.a(chunk.getX(), chunk.getZ());
     }
 
+    public void loadChunk(Chunk chunk) {
+         world.A.d(chunk.getX(), chunk.getZ());
+    }
+
+
     public Block updateBlock(int x, int y, int z) {
         BlockCoordinate loc = new BlockCoordinate(x, y, z);
         CraftBlock block = (CraftBlock)blockCache.get(loc);
