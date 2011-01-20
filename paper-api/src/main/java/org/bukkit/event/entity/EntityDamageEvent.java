@@ -93,6 +93,12 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          *
          * Damage: fall height - 3.0
          */
+        SUFFOCATION,
+        /**
+         * Damage caused by being put in a block
+         *
+         * Damage: 1
+         */
         FALL,
         /**
          * Damage caused by direct exposure to fire
