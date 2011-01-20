@@ -1,6 +1,7 @@
 package org.bukkit.command;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -8,18 +9,14 @@ import org.bukkit.ChatColor;
 import org.bukkit.Server;
 
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginDescriptionFile;
 
 public final class SimpleCommandMap implements CommandMap {
     private final Map<String, Command> knownCommands = new HashMap<String, Command>();
 
     public SimpleCommandMap(final Server server) {
-        register("version", "bukkit", new Command("version") {
-            @Override
-            public boolean execute(Player player, String currentAlias, String[] args) {
-                player.sendMessage("This server is using some funky dev build of Bukkit!");
-                return true;
-            }
-        });
+        register("bukkit", new VersionCommand("version", server));
 
         register("reload", "bukkit", new Command("reload") {
             @Override
@@ -45,14 +42,18 @@ public final class SimpleCommandMap implements CommandMap {
     public void registerAll(String fallbackPrefix, List<Command> commands) {
         if (commands != null) {
             for(Command c : commands) {
-                List<String> names = new ArrayList<String>();
-                names.add(c.getName());
-                names.addAll(c.getAliases());
-                
-                for(String name : names) {
-                    register(name, fallbackPrefix, c);                        
-                }
+                register(fallbackPrefix, c);
             }
+        }
+    }
+
+    private void register(String fallbackPrefix, Command command) {
+        List<String> names = new ArrayList<String>();
+        names.add(command.getName());
+        names.addAll(command.getAliases());
+
+        for (String name : names) {
+            register(name, fallbackPrefix, command);
         }
     }
     
@@ -74,6 +75,8 @@ public final class SimpleCommandMap implements CommandMap {
     public boolean dispatch(Player sender, String commandLine) {
         String[] args = commandLine.split(" ");
         String sentCommandLabel = args[0].substring(1);
+
+        args = Arrays.copyOfRange(args, 1, args.length);
         
         Command target = knownCommands.get(sentCommandLabel);
         boolean isRegisteredCommand = (target != null);
@@ -83,4 +86,101 @@ public final class SimpleCommandMap implements CommandMap {
         return isRegisteredCommand;
     }
 
+    private static class VersionCommand extends Command {
+        private final Server server;
+
+        public VersionCommand(String name, Server server) {
+            super(name);
+            this.server = server;
+            this.tooltip = "Gets the version of this server including any plugins in use";
+            this.usageMessage = "/version [plugin name]";
+            this.setAliases(Arrays.asList("ver", "about"));
+        }
+
+        @Override
+        public boolean execute(Player player, String currentAlias, String[] args) {
+            if (args.length == 0) {
+                player.sendMessage("This server is running " + ChatColor.GREEN
+                        + server.getName() + ChatColor.WHITE + " version " + ChatColor.GREEN + server.getVersion());
+                player.sendMessage("This server is also sporting some funky dev build of Bukkit!");
+                player.sendMessage("Plugins: " + getPluginList());
+            } else {
+                StringBuilder name = new StringBuilder();
+
+                for (String arg : args) {
+                    if (name.length() > 0) {
+                        name.append(' ');
+                    }
+                    name.append(arg);
+                }
+
+                Plugin plugin = server.getPluginManager().getPlugin(name.toString());
+
+                if (plugin != null) {
+                    PluginDescriptionFile desc = plugin.getDescription();
+                    player.sendMessage(ChatColor.GREEN + desc.getName() + ChatColor.WHITE + " version " + ChatColor.GREEN + desc.getVersion());
+
+                    if (desc.getDescription() != null) {
+                        player.sendMessage(desc.getDescription());
+                    }
+
+                    if (desc.getWebsite() != null) {
+                        player.sendMessage("Website: " + ChatColor.GREEN + desc.getWebsite());
+                    }
+
+                    if (!desc.getAuthors().isEmpty()) {
+                        if (desc.getAuthors().size() == 1) {
+                            player.sendMessage("Author: " + getAuthors(desc));
+                        } else {
+                            player.sendMessage("Authors: " + getAuthors(desc));
+                        }
+                    }
+                } else {
+                    player.sendMessage("This server is not running any plugin by that name.");
+                    player.sendMessage("Plugins: " + getPluginList());
+                }
+            }
+
+            return true;
+        }
+
+        private String getPluginList() {
+            StringBuilder pluginList = new StringBuilder();
+            Plugin[] plugins = server.getPluginManager().getPlugins();
+
+            for (Plugin plugin : plugins) {
+                if (pluginList.length() > 0) {
+                    pluginList.append(ChatColor.WHITE);
+                    pluginList.append(", ");
+                }
+
+                pluginList.append(ChatColor.GREEN);
+                pluginList.append(plugin.getDescription().getName());
+            }
+
+            return pluginList.toString();
+        }
+
+        private String getAuthors(final PluginDescriptionFile desc) {
+            StringBuilder result = new StringBuilder();
+            ArrayList<String> authors = desc.getAuthors();
+
+            for (int i = 0; i < authors.size(); i++) {
+                if (result.length() > 0) {
+                    result.append(ChatColor.WHITE);
+
+                    if (i < authors.size() - 1) {
+                        result.append(", ");
+                    } else {
+                        result.append(" and ");
+                    }
+                }
+
+                result.append(ChatColor.GREEN);
+                result.append(authors.get(i));
+            }
+
+            return result.toString();
+        }
+    }
 }
