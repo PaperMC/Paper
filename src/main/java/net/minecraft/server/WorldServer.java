@@ -126,6 +126,13 @@ public class WorldServer extends World {
     }
 
     @Override
+    public boolean a(int i1, int j1, int k1, int l1, int i2) {
+        boolean result = super.a(i1, j1, k1, l1, i2);
+        if ((result) && (world != null)) world.updateBlock(i1, j1, k1);
+        return result;
+    }
+
+    @Override
     public void a(int i1, int j1, int k1, TileEntity tileentity) {
         super.a(i1, j1, k1, tileentity);
         if (world != null) world.updateBlock(i1, j1, k1);
