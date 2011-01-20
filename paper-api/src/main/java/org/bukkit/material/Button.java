@@ -40,7 +40,7 @@ public class Button extends MaterialData implements Redstone, Attachable {
      * @return BlockFace attached to
      */
     public BlockFace getAttachedFace() {
-        byte data = (byte) (getData() ^ 0x8);
+        byte data = (byte) (getData() ^ 0x7);
 
         switch (data) {
             case 0x1:
