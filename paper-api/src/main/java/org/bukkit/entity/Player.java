@@ -2,6 +2,7 @@
 package org.bukkit.entity;
 
 import java.net.InetSocketAddress;
+import org.bukkit.Location;
 
 /**
  * Represents a player, connected or not
@@ -48,6 +49,13 @@ public interface Player extends HumanEntity {
      * @return String containing a color formatted name to display for this player
      */
     public void setDisplayName(String name);
+    
+    /**
+     * Set the target of the player's compass.
+     * 
+     * @param loc
+     */
+    public void setCompassTarget(Location loc);
     
     /**
      * Gets the socket address of this player
