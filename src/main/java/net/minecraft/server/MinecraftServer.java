@@ -286,7 +286,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
             ICommandListener icommandlistener = servercommand.b;
             String s1 = icommandlistener.c();
 
-            if (s.toLowerCase().startsWith("#help") || s.toLowerCase().startsWith("?")) {
+            if (s.toLowerCase().startsWith("#help") || s.toLowerCase().startsWith("#?")) {
                 icommandlistener.b("To run the server without a gui, start it like this:");
                 icommandlistener.b("   java -Xmx1024M -Xms1024M -jar minecraft_server.jar nogui");
                 icommandlistener.b("Console commands:");
