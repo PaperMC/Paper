@@ -4,6 +4,8 @@ package org.bukkit.plugin;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import org.yaml.snakeyaml.Yaml;
@@ -18,6 +20,9 @@ public final class PluginDescriptionFile {
     private String main = null;
     private String version = null;
     private Object commands = null;
+    private String description = null;
+    private ArrayList<String> authors = new ArrayList<String>();
+    private String website = null;
 
     @SuppressWarnings("unchecked")
     public PluginDescriptionFile(final InputStream stream) throws InvalidDescriptionException {
@@ -85,6 +90,23 @@ public final class PluginDescriptionFile {
         return commands;
     }
 
+    /**
+     * Gets the description of this plugin
+     *
+     * return Description of this plugin
+     */
+    public String getDescription() {
+        return description;
+    }
+
+    public ArrayList<String> getAuthors() {
+        return authors;
+    }
+
+    public String getWebsite() {
+        return website;
+    }
+
     private void loadMap(Map<String, Object> map) throws InvalidDescriptionException {
         try {
             name = map.get("name").toString();
@@ -109,13 +131,47 @@ public final class PluginDescriptionFile {
         } catch (ClassCastException ex) {
             throw new InvalidDescriptionException(ex, "main is of wrong type");
         }
-        
-        try {
-            commands = map.get("commands");
-        } catch (NullPointerException ex) {
-            throw new InvalidDescriptionException(ex, "command is not defined");
-        } catch (ClassCastException ex) {
-            throw new InvalidDescriptionException(ex, "command is of wrong type");
+
+        if (map.containsKey("commands")) {
+            try {
+                commands = map.get("commands");
+            } catch (ClassCastException ex) {
+                throw new InvalidDescriptionException(ex, "commands are of wrong type");
+            }
+        }
+
+        if (map.containsKey("website")) {
+            try {
+                website = (String)map.get("website");
+            } catch (ClassCastException ex) {
+                throw new InvalidDescriptionException(ex, "website is of wrong type");
+            }
+        }
+
+        if (map.containsKey("description")) {
+            try {
+                description = (String)map.get("description");
+            } catch (ClassCastException ex) {
+                throw new InvalidDescriptionException(ex, "description is of wrong type");
+            }
+        }
+
+        if (map.containsKey("author")) {
+            try {
+                String extra = (String)map.get("author");
+                authors.add(extra);
+            } catch (ClassCastException ex) {
+                throw new InvalidDescriptionException(ex, "author is of wrong type");
+            }
+        }
+
+        if (map.containsKey("authors")) {
+            try {
+                ArrayList<String> extra = (ArrayList<String>)map.get("authors");
+                authors.addAll(extra);
+            } catch (ClassCastException ex) {
+                throw new InvalidDescriptionException(ex, "authors are of wrong type");
+            }
         }
     }
 
@@ -124,7 +180,17 @@ public final class PluginDescriptionFile {
         map.put("name", name);
         map.put("main", main);
         map.put("version", version);
-        map.put("command", commands);
+
+        if (commands != null) map.put("command", commands);
+        if (website != null) map.put("website", website);
+        if (description != null) map.put("description", description);
+
+        if (authors.size() == 1) {
+            map.put("author", authors.get(0));
+        } else if (authors.size() > 1) {
+            map.put("authors", authors);
+        }
+
         return map;
     }
 }
