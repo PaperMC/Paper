@@ -8,6 +8,7 @@ import org.bukkit.craftbukkit.entity.CraftFish;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 //CraftBukkit end
 
 public class EntityFish extends Entity {
@@ -51,19 +52,12 @@ public class EntityFish extends Entity {
     protected void a() {}
 
     public EntityFish(World world, EntityPlayer entityplayer) {
-        super(world);
-        d = -1;
-        e = -1;
-        f = -1;
-        ak = 0;
-        al = false;
-        a = 0;
-        an = 0;
-        ao = 0;
-        c = null;
+        // CraftBukkit start
+        this(world);
+        // CraftBukkit end
+        
         b = entityplayer;
         b.aE = this;
-        a(0.25F, 0.25F);
         c(entityplayer.p, (entityplayer.q + 1.6200000000000001D) - (double) entityplayer.H, entityplayer.r, entityplayer.v, entityplayer.w);
         p -= MathHelper.b((v / 180F) * 3.141593F) * 0.16F;
         q -= 0.10000000149011612D;
@@ -207,11 +201,16 @@ public class EntityFish extends Entity {
                 boolean bounce;
                 if (movingobjectposition.g instanceof EntityLiving) {
                     CraftServer server = ((WorldServer) this.l).getServer();
+                    org.bukkit.entity.Entity shooter = (b == null)?null:b.getBukkitEntity();
+                    org.bukkit.entity.Entity damagee = movingobjectposition.g.getBukkitEntity();
+                    org.bukkit.entity.Entity projectile = this.getBukkitEntity();
+                    DamageCause damageCause = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
+                    int damage = 0;
 
                     //TODO @see EntityArrow#162
-                    EntityDamageByProjectileEvent edbpe = new EntityDamageByProjectileEvent(b.getBukkitEntity(), movingobjectposition.g.getBukkitEntity(), this.getBukkitEntity(), EntityDamageEvent.DamageCause.ENTITY_ATTACK, 0);
-
+                    EntityDamageByProjectileEvent edbpe = new EntityDamageByProjectileEvent(shooter, damagee, projectile, damageCause, damage);
                     server.getPluginManager().callEvent(edbpe);
+                    
                     if(!edbpe.isCancelled()) {
                         // this function returns if the fish should stick or not, i.e. !bounce
                         bounce = !movingobjectposition.g.a(((Entity) (b)), edbpe.getDamage());

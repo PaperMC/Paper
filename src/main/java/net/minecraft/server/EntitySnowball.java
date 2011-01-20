@@ -9,6 +9,7 @@ import org.bukkit.craftbukkit.entity.CraftSnowball;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 //CraftBukkit end
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 
 public class EntitySnowball extends Entity {
 
@@ -41,16 +42,11 @@ public class EntitySnowball extends Entity {
     protected void a() {}
 
     public EntitySnowball(World world, EntityLiving entityliving) {
-        super(world);
-        b = -1;
-        c = -1;
-        d = -1;
-        e = 0;
-        f = false;
-        a = 0;
-        am = 0;
+        // CraftBukkit start
+        this(world);
+        // CraftBukkit end
+        
         ak = entityliving;
-        a(0.25F, 0.25F);
         c(entityliving.p, entityliving.q + (double) entityliving.w(), entityliving.r, entityliving.v, entityliving.w);
         p -= MathHelper.b((v / 180F) * 3.141593F) * 0.16F;
         q -= 0.10000000149011612D;
@@ -66,16 +62,11 @@ public class EntitySnowball extends Entity {
     }
 
     public EntitySnowball(World world, double d1, double d2, double d3) {
-        super(world);
-        b = -1;
-        c = -1;
-        d = -1;
-        e = 0;
-        f = false;
-        a = 0;
-        am = 0;
+        // CraftBukkit start
+        this(world);
+        // CraftBukkit end
+        
         al = 0;
-        a(0.25F, 0.25F);
         a(d1, d2, d3);
         H = 0.0F;
     }
@@ -175,11 +166,16 @@ public class EntitySnowball extends Entity {
                 boolean bounce;
                 if (movingobjectposition.g instanceof EntityLiving) {
                     CraftServer server = ((WorldServer) this.l).getServer();
+                    org.bukkit.entity.Entity shooter = (ak == null)?null:ak.getBukkitEntity();
+                    org.bukkit.entity.Entity damagee = movingobjectposition.g.getBukkitEntity();
+                    org.bukkit.entity.Entity projectile = this.getBukkitEntity();
+                    DamageCause damageCause = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
+                    int damage = 0;
 
                     //TODO @see EntityArrow#162
-                    EntityDamageByProjectileEvent edbpe = new EntityDamageByProjectileEvent( ak.getBukkitEntity(), movingobjectposition.g.getBukkitEntity(), this.getBukkitEntity(), EntityDamageEvent.DamageCause.ENTITY_ATTACK, 0);
-
+                    EntityDamageByProjectileEvent edbpe = new EntityDamageByProjectileEvent(shooter, damagee, projectile, damageCause, damage);
                     server.getPluginManager().callEvent(edbpe);
+
                     if(!edbpe.isCancelled()) {
                         // this function returns if the snowball should stick or not, i.e. !bounce
                         bounce = !movingobjectposition.g.a(((Entity) (ak)), edbpe.getDamage());

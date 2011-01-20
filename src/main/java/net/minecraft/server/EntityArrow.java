@@ -7,7 +7,9 @@ import org.bukkit.craftbukkit.entity.CraftArrow;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 //CraftBukkit end
+
 
 public class EntityArrow extends Entity {
 
@@ -39,30 +41,20 @@ public class EntityArrow extends Entity {
     }
 
     public EntityArrow(World world, double d1, double d2, double d3) {
-        super(world);
-        c = -1;
-        d = -1;
-        e = -1;
-        f = 0;
-        ak = false;
-        a = 0;
-        am = 0;
-        a(0.5F, 0.5F);
+        // CraftBukkit start
+        this(world);
+        // CraftBukkit end
+        
         a(d1, d2, d3);
         H = 0.0F;
     }
 
     public EntityArrow(World world, EntityLiving entityliving) {
-        super(world);
-        c = -1;
-        d = -1;
-        e = -1;
-        f = 0;
-        ak = false;
-        a = 0;
-        am = 0;
+        // CraftBukkit start
+        this(world);
+        // CraftBukkit end
+        
         b = entityliving;
-        a(0.5F, 0.5F);
         c(entityliving.p, entityliving.q + (double) entityliving.w(), entityliving.r, entityliving.v, entityliving.w);
         p -= MathHelper.b((v / 180F) * 3.141593F) * 0.16F;
         q -= 0.10000000149011612D;
@@ -176,12 +168,14 @@ public class EntityArrow extends Entity {
 
                     //TODO decide if we should create DamageCause.ARROW, DamageCause.PROJECTILE
                     // or leave as DamageCause.ENTITY_ATTACK
-                    org.bukkit.entity.Entity shooter = null;
-                    if ((EntityLiving)b != null) {
-                        shooter = b.getBukkitEntity();
-                    }
-                    EntityDamageByProjectileEvent edbpe = new EntityDamageByProjectileEvent(shooter, entity.getBukkitEntity(), this.getBukkitEntity(), EntityDamageEvent.DamageCause.ENTITY_ATTACK, 4);
+                    org.bukkit.entity.Entity shooter = (b == null)?null:b.getBukkitEntity();
+                    org.bukkit.entity.Entity damagee = movingobjectposition.g.getBukkitEntity();
+                    org.bukkit.entity.Entity projectile = this.getBukkitEntity();
+                    // TODO deal with arrows being fired from a non-entity
+                    DamageCause damageCause = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
+                    int damage = 4;
 
+                    EntityDamageByProjectileEvent edbpe = new EntityDamageByProjectileEvent(shooter, damagee, projectile, damageCause, damage);
                     server.getPluginManager().callEvent(edbpe);
                     if(!edbpe.isCancelled()) {
                         // this function returns if the arrow should stick in or not, i.e. !bounce

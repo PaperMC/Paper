@@ -8,7 +8,9 @@ import org.bukkit.craftbukkit.entity.CraftFireball;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 //CraftBukkit end
+
 
 public class EntityFireball extends Entity {
 
@@ -35,6 +37,7 @@ public class EntityFireball extends Entity {
         a = 0;
         ap = 0;
         a(1.0F, 1.0F);
+        
         //CraftBukkit start
         CraftServer server = ((WorldServer) this.l).getServer();
         this.bukkitEntity = new CraftFireball(server, this);
@@ -44,16 +47,11 @@ public class EntityFireball extends Entity {
     protected void a() {}
 
     public EntityFireball(World world, EntityLiving entityliving, double d1, double d2, double d3) {
-        super(world);
-        e = -1;
-        f = -1;
-        ak = -1;
-        al = 0;
-        am = false;
-        a = 0;
-        ap = 0;
+        // CraftBukkit start
+        this(world);
+        // CraftBukkit end
+        
         an = entityliving;
-        a(1.0F, 1.0F);
         c(entityliving.p, entityliving.q, entityliving.r, entityliving.v, entityliving.w);
         a(p, q, r);
         H = 0.0F;
@@ -137,11 +135,16 @@ public class EntityFireball extends Entity {
                 boolean bounce;
                 if (movingobjectposition.g instanceof EntityLiving) {
                     CraftServer server = ((WorldServer) this.l).getServer();
+                    org.bukkit.entity.Entity shooter = (an == null)?null:an.getBukkitEntity();
+                    org.bukkit.entity.Entity damagee = movingobjectposition.g.getBukkitEntity();
+                    org.bukkit.entity.Entity projectile = this.getBukkitEntity();
+                    DamageCause damageCause = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
+                    int damage = 0;
 
                     //TODO @see EntityArrow#162
-                    EntityDamageByProjectileEvent edbpe = new EntityDamageByProjectileEvent( an.getBukkitEntity(), movingobjectposition.g.getBukkitEntity(), this.getBukkitEntity(), EntityDamageEvent.DamageCause.ENTITY_ATTACK, 0);
-
+                    EntityDamageByProjectileEvent edbpe = new EntityDamageByProjectileEvent(shooter, damagee, projectile, damageCause, damage);
                     server.getPluginManager().callEvent(edbpe);
+
                     if(!edbpe.isCancelled()) {
                         // this function returns if the fireball should stick or not, i.e. !bounce
                         bounce = !movingobjectposition.g.a(((Entity) (an)), edbpe.getDamage());
