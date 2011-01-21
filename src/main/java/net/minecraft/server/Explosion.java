@@ -11,6 +11,8 @@ import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 
+import org.bukkit.Location;
+
 // CraftBukkit end
 
 import java.util.*;
@@ -27,6 +29,10 @@ public class Explosion {
     public float f;
     public Set g;
 
+    // CraftBukkit
+    // Retain where the explosion happened because the Entity no longer exists after explosion.
+    private Location location;
+
     public Explosion(World world, Entity entity, double d1, double d2, double d3, float f1) {
         a = false;
         h = new Random();
@@ -37,6 +43,8 @@ public class Explosion {
         b = d1;
         c = d2;
         d = d3;
+
+        location = entity.getBukkitEntity().getLocation();
     }
 
     public void a() {
@@ -192,7 +200,7 @@ public class Explosion {
         }
 
         org.bukkit.event.Event.Type eventType = EntityExplodeEvent.Type.ENTITY_EXPLODE;
-        EntityExplodeEvent eee = new EntityExplodeEvent(eventType, splode, blocklist);
+        EntityExplodeEvent eee = new EntityExplodeEvent(eventType, splode, location, blocklist);
         server.getPluginManager().callEvent(eee);
         
         if (eee.isCancelled()) {
