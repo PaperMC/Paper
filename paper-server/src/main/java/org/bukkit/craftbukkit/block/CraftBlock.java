@@ -4,6 +4,7 @@ package org.bukkit.craftbukkit.block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
+import org.bukkit.Location;
 import net.minecraft.server.MobSpawnerBase;
 import org.bukkit.*;
 import org.bukkit.block.BlockState;
@@ -52,6 +53,15 @@ public class CraftBlock implements Block {
      */
     public World getWorld() {
         return world;
+    }
+
+    /**
+     * Gets the Location of the block
+     *
+     * @return Location of the block
+     */
+    public Location getLocation() {
+      return new Location(world, x, y, z);
     }
 
     /**
