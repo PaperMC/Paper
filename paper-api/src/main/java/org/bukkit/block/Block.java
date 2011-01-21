@@ -3,6 +3,7 @@ package org.bukkit.block;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.Location;
 import org.bukkit.block.BlockState;
 
 /**
@@ -113,6 +114,14 @@ public interface Block {
      * @return z-coordinate
      */
     int getZ();
+
+    /**
+     * Gets the Location of the block
+     *
+     * @return Location of block
+     */
+
+    Location getLocation();
 
     /**
      * Gets the chunk which contains this block
