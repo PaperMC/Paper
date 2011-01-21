@@ -2,13 +2,13 @@ package net.minecraft.server;
 
 import java.util.List;
 
-//CraftBukkit start
+// CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftArrow;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
-//CraftBukkit end
+// CraftBukkit end
 
 
 public class EntityArrow extends Entity {
@@ -34,10 +34,10 @@ public class EntityArrow extends Entity {
         am = 0;
         a(0.5F, 0.5F);
         
-        //CraftBukkit start
+        // CraftBukkit start
         CraftServer server = ((WorldServer) this.l).getServer();
         this.bukkitEntity = new CraftArrow(server, this);
-        //CraftBukkit end
+        // CraftBukkit end
     }
 
     public EntityArrow(World world, double d1, double d2, double d3) {

@@ -2,10 +2,10 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-//CraftBukkit start
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftSheep;
-//CraftBukkit end
+// CraftBukkit end
 
 public class EntitySheep extends EntityAnimals {
 
@@ -49,10 +49,10 @@ public class EntitySheep extends EntityAnimals {
         super(world);
         aP = "/mob/sheep.png";
         a(0.9F, 1.3F);
-        //CraftBukkit start
+        // CraftBukkit start
         CraftServer server = ((WorldServer) this.l).getServer();
         this.bukkitEntity = new CraftSheep(server, this);
-        //CraftBukkit end
+        // CraftBukkit end
     }
 
     protected void a() {

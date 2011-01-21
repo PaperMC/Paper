@@ -2,7 +2,7 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-//CraftBukkit start
+// CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftSkeleton;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.Event.Type;
@@ -16,10 +16,10 @@ public class EntitySkeleton extends EntityMobs {
     public EntitySkeleton(World world) {
         super(world);
         aP = "/mob/skeleton.png";
-        //CraftBukkit start
+        // CraftBukkit start
         CraftServer server = ((WorldServer) this.l).getServer();
         this.bukkitEntity = new CraftSkeleton(server, this);
-        //CraftBukkit end
+        // CraftBukkit end
     }
 
     protected String e() {
@@ -41,7 +41,9 @@ public class EntitySkeleton extends EntityMobs {
             if (f1 > 0.5F && l.i(MathHelper.b(p), MathHelper.b(q), MathHelper.b(r)) && W.nextFloat() * 30F < (f1 - 0.4F) * 2.0F) {
                 // CraftBukkit start
                 CraftServer server = ((WorldServer) l).getServer();
-                EntityCombustEvent event = new EntityCombustEvent(Type.ENTITY_COMBUST, this.getBukkitEntity());
+                Type eventType = Type.ENTITY_COMBUST;
+                org.bukkit.entity.Entity entity = this.getBukkitEntity();
+                EntityCombustEvent event = new EntityCombustEvent(eventType, entity);
                 server.getPluginManager().callEvent(event);
                 if (!event.isCancelled()) {
                     Z = 300;

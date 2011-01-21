@@ -2,10 +2,10 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-//CraftBukkit start
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftSpider;
-//CraftBukkit stop
+// CraftBukkit stop
 
 public class EntitySpider extends EntityMobs {
 
@@ -14,10 +14,10 @@ public class EntitySpider extends EntityMobs {
         aP = "/mob/spider.png";
         a(1.4F, 0.9F);
         bC = 0.8F;
-        //CraftBukkit start
+        // CraftBukkit start
         CraftServer server = ((WorldServer) this.l).getServer();
         this.bukkitEntity = new CraftSpider(server, this);
-        //CraftBukkit end
+        // CraftBukkit end
     }
 
     public double k() {

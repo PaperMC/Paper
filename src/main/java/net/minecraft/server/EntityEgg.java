@@ -37,10 +37,10 @@ public class EntityEgg extends Entity {
         a = 0;
         am = 0;
         a(0.25F, 0.25F);
-        //CraftBukkit start
+        // CraftBukkit start
         CraftServer server = ((WorldServer) this.l).getServer();
         this.bukkitEntity = new CraftEgg(server, this);
-        //CraftBukkit end
+        // CraftBukkit end
     }
 
     protected void a() {}
@@ -176,7 +176,7 @@ public class EntityEgg extends Entity {
                     DamageCause damageCause = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
                     int damage = 0;
 
-                    //TODO @see EntityArrow#162
+                    // TODO @see EntityArrow#162
                     EntityDamageByProjectileEvent edbpe = new EntityDamageByProjectileEvent(shooter, damagee, projectile, damageCause, damage);
                     server.getPluginManager().callEvent(edbpe);
 
@@ -196,7 +196,7 @@ public class EntityEgg extends Entity {
                 }
             }
 
-            // Craftbukkit start
+            // CraftBukkit start
             boolean hatching = !this.l.z && W.nextInt(8) == 0;
             byte numHatching = (hatching && W.nextInt(32) == 0) ? (byte) 4 : (byte) 1;
             if (!hatching) {
@@ -207,7 +207,7 @@ public class EntityEgg extends Entity {
             if (ak instanceof EntityPlayerMP) {
                 CraftServer server = ((WorldServer) l).getServer();
                 Type eventType = Type.PLAYER_EGG_THROW;
-                Player player = (Player) ak.getBukkitEntity();
+                Player player = (ak == null)?null:(Player) ak.getBukkitEntity();
 
                 PlayerEggThrowEvent event = new PlayerEggThrowEvent(eventType, player, hatching, numHatching, hatchingType);
                 server.getPluginManager().callEvent(event);

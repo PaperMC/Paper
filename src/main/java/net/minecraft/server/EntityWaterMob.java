@@ -1,18 +1,18 @@
 package net.minecraft.server;
 
-//CraftBukkit start
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftWaterMob;
-//CraftBukkit stop
+// CraftBukkit stop
 
 public class EntityWaterMob extends EntityCreature implements IAnimals {
 
     public EntityWaterMob(World world) {
         super(world);
-        //CraftBukkit start
+        // CraftBukkit start
         CraftServer server = ((WorldServer) this.l).getServer();
         this.bukkitEntity = new CraftWaterMob(server, this);
-        //CraftBukkit end
+        // CraftBukkit end
     }
 
     public boolean d_() {

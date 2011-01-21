@@ -3,13 +3,13 @@ package net.minecraft.server;
 import java.util.List;
 import java.util.Random;
 
-//CraftBukkit start
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftSnowball;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-//CraftBukkit end
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+// CraftBukkit end
 
 public class EntitySnowball extends Entity {
 
@@ -33,10 +33,10 @@ public class EntitySnowball extends Entity {
         a = 0;
         am = 0;
         a(0.25F, 0.25F);
-        //CraftBukkit start
+        // CraftBukkit start
         CraftServer server = ((WorldServer) this.l).getServer();
         this.bukkitEntity = new CraftSnowball(server, this);
-        //CraftBukkit end
+        // CraftBukkit end
     }
 
     protected void a() {}
@@ -172,7 +172,7 @@ public class EntitySnowball extends Entity {
                     DamageCause damageCause = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
                     int damage = 0;
 
-                    //TODO @see EntityArrow#162
+                    // TODO @see EntityArrow#162
                     EntityDamageByProjectileEvent edbpe = new EntityDamageByProjectileEvent(shooter, damagee, projectile, damageCause, damage);
                     server.getPluginManager().callEvent(edbpe);
 

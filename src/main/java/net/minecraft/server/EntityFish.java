@@ -9,7 +9,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
-//CraftBukkit end
+// CraftBukkit end
 
 public class EntityFish extends Entity {
 
@@ -197,7 +197,7 @@ public class EntityFish extends Entity {
         if (movingobjectposition != null) {
             if (movingobjectposition.g != null) {
                 // CraftBukkit start
-                //TODO add EntityDamagedByProjectileEvent : fishing hook?
+                // TODO add EntityDamagedByProjectileEvent : fishing hook?
                 boolean bounce;
                 if (movingobjectposition.g instanceof EntityLiving) {
                     CraftServer server = ((WorldServer) this.l).getServer();
@@ -207,7 +207,7 @@ public class EntityFish extends Entity {
                     DamageCause damageCause = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
                     int damage = 0;
 
-                    //TODO @see EntityArrow#162
+                    // TODO @see EntityArrow#162
                     EntityDamageByProjectileEvent edbpe = new EntityDamageByProjectileEvent(shooter, damagee, projectile, damageCause, damage);
                     server.getPluginManager().callEvent(edbpe);
                     

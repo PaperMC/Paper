@@ -2,14 +2,14 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-//CraftBukkit start
+// CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftMonster;
 import org.bukkit.craftbukkit.CraftServer;
 
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
-//CraftBukkit end
+// CraftBukkit end
 
 public class EntityMobs extends EntityCreature implements IMobs {
 
@@ -19,10 +19,10 @@ public class EntityMobs extends EntityCreature implements IMobs {
         super(world);
         c = 2;
         aZ = 20;
-        //CraftBukkit start
+        // CraftBukkit start
         CraftServer server = ((WorldServer) this.l).getServer();
         this.bukkitEntity = new CraftMonster(server, this);
-        //CraftBukkit end
+        // CraftBukkit end
     }
 
     public void o() {
@@ -72,7 +72,7 @@ public class EntityMobs extends EntityCreature implements IMobs {
             if(entity instanceof EntityLiving) {
                 CraftServer server = ((WorldServer) l).getServer();
                 org.bukkit.entity.Entity damager = this.getBukkitEntity();
-                org.bukkit.entity.Entity damagee = entity.getBukkitEntity();
+                org.bukkit.entity.Entity damagee = (entity == null)?null:entity.getBukkitEntity();
                 DamageCause damageType = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
                 int damageDone = c;
 

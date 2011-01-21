@@ -2,10 +2,10 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-//CraftBukkit start
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftChicken;
-//CraftBukkit end
+// CraftBukkit end
 
 public class EntityChicken extends EntityAnimals {
 
@@ -27,10 +27,10 @@ public class EntityChicken extends EntityAnimals {
         a(0.3F, 0.4F);
         aZ = 4;
         am = W.nextInt(6000) + 6000;
-        //CraftBukkit start
+        // CraftBukkit start
         CraftServer server = ((WorldServer) this.l).getServer();
         this.bukkitEntity = new CraftChicken(server, this);
-        //CraftBukkit end
+        // CraftBukkit end
     }
 
     public void o() {

@@ -2,10 +2,10 @@ package net.minecraft.server;
 
 import java.util.*;
 
-//CraftBukkit start
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftPainting;
-//CraftBukkit end
+// CraftBukkit end
 
 public class EntityPainting extends Entity {
 
@@ -22,10 +22,10 @@ public class EntityPainting extends Entity {
         a = 0;
         H = 0.0F;
         a(0.5F, 0.5F);
-        //CraftBukkit start
+        // CraftBukkit start
         CraftServer server = ((WorldServer) this.l).getServer();
         this.bukkitEntity = new CraftPainting(server, this);
-        //CraftBukkit end
+        // CraftBukkit end
     }
 
     public EntityPainting(World world, int i, int j, int k, int l) {

@@ -3,13 +3,13 @@ package net.minecraft.server;
 import java.util.List;
 import java.util.Random;
 
-//CraftBukkit start
+// CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
-//CraftBukkit end
+// CraftBukkit end
 
 public abstract class EntityPlayer extends EntityLiving {
 
@@ -51,10 +51,10 @@ public abstract class EntityPlayer extends EntityLiving {
         aR = 180F;
         Y = 20;
         aP = "/mob/char.png";
-        //CraftBukkit start
+        // CraftBukkit start
         CraftServer server = ((WorldServer) this.l).getServer();
         this.bukkitEntity = new CraftHumanEntity(server, this);
-        //CraftBukkit end
+        // CraftBukkit end
     }
 
     public void b_() {
@@ -343,7 +343,7 @@ public abstract class EntityPlayer extends EntityLiving {
             if(entity instanceof EntityLiving) {
                 CraftServer server = ((WorldServer) l).getServer();
                 org.bukkit.entity.Entity damager = this.getBukkitEntity();
-                org.bukkit.entity.Entity damagee = entity.getBukkitEntity();
+                org.bukkit.entity.Entity damagee = (entity == null)?null:entity.getBukkitEntity();
                 DamageCause damageType = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
                 int damageDone = i;
                 

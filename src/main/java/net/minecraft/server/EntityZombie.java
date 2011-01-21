@@ -1,6 +1,6 @@
 package net.minecraft.server;
 
-//CraftBukkit start
+// CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftZombie;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.Event.Type;
@@ -14,10 +14,10 @@ public class EntityZombie extends EntityMobs {
         aP = "/mob/zombie.png";
         bC = 0.5F;
         c = 5;
-        //CraftBukkit start
+        // CraftBukkit start
         CraftServer server = ((WorldServer) this.l).getServer();
         this.bukkitEntity = new CraftZombie(server, this);
-        //CraftBukkit end
+        // CraftBukkit end
     }
 
     public void o() {

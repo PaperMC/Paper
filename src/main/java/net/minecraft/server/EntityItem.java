@@ -2,10 +2,10 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-//CraftBukkit start
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftItem;
-//CraftBukkit end
+// CraftBukkit end
 
 public class EntityItem extends Entity {
 
@@ -17,12 +17,9 @@ public class EntityItem extends Entity {
     public float d;
 
     public EntityItem(World world, double d1, double d2, double d3, ItemStack itemstack) {
-        super(world);
-        b = 0;
-        f = 5;
-        d = (float) (Math.random() * 3.1415926535897931D * 2D);
-        a(0.25F, 0.25F);
-        H = J / 2.0F;
+        // CraftBukkit start
+        this(world);
+        // CraftBukkit end
         a(d1, d2, d3);
         a = itemstack;
         v = (float) (Math.random() * 360D);
@@ -30,10 +27,7 @@ public class EntityItem extends Entity {
         t = 0.20000000298023224D;
         u = (float) (Math.random() * 0.20000000298023224D - 0.10000000149011612D);
         M = false;
-        //CraftBukkit start
-        CraftServer server = ((WorldServer) this.l).getServer();
-        this.bukkitEntity = new CraftItem(server, this);
-        //CraftBukkit end
+        
     }
 
     public EntityItem(World world) {
@@ -43,6 +37,10 @@ public class EntityItem extends Entity {
         d = (float) (Math.random() * 3.1415926535897931D * 2D);
         a(0.25F, 0.25F);
         H = J / 2.0F;
+        // CraftBukkit start
+        CraftServer server = ((WorldServer) this.l).getServer();
+        this.bukkitEntity = new CraftItem(server, this);
+        // CraftBukkit end
     }
 
     protected void a() {}

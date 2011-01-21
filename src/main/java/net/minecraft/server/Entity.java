@@ -1,13 +1,13 @@
 package net.minecraft.server;
 
-//CraftBukkit start
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
-//CraftBukkit end
+// CraftBukkit end
 
 import java.util.List;
 import java.util.Random;
@@ -76,7 +76,7 @@ public abstract class Entity {
     public int ai;
     public int aj;
     
-    protected org.bukkit.entity.Entity bukkitEntity; //CraftBukkit
+    protected org.bukkit.entity.Entity bukkitEntity; // CraftBukkit
 
     public Entity(World world) {
         g = a++;
@@ -117,7 +117,7 @@ public abstract class Entity {
         af.a(0, ((Byte.valueOf((byte) 0))));
         a();
         
-        bukkitEntity = null; //CraftBukkit
+        bukkitEntity = null; // CraftBukkit
     }
 
     protected abstract void a();
@@ -489,7 +489,7 @@ public abstract class Entity {
             b(1);
             if (!flag2) {
                 Z++;
-                //CraftBukkit start
+                // CraftBukkit start
                 if(Z <= 0){
                     // not on fire yet
                     CraftServer server = ((WorldServer) l).getServer();
@@ -506,7 +506,7 @@ public abstract class Entity {
                     // reset fire level back to max
                     Z = 300;
                 }
-                //CraftBukkit end
+                // CraftBukkit end
             }
         } else if (Z <= 0) {
             Z = -Y;
@@ -922,7 +922,7 @@ public abstract class Entity {
         // e(null) doesn't really fly for overloaded methods,
         // so this method is needed
 
-        //CraftBukkit end
+        // CraftBukkit end
 
         d = 0.0D;
         e = 0.0D;
@@ -982,9 +982,9 @@ public abstract class Entity {
         }
     }
     
-    //CraftBukkit start
+    // CraftBukkit start
     public org.bukkit.entity.Entity getBukkitEntity(){
         return this.bukkitEntity;
     }
-    //CraftBukkit end
+    // CraftBukkit end
 }

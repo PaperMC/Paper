@@ -1,9 +1,9 @@
 package net.minecraft.server;
 
-//CraftBukkit start
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftCow;
-//CraftBukkit end
+// CraftBukkit end
 
 public class EntityCow extends EntityAnimals {
 
@@ -11,10 +11,10 @@ public class EntityCow extends EntityAnimals {
         super(world);
         aP = "/mob/cow.png";
         a(0.9F, 1.3F);
-        //CraftBukkit start
+        // CraftBukkit start
         CraftServer server = ((WorldServer) this.l).getServer();
         this.bukkitEntity = new CraftCow(server, this);
-        //CraftBukkit end
+        // CraftBukkit end
     }
 
     public void a(NBTTagCompound nbttagcompound) {

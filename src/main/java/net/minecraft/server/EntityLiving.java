@@ -3,13 +3,12 @@ package net.minecraft.server;
 import java.util.List;
 import java.util.Random;
 
-//CraftBukkit start
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
-//CraftBukkit end
-import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+// CraftBukkit end
 
 public abstract class EntityLiving extends Entity {
 
@@ -101,10 +100,10 @@ public abstract class EntityLiving extends Entity {
         aG = (float) Math.random() * 12398F;
         v = (float) (Math.random() * 3.1415927410125732D * 2D);
         S = 0.5F;
-        //CraftBukkit start
+        // CraftBukkit start
         CraftServer server = ((WorldServer) this.l).getServer();
         this.bukkitEntity = new CraftLivingEntity(server, this);
-        //CraftBukkit end
+        // CraftBukkit end
     }
 
     protected void a() {}

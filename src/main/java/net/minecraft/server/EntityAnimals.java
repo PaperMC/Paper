@@ -1,18 +1,18 @@
 package net.minecraft.server;
 
-//CraftBukkit start
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftAnimals;
-//CraftBukkit end
+// CraftBukkit end
 
 public abstract class EntityAnimals extends EntityCreature implements IAnimals {
 
     public EntityAnimals(World world) {
         super(world);
-        //CraftBukkit start
+        // CraftBukkit start
         CraftServer server = ((WorldServer) this.l).getServer();
         this.bukkitEntity = new CraftAnimals(server, this);
-        //CraftBukkit end
+        // CraftBukkit end
     }
 
     protected float a(int i, int j, int k) {

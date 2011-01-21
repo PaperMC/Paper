@@ -1,9 +1,9 @@
 package net.minecraft.server;
 
-//CraftBukkit start
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftFallingSand;
-//CraftBukkit end
+// CraftBukkit end
 
 public class EntityFallingSand extends Entity {
 
@@ -13,11 +13,16 @@ public class EntityFallingSand extends Entity {
     public EntityFallingSand(World world) {
         super(world);
         b = 0;
+        // CraftBukkit start
+        CraftServer server = ((WorldServer) this.l).getServer();
+        this.bukkitEntity = new CraftFallingSand(server, this);
+        // CraftBukkit end
     }
 
     public EntityFallingSand(World world, double d, double d1, double d2, int i) {
-        super(world);
-        b = 0;
+        // CraftBukkit start
+        this(world);
+        // CraftBukkit end
         a = i;
         this.i = true;
         a(0.98F, 0.98F);
@@ -30,10 +35,6 @@ public class EntityFallingSand extends Entity {
         m = d;
         n = d1;
         o = d2;
-        //CraftBukkit start
-        CraftServer server = ((WorldServer) this.l).getServer();
-        this.bukkitEntity = new CraftFallingSand(server, this);
-        //CraftBukkit end
     }
 
     protected void a() {}

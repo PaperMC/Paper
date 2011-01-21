@@ -2,10 +2,10 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-//CraftBukkit start
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftSquid;
-//CraftBukkit stop
+// CraftBukkit stop
 
 public class EntitySquid extends EntityWaterMob {
 
@@ -43,10 +43,10 @@ public class EntitySquid extends EntityWaterMob {
         aP = "/mob/squid.png";
         a(0.95F, 0.95F);
         ap = (1.0F / (W.nextFloat() + 1.0F)) * 0.2F;
-        //CraftBukkit start
+        // CraftBukkit start
         CraftServer server = ((WorldServer) this.l).getServer();
         this.bukkitEntity = new CraftSquid(server, this);
-        //CraftBukkit end
+        // CraftBukkit end
     }
 
     public void a(NBTTagCompound nbttagcompound) {

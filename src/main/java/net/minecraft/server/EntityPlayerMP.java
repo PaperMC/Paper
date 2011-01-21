@@ -2,10 +2,10 @@ package net.minecraft.server;
 
 import java.util.*;
 
-//CraftBukkit start
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
-//CraftBukkit end
+// CraftBukkit end
 
 public class EntityPlayerMP extends EntityPlayer implements ICrafting {
 
@@ -48,10 +48,10 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
         aw = s;
         c = iteminworldmanager;
         H = 0.0F;
-        //CraftBukkit start
+        // CraftBukkit start
         CraftServer server = ((WorldServer) this.l).getServer();
         this.bukkitEntity = new CraftPlayer(server, this);
-        //CraftBukkit end
+        // CraftBukkit end
     }
 
     public void l() {
@@ -200,7 +200,7 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
         // e(null) doesn't really fly for overloaded methods,
         // so this method is needed
 
-        //CraftBukkit end
+        // CraftBukkit end
         super.setPassengerOf(entity);
         a.b(((Packet) (new Packet39(((Entity) (this)), k))));
         a.a(p, q, r, v, w);
