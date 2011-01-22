@@ -29,10 +29,6 @@ public class Explosion {
     public float f;
     public Set g;
 
-    // CraftBukkit
-    // Retain where the explosion happened because the Entity no longer exists after explosion.
-    private Location location;
-
     public Explosion(World world, Entity entity, double d1, double d2, double d3, float f1) {
         a = false;
         h = new Random();
@@ -44,7 +40,6 @@ public class Explosion {
         c = d2;
         d = d3;
 
-        location = entity.getBukkitEntity().getLocation();
     }
 
     public void a() {
@@ -189,6 +184,7 @@ public class Explosion {
         Server server = ((WorldServer) i).getServer();
         CraftWorld world = ((WorldServer) i).getWorld();
         org.bukkit.entity.Entity splode = (e == null) ? null : e.getBukkitEntity();
+        Location location = new Location(world, b, c, d);
 
         List<org.bukkit.block.Block> blocklist = new ArrayList<org.bukkit.block.Block>();
         for (int j = arraylist.size() - 1; j >= 0; j--) {
@@ -198,7 +194,7 @@ public class Explosion {
                 blocklist.add(blox);
             }
         }
-
+        
         org.bukkit.event.Event.Type eventType = EntityExplodeEvent.Type.ENTITY_EXPLODE;
         EntityExplodeEvent eee = new EntityExplodeEvent(eventType, splode, location, blocklist);
         server.getPluginManager().callEvent(eee);
