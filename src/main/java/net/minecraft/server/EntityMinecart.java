@@ -133,12 +133,12 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
         H = J / 2.0F;
         M = false;
 
-        handleCreation(world); // CraftBukkit
         // CraftBukkit start
         CraftServer server = ((WorldServer) this.l).getServer();
         this.bukkitEntity = new CraftMinecart(server, this);
         this.bukkitPoweredMinecart = new CraftPoweredMinecart(server, this);
         this.bukkitStorageMinecart = new CraftStorageMinecart(server, this);
+        handleCreation(world);
         // CraftBukkit end
     }
 
@@ -166,8 +166,6 @@ public class EntityMinecart extends Entity implements IInventory, CraftMappable 
         n = d2;
         o = d3;
         d = i;
-
-        handleCreation(world); // CraftBukkit
     }
 
     // CraftBukkit start
