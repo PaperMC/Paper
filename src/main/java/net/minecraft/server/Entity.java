@@ -2,6 +2,8 @@ package net.minecraft.server;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageByBlockEvent;
@@ -117,7 +119,7 @@ public abstract class Entity {
         af.a(0, ((Byte.valueOf((byte) 0))));
         a();
         
-        bukkitEntity = null; // CraftBukkit
+        bukkitEntity = new CraftEntity(((WorldServer) l).getServer(), this); // CraftBukkit
     }
 
     protected abstract void a();

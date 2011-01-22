@@ -7,7 +7,7 @@ import org.bukkit.World;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.util.Vector;
 
-public abstract class CraftEntity implements org.bukkit.entity.Entity {
+public class CraftEntity implements org.bukkit.entity.Entity {
     protected final CraftServer server;
     private Entity entity;
 
