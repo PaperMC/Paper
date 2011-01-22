@@ -66,7 +66,15 @@ public class ItemBlock extends Item {
             Block block = Block.m[a];
 
             // This executes the placement of the block
-            if (world.b(i, j, k, a)) {
+            /*
+             * This replaces world.b(IIIII), we're doing this because we need to
+             * hook between the 'placement' and the informing to 'world' so we can
+             * sanely undo this.
+             * 
+             * Whenever the call to 'world.b' changes we need to figure out again what to
+             * replace this with.
+             */
+            if (world.a(i, j, k, a, a(itemstack.h()))) { // <-- world.b does this to place the block
                 CraftBlock placedBlock = (CraftBlock) blockClicked.getFace(faceClicked) ;
                 CraftItemStack itemInHand = new CraftItemStack(itemstack);
                 CraftPlayer thePlayer = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entityplayer);
@@ -90,10 +98,9 @@ public class ItemBlock extends Item {
                         world.b(i, j - 1, k, 44);
                     }
 
-                    world.b(i, j, k, oldMaterial);
-                    world.d(i, j, k, oldData);
+                    world.a(i, j, k, oldMaterial, oldData);
                 } else {
-                    world.c(i, j, k, a, a(itemstack.h()));
+                    world.f(i, j, k, a); // <-- world.b does this on success (tell the world)
 
                     Block.m[a].c(world, i, j, k, l);
                     Block.m[a].a(world, i, j, k, ((EntityLiving) (entityplayer)));
