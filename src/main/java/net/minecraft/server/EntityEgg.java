@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Random;
 
 // CraftBukkit start
+import org.bukkit.entity.Egg;
 import org.bukkit.entity.MobType;
 import org.bukkit.entity.Player;
 import org.bukkit.craftbukkit.entity.CraftEgg;
@@ -209,7 +210,9 @@ public class EntityEgg extends Entity {
                 Type eventType = Type.PLAYER_EGG_THROW;
                 Player player = (ak == null)?null:(Player) ak.getBukkitEntity();
 
-                PlayerEggThrowEvent event = new PlayerEggThrowEvent(eventType, player, hatching, numHatching, hatchingType);
+                PlayerEggThrowEvent event = new PlayerEggThrowEvent(
+                        eventType, player, (Egg)this.bukkitEntity, hatching,
+                        numHatching, hatchingType);
                 server.getPluginManager().callEvent(event);
                 hatching = event.isHatching();
                 numHatching = event.getNumHatches();
