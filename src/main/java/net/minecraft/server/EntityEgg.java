@@ -250,6 +250,9 @@ public class EntityEgg extends Entity {
                         case ZOMBIE:
                             entity = new EntityZombie(this.l);
                             break;
+                        case SQUID:
+                            entity = new EntitySquid(this.l);
+                            break;
                         default:
                             entity = new EntityChicken(this.l);
                             break;
