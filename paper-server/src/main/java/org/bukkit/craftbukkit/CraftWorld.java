@@ -151,7 +151,7 @@ public class CraftWorld implements World {
             CraftMinecart.Type.Minecart.getId()
         );
         world.a(minecart);
-        return new CraftMinecart(world.getServer(), minecart);
+        return (Minecart) minecart.getBukkitEntity();
     }
     
     public StorageMinecart spawnStorageMinecart(Location loc) {
@@ -163,7 +163,7 @@ public class CraftWorld implements World {
             CraftMinecart.Type.StorageMinecart.getId()
         );
         world.a(minecart);
-        return new CraftStorageMinecart(world.getServer(), minecart);
+        return (StorageMinecart) minecart.getBukkitEntity();
     }
     
     public PoweredMinecart spawnPoweredMinecart(Location loc) {

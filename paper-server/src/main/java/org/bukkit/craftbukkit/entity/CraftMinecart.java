@@ -52,6 +52,8 @@ public class CraftMinecart extends CraftVehicle implements Minecart {
      * @param server
      * @param minecart
      * @return
+     * 
+     * @deprecated
      */
     public static CraftMinecart getCraftMinecart(CraftServer server,
             EntityMinecart minecart) {
