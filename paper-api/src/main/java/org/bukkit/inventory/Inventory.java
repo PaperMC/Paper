@@ -97,6 +97,32 @@ public interface Inventory {
      * @return If any matching ItemStacks were found
      */
     public boolean contains(ItemStack item);
+    
+    /**
+     * Check if the inventory contains any ItemStacks with the given materialId and at least the minimum amount specified
+     * 
+     * @param materialId The materialId to check for
+     * @param amount The minimum amount to look for
+     * @return If any ItemStacks were found
+     */
+    public boolean contains(int materialId, int amount); 
+    
+    /**
+     * Check if the inventory contains any ItemStacks with the given material and at least the minimum amount specified
+     * 
+     * @param material The material to check for
+     * @return If any ItemStacks were found
+     */
+    public boolean contains(Material material, int amount); 
+    
+    /**
+     * Check if the inventory contains any ItemStacks matching the given ItemStack and at least the minimum amount specified
+     * This will only match if both the type and the amount of the stack match
+     * 
+     * @param item The ItemStack to match against
+     * @return If any matching ItemStacks were found
+     */
+    public boolean contains(ItemStack item, int amount);
 
     /**
      * Find all slots in the inventory containing any ItemStacks with the given materialId
