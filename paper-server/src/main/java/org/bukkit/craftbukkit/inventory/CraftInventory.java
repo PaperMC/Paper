@@ -83,7 +83,29 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
         }
         return false;
     }
+    
+    public boolean contains(int materialId, int amount) {
+        for (ItemStack item: getContents()) {
+            if (item.getTypeId() == materialId && item.getAmount() >= amount) {
+                return true;
+            }
+        }
+        return false;
+    }
 
+    public boolean contains(Material material, int amount) {
+    	return contains(material.getId(), amount);
+    }
+
+    public boolean contains(ItemStack item, int amount) {
+        for (ItemStack i: getContents()) {
+            if (item.equals(i) && item.getAmount() >= amount) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
     public HashMap<Integer, CraftItemStack> all(int materialId) {
         HashMap<Integer, CraftItemStack> slots = new HashMap<Integer, CraftItemStack>();
 
