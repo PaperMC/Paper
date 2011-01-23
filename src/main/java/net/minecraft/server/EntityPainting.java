@@ -100,7 +100,7 @@ public class EntityPainting extends Entity {
             f6 -= d(e.A);
         }
         f5 += d(e.B);
-        a(f4, f5, f6);
+        a((double)f4, (double)f5, (double)f6); // CraftBukkit -- forcecast all arguments to double
         float f8 = -0.00625F;
 
         z.c(f4 - f1 - f8, f5 - f2 - f8, f6 - f3 - f8, f4 + f1 + f8, f5 + f2 + f8, f6 + f3 + f8);
