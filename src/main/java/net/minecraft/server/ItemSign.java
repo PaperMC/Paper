@@ -28,7 +28,10 @@ public class ItemSign extends Item {
         }
 
         // CraftBukkit - store the clicked block
-
+        CraftWorld craftWorld = ((WorldServer) world).getWorld();
+        CraftServer craftServer = ((WorldServer) world).getServer();
+        org.bukkit.block.Block blockClicked = craftWorld.getBlockAt(i, j, k);
+        
         if (l == 1) {
             j++;
         }
@@ -50,13 +53,9 @@ public class ItemSign extends Item {
 
         // CraftBukkit start
         // Signs
-        CraftWorld craftWorld = ((WorldServer) world).getWorld();
-        CraftServer craftServer = ((WorldServer) world).getServer();
-        
         Type eventType = Type.PLAYER_ITEM;
         Player who = (entityplayer == null)?null:(Player)entityplayer.getBukkitEntity();
         org.bukkit.inventory.ItemStack itemInHand = new CraftItemStack(itemstack);
-        org.bukkit.block.Block blockClicked = craftWorld.getBlockAt(i, j, k);
         BlockFace blockface = CraftBlock.notchToBlockFace(1);
         
         PlayerItemEvent pie = new PlayerItemEvent(eventType, who, itemInHand, blockClicked, blockface);

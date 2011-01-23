@@ -3,8 +3,8 @@ package net.minecraft.server;
 import java.util.Random;
 
 // CraftBukkit start
-import org.bukkit.Server;
 import org.bukkit.block.BlockFace;
+import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -24,6 +24,11 @@ public class ItemFlintAndSteel extends Item {
     }
 
     public boolean a(ItemStack itemstack, EntityPlayer entityplayer, World world, int i, int j, int k, int l) {
+        // CraftBukkit - store the clicked block
+        CraftWorld craftWorld = ((WorldServer) world).getWorld();
+        CraftServer craftServer = ((WorldServer) world).getServer();
+        org.bukkit.block.Block blockClicked = craftWorld.getBlockAt(i, j, k);
+        
         if (l == 0) {
             j--;
         }
@@ -46,24 +51,20 @@ public class ItemFlintAndSteel extends Item {
 
         if (i1 == 0) {
             // CraftBukkit start - Flint and steel
-            Server server = ((WorldServer)world).getServer();
-            CraftWorld cworld = ((WorldServer)world).getWorld();
-
             Type eventType = Type.PLAYER_ITEM;
             Player thePlayer = (Player) entityplayer.getBukkitEntity();
             CraftItemStack itemInHand = new CraftItemStack(itemstack);
-            org.bukkit.block.Block blockClicked = cworld.getBlockAt(i, j, k);
             BlockFace blockFace = CraftBlock.notchToBlockFace(l);
             
             PlayerItemEvent pie = new PlayerItemEvent(eventType, thePlayer, itemInHand, blockClicked, blockFace);
-            server.getPluginManager().callEvent(pie);
+            craftServer.getPluginManager().callEvent(pie);
 
             boolean preventLighter = pie.isCancelled();
             
             
             IgniteCause igniteCause = BlockIgniteEvent.IgniteCause.FLINT_AND_STEEL;
             BlockIgniteEvent bie = new BlockIgniteEvent(blockClicked, igniteCause, thePlayer);
-            server.getPluginManager().callEvent(bie);
+            craftServer.getPluginManager().callEvent(bie);
             boolean preventFire = bie.isCancelled();
 
 
