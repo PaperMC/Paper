@@ -1,5 +1,9 @@
 package org.bukkit.entity;
 
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
+
 public enum MobType {
     CHICKEN("Chicken"),
     COW("Cow"),
@@ -13,6 +17,15 @@ public enum MobType {
     ZOMBIE("Zombie");
 
     private String name;
+    
+    private static final Map<String, MobType> mapping
+            = new HashMap<String, MobType>();
+
+    static {
+        for (MobType type : EnumSet.allOf(MobType.class)) {
+            mapping.put(type.name, type);
+        }
+    }
 
     private MobType(String name) {
         this.name = name;
@@ -21,5 +34,8 @@ public enum MobType {
     public String getName() {
         return name;
     }
-
+    
+    public static MobType fromName(String name) {
+        return mapping.get(name);
+    }
 }
