@@ -288,6 +288,17 @@ public class CraftBlock implements Block {
             case SIGN_POST:
             case WALL_SIGN:
                 return new CraftSign(this);
+            case CHEST:
+                return new CraftChest(this);
+            case BURNING_FURNACE:
+            case FURNACE:
+                return new CraftFurnace(this);
+            case DISPENSER:
+                return new CraftDispenser(this);
+            case MOB_SPAWNER:
+                return new CraftMobSpawner(this);
+            case NOTE_BLOCK:
+                return new CraftNoteBlock(this);
             default:
                 return new CraftBlockState(this);
         }
