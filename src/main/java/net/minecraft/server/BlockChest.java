@@ -3,8 +3,11 @@ package net.minecraft.server;
 import java.util.Random;
 
 // CraftBukkit start
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockInteractEvent;
 // CraftBukkit end
@@ -150,11 +153,14 @@ public class BlockChest extends BlockContainer {
             return true;
         } else {
             // CraftBukkit start - Interact Chest
-            CraftBlock block = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
-            CraftPlayer player = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entityplayer);
-            BlockInteractEvent bie = new BlockInteractEvent(Type.BLOCK_INTERACT, block, player);
-
-            ((WorldServer) world).getServer().getPluginManager().callEvent(bie);
+            CraftWorld craftWorld = ((WorldServer) world).getWorld();
+            CraftServer server = ((WorldServer) world).getServer();
+            Type eventType = Type.BLOCK_INTERACT;
+            CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
+            LivingEntity who = (entityplayer == null)?null:(LivingEntity)entityplayer.getBukkitEntity();
+            
+            BlockInteractEvent bie = new BlockInteractEvent(eventType, block, who);
+            server.getPluginManager().callEvent(bie);
 
             if (bie.isCancelled()) return true;
             // CraftBukkit end

@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Vehicle;
 
@@ -20,8 +19,12 @@ public abstract class CraftVehicle extends CraftEntity implements Vehicle {
     }
     
     public boolean setPassenger(Entity passenger) {
-        ((CraftEntity)passenger).getHandle().setPassengerOf(getHandle());
-        return true;
+        if(passenger instanceof CraftEntity){
+            ((CraftEntity)passenger).getHandle().setPassengerOf(getHandle());
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public boolean isEmpty() {

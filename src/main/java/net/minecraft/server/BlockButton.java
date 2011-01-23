@@ -4,8 +4,11 @@ import java.util.Random;
 
 // CraftBukkit start
 import org.bukkit.block.BlockFace;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockInteractEvent;
 import org.bukkit.event.block.BlockRedstoneEvent;
@@ -139,11 +142,14 @@ public class BlockButton extends Block {
 
     public boolean a(World world, int i, int j, int k, EntityPlayer entityplayer) {
         // CraftBukkit start - Interact Button
-        CraftBlock block = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
-        CraftPlayer player = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entityplayer);
-        BlockInteractEvent bie = new BlockInteractEvent(Type.BLOCK_INTERACT, block, player);
-
-        ((WorldServer) world).getServer().getPluginManager().callEvent(bie);
+        CraftWorld craftWorld = ((WorldServer) world).getWorld();
+        CraftServer server = ((WorldServer) world).getServer();
+        Type eventType = Type.BLOCK_INTERACT;
+        CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
+        LivingEntity who = (entityplayer == null)?null:(LivingEntity)entityplayer.getBukkitEntity();
+        
+        BlockInteractEvent bie = new BlockInteractEvent(eventType, block, who);
+        server.getPluginManager().callEvent(bie);
 
         if (bie.isCancelled()) {
             return true;
@@ -166,7 +172,7 @@ public class BlockButton extends Block {
         int old = (j1 != 8) ? 1 : 0;
         int current = (j1 == 8) ? 1 : 0;
         BlockRedstoneEvent bre = new BlockRedstoneEvent(block, BlockFace.SELF, old, current);
-        ((WorldServer) world).getServer().getPluginManager().callEvent(bre);
+        server.getPluginManager().callEvent(bre);
         if ((bre.getNewCurrent() > 0) == (j1 == 8)) {
             world.c(i, j, k, i1 + j1);
             world.b(i, j, k, i, j, k);

@@ -2,8 +2,11 @@ package net.minecraft.server;
 
 // CraftBukkit start
 import org.bukkit.block.BlockFace;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockInteractEvent;
 import org.bukkit.event.block.BlockRedstoneEvent;
@@ -143,13 +146,16 @@ public class BlockLever extends Block {
         }
 
         // CraftBukkit start - Interact Lever
-        CraftBlock block = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
-        CraftPlayer player = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entityplayer);
-        BlockInteractEvent bie = new BlockInteractEvent(Type.BLOCK_INTERACT, block, player);
+        CraftWorld craftWorld = ((WorldServer) world).getWorld();
+        CraftServer server = ((WorldServer) world).getServer();
+        Type eventType = Type.BLOCK_INTERACT;
+        CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
+        LivingEntity who = (entityplayer == null)?null:(LivingEntity)entityplayer.getBukkitEntity();
+        
+        BlockInteractEvent bie = new BlockInteractEvent(eventType, block, who);
+        server.getPluginManager().callEvent(bie);
 
-        ((WorldServer) world).getServer().getPluginManager().callEvent(bie);
-
-        // Craftbukkit the client updates the doors before the server does it's thing.
+        // CraftBukkit the client updates the doors before the server does it's thing.
         // Forcibly send correct data.
         if (bie.isCancelled()) {
             ((EntityPlayerMP) entityplayer).a.b(new Packet53BlockChange(i, j, k, (WorldServer) world));
@@ -161,12 +167,12 @@ public class BlockLever extends Block {
         int i1 = l & 7;
         int j1 = 8 - (l & 8);
 
-        // Craftbukkit start
+        // CraftBukkit start
         int old = (j1 != 8) ? 1 : 0;
         int current = (j1 == 8) ? 1 : 0;
         BlockRedstoneEvent bre = new BlockRedstoneEvent(block, BlockFace.SELF, old, current);
-        ((WorldServer) world).getServer().getPluginManager().callEvent(bre);
-        // Craftbukkit end
+        server.getPluginManager().callEvent(bre);
+        // CraftBukkit end
 
         if ((bre.getNewCurrent() > 0) == (j1 == 8)) {
             world.c(i, j, k, i1 + j1);

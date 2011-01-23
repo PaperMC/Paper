@@ -12,6 +12,8 @@ import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.entity.Player;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.block.BlockRightClickEvent;
@@ -38,10 +40,9 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
     // CraftBukkit start - next 2 lines
     private final CraftServer server;
-    private final CraftPlayer player;
 
     public CraftPlayer getPlayer() {
-        return player;
+        return (e == null)?null:(CraftPlayer)e.getBukkitEntity();
     }
     // CraftBukkit end
 
@@ -58,7 +59,6 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
         // CraftBukkit - next 2 lines
         server = minecraftserver.server;
-        player = new CraftPlayer(server, e);
     }
 
     public void a() {
@@ -86,6 +86,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         }
 
         // CraftBukkit start
+        Player player = getPlayer();
         Location from = new Location(player.getWorld(), g, h, i, e.v, e.w);
         Location to = player.getLocation();
         if (!from.equals(to)) {
@@ -212,6 +213,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
     public void a(double d1, double d2, double d3, float f1, float f2) {
         // CraftBukkit start
+        Player player = getPlayer();
         Location from = player.getLocation();
         Location to = new Location(player.getWorld(), d1, d2, d3, f1, f2);
         PlayerMoveEvent event = new PlayerMoveEvent(Type.PLAYER_TELEPORT, player, from, to);
@@ -283,6 +285,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         }
 
         // CraftBukkit start
+        CraftPlayer player = getPlayer();
         CraftBlock block = (CraftBlock) player.getWorld().getBlockAt(l, i1, j1);
         int blockId = block.getTypeId();
         float damage = 0;
@@ -402,13 +405,15 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             }
 
             // CraftBukkit start
-            CraftItemStack craftItem = new CraftItemStack(itemstack);
-            CraftPlayer player = new CraftPlayer(server, e);
-            PlayerItemEvent pie = new PlayerItemEvent(Type.PLAYER_ITEM, player, craftItem, blockClicked, blockFace);
+            Type eventType = Type.PLAYER_ITEM;
+            Player who = (e == null)?null:(Player)e.getBukkitEntity();
+            org.bukkit.inventory.ItemStack itemInHand = new CraftItemStack(itemstack);
+            
+            PlayerItemEvent pie = new PlayerItemEvent(eventType, who, itemInHand, blockClicked, blockFace);            
 
             // CraftBukkit We still call this event even in spawn protection.
             // Don't call this event if using Buckets / signs
-            switch (craftItem.getType()) {
+            switch (itemInHand.getType()) {
                 case SIGN:
                 case BUCKET:
                 case WATER_BUCKET:
@@ -440,7 +445,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             }
             // CraftBukkit start - spawn proection moved to ItemBlock!!!
             CraftItemStack craftItem = new CraftItemStack(itemstack);
-            CraftPlayer player = new CraftPlayer(server, e);
+            Player player = getPlayer();
             BlockRightClickEvent brce = new BlockRightClickEvent(Type.BLOCK_RIGHTCLICKED, blockClicked, blockFace, craftItem, player);
             server.getPluginManager().callEvent(brce);
 
@@ -523,6 +528,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             c(s);
         } else {
             // CraftBukkit start
+            Player player = getPlayer();
             PlayerChatEvent event = new PlayerChatEvent(Type.PLAYER_CHAT, player, s);
             server.getPluginManager().callEvent(event);
             s = String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage());
@@ -538,7 +544,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
     private void c(String s) {
         // CraftBukkit start
-        boolean targetPluginFound = server.dispatchCommand(player, s);
+        CraftPlayer player = getPlayer();
+        boolean targetPluginFound = server.dispatchCommand(player , s);
         if (targetPluginFound) {
             return;
         }
@@ -549,7 +556,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             return;
         }
         s = event.getMessage();
-        CraftPlayer player = (CraftPlayer) event.getPlayer();
+        player = (CraftPlayer) event.getPlayer();
         EntityPlayerMP e = player.getHandle();
         // CraftBukkit stop
 
@@ -585,9 +592,9 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
     public void a(Packet18ArmAnimation packet18armanimation) {
         if (packet18armanimation.b == 1) {
-        	
-        	// Craftbukkit: Arm swing animation
-        	PlayerAnimationEvent event = new PlayerAnimationEvent(Type.PLAYER_ANIMATION, player);
+            Player player = getPlayer();
+            // CraftBukkit: Arm swing animation
+            PlayerAnimationEvent event = new PlayerAnimationEvent(Type.PLAYER_ANIMATION, player);
             server.getPluginManager().callEvent(event);
             
             e.K();
@@ -635,6 +642,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             return;
         } else {
             e = d.f.d(e);
+            CraftPlayer player = getPlayer();
             player.setHandle(e); // CraftBukkit
             return;
         }

@@ -7,7 +7,9 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.entity.Player;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.player.PlayerItemEvent;
 // CraftBukkit end
@@ -55,18 +57,21 @@ public class ItemBucket extends Item {
             }
 
             // CraftBukkit start - Click == placed when handling an empty bucket!
-            CraftWorld theWorld = ((WorldServer) world).getWorld();
-            CraftBlock blockClicked = (CraftBlock) theWorld.getBlockAt(i, j, k);
-            BlockFace direction = CraftBlock.notchToBlockFace(movingobjectposition.e);
-            CraftPlayer thePlayer = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entityplayer);
-            CraftItemStack itemInHand = new CraftItemStack(itemstack);
+            CraftWorld craftWorld = ((WorldServer) world).getWorld();
+            CraftServer craftServer = ((WorldServer) world).getServer();
+            
+            Type eventType = Type.PLAYER_ITEM;
+            Player who = (entityplayer == null)?null:(Player)entityplayer.getBukkitEntity();
+            org.bukkit.inventory.ItemStack itemInHand = new CraftItemStack(itemstack);
+            org.bukkit.block.Block blockClicked = craftWorld.getBlockAt(i, j, k);
+            BlockFace blockFace = CraftBlock.notchToBlockFace(movingobjectposition.e);
             // CraftBukkit end
 
             if (a == 0) {
                 if (world.c(i, j, k) == Material.f && world.b(i, j, k) == 0) {
                     // CraftBukkit start
-                    PlayerItemEvent pie = new PlayerItemEvent(Type.PLAYER_ITEM, thePlayer, itemInHand, blockClicked, direction);
-                    ((WorldServer) world).getServer().getPluginManager().callEvent(pie);
+                    PlayerItemEvent pie = new PlayerItemEvent(eventType, who, itemInHand, blockClicked, blockFace);
+                    craftServer.getPluginManager().callEvent(pie);
 
                     if (pie.isCancelled()) {
                         return itemstack;
@@ -77,8 +82,8 @@ public class ItemBucket extends Item {
                 }
                 if (world.c(i, j, k) == Material.g && world.b(i, j, k) == 0) {
                     // CraftBukkit start
-                    PlayerItemEvent pie = new PlayerItemEvent(Type.PLAYER_ITEM, thePlayer, itemInHand, blockClicked, direction);
-                    ((WorldServer) world).getServer().getPluginManager().callEvent(pie);
+                    PlayerItemEvent pie = new PlayerItemEvent(eventType, who, itemInHand, blockClicked, blockFace);
+                    craftServer.getPluginManager().callEvent(pie);
 
                     if (pie.isCancelled()) {
                         return itemstack;
@@ -117,8 +122,8 @@ public class ItemBucket extends Item {
                         }
                     } else {
                         // CraftBukkit start - bucket empty.
-                        PlayerItemEvent pie = new PlayerItemEvent(Type.PLAYER_ITEM, thePlayer, itemInHand, blockClicked, direction);
-                        ((WorldServer) world).getServer().getPluginManager().callEvent(pie);
+                        PlayerItemEvent pie = new PlayerItemEvent(eventType, who, itemInHand, blockClicked, blockFace);
+                        craftServer.getPluginManager().callEvent(pie);
 
                         if (pie.isCancelled()) {
                             return itemstack;

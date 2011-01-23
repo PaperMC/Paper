@@ -8,6 +8,7 @@ import org.bukkit.craftbukkit.entity.CraftEntity;
  * 
  * @author sk89q
  */
+/**@deprecated*/
 public interface CraftMappable {
     /**
      * Gets the CraftEntity version.

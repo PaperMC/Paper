@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 // CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.Player;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
@@ -94,7 +95,8 @@ public class ServerConfigurationManager {
         // in the event, check with plugins to see if it's ok, and THEN kick
         // depending on the outcome.
         EntityPlayerMP entity = new EntityPlayerMP(c, ((World) (c.e)), s, new ItemInWorldManager(((World) (c.e))));
-        PlayerLoginEvent event = new PlayerLoginEvent(Type.PLAYER_LOGIN, new CraftPlayer(server, entity));
+        Player player = (entity == null)?null:(Player)entity.getBukkitEntity();
+        PlayerLoginEvent event = new PlayerLoginEvent(Type.PLAYER_LOGIN, player);
         // CraftBukkit end
 
         String s2 = ((netloginhandler.b.b())).toString();

@@ -4,9 +4,12 @@ import java.util.List;
 import java.util.Random;
 
 // CraftBukkit start
-import org.bukkit.block.BlockFace;import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.block.BlockFace;import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockInteractEvent;
 import org.bukkit.event.block.BlockRedstoneEvent;
@@ -76,17 +79,14 @@ public class BlockPressurePlate extends Block {
         } else {
             // CraftBukkit start - Interact Pressure Plate
             if (entity instanceof EntityLiving) {
-                CraftBlock block = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
-                CraftLivingEntity craftEntity = null;
-
-                if (entity instanceof EntityPlayerMP) {
-                    craftEntity = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entity);
-                } else {
-                    craftEntity = new CraftLivingEntity(((WorldServer) world).getServer(), (EntityLiving) entity);
-                }
-                BlockInteractEvent bie = new BlockInteractEvent(Type.BLOCK_INTERACT, block, craftEntity);
-
-                ((WorldServer) world).getServer().getPluginManager().callEvent(bie);
+                CraftServer server = ((WorldServer) world).getServer();
+                CraftWorld craftWorld = ((WorldServer) world).getWorld();
+                Type eventType = Type.BLOCK_INTERACT;
+                CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
+                org.bukkit.entity.LivingEntity who = (entity == null)?null:(LivingEntity) entity.getBukkitEntity();
+                
+                BlockInteractEvent bie = new BlockInteractEvent(eventType, block, who);
+                server.getPluginManager().callEvent(bie);
 
                 if (bie.isCancelled()) {
                     return;

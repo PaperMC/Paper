@@ -1,9 +1,12 @@
 package net.minecraft.server;
 
 // CraftBukkit start
+import org.bukkit.block.BlockFace;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.entity.Player;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.player.PlayerItemEvent;
 // CraftBukkit end
@@ -44,14 +47,21 @@ public class ItemBoat extends Item {
 
             if (!world.z) {
                 // CraftBukkit start - Boat placement
-                CraftBlock blockClicked = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
-                CraftItemStack itemInHand = new CraftItemStack(itemstack);
-                CraftPlayer thePlayer = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entityplayer);
-                PlayerItemEvent pie = new PlayerItemEvent(Type.PLAYER_ITEM, thePlayer, itemInHand, blockClicked, CraftBlock.notchToBlockFace(movingobjectposition.e));
+                CraftWorld craftWorld = ((WorldServer) world).getWorld();
+                CraftServer craftServer = ((WorldServer) world).getServer();
+                
+                Type eventType = Type.PLAYER_ITEM;
+                Player who = (entityplayer == null)?null:(Player)entityplayer.getBukkitEntity();
+                org.bukkit.inventory.ItemStack itemInHand = new CraftItemStack(itemstack);
+                org.bukkit.block.Block blockClicked = craftWorld.getBlockAt(i, j, k);
+                BlockFace blockFace = CraftBlock.notchToBlockFace(movingobjectposition.e);
+                
+                PlayerItemEvent pie = new PlayerItemEvent(eventType, who, itemInHand, blockClicked, blockFace);
+                craftServer.getPluginManager().callEvent(pie);
 
-                ((WorldServer) world).getServer().getPluginManager().callEvent(pie);
-
-                if (pie.isCancelled()) return itemstack;
+                if (pie.isCancelled()) {
+                    return itemstack;
+                }
                 // CraftBukkit end
 
                 world.a(((Entity) (new EntityBoat(world, (float) i + 0.5F, (float) j + 1.5F, (float) k + 0.5F))));

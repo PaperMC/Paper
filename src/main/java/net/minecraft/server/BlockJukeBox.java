@@ -1,8 +1,11 @@
 package net.minecraft.server;
 
 // CraftBukkit start
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockInteractEvent;
 // CraftBukkit end
@@ -22,13 +25,18 @@ public class BlockJukeBox extends Block {
 
         if (l > 0) {
             // CraftBukkit start - Interact Jukebox
-            CraftBlock block = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
-            CraftPlayer player = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entityplayer);
-            BlockInteractEvent bie = new BlockInteractEvent(Type.BLOCK_INTERACT, block, player);
+            CraftWorld craftWorld = ((WorldServer) world).getWorld();
+            CraftServer server = ((WorldServer) world).getServer();
+            Type eventType = Type.BLOCK_INTERACT;
+            CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
+            LivingEntity who = (entityplayer == null)?null:(LivingEntity)entityplayer.getBukkitEntity();
+            
+            BlockInteractEvent bie = new BlockInteractEvent(eventType, block, who);
+            server.getPluginManager().callEvent(bie);
 
-            ((WorldServer) world).getServer().getPluginManager().callEvent(bie);
-
-            if (bie.isCancelled()) return true;
+            if (bie.isCancelled()) {
+                return true;
+            }
             // CraftBukkit end
 
             f(world, i, j, k, l);

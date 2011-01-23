@@ -2,9 +2,10 @@ package net.minecraft.server;
 
 // CraftBukkit start
 import org.bukkit.block.BlockFace;
+import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.entity.Player;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockPlaceEvent;
 // CraftBukkit end
@@ -75,17 +76,20 @@ public class ItemBlock extends Item {
              * replace this with.
              */
             if (world.a(i, j, k, a, a(itemstack.h()))) { // <-- world.b does this to place the block
-                CraftBlock placedBlock = (CraftBlock) blockClicked.getFace(faceClicked) ;
-                CraftItemStack itemInHand = new CraftItemStack(itemstack);
-                CraftPlayer thePlayer = new CraftPlayer(((WorldServer) world).getServer(), (EntityPlayerMP) entityplayer);
+                org.bukkit.Server server = ((WorldServer) world).getServer();
+                Type eventType = Type.BLOCK_PLACED;
+                org.bukkit.block.Block placedBlock = blockClicked.getFace(faceClicked) ;
+                org.bukkit.inventory.ItemStack itemInHand = new CraftItemStack(itemstack);
+                Player thePlayer = (entityplayer ==null)?null:(Player)entityplayer.getBukkitEntity();
 
                 int distanceFromSpawn = (int) Math.max(Math.abs(i - world.m), Math.abs(k - world.o));
 
                 // CraftBukkit hardcoded Spawn distance for now
+                // TODO make spawn size configurable
                 boolean canBuild = distanceFromSpawn > 16 || thePlayer.isOp();
 
-                BlockPlaceEvent bpe = new BlockPlaceEvent(Type.BLOCK_PLACED, placedBlock, blockClicked, itemInHand, thePlayer, canBuild);
-                ((WorldServer) world).getServer().getPluginManager().callEvent(bpe);
+                BlockPlaceEvent bpe = new BlockPlaceEvent(eventType, placedBlock, blockClicked, itemInHand, thePlayer, canBuild);
+                server.getPluginManager().callEvent(bpe);
 
                 if (bpe.isCancelled() || !bpe.canBuild()) {
                     // CraftBukkit Undo!
