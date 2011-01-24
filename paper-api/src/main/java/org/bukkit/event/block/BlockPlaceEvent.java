@@ -1,9 +1,10 @@
 package org.bukkit.event.block;
 
 import org.bukkit.block.Block;
-import org.bukkit.inventory.ItemStack;
+import org.bukkit.block.BlockState;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
+import org.bukkit.inventory.ItemStack;
 
 /**
  * Not implemented yet
@@ -12,14 +13,16 @@ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
     protected boolean cancel;
     protected boolean canBuild;
     protected Block placedAgainst;
+    protected BlockState replacedBlockState;
     protected ItemStack itemInHand;
     protected Player player;
 
-    public BlockPlaceEvent(Type type, Block placedBlock, Block placedAgainst, ItemStack itemInHand, Player thePlayer, boolean canBuild) {
+    public BlockPlaceEvent(Type type, Block placedBlock, BlockState replacedBlockState, Block placedAgainst, ItemStack itemInHand, Player thePlayer, boolean canBuild) {
         super(type, placedBlock);
         this.placedAgainst = placedAgainst;
         this.itemInHand = itemInHand;
         this.player = thePlayer;
+        this.replacedBlockState = replacedBlockState;
         this.canBuild = canBuild;
         cancel = false;
     }
@@ -61,6 +64,15 @@ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
      */
     public Block getBlockPlaced() {
         return getBlock();
+    }
+    
+    /**
+     * Returns the state of the block which was replaced. Material type air mostly. 
+     * 
+     * @return BlockState of block which was replaced.
+     */
+    public BlockState getBlockReplacedState() {
+        return this.replacedBlockState;
     }
     
 
