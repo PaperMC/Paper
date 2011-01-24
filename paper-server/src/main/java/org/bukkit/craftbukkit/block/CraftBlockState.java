@@ -184,7 +184,7 @@ public class CraftBlockState implements BlockState {
 
     private void createData(final byte data) {
         Material mat = Material.getMaterial(type);
-        if (mat == null) {
+        if (mat == null || mat.getData() == null) {
             this.data = new MaterialData(type, data);
         } else {
             this.data = mat.getNewData(data);
