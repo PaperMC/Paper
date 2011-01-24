@@ -2,8 +2,9 @@ package net.minecraft.server;
 
 // CraftBukkit start
 import org.bukkit.block.BlockFace;
-import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event.Type;
@@ -59,9 +60,12 @@ public class ItemBlock extends Item {
             return false;
         }
 
-        // CraftBukkit start - store the old data so we can undo it
-        int oldMaterial = world.a(i, j, k);
-        int oldData = world.b(i, j, k);
+        // CraftBukkit start
+        /* We store the old data so we can undo it. Snow(78) and half-steps(44) are special in that they replace the block itself, 
+         * rather than the block touching the face we clicked on.
+         */
+        org.bukkit.block.Block replacedBlock = (blockClicked.getTypeId() == 78 || blockClicked.getTypeId() == 44) ? blockClicked:blockClicked.getFace(faceClicked); 
+        final BlockState replacedBlockState = new CraftBlockState(replacedBlock);
 
         if (world.a(a, i, j, k, false)) {
             Block block = Block.m[a];
@@ -88,7 +92,7 @@ public class ItemBlock extends Item {
                 // TODO make spawn size configurable
                 boolean canBuild = distanceFromSpawn > 16 || thePlayer.isOp();
 
-                BlockPlaceEvent bpe = new BlockPlaceEvent(eventType, placedBlock, blockClicked, itemInHand, thePlayer, canBuild);
+                BlockPlaceEvent bpe = new BlockPlaceEvent(eventType, placedBlock, replacedBlockState, blockClicked, itemInHand, thePlayer, canBuild);
                 server.getPluginManager().callEvent(bpe);
 
                 if (bpe.isCancelled() || !bpe.canBuild()) {
@@ -102,7 +106,7 @@ public class ItemBlock extends Item {
                         world.b(i, j - 1, k, 44);
                     }
 
-                    world.a(i, j, k, oldMaterial, oldData);
+                    world.a(i, j, k, replacedBlockState.getTypeId(), replacedBlockState.getData().getData());
                 } else {
                     world.f(i, j, k, a); // <-- world.b does this on success (tell the world)
 
