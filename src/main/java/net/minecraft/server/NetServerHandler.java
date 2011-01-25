@@ -24,6 +24,7 @@ import org.bukkit.event.player.PlayerItemEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.plugin.Plugin;
 // CraftBukkit end
 
@@ -652,6 +653,17 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     }
 
     public void a(Packet19EntityAction packet19entityaction) {
+        // CraftBukkit: Toggle Sneak
+        if (packet19entityaction.b == 1 || packet19entityaction.b == 2) {
+            Player player = getPlayer();
+            PlayerToggleSneakEvent event = new PlayerToggleSneakEvent(Type.PLAYER_TOGGLE_SNEAK, player);
+            server.getPluginManager().callEvent(event);
+            if (event.isCancelled()) {
+                return;
+            }
+        }
+        // CraftBukkit: Set Sneaking
+
         if (packet19entityaction.b == 1) {
             this.e.b(true);
         } else if (packet19entityaction.b == 2) {
