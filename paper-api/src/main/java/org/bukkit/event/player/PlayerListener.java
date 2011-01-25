@@ -32,9 +32,8 @@ public class PlayerListener implements Listener {
      * @param event Relevant event details
      */
     public void onPlayerKick(PlayerKickEvent event) {
-    	
     }
-    
+
     /**
      * Called when a player sends a chat message
      *
@@ -66,7 +65,7 @@ public class PlayerListener implements Listener {
      */
     public void onPlayerTeleport(PlayerMoveEvent event) {
     }
-    
+
     /**
      * Called when a player respawns
      * 
@@ -129,5 +128,13 @@ public class PlayerListener implements Listener {
      * @param event Relevant event details
      */
     public void onPlayerDropItem(PlayerDropItemEvent event) {
+    }
+
+    /**
+     * Called when a player toggles sneak mode
+     *
+     * @param event Relevant event details
+     */
+    public void onPlayerToggleSneak(PlayerToggleSneakEvent event) {
     }
 }

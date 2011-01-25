@@ -194,6 +194,11 @@ public final class JavaPluginLoader implements PluginLoader {
                     ((PlayerListener)listener).onPlayerDropItem( (PlayerDropItemEvent)event );
                 }
             };
+        case PLAYER_TOGGLE_SNEAK:
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
+                    ((PlayerListener)listener).onPlayerToggleSneak( (PlayerToggleSneakEvent)event );
+                }
+            };
 
         // Block Events
         case BLOCK_PHYSICS:
