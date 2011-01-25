@@ -97,7 +97,7 @@ public class TileEntityMobSpawner extends TileEntity {
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
         h = nbttagcompound.h("EntityId");
-        e = ((int) (nbttagcompound.c("Delay")));
+        e = ((short) (nbttagcompound.c("Delay")));
     }
 
     public void b(NBTTagCompound nbttagcompound) {
