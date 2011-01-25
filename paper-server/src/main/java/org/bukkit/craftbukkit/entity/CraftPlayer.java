@@ -150,4 +150,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             entity.a.a(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         }
     }
+
+    public void setSneaking(boolean sneak) {
+        entity.b(sneak);
+    }
+
+    public boolean isSneaking() {
+        return entity.J();
+    }
 }
