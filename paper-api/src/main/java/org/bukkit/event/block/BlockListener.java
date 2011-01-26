@@ -94,4 +94,12 @@ public class BlockListener implements Listener {
     public void onLeavesDecay(LeavesDecayEvent event) {
     }
 
+    /**
+     * Called when a block is destroyed from burning
+     *
+     * @param event Relevant event details
+     */
+    public void onBlockBurn(BlockBurnEvent event) {
+    }
+
 }

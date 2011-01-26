@@ -276,6 +276,13 @@ public abstract class Event {
         BLOCK_INTERACT (Category.BLOCK),
 
         /**
+         * Called when a block is destroyed from being burnt by fire
+         *
+         * @see org.bukkit.event.block.BlockBurnEvent
+         */
+        BLOCK_BURN (Category.BLOCK),
+
+        /**
          * Called when leaves are decaying naturally
          *
          * @see org.bukkit.event.block.LeavesDecayEvent

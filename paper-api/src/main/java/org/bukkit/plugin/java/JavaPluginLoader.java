@@ -191,6 +191,9 @@ public final class JavaPluginLoader implements PluginLoader {
                 case REDSTONE_CHANGE:
                     trueListener.onBlockRedstoneChange((BlockFromToEvent)event);
                     break;
+                case BLOCK_BURN:
+                    trueListener.onBlockBurn((BlockBurnEvent)event);
+                    break;
             }
         } else if(listener instanceof ServerListener) {
             ServerListener trueListener = (ServerListener)listener;
