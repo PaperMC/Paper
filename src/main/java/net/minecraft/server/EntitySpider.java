@@ -4,7 +4,10 @@ import java.util.Random;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftSpider;
+import org.bukkit.event.entity.EntityTargetEvent;
+import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
 // CraftBukkit stop
 
 public class EntitySpider extends EntityMobs {
@@ -52,8 +55,19 @@ public class EntitySpider extends EntityMobs {
         float f2 = b(1.0F);
 
         if (f2 > 0.5F && W.nextInt(100) == 0) {
-            this.d = null;
-            return;
+            // CraftBukkit start
+            EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), null, TargetReason.FORGOT_TARGET);
+            CraftServer server = ((WorldServer) this.l).getServer();
+            server.getPluginManager().callEvent(event);
+            if(!event.isCancelled()) {
+                if(event.getTarget() == null) {
+                    this.d = null;
+                } else {
+                    this.d = ((CraftEntity) event.getTarget()).getHandle();
+                }
+                return;
+            }
+            // CraftBukkit end
         }
         if (f1 > 2.0F && f1 < 6F && W.nextInt(10) == 0) {
             if (A) {

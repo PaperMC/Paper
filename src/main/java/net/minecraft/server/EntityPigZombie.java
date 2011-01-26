@@ -5,7 +5,10 @@ import java.util.Random;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftPigZombie;
+import org.bukkit.event.entity.EntityTargetEvent;
+import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
 // CraftBukkit end
 
 public class EntityPigZombie extends EntityZombie {
@@ -82,9 +85,24 @@ public class EntityPigZombie extends EntityZombie {
     }
 
     private void g(Entity entity) {
-        d = entity;
-        a = 400 + W.nextInt(400);
-        b = W.nextInt(40);
+        // CraftBukkit start
+        org.bukkit.entity.Entity bukkitTarget = null;
+        if(entity != null) {
+            bukkitTarget = entity.getBukkitEntity();
+        }
+        EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), bukkitTarget, TargetReason.PIG_ZOMBIE_TARGET);
+        CraftServer server = ((WorldServer) this.l).getServer();
+        server.getPluginManager().callEvent(event);
+        if(!event.isCancelled()) {
+            if(event.getTarget() == null) {
+                d = null;
+            } else {
+                d = ((CraftEntity) event.getTarget()).getHandle();
+                a = 400 + W.nextInt(400);
+                b = W.nextInt(40);
+            }
+        }
+        // CraftBukkit end
     }
 
     protected String e() {
