@@ -7,6 +7,7 @@ import org.bukkit.event.block.BlockIgniteEvent;
 import org.bukkit.event.block.BlockIgniteEvent.IgniteCause;
 import org.bukkit.craftbukkit.CraftWorld;
 import java.util.Random;
+import org.bukkit.event.block.BlockBurnEvent;
 // CraftBukkit end
 
 public class BlockFire extends Block {
@@ -116,31 +117,36 @@ public class BlockFire extends Block {
 
         if (random.nextInt(l) < i1) {
             boolean flag = world.a(i, j, k) == Block.am.bi;
+            // CraftBukkit start: BlockBurnEvent
+            Server server = ((WorldServer)world).getServer();
+            CraftWorld cworld = ((WorldServer)world).getWorld();
+            org.bukkit.block.Block theBlock = (cworld.getBlockAt(i, j, k));
+            BlockBurnEvent burnEvent = new BlockBurnEvent(theBlock);
+            server.getPluginManager().callEvent(burnEvent);
+            if(!burnEvent.isCancelled()) {
+                if (random.nextInt(2) == 0) {
+                    // CraftBukkit start: Call to stop very slow spread of fire.
 
-            if (random.nextInt(2) == 0) {
-                // CraftBukkit start: Call to stop very slow spread of fire.
-                Server server = ((WorldServer)world).getServer();
-                CraftWorld cworld = ((WorldServer)world).getWorld();
-                
-                org.bukkit.block.Block theBlock = (cworld.getBlockAt(i, j, k));
-                IgniteCause igniteCause = BlockIgniteEvent.IgniteCause.SLOW_SPREAD;
-                Player thePlayer = null;
-                
-                if (theBlock.getTypeId() != Block.ar.bi){
-                    BlockIgniteEvent event = new BlockIgniteEvent(theBlock, igniteCause, thePlayer);
-                    server.getPluginManager().callEvent(event);
-                    if (event.isCancelled()) {
-                        return;
+                    IgniteCause igniteCause = BlockIgniteEvent.IgniteCause.SLOW_SPREAD;
+                    Player thePlayer = null;
+
+                    if (theBlock.getTypeId() != Block.ar.bi){
+                        BlockIgniteEvent event = new BlockIgniteEvent(theBlock, igniteCause, thePlayer);
+                        server.getPluginManager().callEvent(event);
+                        if (event.isCancelled()) {
+                            return;
+                        }
                     }
+                    // CraftBukkit end
+                    world.e(i, j, k, bi);
+                } else {
+                    world.e(i, j, k, 0);
                 }
-                // CraftBukkit end
-                world.e(i, j, k, bi);
-            } else {
-                world.e(i, j, k, 0);
+                if (flag) {
+                    Block.am.a(world, i, j, k, 0);
+                }
             }
-            if (flag) {
-                Block.am.a(world, i, j, k, 0);
-            }
+            // CraftBukkit end: BlockBurnEvent
         }
     }
 
