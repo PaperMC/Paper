@@ -1,10 +1,13 @@
 
 package org.bukkit;
 
+import java.util.List;
 import org.bukkit.block.Block;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemDrop;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.PoweredMinecart;
 import org.bukkit.entity.Minecart;
 import org.bukkit.entity.StorageMinecart;
@@ -155,6 +158,20 @@ public interface World {
      * @return
      */
     public Boat spawnBoat(Location loc);
+    
+    /**
+     * Get a list of all entities.
+     * 
+     * @return
+     */
+    public List<Entity> getEntities();
+    
+    /**
+     * Get a list of all living entities.
+     * 
+     * @return
+     */
+    public List<LivingEntity> getLivingEntities();
 
     /**
      * Gets the name of this world. This is not guaranteed to be unique.
@@ -171,6 +188,7 @@ public interface World {
      * @return Id of this world
      */
     public long getId();
+    
     /**
      * Gets the default spawn location.
      */
