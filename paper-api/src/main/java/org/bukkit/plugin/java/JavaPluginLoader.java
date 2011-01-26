@@ -23,6 +23,7 @@ import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityListener;
+import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.event.server.PluginEvent;
 import org.bukkit.event.server.ServerListener;
@@ -237,6 +238,9 @@ public final class JavaPluginLoader implements PluginLoader {
                     break;
                 case ENTITY_EXPLODE:
                     trueListener.onEntityExplode((EntityExplodeEvent)event);
+                    break;
+                case ENTITY_TARGET:
+                    trueListener.onEntityTarget((EntityTargetEvent)event);
                     break;
             }
         } else if (listener instanceof VehicleListener) {

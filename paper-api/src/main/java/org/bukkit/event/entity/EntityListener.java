@@ -26,4 +26,7 @@ public class EntityListener implements Listener {
 
     public void onEntityExplode(EntityExplodeEvent event) {
     }
+
+    public void onEntityTarget(EntityTargetEvent event) {
+    }
 }

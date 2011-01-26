@@ -454,6 +454,13 @@ public abstract class Event {
         ENTITY_EXPLODE (Category.LIVING_ENTITY),
 
         /**
+         * Called when an entity targets another entity
+         *
+         * @see org.bukkit.event.entity.EntityTargetEvent
+         */
+        ENTITY_TARGET (Category.LIVING_ENTITY),
+
+        /**
          * VEHICLE EVENTS
          */
 
