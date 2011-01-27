@@ -320,7 +320,6 @@ public class CraftWorld implements World {
         }
     }
 
-    @Override
     public List<Entity> getEntities() {
         List<Entity> list = new ArrayList<Entity>();
         
@@ -341,7 +340,6 @@ public class CraftWorld implements World {
         return list;
     }
 
-    @Override
     public List<LivingEntity> getLivingEntities() {
         List<LivingEntity> list = new ArrayList<LivingEntity>();
         
