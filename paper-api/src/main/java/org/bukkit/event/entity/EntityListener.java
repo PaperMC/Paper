@@ -29,4 +29,7 @@ public class EntityListener implements Listener {
 
     public void onEntityTarget(EntityTargetEvent event) {
     }
+
+    public void onEntityDeath(EntityDeathEvent event) {
+    }
 }

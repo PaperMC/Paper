@@ -21,6 +21,7 @@ import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityListener;
 import org.bukkit.event.entity.EntityTargetEvent;
@@ -234,7 +235,7 @@ public final class JavaPluginLoader implements PluginLoader {
                     trueListener.onEntityDamage((EntityDamageEvent)event);
                     break;
                 case ENTITY_DEATH:
-                    // TODO: ENTITY_DEATH hook
+                    trueListener.onEntityDeath((EntityDeathEvent)event);
                     break;
                 case ENTITY_COMBUST:
                     trueListener.onEntityCombust((EntityCombustEvent)event);
