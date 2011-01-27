@@ -52,6 +52,10 @@ public final class CraftServer implements Server {
         }
     }
 
+    public void disablePlugins() {
+        pluginManager.disablePlugins();
+    }
+
     private void loadPlugin(Plugin plugin) {
         List<Command> pluginCommands = PluginCommandYamlParser.parse(plugin);
         if (!pluginCommands.isEmpty()) {
