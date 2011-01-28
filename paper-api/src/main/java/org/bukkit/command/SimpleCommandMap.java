@@ -86,6 +86,12 @@ public final class SimpleCommandMap implements CommandMap {
         return isRegisteredCommand;
     }
 
+    public void clearCommands() {
+        synchronized (this) {
+            knownCommands.clear();
+        }
+    }
+
     private static class VersionCommand extends Command {
         private final Server server;
 

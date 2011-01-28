@@ -188,6 +188,15 @@ public final class SimplePluginManager implements PluginManager {
         }
     }
 
+    public void clearPlugins() {
+        synchronized (this) {
+            disablePlugins();
+            plugins.clear();
+            lookupNames.clear();
+            listeners.clear();
+        }
+    }
+
     /**
      * Calls a player related event with the given details
      *

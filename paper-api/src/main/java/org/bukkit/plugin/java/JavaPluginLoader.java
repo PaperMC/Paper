@@ -8,6 +8,7 @@ import java.lang.reflect.Constructor;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
@@ -301,10 +302,20 @@ public final class JavaPluginLoader implements PluginLoader {
 
         if (plugin.isEnabled()) {
             JavaPlugin jPlugin = (JavaPlugin)plugin;
+            ClassLoader cloader = jPlugin.getClassLoader();
 
             server.getPluginManager().callEvent(new PluginEvent(Event.Type.PLUGIN_DISABLE, plugin));
 
             jPlugin.setEnabled(false);
+
+            if (cloader instanceof PluginClassLoader) {
+                PluginClassLoader loader = (PluginClassLoader)cloader;
+                Set<String> names = loader.getClasses();
+
+                for (String name : names) {
+                    classes.remove(name);
+                }
+            }
         }
     }
 }

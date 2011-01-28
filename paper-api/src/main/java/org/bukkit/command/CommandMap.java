@@ -26,4 +26,8 @@ public interface CommandMap {
      */
     public boolean dispatch(Player sender, String cmdLine);
 
+    /**
+     * Clears all registered commands.
+     */
+    public void clearCommands();
 }
