@@ -91,7 +91,7 @@ public class BlockFire extends Block {
                         Server server = ((WorldServer)world).getServer();
                         CraftWorld cworld = ((WorldServer)world).getWorld();
                         
-                        org.bukkit.block.Block theBlock = (cworld.getBlockAt(i1, j1, k1));
+                        org.bukkit.block.Block theBlock = (cworld.getBlockAt(i1, k1, j1));
                         IgniteCause igniteCause = BlockIgniteEvent.IgniteCause.SPREAD;
                         Player thePlayer = null;
                         
