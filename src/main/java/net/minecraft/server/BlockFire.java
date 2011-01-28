@@ -99,7 +99,7 @@ public class BlockFire extends Block {
                             BlockIgniteEvent event = new BlockIgniteEvent(theBlock, igniteCause, thePlayer);
                             server.getPluginManager().callEvent(event);
                             if (event.isCancelled()) {
-                                return;
+                                continue;
                             }
                         }
                         // CraftBukkit end
