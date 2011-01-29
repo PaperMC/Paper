@@ -1,118 +1,122 @@
 package net.minecraft.server;
 
-import java.util.Random;
-
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftSlime;
 // CraftBukkit stop
 
-public class EntitySlime extends EntityLiving implements IMobs {
+public class EntitySlime extends EntityLiving implements IMonster {
 
     public float a;
     public float b;
-    private int d;
-    public int c;
+    private int d = 0;
+    public int c = 1;
 
     public EntitySlime(World world) {
         super(world);
-        d = 0;
-        c = 1;
-        aP = "/mob/slime.png";
-        c = 1 << W.nextInt(3);
-        H = 0.0F;
-        d = W.nextInt(20) + 10;
-        a(c);
+        this.texture = "/mob/slime.png";
+        this.c = 1 << this.random.nextInt(3);
+        this.height = 0.0F;
+        this.d = this.random.nextInt(20) + 10;
+        this.a(this.c);
+
         // CraftBukkit start
-        CraftServer server = ((WorldServer) this.l).getServer();
+        CraftServer server = ((WorldServer) this.world).getServer();
         this.bukkitEntity = new CraftSlime(server, this);
         // CraftBukkit end
     }
 
-    public void a(int j) {
-        c = j;
-        a(0.6F * (float) j, 0.6F * (float) j);
-        aZ = j * j;
-        a(p, q, r);
+    public void a(int i) {
+        this.c = i;
+        this.a(0.6F * (float) i, 0.6F * (float) i);
+        this.health = i * i;
+        this.a(this.locX, this.locY, this.locZ);
     }
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        nbttagcompound.a("Size", c - 1);
+        nbttagcompound.a("Size", this.c - 1);
     }
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
-        c = nbttagcompound.d("Size") + 1;
+        this.c = nbttagcompound.d("Size") + 1;
     }
 
     public void b_() {
-        b = a;
-        boolean flag = A;
+        this.b = this.a;
+        boolean flag = this.onGround;
 
         super.b_();
-        if (A && !flag) {
-            for (int j = 0; j < c * 8; j++) {
-                float f1 = W.nextFloat() * 3.141593F * 2.0F;
-                float f2 = W.nextFloat() * 0.5F + 0.5F;
-                float f3 = MathHelper.a(f1) * (float) c * 0.5F * f2;
-                float f4 = MathHelper.b(f1) * (float) c * 0.5F * f2;
+        if (this.onGround && !flag) {
+            for (int i = 0; i < this.c * 8; ++i) {
+                float f = this.random.nextFloat() * 3.1415927F * 2.0F;
+                float f1 = this.random.nextFloat() * 0.5F + 0.5F;
+                float f2 = MathHelper.a(f) * (float) this.c * 0.5F * f1;
+                float f3 = MathHelper.b(f) * (float) this.c * 0.5F * f1;
 
-                l.a("slime", p + (double) f3, z.b, r + (double) f4, 0.0D, 0.0D, 0.0D);
+                this.world.a("slime", this.locX + (double) f2, this.boundingBox.b, this.locZ + (double) f3, 0.0D, 0.0D, 0.0D);
             }
 
-            if (c > 2) {
-                l.a(((Entity) (this)), "mob.slime", i(), ((W.nextFloat() - W.nextFloat()) * 0.2F + 1.0F) / 0.8F);
+            if (this.c > 2) {
+                this.world.a(this, "mob.slime", this.i(), ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) / 0.8F);
             }
-            a = -0.5F;
+
+            this.a = -0.5F;
         }
-        a = a * 0.6F;
+
+        this.a *= 0.6F;
     }
 
     protected void d() {
-        EntityPlayer entityplayer = l.a(((Entity) (this)), 16D);
+        EntityHuman entityhuman = this.world.a(this, 16.0D);
 
-        if (entityplayer != null) {
-            b(((Entity) (entityplayer)), 10F);
+        if (entityhuman != null) {
+            this.b(entityhuman, 10.0F);
         }
-        if (A && d-- <= 0) {
-            d = W.nextInt(20) + 10;
-            if (entityplayer != null) {
-                d /= 3;
+
+        if (this.onGround && this.d-- <= 0) {
+            this.d = this.random.nextInt(20) + 10;
+            if (entityhuman != null) {
+                this.d /= 3;
             }
-            bA = true;
-            if (c > 1) {
-                l.a(((Entity) (this)), "mob.slime", i(), ((W.nextFloat() - W.nextFloat()) * 0.2F + 1.0F) * 0.8F);
+
+            this.bA = true;
+            if (this.c > 1) {
+                this.world.a(this, "mob.slime", this.i(), ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 0.8F);
             }
-            a = 1.0F;
-            bx = 1.0F - W.nextFloat() * 2.0F;
-            by = 1 * c;
+
+            this.a = 1.0F;
+            this.bx = 1.0F - this.random.nextFloat() * 2.0F;
+            this.by = (float) (1 * this.c);
         } else {
-            bA = false;
-            if (A) {
-                bx = by = 0.0F;
+            this.bA = false;
+            if (this.onGround) {
+                this.bx = this.by = 0.0F;
             }
         }
     }
 
     public void q() {
-        if (c > 1 && aZ == 0) {
-            for (int j = 0; j < 4; j++) {
-                float f1 = (((float) (j % 2) - 0.5F) * (float) c) / 4F;
-                float f2 = (((float) (j / 2) - 0.5F) * (float) c) / 4F;
-                EntitySlime entityslime = new EntitySlime(l);
+        if (this.c > 1 && this.health == 0) {
+            for (int i = 0; i < 4; ++i) {
+                float f = ((float) (i % 2) - 0.5F) * (float) this.c / 4.0F;
+                float f1 = ((float) (i / 2) - 0.5F) * (float) this.c / 4.0F;
+                EntitySlime entityslime = new EntitySlime(this.world);
 
-                entityslime.a(c / 2);
-                entityslime.c(p + (double) f1, q + 0.5D, r + (double) f2, W.nextFloat() * 360F, 0.0F);
-                l.a(((Entity) (entityslime)));
+                entityslime.a(this.c / 2);
+                entityslime.c(this.locX + (double) f, this.locY + 0.5D, this.locZ + (double) f1, this.random.nextFloat() * 360.0F, 0.0F);
+                this.world.a((Entity) entityslime);
             }
         }
+
         super.q();
     }
 
-    public void b(EntityPlayer entityplayer) {
-        if (c > 1 && i(((Entity) (entityplayer))) && (double) a(((Entity) (entityplayer))) < 0.59999999999999998D * (double) c && entityplayer.a(((Entity) (this)), c)) {
-            l.a(((Entity) (this)), "mob.slimeattack", 1.0F, (W.nextFloat() - W.nextFloat()) * 0.2F + 1.0F);
+    public void b(EntityHuman entityhuman) {
+        // CraftBukkit - add cast to Entity                      VVVVVVVV
+        if (this.c > 1 && this.i(entityhuman) && (double) this.a((Entity) entityhuman) < 0.6D * (double) this.c && entityhuman.a(this, this.c)) {
+            this.world.a(this, "mob.slimeattack", 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
         }
     }
 
@@ -125,17 +129,13 @@ public class EntitySlime extends EntityLiving implements IMobs {
     }
 
     protected int h() {
-        if (c == 1) {
-            return Item.aK.ba;
-        } else {
-            return 0;
-        }
+        return this.c == 1 ? Item.SLIME_BALL.id : 0;
     }
 
     public boolean b() {
-        Chunk chunk = l.b(MathHelper.b(p), MathHelper.b(r));
+        Chunk chunk = this.world.b(MathHelper.b(this.locX), MathHelper.b(this.locZ));
 
-        return (c == 1 || l.k > 0) && W.nextInt(10) == 0 && chunk.a(0x3ad8025fL).nextInt(10) == 0 && q < 16D;
+        return (this.c == 1 || this.world.k > 0) && this.random.nextInt(10) == 0 && chunk.a(987234911L).nextInt(10) == 0 && this.locY < 16.0D;
     }
 
     protected float i() {

@@ -2,21 +2,21 @@ package net.minecraft.server;
 
 public interface IInventory {
 
-    public abstract int h_();
+    int h_();
 
-    public abstract ItemStack a(int i);
+    ItemStack a(int i);
 
-    public abstract ItemStack b(int i, int j);
+    ItemStack b(int i, int j);
 
-    public abstract void a(int i, ItemStack itemstack);
+    void a(int i, ItemStack itemstack);
 
-    public abstract String b();
+    String b();
 
-    public abstract int c();
+    int c();
 
-    public abstract void d();
+    void d();
 
-    public abstract boolean a_(EntityPlayer entityplayer);
+    boolean a_(EntityHuman entityhuman);
 
     public abstract ItemStack[] getContents(); // CraftBukkit
 }

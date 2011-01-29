@@ -7,34 +7,36 @@ import org.bukkit.event.Event.Type;
 import org.bukkit.event.entity.EntityCombustEvent;
 // CraftBukkit end
 
-public class EntityZombie extends EntityMobs {
+public class EntityZombie extends EntityMonster {
 
     public EntityZombie(World world) {
         super(world);
-        aP = "/mob/zombie.png";
-        bC = 0.5F;
-        c = 5;
+        this.texture = "/mob/zombie.png";
+        this.bC = 0.5F;
+        this.c = 5;
+
         // CraftBukkit start
-        CraftServer server = ((WorldServer) this.l).getServer();
+        CraftServer server = ((WorldServer) this.world).getServer();
         this.bukkitEntity = new CraftZombie(server, this);
         // CraftBukkit end
     }
 
     public void o() {
-        if (l.b()) {
-            float f1 = b(1.0F);
+        if (this.world.b()) {
+            float f = this.b(1.0F);
 
-            if (f1 > 0.5F && l.i(MathHelper.b(p), MathHelper.b(q), MathHelper.b(r)) && W.nextFloat() * 30F < (f1 - 0.4F) * 2.0F) {
+            if (f > 0.5F && this.world.i(MathHelper.b(this.locX), MathHelper.b(this.locY), MathHelper.b(this.locZ)) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
                 // CraftBukkit start
-                CraftServer server = ((WorldServer) l).getServer();
+                CraftServer server = ((WorldServer) this.world).getServer();
                 EntityCombustEvent event = new EntityCombustEvent(Type.ENTITY_COMBUST, this.getBukkitEntity());
                 server.getPluginManager().callEvent(event);
                 if (!event.isCancelled()) {
-                    Z = 300;
+                    this.fireTicks = 300;
                 }
                 // CraftBukkit end
             }
         }
+
         super.o();
     }
 
@@ -51,6 +53,6 @@ public class EntityZombie extends EntityMobs {
     }
 
     protected int h() {
-        return Item.J.ba;
+        return Item.FEATHER.id;
     }
 }

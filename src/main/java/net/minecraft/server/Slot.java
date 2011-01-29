@@ -9,14 +9,14 @@ public class Slot {
     public int e;
 
     public Slot(IInventory iinventory, int i, int j, int k) {
-        b = iinventory;
-        a = i;
-        d = j;
-        e = k;
+        this.b = iinventory;
+        this.a = i;
+        this.d = j;
+        this.e = k;
     }
 
     public void b() {
-        d();
+        this.d();
     }
 
     public boolean a(ItemStack itemstack) {
@@ -24,27 +24,27 @@ public class Slot {
     }
 
     public ItemStack c() {
-        return b.a(a);
+        return this.b.a(this.a);
     }
 
     public void b(ItemStack itemstack) {
-        b.a(a, itemstack);
-        d();
+        this.b.a(this.a, itemstack);
+        this.d();
     }
 
     public void d() {
-        b.d();
+        this.b.d();
     }
 
     public int a() {
-        return b.c();
+        return this.b.c();
     }
 
     public ItemStack a(int i) {
-        return b.b(a, i);
+        return this.b.b(this.a, i);
     }
 
     public boolean a(IInventory iinventory, int i) {
-        return iinventory == b && i == a;
+        return iinventory == this.b && i == this.a;
     }
 }

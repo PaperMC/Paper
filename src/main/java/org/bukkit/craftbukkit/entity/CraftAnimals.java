@@ -1,12 +1,12 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.server.EntityAnimals;
+import net.minecraft.server.EntityAnimal;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Animals;
 
 public class CraftAnimals extends CraftCreature implements Animals{
 
-    public CraftAnimals(CraftServer server, EntityAnimals entity) {
+    public CraftAnimals(CraftServer server, EntityAnimal entity) {
         super(server, entity);
     }
 

@@ -8,9 +8,9 @@ public class CraftItemStack extends ItemStack {
 
     public CraftItemStack(net.minecraft.server.ItemStack item) {
         super(
-            item != null ? item.c : 0,
-            item != null ? item.a : 0,
-            (byte)(item != null ? item.d : 0)
+            item != null ? item.id: 0,
+            item != null ? item.count : 0,
+            (byte)(item != null ? item.damage : 0)
         );
         this.item = item;
     }
@@ -55,14 +55,14 @@ public class CraftItemStack extends ItemStack {
 
     @Override
     public Material getType() {
-        super.setTypeId(item != null ? item.c : 0); // sync, needed?
+        super.setTypeId(item != null ? item.id : 0); // sync, needed?
         return super.getType();
     }
 
     @Override
     public int getTypeId() {
-        super.setTypeId(item != null ? item.c : 0); // sync, needed?
-        return item != null ? item.c : 0;
+        super.setTypeId(item != null ? item.id : 0); // sync, needed?
+        return item != null ? item.id : 0;
     }
 
     @Override
@@ -76,16 +76,16 @@ public class CraftItemStack extends ItemStack {
                 item = new net.minecraft.server.ItemStack(type, 1, 0);
                 super.setAmount(1);
             } else {
-                item.c = type;
-                super.setTypeId(item.c);
+                item.id = type;
+                super.setTypeId(item.id);
             }
         }
     }
 
     @Override
     public int getAmount() {
-        super.setAmount(item != null ? item.a : 0); // sync, needed?
-        return (item != null ? item.a : 0);
+        super.setAmount(item != null ? item.count : 0); // sync, needed?
+        return (item != null ? item.count : 0);
     }
 
     @Override
@@ -96,7 +96,7 @@ public class CraftItemStack extends ItemStack {
             item = null;
         } else {
             super.setAmount(amount);
-            item.a = amount;
+            item.count = amount;
         }
     }
 
@@ -105,15 +105,15 @@ public class CraftItemStack extends ItemStack {
         // Ignore damage if item is null
         if (item != null) {
             super.setDamage(damage);
-            item.d = damage;
+            item.damage = damage;
         } 
     }
 
     @Override
     public byte getDamage() {
         if (item != null) {
-            super.setDamage((byte) item.d); // sync, needed?    
-            return (byte) item.d;
+            super.setDamage((byte) item.damage); // sync, needed?    
+            return (byte) item.damage;
         } else {
             return 0;
         }

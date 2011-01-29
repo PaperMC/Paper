@@ -5,7 +5,8 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.Location;
-import net.minecraft.server.MobSpawnerBase;
+
+import net.minecraft.server.BiomeBase;
 import org.bukkit.*;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.CraftChunk;
@@ -306,31 +307,31 @@ public class CraftBlock implements Block {
 
     public Biome getBiome() {
         // TODO: This may not be 100% accurate; investigate into getting per-block instead of per-chunk
-        MobSpawnerBase base = world.getHandle().a().a(chunk.getX(), chunk.getZ());
+        BiomeBase base = world.getHandle().a().a(chunk.getX(), chunk.getZ());
 
-        if (base == MobSpawnerBase.a) {
+        if (base == BiomeBase.RAINFOREST) {
             return Biome.RAINFOREST;
-        } else if (base == MobSpawnerBase.b) {
+        } else if (base == BiomeBase.SWAMPLAND) {
             return Biome.SWAMPLAND;
-        } else if (base == MobSpawnerBase.c) {
+        } else if (base == BiomeBase.SEASONAL_FOREST) {
             return Biome.SEASONAL_FOREST;
-        } else if (base == MobSpawnerBase.d) {
+        } else if (base == BiomeBase.FOREST) {
             return Biome.FOREST;
-        } else if (base == MobSpawnerBase.e) {
+        } else if (base == BiomeBase.SAVANNA) {
             return Biome.SAVANNA;
-        } else if (base == MobSpawnerBase.f) {
+        } else if (base == BiomeBase.SHRUBLAND) {
             return Biome.SHRUBLAND;
-        } else if (base == MobSpawnerBase.g) {
+        } else if (base == BiomeBase.TAIGA) {
             return Biome.TAIGA;
-        } else if (base == MobSpawnerBase.h) {
+        } else if (base == BiomeBase.DESERT) {
             return Biome.DESERT;
-        } else if (base == MobSpawnerBase.i) {
+        } else if (base == BiomeBase.PLAINS) {
             return Biome.PLAINS;
-        } else if (base == MobSpawnerBase.j) {
+        } else if (base == BiomeBase.ICE_DESERT) {
             return Biome.ICE_DESERT;
-        } else if (base == MobSpawnerBase.k) {
+        } else if (base == BiomeBase.TUNDRA) {
             return Biome.TUNDRA;
-        } else if (base == MobSpawnerBase.l) {
+        } else if (base == BiomeBase.HELL) {
             return Biome.HELL;
         }
 
@@ -346,8 +347,8 @@ public class CraftBlock implements Block {
     }
 
     public void update() {
-        type = world.getHandle().a(x, y, z);
-        data = (byte)world.getHandle().b(x, y, z);
+        type = world.getHandle().getTypeId(x, y, z);
+        data = (byte)world.getHandle().getData(x, y, z);
         light = (byte)world.getHandle().j(x, y, z);
     }
 }

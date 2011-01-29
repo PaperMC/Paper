@@ -1,26 +1,35 @@
 package net.minecraft.server;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+// CraftBukkit start
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.event.block.BlockRedstoneEvent;
+// CraftBukkit end
 
 public class BlockRedstoneTorch extends BlockTorch {
 
-    private boolean a;
+    private boolean a = false;
     private static List b = new ArrayList();
 
     private boolean a(World world, int i, int j, int k, boolean flag) {
         if (flag) {
-            b.add(((new RedstoneUpdateInfo(i, j, k, world.e))));
+            b.add(new RedstoneUpdateInfo(i, j, k, world.e));
         }
+
         int l = 0;
 
-        for (int i1 = 0; i1 < b.size(); i1++) {
+        for (int i1 = 0; i1 < b.size(); ++i1) {
             RedstoneUpdateInfo redstoneupdateinfo = (RedstoneUpdateInfo) b.get(i1);
 
-            if (redstoneupdateinfo.a == i && redstoneupdateinfo.b == j && redstoneupdateinfo.c == k && ++l >= 8) {
-                return true;
+            if (redstoneupdateinfo.a == i && redstoneupdateinfo.b == j && redstoneupdateinfo.c == k) {
+                ++l;
+                if (l >= 8) {
+                    return true;
+                }
             }
         }
 
@@ -29,9 +38,8 @@ public class BlockRedstoneTorch extends BlockTorch {
 
     protected BlockRedstoneTorch(int i, int j, boolean flag) {
         super(i, j);
-        a = false;
-        a = flag;
-        a(true);
+        this.a = flag;
+        this.a(true);
     }
 
     public int b() {
@@ -39,119 +47,94 @@ public class BlockRedstoneTorch extends BlockTorch {
     }
 
     public void e(World world, int i, int j, int k) {
-        if (world.b(i, j, k) == 0) {
+        if (world.getData(i, j, k) == 0) {
             super.e(world, i, j, k);
         }
-        if (a) {
-            world.h(i, j - 1, k, bi);
-            world.h(i, j + 1, k, bi);
-            world.h(i - 1, j, k, bi);
-            world.h(i + 1, j, k, bi);
-            world.h(i, j, k - 1, bi);
-            world.h(i, j, k + 1, bi);
+
+        if (this.a) {
+            world.h(i, j - 1, k, this.id);
+            world.h(i, j + 1, k, this.id);
+            world.h(i - 1, j, k, this.id);
+            world.h(i + 1, j, k, this.id);
+            world.h(i, j, k - 1, this.id);
+            world.h(i, j, k + 1, this.id);
         }
     }
 
     public void b(World world, int i, int j, int k) {
-        if (a) {
-            world.h(i, j - 1, k, bi);
-            world.h(i, j + 1, k, bi);
-            world.h(i - 1, j, k, bi);
-            world.h(i + 1, j, k, bi);
-            world.h(i, j, k - 1, bi);
-            world.h(i, j, k + 1, bi);
+        if (this.a) {
+            world.h(i, j - 1, k, this.id);
+            world.h(i, j + 1, k, this.id);
+            world.h(i - 1, j, k, this.id);
+            world.h(i + 1, j, k, this.id);
+            world.h(i, j, k - 1, this.id);
+            world.h(i, j, k + 1, this.id);
         }
     }
 
     public boolean b(IBlockAccess iblockaccess, int i, int j, int k, int l) {
-        if (!a) {
+        if (!this.a) {
             return false;
-        }
-        int i1 = iblockaccess.b(i, j, k);
+        } else {
+            int i1 = iblockaccess.getData(i, j, k);
 
-        if (i1 == 5 && l == 1) {
-            return false;
+            return i1 == 5 && l == 1 ? false : (i1 == 3 && l == 3 ? false : (i1 == 4 && l == 2 ? false : (i1 == 1 && l == 5 ? false : i1 != 2 || l != 4)));
         }
-        if (i1 == 3 && l == 3) {
-            return false;
-        }
-        if (i1 == 4 && l == 2) {
-            return false;
-        }
-        if (i1 == 1 && l == 5) {
-            return false;
-        }
-        return i1 != 2 || l != 4;
     }
 
     private boolean g(World world, int i, int j, int k) {
-        int l = world.b(i, j, k);
+        int l = world.getData(i, j, k);
 
-        if (l == 5 && world.k(i, j - 1, k, 0)) {
-            return true;
-        }
-        if (l == 3 && world.k(i, j, k - 1, 2)) {
-            return true;
-        }
-        if (l == 4 && world.k(i, j, k + 1, 3)) {
-            return true;
-        }
-        if (l == 1 && world.k(i - 1, j, k, 4)) {
-            return true;
-        }
-        return l == 2 && world.k(i + 1, j, k, 5);
+        return l == 5 && world.k(i, j - 1, k, 0) ? true : (l == 3 && world.k(i, j, k - 1, 2) ? true : (l == 4 && world.k(i, j, k + 1, 3) ? true : (l == 1 && world.k(i - 1, j, k, 4) ? true : l == 2 && world.k(i + 1, j, k, 5))));
     }
 
     public void a(World world, int i, int j, int k, Random random) {
-        boolean flag = g(world, i, j, k);
+        boolean flag = this.g(world, i, j, k);
 
-        for (; b.size() > 0 && world.e - ((RedstoneUpdateInfo) b.get(0)).d > 100L; b.remove(0)) {
-            ;
+        while (b.size() > 0 && world.e - ((RedstoneUpdateInfo) b.get(0)).d > 100L) {
+            b.remove(0);
         }
-        
+
         // Craftbukkit start
         CraftBlock block = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
-        BlockRedstoneEvent bre = new BlockRedstoneEvent(block, BlockFace.SELF, flag ? 15 : 0, flag ? 0 : 15);
-        ((WorldServer) world).getServer().getPluginManager().callEvent(bre);
-        if ((bre.getNewCurrent() != 0) == flag) {
+        BlockRedstoneEvent event = new BlockRedstoneEvent(block, BlockFace.SELF, flag ? 15 : 0, flag ? 0 : 15);
+        ((WorldServer) world).getServer().getPluginManager().callEvent(event);
+        if ((event.getNewCurrent() != 0) == flag) {
             return;
         }
         // Craftbukkit end
 
-        if (a) {
+        if (this.a) {
             if (flag) {
-                world.b(i, j, k, Block.aP.bi, world.b(i, j, k));
-                if (a(world, i, j, k, true)) {
-                    world.a((float) i + 0.5F, (float) j + 0.5F, (float) k + 0.5F, "random.fizz", 0.5F, 2.6F + (world.l.nextFloat() - world.l.nextFloat()) * 0.8F);
-                    for (int l = 0; l < 5; l++) {
-                        double d1 = (double) i + random.nextDouble() * 0.59999999999999998D + 0.20000000000000001D;
-                        double d2 = (double) j + random.nextDouble() * 0.59999999999999998D + 0.20000000000000001D;
-                        double d3 = (double) k + random.nextDouble() * 0.59999999999999998D + 0.20000000000000001D;
+                world.b(i, j, k, Block.REDSTONE_TORCH_OFF.id, world.getData(i, j, k));
+                if (this.a(world, i, j, k, true)) {
+                    world.a((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), "random.fizz", 0.5F, 2.6F + (world.l.nextFloat() - world.l.nextFloat()) * 0.8F);
 
-                        world.a("smoke", d1, d2, d3, 0.0D, 0.0D, 0.0D);
+                    for (int l = 0; l < 5; ++l) {
+                        double d0 = (double) i + random.nextDouble() * 0.6D + 0.2D;
+                        double d1 = (double) j + random.nextDouble() * 0.6D + 0.2D;
+                        double d2 = (double) k + random.nextDouble() * 0.6D + 0.2D;
+
+                        world.a("smoke", d0, d1, d2, 0.0D, 0.0D, 0.0D);
                     }
                 }
             }
-        } else if (!flag && !a(world, i, j, k, false)) {
-            world.b(i, j, k, Block.aQ.bi, world.b(i, j, k));
+        } else if (!flag && !this.a(world, i, j, k, false)) {
+            world.b(i, j, k, Block.REDSTONE_TORCH_ON.id, world.getData(i, j, k));
         }
     }
 
     public void b(World world, int i, int j, int k, int l) {
         super.b(world, i, j, k, l);
-        world.i(i, j, k, bi);
+        world.i(i, j, k, this.id);
     }
 
     public boolean d(World world, int i, int j, int k, int l) {
-        if (l == 0) {
-            return b(((IBlockAccess) (world)), i, j, k, l);
-        } else {
-            return false;
-        }
+        return l == 0 ? this.b((IBlockAccess) world, i, j, k, l) : false;
     }
 
     public int a(int i, Random random) {
-        return Block.aQ.bi;
+        return Block.REDSTONE_TORCH_ON.id;
     }
 
     public boolean c() {

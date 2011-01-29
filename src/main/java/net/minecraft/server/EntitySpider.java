@@ -1,7 +1,5 @@
 package net.minecraft.server;
 
-import java.util.Random;
-
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftEntity;
@@ -10,30 +8,31 @@ import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
 // CraftBukkit stop
 
-public class EntitySpider extends EntityMobs {
+public class EntitySpider extends EntityMonster {
 
     public EntitySpider(World world) {
         super(world);
-        aP = "/mob/spider.png";
-        a(1.4F, 0.9F);
-        bC = 0.8F;
+        this.texture = "/mob/spider.png";
+        this.a(1.4F, 0.9F);
+        this.bC = 0.8F;
+
         // CraftBukkit start
-        CraftServer server = ((WorldServer) this.l).getServer();
+        CraftServer server = ((WorldServer) this.world).getServer();
         this.bukkitEntity = new CraftSpider(server, this);
         // CraftBukkit end
     }
 
     public double k() {
-        return (double) J * 0.75D - 0.5D;
+        return (double) this.width * 0.75D - 0.5D;
     }
 
     protected Entity l() {
-        float f1 = b(1.0F);
+        float f = this.b(1.0F);
 
-        if (f1 < 0.5F) {
-            double d = 16D;
+        if (f < 0.5F) {
+            double d0 = 16.0D;
 
-            return ((Entity) (l.a(((Entity) (this)), d)));
+            return this.world.a(this, d0);
         } else {
             return null;
         }
@@ -51,16 +50,16 @@ public class EntitySpider extends EntityMobs {
         return "mob.spiderdeath";
     }
 
-    protected void a(Entity entity, float f1) {
-        float f2 = b(1.0F);
+    protected void a(Entity entity, float f) {
+        float f1 = this.b(1.0F);
 
-        if (f2 > 0.5F && W.nextInt(100) == 0) {
+        if (f1 > 0.5F && this.random.nextInt(100) == 0) {
             // CraftBukkit start
             EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), null, TargetReason.FORGOT_TARGET);
-            CraftServer server = ((WorldServer) this.l).getServer();
+            CraftServer server = ((WorldServer) this.world).getServer();
             server.getPluginManager().callEvent(event);
-            if(!event.isCancelled()) {
-                if(event.getTarget() == null) {
+            if (!event.isCancelled()) {
+                if (event.getTarget() == null) {
                     this.d = null;
                 } else {
                     this.d = ((CraftEntity) event.getTarget()).getHandle();
@@ -68,19 +67,20 @@ public class EntitySpider extends EntityMobs {
                 return;
             }
             // CraftBukkit end
-        }
-        if (f1 > 2.0F && f1 < 6F && W.nextInt(10) == 0) {
-            if (A) {
-                double d = entity.p - p;
-                double d1 = entity.r - r;
-                float f3 = MathHelper.a(d * d + d1 * d1);
-
-                s = (d / (double) f3) * 0.5D * 0.80000001192092896D + s * 0.20000000298023224D;
-                u = (d1 / (double) f3) * 0.5D * 0.80000001192092896D + u * 0.20000000298023224D;
-                t = 0.40000000596046448D;
-            }
         } else {
-            super.a(entity, f1);
+            if (f > 2.0F && f < 6.0F && this.random.nextInt(10) == 0) {
+                if (this.onGround) {
+                    double d0 = entity.locX - this.locX;
+                    double d1 = entity.locZ - this.locZ;
+                    float f2 = MathHelper.a(d0 * d0 + d1 * d1);
+
+                    this.motX = d0 / (double) f2 * 0.5D * 0.800000011920929D + this.motX * 0.20000000298023224D;
+                    this.motZ = d1 / (double) f2 * 0.5D * 0.800000011920929D + this.motZ * 0.20000000298023224D;
+                    this.motY = 0.4000000059604645D;
+                }
+            } else {
+                super.a(entity, f);
+            }
         }
     }
 
@@ -93,10 +93,10 @@ public class EntitySpider extends EntityMobs {
     }
 
     protected int h() {
-        return Item.I.ba;
+        return Item.STRING.id;
     }
 
     public boolean m() {
-        return B;
+        return this.B;
     }
 }

@@ -17,21 +17,21 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public Location getLocation() {
-        return new Location(getWorld(), entity.p, entity.q, entity.r, entity.v, entity.w);
+        return new Location(getWorld(), entity.locX, entity.locY, entity.locZ, entity.yaw, entity.pitch);
     }
 
     public Vector getVelocity() {
-        return new Vector(entity.s, entity.t, entity.u);
+        return new Vector(entity.motX, entity.motY, entity.motZ);
     }
 
     public void setVelocity(Vector vel) {
-        entity.s = vel.getX();
-        entity.t = vel.getY();
-        entity.u = vel.getZ();
+        entity.motX = vel.getX();
+        entity.motY = vel.getY();
+        entity.motZ = vel.getZ();
     }
 
     public World getWorld() {
-        return ((WorldServer)entity.l).getWorld();
+        return ((WorldServer)entity.world).getWorld();
     }
 
     public void teleportTo(Location location) {
@@ -43,7 +43,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public int getEntityId() {
-        return entity.g;
+        return entity.id;
     }
 
     public Entity getHandle() {

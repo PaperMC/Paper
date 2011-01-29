@@ -12,28 +12,28 @@ import org.bukkit.event.block.LeavesDecayEvent;
 public class BlockLeaves extends BlockLeavesBase {
 
     private int c;
-    int b[];
+    int[] b;
 
     protected BlockLeaves(int i, int j) {
-        super(i, j, Material.h, false);
-        c = j;
-        a(true);
+        super(i, j, Material.LEAVES, false);
+        this.c = j;
+        this.a(true);
     }
 
     public void b(World world, int i, int j, int k) {
-        int l = 1;
-        int i1 = l + 1;
+        byte b0 = 1;
+        int l = b0 + 1;
 
-        if (world.a(i - i1, j - i1, k - i1, i + i1, j + i1, k + i1)) {
-            for (int j1 = -l; j1 <= l; j1++) {
-                for (int k1 = -l; k1 <= l; k1++) {
-                    for (int l1 = -l; l1 <= l; l1++) {
-                        int i2 = world.a(i + j1, j + k1, k + l1);
+        if (world.a(i - l, j - l, k - l, i + l, j + l, k + l)) {
+            for (int i1 = -b0; i1 <= b0; ++i1) {
+                for (int j1 = -b0; j1 <= b0; ++j1) {
+                    for (int k1 = -b0; k1 <= b0; ++k1) {
+                        int l1 = world.getTypeId(i + i1, j + j1, k + k1);
 
-                        if (i2 == Block.K.bi) {
-                            int j2 = world.b(i + j1, j + k1, k + l1);
+                        if (l1 == Block.LEAVES.id) {
+                            int i2 = world.getData(i + i1, j + j1, k + k1);
 
-                            world.d(i + j1, j + k1, k + l1, j2 | 4);
+                            world.d(i + i1, j + j1, k + k1, i2 | 4);
                         }
                     }
                 }
@@ -42,76 +42,83 @@ public class BlockLeaves extends BlockLeavesBase {
     }
 
     public void a(World world, int i, int j, int k, Random random) {
-        if (world.z) {
-            return;
-        }
-        int l = world.b(i, j, k);
+        if (!world.isStatic) {
+            int l = world.getData(i, j, k);
 
-        if ((l & 4) != 0) {
-            byte byte0 = 4;
-            int i1 = byte0 + 1;
-            byte byte1 = 32;
-            int j1 = byte1 * byte1;
-            int k1 = byte1 / 2;
+            if ((l & 4) != 0) {
+                byte b0 = 4;
+                int i1 = b0 + 1;
+                byte b1 = 32;
+                int j1 = b1 * b1;
+                int k1 = b1 / 2;
 
-            if (b == null) {
-                b = new int[byte1 * byte1 * byte1];
-            }
-            if (world.a(i - i1, j - i1, k - i1, i + i1, j + i1, k + i1)) {
-                for (int l1 = -byte0; l1 <= byte0; l1++) {
-                    for (int k2 = -byte0; k2 <= byte0; k2++) {
-                        for (int i3 = -byte0; i3 <= byte0; i3++) {
-                            int k3 = world.a(i + l1, j + k2, k + i3);
+                if (this.b == null) {
+                    this.b = new int[b1 * b1 * b1];
+                }
 
-                            if (k3 == Block.J.bi) {
-                                b[(l1 + k1) * j1 + (k2 + k1) * byte1 + (i3 + k1)] = 0;
-                                continue;
+                int l1;
+
+                if (world.a(i - i1, j - i1, k - i1, i + i1, j + i1, k + i1)) {
+                    int i2;
+                    int j2;
+                    int k2;
+
+                    for (l1 = -b0; l1 <= b0; ++l1) {
+                        for (i2 = -b0; i2 <= b0; ++i2) {
+                            for (j2 = -b0; j2 <= b0; ++j2) {
+                                k2 = world.getTypeId(i + l1, j + i2, k + j2);
+                                if (k2 == Block.LOG.id) {
+                                    this.b[(l1 + k1) * j1 + (i2 + k1) * b1 + j2 + k1] = 0;
+                                } else if (k2 == Block.LEAVES.id) {
+                                    this.b[(l1 + k1) * j1 + (i2 + k1) * b1 + j2 + k1] = -2;
+                                } else {
+                                    this.b[(l1 + k1) * j1 + (i2 + k1) * b1 + j2 + k1] = -1;
+                                }
                             }
-                            if (k3 == Block.K.bi) {
-                                b[(l1 + k1) * j1 + (k2 + k1) * byte1 + (i3 + k1)] = -2;
-                            } else {
-                                b[(l1 + k1) * j1 + (k2 + k1) * byte1 + (i3 + k1)] = -1;
+                        }
+                    }
+
+                    for (l1 = 1; l1 <= 4; ++l1) {
+                        for (i2 = -b0; i2 <= b0; ++i2) {
+                            for (j2 = -b0; j2 <= b0; ++j2) {
+                                for (k2 = -b0; k2 <= b0; ++k2) {
+                                    if (this.b[(i2 + k1) * j1 + (j2 + k1) * b1 + k2 + k1] == l1 - 1) {
+                                        if (this.b[(i2 + k1 - 1) * j1 + (j2 + k1) * b1 + k2 + k1] == -2) {
+                                            this.b[(i2 + k1 - 1) * j1 + (j2 + k1) * b1 + k2 + k1] = l1;
+                                        }
+
+                                        if (this.b[(i2 + k1 + 1) * j1 + (j2 + k1) * b1 + k2 + k1] == -2) {
+                                            this.b[(i2 + k1 + 1) * j1 + (j2 + k1) * b1 + k2 + k1] = l1;
+                                        }
+
+                                        if (this.b[(i2 + k1) * j1 + (j2 + k1 - 1) * b1 + k2 + k1] == -2) {
+                                            this.b[(i2 + k1) * j1 + (j2 + k1 - 1) * b1 + k2 + k1] = l1;
+                                        }
+
+                                        if (this.b[(i2 + k1) * j1 + (j2 + k1 + 1) * b1 + k2 + k1] == -2) {
+                                            this.b[(i2 + k1) * j1 + (j2 + k1 + 1) * b1 + k2 + k1] = l1;
+                                        }
+
+                                        if (this.b[(i2 + k1) * j1 + (j2 + k1) * b1 + (k2 + k1 - 1)] == -2) {
+                                            this.b[(i2 + k1) * j1 + (j2 + k1) * b1 + (k2 + k1 - 1)] = l1;
+                                        }
+
+                                        if (this.b[(i2 + k1) * j1 + (j2 + k1) * b1 + k2 + k1 + 1] == -2) {
+                                            this.b[(i2 + k1) * j1 + (j2 + k1) * b1 + k2 + k1 + 1] = l1;
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 }
 
-                for (int i2 = 1; i2 <= 4; i2++) {
-                    for (int l2 = -byte0; l2 <= byte0; l2++) {
-                        for (int j3 = -byte0; j3 <= byte0; j3++) {
-                            for (int l3 = -byte0; l3 <= byte0; l3++) {
-                                if (b[(l2 + k1) * j1 + (j3 + k1) * byte1 + (l3 + k1)] != i2 - 1) {
-                                    continue;
-                                }
-                                if (b[((l2 + k1) - 1) * j1 + (j3 + k1) * byte1 + (l3 + k1)] == -2) {
-                                    b[((l2 + k1) - 1) * j1 + (j3 + k1) * byte1 + (l3 + k1)] = i2;
-                                }
-                                if (b[(l2 + k1 + 1) * j1 + (j3 + k1) * byte1 + (l3 + k1)] == -2) {
-                                    b[(l2 + k1 + 1) * j1 + (j3 + k1) * byte1 + (l3 + k1)] = i2;
-                                }
-                                if (b[(l2 + k1) * j1 + ((j3 + k1) - 1) * byte1 + (l3 + k1)] == -2) {
-                                    b[(l2 + k1) * j1 + ((j3 + k1) - 1) * byte1 + (l3 + k1)] = i2;
-                                }
-                                if (b[(l2 + k1) * j1 + (j3 + k1 + 1) * byte1 + (l3 + k1)] == -2) {
-                                    b[(l2 + k1) * j1 + (j3 + k1 + 1) * byte1 + (l3 + k1)] = i2;
-                                }
-                                if (b[(l2 + k1) * j1 + (j3 + k1) * byte1 + ((l3 + k1) - 1)] == -2) {
-                                    b[(l2 + k1) * j1 + (j3 + k1) * byte1 + ((l3 + k1) - 1)] = i2;
-                                }
-                                if (b[(l2 + k1) * j1 + (j3 + k1) * byte1 + (l3 + k1 + 1)] == -2) {
-                                    b[(l2 + k1) * j1 + (j3 + k1) * byte1 + (l3 + k1 + 1)] = i2;
-                                }
-                            }
-                        }
-                    }
+                l1 = this.b[k1 * j1 + k1 * b1 + k1];
+                if (l1 >= 0) {
+                    world.c(i, j, k, l & -5);
+                } else {
+                    this.g(world, i, j, k);
                 }
-            }
-            int j2 = b[k1 * j1 + k1 * byte1 + k1];
-
-            if (j2 >= 0) {
-                world.c(i, j, k, l & -5);
-            } else {
-                g(world, i, j, k);
             }
         }
     }
@@ -126,20 +133,20 @@ public class BlockLeaves extends BlockLeavesBase {
         if (event.isCancelled()) return;
         // CraftBukkit end
 
-        a_(world, i, j, k, world.b(i, j, k));
+        this.a_(world, i, j, k, world.getData(i, j, k));
         world.e(i, j, k, 0);
     }
 
     public int a(Random random) {
-        return random.nextInt(16) != 0 ? 0 : 1;
+        return random.nextInt(16) == 0 ? 1 : 0;
     }
 
     public int a(int i, Random random) {
-        return Block.y.bi;
+        return Block.SAPLING.id;
     }
 
     public boolean a() {
-        return !a;
+        return !this.a;
     }
 
     public void b(World world, int i, int j, int k, Entity entity) {

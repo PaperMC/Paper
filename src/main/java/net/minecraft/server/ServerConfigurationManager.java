@@ -1,7 +1,15 @@
 package net.minecraft.server;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 // CraftBukkit start
@@ -16,100 +24,89 @@ import org.bukkit.event.player.PlayerLoginEvent;
 public class ServerConfigurationManager {
 
     public static Logger a = Logger.getLogger("Minecraft");
-    public List b;
+    public List b = new ArrayList();
     private MinecraftServer c;
     private PlayerManager d;
     private int e;
-    private Set f;
-    private Set g;
-    private Set h;
+    private Set f = new HashSet();
+    private Set g = new HashSet();
+    private Set h = new HashSet();
     private File i;
     private File j;
     private File k;
     private PlayerNBTManager l;
 
-    private CraftServer server; // CraftBukkit
-
     public ServerConfigurationManager(MinecraftServer minecraftserver) {
-        // CraftBukkit 2 lines!
-        minecraftserver.server = new CraftServer(minecraftserver, this);
-        server = minecraftserver.server;
-
-        b = ((List) (new ArrayList()));
-        f = ((Set) (new HashSet()));
-        g = ((Set) (new HashSet()));
-        h = ((Set) (new HashSet()));
-        c = minecraftserver;
-        i = minecraftserver.a("banned-players.txt");
-        j = minecraftserver.a("banned-ips.txt");
-        k = minecraftserver.a("ops.txt");
-        d = new PlayerManager(minecraftserver);
-        e = minecraftserver.d.a("max-players", 20);
-        e();
-        g();
-        i();
-        f();
-        h();
-        j();
+        this.c = minecraftserver;
+        this.i = minecraftserver.a("banned-players.txt");
+        this.j = minecraftserver.a("banned-ips.txt");
+        this.k = minecraftserver.a("ops.txt");
+        this.d = new PlayerManager(minecraftserver);
+        this.e = minecraftserver.d.a("max-players", 20);
+        this.e();
+        this.g();
+        this.i();
+        this.f();
+        this.h();
+        this.j();
     }
 
     public void a(WorldServer worldserver) {
-        l = new PlayerNBTManager(new File(worldserver.t, "players"));
+        this.l = new PlayerNBTManager(new File(worldserver.t, "players"));
     }
 
     public int a() {
-        return d.b();
+        return this.d.b();
     }
 
-    public void a(EntityPlayerMP entityplayermp) {
-        b.add(((entityplayermp)));
-        l.b(entityplayermp);
-        c.e.A.d((int) entityplayermp.p >> 4, (int) entityplayermp.r >> 4);
-        for (; c.e.a(((Entity) (entityplayermp)), entityplayermp.z).size() != 0; entityplayermp.a(entityplayermp.p, entityplayermp.q + 1.0D, entityplayermp.r)) {
-            ;
+    public void a(EntityPlayer entityplayer) {
+        this.b.add(entityplayer);
+        this.l.b(entityplayer);
+        this.c.e.A.d((int) entityplayer.locX >> 4, (int) entityplayer.locZ >> 4);
+
+        while (this.c.e.a(entityplayer, entityplayer.boundingBox).size() != 0) {
+            entityplayer.a(entityplayer.locX, entityplayer.locY + 1.0D, entityplayer.locZ);
         }
-        c.e.a(((Entity) (entityplayermp)));
-        d.a(entityplayermp);
 
-        // CraftBukkit
-        server.getPluginManager().callEvent(new PlayerEvent(PlayerEvent.Type.PLAYER_JOIN, server.getPlayer(entityplayermp)));
+        this.c.e.a(entityplayer);
+        this.d.a(entityplayer);
     }
 
-    public void b(EntityPlayerMP entityplayermp) {
-        d.c(entityplayermp);
+    public void b(EntityPlayer entityplayer) {
+        this.d.c(entityplayer);
     }
 
-    public void c(EntityPlayerMP entityplayermp) {
-        l.a(entityplayermp);
-        c.e.d(((Entity) (entityplayermp)));
-        b.remove(((entityplayermp)));
-        d.b(entityplayermp);
+    public void c(EntityPlayer entityplayer) {
+        this.l.a(entityplayer);
+        this.c.e.d(entityplayer);
+        this.b.remove(entityplayer);
+        this.d.b(entityplayer);
 
-        // CraftBukkit
-        server.getPluginManager().callEvent(new PlayerEvent(PlayerEvent.Type.PLAYER_QUIT, server.getPlayer(entityplayermp)));
+        // CraftBukkit start
+        server.getPluginManager().callEvent(new PlayerEvent(PlayerEvent.Type.PLAYER_QUIT, server.getPlayer(entityplayer))); // CraftBukkit
     }
+    private CraftServer server;
+    // CraftBukkit end
 
-    public EntityPlayerMP a(NetLoginHandler netloginhandler, String s, String s1) {
+    public EntityPlayer a(NetLoginHandler netloginhandler, String s, String s1) {
         // CraftBukkit start - note: this entire method needs to be changed
         // Instead of kicking then returning, we need to store the kick reason
         // in the event, check with plugins to see if it's ok, and THEN kick
         // depending on the outcome.
-        EntityPlayerMP entity = new EntityPlayerMP(c, ((World) (c.e)), s, new ItemInWorldManager(((World) (c.e))));
-        Player player = (entity == null)?null:(Player)entity.getBukkitEntity();
+        EntityPlayer entity = new EntityPlayer(c, ((World) (c.e)), s, new ItemInWorldManager(((World) (c.e))));
+        Player player = (entity == null) ? null : (Player) entity.getBukkitEntity();
         PlayerLoginEvent event = new PlayerLoginEvent(Type.PLAYER_LOGIN, player);
-        // CraftBukkit end
 
-        String s2 = ((netloginhandler.b.b())).toString();
+        String s2 = netloginhandler.b.b().toString();
 
         s2 = s2.substring(s2.indexOf("/") + 1);
         s2 = s2.substring(0, s2.indexOf(":"));
 
-        // CraftBukkit start
-        if (f.contains(s.trim().toLowerCase())) {
+        if (this.f.contains(s.trim().toLowerCase())) {
             event.disallow(PlayerLoginEvent.Result.KICK_BANNED, "You are banned from this server!");
-        } else if (g.contains(s2)) {
+        } else if (this.g.contains(s2)) {
             event.disallow(PlayerLoginEvent.Result.KICK_BANNED, "Your IP address is banned from this server!");
-        } else if (b.size() >= e) {
+        } else if (this.b.size() >= this.e) {
             event.disallow(PlayerLoginEvent.Result.KICK_FULL, "The server is full!");
         }
 
@@ -118,201 +115,213 @@ public class ServerConfigurationManager {
             netloginhandler.a(event.getKickMessage());
             return null;
         }
-        // CraftBukkit end
-        for (int i1 = 0; i1 < b.size(); i1++) {
-            EntityPlayerMP entityplayermp = (EntityPlayerMP) b.get(i1);
 
-            if (entityplayermp.aw.equalsIgnoreCase(s)) {
-                entityplayermp.a.a("You logged in from another location");
+        for (int i = 0; i < this.b.size(); ++i) {
+            EntityPlayer entityplayer = (EntityPlayer) this.b.get(i);
+
+            if (entityplayer.name.equalsIgnoreCase(s)) {
+                entityplayer.a.a("You logged in from another location");
             }
         }
 
-        // CraftBukkit
-        return entity;
+        return new EntityPlayer(this.c, this.c.e, s, new ItemInWorldManager(this.c.e));
+        // CraftBukkit end
     }
 
-    public EntityPlayerMP d(EntityPlayerMP entityplayermp) {
-        c.k.a(entityplayermp);
-        c.k.b(((Entity) (entityplayermp)));
-        d.b(entityplayermp);
-        b.remove(((entityplayermp)));
-        c.e.e(((Entity) (entityplayermp)));
-        EntityPlayerMP entityplayermp1 = new EntityPlayerMP(c, ((World) (c.e)), entityplayermp.aw, new ItemInWorldManager(((World) (c.e))));
+    public EntityPlayer d(EntityPlayer entityplayer) {
+        this.c.k.a(entityplayer);
+        this.c.k.b(entityplayer);
+        this.d.b(entityplayer);
+        this.b.remove(entityplayer);
+        this.c.e.e(entityplayer);
+        EntityPlayer entityplayer1 = new EntityPlayer(this.c, this.c.e, entityplayer.name, new ItemInWorldManager(this.c.e));
 
-        entityplayermp1.g = entityplayermp.g;
-        entityplayermp1.a = entityplayermp.a;
-        c.e.A.d((int) entityplayermp1.p >> 4, (int) entityplayermp1.r >> 4);
-        for (; c.e.a(((Entity) (entityplayermp1)), entityplayermp1.z).size() != 0; entityplayermp1.a(entityplayermp1.p, entityplayermp1.q + 1.0D, entityplayermp1.r)) {
-            ;
+        entityplayer1.id = entityplayer.id;
+        entityplayer1.a = entityplayer.a;
+        this.c.e.A.d((int) entityplayer1.locX >> 4, (int) entityplayer1.locZ >> 4);
+
+        while (this.c.e.a(entityplayer1, entityplayer1.boundingBox).size() != 0) {
+            entityplayer1.a(entityplayer1.locX, entityplayer1.locY + 1.0D, entityplayer1.locZ);
         }
-        entityplayermp1.a.b(((Packet) (new Packet9())));
-        entityplayermp1.a.a(entityplayermp1.p, entityplayermp1.q, entityplayermp1.r, entityplayermp1.v, entityplayermp1.w);
-        d.a(entityplayermp1);
-        c.e.a(((Entity) (entityplayermp1)));
-        b.add(((entityplayermp1)));
-        entityplayermp1.l();
-        return entityplayermp1;
+
+        entityplayer1.a.b((Packet) (new Packet9Respawn()));
+        entityplayer1.a.a(entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch);
+        this.d.a(entityplayer1);
+        this.c.e.a(entityplayer1);
+        this.b.add(entityplayer1);
+        entityplayer1.l();
+        return entityplayer1;
     }
 
     public void b() {
-        d.a();
+        this.d.a();
     }
 
-    public void a(int i1, int j1, int k1) {
-        d.a(i1, j1, k1);
+    public void a(int i, int j, int k) {
+        this.d.a(i, j, k);
     }
 
     public void a(Packet packet) {
-        for (int i1 = 0; i1 < b.size(); i1++) {
-            EntityPlayerMP entityplayermp = (EntityPlayerMP) b.get(i1);
+        for (int i = 0; i < this.b.size(); ++i) {
+            EntityPlayer entityplayer = (EntityPlayer) this.b.get(i);
 
-            entityplayermp.a.b(packet);
+            entityplayer.a.b(packet);
         }
     }
 
     public String c() {
         String s = "";
 
-        for (int i1 = 0; i1 < b.size(); i1++) {
-            if (i1 > 0) {
-                s = (new StringBuilder()).append(s).append(", ").toString();
+        for (int i = 0; i < this.b.size(); ++i) {
+            if (i > 0) {
+                s = s + ", ";
             }
-            s = (new StringBuilder()).append(s).append(((EntityPlayerMP) b.get(i1)).aw).toString();
+
+            s = s + ((EntityPlayer) this.b.get(i)).name;
         }
 
         return s;
     }
 
     public void a(String s) {
-        f.add(((s.toLowerCase())));
-        f();
+        this.f.add(s.toLowerCase());
+        this.f();
     }
 
     public void b(String s) {
-        f.remove(((s.toLowerCase())));
-        f();
+        this.f.remove(s.toLowerCase());
+        this.f();
     }
 
     private void e() {
         try {
-            f.clear();
-            BufferedReader bufferedreader = new BufferedReader(((java.io.Reader) (new FileReader(i))));
+            this.f.clear();
+            BufferedReader bufferedreader = new BufferedReader(new FileReader(this.i));
+            String s = "";
 
-            for (String s = ""; (s = bufferedreader.readLine()) != null;) {
-                f.add(((s.trim().toLowerCase())));
+            while ((s = bufferedreader.readLine()) != null) {
+                this.f.add(s.trim().toLowerCase());
             }
 
             bufferedreader.close();
         } catch (Exception exception) {
-            a.warning((new StringBuilder()).append("Failed to load ban list: ").append(((exception))).toString());
+            a.warning("Failed to load ban list: " + exception);
         }
     }
 
     private void f() {
         try {
-            PrintWriter printwriter = new PrintWriter(((java.io.Writer) (new FileWriter(i, false))));
-            String s;
+            PrintWriter printwriter = new PrintWriter(new FileWriter(this.i, false));
+            Iterator iterator = this.f.iterator();
 
-            for (Iterator iterator = f.iterator(); iterator.hasNext(); printwriter.println(s)) {
-                s = (String) iterator.next();
+            while (iterator.hasNext()) {
+                String s = (String) iterator.next();
+
+                printwriter.println(s);
             }
 
             printwriter.close();
         } catch (Exception exception) {
-            a.warning((new StringBuilder()).append("Failed to save ban list: ").append(((exception))).toString());
+            a.warning("Failed to save ban list: " + exception);
         }
     }
 
     public void c(String s) {
-        g.add(((s.toLowerCase())));
-        h();
+        this.g.add(s.toLowerCase());
+        this.h();
     }
 
     public void d(String s) {
-        g.remove(((s.toLowerCase())));
-        h();
+        this.g.remove(s.toLowerCase());
+        this.h();
     }
 
     private void g() {
         try {
-            g.clear();
-            BufferedReader bufferedreader = new BufferedReader(((java.io.Reader) (new FileReader(j))));
+            this.g.clear();
+            BufferedReader bufferedreader = new BufferedReader(new FileReader(this.j));
+            String s = "";
 
-            for (String s = ""; (s = bufferedreader.readLine()) != null;) {
-                g.add(((s.trim().toLowerCase())));
+            while ((s = bufferedreader.readLine()) != null) {
+                this.g.add(s.trim().toLowerCase());
             }
 
             bufferedreader.close();
         } catch (Exception exception) {
-            a.warning((new StringBuilder()).append("Failed to load ip ban list: ").append(((exception))).toString());
+            a.warning("Failed to load ip ban list: " + exception);
         }
     }
 
     private void h() {
         try {
-            PrintWriter printwriter = new PrintWriter(((java.io.Writer) (new FileWriter(j, false))));
-            String s;
+            PrintWriter printwriter = new PrintWriter(new FileWriter(this.j, false));
+            Iterator iterator = this.g.iterator();
 
-            for (Iterator iterator = g.iterator(); iterator.hasNext(); printwriter.println(s)) {
-                s = (String) iterator.next();
+            while (iterator.hasNext()) {
+                String s = (String) iterator.next();
+
+                printwriter.println(s);
             }
 
             printwriter.close();
         } catch (Exception exception) {
-            a.warning((new StringBuilder()).append("Failed to save ip ban list: ").append(((exception))).toString());
+            a.warning("Failed to save ip ban list: " + exception);
         }
     }
 
     public void e(String s) {
-        h.add(((s.toLowerCase())));
-        j();
+        this.h.add(s.toLowerCase());
+        this.j();
     }
 
     public void f(String s) {
-        h.remove(((s.toLowerCase())));
-        j();
+        this.h.remove(s.toLowerCase());
+        this.j();
     }
 
     private void i() {
         try {
-            h.clear();
-            BufferedReader bufferedreader = new BufferedReader(((java.io.Reader) (new FileReader(k))));
+            this.h.clear();
+            BufferedReader bufferedreader = new BufferedReader(new FileReader(this.k));
+            String s = "";
 
-            for (String s = ""; (s = bufferedreader.readLine()) != null;) {
-                h.add(((s.trim().toLowerCase())));
+            while ((s = bufferedreader.readLine()) != null) {
+                this.h.add(s.trim().toLowerCase());
             }
 
             bufferedreader.close();
         } catch (Exception exception) {
-            a.warning((new StringBuilder()).append("Failed to load ip ban list: ").append(((exception))).toString());
+            a.warning("Failed to load ip ban list: " + exception);
         }
     }
 
     private void j() {
         try {
-            PrintWriter printwriter = new PrintWriter(((java.io.Writer) (new FileWriter(k, false))));
-            String s;
+            PrintWriter printwriter = new PrintWriter(new FileWriter(this.k, false));
+            Iterator iterator = this.h.iterator();
 
-            for (Iterator iterator = h.iterator(); iterator.hasNext(); printwriter.println(s)) {
-                s = (String) iterator.next();
+            while (iterator.hasNext()) {
+                String s = (String) iterator.next();
+
+                printwriter.println(s);
             }
 
             printwriter.close();
         } catch (Exception exception) {
-            a.warning((new StringBuilder()).append("Failed to save ip ban list: ").append(((exception))).toString());
+            a.warning("Failed to save ip ban list: " + exception);
         }
     }
 
     public boolean g(String s) {
-        return h.contains(((s.trim().toLowerCase())));
+        return this.h.contains(s.trim().toLowerCase());
     }
 
-    public EntityPlayerMP h(String s) {
-        for (int i1 = 0; i1 < b.size(); i1++) {
-            EntityPlayerMP entityplayermp = (EntityPlayerMP) b.get(i1);
+    public EntityPlayer h(String s) {
+        for (int i = 0; i < this.b.size(); ++i) {
+            EntityPlayer entityplayer = (EntityPlayer) this.b.get(i);
 
-            if (entityplayermp.aw.equalsIgnoreCase(s)) {
-                return entityplayermp;
+            if (entityplayer.name.equalsIgnoreCase(s)) {
+                return entityplayer;
             }
         }
 
@@ -320,22 +329,22 @@ public class ServerConfigurationManager {
     }
 
     public void a(String s, String s1) {
-        EntityPlayerMP entityplayermp = h(s);
+        EntityPlayer entityplayer = this.h(s);
 
-        if (entityplayermp != null) {
-            entityplayermp.a.b(((Packet) (new Packet3Chat(s1))));
+        if (entityplayer != null) {
+            entityplayer.a.b((Packet) (new Packet3Chat(s1)));
         }
     }
 
-    public void a(double d1, double d2, double d3, double d4, Packet packet) {
-        for (int i1 = 0; i1 < b.size(); i1++) {
-            EntityPlayerMP entityplayermp = (EntityPlayerMP) b.get(i1);
-            double d5 = d1 - entityplayermp.p;
-            double d6 = d2 - entityplayermp.q;
-            double d7 = d3 - entityplayermp.r;
+    public void a(double d0, double d1, double d2, double d3, Packet packet) {
+        for (int i = 0; i < this.b.size(); ++i) {
+            EntityPlayer entityplayer = (EntityPlayer) this.b.get(i);
+            double d4 = d0 - entityplayer.locX;
+            double d5 = d1 - entityplayer.locY;
+            double d6 = d2 - entityplayer.locZ;
 
-            if (d5 * d5 + d6 * d6 + d7 * d7 < d4 * d4) {
-                entityplayermp.a.b(packet);
+            if (d4 * d4 + d5 * d5 + d6 * d6 < d3 * d3) {
+                entityplayer.a.b(packet);
             }
         }
     }
@@ -343,20 +352,20 @@ public class ServerConfigurationManager {
     public void i(String s) {
         Packet3Chat packet3chat = new Packet3Chat(s);
 
-        for (int i1 = 0; i1 < b.size(); i1++) {
-            EntityPlayerMP entityplayermp = (EntityPlayerMP) b.get(i1);
+        for (int i = 0; i < this.b.size(); ++i) {
+            EntityPlayer entityplayer = (EntityPlayer) this.b.get(i);
 
-            if (g(entityplayermp.aw)) {
-                entityplayermp.a.b(((Packet) (packet3chat)));
+            if (this.g(entityplayer.name)) {
+                entityplayer.a.b((Packet) packet3chat);
             }
         }
     }
 
     public boolean a(String s, Packet packet) {
-        EntityPlayerMP entityplayermp = h(s);
+        EntityPlayer entityplayer = this.h(s);
 
-        if (entityplayermp != null) {
-            entityplayermp.a.b(packet);
+        if (entityplayer != null) {
+            entityplayer.a.b(packet);
             return true;
         } else {
             return false;
@@ -364,10 +373,10 @@ public class ServerConfigurationManager {
     }
 
     public void d() {
-        for (int i1 = 0; i1 < b.size(); i1++) {
-            l.a((EntityPlayerMP) b.get(i1));
+        for (int i = 0; i < this.b.size(); ++i) {
+            this.l.a((EntityPlayer) this.b.get(i));
         }
     }
 
-    public void a(int i1, int j1, int k1, TileEntity tileentity) {}
+    public void a(int i, int j, int k, TileEntity tileentity) {}
 }

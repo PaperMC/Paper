@@ -2,12 +2,12 @@ package net.minecraft.server;
 
 public class InventoryPlayer implements IInventory {
 
-    public ItemStack a[];
-    public ItemStack b[];
-    public int c;
-    private EntityPlayer e;
+    public ItemStack[] a = new ItemStack[36];
+    public ItemStack[] b = new ItemStack[4];
+    public int c = 0;
+    private EntityHuman e;
     private ItemStack f;
-    public boolean d;
+    public boolean d = false;
 
     // CraftBukkit start
     public ItemStack[] getContents() {
@@ -19,22 +19,18 @@ public class InventoryPlayer implements IInventory {
     }
     // CraftBukkit end
 
-    public InventoryPlayer(EntityPlayer entityplayer) {
-        a = new ItemStack[36];
-        b = new ItemStack[4];
-        c = 0;
-        d = false;
-        e = entityplayer;
+    public InventoryPlayer(EntityHuman entityhuman) {
+        this.e = entityhuman;
     }
 
     public ItemStack e() {
-        return a[c];
+        return this.a[this.c];
     }
 
-    private int d(int k) {
-        for (int l = 0; l < a.length; l++) {
-            if (a[l] != null && a[l].c == k) {
-                return l;
+    private int d(int i) {
+        for (int j = 0; j < this.a.length; ++j) {
+            if (this.a[j] != null && this.a[j].id == i) {
+                return j;
             }
         }
 
@@ -42,9 +38,9 @@ public class InventoryPlayer implements IInventory {
     }
 
     private int c(ItemStack itemstack) {
-        for (int k = 0; k < a.length; k++) {
-            if (a[k] != null && a[k].c == itemstack.c && a[k].c() && a[k].a < a[k].b() && a[k].a < c() && (!a[k].e() || a[k].h() == itemstack.h())) {
-                return k;
+        for (int i = 0; i < this.a.length; ++i) {
+            if (this.a[i] != null && this.a[i].id == itemstack.id && this.a[i].c() && this.a[i].count < this.a[i].b() && this.a[i].count < this.c() && (!this.a[i].e() || this.a[i].h() == itemstack.h())) {
+                return i;
             }
         }
 
@@ -52,9 +48,9 @@ public class InventoryPlayer implements IInventory {
     }
 
     private int j() {
-        for (int k = 0; k < a.length; k++) {
-            if (a[k] == null) {
-                return k;
+        for (int i = 0; i < this.a.length; ++i) {
+            if (this.a[i] == null) {
+                return i;
             }
         }
 
@@ -62,137 +58,151 @@ public class InventoryPlayer implements IInventory {
     }
 
     private int d(ItemStack itemstack) {
-        int k = itemstack.c;
-        int l = itemstack.a;
-        int i1 = c(itemstack);
+        int i = itemstack.id;
+        int j = itemstack.count;
+        int k = this.c(itemstack);
 
-        if (i1 < 0) {
-            i1 = j();
+        if (k < 0) {
+            k = this.j();
         }
-        if (i1 < 0) {
-            return l;
-        }
-        if (a[i1] == null) {
-            a[i1] = new ItemStack(k, 0, itemstack.h());
-        }
-        int j1 = l;
 
-        if (j1 > a[i1].b() - a[i1].a) {
-            j1 = a[i1].b() - a[i1].a;
-        }
-        if (j1 > c() - a[i1].a) {
-            j1 = c() - a[i1].a;
-        }
-        if (j1 == 0) {
-            return l;
+        if (k < 0) {
+            return j;
         } else {
-            l -= j1;
-            a[i1].a += j1;
-            a[i1].b = 5;
-            return l;
+            if (this.a[k] == null) {
+                this.a[k] = new ItemStack(i, 0, itemstack.h());
+            }
+
+            int l = j;
+
+            if (j > this.a[k].b() - this.a[k].count) {
+                l = this.a[k].b() - this.a[k].count;
+            }
+
+            if (l > this.c() - this.a[k].count) {
+                l = this.c() - this.a[k].count;
+            }
+
+            if (l == 0) {
+                return j;
+            } else {
+                j -= l;
+                this.a[k].count += l;
+                this.a[k].b = 5;
+                return j;
+            }
         }
     }
 
     public void f() {
-        for (int k = 0; k < a.length; k++) {
-            if (a[k] != null && a[k].b > 0) {
-                a[k].b--;
+        for (int i = 0; i < this.a.length; ++i) {
+            if (this.a[i] != null && this.a[i].b > 0) {
+                --this.a[i].b;
             }
         }
     }
 
-    public boolean b(int k) {
-        int l = d(k);
+    public boolean b(int i) {
+        int j = this.d(i);
 
-        if (l < 0) {
+        if (j < 0) {
             return false;
+        } else {
+            if (--this.a[j].count <= 0) {
+                this.a[j] = null;
+            }
+
+            return true;
         }
-        if (--a[l].a <= 0) {
-            a[l] = null;
-        }
-        return true;
     }
 
     public boolean a(ItemStack itemstack) {
         if (!itemstack.f()) {
-            itemstack.a = d(itemstack);
-            if (itemstack.a == 0) {
+            itemstack.count = this.d(itemstack);
+            if (itemstack.count == 0) {
                 return true;
             }
         }
-        int k = j();
 
-        if (k >= 0) {
-            a[k] = itemstack;
-            a[k].b = 5;
+        int i = this.j();
+
+        if (i >= 0) {
+            this.a[i] = itemstack;
+            this.a[i].b = 5;
             return true;
         } else {
             return false;
         }
     }
 
-    public ItemStack b(int k, int l) {
-        ItemStack aitemstack[] = a;
+    public ItemStack b(int i, int j) {
+        ItemStack[] aitemstack = this.a;
 
-        if (k >= a.length) {
-            aitemstack = b;
-            k -= a.length;
+        if (i >= this.a.length) {
+            aitemstack = this.b;
+            i -= this.a.length;
         }
-        if (aitemstack[k] != null) {
-            if (aitemstack[k].a <= l) {
-                ItemStack itemstack = aitemstack[k];
 
-                aitemstack[k] = null;
+        if (aitemstack[i] != null) {
+            ItemStack itemstack;
+
+            if (aitemstack[i].count <= j) {
+                itemstack = aitemstack[i];
+                aitemstack[i] = null;
+                return itemstack;
+            } else {
+                itemstack = aitemstack[i].a(j);
+                if (aitemstack[i].count == 0) {
+                    aitemstack[i] = null;
+                }
+
                 return itemstack;
             }
-            ItemStack itemstack1 = aitemstack[k].a(l);
-
-            if (aitemstack[k].a == 0) {
-                aitemstack[k] = null;
-            }
-            return itemstack1;
         } else {
             return null;
         }
     }
 
-    public void a(int k, ItemStack itemstack) {
-        ItemStack aitemstack[] = a;
+    public void a(int i, ItemStack itemstack) {
+        ItemStack[] aitemstack = this.a;
 
-        if (k >= aitemstack.length) {
-            k -= aitemstack.length;
-            aitemstack = b;
+        if (i >= aitemstack.length) {
+            i -= aitemstack.length;
+            aitemstack = this.b;
         }
-        aitemstack[k] = itemstack;
+
+        aitemstack[i] = itemstack;
     }
 
     public float a(Block block) {
-        float f1 = 1.0F;
+        float f = 1.0F;
 
-        if (a[c] != null) {
-            f1 *= a[c].a(block);
+        if (this.a[this.c] != null) {
+            f *= this.a[this.c].a(block);
         }
-        return f1;
+
+        return f;
     }
 
     public NBTTagList a(NBTTagList nbttaglist) {
-        for (int k = 0; k < a.length; k++) {
-            if (a[k] != null) {
-                NBTTagCompound nbttagcompound = new NBTTagCompound();
+        int i;
+        NBTTagCompound nbttagcompound;
 
-                nbttagcompound.a("Slot", (byte) k);
-                a[k].a(nbttagcompound);
-                nbttaglist.a(((NBTBase) (nbttagcompound)));
+        for (i = 0; i < this.a.length; ++i) {
+            if (this.a[i] != null) {
+                nbttagcompound = new NBTTagCompound();
+                nbttagcompound.a("Slot", (byte) i);
+                this.a[i].a(nbttagcompound);
+                nbttaglist.a((NBTBase) nbttagcompound);
             }
         }
 
-        for (int l = 0; l < b.length; l++) {
-            if (b[l] != null) {
-                NBTTagCompound nbttagcompound1 = new NBTTagCompound();
-
-                nbttagcompound1.a("Slot", (byte) (l + 100));
-                b[l].a(nbttagcompound1);
-                nbttaglist.a(((NBTBase) (nbttagcompound1)));
+        for (i = 0; i < this.b.length; ++i) {
+            if (this.b[i] != null) {
+                nbttagcompound = new NBTTagCompound();
+                nbttagcompound.a("Slot", (byte) (i + 100));
+                this.b[i].a(nbttagcompound);
+                nbttaglist.a((NBTBase) nbttagcompound);
             }
         }
 
@@ -200,37 +210,39 @@ public class InventoryPlayer implements IInventory {
     }
 
     public void b(NBTTagList nbttaglist) {
-        a = new ItemStack[36];
-        b = new ItemStack[4];
-        for (int k = 0; k < nbttaglist.b(); k++) {
-            NBTTagCompound nbttagcompound = (NBTTagCompound) nbttaglist.a(k);
-            int l = nbttagcompound.b("Slot") & 0xff;
+        this.a = new ItemStack[36];
+        this.b = new ItemStack[4];
+
+        for (int i = 0; i < nbttaglist.b(); ++i) {
+            NBTTagCompound nbttagcompound = (NBTTagCompound) nbttaglist.a(i);
+            int j = nbttagcompound.b("Slot") & 255;
             ItemStack itemstack = new ItemStack(nbttagcompound);
 
-            if (itemstack.a() == null) {
-                continue;
-            }
-            if (l >= 0 && l < a.length) {
-                a[l] = itemstack;
-            }
-            if (l >= 100 && l < b.length + 100) {
-                b[l - 100] = itemstack;
+            if (itemstack.a() != null) {
+                if (j >= 0 && j < this.a.length) {
+                    this.a[j] = itemstack;
+                }
+
+                if (j >= 100 && j < this.b.length + 100) {
+                    this.b[j - 100] = itemstack;
+                }
             }
         }
     }
 
     public int h_() {
-        return a.length + 4;
+        return this.a.length + 4;
     }
 
-    public ItemStack a(int k) {
-        ItemStack aitemstack[] = a;
+    public ItemStack a(int i) {
+        ItemStack[] aitemstack = this.a;
 
-        if (k >= aitemstack.length) {
-            k -= aitemstack.length;
-            aitemstack = b;
+        if (i >= aitemstack.length) {
+            i -= aitemstack.length;
+            aitemstack = this.b;
         }
-        return aitemstack[k];
+
+        return aitemstack[i];
     }
 
     public String b() {
@@ -242,101 +254,91 @@ public class InventoryPlayer implements IInventory {
     }
 
     public int a(Entity entity) {
-        ItemStack itemstack = a(c);
+        ItemStack itemstack = this.a(this.c);
 
-        if (itemstack != null) {
-            return itemstack.a(entity);
-        } else {
-            return 1;
-        }
+        return itemstack != null ? itemstack.a(entity) : 1;
     }
 
     public boolean b(Block block) {
-        if (block.bt != Material.d && block.bt != Material.e && block.bt != Material.t && block.bt != Material.s) {
+        if (block.material != Material.STONE && block.material != Material.ORE && block.material != Material.SNOW_BLOCK && block.material != Material.SNOW_LAYER) {
             return true;
-        }
-        ItemStack itemstack = a(c);
-
-        if (itemstack != null) {
-            return itemstack.b(block);
         } else {
-            return false;
+            ItemStack itemstack = this.a(this.c);
+
+            return itemstack != null ? itemstack.b(block) : false;
         }
     }
 
     public int g() {
+        int i = 0;
+        int j = 0;
         int k = 0;
-        int l = 0;
-        int i1 = 0;
 
-        for (int j1 = 0; j1 < b.length; j1++) {
-            if (b[j1] != null && (b[j1].a() instanceof ItemArmor)) {
-                int k1 = b[j1].i();
-                int l1 = b[j1].g();
-                int i2 = k1 - l1;
+        for (int l = 0; l < this.b.length; ++l) {
+            if (this.b[l] != null && this.b[l].a() instanceof ItemArmor) {
+                int i1 = this.b[l].i();
+                int j1 = this.b[l].g();
+                int k1 = i1 - j1;
 
-                l += i2;
-                i1 += k1;
-                int j2 = ((ItemArmor) b[j1].a()).bh;
+                j += k1;
+                k += i1;
+                int l1 = ((ItemArmor) this.b[l].a()).bh;
 
-                k += j2;
+                i += l1;
             }
         }
 
-        if (i1 == 0) {
+        if (k == 0) {
             return 0;
         } else {
-            return ((k - 1) * l) / i1 + 1;
+            return (i - 1) * j / k + 1;
         }
     }
 
-    public void c(int k) {
-        for (int l = 0; l < b.length; l++) {
-            if (b[l] == null || !(b[l].a() instanceof ItemArmor)) {
-                continue;
-            }
-            b[l].b(k);
-            if (b[l].a == 0) {
-                b[l].a(e);
-                b[l] = null;
+    public void c(int i) {
+        for (int j = 0; j < this.b.length; ++j) {
+            if (this.b[j] != null && this.b[j].a() instanceof ItemArmor) {
+                this.b[j].b(i);
+                if (this.b[j].count == 0) {
+                    this.b[j].a(this.e);
+                    this.b[j] = null;
+                }
             }
         }
-
     }
 
     public void h() {
-        for (int k = 0; k < a.length; k++) {
-            if (a[k] != null) {
-                e.a(a[k], true);
-                a[k] = null;
+        int i;
+
+        for (i = 0; i < this.a.length; ++i) {
+            if (this.a[i] != null) {
+                this.e.a(this.a[i], true);
+                this.a[i] = null;
             }
         }
 
-        for (int l = 0; l < b.length; l++) {
-            if (b[l] != null) {
-                e.a(b[l], true);
-                b[l] = null;
+        for (i = 0; i < this.b.length; ++i) {
+            if (this.b[i] != null) {
+                this.e.a(this.b[i], true);
+                this.b[i] = null;
             }
         }
     }
 
     public void d() {
-        d = true;
+        this.d = true;
     }
 
     public void b(ItemStack itemstack) {
-        f = itemstack;
-        e.a(itemstack);
+        this.f = itemstack;
+        this.e.a(itemstack);
     }
 
     public ItemStack i() {
-        return f;
+        return this.f;
     }
 
-    public boolean a_(EntityPlayer entityplayer) {
-        if (e.G) {
-            return false;
-        }
-        return entityplayer.b(((Entity) (e))) <= 64D;
+    public boolean a_(EntityHuman entityhuman) {
+        return this.e.dead ? false : entityhuman.b((Entity) this.e) <= 64.0D;
     }
 }

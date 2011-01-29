@@ -1,7 +1,6 @@
 package net.minecraft.server;
 
 import java.util.List;
-import java.util.Random;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftFireball;
@@ -11,215 +10,218 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 // CraftBukkit end
 
-
 public class EntityFireball extends Entity {
 
-    private int e;
-    private int f;
-    private int ak;
-    private int al;
-    private boolean am;
-    public int a;
+    private int e = -1;
+    private int f = -1;
+    private int ak = -1;
+    private int al = 0;
+    private boolean am = false;
+    public int a = 0;
     private EntityLiving an;
     private int ao;
-    private int ap;
+    private int ap = 0;
     public double b;
     public double c;
     public double d;
 
     public EntityFireball(World world) {
         super(world);
-        e = -1;
-        f = -1;
-        ak = -1;
-        al = 0;
-        am = false;
-        a = 0;
-        ap = 0;
-        a(1.0F, 1.0F);
-        
+        this.a(1.0F, 1.0F);
+
         // CraftBukkit start
-        CraftServer server = ((WorldServer) this.l).getServer();
+        CraftServer server = ((WorldServer) this.world).getServer();
         this.bukkitEntity = new CraftFireball(server, this);
         // CraftBukkit end
     }
 
     protected void a() {}
 
-    public EntityFireball(World world, EntityLiving entityliving, double d1, double d2, double d3) {
-        // CraftBukkit start
-        this(world);
-        // CraftBukkit end
-        
-        an = entityliving;
-        c(entityliving.p, entityliving.q, entityliving.r, entityliving.v, entityliving.w);
-        a(p, q, r);
-        H = 0.0F;
-        s = t = u = 0.0D;
-        d1 += W.nextGaussian() * 0.40000000000000002D;
-        d2 += W.nextGaussian() * 0.40000000000000002D;
-        d3 += W.nextGaussian() * 0.40000000000000002D;
-        double d4 = MathHelper.a(d1 * d1 + d2 * d2 + d3 * d3);
+    public EntityFireball(World world, EntityLiving entityliving, double d0, double d1, double d2) {
+        this(world); // CraftBukkit super->this so we assign the entity
 
-        b = (d1 / d4) * 0.10000000000000001D;
-        c = (d2 / d4) * 0.10000000000000001D;
-        d = (d3 / d4) * 0.10000000000000001D;
+        this.an = entityliving;
+        this.a(1.0F, 1.0F);
+        this.c(entityliving.locX, entityliving.locY, entityliving.locZ, entityliving.yaw, entityliving.pitch);
+        this.a(this.locX, this.locY, this.locZ);
+        this.height = 0.0F;
+        this.motX = this.motY = this.motZ = 0.0D;
+        d0 += this.random.nextGaussian() * 0.4D;
+        d1 += this.random.nextGaussian() * 0.4D;
+        d2 += this.random.nextGaussian() * 0.4D;
+        double d3 = (double) MathHelper.a(d0 * d0 + d1 * d1 + d2 * d2);
+
+        this.b = d0 / d3 * 0.1D;
+        this.c = d1 / d3 * 0.1D;
+        this.d = d2 / d3 * 0.1D;
     }
 
     public void b_() {
         super.b_();
-        Z = 10;
-        if (a > 0) {
-            a--;
+        this.fireTicks = 10;
+        if (this.a > 0) {
+            --this.a;
         }
-        if (am) {
-            int i = l.a(e, f, ak);
 
-            if (i != al) {
-                am = false;
-                s *= W.nextFloat() * 0.2F;
-                t *= W.nextFloat() * 0.2F;
-                u *= W.nextFloat() * 0.2F;
-                ao = 0;
-                ap = 0;
-            } else {
-                ao++;
-                if (ao == 1200) {
-                    q();
+        if (this.am) {
+            int i = this.world.getTypeId(this.e, this.f, this.ak);
+
+            if (i == this.al) {
+                ++this.ao;
+                if (this.ao == 1200) {
+                    this.q();
                 }
+
                 return;
             }
-        } else {
-            ap++;
-        }
-        Vec3D vec3d = Vec3D.b(p, q, r);
-        Vec3D vec3d1 = Vec3D.b(p + s, q + t, r + u);
-        MovingObjectPosition movingobjectposition = l.a(vec3d, vec3d1);
 
-        vec3d = Vec3D.b(p, q, r);
-        vec3d1 = Vec3D.b(p + s, q + t, r + u);
+            this.am = false;
+            this.motX *= (double) (this.random.nextFloat() * 0.2F);
+            this.motY *= (double) (this.random.nextFloat() * 0.2F);
+            this.motZ *= (double) (this.random.nextFloat() * 0.2F);
+            this.ao = 0;
+            this.ap = 0;
+        } else {
+            ++this.ap;
+        }
+
+        Vec3D vec3d = Vec3D.b(this.locX, this.locY, this.locZ);
+        Vec3D vec3d1 = Vec3D.b(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
+        MovingObjectPosition movingobjectposition = this.world.a(vec3d, vec3d1);
+
+        vec3d = Vec3D.b(this.locX, this.locY, this.locZ);
+        vec3d1 = Vec3D.b(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
         if (movingobjectposition != null) {
             vec3d1 = Vec3D.b(movingobjectposition.f.a, movingobjectposition.f.b, movingobjectposition.f.c);
         }
-        Entity entity = null;
-        List list = l.b(((Entity) (this)), z.a(s, t, u).b(1.0D, 1.0D, 1.0D));
-        double d1 = 0.0D;
 
-        for (int j = 0; j < list.size(); j++) {
+        Entity entity = null;
+        List list = this.world.b((Entity) this, this.boundingBox.a(this.motX, this.motY, this.motZ).b(1.0D, 1.0D, 1.0D));
+        double d0 = 0.0D;
+
+        for (int j = 0; j < list.size(); ++j) {
             Entity entity1 = (Entity) list.get(j);
 
-            if (!entity1.c_() || entity1 == an && ap < 25) {
-                continue;
-            }
-            float f3 = 0.3F;
-            AxisAlignedBB axisalignedbb = entity1.z.b(f3, f3, f3);
-            MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
+            if (entity1.c_() && (entity1 != this.an || this.ap >= 25)) {
+                float f = 0.3F;
+                AxisAlignedBB axisalignedbb = entity1.boundingBox.b((double) f, (double) f, (double) f);
+                MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
 
-            if (movingobjectposition1 == null) {
-                continue;
-            }
-            double d2 = vec3d.a(movingobjectposition1.f);
+                if (movingobjectposition1 != null) {
+                    double d1 = vec3d.a(movingobjectposition1.f);
 
-            if (d2 < d1 || d1 == 0.0D) {
-                entity = entity1;
-                d1 = d2;
+                    if (d1 < d0 || d0 == 0.0D) {
+                        entity = entity1;
+                        d0 = d1;
+                    }
+                }
             }
         }
 
         if (entity != null) {
             movingobjectposition = new MovingObjectPosition(entity);
         }
+
         if (movingobjectposition != null) {
+            // CraftBukkit start
             if (movingobjectposition.g != null) {
-                // CraftBukkit start
-                boolean bounce;
+                boolean stick;
                 if (movingobjectposition.g instanceof EntityLiving) {
-                    CraftServer server = ((WorldServer) this.l).getServer();
-                    org.bukkit.entity.Entity shooter = (an == null)?null:an.getBukkitEntity();
+                    CraftServer server = ((WorldServer) this.world).getServer();
+                    org.bukkit.entity.Entity shooter = (this.an == null) ? null : this.an.getBukkitEntity();
                     org.bukkit.entity.Entity damagee = movingobjectposition.g.getBukkitEntity();
                     org.bukkit.entity.Entity projectile = this.getBukkitEntity();
                     DamageCause damageCause = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
                     int damage = 0;
 
                     // TODO @see EntityArrow#162
-                    EntityDamageByProjectileEvent edbpe = new EntityDamageByProjectileEvent(shooter, damagee, projectile, damageCause, damage);
-                    server.getPluginManager().callEvent(edbpe);
+                    EntityDamageByProjectileEvent event = new EntityDamageByProjectileEvent(shooter, damagee, projectile, damageCause, damage);
+                    server.getPluginManager().callEvent(event);
 
-                    if(!edbpe.isCancelled()) {
+                    if(!event.isCancelled()) {
                         // this function returns if the fireball should stick or not, i.e. !bounce
-                        bounce = !movingobjectposition.g.a(((Entity) (an)), edbpe.getDamage());
+                        stick = movingobjectposition.g.a(this.an, event.getDamage());
                     } else {
                         // event was cancelled, get if the fireball should bounce or not
-                        bounce = edbpe.getBounce();
+                        stick = !event.getBounce();
                     }
                 } else {
-                    bounce = !movingobjectposition.g.a(((Entity) (an)), 0);
+                    stick = movingobjectposition.g.a(this.an, 0);
                 }
-                if (!bounce) {
+                if (stick) {
                     // CraftBukkit end
                     ;
                 }
             }
-            l.a(((Entity) (null)), p, q, r, 1.0F, true);
-            q();
-        }
-        p += s;
-        q += t;
-        r += u;
-        float f1 = MathHelper.a(s * s + u * u);
+            // CraftBukkit end
 
-        v = (float) ((Math.atan2(s, u) * 180D) / 3.1415927410125732D);
-        for (w = (float) ((Math.atan2(t, f1) * 180D) / 3.1415927410125732D); w - y < -180F; y -= 360F) {
+            this.world.a((Entity) null, this.locX, this.locY, this.locZ, 1.0F, true);
+            this.q();
+        }
+
+        this.locX += this.motX;
+        this.locY += this.motY;
+        this.locZ += this.motZ;
+        float f1 = MathHelper.a(this.motX * this.motX + this.motZ * this.motZ);
+
+        this.yaw = (float) (Math.atan2(this.motX, this.motZ) * 180.0D / 3.1415927410125732D);
+
+        for (this.pitch = (float) (Math.atan2(this.motY, (double) f1) * 180.0D / 3.1415927410125732D); this.pitch - this.lastPitch < -180.0F; this.lastPitch -= 360.0F) {
             ;
         }
-        for (; w - y >= 180F; y += 360F) {
-            ;
+
+        while (this.pitch - this.lastPitch >= 180.0F) {
+            this.lastPitch += 360.0F;
         }
-        for (; v - x < -180F; x -= 360F) {
-            ;
+
+        while (this.yaw - this.lastYaw < -180.0F) {
+            this.lastYaw -= 360.0F;
         }
-        for (; v - x >= 180F; x += 360F) {
-            ;
+
+        while (this.yaw - this.lastYaw >= 180.0F) {
+            this.lastYaw += 360.0F;
         }
-        w = y + (w - y) * 0.2F;
-        v = x + (v - x) * 0.2F;
+
+        this.pitch = this.lastPitch + (this.pitch - this.lastPitch) * 0.2F;
+        this.yaw = this.lastYaw + (this.yaw - this.lastYaw) * 0.2F;
         float f2 = 0.95F;
 
-        if (v()) {
-            for (int k = 0; k < 4; k++) {
-                float f4 = 0.25F;
+        if (this.v()) {
+            for (int k = 0; k < 4; ++k) {
+                float f3 = 0.25F;
 
-                l.a("bubble", p - s * (double) f4, q - t * (double) f4, r - u * (double) f4, s, t, u);
+                this.world.a("bubble", this.locX - this.motX * (double) f3, this.locY - this.motY * (double) f3, this.locZ - this.motZ * (double) f3, this.motX, this.motY, this.motZ);
             }
 
             f2 = 0.8F;
         }
-        s += b;
-        t += c;
-        u += d;
-        s *= f2;
-        t *= f2;
-        u *= f2;
-        l.a("smoke", p, q + 0.5D, r, 0.0D, 0.0D, 0.0D);
-        a(p, q, r);
+
+        this.motX += this.b;
+        this.motY += this.c;
+        this.motZ += this.d;
+        this.motX *= (double) f2;
+        this.motY *= (double) f2;
+        this.motZ *= (double) f2;
+        this.world.a("smoke", this.locX, this.locY + 0.5D, this.locZ, 0.0D, 0.0D, 0.0D);
+        this.a(this.locX, this.locY, this.locZ);
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("xTile", (short) e);
-        nbttagcompound.a("yTile", (short) f);
-        nbttagcompound.a("zTile", (short) ak);
-        nbttagcompound.a("inTile", (byte) al);
-        nbttagcompound.a("shake", (byte) a);
-        nbttagcompound.a("inGround", (byte) (am ? 1 : 0));
+        nbttagcompound.a("xTile", (short) this.e);
+        nbttagcompound.a("yTile", (short) this.f);
+        nbttagcompound.a("zTile", (short) this.ak);
+        nbttagcompound.a("inTile", (byte) this.al);
+        nbttagcompound.a("shake", (byte) this.a);
+        nbttagcompound.a("inGround", (byte) (this.am ? 1 : 0));
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        e = ((int) (nbttagcompound.c("xTile")));
-        f = ((int) (nbttagcompound.c("yTile")));
-        ak = ((int) (nbttagcompound.c("zTile")));
-        al = nbttagcompound.b("inTile") & 0xff;
-        a = nbttagcompound.b("shake") & 0xff;
-        am = nbttagcompound.b("inGround") == 1;
+        this.e = nbttagcompound.c("xTile");
+        this.f = nbttagcompound.c("yTile");
+        this.ak = nbttagcompound.c("zTile");
+        this.al = nbttagcompound.b("inTile") & 255;
+        this.a = nbttagcompound.b("shake") & 255;
+        this.am = nbttagcompound.b("inGround") == 1;
     }
 
     public boolean c_() {
@@ -227,18 +229,19 @@ public class EntityFireball extends Entity {
     }
 
     public boolean a(Entity entity, int i) {
-        y();
+        this.y();
         if (entity != null) {
             Vec3D vec3d = entity.G();
 
             if (vec3d != null) {
-                s = vec3d.a;
-                t = vec3d.b;
-                u = vec3d.c;
-                b = s * 0.10000000000000001D;
-                c = t * 0.10000000000000001D;
-                d = u * 0.10000000000000001D;
+                this.motX = vec3d.a;
+                this.motY = vec3d.b;
+                this.motZ = vec3d.c;
+                this.b = this.motX * 0.1D;
+                this.c = this.motY * 0.1D;
+                this.d = this.motZ * 0.1D;
             }
+
             return true;
         } else {
             return false;

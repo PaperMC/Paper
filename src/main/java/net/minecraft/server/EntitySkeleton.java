@@ -1,7 +1,5 @@
 package net.minecraft.server;
 
-import java.util.Random;
-
 // CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftSkeleton;
 import org.bukkit.craftbukkit.CraftServer;
@@ -9,15 +7,16 @@ import org.bukkit.event.Event.Type;
 import org.bukkit.event.entity.EntityCombustEvent;
 // CraftBukkit end
 
-public class EntitySkeleton extends EntityMobs {
+public class EntitySkeleton extends EntityMonster {
 
-    private static final ItemStack a;
+    private static final ItemStack a = new ItemStack(Item.BOW, 1);
 
     public EntitySkeleton(World world) {
         super(world);
-        aP = "/mob/skeleton.png";
+        this.texture = "/mob/skeleton.png";
+
         // CraftBukkit start
-        CraftServer server = ((WorldServer) this.l).getServer();
+        CraftServer server = ((WorldServer) this.world).getServer();
         this.bukkitEntity = new CraftSkeleton(server, this);
         // CraftBukkit end
     }
@@ -35,44 +34,46 @@ public class EntitySkeleton extends EntityMobs {
     }
 
     public void o() {
-        if (l.b()) {
-            float f1 = b(1.0F);
+        if (this.world.b()) {
+            float f = this.b(1.0F);
 
-            if (f1 > 0.5F && l.i(MathHelper.b(p), MathHelper.b(q), MathHelper.b(r)) && W.nextFloat() * 30F < (f1 - 0.4F) * 2.0F) {
+            if (f > 0.5F && this.world.i(MathHelper.b(this.locX), MathHelper.b(this.locY), MathHelper.b(this.locZ)) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
                 // CraftBukkit start
-                CraftServer server = ((WorldServer) l).getServer();
+                CraftServer server = ((WorldServer) this.world).getServer();
                 Type eventType = Type.ENTITY_COMBUST;
                 org.bukkit.entity.Entity entity = this.getBukkitEntity();
                 EntityCombustEvent event = new EntityCombustEvent(eventType, entity);
                 server.getPluginManager().callEvent(event);
                 if (!event.isCancelled()) {
-                    Z = 300;
+                    this.fireTicks = 300;
                 }
                 // CraftBukkit end
             }
         }
+
         super.o();
     }
 
-    protected void a(Entity entity, float f1) {
-        if (f1 < 10F) {
-            double d = entity.p - p;
-            double d1 = entity.r - r;
+    protected void a(Entity entity, float f) {
+        if (f < 10.0F) {
+            double d0 = entity.locX - this.locX;
+            double d1 = entity.locZ - this.locZ;
 
-            if (bf == 0) {
-                EntityArrow entityarrow = new EntityArrow(l, ((EntityLiving) (this)));
+            if (this.attackTicks == 0) {
+                EntityArrow entityarrow = new EntityArrow(this.world, this);
 
-                entityarrow.q += 1.3999999761581421D;
-                double d2 = entity.q - 0.20000000298023224D - entityarrow.q;
-                float f2 = MathHelper.a(d * d + d1 * d1) * 0.2F;
+                ++entityarrow.locY;
+                double d2 = entity.locY - 0.20000000298023224D - entityarrow.locY;
+                float f1 = MathHelper.a(d0 * d0 + d1 * d1) * 0.2F;
 
-                l.a(((Entity) (this)), "random.bow", 1.0F, 1.0F / (W.nextFloat() * 0.4F + 0.8F));
-                l.a(((Entity) (entityarrow)));
-                entityarrow.a(d, d2 + (double) f2, d1, 0.6F, 12F);
-                bf = 30;
+                this.world.a(this, "random.bow", 1.0F, 1.0F / (this.random.nextFloat() * 0.4F + 0.8F));
+                this.world.a((Entity) entityarrow);
+                entityarrow.a(d0, d2 + (double) f1, d1, 0.6F, 12.0F);
+                this.attackTicks = 30;
             }
-            v = (float) ((Math.atan2(d1, d) * 180D) / 3.1415927410125732D) - 90F;
-            e = true;
+
+            this.yaw = (float) (Math.atan2(d1, d0) * 180.0D / 3.1415927410125732D) - 90.0F;
+            this.e = true;
         }
     }
 
@@ -85,23 +86,22 @@ public class EntitySkeleton extends EntityMobs {
     }
 
     protected int h() {
-        return Item.j.ba;
+        return Item.ARROW.id;
     }
 
     protected void g_() {
-        int i = W.nextInt(3);
+        int i = this.random.nextInt(3);
 
-        for (int j = 0; j < i; j++) {
-            a(Item.j.ba, 1);
+        int j;
+
+        for (j = 0; j < i; ++j) {
+            this.a(Item.ARROW.id, 1);
         }
 
-        i = W.nextInt(3);
-        for (int k = 0; k < i; k++) {
-            a(Item.aV.ba, 1);
-        }
-    }
+        i = this.random.nextInt(3);
 
-    static {
-        a = new ItemStack(Item.i, 1);
+        for (j = 0; j < i; ++j) {
+            this.a(Item.BONE.id, 1);
+        }
     }
 }

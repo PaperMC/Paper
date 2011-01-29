@@ -2,183 +2,170 @@ package net.minecraft.server;
 
 public final class ItemStack {
 
-    public int a;
+    public int count;
     public int b;
-    public int c;
-    public int d; // Craftbukkit - make public
+    public int id;
+    public int damage; // Craftbukkit - make public
 
     public ItemStack(Block block) {
         this(block, 1);
     }
 
-    public ItemStack(Block block, int k) {
-        this(block.bi, k, 0);
+    public ItemStack(Block block, int i) {
+        this(block.id, i, 0);
     }
 
-    public ItemStack(Block block, int k, int l) {
-        this(block.bi, k, l);
+    public ItemStack(Block block, int i, int j) {
+        this(block.id, i, j);
     }
 
     public ItemStack(Item item) {
-        this(item.ba, 1, 0);
+        this(item.id, 1, 0);
     }
 
-    public ItemStack(Item item, int k) {
-        this(item.ba, k, 0);
+    public ItemStack(Item item, int i) {
+        this(item.id, i, 0);
     }
 
-    public ItemStack(Item item, int k, int l) {
-        this(item.ba, k, l);
+    public ItemStack(Item item, int i, int j) {
+        this(item.id, i, j);
     }
 
-    public ItemStack(int k, int l, int i1) {
-        a = 0;
-        c = k;
-        a = l;
-        d = i1;
+    public ItemStack(int i, int j, int k) {
+        this.count = 0;
+        this.id = i;
+        this.count = j;
+        this.damage = k;
     }
 
     public ItemStack(NBTTagCompound nbttagcompound) {
-        a = 0;
-        b(nbttagcompound);
+        this.count = 0;
+        this.b(nbttagcompound);
     }
 
-    public ItemStack a(int k) {
-        a -= k;
-        return new ItemStack(c, k, d);
+    public ItemStack a(int i) {
+        this.count -= i;
+        return new ItemStack(this.id, i, this.damage);
     }
 
     public Item a() {
-        return Item.c[c];
+        return Item.byId[this.id];
     }
 
-    public boolean a(EntityPlayer entityplayer, World world, int k, int l, int i1, int j1) {
-        return a().a(this, entityplayer, world, k, l, i1, j1);
+    public boolean a(EntityHuman entityhuman, World world, int i, int j, int k, int l) {
+        return this.a().a(this, entityhuman, world, i, j, k, l);
     }
 
     public float a(Block block) {
-        return a().a(this, block);
+        return this.a().a(this, block);
     }
 
-    public ItemStack a(World world, EntityPlayer entityplayer) {
-        return a().a(this, world, entityplayer);
+    public ItemStack a(World world, EntityHuman entityhuman) {
+        return this.a().a(this, world, entityhuman);
     }
 
     public NBTTagCompound a(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("id", (short) c);
-        nbttagcompound.a("Count", (byte) a);
-        nbttagcompound.a("Damage", (short) d);
+        nbttagcompound.a("id", (short) this.id);
+        nbttagcompound.a("Count", (byte) this.count);
+        nbttagcompound.a("Damage", (short) this.damage);
         return nbttagcompound;
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        c = ((int) (nbttagcompound.c("id")));
-        a = ((int) (nbttagcompound.b("Count")));
-        d = ((int) (nbttagcompound.c("Damage")));
+        this.id = nbttagcompound.c("id");
+        this.count = nbttagcompound.b("Count");
+        this.damage = nbttagcompound.c("Damage");
     }
 
     public int b() {
-        return a().b();
+        return this.a().b();
     }
 
     public boolean c() {
-        return b() > 1 && (!d() || !f());
+        return this.b() > 1 && (!this.d() || !this.f());
     }
 
     public boolean d() {
-        return Item.c[c].d() > 0;
+        return Item.byId[this.id].d() > 0;
     }
 
     public boolean e() {
-        return Item.c[c].c();
+        return Item.byId[this.id].c();
     }
 
     public boolean f() {
-        return d() && d > 0;
+        return this.d() && this.damage > 0;
     }
 
     public int g() {
-        return d;
+        return this.damage;
     }
 
     public int h() {
-        return d;
+        return this.damage;
     }
 
     public int i() {
-        return Item.c[c].d();
+        return Item.byId[this.id].d();
     }
 
-    public void b(int k) {
-        if (!d()) {
-            return;
-        }
-        d += k;
-        if (d > i()) {
-            a--;
-            if (a < 0) {
-                a = 0;
+    public void b(int i) {
+        if (this.d()) {
+            this.damage += i;
+            if (this.damage > this.i()) {
+                --this.count;
+                if (this.count < 0) {
+                    this.count = 0;
+                }
+
+                this.damage = 0;
             }
-            d = 0;
         }
     }
 
     public void a(EntityLiving entityliving) {
-        Item.c[c].a(this, entityliving);
+        Item.byId[this.id].a(this, entityliving);
     }
 
-    public void a(int k, int l, int i1, int j1) {
-        Item.c[c].a(this, k, l, i1, j1);
+    public void a(int i, int j, int k, int l) {
+        Item.byId[this.id].a(this, i, j, k, l);
     }
 
     public int a(Entity entity) {
-        return Item.c[c].a(entity);
+        return Item.byId[this.id].a(entity);
     }
 
     public boolean b(Block block) {
-        return Item.c[c].a(block);
+        return Item.byId[this.id].a(block);
     }
 
-    public void a(EntityPlayer entityplayer) {}
+    public void a(EntityHuman entityhuman) {}
 
     public void b(EntityLiving entityliving) {
-        Item.c[c].b(this, entityliving);
+        Item.byId[this.id].b(this, entityliving);
     }
 
     public ItemStack j() {
-        return new ItemStack(c, a, d);
+        return new ItemStack(this.id, this.count, this.damage);
     }
 
     public static boolean a(ItemStack itemstack, ItemStack itemstack1) {
-        if (itemstack == null && itemstack1 == null) {
-            return true;
-        }
-        if (itemstack == null || itemstack1 == null) {
-            return false;
-        } else {
-            return itemstack.c(itemstack1);
-        }
+        return itemstack == null && itemstack1 == null ? true : (itemstack != null && itemstack1 != null ? itemstack.c(itemstack1) : false);
     }
 
     private boolean c(ItemStack itemstack) {
-        if (a != itemstack.a) {
-            return false;
-        }
-        if (c != itemstack.c) {
-            return false;
-        }
-        return d == itemstack.d;
+        return this.count != itemstack.count ? false : (this.id != itemstack.id ? false : this.damage == itemstack.damage);
     }
 
     public boolean a(ItemStack itemstack) {
-        return c == itemstack.c && d == itemstack.d;
+        return this.id == itemstack.id && this.damage == itemstack.damage;
     }
 
     public static ItemStack b(ItemStack itemstack) {
-        return itemstack != null ? itemstack.j() : null;
+        return itemstack == null ? null : itemstack.j();
     }
 
     public String toString() {
-        return (new StringBuilder()).append(a).append("x").append(Item.c[c].a()).append("@").append(d).toString();
+        return this.count + "x" + Item.byId[this.id].a() + "@" + this.damage;
     }
 }

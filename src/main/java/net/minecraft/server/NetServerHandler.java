@@ -1,7 +1,8 @@
 package net.minecraft.server;
 
-import java.io.PrintStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 // CraftBukkit start
@@ -28,66 +29,71 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
     public static Logger a = Logger.getLogger("Minecraft");
     public NetworkManager b;
-    public boolean c;
+    public boolean c = false;
     private MinecraftServer d;
-    private EntityPlayerMP e;
-    private int f;
+    private EntityPlayer e;
+    private int f = 0;
     private double g;
     private double h;
     private double i;
-    private boolean j;
-    private Map k;
+    private boolean j = true;
+    private Map k = new HashMap();
 
-    // CraftBukkit start - next 2 lines
+    public NetServerHandler(MinecraftServer minecraftserver, NetworkManager networkmanager, EntityPlayer entityplayer) {
+        this.d = minecraftserver;
+        this.b = networkmanager;
+        networkmanager.a((NetHandler) this);
+        this.e = entityplayer;
+        entityplayer.a = this;
+
+        // CraftBukkit start
+        server = minecraftserver.server;
+    }
     private final CraftServer server;
 
+    // Get position of last block hit for BlockDamageLevel.STOPPED
+    private int lastX;
+    private int lastY;
+    private int lastZ;
+
+    // Store the last block right clicked and what type it was
+    private CraftBlock lastRightClicked;
+    private int lastMaterial;
+
     public CraftPlayer getPlayer() {
-        return (e == null)?null:(CraftPlayer)e.getBukkitEntity();
+        return (e == null) ? null : (CraftPlayer) e.getBukkitEntity();
     }
     // CraftBukkit end
 
-    public NetServerHandler(MinecraftServer minecraftserver, NetworkManager networkmanager, EntityPlayerMP entityplayermp) {
-        c = false;
-        f = 0;
-        j = true;
-        k = ((Map) (new HashMap()));
-        d = minecraftserver;
-        b = networkmanager;
-        networkmanager.a(((NetHandler) (this)));
-        e = entityplayermp;
-        entityplayermp.a = this;
-
-        // CraftBukkit - next 2 lines
-        server = minecraftserver.server;
-    }
 
     public void a() {
-        b.a();
-        if (f++ % 20 == 0) {
-            b.a(((Packet) (new Packet0KeepAlive())));
+        this.b.a();
+        if (this.f++ % 20 == 0) {
+            this.b.a((Packet) (new Packet0KeepAlive()));
         }
     }
 
     public void a(String s) {
-        b.a(((Packet) (new Packet255KickDisconnect(s))));
-        b.c();
-        d.f.a(((Packet) (new Packet3Chat((new StringBuilder()).append("\247e").append(e.aw).append(" left the game.").toString()))));
-        d.f.c(e);
-        c = true;
+        this.b.a((Packet) (new Packet255KickDisconnect(s)));
+        this.b.c();
+        this.d.f.a((Packet) (new Packet3Chat("§e" + this.e.name + " left the game.")));
+        this.d.f.c(this.e);
+        this.c = true;
     }
 
     public void a(Packet10Flying packet10flying) {
-        if (!j) {
-            double d1 = packet10flying.b - h;
+        double d0;
 
-            if (packet10flying.a == g && d1 * d1 < 0.01D && packet10flying.c == i) {
-                j = true;
+        if (!this.j) {
+            d0 = packet10flying.b - this.h;
+            if (packet10flying.a == this.g && d0 * d0 < 0.01D && packet10flying.c == this.i) {
+                this.j = true;
             }
         }
 
         // CraftBukkit start
         Player player = getPlayer();
-        Location from = new Location(player.getWorld(), g, h, i, e.v, e.w);
+        Location from = new Location(player.getWorld(), g, h, i, this.e.yaw, this.e.pitch);
         Location to = player.getLocation();
         if (!from.equals(to)) {
             PlayerMoveEvent event = new PlayerMoveEvent(Type.PLAYER_MOVE, player, from, to);
@@ -96,276 +102,287 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             from = event.getFrom();
             to = event.isCancelled() ? from : event.getTo();
 
-            e.p = to.getX();
-            e.q = to.getY();
-            e.r = to.getZ();
-            e.v = to.getYaw();
-            e.w = to.getPitch();
+            this.e.locX = to.getX();
+            this.e.locY = to.getY();
+            this.e.locZ = to.getZ();
+            this.e.yaw = to.getYaw();
+            this.e.pitch = to.getPitch();
         }
         // CraftBukkit end
 
-        if (j) {
-            if (e.k != null) {
-                float f1 = e.v;
-                float f2 = e.w;
+        if (this.j) {
+            double d1;
+            double d2;
+            double d3;
+            double d4;
 
-                e.k.E();
-                double d3 = e.p;
-                double d5 = e.q;
-                double d7 = e.r;
-                double d9 = 0.0D;
-                double d10 = 0.0D;
+            if (this.e.vehicle != null) {
+                float f = this.e.yaw;
+                float f1 = this.e.pitch;
 
+                this.e.vehicle.E();
+                d1 = this.e.locX;
+                d2 = this.e.locY;
+                d3 = this.e.locZ;
+                double d5 = 0.0D;
+
+                d4 = 0.0D;
                 if (packet10flying.i) {
-                    f1 = packet10flying.e;
-                    f2 = packet10flying.f;
+                    f = packet10flying.e;
+                    f1 = packet10flying.f;
                 }
-                if (packet10flying.h && packet10flying.b == -999D && packet10flying.d == -999D) {
-                    d9 = packet10flying.a;
-                    d10 = packet10flying.c;
+
+                if (packet10flying.h && packet10flying.b == -999.0D && packet10flying.d == -999.0D) {
+                    d5 = packet10flying.a;
+                    d4 = packet10flying.c;
                 }
-                e.A = packet10flying.g;
-                e.n();
-                e.c(d9, 0.0D, d10);
-                e.b(d3, d5, d7, f1, f2);
-                e.s = d9;
-                e.u = d10;
-                if (e.k != null) {
-                    d.e.b(e.k, true);
+
+                this.e.onGround = packet10flying.g;
+                this.e.n();
+                this.e.c(d5, 0.0D, d4);
+                this.e.b(d1, d2, d3, f, f1);
+                this.e.motX = d5;
+                this.e.motZ = d4;
+                if (this.e.vehicle != null) {
+                    this.d.e.b(this.e.vehicle, true);
                 }
-                if (e.k != null) {
-                    e.k.E();
+
+                if (this.e.vehicle != null) {
+                    this.e.vehicle.E();
                 }
-                d.f.b(e);
-                g = e.p;
-                h = e.q;
-                i = e.r;
-                d.e.f(((Entity) (e)));
+
+                this.d.f.b(this.e);
+                this.g = this.e.locX;
+                this.h = this.e.locY;
+                this.i = this.e.locZ;
+                this.d.e.f(this.e);
                 return;
             }
-            double d2 = e.q;
 
-            g = e.p;
-            h = e.q;
-            i = e.r;
-            double d4 = e.p;
-            double d6 = e.q;
-            double d8 = e.r;
-            float f3 = e.v;
-            float f4 = e.w;
+            d0 = this.e.locY;
+            this.g = this.e.locX;
+            this.h = this.e.locY;
+            this.i = this.e.locZ;
+            d1 = this.e.locX;
+            d2 = this.e.locY;
+            d3 = this.e.locZ;
+            float f2 = this.e.yaw;
+            float f3 = this.e.pitch;
 
-            if (packet10flying.h && packet10flying.b == -999D && packet10flying.d == -999D) {
+            if (packet10flying.h && packet10flying.b == -999.0D && packet10flying.d == -999.0D) {
                 packet10flying.h = false;
             }
+
             if (packet10flying.h) {
-                d4 = packet10flying.a;
-                d6 = packet10flying.b;
-                d8 = packet10flying.c;
-                double d11 = packet10flying.d - packet10flying.b;
-
-                if (d11 > 1.6499999999999999D || d11 < 0.10000000000000001D) {
-                    a("Illegal stance");
-                    a.warning((new StringBuilder()).append(e.aw).append(" had an illegal stance: ").append(d11).toString());
+                d1 = packet10flying.a;
+                d2 = packet10flying.b;
+                d3 = packet10flying.c;
+                d4 = packet10flying.d - packet10flying.b;
+                if (d4 > 1.65D || d4 < 0.1D) {
+                    this.a("Illegal stance");
+                    a.warning(this.e.name + " had an illegal stance: " + d4);
                 }
-                e.al = packet10flying.d;
-            }
-            if (packet10flying.i) {
-                f3 = packet10flying.e;
-                f4 = packet10flying.f;
-            }
-            e.n();
-            e.R = 0.0F;
-            e.b(g, h, i, f3, f4);
-            double d12 = d4 - e.p;
-            double d13 = d6 - e.q;
-            double d14 = d8 - e.r;
-            float f5 = 0.0625F;
-            boolean flag = d.e.a(((Entity) (e)), e.z.b().e(f5, f5, f5)).size() == 0;
 
-            e.c(d12, d13, d14);
-            d12 = d4 - e.p;
-            d13 = d6 - e.q;
-            if (d13 > -0.5D || d13 < 0.5D) {
-                d13 = 0.0D;
+                this.e.al = packet10flying.d;
             }
-            d14 = d8 - e.r;
-            double d15 = d12 * d12 + d13 * d13 + d14 * d14;
+
+            if (packet10flying.i) {
+                f2 = packet10flying.e;
+                f3 = packet10flying.f;
+            }
+
+            this.e.n();
+            this.e.R = 0.0F;
+            this.e.b(this.g, this.h, this.i, f2, f3);
+            d4 = d1 - this.e.locX;
+            double d6 = d2 - this.e.locY;
+            double d7 = d3 - this.e.locZ;
+            float f4 = 0.0625F;
+            boolean flag = this.d.e.a(this.e, this.e.boundingBox.b().e((double) f4, (double) f4, (double) f4)).size() == 0;
+
+            this.e.c(d4, d6, d7);
+            d4 = d1 - this.e.locX;
+            d6 = d2 - this.e.locY;
+            if (d6 > -0.5D || d6 < 0.5D) {
+                d6 = 0.0D;
+            }
+
+            d7 = d3 - this.e.locZ;
+            double d8 = d4 * d4 + d6 * d6 + d7 * d7;
             boolean flag1 = false;
 
-            if (d15 > 0.0625D) {
+            if (d8 > 0.0625D) {
                 flag1 = true;
-                a.warning((new StringBuilder()).append(e.aw).append(" moved wrongly!").toString());
-                System.out.println((new StringBuilder()).append("Got position ").append(d4).append(", ").append(d6).append(", ").append(d8).toString());
-                System.out.println((new StringBuilder()).append("Expected ").append(e.p).append(", ").append(e.q).append(", ").append(e.r).toString());
+                a.warning(this.e.name + " moved wrongly!");
+                System.out.println("Got position " + d1 + ", " + d2 + ", " + d3);
+                System.out.println("Expected " + this.e.locX + ", " + this.e.locY + ", " + this.e.locZ);
             }
-            e.b(d4, d6, d8, f3, f4);
-            boolean flag2 = d.e.a(((Entity) (e)), e.z.b().e(f5, f5, f5)).size() == 0;
+
+            this.e.b(d1, d2, d3, f2, f3);
+            boolean flag2 = this.d.e.a(this.e, this.e.boundingBox.b().e((double) f4, (double) f4, (double) f4)).size() == 0;
 
             if (flag && (flag1 || !flag2)) {
-                a(g, h, i, f3, f4);
+                this.a(this.g, this.h, this.i, f2, f3);
                 return;
             }
-            e.A = packet10flying.g;
-            d.f.b(e);
-            e.b(e.q - d2, packet10flying.g);
+
+            this.e.onGround = packet10flying.g;
+            this.d.f.b(this.e);
+            this.e.b(this.e.locY - d0, packet10flying.g);
         }
     }
 
-    public void a(double d1, double d2, double d3, float f1, float f2) {
+    public void a(double d0, double d1, double d2, float f, float f1) {
         // CraftBukkit start
         Player player = getPlayer();
         Location from = player.getLocation();
-        Location to = new Location(player.getWorld(), d1, d2, d3, f1, f2);
+        Location to = new Location(player.getWorld(), d0, d1, d2, f, f1);
         PlayerMoveEvent event = new PlayerMoveEvent(Type.PLAYER_TELEPORT, player, from, to);
         server.getPluginManager().callEvent(event);
 
         from = event.getFrom();
         to = event.isCancelled() ? from : event.getTo();
 
-        d1 = to.getX();
-        d2 = to.getY();
-        d3 = to.getZ();
-        f1 = to.getYaw();
-        f2 = to.getPitch();
+        d0 = to.getX();
+        d1 = to.getY();
+        d2 = to.getZ();
+        f = to.getYaw();
+        f1 = to.getPitch();
         // CraftBukkit end
 
-        j = false;
-        g = d1;
-        h = d2;
-        i = d3;
-        e.b(d1, d2, d3, f1, f2);
-        e.a.b(((Packet) (new Packet13PlayerLookMove(d1, d2 + 1.6200000047683716D, d2, d3, f1, f2, false))));
+        this.j = false;
+        this.g = d0;
+        this.h = d1;
+        this.i = d2;
+        this.e.b(d0, d1, d2, f, f1);
+        this.e.a.b((Packet) (new Packet13PlayerLookMove(d0, d1 + 1.6200000047683716D, d1, d2, f, f1, false)));
     }
-
-    // CraftBukkit start
-    // Get position of last block hit for BlockDamageLevel.STOPPED
-    private int lastX;
-    private int lastY;
-    private int lastZ;
-    // CraftBukkit end
 
     public void a(Packet14BlockDig packet14blockdig) {
         if (packet14blockdig.e == 4) {
-            e.O();
-            return;
-        }
-        boolean flag = d.e.B = d.f.g(e.aw);
-        boolean flag1 = false;
+            this.e.O();
+        } else {
+            boolean flag = this.d.e.B = this.d.f.g(this.e.name);
+            boolean flag1 = false;
 
-        if (packet14blockdig.e == 0) {
-            flag1 = true;
-        }
-        if (packet14blockdig.e == 1) {
-            flag1 = true;
-        }
-        int l = packet14blockdig.a;
-        int i1 = packet14blockdig.b;
-        int j1 = packet14blockdig.c;
-
-        if (flag1) {
-            double d1 = e.p - ((double) l + 0.5D);
-            double d2 = e.q - ((double) i1 + 0.5D);
-            double d3 = e.r - ((double) j1 + 0.5D);
-            double d4 = d1 * d1 + d2 * d2 + d3 * d3;
-
-            if (d4 > 36D) {
-                return;
+            if (packet14blockdig.e == 0) {
+                flag1 = true;
             }
-            double d5 = e.q;
 
-            e.q = e.al;
-            e.q = d5;
-        }
-        int k1 = packet14blockdig.d;
-        int l1 = (int) MathHelper.e(l - d.e.m);
-        int i2 = (int) MathHelper.e(j1 - d.e.o);
+            if (packet14blockdig.e == 1) {
+                flag1 = true;
+            }
 
-        if (l1 > i2) {
-            i2 = l1;
-        }
+            int i = packet14blockdig.a;
+            int j = packet14blockdig.b;
+            int k = packet14blockdig.c;
 
-        // CraftBukkit start
-        CraftPlayer player = getPlayer();
-        CraftBlock block = (CraftBlock) player.getWorld().getBlockAt(l, i1, j1);
-        int blockId = block.getTypeId();
-        float damage = 0;
-        if(Block.m[blockId] != null) {
-            damage = Block.m[blockId].a(player.getHandle()); //Get amount of damage going to block
-        }
+            if (flag1) {
+                double d0 = this.e.locX - ((double) i + 0.5D);
+                double d1 = this.e.locY - ((double) j + 0.5D);
+                double d2 = this.e.locZ - ((double) k + 0.5D);
+                double d3 = d0 * d0 + d1 * d1 + d2 * d2;
 
-        if (packet14blockdig.e == 0) {
-            if (i2 > 16 || flag) {
-                if(blockId > 0) {
+                if (d3 > 36.0D) {
+                    return;
+                }
+
+                double d4 = this.e.locY;
+
+                this.e.locY = this.e.al;
+                this.e.locY = d4;
+            }
+
+            int l = packet14blockdig.d;
+            int i1 = (int) MathHelper.e((float) (i - this.d.e.spawnX));
+            int j1 = (int) MathHelper.e((float) (k - this.d.e.spawnZ));
+
+            if (i1 > j1) {
+                j1 = i1;
+            }
+
+            // CraftBukkit start
+            CraftPlayer player = getPlayer();
+            CraftBlock block = (CraftBlock) player.getWorld().getBlockAt(l, i1, j1);
+            int blockId = block.getTypeId();
+            float damage = 0;
+            if(Block.byId[blockId] != null) {
+                damage = Block.byId[blockId].a(player.getHandle()); //Get amount of damage going to block
+            }
+            // CraftBukkit end
+
+            if (packet14blockdig.e == 0) {
+                if (j1 > 16 || flag) {
+                    // CraftBukkit start
+                    if(blockId > 0) {
+                        BlockDamageEvent event;
+                        // If the amount of damage that the player is going to do to the block
+                        // is >= 1, then the block is going to break (eg, flowers, torches)
+                        if (damage >= 1.0F) {
+                            event = new BlockDamageEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.BROKEN, player);
+                        } else {
+                            event = new BlockDamageEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.STARTED, player);
+                        }
+                        server.getPluginManager().callEvent(event);
+                        if (!event.isCancelled()) {
+                            this.e.c.a(i, j, k);
+                        }
+                    }
+                    // CraftBukkit end
+                }
+            } else if (packet14blockdig.e == 2) {
+                // CraftBukkit start - Get last block that the player hit
+                // Otherwise the block is a Bedrock @(0,0,0)
+                block = (CraftBlock) player.getWorld().getBlockAt(lastX, lastY, lastZ);
+                BlockDamageEvent event = new BlockDamageEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.STOPPED, player);
+                server.getPluginManager().callEvent(event);
+                if (!event.isCancelled()) {
+                    this.e.c.a();
+                }
+                // CraftBukkit end
+            } else if (packet14blockdig.e == 1) {
+                if (j1 > 16 || flag) {
+                    // CraftBukkit start
                     BlockDamageEvent event;
-                    // If the amount of damage that the player is going to do to the block
-                    // is >= 1, then the block is going to break (eg, flowers, torches)
-                    if (damage >= 1.0F) {
+                    // If the amount of damage going to the block plus the current amount
+                    // of damage is greater than 1, the block is going to break.
+                    if (e.c.d + damage  >= 1.0F) {
                         event = new BlockDamageEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.BROKEN, player);
                     } else {
-                        event = new BlockDamageEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.STARTED, player);
+                        event = new BlockDamageEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.DIGGING, player);
                     }
                     server.getPluginManager().callEvent(event);
                     if (!event.isCancelled()) {
-                        e.c.a(l, i1, j1);
+                        this.e.c.a(i, j, k, l);
+                    } else {
+                        e.c.d = 0; // Reset the amount of damage if stopping break.
                     }
+                    // CraftBukkit end
+                }
+            } else if (packet14blockdig.e == 3) {
+                double d5 = this.e.locX - ((double) i + 0.5D);
+                double d6 = this.e.locY - ((double) j + 0.5D);
+                double d7 = this.e.locZ - ((double) k + 0.5D);
+                double d8 = d5 * d5 + d6 * d6 + d7 * d7;
+
+                if (d8 < 256.0D) {
+                    this.e.a.b((Packet) (new Packet53BlockChange(i, j, k, this.d.e)));
                 }
             }
-        } else if (packet14blockdig.e == 2) {
-            // CraftBukkit start - Get last block that the player hit
-            // Otherwise the block is a Bedrock @(0,0,0)
-            block = (CraftBlock) player.getWorld().getBlockAt(lastX, lastY, lastZ);
-            BlockDamageEvent event = new BlockDamageEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.STOPPED, player);
-            server.getPluginManager().callEvent(event);
-            if (!event.isCancelled()) {
-                e.c.a();
-            }
+
+            // CraftBukkit start
+            lastX = i;
+            lastY = j;
+            lastZ = k;
             // CraftBukkit end
-        } else if (packet14blockdig.e == 1) {
-            if (i2 > 16 || flag) {
-                // CraftBukkit start
-                BlockDamageEvent event;
-                // If the amount of damage going to the block plus the current amount
-                // of damage is greater than 1, the block is going to break.
-                if (e.c.d + damage  >= 1.0F) {
-                    event = new BlockDamageEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.BROKEN, player);
-                } else {
-                    event = new BlockDamageEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.DIGGING, player);
-                }
-                server.getPluginManager().callEvent(event);
-                if (!event.isCancelled()) {
-                    e.c.a(l, i1, j1, k1);
-                } else {
-                    e.c.d = 0; // Reset the amount of damage if stopping break.
-                }
-                // CraftBukkit end
-            }
-        } else if (packet14blockdig.e == 3) {
-            double d6 = e.p - ((double) l + 0.5D);
-            double d7 = e.q - ((double) i1 + 0.5D);
-            double d8 = e.r - ((double) j1 + 0.5D);
-            double d9 = d6 * d6 + d7 * d7 + d8 * d8;
 
-            if (d9 < 256D) {
-                e.a.b(((Packet) (new Packet53BlockChange(l, i1, j1, ((World) (d.e))))));
-            }
+            this.d.e.B = false;
         }
-
-        // CraftBukkit start
-        lastX = l;
-        lastY = i1;
-        lastZ = j1;
-        // CraftBukkit end
-
-        d.e.B = false;
     }
 
-    // CraftBukkit start - store the last block right clicked and what type it was
-    CraftBlock lastRightClicked;
-    int lastMaterial;
-
     public void a(Packet15Place packet15place) {
-        ItemStack itemstack = e.an.e();
-        boolean flag = d.e.B = d.f.g(e.aw);
+        ItemStack itemstack = this.e.inventory.e();
+        boolean flag = this.d.e.B = this.d.f.g(this.e.name);
 
         // CraftBukkit start
         CraftBlock blockClicked = null;
@@ -373,7 +390,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
         if (packet15place.d == 255) {
             // CraftBukkit ITEM_USE -- if we have a lastRightClicked then it could be a usable location
-            if (packet15place.e != null && packet15place.e.c == lastMaterial) {
+            if (packet15place.e != null && packet15place.e.id == lastMaterial) {
                 blockClicked = lastRightClicked;
             } else if (lastMaterial == 0) {
                 blockClicked = lastRightClicked;
@@ -384,7 +401,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             // CraftBukkit RIGHTCLICK or BLOCK_PLACE .. or nothing
             blockClicked = (CraftBlock) d.e.getWorld().getBlockAt(packet15place.a, packet15place.b, packet15place.c);
             lastRightClicked = blockClicked;
-            lastMaterial = (packet15place.e == null) ? 0 : packet15place.e.c;
+            lastMaterial = (packet15place.e == null) ? 0 : packet15place.e.id;
         }
 
         if (blockClicked != null && itemstack != null) {
@@ -406,10 +423,10 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
             // CraftBukkit start
             Type eventType = Type.PLAYER_ITEM;
-            Player who = (e == null)?null:(Player)e.getBukkitEntity();
+            Player who = (this.e == null) ? null : (Player) this.e.getBukkitEntity();
             org.bukkit.inventory.ItemStack itemInHand = new CraftItemStack(itemstack);
-            
-            PlayerItemEvent pie = new PlayerItemEvent(eventType, who, itemInHand, blockClicked, blockFace);            
+
+            PlayerItemEvent event = new PlayerItemEvent(eventType, who, itemInHand, blockClicked, blockFace);            
 
             // CraftBukkit We still call this event even in spawn protection.
             // Don't call this event if using Buckets / signs
@@ -420,136 +437,149 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 case LAVA_BUCKET:
                     break;
                 default:
-                    server.getPluginManager().callEvent(pie);
+                    server.getPluginManager().callEvent(event);
             }
 
-            if (!pie.isCancelled()) {
-                int itemstackAmount = itemstack.a;
-                e.c.a(((EntityPlayer) (e)), ((World) (d.e)), itemstack);
+            if (!event.isCancelled()) {
+                int itemstackAmount = itemstack.count;
+                this.e.c.a(this.e, this.d.e, itemstack);
+
                 // CraftBukkit notch decrements the counter by 1 in the above method with food,
                 // snowballs and so forth, but he does it in a place that doesnt cause the
                 // inventory update packet to get sent
-                always = (itemstack.a != itemstackAmount);
+                always = (itemstack.count != itemstackAmount);
             }
             // CraftBukkit end
         } else {
-            int l = packet15place.a;
-            int i1 = packet15place.b;
-            int j1 = packet15place.c;
-            int k1 = packet15place.d;
-            int l1 = (int) MathHelper.e(l - d.e.m);
-            int i2 = (int) MathHelper.e(j1 - d.e.o);
+            int i = packet15place.a;
+            int j = packet15place.b;
+            int k = packet15place.c;
+            int l = packet15place.d;
+            int i1 = (int) MathHelper.e((float) (i - this.d.e.spawnX));
+            int j1 = (int) MathHelper.e((float) (k - this.d.e.spawnZ));
 
-            if (l1 > i2) {
-                i2 = l1;
+            if (i1 > j1) {
+                j1 = i1;
             }
-            // CraftBukkit start - spawn proection moved to ItemBlock!!!
+
+            // CraftBukkit start - spawn protection moved to ItemBlock!!!
             CraftItemStack craftItem = new CraftItemStack(itemstack);
             Player player = getPlayer();
-            BlockRightClickEvent brce = new BlockRightClickEvent(Type.BLOCK_RIGHTCLICKED, blockClicked, blockFace, craftItem, player);
-            server.getPluginManager().callEvent(brce);
+            BlockRightClickEvent event = new BlockRightClickEvent(Type.BLOCK_RIGHTCLICKED, blockClicked, blockFace, craftItem, player);
+            server.getPluginManager().callEvent(event);
 
-            e.c.a(((EntityPlayer) (e)), ((World) (d.e)), itemstack, l, i1, j1, k1);
+            this.e.c.a(this.e, this.d.e, itemstack, i, j, k, l);
             // CraftBukkit end
 
-            e.a.b(((Packet) (new Packet53BlockChange(l, i1, j1, ((World) (d.e))))));
-            if (k1 == 0) {
-                i1--;
+            this.e.a.b((Packet) (new Packet53BlockChange(i, j, k, this.d.e)));
+            if (l == 0) {
+                --j;
             }
-            if (k1 == 1) {
-                i1++;
-            }
-            if (k1 == 2) {
-                j1--;
-            }
-            if (k1 == 3) {
-                j1++;
-            }
-            if (k1 == 4) {
-                l--;
-            }
-            if (k1 == 5) {
-                l++;
-            }
-            e.a.b(((Packet) (new Packet53BlockChange(l, i1, j1, ((World) (d.e))))));
-        }
-        if (itemstack != null && itemstack.a == 0) {
-            e.an.a[e.an.c] = null;
-        }
-        e.am = true;
-        e.an.a[e.an.c] = ItemStack.b(e.an.a[e.an.c]);
-        Slot slot = e.ap.a(((IInventory) (e.an)), e.an.c);
 
-        e.ap.a();
-        e.am = false;
-        // CraftBukkit - Boolean flag
-        if (!ItemStack.a(e.an.e(), packet15place.e) || always) {
-            b(((Packet) (new Packet103(e.ap.f, slot.c, e.an.e()))));
+            if (l == 1) {
+                ++j;
+            }
+
+            if (l == 2) {
+                --k;
+            }
+
+            if (l == 3) {
+                ++k;
+            }
+
+            if (l == 4) {
+                --i;
+            }
+
+            if (l == 5) {
+                ++i;
+            }
+
+            this.e.a.b((Packet) (new Packet53BlockChange(i, j, k, this.d.e)));
         }
-        d.e.B = false;
+
+        if (itemstack != null && itemstack.count == 0) {
+            this.e.inventory.a[this.e.inventory.c] = null;
+        }
+
+        this.e.am = true;
+        this.e.inventory.a[this.e.inventory.c] = ItemStack.b(this.e.inventory.a[this.e.inventory.c]);
+        Slot slot = this.e.activeContainer.a(this.e.inventory, this.e.inventory.c);
+
+        this.e.activeContainer.a();
+        this.e.am = false;
+
+        // CraftBukkit - Boolean flag
+        if (!ItemStack.a(this.e.inventory.e(), packet15place.e) || always) {
+            this.b((Packet) (new Packet103SetSlot(this.e.activeContainer.f, slot.c, this.e.inventory.e())));
+        }
+
+        this.d.e.B = false;
     }
 
-    public void a(String s, Object aobj[]) {
-        a.info((new StringBuilder()).append(e.aw).append(" lost connection: ").append(s).toString());
-        d.f.a(((Packet) (new Packet3Chat((new StringBuilder()).append("\247e").append(e.aw).append(" left the game.").toString()))));
-        d.f.c(e);
-        c = true;
+    public void a(String s, Object[] aobject) {
+        a.info(this.e.name + " lost connection: " + s);
+        this.d.f.a((Packet) (new Packet3Chat("§e" + this.e.name + " left the game.")));
+        this.d.f.c(this.e);
+        this.c = true;
     }
 
     public void a(Packet packet) {
-        a.warning((new StringBuilder()).append((((this).getClass()))).append(" wasn't prepared to deal with a ").append(((((packet)).getClass()))).toString());
-        a("Protocol error, unexpected packet");
+        a.warning(this.getClass() + " wasn\'t prepared to deal with a " + packet.getClass());
+        this.a("Protocol error, unexpected packet");
     }
 
     public void b(Packet packet) {
-        b.a(packet);
+        this.b.a(packet);
     }
 
     public void a(Packet16BlockItemSwitch packet16blockitemswitch) {
-        e.an.c = packet16blockitemswitch.a;
+        this.e.inventory.c = packet16blockitemswitch.a;
     }
 
     public void a(Packet3Chat packet3chat) {
         String s = packet3chat.a;
 
         if (s.length() > 100) {
-            a("Chat message too long");
-            return;
-        }
-        s = s.trim();
-        for (int l = 0; l < s.length(); l++) {
-            if (FontAllowedCharacters.a.indexOf(((int) (s.charAt(l)))) < 0) {
-                a("Illegal characters in chat");
-                return;
-            }
-        }
-
-        if (s.startsWith("/")) {
-            c(s);
+            this.a("Chat message too long");
         } else {
-            // CraftBukkit start
-            Player player = getPlayer();
-            PlayerChatEvent event = new PlayerChatEvent(Type.PLAYER_CHAT, player, s);
-            server.getPluginManager().callEvent(event);
-            s = String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage());
-            if (event.isCancelled()) {
-                return;
-            }
-            // CraftBukkit end
+            s = s.trim();
 
-            a.info(s);
-            d.f.a(((Packet) (new Packet3Chat(s))));
+            for (int i = 0; i < s.length(); ++i) {
+                if (FontAllowedCharacters.a.indexOf(s.charAt(i)) < 0) {
+                    this.a("Illegal characters in chat");
+                    return;
+                }
+            }
+
+            if (s.startsWith("/")) {
+                this.c(s);
+            } else {
+                // CraftBukkit start
+                Player player = getPlayer();
+                PlayerChatEvent event = new PlayerChatEvent(Type.PLAYER_CHAT, player, s);
+                server.getPluginManager().callEvent(event);
+                s = String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage());
+                if (event.isCancelled()) {
+                    return;
+                }
+                // CraftBukkit end
+
+                a.info(s);
+                this.d.f.a((Packet) (new Packet3Chat(s)));
+            }
         }
     }
 
     private void c(String s) {
         // CraftBukkit start
         CraftPlayer player = getPlayer();
-        boolean targetPluginFound = server.dispatchCommand(player , s);
+        boolean targetPluginFound = server.dispatchCommand(player, s);
         if (targetPluginFound) {
             return;
         }
-        
+
         PlayerChatEvent event = new PlayerChatEvent(Type.PLAYER_COMMAND, player, s);
         server.getPluginManager().callEvent(event);
         if (event.isCancelled()) {
@@ -557,167 +587,175 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         }
         s = event.getMessage();
         player = (CraftPlayer) event.getPlayer();
-        EntityPlayerMP e = player.getHandle();
+        EntityPlayer e = player.getHandle();
         // CraftBukkit stop
 
         if (s.toLowerCase().startsWith("/me ")) {
-            s = (new StringBuilder()).append("* ").append(e.aw).append(" ").append(s.substring(s.indexOf(" ")).trim()).toString();
+            s = "* " + this.e.name + " " + s.substring(s.indexOf(" ")).trim();
             a.info(s);
-            d.f.a(((Packet) (new Packet3Chat(s))));
+            this.d.f.a((Packet) (new Packet3Chat(s)));
         } else if (s.toLowerCase().startsWith("/kill")) {
-            e.a(((Entity) (null)), 1000);
+            this.e.a((Entity) null, 1000);
         } else if (s.toLowerCase().startsWith("/tell ")) {
-            String as[] = s.split(" ");
+            String[] astring = s.split(" ");
 
-            if (as.length >= 3) {
+            if (astring.length >= 3) {
                 s = s.substring(s.indexOf(" ")).trim();
                 s = s.substring(s.indexOf(" ")).trim();
-                s = (new StringBuilder()).append("\2477").append(e.aw).append(" whispers ").append(s).toString();
-                a.info((new StringBuilder()).append(s).append(" to ").append(as[1]).toString());
-                if (!d.f.a(as[1], ((Packet) (new Packet3Chat(s))))) {
-                    b(((Packet) (new Packet3Chat("\247cThere's no player by that name online."))));
+                s = "§7" + this.e.name + " whispers " + s;
+                a.info(s + " to " + astring[1]);
+                if (!this.d.f.a(astring[1], (Packet) (new Packet3Chat(s)))) {
+                    this.b((Packet) (new Packet3Chat("§cThere\'s no player by that name online.")));
                 }
             }
-        } else if (d.f.g(e.aw)) {
-            String s1 = s.substring(1);
-
-            a.info((new StringBuilder()).append(e.aw).append(" issued server command: ").append(s1).toString());
-            d.a(s1, ((ICommandListener) (this)));
         } else {
-            String s2 = s.substring(1);
+            String s1;
 
-            a.info((new StringBuilder()).append(e.aw).append(" tried command: ").append(s2).toString());
+            if (this.d.f.g(this.e.name)) {
+                s1 = s.substring(1);
+                a.info(this.e.name + " issued server command: " + s1);
+                this.d.a(s1, (ICommandListener) this);
+            } else {
+                s1 = s.substring(1);
+                a.info(this.e.name + " tried command: " + s1);
+            }
         }
     }
 
     public void a(Packet18ArmAnimation packet18armanimation) {
         if (packet18armanimation.b == 1) {
+            // CraftBukkit start - Arm swing animation
             Player player = getPlayer();
-            // CraftBukkit: Arm swing animation
             PlayerAnimationEvent event = new PlayerAnimationEvent(Type.PLAYER_ANIMATION, player);
             server.getPluginManager().callEvent(event);
-            
-            e.K();
+            // CraftBukkit end
+
+            this.e.K();
         }
     }
 
-    public void a(Packet19 packet19) {
-        if (packet19.b == 1) {
-            e.b(true);
-        } else if (packet19.b == 2) {
-            e.b(false);
+    public void a(Packet19EntityAction packet19entityaction) {
+        if (packet19entityaction.b == 1) {
+            this.e.b(true);
+        } else if (packet19entityaction.b == 2) {
+            this.e.b(false);
         }
     }
 
     public void a(Packet255KickDisconnect packet255kickdisconnect) {
-        b.a("disconnect.quitting", new Object[0]);
+        this.b.a("disconnect.quitting", new Object[0]);
     }
 
     public int b() {
-        return b.d();
+        return this.b.d();
     }
 
     public void b(String s) {
-        b(((Packet) (new Packet3Chat((new StringBuilder()).append("\2477").append(s).toString()))));
+        this.b((Packet) (new Packet3Chat("§7" + s)));
     }
 
     public String c() {
-        return e.aw;
+        return this.e.name;
     }
 
-    public void a(Packet7 packet7) {
-        Entity entity = d.e.a(packet7.b);
+    public void a(Packet7UseEntity packet7useentity) {
+        Entity entity = this.d.e.a(packet7useentity.b);
 
-        if (entity != null && e.i(entity)) {
-            if (packet7.c == 0) {
-                e.g(entity);
-            } else if (packet7.c == 1) {
-                e.h(entity);
+        if (entity != null && this.e.i(entity)) {
+            if (packet7useentity.c == 0) {
+                this.e.g(entity);
+            } else if (packet7useentity.c == 1) {
+                this.e.h(entity);
             }
         }
     }
 
-    public void a(Packet9 packet9) {
-        if (e.aZ > 0) {
-            return;
-        } else {
-            e = d.f.d(e);
+    public void a(Packet9Respawn packet9respawn) {
+        if (this.e.health <= 0) {
+            this.e = this.d.f.d(this.e);
+
+            // CraftBukkit start
             CraftPlayer player = getPlayer();
-            player.setHandle(e); // CraftBukkit
-            return;
+            player.setHandle(e);
+            // CraftBukkit end
         }
     }
 
-    public void a(Packet101 packet101) {
-        e.N();
+    public void a(Packet101CloseWindow packet101closewindow) {
+        this.e.N();
     }
 
-    public void a(Packet102 packet102) {
-        if (e.ap.f == packet102.a && e.ap.c(((EntityPlayer) (e)))) {
-            ItemStack itemstack = e.ap.a(packet102.b, packet102.c, ((EntityPlayer) (e)));
+    public void a(Packet102WindowClick packet102windowclick) {
+        if (this.e.activeContainer.f == packet102windowclick.a && this.e.activeContainer.c(this.e)) {
+            ItemStack itemstack = this.e.activeContainer.a(packet102windowclick.b, packet102windowclick.c, this.e);
 
-            if (ItemStack.a(packet102.e, itemstack)) {
-                e.a.b(((Packet) (new Packet106(packet102.a, packet102.d, true))));
-                e.am = true;
-                e.ap.a();
-                e.M();
-                e.am = false;
+            if (ItemStack.a(packet102windowclick.e, itemstack)) {
+                this.e.a.b((Packet) (new Packet106Transaction(packet102windowclick.a, packet102windowclick.d, true)));
+                this.e.am = true;
+                this.e.activeContainer.a();
+                this.e.M();
+                this.e.am = false;
             } else {
-                k.put(((Integer.valueOf(e.ap.f))), ((Short.valueOf(packet102.d))));
-                e.a.b(((Packet) (new Packet106(packet102.a, packet102.d, false))));
-                e.ap.a(((EntityPlayer) (e)), false);
+                this.k.put(Integer.valueOf(this.e.activeContainer.f), Short.valueOf(packet102windowclick.d));
+                this.e.a.b((Packet) (new Packet106Transaction(packet102windowclick.a, packet102windowclick.d, false)));
+                this.e.activeContainer.a(this.e, false);
                 ArrayList arraylist = new ArrayList();
 
-                for (int l = 0; l < e.ap.e.size(); l++) {
-                    ((List) (arraylist)).add(((((Slot) e.ap.e.get(l)).c())));
+                for (int i = 0; i < this.e.activeContainer.e.size(); ++i) {
+                    arraylist.add(((Slot) this.e.activeContainer.e.get(i)).c());
                 }
 
-                e.a(e.ap, ((List) (arraylist)));
+                this.e.a(this.e.activeContainer, arraylist);
             }
         }
     }
 
-    public void a(Packet106 packet106) {
-        Short short1 = (Short) k.get(((Integer.valueOf(e.ap.f))));
+    public void a(Packet106Transaction packet106transaction) {
+        Short oshort = (Short) this.k.get(Integer.valueOf(this.e.activeContainer.f));
 
-        if (short1 != null && packet106.b == short1.shortValue() && e.ap.f == packet106.a && !e.ap.c(((EntityPlayer) (e)))) {
-            e.ap.a(((EntityPlayer) (e)), true);
+        if (oshort != null && packet106transaction.b == oshort.shortValue() && this.e.activeContainer.f == packet106transaction.a && !this.e.activeContainer.c(this.e)) {
+            this.e.activeContainer.a(this.e, true);
         }
     }
 
-    public void a(Packet130 packet130) {
-        if (d.e.f(packet130.a, packet130.b, packet130.c)) {
-            TileEntity tileentity = d.e.m(packet130.a, packet130.b, packet130.c);
+    public void a(Packet130UpdateSign packet130updatesign) {
+        if (this.d.e.f(packet130updatesign.a, packet130updatesign.b, packet130updatesign.c)) {
+            TileEntity tileentity = this.d.e.getTileEntity(packet130updatesign.a, packet130updatesign.b, packet130updatesign.c);
 
-            for (int l = 0; l < 4; l++) {
+            int i;
+            int j;
+
+            for (i = 0; i < 4; ++i) {
                 boolean flag = true;
 
-                if (packet130.d[l].length() > 15) {
+                if (packet130updatesign.d[i].length() > 15) {
                     flag = false;
                 } else {
-                    for (int k1 = 0; k1 < packet130.d[l].length(); k1++) {
-                        if (FontAllowedCharacters.a.indexOf(((int) (packet130.d[l].charAt(k1)))) < 0) {
+                    for (j = 0; j < packet130updatesign.d[i].length(); ++j) {
+                        if (FontAllowedCharacters.a.indexOf(packet130updatesign.d[i].charAt(j)) < 0) {
                             flag = false;
                         }
                     }
                 }
+
                 if (!flag) {
-                    packet130.d[l] = "!?";
+                    packet130updatesign.d[i] = "!?";
                 }
             }
 
             if (tileentity instanceof TileEntitySign) {
-                int i1 = packet130.a;
-                int j1 = packet130.b;
-                int l1 = packet130.c;
+                i = packet130updatesign.a;
+                int k = packet130updatesign.b;
+
+                j = packet130updatesign.c;
                 TileEntitySign tileentitysign = (TileEntitySign) tileentity;
 
-                for (int i2 = 0; i2 < 4; i2++) {
-                    tileentitysign.e[i2] = packet130.d[i2];
+                for (int l = 0; l < 4; ++l) {
+                    tileentitysign.e[l] = packet130updatesign.d[l];
                 }
 
                 tileentitysign.d();
-                d.e.g(i1, j1, l1);
+                this.d.e.g(i, k, j);
             }
         }
     }

@@ -1,7 +1,6 @@
 package net.minecraft.server;
 
 import java.util.List;
-import java.util.Random;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
@@ -13,28 +12,22 @@ import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 
 public class EntitySnowball extends Entity {
 
-    private int b;
-    private int c;
-    private int d;
-    private int e;
-    private boolean f;
-    public int a;
+    private int b = -1;
+    private int c = -1;
+    private int d = -1;
+    private int e = 0;
+    private boolean f = false;
+    public int a = 0;
     private EntityLiving ak;
     private int al;
-    private int am;
+    private int am = 0;
 
     public EntitySnowball(World world) {
         super(world);
-        b = -1;
-        c = -1;
-        d = -1;
-        e = 0;
-        f = false;
-        a = 0;
-        am = 0;
-        a(0.25F, 0.25F);
+        this.a(0.25F, 0.25F);
+
         // CraftBukkit start
-        CraftServer server = ((WorldServer) this.l).getServer();
+        CraftServer server = ((WorldServer) this.world).getServer();
         this.bukkitEntity = new CraftSnowball(server, this);
         // CraftBukkit end
     }
@@ -42,117 +35,117 @@ public class EntitySnowball extends Entity {
     protected void a() {}
 
     public EntitySnowball(World world, EntityLiving entityliving) {
-        // CraftBukkit start
-        this(world);
-        // CraftBukkit end
-        
-        ak = entityliving;
-        c(entityliving.p, entityliving.q + (double) entityliving.w(), entityliving.r, entityliving.v, entityliving.w);
-        p -= MathHelper.b((v / 180F) * 3.141593F) * 0.16F;
-        q -= 0.10000000149011612D;
-        r -= MathHelper.a((v / 180F) * 3.141593F) * 0.16F;
-        a(p, q, r);
-        H = 0.0F;
-        float f1 = 0.4F;
+        this(world); // CraftBukkit super->this so we assign the entity
 
-        s = -MathHelper.a((v / 180F) * 3.141593F) * MathHelper.b((w / 180F) * 3.141593F) * f1;
-        u = MathHelper.b((v / 180F) * 3.141593F) * MathHelper.b((w / 180F) * 3.141593F) * f1;
-        t = -MathHelper.a((w / 180F) * 3.141593F) * f1;
-        a(s, t, u, 1.5F, 1.0F);
+        this.ak = entityliving;
+        this.a(0.25F, 0.25F);
+        this.c(entityliving.locX, entityliving.locY + (double) entityliving.w(), entityliving.locZ, entityliving.yaw, entityliving.pitch);
+        this.locX -= (double) (MathHelper.b(this.yaw / 180.0F * 3.1415927F) * 0.16F);
+        this.locY -= 0.10000000149011612D;
+        this.locZ -= (double) (MathHelper.a(this.yaw / 180.0F * 3.1415927F) * 0.16F);
+        this.a(this.locX, this.locY, this.locZ);
+        this.height = 0.0F;
+        float f = 0.4F;
+
+        this.motX = (double) (-MathHelper.a(this.yaw / 180.0F * 3.1415927F) * MathHelper.b(this.pitch / 180.0F * 3.1415927F) * f);
+        this.motZ = (double) (MathHelper.b(this.yaw / 180.0F * 3.1415927F) * MathHelper.b(this.pitch / 180.0F * 3.1415927F) * f);
+        this.motY = (double) (-MathHelper.a(this.pitch / 180.0F * 3.1415927F) * f);
+        this.a(this.motX, this.motY, this.motZ, 1.5F, 1.0F);
     }
 
-    public EntitySnowball(World world, double d1, double d2, double d3) {
-        // CraftBukkit start
-        this(world);
-        // CraftBukkit end
-        
-        al = 0;
-        a(d1, d2, d3);
-        H = 0.0F;
+    public EntitySnowball(World world, double d0, double d1, double d2) {
+        this(world); // CraftBukkit super->this so we assign the entity
+
+        this.al = 0;
+        this.a(0.25F, 0.25F);
+        this.a(d0, d1, d2);
+        this.height = 0.0F;
     }
 
-    public void a(double d1, double d2, double d3, float f1, float f2) {
-        float f3 = MathHelper.a(d1 * d1 + d2 * d2 + d3 * d3);
+    public void a(double d0, double d1, double d2, float f, float f1) {
+        float f2 = MathHelper.a(d0 * d0 + d1 * d1 + d2 * d2);
 
-        d1 /= f3;
-        d2 /= f3;
-        d3 /= f3;
-        d1 += W.nextGaussian() * 0.0074999998323619366D * (double) f2;
-        d2 += W.nextGaussian() * 0.0074999998323619366D * (double) f2;
-        d3 += W.nextGaussian() * 0.0074999998323619366D * (double) f2;
-        d1 *= f1;
-        d2 *= f1;
-        d3 *= f1;
-        s = d1;
-        t = d2;
-        u = d3;
-        float f4 = MathHelper.a(d1 * d1 + d3 * d3);
+        d0 /= (double) f2;
+        d1 /= (double) f2;
+        d2 /= (double) f2;
+        d0 += this.random.nextGaussian() * 0.007499999832361937D * (double) f1;
+        d1 += this.random.nextGaussian() * 0.007499999832361937D * (double) f1;
+        d2 += this.random.nextGaussian() * 0.007499999832361937D * (double) f1;
+        d0 *= (double) f;
+        d1 *= (double) f;
+        d2 *= (double) f;
+        this.motX = d0;
+        this.motY = d1;
+        this.motZ = d2;
+        float f3 = MathHelper.a(d0 * d0 + d2 * d2);
 
-        x = v = (float) ((Math.atan2(d1, d3) * 180D) / 3.1415927410125732D);
-        y = w = (float) ((Math.atan2(d2, f4) * 180D) / 3.1415927410125732D);
-        al = 0;
+        this.lastYaw = this.yaw = (float) (Math.atan2(d0, d2) * 180.0D / 3.1415927410125732D);
+        this.lastPitch = this.pitch = (float) (Math.atan2(d1, (double) f3) * 180.0D / 3.1415927410125732D);
+        this.al = 0;
     }
 
     public void b_() {
-        O = p;
-        P = q;
-        Q = r;
+        this.O = this.locX;
+        this.P = this.locY;
+        this.Q = this.locZ;
         super.b_();
-        if (a > 0) {
-            a--;
+        if (this.a > 0) {
+            --this.a;
         }
-        if (f) {
-            int i = this.l.a(b, c, d);
 
-            if (i != e) {
-                f = false;
-                s *= W.nextFloat() * 0.2F;
-                t *= W.nextFloat() * 0.2F;
-                u *= W.nextFloat() * 0.2F;
-                al = 0;
-                am = 0;
-            } else {
-                al++;
-                if (al == 1200) {
-                    q();
+        if (this.f) {
+            int i = this.world.getTypeId(this.b, this.c, this.d);
+
+            if (i == this.e) {
+                ++this.al;
+                if (this.al == 1200) {
+                    this.q();
                 }
+
                 return;
             }
-        } else {
-            am++;
-        }
-        Vec3D vec3d = Vec3D.b(p, q, r);
-        Vec3D vec3d1 = Vec3D.b(p + s, q + t, r + u);
-        MovingObjectPosition movingobjectposition = this.l.a(vec3d, vec3d1);
 
-        vec3d = Vec3D.b(p, q, r);
-        vec3d1 = Vec3D.b(p + s, q + t, r + u);
+            this.f = false;
+            this.motX *= (double) (this.random.nextFloat() * 0.2F);
+            this.motY *= (double) (this.random.nextFloat() * 0.2F);
+            this.motZ *= (double) (this.random.nextFloat() * 0.2F);
+            this.al = 0;
+            this.am = 0;
+        } else {
+            ++this.am;
+        }
+
+        Vec3D vec3d = Vec3D.b(this.locX, this.locY, this.locZ);
+        Vec3D vec3d1 = Vec3D.b(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
+        MovingObjectPosition movingobjectposition = this.world.a(vec3d, vec3d1);
+
+        vec3d = Vec3D.b(this.locX, this.locY, this.locZ);
+        vec3d1 = Vec3D.b(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
         if (movingobjectposition != null) {
             vec3d1 = Vec3D.b(movingobjectposition.f.a, movingobjectposition.f.b, movingobjectposition.f.c);
         }
-        if (!this.l.z) {
+
+        if (!this.world.isStatic) {
             Entity entity = null;
-            List list = this.l.b(((Entity) (this)), z.a(s, t, u).b(1.0D, 1.0D, 1.0D));
-            double d1 = 0.0D;
+            List list = this.world.b((Entity) this, this.boundingBox.a(this.motX, this.motY, this.motZ).b(1.0D, 1.0D, 1.0D));
+            double d0 = 0.0D;
 
-            for (int k = 0; k < list.size(); k++) {
-                Entity entity1 = (Entity) list.get(k);
+            for (int j = 0; j < list.size(); ++j) {
+                Entity entity1 = (Entity) list.get(j);
 
-                if (!entity1.c_() || entity1 == ak && am < 5) {
-                    continue;
-                }
-                float f4 = 0.3F;
-                AxisAlignedBB axisalignedbb = entity1.z.b(f4, f4, f4);
-                MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
+                if (entity1.c_() && (entity1 != this.ak || this.am >= 5)) {
+                    float f = 0.3F;
+                    AxisAlignedBB axisalignedbb = entity1.boundingBox.b((double) f, (double) f, (double) f);
+                    MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
 
-                if (movingobjectposition1 == null) {
-                    continue;
-                }
-                double d2 = vec3d.a(movingobjectposition1.f);
+                    if (movingobjectposition1 != null) {
+                        double d1 = vec3d.a(movingobjectposition1.f);
 
-                if (d2 < d1 || d1 == 0.0D) {
-                    entity = entity1;
-                    d1 = d2;
+                        if (d1 < d0 || d0 == 0.0D) {
+                            entity = entity1;
+                            d0 = d1;
+                        }
+                    }
                 }
             }
 
@@ -160,105 +153,114 @@ public class EntitySnowball extends Entity {
                 movingobjectposition = new MovingObjectPosition(entity);
             }
         }
+
         if (movingobjectposition != null) {
+            // CraftBukkit start
             if (movingobjectposition.g != null) {
-                // CraftBukkit start
-                boolean bounce;
+                boolean stick;
                 if (movingobjectposition.g instanceof EntityLiving) {
-                    CraftServer server = ((WorldServer) this.l).getServer();
-                    org.bukkit.entity.Entity shooter = (ak == null)?null:ak.getBukkitEntity();
+                    CraftServer server = ((WorldServer) this.world).getServer();
+                    org.bukkit.entity.Entity shooter = (this.ak == null) ? null : this.ak.getBukkitEntity();
                     org.bukkit.entity.Entity damagee = movingobjectposition.g.getBukkitEntity();
                     org.bukkit.entity.Entity projectile = this.getBukkitEntity();
                     DamageCause damageCause = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
                     int damage = 0;
 
                     // TODO @see EntityArrow#162
-                    EntityDamageByProjectileEvent edbpe = new EntityDamageByProjectileEvent(shooter, damagee, projectile, damageCause, damage);
-                    server.getPluginManager().callEvent(edbpe);
+                    EntityDamageByProjectileEvent event = new EntityDamageByProjectileEvent(shooter, damagee, projectile, damageCause, damage);
+                    server.getPluginManager().callEvent(event);
 
-                    if(!edbpe.isCancelled()) {
+                    if(!event.isCancelled()) {
                         // this function returns if the snowball should stick or not, i.e. !bounce
-                        bounce = !movingobjectposition.g.a(((Entity) (ak)), edbpe.getDamage());
+                        stick = movingobjectposition.g.a(this.ak, event.getDamage());
                     } else {
                         // event was cancelled, get if the snowball should bounce or not
-                        bounce = edbpe.getBounce();
+                        stick = !event.getBounce();
                     }
                 } else {
-                    bounce = !movingobjectposition.g.a(((Entity) (ak)), 0);
+                    stick = movingobjectposition.g.a(this.ak, 0);
                 }
-                if (!bounce) {
-                    // CraftBukkit end
+                if (stick) {
                     ;
                 }
-            }
-            for (int j = 0; j < 8; j++) {
-                this.l.a("snowballpoof", p, q, r, 0.0D, 0.0D, 0.0D);
+                // CraftBukkit end
             }
 
-            q();
-        }
-        p += s;
-        q += t;
-        r += u;
-        float f1 = MathHelper.a(s * s + u * u);
+            for (int k = 0; k < 8; ++k) {
+                this.world.a("snowballpoof", this.locX, this.locY, this.locZ, 0.0D, 0.0D, 0.0D);
+            }
 
-        v = (float) ((Math.atan2(s, u) * 180D) / 3.1415927410125732D);
-        for (w = (float) ((Math.atan2(t, f1) * 180D) / 3.1415927410125732D); w - y < -180F; y -= 360F) {
+            this.q();
+        }
+
+        this.locX += this.motX;
+        this.locY += this.motY;
+        this.locZ += this.motZ;
+        float f1 = MathHelper.a(this.motX * this.motX + this.motZ * this.motZ);
+
+        this.yaw = (float) (Math.atan2(this.motX, this.motZ) * 180.0D / 3.1415927410125732D);
+
+        for (this.pitch = (float) (Math.atan2(this.motY, (double) f1) * 180.0D / 3.1415927410125732D); this.pitch - this.lastPitch < -180.0F; this.lastPitch -= 360.0F) {
             ;
         }
-        for (; w - y >= 180F; y += 360F) {
-            ;
+
+        while (this.pitch - this.lastPitch >= 180.0F) {
+            this.lastPitch += 360.0F;
         }
-        for (; v - x < -180F; x -= 360F) {
-            ;
+
+        while (this.yaw - this.lastYaw < -180.0F) {
+            this.lastYaw -= 360.0F;
         }
-        for (; v - x >= 180F; x += 360F) {
-            ;
+
+        while (this.yaw - this.lastYaw >= 180.0F) {
+            this.lastYaw += 360.0F;
         }
-        w = y + (w - y) * 0.2F;
-        v = x + (v - x) * 0.2F;
+
+        this.pitch = this.lastPitch + (this.pitch - this.lastPitch) * 0.2F;
+        this.yaw = this.lastYaw + (this.yaw - this.lastYaw) * 0.2F;
         float f2 = 0.99F;
-        float f5 = 0.03F;
+        float f3 = 0.03F;
 
-        if (v()) {
-            for (int l = 0; l < 4; l++) {
-                float f3 = 0.25F;
+        if (this.v()) {
+            for (int l = 0; l < 4; ++l) {
+                float f4 = 0.25F;
 
-                this.l.a("bubble", p - s * (double) f3, q - t * (double) f3, r - u * (double) f3, s, t, u);
+                this.world.a("bubble", this.locX - this.motX * (double) f4, this.locY - this.motY * (double) f4, this.locZ - this.motZ * (double) f4, this.motX, this.motY, this.motZ);
             }
 
             f2 = 0.8F;
         }
-        s *= f2;
-        t *= f2;
-        u *= f2;
-        t -= f5;
-        a(p, q, r);
+
+        this.motX *= (double) f2;
+        this.motY *= (double) f2;
+        this.motZ *= (double) f2;
+        this.motY -= (double) f3;
+        this.a(this.locX, this.locY, this.locZ);
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("xTile", (short) b);
-        nbttagcompound.a("yTile", (short) c);
-        nbttagcompound.a("zTile", (short) d);
-        nbttagcompound.a("inTile", (byte) e);
-        nbttagcompound.a("shake", (byte) a);
-        nbttagcompound.a("inGround", (byte) (f ? 1 : 0));
+        nbttagcompound.a("xTile", (short) this.b);
+        nbttagcompound.a("yTile", (short) this.c);
+        nbttagcompound.a("zTile", (short) this.d);
+        nbttagcompound.a("inTile", (byte) this.e);
+        nbttagcompound.a("shake", (byte) this.a);
+        nbttagcompound.a("inGround", (byte) (this.f ? 1 : 0));
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        b = ((int) (nbttagcompound.c("xTile")));
-        c = ((int) (nbttagcompound.c("yTile")));
-        d = ((int) (nbttagcompound.c("zTile")));
-        e = nbttagcompound.b("inTile") & 0xff;
-        a = nbttagcompound.b("shake") & 0xff;
-        f = nbttagcompound.b("inGround") == 1;
+        this.b = nbttagcompound.c("xTile");
+        this.c = nbttagcompound.c("yTile");
+        this.d = nbttagcompound.c("zTile");
+        this.e = nbttagcompound.b("inTile") & 255;
+        this.a = nbttagcompound.b("shake") & 255;
+        this.f = nbttagcompound.b("inGround") == 1;
     }
 
-    public void b(EntityPlayer entityplayer) {
-        if (f && ak == entityplayer && a <= 0 && entityplayer.an.a(new ItemStack(Item.j, 1))) {
-            l.a(((Entity) (this)), "random.pop", 0.2F, ((W.nextFloat() - W.nextFloat()) * 0.7F + 1.0F) * 2.0F);
-            entityplayer.c(((Entity) (this)), 1);
-            q();
+    public void b(EntityHuman entityhuman) {
+        if (this.f && this.ak == entityhuman && this.a <= 0 && entityhuman.inventory.a(new ItemStack(Item.ARROW, 1))) {
+            this.world.a(this, "random.pop", 0.2F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
+            entityhuman.c(this, 1);
+            this.q();
         }
     }
 }

@@ -2,7 +2,7 @@ package net.minecraft.server;
 
 public class InventoryCraftResult implements IInventory {
 
-    private ItemStack a[];
+    private ItemStack[] a = new ItemStack[1];
 
     // CraftBukkit start
     public ItemStack[] getContents() {
@@ -10,16 +10,14 @@ public class InventoryCraftResult implements IInventory {
     }
     // CraftBukkit end
 
-    public InventoryCraftResult() {
-        a = new ItemStack[1];
-    }
+    public InventoryCraftResult() {}
 
     public int h_() {
         return 1;
     }
 
     public ItemStack a(int i) {
-        return a[i];
+        return this.a[i];
     }
 
     public String b() {
@@ -27,10 +25,10 @@ public class InventoryCraftResult implements IInventory {
     }
 
     public ItemStack b(int i, int j) {
-        if (a[i] != null) {
-            ItemStack itemstack = a[i];
+        if (this.a[i] != null) {
+            ItemStack itemstack = this.a[i];
 
-            a[i] = null;
+            this.a[i] = null;
             return itemstack;
         } else {
             return null;
@@ -38,7 +36,7 @@ public class InventoryCraftResult implements IInventory {
     }
 
     public void a(int i, ItemStack itemstack) {
-        a[i] = itemstack;
+        this.a[i] = itemstack;
     }
 
     public int c() {
@@ -47,7 +45,7 @@ public class InventoryCraftResult implements IInventory {
 
     public void d() {}
 
-    public boolean a_(EntityPlayer entityplayer) {
+    public boolean a_(EntityHuman entityhuman) {
         return true;
     }
 }

@@ -9,8 +9,9 @@ public class EntityFlying extends EntityLiving {
 
     public EntityFlying(World world) {
         super(world);
+
         // CraftBukkit start
-        CraftServer server = ((WorldServer) this.l).getServer();
+        CraftServer server = ((WorldServer) this.world).getServer();
         this.bukkitEntity = new CraftFlying(server, this);
         // CraftBukkit end
     }
@@ -18,56 +19,60 @@ public class EntityFlying extends EntityLiving {
     protected void a(float f) {}
 
     public void c(float f, float f1) {
-        if (v()) {
-            a(f, f1, 0.02F);
-            c(s, t, u);
-            s *= 0.80000001192092896D;
-            t *= 0.80000001192092896D;
-            u *= 0.80000001192092896D;
-        } else if (x()) {
-            a(f, f1, 0.02F);
-            c(s, t, u);
-            s *= 0.5D;
-            t *= 0.5D;
-            u *= 0.5D;
+        if (this.v()) {
+            this.a(f, f1, 0.02F);
+            this.c(this.motX, this.motY, this.motZ);
+            this.motX *= 0.800000011920929D;
+            this.motY *= 0.800000011920929D;
+            this.motZ *= 0.800000011920929D;
+        } else if (this.x()) {
+            this.a(f, f1, 0.02F);
+            this.c(this.motX, this.motY, this.motZ);
+            this.motX *= 0.5D;
+            this.motY *= 0.5D;
+            this.motZ *= 0.5D;
         } else {
             float f2 = 0.91F;
 
-            if (A) {
-                f2 = 0.5460001F;
-                int i = l.a(MathHelper.b(p), MathHelper.b(z.b) - 1, MathHelper.b(r));
+            if (this.onGround) {
+                f2 = 0.54600006F;
+                int i = this.world.getTypeId(MathHelper.b(this.locX), MathHelper.b(this.boundingBox.b) - 1, MathHelper.b(this.locZ));
 
                 if (i > 0) {
-                    f2 = Block.m[i].bu * 0.91F;
+                    f2 = Block.byId[i].frictionFactor * 0.91F;
                 }
             }
-            float f3 = 0.1627714F / (f2 * f2 * f2);
 
-            a(f, f1, A ? 0.1F * f3 : 0.02F);
+            float f3 = 0.16277136F / (f2 * f2 * f2);
+
+            this.a(f, f1, this.onGround ? 0.1F * f3 : 0.02F);
             f2 = 0.91F;
-            if (A) {
-                f2 = 0.5460001F;
-                int j = l.a(MathHelper.b(p), MathHelper.b(z.b) - 1, MathHelper.b(r));
+            if (this.onGround) {
+                f2 = 0.54600006F;
+                int j = this.world.getTypeId(MathHelper.b(this.locX), MathHelper.b(this.boundingBox.b) - 1, MathHelper.b(this.locZ));
 
                 if (j > 0) {
-                    f2 = Block.m[j].bu * 0.91F;
+                    f2 = Block.byId[j].frictionFactor * 0.91F;
                 }
             }
-            c(s, t, u);
-            s *= f2;
-            t *= f2;
-            u *= f2;
+
+            this.c(this.motX, this.motY, this.motZ);
+            this.motX *= (double) f2;
+            this.motY *= (double) f2;
+            this.motZ *= (double) f2;
         }
-        bl = bm;
-        double d = p - m;
-        double d1 = r - o;
-        float f4 = MathHelper.a(d * d + d1 * d1) * 4F;
+
+        this.bl = this.bm;
+        double d0 = this.locX - this.lastX;
+        double d1 = this.locZ - this.lastZ;
+        float f4 = MathHelper.a(d0 * d0 + d1 * d1) * 4.0F;
 
         if (f4 > 1.0F) {
             f4 = 1.0F;
         }
-        bm += (f4 - bm) * 0.4F;
-        bn += bm;
+
+        this.bm += (f4 - this.bm) * 0.4F;
+        this.bn += this.bm;
     }
 
     public boolean m() {

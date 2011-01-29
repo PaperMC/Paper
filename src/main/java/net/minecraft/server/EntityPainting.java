@@ -1,6 +1,7 @@
 package net.minecraft.server;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
@@ -18,158 +19,175 @@ public class EntityPainting extends Entity {
 
     public EntityPainting(World world) {
         super(world);
-        f = 0;
-        a = 0;
-        H = 0.0F;
-        a(0.5F, 0.5F);
+        this.f = 0;
+        this.a = 0;
+        this.height = 0.0F;
+        this.a(0.5F, 0.5F);
+
         // CraftBukkit start
-        CraftServer server = ((WorldServer) this.l).getServer();
+        CraftServer server = ((WorldServer) this.world).getServer();
         this.bukkitEntity = new CraftPainting(server, this);
         // CraftBukkit end
     }
 
     public EntityPainting(World world, int i, int j, int k, int l) {
         this(world);
-        b = i;
-        c = j;
-        d = k;
+        this.b = i;
+        this.c = j;
+        this.d = k;
         ArrayList arraylist = new ArrayList();
-        EnumArt aenumart[] = EnumArt.values();
+        EnumArt[] aenumart = EnumArt.values();
         int i1 = aenumart.length;
 
-        for (int j1 = 0; j1 < i1; j1++) {
+        for (int j1 = 0; j1 < i1; ++j1) {
             EnumArt enumart = aenumart[j1];
 
-            e = enumart;
-            a(l);
-            if (d()) {
-                ((List) (arraylist)).add(((enumart)));
+            this.e = enumart;
+            this.a(l);
+            if (this.d()) {
+                arraylist.add(enumart);
             }
         }
 
-        if (((List) (arraylist)).size() > 0) {
-            e = (EnumArt) ((List) (arraylist)).get(W.nextInt(((List) (arraylist)).size()));
+        if (arraylist.size() > 0) {
+            this.e = (EnumArt) arraylist.get(this.random.nextInt(arraylist.size()));
         }
-        a(l);
+
+        this.a(l);
     }
 
     protected void a() {}
 
     public void a(int i) {
-        a = i;
-        x = v = i * 90;
-        float f1 = e.A;
-        float f2 = e.B;
-        float f3 = e.A;
+        this.a = i;
+        this.lastYaw = this.yaw = (float) (i * 90);
+        float f = (float) this.e.A;
+        float f1 = (float) this.e.B;
+        float f2 = (float) this.e.A;
 
-        if (i == 0 || i == 2) {
-            f3 = 0.5F;
+        if (i != 0 && i != 2) {
+            f = 0.5F;
         } else {
-            f1 = 0.5F;
+            f2 = 0.5F;
         }
-        f1 /= 32F;
-        f2 /= 32F;
-        f3 /= 32F;
-        float f4 = (float) b + 0.5F;
-        float f5 = (float) c + 0.5F;
-        float f6 = (float) d + 0.5F;
-        float f7 = 0.5625F;
+
+        f /= 32.0F;
+        f1 /= 32.0F;
+        f2 /= 32.0F;
+        float f3 = (float) this.b + 0.5F;
+        float f4 = (float) this.c + 0.5F;
+        float f5 = (float) this.d + 0.5F;
+        float f6 = 0.5625F;
 
         if (i == 0) {
-            f6 -= f7;
+            f5 -= f6;
         }
-        if (i == 1) {
-            f4 -= f7;
-        }
-        if (i == 2) {
-            f6 += f7;
-        }
-        if (i == 3) {
-            f4 += f7;
-        }
-        if (i == 0) {
-            f4 -= d(e.A);
-        }
-        if (i == 1) {
-            f6 += d(e.A);
-        }
-        if (i == 2) {
-            f4 += d(e.A);
-        }
-        if (i == 3) {
-            f6 -= d(e.A);
-        }
-        f5 += d(e.B);
-        a((double)f4, (double)f5, (double)f6); // CraftBukkit -- forcecast all arguments to double
-        float f8 = -0.00625F;
 
-        z.c(f4 - f1 - f8, f5 - f2 - f8, f6 - f3 - f8, f4 + f1 + f8, f5 + f2 + f8, f6 + f3 + f8);
+        if (i == 1) {
+            f3 -= f6;
+        }
+
+        if (i == 2) {
+            f5 += f6;
+        }
+
+        if (i == 3) {
+            f3 += f6;
+        }
+
+        if (i == 0) {
+            f3 -= this.d(this.e.A);
+        }
+
+        if (i == 1) {
+            f5 += this.d(this.e.A);
+        }
+
+        if (i == 2) {
+            f3 += this.d(this.e.A);
+        }
+
+        if (i == 3) {
+            f5 -= this.d(this.e.A);
+        }
+
+        f4 += this.d(this.e.B);
+        this.a((double) f3, (double) f4, (double) f5);
+        float f7 = -0.00625F;
+
+        this.boundingBox.c((double) (f3 - f - f7), (double) (f4 - f1 - f7), (double) (f5 - f2 - f7), (double) (f3 + f + f7), (double) (f4 + f1 + f7), (double) (f5 + f2 + f7));
     }
 
     private float d(int i) {
-        if (i == 32) {
-            return 0.5F;
-        }
-        return i != 64 ? 0.0F : 0.5F;
+        return i == 32 ? 0.5F : (i == 64 ? 0.5F : 0.0F);
     }
 
     public void b_() {
-        if (f++ == 100 && !l.z) {
-            f = 0;
-            if (!d()) {
-                q();
-                l.a(((Entity) (new EntityItem(l, p, q, r, new ItemStack(Item.aq)))));
+        if (this.f++ == 100 && !this.world.isStatic) {
+            this.f = 0;
+            if (!this.d()) {
+                this.q();
+                this.world.a((Entity) (new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.PAINTING))));
             }
         }
     }
 
     public boolean d() {
-        if (this.l.a(((Entity) (this)), z).size() > 0) {
+        if (this.world.a((Entity) this, this.boundingBox).size() > 0) {
             return false;
-        }
-        int i = e.A / 16;
-        int j = e.B / 16;
-        int k = b;
-        int l = c;
-        int i1 = d;
+        } else {
+            int i = this.e.A / 16;
+            int j = this.e.B / 16;
+            int k = this.b;
+            int l = this.c;
+            int i1 = this.d;
 
-        if (a == 0) {
-            k = MathHelper.b(p - (double) ((float) e.A / 32F));
-        }
-        if (a == 1) {
-            i1 = MathHelper.b(r - (double) ((float) e.A / 32F));
-        }
-        if (a == 2) {
-            k = MathHelper.b(p - (double) ((float) e.A / 32F));
-        }
-        if (a == 3) {
-            i1 = MathHelper.b(r - (double) ((float) e.A / 32F));
-        }
-        l = MathHelper.b(q - (double) ((float) e.B / 32F));
-        for (int j1 = 0; j1 < i; j1++) {
-            for (int k1 = 0; k1 < j; k1++) {
-                Material material;
+            if (this.a == 0) {
+                k = MathHelper.b(this.locX - (double) ((float) this.e.A / 32.0F));
+            }
 
-                if (a == 0 || a == 2) {
-                    material = this.l.c(k + j1, l + k1, d);
-                } else {
-                    material = this.l.c(b, l + k1, i1 + j1);
+            if (this.a == 1) {
+                i1 = MathHelper.b(this.locZ - (double) ((float) this.e.A / 32.0F));
+            }
+
+            if (this.a == 2) {
+                k = MathHelper.b(this.locX - (double) ((float) this.e.A / 32.0F));
+            }
+
+            if (this.a == 3) {
+                i1 = MathHelper.b(this.locZ - (double) ((float) this.e.A / 32.0F));
+            }
+
+            l = MathHelper.b(this.locY - (double) ((float) this.e.B / 32.0F));
+
+            int j1;
+
+            for (int k1 = 0; k1 < i; ++k1) {
+                for (j1 = 0; j1 < j; ++j1) {
+                    Material material;
+
+                    if (this.a != 0 && this.a != 2) {
+                        material = this.world.getMaterial(this.b, l + j1, i1 + k1);
+                    } else {
+                        material = this.world.getMaterial(k + k1, l + j1, this.d);
+                    }
+
+                    if (!material.isBuildable()) {
+                        return false;
+                    }
                 }
-                if (!material.a()) {
+            }
+
+            List list = this.world.b((Entity) this, this.boundingBox);
+
+            for (j1 = 0; j1 < list.size(); ++j1) {
+                if (list.get(j1) instanceof EntityPainting) {
                     return false;
                 }
             }
+
+            return true;
         }
-
-        List list = this.l.b(((Entity) (this)), z);
-
-        for (int l1 = 0; l1 < list.size(); l1++) {
-            if (list.get(l1) instanceof EntityPainting) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     public boolean c_() {
@@ -177,42 +195,44 @@ public class EntityPainting extends Entity {
     }
 
     public boolean a(Entity entity, int i) {
-        if (!G && !l.z) {
-            q();
-            y();
-            l.a(((Entity) (new EntityItem(l, p, q, r, new ItemStack(Item.aq)))));
+        if (!this.dead && !this.world.isStatic) {
+            this.q();
+            this.y();
+            this.world.a((Entity) (new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.PAINTING))));
         }
+
         return true;
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("Dir", (byte) a);
-        nbttagcompound.a("Motive", e.z);
-        nbttagcompound.a("TileX", b);
-        nbttagcompound.a("TileY", c);
-        nbttagcompound.a("TileZ", d);
+        nbttagcompound.a("Dir", (byte) this.a);
+        nbttagcompound.a("Motive", this.e.z);
+        nbttagcompound.a("TileX", this.b);
+        nbttagcompound.a("TileY", this.c);
+        nbttagcompound.a("TileZ", this.d);
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        a = ((int) (nbttagcompound.b("Dir")));
-        b = nbttagcompound.d("TileX");
-        c = nbttagcompound.d("TileY");
-        d = nbttagcompound.d("TileZ");
+        this.a = nbttagcompound.b("Dir");
+        this.b = nbttagcompound.d("TileX");
+        this.c = nbttagcompound.d("TileY");
+        this.d = nbttagcompound.d("TileZ");
         String s = nbttagcompound.h("Motive");
-        EnumArt aenumart[] = EnumArt.values();
+        EnumArt[] aenumart = EnumArt.values();
         int i = aenumart.length;
 
-        for (int j = 0; j < i; j++) {
+        for (int j = 0; j < i; ++j) {
             EnumArt enumart = aenumart[j];
 
-            if (enumart.z.equals(((s)))) {
-                e = enumart;
+            if (enumart.z.equals(s)) {
+                this.e = enumart;
             }
         }
 
-        if (e == null) {
-            e = EnumArt.a;
+        if (this.e == null) {
+            this.e = EnumArt.KEBAB;
         }
-        a(a);
+
+        this.a(this.a);
     }
 }

@@ -1,15 +1,14 @@
 package net.minecraft.server;
 
+import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,184 +26,187 @@ public class MinecraftServer implements ICommandListener, Runnable {
     public PropertyManager d;
     public WorldServer e;
     public ServerConfigurationManager f;
-    private boolean o;
-    public boolean g;
-    int h;
+    private boolean o = true;
+    public boolean g = false;
+    int h = 0;
     public String i;
     public int j;
-    private List p;
-    private List q;
+    private List p = new ArrayList();
+    private List q = Collections.synchronizedList(new ArrayList());
     public EntityTracker k;
     public boolean l;
     public boolean m;
     public boolean n;
 
-    public CraftServer server; // CraftBukkit
-    public OptionSet options; // CraftBukkit
-
-    // CraftBukkit: Added arg "OptionSet options"
-    public MinecraftServer(final OptionSet options) {
-        o = true;
-        g = false;
-        h = 0;
-        p = ((List) (new ArrayList()));
-        q = Collections.synchronizedList(((List) (new ArrayList())));
+    public MinecraftServer() {
         new ThreadSleepForever(this);
-
-        this.options = options; // CraftBukkit
+        // CraftBukkit start
+        this.options = options;
     }
+    public CraftServer server;
+    public OptionSet options;
 
-    // CraftBukkit: added throws UnknownHostException
     private boolean d() throws UnknownHostException {
+        // CraftBukkit end -- added throws UnknownHostException
         ThreadCommandReader threadcommandreader = new ThreadCommandReader(this);
 
-        ((Thread) (threadcommandreader)).setDaemon(true);
-        ((Thread) (threadcommandreader)).start();
+        threadcommandreader.setDaemon(true);
+        threadcommandreader.start();
         ConsoleLogManager.a();
         a.info("Starting minecraft server version Beta 1.2_01");
         if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
             a.warning("**** NOT ENOUGH RAM!");
             a.warning("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
         }
-        a.info("Loading properties");
-        d = new PropertyManager(options);
-        String s = d.a("server-ip", "");
 
-        l = d.a("online-mode", true);
-        m = d.a("spawn-animals", true);
-        n = d.a("pvp", true);
+        a.info("Loading properties");
+        this.d = new PropertyManager(new File("server.properties"));
+        String s = this.d.a("server-ip", "");
+
+        this.l = this.d.a("online-mode", true);
+        this.m = this.d.a("spawn-animals", true);
+        this.n = this.d.a("pvp", true);
         InetAddress inetaddress = null;
 
         if (s.length() > 0) {
             inetaddress = InetAddress.getByName(s);
         }
-        int i1 = d.a("server-port", 25565);
 
-        a.info((new StringBuilder()).append("Starting Minecraft server on ").append(s.length() != 0 ? s : "*").append(":").append(i1).toString());
+        int i = this.d.a("server-port", 25565);
+
+        a.info("Starting Minecraft server on " + (s.length() == 0 ? "*" : s) + ":" + i);
+
         try {
-            c = new NetworkListenThread(this, inetaddress, i1);
+            this.c = new NetworkListenThread(this, inetaddress, i);
             // CraftBukkit: Be more generic; IOException -> Throwable
         } catch (Throwable ioexception) {
             a.warning("**** FAILED TO BIND TO PORT!");
-            a.log(Level.WARNING, (new StringBuilder()).append("The exception was: ").append(ioexception.toString()).toString());
+            a.log(Level.WARNING, "The exception was: " + ioexception.toString());
             a.warning("Perhaps a server is already running on that port?");
             return false;
         }
-        if (!l) {
+
+        if (!this.l) {
             a.warning("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
             a.warning("The server will make no attempt to authenticate usernames. Beware.");
             a.warning("While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.");
             a.warning("To change this, set \"online-mode\" to \"true\" in the server.settings file.");
         }
-        f = new ServerConfigurationManager(this);
-        k = new EntityTracker(this);
-        String s1 = d.a("level-name", "world");
 
-        a.info((new StringBuilder()).append("Preparing level \"").append(s1).append("\"").toString());
-        c(s1);
+        this.f = new ServerConfigurationManager(this);
+        this.k = new EntityTracker(this);
+        String s1 = this.d.a("level-name", "world");
+
+        a.info("Preparing level \"" + s1 + "\"");
+        this.c(s1);
         a.info("Done! For help, type \"help\" or \"?\"");
         return true;
     }
 
     private void c(String s) {
         a.info("Preparing start region");
-        e = new WorldServer(this, new File("."), s, d.a("hellworld", false) ? -1 : 0);
-        e.a(((IWorldAccess) (new WorldManager(this))));
-        e.k = d.a("spawn-monsters", true) ? 1 : 0;
-        e.a(d.a("spawn-monsters", true), m);
-        f.a(e);
-        char c1 = '\304';
-        long l1 = System.currentTimeMillis();
+        this.e = new WorldServer(this, new File("."), s, this.d.a("hellworld", false) ? -1 : 0);
+        this.e.a(new WorldManager(this));
+        this.e.k = this.d.a("spawn-monsters", true) ? 1 : 0;
+        this.e.a(this.d.a("spawn-monsters", true), this.m);
+        this.f.a(this.e);
+        short short1 = 196;
+        long i = System.currentTimeMillis();
 
-        for (int i1 = -c1; i1 <= c1 && o; i1 += 16) {
-            for (int j1 = -c1; j1 <= c1 && o; j1 += 16) {
-                long l2 = System.currentTimeMillis();
+        for (int j = -short1; j <= short1 && this.o; j += 16) {
+            for (int k = -short1; k <= short1 && this.o; k += 16) {
+                long l = System.currentTimeMillis();
 
-                if (l2 < l1) {
-                    l1 = l2;
+                if (l < i) {
+                    i = l;
                 }
-                if (l2 > l1 + 1000L) {
-                    int k1 = (c1 * 2 + 1) * (c1 * 2 + 1);
-                    int i2 = (i1 + c1) * (c1 * 2 + 1) + (j1 + 1);
 
-                    a("Preparing spawn area", (i2 * 100) / k1);
-                    l1 = l2;
+                if (l > i + 1000L) {
+                    int i1 = (short1 * 2 + 1) * (short1 * 2 + 1);
+                    int j1 = (j + short1) * (short1 * 2 + 1) + k + 1;
+
+                    this.a("Preparing spawn area", j1 * 100 / i1);
+                    i = l;
                 }
-                e.A.d(e.m + i1 >> 4, e.o + j1 >> 4);
-                while (e.d() && o) {
+
+                this.e.A.d(this.e.spawnX + j >> 4, this.e.spawnZ + k >> 4);
+
+                while (this.e.d() && this.o) {
                     ;
                 }
             }
         }
 
-        e();
+        this.e();
     }
 
-    private void a(String s, int i1) {
-        i = s;
-        j = i1;
-        System.out.println((new StringBuilder()).append(s).append(": ").append(i1).append("%").toString());
+    private void a(String s, int i) {
+        this.i = s;
+        this.j = i;
+        a.info(s + ": " + i + "%");
     }
 
     private void e() {
-        i = null;
-        j = 0;
+        this.i = null;
+        this.j = 0;
 
         server.loadPlugins(); // CraftBukkit
     }
 
     private void f() {
         a.info("Saving chunks");
-        e.a(true, ((IProgressUpdate) (null)));
+        this.e.a(true, (IProgressUpdate) null);
     }
 
     private void g() {
         a.info("Stopping server");
-        if(server != null) {
-            server.disablePlugins();
+        if (this.f != null) {
+            this.f.d();
         }
 
-        if (f != null) {
-            f.d();
-        }
-        if (e != null) {
-            f();
+        if (this.e != null) {
+            this.f();
         }
     }
 
     public void a() {
-        o = false;
+        this.o = false;
     }
 
     public void run() {
         try {
-            if (d()) {
-                long l1 = System.currentTimeMillis();
-                long l2 = 0L;
+            if (this.d()) {
+                long i = System.currentTimeMillis();
+                long j = 0L;
 
-                while (o) {
-                    long l3 = System.currentTimeMillis();
-                    long l4 = l3 - l1;
+                while (this.o) {
+                    long k = System.currentTimeMillis();
+                    long l = k - i;
 
-                    if (l4 > 2000L) {
-                        a.warning("Can't keep up! Did the system time change, or is the server overloaded?");
-                        l4 = 2000L;
+                    if (l > 2000L) {
+                        a.warning("Can\'t keep up! Did the system time change, or is the server overloaded?");
+                        l = 2000L;
                     }
-                    if (l4 < 0L) {
+
+                    if (l < 0L) {
                         a.warning("Time ran backwards! Did the system time change?");
-                        l4 = 0L;
+                        l = 0L;
                     }
-                    l2 += l4;
-                    l1 = l3;
-                    while (l2 > 50L) {
-                        l2 -= 50L;
-                        h();
+
+                    j += l;
+                    i = k;
+
+                    while (j > 50L) {
+                        j -= 50L;
+                        this.h();
                     }
+
                     Thread.sleep(1L);
                 }
             } else {
-                while (o) {
-                    b();
+                while (this.o) {
+                    this.b();
+
                     try {
                         Thread.sleep(10L);
                     } catch (InterruptedException interruptedexception) {
@@ -214,9 +216,11 @@ public class MinecraftServer implements ICommandListener, Runnable {
             }
         } catch (Exception exception) {
             exception.printStackTrace();
-            a.log(Level.SEVERE, "Unexpected exception", ((Throwable) (exception)));
-            while (o) {
-                b();
+            a.log(Level.SEVERE, "Unexpected exception", exception);
+
+            while (this.o) {
+                this.b();
+
                 try {
                     Thread.sleep(10L);
                 } catch (InterruptedException interruptedexception1) {
@@ -225,8 +229,8 @@ public class MinecraftServer implements ICommandListener, Runnable {
             }
         } finally {
             try {
-                g();
-                g = true;
+                this.g();
+                this.g = true;
             } finally {
                 System.exit(0);
             }
@@ -235,62 +239,217 @@ public class MinecraftServer implements ICommandListener, Runnable {
 
     private void h() {
         ArrayList arraylist = new ArrayList();
+        Iterator iterator = b.keySet().iterator();
 
-        for (Iterator iterator = b.keySet().iterator(); iterator.hasNext();) {
+        while (iterator.hasNext()) {
             String s = (String) iterator.next();
-            int k1 = ((Integer) b.get(((s)))).intValue();
+            int i = ((Integer) b.get(s)).intValue();
 
-            if (k1 > 0) {
-                b.put(((s)), ((Integer.valueOf(k1 - 1))));
+            if (i > 0) {
+                b.put(s, Integer.valueOf(i - 1));
             } else {
-                ((List) (arraylist)).add(((s)));
+                arraylist.add(s);
             }
         }
 
-        for (int i1 = 0; i1 < ((List) (arraylist)).size(); i1++) {
-            b.remove(((List) (arraylist)).get(i1));
+        int j;
+
+        for (j = 0; j < arraylist.size(); ++j) {
+            b.remove(arraylist.get(j));
         }
 
         AxisAlignedBB.a();
         Vec3D.a();
-        h++;
-        if (h % 20 == 0) {
-            f.a(((Packet) (new Packet4UpdateTime(e.e))));
+        ++this.h;
+        if (this.h % 20 == 0) {
+            this.f.a((Packet) (new Packet4UpdateTime(this.e.e)));
         }
-        e.f();
-        while (e.d()) {
+
+        this.e.f();
+
+        while (this.e.d()) {
             ;
         }
-        e.c();
-        c.a();
-        f.b();
-        k.a();
-        for (int j1 = 0; j1 < p.size(); j1++) {
-            ((IUpdatePlayerListBox) p.get(j1)).a();
+
+        this.e.c();
+        this.c.a();
+        this.f.b();
+        this.k.a();
+
+        for (j = 0; j < this.p.size(); ++j) {
+            ((IUpdatePlayerListBox) this.p.get(j)).a();
         }
 
         try {
-            b();
+            this.b();
         } catch (Exception exception) {
-            a.log(Level.WARNING, "Unexpected exception while parsing console command", ((Throwable) (exception)));
+            a.log(Level.WARNING, "Unexpected exception while parsing console command", exception);
         }
     }
 
     public void a(String s, ICommandListener icommandlistener) {
-        q.add(((new ServerCommand(s, icommandlistener))));
+        this.q.add(new ServerCommand(s, icommandlistener));
     }
 
     public void b() {
-        do {
-            if (q.size() <= 0) {
-                break;
-            }
-            ServerCommand servercommand = (ServerCommand) q.remove(0);
+        while (this.q.size() > 0) {
+            ServerCommand servercommand = (ServerCommand) this.q.remove(0);
             String s = servercommand.a;
             ICommandListener icommandlistener = servercommand.b;
             String s1 = icommandlistener.c();
 
-            if (s.toLowerCase().startsWith("#help") || s.toLowerCase().startsWith("#?")) {
+            if (!s.toLowerCase().startsWith("help") && !s.toLowerCase().startsWith("?")) {
+                if (s.toLowerCase().startsWith("list")) {
+                    icommandlistener.b("Connected players: " + this.f.c());
+                } else if (s.toLowerCase().startsWith("stop")) {
+                    this.a(s1, "Stopping the server..");
+                    this.o = false;
+                } else if (s.toLowerCase().startsWith("save-all")) {
+                    this.a(s1, "Forcing save..");
+                    this.e.a(true, (IProgressUpdate) null);
+                    this.a(s1, "Save complete.");
+                } else if (s.toLowerCase().startsWith("save-off")) {
+                    this.a(s1, "Disabling level saving..");
+                    this.e.C = true;
+                } else if (s.toLowerCase().startsWith("save-on")) {
+                    this.a(s1, "Enabling level saving..");
+                    this.e.C = false;
+                } else {
+                    String s2;
+
+                    if (s.toLowerCase().startsWith("op ")) {
+                        s2 = s.substring(s.indexOf(" ")).trim();
+                        this.f.e(s2);
+                        this.a(s1, "Opping " + s2);
+                        this.f.a(s2, "§eYou are now op!");
+                    } else if (s.toLowerCase().startsWith("deop ")) {
+                        s2 = s.substring(s.indexOf(" ")).trim();
+                        this.f.f(s2);
+                        this.f.a(s2, "§eYou are no longer op!");
+                        this.a(s1, "De-opping " + s2);
+                    } else if (s.toLowerCase().startsWith("ban-ip ")) {
+                        s2 = s.substring(s.indexOf(" ")).trim();
+                        this.f.c(s2);
+                        this.a(s1, "Banning ip " + s2);
+                    } else if (s.toLowerCase().startsWith("pardon-ip ")) {
+                        s2 = s.substring(s.indexOf(" ")).trim();
+                        this.f.d(s2);
+                        this.a(s1, "Pardoning ip " + s2);
+                    } else {
+                        EntityPlayer entityplayer;
+
+                        if (s.toLowerCase().startsWith("ban ")) {
+                            s2 = s.substring(s.indexOf(" ")).trim();
+                            this.f.a(s2);
+                            this.a(s1, "Banning " + s2);
+                            entityplayer = this.f.h(s2);
+                            if (entityplayer != null) {
+                                entityplayer.a.a("Banned by admin");
+                            }
+                        } else if (s.toLowerCase().startsWith("pardon ")) {
+                            s2 = s.substring(s.indexOf(" ")).trim();
+                            this.f.b(s2);
+                            this.a(s1, "Pardoning " + s2);
+                        } else if (s.toLowerCase().startsWith("kick ")) {
+                            s2 = s.substring(s.indexOf(" ")).trim();
+                            entityplayer = null;
+
+                            for (int i = 0; i < this.f.b.size(); ++i) {
+                                EntityPlayer entityplayer1 = (EntityPlayer) this.f.b.get(i);
+
+                                if (entityplayer1.name.equalsIgnoreCase(s2)) {
+                                    entityplayer = entityplayer1;
+                                }
+                            }
+
+                            if (entityplayer != null) {
+                                entityplayer.a.a("Kicked by admin");
+                                this.a(s1, "Kicking " + entityplayer.name);
+                            } else {
+                                icommandlistener.b("Can\'t find user " + s2 + ". No kick.");
+                            }
+                        } else {
+                            String[] astring;
+                            EntityPlayer entityplayer2;
+
+                            if (s.toLowerCase().startsWith("tp ")) {
+                                astring = s.split(" ");
+                                if (astring.length == 3) {
+                                    entityplayer = this.f.h(astring[1]);
+                                    entityplayer2 = this.f.h(astring[2]);
+                                    if (entityplayer == null) {
+                                        icommandlistener.b("Can\'t find user " + astring[1] + ". No tp.");
+                                    } else if (entityplayer2 == null) {
+                                        icommandlistener.b("Can\'t find user " + astring[2] + ". No tp.");
+                                    } else {
+                                        entityplayer.a.a(entityplayer2.locX, entityplayer2.locY, entityplayer2.locZ, entityplayer2.yaw, entityplayer2.pitch);
+                                        this.a(s1, "Teleporting " + astring[1] + " to " + astring[2] + ".");
+                                    }
+                                } else {
+                                    icommandlistener.b("Syntax error, please provice a source and a target.");
+                                }
+                            } else if (s.toLowerCase().startsWith("give ")) {
+                                astring = s.split(" ");
+                                if (astring.length != 3 && astring.length != 4) {
+                                    return;
+                                }
+
+                                String s3 = astring[1];
+
+                                entityplayer2 = this.f.h(s3);
+                                if (entityplayer2 != null) {
+                                    try {
+                                        int j = Integer.parseInt(astring[2]);
+
+                                        if (Item.byId[j] != null) {
+                                            this.a(s1, "Giving " + entityplayer2.name + " some " + j);
+                                            int k = 1;
+
+                                            if (astring.length > 3) {
+                                                k = this.b(astring[3], 1);
+                                            }
+
+                                            if (k < 1) {
+                                                k = 1;
+                                            }
+
+                                            if (k > 64) {
+                                                k = 64;
+                                            }
+
+                                            entityplayer2.b(new ItemStack(j, k, 0));
+                                        } else {
+                                            icommandlistener.b("There\'s no item with id " + j);
+                                        }
+                                    } catch (NumberFormatException numberformatexception) {
+                                        icommandlistener.b("There\'s no item with id " + astring[2]);
+                                    }
+                                } else {
+                                    icommandlistener.b("Can\'t find user " + s3);
+                                }
+                            } else if (s.toLowerCase().startsWith("say ")) {
+                                s = s.substring(s.indexOf(" ")).trim();
+                                a.info("[" + s1 + "] " + s);
+                                this.f.a((Packet) (new Packet3Chat("§d[Server] " + s)));
+                            } else if (s.toLowerCase().startsWith("tell ")) {
+                                astring = s.split(" ");
+                                if (astring.length >= 3) {
+                                    s = s.substring(s.indexOf(" ")).trim();
+                                    s = s.substring(s.indexOf(" ")).trim();
+                                    a.info("[" + s1 + "->" + astring[1] + "] " + s);
+                                    s = "§7" + s1 + " whispers " + s;
+                                    a.info(s);
+                                    if (!this.f.a(astring[1], (Packet) (new Packet3Chat(s)))) {
+                                        icommandlistener.b("There\'s no player by that name online.");
+                                    }
+                                }
+                            } else {
+                                a.info("Unknown console command. Type \"help\" for help.");
+                            }
+                        }
+                    }
+                }
+            } else {
                 icommandlistener.b("To run the server without a gui, start it like this:");
                 icommandlistener.b("   java -Xmx1024M -Xms1024M -jar minecraft_server.jar nogui");
                 icommandlistener.b("Console commands:");
@@ -311,181 +470,39 @@ public class MinecraftServer implements ICommandListener, Runnable {
                 icommandlistener.b("   save-on                   re-enables terrain saving");
                 icommandlistener.b("   list                      lists all currently connected players");
                 icommandlistener.b("   say <message>             broadcasts a message to all players");
-            } else if (s.toLowerCase().startsWith("#list")) {
-                icommandlistener.b((new StringBuilder()).append("Connected players: ").append(f.c()).toString());
-            } else if (s.toLowerCase().startsWith("#stop")) {
-                a(s1, "Stopping the server..");
-                o = false;
-            } else if (s.toLowerCase().startsWith("#save-all")) {
-                a(s1, "Forcing save..");
-                e.a(true, ((IProgressUpdate) (null)));
-                a(s1, "Save complete.");
-            } else if (s.toLowerCase().startsWith("#save-off")) {
-                a(s1, "Disabling level saving..");
-                e.C = true;
-            } else if (s.toLowerCase().startsWith("#save-on")) {
-                a(s1, "Enabling level saving..");
-                e.C = false;
-            } else if (s.toLowerCase().startsWith("#op ")) {
-                String s2 = s.substring(s.indexOf(" ")).trim();
-
-                f.e(s2);
-                a(s1, (new StringBuilder()).append("Opping ").append(s2).toString());
-                f.a(s2, "\247eYou are now op!");
-            } else if (s.toLowerCase().startsWith("#deop ")) {
-                String s3 = s.substring(s.indexOf(" ")).trim();
-
-                f.f(s3);
-                f.a(s3, "\247eYou are no longer op!");
-                a(s1, (new StringBuilder()).append("De-opping ").append(s3).toString());
-            } else if (s.toLowerCase().startsWith("#ban-ip ")) {
-                String s4 = s.substring(s.indexOf(" ")).trim();
-
-                f.c(s4);
-                a(s1, (new StringBuilder()).append("Banning ip ").append(s4).toString());
-            } else if (s.toLowerCase().startsWith("#pardon-ip ")) {
-                String s5 = s.substring(s.indexOf(" ")).trim();
-
-                f.d(s5);
-                a(s1, (new StringBuilder()).append("Pardoning ip ").append(s5).toString());
-            } else if (s.toLowerCase().startsWith("#ban ")) {
-                String s6 = s.substring(s.indexOf(" ")).trim();
-
-                f.a(s6);
-                a(s1, (new StringBuilder()).append("Banning ").append(s6).toString());
-                EntityPlayerMP entityplayermp = f.h(s6);
-
-                if (entityplayermp != null) {
-                    entityplayermp.a.a("Banned by admin");
-                }
-            } else if (s.toLowerCase().startsWith("#pardon ")) {
-                String s7 = s.substring(s.indexOf(" ")).trim();
-
-                f.b(s7);
-                a(s1, (new StringBuilder()).append("Pardoning ").append(s7).toString());
-            } else if (s.toLowerCase().startsWith("#kick ")) {
-                String s8 = s.substring(s.indexOf(" ")).trim();
-                EntityPlayerMP entityplayermp1 = null;
-
-                for (int i1 = 0; i1 < f.b.size(); i1++) {
-                    EntityPlayerMP entityplayermp5 = (EntityPlayerMP) f.b.get(i1);
-
-                    if (entityplayermp5.aw.equalsIgnoreCase(s8)) {
-                        entityplayermp1 = entityplayermp5;
-                    }
-                }
-
-                if (entityplayermp1 != null) {
-                    entityplayermp1.a.a("Kicked by admin");
-                    a(s1, (new StringBuilder()).append("Kicking ").append(entityplayermp1.aw).toString());
-                } else {
-                    icommandlistener.b((new StringBuilder()).append("Can't find user ").append(s8).append(". No kick.").toString());
-                }
-            } else if (s.toLowerCase().startsWith("#tp ")) {
-                String as[] = s.split(" ");
-
-                if (as.length == 3) {
-                    EntityPlayerMP entityplayermp2 = f.h(as[1]);
-                    EntityPlayerMP entityplayermp3 = f.h(as[2]);
-
-                    if (entityplayermp2 == null) {
-                        icommandlistener.b((new StringBuilder()).append("Can't find user ").append(as[1]).append(". No tp.").toString());
-                    } else if (entityplayermp3 == null) {
-                        icommandlistener.b((new StringBuilder()).append("Can't find user ").append(as[2]).append(". No tp.").toString());
-                    } else {
-                        entityplayermp2.a.a(entityplayermp3.p, entityplayermp3.q, entityplayermp3.r, entityplayermp3.v, entityplayermp3.w);
-                        a(s1, (new StringBuilder()).append("Teleporting ").append(as[1]).append(" to ").append(as[2]).append(".").toString());
-                    }
-                } else {
-                    icommandlistener.b("Syntax error, please provice a source and a target.");
-                }
-            } else if (s.toLowerCase().startsWith("#give ")) {
-                String as1[] = s.split(" ");
-
-                if (as1.length != 3 && as1.length != 4) {
-                    return;
-                }
-                String s9 = as1[1];
-                EntityPlayerMP entityplayermp4 = f.h(s9);
-
-                if (entityplayermp4 != null) {
-                    try {
-                        int j1 = Integer.parseInt(as1[2]);
-
-                        if (Item.c[j1] != null) {
-                            a(s1, (new StringBuilder()).append("Giving ").append(entityplayermp4.aw).append(" some ").append(j1).toString());
-                            int k1 = 1;
-
-                            if (as1.length > 3) {
-                                k1 = b(as1[3], 1);
-                            }
-                            if (k1 < 1) {
-                                k1 = 1;
-                            }
-                            if (k1 > 64) {
-                                k1 = 64;
-                            }
-                            entityplayermp4.b(new ItemStack(j1, k1, 0));
-                        } else {
-                            icommandlistener.b((new StringBuilder()).append("There's no item with id ").append(j1).toString());
-                        }
-                    } catch (NumberFormatException numberformatexception) {
-                        icommandlistener.b((new StringBuilder()).append("There's no item with id ").append(as1[2]).toString());
-                    }
-                } else {
-                    icommandlistener.b((new StringBuilder()).append("Can't find user ").append(s9).toString());
-                }
-            } else if (s.toLowerCase().startsWith("#say ")) {
-                s = s.substring(s.indexOf(" ")).trim();
-                a.info((new StringBuilder()).append("[").append(s1).append("] ").append(s).toString());
-                f.a(((Packet) (new Packet3Chat((new StringBuilder()).append("\247d[Server] ").append(s).toString()))));
-            } else if (s.toLowerCase().startsWith("#tell ")) {
-                String as2[] = s.split(" ");
-
-                if (as2.length >= 3) {
-                    s = s.substring(s.indexOf(" ")).trim();
-                    s = s.substring(s.indexOf(" ")).trim();
-                    a.info((new StringBuilder()).append("[").append(s1).append("->").append(as2[1]).append("] ").append(s).toString());
-                    s = (new StringBuilder()).append("\2477").append(s1).append(" whispers ").append(s).toString();
-                    a.info(s);
-                    if (!f.a(as2[1], ((Packet) (new Packet3Chat(s))))) {
-                        icommandlistener.b("There's no player by that name online.");
-                    }
-                }
-            } else {
-                a.info("Unknown console command. Type \"help\" for help.");
             }
-        } while (true);
+        }
     }
 
     private void a(String s, String s1) {
-        String s2 = (new StringBuilder()).append(s).append(": ").append(s1).toString();
+        String s2 = s + ": " + s1;
 
-        f.i((new StringBuilder()).append("\2477(").append(s2).append(")").toString());
+        this.f.i("§7(" + s2 + ")");
         a.info(s2);
     }
 
-    private int b(String s, int i1) {
+    private int b(String s, int i) {
         try {
             return Integer.parseInt(s);
         } catch (NumberFormatException numberformatexception) {
-            return i1;
+            return i;
         }
     }
 
     public void a(IUpdatePlayerListBox iupdateplayerlistbox) {
-        p.add(((iupdateplayerlistbox)));
+        this.p.add(iupdateplayerlistbox);
     }
 
     // Craftbukkit start - replaces main(String args[])
     public static void main(final OptionSet options) {
         try {
+            MinecraftServer minecraftserver = new MinecraftServer();
+
             // CraftBukkit - remove gui
-            MinecraftServer minecraftserver = new MinecraftServer(options);
 
             (new ThreadServerApplication("Server thread", minecraftserver)).start();
         } catch (Exception exception) {
-            a.log(Level.SEVERE, "Failed to start the minecraft server", ((Throwable) (exception)));
+            a.log(Level.SEVERE, "Failed to start the minecraft server", exception);
         }
     }
 

@@ -11,70 +11,72 @@ public class EntityTNTPrimed extends Entity {
 
     public EntityTNTPrimed(World world) {
         super(world);
-        a = 0;
-        i = true;
-        a(0.98F, 0.98F);
-        H = J / 2.0F;
+        this.a = 0;
+        this.i = true;
+        this.a(0.98F, 0.98F);
+        this.height = this.width / 2.0F;
+
         // CraftBukkit start
-        CraftServer server = ((WorldServer) this.l).getServer();
+        CraftServer server = ((WorldServer) this.world).getServer();
         this.bukkitEntity = new CraftTNTPrimed(server, this);
         // CraftBukkit end
     }
 
-    public EntityTNTPrimed(World world, double d1, double d2, double d3) {
+    public EntityTNTPrimed(World world, double d0, double d1, double d2) {
         this(world);
-        a(d1, d2, d3);
-        float f = (float) (Math.random() * 3.1415927410125732D * 2D);
+        this.a(d0, d1, d2);
+        float f = (float) (Math.random() * 3.1415927410125732D * 2.0D);
 
-        s = -MathHelper.a((f * 3.141593F) / 180F) * 0.02F;
-        t = 0.20000000298023224D;
-        u = -MathHelper.b((f * 3.141593F) / 180F) * 0.02F;
-        M = false;
-        a = 80;
-        m = d1;
-        n = d2;
-        o = d3;
+        this.motX = (double) (-MathHelper.a(f * 3.1415927F / 180.0F) * 0.02F);
+        this.motY = 0.20000000298023224D;
+        this.motZ = (double) (-MathHelper.b(f * 3.1415927F / 180.0F) * 0.02F);
+        this.M = false;
+        this.a = 80;
+        this.lastX = d0;
+        this.lastY = d1;
+        this.lastZ = d2;
     }
 
     protected void a() {}
 
     public boolean c_() {
-        return !G;
+        return !this.dead;
     }
 
     public void b_() {
-        m = p;
-        n = q;
-        o = r;
-        t -= 0.039999999105930328D;
-        c(s, t, u);
-        s *= 0.98000001907348633D;
-        t *= 0.98000001907348633D;
-        u *= 0.98000001907348633D;
-        if (A) {
-            s *= 0.69999998807907104D;
-            u *= 0.69999998807907104D;
-            t *= -0.5D;
+        this.lastX = this.locX;
+        this.lastY = this.locY;
+        this.lastZ = this.locZ;
+        this.motY -= 0.03999999910593033D;
+        this.c(this.motX, this.motY, this.motZ);
+        this.motX *= 0.9800000190734863D;
+        this.motY *= 0.9800000190734863D;
+        this.motZ *= 0.9800000190734863D;
+        if (this.onGround) {
+            this.motX *= 0.699999988079071D;
+            this.motZ *= 0.699999988079071D;
+            this.motY *= -0.5D;
         }
-        if (a-- <= 0) {
-            q();
-            d();
+
+        if (this.a-- <= 0) {
+            this.q();
+            this.d();
         } else {
-            l.a("smoke", p, q + 0.5D, r, 0.0D, 0.0D, 0.0D);
+            this.world.a("smoke", this.locX, this.locY + 0.5D, this.locZ, 0.0D, 0.0D, 0.0D);
         }
     }
 
     private void d() {
-        float f = 4F;
+        float f = 4.0F;
 
-        l.a(((Entity) (null)), p, q, r, f);
+        this.world.a((Entity) null, this.locX, this.locY, this.locZ, f);
     }
 
     protected void a(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("Fuse", (byte) a);
+        nbttagcompound.a("Fuse", (byte) this.a);
     }
 
     protected void b(NBTTagCompound nbttagcompound) {
-        a = ((int) (nbttagcompound.b("Fuse")));
+        this.a = nbttagcompound.b("Fuse");
     }
 }

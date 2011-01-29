@@ -14,163 +14,129 @@ import org.bukkit.event.block.BlockInteractEvent;
 
 public class BlockChest extends BlockContainer {
 
-    private Random a;
+    private Random a = new Random();
 
     protected BlockChest(int i) {
-        super(i, Material.c);
-        a = new Random();
-        bh = 26;
+        super(i, Material.WOOD);
+        this.textureId = 26;
     }
 
     public int a(int i) {
-        if (i == 1) {
-            return bh - 1;
-        }
-        if (i == 0) {
-            return bh - 1;
-        }
-        if (i == 3) {
-            return bh + 1;
-        } else {
-            return bh;
-        }
+        return i == 1 ? this.textureId - 1 : (i == 0 ? this.textureId - 1 : (i == 3 ? this.textureId + 1 : this.textureId));
     }
 
     public boolean a(World world, int i, int j, int k) {
         int l = 0;
 
-        if (world.a(i - 1, j, k) == bi) {
-            l++;
+        if (world.getTypeId(i - 1, j, k) == this.id) {
+            ++l;
         }
-        if (world.a(i + 1, j, k) == bi) {
-            l++;
+
+        if (world.getTypeId(i + 1, j, k) == this.id) {
+            ++l;
         }
-        if (world.a(i, j, k - 1) == bi) {
-            l++;
+
+        if (world.getTypeId(i, j, k - 1) == this.id) {
+            ++l;
         }
-        if (world.a(i, j, k + 1) == bi) {
-            l++;
+
+        if (world.getTypeId(i, j, k + 1) == this.id) {
+            ++l;
         }
-        if (l > 1) {
-            return false;
-        }
-        if (g(world, i - 1, j, k)) {
-            return false;
-        }
-        if (g(world, i + 1, j, k)) {
-            return false;
-        }
-        if (g(world, i, j, k - 1)) {
-            return false;
-        }
-        return !g(world, i, j, k + 1);
+
+        return l > 1 ? false : (this.g(world, i - 1, j, k) ? false : (this.g(world, i + 1, j, k) ? false : (this.g(world, i, j, k - 1) ? false : !this.g(world, i, j, k + 1))));
     }
 
     private boolean g(World world, int i, int j, int k) {
-        if (world.a(i, j, k) != bi) {
-            return false;
-        }
-        if (world.a(i - 1, j, k) == bi) {
-            return true;
-        }
-        if (world.a(i + 1, j, k) == bi) {
-            return true;
-        }
-        if (world.a(i, j, k - 1) == bi) {
-            return true;
-        }
-        return world.a(i, j, k + 1) == bi;
+        return world.getTypeId(i, j, k) != this.id ? false : (world.getTypeId(i - 1, j, k) == this.id ? true : (world.getTypeId(i + 1, j, k) == this.id ? true : (world.getTypeId(i, j, k - 1) == this.id ? true : world.getTypeId(i, j, k + 1) == this.id)));
     }
 
     public void b(World world, int i, int j, int k) {
-        TileEntityChest tileentitychest = (TileEntityChest) world.m(i, j, k);
+        TileEntityChest tileentitychest = (TileEntityChest) world.getTileEntity(i, j, k);
 
-        label0:
-        for (int l = 0; l < ((IInventory) (tileentitychest)).h_(); l++) {
-            ItemStack itemstack = ((IInventory) (tileentitychest)).a(l);
+        for (int l = 0; l < tileentitychest.h_(); ++l) {
+            ItemStack itemstack = tileentitychest.a(l);
 
-            if (itemstack == null) {
-                continue;
+            if (itemstack != null) {
+                float f = this.a.nextFloat() * 0.8F + 0.1F;
+                float f1 = this.a.nextFloat() * 0.8F + 0.1F;
+                float f2 = this.a.nextFloat() * 0.8F + 0.1F;
+
+                while (itemstack.count > 0) {
+                    int i1 = this.a.nextInt(21) + 10;
+
+                    if (i1 > itemstack.count) {
+                        i1 = itemstack.count;
+                    }
+
+                    itemstack.count -= i1;
+                    EntityItem entityitem = new EntityItem(world, (double) ((float) i + f), (double) ((float) j + f1), (double) ((float) k + f2), new ItemStack(itemstack.id, i1, itemstack.h()));
+                    float f3 = 0.05F;
+
+                    entityitem.motX = (double) ((float) this.a.nextGaussian() * f3);
+                    entityitem.motY = (double) ((float) this.a.nextGaussian() * f3 + 0.2F);
+                    entityitem.motZ = (double) ((float) this.a.nextGaussian() * f3);
+                    world.a((Entity) entityitem);
+                }
             }
-            float f = a.nextFloat() * 0.8F + 0.1F;
-            float f1 = a.nextFloat() * 0.8F + 0.1F;
-            float f2 = a.nextFloat() * 0.8F + 0.1F;
-
-            do {
-                if (itemstack.a <= 0) {
-                    continue label0;
-                }
-                int i1 = a.nextInt(21) + 10;
-
-                if (i1 > itemstack.a) {
-                    i1 = itemstack.a;
-                }
-                itemstack.a -= i1;
-                EntityItem entityitem = new EntityItem(world, (float) i + f, (float) j + f1, (float) k + f2, new ItemStack(itemstack.c, i1, itemstack.h()));
-                float f3 = 0.05F;
-
-                entityitem.s = (float) a.nextGaussian() * f3;
-                entityitem.t = (float) a.nextGaussian() * f3 + 0.2F;
-                entityitem.u = (float) a.nextGaussian() * f3;
-                world.a(((Entity) (entityitem)));
-            } while (true);
         }
 
         super.b(world, i, j, k);
     }
 
-    public boolean a(World world, int i, int j, int k, EntityPlayer entityplayer) {
-        Object obj = (((TileEntityChest) world.m(i, j, k)));
+    public boolean a(World world, int i, int j, int k, EntityHuman entityhuman) {
+        Object object = (TileEntityChest) world.getTileEntity(i, j, k);
 
         if (world.d(i, j + 1, k)) {
             return true;
-        }
-        if (world.a(i - 1, j, k) == bi && world.d(i - 1, j + 1, k)) {
+        } else if (world.getTypeId(i - 1, j, k) == this.id && world.d(i - 1, j + 1, k)) {
             return true;
-        }
-        if (world.a(i + 1, j, k) == bi && world.d(i + 1, j + 1, k)) {
+        } else if (world.getTypeId(i + 1, j, k) == this.id && world.d(i + 1, j + 1, k)) {
             return true;
-        }
-        if (world.a(i, j, k - 1) == bi && world.d(i, j + 1, k - 1)) {
+        } else if (world.getTypeId(i, j, k - 1) == this.id && world.d(i, j + 1, k - 1)) {
             return true;
-        }
-        if (world.a(i, j, k + 1) == bi && world.d(i, j + 1, k + 1)) {
-            return true;
-        }
-        if (world.a(i - 1, j, k) == bi) {
-            obj = ((new InventoryLargeChest("Large chest", ((IInventory) ((TileEntityChest) world.m(i - 1, j, k))), ((IInventory) (obj)))));
-        }
-        if (world.a(i + 1, j, k) == bi) {
-            obj = ((new InventoryLargeChest("Large chest", ((IInventory) (obj)), ((IInventory) ((TileEntityChest) world.m(i + 1, j, k))))));
-        }
-        if (world.a(i, j, k - 1) == bi) {
-            obj = ((new InventoryLargeChest("Large chest", ((IInventory) ((TileEntityChest) world.m(i, j, k - 1))), ((IInventory) (obj)))));
-        }
-        if (world.a(i, j, k + 1) == bi) {
-            obj = ((new InventoryLargeChest("Large chest", ((IInventory) (obj)), ((IInventory) ((TileEntityChest) world.m(i, j, k + 1))))));
-        }
-        if (world.z) {
+        } else if (world.getTypeId(i, j, k + 1) == this.id && world.d(i, j + 1, k + 1)) {
             return true;
         } else {
-            // CraftBukkit start - Interact Chest
-            CraftWorld craftWorld = ((WorldServer) world).getWorld();
-            CraftServer server = ((WorldServer) world).getServer();
-            Type eventType = Type.BLOCK_INTERACT;
-            CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
-            LivingEntity who = (entityplayer == null)?null:(LivingEntity)entityplayer.getBukkitEntity();
-            
-            BlockInteractEvent bie = new BlockInteractEvent(eventType, block, who);
-            server.getPluginManager().callEvent(bie);
+            if (world.getTypeId(i - 1, j, k) == this.id) {
+                object = new InventoryLargeChest("Large chest", (TileEntityChest) world.getTileEntity(i - 1, j, k), (IInventory) object);
+            }
 
-            if (bie.isCancelled()) return true;
-            // CraftBukkit end
+            if (world.getTypeId(i + 1, j, k) == this.id) {
+                object = new InventoryLargeChest("Large chest", (IInventory) object, (TileEntityChest) world.getTileEntity(i + 1, j, k));
+            }
 
-            entityplayer.a(((IInventory) (obj)));
-            return true;
+            if (world.getTypeId(i, j, k - 1) == this.id) {
+                object = new InventoryLargeChest("Large chest", (TileEntityChest) world.getTileEntity(i, j, k - 1), (IInventory) object);
+            }
+
+            if (world.getTypeId(i, j, k + 1) == this.id) {
+                object = new InventoryLargeChest("Large chest", (IInventory) object, (TileEntityChest) world.getTileEntity(i, j, k + 1));
+            }
+
+            if (world.isStatic) {
+                return true;
+            } else {
+                // CraftBukkit start - Interact Chest
+                CraftWorld craftWorld = ((WorldServer) world).getWorld();
+                CraftServer server = ((WorldServer) world).getServer();
+                Type eventType = Type.BLOCK_INTERACT;
+                CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
+                LivingEntity who = (entityhuman == null) ? null : (LivingEntity) entityhuman.getBukkitEntity();
+
+                BlockInteractEvent event = new BlockInteractEvent(eventType, block, who);
+                server.getPluginManager().callEvent(event);
+
+                if (event.isCancelled()) return true;
+                // CraftBukkit end
+
+                entityhuman.a((IInventory) object);
+                return true;
+            }
         }
     }
 
     protected TileEntity a_() {
-        return ((TileEntity) (new TileEntityChest()));
+        return new TileEntityChest();
     }
 }

@@ -5,22 +5,19 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftAnimals;
 // CraftBukkit end
 
-public abstract class EntityAnimals extends EntityCreature implements IAnimals {
+public abstract class EntityAnimal extends EntityCreature implements IAnimal {
 
-    public EntityAnimals(World world) {
+    public EntityAnimal(World world) {
         super(world);
+
         // CraftBukkit start
-        CraftServer server = ((WorldServer) this.l).getServer();
+        CraftServer server = ((WorldServer) this.world).getServer();
         this.bukkitEntity = new CraftAnimals(server, this);
         // CraftBukkit end
     }
 
     protected float a(int i, int j, int k) {
-        if (l.a(i, j - 1, k) == Block.u.bi) {
-            return 10F;
-        } else {
-            return l.l(i, j, k) - 0.5F;
-        }
+        return this.world.getTypeId(i, j - 1, k) == Block.GRASS.id ? 10.0F : this.world.l(i, j, k) - 0.5F;
     }
 
     public void a(NBTTagCompound nbttagcompound) {
@@ -32,11 +29,11 @@ public abstract class EntityAnimals extends EntityCreature implements IAnimals {
     }
 
     public boolean b() {
-        int i = MathHelper.b(p);
-        int j = MathHelper.b(z.b);
-        int k = MathHelper.b(r);
+        int i = MathHelper.b(this.locX);
+        int j = MathHelper.b(this.boundingBox.b);
+        int k = MathHelper.b(this.locZ);
 
-        return l.a(i, j - 1, k) == Block.u.bi && l.j(i, j, k) > 8 && super.b();
+        return this.world.getTypeId(i, j - 1, k) == Block.GRASS.id && this.world.j(i, j, k) > 8 && super.b();
     }
 
     public int c() {

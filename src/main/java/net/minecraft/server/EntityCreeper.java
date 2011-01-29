@@ -1,29 +1,29 @@
 package net.minecraft.server;
 
-import java.util.Random;
-
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftCreeper;
 // CraftBukkit end
 
-public class EntityCreeper extends EntityMobs {
+
+public class EntityCreeper extends EntityMonster {
 
     int a;
     int b;
 
     public EntityCreeper(World world) {
         super(world);
-        aP = "/mob/creeper.png";
+        this.texture = "/mob/creeper.png";
+
         // CraftBukkit start
-        CraftServer server = ((WorldServer) this.l).getServer();
+        CraftServer server = ((WorldServer) this.world).getServer();
         this.bukkitEntity = new CraftCreeper(server, this);
         // CraftBukkit end
     }
 
     protected void a() {
         super.a();
-        af.a(16, ((Byte.valueOf((byte) -1))));
+        this.datawatcher.a(16, Byte.valueOf((byte) -1));
     }
 
     public void a(NBTTagCompound nbttagcompound) {
@@ -35,21 +35,24 @@ public class EntityCreeper extends EntityMobs {
     }
 
     public void b_() {
-        b = a;
-        if (l.z) {
-            int i = K();
+        this.b = this.a;
+        if (this.world.isStatic) {
+            int i = this.K();
 
-            if (i > 0 && a == 0) {
-                l.a(((Entity) (this)), "random.fuse", 1.0F, 0.5F);
+            if (i > 0 && this.a == 0) {
+                this.world.a(this, "random.fuse", 1.0F, 0.5F);
             }
-            a += i;
-            if (a < 0) {
-                a = 0;
+
+            this.a += i;
+            if (this.a < 0) {
+                this.a = 0;
             }
-            if (a >= 30) {
-                a = 30;
+
+            if (this.a >= 30) {
+                this.a = 30;
             }
         }
+
         super.b_();
     }
 
@@ -64,42 +67,44 @@ public class EntityCreeper extends EntityMobs {
     public void f(Entity entity) {
         super.f(entity);
         if (entity instanceof EntitySkeleton) {
-            a(Item.aY.ba + W.nextInt(2), 1);
+            this.a(Item.GOLD_RECORD.id + this.random.nextInt(2), 1);
         }
     }
 
-    protected void a(Entity entity, float f1) {
-        int i = K();
+    protected void a(Entity entity, float f) {
+        int i = this.K();
 
-        if (i <= 0 && f1 < 3F || i > 0 && f1 < 7F) {
-            if (a == 0) {
-                l.a(((Entity) (this)), "random.fuse", 1.0F, 0.5F);
+        if ((i > 0 || f >= 3.0F) && (i <= 0 || f >= 7.0F)) {
+            this.a(-1);
+            --this.a;
+            if (this.a < 0) {
+                this.a = 0;
             }
-            a(1);
-            a++;
-            if (a >= 30) {
-                l.a(((Entity) (this)), p, q, r, 3F);
-                q();
-            }
-            e = true;
         } else {
-            a(-1);
-            a--;
-            if (a < 0) {
-                a = 0;
+            if (this.a == 0) {
+                this.world.a(this, "random.fuse", 1.0F, 0.5F);
             }
+
+            this.a(1);
+            ++this.a;
+            if (this.a >= 30) {
+                this.world.a(this, this.locX, this.locY, this.locZ, 3.0F);
+                this.q();
+            }
+
+            this.e = true;
         }
     }
 
     protected int h() {
-        return Item.K.ba;
+        return Item.SULPHUR.id;
     }
 
     private int K() {
-        return ((int) (af.a(16)));
+        return this.datawatcher.a(16);
     }
 
     private void a(int i) {
-        af.b(16, ((Byte.valueOf((byte) i))));
+        this.datawatcher.b(16, Byte.valueOf((byte) i));
     }
 }

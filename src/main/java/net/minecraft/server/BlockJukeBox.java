@@ -13,15 +13,15 @@ import org.bukkit.event.block.BlockInteractEvent;
 public class BlockJukeBox extends Block {
 
     protected BlockJukeBox(int i, int j) {
-        super(i, j, Material.c);
+        super(i, j, Material.WOOD);
     }
 
     public int a(int i) {
-        return bh + (i != 1 ? 0 : 1);
+        return this.textureId + (i == 1 ? 1 : 0);
     }
 
-    public boolean a(World world, int i, int j, int k, EntityPlayer entityplayer) {
-        int l = world.b(i, j, k);
+    public boolean a(World world, int i, int j, int k, EntityHuman entityhuman) {
+        int l = world.getData(i, j, k);
 
         if (l > 0) {
             // CraftBukkit start - Interact Jukebox
@@ -29,17 +29,17 @@ public class BlockJukeBox extends Block {
             CraftServer server = ((WorldServer) world).getServer();
             Type eventType = Type.BLOCK_INTERACT;
             CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
-            LivingEntity who = (entityplayer == null)?null:(LivingEntity)entityplayer.getBukkitEntity();
-            
-            BlockInteractEvent bie = new BlockInteractEvent(eventType, block, who);
-            server.getPluginManager().callEvent(bie);
+            LivingEntity who = (entityhuman == null) ? null : (LivingEntity) entityhuman.getBukkitEntity();
 
-            if (bie.isCancelled()) {
+            BlockInteractEvent event = new BlockInteractEvent(eventType, block, who);
+            server.getPluginManager().callEvent(event);
+
+            if (event.isCancelled()) {
                 return true;
             }
             // CraftBukkit end
 
-            f(world, i, j, k, l);
+            this.f(world, i, j, k, l);
             return true;
         } else {
             return false;
@@ -47,26 +47,26 @@ public class BlockJukeBox extends Block {
     }
 
     public void f(World world, int i, int j, int k, int l) {
-        world.a(((String) (null)), i, j, k);
+        world.a((String) null, i, j, k);
         world.c(i, j, k, 0);
-        int i1 = (Item.aY.ba + l) - 1;
-        float f1 = 0.7F;
-        double d = (double) (world.l.nextFloat() * f1) + (double) (1.0F - f1) * 0.5D;
-        double d1 = (double) (world.l.nextFloat() * f1) + (double) (1.0F - f1) * 0.20000000000000001D + 0.59999999999999998D;
-        double d2 = (double) (world.l.nextFloat() * f1) + (double) (1.0F - f1) * 0.5D;
-        EntityItem entityitem = new EntityItem(world, (double) i + d, (double) j + d1, (double) k + d2, new ItemStack(i1, 1, 0));
+        int i1 = Item.GOLD_RECORD.id + l - 1;
+        float f = 0.7F;
+        double d0 = (double) (world.l.nextFloat() * f) + (double) (1.0F - f) * 0.5D;
+        double d1 = (double) (world.l.nextFloat() * f) + (double) (1.0F - f) * 0.2D + 0.6D;
+        double d2 = (double) (world.l.nextFloat() * f) + (double) (1.0F - f) * 0.5D;
+        EntityItem entityitem = new EntityItem(world, (double) i + d0, (double) j + d1, (double) k + d2, new ItemStack(i1, 1, 0));
 
         entityitem.c = 10;
-        world.a(((Entity) (entityitem)));
+        world.a((Entity) entityitem);
     }
 
-    public void a(World world, int i, int j, int k, int l, float f1) {
-        if (world.z) {
-            return;
+    public void a(World world, int i, int j, int k, int l, float f) {
+        if (!world.isStatic) {
+            if (l > 0) {
+                this.f(world, i, j, k, l);
+            }
+
+            super.a(world, i, j, k, l, f);
         }
-        if (l > 0) {
-            f(world, i, j, k, l);
-        }
-        super.a(world, i, j, k, l, f1);
     }
 }

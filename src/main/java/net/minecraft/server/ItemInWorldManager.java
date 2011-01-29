@@ -3,125 +3,121 @@ package net.minecraft.server;
 public class ItemInWorldManager {
 
     private World b;
-    public EntityPlayer a;
+    public EntityHuman a;
     private float c;
-    public float d; // CraftBukkit private -> public
-    private int e;
-    private float f;
+    public float d = 0.0F; // CraftBukkit private -> public
+    private int e = 0;
+    private float f = 0.0F;
     private int g;
     private int h;
     private int i;
 
     public ItemInWorldManager(World world) {
-        d = 0.0F;
-        e = 0;
-        f = 0.0F;
-        b = world;
+        this.b = world;
     }
 
-    public void a(int j, int k, int l) {
-        int i1 = b.a(j, k, l);
+    public void a(int i, int j, int k) {
+        int l = this.b.getTypeId(i, j, k);
 
-        if (i1 > 0 && d == 0.0F) {
-            Block.m[i1].b(b, j, k, l, a);
+        if (l > 0 && this.d == 0.0F) {
+            Block.byId[l].b(this.b, i, j, k, this.a);
         }
-        if (i1 > 0 && Block.m[i1].a(a) >= 1.0F) {
-            c(j, k, l);
+
+        if (l > 0 && Block.byId[l].a(this.a) >= 1.0F) {
+            this.c(i, j, k);
         }
     }
 
     public void a() {
-        d = 0.0F;
-        e = 0;
+        this.d = 0.0F;
+        this.e = 0;
     }
 
-    public void a(int j, int k, int l, int i1) {
-        if (e > 0) {
-            e--;
-            return;
-        }
-        if (j == g && k == h && l == i) {
-            int j1 = b.a(j, k, l);
-
-            if (j1 == 0) {
-                return;
-            }
-            Block block = Block.m[j1];
-
-            d += block.a(a);
-            f++;
-            if (d >= 1.0F) {
-                c(j, k, l);
-                d = 0.0F;
-                c = 0.0F;
-                f = 0.0F;
-                e = 5;
-            }
+    public void a(int i, int j, int k, int l) {
+        if (this.e > 0) {
+            --this.e;
         } else {
-            d = 0.0F;
-            c = 0.0F;
-            f = 0.0F;
-            g = j;
-            h = k;
-            i = l;
+            if (i == this.g && j == this.h && k == this.i) {
+                int i1 = this.b.getTypeId(i, j, k);
+
+                if (i1 == 0) {
+                    return;
+                }
+
+                Block block = Block.byId[i1];
+
+                this.d += block.a(this.a);
+                ++this.f;
+                if (this.d >= 1.0F) {
+                    this.c(i, j, k);
+                    this.d = 0.0F;
+                    this.c = 0.0F;
+                    this.f = 0.0F;
+                    this.e = 5;
+                }
+            } else {
+                this.d = 0.0F;
+                this.c = 0.0F;
+                this.f = 0.0F;
+                this.g = i;
+                this.h = j;
+                this.i = k;
+            }
         }
     }
 
-    public boolean b(int j, int k, int l) {
-        Block block = Block.m[b.a(j, k, l)];
-        int i1 = b.b(j, k, l);
-        boolean flag = b.e(j, k, l, 0);
+    public boolean b(int i, int j, int k) {
+        Block block = Block.byId[this.b.getTypeId(i, j, k)];
+        int l = this.b.getData(i, j, k);
+        boolean flag = this.b.e(i, j, k, 0);
 
         if (block != null && flag) {
-            block.a(b, j, k, l, i1);
+            block.a(this.b, i, j, k, l);
         }
+
         return flag;
     }
 
-    public boolean c(int j, int k, int l) {
-        int i1 = b.a(j, k, l);
-        int j1 = b.b(j, k, l);
-        boolean flag = b(j, k, l);
-        ItemStack itemstack = a.P();
+    public boolean c(int i, int j, int k) {
+        int l = this.b.getTypeId(i, j, k);
+        int i1 = this.b.getData(i, j, k);
+        boolean flag = this.b(i, j, k);
+        ItemStack itemstack = this.a.P();
 
         if (itemstack != null) {
-            itemstack.a(i1, j, k, l);
-            if (itemstack.a == 0) {
-                itemstack.a(a);
-                a.Q();
+            itemstack.a(l, i, j, k);
+            if (itemstack.count == 0) {
+                itemstack.a(this.a);
+                this.a.Q();
             }
         }
-        if (flag && a.b(Block.m[i1])) {
-            Block.m[i1].g(b, j, k, l, j1);
+
+        if (flag && this.a.b(Block.byId[l])) {
+            Block.byId[l].g(this.b, i, j, k, i1);
         }
+
         return flag;
     }
 
-    public boolean a(EntityPlayer entityplayer, World world, ItemStack itemstack) {
-        int j = itemstack.a;
-        ItemStack itemstack1 = itemstack.a(world, entityplayer);
+    public boolean a(EntityHuman entityhuman, World world, ItemStack itemstack) {
+        int i = itemstack.count;
+        ItemStack itemstack1 = itemstack.a(world, entityhuman);
 
-        if (itemstack1 != itemstack || itemstack1 != null && itemstack1.a != j) {
-            entityplayer.an.a[entityplayer.an.c] = itemstack1;
-            if (itemstack1.a == 0) {
-                entityplayer.an.a[entityplayer.an.c] = null;
-            }
-            return true;
-        } else {
+        if (itemstack1 == itemstack && (itemstack1 == null || itemstack1.count == i)) {
             return false;
+        } else {
+            entityhuman.inventory.a[entityhuman.inventory.c] = itemstack1;
+            if (itemstack1.count == 0) {
+                entityhuman.inventory.a[entityhuman.inventory.c] = null;
+            }
+
+            return true;
         }
     }
 
-    public boolean a(EntityPlayer entityplayer, World world, ItemStack itemstack, int j, int k, int l, int i1) {
-        int j1 = world.a(j, k, l);
+    public boolean a(EntityHuman entityhuman, World world, ItemStack itemstack, int i, int j, int k, int l) {
+        int i1 = world.getTypeId(i, j, k);
 
-        if (j1 > 0 && Block.m[j1].a(world, j, k, l, entityplayer)) {
-            return true;
-        }
-        if (itemstack == null) {
-            return false;
-        } else {
-            return itemstack.a(entityplayer, world, j, k, l, i1);
-        }
+        return i1 > 0 && Block.byId[i1].a(world, i, j, k, entityhuman) ? true : (itemstack == null ? false : itemstack.a(entityhuman, world, i, j, k, l));
     }
 }

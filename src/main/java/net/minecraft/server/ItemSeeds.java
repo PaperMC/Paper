@@ -18,39 +18,40 @@ public class ItemSeeds extends Item {
 
     public ItemSeeds(int i, int j) {
         super(i);
-        a = j;
+        this.a = j;
     }
 
-    public boolean a(ItemStack itemstack, EntityPlayer entityplayer, World world, int i, int j, int k, int l) {
+    public boolean a(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
         if (l != 1) {
             return false;
-        }
-        int i1 = world.a(i, j, k);
+        } else {
+            int i1 = world.getTypeId(i, j, k);
 
-        if (i1 == Block.aA.bi && world.e(i, j + 1, k)) {
-            // CraftBukkit start - Seeds
-            CraftWorld craftWorld = ((WorldServer) world).getWorld();
-            CraftServer craftServer = ((WorldServer) world).getServer();
-            
-            Type eventType = Type.PLAYER_ITEM;
-            Player who = (entityplayer == null)?null:(Player)entityplayer.getBukkitEntity();
-            org.bukkit.inventory.ItemStack itemInHand = new CraftItemStack(itemstack);
-            org.bukkit.block.Block blockClicked = craftWorld.getBlockAt(i, j, k);
-            BlockFace blockface = CraftBlock.notchToBlockFace(1);
-            
-            PlayerItemEvent pie = new PlayerItemEvent(eventType, who, itemInHand, blockClicked, blockface);
-            craftServer.getPluginManager().callEvent(pie);
-            
-            if (pie.isCancelled()) {
+            if (i1 == Block.SOIL.id && world.isEmpty(i, j + 1, k)) {
+                // CraftBukkit start - Seeds
+                CraftWorld craftWorld = ((WorldServer) world).getWorld();
+                CraftServer craftServer = ((WorldServer) world).getServer();
+
+                Type eventType = Type.PLAYER_ITEM;
+                Player who = (entityhuman == null) ? null : (Player) entityhuman.getBukkitEntity();
+                org.bukkit.inventory.ItemStack itemInHand = new CraftItemStack(itemstack);
+                org.bukkit.block.Block blockClicked = craftWorld.getBlockAt(i, j, k);
+                BlockFace blockface = CraftBlock.notchToBlockFace(1);
+
+                PlayerItemEvent event = new PlayerItemEvent(eventType, who, itemInHand, blockClicked, blockface);
+                craftServer.getPluginManager().callEvent(event);
+
+                if (event.isCancelled()) {
+                    return false;
+                }
+                // CraftBukkit end
+
+                world.e(i, j + 1, k, this.a);
+                --itemstack.count;
+                return true;
+            } else {
                 return false;
             }
-            // CraftBukkit end
-
-            world.e(i, j + 1, k, a);
-            itemstack.a--;
-            return true;
-        } else {
-            return false;
         }
     }
 }

@@ -1,7 +1,6 @@
 package net.minecraft.server;
 
 import java.util.List;
-import java.util.Random;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
@@ -12,39 +11,39 @@ import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 
 public abstract class EntityLiving extends Entity {
 
-    public int aF;
+    public int maxNoDamageTicks = 20;
     public float aG;
     public float aH;
-    public float aI;
-    public float aJ;
+    public float aI = 0.0F;
+    public float aJ = 0.0F;
     protected float aK;
     protected float aL;
     protected float aM;
     protected float aN;
-    protected boolean aO;
-    protected String aP;
-    protected boolean aQ;
-    protected float aR;
-    protected String aS;
-    protected float aT;
-    protected int aU;
-    protected float aV;
-    public boolean aW;
+    protected boolean aO = true;
+    protected String texture = "/mob/char.png";
+    protected boolean aQ = true;
+    protected float aR = 0.0F;
+    protected String aS = null;
+    protected float aT = 1.0F;
+    protected int aU = 0;
+    protected float aV = 0.0F;
+    public boolean aW = false;
     public float aX;
     public float aY;
-    public int aZ;
+    public int health = 10;
     public int ba;
     private int a;
-    public int bb;
+    public int hurtTicks;
     public int bc;
-    public float bd;
-    public int be;
-    public int bf;
+    public float bd = 0.0F;
+    public int deathTicks = 0;
+    public int attackTicks = 0;
     public float bg;
     public float bh;
-    protected boolean bi;
-    public int bj;
-    public float bk;
+    protected boolean bi = false;
+    public int bj = -1;
+    public float bk = (float) (Math.random() * 0.8999999761581421D + 0.10000000149011612D);
     public float bl;
     public float bm;
     public float bn;
@@ -54,54 +53,29 @@ public abstract class EntityLiving extends Entity {
     protected double br;
     protected double bs;
     protected double bt;
-    float bu;
-    protected int bv;
-    protected int bw;
+    float bu = 0.0F;
+    protected int lastDamage = 0;
+    protected int bw = 0;
     protected float bx;
     protected float by;
     protected float bz;
-    protected boolean bA;
-    protected float bB;
-    protected float bC;
+    protected boolean bA = false;
+    protected float bB = 0.0F;
+    protected float bC = 0.7F;
     private Entity b;
-    private int c;
+    private int c = 0;
 
     public EntityLiving(World world) {
         super(world);
-        aF = 20;
-        aI = 0.0F;
-        aJ = 0.0F;
-        aO = true;
-        aP = "/mob/char.png";
-        aQ = true;
-        aR = 0.0F;
-        aS = null;
-        aT = 1.0F;
-        aU = 0;
-        aV = 0.0F;
-        aW = false;
-        bd = 0.0F;
-        be = 0;
-        bf = 0;
-        bi = false;
-        bj = -1;
-        bk = (float) (Math.random() * 0.89999997615814209D + 0.10000000149011612D);
-        bu = 0.0F;
-        bv = 0;
-        bw = 0;
-        bA = false;
-        bB = 0.0F;
-        bC = 0.7F;
-        c = 0;
-        aZ = 10;
-        i = true;
-        aH = (float) (Math.random() + 1.0D) * 0.01F;
-        a(p, q, r);
-        aG = (float) Math.random() * 12398F;
-        v = (float) (Math.random() * 3.1415927410125732D * 2D);
-        S = 0.5F;
+        this.i = true;
+        this.aH = (float) (Math.random() + 1.0D) * 0.01F;
+        this.a(this.locX, this.locY, this.locZ);
+        this.aG = (float) Math.random() * 12398.0F;
+        this.yaw = (float) (Math.random() * 3.1415927410125732D * 2.0D);
+        this.S = 0.5F;
+
         // CraftBukkit start
-        CraftServer server = ((WorldServer) this.l).getServer();
+        CraftServer server = ((WorldServer) this.world).getServer();
         this.bukkitEntity = new CraftLivingEntity(server, this);
         // CraftBukkit end
     }
@@ -109,19 +83,19 @@ public abstract class EntityLiving extends Entity {
     protected void a() {}
 
     public boolean i(Entity entity) {
-        return l.a(Vec3D.b(p, q + (double) w(), r), Vec3D.b(entity.p, entity.q + (double) entity.w(), entity.r)) == null;
+        return this.world.a(Vec3D.b(this.locX, this.locY + (double) this.w(), this.locZ), Vec3D.b(entity.locX, entity.locY + (double) entity.w(), entity.locZ)) == null;
     }
 
     public boolean c_() {
-        return !G;
+        return !this.dead;
     }
 
     public boolean z() {
-        return !G;
+        return !this.dead;
     }
 
     public float w() {
-        return J * 0.85F;
+        return this.width * 0.85F;
     }
 
     public int c() {
@@ -129,257 +103,297 @@ public abstract class EntityLiving extends Entity {
     }
 
     public void r() {
-        aX = aY;
+        this.aX = this.aY;
         super.r();
-        if (W.nextInt(1000) < a++) {
-            a = -c();
-            String s = e();
+        if (this.random.nextInt(1000) < this.a++) {
+            this.a = -this.c();
+            String s = this.e();
 
             if (s != null) {
-                this.l.a(((Entity) (this)), s, i(), (W.nextFloat() - W.nextFloat()) * 0.2F + 1.0F);
+                this.world.a(this, s, this.i(), (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
             }
         }
-        if (B() && C()) {
+
+        if (this.B() && this.C()) {
             // CraftBukkit start
-            CraftServer server = ((WorldServer) l).getServer();
+            CraftServer server = ((WorldServer) this.world).getServer();
             org.bukkit.entity.Entity victim = this.getBukkitEntity();
             DamageCause damageType = EntityDamageEvent.DamageCause.SUFFOCATION;
-            EntityDamageEvent evt = new EntityDamageEvent(victim, damageType, 1);
-            server.getPluginManager().callEvent(evt);
-            
-            if (!evt.isCancelled()){
-                a(((Entity) (null)), 1);
+            EntityDamageEvent event = new EntityDamageEvent(victim, damageType, 1);
+            server.getPluginManager().callEvent(event);
+
+            if (!event.isCancelled()){
+                this.a((Entity) null, 1);
             }
             // CraftBukkit end
         }
-        if (ae || this.l.z) {
-            Z = 0;
-        }
-        if (B() && a(Material.f) && !d_()) {
-            ad--;
-            if (ad == -20) {
-                ad = 0;
-                for (int k = 0; k < 8; k++) {
-                    float f1 = W.nextFloat() - W.nextFloat();
-                    float f2 = W.nextFloat() - W.nextFloat();
-                    float f3 = W.nextFloat() - W.nextFloat();
 
-                    this.l.a("bubble", p + (double) f1, q + (double) f2, r + (double) f3, this.s, t, u);
+        if (this.ae || this.world.isStatic) {
+            this.fireTicks = 0;
+        }
+
+        int i;
+
+        if (this.B() && this.a(Material.WATER) && !this.d_()) {
+            --this.airTicks;
+            if (this.airTicks == -20) {
+                this.airTicks = 0;
+
+                for (i = 0; i < 8; ++i) {
+                    float f = this.random.nextFloat() - this.random.nextFloat();
+                    float f1 = this.random.nextFloat() - this.random.nextFloat();
+                    float f2 = this.random.nextFloat() - this.random.nextFloat();
+
+                    this.world.a("bubble", this.locX + (double) f, this.locY + (double) f1, this.locZ + (double) f2, this.motX, this.motY, this.motZ);
                 }
 
                 // CraftBukkit start
-                CraftServer server = ((WorldServer) l).getServer();
+                CraftServer server = ((WorldServer) this.world).getServer();
                 org.bukkit.entity.Entity damagee = this.getBukkitEntity();
                 DamageCause damageType = EntityDamageEvent.DamageCause.DROWNING;
                 int damageDone = 2;
 
-                EntityDamageEvent ede = new EntityDamageEvent(damagee, damageType, damageDone);
-                server.getPluginManager().callEvent(ede);
+                EntityDamageEvent event = new EntityDamageEvent(damagee, damageType, damageDone);
+                server.getPluginManager().callEvent(event);
 
-                if (!ede.isCancelled()){
-                    a(((Entity) (null)), ede.getDamage());
+                if (!event.isCancelled()){
+                    this.a((Entity) null, event.getDamage());
                 }
                 // CraftBukkit end
             }
-            Z = 0;
-        } else {
-            ad = aa;
-        }
-        bg = bh;
-        if (bf > 0) {
-            bf--;
-        }
-        if (bb > 0) {
-            bb--;
-        }
-        if (ac > 0) {
-            ac--;
-        }
-        if (aZ <= 0) {
-            be++;
-            if (be > 20) {
-                T();
-                q();
-                for (int l = 0; l < 20; l++) {
-                    double d1 = W.nextGaussian() * 0.02D;
-                    double d2 = W.nextGaussian() * 0.02D;
-                    double d3 = W.nextGaussian() * 0.02D;
 
-                    this.l.a("explode", (p + (double) (W.nextFloat() * I * 2.0F)) - (double) I, q + (double) (W.nextFloat() * J), (r + (double) (W.nextFloat() * I * 2.0F)) - (double) I, d1, d2, d3);
+            this.fireTicks = 0;
+        } else {
+            this.airTicks = this.maxAirTicks;
+        }
+
+        this.bg = this.bh;
+        if (this.attackTicks > 0) {
+            --this.attackTicks;
+        }
+
+        if (this.hurtTicks > 0) {
+            --this.hurtTicks;
+        }
+
+        if (this.noDamageTicks > 0) {
+            --this.noDamageTicks;
+        }
+
+        if (this.health <= 0) {
+            ++this.deathTicks;
+            if (this.deathTicks > 20) {
+                this.T();
+                this.q();
+
+                for (i = 0; i < 20; ++i) {
+                    double d0 = this.random.nextGaussian() * 0.02D;
+                    double d1 = this.random.nextGaussian() * 0.02D;
+                    double d2 = this.random.nextGaussian() * 0.02D;
+
+                    this.world.a("explode", this.locX + (double) (this.random.nextFloat() * this.length * 2.0F) - (double) this.length, this.locY + (double) (this.random.nextFloat() * this.width), this.locZ + (double) (this.random.nextFloat() * this.length * 2.0F) - (double) this.length, d0, d1, d2);
                 }
             }
         }
-        aN = aM;
-        aJ = aI;
-        x = v;
-        y = w;
+
+        this.aN = this.aM;
+        this.aJ = this.aI;
+        this.lastYaw = this.yaw;
+        this.lastPitch = this.pitch;
     }
 
     public void R() {
-        for (int k = 0; k < 20; k++) {
-            double d1 = W.nextGaussian() * 0.02D;
-            double d2 = W.nextGaussian() * 0.02D;
-            double d3 = W.nextGaussian() * 0.02D;
-            double d4 = 10D;
+        for (int i = 0; i < 20; ++i) {
+            double d0 = this.random.nextGaussian() * 0.02D;
+            double d1 = this.random.nextGaussian() * 0.02D;
+            double d2 = this.random.nextGaussian() * 0.02D;
+            double d3 = 10.0D;
 
-            l.a("explode", (p + (double) (W.nextFloat() * I * 2.0F)) - (double) I - d1 * d4, (q + (double) (W.nextFloat() * J)) - d2 * d4, (r + (double) (W.nextFloat() * I * 2.0F)) - (double) I - d3 * d4, d1, d2, d3);
+            this.world.a("explode", this.locX + (double) (this.random.nextFloat() * this.length * 2.0F) - (double) this.length - d0 * d3, this.locY + (double) (this.random.nextFloat() * this.width) - d1 * d3, this.locZ + (double) (this.random.nextFloat() * this.length * 2.0F) - (double) this.length - d2 * d3, d0, d1, d2);
         }
     }
 
     public void D() {
         super.D();
-        aK = aL;
-        aL = 0.0F;
+        this.aK = this.aL;
+        this.aL = 0.0F;
     }
 
     public void b_() {
         super.b_();
-        o();
-        double d1 = p - m;
-        double d2 = r - o;
-        float f1 = MathHelper.a(d1 * d1 + d2 * d2);
-        float f2 = aI;
+        this.o();
+        double d0 = this.locX - this.lastX;
+        double d1 = this.locZ - this.lastZ;
+        float f = MathHelper.a(d0 * d0 + d1 * d1);
+        float f1 = this.aI;
+        float f2 = 0.0F;
+
+        this.aK = this.aL;
         float f3 = 0.0F;
 
-        aK = aL;
-        float f4 = 0.0F;
+        if (f > 0.05F) {
+            f3 = 1.0F;
+            f2 = f * 3.0F;
+            f1 = (float) Math.atan2(d1, d0) * 180.0F / 3.1415927F - 90.0F;
+        }
 
-        if (f1 > 0.05F) {
-            f4 = 1.0F;
-            f3 = f1 * 3F;
-            f2 = ((float) Math.atan2(d2, d1) * 180F) / 3.141593F - 90F;
+        if (this.aY > 0.0F) {
+            f1 = this.yaw;
         }
-        if (aY > 0.0F) {
-            f2 = v;
+
+        if (!this.onGround) {
+            f3 = 0.0F;
         }
-        if (!A) {
-            f4 = 0.0F;
+
+        this.aL += (f3 - this.aL) * 0.3F;
+
+        float f4;
+
+        for (f4 = f1 - this.aI; f4 < -180.0F; f4 += 360.0F) {
+            ;
         }
-        aL = aL + (f4 - aL) * 0.3F;
+
+        while (f4 >= 180.0F) {
+            f4 -= 360.0F;
+        }
+
+        this.aI += f4 * 0.3F;
+
         float f5;
 
-        for (f5 = f2 - aI; f5 < -180F; f5 += 360F) {
+        for (f5 = this.yaw - this.aI; f5 < -180.0F; f5 += 360.0F) {
             ;
         }
-        for (; f5 >= 180F; f5 -= 360F) {
-            ;
-        }
-        aI += f5 * 0.3F;
-        float f6;
 
-        for (f6 = v - aI; f6 < -180F; f6 += 360F) {
-            ;
+        while (f5 >= 180.0F) {
+            f5 -= 360.0F;
         }
-        for (; f6 >= 180F; f6 -= 360F) {
-            ;
-        }
-        boolean flag = f6 < -90F || f6 >= 90F;
 
-        if (f6 < -75F) {
-            f6 = -75F;
+        boolean flag = f5 < -90.0F || f5 >= 90.0F;
+
+        if (f5 < -75.0F) {
+            f5 = -75.0F;
         }
-        if (f6 >= 75F) {
-            f6 = 75F;
+
+        if (f5 >= 75.0F) {
+            f5 = 75.0F;
         }
-        aI = v - f6;
-        if (f6 * f6 > 2500F) {
-            aI += f6 * 0.2F;
+
+        this.aI = this.yaw - f5;
+        if (f5 * f5 > 2500.0F) {
+            this.aI += f5 * 0.2F;
         }
+
         if (flag) {
-            f3 *= -1F;
+            f2 *= -1.0F;
         }
-        for (; v - x < -180F; x -= 360F) {
-            ;
+
+        while (this.yaw - this.lastYaw < -180.0F) {
+            this.lastYaw -= 360.0F;
         }
-        for (; v - x >= 180F; x += 360F) {
-            ;
+
+        while (this.yaw - this.lastYaw >= 180.0F) {
+            this.lastYaw += 360.0F;
         }
-        for (; aI - aJ < -180F; aJ -= 360F) {
-            ;
+
+        while (this.aI - this.aJ < -180.0F) {
+            this.aJ -= 360.0F;
         }
-        for (; aI - aJ >= 180F; aJ += 360F) {
-            ;
+
+        while (this.aI - this.aJ >= 180.0F) {
+            this.aJ += 360.0F;
         }
-        for (; w - y < -180F; y -= 360F) {
-            ;
+
+        while (this.pitch - this.lastPitch < -180.0F) {
+            this.lastPitch -= 360.0F;
         }
-        for (; w - y >= 180F; y += 360F) {
-            ;
+
+        while (this.pitch - this.lastPitch >= 180.0F) {
+            this.lastPitch += 360.0F;
         }
-        aM += f3;
+
+        this.aM += f2;
     }
 
-    protected void a(float f1, float f2) {
-        super.a(f1, f2);
+    protected void a(float f, float f1) {
+        super.a(f, f1);
     }
 
-    public void d(int k) {
-        if (aZ <= 0) {
-            return;
-        }
-        aZ += k;
-        if (aZ > 20) {
-            aZ = 20;
-        }
-        ac = aF / 2;
-    }
-
-    public boolean a(Entity entity, int k) {
-        if (l.z) {
-            return false;
-        }
-        bw = 0;
-        if (aZ <= 0) {
-            return false;
-        }
-        bm = 1.5F;
-        boolean flag = true;
-
-        if ((float) ac > (float) aF / 2.0F) {
-            if (k <= bv) {
-                return false;
+    public void d(int i) {
+        if (this.health > 0) {
+            this.health += i;
+            if (this.health > 20) {
+                this.health = 20;
             }
-            e(k - bv);
-            bv = k;
-            flag = false;
-        } else {
-            bv = k;
-            ba = aZ;
-            ac = aF;
-            e(k);
-            bb = bc = 10;
-        }
-        bd = 0.0F;
-        if (flag) {
-            l.a(((Entity) (this)), (byte) 2);
-            y();
-            if (entity != null) {
-                double d1 = entity.p - p;
-                double d2;
 
-                for (d2 = entity.r - r; d1 * d1 + d2 * d2 < 0.0001D; d2 = (Math.random() - Math.random()) * 0.01D) {
-                    d1 = (Math.random() - Math.random()) * 0.01D;
+            this.noDamageTicks = this.maxNoDamageTicks / 2;
+        }
+    }
+
+    public boolean a(Entity entity, int i) {
+        if (this.world.isStatic) {
+            return false;
+        } else {
+            this.bw = 0;
+            if (this.health <= 0) {
+                return false;
+            } else {
+                this.bm = 1.5F;
+                boolean flag = true;
+
+                if ((float) this.noDamageTicks > (float) this.maxNoDamageTicks / 2.0F) {
+                    if (i <= this.lastDamage) {
+                        return false;
+                    }
+
+                    this.e(i - this.lastDamage);
+                    this.lastDamage = i;
+                    flag = false;
+                } else {
+                    this.lastDamage = i;
+                    this.ba = this.health;
+                    this.noDamageTicks = this.maxNoDamageTicks;
+                    this.e(i);
+                    this.hurtTicks = this.bc = 10;
                 }
 
-                bd = (float) ((Math.atan2(d2, d1) * 180D) / 3.1415927410125732D) - v;
-                a(entity, k, d1, d2);
-            } else {
-                bd = (int) (Math.random() * 2D) * 180;
+                this.bd = 0.0F;
+                if (flag) {
+                    this.world.a(this, (byte) 2);
+                    this.y();
+                    if (entity != null) {
+                        double d0 = entity.locX - this.locX;
+
+                        double d1;
+
+                        for (d1 = entity.locZ - this.locZ; d0 * d0 + d1 * d1 < 1.0E-4D; d1 = (Math.random() - Math.random()) * 0.01D) {
+                            d0 = (Math.random() - Math.random()) * 0.01D;
+                        }
+
+                        this.bd = (float) (Math.atan2(d1, d0) * 180.0D / 3.1415927410125732D) - this.yaw;
+                        this.a(entity, i, d0, d1);
+                    } else {
+                        this.bd = (float) ((int) (Math.random() * 2.0D) * 180);
+                    }
+                }
+
+                if (this.health <= 0) {
+                    if (flag) {
+                        this.world.a(this, this.g(), this.i(), (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
+                    }
+
+                    this.f(entity);
+                } else if (flag) {
+                    this.world.a(this, this.f(), this.i(), (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
+                }
+
+                return true;
             }
         }
-        if (aZ <= 0) {
-            if (flag) {
-                l.a(((Entity) (this)), g(), i(), (W.nextFloat() - W.nextFloat()) * 0.2F + 1.0F);
-            }
-            f(entity);
-        } else if (flag) {
-            l.a(((Entity) (this)), f(), i(), (W.nextFloat() - W.nextFloat()) * 0.2F + 1.0F);
-        }
-        return true;
     }
 
-    protected void e(int k) {
-        aZ -= k;
+    protected void e(int i) {
+        this.health -= i;
     }
 
     protected float i() {
@@ -398,40 +412,42 @@ public abstract class EntityLiving extends Entity {
         return "random.hurt";
     }
 
-    public void a(Entity entity, int k, double d1, double d2) {
-        float f1 = MathHelper.a(d1 * d1 + d2 * d2);
-        float f2 = 0.4F;
+    public void a(Entity entity, int i, double d0, double d1) {
+        float f = MathHelper.a(d0 * d0 + d1 * d1);
+        float f1 = 0.4F;
 
-        s /= 2D;
-        t /= 2D;
-        u /= 2D;
-        s -= (d1 / (double) f1) * (double) f2;
-        t += 0.40000000596046448D;
-        u -= (d2 / (double) f1) * (double) f2;
-        if (t > 0.40000000596046448D) {
-            t = 0.40000000596046448D;
+        this.motX /= 2.0D;
+        this.motY /= 2.0D;
+        this.motZ /= 2.0D;
+        this.motX -= d0 / (double) f * (double) f1;
+        this.motY += 0.4000000059604645D;
+        this.motZ -= d1 / (double) f * (double) f1;
+        if (this.motY > 0.4000000059604645D) {
+            this.motY = 0.4000000059604645D;
         }
     }
 
     public void f(Entity entity) {
-        if (aU > 0 && entity != null) {
-            entity.b(((Entity) (this)), aU);
+        if (this.aU > 0 && entity != null) {
+            entity.b(this, this.aU);
         }
-        bi = true;
-        if (!l.z) {
-            g_();
+
+        this.bi = true;
+        if (!this.world.isStatic) {
+            this.g_();
         }
-        l.a(((Entity) (this)), (byte) 3);
+
+        this.world.a(this, (byte) 3);
     }
 
     protected void g_() {
-        int k = h();
+        int i = this.h();
 
-        if (k > 0) {
-            int l = W.nextInt(3);
+        if (i > 0) {
+            int j = this.random.nextInt(3);
 
-            for (int i1 = 0; i1 < l; i1++) {
-                a(k, 1);
+            for (int k = 0; k < j; ++k) {
+                this.a(i, 1);
             }
         }
     }
@@ -440,134 +456,141 @@ public abstract class EntityLiving extends Entity {
         return 0;
     }
 
-    protected void a(float f1) {
-        int k = (int) Math.ceil(f1 - 3F);
+    protected void a(float f) {
+        int i = (int) Math.ceil((double) (f - 3.0F));
 
-        if (k > 0) {
+        if (i > 0) {
             // CraftBukkit start
-            CraftServer server = ((WorldServer) l).getServer();
+            CraftServer server = ((WorldServer) this.world).getServer();
             org.bukkit.entity.Entity victim = this.getBukkitEntity();
             DamageCause damageType = EntityDamageEvent.DamageCause.FALL;
-            EntityDamageEvent evt = new EntityDamageEvent(victim, damageType, k);
-            server.getPluginManager().callEvent(evt);
-            
-            if (!evt.isCancelled()){
-                a(((Entity) (null)), k);
+            EntityDamageEvent event = new EntityDamageEvent(victim, damageType, i);
+            server.getPluginManager().callEvent(event);
+
+            if (!event.isCancelled()){
+                this.a((Entity) null, i);
             }
             // CraftBukkit end
-            
-            int l = this.l.a(MathHelper.b(p), MathHelper.b(q - 0.20000000298023224D - (double) H), MathHelper.b(r));
 
-            if (l > 0) {
-                StepSound stepsound = Block.m[l].br;
+            int j = this.world.getTypeId(MathHelper.b(this.locX), MathHelper.b(this.locY - 0.20000000298023224D - (double) this.height), MathHelper.b(this.locZ));
 
-                this.l.a(((Entity) (this)), stepsound.c(), stepsound.a() * 0.5F, stepsound.b() * 0.75F);
+            if (j > 0) {
+                StepSound stepsound = Block.byId[j].stepSound;
+
+                this.world.a(this, stepsound.c(), stepsound.a() * 0.5F, stepsound.b() * 0.75F);
             }
         }
     }
 
-    public void c(float f1, float f2) {
-        if (v()) {
-            double d1 = q;
+    public void c(float f, float f1) {
+        double d0;
 
-            a(f1, f2, 0.02F);
-            c(s, t, u);
-            s *= 0.80000001192092896D;
-            t *= 0.80000001192092896D;
-            u *= 0.80000001192092896D;
-            t -= 0.02D;
-            if (B && b(s, ((t + 0.60000002384185791D) - q) + d1, u)) {
-                t = 0.30000001192092896D;
+        if (this.v()) {
+            d0 = this.locY;
+            this.a(f, f1, 0.02F);
+            this.c(this.motX, this.motY, this.motZ);
+            this.motX *= 0.800000011920929D;
+            this.motY *= 0.800000011920929D;
+            this.motZ *= 0.800000011920929D;
+            this.motY -= 0.02D;
+            if (this.B && this.b(this.motX, this.motY + 0.6000000238418579D - this.locY + d0, this.motZ)) {
+                this.motY = 0.30000001192092896D;
             }
-        } else if (x()) {
-            double d2 = q;
-
-            a(f1, f2, 0.02F);
-            c(s, t, u);
-            s *= 0.5D;
-            t *= 0.5D;
-            u *= 0.5D;
-            t -= 0.02D;
-            if (B && b(s, ((t + 0.60000002384185791D) - q) + d2, u)) {
-                t = 0.30000001192092896D;
+        } else if (this.x()) {
+            d0 = this.locY;
+            this.a(f, f1, 0.02F);
+            this.c(this.motX, this.motY, this.motZ);
+            this.motX *= 0.5D;
+            this.motY *= 0.5D;
+            this.motZ *= 0.5D;
+            this.motY -= 0.02D;
+            if (this.B && this.b(this.motX, this.motY + 0.6000000238418579D - this.locY + d0, this.motZ)) {
+                this.motY = 0.30000001192092896D;
             }
         } else {
-            float f3 = 0.91F;
+            float f2 = 0.91F;
 
-            if (A) {
-                f3 = 0.5460001F;
-                int k = this.l.a(MathHelper.b(p), MathHelper.b(z.b) - 1, MathHelper.b(r));
+            if (this.onGround) {
+                f2 = 0.54600006F;
+                int i = this.world.getTypeId(MathHelper.b(this.locX), MathHelper.b(this.boundingBox.b) - 1, MathHelper.b(this.locZ));
 
-                if (k > 0) {
-                    f3 = Block.m[k].bu * 0.91F;
+                if (i > 0) {
+                    f2 = Block.byId[i].frictionFactor * 0.91F;
                 }
             }
-            float f4 = 0.1627714F / (f3 * f3 * f3);
 
-            a(f1, f2, A ? 0.1F * f4 : 0.02F);
-            f3 = 0.91F;
-            if (A) {
-                f3 = 0.5460001F;
-                int l = this.l.a(MathHelper.b(p), MathHelper.b(z.b) - 1, MathHelper.b(r));
+            float f3 = 0.16277136F / (f2 * f2 * f2);
 
-                if (l > 0) {
-                    f3 = Block.m[l].bu * 0.91F;
+            this.a(f, f1, this.onGround ? 0.1F * f3 : 0.02F);
+            f2 = 0.91F;
+            if (this.onGround) {
+                f2 = 0.54600006F;
+                int j = this.world.getTypeId(MathHelper.b(this.locX), MathHelper.b(this.boundingBox.b) - 1, MathHelper.b(this.locZ));
+
+                if (j > 0) {
+                    f2 = Block.byId[j].frictionFactor * 0.91F;
                 }
             }
-            if (m()) {
-                N = 0.0F;
-                if (t < -0.14999999999999999D) {
-                    t = -0.14999999999999999D;
+
+            if (this.m()) {
+                this.fallDistance = 0.0F;
+                if (this.motY < -0.15D) {
+                    this.motY = -0.15D;
                 }
             }
-            c(s, t, u);
-            if (B && m()) {
-                t = 0.20000000000000001D;
+
+            this.c(this.motX, this.motY, this.motZ);
+            if (this.B && this.m()) {
+                this.motY = 0.2D;
             }
-            t -= 0.080000000000000002D;
-            t *= 0.98000001907348633D;
-            s *= f3;
-            u *= f3;
+
+            this.motY -= 0.08D;
+            this.motY *= 0.9800000190734863D;
+            this.motX *= (double) f2;
+            this.motZ *= (double) f2;
         }
-        bl = bm;
-        double d3 = p - m;
-        double d4 = r - o;
-        float f5 = MathHelper.a(d3 * d3 + d4 * d4) * 4F;
 
-        if (f5 > 1.0F) {
-            f5 = 1.0F;
+        this.bl = this.bm;
+        d0 = this.locX - this.lastX;
+        double d1 = this.locZ - this.lastZ;
+        float f4 = MathHelper.a(d0 * d0 + d1 * d1) * 4.0F;
+
+        if (f4 > 1.0F) {
+            f4 = 1.0F;
         }
-        bm += (f5 - bm) * 0.4F;
-        bn += bm;
+
+        this.bm += (f4 - this.bm) * 0.4F;
+        this.bn += this.bm;
     }
 
     public boolean m() {
-        int k = MathHelper.b(p);
-        int l = MathHelper.b(z.b);
-        int i1 = MathHelper.b(r);
+        int i = MathHelper.b(this.locX);
+        int j = MathHelper.b(this.boundingBox.b);
+        int k = MathHelper.b(this.locZ);
 
-        return this.l.a(k, l, i1) == Block.aF.bi || this.l.a(k, l + 1, i1) == Block.aF.bi;
+        return this.world.getTypeId(i, j, k) == Block.LADDER.id || this.world.getTypeId(i, j + 1, k) == Block.LADDER.id;
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("Health", (short) aZ);
-        nbttagcompound.a("HurtTime", (short) bb);
-        nbttagcompound.a("DeathTime", (short) be);
-        nbttagcompound.a("AttackTime", (short) bf);
+        nbttagcompound.a("Health", (short) this.health);
+        nbttagcompound.a("HurtTime", (short) this.hurtTicks);
+        nbttagcompound.a("DeathTime", (short) this.deathTicks);
+        nbttagcompound.a("AttackTime", (short) this.attackTicks);
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        aZ = ((int) (nbttagcompound.c("Health")));
+        this.health = nbttagcompound.c("Health");
         if (!nbttagcompound.a("Health")) {
-            aZ = 10;
+            this.health = 10;
         }
-        bb = ((int) (nbttagcompound.c("HurtTime")));
-        be = ((int) (nbttagcompound.c("DeathTime")));
-        bf = ((int) (nbttagcompound.c("AttackTime")));
+
+        this.hurtTicks = nbttagcompound.c("HurtTime");
+        this.deathTicks = nbttagcompound.c("DeathTime");
+        this.attackTicks = nbttagcompound.c("AttackTime");
     }
 
     public boolean B() {
-        return !G && aZ > 0;
+        return !this.dead && this.health > 0;
     }
 
     public boolean d_() {
@@ -575,189 +598,208 @@ public abstract class EntityLiving extends Entity {
     }
 
     public void o() {
-        if (bo > 0) {
-            double d1 = p + (bp - p) / (double) bo;
-            double d2 = q + (bq - q) / (double) bo;
-            double d3 = r + (br - r) / (double) bo;
-            double d4;
+        if (this.bo > 0) {
+            double d0 = this.locX + (this.bp - this.locX) / (double) this.bo;
+            double d1 = this.locY + (this.bq - this.locY) / (double) this.bo;
+            double d2 = this.locZ + (this.br - this.locZ) / (double) this.bo;
 
-            for (d4 = bs - (double) v; d4 < -180D; d4 += 360D) {
+            double d3;
+
+            for (d3 = this.bs - (double) this.yaw; d3 < -180.0D; d3 += 360.0D) {
                 ;
             }
-            for (; d4 >= 180D; d4 -= 360D) {
-                ;
-            }
-            v += ((float) (d4 / (double) bo));
-            w += ((float) ((bt - (double) w) / (double) bo));
-            bo--;
-            a(d1, d2, d3);
-            b(v, w);
-        }
-        if (aZ <= 0) {
-            bA = false;
-            bx = 0.0F;
-            by = 0.0F;
-            bz = 0.0F;
-        } else if (!aW) {
-            d();
-        }
-        boolean flag = v();
-        boolean flag1 = x();
 
-        if (bA) {
+            while (d3 >= 180.0D) {
+                d3 -= 360.0D;
+            }
+
+            this.yaw = (float) ((double) this.yaw + d3 / (double) this.bo);
+            this.pitch = (float) ((double) this.pitch + (this.bt - (double) this.pitch) / (double) this.bo);
+            --this.bo;
+            this.a(d0, d1, d2);
+            this.b(this.yaw, this.pitch);
+        }
+
+        if (this.health <= 0) {
+            this.bA = false;
+            this.bx = 0.0F;
+            this.by = 0.0F;
+            this.bz = 0.0F;
+        } else if (!this.aW) {
+            this.d();
+        }
+
+        boolean flag = this.v();
+        boolean flag1 = this.x();
+
+        if (this.bA) {
             if (flag) {
-                t += 0.039999999105930328D;
+                this.motY += 0.03999999910593033D;
             } else if (flag1) {
-                t += 0.039999999105930328D;
-            } else if (A) {
-                S();
+                this.motY += 0.03999999910593033D;
+            } else if (this.onGround) {
+                this.S();
             }
         }
-        bx *= 0.98F;
-        by *= 0.98F;
-        bz *= 0.9F;
-        c(bx, by);
-        List list = l.b(((Entity) (this)), z.b(0.20000000298023224D, 0.0D, 0.20000000298023224D));
+
+        this.bx *= 0.98F;
+        this.by *= 0.98F;
+        this.bz *= 0.9F;
+        this.c(this.bx, this.by);
+        List list = this.world.b((Entity) this, this.boundingBox.b(0.20000000298023224D, 0.0D, 0.20000000298023224D));
 
         if (list != null && list.size() > 0) {
-            for (int k = 0; k < list.size(); k++) {
-                Entity entity = (Entity) list.get(k);
+            for (int i = 0; i < list.size(); ++i) {
+                Entity entity = (Entity) list.get(i);
 
                 if (entity.z()) {
-                    entity.c(((Entity) (this)));
+                    entity.c((Entity) this);
                 }
             }
         }
     }
 
     protected void S() {
-        t = 0.41999998688697815D;
+        this.motY = 0.41999998688697815D;
     }
 
     protected void d() {
-        bw++;
-        EntityPlayer entityplayer = l.a(((Entity) (this)), -1D);
+        ++this.bw;
+        EntityHuman entityhuman = this.world.a(this, -1.0D);
 
-        if (entityplayer != null) {
-            double d1 = ((Entity) (entityplayer)).p - p;
-            double d2 = ((Entity) (entityplayer)).q - q;
-            double d3 = ((Entity) (entityplayer)).r - r;
-            double d4 = d1 * d1 + d2 * d2 + d3 * d3;
+        if (entityhuman != null) {
+            double d0 = entityhuman.locX - this.locX;
+            double d1 = entityhuman.locY - this.locY;
+            double d2 = entityhuman.locZ - this.locZ;
+            double d3 = d0 * d0 + d1 * d1 + d2 * d2;
 
-            if (d4 > 16384D) {
-                q();
+            if (d3 > 16384.0D) {
+                this.q();
             }
-            if (bw > 600 && W.nextInt(800) == 0) {
-                if (d4 < 1024D) {
-                    bw = 0;
+
+            if (this.bw > 600 && this.random.nextInt(800) == 0) {
+                if (d3 < 1024.0D) {
+                    this.bw = 0;
                 } else {
-                    q();
+                    this.q();
                 }
             }
         }
-        bx = 0.0F;
-        by = 0.0F;
-        float f1 = 8F;
 
-        if (W.nextFloat() < 0.02F) {
-            EntityPlayer entityplayer1 = l.a(((Entity) (this)), f1);
+        this.bx = 0.0F;
+        this.by = 0.0F;
+        float f = 8.0F;
 
-            if (entityplayer1 != null) {
-                b = ((Entity) (entityplayer1));
-                c = 10 + W.nextInt(20);
+        if (this.random.nextFloat() < 0.02F) {
+            entityhuman = this.world.a(this, (double) f);
+            if (entityhuman != null) {
+                this.b = entityhuman;
+                this.c = 10 + this.random.nextInt(20);
             } else {
-                bz = (W.nextFloat() - 0.5F) * 20F;
+                this.bz = (this.random.nextFloat() - 0.5F) * 20.0F;
             }
         }
-        if (b != null) {
-            b(b, 10F);
-            if (c-- <= 0 || b.G || b.b(((Entity) (this))) > (double) (f1 * f1)) {
-                b = null;
+
+        if (this.b != null) {
+            this.b(this.b, 10.0F);
+            if (this.c-- <= 0 || this.b.dead || this.b.b((Entity) this) > (double) (f * f)) {
+                this.b = null;
             }
         } else {
-            if (W.nextFloat() < 0.05F) {
-                bz = (W.nextFloat() - 0.5F) * 20F;
+            if (this.random.nextFloat() < 0.05F) {
+                this.bz = (this.random.nextFloat() - 0.5F) * 20.0F;
             }
-            v += bz;
-            w = bB;
+
+            this.yaw += this.bz;
+            this.pitch = this.bB;
         }
-        boolean flag = v();
-        boolean flag1 = x();
+
+        boolean flag = this.v();
+        boolean flag1 = this.x();
 
         if (flag || flag1) {
-            bA = W.nextFloat() < 0.8F;
+            this.bA = this.random.nextFloat() < 0.8F;
         }
     }
 
-    public void b(Entity entity, float f1) {
-        double d1 = entity.p - p;
-        double d2 = entity.r - r;
-        double d3;
+    public void b(Entity entity, float f) {
+        double d0 = entity.locX - this.locX;
+        double d1 = entity.locZ - this.locZ;
+        double d2;
 
         if (entity instanceof EntityLiving) {
             EntityLiving entityliving = (EntityLiving) entity;
 
-            d3 = (entityliving.q + (double) entityliving.w()) - (q + (double) w());
+            d2 = entityliving.locY + (double) entityliving.w() - (this.locY + (double) this.w());
         } else {
-            d3 = (entity.z.b + entity.z.e) / 2D - (q + (double) w());
+            d2 = (entity.boundingBox.b + entity.boundingBox.e) / 2.0D - (this.locY + (double) this.w());
         }
-        double d4 = MathHelper.a(d1 * d1 + d2 * d2);
-        float f2 = (float) ((Math.atan2(d2, d1) * 180D) / 3.1415927410125732D) - 90F;
-        float f3 = (float) ((Math.atan2(d3, d4) * 180D) / 3.1415927410125732D);
 
-        w = -b(w, f3, f1);
-        v = b(v, f2, f1);
+        double d3 = (double) MathHelper.a(d0 * d0 + d1 * d1);
+        float f1 = (float) (Math.atan2(d1, d0) * 180.0D / 3.1415927410125732D) - 90.0F;
+        float f2 = (float) (Math.atan2(d2, d3) * 180.0D / 3.1415927410125732D);
+
+        this.pitch = -this.b(this.pitch, f2, f);
+        this.yaw = this.b(this.yaw, f1, f);
     }
 
-    private float b(float f1, float f2, float f3) {
-        float f4;
+    private float b(float f, float f1, float f2) {
+        float f3;
 
-        for (f4 = f2 - f1; f4 < -180F; f4 += 360F) {
+        for (f3 = f1 - f; f3 < -180.0F; f3 += 360.0F) {
             ;
         }
-        for (; f4 >= 180F; f4 -= 360F) {
-            ;
+
+        while (f3 >= 180.0F) {
+            f3 -= 360.0F;
         }
-        if (f4 > f3) {
-            f4 = f3;
+
+        if (f3 > f2) {
+            f3 = f2;
         }
-        if (f4 < -f3) {
-            f4 = -f3;
+
+        if (f3 < -f2) {
+            f3 = -f2;
         }
-        return f1 + f4;
+
+        return f + f3;
     }
 
     public void T() {}
 
     public boolean b() {
-        return l.a(z) && l.a(((Entity) (this)), z).size() == 0 && !l.b(z);
+        return this.world.a(this.boundingBox) && this.world.a((Entity) this, this.boundingBox).size() == 0 && !this.world.b(this.boundingBox);
     }
 
     protected void t() {
-        a(((Entity) (null)), 4);
+        this.a((Entity) null, 4);
     }
 
     public Vec3D G() {
-        return c(1.0F);
+        return this.c(1.0F);
     }
 
-    public Vec3D c(float f1) {
-        if (f1 == 1.0F) {
-            float f2 = MathHelper.b(-v * 0.01745329F - 3.141593F);
-            float f4 = MathHelper.a(-v * 0.01745329F - 3.141593F);
-            float f6 = -MathHelper.b(-w * 0.01745329F);
-            float f8 = MathHelper.a(-w * 0.01745329F);
+    public Vec3D c(float f) {
+        float f1;
+        float f2;
+        float f3;
+        float f4;
 
-            return Vec3D.b(f4 * f6, f8, f2 * f6);
+        if (f == 1.0F) {
+            f1 = MathHelper.b(-this.yaw * 0.017453292F - 3.1415927F);
+            f2 = MathHelper.a(-this.yaw * 0.017453292F - 3.1415927F);
+            f3 = -MathHelper.b(-this.pitch * 0.017453292F);
+            f4 = MathHelper.a(-this.pitch * 0.017453292F);
+            return Vec3D.b((double) (f2 * f3), (double) f4, (double) (f1 * f3));
         } else {
-            float f3 = y + (w - y) * f1;
-            float f5 = x + (v - x) * f1;
-            float f7 = MathHelper.b(-f5 * 0.01745329F - 3.141593F);
-            float f9 = MathHelper.a(-f5 * 0.01745329F - 3.141593F);
-            float f10 = -MathHelper.b(-f3 * 0.01745329F);
-            float f11 = MathHelper.a(-f3 * 0.01745329F);
+            f1 = this.lastPitch + (this.pitch - this.lastPitch) * f;
+            f2 = this.lastYaw + (this.yaw - this.lastYaw) * f;
+            f3 = MathHelper.b(-f2 * 0.017453292F - 3.1415927F);
+            f4 = MathHelper.a(-f2 * 0.017453292F - 3.1415927F);
+            float f5 = -MathHelper.b(-f1 * 0.017453292F);
+            float f6 = MathHelper.a(-f1 * 0.017453292F);
 
-            return Vec3D.b(f9 * f10, f11, f7 * f10);
+            return Vec3D.b((double) (f4 * f5), (double) f6, (double) (f3 * f5));
         }
     }
 

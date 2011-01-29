@@ -2,9 +2,9 @@ package net.minecraft.server;
 
 public class InventoryCrafting implements IInventory {
 
-    private ItemStack a[];
+    private ItemStack[] a;
     private int b;
-    private CraftingInventoryCB c;
+    private Container c;
 
     // CraftBukkit start
     public ItemStack[] getContents() {
@@ -12,33 +12,29 @@ public class InventoryCrafting implements IInventory {
     }
     // CraftBukkit end
 
-    public InventoryCrafting(CraftingInventoryCB craftinginventorycb, int i, int j) {
+    public InventoryCrafting(Container container, int i, int j) {
         int k = i * j;
 
-        a = new ItemStack[k];
-        c = craftinginventorycb;
-        b = i;
+        this.a = new ItemStack[k];
+        this.c = container;
+        this.b = i;
     }
 
     public int h_() {
-        return a.length;
+        return this.a.length;
     }
 
     public ItemStack a(int i) {
-        if (i >= h_()) {
-            return null;
-        } else {
-            return a[i];
-        }
+        return i >= this.h_() ? null : this.a[i];
     }
 
     public ItemStack a(int i, int j) {
-        if (i < 0 || i >= b) {
-            return null;
-        } else {
-            int k = i + j * b;
+        if (i >= 0 && i < this.b) {
+            int k = i + j * this.b;
 
-            return a(k);
+            return this.a(k);
+        } else {
+            return null;
         }
     }
 
@@ -47,29 +43,31 @@ public class InventoryCrafting implements IInventory {
     }
 
     public ItemStack b(int i, int j) {
-        if (a[i] != null) {
-            if (a[i].a <= j) {
-                ItemStack itemstack = a[i];
+        if (this.a[i] != null) {
+            ItemStack itemstack;
 
-                a[i] = null;
-                c.a(((IInventory) (this)));
+            if (this.a[i].count <= j) {
+                itemstack = this.a[i];
+                this.a[i] = null;
+                this.c.a((IInventory) this);
+                return itemstack;
+            } else {
+                itemstack = this.a[i].a(j);
+                if (this.a[i].count == 0) {
+                    this.a[i] = null;
+                }
+
+                this.c.a((IInventory) this);
                 return itemstack;
             }
-            ItemStack itemstack1 = a[i].a(j);
-
-            if (a[i].a == 0) {
-                a[i] = null;
-            }
-            c.a(((IInventory) (this)));
-            return itemstack1;
         } else {
             return null;
         }
     }
 
     public void a(int i, ItemStack itemstack) {
-        a[i] = itemstack;
-        c.a(((IInventory) (this)));
+        this.a[i] = itemstack;
+        this.c.a((IInventory) this);
     }
 
     public int c() {
@@ -78,7 +76,7 @@ public class InventoryCrafting implements IInventory {
 
     public void d() {}
 
-    public boolean a_(EntityPlayer entityplayer) {
+    public boolean a_(EntityHuman entityhuman) {
         return true;
     }
 }

@@ -12,22 +12,23 @@ import java.util.Random;
 public class BlockCactus extends Block {
 
     protected BlockCactus(int i, int j) {
-        super(i, j, Material.u);
-        a(true);
+        super(i, j, Material.CACTUS);
+        this.a(true);
     }
 
     public void a(World world, int i, int j, int k, Random random) {
-        if (world.e(i, j + 1, k)) {
+        if (world.isEmpty(i, j + 1, k)) {
             int l;
 
-            for (l = 1; world.a(i, j - l, k) == bi; l++) {
+            for (l = 1; world.getTypeId(i, j - l, k) == this.id; ++l) {
                 ;
             }
+
             if (l < 3) {
-                int i1 = world.b(i, j, k);
+                int i1 = world.getData(i, j, k);
 
                 if (i1 == 15) {
-                    world.e(i, j + 1, k, bi);
+                    world.e(i, j + 1, k, this.id);
                     world.c(i, j, k, 0);
                 } else {
                     world.c(i, j, k, i1 + 1);
@@ -37,20 +38,13 @@ public class BlockCactus extends Block {
     }
 
     public AxisAlignedBB d(World world, int i, int j, int k) {
-        float f1 = 0.0625F;
+        float f = 0.0625F;
 
-        return AxisAlignedBB.b((float) i + f1, j, (float) k + f1, (float) (i + 1) - f1, (float) (j + 1) - f1, (float) (k + 1) - f1);
+        return AxisAlignedBB.b((double) ((float) i + f), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) ((float) (j + 1) - f), (double) ((float) (k + 1) - f));
     }
 
     public int a(int i) {
-        if (i == 1) {
-            return bh - 1;
-        }
-        if (i == 0) {
-            return bh + 1;
-        } else {
-            return bh;
-        }
+        return i == 1 ? this.textureId - 1 : (i == 0 ? this.textureId + 1 : this.textureId);
     }
 
     public boolean a() {
@@ -58,42 +52,34 @@ public class BlockCactus extends Block {
     }
 
     public boolean a(World world, int i, int j, int k) {
-        if (!super.a(world, i, j, k)) {
-            return false;
-        } else {
-            return f(world, i, j, k);
-        }
+        return !super.a(world, i, j, k) ? false : this.f(world, i, j, k);
     }
 
     public void b(World world, int i, int j, int k, int l) {
-        if (!f(world, i, j, k)) {
-            a_(world, i, j, k, world.b(i, j, k));
+        if (!this.f(world, i, j, k)) {
+            this.a_(world, i, j, k, world.getData(i, j, k));
             world.e(i, j, k, 0);
         }
     }
 
     public boolean f(World world, int i, int j, int k) {
-        if (world.c(i - 1, j, k).a()) {
+        if (world.getMaterial(i - 1, j, k).isBuildable()) {
             return false;
-        }
-        if (world.c(i + 1, j, k).a()) {
+        } else if (world.getMaterial(i + 1, j, k).isBuildable()) {
             return false;
-        }
-        if (world.c(i, j, k - 1).a()) {
+        } else if (world.getMaterial(i, j, k - 1).isBuildable()) {
             return false;
-        }
-        if (world.c(i, j, k + 1).a()) {
+        } else if (world.getMaterial(i, j, k + 1).isBuildable()) {
             return false;
         } else {
-            int l = world.a(i, j - 1, k);
+            int l = world.getTypeId(i, j - 1, k);
 
-            return l == Block.aV.bi || l == Block.E.bi;
+            return l == Block.CACTUS.id || l == Block.SAND.id;
         }
     }
 
     public void a(World world, int i, int j, int k, Entity entity) {
         // CraftBukkit start - ENTITY_DAMAGEBY_BLOCK event
-
         if(entity instanceof EntityLiving) {
             CraftServer server = ((WorldServer) world).getServer();
             org.bukkit.block.Block damager = ((WorldServer) world).getWorld().getBlockAt(i, j, k);
@@ -101,16 +87,15 @@ public class BlockCactus extends Block {
             DamageCause damageType = EntityDamageEvent.DamageCause.CONTACT;
             int damageDone = 1;
 
-            EntityDamageByBlockEvent edbbe = new EntityDamageByBlockEvent(damager, damagee, damageType, damageDone);
-            server.getPluginManager().callEvent(edbbe);
+            EntityDamageByBlockEvent event = new EntityDamageByBlockEvent(damager, damagee, damageType, damageDone);
+            server.getPluginManager().callEvent(event);
 
-            if (!edbbe.isCancelled()){
-                entity.a(((Entity) (null)), edbbe.getDamage());
+            if (!event.isCancelled()){
+                entity.a((Entity) null, event.getDamage());
             }
             return;
-        } else {
-            entity.a(((Entity) (null)), 1);
         }
-     // CraftBukkit end
+        // CraftBukkit end
+        entity.a((Entity) null, 1);
     }
 }

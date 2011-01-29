@@ -18,51 +18,60 @@ public class ItemRedstone extends Item {
         super(i);
     }
 
-    public boolean a(ItemStack itemstack, EntityPlayer entityplayer, World world, int i, int j, int k, int l) {
-        // CraftBukkit - store the clicked block
+    public boolean a(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
+        // CraftBukkit start - store the clicked block
         CraftWorld craftWorld = ((WorldServer) world).getWorld();
         CraftServer craftServer = ((WorldServer) world).getServer();
         org.bukkit.block.Block blockClicked = craftWorld.getBlockAt(i, j, k);
-        
-        if (l == 0) {
-            j--;
-        }
-        if (l == 1) {
-            j++;
-        }
-        if (l == 2) {
-            k--;
-        }
-        if (l == 3) {
-            k++;
-        }
-        if (l == 4) {
-            i--;
-        }
-        if (l == 5) {
-            i++;
-        }
-        if (!world.e(i, j, k)) {
-            return false;
-        }
-        if (Block.av.a(world, i, j, k)) {
-            // CraftBukkit start - Redstone
-            Type eventType = Type.PLAYER_ITEM;
-            Player who = (entityplayer == null)?null:(Player)entityplayer.getBukkitEntity();
-            org.bukkit.inventory.ItemStack itemInHand = new CraftItemStack(itemstack);
-            BlockFace blockface = CraftBlock.notchToBlockFace(1);
-            
-            PlayerItemEvent pie = new PlayerItemEvent(eventType, who, itemInHand, blockClicked, blockface);
-            craftServer.getPluginManager().callEvent(pie);
-            
-            if (pie.isCancelled()) {
-                return false;
-            }
-            // CraftBukkit end
+        // CraftBukkit end
 
-            itemstack.a--;
-            world.e(i, j, k, Block.av.bi);
+        if (l == 0) {
+            --j;
         }
-        return true;
+
+        if (l == 1) {
+            ++j;
+        }
+
+        if (l == 2) {
+            --k;
+        }
+
+        if (l == 3) {
+            ++k;
+        }
+
+        if (l == 4) {
+            --i;
+        }
+
+        if (l == 5) {
+            ++i;
+        }
+
+        if (!world.isEmpty(i, j, k)) {
+            return false;
+        } else {
+            if (Block.REDSTONE_WIRE.a(world, i, j, k)) {
+                // CraftBukkit start - Redstone
+                Type eventType = Type.PLAYER_ITEM;
+                Player who = (entityhuman == null) ? null : (Player) entityhuman.getBukkitEntity();
+                org.bukkit.inventory.ItemStack itemInHand = new CraftItemStack(itemstack);
+                BlockFace blockface = CraftBlock.notchToBlockFace(1);
+
+                PlayerItemEvent event = new PlayerItemEvent(eventType, who, itemInHand, blockClicked, blockface);
+                craftServer.getPluginManager().callEvent(event);
+
+                if (event.isCancelled()) {
+                    return false;
+                }
+                // CraftBukkit end
+
+                --itemstack.count;
+                world.e(i, j, k, Block.REDSTONE_WIRE.id);
+            }
+
+            return true;
+        }
     }
 }

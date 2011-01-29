@@ -12,26 +12,16 @@ import org.bukkit.event.block.BlockInteractEvent;
 public class BlockWorkbench extends Block {
 
     protected BlockWorkbench(int i) {
-        super(i, Material.c);
-        bh = 59;
+        super(i, Material.WOOD);
+        this.textureId = 59;
     }
 
     public int a(int i) {
-        if (i == 1) {
-            return bh - 16;
-        }
-        if (i == 0) {
-            return Block.x.a(0);
-        }
-        if (i == 2 || i == 4) {
-            return bh + 1;
-        } else {
-            return bh;
-        }
+        return i == 1 ? this.textureId - 16 : (i == 0 ? Block.WOOD.a(0) : (i != 2 && i != 4 ? this.textureId : this.textureId + 1));
     }
 
-    public boolean a(World world, int i, int j, int k, EntityPlayer entityplayer) {
-        if (world.z) {
+    public boolean a(World world, int i, int j, int k, EntityHuman entityhuman) {
+        if (world.isStatic) {
             return true;
         } else {
             // CraftBukkit start - Interact Workbench
@@ -39,17 +29,17 @@ public class BlockWorkbench extends Block {
             CraftServer server = ((WorldServer) world).getServer();
             Type eventType = Type.BLOCK_INTERACT;
             CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
-            LivingEntity who = (entityplayer == null)?null:(LivingEntity)entityplayer.getBukkitEntity();
-            
-            BlockInteractEvent bie = new BlockInteractEvent(eventType, block, who);
-            server.getPluginManager().callEvent(bie);
+            LivingEntity who = (entityhuman == null) ? null : (LivingEntity) entityhuman.getBukkitEntity();
 
-            if (bie.isCancelled()) {
+            BlockInteractEvent event = new BlockInteractEvent(eventType, block, who);
+            server.getPluginManager().callEvent(event);
+
+            if (event.isCancelled()) {
                 return true;
             }
             // CraftBukkit end
 
-            entityplayer.a(i, j, k);
+            entityhuman.a(i, j, k);
             return true;
         }
     }

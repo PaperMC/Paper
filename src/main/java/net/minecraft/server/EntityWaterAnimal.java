@@ -5,12 +5,13 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftWaterMob;
 // CraftBukkit stop
 
-public class EntityWaterMob extends EntityCreature implements IAnimals {
+public class EntityWaterAnimal extends EntityCreature implements IAnimal {
 
-    public EntityWaterMob(World world) {
+    public EntityWaterAnimal(World world) {
         super(world);
+
         // CraftBukkit start
-        CraftServer server = ((WorldServer) this.l).getServer();
+        CraftServer server = ((WorldServer) this.world).getServer();
         this.bukkitEntity = new CraftWaterMob(server, this);
         // CraftBukkit end
     }
@@ -28,7 +29,7 @@ public class EntityWaterMob extends EntityCreature implements IAnimals {
     }
 
     public boolean b() {
-        return l.a(z);
+        return this.world.a(this.boundingBox);
     }
 
     public int c() {

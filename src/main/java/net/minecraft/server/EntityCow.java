@@ -5,14 +5,15 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftCow;
 // CraftBukkit end
 
-public class EntityCow extends EntityAnimals {
+public class EntityCow extends EntityAnimal {
 
     public EntityCow(World world) {
         super(world);
-        aP = "/mob/cow.png";
-        a(0.9F, 1.3F);
+        this.texture = "/mob/cow.png";
+        this.a(0.9F, 1.3F);
+
         // CraftBukkit start
-        CraftServer server = ((WorldServer) this.l).getServer();
+        CraftServer server = ((WorldServer) this.world).getServer();
         this.bukkitEntity = new CraftCow(server, this);
         // CraftBukkit end
     }
@@ -42,14 +43,14 @@ public class EntityCow extends EntityAnimals {
     }
 
     protected int h() {
-        return Item.aD.ba;
+        return Item.LEATHER.id;
     }
 
-    public boolean a(EntityPlayer entityplayer) {
-        ItemStack itemstack = entityplayer.an.e();
+    public boolean a(EntityHuman entityhuman) {
+        ItemStack itemstack = entityhuman.inventory.e();
 
-        if (itemstack != null && itemstack.c == Item.au.ba) {
-            entityplayer.an.a(entityplayer.an.c, new ItemStack(Item.aE));
+        if (itemstack != null && itemstack.id == Item.BUCKET.id) {
+            entityhuman.inventory.a(entityhuman.inventory.c, new ItemStack(Item.MILK_BUCKET));
             return true;
         } else {
             return false;

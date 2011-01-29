@@ -1,108 +1,102 @@
 package net.minecraft.server;
 
-import java.util.List;
-import java.util.Random;
-
 public class TileEntityMobSpawner extends TileEntity {
 
-    public int e;
-    public String h; // CraftBukkit -> public
+    public int e = -1;
+    public String h = "Pig"; // CraftBukkit private -> public
     public double f;
-    public double g;
+    public double g = 0.0D;
 
     public TileEntityMobSpawner() {
-        e = -1;
-        g = 0.0D;
-        h = "Pig";
-        e = 20;
+        this.e = 20;
     }
 
     public void a(String s) {
-        h = s;
+        this.h = s;
     }
 
     public boolean a() {
-        return a.a((double) b + 0.5D, (double) c + 0.5D, (double) d + 0.5D, 16D) != null;
+        return this.a.a((double) this.b + 0.5D, (double) this.c + 0.5D, (double) this.d + 0.5D, 16.0D) != null;
     }
 
     public void f() {
-        g = f;
-        if (!a()) {
-            return;
-        }
-        double d = (float) b + a.l.nextFloat();
-        double d2 = (float) c + a.l.nextFloat();
-        double d4 = (float) this.d + a.l.nextFloat();
+        this.g = this.f;
+        if (this.a()) {
+            double d0 = (double) ((float) this.b + this.a.l.nextFloat());
+            double d1 = (double) ((float) this.c + this.a.l.nextFloat());
+            double d2 = (double) ((float) this.d + this.a.l.nextFloat());
 
-        a.a("smoke", d, d2, d4, 0.0D, 0.0D, 0.0D);
-        a.a("flame", d, d2, d4, 0.0D, 0.0D, 0.0D);
-        for (f += 1000F / ((float) e + 200F); f > 360D;) {
-            f -= 360D;
-            g -= 360D;
-        }
+            this.a.a("smoke", d0, d1, d2, 0.0D, 0.0D, 0.0D);
+            this.a.a("flame", d0, d1, d2, 0.0D, 0.0D, 0.0D);
 
-        if (e == -1) {
-            b();
-        }
-        if (e > 0) {
-            e--;
-            return;
-        }
-        byte byte0 = 4;
-
-        for (int i = 0; i < byte0; i++) {
-            EntityLiving entityliving = (EntityLiving) EntityList.a(h, a);
-
-            if (entityliving == null) {
-                return;
-            }
-            int j = a.a(((entityliving)).getClass(), AxisAlignedBB.b(b, c, this.d, b + 1, c + 1, this.d + 1).b(8D, 4D, 8D)).size();
-
-            if (j >= 6) {
-                b();
-                return;
-            }
-            if (entityliving == null) {
-                continue;
-            }
-            double d6 = (double) b + (a.l.nextDouble() - a.l.nextDouble()) * 4D;
-            double d7 = (c + a.l.nextInt(3)) - 1;
-            double d8 = (double) this.d + (a.l.nextDouble() - a.l.nextDouble()) * 4D;
-
-            entityliving.c(d6, d7, d8, a.l.nextFloat() * 360F, 0.0F);
-            if (!entityliving.b()) {
-                continue;
-            }
-            a.a(((Entity) (entityliving)));
-            for (int k = 0; k < 20; k++) {
-                double d1 = (double) b + 0.5D + ((double) a.l.nextFloat() - 0.5D) * 2D;
-                double d3 = (double) c + 0.5D + ((double) a.l.nextFloat() - 0.5D) * 2D;
-                double d5 = (double) this.d + 0.5D + ((double) a.l.nextFloat() - 0.5D) * 2D;
-
-                a.a("smoke", d1, d3, d5, 0.0D, 0.0D, 0.0D);
-                a.a("flame", d1, d3, d5, 0.0D, 0.0D, 0.0D);
+            for (this.f += (double) (1000.0F / ((float) this.e + 200.0F)); this.f > 360.0D; this.g -= 360.0D) {
+                this.f -= 360.0D;
             }
 
-            entityliving.R();
-            b();
-        }
+            if (this.e == -1) {
+                this.b();
+            }
 
-        super.f();
+            if (this.e > 0) {
+                --this.e;
+            } else {
+                byte b0 = 4;
+
+                for (int i = 0; i < b0; ++i) {
+                    EntityLiving entityliving = (EntityLiving) ((EntityLiving) EntityTypes.a(this.h, this.a));
+
+                    if (entityliving == null) {
+                        return;
+                    }
+
+                    int j = this.a.a(entityliving.getClass(), AxisAlignedBB.b((double) this.b, (double) this.c, (double) this.d, (double) (this.b + 1), (double) (this.c + 1), (double) (this.d + 1)).b(8.0D, 4.0D, 8.0D)).size();
+
+                    if (j >= 6) {
+                        this.b();
+                        return;
+                    }
+
+                    if (entityliving != null) {
+                        double d3 = (double) this.b + (this.a.l.nextDouble() - this.a.l.nextDouble()) * 4.0D;
+                        double d4 = (double) (this.c + this.a.l.nextInt(3) - 1);
+                        double d5 = (double) this.d + (this.a.l.nextDouble() - this.a.l.nextDouble()) * 4.0D;
+
+                        entityliving.c(d3, d4, d5, this.a.l.nextFloat() * 360.0F, 0.0F);
+                        if (entityliving.b()) {
+                            this.a.a((Entity) entityliving);
+
+                            for (int k = 0; k < 20; ++k) {
+                                d0 = (double) this.b + 0.5D + ((double) this.a.l.nextFloat() - 0.5D) * 2.0D;
+                                d1 = (double) this.c + 0.5D + ((double) this.a.l.nextFloat() - 0.5D) * 2.0D;
+                                d2 = (double) this.d + 0.5D + ((double) this.a.l.nextFloat() - 0.5D) * 2.0D;
+                                this.a.a("smoke", d0, d1, d2, 0.0D, 0.0D, 0.0D);
+                                this.a.a("flame", d0, d1, d2, 0.0D, 0.0D, 0.0D);
+                            }
+
+                            entityliving.R();
+                            this.b();
+                        }
+                    }
+                }
+
+                super.f();
+            }
+        }
     }
 
     private void b() {
-        e = 200 + a.l.nextInt(600);
+        this.e = 200 + this.a.l.nextInt(600);
     }
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        h = nbttagcompound.h("EntityId");
-        e = ((short) (nbttagcompound.c("Delay")));
+        this.h = nbttagcompound.h("EntityId");
+        this.e = nbttagcompound.c("Delay");
     }
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
-        nbttagcompound.a("EntityId", h);
-        nbttagcompound.a("Delay", (short) e);
+        nbttagcompound.a("EntityId", this.h);
+        nbttagcompound.a("Delay", (short) this.e);
     }
 }

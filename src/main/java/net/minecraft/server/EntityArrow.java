@@ -10,278 +10,280 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 // CraftBukkit end
 
-
 public class EntityArrow extends Entity {
 
-    private int c;
-    private int d;
-    private int e;
-    private int f;
-    private boolean ak;
-    public int a;
+    private int c = -1;
+    private int d = -1;
+    private int e = -1;
+    private int f = 0;
+    private boolean ak = false;
+    public int a = 0;
     public EntityLiving b;
     private int al;
-    private int am;
-    
+    private int am = 0;
+
     public EntityArrow(World world) {
         super(world);
-        c = -1;
-        d = -1;
-        e = -1;
-        f = 0;
-        ak = false;
-        a = 0;
-        am = 0;
-        a(0.5F, 0.5F);
-        
+        this.a(0.5F, 0.5F);
+
         // CraftBukkit start
-        CraftServer server = ((WorldServer) this.l).getServer();
+        CraftServer server = ((WorldServer) this.world).getServer();
         this.bukkitEntity = new CraftArrow(server, this);
         // CraftBukkit end
     }
 
-    public EntityArrow(World world, double d1, double d2, double d3) {
-        // CraftBukkit start
-        this(world);
-        // CraftBukkit end
-        
-        a(d1, d2, d3);
-        H = 0.0F;
+    public EntityArrow(World world, double d0, double d1, double d2) {
+        this(world); // CraftBukkit super->this so we assign the entity
+
+        this.a(0.5F, 0.5F);
+        this.a(d0, d1, d2);
+        this.height = 0.0F;
     }
 
     public EntityArrow(World world, EntityLiving entityliving) {
-        // CraftBukkit start
-        this(world);
-        // CraftBukkit end
-        
-        b = entityliving;
-        c(entityliving.p, entityliving.q + (double) entityliving.w(), entityliving.r, entityliving.v, entityliving.w);
-        p -= MathHelper.b((v / 180F) * 3.141593F) * 0.16F;
-        q -= 0.10000000149011612D;
-        r -= MathHelper.a((v / 180F) * 3.141593F) * 0.16F;
-        a(p, q, r);
-        H = 0.0F;
-        s = -MathHelper.a((v / 180F) * 3.141593F) * MathHelper.b((w / 180F) * 3.141593F);
-        u = MathHelper.b((v / 180F) * 3.141593F) * MathHelper.b((w / 180F) * 3.141593F);
-        t = -MathHelper.a((w / 180F) * 3.141593F);
-        a(s, t, u, 1.5F, 1.0F);
+        this(world); // CraftBukkit super->this so we assign the entity
+
+        this.b = entityliving;
+        this.a(0.5F, 0.5F);
+        this.c(entityliving.locX, entityliving.locY + (double) entityliving.w(), entityliving.locZ, entityliving.yaw, entityliving.pitch);
+        this.locX -= (double) (MathHelper.b(this.yaw / 180.0F * 3.1415927F) * 0.16F);
+        this.locY -= 0.10000000149011612D;
+        this.locZ -= (double) (MathHelper.a(this.yaw / 180.0F * 3.1415927F) * 0.16F);
+        this.a(this.locX, this.locY, this.locZ);
+        this.height = 0.0F;
+        this.motX = (double) (-MathHelper.a(this.yaw / 180.0F * 3.1415927F) * MathHelper.b(this.pitch / 180.0F * 3.1415927F));
+        this.motZ = (double) (MathHelper.b(this.yaw / 180.0F * 3.1415927F) * MathHelper.b(this.pitch / 180.0F * 3.1415927F));
+        this.motY = (double) (-MathHelper.a(this.pitch / 180.0F * 3.1415927F));
+        this.a(this.motX, this.motY, this.motZ, 1.5F, 1.0F);
     }
 
     protected void a() {}
 
-    public void a(double d1, double d2, double d3, float f1, float f2) {
-        float f3 = MathHelper.a(d1 * d1 + d2 * d2 + d3 * d3);
+    public void a(double d0, double d1, double d2, float f, float f1) {
+        float f2 = MathHelper.a(d0 * d0 + d1 * d1 + d2 * d2);
 
-        d1 /= f3;
-        d2 /= f3;
-        d3 /= f3;
-        d1 += W.nextGaussian() * 0.0074999998323619366D * (double) f2;
-        d2 += W.nextGaussian() * 0.0074999998323619366D * (double) f2;
-        d3 += W.nextGaussian() * 0.0074999998323619366D * (double) f2;
-        d1 *= f1;
-        d2 *= f1;
-        d3 *= f1;
-        s = d1;
-        t = d2;
-        u = d3;
-        float f4 = MathHelper.a(d1 * d1 + d3 * d3);
+        d0 /= (double) f2;
+        d1 /= (double) f2;
+        d2 /= (double) f2;
+        d0 += this.random.nextGaussian() * 0.007499999832361937D * (double) f1;
+        d1 += this.random.nextGaussian() * 0.007499999832361937D * (double) f1;
+        d2 += this.random.nextGaussian() * 0.007499999832361937D * (double) f1;
+        d0 *= (double) f;
+        d1 *= (double) f;
+        d2 *= (double) f;
+        this.motX = d0;
+        this.motY = d1;
+        this.motZ = d2;
+        float f3 = MathHelper.a(d0 * d0 + d2 * d2);
 
-        x = v = (float) ((Math.atan2(d1, d3) * 180D) / 3.1415927410125732D);
-        y = w = (float) ((Math.atan2(d2, f4) * 180D) / 3.1415927410125732D);
-        al = 0;
+        this.lastYaw = this.yaw = (float) (Math.atan2(d0, d2) * 180.0D / 3.1415927410125732D);
+        this.lastPitch = this.pitch = (float) (Math.atan2(d1, (double) f3) * 180.0D / 3.1415927410125732D);
+        this.al = 0;
     }
 
     public void b_() {
         super.b_();
-        if (y == 0.0F && x == 0.0F) {
-            float f1 = MathHelper.a(s * s + u * u);
+        if (this.lastPitch == 0.0F && this.lastYaw == 0.0F) {
+            float f = MathHelper.a(this.motX * this.motX + this.motZ * this.motZ);
 
-            x = v = (float) ((Math.atan2(s, u) * 180D) / 3.1415927410125732D);
-            y = w = (float) ((Math.atan2(t, f1) * 180D) / 3.1415927410125732D);
+            this.lastYaw = this.yaw = (float) (Math.atan2(this.motX, this.motZ) * 180.0D / 3.1415927410125732D);
+            this.lastPitch = this.pitch = (float) (Math.atan2(this.motY, (double) f) * 180.0D / 3.1415927410125732D);
         }
-        if (a > 0) {
-            a--;
-        }
-        if (ak) {
-            int i = l.a(c, d, e);
 
-            if (i != f) {
-                ak = false;
-                s *= W.nextFloat() * 0.2F;
-                t *= W.nextFloat() * 0.2F;
-                u *= W.nextFloat() * 0.2F;
-                al = 0;
-                am = 0;
-            } else {
-                al++;
-                if (al == 1200) {
-                    q();
+        if (this.a > 0) {
+            --this.a;
+        }
+
+        if (this.ak) {
+            int i = this.world.getTypeId(this.c, this.d, this.e);
+
+            if (i == this.f) {
+                ++this.al;
+                if (this.al == 1200) {
+                    this.q();
                 }
+
                 return;
             }
-        } else {
-            am++;
-        }
-        Vec3D vec3d = Vec3D.b(p, q, r);
-        Vec3D vec3d1 = Vec3D.b(p + s, q + t, r + u);
-        MovingObjectPosition movingobjectposition = l.a(vec3d, vec3d1);
 
-        vec3d = Vec3D.b(p, q, r);
-        vec3d1 = Vec3D.b(p + s, q + t, r + u);
+            this.ak = false;
+            this.motX *= (double) (this.random.nextFloat() * 0.2F);
+            this.motY *= (double) (this.random.nextFloat() * 0.2F);
+            this.motZ *= (double) (this.random.nextFloat() * 0.2F);
+            this.al = 0;
+            this.am = 0;
+        } else {
+            ++this.am;
+        }
+
+        Vec3D vec3d = Vec3D.b(this.locX, this.locY, this.locZ);
+        Vec3D vec3d1 = Vec3D.b(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
+        MovingObjectPosition movingobjectposition = this.world.a(vec3d, vec3d1);
+
+        vec3d = Vec3D.b(this.locX, this.locY, this.locZ);
+        vec3d1 = Vec3D.b(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
         if (movingobjectposition != null) {
             vec3d1 = Vec3D.b(movingobjectposition.f.a, movingobjectposition.f.b, movingobjectposition.f.c);
         }
-        Entity entity = null;
-        List list = l.b(((Entity) (this)), z.a(s, t, u).b(1.0D, 1.0D, 1.0D));
-        double d1 = 0.0D;
 
-        for (int j = 0; j < list.size(); j++) {
+        Entity entity = null;
+        List list = this.world.b((Entity) this, this.boundingBox.a(this.motX, this.motY, this.motZ).b(1.0D, 1.0D, 1.0D));
+        double d0 = 0.0D;
+
+        float f1;
+
+        for (int j = 0; j < list.size(); ++j) {
             Entity entity1 = (Entity) list.get(j);
 
-            if (!entity1.c_() || entity1 == b && am < 5) {
-                continue;
-            }
-            float f5 = 0.3F;
-            AxisAlignedBB axisalignedbb = entity1.z.b(f5, f5, f5);
-            MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
+            if (entity1.c_() && (entity1 != this.b || this.am >= 5)) {
+                f1 = 0.3F;
+                AxisAlignedBB axisalignedbb = entity1.boundingBox.b((double) f1, (double) f1, (double) f1);
+                MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
 
-            if (movingobjectposition1 == null) {
-                continue;
-            }
-            double d2 = vec3d.a(movingobjectposition1.f);
+                if (movingobjectposition1 != null) {
+                    double d1 = vec3d.a(movingobjectposition1.f);
 
-            if (d2 < d1 || d1 == 0.0D) {
-                entity = entity1;
-                d1 = d2;
+                    if (d1 < d0 || d0 == 0.0D) {
+                        entity = entity1;
+                        d0 = d1;
+                    }
+                }
             }
         }
 
         if (entity != null) {
             movingobjectposition = new MovingObjectPosition(entity);
         }
+
+        float f2;
+
         if (movingobjectposition != null) {
             if (movingobjectposition.g != null) {
                 // CraftBukkit start
-                boolean bounce;
+                boolean stick;
                 if (entity instanceof EntityLiving) {
-                    CraftServer server = ((WorldServer) this.l).getServer();
+                    CraftServer server = ((WorldServer) this.world).getServer();
 
                     //TODO decide if we should create DamageCause.ARROW, DamageCause.PROJECTILE
                     // or leave as DamageCause.ENTITY_ATTACK
-                    org.bukkit.entity.Entity shooter = (b == null)?null:b.getBukkitEntity();
+                    org.bukkit.entity.Entity shooter = (this.b == null) ? null : this.b.getBukkitEntity();
                     org.bukkit.entity.Entity damagee = movingobjectposition.g.getBukkitEntity();
                     org.bukkit.entity.Entity projectile = this.getBukkitEntity();
                     // TODO deal with arrows being fired from a non-entity
                     DamageCause damageCause = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
                     int damage = 4;
 
-                    EntityDamageByProjectileEvent edbpe = new EntityDamageByProjectileEvent(shooter, damagee, projectile, damageCause, damage);
-                    server.getPluginManager().callEvent(edbpe);
-                    if(!edbpe.isCancelled()) {
+                    EntityDamageByProjectileEvent event = new EntityDamageByProjectileEvent(shooter, damagee, projectile, damageCause, damage);
+                    server.getPluginManager().callEvent(event);
+                    if(!event.isCancelled()) {
                         // this function returns if the arrow should stick in or not, i.e. !bounce
-                        bounce = !movingobjectposition.g.a(((Entity) (b)), edbpe.getDamage());
+                        stick = movingobjectposition.g.a(this.b, event.getDamage());
                     } else {
                         // event was cancelled, get if the arrow should bounce or not
-                        bounce = edbpe.getBounce();
+                        stick = !event.getBounce();
                     }
                 } else {
-                    bounce = !movingobjectposition.g.a(((Entity) (b)), 4);
+                    stick = movingobjectposition.g.a(this.b, 4);
                 }
-                if (!bounce) {
-                 // CraftBukkit end
-                    l.a(((Entity) (this)), "random.drr", 1.0F, 1.2F / (W.nextFloat() * 0.2F + 0.9F));
-                    q();
+                if (stick) {
+                // CraftBukkit end
+                    this.world.a(this, "random.drr", 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
+                    this.q();
                 } else {
-                    s *= -0.10000000149011612D;
-                    t *= -0.10000000149011612D;
-                    u *= -0.10000000149011612D;
-                    v += 180F;
-                    x += 180F;
-                    am = 0;
+                    this.motX *= -0.10000000149011612D;
+                    this.motY *= -0.10000000149011612D;
+                    this.motZ *= -0.10000000149011612D;
+                    this.yaw += 180.0F;
+                    this.lastYaw += 180.0F;
+                    this.am = 0;
                 }
             } else {
-                c = movingobjectposition.b;
-                d = movingobjectposition.c;
-                e = movingobjectposition.d;
-                f = l.a(c, d, e);
-                s = (float) (movingobjectposition.f.a - p);
-                t = (float) (movingobjectposition.f.b - q);
-                u = (float) (movingobjectposition.f.c - r);
-                float f2 = MathHelper.a(s * s + t * t + u * u);
-
-                p -= (s / (double) f2) * 0.05000000074505806D;
-                q -= (t / (double) f2) * 0.05000000074505806D;
-                r -= (u / (double) f2) * 0.05000000074505806D;
-                l.a(((Entity) (this)), "random.drr", 1.0F, 1.2F / (W.nextFloat() * 0.2F + 0.9F));
-                ak = true;
-                a = 7;
+                this.c = movingobjectposition.b;
+                this.d = movingobjectposition.c;
+                this.e = movingobjectposition.d;
+                this.f = this.world.getTypeId(this.c, this.d, this.e);
+                this.motX = (double) ((float) (movingobjectposition.f.a - this.locX));
+                this.motY = (double) ((float) (movingobjectposition.f.b - this.locY));
+                this.motZ = (double) ((float) (movingobjectposition.f.c - this.locZ));
+                f2 = MathHelper.a(this.motX * this.motX + this.motY * this.motY + this.motZ * this.motZ);
+                this.locX -= this.motX / (double) f2 * 0.05000000074505806D;
+                this.locY -= this.motY / (double) f2 * 0.05000000074505806D;
+                this.locZ -= this.motZ / (double) f2 * 0.05000000074505806D;
+                this.world.a(this, "random.drr", 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
+                this.ak = true;
+                this.a = 7;
             }
         }
-        p += s;
-        q += t;
-        r += u;
-        float f3 = MathHelper.a(s * s + u * u);
 
-        v = (float) ((Math.atan2(s, u) * 180D) / 3.1415927410125732D);
-        for (w = (float) ((Math.atan2(t, f3) * 180D) / 3.1415927410125732D); w - y < -180F; y -= 360F) {
-            ;
-        }
-        for (; w - y >= 180F; y += 360F) {
-            ;
-        }
-        for (; v - x < -180F; x -= 360F) {
-            ;
-        }
-        for (; v - x >= 180F; x += 360F) {
-            ;
-        }
-        w = y + (w - y) * 0.2F;
-        v = x + (v - x) * 0.2F;
-        float f4 = 0.99F;
-        float f6 = 0.03F;
+        this.locX += this.motX;
+        this.locY += this.motY;
+        this.locZ += this.motZ;
+        f2 = MathHelper.a(this.motX * this.motX + this.motZ * this.motZ);
+        this.yaw = (float) (Math.atan2(this.motX, this.motZ) * 180.0D / 3.1415927410125732D);
 
-        if (v()) {
-            for (int k = 0; k < 4; k++) {
-                float f7 = 0.25F;
+        for (this.pitch = (float) (Math.atan2(this.motY, (double) f2) * 180.0D / 3.1415927410125732D); this.pitch - this.lastPitch < -180.0F; this.lastPitch -= 360.0F) {
+            ;
+        }
 
-                l.a("bubble", p - s * (double) f7, q - t * (double) f7, r - u * (double) f7, s, t, u);
+        while (this.pitch - this.lastPitch >= 180.0F) {
+            this.lastPitch += 360.0F;
+        }
+
+        while (this.yaw - this.lastYaw < -180.0F) {
+            this.lastYaw -= 360.0F;
+        }
+
+        while (this.yaw - this.lastYaw >= 180.0F) {
+            this.lastYaw += 360.0F;
+        }
+
+        this.pitch = this.lastPitch + (this.pitch - this.lastPitch) * 0.2F;
+        this.yaw = this.lastYaw + (this.yaw - this.lastYaw) * 0.2F;
+        float f3 = 0.99F;
+
+        f1 = 0.03F;
+        if (this.v()) {
+            for (int k = 0; k < 4; ++k) {
+                float f4 = 0.25F;
+
+                this.world.a("bubble", this.locX - this.motX * (double) f4, this.locY - this.motY * (double) f4, this.locZ - this.motZ * (double) f4, this.motX, this.motY, this.motZ);
             }
 
-            f4 = 0.8F;
+            f3 = 0.8F;
         }
-        s *= f4;
-        t *= f4;
-        u *= f4;
-        t -= f6;
-        a(p, q, r);
+
+        this.motX *= (double) f3;
+        this.motY *= (double) f3;
+        this.motZ *= (double) f3;
+        this.motY -= (double) f1;
+        this.a(this.locX, this.locY, this.locZ);
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("xTile", (short) c);
-        nbttagcompound.a("yTile", (short) d);
-        nbttagcompound.a("zTile", (short) e);
-        nbttagcompound.a("inTile", (byte) f);
-        nbttagcompound.a("shake", (byte) a);
-        nbttagcompound.a("inGround", (byte) (ak ? 1 : 0));
+        nbttagcompound.a("xTile", (short) this.c);
+        nbttagcompound.a("yTile", (short) this.d);
+        nbttagcompound.a("zTile", (short) this.e);
+        nbttagcompound.a("inTile", (byte) this.f);
+        nbttagcompound.a("shake", (byte) this.a);
+        nbttagcompound.a("inGround", (byte) (this.ak ? 1 : 0));
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        c = ((int) (nbttagcompound.c("xTile")));
-        d = ((int) (nbttagcompound.c("yTile")));
-        e = ((int) (nbttagcompound.c("zTile")));
-        f = nbttagcompound.b("inTile") & 0xff;
-        a = nbttagcompound.b("shake") & 0xff;
-        ak = nbttagcompound.b("inGround") == 1;
+        this.c = nbttagcompound.c("xTile");
+        this.d = nbttagcompound.c("yTile");
+        this.e = nbttagcompound.c("zTile");
+        this.f = nbttagcompound.b("inTile") & 255;
+        this.a = nbttagcompound.b("shake") & 255;
+        this.ak = nbttagcompound.b("inGround") == 1;
     }
 
-    public void b(EntityPlayer entityplayer) {
-        if (l.z) {
-            return;
-        }
-        if (ak && b == entityplayer && a <= 0 && entityplayer.an.a(new ItemStack(Item.j, 1))) {
-            l.a(((Entity) (this)), "random.pop", 0.2F, ((W.nextFloat() - W.nextFloat()) * 0.7F + 1.0F) * 2.0F);
-            entityplayer.c(((Entity) (this)), 1);
-            q();
+    public void b(EntityHuman entityhuman) {
+        if (!this.world.isStatic) {
+            if (this.ak && this.b == entityhuman && this.a <= 0 && entityhuman.inventory.a(new ItemStack(Item.ARROW, 1))) {
+                this.world.a(this, "random.pop", 0.2F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
+                entityhuman.c(this, 1);
+                this.q();
+            }
         }
     }
 }
