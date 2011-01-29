@@ -22,4 +22,12 @@ public class ServerListener implements Listener {
      */
     public void onPluginDisabled(PluginEvent event) {
     }
+
+    /**
+     * Called when a server command is used
+     *
+     * @param event Relevant event details
+     */
+    public void onServerCommand(PluginEvent event) {
+    }
 }

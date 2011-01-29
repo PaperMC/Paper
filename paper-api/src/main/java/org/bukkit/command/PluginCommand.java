@@ -13,15 +13,15 @@ public final class PluginCommand extends Command {
         this.usageMessage = "";
     }
 
-    public boolean execute(Player player, String commandLabel, String[] args) {
-        boolean cmdSuccess = owningPlugin.onCommand(player, this, commandLabel, args);
+    public boolean execute(CommandSender sender, String commandLabel, String[] args) {
+        boolean cmdSuccess = owningPlugin.onCommand(sender, this, commandLabel, args);
         if (!cmdSuccess && !usageMessage.isEmpty()) {
             String tmpMsg = usageMessage.replace("<command>", commandLabel);
             String[] usageLines = tmpMsg.split("\\n");
             for(String line: usageLines) {
                 while (line.length() > 0) {
                     int stripChars = (line.length() > 53 ? 53:line.length());
-                    player.sendMessage(ChatColor.RED + line.substring(0, stripChars));
+                    sender.sendMessage(ChatColor.RED + line.substring(0, stripChars));
                     line = line.substring(stripChars);
                 }
             }

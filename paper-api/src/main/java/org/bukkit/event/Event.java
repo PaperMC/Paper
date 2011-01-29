@@ -38,8 +38,7 @@ public abstract class Event {
      * @return Name of this event
      */
     public final String getEventName() {
-        if(type!=Type.CUSTOM_EVENT) return type.toString();
-        else return name;
+        return ( type != Type.CUSTOM_EVENT) ? type.toString() : name;
     }
 
     /**
@@ -276,6 +275,13 @@ public abstract class Event {
         BLOCK_INTERACT (Category.BLOCK),
 
         /**
+         * Called when a block is destroyed from being burnt by fire
+         *
+         * @see org.bukkit.event.block.BlockBurnEvent
+         */
+        BLOCK_BURN (Category.BLOCK),
+
+        /**
          * Called when leaves are decaying naturally
          *
          * @see org.bukkit.event.block.LeavesDecayEvent
@@ -357,6 +363,13 @@ public abstract class Event {
         PLUGIN_DISABLE (Category.SERVER),
 
         /**
+         * Called when a plugin is disabled
+         *
+         * @see org.bukkit.event.server.PluginEvent
+         */
+        SERVER_COMMAND (Category.SERVER),
+
+        /**
          * WORLD EVENTS
          */
 
@@ -417,7 +430,7 @@ public abstract class Event {
          * @see org.bukkit.event.entity.EntityDamageByEntityEvent
          */
         ENTITY_DAMAGEDBY_ENTITY (Category.LIVING_ENTITY),
-        
+
         /**
          * Called when a LivingEntity is damaged by a projectile Entity
          *
@@ -445,13 +458,20 @@ public abstract class Event {
          * @todo: add javadoc see comment
          */
         ENTITY_COMBUST (Category.LIVING_ENTITY),
-        
+
         /**
          * Called when an entity explodes, either TNT, Creeper, or Ghast Fireball
          *
          * @todo: add javadoc see comment
          */
         ENTITY_EXPLODE (Category.LIVING_ENTITY),
+
+        /**
+         * Called when an entity targets another entity
+         *
+         * @see org.bukkit.event.entity.EntityTargetEvent
+         */
+        ENTITY_TARGET (Category.LIVING_ENTITY),
 
         /**
          * VEHICLE EVENTS

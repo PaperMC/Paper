@@ -5,6 +5,7 @@ import java.io.File;
 import java.util.regex.Pattern;
 
 import org.bukkit.event.Event;
+import org.bukkit.event.Listener;
 
 /**
  * Represents a plugin loader, which handles direct access to specific types
@@ -27,13 +28,12 @@ public interface PluginLoader {
     public Pattern[] getPluginFileFilters();
 
     /**
-     * Calls a player related event with the given details
+     * Creates and returns an event executor
      *
-     * @param registration Registered information on the plugin to call about this event
-     * @param type Type of player related event to call
-     * @param event Event details
+     * @param type Type of the event executor to create
+     * @param listener the object that will handle the eventual call back
      */
-    public void callEvent(RegisteredListener registration, Event event);
+    public IExecutor createExecutor(Event.Type type, Listener listener);
 
     /**
      * Enables the specified plugin

@@ -4,7 +4,7 @@ package org.bukkit.plugin.java;
 import java.io.File;
 import org.bukkit.Server;
 import org.bukkit.command.Command;
-import org.bukkit.entity.Player;
+import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoader;
@@ -49,7 +49,7 @@ public abstract class JavaPlugin implements Plugin {
     /**
      * Returns the folder that the plugin data's files are located in. The
      * folder may not yet exist.
-     * 
+     *
      * @return
      */
     public File getDataFolder() {
@@ -100,13 +100,13 @@ public abstract class JavaPlugin implements Plugin {
     public PluginDescriptionFile getDescription() {
         return description;
     }
-    
+
     /**
      * Returns the main configuration located at
      * <plugin name>/config.yml and loads the file. If the configuration file
      * does not exist and it cannot be loaded, no error will be emitted and
      * the configuration file will have no values.
-     * 
+     *
      * @return
      */
     public Configuration getConfiguration() {
@@ -138,11 +138,11 @@ public abstract class JavaPlugin implements Plugin {
             }
         }
     }
-    
+
     /**
      * Called when a command registered by this plugin is received.
      */
-    public boolean onCommand(Player player, Command cmd, String commandLabel, String[] args) {
+    public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args) {
         return false; // default implementation:  do nothing!
     }
 }

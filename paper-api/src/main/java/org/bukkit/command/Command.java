@@ -3,7 +3,7 @@ package org.bukkit.command;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bukkit.entity.Player;
+import org.bukkit.command.CommandSender;
 
 public abstract class Command {
     private final String name;
@@ -17,12 +17,12 @@ public abstract class Command {
         this.usageMessage = "/" + name;
     }
 
-    public abstract boolean execute(Player player, String currentAlias, String[] args);
-    
+    public abstract boolean execute(CommandSender sender, String currentAlias, String[] args);
+
     public String getName() {
         return name;
     }
-    
+
     public List<String> getAliases() {
         return aliases;
     }
@@ -34,17 +34,17 @@ public abstract class Command {
     public String getUsage() {
         return usageMessage;
     }
-    
+
     public Command setAliases(List<String> aliases) {
         this.aliases = aliases;
         return this;
     }
-    
+
     public Command setTooltip(String tooltip) {
         this.tooltip = tooltip;
         return this;
     }
-    
+
     public Command setUsage(String usage) {
         this.usageMessage = usage;
         return this;

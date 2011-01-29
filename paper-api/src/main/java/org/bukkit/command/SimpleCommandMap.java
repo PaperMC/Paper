@@ -20,12 +20,12 @@ public final class SimpleCommandMap implements CommandMap {
 
         register("reload", "bukkit", new Command("reload") {
             @Override
-            public boolean execute(Player player, String currentAlias, String[] args) {
-                if (player.isOp()) {
+            public boolean execute(CommandSender sender, String currentAlias, String[] args) {
+                if (sender.isOp()) {
                     server.reload();
-                    player.sendMessage(ChatColor.GREEN + "Reload complete.");
+                    sender.sendMessage(ChatColor.GREEN + "Reload complete.");
                 } else {
-                    player.sendMessage(ChatColor.RED + "You do not have sufficient access"
+                    sender.sendMessage(ChatColor.RED + "You do not have sufficient access"
                             + " to reload this server.");
                 }
 
@@ -56,28 +56,28 @@ public final class SimpleCommandMap implements CommandMap {
             register(name, fallbackPrefix, command);
         }
     }
-    
-    /** 
+
+    /**
      * {@inheritDoc}
      */
     public boolean register(String name, String fallbackPrefix, Command command) {
         boolean nameInUse = (knownCommands.get(name) != null);
         if (nameInUse)
             name = fallbackPrefix + ":" + name;
-        
+
         knownCommands.put(name, command);
         return !nameInUse;
     }
 
-    /** 
+    /**
      * {@inheritDoc}
      */
-    public boolean dispatch(Player sender, String commandLine) {
+    public boolean dispatch(CommandSender sender, String commandLine) {
         String[] args = commandLine.split(" ");
         String sentCommandLabel = args[0].substring(1);
 
         args = Arrays.copyOfRange(args, 1, args.length);
-        
+
         Command target = knownCommands.get(sentCommandLabel);
         boolean isRegisteredCommand = (target != null);
         if (isRegisteredCommand) {
@@ -98,12 +98,12 @@ public final class SimpleCommandMap implements CommandMap {
         }
 
         @Override
-        public boolean execute(Player player, String currentAlias, String[] args) {
+        public boolean execute(CommandSender sender, String currentAlias, String[] args) {
             if (args.length == 0) {
-                player.sendMessage("This server is running " + ChatColor.GREEN
+                sender.sendMessage("This server is running " + ChatColor.GREEN
                         + server.getName() + ChatColor.WHITE + " version " + ChatColor.GREEN + server.getVersion());
-                player.sendMessage("This server is also sporting some funky dev build of Bukkit!");
-                player.sendMessage("Plugins: " + getPluginList());
+                sender.sendMessage("This server is also sporting some funky dev build of Bukkit!");
+                sender.sendMessage("Plugins: " + getPluginList());
             } else {
                 StringBuilder name = new StringBuilder();
 
@@ -118,26 +118,26 @@ public final class SimpleCommandMap implements CommandMap {
 
                 if (plugin != null) {
                     PluginDescriptionFile desc = plugin.getDescription();
-                    player.sendMessage(ChatColor.GREEN + desc.getName() + ChatColor.WHITE + " version " + ChatColor.GREEN + desc.getVersion());
+                    sender.sendMessage(ChatColor.GREEN + desc.getName() + ChatColor.WHITE + " version " + ChatColor.GREEN + desc.getVersion());
 
                     if (desc.getDescription() != null) {
-                        player.sendMessage(desc.getDescription());
+                        sender.sendMessage(desc.getDescription());
                     }
 
                     if (desc.getWebsite() != null) {
-                        player.sendMessage("Website: " + ChatColor.GREEN + desc.getWebsite());
+                        sender.sendMessage("Website: " + ChatColor.GREEN + desc.getWebsite());
                     }
 
                     if (!desc.getAuthors().isEmpty()) {
                         if (desc.getAuthors().size() == 1) {
-                            player.sendMessage("Author: " + getAuthors(desc));
+                            sender.sendMessage("Author: " + getAuthors(desc));
                         } else {
-                            player.sendMessage("Authors: " + getAuthors(desc));
+                            sender.sendMessage("Authors: " + getAuthors(desc));
                         }
                     }
                 } else {
-                    player.sendMessage("This server is not running any plugin by that name.");
-                    player.sendMessage("Plugins: " + getPluginList());
+                    sender.sendMessage("This server is not running any plugin by that name.");
+                    sender.sendMessage("Plugins: " + getPluginList());
                 }
             }
 
