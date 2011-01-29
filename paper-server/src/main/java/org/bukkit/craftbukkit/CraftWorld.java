@@ -3,8 +3,11 @@ package org.bukkit.craftbukkit;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.entity.*;
 import org.bukkit.entity.*;
+import org.bukkit.entity.Entity;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import net.minecraft.server.*;
@@ -315,5 +318,45 @@ public class CraftWorld implements World {
             hash = 37 * hash + this.z;
             return hash;
         }
+    }
+
+    public List<Entity> getEntities() {
+        List<Entity> list = new ArrayList<Entity>();
+        
+        for (Object o : world.b) {
+            if (o instanceof net.minecraft.server.Entity) {
+                net.minecraft.server.Entity mcEnt
+                         = (net.minecraft.server.Entity)o;
+                
+                Entity bukkitEntity = mcEnt.getBukkitEntity();
+
+                // Assuming that bukkitEntity isn't null
+                if (bukkitEntity != null) {
+                    list.add(bukkitEntity);
+                }
+            }
+        }
+        
+        return list;
+    }
+
+    public List<LivingEntity> getLivingEntities() {
+        List<LivingEntity> list = new ArrayList<LivingEntity>();
+        
+        for (Object o : world.b) {
+            if (o instanceof net.minecraft.server.Entity) {
+                net.minecraft.server.Entity mcEnt
+                         = (net.minecraft.server.Entity)o;
+                
+                Entity bukkitEntity = mcEnt.getBukkitEntity();
+                
+                // Assuming that bukkitEntity isn't null
+                if (bukkitEntity != null && bukkitEntity instanceof LivingEntity) {
+                    list.add((LivingEntity)bukkitEntity);
+                }
+            }
+        }
+        
+        return list;
     }
 }

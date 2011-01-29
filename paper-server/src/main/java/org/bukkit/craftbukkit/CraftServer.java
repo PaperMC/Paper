@@ -49,6 +49,10 @@ public final class CraftServer implements Server {
         }
     }
 
+    public void disablePlugins() {
+        pluginManager.disablePlugins();
+    }
+
     private void loadPlugin(Plugin plugin) {
         List<Command> pluginCommands = PluginCommandYamlParser.parse(plugin);
         if (!pluginCommands.isEmpty()) {
@@ -168,5 +172,9 @@ public final class CraftServer implements Server {
 
         console.e.k = monsters ? 1 : 0;
         console.e.a(monsters, animals);
+
+        pluginManager.clearPlugins();
+        commandMap.clearCommands();
+        loadPlugins();
     }
 }

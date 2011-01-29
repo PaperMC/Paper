@@ -337,6 +337,14 @@ public class CraftBlock implements Block {
         return null;
     }
 
+    public boolean isBlockPowered() {
+        return world.getHandle().o(x, y, z);
+    }
+
+    public boolean isBlockIndirectlyPowered() {
+        return world.getHandle().p(x, y, z);
+    }
+
     public void update() {
         type = world.getHandle().a(x, y, z);
         data = (byte)world.getHandle().b(x, y, z);
