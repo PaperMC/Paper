@@ -363,7 +363,7 @@ public abstract class Event {
         PLUGIN_DISABLE (Category.SERVER),
 
         /**
-         * Called when a plugin is disabled
+         * Called when a server command is called
          *
          * @see org.bukkit.event.server.PluginEvent
          */

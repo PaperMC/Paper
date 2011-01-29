@@ -3,7 +3,7 @@ package org.bukkit.plugin;
 
 import org.bukkit.event.Event;
 import org.bukkit.event.Listener;
-import org.bukkit.plugin.IExecutor;
+import org.bukkit.plugin.EventExecutor;
 
 /**
  * Stores relevant information for plugin listeners
@@ -12,9 +12,9 @@ public class RegisteredListener {
     private final Listener listener;
     private final Event.Priority priority;
     private final Plugin plugin;
-    private final IExecutor executor;
+    private final EventExecutor executor;
 
-    public RegisteredListener(final Listener pluginListener, final IExecutor eventExecutor, final Event.Priority eventPriority, final Plugin registeredPlugin ) {
+    public RegisteredListener(final Listener pluginListener, final EventExecutor eventExecutor, final Event.Priority eventPriority, final Plugin registeredPlugin ) {
         listener = pluginListener;
         priority = eventPriority;
         plugin = registeredPlugin;

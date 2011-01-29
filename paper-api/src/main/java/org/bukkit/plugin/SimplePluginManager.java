@@ -231,14 +231,15 @@ public final class SimplePluginManager implements PluginManager {
     }
 
     /**
-     * Registers the given event to the specified listener
+     * Registers the given event to the specified listener using a directly passed EventExecutor
      *
      * @param type EventType to register
      * @param listener PlayerListener to register
+     * @param executor EventExecutor to register
      * @param priority Priority of this event
      * @param plugin Plugin to register
      */
-    public void registerEvent(Event.Type type, Listener listener, IExecutor executor, Priority priority, Plugin plugin) {
+    public void registerEvent(Event.Type type, Listener listener, EventExecutor executor, Priority priority, Plugin plugin) {
         getEventListeners( type ).offer(new RegisteredListener(listener, executor, priority, plugin));
     }
 

@@ -112,232 +112,232 @@ public final class JavaPluginLoader implements PluginLoader {
         classes.put(name, clazz);
     }
 
-    public IExecutor createExecutor( Event.Type type, Listener listener ) {
+    public EventExecutor createExecutor( Event.Type type, Listener listener ) {
         // TODO: remove multiple Listener type and hence casts
         switch (type) {
         // Player Events
         case PLAYER_JOIN:
-            return new IExecutor() {
+            return new EventExecutor() {
                 public void execute( Listener listener, Event event ) {
                     ((PlayerListener)listener).onPlayerJoin( (PlayerEvent)event );
                 }
             };
         case PLAYER_QUIT:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((PlayerListener)listener).onPlayerQuit( (PlayerEvent)event );
                 }
             };
         case PLAYER_COMMAND:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((PlayerListener)listener).onPlayerCommand( (PlayerChatEvent)event );
                 }
             };
         case PLAYER_CHAT:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((PlayerListener)listener).onPlayerChat( (PlayerChatEvent)event );
                 }
             };
         case PLAYER_MOVE:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((PlayerListener)listener).onPlayerMove( (PlayerMoveEvent)event );
                 }
             };
         case PLAYER_TELEPORT:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((PlayerListener)listener).onPlayerTeleport( (PlayerMoveEvent)event );
                 }
             };
         case PLAYER_ITEM:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((PlayerListener)listener).onPlayerItem( (PlayerItemEvent)event );
                 }
             };
         case PLAYER_LOGIN:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((PlayerListener)listener).onPlayerLogin( (PlayerLoginEvent)event );
                 }
             };
         case PLAYER_EGG_THROW:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((PlayerListener)listener).onPlayerEggThrow( (PlayerEggThrowEvent)event );
                 }
             };
         case PLAYER_ANIMATION:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((PlayerListener)listener).onPlayerAnimation( (PlayerAnimationEvent)event );
                 }
             };
 
         // Block Events
         case BLOCK_PHYSICS:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((BlockListener)listener).onBlockPhysics( (BlockPhysicsEvent)event );
                 }
             };
         case BLOCK_CANBUILD:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((BlockListener)listener).onBlockCanBuild( (BlockCanBuildEvent)event );
                 }
             };
         case BLOCK_RIGHTCLICKED:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((BlockListener)listener).onBlockRightClick( (BlockRightClickEvent)event );
                 }
             };
         case BLOCK_PLACED:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((BlockListener)listener).onBlockPlace( (BlockPlaceEvent)event );
                 }
             };
         case BLOCK_DAMAGED:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((BlockListener)listener).onBlockDamage( (BlockDamageEvent)event );
                 }
             };
         case BLOCK_INTERACT:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((BlockListener)listener).onBlockInteract( (BlockInteractEvent)event );
                 }
             };
         case BLOCK_FLOW:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((BlockListener)listener).onBlockFlow( (BlockFromToEvent)event );
                 }
             };
         case LEAVES_DECAY:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((BlockListener)listener).onLeavesDecay( (LeavesDecayEvent)event );
                 }
             };
         case BLOCK_IGNITE:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((BlockListener)listener).onBlockIgnite( (BlockIgniteEvent)event );
                 }
             };
         case REDSTONE_CHANGE:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((BlockListener)listener).onBlockRedstoneChange( (BlockFromToEvent)event );
                 }
             };
 
         case BLOCK_BURN:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((BlockListener)listener).onBlockBurn( (BlockBurnEvent)event );
                 }
             };
 
         // Server Events
         case PLUGIN_ENABLE:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((ServerListener)listener).onPluginEnabled( (PluginEvent)event );
                 }
             };
         case PLUGIN_DISABLE:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((ServerListener)listener).onPluginDisabled( (PluginEvent)event );
                 }
             };
 
         case SERVER_COMMAND:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((ServerListener)listener).onServerCommand( (ServerCommandEvent)event );
                 }
             };
 
         // World Events
         case CHUNK_LOADED:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((WorldListener)listener).onChunkLoaded( (ChunkLoadEvent)event );
                 }
             };
         case CHUNK_UNLOADED:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((WorldListener)listener).onChunkUnloaded( (ChunkUnloadEvent)event );
                 }
             };
 
         // Entity Events
         case ENTITY_DAMAGEDBY_BLOCK:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((EntityListener)listener).onEntityDamageByBlock( (EntityDamageByBlockEvent)event );
                 }
             };
         case ENTITY_DAMAGEDBY_ENTITY:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((EntityListener)listener).onEntityDamageByEntity( (EntityDamageByEntityEvent)event );
                 }
             };
         case ENTITY_DAMAGEDBY_PROJECTILE:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((EntityListener)listener).onEntityDamageByProjectile( (EntityDamageByProjectileEvent)event );
                 }
             };
         case ENTITY_DAMAGED:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((EntityListener)listener).onEntityDamage( (EntityDamageEvent)event );
                 }
             };
         case ENTITY_DEATH:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((EntityListener)listener).onEntityDeath( (EntityDeathEvent)event );
                 }
             };
         case ENTITY_COMBUST:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((EntityListener)listener).onEntityCombust( (EntityCombustEvent)event );
                 }
             };
         case ENTITY_EXPLODE:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((EntityListener)listener).onEntityExplode( (EntityExplodeEvent)event );
                 }
             };
         case ENTITY_TARGET:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((EntityListener)listener).onEntityTarget( (EntityTargetEvent)event );
                 }
             };
 
         // Vehicle Events
         case VEHICLE_CREATE:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((VehicleListener)listener).onVehicleCreate( (VehicleCreateEvent)event );
                 }
             };
         case VEHICLE_DAMAGE:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((VehicleListener)listener).onVehicleDamage( (VehicleDamageEvent)event );
                 }
             };
         case VEHICLE_COLLISION_BLOCK:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((VehicleListener)listener).onVehicleBlockCollision( (VehicleBlockCollisionEvent)event );
                 }
             };
         case VEHICLE_COLLISION_ENTITY:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((VehicleListener)listener).onVehicleEntityCollision( (VehicleEntityCollisionEvent)event );
                 }
             };
         case VEHICLE_ENTER:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((VehicleListener)listener).onVehicleEnter( (VehicleEnterEvent)event );
                 }
             };
         case VEHICLE_EXIT:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((VehicleListener)listener).onVehicleExit( (VehicleExitEvent)event );
                 }
             };
         case VEHICLE_MOVE:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((VehicleListener)listener).onVehicleMove( (VehicleMoveEvent)event );
                 }
             };
 
         // Custom Events
         case CUSTOM_EVENT:
-            return new IExecutor() { public void execute( Listener listener, Event event ) {
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((CustomEventListener)listener).onCustomEvent( event );
                 }
             };

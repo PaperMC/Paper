@@ -196,12 +196,12 @@ public final class SimpleCommandMap implements CommandMap {
         }
 
         @Override
-        public boolean execute(Player player, String currentAlias, String[] args) {
-            if (player.isOp()) {
+        public boolean execute(CommandSender sender, String currentAlias, String[] args) {
+            if (sender.isOp()) {
                 server.reload();
-                player.sendMessage(ChatColor.GREEN + "Reload complete.");
+                sender.sendMessage(ChatColor.GREEN + "Reload complete.");
             } else {
-                player.sendMessage(ChatColor.RED + "You do not have sufficient access" + " to reload this server.");
+                sender.sendMessage(ChatColor.RED + "You do not have sufficient access" + " to reload this server.");
             }
             return true;
         }

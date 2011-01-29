@@ -108,11 +108,11 @@ public interface PluginManager {
      *
      * @param type EventType to register
      * @param listener Listener to register
-     * @param executor IExecutor to register
+     * @param executor EventExecutor to register
      * @param priority Priority of this event
      * @param plugin Plugin to register
      */
-    public void registerEvent(Event.Type type, Listener listener, IExecutor executor, Priority priority, Plugin plugin);
+    public void registerEvent(Event.Type type, Listener listener, EventExecutor executor, Priority priority, Plugin plugin);
 
     /**
      * Enables the specified plugin

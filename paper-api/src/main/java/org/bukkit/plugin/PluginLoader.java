@@ -33,7 +33,7 @@ public interface PluginLoader {
      * @param type Type of the event executor to create
      * @param listener the object that will handle the eventual call back
      */
-    public IExecutor createExecutor(Event.Type type, Listener listener);
+    public EventExecutor createExecutor(Event.Type type, Listener listener);
 
     /**
      * Enables the specified plugin

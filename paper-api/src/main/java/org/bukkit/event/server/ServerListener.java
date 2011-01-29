@@ -28,6 +28,6 @@ public class ServerListener implements Listener {
      *
      * @param event Relevant event details
      */
-    public void onServerCommand(PluginEvent event) {
+    public void onServerCommand(ServerCommandEvent event) {
     }
 }
