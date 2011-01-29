@@ -4,6 +4,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A ClassLoader for plugins, to allow shared classes across multiple plugins
@@ -37,5 +38,9 @@ public class PluginClassLoader extends URLClassLoader {
         }
 
         return result;
+    }
+
+    public Set<String> getClasses() {
+        return classes.keySet();
     }
 }

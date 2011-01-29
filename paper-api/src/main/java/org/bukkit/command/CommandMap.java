@@ -26,4 +26,8 @@ public interface CommandMap {
      */
     public boolean dispatch(CommandSender sender, String cmdLine);
 
+    /**
+     * Clears all registered commands.
+     */
+    public void clearCommands();
 }

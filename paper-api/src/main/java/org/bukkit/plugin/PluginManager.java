@@ -76,6 +76,16 @@ public interface PluginManager {
     public Plugin[] loadPlugins(File directory);
 
     /**
+     * Disables all the loaded plugins
+     */
+    public void disablePlugins();
+
+    /**
+     * Disables and removes all plugins
+     */
+    public void clearPlugins();
+
+    /**
      * Calls a player related event with the given details
      *
      * @param type Type of player related event to call

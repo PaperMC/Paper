@@ -56,4 +56,12 @@ public interface Player extends HumanEntity, CommandSender {
      * @return
      */
     public void kickPlayer(String message);
+
+    /**
+     * Makes the player perform the given command
+     *
+     * @param command Command to perform
+     * @return true if the command was successful, otherwise false
+     */
+    public boolean performCommand(String command);
 }

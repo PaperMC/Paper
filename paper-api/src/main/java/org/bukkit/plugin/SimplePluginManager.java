@@ -176,9 +176,24 @@ public final class SimplePluginManager implements PluginManager {
         }
     }
 
+    public void disablePlugins() {
+        for(Plugin plugin: getPlugins()) {
+            disablePlugin(plugin);
+        }
+    }
+
     public void disablePlugin(final Plugin plugin) {
         if (plugin.isEnabled()) {
             plugin.getPluginLoader().disablePlugin(plugin);
+        }
+    }
+
+    public void clearPlugins() {
+        synchronized (this) {
+            disablePlugins();
+            plugins.clear();
+            lookupNames.clear();
+            listeners.clear();
         }
     }
 

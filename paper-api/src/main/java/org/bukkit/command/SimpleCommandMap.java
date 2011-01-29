@@ -14,24 +14,16 @@ import org.bukkit.plugin.PluginDescriptionFile;
 
 public final class SimpleCommandMap implements CommandMap {
     private final Map<String, Command> knownCommands = new HashMap<String, Command>();
+    private final Server server;
 
     public SimpleCommandMap(final Server server) {
+        this.server = server;
+        setDefaultCommands(server);
+    }
+
+    private void setDefaultCommands(final Server server) {
         register("bukkit", new VersionCommand("version", server));
-
-        register("reload", "bukkit", new Command("reload") {
-            @Override
-            public boolean execute(CommandSender sender, String currentAlias, String[] args) {
-                if (sender.isOp()) {
-                    server.reload();
-                    sender.sendMessage(ChatColor.GREEN + "Reload complete.");
-                } else {
-                    sender.sendMessage(ChatColor.RED + "You do not have sufficient access"
-                            + " to reload this server.");
-                }
-
-                return true;
-            }
-        });
+        register("bukkit", new ReloadCommand("reload", server));
     }
 
     /**
@@ -84,6 +76,13 @@ public final class SimpleCommandMap implements CommandMap {
             target.execute(sender, sentCommandLabel, args);
         }
         return isRegisteredCommand;
+    }
+
+    public void clearCommands() {
+        synchronized (this) {
+            knownCommands.clear();
+            setDefaultCommands(server);
+        }
     }
 
     private static class VersionCommand extends Command {
@@ -181,6 +180,30 @@ public final class SimpleCommandMap implements CommandMap {
             }
 
             return result.toString();
+        }
+    }
+
+    private static class ReloadCommand extends Command {
+
+        private final Server server;
+
+        public ReloadCommand(String name, Server server) {
+            super(name);
+            this.server = server;
+            this.tooltip = "Reloads the server configuration and plugins";
+            this.usageMessage = "/reload";
+            this.setAliases(Arrays.asList("rl"));
+        }
+
+        @Override
+        public boolean execute(Player player, String currentAlias, String[] args) {
+            if (player.isOp()) {
+                server.reload();
+                player.sendMessage(ChatColor.GREEN + "Reload complete.");
+            } else {
+                player.sendMessage(ChatColor.RED + "You do not have sufficient access" + " to reload this server.");
+            }
+            return true;
         }
     }
 }
