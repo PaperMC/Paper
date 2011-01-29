@@ -25,6 +25,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         return server.getHandle().g(getName());
     }
 
+    public boolean isPlayer() {
+        return true;
+    }
+
     public boolean isOnline() {
         for (Object obj: server.getHandle().b) {
             EntityPlayerMP player = (EntityPlayerMP) obj;
