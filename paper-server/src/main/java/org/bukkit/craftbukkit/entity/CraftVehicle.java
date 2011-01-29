@@ -15,7 +15,7 @@ public abstract class CraftVehicle extends CraftEntity implements Vehicle {
     }
 
     public Entity getPassenger() {
-        return isEmpty()?null:(getHandle().j.getBukkitEntity());
+        return isEmpty() ? null : (getHandle().passenger.getBukkitEntity());
     }
     
     public boolean setPassenger(Entity passenger) {
@@ -28,15 +28,15 @@ public abstract class CraftVehicle extends CraftEntity implements Vehicle {
     }
 
     public boolean isEmpty() {
-        return getHandle().j == null;
+        return getHandle().passenger == null;
     }
     
     public boolean eject() {
-        if (getHandle().j == null) {
+        if (getHandle().passenger == null) {
             return false;
         }
         
-        getHandle().j.setPassengerOf(null);
+        getHandle().passenger.setPassengerOf(null);
         return true;
     }
 }

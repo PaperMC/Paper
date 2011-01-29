@@ -2,8 +2,8 @@ package org.bukkit.craftbukkit.entity;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import net.minecraft.server.EntityHuman;
 import net.minecraft.server.EntityPlayer;
-import net.minecraft.server.EntityPlayerMP;
 import net.minecraft.server.Packet;
 import net.minecraft.server.Packet3Chat;
 import net.minecraft.server.Packet6SpawnPosition;
@@ -12,10 +12,10 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Player;
 
 public class CraftPlayer extends CraftHumanEntity implements Player {
-    private EntityPlayerMP entity;
+    private EntityPlayer entity;
     private String name;
 
-    public CraftPlayer(CraftServer server, EntityPlayerMP entity) {
+    public CraftPlayer(CraftServer server, EntityPlayer entity) {
         super(server, entity);
         this.name = getName();
         this.entity = entity;
@@ -31,8 +31,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public boolean isOnline() {
         for (Object obj: server.getHandle().b) {
-            EntityPlayerMP player = (EntityPlayerMP) obj;
-            if (player.aw.equalsIgnoreCase(getName())) {
+            EntityPlayer player = (EntityPlayer) obj;
+            if (player.name.equalsIgnoreCase(getName())) {
                 return true;
             }
         }
@@ -49,12 +49,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
-    public EntityPlayerMP getHandle() {
+    public EntityPlayer getHandle() {
         return entity;
     }
 
-    public void setHandle(final EntityPlayerMP entity) {
-        super.setHandle((EntityPlayer) entity);
+    public void setHandle(final EntityPlayer entity) {
+        super.setHandle((EntityHuman) entity);
         this.entity = entity;
     }
 

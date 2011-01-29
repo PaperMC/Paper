@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import net.minecraft.server.EntityPlayerMP;
+import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PropertyManager;
 import net.minecraft.server.ServerConfigurationManager;
@@ -70,7 +70,7 @@ public final class CraftServer implements Server {
     }
 
     public Player[] getOnlinePlayers() {
-        List<EntityPlayerMP> online = server.b;
+        List<EntityPlayer> online = server.b;
         Player[] players = new Player[online.size()];
 
         for (int i = 0; i < players.length; i++) {
@@ -109,7 +109,7 @@ public final class CraftServer implements Server {
         return players.length;
     }
 
-    public Player getPlayer(final EntityPlayerMP entity) {
+    public Player getPlayer(final EntityPlayer entity) {
         return entity.a.getPlayer();
     }
 

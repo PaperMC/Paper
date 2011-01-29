@@ -24,7 +24,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public int getHealth() {
-        return entity.aZ;
+        return entity.health;
     }
 
     public void setHealth(int health) {
@@ -32,7 +32,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             throw new IllegalArgumentException("Health must be between 0 and 200");
         }
 
-        entity.aZ = health;
+        entity.health = health;
     }
 
     @Override
@@ -72,11 +72,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public boolean isInsideVehicle() {
-        return entity.k != null;
+        return entity.vehicle != null;
     }
 
     public boolean leaveVehicle() {
-        if (entity.k == null) {
+        if (entity.vehicle == null) {
             return false;
         }
         
@@ -85,13 +85,13 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public Vehicle getVehicle() {
-        if (entity.k == null) {
+        if (entity.vehicle == null) {
             return null;
         }
         
-        org.bukkit.entity.Entity vehicle = (entity.k.getBukkitEntity());
+        org.bukkit.entity.Entity vehicle = (entity.vehicle.getBukkitEntity());
         if (vehicle instanceof Vehicle) {
-            return (Vehicle)vehicle;
+            return (Vehicle) vehicle;
         }
         
         return null;

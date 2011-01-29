@@ -37,7 +37,7 @@ public class CraftWorld implements World {
         CraftBlock block = blockCache.get(loc);
 
         if (block == null) {
-            block = new CraftBlock(this, x, y, z, world.a(x, y, z), (byte)world.b(x, y, z));
+            block = new CraftBlock(this, x, y, z, world.getTypeId(x, y, z), (byte)world.getData(x, y, z));
             blockCache.put(loc, block);
         } else {
             block.update();
@@ -47,7 +47,7 @@ public class CraftWorld implements World {
     }
 
     public int getBlockTypeIdAt(int x, int y, int z) {
-        return world.a(x, y, z);
+        return world.getTypeId(x, y, z);
     }
 
     public int getHighestBlockYAt(int x, int z) {
@@ -55,7 +55,7 @@ public class CraftWorld implements World {
     }
     
     public Location getSpawnLocation() {
-        return new Location(this, world.m, world.e(world.m, world.o), world.o);
+        return new Location(this, world.spawnX, world.e(world.spawnX, world.spawnZ), world.spawnZ);
     }
 
     public Chunk getChunkAt(int x, int z) {
@@ -86,8 +86,8 @@ public class CraftWorld implements World {
     public Block updateBlock(int x, int y, int z) {
         BlockCoordinate loc = new BlockCoordinate(x, y, z);
         CraftBlock block = (CraftBlock)blockCache.get(loc);
-        final int type = world.a(x, y, z);
-        final byte data = (byte)world.b(x, y, z);
+        final int type = world.getTypeId(x, y, z);
+        final byte data = (byte)world.getData(x, y, z);
 
         if (block == null) {
             block = new CraftBlock(this, x, y, z, type, data);
@@ -202,31 +202,8 @@ public class CraftWorld implements World {
         return treeGen.a(world, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
     }
     
-    /**@deprecated*/
-    public CraftEntity toCraftEntity(net.minecraft.server.Entity entity) {
-        if (entity instanceof CraftMappable) {
-            return ((CraftMappable)entity).getCraftEntity();
-        } else if (entity instanceof EntityItem) {
-            return new CraftItemDrop(world.getServer(), (EntityItem)entity);
-        } else if (entity instanceof EntityArrow) {
-            return new CraftArrow(world.getServer(), (EntityArrow)entity);
-        } else if (entity instanceof EntityEgg) {
-            return new CraftEgg(world.getServer(), (EntityEgg)entity);
-        } else if (entity instanceof EntityPlayerMP) {
-            return new CraftPlayer(world.getServer(), (EntityPlayerMP)entity);
-        } else if (entity instanceof EntitySnowball) {
-            return new CraftSnowball(world.getServer(), (EntitySnowball)entity);
-        } else if (entity instanceof EntityPlayer) {
-            return new CraftHumanEntity(world.getServer(), (EntityPlayer)entity);
-        } else if (entity instanceof EntityLiving) {
-            return new CraftLivingEntity(world.getServer(), (EntityLiving)entity);
-        } else {
-            return null;
-        }
-    }
-
     public TileEntity getTileEntityAt(final int x, final int y, final int z) {
-        return world.m(x, y, z);
+        return world.getTileEntity(x, y, z);
     }
 
     public String getName() {

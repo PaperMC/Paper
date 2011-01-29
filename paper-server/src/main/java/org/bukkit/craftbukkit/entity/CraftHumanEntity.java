@@ -1,7 +1,7 @@
 
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.server.EntityPlayer;
+import net.minecraft.server.EntityHuman;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -10,28 +10,28 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.CraftServer;
 
 public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
-    private EntityPlayer entity;
+    private EntityHuman entity;
     private CraftInventoryPlayer inventory;
 
-    public CraftHumanEntity(final CraftServer server, final EntityPlayer entity) {
+    public CraftHumanEntity(final CraftServer server, final EntityHuman entity) {
         super(server, entity);
         this.entity = entity;
-        this.inventory = new CraftInventoryPlayer( entity.an );
+        this.inventory = new CraftInventoryPlayer( entity.inventory );
     }
 
     public String getName() {
-        return entity.aw;
+        return entity.name;
     }
 
     @Override
-    public EntityPlayer getHandle() {
+    public EntityHuman getHandle() {
         return entity;
     }
 
-    public void setHandle(final EntityPlayer entity) {
-        super.setHandle((EntityPlayer)entity);
+    public void setHandle(final EntityHuman entity) {
+        super.setHandle((EntityHuman)entity);
         this.entity = entity;
-        this.inventory = new CraftInventoryPlayer( entity.an );
+        this.inventory = new CraftInventoryPlayer( entity.inventory );
     }
 
     public CraftInventoryPlayer getInventory() {
