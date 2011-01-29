@@ -5,6 +5,9 @@ import java.util.Random;
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftCreature;
+import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.event.entity.EntityTargetEvent;
+import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
 // CraftBukkit end
 
 public class EntityCreature extends EntityLiving {
@@ -27,12 +30,37 @@ public class EntityCreature extends EntityLiving {
         float f = 16F;
 
         if (d == null) {
-            d = l();
+            // CraftBukkit start
+            Entity target = l();
+            if(target != null) {
+                EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), target.getBukkitEntity(), TargetReason.CLOSEST_PLAYER);
+                CraftServer server = ((WorldServer) this.l).getServer();
+                server.getPluginManager().callEvent(event);
+                if(!event.isCancelled()) {
+                    if(event.getTarget() == null) {
+                        d = null;
+                    } else {
+                        d = ((CraftEntity) event.getTarget()).getHandle();
+                    }
+                }
+            }
+            // CraftBukkit end
             if (d != null) {
                 a = l.a(((Entity) (this)), d, f);
             }
         } else if (!d.B()) {
-            d = null;
+            // CraftBukkit start
+            EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), null, TargetReason.TARGET_DIED);
+            CraftServer server = ((WorldServer) this.l).getServer();
+            server.getPluginManager().callEvent(event);
+            if(!event.isCancelled()) {
+                if(event.getTarget() == null) {
+                    d = null;
+                } else {
+                    d = ((CraftEntity) event.getTarget()).getHandle();
+                }
+            }
+            // CraftBukkit end
         } else {
             float f1 = d.a(((Entity) (this)));
 

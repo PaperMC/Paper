@@ -5,10 +5,13 @@ import java.util.Random;
 // CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftMonster;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+import org.bukkit.event.entity.EntityTargetEvent;
+import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
 // CraftBukkit end
 
 public class EntityMobs extends EntityCreature implements IMobs {
@@ -57,7 +60,22 @@ public class EntityMobs extends EntityCreature implements IMobs {
                 return true;
             }
             if (entity != this) {
-                d = entity;
+                // CraftBukkit start
+                org.bukkit.entity.Entity bukkitTarget = null;
+                if(entity != null) {
+                    bukkitTarget = entity.getBukkitEntity();
+                }
+                EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), bukkitTarget, TargetReason.TARGET_ATTACKED_ENTITY);
+                CraftServer server = ((WorldServer) this.l).getServer();
+                server.getPluginManager().callEvent(event);
+                if(!event.isCancelled()) {
+                    if(event.getTarget() == null) {
+                        d = null;
+                    } else {
+                        d = ((CraftEntity) event.getTarget()).getHandle();
+                    }
+                }
+                // CraftBukkit end
             }
             return true;
         } else {
