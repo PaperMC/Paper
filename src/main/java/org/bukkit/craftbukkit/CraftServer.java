@@ -1,9 +1,6 @@
 package org.bukkit.craftbukkit;
 
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandMap;
-import org.bukkit.command.SimpleCommandMap;
-import org.bukkit.command.PluginCommandYamlParser;
+import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 import java.io.File;
 import java.util.ArrayList;
@@ -153,15 +150,15 @@ public final class CraftServer implements Server {
         return server;
     }
 
-    public boolean dispatchCommand(Player player, String commandLine) {
-        return commandMap.dispatch(player, commandLine);
+    public boolean dispatchCommand(CommandSender sender, String commandLine) {
+        return commandMap.dispatch(sender, commandLine);
     }
 
     public void reload() {
         PropertyManager config = new PropertyManager(console.options);
 
         console.d = config;
-        
+
         boolean animals = config.a("spawn-monsters", console.m);
         boolean monsters = config.a("spawn-monsters", console.e.k > 0);
 
