@@ -17,15 +17,6 @@ public class EntityDeathEvent extends EntityEvent {
     }
 
     /**
-     * Sets what items will be dropped when this entity dies
-     *
-     * @param drops Items to drop when the entity dies
-     */
-    public void setDrops(final List<ItemStack> drops) {
-        this.drops = drops;
-    }
-
-    /**
      * Gets all the items which will drop when the entity dies
      *
      * @return Items to drop when the entity dies
