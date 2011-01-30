@@ -75,6 +75,9 @@ public class ServerConfigurationManager {
 
         this.c.e.a(entityplayer);
         this.d.a(entityplayer);
+
+        // CraftBukkit
+        server.getPluginManager().callEvent(new PlayerEvent(PlayerEvent.Type.PLAYER_JOIN, server.getPlayer(entityplayer)));
     }
 
     public void b(EntityPlayer entityplayer) {
