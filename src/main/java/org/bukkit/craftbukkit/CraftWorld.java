@@ -83,20 +83,22 @@ public class CraftWorld implements World {
     }
 
 
-    public Block updateBlock(int x, int y, int z) {
+    public void updateBlock(int x, int y, int z, Integer type, Integer data) {
         BlockCoordinate loc = new BlockCoordinate(x, y, z);
-        CraftBlock block = (CraftBlock)blockCache.get(loc);
-        final int type = world.getTypeId(x, y, z);
-        final byte data = (byte)world.getData(x, y, z);
+        CraftBlock block = (CraftBlock) blockCache.get(loc);
 
         if (block == null) {
-            block = new CraftBlock(this, x, y, z, type, data);
-            blockCache.put(loc, block);
-        } else {
-            block.update();
+            return;
         }
 
-        return block;
+        if (type == null) {
+            type = world.getTypeId(x, y, z);
+        }
+        if (data == null) {
+            data = world.getData(x, y, z);
+        }
+
+        block.update(type, data.byteValue());
     }
 
     public CraftChunk updateChunk(int x, int z) {

@@ -346,9 +346,13 @@ public class CraftBlock implements Block {
         return world.getHandle().p(x, y, z);
     }
 
-    public void update() {
-        type = world.getHandle().getTypeId(x, y, z);
-        data = (byte)world.getHandle().getData(x, y, z);
+    public void update(int type, byte data) {
+        this.type = type;
+        this.data = data;
         light = (byte)world.getHandle().j(x, y, z);
+    }
+
+    public void update() {
+        this.update( world.getHandle().getTypeId(x, y, z), (byte)world.getHandle().getData(x, y, z));
     }
 }

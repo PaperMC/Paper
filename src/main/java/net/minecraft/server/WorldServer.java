@@ -34,31 +34,33 @@ public class WorldServer extends World {
     private final CraftWorld world;
     private final CraftServer server;
 
+    /**
+     * setData
+     * 
+     * @param x
+     * @param y
+     * @param z
+     * @param data (actually a byte!)
+     */
     @Override
-    public boolean d(int i1, int j1, int k1, int l1) {
-        boolean result = super.d(i1, j1, k1, l1);
-        if ((result) && (world != null)) world.updateBlock(i1, j1, k1);
+    public boolean d(int x, int y, int z, int data) {
+        boolean result = super.d(x, y, z, data);
+        if ((result) && (world != null)) world.updateBlock(x, y, z, null, data);
         return result;
     }
 
     @Override
-    public boolean setTypeId(int i, int j, int k, int l) {
-        boolean result = super.setTypeId(i, j, k, l);
-        if ((result) && (world != null)) world.updateBlock(i, j, k);
+    public boolean setTypeId(int x, int y, int z, int type) {
+        boolean result = super.setTypeId(x, y, z, type);
+        if ((result) && (world != null)) world.updateBlock(x, y, z, type, null);
         return result;
     }
 
     @Override
-    public boolean setTypeIdAndData(int i, int j, int k, int l, int i1) {
-        boolean result = super.setTypeIdAndData(i, j, k, l, i1);
-        if ((result) && (world != null)) world.updateBlock(i, j, k);
+    public boolean setTypeIdAndData(int x, int y, int z, int type, int data) {
+        boolean result = super.setTypeIdAndData(x, y, z, type, data);
+        if ((result) && (world != null)) world.updateBlock(x, y, z, type, data);
         return result;
-    }
-
-    @Override
-    public void setTileEntity(int i, int j, int k, TileEntity tileentity) {
-        super.setTileEntity(i, j, k, tileentity);
-        if (world != null) world.updateBlock(i, j, k);
     }
 
     public CraftWorld getWorld() {
