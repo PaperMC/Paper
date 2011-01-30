@@ -115,17 +115,21 @@ public interface World {
      * Spawns a tree at a location.
      * 
      * @param loc
+     * @param type
      * @return whether the tree was created
      */
-    public boolean generateTree(Location loc);
-
+    public boolean generateTree(Location loc, TreeType type);
+    
     /**
-     * Spawns a big tree at a location.
+     * Spawns a tree at a location.
      * 
      * @param loc
+     * @param type
+     * @param delegate
      * @return whether the tree was created
      */
-    public boolean generateBigTree(Location loc);
+    public boolean generateTree(Location loc, TreeType type,
+            BlockChangeDelegate delegate);
 
     /**
      * Spawns a regular passenger minecart.
