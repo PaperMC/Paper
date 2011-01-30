@@ -1,9 +1,17 @@
 package net.minecraft.server;
 
+import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import org.bukkit.Server;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.event.Event;
+import org.bukkit.event.entity.EntityDeathEvent;
 
 public class EntityPlayer extends EntityHuman implements ICrafting {
 
@@ -69,7 +77,31 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     }
 
     public void f(Entity entity) {
-        this.inventory.h();
+        // Craftbukkit start
+        List<org.bukkit.inventory.ItemStack> loot = new ArrayList<org.bukkit.inventory.ItemStack>();
+        
+        for (int i = 0; i < inventory.a.length; ++i) {
+            if (inventory.a[i] != null) {
+                loot.add(new CraftItemStack(inventory.a[i]));
+            }
+        }
+
+        for (int i = 0; i < inventory.b.length; ++i) {
+            if (inventory.b[i] != null) {
+                loot.add(new CraftItemStack(inventory.b[i]));
+            }
+        }
+
+        CraftEntity ent = (CraftEntity)getBukkitEntity();
+        EntityDeathEvent event = new EntityDeathEvent(Event.Type.ENTITY_DEATH, ent, loot);
+        CraftWorld cworld = ((WorldServer)world).getWorld();
+        Server server = ((WorldServer)world).getServer();
+        server.getPluginManager().callEvent(event);
+
+        for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
+            cworld.dropItemNaturally(ent.getLocation(), stack);
+        }
+        // Craftbukkit end
     }
 
     public boolean a(Entity entity, int i) {
