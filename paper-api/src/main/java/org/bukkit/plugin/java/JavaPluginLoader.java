@@ -24,6 +24,7 @@ import org.bukkit.event.vehicle.*;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.event.world.WorldListener;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.plugin.*;
 
 /**
@@ -165,6 +166,11 @@ public final class JavaPluginLoader implements PluginLoader {
         case PLAYER_ANIMATION:
             return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((PlayerListener)listener).onPlayerAnimation( (PlayerAnimationEvent)event );
+                }
+            };
+        case INVENTORY_OPEN:
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
+                    ((PlayerListener)listener).onInventoryOpen( (PlayerInventoryEvent)event );
                 }
             };
 
