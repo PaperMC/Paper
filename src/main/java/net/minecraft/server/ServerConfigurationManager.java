@@ -36,7 +36,12 @@ public class ServerConfigurationManager {
     private File k;
     private PlayerNBTManager l;
 
+    private CraftServer server; // CraftBukkit
+
     public ServerConfigurationManager(MinecraftServer minecraftserver) {
+        // CraftBukkit 2 lines!
+        minecraftserver.server = new CraftServer(minecraftserver, this);
+        server = minecraftserver.server;
         this.c = minecraftserver;
         this.i = minecraftserver.a("banned-players.txt");
         this.j = minecraftserver.a("banned-ips.txt");
@@ -84,9 +89,9 @@ public class ServerConfigurationManager {
 
         // CraftBukkit start
         server.getPluginManager().callEvent(new PlayerEvent(PlayerEvent.Type.PLAYER_QUIT, server.getPlayer(entityplayer))); // CraftBukkit
+        // CraftBukkit end
     }
-    private CraftServer server;
-    // CraftBukkit end
+
 
     public EntityPlayer a(NetLoginHandler netloginhandler, String s, String s1) {
         // CraftBukkit start - note: this entire method needs to be changed

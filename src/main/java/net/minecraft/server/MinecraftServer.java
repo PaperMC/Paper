@@ -38,7 +38,8 @@ public class MinecraftServer implements ICommandListener, Runnable {
     public boolean m;
     public boolean n;
 
-    public MinecraftServer() {
+    // Craftbukkit start - adds argument OptionSet
+    public MinecraftServer(OptionSet options) {
         new ThreadSleepForever(this);
         // CraftBukkit start
         this.options = options;
@@ -496,7 +497,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
     // Craftbukkit start - replaces main(String args[])
     public static void main(final OptionSet options) {
         try {
-            MinecraftServer minecraftserver = new MinecraftServer();
+            MinecraftServer minecraftserver = new MinecraftServer(options);
 
             // CraftBukkit - remove gui
 
