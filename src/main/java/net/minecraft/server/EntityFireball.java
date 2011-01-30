@@ -3,7 +3,6 @@ package net.minecraft.server;
 import java.util.List;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.entity.CraftFireball;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -28,18 +27,12 @@ public class EntityFireball extends Entity {
     public EntityFireball(World world) {
         super(world);
         this.a(1.0F, 1.0F);
-
-        // CraftBukkit start
-        CraftServer server = ((WorldServer) this.world).getServer();
-        this.bukkitEntity = new CraftFireball(server, this);
-        // CraftBukkit end
     }
 
     protected void a() {}
 
     public EntityFireball(World world, EntityLiving entityliving, double d0, double d1, double d2) {
-        this(world); // CraftBukkit super->this so we assign the entity
-
+        super(world);
         this.an = entityliving;
         this.a(1.0F, 1.0F);
         this.c(entityliving.locX, entityliving.locY, entityliving.locZ, entityliving.yaw, entityliving.pitch);

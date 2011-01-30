@@ -5,11 +5,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.entity.CraftPlayer;
-// CraftBukkit end
-
 public class EntityPlayer extends EntityHuman implements ICrafting {
 
     public NetServerHandler a;
@@ -45,11 +40,6 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         this.name = s;
         this.c = iteminworldmanager;
         this.height = 0.0F;
-
-        // CraftBukkit start
-        CraftServer server = ((WorldServer) this.world).getServer();
-        this.bukkitEntity = new CraftPlayer(server, this);
-        // CraftBukkit end
     }
 
     public void l() {

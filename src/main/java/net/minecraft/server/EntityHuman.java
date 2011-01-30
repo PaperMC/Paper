@@ -3,7 +3,6 @@ package net.minecraft.server;
 import java.util.List;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -43,11 +42,6 @@ public abstract class EntityHuman extends EntityLiving {
         this.aR = 180.0F;
         this.maxFireTicks = 20;
         this.texture = "/mob/char.png";
-
-        // CraftBukkit start
-        CraftServer server = ((WorldServer) this.world).getServer();
-        this.bukkitEntity = new CraftHumanEntity(server, this);
-        // CraftBukkit end
     }
 
     public void b_() {

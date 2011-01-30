@@ -4,7 +4,6 @@ import java.util.List;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 // CraftBukkit end
@@ -73,11 +72,6 @@ public abstract class EntityLiving extends Entity {
         this.aG = (float) Math.random() * 12398.0F;
         this.yaw = (float) (Math.random() * 3.1415927410125732D * 2.0D);
         this.S = 0.5F;
-
-        // CraftBukkit start
-        CraftServer server = ((WorldServer) this.world).getServer();
-        this.bukkitEntity = new CraftLivingEntity(server, this);
-        // CraftBukkit end
     }
 
     protected void a() {}

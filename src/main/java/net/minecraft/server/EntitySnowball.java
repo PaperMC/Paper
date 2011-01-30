@@ -4,7 +4,6 @@ import java.util.List;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.entity.CraftSnowball;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
@@ -25,18 +24,12 @@ public class EntitySnowball extends Entity {
     public EntitySnowball(World world) {
         super(world);
         this.a(0.25F, 0.25F);
-
-        // CraftBukkit start
-        CraftServer server = ((WorldServer) this.world).getServer();
-        this.bukkitEntity = new CraftSnowball(server, this);
-        // CraftBukkit end
     }
 
     protected void a() {}
 
     public EntitySnowball(World world, EntityLiving entityliving) {
-        this(world); // CraftBukkit super->this so we assign the entity
-
+        super(world);
         this.ak = entityliving;
         this.a(0.25F, 0.25F);
         this.c(entityliving.locX, entityliving.locY + (double) entityliving.w(), entityliving.locZ, entityliving.yaw, entityliving.pitch);
@@ -54,8 +47,7 @@ public class EntitySnowball extends Entity {
     }
 
     public EntitySnowball(World world, double d0, double d1, double d2) {
-        this(world); // CraftBukkit super->this so we assign the entity
-
+        super(world);
         this.al = 0;
         this.a(0.25F, 0.25F);
         this.a(d0, d1, d2);

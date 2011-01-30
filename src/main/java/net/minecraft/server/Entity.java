@@ -115,12 +115,7 @@ public abstract class Entity {
         this.a(0.0D, 0.0D, 0.0D);
         this.datawatcher.a(0, Byte.valueOf((byte) 0));
         this.a();
-
-        // CraftBukkit start
-        bukkitEntity = null;
     }
-    protected org.bukkit.entity.Entity bukkitEntity;
-    // CraftBukkit end
 
     protected abstract void a();
 
@@ -954,8 +949,13 @@ public abstract class Entity {
         setPassengerOf(entity);
     }
 
+    protected org.bukkit.entity.Entity bukkitEntity;
+
     public org.bukkit.entity.Entity getBukkitEntity(){
-        return this.bukkitEntity;
+        if (bukkitEntity == null) {
+            bukkitEntity = org.bukkit.craftbukkit.entity.CraftEntity.getEntity(((WorldServer) this.world).getServer(), this);
+        }
+        return bukkitEntity;
     }
 
     public void setPassengerOf(Entity entity) {

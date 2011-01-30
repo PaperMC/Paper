@@ -6,7 +6,6 @@ import java.util.List;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.entity.CraftBoat;
 import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.craftbukkit.CraftMappable;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.Vehicle;
@@ -65,12 +64,6 @@ public class EntityBoat extends Entity {
         this.a(1.5F, 0.6F);
         this.height = this.width / 2.0F;
         this.M = false;
-
-        // CraftBukkit start
-        handleCreation(world);
-        CraftServer server = ((WorldServer) this.world).getServer();
-        this.bukkitEntity = new CraftBoat(server, this);
-        // CraftBukkit end
     }
 
     protected void a() {}

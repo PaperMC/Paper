@@ -1,7 +1,6 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.entity.CraftMonster;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 
@@ -19,11 +18,6 @@ public class EntityMonster extends EntityCreature implements IMonster {
     public EntityMonster(World world) {
         super(world);
         this.health = 20;
-
-        // CraftBukkit start
-        CraftServer server = ((WorldServer) this.world).getServer();
-        this.bukkitEntity = new CraftMonster(server, this);
-        // CraftBukkit end
     }
 
     public void o() {

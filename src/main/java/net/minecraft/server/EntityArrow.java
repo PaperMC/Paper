@@ -25,24 +25,17 @@ public class EntityArrow extends Entity {
     public EntityArrow(World world) {
         super(world);
         this.a(0.5F, 0.5F);
-
-        // CraftBukkit start
-        CraftServer server = ((WorldServer) this.world).getServer();
-        this.bukkitEntity = new CraftArrow(server, this);
-        // CraftBukkit end
     }
 
     public EntityArrow(World world, double d0, double d1, double d2) {
-        this(world); // CraftBukkit super->this so we assign the entity
-
+        super(world);
         this.a(0.5F, 0.5F);
         this.a(d0, d1, d2);
         this.height = 0.0F;
     }
 
     public EntityArrow(World world, EntityLiving entityliving) {
-        this(world); // CraftBukkit super->this so we assign the entity
-
+        super(world);
         this.b = entityliving;
         this.a(0.5F, 0.5F);
         this.c(entityliving.locX, entityliving.locY + (double) entityliving.w(), entityliving.locZ, entityliving.yaw, entityliving.pitch);

@@ -5,7 +5,6 @@ import java.util.List;
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.craftbukkit.entity.CraftPigZombie;
 import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
 // CraftBukkit end
@@ -22,11 +21,6 @@ public class EntityPigZombie extends EntityZombie {
         this.bC = 0.5F;
         this.c = 5;
         this.ae = true;
-
-        // CraftBukkit start
-        CraftServer server = ((WorldServer) this.world).getServer();
-        this.bukkitEntity = new CraftPigZombie(server, this);
-        // CraftBukkit end
     }
 
     public void b_() {

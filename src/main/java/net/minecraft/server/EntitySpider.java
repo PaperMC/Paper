@@ -3,7 +3,6 @@ package net.minecraft.server;
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.craftbukkit.entity.CraftSpider;
 import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
 // CraftBukkit stop
@@ -15,11 +14,6 @@ public class EntitySpider extends EntityMonster {
         this.texture = "/mob/spider.png";
         this.a(1.4F, 0.9F);
         this.bC = 0.8F;
-
-        // CraftBukkit start
-        CraftServer server = ((WorldServer) this.world).getServer();
-        this.bukkitEntity = new CraftSpider(server, this);
-        // CraftBukkit end
     }
 
     public double k() {
