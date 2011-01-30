@@ -1,11 +1,19 @@
 package net.minecraft.server;
 
+import java.util.ArrayList;
 import java.util.List;
 
 // CraftBukkit start
+import org.bukkit.Location;
+import org.bukkit.Server;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.event.Event.Type;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+import org.bukkit.event.entity.EntityDeathEvent;
 // CraftBukkit end
 
 public abstract class EntityLiving extends Entity {
@@ -435,15 +443,25 @@ public abstract class EntityLiving extends Entity {
     }
 
     protected void g_() {
-        int i = this.h();
+        // Craftbukkit start - whole method
+        List<org.bukkit.inventory.ItemStack> loot = new ArrayList<org.bukkit.inventory.ItemStack>();
+        int drop = this.h();
+        int count = random.nextInt(3);
 
-        if (i > 0) {
-            int j = this.random.nextInt(3);
-
-            for (int k = 0; k < j; ++k) {
-                this.a(i, 1);
-            }
+        if ((drop > 0) && (count > 0)) {
+            loot.add(new org.bukkit.inventory.ItemStack(drop, count));
         }
+
+        CraftEntity entity = (CraftEntity)getBukkitEntity();
+        EntityDeathEvent event = new EntityDeathEvent(Type.ENTITY_DEATH, entity, loot);
+        CraftWorld cworld = ((WorldServer)world).getWorld();
+        Server server = ((WorldServer)world).getServer();
+        server.getPluginManager().callEvent(event);
+
+        for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
+            cworld.dropItemNaturally(entity.getLocation(), stack);
+        }
+        // Craftbukkit end
     }
 
     protected int h() {

@@ -1,9 +1,15 @@
 package net.minecraft.server;
 
 // CraftBukkit start
+import java.util.ArrayList;
+import java.util.List;
+import org.bukkit.Server;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.entity.EntityCombustEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
 // CraftBukkit end
 
 public class EntitySkeleton extends EntityMonster {
@@ -84,18 +90,28 @@ public class EntitySkeleton extends EntityMonster {
     }
 
     protected void g_() {
-        int i = this.random.nextInt(3);
+        // Craftbukkit start - whole method
+        List<org.bukkit.inventory.ItemStack> loot = new ArrayList<org.bukkit.inventory.ItemStack>();
 
-        int j;
-
-        for (j = 0; j < i; ++j) {
-            this.a(Item.ARROW.id, 1);
+        int count = this.random.nextInt(3);
+        if (count > 0) {
+            loot.add(new org.bukkit.inventory.ItemStack(org.bukkit.Material.ARROW, count));
         }
 
-        i = this.random.nextInt(3);
-
-        for (j = 0; j < i; ++j) {
-            this.a(Item.BONE.id, 1);
+        count = this.random.nextInt(3);
+        if (count > 0) {
+            loot.add(new org.bukkit.inventory.ItemStack(org.bukkit.Material.BONE, count));
         }
+
+        CraftEntity entity = (CraftEntity)getBukkitEntity();
+        EntityDeathEvent event = new EntityDeathEvent(Type.ENTITY_DEATH, entity, loot);
+        CraftWorld cworld = ((WorldServer)world).getWorld();
+        Server server = ((WorldServer)world).getServer();
+        server.getPluginManager().callEvent(event);
+
+        for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
+            cworld.dropItemNaturally(entity.getLocation(), stack);
+        }
+        // Craftbukkit end
     }
 }
