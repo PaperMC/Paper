@@ -6,15 +6,16 @@ import java.util.List;
 import java.util.Random;
 
 // CraftBukkit start
+import org.bukkit.BlockChangeDelegate;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.Event;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockCanBuildEvent;
 import org.bukkit.event.block.BlockPhysicsEvent;
-// CraftBukkit end
 
-public class WorldServer extends World {
+public class WorldServer extends World implements BlockChangeDelegate {
+// CraftBukkit end
 
     public ChunkProviderServer A;
     public boolean B = false;
