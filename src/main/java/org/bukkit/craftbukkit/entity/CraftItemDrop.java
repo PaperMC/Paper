@@ -22,4 +22,9 @@ public class CraftItemDrop extends CraftEntity implements ItemDrop {
     public ItemStack getItemStack() {
         return new CraftItemStack(item.a);
     }
+
+    @Override
+    public String toString() {
+        return "CraftItemDrop{" + "item=" + item + '}';
+    }
 }

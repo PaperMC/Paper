@@ -10,4 +10,9 @@ public class CraftGhast extends CraftFlying implements Ghast {
         super(server, entity);
     }
 
+    @Override
+    public String toString() {
+        return "CraftGhast";
+    }
+
 }

@@ -11,4 +11,9 @@ public class CraftSkeleton extends CraftMonster implements Skeleton {
         super(server, entity);
     }
 
+    @Override
+    public String toString() {
+        return "CraftSkeleton";
+    }
+
 }

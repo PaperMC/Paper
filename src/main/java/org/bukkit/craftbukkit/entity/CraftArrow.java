@@ -13,4 +13,9 @@ public class CraftArrow extends CraftEntity implements Arrow {
     public CraftArrow(CraftServer server, EntityArrow entity) {
         super(server, entity);
     }
+
+    @Override
+    public String toString() {
+        return "CraftArrow";
+    }
 }

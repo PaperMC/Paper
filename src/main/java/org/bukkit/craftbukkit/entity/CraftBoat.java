@@ -16,4 +16,9 @@ public class CraftBoat extends CraftVehicle implements Boat {
         super(server, entity);
         boat = entity;
     }
+
+    @Override
+    public String toString() {
+        return "CraftBoat";
+    }
 }

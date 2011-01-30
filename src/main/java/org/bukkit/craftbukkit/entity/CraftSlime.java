@@ -11,4 +11,9 @@ public class CraftSlime extends CraftLivingEntity implements Slime {
         super(server, entity);
     }
 
+    @Override
+    public String toString() {
+        return "CraftSlime";
+    }
+
 }

@@ -11,4 +11,9 @@ public class CraftSheep extends CraftAnimals implements Sheep {
         super(server, entity);
     }
 
+    @Override
+    public String toString() {
+        return "CraftSheep";
+    }
+
 }

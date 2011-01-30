@@ -12,4 +12,9 @@ public class CraftPig extends CraftAnimals implements Pig {
         super(server, entity);
     }
 
+    @Override
+    public String toString() {
+        return "CraftPig";
+    }
+
 }

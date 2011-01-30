@@ -11,4 +11,9 @@ public class CraftWaterMob extends CraftCreature implements WaterMob {
         super(server, entity);
     }
 
+    @Override
+    public String toString() {
+        return "CraftWaterMob";
+    }
+
 }

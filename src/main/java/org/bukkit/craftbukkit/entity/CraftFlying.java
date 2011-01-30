@@ -10,4 +10,9 @@ public class CraftFlying extends CraftLivingEntity implements Flying {
         super(server, entity);
     }
 
+    @Override
+    public String toString() {
+        return "CraftFlying";
+    }
+
 }

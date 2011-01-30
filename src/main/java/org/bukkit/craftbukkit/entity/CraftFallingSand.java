@@ -12,4 +12,9 @@ public class CraftFallingSand extends CraftEntity implements FallingSand {
         super(server, entity);
     }
 
+    @Override
+    public String toString() {
+        return "CraftFallingSand";
+    }
+
 }

@@ -13,4 +13,9 @@ public class CraftEgg extends CraftEntity implements Egg {
     public CraftEgg(CraftServer server, EntityEgg entity) {
         super(server, entity);
     }
+
+    @Override
+    public String toString() {
+        return "CraftEgg";
+    }
 }

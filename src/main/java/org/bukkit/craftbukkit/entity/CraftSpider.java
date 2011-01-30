@@ -11,4 +11,9 @@ public class CraftSpider extends CraftMonster implements Spider {
         super(server, entity);
     }
 
+    @Override
+    public String toString() {
+        return "CraftSpider";
+    }
+
 }

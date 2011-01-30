@@ -11,4 +11,9 @@ public class CraftGiant extends CraftMonster implements Giant {
         super(server, entity);
     }
 
+    @Override
+    public String toString() {
+        return "CraftGiant";
+    }
+
 }

@@ -11,4 +11,9 @@ public class CraftPigZombie extends CraftZombie implements PigZombie {
         super(server, entity);
     }
 
+    @Override
+    public String toString() {
+        return "CraftPigZombie";
+    }
+
 }

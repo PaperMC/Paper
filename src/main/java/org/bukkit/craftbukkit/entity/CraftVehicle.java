@@ -39,4 +39,9 @@ public abstract class CraftVehicle extends CraftEntity implements Vehicle {
         getHandle().passenger.setPassengerOf(null);
         return true;
     }
+
+    @Override
+    public String toString() {
+        return "CraftVehicle{passenger=" + getPassenger() + '}';
+    }
 }

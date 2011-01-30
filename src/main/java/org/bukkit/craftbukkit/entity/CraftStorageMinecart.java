@@ -23,4 +23,9 @@ public class CraftStorageMinecart extends CraftMinecart implements StorageMineca
     public Inventory getInventory() {
         return inventory;
     }
+
+    @Override
+    public String toString() {
+        return "CraftStorageMinecart{" + "inventory=" + inventory + '}';
+    }
 }

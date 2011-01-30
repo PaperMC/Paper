@@ -11,4 +11,9 @@ public class CraftZombie extends CraftMonster implements Zombie{
         super(server, entity);
     }
 
+    @Override
+    public String toString() {
+        return "CraftZombie";
+    }
+
 }
