@@ -11,4 +11,9 @@ public class CraftPainting extends CraftEntity implements Painting {
         super(server, entity);
     }
 
+    @Override
+    public String toString() {
+        return "CraftPainting";
+    }
+
 }

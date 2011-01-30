@@ -11,4 +11,9 @@ public class CraftSquid extends CraftWaterMob implements Squid {
         super(server, entity);
     }
 
+    @Override
+    public String toString() {
+        return "CraftSquid";
+    }
+
 }

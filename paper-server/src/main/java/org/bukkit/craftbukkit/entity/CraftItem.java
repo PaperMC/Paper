@@ -11,4 +11,9 @@ public class CraftItem extends CraftEntity implements Item {
         super(server, entity);
     }
 
+    @Override
+    public String toString() {
+        return "CraftItem";
+    }
+
 }

@@ -14,4 +14,9 @@ public class CraftFish extends CraftEntity implements Fish {
     public CraftFish(CraftServer server, EntityFish entity) {
         super(server, entity);
     }
+
+    @Override
+    public String toString() {
+        return "CraftFish";
+    }
 }

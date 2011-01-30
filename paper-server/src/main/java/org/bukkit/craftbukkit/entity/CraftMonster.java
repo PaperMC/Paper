@@ -11,4 +11,9 @@ public class CraftMonster extends CraftCreature implements Monster {
         super(server, entity);
     }
 
+    @Override
+    public String toString() {
+        return "CraftMonster";
+    }
+
 }

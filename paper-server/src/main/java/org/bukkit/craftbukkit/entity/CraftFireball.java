@@ -14,4 +14,9 @@ public class CraftFireball extends CraftEntity implements Fireball {
     public CraftFireball(CraftServer server, EntityFireball entity) {
         super(server, entity);
     }
+
+    @Override
+    public String toString() {
+        return "CraftFireball";
+    }
 }

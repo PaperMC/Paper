@@ -16,4 +16,9 @@ public class CraftPoweredMinecart extends CraftMinecart
         super(server, entity);
     }
 
+    @Override
+    public String toString() {
+        return "CraftPoweredMinecart";
+    }
+
 }

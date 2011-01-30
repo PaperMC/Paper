@@ -66,4 +66,9 @@ public class CraftMinecart extends CraftVehicle implements Minecart {
         }
     }
 
+    @Override
+    public String toString() {
+        return "CraftMinecart";
+    }
+
 }

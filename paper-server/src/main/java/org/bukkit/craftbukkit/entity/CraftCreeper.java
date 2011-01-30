@@ -10,4 +10,9 @@ public class CraftCreeper extends CraftMonster implements Creeper {
         super(server, entity);
     }
 
+    @Override
+    public String toString() {
+        return "CraftCreeper";
+    }
+
 }

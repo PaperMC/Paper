@@ -11,4 +11,9 @@ public class CraftTNTPrimed extends CraftEntity implements TNTPrimed {
         super(server, entity);
     }
 
+    @Override
+    public String toString() {
+        return "CraftTNTPrimed";
+    }
+
 }

@@ -10,6 +10,9 @@ public class CraftAnimals extends CraftCreature implements Animals{
         super(server, entity);
     }
 
-
+    @Override
+    public String toString() {
+        return "CraftAnimals";
+    }
 
 }
