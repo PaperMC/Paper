@@ -18,7 +18,9 @@ import org.bukkit.Chunk;
 import org.bukkit.entity.ItemDrop;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
+import org.bukkit.BlockChangeDelegate;
 import org.bukkit.Location;
+import org.bukkit.TreeType;
 import org.bukkit.World;
 
 public class CraftWorld implements World {
@@ -194,14 +196,34 @@ public class CraftWorld implements World {
         return (Boat) boat.getBukkitEntity();
     }
     
-    public boolean generateTree(Location loc) {
-        WorldGenTrees treeGen = new WorldGenTrees();
-        return treeGen.a(world, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+    public boolean generateTree(Location loc, TreeType type) {
+        return generateTree(loc, type, world);
     }
-    
-    public boolean generateBigTree(Location loc) {
-        WorldGenBigTree treeGen = new WorldGenBigTree();
-        return treeGen.a(world, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+
+    public boolean generateTree(Location loc, TreeType type, BlockChangeDelegate delegate) {
+        switch (type) {
+            case BIG_TREE:
+                return (new WorldGenBigTree())
+                    .generate(delegate, rand,
+                            loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+            case BIRCH:
+                return (new WorldGenForest())
+                .generate(delegate, rand,
+                        loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+            case REDWOOD:
+                return (new WorldGenTaiga2())
+                .generate(delegate, rand,
+                        loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+            case TALL_REDWOOD:
+                return (new WorldGenTaiga1())
+                .generate(delegate, rand,
+                        loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+            case TREE:
+            default:
+                return (new WorldGenTrees())
+                .generate(delegate, rand,
+                        loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+        }
     }
     
     public TileEntity getTileEntityAt(final int x, final int y, final int z) {
