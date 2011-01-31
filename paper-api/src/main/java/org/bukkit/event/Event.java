@@ -207,6 +207,13 @@ public abstract class Event {
         PLAYER_TELEPORT (Category.PLAYER),
 
         /**
+         * Called when a player changes their held item
+         *
+         * @see org.bukkit.event.player.PlayerItemHeldEvent
+         */
+        PLAYER_ITEM_HELD (Category.PLAYER),
+
+        /**
          * BLOCK EVENTS
          */
 

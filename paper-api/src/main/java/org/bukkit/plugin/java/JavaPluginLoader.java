@@ -173,6 +173,11 @@ public final class JavaPluginLoader implements PluginLoader {
                     ((PlayerListener)listener).onInventoryOpen( (PlayerInventoryEvent)event );
                 }
             };
+        case PLAYER_ITEM_HELD:
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
+                    ((PlayerListener)listener).onItemHeldChange( (PlayerItemHeldEvent)event );
+                }
+            };
 
         // Block Events
         case BLOCK_PHYSICS:
