@@ -62,7 +62,7 @@ public abstract class Entity {
     public int ticksLived;
     public int maxFireTicks;
     public int fireTicks;
-    protected int maxAirTicks;
+    public int maxAirTicks; // Craftbukkit: Make public
     protected boolean ab;
     public int noDamageTicks;
     public int airTicks;
