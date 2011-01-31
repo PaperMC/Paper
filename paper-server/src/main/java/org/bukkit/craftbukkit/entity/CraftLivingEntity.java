@@ -96,4 +96,20 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         
         return null;
     }
+
+    public int getRemainingAir() {
+        return entity.airTicks;
+    }
+
+    public void setRemainingAir(int ticks) {
+        entity.airTicks = ticks;
+    }
+
+    public int getMaximumAir() {
+        return entity.maxAirTicks;
+    }
+
+    public void setMaximumAir(int ticks) {
+        entity.maxAirTicks = ticks;
+    }
 }
