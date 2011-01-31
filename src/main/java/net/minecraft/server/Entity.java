@@ -221,7 +221,7 @@ public abstract class Entity {
                     if(this instanceof EntityLiving) {
                         CraftServer server = ((WorldServer) this.world).getServer();
                         org.bukkit.entity.Entity damagee = this.getBukkitEntity();
-                        DamageCause damageType = EntityDamageEvent.DamageCause.DROWNING;
+                        DamageCause damageType = EntityDamageEvent.DamageCause.FIRE_TICK;
                         int damageDone = 1;
 
                         EntityDamageEvent event = new EntityDamageEvent(damagee, damageType, damageDone);
