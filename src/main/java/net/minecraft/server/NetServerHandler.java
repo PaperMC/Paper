@@ -21,6 +21,7 @@ import org.bukkit.event.block.BlockRightClickEvent;
 import org.bukkit.event.player.PlayerAnimationEvent;
 import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerItemEvent;
+import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.plugin.Plugin;
 // CraftBukkit end
@@ -535,6 +536,11 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     }
 
     public void a(Packet16BlockItemSwitch packet16blockitemswitch) {
+        // Craftbukkit start
+        PlayerItemHeldEvent event = new PlayerItemHeldEvent(Type.PLAYER_ITEM_HELD, getPlayer(), e.inventory.c, packet16blockitemswitch.a);
+        server.getPluginManager().callEvent(event);
+        // Craftbukkit end
+
         this.e.inventory.c = packet16blockitemswitch.a;
     }
 
