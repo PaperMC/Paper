@@ -11,6 +11,10 @@ import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 
 import java.util.List;
 import java.util.Random;
+import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Vehicle;
+import org.bukkit.event.vehicle.VehicleBlockCollisionEvent;
+import org.bukkit.event.vehicle.VehicleCollisionEvent;
 
 public abstract class Entity {
 
@@ -469,6 +473,27 @@ public abstract class Entity {
             int l;
             int i1;
             int j1;
+
+            // Craftbukkit start
+            if ((B) && (getBukkitEntity() instanceof Vehicle)) {
+                Vehicle vehicle = (Vehicle)getBukkitEntity();
+                org.bukkit.World wrld = ((WorldServer)world).getWorld();
+                org.bukkit.block.Block block = wrld.getBlockAt(MathHelper.b(locX), MathHelper.b(locY - 0.20000000298023224D - (double) this.height), MathHelper.b(locZ));
+
+                if (d5 > d0) {
+                    block = block.getFace(BlockFace.SOUTH);
+                } else if (d5 < d0) {
+                    block = block.getFace(BlockFace.NORTH);
+                } else if (d7 > d2) {
+                    block = block.getFace(BlockFace.WEST);
+                } else if (d7 < d2) {
+                    block = block.getFace(BlockFace.EAST);
+                }
+
+                VehicleBlockCollisionEvent event = new VehicleBlockCollisionEvent(Type.VEHICLE_COLLISION_BLOCK, vehicle, block);
+                ((WorldServer)world).getServer().getPluginManager().callEvent(event);
+            }
+            // Craftbukkit end
 
             if (this.M && !flag) {
                 this.L = (float) ((double) this.L + (double) MathHelper.a(d9 * d9 + d10 * d10) * 0.6D);
