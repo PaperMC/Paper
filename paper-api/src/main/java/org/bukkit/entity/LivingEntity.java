@@ -59,4 +59,32 @@ public interface LivingEntity extends Entity {
      * @return
      */
     public Vehicle getVehicle();
+
+    /**
+     * Returns the amount of air that this entity has remaining, in ticks
+     *
+     * @return Amount of air remaining
+     */
+    public int getRemainingAir();
+
+    /**
+     * Sets the amount of air that this entity has remaining, in ticks
+     *
+     * @param ticks Amount of air remaining
+     */
+    public void setRemainingAir(int ticks);
+
+    /**
+     * Returns the maximum amount of air this entity can have, in ticks
+     *
+     * @return Maximum amount of air
+     */
+    public int getMaximumAir();
+
+    /**
+     * Sets the maximum amount of air this entity can have, in ticks
+     *
+     * @param ticks Maximum amount of air
+     */
+    public void setMaximumAir(int ticks);
 }
