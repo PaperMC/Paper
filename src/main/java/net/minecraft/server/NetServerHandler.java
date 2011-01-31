@@ -303,7 +303,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
             // CraftBukkit start
             CraftPlayer player = getPlayer();
-            CraftBlock block = (CraftBlock) player.getWorld().getBlockAt(l, i1, j1);
+            CraftBlock block = (CraftBlock) player.getWorld().getBlockAt(i, j, k);
             int blockId = block.getTypeId();
             float damage = 0;
             if(Block.byId[blockId] != null) {
