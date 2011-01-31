@@ -10,7 +10,7 @@ public class CraftItemStack extends ItemStack {
         super(
             item != null ? item.id: 0,
             item != null ? item.count : 0,
-            (byte)(item != null ? item.damage : 0)
+            (short)(item != null ? item.damage : 0)
         );
         this.item = item;
     }
@@ -101,21 +101,21 @@ public class CraftItemStack extends ItemStack {
     }
 
     @Override
-    public void setDamage(final byte damage) {
+    public void setDurability(final short durability) {
         // Ignore damage if item is null
         if (item != null) {
-            super.setDamage(damage);
-            item.damage = damage;
+            super.setDurability(durability);
+            item.damage = durability;
         } 
     }
 
     @Override
-    public byte getDamage() {
+    public short getDurability() {
         if (item != null) {
-            super.setDamage((byte) item.damage); // sync, needed?    
-            return (byte) item.damage;
+            super.setDurability((short) item.damage); // sync, needed?
+            return (short) item.damage;
         } else {
-            return 0;
+            return -1;
         }
     }
 
