@@ -125,7 +125,7 @@ public class CraftWorld implements World {
         net.minecraft.server.ItemStack stack = new net.minecraft.server.ItemStack(
             item.getTypeId(),
             item.getAmount(),
-            item.getDamage()
+            item.getDurability()
         );
         EntityItem entity = new EntityItem(world, loc.getX(), loc.getY(), loc.getZ(), stack);
         entity.c = 10;
