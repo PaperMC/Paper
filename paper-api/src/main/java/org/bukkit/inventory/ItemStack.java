@@ -11,7 +11,7 @@ public class ItemStack {
     private int type;
     private int amount = 0;
     private MaterialData data = null;
-    private byte damage = 0;
+    private short durability = 0;
 
     public ItemStack(final int type) {
         this(type, 0);
@@ -22,32 +22,32 @@ public class ItemStack {
     }
 
     public ItemStack(final int type, final int amount) {
-        this(type, amount, (byte) 0);
+        this(type, amount, (short) 0);
     }
 
     public ItemStack(final Material type, final int amount) {
         this(type.getId(), amount);
     }
 
-    public ItemStack(final int type, final int amount, final byte damage) {
+    public ItemStack(final int type, final int amount, final short damage) {
         this(type, amount, damage, null);
     }
 
-    public ItemStack(final Material type, final int amount, final byte damage) {
+    public ItemStack(final Material type, final int amount, final short damage) {
         this(type.getId(), amount, damage);
     }
 
-    public ItemStack(final int type, final int amount, final byte damage, final Byte data) {
+    public ItemStack(final int type, final int amount, final short damage, final Byte data) {
         this.type = type;
         this.amount = amount;
-        this.damage = damage;
+        this.durability = damage;
         if (data != null) {
             createData(data);
-            this.damage = data;
+            this.durability = data;
         }
     }
 
-    public ItemStack(final Material type, final int amount, final byte damage, final Byte data) {
+    public ItemStack(final Material type, final int amount, final short damage, final Byte data) {
         this(type.getId(), amount, damage, data);
     }
 
@@ -140,29 +140,21 @@ public class ItemStack {
     }
 
     /**
-     * Sets the damage of this item<br /><br />
+     * Sets the durability of this item
      *
-     * 0x00 represents an item which cannot be damaged<br />
-     * 0x01 represents an item at maximum health<br />
-     * 0x32 represents an item with no health left
-     *
-     * @param damage Damage of this item
+     * @param durability Durability of this item
      */
-    public void setDamage(final byte damage) {
-        this.damage = damage;
+    public void setDurability(final short durability) {
+        this.durability = durability;
     }
 
     /**
-     * Gets the damage of this item<br /><br />
+     * Gets the durability of this item
      *
-     * 0x00 represents an item which cannot be damaged<br />
-     * 0x01 represents an item at maximum health<br />
-     * 0x32 represents an item with no health left
-     *
-     * @return Damage of this item
+     * @return Durability of this item
      */
-    public byte getDamage() {
-        return damage;
+    public short getDurability() {
+        return durability;
     }
 
     /**

@@ -95,10 +95,11 @@ public enum Material {
     PORTAL(90),
     JACK_O_LANTERN(91),
     CAKE_BLOCK(92, 1),
-    IRON_SPADE(256),
-    IRON_PICKAXE(257),
-    IRON_AXE(258),
-    FLINT_AND_STEEL(259, 1),
+    // ----- Item Separator -----
+    IRON_SPADE(256, 1, 250),
+    IRON_PICKAXE(257, 1, 250),
+    IRON_AXE(258, 1, 250),
+    FLINT_AND_STEEL(259, 1, 64),
     APPLE(260, 1),
     BOW(261, 1),
     ARROW(262),
@@ -106,57 +107,57 @@ public enum Material {
     DIAMOND(264),
     IRON_INGOT(265),
     GOLD_INGOT(266),
-    IRON_SWORD(267, 1),
-    WOOD_SWORD(268, 1),
-    WOOD_SPADE(269, 1),
-    WOOD_PICKAXE(270, 1),
-    WOOD_AXE(271, 1),
-    STONE_SWORD(272, 1),
-    STONE_SPADE(273, 1),
-    STONE_PICKAXE(274, 1),
-    STONE_AXE(275, 1),
-    DIAMOND_SWORD(276, 1),
-    DIAMOND_SPADE(277, 1),
-    DIAMOND_PICKAXE(278, 1),
-    DIAMOND_AXE(279, 1),
+    IRON_SWORD(267, 1, 59),
+    WOOD_SWORD(268, 1, 59),
+    WOOD_SPADE(269, 1, 59),
+    WOOD_PICKAXE(270, 1, 59),
+    WOOD_AXE(271, 1, 59),
+    STONE_SWORD(272, 1, 131),
+    STONE_SPADE(273, 1, 131),
+    STONE_PICKAXE(274, 1, 131),
+    STONE_AXE(275, 1, 131),
+    DIAMOND_SWORD(276, 1, 1561),
+    DIAMOND_SPADE(277, 1, 1561),
+    DIAMOND_PICKAXE(278, 1, 1561),
+    DIAMOND_AXE(279, 1, 1561),
     STICK(280),
     BOWL(281),
     MUSHROOM_SOUP(282, 1),
-    GOLD_SWORD(283, 1),
-    GOLD_SPADE(284, 1),
-    GOLD_PICKAXE(285, 1),
-    GOLD_AXE(286, 1),
+    GOLD_SWORD(283, 1, 32),
+    GOLD_SPADE(284, 1, 32),
+    GOLD_PICKAXE(285, 1, 32),
+    GOLD_AXE(286, 1, 32),
     STRING(287),
     FEATHER(288),
     SULPHUR(289),
-    WOOD_HOE(290, 1),
-    STONE_HOE(291, 1),
-    IRON_HOE(292, 1),
-    DIAMOND_HOE(293, 1),
-    GOLD_HOE(294, 1),
+    WOOD_HOE(290, 1, 59),
+    STONE_HOE(291, 1, 131),
+    IRON_HOE(292, 1, 250),
+    DIAMOND_HOE(293, 1, 1561),
+    GOLD_HOE(294, 1, 32),
     SEEDS(295),
     WHEAT(296),
     BREAD(297, 1),
-    LEATHER_HELMET(298, 1),
-    LEATHER_CHESTPLATE(299, 1),
-    LEATHER_LEGGINGS(300, 1),
-    LEATHER_BOOTS(301, 1),
-    CHAINMAIL_HELMET(302, 1),
-    CHAINMAIL_CHESTPLATE(303, 1),
-    CHAINMAIL_LEGGINGS(304, 1),
-    CHAINMAIL_BOOTS(305, 1),
-    IRON_HELMET(306, 1),
-    IRON_CHESTPLATE(307, 1),
-    IRON_LEGGINGS(308, 1),
-    IRON_BOOTS(309, 1),
-    DIAMOND_HELMET(310, 1),
-    DIAMOND_CHESTPLATE(311, 1),
-    DIAMOND_LEGGINGS(312, 1),
-    DIAMOND_BOOTS(313, 1),
-    GOLD_HELMET(314, 1),
-    GOLD_CHESTPLATE(315, 1),
-    GOLD_LEGGINGS(316, 1),
-    GOLD_BOOTS(317, 1),
+    LEATHER_HELMET(298, 1, 33),
+    LEATHER_CHESTPLATE(299, 1, 47),
+    LEATHER_LEGGINGS(300, 1, 45),
+    LEATHER_BOOTS(301, 1, 39),
+    CHAINMAIL_HELMET(302, 1, 66),
+    CHAINMAIL_CHESTPLATE(303, 1, 95),
+    CHAINMAIL_LEGGINGS(304, 1, 91),
+    CHAINMAIL_BOOTS(305, 1, 78),
+    IRON_HELMET(306, 1, 135),
+    IRON_CHESTPLATE(307, 1, 191),
+    IRON_LEGGINGS(308, 1, 183),
+    IRON_BOOTS(309, 1, 159),
+    DIAMOND_HELMET(310, 1, 271),
+    DIAMOND_CHESTPLATE(311, 1, 383),
+    DIAMOND_LEGGINGS(312, 1, 367),
+    DIAMOND_BOOTS(313, 1, 319),
+    GOLD_HELMET(314, 1, 67),
+    GOLD_CHESTPLATE(315, 1, 95),
+    GOLD_LEGGINGS(316, 1, 91),
+    GOLD_BOOTS(317, 1, 79),
     FLINT(318),
     PORK(319, 1),
     GRILLED_PORK(320, 1),
@@ -185,7 +186,7 @@ public enum Material {
     POWERED_MINECART(343, 1),
     EGG(344, 16),
     COMPASS(345),
-    FISHING_ROD(346),
+    FISHING_ROD(346, 1, 64),
     WATCH(347),
     GLOWSTONE_DUST(348),
     RAW_FISH(349),
@@ -202,6 +203,7 @@ public enum Material {
     private static final Map<Integer, Material> lookupId = new HashMap<Integer, Material>();
     private static final Map<String, Material> lookupName = new HashMap<String, Material>();
     private final int maxStack;
+    private final short durability;
 
     private Material(final int id) {
         this(id, 64);
@@ -211,14 +213,23 @@ public enum Material {
         this(id, stack, null);
     }
 
+    private Material(final int id, final int stack, final int durability) {
+        this(id, stack, durability, null);
+    }
+
     private Material(final int id, final Class<? extends MaterialData> data) {
         this(id, 64, data);
     }
 
     private Material(final int id, final int stack, final Class<? extends MaterialData> data) {
+        this(id, -1, stack, data);
+    }
+
+    private Material(final int id, final int durability, final int stack, final Class<? extends MaterialData> data) {
         this.id = id;
-        this.data = data;
+        this.durability = (short)durability;
         this.maxStack = stack;
+        this.data = data;
     }
 
     /**
@@ -237,6 +248,15 @@ public enum Material {
      */
     public int getMaxStackSize() {
         return maxStack;
+    }
+
+    /**
+     * Gets the maximum durability of this material
+     *
+     * @return Maximum durability for this material
+     */
+    public short getMaxDurability() {
+        return durability;
     }
 
     /**
