@@ -80,9 +80,7 @@ public class ChunkProviderServer implements IChunkProvider {
                  * the World constructor. We can't reliably alter that, so we have
                  * no way of creating a CraftWorld/CraftServer at that point.
                  */
-                CraftWorld world = g.getWorld();
-                CraftChunk cchunk = world.updateChunk(i, j);
-                server.getPluginManager().callEvent(new ChunkLoadEvent(Type.CHUNK_LOADED, cchunk));
+                server.getPluginManager().callEvent(new ChunkLoadEvent(Type.CHUNK_LOADED, chunk.bukkitChunk));
             }
             // CraftBukkit end
 

@@ -1,6 +1,5 @@
 package org.bukkit.craftbukkit;
 
-import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.entity.*;
 import org.bukkit.entity.*;
 import org.bukkit.entity.Entity;
@@ -24,8 +23,6 @@ import org.bukkit.TreeType;
 import org.bukkit.World;
 
 public class CraftWorld implements World {
-    private final Map<ChunkCoordinate, CraftChunk> chunkCache = new HashMap<ChunkCoordinate, CraftChunk>();
-    private final Map<BlockCoordinate, CraftBlock> blockCache = new HashMap<BlockCoordinate, CraftBlock>();
     private final WorldServer world;
     
     private static final Random rand = new Random();
@@ -35,17 +32,7 @@ public class CraftWorld implements World {
     }
 
     public Block getBlockAt(int x, int y, int z) {
-        BlockCoordinate loc = new BlockCoordinate(x, y, z);
-        CraftBlock block = blockCache.get(loc);
-
-        if (block == null) {
-            block = new CraftBlock(this, x, y, z, world.getTypeId(x, y, z), (byte)world.getData(x, y, z));
-            blockCache.put(loc, block);
-        } else {
-            block.update();
-        }
-
-        return block;
+        return getChunkAt(x >> 4, z >> 4).getBlock(x & 0xF, y & 0x7F, z & 0xF);
     }
 
     public int getBlockTypeIdAt(int x, int y, int z) {
@@ -61,66 +48,34 @@ public class CraftWorld implements World {
     }
 
     public Chunk getChunkAt(int x, int z) {
-        ChunkCoordinate loc = new ChunkCoordinate(x, z);
-        CraftChunk chunk = chunkCache.get(loc);
-
-        if (chunk == null) {
-            chunk = new CraftChunk(this, x, z);
-            chunkCache.put(loc, chunk);
-        }
-
-        return chunk;
+        return this.world.A.d(x,z).bukkitChunk;
     }
 
     public Chunk getChunkAt(Block block) {
         return getChunkAt(block.getX() >> 4, block.getZ() >> 4);
     }
 
+    public boolean isChunkLoaded(int x, int z) {
+        return world.A.a( x, z );
+    }
+
+    public void loadChunk(int x, int z) {
+         world.A.d(x, z);
+    }
+
     public boolean isChunkLoaded(Chunk chunk) {
-        return world.A.a(chunk.getX(), chunk.getZ());
+        return isChunkLoaded(chunk.getX(), chunk.getZ());
     }
 
     public void loadChunk(Chunk chunk) {
-         world.A.d(chunk.getX(), chunk.getZ());
-    }
-
-
-    public void updateBlock(int x, int y, int z, Integer type, Integer data) {
-        BlockCoordinate loc = new BlockCoordinate(x, y, z);
-        CraftBlock block = (CraftBlock) blockCache.get(loc);
-
-        if (block == null) {
-            return;
-        }
-
-        if (type == null) {
-            type = world.getTypeId(x, y, z);
-        }
-        if (data == null) {
-            data = world.getData(x, y, z);
-        }
-
-        block.update(type, data.byteValue());
-    }
-
-    public CraftChunk updateChunk(int x, int z) {
-        ChunkCoordinate loc = new ChunkCoordinate(x, z);
-        CraftChunk chunk = chunkCache.get(loc);
-
-        if (chunk == null) {
-            chunk = new CraftChunk(this, x, z);
-            chunkCache.put(loc, chunk);
-        } else {
-            // TODO: Chunk stuff
-        }
-
-        return chunk;
+        loadChunk(chunk.getX(), chunk.getZ());
+        ((CraftChunk) getChunkAt(chunk.getX(), chunk.getZ())).getHandle().bukkitChunk = chunk;
     }
 
     public WorldServer getHandle() {
         return world;
     }
-    
+
     public ItemDrop dropItem(Location loc, ItemStack item) {
         net.minecraft.server.ItemStack stack = new net.minecraft.server.ItemStack(
             item.getTypeId(),
@@ -295,48 +250,6 @@ public class CraftWorld implements World {
             int hash = 5;
             hash = 53 * hash + this.x;
             hash = 53 * hash + this.z;
-            return hash;
-        }
-    }
-
-    private final class BlockCoordinate {
-        public final int x;
-        public final int y;
-        public final int z;
-
-        public BlockCoordinate(final int x, final int y, final int z) {
-            this.x = x;
-            this.y = y;
-            this.z = z;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            final BlockCoordinate other = (BlockCoordinate) obj;
-            if (this.x != other.x) {
-                return false;
-            }
-            if (this.y != other.y) {
-                return false;
-            }
-            if (this.z != other.z) {
-                return false;
-            }
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            int hash = 7;
-            hash = 37 * hash + this.x;
-            hash = 37 * hash + this.y;
-            hash = 37 * hash + this.z;
             return hash;
         }
     }

@@ -35,35 +35,6 @@ public class WorldServer extends World implements BlockChangeDelegate {
     private final CraftWorld world;
     private final CraftServer server;
 
-    /**
-     * setData
-     * 
-     * @param x
-     * @param y
-     * @param z
-     * @param data (actually a byte!)
-     */
-    @Override
-    public boolean d(int x, int y, int z, int data) {
-        boolean result = super.d(x, y, z, data);
-        if ((result) && (world != null)) world.updateBlock(x, y, z, null, data);
-        return result;
-    }
-
-    @Override
-    public boolean setTypeId(int x, int y, int z, int type) {
-        boolean result = super.setTypeId(x, y, z, type);
-        if ((result) && (world != null)) world.updateBlock(x, y, z, type, null);
-        return result;
-    }
-
-    @Override
-    public boolean setTypeIdAndData(int x, int y, int z, int type, int data) {
-        boolean result = super.setTypeIdAndData(x, y, z, type, data);
-        if ((result) && (world != null)) world.updateBlock(x, y, z, type, data);
-        return result;
-    }
-
     public CraftWorld getWorld() {
         return world;
     }

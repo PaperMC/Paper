@@ -1,49 +1,51 @@
 
 package org.bukkit.craftbukkit;
 
+import java.util.HashMap;
+
+import net.minecraft.server.WorldServer;
+
 import org.bukkit.Chunk;
 import org.bukkit.World;
+import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.block.CraftBlock;
 
 public class CraftChunk implements Chunk {
-    private final CraftWorld world;
-    private final int x;
-    private final int z;
+    private final net.minecraft.server.Chunk chunk;
+    private final HashMap<Integer, Block> cache = new HashMap<Integer, Block>();
 
-    protected CraftChunk(final CraftWorld world, final int x, final int z) {
-        this.world = world;
-        this.x = x;
-        this.z = z;
+    public CraftChunk(net.minecraft.server.Chunk chunk) {
+        this.chunk = chunk;
     }
 
-    /**
-     * Gets the world containing this chunk
-     *
-     * @return World
-     */
     public World getWorld() {
-        return world;
+        return ((WorldServer) chunk.d).getWorld();
     }
 
-    /**
-     * Gets the X-coordinate of this chunk
-     *
-     * @return X-coordinate
-     */
+    public net.minecraft.server.Chunk getHandle() {
+        return chunk;
+    }
+
     public int getX() {
-        return x;
+        return chunk.j;
     }
 
-    /**
-     * Gets the Z-coordinate of this chunk
-     *
-     * @return Z-coordinate
-     */
     public int getZ() {
-        return z;
+        return chunk.k;
     }
 
     @Override
     public String toString() {
-        return "CraftChunk{" + "x=" + x + "z=" + z + '}';
+        return "CraftChunk{" + "x=" + getX() + "z=" + getZ() + '}';
+    }
+
+    public Block getBlock(int x, int y, int z) {
+        int pos = (x & 0xF) << 11 | (z & 0xF) << 7 | (y & 0x7F);
+        Block block = this.cache.get( pos );
+        if (block == null) {
+            block = new CraftBlock( this, (getX() << 4) | (x & 0xF), y & 0x7F, (getZ() << 4) | (z & 0xF) );
+            this.cache.put( pos, block );
+        }
+        return block;
     }
 }

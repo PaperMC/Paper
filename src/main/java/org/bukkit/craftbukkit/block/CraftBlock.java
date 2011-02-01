@@ -10,41 +10,20 @@ import net.minecraft.server.BiomeBase;
 import org.bukkit.*;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.CraftChunk;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.block.CraftSign;
 
 public class CraftBlock implements Block {
-    private final CraftWorld world;
     private final CraftChunk chunk;
     private final int x;
     private final int y;
     private final int z;
-    protected int type;
-    protected byte data;
-    protected byte light;
 
-    public CraftBlock(final CraftWorld world, final int x, final int y, final int z, final int type, final byte data) {
-        this.world = world;
+    public CraftBlock(CraftChunk chunk, int x, int y, int z) {
         this.x = x;
         this.y = y;
         this.z = z;
-        this.type = type;
-        this.data = data;
-        this.light = (byte)world.getHandle().j(x, y, z);
-        this.chunk = (CraftChunk)world.getChunkAt(x >> 4, z >> 4);
-    }
-
-    protected CraftBlock(final CraftWorld world, final int x, final int y,
-            final int z, final int type, final byte data, final byte light) {
-        this.world = world;
-        this.x = x;
-        this.y = y;
-        this.z = z;
-        this.type = type;
-        this.data = data;
-        this.light = light;
-        this.chunk = (CraftChunk)world.getChunkAt(x >> 4, z >> 4);
+        this.chunk = chunk;
     }
 
     /**
@@ -53,7 +32,7 @@ public class CraftBlock implements Block {
      * @return World containing this block
      */
     public World getWorld() {
-        return world;
+        return chunk.getWorld();
     }
 
     /**
@@ -62,7 +41,7 @@ public class CraftBlock implements Block {
      * @return Location of the block
      */
     public Location getLocation() {
-      return new Location(world, x, y, z);
+      return new Location(getWorld(), x, y, z);
     }
 
     /**
@@ -107,8 +86,7 @@ public class CraftBlock implements Block {
      * @param data New block specific metadata
      */
     public void setData(final byte data) {
-        this.data = data;
-        world.getHandle().c(x, y, z, data);
+        chunk.getHandle().d.c(x, y, z, data);
     }
 
     /**
@@ -117,7 +95,7 @@ public class CraftBlock implements Block {
      * @return block specific metadata
      */
     public byte getData() {
-        return data;
+        return (byte) chunk.getHandle().b(this.x & 0xF, this.y & 0x7F, this.z & 0xF);
     }
 
     /**
@@ -136,8 +114,7 @@ public class CraftBlock implements Block {
      * @return whether the block was changed
      */
     public boolean setTypeId(final int type) {
-        this.type = type;
-        return world.getHandle().e(x, y, z, type);
+        return chunk.getHandle().d.e(x, y, z, type);
     }
 
     /**
@@ -155,7 +132,7 @@ public class CraftBlock implements Block {
      * @return block type-id
      */
     public int getTypeId() {
-        return type;
+        return chunk.getHandle().a(this.x & 0xF, this.y & 0x7F, this.z & 0xF);
     }
     
     /**
@@ -164,7 +141,7 @@ public class CraftBlock implements Block {
      * @return light level
      */
     public byte getLightLevel() {
-        return light;
+        return (byte) chunk.getHandle().d.j(this.x, this.y, this.z);
     }
 
     /**
@@ -253,7 +230,7 @@ public class CraftBlock implements Block {
 
     @Override
     public String toString() {
-        return "CraftBlock{" + "world=" + world + "x=" + x + "y=" + y + "z=" + z + "type=" + type + "data=" + data + '}';
+        return "CraftBlock{" + "chunk=" + chunk + "x=" + x + "y=" + y + "z=" + z + '}';
     }
     
     /**
@@ -307,7 +284,7 @@ public class CraftBlock implements Block {
 
     public Biome getBiome() {
         // TODO: This may not be 100% accurate; investigate into getting per-block instead of per-chunk
-        BiomeBase base = world.getHandle().a().a(chunk.getX(), chunk.getZ());
+        BiomeBase base = chunk.getHandle().d.a().a(chunk.getX(), chunk.getZ());
 
         if (base == BiomeBase.RAINFOREST) {
             return Biome.RAINFOREST;
@@ -339,20 +316,15 @@ public class CraftBlock implements Block {
     }
 
     public boolean isBlockPowered() {
-        return world.getHandle().o(x, y, z);
+        return chunk.getHandle().d.o(x, y, z);
     }
 
     public boolean isBlockIndirectlyPowered() {
-        return world.getHandle().p(x, y, z);
+        return chunk.getHandle().d.p(x, y, z);
     }
 
-    public void update(int type, byte data) {
-        this.type = type;
-        this.data = data;
-        light = (byte)world.getHandle().j(x, y, z);
-    }
-
-    public void update() {
-        this.update( world.getHandle().getTypeId(x, y, z), (byte)world.getHandle().getData(x, y, z));
+    @Override
+    public boolean equals( Object o ) {
+        return this == o;
     }
 }
