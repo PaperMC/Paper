@@ -178,6 +178,11 @@ public final class JavaPluginLoader implements PluginLoader {
                     ((PlayerListener)listener).onItemHeldChange( (PlayerItemHeldEvent)event );
                 }
             };
+        case PLAYER_DROP_ITEM:
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
+                    ((PlayerListener)listener).onPlayerDropItem( (PlayerDropItemEvent)event );
+                }
+            };
 
         // Block Events
         case BLOCK_PHYSICS:

@@ -214,6 +214,13 @@ public abstract class Event {
         PLAYER_ITEM_HELD (Category.PLAYER),
 
         /**
+         * Called when a player drops an item
+         *
+         * @see org.bukkit.event.player.PlayerDropItemEvent
+         */
+        PLAYER_DROP_ITEM (Category.PLAYER),
+
+        /**
          * BLOCK EVENTS
          */
 

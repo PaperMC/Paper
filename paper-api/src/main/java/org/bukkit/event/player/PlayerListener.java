@@ -105,4 +105,12 @@ public class PlayerListener implements Listener {
      */
     public void onItemHeldChange(PlayerItemHeldEvent event) {
     }
+
+    /**
+     * Called when a player drops an item from their inventory
+     *
+     * @param event Relevant event details
+     */
+    public void onPlayerDropItem(PlayerDropItemEvent event) {
+    }
 }
