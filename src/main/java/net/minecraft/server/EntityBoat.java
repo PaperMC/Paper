@@ -4,8 +4,6 @@ import java.util.List;
 
 // CraftBukkit start
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.entity.CraftBoat;
-import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.Vehicle;
@@ -31,14 +29,6 @@ public class EntityBoat extends Entity {
     private double am;
 
     // CraftBukkit start
-    private void handleCreation(World world) {
-        CraftServer server = ((WorldServer) world).getServer();
-        Type eventType = Type.VEHICLE_CREATE;
-        Vehicle vehicle = (Vehicle) this.getBukkitEntity();
-        VehicleCreateEvent event = new VehicleCreateEvent(eventType, vehicle);
-        server.getPluginManager().callEvent(event);
-    }
-
     public void c(Entity entity) {
         CraftServer server = ((WorldServer) this.world).getServer();
         Type eventType = Type.VEHICLE_COLLISION_ENTITY;
@@ -91,7 +81,13 @@ public class EntityBoat extends Entity {
         this.lastY = d1;
         this.lastZ = d2;
 
-        handleCreation(world); // CraftBukkit
+        // CraftBukkit start
+        CraftServer server = ((WorldServer) world).getServer();
+        Type eventType = Type.VEHICLE_CREATE;
+        Vehicle vehicle = (Vehicle) this.getBukkitEntity();
+        VehicleCreateEvent event = new VehicleCreateEvent(eventType, vehicle);
+        server.getPluginManager().callEvent(event);
+        // CraftBukkit end
     }
 
     public double k() {

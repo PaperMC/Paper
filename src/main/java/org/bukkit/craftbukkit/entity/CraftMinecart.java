@@ -6,7 +6,7 @@ import org.bukkit.entity.Minecart;
 
 /**
  * A minecart.
- * 
+ *
  * @author sk89q
  */
 public class CraftMinecart extends CraftVehicle implements Minecart {
@@ -18,18 +18,18 @@ public class CraftMinecart extends CraftVehicle implements Minecart {
         Minecart(0),
         StorageMinecart(1),
         PoweredMinecart(2);
-        
+
         private final int id;
-        
+
         private Type(int id) {
             this.id = id;
         }
-        
+
         public int getId() {
             return id;
         }
     }
-    
+
     protected EntityMinecart minecart;
 
     public CraftMinecart(CraftServer server, EntityMinecart entity) {
@@ -43,27 +43,6 @@ public class CraftMinecart extends CraftVehicle implements Minecart {
 
     public int getDamage() {
         return minecart.a;
-    }
-    
-    /**
-     * Internal function to convert an MC entity to an appropriate CraftBukkit
-     * entity.
-     * 
-     * @param server
-     * @param minecart
-     * @return
-     * 
-     * @deprecated
-     */
-    public static CraftMinecart getCraftMinecart(CraftServer server,
-            EntityMinecart minecart) {
-        if (minecart.d == Type.StorageMinecart.getId()) {
-            return new CraftStorageMinecart(server, minecart);
-        } else if (minecart.d == Type.PoweredMinecart.getId()) {
-            return new CraftPoweredMinecart(server, minecart);
-        } else {
-            return new CraftMinecart(server, minecart);
-        }
     }
 
     @Override

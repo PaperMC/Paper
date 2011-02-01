@@ -4,12 +4,7 @@ import java.util.List;
 
 // CraftBukkit start
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.craftbukkit.entity.CraftPoweredMinecart;
-import org.bukkit.craftbukkit.entity.CraftStorageMinecart;
-import org.bukkit.craftbukkit.CraftMappable;
 import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.entity.CraftMinecart;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.event.Event.Type;
@@ -50,26 +45,6 @@ public class EntityMinecart extends Entity implements IInventory {
     public ItemStack[] getContents() {
         return this.al;
     }
-
-    private void handleCreation(World world) {
-        CraftServer server = ((WorldServer) world).getServer();
-        Type eventType = Type.VEHICLE_CREATE;
-        Vehicle vehicle = (Vehicle) this.getBukkitEntity();
-
-        VehicleCreateEvent event = new VehicleCreateEvent(eventType, vehicle);
-        server.getPluginManager().callEvent(event);
-    }
-
-    @Override
-    public org.bukkit.entity.Entity getBukkitEntity(){
-        if (this.d == CraftMinecart.Type.StorageMinecart.getId()) {
-            return this.bukkitStorageMinecart;
-        } else if (this.d == CraftMinecart.Type.PoweredMinecart.getId()) {
-            return this.bukkitPoweredMinecart;
-        } else {
-            return this.bukkitEntity;
-        }
-    }
     // CraftBukkit end
 
     public EntityMinecart(World world) {
@@ -86,10 +61,11 @@ public class EntityMinecart extends Entity implements IInventory {
 
         // CraftBukkit start
         CraftServer server = ((WorldServer) this.world).getServer();
-        this.bukkitEntity = new CraftMinecart(server, this);
-        this.bukkitPoweredMinecart = new CraftPoweredMinecart(server, this);
-        this.bukkitStorageMinecart = new CraftStorageMinecart(server, this);
-        handleCreation(world);
+        Type eventType = Type.VEHICLE_CREATE;
+        Vehicle vehicle = (Vehicle) this.getBukkitEntity();
+
+        VehicleCreateEvent event = new VehicleCreateEvent(eventType, vehicle);
+        server.getPluginManager().callEvent(event);
         // CraftBukkit end
     }
 
