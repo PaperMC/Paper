@@ -581,7 +581,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     private void c(String s) {
         // CraftBukkit start
         CraftPlayer player = getPlayer();
-        boolean targetPluginFound = server.dispatchCommand(player, s);
+        boolean targetPluginFound = server.dispatchCommand(player, s.substring(1));
         if (targetPluginFound) {
             return;
         }

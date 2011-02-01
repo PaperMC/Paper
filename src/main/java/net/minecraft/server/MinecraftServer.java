@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 // CraftBukkit start
 import java.net.UnknownHostException;
 import joptsimple.OptionSet;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.craftbukkit.CraftServer;
 // CraftBukkit end
 
@@ -46,6 +47,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
     }
     public CraftServer server;
     public OptionSet options;
+    public ConsoleCommandSender console = new ConsoleCommandSender();
 
     private boolean d() throws UnknownHostException {
         // CraftBukkit end -- added throws UnknownHostException
@@ -298,6 +300,12 @@ public class MinecraftServer implements ICommandListener, Runnable {
             String s = servercommand.a;
             ICommandListener icommandlistener = servercommand.b;
             String s1 = icommandlistener.c();
+
+            // Craftbukkit start
+            if (server.dispatchCommand(console, s)) {
+                continue;
+            }
+            // Craftbukkit end
 
             if (!s.toLowerCase().startsWith("help") && !s.toLowerCase().startsWith("?")) {
                 if (s.toLowerCase().startsWith("list")) {
