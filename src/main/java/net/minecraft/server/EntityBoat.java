@@ -14,6 +14,7 @@ import org.bukkit.event.vehicle.VehicleCreateEvent;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.event.vehicle.VehicleEntityCollisionEvent;
+import org.bukkit.event.vehicle.VehicleEvent;
 import org.bukkit.event.vehicle.VehicleMoveEvent;
 // CraftBukkit end
 
@@ -326,9 +327,9 @@ public class EntityBoat extends Entity {
             CraftWorld world = ((WorldServer) this.world).getWorld();
             Location from = new Location(world, prevX, prevY, prevZ, prevYaw, prevPitch);
             Location to = new Location(world, this.locX, this.locY, this.locZ, this.yaw, this.pitch);
+            Vehicle vehicle = (Vehicle) this.getBukkitEntity();
+            server.getPluginManager().callEvent(new VehicleEvent(Type.VEHICLE_UPDATE, vehicle));
             if (!from.equals(to)) {
-                Vehicle vehicle = (Vehicle) this.getBukkitEntity();
-
                 VehicleMoveEvent event = new VehicleMoveEvent(Type.VEHICLE_MOVE, vehicle, from, to);
                 server.getPluginManager().callEvent(event);
             }

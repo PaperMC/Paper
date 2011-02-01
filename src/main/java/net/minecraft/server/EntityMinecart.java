@@ -480,14 +480,14 @@ public class EntityMinecart extends Entity implements IInventory {
 
             this.b(this.yaw, this.pitch);
 
-             // CraftBukkit start
+            // CraftBukkit start
             CraftServer server = ((WorldServer) this.world).getServer();
             CraftWorld world = ((WorldServer) this.world).getWorld();
             Location from = new Location(world, prevX, prevY, prevZ, prevYaw, prevPitch);
             Location to = new Location(world, this.locX, this.locY, this.locZ, this.yaw, this.pitch);
+            Vehicle vehicle = (Vehicle) this.getBukkitEntity();
+            server.getPluginManager().callEvent(new VehicleEvent(Type.VEHICLE_UPDATE, vehicle));
             if (!from.equals(to)) {
-                Vehicle vehicle = (Vehicle) this.getBukkitEntity();
-
                 VehicleMoveEvent event = new VehicleMoveEvent(Type.VEHICLE_MOVE, vehicle, from, to);
                 server.getPluginManager().callEvent(event);
             }
