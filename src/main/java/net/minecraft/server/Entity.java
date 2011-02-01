@@ -12,9 +12,12 @@ import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import java.util.List;
 import java.util.Random;
 import org.bukkit.block.BlockFace;
+import org.bukkit.craftbukkit.entity.CraftVehicle;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.event.vehicle.VehicleBlockCollisionEvent;
 import org.bukkit.event.vehicle.VehicleCollisionEvent;
+import org.bukkit.event.vehicle.VehicleExitEvent;
 
 public abstract class Entity {
 
@@ -992,12 +995,30 @@ public abstract class Entity {
         this.e = 0.0D;
         if (entity == null) {
             if (this.vehicle != null) {
+                // Craftbukkit start
+                if ((this.getBukkitEntity() instanceof LivingEntity) && (vehicle.getBukkitEntity() instanceof CraftVehicle)) {
+                    CraftVehicle cvehicle = (CraftVehicle)vehicle.getBukkitEntity();
+                    LivingEntity living = (LivingEntity)getBukkitEntity();
+                    VehicleExitEvent event = new VehicleExitEvent(Type.VEHICLE_EXIT, cvehicle, living);
+                    ((WorldServer)world).getServer().getPluginManager().callEvent(event);
+                }
+                // Craftbukkit end
+
                 this.c(this.vehicle.locX, this.vehicle.boundingBox.b + (double) this.vehicle.width, this.vehicle.locZ, this.yaw, this.pitch);
                 this.vehicle.passenger = null;
             }
 
             this.vehicle = null;
         } else if (this.vehicle == entity) {
+            // Craftbukkit start
+            if ((this.getBukkitEntity() instanceof LivingEntity) && (vehicle.getBukkitEntity() instanceof CraftVehicle)) {
+                CraftVehicle cvehicle = (CraftVehicle)vehicle.getBukkitEntity();
+                LivingEntity living = (LivingEntity)getBukkitEntity();
+                VehicleExitEvent event = new VehicleExitEvent(Type.VEHICLE_EXIT, cvehicle, living);
+                ((WorldServer)world).getServer().getPluginManager().callEvent(event);
+            }
+            // Craftbukkit end
+
             this.vehicle.passenger = null;
             this.vehicle = null;
             this.c(entity.locX, entity.boundingBox.b + (double) entity.width, entity.locZ, this.yaw, this.pitch);
