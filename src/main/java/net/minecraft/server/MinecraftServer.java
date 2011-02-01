@@ -163,6 +163,11 @@ public class MinecraftServer implements ICommandListener, Runnable {
 
     private void g() {
         a.info("Stopping server");
+        // CraftBukkit
+        if(server != null) {
+            server.disablePlugins();
+        }
+        
         if (this.f != null) {
             this.f.d();
         }
