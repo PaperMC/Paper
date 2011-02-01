@@ -1,5 +1,10 @@
 package net.minecraft.server;
 
+// CraftBukkit start
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.event.block.BlockBreakEvent;
+// CraftBukkit end
+
 public class ItemInWorldManager {
 
     private World b;
@@ -79,6 +84,21 @@ public class ItemInWorldManager {
     }
 
     public boolean c(int i, int j, int k) {
+        //CraftBukkit start
+        if (this.a instanceof EntityPlayer){
+            CraftServer server = ((WorldServer) this.b).getServer();
+            org.bukkit.block.Block block = ((WorldServer) this.b).getWorld().getBlockAt(i, j, k);
+            org.bukkit.entity.Player player = (org.bukkit.entity.Player) this.a.getBukkitEntity();
+
+            BlockBreakEvent event = new BlockBreakEvent(block,player);
+            server.getPluginManager().callEvent(event);
+
+            if (event.isCancelled()){
+                return true;
+            }
+        }
+        //CraftBukkit end
+
         int l = this.b.getTypeId(i, j, k);
         int i1 = this.b.getData(i, j, k);
         boolean flag = this.b(i, j, k);
