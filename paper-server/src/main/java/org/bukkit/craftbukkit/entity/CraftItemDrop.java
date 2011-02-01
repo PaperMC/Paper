@@ -23,6 +23,10 @@ public class CraftItemDrop extends CraftEntity implements ItemDrop {
         return new CraftItemStack(item.a);
     }
 
+    public void setItemStack(ItemStack stack) {
+        item.a = new net.minecraft.server.ItemStack(stack.getTypeId(), stack.getAmount(), stack.getDurability());
+    }
+
     @Override
     public String toString() {
         return "CraftItemDrop{" + "item=" + item + '}';
