@@ -6,7 +6,7 @@ import org.bukkit.entity.Vehicle;
 
 /**
  * A vehicle.
- * 
+ *
  * @author sk89q
  */
 public abstract class CraftVehicle extends CraftEntity implements Vehicle {
@@ -17,7 +17,7 @@ public abstract class CraftVehicle extends CraftEntity implements Vehicle {
     public Entity getPassenger() {
         return isEmpty() ? null : (getHandle().passenger.getBukkitEntity());
     }
-    
+
     public boolean setPassenger(Entity passenger) {
         if(passenger instanceof CraftEntity){
             ((CraftEntity)passenger).getHandle().setPassengerOf(getHandle());
@@ -30,12 +30,12 @@ public abstract class CraftVehicle extends CraftEntity implements Vehicle {
     public boolean isEmpty() {
         return getHandle().passenger == null;
     }
-    
+
     public boolean eject() {
         if (getHandle().passenger == null) {
             return false;
         }
-        
+
         getHandle().passenger.setPassengerOf(null);
         return true;
     }

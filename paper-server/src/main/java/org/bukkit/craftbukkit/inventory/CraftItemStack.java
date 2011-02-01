@@ -106,7 +106,7 @@ public class CraftItemStack extends ItemStack {
         if (item != null) {
             super.setDurability(durability);
             item.damage = durability;
-        } 
+        }
     }
 
     @Override

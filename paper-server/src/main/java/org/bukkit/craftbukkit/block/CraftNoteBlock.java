@@ -8,7 +8,7 @@ import org.bukkit.craftbukkit.CraftWorld;
 
 /**
  * Represents a note block.
- * 
+ *
  * @author sk89q
  */
 public class CraftNoteBlock extends CraftBlockState implements NoteBlock {

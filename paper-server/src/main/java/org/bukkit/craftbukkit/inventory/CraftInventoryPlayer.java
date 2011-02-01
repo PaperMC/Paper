@@ -9,7 +9,7 @@ public class CraftInventoryPlayer extends CraftInventory implements PlayerInvent
     public CraftInventoryPlayer(net.minecraft.server.InventoryPlayer inventory) {
         super(inventory);
     }
-    
+
     public InventoryPlayer getInventory() {
         return (InventoryPlayer) inventory;
     }

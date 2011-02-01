@@ -12,7 +12,7 @@ import org.bukkit.inventory.Inventory;
 
 /**
  * Represents a dispenser.
- * 
+ *
  * @author sk89q
  */
 public class CraftDispenser extends CraftBlockState implements Dispenser {
