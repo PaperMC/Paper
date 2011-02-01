@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import net.minecraft.server.TileEntityNote;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.NoteBlock;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -27,5 +28,18 @@ public class CraftNoteBlock extends CraftBlockState implements NoteBlock {
 
     public void setNote(byte n) {
         note.e = n;
+    }
+
+    public boolean play() {
+        Block block = getBlock();
+
+        synchronized (block) {
+            if (block.getType() == Material.NOTE_BLOCK) {
+                note.a(world.getHandle(), getX(), getY(), getZ());
+                return true;
+            } else {
+                return false;
+            }
+        }
     }
 }
