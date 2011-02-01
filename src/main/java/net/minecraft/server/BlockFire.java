@@ -113,6 +113,17 @@ public class BlockFire extends Block {
                 }
             }
         }
+        
+        // Craftbukkit start - won't be needed next port hopefully
+        if(l == 15) {
+            this.a(world, i + 1, j, k, 1, random);
+            this.a(world, i - 1, j, k, 1, random);
+            this.a(world, i, j - 1, k, 1, random);
+            this.a(world, i, j + 1, k, 1, random);
+            this.a(world, i, j, k - 1, 1, random);
+            this.a(world, i, j, k + 1, 1, random);
+        }
+        // Craftbukkit end
     }
 
     private void a(World world, int i, int j, int k, int l, Random random) {
