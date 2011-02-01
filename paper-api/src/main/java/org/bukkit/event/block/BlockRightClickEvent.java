@@ -30,17 +30,17 @@ public class BlockRightClickEvent extends BlockEvent  {
     public Player getPlayer() {
         return player;
     }
-    
+
 
     /**
      * Get the block that this block was placed against
-     * 
+     *
      * @return Block the block that the new block was placed against
      */
     public Block getBlockAgainst() {
         return clickedBlock;
     }
-    
+
     /**
      * @return BlockFace the direction this block was clicked
      */
@@ -50,7 +50,7 @@ public class BlockRightClickEvent extends BlockEvent  {
 
     /**
      * Returns the item in your hand when you placed the block
-     * 
+     *
      * @return ItemStack the item in your hand when placing the block
      */
     public ItemStack getItemInHand() {

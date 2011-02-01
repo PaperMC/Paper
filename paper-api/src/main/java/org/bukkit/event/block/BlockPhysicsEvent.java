@@ -6,7 +6,7 @@ import org.bukkit.event.Event;
 
 /**
  * Thrown when a block physics check is called
- * 
+ *
  * @author Dinnerbone
  */
 public class BlockPhysicsEvent extends BlockEvent {

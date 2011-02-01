@@ -38,7 +38,7 @@ public interface Entity {
 
     /**
      * Returns a unique id for this entity
-     * 
+     *
      * @return Entity id
      */
     public int getEntityId();

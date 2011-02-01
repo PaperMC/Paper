@@ -30,10 +30,10 @@ public interface Server {
      * @return An array of Players that are currently online
      */
     public Player[] getOnlinePlayers();
-    
+
     /**
      * Broadcast a message to all players.
-     * 
+     *
      * @param message the message
      * @return the number of players
      */
@@ -74,24 +74,6 @@ public interface Server {
      * @return An array of worlds
      */
     public World[] getWorlds();
-
-    /**
-     * Gets the in-game time on the server (in hours*1000)
-     *
-     * @return The current time in hours*1000
-     * @deprecated Use World.getTime
-     */
-    @Deprecated
-    public long getTime();
-
-    /**
-     * Sets the in-game time on the server (in hours*1000)
-     *
-     * @param time The time to set the in-game time to (in hours*1000)
-     * @deprecated Use World.setTime
-     */
-    @Deprecated
-    public void setTime(long time);
 
     /**
      * Reloads the server, refreshing settings and plugin information

@@ -26,7 +26,7 @@ public class PlayerEggThrowEvent extends PlayerEvent {
 
     /**
      * Get the egg.
-     * 
+     *
      * @return the egg
      */
     public Egg getEgg() {

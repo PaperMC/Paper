@@ -100,57 +100,55 @@ public interface World {
 
     /**
      * Drop an item exactly at the specified location.
-     * 
+     *
      * @param loc
      * @param item
      * @return dropped item entity
      */
     public ItemDrop dropItem(Location loc, ItemStack item);
-    
+
     /**
      * Drop an item as if it was mined (randomly placed).
-     * 
+     *
      * @param loc
      * @param item
      * @return dropped item entity
      */
     public ItemDrop dropItemNaturally(Location loc, ItemStack item);
-    
+
     /**
      * Spawns an arrow.
-     * 
+     *
      * @param loc
      * @param velocity velocity vector
      * @param speed a reasonable speed is 0.6
      * @param spread a reasonable spread is 12
      * @return the arrow entity
      */
-    public Arrow spawnArrow(Location loc, Vector velocity,
-            float speed, float spread);
-    
+    public Arrow spawnArrow(Location loc, Vector velocity, float speed, float spread);
+
     /**
      * Spawns a tree at a location.
-     * 
+     *
      * @param loc
      * @param type
      * @return whether the tree was created
      */
     public boolean generateTree(Location loc, TreeType type);
-    
+
     /**
      * Spawns a tree at a location.
-     * 
+     *
      * @param loc
      * @param type
      * @param delegate
      * @return whether the tree was created
      */
-    public boolean generateTree(Location loc, TreeType type,
-            BlockChangeDelegate delegate);
+    public boolean generateTree(Location loc, TreeType type, BlockChangeDelegate delegate);
 
     /**
      * Spawns a regular passenger minecart.
-     * 
+     *
      * @param loc
      * @return
      */
@@ -158,7 +156,7 @@ public interface World {
 
     /**
      * Spawns a storage minecart.
-     * 
+     *
      * @param loc
      * @return
      */
@@ -166,30 +164,30 @@ public interface World {
 
     /**
      * Spawns a powered minecart.
-     * 
+     *
      * @param loc
      * @return
      */
     public PoweredMinecart spawnPoweredMinecart(Location loc);
-    
+
     /**
      * Spawn a boat.
-     * 
+     *
      * @param loc
      * @return
      */
     public Boat spawnBoat(Location loc);
-    
+
     /**
      * Get a list of all entities.
-     * 
+     *
      * @return
      */
     public List<Entity> getEntities();
-    
+
     /**
      * Get a list of all living entities.
-     * 
+     *
      * @return
      */
     public List<LivingEntity> getLivingEntities();
@@ -209,7 +207,7 @@ public interface World {
      * @return Id of this world
      */
     public long getId();
-    
+
     /**
      * Gets the default spawn location.
      */

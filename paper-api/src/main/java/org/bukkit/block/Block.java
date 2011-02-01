@@ -79,10 +79,10 @@ public interface Block {
      * @return block type-id
      */
     int getTypeId();
-    
+
     /**
      * Gets the light level between 0-15
-     * 
+     *
      * @return light level
      */
     byte getLightLevel();
@@ -187,17 +187,17 @@ public interface Block {
      * @return Biome type containing this block
      */
     Biome getBiome();
-    
+
     /**
      * Returns true if the block is being powered by Redstone.
-     * 
+     *
      * @return
      */
     boolean isBlockPowered();
 
     /**
      * Returns true if the block is being indirectly powered by Redstone.
-     * 
+     *
      * @return
      */
     boolean isBlockIndirectlyPowered();

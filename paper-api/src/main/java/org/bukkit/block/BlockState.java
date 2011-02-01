@@ -17,7 +17,7 @@ import org.bukkit.material.MaterialData;
 public interface BlockState {
     /**
      * Gets the block represented by this BlockState
-     * 
+     *
      * @return Block that this BlockState represents
      */
     Block getBlock();

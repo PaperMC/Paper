@@ -23,7 +23,7 @@ public class Dye extends MaterialData {
     public Dye(final Material type, final byte data) {
         super(type, data);
     }
-    
+
     /**
      * Gets the current color of this dye
      *

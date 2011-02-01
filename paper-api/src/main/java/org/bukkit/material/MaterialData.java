@@ -39,7 +39,7 @@ public class MaterialData {
 
     /**
      * Sets the raw data of this material
-     * 
+     *
      * @param data New raw data
      */
     public void setData(byte data) {

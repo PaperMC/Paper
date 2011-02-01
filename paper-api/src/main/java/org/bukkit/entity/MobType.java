@@ -18,7 +18,7 @@ public enum MobType {
     SQUID("Squid");
 
     private String name;
-    
+
     private static final Map<String, MobType> mapping
             = new HashMap<String, MobType>();
 
@@ -35,7 +35,7 @@ public enum MobType {
     public String getName() {
         return name;
     }
-    
+
     public static MobType fromName(String name) {
         return mapping.get(name);
     }

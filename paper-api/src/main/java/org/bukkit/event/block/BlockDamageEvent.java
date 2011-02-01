@@ -22,7 +22,7 @@ public class BlockDamageEvent extends BlockEvent implements Cancellable {
 
     /**
      * Returns the player doing the damage
-     * 
+     *
      * @return
      */
     public Player getPlayer() {
@@ -31,7 +31,7 @@ public class BlockDamageEvent extends BlockEvent implements Cancellable {
 
     /**
      * Returns the level of damage to the block
-     * 
+     *
      * @return
      */
     public BlockDamageLevel getDamageLevel() {

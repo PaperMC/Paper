@@ -306,7 +306,7 @@ public enum Material {
      * @return true if this material is a block
      */
     public boolean isBlock() {
-        return id < 256; 
+        return id < 256;
     }
 
     /**
@@ -355,7 +355,7 @@ public enum Material {
 
         return result;
     }
-    
+
     static {
         for (Material material : values()) {
             lookupId.put(material.getId(), material);

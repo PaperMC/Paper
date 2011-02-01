@@ -62,11 +62,11 @@ public class Location implements Cloneable {
     public double getX() {
         return x;
     }
-    
+
     /**
      * Gets the floored value of the X component, indicating the block that
      * this location is contained with.
-     * 
+     *
      * @return block X
      */
     public int getBlockX() {
@@ -94,7 +94,7 @@ public class Location implements Cloneable {
     /**
      * Gets the floored value of the Y component, indicating the block that
      * this location is contained with.
-     * 
+     *
      * @return block y
      */
     public int getBlockY() {
@@ -122,7 +122,7 @@ public class Location implements Cloneable {
     /**
      * Gets the floored value of the Z component, indicating the block that
      * this location is contained with.
-     * 
+     *
      * @return block z
      */
     public int getBlockZ() {
@@ -211,7 +211,7 @@ public class Location implements Cloneable {
     public String toString() {
         return "Location{" + "world=" + world + "x=" + x + "y=" + y + "z=" + z + "pitch=" + pitch + "yaw=" + yaw + '}';
     }
-    
+
     public Vector toVector() {
         return new Vector(x, y, z);
     }

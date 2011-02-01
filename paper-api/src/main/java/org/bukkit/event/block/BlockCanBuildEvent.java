@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package org.bukkit.event.block;
 
@@ -22,7 +22,7 @@ public class BlockCanBuildEvent extends BlockEvent {
     /**
      * Returns whether or not the block can be built here. By default, returns
      * Minecraft's answer on whether the block can be built
-     * 
+     *
      * @return boolean whether or not the block can be built
      */
     public boolean isBuildable() {

@@ -15,7 +15,7 @@ import org.bukkit.block.BlockFace;
 public class BlockRedstoneEvent extends BlockFromToEvent {
     private int oldCurrent;
     private int newCurrent;
-    
+
     public BlockRedstoneEvent(Block block, BlockFace face, int oldCurrent, int newCurrent) {
         super(Type.REDSTONE_CHANGE, block, face);
         this.oldCurrent = oldCurrent;

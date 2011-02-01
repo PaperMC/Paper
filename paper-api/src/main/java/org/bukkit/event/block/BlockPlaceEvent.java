@@ -55,39 +55,39 @@ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
     public Player getPlayer() {
         return player;
     }
-    
+
     /**
      * Clarity method for getting the placed block. Not really needed
      * except for reasons of clarity
-     * 
+     *
      * @return Block the block that was placed
      */
     public Block getBlockPlaced() {
         return getBlock();
     }
-    
+
     /**
-     * Returns the state of the block which was replaced. Material type air mostly. 
-     * 
+     * Returns the state of the block which was replaced. Material type air mostly.
+     *
      * @return BlockState of block which was replaced.
      */
     public BlockState getBlockReplacedState() {
         return this.replacedBlockState;
     }
-    
+
 
     /**
      * Get the block that this block was placed against
-     * 
+     *
      * @return Block the block that the new block was placed against
      */
     public Block getBlockAgainst() {
         return placedAgainst;
     }
-    
+
     /**
      * Returns the item in your hand when you placed the block
-     * 
+     *
      * @return ItemStack the item in your hand when placing the block
      */
     public ItemStack getItemInHand() {
@@ -100,16 +100,16 @@ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
      * player is in Spawn). Note that this is an entirely different check
      * than BLOCK_CANBUILD, as this refers to a player, not universe-physics
      * rule like cactus on dirt.
-     * 
+     *
      * @return boolean whether the server would allow a player to build here
      */
     public boolean canBuild() {
         return this.canBuild;
     }
-    
+
     /**
      * Sets the canBuild state of this event. Set to true if you want the
-     * player to be able to build.  
+     * player to be able to build.
      */
     public void setBuild(boolean canBuild) {
         this.canBuild = canBuild;

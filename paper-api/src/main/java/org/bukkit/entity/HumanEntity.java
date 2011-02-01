@@ -24,7 +24,7 @@ public interface HumanEntity extends LivingEntity {
 
     /**
      * Returns the ItemStack currently in your hand, can be empty.
-     * 
+     *
      * @return The ItemStack of the item you are currently holding.
      */
     public ItemStack getItemInHand();
@@ -32,17 +32,17 @@ public interface HumanEntity extends LivingEntity {
     /**
      * Sets the item to the given ItemStack, this will replace whatever the
      * user was holding.
-     * 
+     *
      * @param item The ItemStack which will end up in the hand
-     * @return 
+     * @return
      */
     public void setItemInHand(ItemStack item);
 
     /**
      * Changes the item in hand to another of your 'action slots'.
-     * 
+     *
      * @param index The new index to use, only valid ones are 0-8.
-     * 
+     *
     public void selectItemInHand( int index );
     */
 }
