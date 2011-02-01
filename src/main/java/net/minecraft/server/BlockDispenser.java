@@ -84,7 +84,8 @@ public class BlockDispenser extends BlockContainer {
         }
     }
 
-    private void b(World world, int i, int j, int k, Random random) {
+    // Craftbukkit - following method should be public
+    public void b(World world, int i, int j, int k, Random random) {
         int l = world.getData(i, j, k);
         float f = 0.0F;
         float f1 = 0.0F;

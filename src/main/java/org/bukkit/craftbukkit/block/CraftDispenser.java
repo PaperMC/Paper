@@ -1,6 +1,9 @@
 package org.bukkit.craftbukkit.block;
 
+import java.util.Random;
+import net.minecraft.server.BlockDispenser;
 import net.minecraft.server.TileEntityDispenser;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Dispenser;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -25,6 +28,20 @@ public class CraftDispenser extends CraftBlockState implements Dispenser {
 
     public Inventory getInventory() {
         return new CraftInventory(dispenser);
+    }
+
+    public boolean dispense() {
+        Block block = getBlock();
+
+        synchronized (block) {
+            if (block.getType() == Material.DISPENSER) {
+                BlockDispenser dispense = (BlockDispenser)net.minecraft.server.Block.DISPENSER;
+                dispense.b(world.getHandle(), getX(), getY(), getZ(), new Random());
+                return true;
+            } else {
+                return false;
+            }
+        }
     }
 
     @Override
