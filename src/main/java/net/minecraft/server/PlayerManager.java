@@ -44,6 +44,15 @@ public class PlayerManager {
         }
     }
 
+    // CraftBukkit start
+    private final int[][] direction = new int[][] {
+        {  1,  0 },
+        {  0,  1 },
+        { -1,  0 },
+        {  0, -1 },
+    };
+    // CraftBukkit end
+
     public void a(EntityPlayer entityplayer) {
         int i = (int) entityplayer.locX >> 4;
         int j = (int) entityplayer.locZ >> 4;
@@ -51,11 +60,36 @@ public class PlayerManager {
         entityplayer.d = entityplayer.locX;
         entityplayer.e = entityplayer.locZ;
 
-        for (int k = i - 10; k <= i + 10; ++k) {
-            for (int l = j - 10; l <= j + 10; ++l) {
-                this.a(k, l, true).a(entityplayer);
+        // CraftBukkit start
+        int facing = 0;
+        int size = 10;
+        int dx = 0;
+        int dz = 0;
+
+        // Origin
+        this.a(i, j, true).a(entityplayer);
+
+        // All but the last leg
+        for (int legSize = 1; legSize <= size * 2; legSize++) {
+            for (int leg = 0; leg < 2; leg++) {
+                int[] dir = direction[ facing++ % 4 ];
+
+                for (int k = 0; k < legSize; k++ ) {
+                    dx += dir[0];
+                    dz += dir[1];
+                    this.a(i + dx, j + dz, true).a(entityplayer);
+                }
             }
         }
+
+        // Final leg
+        facing %= 4;
+        for (int k = 0; k < size * 2; k++) {
+            dx += direction[facing][0];
+            dz += direction[facing][1];
+            this.a(i + dx, j + dz, true).a(entityplayer);
+        }
+        // CraftBukkit end
 
         this.a.add(entityplayer);
     }
