@@ -79,7 +79,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         if (entity.vehicle == null) {
             return false;
         }
-        
+
         entity.setPassengerOf(null);
         return true;
     }
@@ -88,12 +88,12 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         if (entity.vehicle == null) {
             return null;
         }
-        
+
         org.bukkit.entity.Entity vehicle = (entity.vehicle.getBukkitEntity());
         if (vehicle instanceof Vehicle) {
             return (Vehicle) vehicle;
         }
-        
+
         return null;
     }
 

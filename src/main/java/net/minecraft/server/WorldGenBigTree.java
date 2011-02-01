@@ -2,9 +2,9 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-//CraftBukkit start
+// CraftBukkit start
 import org.bukkit.BlockChangeDelegate;
-//CraftBukkit end
+// CraftBukkit end
 
 public class WorldGenBigTree extends WorldGenerator {
 
@@ -346,7 +346,7 @@ public class WorldGenBigTree extends WorldGenerator {
         // then allows plugins to catch manually-invoked generation events
         return generate((BlockChangeDelegate)world, random, i, j, k);
     }
-    
+
     public boolean generate(BlockChangeDelegate world, Random random, int i, int j, int k) {
         // CraftBukkit end
         this.c = world;

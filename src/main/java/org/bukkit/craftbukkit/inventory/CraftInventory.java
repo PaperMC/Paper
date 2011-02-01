@@ -159,7 +159,7 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
     public int firstPartial(ItemStack item) {
         return firstPartial(item.getTypeId());
     }
-    
+
     public HashMap<Integer, ItemStack> addItem(ItemStack... items) {
         HashMap<Integer, ItemStack> leftover = new HashMap<Integer, ItemStack>();
 
@@ -202,13 +202,13 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
                     int amount = item.getAmount();
                     int partialAmount = partialItem.getAmount();
                     int maxAmount = partialItem.getMaxStackSize();
-    
+
                     // Check if it fully fits
                     if (amount + partialAmount <= maxAmount) {
                         partialItem.setAmount( amount + partialAmount );
                         break;
                     }
-    
+
                     // It fits partially
                     partialItem.setAmount( maxAmount );
                     item.setAmount( amount + partialAmount - maxAmount );

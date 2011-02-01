@@ -37,7 +37,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
                 }
                 // Monsters
                 else if (entity instanceof EntityMonster) {
-                    if (entity instanceof EntityZombie) { 
+                    if (entity instanceof EntityZombie) {
                         if (entity instanceof EntityPigZombie) { return new CraftPigZombie( server, (EntityPigZombie) entity); }
                         else { return new CraftZombie( server, (EntityZombie) entity); }
                     }

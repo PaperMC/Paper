@@ -6,7 +6,7 @@ import org.bukkit.craftbukkit.CraftServer;
 
 /**
  * Represents an arrow.
- * 
+ *
  * @author sk89q
  */
 public class CraftArrow extends CraftEntity implements Arrow {

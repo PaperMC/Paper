@@ -24,7 +24,7 @@ import org.bukkit.World;
 
 public class CraftWorld implements World {
     private final WorldServer world;
-    
+
     private static final Random rand = new Random();
 
     public CraftWorld(WorldServer world) {
@@ -42,7 +42,7 @@ public class CraftWorld implements World {
     public int getHighestBlockYAt(int x, int z) {
         return world.d(x, z);
     }
-    
+
     public Location getSpawnLocation() {
         return new Location(this, world.spawnX, world.e(world.spawnX, world.spawnZ), world.spawnZ);
     }
@@ -89,7 +89,7 @@ public class CraftWorld implements World {
         // However, this entity is not at the moment backed by a server entity class so it may be left.
         return new CraftItemDrop(world.getServer(), entity);
     }
-    
+
     public ItemDrop dropItemNaturally(Location loc, ItemStack item) {
         double xs = world.l.nextFloat() * 0.7F + (1.0F - 0.7F) * 0.5D;
         double ys = world.l.nextFloat() * 0.7F + (1.0F - 0.7F) * 0.5D;
@@ -108,7 +108,7 @@ public class CraftWorld implements World {
         arrow.a(velocity.getX(), velocity.getY(), velocity.getZ(), speed, spread);
         return (Arrow) arrow.getBukkitEntity();
     }
-    
+
     public Minecart spawnMinecart(Location loc) {
         EntityMinecart minecart = new EntityMinecart(
             world,
@@ -120,7 +120,7 @@ public class CraftWorld implements World {
         world.a(minecart);
         return (Minecart) minecart.getBukkitEntity();
     }
-    
+
     public StorageMinecart spawnStorageMinecart(Location loc) {
         EntityMinecart minecart = new EntityMinecart(
             world,
@@ -132,7 +132,7 @@ public class CraftWorld implements World {
         world.a(minecart);
         return (StorageMinecart) minecart.getBukkitEntity();
     }
-    
+
     public PoweredMinecart spawnPoweredMinecart(Location loc) {
         EntityMinecart minecart = new EntityMinecart(
             world,
@@ -144,13 +144,13 @@ public class CraftWorld implements World {
         world.a(minecart);
         return (PoweredMinecart) minecart.getBukkitEntity();
     }
-    
+
     public Boat spawnBoat(Location loc) {
         EntityBoat boat = new EntityBoat(world, loc.getX(), loc.getY(), loc.getZ());
         world.a(boat);
         return (Boat) boat.getBukkitEntity();
     }
-    
+
     public boolean generateTree(Location loc, TreeType type) {
         return generateTree(loc, type, world);
     }
@@ -158,29 +158,19 @@ public class CraftWorld implements World {
     public boolean generateTree(Location loc, TreeType type, BlockChangeDelegate delegate) {
         switch (type) {
             case BIG_TREE:
-                return (new WorldGenBigTree())
-                    .generate(delegate, rand,
-                            loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+                return new WorldGenBigTree().generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
             case BIRCH:
-                return (new WorldGenForest())
-                .generate(delegate, rand,
-                        loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+                return new WorldGenForest().generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
             case REDWOOD:
-                return (new WorldGenTaiga2())
-                .generate(delegate, rand,
-                        loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+                return new WorldGenTaiga2().generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
             case TALL_REDWOOD:
-                return (new WorldGenTaiga1())
-                .generate(delegate, rand,
-                        loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+                return new WorldGenTaiga1().generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
             case TREE:
             default:
-                return (new WorldGenTrees())
-                .generate(delegate, rand,
-                        loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+                return new WorldGenTrees().generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
         }
     }
-    
+
     public TileEntity getTileEntityAt(final int x, final int y, final int z) {
         return world.getTileEntity(x, y, z);
     }
@@ -256,12 +246,10 @@ public class CraftWorld implements World {
 
     public List<Entity> getEntities() {
         List<Entity> list = new ArrayList<Entity>();
-        
-        for (Object o : world.b) {
+
+        for (Object o: world.b) {
             if (o instanceof net.minecraft.server.Entity) {
-                net.minecraft.server.Entity mcEnt
-                         = (net.minecraft.server.Entity)o;
-                
+                net.minecraft.server.Entity mcEnt = (net.minecraft.server.Entity)o;
                 Entity bukkitEntity = mcEnt.getBukkitEntity();
 
                 // Assuming that bukkitEntity isn't null
@@ -270,27 +258,25 @@ public class CraftWorld implements World {
                 }
             }
         }
-        
+
         return list;
     }
 
     public List<LivingEntity> getLivingEntities() {
         List<LivingEntity> list = new ArrayList<LivingEntity>();
-        
-        for (Object o : world.b) {
+
+        for (Object o: world.b) {
             if (o instanceof net.minecraft.server.Entity) {
-                net.minecraft.server.Entity mcEnt
-                         = (net.minecraft.server.Entity)o;
-                
+                net.minecraft.server.Entity mcEnt = (net.minecraft.server.Entity)o;
                 Entity bukkitEntity = mcEnt.getBukkitEntity();
-                
+
                 // Assuming that bukkitEntity isn't null
                 if (bukkitEntity != null && bukkitEntity instanceof LivingEntity) {
                     list.add((LivingEntity)bukkitEntity);
                 }
             }
         }
-        
+
         return list;
     }
 }

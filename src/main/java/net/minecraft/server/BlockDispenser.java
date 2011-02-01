@@ -69,14 +69,14 @@ public class BlockDispenser extends BlockContainer {
             CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
             LivingEntity who = (entityhuman == null)?null:(LivingEntity)entityhuman.getBukkitEntity();
 
-            BlockInteractEvent bie = new BlockInteractEvent(eventType, block, who);
-            server.getPluginManager().callEvent(bie);
+            BlockInteractEvent event = new BlockInteractEvent(eventType, block, who);
+            server.getPluginManager().callEvent(event);
 
-            if (bie.isCancelled()) {
+            if (event.isCancelled()) {
                 return true;
             }
             // CraftBukkit end
-            
+
             TileEntityDispenser tileentitydispenser = (TileEntityDispenser) world.getTileEntity(i, j, k);
 
             entityhuman.a(tileentitydispenser);

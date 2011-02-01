@@ -167,7 +167,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
         if(server != null) {
             server.disablePlugins();
         }
-        
+
         if (this.f != null) {
             this.f.d();
         }

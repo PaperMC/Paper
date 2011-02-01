@@ -79,7 +79,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public void f(Entity entity) {
         // Craftbukkit start
         List<org.bukkit.inventory.ItemStack> loot = new ArrayList<org.bukkit.inventory.ItemStack>();
-        
+
         for (int i = 0; i < inventory.a.length; ++i) {
             if (inventory.a[i] != null) {
                 loot.add(new CraftItemStack(inventory.a[i]));

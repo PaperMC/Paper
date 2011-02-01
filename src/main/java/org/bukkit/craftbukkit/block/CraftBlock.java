@@ -134,10 +134,10 @@ public class CraftBlock implements Block {
     public int getTypeId() {
         return chunk.getHandle().a(this.x & 0xF, this.y & 0x7F, this.z & 0xF);
     }
-    
+
     /**
      * Gets the light level between 0-15
-     * 
+     *
      * @return light level
      */
     public byte getLightLevel() {
@@ -170,8 +170,7 @@ public class CraftBlock implements Block {
      * @return Block at the given face
      */
     public Block getFace(final BlockFace face, final int distance) {
-        return getRelative(face.getModX() * distance, face.getModY() * distance,
-                face.getModZ() * distance);
+        return getRelative(face.getModX() * distance, face.getModY() * distance, face.getModZ() * distance);
     }
 
     /**
@@ -232,11 +231,11 @@ public class CraftBlock implements Block {
     public String toString() {
         return "CraftBlock{" + "chunk=" + chunk + "x=" + x + "y=" + y + "z=" + z + '}';
     }
-    
+
     /**
      * Notch uses a 0-5 to mean DOWN, UP, EAST, WEST, NORTH, SOUTH
      * in that order all over. This method is convenience to convert for us.
-     * 
+     *
      * @return BlockFace the BlockFace represented by this number
      */
     public static BlockFace notchToBlockFace(int notch) {

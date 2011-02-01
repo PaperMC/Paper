@@ -65,7 +65,7 @@ public class ItemBlock extends Item {
             return false;
         } else {
             // CraftBukkit start
-            /* We store the old data so we can undo it. Snow(78) and half-steps(44) are special in that they replace the block itself, 
+            /* We store the old data so we can undo it. Snow(78) and half-steps(44) are special in that they replace the block itself,
             * rather than the block touching the face we clicked on.
             */
             org.bukkit.block.Block replacedBlock = (blockClicked.getTypeId() == Block.SNOW.id || blockClicked.getTypeId() == Block.STEP.id) ? blockClicked:blockClicked.getFace(faceClicked);

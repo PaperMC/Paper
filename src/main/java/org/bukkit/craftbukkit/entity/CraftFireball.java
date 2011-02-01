@@ -7,7 +7,7 @@ import org.bukkit.entity.Fireball;
 
 /**
  * A Fireball.
- * 
+ *
  * @author Cogito
  */
 public class CraftFireball extends CraftEntity implements Fireball {

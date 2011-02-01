@@ -29,7 +29,7 @@ public class ItemSign extends Item {
             CraftWorld craftWorld = ((WorldServer) world).getWorld();
             CraftServer craftServer = ((WorldServer) world).getServer();
             org.bukkit.block.Block blockClicked = craftWorld.getBlockAt(i, j, k);
-            //CraftBukkit end
+            // CraftBukkit end
 
             if (l == 1) {
                 ++j;

@@ -125,7 +125,7 @@ public class CraftBlockState implements BlockState {
     public void setTypeId(final int type) {
         this.type = type;
         world.getHandle().e(x, y, z, type);
-        
+
         createData((byte)0);
     }
 

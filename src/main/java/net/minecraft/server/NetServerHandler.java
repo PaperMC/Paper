@@ -427,7 +427,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             Player who = (this.e == null) ? null : (Player) this.e.getBukkitEntity();
             org.bukkit.inventory.ItemStack itemInHand = new CraftItemStack(itemstack);
 
-            PlayerItemEvent event = new PlayerItemEvent(eventType, who, itemInHand, blockClicked, blockFace);            
+            PlayerItemEvent event = new PlayerItemEvent(eventType, who, itemInHand, blockClicked, blockFace);
 
             // CraftBukkit We still call this event even in spawn protection.
             // Don't call this event if using Buckets / signs

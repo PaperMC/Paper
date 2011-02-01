@@ -6,7 +6,7 @@ import org.bukkit.entity.Egg;
 
 /**
  * An egg.
- * 
+ *
  * @author sk89q
  */
 public class CraftEgg extends CraftEntity implements Egg {

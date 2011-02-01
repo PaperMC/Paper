@@ -6,7 +6,7 @@ import org.bukkit.entity.Snowball;
 
 /**
  * A snowball.
- * 
+ *
  * @author sk89q
  */
 public class CraftSnowball extends CraftEntity implements Snowball {

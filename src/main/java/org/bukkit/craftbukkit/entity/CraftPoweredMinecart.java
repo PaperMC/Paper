@@ -7,7 +7,7 @@ import org.bukkit.entity.PoweredMinecart;
 
 /**
  * A powered minecart.
- * 
+ *
  * @author sk89q
  */
 public class CraftPoweredMinecart extends CraftMinecart

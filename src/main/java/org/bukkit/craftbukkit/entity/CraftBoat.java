@@ -6,7 +6,7 @@ import org.bukkit.entity.Boat;
 
 /**
  * A minecart.
- * 
+ *
  * @author sk89q
  */
 public class CraftBoat extends CraftVehicle implements Boat {

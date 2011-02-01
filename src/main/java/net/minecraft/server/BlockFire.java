@@ -113,7 +113,7 @@ public class BlockFire extends Block {
                 }
             }
         }
-        
+
         // Craftbukkit start - won't be needed next port hopefully
         if(l == 15) {
             this.a(world, i + 1, j, k, 1, random);
@@ -131,13 +131,13 @@ public class BlockFire extends Block {
 
         if (random.nextInt(l) < i1) {
             boolean flag = world.getTypeId(i, j, k) == Block.TNT.id;
-            // CraftBukkit start: BlockBurnEvent
+            // CraftBukkit start
             Server server = ((WorldServer)world).getServer();
             CraftWorld cworld = ((WorldServer)world).getWorld();
             org.bukkit.block.Block theBlock = (cworld.getBlockAt(i, j, k));
-            BlockBurnEvent burnEvent = new BlockBurnEvent(theBlock);
-            server.getPluginManager().callEvent(burnEvent);
-            if(!burnEvent.isCancelled()) {
+            BlockBurnEvent event = new BlockBurnEvent(theBlock);
+            server.getPluginManager().callEvent(event);
+            if(!event.isCancelled()) {
                 if (random.nextInt(2) == 0) {
                     world.e(i, j, k, this.id);
                 } else {
@@ -148,7 +148,7 @@ public class BlockFire extends Block {
                     Block.TNT.a(world, i, j, k, 0);
                 }
             }
-            // CraftBukkit end: BlockBurnEvent
+            // CraftBukkit end
         }
     }
 

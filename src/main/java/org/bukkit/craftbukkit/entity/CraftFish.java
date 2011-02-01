@@ -7,7 +7,7 @@ import org.bukkit.entity.Fish;
 
 /**
  * A Fish.
- * 
+ *
  * @author Cogito
  */
 public class CraftFish extends CraftEntity implements Fish {
