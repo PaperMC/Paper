@@ -6,7 +6,7 @@ package org.bukkit.command;
  */
 public class ConsoleCommandSender implements CommandSender {
     public void sendMessage(String message) {
-        System.out.println(message);
+        System.out.println(message.replaceAll("(?i)\u00A7[0-F]", ""));
     }
 
     public boolean isOp() {
