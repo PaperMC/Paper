@@ -20,6 +20,8 @@ public interface CommandSender {
      * Checks if this sender is a player
      *
      * @return true if they are
+     * @deprecated Use instanceof
      */
+    @Deprecated
     public boolean isPlayer();
 }
