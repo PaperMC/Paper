@@ -197,4 +197,43 @@ public interface World {
      * Gets the default spawn location.
      */
     public Location getSpawnLocation();
+
+    /**
+     * Gets the relative in-game time on this world (in hours*1000)
+     *
+     * @return The current relative time in hours*1000
+     * @see getFullTime
+     */
+    public long getTime();
+
+    /**
+     * Sets the relative in-game time on the server (in hours*1000)<br />
+     * <br />
+     * Note that setting the relative time below the current relative time will
+     * actually move the clock forward a day. If you require to rewind time, please
+     * see setFullTime
+     *
+     * @param time The new relative time to set the in-game time to (in hours*1000)
+     * @see setFullTime
+     */
+    public void setTime(long time);
+
+    /**
+     * Gets the full in-game time on this world (in hours*1000)
+     *
+     * @return The current time in hours*1000
+     * @see setTime
+     */
+    public long getFullTime();
+
+    /**
+     * Sets the in-game time on the server (in hours*1000)<br />
+     * <br />
+     * Note that this sets the full time of the world, which may cause adverse
+     * effects such as breaking redstone clocks and any scheduled events
+     *
+     * @param time The new time to set the in-game time to (in hours*1000)
+     * @see setTime
+     */
+    public void setFullTime(long time);
 }
