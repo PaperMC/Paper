@@ -80,7 +80,24 @@ public interface World {
      *
      */
     public void loadChunk(Chunk chunk);
-    
+
+    /**
+     * Checks if the chunk at the specified coordinates is loaded
+     *
+     * @param x X-coordinate of the chunk
+     * @param z Z-coordinate of the chunk
+     * @return true if the chunk is loaded, otherwise false
+     */
+    public boolean isChunkLoaded(int x, int z);
+
+    /**
+     * Loads the chunk at the specified coordinates
+     * @param x X-coordinate of the chunk
+     * @param z Z-coordinate of the chunk
+     *
+     */
+    public void loadChunk(int x, int z);
+
     /**
      * Drop an item exactly at the specified location.
      * 

@@ -1,6 +1,8 @@
 
 package org.bukkit;
 
+import org.bukkit.block.Block;
+
 /**
  * Represents a chunk of blocks
  */
@@ -26,4 +28,14 @@ public interface Chunk {
      * @return Parent World
      */
     World getWorld();
+
+    /**
+     * Gets a block from this chunk
+     * 
+     * @param x 0-15
+     * @param y 0-127
+     * @param z 0-15
+     * @return the Block
+     */
+    Block getBlock(int x, int y, int z);
 }
