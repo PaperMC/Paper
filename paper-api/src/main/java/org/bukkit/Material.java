@@ -308,13 +308,52 @@ public enum Material {
     public boolean isBlock() {
         return id < 256; 
     }
-    
+
+    /**
+     * Attempts to get the Material with the given ID
+     *
+     * @param id ID of the material to get
+     * @return Material if found, or null
+     */
     public static Material getMaterial(final int id) {
         return lookupId.get(id);
     }
 
+    /**
+     * Attempts to get the Material with the given name.
+     * This is a normal lookup, names must be the precise name they are given
+     * in the enum.
+     *
+     * @param name Name of the material to get
+     * @return Material if found, or null
+     */
     public static Material getMaterial(final String name) {
         return lookupName.get(name);
+    }
+
+    /**
+     * Attempts to match the Material with the given name.
+     * This is a match lookup; names will be converted to uppercase, then stripped
+     * of special characters in an attempt to format it like the enum
+     *
+     * @param name Name of the material to get
+     * @return Material if found, or null
+     */
+    public static Material matchMaterial(final String name) {
+        Material result = null;
+
+        try {
+            result = getMaterial(Integer.parseInt(name));
+        } catch (NumberFormatException ex) {
+        }
+
+        if (result == null) {
+            String filtered = name.toUpperCase();
+            filtered = filtered.replaceAll("\\s+", "_").replaceAll("\\W", "");
+            result = lookupName.get(filtered);
+        }
+
+        return result;
     }
     
     static {
