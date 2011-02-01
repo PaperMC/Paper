@@ -19,7 +19,7 @@ import org.bukkit.plugin.java.JavaPluginLoader;
 
 public final class CraftServer implements Server {
     private final String serverName = "Craftbukkit";
-	private final String serverVersion;
+    private final String serverVersion;
     private final String protocolVersion = "1.2_01";
     private final PluginManager pluginManager = new SimplePluginManager(this);
     private final CommandMap commandMap = new SimpleCommandMap(this);
@@ -29,7 +29,7 @@ public final class CraftServer implements Server {
     public CraftServer(MinecraftServer console, ServerConfigurationManager server) {
         this.console = console;
         this.server = server;
-		this.serverVersion = CraftServer.class.getPackage().getImplementationVersion();
+        this.serverVersion = CraftServer.class.getPackage().getImplementationVersion();
 
         pluginManager.RegisterInterface(JavaPluginLoader.class);
     }
