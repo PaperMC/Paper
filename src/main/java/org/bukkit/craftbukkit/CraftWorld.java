@@ -243,6 +243,26 @@ public class CraftWorld implements World {
         return "CraftWorld";
     }
 
+    public long getTime() {
+        long time = getFullTime() % 24000;
+        if (time < 0) time += 24000;
+        return time;
+    }
+
+    public void setTime(long time) {
+        long margin = (time - getFullTime()) % 24000;
+        if (margin < 0) margin += 24000;
+        setFullTime(getFullTime() + margin);
+    }
+
+    public long getFullTime() {
+        return world.e;
+    }
+
+    public void setFullTime(long time) {
+        world.e = time;
+    }
+
     private final class ChunkCoordinate {
         public final int x;
         public final int z;
