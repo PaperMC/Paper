@@ -345,6 +345,11 @@ public final class JavaPluginLoader implements PluginLoader {
                     ((VehicleListener)listener).onVehicleMove( (VehicleMoveEvent)event );
                 }
             };
+        case VEHICLE_UPDATE:
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
+                    ((VehicleListener)listener).onVehicleUpdate((VehicleEvent)event);
+                }
+            };
 
         // Custom Events
         case CUSTOM_EVENT:

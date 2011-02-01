@@ -534,6 +534,13 @@ public abstract class Event {
         VEHICLE_MOVE (Category.VEHICLE),
 
         /**
+         * Called when a vehicle is going through an update cycle, rechecking itself
+         *
+         * @see org.bukkit.event.vehicle.VehicleUpdateEvent
+         */
+        VEHICLE_UPDATE (Category.VEHICLE),
+
+        /**
          * MISCELLANEOUS EVENTS
          */
 

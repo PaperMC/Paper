@@ -59,12 +59,20 @@ public class VehicleListener implements Listener {
      */
     public void onVehicleExit(VehicleExitEvent event) {
     }
-    
+
     /**
      * Called when an vehicle moves.
-     * 
+     *
      * @param event
      */
     public void onVehicleMove(VehicleMoveEvent event) {
+    }
+
+    /**
+     * Called when a vehicle goes through an update cycle
+     *
+     * @param event
+     */
+    public void onVehicleUpdate(VehicleEvent event) {
     }
 }
