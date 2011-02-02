@@ -181,4 +181,9 @@ public final class CraftServer implements Server {
         commandMap.clearCommands();
         loadPlugins();
     }
+
+    @Override
+    public String toString() {
+        return "CraftServer{" + "serverName=" + serverName + "serverVersion=" + serverVersion + "protocolVersion=" + protocolVersion + '}';
+    }
 }
