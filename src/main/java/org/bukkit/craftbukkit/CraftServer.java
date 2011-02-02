@@ -16,12 +16,15 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.SimplePluginManager;
 import org.bukkit.plugin.java.JavaPluginLoader;
+import org.bukkit.scheduler.BukkitScheduler;
+import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 
 public final class CraftServer implements Server {
     private final String serverName = "Craftbukkit";
     private final String serverVersion;
     private final String protocolVersion = "1.2_01";
     private final PluginManager pluginManager = new SimplePluginManager(this);
+    private final BukkitScheduler scheduler =  new CraftScheduler(this);
     private final CommandMap commandMap = new SimpleCommandMap(this);
     protected final MinecraftServer console;
     protected final ServerConfigurationManager server;
@@ -143,6 +146,10 @@ public final class CraftServer implements Server {
 
     public PluginManager getPluginManager() {
         return pluginManager;
+    }
+
+    public BukkitScheduler getScheduler() {
+        return scheduler;
     }
 
     public World[] getWorlds() {

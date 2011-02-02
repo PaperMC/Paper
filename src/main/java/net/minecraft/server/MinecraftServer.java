@@ -17,6 +17,7 @@ import java.net.UnknownHostException;
 import joptsimple.OptionSet;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 // CraftBukkit end
 
 public class MinecraftServer implements ICommandListener, Runnable {
@@ -274,6 +275,10 @@ public class MinecraftServer implements ICommandListener, Runnable {
         }
 
         this.e.f();
+
+        // CraftBukkit start
+        ((CraftScheduler) server.getScheduler()).mainThreadHeartbeat(this.h);
+        // CraftBukkit end
 
         while (this.e.d()) {
             ;
