@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 import java.util.List;
 
 import org.bukkit.plugin.PluginManager;
+import org.bukkit.scheduler.BukkitScheduler;
 
 /**
  * Represents a server implementation
@@ -74,6 +75,13 @@ public interface Server {
      * @return PluginManager for this Server instance
      */
     public PluginManager getPluginManager();
+
+    /**
+     * Gets the Scheduler for managing scheduled events
+     *
+     * @return Scheduler for this Server instance
+     */
+    public BukkitScheduler getScheduler();
 
     /**
      * Gets a list of all worlds on this server
