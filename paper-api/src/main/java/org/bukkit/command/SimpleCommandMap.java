@@ -74,6 +74,12 @@ public final class SimpleCommandMap implements CommandMap {
         boolean isRegisteredCommand = (target != null);
         if (isRegisteredCommand) {
             target.execute(sender, sentCommandLabel, args);
+            return true;
+        }
+        target = knownCommands.get(sentCommandLabel.substring(1));
+        isRegisteredCommand = (target != null);
+        if (isRegisteredCommand) {
+            target.execute(sender, sentCommandLabel, args);
         }
         return isRegisteredCommand;
     }
