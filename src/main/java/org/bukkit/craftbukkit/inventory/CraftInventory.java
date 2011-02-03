@@ -94,7 +94,7 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
     }
 
     public boolean contains(Material material, int amount) {
-    	return contains(material.getId(), amount);
+        return contains(material.getId(), amount);
     }
 
     public boolean contains(ItemStack item, int amount) {
