@@ -13,8 +13,8 @@ import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
 
 public class EntityCreature extends EntityLiving {
 
-    private PathEntity a;
-    protected Entity d;
+    public PathEntity a; // Craftbukkit - public
+    public Entity d; // Craftbukkit - public
     protected boolean e = false;
 
     public EntityCreature(World world) {
