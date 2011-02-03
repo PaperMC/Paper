@@ -235,10 +235,14 @@ public final class JavaPluginLoader implements PluginLoader {
                     ((BlockListener)listener).onBlockRedstoneChange( (BlockFromToEvent)event );
                 }
             };
-
         case BLOCK_BURN:
             return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((BlockListener)listener).onBlockBurn( (BlockBurnEvent)event );
+                }
+            };
+        case BLOCK_BREAK:
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
+                    ((BlockListener)listener).onBlockBreak( (BlockBreakEvent)event );
                 }
             };
 

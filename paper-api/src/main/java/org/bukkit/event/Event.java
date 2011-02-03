@@ -320,6 +320,13 @@ public abstract class Event {
         REDSTONE_CHANGE (Category.BLOCK),
 
         /**
+         * Called when a block is destroyed by a player.
+         *
+         * @see org.bukkit.event.block.BlockBreakEvent
+         */
+        BLOCK_BREAK (Category.BLOCK),
+
+        /**
          * INVENTORY EVENTS
          */
 

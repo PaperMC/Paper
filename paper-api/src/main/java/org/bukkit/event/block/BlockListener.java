@@ -101,4 +101,12 @@ public class BlockListener implements Listener {
      */
     public void onBlockBurn(BlockBurnEvent event) {
     }
+
+    /**
+     * Called when a block is destroyed by a player.
+     *
+     * @param event Relevant event details
+     */
+    public void onBlockBreak(BlockBreakEvent event) {
+    }
 }
