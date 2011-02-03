@@ -68,7 +68,7 @@ public class ItemBlock extends Item {
             /* We store the old data so we can undo it. Snow(78) and half-steps(44) are special in that they replace the block itself,
             * rather than the block touching the face we clicked on.
             */
-            org.bukkit.block.Block replacedBlock = (blockClicked.getTypeId() == Block.SNOW.id || blockClicked.getTypeId() == Block.STEP.id) ? blockClicked:blockClicked.getFace(faceClicked);
+            org.bukkit.block.Block replacedBlock = ( blockClicked.getTypeId() == Block.SNOW.id || (blockClicked.getTypeId() == Block.STEP.id && itemstack.id == Block.STEP.id && faceClicked == BlockFace.UP) ) ? blockClicked : blockClicked.getFace(faceClicked);
             final BlockState replacedBlockState = new CraftBlockState(replacedBlock);
             // CraftBukkit end
 
@@ -103,15 +103,20 @@ public class ItemBlock extends Item {
                     if (event.isCancelled() || !event.canBuild()) {
                         // CraftBukkit Undo!
 
-                        if (this.a == block.ICE.id) {
-                            // Ice will explode if we set straight to 0
-                            world.setTypeId(i, j, k, 20);
-                        } else if ((this.a == Block.STEP.id) && (world.getTypeId(i, j - 1, k) == Block.DOUBLE_STEP.id) && (world.getTypeId(i, j, k) == 0)) {
+                        if ((this.a == Block.STEP.id) && (world.getTypeId(i, j - 1, k) == Block.DOUBLE_STEP.id) && (world.getTypeId(i, j, k) == 0)) {
                             // Half steps automatically set the block below to a double
                             world.setTypeId(i, j - 1, k, 44);
+
+                        } else {
+
+                            if (this.a == block.ICE.id) {
+                                // Ice will explode if we set straight to 0
+                                world.setTypeId(i, j, k, 20);
+                            }
+
+                            world.setTypeIdAndData(i, j, k, replacedBlockState.getTypeId(), replacedBlockState.getData().getData());
                         }
 
-                        world.setTypeIdAndData(i, j, k, replacedBlockState.getTypeId(), replacedBlockState.getData().getData());
                     } else {
                         world.f(i, j, k, a); // <-- world.b does this on success (tell the world)
 
