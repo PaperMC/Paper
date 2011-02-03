@@ -66,9 +66,14 @@ public class ItemBlock extends Item {
         } else {
             // CraftBukkit start
             /* We store the old data so we can undo it. Snow(78) and half-steps(44) are special in that they replace the block itself,
-            * rather than the block touching the face we clicked on.
-            */
-            org.bukkit.block.Block replacedBlock = ( blockClicked.getTypeId() == Block.SNOW.id || (blockClicked.getTypeId() == Block.STEP.id && itemstack.id == Block.STEP.id && faceClicked == BlockFace.UP) ) ? blockClicked : blockClicked.getFace(faceClicked);
+             * rather than the block touching the face we clicked on.
+             */
+            int typeId = blockClicked.getTypeId(); 
+            org.bukkit.block.Block replacedBlock = blockClicked.getFace(faceClicked);
+
+            if (typeId == Block.SNOW.id || (typeId == Block.STEP.id && itemstack.id == Block.STEP.id && faceClicked == BlockFace.UP))
+                replacedBlock = blockClicked;
+            
             final BlockState replacedBlockState = new CraftBlockState(replacedBlock);
             // CraftBukkit end
 
@@ -77,13 +82,13 @@ public class ItemBlock extends Item {
 
                 // CraftBukkit start - This executes the placement of the block
                 /*
-                * This replaces world.b(IIIII), we're doing this because we need to
-                * hook between the 'placement' and the informing to 'world' so we can
-                * sanely undo this.
-                *
-                * Whenever the call to 'world.b' changes we need to figure out again what to
-                * replace this with.
-                */
+                 * This replaces world.b(IIIII), we're doing this because we need to
+                 * hook between the 'placement' and the informing to 'world' so we can
+                 * sanely undo this.
+                 *
+                 * Whenever the call to 'world.b' changes we need to figure out again what to
+                 * replace this with.
+                 */
                 if (world.setTypeIdAndData(i, j, k, a, a(itemstack.h()))) { // <-- world.b does this to place the block
                     org.bukkit.Server server = ((WorldServer) world).getServer();
                     Type eventType = Type.BLOCK_PLACED;
