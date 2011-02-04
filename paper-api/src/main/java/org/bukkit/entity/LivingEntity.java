@@ -135,4 +135,19 @@ public interface LivingEntity extends Entity {
      * @param ticks Maximum amount of air
      */
     public void setMaximumAir(int ticks);
+
+    /**
+     * Deals the given amount of damage to this entity
+     *
+     * @param amount Amount of damage to deal
+     */
+    public void damage(int amount);
+
+    /**
+     * Deals the given amount of damage to this entity, from a specified entity
+     *
+     * @param amount Amount of damage to deal
+     * @param source Entity which to attribute this damage from
+     */
+    public void damage(int amount, Entity source);
 }
