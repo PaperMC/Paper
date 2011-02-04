@@ -76,6 +76,13 @@ public interface World {
     public boolean isChunkLoaded(Chunk chunk);
 
     /**
+     * Gets an array of all loaded chunks
+     *
+     * @return Chunk array of all loaded chunks
+     */
+    public Chunk[] getLoadedChunks();
+
+    /**
      * Loads the specified chunk
      *
      */
