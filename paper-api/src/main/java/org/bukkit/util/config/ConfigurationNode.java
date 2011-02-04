@@ -9,7 +9,7 @@ import java.util.Map;
  * 
  * @author sk89q
  */
-public abstract class ConfigurationNode {
+public class ConfigurationNode {
     protected Map<String, Object> root;
     
     ConfigurationNode(Map<String, Object> root) {
