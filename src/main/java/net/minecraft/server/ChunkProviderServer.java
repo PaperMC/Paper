@@ -33,6 +33,19 @@ public class ChunkProviderServer implements IChunkProvider {
         this.c = ichunkprovider;
     }
 
+    // CraftBukkit start
+    public org.bukkit.Chunk[] getLoadedChunks() {
+        Object[] chunks = e.values().toArray();
+        org.bukkit.Chunk[] craftChunks = new CraftChunk[chunks.length];
+
+        for(int cnt =0;cnt<chunks.length;cnt++) {
+            craftChunks[cnt] = ((Chunk)chunks[cnt]).bukkitChunk;
+        }
+
+        return craftChunks;
+    }
+    // CraftBukkit end
+
     public boolean a(int i, int j) {
         ChunkCoordinates chunkcoordinates = new ChunkCoordinates(i, j);
 
