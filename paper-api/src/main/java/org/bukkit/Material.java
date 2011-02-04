@@ -225,7 +225,7 @@ public enum Material {
         this(id, -1, stack, data);
     }
 
-    private Material(final int id, final int durability, final int stack, final Class<? extends MaterialData> data) {
+    private Material(final int id, final int stack, final int durability, final Class<? extends MaterialData> data) {
         this.id = id;
         this.durability = (short)durability;
         this.maxStack = stack;
