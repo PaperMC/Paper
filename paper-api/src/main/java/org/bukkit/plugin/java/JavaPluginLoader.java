@@ -128,6 +128,16 @@ public final class JavaPluginLoader implements PluginLoader {
                     ((PlayerListener)listener).onPlayerQuit( (PlayerEvent)event );
                 }
             };
+        case PLAYER_RESPAWN:
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
+                    ((PlayerListener)listener).onPlayerRespawn( (PlayerRespawnEvent)event );
+                }
+            };
+        case PLAYER_KICK:
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
+                    ((PlayerListener)listener).onPlayerKick( (PlayerKickEvent)event );
+                }
+            };
         case PLAYER_COMMAND:
             return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((PlayerListener)listener).onPlayerCommand( (PlayerChatEvent)event );

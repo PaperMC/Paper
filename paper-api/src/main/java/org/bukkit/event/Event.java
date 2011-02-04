@@ -151,6 +151,20 @@ public abstract class Event {
         PLAYER_LOGIN (Category.PLAYER),
 
         /**
+         * Called when a player respawns
+         *
+         * @see org.bukkit.event.player.PlayerEvent
+         */
+        PLAYER_RESPAWN (Category.PLAYER),
+
+        /**
+         * Called when a player gets kicked a server
+         *
+         * @see org.bukkit.event.player.PlayerEvent
+         */
+        PLAYER_KICK (Category.PLAYER),
+
+        /**
          * Called when a player sends a chat message
          *
          * @see org.bukkit.event.player.PlayerChatEvent

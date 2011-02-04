@@ -27,6 +27,15 @@ public class PlayerListener implements Listener {
     }
 
     /**
+     * Called when a player gets kicked from the server
+     * 
+     * @param event Relevant event details
+     */
+    public void onPlayerKick(PlayerKickEvent event) {
+    	
+    }
+    
+    /**
      * Called when a player sends a chat message
      *
      * @param event Relevant event details
@@ -56,6 +65,14 @@ public class PlayerListener implements Listener {
      * @param event Relevant event details
      */
     public void onPlayerTeleport(PlayerMoveEvent event) {
+    }
+    
+    /**
+     * Called when a player respawns
+     * 
+     * @param event Relevant event details
+     */
+    public void onPlayerRespawn(PlayerRespawnEvent event) {
     }
 
     /**
