@@ -56,6 +56,12 @@ public class ServerConfigurationManager {
         this.j();
     }
 
+    // CraftBukkit start
+    public int getMaxPlayers() {
+        return this.e;
+    }
+    // CraftBukkit end
+    
     public void a(WorldServer worldserver) {
         this.l = new PlayerNBTManager(new File(worldserver.t, "players"));
     }

@@ -136,6 +136,10 @@ public final class CraftServer implements Server {
         return matchedPlayers;
     }
 
+    public int getMaxPlayers() {
+        return server.getMaxPlayers();
+    }
+    
     public PluginManager getPluginManager() {
         return pluginManager;
     }
