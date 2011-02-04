@@ -343,6 +343,11 @@ public final class JavaPluginLoader implements PluginLoader {
                     ((EntityListener)listener).onEntityExplode( (EntityExplodeEvent)event );
                 }
             };
+        case EXPLOSION_PRIMED:
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
+                    ((EntityListener)listener).onExplosionPrimed( (ExplosionPrimedEvent)event );
+                }
+            };
         case ENTITY_TARGET:
             return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((EntityListener)listener).onEntityTarget( (EntityTargetEvent)event );

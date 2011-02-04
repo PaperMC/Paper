@@ -534,6 +534,20 @@ public abstract class Event {
         ENTITY_EXPLODE (Category.LIVING_ENTITY),
 
         /**
+         * Called when an entity has made a decision to explode.
+         * 
+         * Provides an opportunity to act on the entity, change the explosion radius,
+         * or to change the fire-spread flag.
+         * 
+         * Canceling the event negates the entity's decision to explode.
+         * For EntityCreeper, this resets the fuse but does not kill the Entity.
+         * For EntityFireball and EntityTNTPrimed....?
+         * 
+         * @see org.bukkit.event.entity.EntityExplodeTriggerEvent
+         */
+        EXPLOSION_PRIMED (Category.LIVING_ENTITY),
+
+        /**
          * Called when an entity targets another entity
          *
          * @see org.bukkit.event.entity.EntityTargetEvent
