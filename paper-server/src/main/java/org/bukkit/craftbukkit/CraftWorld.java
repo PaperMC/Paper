@@ -59,6 +59,10 @@ public class CraftWorld implements World {
         return world.A.a( x, z );
     }
 
+    public Chunk[] getLoadedChunks() {
+        return world.A.getLoadedChunks();
+    }
+
     public void loadChunk(int x, int z) {
          world.A.d(x, z);
     }
