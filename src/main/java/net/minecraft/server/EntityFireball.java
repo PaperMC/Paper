@@ -4,9 +4,12 @@ import java.util.List;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+import org.bukkit.event.entity.ExplosionPrimedEvent;
 // CraftBukkit end
 
 public class EntityFireball extends Entity {
@@ -148,8 +151,16 @@ public class EntityFireball extends Entity {
             }
             // CraftBukkit end
 
-            this.world.a((Entity) null, this.locX, this.locY, this.locZ, 1.0F, true);
-            this.q();
+            // Craftbukkit start
+            CraftServer server = ((WorldServer) this.world).getServer();
+            org.bukkit.event.Event.Type eventType = ExplosionPrimedEvent.Type.EXPLOSION_PRIMED;
+            ExplosionPrimedEvent event = new ExplosionPrimedEvent(eventType, CraftEntity.getEntity(server, this), 1.0F, false); 
+            server.getPluginManager().callEvent(event);
+            if(!event.isCancelled()) {
+                this.world.a((Entity) null, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire());
+                this.q();
+            }
+            // Craftbukkit end
         }
 
         this.locX += this.motX;
