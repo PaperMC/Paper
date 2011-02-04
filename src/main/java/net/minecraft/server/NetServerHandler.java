@@ -22,6 +22,7 @@ import org.bukkit.event.player.PlayerAnimationEvent;
 import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerItemEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
+import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.plugin.Plugin;
 // CraftBukkit end
@@ -66,7 +67,6 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     }
     // CraftBukkit end
 
-
     public void a() {
         this.b.a();
         if (this.f++ % 20 == 0) {
@@ -75,10 +75,21 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     }
 
     public void a(String s) {
-        this.b.a((Packet) (new Packet255KickDisconnect(s)));
-        this.b.c();
-        this.d.f.a((Packet) (new Packet3Chat("§e" + this.e.name + " left the game.")));
+        // CraftBukkit start
+        String leaveMessage = "§e" + this.e.name + " left the game.";
+        PlayerKickEvent kickEvent = new PlayerKickEvent(org.bukkit.event.Event.Type.PLAYER_KICK, server.getPlayer(this.e), s, leaveMessage);
+        server.getPluginManager().callEvent(kickEvent);
+        if (kickEvent.isCancelled()) {
+            // Do not kick the player
+            return;
+        }
+        // Send the possibly modified leave message
+        this.d.f.a((Packet) (new Packet3Chat( kickEvent.getLeaveMessage() )));
         this.d.f.c(this.e);
+        this.b.a((Packet) (new Packet255KickDisconnect( kickEvent.getReason() )));
+        // CraftBukkit end
+
+        this.b.c();
         this.c = true;
     }
 

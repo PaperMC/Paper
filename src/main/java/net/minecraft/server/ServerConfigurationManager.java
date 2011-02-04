@@ -13,12 +13,14 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 // CraftBukkit end
 
 public class ServerConfigurationManager {
@@ -36,12 +38,18 @@ public class ServerConfigurationManager {
     private File k;
     private PlayerNBTManager l;
 
-    private CraftServer server; // CraftBukkit
+    // CraftBukkit start
+    private CraftServer server;
+
+    public int getMaxPlayers() {
+        return this.e;
+    }
 
     public ServerConfigurationManager(MinecraftServer minecraftserver) {
-        // CraftBukkit 2 lines!
         minecraftserver.server = new CraftServer(minecraftserver, this);
         server = minecraftserver.server;
+        // CraftBukkit end
+
         this.c = minecraftserver;
         this.i = minecraftserver.a("banned-players.txt");
         this.j = minecraftserver.a("banned-ips.txt");
@@ -56,12 +64,6 @@ public class ServerConfigurationManager {
         this.j();
     }
 
-    // CraftBukkit start
-    public int getMaxPlayers() {
-        return this.e;
-    }
-    // CraftBukkit end
-    
     public void a(WorldServer worldserver) {
         this.l = new PlayerNBTManager(new File(worldserver.t, "players"));
     }
@@ -101,13 +103,12 @@ public class ServerConfigurationManager {
         // CraftBukkit end
     }
 
-
     public EntityPlayer a(NetLoginHandler netloginhandler, String s, String s1) {
         // CraftBukkit start - note: this entire method needs to be changed
         // Instead of kicking then returning, we need to store the kick reason
         // in the event, check with plugins to see if it's ok, and THEN kick
         // depending on the outcome.
-        EntityPlayer entity = new EntityPlayer(c, ((World) (c.e)), s, new ItemInWorldManager(((World) (c.e))));
+        EntityPlayer entity = new EntityPlayer(c, (World) c.e, s, new ItemInWorldManager((World) c.e));
         Player player = (entity == null) ? null : (Player) entity.getBukkitEntity();
         PlayerLoginEvent event = new PlayerLoginEvent(Type.PLAYER_LOGIN, player);
 
@@ -157,6 +158,18 @@ public class ServerConfigurationManager {
         while (this.c.e.a(entityplayer1, entityplayer1.boundingBox).size() != 0) {
             entityplayer1.a(entityplayer1.locX, entityplayer1.locY + 1.0D, entityplayer1.locZ);
         }
+
+        // CraftBukkit start
+        Player respawnPlayer = server.getPlayer(entityplayer);
+        Location respawnLocation = new Location(respawnPlayer.getWorld(), entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch);
+        PlayerRespawnEvent respawnEvent = new PlayerRespawnEvent(Event.Type.PLAYER_RESPAWN, respawnPlayer, respawnLocation );
+        server.getPluginManager().callEvent(respawnEvent);
+        entityplayer1.locX = respawnEvent.getRespawnLocation().getX();
+        entityplayer1.locY = respawnEvent.getRespawnLocation().getY();
+        entityplayer1.locZ = respawnEvent.getRespawnLocation().getZ();
+        entityplayer1.yaw = respawnEvent.getRespawnLocation().getYaw();
+        entityplayer1.pitch = respawnEvent.getRespawnLocation().getPitch();
+        // CraftBukkit end
 
         entityplayer1.a.b((Packet) (new Packet9Respawn()));
         entityplayer1.a.a(entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch);
