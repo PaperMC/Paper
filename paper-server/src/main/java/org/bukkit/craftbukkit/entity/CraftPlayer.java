@@ -103,7 +103,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void kickPlayer(String message) {
-        entity.a.a(message);
+        entity.a.a(message == null ? "" : message);
     }
 
     public void setCompassTarget(Location loc) {
