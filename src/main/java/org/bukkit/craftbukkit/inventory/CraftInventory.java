@@ -209,7 +209,7 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
                     } else {
                         // More than a single stack!
                         if (item.getAmount() > getMaxItemStack()) {
-                            setItem( firstFree, new CraftItemStack(item.getTypeId(), getMaxItemStack()));
+                            setItem( firstFree, new CraftItemStack(item.getTypeId(), getMaxItemStack(), item.getDamage()));
                             item.setAmount(item.getAmount() - getMaxItemStack());
                         } else {
                             // Just store it

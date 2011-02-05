@@ -32,19 +32,19 @@ public class CraftItemStack extends ItemStack {
         this(type.getId(), amount);
     }
 
-    public CraftItemStack(final int type, final int amount, final byte damage) {
+    public CraftItemStack(final int type, final int amount, final short damage) {
         this(type, amount, damage, null);
     }
 
-    public CraftItemStack(final Material type, final int amount, final byte damage) {
+    public CraftItemStack(final Material type, final int amount, final short damage) {
         this(type.getId(), amount, damage);
     }
 
-    public CraftItemStack(final Material type, final int amount, final byte damage, final Byte data) {
+    public CraftItemStack(final Material type, final int amount, final short damage, final Byte data) {
         this(type.getId(), amount, damage, data);
     }
 
-    public CraftItemStack(int type, int amount, byte damage, Byte data) {
+    public CraftItemStack(int type, int amount, short damage, Byte data) {
         this(new net.minecraft.server.ItemStack(type, amount, data != null ? data : damage));
     }
 
