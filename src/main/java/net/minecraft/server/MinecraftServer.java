@@ -321,6 +321,9 @@ public class MinecraftServer implements ICommandListener, Runnable {
                 } else if (s.toLowerCase().startsWith("save-all")) {
                     this.a(s1, "Forcing save..");
                     this.e.a(true, (IProgressUpdate) null);
+                    // Craftbukkit start -- save player data on save-all.
+                    this.f.d();
+                    // Craftbukkit end
                     this.a(s1, "Save complete.");
                 } else if (s.toLowerCase().startsWith("save-off")) {
                     this.a(s1, "Disabling level saving..");
