@@ -86,9 +86,11 @@ public interface Server {
     /**
      * Gets a list of all worlds on this server
      *
-     * @return An array of worlds
+     * @return A list of worlds
      */
-    public World[] getWorlds();
+    public List<World> getWorlds();
+    
+    public World createWorld(String name, boolean nether);
 
     /**
      * Reloads the server, refreshing settings and plugin information
