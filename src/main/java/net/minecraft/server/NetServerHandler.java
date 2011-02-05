@@ -156,7 +156,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 this.e.motX = d5;
                 this.e.motZ = d4;
                 if (this.e.vehicle != null) {
-                    this.d.e.b(this.e.vehicle, true);
+                    ((WorldServer)this.e.world).b(this.e.vehicle, true); // Craftbukkit
                 }
 
                 if (this.e.vehicle != null) {
@@ -167,7 +167,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 this.g = this.e.locX;
                 this.h = this.e.locY;
                 this.i = this.e.locZ;
-                this.d.e.f(this.e);
+                this.e.world.f(this.e);
                 return;
             }
 
@@ -210,7 +210,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             double d6 = d2 - this.e.locY;
             double d7 = d3 - this.e.locZ;
             float f4 = 0.0625F;
-            boolean flag = this.d.e.a(this.e, this.e.boundingBox.b().e((double) f4, (double) f4, (double) f4)).size() == 0;
+            boolean flag = this.e.world.a(this.e, this.e.boundingBox.b().e((double) f4, (double) f4, (double) f4)).size() == 0; // Craftbukkit
 
             this.e.c(d4, d6, d7);
             d4 = d1 - this.e.locX;
@@ -231,7 +231,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             }
 
             this.e.b(d1, d2, d3, f2, f3);
-            boolean flag2 = this.d.e.a(this.e, this.e.boundingBox.b().e((double) f4, (double) f4, (double) f4)).size() == 0;
+            boolean flag2 = this.e.world.a(this.e, this.e.boundingBox.b().e((double) f4, (double) f4, (double) f4)).size() == 0; // Craftbukkit
 
             if (flag && (flag1 || !flag2)) {
                 this.a(this.g, this.h, this.i, f2, f3);
@@ -274,7 +274,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         if (packet14blockdig.e == 4) {
             this.e.O();
         } else {
-            boolean flag = this.d.e.B = this.d.f.g(this.e.name);
+            boolean flag = ((WorldServer)this.e.world).B = this.d.f.g(this.e.name); // Craftbukkit
             boolean flag1 = false;
 
             if (packet14blockdig.e == 0) {
@@ -306,8 +306,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             }
 
             int l = packet14blockdig.d;
-            int i1 = (int) MathHelper.e((float) (i - this.d.e.spawnX));
-            int j1 = (int) MathHelper.e((float) (k - this.d.e.spawnZ));
+            int i1 = (int) MathHelper.e((float) (i - this.e.world.spawnX)); // Craftbukkit
+            int j1 = (int) MathHelper.e((float) (k - this.e.world.spawnZ)); // Craftbukkit
 
             if (i1 > j1) {
                 j1 = i1;
@@ -378,7 +378,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 double d8 = d5 * d5 + d6 * d6 + d7 * d7;
 
                 if (d8 < 256.0D) {
-                    this.e.a.b((Packet) (new Packet53BlockChange(i, j, k, this.d.e)));
+                    this.e.a.b((Packet) (new Packet53BlockChange(i, j, k, this.e.world))); // Craftbukkit
                 }
             }
 
@@ -388,13 +388,13 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             lastZ = k;
             // CraftBukkit end
 
-            this.d.e.B = false;
+            ((WorldServer)this.e.world).B = false; // Craftbukkit
         }
     }
 
     public void a(Packet15Place packet15place) {
         ItemStack itemstack = this.e.inventory.e();
-        boolean flag = this.d.e.B = this.d.f.g(this.e.name);
+        boolean flag = ((WorldServer)this.e.world).B = this.d.f.g(this.e.name); // Craftbukkit
 
         // CraftBukkit start
         CraftBlock blockClicked = null;
@@ -411,7 +411,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             lastMaterial = 0;
         } else {
             // CraftBukkit RIGHTCLICK or BLOCK_PLACE .. or nothing
-            blockClicked = (CraftBlock) d.e.getWorld().getBlockAt(packet15place.a, packet15place.b, packet15place.c);
+            blockClicked = (CraftBlock) ((WorldServer)e.world).getWorld().getBlockAt(packet15place.a, packet15place.b, packet15place.c);
             lastRightClicked = blockClicked;
             lastMaterial = (packet15place.e == null) ? 0 : packet15place.e.id;
         }
@@ -454,7 +454,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
             if (!event.isCancelled()) {
                 int itemstackAmount = itemstack.count;
-                this.e.c.a(this.e, this.d.e, itemstack);
+                this.e.c.a(this.e, this.e.world, itemstack);
 
                 // CraftBukkit notch decrements the counter by 1 in the above method with food,
                 // snowballs and so forth, but he does it in a place that doesnt cause the
@@ -467,8 +467,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             int j = packet15place.b;
             int k = packet15place.c;
             int l = packet15place.d;
-            int i1 = (int) MathHelper.e((float) (i - this.d.e.spawnX));
-            int j1 = (int) MathHelper.e((float) (k - this.d.e.spawnZ));
+            int i1 = (int) MathHelper.e((float) (i - this.e.world.spawnX)); // Craftbukkit
+            int j1 = (int) MathHelper.e((float) (k - this.e.world.spawnZ)); // Craftbukkit
 
             if (i1 > j1) {
                 j1 = i1;
@@ -480,10 +480,10 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             BlockRightClickEvent event = new BlockRightClickEvent(Type.BLOCK_RIGHTCLICKED, blockClicked, blockFace, craftItem, player);
             server.getPluginManager().callEvent(event);
 
-            this.e.c.a(this.e, this.d.e, itemstack, i, j, k, l);
+            this.e.c.a(this.e, this.e.world, itemstack, i, j, k, l);
             // CraftBukkit end
 
-            this.e.a.b((Packet) (new Packet53BlockChange(i, j, k, this.d.e)));
+            this.e.a.b((Packet) (new Packet53BlockChange(i, j, k, this.e.world)));
             if (l == 0) {
                 --j;
             }
@@ -508,7 +508,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 ++i;
             }
 
-            this.e.a.b((Packet) (new Packet53BlockChange(i, j, k, this.d.e)));
+            this.e.a.b((Packet) (new Packet53BlockChange(i, j, k, this.e.world)));
         }
 
         if (itemstack != null && itemstack.count == 0) {
@@ -527,7 +527,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             this.b((Packet) (new Packet103SetSlot(this.e.activeContainer.f, slot.c, this.e.inventory.e())));
         }
 
-        this.d.e.B = false;
+        ((WorldServer)this.e.world).B = false; // Craftbukkit
     }
 
     public void a(String s, Object[] aobject) {
@@ -676,7 +676,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     }
 
     public void a(Packet7UseEntity packet7useentity) {
-        Entity entity = this.d.e.a(packet7useentity.b);
+        Entity entity = ((WorldServer)this.e.world).a(packet7useentity.b); // Craftbukkit
 
         if (entity != null && this.e.i(entity)) {
             if (packet7useentity.c == 0) {
@@ -736,8 +736,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     }
 
     public void a(Packet130UpdateSign packet130updatesign) {
-        if (this.d.e.f(packet130updatesign.a, packet130updatesign.b, packet130updatesign.c)) {
-            TileEntity tileentity = this.d.e.getTileEntity(packet130updatesign.a, packet130updatesign.b, packet130updatesign.c);
+        if (this.e.world.f(packet130updatesign.a, packet130updatesign.b, packet130updatesign.c)) { // Craftbukkit
+            TileEntity tileentity = this.e.world.getTileEntity(packet130updatesign.a, packet130updatesign.b, packet130updatesign.c); // Craftbukkit
 
             int i;
             int j;
@@ -772,7 +772,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 }
 
                 tileentitysign.d();
-                this.d.e.g(i, k, j);
+                this.e.world.g(i, k, j); // Craftbukkit
             }
         }
     }

@@ -75,17 +75,20 @@ public class ServerConfigurationManager {
     public void a(EntityPlayer entityplayer) {
         this.b.add(entityplayer);
         this.l.b(entityplayer);
-        this.c.e.A.d((int) entityplayer.locX >> 4, (int) entityplayer.locZ >> 4);
 
-        while (this.c.e.a(entityplayer, entityplayer.boundingBox).size() != 0) {
+        // Craftbukkit start
+        ((WorldServer)entityplayer.world).A.d((int) entityplayer.locX >> 4, (int) entityplayer.locZ >> 4);
+
+        while (entityplayer.world.a(entityplayer, entityplayer.boundingBox).size() != 0) {
             entityplayer.a(entityplayer.locX, entityplayer.locY + 1.0D, entityplayer.locZ);
         }
 
-        this.c.e.a(entityplayer);
-        this.d.a(entityplayer);
+        entityplayer.world.a(entityplayer);
 
-        // CraftBukkit
         server.getPluginManager().callEvent(new PlayerEvent(PlayerEvent.Type.PLAYER_JOIN, server.getPlayer(entityplayer)));
+        // Craftbukkit end
+        
+        this.d.a(entityplayer);
     }
 
     public void b(EntityPlayer entityplayer) {
@@ -94,7 +97,7 @@ public class ServerConfigurationManager {
 
     public void c(EntityPlayer entityplayer) {
         this.l.a(entityplayer);
-        this.c.e.d(entityplayer);
+        entityplayer.world.d(entityplayer); // Craftbukkit
         this.b.remove(entityplayer);
         this.d.b(entityplayer);
 
@@ -107,8 +110,8 @@ public class ServerConfigurationManager {
         // CraftBukkit start - note: this entire method needs to be changed
         // Instead of kicking then returning, we need to store the kick reason
         // in the event, check with plugins to see if it's ok, and THEN kick
-        // depending on the outcome.
-        EntityPlayer entity = new EntityPlayer(c, (World) c.e, s, new ItemInWorldManager((World) c.e));
+        // depending on the outcome. Also change any reference to this.e.c to entity.world
+        EntityPlayer entity = new EntityPlayer(c, c.worlds.get(0), s, new ItemInWorldManager(c.worlds.get(0)));
         Player player = (entity == null) ? null : (Player) entity.getBukkitEntity();
         PlayerLoginEvent event = new PlayerLoginEvent(Type.PLAYER_LOGIN, player);
 
@@ -139,23 +142,24 @@ public class ServerConfigurationManager {
             }
         }
 
-        return new EntityPlayer(this.c, this.c.e, s, new ItemInWorldManager(this.c.e));
+        return new EntityPlayer(this.c, entity.world, s, new ItemInWorldManager(entity.world));
         // CraftBukkit end
     }
 
     public EntityPlayer d(EntityPlayer entityplayer) {
+        // Craftbukkit start - every reference to this.c.e should be entityplayer.world
         this.c.k.a(entityplayer);
         this.c.k.b(entityplayer);
         this.d.b(entityplayer);
         this.b.remove(entityplayer);
-        this.c.e.e(entityplayer);
-        EntityPlayer entityplayer1 = new EntityPlayer(this.c, this.c.e, entityplayer.name, new ItemInWorldManager(this.c.e));
+        entityplayer.world.e(entityplayer);
+        EntityPlayer entityplayer1 = new EntityPlayer(this.c, entityplayer.world, entityplayer.name, new ItemInWorldManager(entityplayer.world));
 
         entityplayer1.id = entityplayer.id;
         entityplayer1.a = entityplayer.a;
-        this.c.e.A.d((int) entityplayer1.locX >> 4, (int) entityplayer1.locZ >> 4);
+        ((WorldServer)entityplayer.world).A.d((int) entityplayer1.locX >> 4, (int) entityplayer1.locZ >> 4);
 
-        while (this.c.e.a(entityplayer1, entityplayer1.boundingBox).size() != 0) {
+        while (entityplayer.world.a(entityplayer1, entityplayer1.boundingBox).size() != 0) {
             entityplayer1.a(entityplayer1.locX, entityplayer1.locY + 1.0D, entityplayer1.locZ);
         }
 
@@ -174,18 +178,20 @@ public class ServerConfigurationManager {
         entityplayer1.a.b((Packet) (new Packet9Respawn()));
         entityplayer1.a.a(entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch);
         this.d.a(entityplayer1);
-        this.c.e.a(entityplayer1);
+        entityplayer.world.a(entityplayer1);
         this.b.add(entityplayer1);
         entityplayer1.l();
         return entityplayer1;
+        // Craftbukkit end
     }
 
     public void b() {
         this.d.a();
     }
 
-    public void a(int i, int j, int k) {
-        this.d.a(i, j, k);
+    // Craftbukkit - changed signature
+    public void a(int i, int j, int k, WorldServer world) {
+        this.d.a(i, j, k, world); // Craftbukkit
     }
 
     public void a(Packet packet) {

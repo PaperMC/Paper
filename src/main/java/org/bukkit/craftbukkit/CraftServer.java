@@ -11,6 +11,7 @@ import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PropertyManager;
 import net.minecraft.server.ServerConfigurationManager;
+import net.minecraft.server.WorldServer;
 import org.bukkit.*;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
@@ -148,8 +149,13 @@ public final class CraftServer implements Server {
         return pluginManager;
     }
 
+<<<<<<< HEAD
     public BukkitScheduler getScheduler() {
         return scheduler;
+=======
+    public World[] getWorlds() {
+        return console.worlds.toArray(new World[0]);
+>>>>>>> f045828... Added internal MC support for multiple worlds
     }
 
     public World[] getWorlds() {
@@ -170,14 +176,16 @@ public final class CraftServer implements Server {
         console.d = config;
 
         boolean animals = config.a("spawn-monsters", console.m);
-        boolean monsters = config.a("spawn-monsters", console.e.k > 0);
+        boolean monsters = config.a("spawn-monsters", console.worlds.get(0).k > 0);
 
         console.l = config.a("online-mode", console.l);
         console.m = config.a("spawn-animals", console.m);
         console.n = config.a("pvp", console.n);
 
-        console.e.k = monsters ? 1 : 0;
-        console.e.a(monsters, animals);
+        for (WorldServer world : console.worlds) {
+            world.k = monsters ? 1 : 0;
+            world.a(monsters, animals);
+        }
 
         pluginManager.clearPlugins();
         commandMap.clearCommands();

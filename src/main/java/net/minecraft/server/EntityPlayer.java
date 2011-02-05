@@ -158,8 +158,11 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
             if (flag) {
                 this.f.remove(chunkcoordintpair);
-                this.a.b((Packet) (new Packet51MapChunk(chunkcoordintpair.a * 16, 0, chunkcoordintpair.b * 16, 16, 128, 16, this.b.e)));
-                List list = this.b.e.d(chunkcoordintpair.a * 16, 0, chunkcoordintpair.b * 16, chunkcoordintpair.a * 16 + 16, 128, chunkcoordintpair.b * 16 + 16);
+
+                // Craftbukkit start
+                this.a.b((Packet) (new Packet51MapChunk(chunkcoordintpair.a * 16, 0, chunkcoordintpair.b * 16, 16, 128, 16, this.world)));
+                List list = ((WorldServer)world).d(chunkcoordintpair.a * 16, 0, chunkcoordintpair.b * 16, chunkcoordintpair.a * 16 + 16, 128, chunkcoordintpair.b * 16 + 16);
+                // Craftbukkit end
 
                 for (int j = 0; j < list.size(); ++j) {
                     this.a((TileEntity) list.get(j));

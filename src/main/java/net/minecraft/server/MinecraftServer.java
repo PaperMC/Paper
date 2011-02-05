@@ -26,7 +26,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
     public static HashMap b = new HashMap();
     public NetworkListenThread c;
     public PropertyManager d;
-    public WorldServer e;
+    //public WorldServer e;
     public ServerConfigurationManager f;
     private boolean o = true;
     public boolean g = false;
@@ -39,6 +39,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
     public boolean l;
     public boolean m;
     public boolean n;
+    public List<WorldServer> worlds = new ArrayList<WorldServer>();
 
     // Craftbukkit start - adds argument OptionSet
     public MinecraftServer(OptionSet options) {
@@ -109,11 +110,16 @@ public class MinecraftServer implements ICommandListener, Runnable {
 
     private void c(String s) {
         a.info("Preparing start region");
-        this.e = new WorldServer(this, new File("."), s, this.d.a("hellworld", false) ? -1 : 0);
-        this.e.a(new WorldManager(this));
-        this.e.k = this.d.a("spawn-monsters", true) ? 1 : 0;
-        this.e.a(this.d.a("spawn-monsters", true), this.m);
-        this.f.a(this.e);
+
+        // Craftbukkit start
+        WorldServer world = new WorldServer(this, new File("."), s, this.d.a("hellworld", false) ? -1 : 0);
+        world.a(new WorldManager(this, world));
+        world.k = this.d.a("spawn-monsters", true) ? 1 : 0;
+        world.a(this.d.a("spawn-monsters", true), this.m);
+        this.f.a(world);
+        worlds.add(world);
+        // Craftbukkit end
+
         short short1 = 196;
         long i = System.currentTimeMillis();
 
@@ -133,11 +139,15 @@ public class MinecraftServer implements ICommandListener, Runnable {
                     i = l;
                 }
 
-                this.e.A.d(this.e.spawnX + j >> 4, this.e.spawnZ + k >> 4);
+                // Craftbukkit start
+                for (WorldServer worldserver : worlds) {
+                    world.A.d(world.spawnX + j >> 4, world.spawnZ + k >> 4);
 
-                while (this.e.d() && this.o) {
-                    ;
+                    while (world.d() && this.o) {
+                        ;
+                    }
                 }
+                // Craftbukkit end
             }
         }
 
@@ -159,7 +169,12 @@ public class MinecraftServer implements ICommandListener, Runnable {
 
     private void f() {
         a.info("Saving chunks");
-        this.e.a(true, (IProgressUpdate) null);
+
+        // Craftbukkit start
+        for (WorldServer world : worlds) {
+            world.a(true, (IProgressUpdate) null);
+        }
+        // Craftbukkit end
     }
 
     private void g() {
@@ -173,7 +188,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
             this.f.d();
         }
 
-        if (this.e != null) {
+        if (this.worlds.size() > 0) { // Craftbukkit
             this.f();
         }
     }
@@ -270,21 +285,31 @@ public class MinecraftServer implements ICommandListener, Runnable {
         AxisAlignedBB.a();
         Vec3D.a();
         ++this.h;
+
+        // Craftbukkit start
         if (this.h % 20 == 0) {
-            this.f.a((Packet) (new Packet4UpdateTime(this.e.e)));
+            for (int i = 0; i < this.f.b.size(); ++i) {
+                EntityPlayer entityplayer = (EntityPlayer) this.f.b.get(i);
+                entityplayer.a.b((Packet) (new Packet4UpdateTime(entityplayer.world.e)));
+            }
         }
+        
+        for (WorldServer world : worlds) {
+            world.f();
 
-        this.e.f();
+            while (world.d()) {
+                ;
+            }
 
-        // CraftBukkit start
+            ;
         ((CraftScheduler) server.getScheduler()).mainThreadHeartbeat(this.h);
-        // CraftBukkit end
 
         while (this.e.d()) {
             ;
+            world.c();
         }
+        // Craftbukkit end
 
-        this.e.c();
         this.c.a();
         this.f.b();
         this.k.a();
@@ -325,17 +350,32 @@ public class MinecraftServer implements ICommandListener, Runnable {
                     this.o = false;
                 } else if (s.toLowerCase().startsWith("save-all")) {
                     this.a(s1, "Forcing save..");
-                    this.e.a(true, (IProgressUpdate) null);
-                    // Craftbukkit start -- save player data on save-all.
+
+                    // Craftbukkit start
+                    for (WorldServer world : worlds) {
+                        world.a(true, (IProgressUpdate) null);
+                    }
+                    
                     this.f.d();
                     // Craftbukkit end
+
                     this.a(s1, "Save complete.");
                 } else if (s.toLowerCase().startsWith("save-off")) {
                     this.a(s1, "Disabling level saving..");
-                    this.e.C = true;
+
+                    // Craftbukkit start
+                    for (WorldServer world : worlds) {
+                        world.C = true;
+                    }
+                    // Craftbukkit end
                 } else if (s.toLowerCase().startsWith("save-on")) {
                     this.a(s1, "Enabling level saving..");
-                    this.e.C = false;
+
+                    // Craftbukkit start
+                    for (WorldServer world : worlds) {
+                        world.C = false;
+                    }
+                    // Craftbukkit end
                 } else {
                     String s2;
 
