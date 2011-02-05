@@ -118,13 +118,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (worldChange) {
             // Unload player from current chunks
             server.getServer().f.d.b(entity);
+
+            entity.c = new ItemInWorldManager(((CraftWorld)location.getWorld()).getHandle());
         }
         entity.world = ((CraftWorld)location.getWorld()).getHandle();
         entity.b(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         if (worldChange) {
             // Forceload the chunks around player
             server.getServer().f.d.a(entity);
-            entity.c = new ItemInWorldManager(((CraftWorld)location.getWorld()).getHandle());
         }
     }
 }
