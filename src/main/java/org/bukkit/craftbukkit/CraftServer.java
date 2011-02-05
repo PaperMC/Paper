@@ -149,17 +149,12 @@ public final class CraftServer implements Server {
         return pluginManager;
     }
 
-<<<<<<< HEAD
     public BukkitScheduler getScheduler() {
         return scheduler;
-=======
-    public World[] getWorlds() {
-        return console.worlds.toArray(new World[0]);
->>>>>>> f045828... Added internal MC support for multiple worlds
     }
 
     public World[] getWorlds() {
-        return new World[]{console.e.getWorld()};
+        return console.worlds.toArray(new World[0]);
     }
 
     public ServerConfigurationManager getHandle() {
@@ -195,5 +190,53 @@ public final class CraftServer implements Server {
     @Override
     public String toString() {
         return "CraftServer{" + "serverName=" + serverName + "serverVersion=" + serverVersion + "protocolVersion=" + protocolVersion + '}';
+    }
+
+    public World createWorld(String name, boolean nether) {
+        File folder = new File(name);
+        
+        if ((folder.exists()) && (!folder.isDirectory())) {
+            throw new IllegalArgumentException("File exists with the name '" + name + "' and isn't a folder");
+        }
+
+        WorldServer internal = new WorldServer(console, new File("."), name, nether ? -1 : 0);
+
+        internal.a(new WorldManager(console, internal));
+        internal.k = 1;
+        internal.a(true, true);
+        console.f.a(internal);
+        console.worlds.add(internal);
+
+        short short1 = 196;
+        long i = System.currentTimeMillis();
+        for (int j = -short1; j <= short1; j += 16) {
+            for (int k = -short1; k <= short1; k += 16) {
+                long l = System.currentTimeMillis();
+
+                if (l < i) {
+                    i = l;
+                }
+
+                if (l > i + 1000L) {
+                    int i1 = (short1 * 2 + 1) * (short1 * 2 + 1);
+                    int j1 = (j + short1) * (short1 * 2 + 1) + k + 1;
+
+                    System.out.println("Preparing spawn area for " + name + ", " + (j1 * 100 / i1) + "%");
+                    i = l;
+                }
+
+                internal.A.d(internal.spawnX + j >> 4, internal.spawnZ + k >> 4);
+
+                while (internal.d()) {
+                    ;
+                }
+            }
+        }
+        
+        return new CraftWorld(internal);
+    }
+
+    public MinecraftServer getServer() {
+        return console;
     }
 }

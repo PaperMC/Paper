@@ -28,7 +28,7 @@ public class ServerConfigurationManager {
     public static Logger a = Logger.getLogger("Minecraft");
     public List b = new ArrayList();
     private MinecraftServer c;
-    private PlayerManager d;
+    public PlayerManager d; // Craftbukkit - public
     private int e;
     private Set f = new HashSet();
     private Set g = new HashSet();
