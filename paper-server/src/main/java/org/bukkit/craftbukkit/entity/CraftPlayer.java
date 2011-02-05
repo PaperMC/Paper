@@ -10,6 +10,7 @@ import net.minecraft.server.Packet6SpawnPosition;
 import net.minecraft.server.WorldServer;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.Player;
 
 public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -108,5 +109,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public boolean performCommand(String command) {
         return server.dispatchCommand(this, command);
+    }
+
+    @Override
+    public void teleportTo(Location location) {
+        if (location.getWorld() != getWorld()) {
+            server.getServer().f.d.b(entity);
+        }
+        entity.world = ((CraftWorld)location.getWorld()).getHandle();
+        entity.b(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
     }
 }
