@@ -4,6 +4,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.EntityPlayer;
+import net.minecraft.server.ItemInWorldManager;
 import net.minecraft.server.Packet;
 import net.minecraft.server.Packet3Chat;
 import net.minecraft.server.Packet6SpawnPosition;
@@ -123,6 +124,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (worldChange) {
             // Forceload the chunks around player
             server.getServer().f.d.a(entity);
+            entity.c = new ItemInWorldManager(((CraftWorld)location.getWorld()).getHandle());
         }
     }
 }
