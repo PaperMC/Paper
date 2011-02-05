@@ -5,6 +5,7 @@ import net.minecraft.server.WorldServer;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.util.Vector;
 
 public abstract class CraftEntity implements org.bukkit.entity.Entity {
@@ -105,6 +106,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public void teleportTo(Location location) {
+        entity.world = ((CraftWorld)location.getWorld()).getHandle();
         entity.b(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
     }
 
