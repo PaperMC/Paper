@@ -120,6 +120,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             server.getServer().f.d.b(entity);
 
             entity.c = new ItemInWorldManager(((CraftWorld)location.getWorld()).getHandle());
+            entity.c.a = entity;
         }
         entity.world = ((CraftWorld)location.getWorld()).getHandle();
         entity.b(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
