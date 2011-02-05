@@ -24,6 +24,7 @@ public final class SimpleCommandMap implements CommandMap {
     private void setDefaultCommands(final Server server) {
         register("bukkit", new VersionCommand("version", server));
         register("bukkit", new ReloadCommand("reload", server));
+        register("bukkit", new PluginsCommand("plugins",server));
     }
 
     /**
@@ -102,7 +103,6 @@ public final class SimpleCommandMap implements CommandMap {
                 sender.sendMessage("This server is running " + ChatColor.GREEN
                         + server.getName() + ChatColor.WHITE + " version " + ChatColor.GREEN + server.getVersion());
                 sender.sendMessage("This server is also sporting some funky dev build of Bukkit!");
-                sender.sendMessage("Plugins: " + getPluginList());
             } else {
                 StringBuilder name = new StringBuilder();
 
@@ -136,28 +136,11 @@ public final class SimpleCommandMap implements CommandMap {
                     }
                 } else {
                     sender.sendMessage("This server is not running any plugin by that name.");
-                    sender.sendMessage("Plugins: " + getPluginList());
+                    sender.sendMessage("Use /plugins to get a list of plugins.");
                 }
             }
 
             return true;
-        }
-
-        private String getPluginList() {
-            StringBuilder pluginList = new StringBuilder();
-            Plugin[] plugins = server.getPluginManager().getPlugins();
-
-            for (Plugin plugin : plugins) {
-                if (pluginList.length() > 0) {
-                    pluginList.append(ChatColor.WHITE);
-                    pluginList.append(", ");
-                }
-
-                pluginList.append(ChatColor.GREEN);
-                pluginList.append(plugin.getDescription().getName());
-            }
-
-            return pluginList.toString();
         }
 
         private String getAuthors(final PluginDescriptionFile desc) {
@@ -204,6 +187,42 @@ public final class SimpleCommandMap implements CommandMap {
                 sender.sendMessage(ChatColor.RED + "You do not have sufficient access" + " to reload this server.");
             }
             return true;
+        }
+    }
+    
+    private static class PluginsCommand extends Command {
+        
+        private final Server server;
+        
+        public PluginsCommand(String name, Server server) {
+            super(name);
+            this.server = server;
+            this.tooltip = "Gets a list of plugins running on the server";
+            this.usageMessage = "/plugins";
+            this.setAliases(Arrays.asList("pl"));
+        }
+        
+        @Override
+        public boolean execute(CommandSender sender, String currentAlias, String[] args) {
+            sender.sendMessage("Plugins: " + getPluginList());
+            return true;
+        }
+        
+        private String getPluginList() {
+            StringBuilder pluginList = new StringBuilder();
+            Plugin[] plugins = server.getPluginManager().getPlugins();
+
+            for (Plugin plugin : plugins) {
+                if (pluginList.length() > 0) {
+                    pluginList.append(ChatColor.WHITE);
+                    pluginList.append(", ");
+                }
+
+                pluginList.append(ChatColor.GREEN);
+                pluginList.append(plugin.getDescription().getName());
+            }
+
+            return pluginList.toString();
         }
     }
 }
