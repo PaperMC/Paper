@@ -7,6 +7,7 @@ import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.Packet;
 import net.minecraft.server.Packet3Chat;
 import net.minecraft.server.Packet6SpawnPosition;
+import net.minecraft.server.WorldServer;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Player;
@@ -60,11 +61,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public void sendMessage(String message) {
         entity.a.b(new Packet3Chat(message));
-    }
-
-    @Override
-    public void teleportTo(Location location) {
-        entity.a.a(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
     }
 
     public String getDisplayName() {
