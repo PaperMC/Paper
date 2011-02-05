@@ -113,10 +113,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void teleportTo(Location location) {
-        if (location.getWorld() != getWorld()) {
+        boolean worldChange = location.getWorld() != getWorld();
+        if (worldChange) {
+            // Unload player from current chunks
             server.getServer().f.d.b(entity);
         }
         entity.world = ((CraftWorld)location.getWorld()).getHandle();
         entity.b(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+        if (worldChange) {
+            // Forceload the chunks around player
+            server.getServer().f.d.a(entity);
+        }
     }
 }
