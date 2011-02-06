@@ -563,6 +563,15 @@ public class Vector implements Cloneable {
     public Location toLocation(World world, float yaw, float pitch) {
         return new Location(world, x, y, z, yaw, pitch);
     }
+    
+    /**
+     * Get the block vector of this vector.
+     * 
+     * @return
+     */
+    public BlockVector toBlockVector() {
+        return new BlockVector(x, y, z);
+    }
 
     /**
      * Get the threshold used for equals().
