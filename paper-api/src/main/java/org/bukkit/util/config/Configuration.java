@@ -2,12 +2,16 @@ package org.bukkit.util.config;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.HashMap;
 import java.util.Map;
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.reader.UnicodeReader;
+import org.yaml.snakeyaml.representer.Representer;
 
 /**
  * YAML configuration loader. To use this class, construct it with path to
@@ -43,18 +47,25 @@ import org.yaml.snakeyaml.reader.UnicodeReader;
  * @author sk89q
  */
 public class Configuration extends ConfigurationNode {
-    private Yaml yaml = new Yaml(new SafeConstructor());
+    private Yaml yaml;
     private File file;
     
     public Configuration(File file) {
         super(new HashMap<String, Object>());
+        
+        DumperOptions options = new DumperOptions();
+        options.setIndent(4);
+        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+
+        yaml = new Yaml(new SafeConstructor(), new Representer(), options);
+        
         this.file = file;
     }
     
     /**
      * Loads the configuration file. All errors are thrown away.
      */
-    public void load() {
+    public void load() {        
         FileInputStream stream = null;
         
         try {
@@ -72,6 +83,33 @@ public class Configuration extends ConfigurationNode {
             } catch (IOException e) {
             }
         }
+    }
+    
+    /**
+     * Saves the configuration to disk. All errors are clobbered.
+     * 
+     * @return true if it was successful        
+     */
+    public boolean save() {
+        FileOutputStream stream = null;
+        
+        file.getParentFile().mkdirs();
+        
+        try {
+            stream = new FileOutputStream(file);
+            yaml.dump(root, new OutputStreamWriter(stream, "UTF-8"));
+            return true;
+        } catch (IOException e) {
+        } finally {
+            try {
+                if (stream != null) {
+                    stream.close();
+                }
+            } catch (IOException e) {
+            }
+        }
+        
+        return false;
     }
     
     @SuppressWarnings("unchecked")
