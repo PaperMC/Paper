@@ -140,23 +140,13 @@ public final class CraftServer implements Server {
     public int getMaxPlayers() {
         return server.getMaxPlayers();
     }
-    
+
     public PluginManager getPluginManager() {
         return pluginManager;
     }
 
     public World[] getWorlds() {
         return new World[]{console.e.getWorld()};
-    }
-
-    @Deprecated
-    public long getTime() {
-        return getWorlds()[0].getFullTime();
-    }
-
-    @Deprecated
-    public void setTime(long time) {
-        getWorlds()[0].setFullTime(time);
     }
 
     public ServerConfigurationManager getHandle() {
