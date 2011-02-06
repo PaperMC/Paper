@@ -12,6 +12,7 @@ import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.CraftChunk;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.block.CraftSign;
+import org.bukkit.util.BlockVector;
 
 public class CraftBlock implements Block {
     private final CraftChunk chunk;
@@ -42,6 +43,10 @@ public class CraftBlock implements Block {
      */
     public Location getLocation() {
       return new Location(getWorld(), x, y, z);
+    }
+
+    public BlockVector getVector() {
+        return new BlockVector(x, y, z);
     }
 
     /**
