@@ -116,28 +116,37 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void teleportTo(Location location) {
-        boolean worldChange = location.getWorld() != getWorld();
+        WorldServer oldWorld = ((CraftWorld)getWorld()).getHandle();
+        WorldServer newWorld = ((CraftWorld)location.getWorld()).getHandle();
         ServerConfigurationManager manager = server.getHandle();
 
-        if (worldChange) {
+        if (oldWorld != newWorld) {
             manager.c.k.a(entity);
             manager.c.k.b(entity);
             manager.d.b(entity);
-            entity.world.e(entity);
+            manager.b.remove(entity);
+            oldWorld.e(entity);
 
-            entity.world = ((CraftWorld)location.getWorld()).getHandle();
+            EntityPlayer newEntity = new EntityPlayer(manager.c, newWorld, entity.name, new ItemInWorldManager(newWorld));
 
-            entity.c = new ItemInWorldManager(((CraftWorld)location.getWorld()).getHandle());
-            entity.c.a = entity;
+            newEntity.id = entity.id;
+            newEntity.a = entity.a;
+            newEntity.health = entity.health;
+            newEntity.fireTicks = entity.fireTicks;
+            newWorld.A.d((int) location.getBlockX() >> 4, (int) location.getBlockZ() >> 4);
 
-            ((WorldServer)entity.world).A.d((int) entity.locX >> 4, (int) entity.locZ >> 4);
-        }
+            newEntity.a.a(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+            manager.d.a(newEntity);
+            newWorld.a(newEntity);
+            manager.b.add(newEntity);
+            newEntity.l();
 
-        entity.a.a(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
-
-        if (worldChange) {
-            manager.d.a(entity);
-            entity.world.a(entity);
+            entity.a.e = newEntity;
+            newEntity.inventory = entity.inventory;
+            newEntity.inventory.e = newEntity;
+            entity = newEntity;
+        } else {
+            entity.a.a(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         }
     }
 }
