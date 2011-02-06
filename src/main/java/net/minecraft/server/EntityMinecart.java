@@ -604,15 +604,40 @@ public class EntityMinecart extends Entity implements IInventory {
     public void c(Entity entity) {
         if (!this.world.isStatic) {
             if (entity != this.passenger) {
-                if (entity instanceof EntityLiving && !(entity instanceof EntityHuman) && this.d == 0 && this.motX * this.motX + this.motZ * this.motZ > 0.01D && this.passenger == null && entity.vehicle == null) {
-                    entity.e((Entity) this);
+
+                // CraftBukkit start
+                CraftServer server = ((WorldServer) world).getServer();
+                Type eventType = Type.VEHICLE_COLLISION_ENTITY;
+                Vehicle vehicle = (Vehicle) this.getBukkitEntity();
+                org.bukkit.entity.Entity hitEntity = (entity == null) ? null : entity.getBukkitEntity();
+
+                VehicleEntityCollisionEvent collsionEvent = new VehicleEntityCollisionEvent(eventType, vehicle, hitEntity);
+                server.getPluginManager().callEvent(collsionEvent);
+
+                if (collsionEvent.isCancelled()) {
+                    return;
                 }
+
+                if (entity instanceof EntityLiving && !(entity instanceof EntityHuman) && this.d == 0 && this.motX * this.motX + this.motZ * this.motZ > 0.01D && this.passenger == null && entity.vehicle == null) {
+                    if (!collsionEvent.isPickupCancelled()) {
+                        eventType = Type.VEHICLE_ENTER;
+
+                        VehicleEnterEvent enterEvent = new VehicleEnterEvent(eventType, vehicle, hitEntity);
+                        server.getPluginManager().callEvent(enterEvent);
+
+                        if (!enterEvent.isCancelled()) {
+                            entity.e((Entity) this);
+                        }
+                    }
+                }
+                // CraftBukkit end
 
                 double d0 = entity.locX - this.locX;
                 double d1 = entity.locZ - this.locZ;
                 double d2 = d0 * d0 + d1 * d1;
 
-                if (d2 >= 9.999999747378752E-5D) {
+                // CraftBukkit - Collision
+                if (d2 >= 9.9999997473787516E-005D && !collsionEvent.isCollisionCancelled()) {
                     d2 = (double) MathHelper.a(d2);
                     d0 /= d2;
                     d1 /= d2;
