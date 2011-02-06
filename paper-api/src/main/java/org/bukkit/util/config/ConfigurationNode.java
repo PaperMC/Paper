@@ -196,6 +196,7 @@ public class ConfigurationNode {
      */
     @SuppressWarnings("unchecked")
     public List<String> getKeys(String path) {
+        if (path == null) return new ArrayList<String>(root.keySet());
         Object o = getProperty(path);
         if (o == null) {
             return null;
