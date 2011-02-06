@@ -192,14 +192,14 @@ public final class CraftServer implements Server {
         return "CraftServer{" + "serverName=" + serverName + "serverVersion=" + serverVersion + "protocolVersion=" + protocolVersion + '}';
     }
 
-    public World createWorld(String name, boolean nether) {
+    public World createWorld(String name, World.Environment environment) {
         File folder = new File(name);
         
         if ((folder.exists()) && (!folder.isDirectory())) {
             throw new IllegalArgumentException("File exists with the name '" + name + "' and isn't a folder");
         }
 
-        WorldServer internal = new WorldServer(console, new File("."), name, nether ? -1 : 0);
+        WorldServer internal = new WorldServer(console, new File("."), name, environment == World.Environment.NETHER ? -1 : 0);
 
         internal.a(new WorldManager(console, internal));
         internal.k = 1;
