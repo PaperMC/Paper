@@ -258,4 +258,26 @@ public interface World {
      * @see setTime
      */
     public void setFullTime(long time);
+
+    /**
+     * Gets the environment type of this world
+     *
+     * @return This worlds Environment type
+     */
+    public Environment getEnvironment();
+
+    /**
+     * Represents various map environment types that a world may be
+     */
+    public enum Environment {
+        /**
+         * Represents the "normal"/"surface world" map
+         */
+        NORMAL,
+
+        /**
+         * Represents a nether based map
+         */
+        NETHER
+    }
 }

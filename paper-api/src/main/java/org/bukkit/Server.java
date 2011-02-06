@@ -89,8 +89,15 @@ public interface Server {
      * @return A list of worlds
      */
     public List<World> getWorlds();
-    
-    public World createWorld(String name, boolean nether);
+
+    /**
+     * Creates or loads a world with the given name
+     *
+     * @param name Name of the world to load
+     * @param environment Environment type of the world
+     * @return Newly created or loaded World
+     */
+    public World createWorld(String name, World.Environment environment);
 
     /**
      * Reloads the server, refreshing settings and plugin information
