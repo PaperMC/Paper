@@ -9,7 +9,7 @@ public class PlayerManager {
     private PlayerList b = new PlayerList();
     private List c = new ArrayList();
     private MinecraftServer d;
-    private WorldServer world; // Craftbukkit
+    public WorldServer world; // Craftbukkit
 
     // Craftbukkit - change of method signature
     public PlayerManager(MinecraftServer minecraftserver, WorldServer world) {
@@ -32,7 +32,7 @@ public class PlayerManager {
         PlayerInstance playerinstance = (PlayerInstance) this.b.a(k);
 
         if (playerinstance == null && flag) {
-            playerinstance = new PlayerInstance(this, i, j, world);
+            playerinstance = new PlayerInstance(this, i, j);
             this.b.a(k, playerinstance);
         }
 

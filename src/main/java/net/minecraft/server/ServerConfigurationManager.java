@@ -92,7 +92,7 @@ public class ServerConfigurationManager {
     }
 
     public void b(EntityPlayer entityplayer) {
-        ((WorldServer)entityplayer.world).c(entityplayer); // Craftbukkit
+        ((WorldServer)entityplayer.world).manager.c(entityplayer); // Craftbukkit
     }
 
     public void c(EntityPlayer entityplayer) {

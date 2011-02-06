@@ -17,12 +17,10 @@ class PlayerInstance {
     private int k;
     private int l;
     private int m;
-    private WorldServer world; // Craftbukkit
 
     final PlayerManager a;
 
-    // Craftbukkit - this method signature is changed.
-    public PlayerInstance(PlayerManager playermanager, int i, int j, WorldServer world) {
+    public PlayerInstance(PlayerManager playermanager, int i, int j) {
         this.a = playermanager;
         this.b = new ArrayList();
         this.f = new short[10];
@@ -32,8 +30,7 @@ class PlayerInstance {
         this.e = new ChunkCoordIntPair(i, j);
 
         // Craftbukkit start
-        this.world = world;
-        world.A.d(i, j);
+        playermanager.world.A.d(i, j);
         // Craftbukkit end
     }
 
@@ -136,9 +133,9 @@ class PlayerInstance {
                 i = this.c * 16 + this.h;
                 j = this.j;
                 k = this.d * 16 + this.l;
-                this.a((Packet) (new Packet53BlockChange(i, j, k, world))); // Craftbukkit
-                if (Block.p[world.getTypeId(i, j, k)]) { // Craftbukkit
-                    this.a(world.getTileEntity(i, j, k)); // Craftbukkit
+                this.a((Packet) (new Packet53BlockChange(i, j, k, a.world))); // Craftbukkit
+                if (Block.p[a.world.getTypeId(i, j, k)]) { // Craftbukkit
+                    this.a(a.world.getTileEntity(i, j, k)); // Craftbukkit
                 }
             } else {
                 int l;
@@ -153,22 +150,22 @@ class PlayerInstance {
                     int i1 = this.k - this.j + 2;
                     int j1 = this.m - this.l + 1;
 
-                    this.a((Packet) (new Packet51MapChunk(i, j, k, l, i1, j1, world))); // Craftbukkit
-                    List list = world.d(i, j, k, i + l, j + i1, k + j1); // Craftbukkit
+                    this.a((Packet) (new Packet51MapChunk(i, j, k, l, i1, j1, a.world))); // Craftbukkit
+                    List list = a.world.d(i, j, k, i + l, j + i1, k + j1); // Craftbukkit
 
                     for (int k1 = 0; k1 < list.size(); ++k1) {
                         this.a((TileEntity) list.get(k1));
                     }
                 } else {
-                    this.a((Packet) (new Packet52MultiBlockChange(this.c, this.d, this.f, this.g, world))); // Craftbukkit
+                    this.a((Packet) (new Packet52MultiBlockChange(this.c, this.d, this.f, this.g, a.world))); // Craftbukkit
 
                     for (i = 0; i < this.g; ++i) {
                         j = this.c * 16 + (this.g >> 12 & 15);
                         k = this.g & 255;
                         l = this.d * 16 + (this.g >> 8 & 15);
-                        if (Block.p[world.getTypeId(j, k, l)]) { // Craftbukkit
+                        if (Block.p[a.world.getTypeId(j, k, l)]) { // Craftbukkit
                             System.out.println("Sending!");
-                            this.a(world.getTileEntity(j, k, l)); // Craftbukkit
+                            this.a(a.world.getTileEntity(j, k, l)); // Craftbukkit
                         }
                     }
                 }
