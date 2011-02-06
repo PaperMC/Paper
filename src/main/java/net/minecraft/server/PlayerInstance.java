@@ -162,6 +162,9 @@ class PlayerInstance {
                 } else {
                     this.a((Packet) (new Packet52MultiBlockChange(this.c, this.d, this.f, this.g, world))); // Craftbukkit
 
+                    System.out.println("MultiBlockChange called for world " + world.w);
+                    new Exception().printStackTrace();
+
                     for (i = 0; i < this.g; ++i) {
                         j = this.c * 16 + (this.g >> 12 & 15);
                         k = this.g & 255;
