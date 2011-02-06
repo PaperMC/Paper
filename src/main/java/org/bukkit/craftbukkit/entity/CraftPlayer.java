@@ -8,6 +8,8 @@ import net.minecraft.server.ItemInWorldManager;
 import net.minecraft.server.Packet;
 import net.minecraft.server.Packet3Chat;
 import net.minecraft.server.Packet6SpawnPosition;
+import net.minecraft.server.Packet9Respawn;
+import net.minecraft.server.ServerConfigurationManager;
 import net.minecraft.server.WorldServer;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
@@ -115,18 +117,27 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public void teleportTo(Location location) {
         boolean worldChange = location.getWorld() != getWorld();
+        ServerConfigurationManager manager = server.getHandle();
+
         if (worldChange) {
-            // Unload player from current chunks
-            server.getServer().f.d.b(entity);
+            manager.c.k.a(entity);
+            manager.c.k.b(entity);
+            manager.d.b(entity);
+            entity.world.e(entity);
+
+            entity.world = ((CraftWorld)location.getWorld()).getHandle();
 
             entity.c = new ItemInWorldManager(((CraftWorld)location.getWorld()).getHandle());
             entity.c.a = entity;
+
+            ((WorldServer)entity.world).A.d((int) entity.locX >> 4, (int) entity.locZ >> 4);
         }
-        entity.world = ((CraftWorld)location.getWorld()).getHandle();
-        entity.b(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+
+        entity.a.a(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+
         if (worldChange) {
-            // Forceload the chunks around player
-            server.getServer().f.d.a(entity);
+            manager.d.a(entity);
+            entity.world.a(entity);
         }
     }
 }
