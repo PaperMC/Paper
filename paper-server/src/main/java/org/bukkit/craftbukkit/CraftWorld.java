@@ -24,11 +24,18 @@ import org.bukkit.World;
 
 public class CraftWorld implements World {
     private final WorldServer world;
+    private final Environment environment;
 
     private static final Random rand = new Random();
 
     public CraftWorld(WorldServer world) {
         this.world = world;
+
+        if (world.q instanceof WorldProviderHell) {
+            environment = Environment.NETHER;
+        } else {
+            environment = Environment.NORMAL;
+        }
     }
 
     public Block getBlockAt(int x, int y, int z) {
@@ -210,6 +217,10 @@ public class CraftWorld implements World {
 
     public void setFullTime(long time) {
         world.e = time;
+    }
+
+    public Environment getEnvironment() {
+        return environment;
     }
 
     private final class ChunkCoordinate {
