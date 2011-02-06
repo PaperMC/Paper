@@ -142,8 +142,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             newEntity.l();
 
             entity.a.e = newEntity;
-            newEntity.inventory = entity.inventory;
-            newEntity.inventory.e = newEntity;
             entity = newEntity;
         } else {
             entity.a.a(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
