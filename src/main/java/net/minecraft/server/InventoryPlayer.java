@@ -5,7 +5,7 @@ public class InventoryPlayer implements IInventory {
     public ItemStack[] a = new ItemStack[36];
     public ItemStack[] b = new ItemStack[4];
     public int c = 0;
-    private EntityHuman e;
+    public EntityHuman e; // Craftbukkit - public
     private ItemStack f;
     public boolean d = false;
 

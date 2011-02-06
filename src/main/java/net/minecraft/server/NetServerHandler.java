@@ -33,7 +33,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     public NetworkManager b;
     public boolean c = false;
     private MinecraftServer d;
-    private EntityPlayer e;
+    public EntityPlayer e; // Craftbukkit - public
     private int f = 0;
     private double g;
     private double h;
