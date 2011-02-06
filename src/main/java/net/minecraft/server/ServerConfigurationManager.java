@@ -28,7 +28,7 @@ public class ServerConfigurationManager {
     public static Logger a = Logger.getLogger("Minecraft");
     public List b = new ArrayList();
     public MinecraftServer c; // Craftbukkit - public
-    public PlayerManager d; // Craftbukkit - public
+    // public PlayerManager d; // Craftbukkit - removed!
     private int e;
     private Set f = new HashSet();
     private Set g = new HashSet();
@@ -54,7 +54,7 @@ public class ServerConfigurationManager {
         this.i = minecraftserver.a("banned-players.txt");
         this.j = minecraftserver.a("banned-ips.txt");
         this.k = minecraftserver.a("ops.txt");
-        this.d = new PlayerManager(minecraftserver);
+        // this.d = new PlayerManager(minecraftserver); // Craftbukkit - removed!
         this.e = minecraftserver.d.a("max-players", 20);
         this.e();
         this.g();
@@ -69,7 +69,7 @@ public class ServerConfigurationManager {
     }
 
     public int a() {
-        return this.d.b();
+        return 144; // Craftbukkit - magic number from PlayerManager.b() (??)
     }
 
     public void a(EntityPlayer entityplayer) {
@@ -86,22 +86,22 @@ public class ServerConfigurationManager {
         entityplayer.world.a(entityplayer);
 
         server.getPluginManager().callEvent(new PlayerEvent(PlayerEvent.Type.PLAYER_JOIN, server.getPlayer(entityplayer)));
+
+        ((WorldServer)entityplayer.world).manager.a(entityplayer);
         // Craftbukkit end
-        
-        this.d.a(entityplayer);
     }
 
     public void b(EntityPlayer entityplayer) {
-        this.d.c(entityplayer);
+        ((WorldServer)entityplayer.world).c(entityplayer); // Craftbukkit
     }
 
     public void c(EntityPlayer entityplayer) {
         this.l.a(entityplayer);
         entityplayer.world.d(entityplayer); // Craftbukkit
         this.b.remove(entityplayer);
-        this.d.b(entityplayer);
 
         // CraftBukkit start
+        ((WorldServer)entityplayer.world).manager.b(entityplayer);
         server.getPluginManager().callEvent(new PlayerEvent(PlayerEvent.Type.PLAYER_QUIT, server.getPlayer(entityplayer))); // CraftBukkit
         // CraftBukkit end
     }
@@ -150,7 +150,7 @@ public class ServerConfigurationManager {
         // Craftbukkit start - every reference to this.c.e should be entityplayer.world
         this.c.k.a(entityplayer);
         this.c.k.b(entityplayer);
-        this.d.b(entityplayer);
+        ((WorldServer)entityplayer.world).manager.b(entityplayer);
         this.b.remove(entityplayer);
         entityplayer.world.e(entityplayer);
         EntityPlayer entityplayer1 = new EntityPlayer(this.c, entityplayer.world, entityplayer.name, new ItemInWorldManager(entityplayer.world));
@@ -177,7 +177,7 @@ public class ServerConfigurationManager {
 
         entityplayer1.a.b((Packet) (new Packet9Respawn()));
         entityplayer1.a.a(entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch);
-        this.d.a(entityplayer1);
+        ((WorldServer)entityplayer1.world).manager.a(entityplayer1);
         entityplayer.world.a(entityplayer1);
         this.b.add(entityplayer1);
         entityplayer1.l();
@@ -186,12 +186,16 @@ public class ServerConfigurationManager {
     }
 
     public void b() {
-        this.d.a();
+        // Craftbukkit start
+        for (WorldServer world : c.worlds) {
+            world.manager.a();
+        }
+        // Craftbukkit end
     }
 
     // Craftbukkit - changed signature
     public void a(int i, int j, int k, WorldServer world) {
-        this.d.a(i, j, k, world); // Craftbukkit
+        world.manager.a(i, j, k, world); // Craftbukkit
     }
 
     public void a(Packet packet) {

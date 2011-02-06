@@ -22,6 +22,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
     public boolean C;
     private MinecraftServer D;
     private EntityList E = new EntityList();
+    public PlayerManager manager; // Craftbukkit
 
     public WorldServer(MinecraftServer minecraftserver, File file1, String s, int i) {
         super(file1, s, (new Random()).nextLong(), WorldProvider.a(i));
@@ -30,6 +31,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
         // CraftBukkit start
         world = new CraftWorld(this);
         server = minecraftserver.server;
+        manager = new PlayerManager(minecraftserver, this);
     }
 
     private final CraftWorld world;

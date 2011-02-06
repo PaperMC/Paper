@@ -123,7 +123,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (oldWorld != newWorld) {
             manager.c.k.a(entity);
             manager.c.k.b(entity);
-            manager.d.b(entity);
+            oldWorld.manager.b(entity);
             manager.b.remove(entity);
             oldWorld.e(entity);
 
@@ -136,7 +136,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             newWorld.A.d((int) location.getBlockX() >> 4, (int) location.getBlockZ() >> 4);
 
             newEntity.a.a(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
-            manager.d.a(newEntity);
+            newWorld.manager.a(newEntity);
             newWorld.a(newEntity);
             manager.b.add(newEntity);
             newEntity.l();

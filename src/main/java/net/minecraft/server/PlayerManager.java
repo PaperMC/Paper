@@ -9,9 +9,13 @@ public class PlayerManager {
     private PlayerList b = new PlayerList();
     private List c = new ArrayList();
     private MinecraftServer d;
+    private WorldServer world; // Craftbukkit
 
-    public PlayerManager(MinecraftServer minecraftserver) {
+    // Craftbukkit - change of method signature
+    public PlayerManager(MinecraftServer minecraftserver, WorldServer world) {
         this.d = minecraftserver;
+
+        this.world = world; // Craftbukkit
     }
 
     public void a() {
