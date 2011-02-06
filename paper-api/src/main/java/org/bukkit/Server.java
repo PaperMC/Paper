@@ -32,6 +32,13 @@ public interface Server {
     public Player[] getOnlinePlayers();
 
     /**
+     * Get the maximum amount of players which can login to this server
+     *
+     * @return The amount of players this server allows
+     */
+    public int getMaxPlayers();
+
+    /**
      * Broadcast a message to all players.
      *
      * @param message the message
