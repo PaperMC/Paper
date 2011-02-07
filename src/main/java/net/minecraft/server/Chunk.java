@@ -395,6 +395,7 @@ public class Chunk {
 
         if (i != this.j || j != this.k) {
             System.out.println("Wrong location! " + entity);
+            System.out.println("" + entity.locX + "," + entity.locZ + "(" + i + "," + j + ") vs " + this.j + "," + this.k);
             Thread.dumpStack();
         }
 

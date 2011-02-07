@@ -11,18 +11,17 @@ import java.util.Set;
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftChunk;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.world.ChunkLoadEvent;
 // CraftBukkit end
 
 public class ChunkProviderServer implements IChunkProvider {
 
-    private Set a = new HashSet();
+    private LongHashset a = new LongHashset();
     private Chunk b;
     private IChunkProvider c;
     private IChunkLoader d;
-    private Map e = new HashMap();
+    private LongHashtable<Chunk> e = new LongHashtable<Chunk>();
     private List f = new ArrayList();
     private WorldServer g;
 
@@ -47,9 +46,7 @@ public class ChunkProviderServer implements IChunkProvider {
     // CraftBukkit end
 
     public boolean a(int i, int j) {
-        ChunkCoordinates chunkcoordinates = new ChunkCoordinates(i, j);
-
-        return this.e.containsKey(chunkcoordinates);
+        return this.e.containsKey(i, j);
     }
 
     public void c(int i, int j) {
@@ -58,15 +55,13 @@ public class ChunkProviderServer implements IChunkProvider {
         short short1 = 128;
 
         if (k < -short1 || k > short1 || l < -short1 || l > short1) {
-            this.a.add(new ChunkCoordinates(i, j));
+            this.a.add(i, j);
         }
     }
 
     public Chunk d(int i, int j) {
-        ChunkCoordinates chunkcoordinates = new ChunkCoordinates(i, j);
-
-        this.a.remove(new ChunkCoordinates(i, j));
-        Chunk chunk = (Chunk) this.e.get(chunkcoordinates);
+        this.a.remove(i, j);
+        Chunk chunk = (Chunk) this.e.get(i, j);
 
         if (chunk == null) {
             chunk = this.e(i, j);
@@ -78,7 +73,7 @@ public class ChunkProviderServer implements IChunkProvider {
                 }
             }
 
-            this.e.put(chunkcoordinates, chunk);
+            this.e.put(i, j, chunk);
             this.f.add(chunk);
             if (chunk != null) {
                 chunk.c();
@@ -118,8 +113,7 @@ public class ChunkProviderServer implements IChunkProvider {
     }
 
     public Chunk b(int i, int j) {
-        ChunkCoordinates chunkcoordinates = new ChunkCoordinates(i, j);
-        Chunk chunk = (Chunk) this.e.get(chunkcoordinates);
+        Chunk chunk = (Chunk) this.e.get(i, j);
 
         return chunk == null ? (this.g.x ? this.d(i, j) : this.b) : chunk;
     }
@@ -211,13 +205,12 @@ public class ChunkProviderServer implements IChunkProvider {
         if (!this.g.C) {
             for (int i = 0; i < 100; ++i) {
                 if (!this.a.isEmpty()) {
-                    ChunkCoordinates chunkcoordinates = (ChunkCoordinates) this.a.iterator().next();
-                    Chunk chunk = this.b(chunkcoordinates.a, chunkcoordinates.b);
-
+                    long chunkcoordinates = this.a.popFirst();
+                    Chunk chunk = e.get(chunkcoordinates);
+                    if(chunk == null) continue;
                     chunk.e();
                     this.b(chunk);
                     this.a(chunk);
-                    this.a.remove(chunkcoordinates);
                     this.e.remove(chunkcoordinates);
                     this.f.remove(chunk);
                 }
