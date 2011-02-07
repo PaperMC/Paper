@@ -278,7 +278,7 @@ public class World implements IBlockAccess {
     int lastXAccessed = Integer.MIN_VALUE;
     int lastZAccessed = Integer.MIN_VALUE;
     public Chunk c(int i, int j) {
-        if(lastXAccessed != i || lastZAccessed != j) {
+        if(lastChunkAccessed == null || lastXAccessed != i || lastZAccessed != j) {
             lastXAccessed = i;
             lastZAccessed = j;
             lastChunkAccessed = this.G.b(i, j);
@@ -1367,7 +1367,12 @@ public class World implements IBlockAccess {
 
                 if (!this.f(k1, 64, l1)) {
                     --y;
-                } else if (!this.b(k1, l1).g()) {
+                } else {
+                    Chunk chunk = this.b(k1, l1);
+                    if(chunk == null) {
+                        System.out.println(k1 + "," + l1);
+                    }
+                    if (!chunk.g()) {
                     int i2 = this.A.size();
                     int j2;
 
@@ -1395,6 +1400,7 @@ public class World implements IBlockAccess {
                     }
 
                     --y;
+                }
                 }
             }
         }
