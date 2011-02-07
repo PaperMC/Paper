@@ -29,6 +29,7 @@ public class Explosion {
     public Entity e;
     public float f;
     public Set g = new HashSet();
+    public boolean wasCanceled = false;
 
     public Explosion(World world, Entity entity, double d0, double d1, double d2, float f) {
         this.i = world;
@@ -199,6 +200,7 @@ public class Explosion {
         server.getPluginManager().callEvent(event);
 
         if (event.isCancelled()) {
+            wasCanceled = true;
             return;
         }
         // CraftBukkit end

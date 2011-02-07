@@ -113,6 +113,12 @@ public class WorldServer extends World implements BlockChangeDelegate {
     public Explosion a(Entity entity, double d0, double d1, double d2, float f, boolean flag) {
         Explosion explosion = super.a(entity, d0, d1, d2, f, flag);
 
+        // Craftbukkit start
+        if(explosion.wasCanceled) {
+            return explosion;
+        }
+        // Craftbukkit end
+
         this.D.f.a(d0, d1, d2, 64.0D, new Packet60Explosion(d0, d1, d2, f, explosion.g));
         return explosion;
     }
