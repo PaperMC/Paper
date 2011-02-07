@@ -273,7 +273,7 @@ public class World implements IBlockAccess {
         return this.c(i >> 4, j >> 4);
     }
 
-    //start craftbukkit
+    // CraftBukkit start
     Chunk lastChunkAccessed;
     int lastXAccessed = Integer.MIN_VALUE;
     int lastZAccessed = Integer.MIN_VALUE;
@@ -285,7 +285,7 @@ public class World implements IBlockAccess {
         }
         return lastChunkAccessed;
     }
-    //end craftbukkit
+    // CraftBukkit end
 
     public boolean setTypeIdAndData(int i, int j, int k, int l, int i1) {
         if (i >= -32000000 && k >= -32000000 && i < 32000000 && k <= 32000000) {
@@ -1367,12 +1367,7 @@ public class World implements IBlockAccess {
 
                 if (!this.f(k1, 64, l1)) {
                     --y;
-                } else {
-                    Chunk chunk = this.b(k1, l1);
-                    if(chunk == null) {
-                        System.out.println(k1 + "," + l1);
-                    }
-                    if (!chunk.g()) {
+                } else if (!this.b(k1, l1).g()) {
                     int i2 = this.A.size();
                     int j2;
 
@@ -1400,7 +1395,6 @@ public class World implements IBlockAccess {
                     }
 
                     --y;
-                }
                 }
             }
         }

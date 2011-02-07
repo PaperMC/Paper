@@ -17,11 +17,11 @@ import org.bukkit.event.world.ChunkLoadEvent;
 
 public class ChunkProviderServer implements IChunkProvider {
 
-    private LongHashset a = new LongHashset();
+    private LongHashset a = new LongHashset(); // CraftBukkit
     private Chunk b;
     private IChunkProvider c;
     private IChunkLoader d;
-    private LongHashtable<Chunk> e = new LongHashtable<Chunk>();
+    private LongHashtable<Chunk> e = new LongHashtable<Chunk>(); // CraftBukkit
     private List f = new ArrayList();
     private WorldServer g;
 
@@ -43,11 +43,11 @@ public class ChunkProviderServer implements IChunkProvider {
 
         return craftChunks;
     }
-    // CraftBukkit end
 
     public boolean a(int i, int j) {
         return this.e.containsKey(i, j);
     }
+    // CraftBukkit end
 
     public void c(int i, int j) {
         int k = i * 16 + 8 - this.g.spawnX;
@@ -55,13 +55,15 @@ public class ChunkProviderServer implements IChunkProvider {
         short short1 = 128;
 
         if (k < -short1 || k > short1 || l < -short1 || l > short1) {
-            this.a.add(i, j);
+            this.a.add(i, j); // CraftBukkit
         }
     }
 
     public Chunk d(int i, int j) {
+        // CraftBukkit start
         this.a.remove(i, j);
         Chunk chunk = (Chunk) this.e.get(i, j);
+        // CraftBukkit end
 
         if (chunk == null) {
             chunk = this.e(i, j);
@@ -73,7 +75,7 @@ public class ChunkProviderServer implements IChunkProvider {
                 }
             }
 
-            this.e.put(i, j, chunk);
+            this.e.put(i, j, chunk); // CraftBukkit
             this.f.add(chunk);
             if (chunk != null) {
                 chunk.c();
@@ -113,7 +115,7 @@ public class ChunkProviderServer implements IChunkProvider {
     }
 
     public Chunk b(int i, int j) {
-        Chunk chunk = (Chunk) this.e.get(i, j);
+        Chunk chunk = (Chunk) this.e.get(i, j); // CraftBukkit
 
         return chunk == null ? (this.g.x ? this.d(i, j) : this.b) : chunk;
     }
@@ -205,12 +207,15 @@ public class ChunkProviderServer implements IChunkProvider {
         if (!this.g.C) {
             for (int i = 0; i < 100; ++i) {
                 if (!this.a.isEmpty()) {
+                    // CraftBukkit start
                     long chunkcoordinates = this.a.popFirst();
                     Chunk chunk = e.get(chunkcoordinates);
-                    if(chunk == null) continue;
+                    if (chunk == null) continue;
+                    // CraftBukkit end
                     chunk.e();
                     this.b(chunk);
                     this.a(chunk);
+                    // this.a.remove(chunkcoordinates); // CraftBukkit
                     this.e.remove(chunkcoordinates);
                     this.f.remove(chunk);
                 }
