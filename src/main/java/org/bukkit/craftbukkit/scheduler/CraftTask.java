@@ -68,7 +68,6 @@ public class CraftTask implements Comparable {
         return idNumber;
     }
 
-    @Override
     public int compareTo(Object other) {
         if (!(other instanceof CraftTask)) {
             return 0;
