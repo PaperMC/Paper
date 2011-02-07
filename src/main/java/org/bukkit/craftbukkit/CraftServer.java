@@ -11,6 +11,7 @@ import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PropertyManager;
 import net.minecraft.server.ServerConfigurationManager;
+import net.minecraft.server.WorldManager;
 import net.minecraft.server.WorldServer;
 import org.bukkit.*;
 import org.bukkit.plugin.Plugin;
@@ -153,8 +154,16 @@ public final class CraftServer implements Server {
         return scheduler;
     }
 
-    public World[] getWorlds() {
-        return console.worlds.toArray(new World[0]);
+    public List<World> getWorlds() {
+        List<World> worlds = new ArrayList<World>();
+
+        synchronized (console.worlds) {
+            for (WorldServer world : console.worlds) {
+                worlds.add(world.getWorld());
+            }
+        }
+
+        return worlds;
     }
 
     public ServerConfigurationManager getHandle() {

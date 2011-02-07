@@ -293,6 +293,8 @@ public class MinecraftServer implements ICommandListener, Runnable {
                 entityplayer.a.b((Packet) (new Packet4UpdateTime(entityplayer.world.e)));
             }
         }
+
+        ((CraftScheduler) server.getScheduler()).mainThreadHeartbeat(this.h);
         
         for (WorldServer world : worlds) {
             world.f();
@@ -300,12 +302,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
             while (world.d()) {
                 ;
             }
-
-            ;
-        ((CraftScheduler) server.getScheduler()).mainThreadHeartbeat(this.h);
-
-        while (this.e.d()) {
-            ;
+            
             world.c();
         }
         // Craftbukkit end
