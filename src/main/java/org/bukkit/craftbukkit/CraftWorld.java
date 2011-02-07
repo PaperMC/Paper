@@ -196,7 +196,7 @@ public class CraftWorld implements World {
 
     @Override
     public String toString() {
-        return "CraftWorld";
+        return "CraftWorld{name=" + getName() + '}';
     }
 
     public long getTime() {
