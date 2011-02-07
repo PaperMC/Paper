@@ -65,7 +65,11 @@ public class ServerConfigurationManager {
     }
 
     public void a(WorldServer worldserver) {
-        this.l = new PlayerNBTManager(new File(worldserver.t, "players"));
+        // Craftbukkit start
+        if (this.l == null) {
+            this.l = new PlayerNBTManager(new File(worldserver.t, "players"));
+        }
+        // Craftbukkit end
     }
 
     public int a() {

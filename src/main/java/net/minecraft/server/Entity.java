@@ -809,6 +809,7 @@ public abstract class Entity {
         nbttagcompound.a("Fire", (short) this.fireTicks);
         nbttagcompound.a("Air", (short) this.airTicks);
         nbttagcompound.a("OnGround", this.onGround);
+        nbttagcompound.a("World", world.w); // Craftbukkit
         this.a(nbttagcompound);
     }
 
@@ -830,6 +831,20 @@ public abstract class Entity {
         this.fireTicks = nbttagcompound.c("Fire");
         this.airTicks = nbttagcompound.c("Air");
         this.onGround = nbttagcompound.l("OnGround");
+
+        // Craftbukkit start
+        if (nbttagcompound.a("World")) {
+            String worldName = nbttagcompound.h("World");
+            
+            for (WorldServer world : ((WorldServer)this.world).getServer().getServer().worlds) {
+                if (world.w.equals(worldName)) {
+                    this.world = world;
+                    break;
+                }
+            }
+        }
+        // Craftbukkit end
+
         this.a(this.locX, this.locY, this.locZ);
         this.b(nbttagcompound);
     }
