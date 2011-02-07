@@ -9,10 +9,6 @@ import java.util.Random;
 import org.bukkit.BlockChangeDelegate;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.event.Event;
-import org.bukkit.event.Event.Type;
-import org.bukkit.event.block.BlockCanBuildEvent;
-import org.bukkit.event.block.BlockPhysicsEvent;
 
 public class WorldServer extends World implements BlockChangeDelegate {
 // CraftBukkit end
@@ -29,9 +25,9 @@ public class WorldServer extends World implements BlockChangeDelegate {
         this.D = minecraftserver;
 
         // CraftBukkit start
-        world = new CraftWorld(this);
-        server = minecraftserver.server;
-        manager = new PlayerManager(minecraftserver, this);
+        this.world = new CraftWorld(this);
+        this.server = minecraftserver.server;
+        this.manager = new PlayerManager(minecraftserver, this);
     }
 
     private final CraftWorld world;
