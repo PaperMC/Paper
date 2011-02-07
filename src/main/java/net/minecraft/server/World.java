@@ -434,6 +434,16 @@ public class World implements IBlockAccess {
             Block block = Block.byId[this.getTypeId(i, j, k)];
 
             if (block != null) {
+                // CraftBukkit start
+                if (world != null) {
+                    BlockPhysicsEvent event = new BlockPhysicsEvent(Event.Type.BLOCK_PHYSICS, world.getBlockAt(i, j, k), l);
+                    server.getPluginManager().callEvent(event);
+                    if (event.isCancelled()) {
+                        return;
+                    }
+                }
+                // CraftBukkit stop
+
                 block.b(this, i, j, k, l);
             }
         }
@@ -1623,7 +1633,18 @@ public class World implements IBlockAccess {
             axisalignedbb = null;
         }
 
-        return axisalignedbb != null && !this.a(axisalignedbb) ? false : (block != Block.WATER && block != Block.STATIONARY_WATER && block != Block.LAVA && block != Block.STATIONARY_LAVA && block != Block.FIRE && block != Block.SNOW ? i > 0 && block == null && block1.a(this, j, k, l) : true);
+        // Craftbukkit start - We dont want to allow the user to override the bounding box check
+        boolean defaultReturn = axisalignedbb != null && !this.a(axisalignedbb) ? false : (block != Block.WATER && block != Block.STATIONARY_WATER && block != Block.LAVA && block != Block.STATIONARY_LAVA && block != Block.FIRE && block != Block.SNOW ? i > 0 && block == null && block1.a(this, j, k, l) : true);
+
+        if (!defaultReturn) {
+            return false;
+        }
+
+        BlockCanBuildEvent event = new BlockCanBuildEvent(Type.BLOCK_CANBUILD, getWorld().getBlockAt(j, k, l), i1, defaultReturn);
+        server.getPluginManager().callEvent(event);
+
+        return event.isBuildable();
+        // CraftBukkit end
     }
 
     public PathEntity a(Entity entity, Entity entity1, float f) {
