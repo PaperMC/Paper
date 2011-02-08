@@ -83,7 +83,7 @@ public class BlockListener implements Listener {
      *
      * @param event Relevant event details
      */
-    public void onBlockRedstoneChange(BlockFromToEvent event) {
+    public void onBlockRedstoneChange(BlockRedstoneEvent event) {
     }
 
     /**

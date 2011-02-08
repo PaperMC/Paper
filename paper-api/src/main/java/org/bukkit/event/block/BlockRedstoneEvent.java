@@ -1,43 +1,43 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 
 package org.bukkit.event.block;
 
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 
 /**
- *
- * @author Nathan
+ * Called when a redstone current changes
  */
-public class BlockRedstoneEvent extends BlockFromToEvent {
+public class BlockRedstoneEvent extends BlockEvent {
     private int oldCurrent;
     private int newCurrent;
 
-    public BlockRedstoneEvent(Block block, BlockFace face, int oldCurrent, int newCurrent) {
-        super(Type.REDSTONE_CHANGE, block, face);
+    public BlockRedstoneEvent(Block block, int oldCurrent, int newCurrent) {
+        super(Type.REDSTONE_CHANGE, block);
         this.oldCurrent = oldCurrent;
         this.newCurrent = newCurrent;
     }
 
     /**
-     * @return the oldCurrent
+     * Gets the old current of this block
+     *
+     * @return The previous current
      */
     public int getOldCurrent() {
         return oldCurrent;
     }
 
     /**
-     * @return the newCurrent
+     * Gets the new current of this block
+     *
+     * @return The new current
      */
     public int getNewCurrent() {
         return newCurrent;
     }
 
     /**
-     * @param newCurrent the newCurrent to set
+     * Sets the new current of this block
+     *
+     * @param newCurrent The new current to set
      */
     public void setNewCurrent(int newCurrent) {
         this.newCurrent = newCurrent;
