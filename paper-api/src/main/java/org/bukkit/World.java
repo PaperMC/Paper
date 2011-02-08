@@ -98,12 +98,64 @@ public interface World {
     public boolean isChunkLoaded(int x, int z);
 
     /**
-     * Loads the chunk at the specified coordinates
+     * Loads the chunk at the specified coordinates and generates the chunk when it is non-existing
      * @param x X-coordinate of the chunk
      * @param z Z-coordinate of the chunk
-     *
      */
     public void loadChunk(int x, int z);
+
+    /**
+     * Loads the chunk at the specified coordinates and generates the chunk when it is non-existing if generate is enabled
+     * @param x X-coordinate of the chunk
+     * @param z Z-coordinate of the chunk
+     * @param generate Controls whether non-generated chunks are generated
+     * @return Whether the chunk has loaded
+     */
+    public boolean loadChunk(int x, int z, boolean generate);
+
+    /**
+     * Safely unloads and saves the chunk at the specified coordinates
+     * @param x X-coordinate of the chunk
+     * @param z Z-coordinate of the chunk
+     * @return Whether the chunk was actually unloaded
+     */
+    public boolean unloadChunk(int x, int z);
+
+    /**
+     * Safely unloads and optionally saves the chunk at the specified coordinates
+     * @param x X-coordinate of the chunk
+     * @param z Z-coordinate of the chunk
+     * @param save Controls whether the chunk is saved
+     * @return Whether the chunk was actually unloaded
+     */
+    public boolean unloadChunk(int x, int z, boolean save);
+
+    /**
+     * Unloads and optionally saves the chunk at the specified coordinates
+     * @param x X-coordinate of the chunk
+     * @param z Z-coordinate of the chunk
+     * @param save Controls whether the chunk is saved
+     * @param safe Controls whether to unload the chunk when players are nearby
+     * @return Whether the chunk was actually unloaded
+     */
+    public boolean unloadChunk(int x, int z, boolean save, boolean safe);
+
+    /**
+     * Safely queues the chunk at the specified coordinates for unloading
+     * @param x X-coordinate of the chunk
+     * @param z Z-coordinate of the chunk
+     * @return Whether the chunk was actually queued
+     */
+    public boolean unloadChunkRequest(int x, int z);
+
+    /**
+     * Queues the chunk at the specified coordinates for unloading
+     * @param x X-coordinate of the chunk
+     * @param z Z-coordinate of the chunk
+     * @param safe Controls whether to queue the chunk when players are nearby
+     * @return Whether the chunk was actually queued
+     */
+    public boolean unloadChunkRequest(int x, int z, boolean safe);
 
     /**
      * Drop an item exactly at the specified location.
