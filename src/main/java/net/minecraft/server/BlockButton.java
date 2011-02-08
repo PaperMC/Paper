@@ -170,7 +170,7 @@ public class BlockButton extends Block {
                 //Allow the lever to change the current
                 int old = (j1 != 8) ? 1 : 0;
                 int current = (j1 == 8) ? 1 : 0;
-                BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, BlockFace.SELF, old, current);
+                BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, old, current);
                 server.getPluginManager().callEvent(eventRedstone);
                 if ((eventRedstone.getNewCurrent() > 0) == (j1 == 8)) {
                     world.c(i, j, k, i1 + j1);

@@ -103,7 +103,7 @@ public class BlockRedstoneWire extends Block {
         // Craftbukkit start
         if (k1 != l1) {
             CraftBlock block = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
-            BlockRedstoneEvent event = new BlockRedstoneEvent(block, BlockFace.SELF, k1, l1);
+            BlockRedstoneEvent event = new BlockRedstoneEvent(block, k1, l1);
             ((WorldServer) world).getServer().getPluginManager().callEvent(event);
             l1 = event.getNewCurrent();
         }

@@ -97,7 +97,7 @@ public class BlockRedstoneTorch extends BlockTorch {
 
         // Craftbukkit start
         CraftBlock block = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
-        BlockRedstoneEvent event = new BlockRedstoneEvent(block, BlockFace.SELF, flag ? 15 : 0, flag ? 0 : 15);
+        BlockRedstoneEvent event = new BlockRedstoneEvent(block, flag ? 15 : 0, flag ? 0 : 15);
         ((WorldServer) world).getServer().getPluginManager().callEvent(event);
         if ((event.getNewCurrent() != 0) == flag) {
             return;
