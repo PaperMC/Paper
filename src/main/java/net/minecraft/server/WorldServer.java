@@ -25,8 +25,8 @@ public class WorldServer extends World implements BlockChangeDelegate {
         this.D = minecraftserver;
 
         // CraftBukkit start
-        this.world = new CraftWorld(this);
         this.server = minecraftserver.server;
+        this.world = new CraftWorld(this);
         this.manager = new PlayerManager(minecraftserver, this);
     }
 
