@@ -26,12 +26,14 @@ public class CraftWorld implements World {
     private final WorldServer world;
     private final Environment environment;
     private final CraftServer server;
+    private final ChunkProviderServer provider;
 
     private static final Random rand = new Random();
 
     public CraftWorld(WorldServer world) {
         this.world = world;
         this.server = world.getServer();
+        this.provider = world.A;
 
         if (world.q instanceof WorldProviderHell) {
             environment = Environment.NETHER;
@@ -59,7 +61,7 @@ public class CraftWorld implements World {
     }
 
     public Chunk getChunkAt(int x, int z) {
-        return this.world.A.d(x,z).bukkitChunk;
+        return this.provider.d(x,z).bukkitChunk;
     }
 
     public Chunk getChunkAt(Block block) {
@@ -67,19 +69,22 @@ public class CraftWorld implements World {
     }
 
     public boolean isChunkLoaded(int x, int z) {
-        return world.A.a( x, z );
+        return provider.a( x, z );
     }
 
     public Chunk[] getLoadedChunks() {
-        return world.A.getLoadedChunks();
+        net.minecraft.server.Chunk[] chunks = (net.minecraft.server.Chunk[])provider.e.values().toArray();
+        org.bukkit.Chunk[] craftChunks = new CraftChunk[chunks.length];
+
+        for (int i = 0; i < chunks.length; i++) {
+            craftChunks[i] = chunks[i].bukkitChunk;
+        }
+
+        return craftChunks;
     }
 
     public void loadChunk(int x, int z) {
         loadChunk(x, z, true);
-    }
-
-    public boolean loadChunk(int x, int z, boolean generate) {
-        return world.A.loadChunk(x, z, generate) != null;
     }
 
     public boolean unloadChunk(int x, int z) {
@@ -89,17 +94,97 @@ public class CraftWorld implements World {
     public boolean unloadChunk(int x, int z, boolean save) {
         return unloadChunk(x, z, save, false);
     }
-
-    public boolean unloadChunk(int x, int z, boolean save, boolean safe) {
-        return world.A.unloadChunk(x, z, save, safe);
-    }
     
     public boolean unloadChunkRequest(int x, int z) {
         return unloadChunkRequest(x, z, true);
     }
     
     public boolean unloadChunkRequest(int x, int z, boolean safe) {
-        return world.A.unloadChunkRequest(x, z, safe);
+        if (safe && isChunkInUse(x, z)) {
+            return false;
+        }
+        
+        provider.c(x, z);
+
+        return true;
+    }
+
+    public boolean unloadChunk(int x, int z, boolean save, boolean safe) {
+        if (safe && isChunkInUse(x, z)) {
+            return false;
+        }
+        
+        net.minecraft.server.Chunk chunk = provider.b(x, z);
+        
+        if (save) {
+            chunk.e();
+            provider.b(chunk);
+            provider.a(chunk);
+        }
+
+        provider.a.remove(x, z);
+        provider.e.remove(x, z);
+        provider.f.remove(chunk);
+        
+        return true;
+    }
+
+    public boolean isChunkInUse(int x, int z) {
+        Player[] players = server.getOnlinePlayers();
+        
+        for (Player player : players) {
+            Location loc = player.getLocation();
+            if (loc.getWorld() != provider.g.getWorld()) {
+                continue;
+            }
+
+            // If the chunk is within 256 blocks of a player, refuse to accept the unload request
+            // This is larger than the distance of loaded chunks that actually surround a player
+            // The player is the center of a 21x21 chunk grid, so the edge is 10 chunks (160 blocks) away from the player
+            if (Math.abs(loc.getBlockX() - (x << 4)) <= 256 && Math.abs(loc.getBlockZ() - (z << 4)) <= 256) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean loadChunk(int x, int z, boolean generate) {
+        if (generate) {
+            // Use the default variant of loadChunk when generate == true.
+            return provider.d(x, z) != null;
+        }
+
+        provider.a.remove(x, z);
+        net.minecraft.server.Chunk chunk = (net.minecraft.server.Chunk) provider.e.get(x, z);
+
+        if (chunk == null) {
+            chunk = provider.e(x, z);
+
+            if (chunk != null) {
+                provider.e.put(x, z, chunk);
+                provider.f.add(chunk);
+
+                chunk.c();
+                chunk.d();
+
+                if (!chunk.n && provider.a(x + 1, z + 1) && provider.a(x, z + 1) && provider.a(x + 1, z)) {
+                    provider.a(provider, x, z);
+                }
+
+                if (provider.a(x - 1, z) && !provider.b(x - 1, z).n && provider.a(x - 1, z + 1) && provider.a(x, z + 1) && provider.a(x - 1, z)) {
+                    provider.a(provider, x - 1, z);
+                }
+
+                if (provider.a(x, z - 1) && !provider.b(x, z - 1).n && provider.a(x + 1, z - 1) && provider.a(x, z - 1) && provider.a(x + 1, z)) {
+                    provider.a(provider, x, z - 1);
+                }
+
+                if (provider.a(x - 1, z - 1) && !provider.b(x - 1, z - 1).n && provider.a(x - 1, z - 1) && provider.a(x, z - 1) && provider.a(x - 1, z)) {
+                    provider.a(provider, x - 1, z - 1);
+                }
+            }
+        }
+        return chunk != null;
     }
 
     public boolean isChunkLoaded(Chunk chunk) {

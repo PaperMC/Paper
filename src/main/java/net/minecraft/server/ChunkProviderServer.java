@@ -19,13 +19,13 @@ import org.bukkit.event.world.ChunkLoadEvent;
 
 public class ChunkProviderServer implements IChunkProvider {
 
-    private LongHashset a = new LongHashset(); // CraftBukkit
+    public LongHashset a = new LongHashset(); // CraftBukkit
     private Chunk b;
     private IChunkProvider c;
     private IChunkLoader d;
-    private LongHashtable<Chunk> e = new LongHashtable<Chunk>(); // CraftBukkit
-    private List f = new ArrayList();
-    private WorldServer g;
+    public LongHashtable<Chunk> e = new LongHashtable<Chunk>(); // CraftBukkit
+    public List f = new ArrayList(); // Craftbukkit
+    public WorldServer g; // Craftbukkit
 
     public ChunkProviderServer(WorldServer worldserver, IChunkLoader ichunkloader, IChunkProvider ichunkprovider) {
         this.b = new EmptyChunk(worldserver, new byte['\u8000'], 0, 0);
@@ -35,105 +35,8 @@ public class ChunkProviderServer implements IChunkProvider {
     }
 
     // CraftBukkit start
-    public org.bukkit.Chunk[] getLoadedChunks() {
-        Object[] chunks = e.values().toArray();
-        org.bukkit.Chunk[] craftChunks = new CraftChunk[chunks.length];
-
-        for(int cnt =0;cnt<chunks.length;cnt++) {
-            craftChunks[cnt] = ((Chunk)chunks[cnt]).bukkitChunk;
-        }
-
-        return craftChunks;
-    }
-
     public boolean a(int i, int j) {
         return this.e.containsKey(i, j);
-    }
-
-    public void saveChunk(int x, int z) {
-        Chunk chunk = this.b(x, z);
-        chunk.e();
-        this.b(chunk);
-        this.a(chunk);
-    }
-
-    public boolean unloadChunk(int x, int z, boolean save, boolean safe) {
-        if (safe && isChunkInUse(x, z))
-            return false;
-        
-        Chunk chunk = this.b(x, z);
-        
-        if (save)
-            saveChunk(x, z);
-
-        this.a.remove(x, z);
-        this.e.remove(x, z);
-        this.f.remove(chunk);
-        return true;
-    }
-    
-    public boolean unloadChunkRequest(int x, int z, boolean safe) {
-        if (safe && isChunkInUse(x, z))
-            return false;
-        c(x, z);
-        return true;
-    }
-
-    public boolean isChunkInUse(int x, int z) {
-        CraftServer server = g.getServer();
-        Player[] players = server.getOnlinePlayers();
-        for (Player player : players) {
-            Location loc = player.getLocation();
-            if (loc.getWorld() != g.getWorld()) {
-                continue;
-            }
-            // If the chunk is within 256 blocks of a player, refuse to accept the unload request
-            // This is larger than the distance of loaded chunks that actually surround a player
-            // The player is the center of a 21x21 chunk grid, so the edge is 10 chunks (160 blocks) away from the player
-            if (Math.abs(loc.getBlockX() - (x << 4)) <= 256 && Math.abs(loc.getBlockZ() - (z << 4)) <= 256) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public Chunk loadChunk(int x, int z, boolean generate) {
-        if (generate) {
-            // Use the default variant of loadChunk when generate == true.
-            return d(x, z);
-        }
-
-        this.a.remove(x, z);
-        Chunk chunk = (Chunk) this.e.get(x, z);
-
-        if (chunk == null) {
-            chunk = this.e(x, z);
-
-            if (chunk != null) {
-                this.e.put(x, z, chunk);
-                this.f.add(chunk);
-
-                chunk.c();
-                chunk.d();
-
-                if (!chunk.n && this.a(x + 1, z + 1) && this.a(x, z + 1) && this.a(x + 1, z)) {
-                    this.a(this, x, z);
-                }
-
-                if (this.a(x - 1, z) && !this.b(x - 1, z).n && this.a(x - 1, z + 1) && this.a(x, z + 1) && this.a(x - 1, z)) {
-                    this.a(this, x - 1, z);
-                }
-
-                if (this.a(x, z - 1) && !this.b(x, z - 1).n && this.a(x + 1, z - 1) && this.a(x, z - 1) && this.a(x + 1, z)) {
-                    this.a(this, x, z - 1);
-                }
-
-                if (this.a(x - 1, z - 1) && !this.b(x - 1, z - 1).n && this.a(x - 1, z - 1) && this.a(x, z - 1) && this.a(x - 1, z)) {
-                    this.a(this, x - 1, z - 1);
-                }
-            }
-        }
-        return chunk;
     }
     // CraftBukkit end
     
@@ -208,7 +111,7 @@ public class ChunkProviderServer implements IChunkProvider {
         return chunk == null ? (this.g.x ? this.d(i, j) : this.b) : chunk;
     }
 
-    private Chunk e(int i, int j) {
+    public Chunk e(int i, int j) { // Craftbukkit - public
         if (this.d == null) {
             return null;
         } else {
@@ -227,7 +130,7 @@ public class ChunkProviderServer implements IChunkProvider {
         }
     }
 
-    private void a(Chunk chunk) {
+    public void a(Chunk chunk) { // Craftbukkit - public
         if (this.d != null) {
             try {
                 this.d.b(this.g, chunk);
@@ -237,7 +140,7 @@ public class ChunkProviderServer implements IChunkProvider {
         }
     }
 
-    private void b(Chunk chunk) {
+    public void b(Chunk chunk) { // Craftbukkit - public
         if (this.d != null) {
             try {
                 chunk.r = this.g.e;
