@@ -440,6 +440,11 @@ public abstract class Event {
         ITEM_SPAWN (Category.WORLD),
 
         /**
+         * Called when a World is loaded
+         */
+        WORLD_LOADED (Category.WORLD),
+
+        /**
          * LIVING_ENTITY EVENTS
          */
 
