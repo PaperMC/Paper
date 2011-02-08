@@ -91,13 +91,23 @@ public interface Server {
     public List<World> getWorlds();
 
     /**
-     * Creates or loads a world with the given name
+     * Creates or loads a world with the given name.
+     * If the world is already loaded, it will just return the equivalent of
+     * getWorld(name)
      *
      * @param name Name of the world to load
      * @param environment Environment type of the world
      * @return Newly created or loaded World
      */
     public World createWorld(String name, World.Environment environment);
+
+    /**
+     * Gets the world with the given name
+     *
+     * @param name Name of the world to retrieve
+     * @return World with the given name, or null if none exists
+     */
+    public World getWorld(String name);
 
     /**
      * Reloads the server, refreshing settings and plugin information
