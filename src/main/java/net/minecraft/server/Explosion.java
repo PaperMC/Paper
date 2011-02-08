@@ -29,7 +29,9 @@ public class Explosion {
     public Entity e;
     public float f;
     public Set g = new HashSet();
+    // Craftbukkit start
     public boolean wasCanceled = false;
+    // Craftbukkit end
 
     public Explosion(World world, Entity entity, double d0, double d1, double d2, float f) {
         this.i = world;
