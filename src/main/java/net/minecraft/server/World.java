@@ -136,6 +136,8 @@ public class World implements IBlockAccess {
             flag = true;
         }
 
+        // Craftbukkit start
+
         this.q = (WorldProvider) object;
         this.q.a(this);
         this.G = this.a(this.t);

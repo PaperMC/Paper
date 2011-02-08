@@ -4,7 +4,9 @@ import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.minecraft.server.EntityPlayer;
@@ -30,6 +32,7 @@ public final class CraftServer implements Server {
     private final CommandMap commandMap = new SimpleCommandMap(this);
     protected final MinecraftServer console;
     protected final ServerConfigurationManager server;
+    private final Map<String, World> worlds = new HashMap<String, World>();
 
     public CraftServer(MinecraftServer console, ServerConfigurationManager server) {
         this.console = console;
@@ -155,15 +158,7 @@ public final class CraftServer implements Server {
     }
 
     public List<World> getWorlds() {
-        List<World> worlds = new ArrayList<World>();
-
-        synchronized (console.worlds) {
-            for (WorldServer world : console.worlds) {
-                worlds.add(world.getWorld());
-            }
-        }
-
-        return worlds;
+        return new ArrayList<World>(worlds.values());
     }
 
     public ServerConfigurationManager getHandle() {
@@ -203,6 +198,11 @@ public final class CraftServer implements Server {
 
     public World createWorld(String name, World.Environment environment) {
         File folder = new File(name);
+        World world = getWorld(name);
+
+        if (world != null) {
+            return world;
+        }
         
         if ((folder.exists()) && (!folder.isDirectory())) {
             throw new IllegalArgumentException("File exists with the name '" + name + "' and isn't a folder");
@@ -247,5 +247,13 @@ public final class CraftServer implements Server {
 
     public MinecraftServer getServer() {
         return console;
+    }
+
+    public World getWorld(String name) {
+        return worlds.get(name.toLowerCase());
+    }
+
+    protected void addWorld(World world) {
+        worlds.put(world.getName().toLowerCase(), world);
     }
 }

@@ -25,17 +25,21 @@ import org.bukkit.World;
 public class CraftWorld implements World {
     private final WorldServer world;
     private final Environment environment;
+    private final CraftServer server;
 
     private static final Random rand = new Random();
 
     public CraftWorld(WorldServer world) {
         this.world = world;
+        this.server = world.getServer();
 
         if (world.q instanceof WorldProviderHell) {
             environment = Environment.NETHER;
         } else {
             environment = Environment.NORMAL;
         }
+
+        server.addWorld(this);
     }
 
     public Block getBlockAt(int x, int y, int z) {
