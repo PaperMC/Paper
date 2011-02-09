@@ -445,6 +445,12 @@ public abstract class Event {
          * @todo: add javadoc see comment
          */
         ITEM_SPAWN (Category.WORLD),
+        
+        /**
+         * Called when a world is saved
+         * 
+         */
+        WORLD_SAVED (Category.WORLD),
 
         /**
          * Called when a World is loaded

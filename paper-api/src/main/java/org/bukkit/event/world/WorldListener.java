@@ -24,6 +24,14 @@ public class WorldListener implements Listener {
     }
 
     /**
+    * Called when a world is saved
+    *
+    * param event Relevant event details
+    */
+    public void onWorldSaved(WorldEvent event) {
+    }
+
+    /**
      * Called when a World is loaded
      *
      * @param event Relevant event details
