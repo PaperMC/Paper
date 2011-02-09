@@ -24,6 +24,14 @@ public class CraftCreature extends CraftLivingEntity implements Creature{
         }
     }
 
+    public CraftLivingEntity getTarget() {
+        if (entity.d == null) {
+            return null;
+        } else {
+            return (CraftLivingEntity)entity.d.getBukkitEntity();
+        }
+    }
+
     @Override
     public EntityCreature getHandle() {
         return entity;
