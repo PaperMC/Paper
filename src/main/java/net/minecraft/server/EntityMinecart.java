@@ -31,9 +31,6 @@ public class EntityMinecart extends Entity implements IInventory {
     private double at;
 
     // CraftBukkit start
-    protected org.bukkit.entity.Entity bukkitPoweredMinecart;
-    protected org.bukkit.entity.Entity bukkitStorageMinecart;
-
     private boolean slowWhenEmpty = true;
     private double derailedX = 0.5;
     private double derailedY = 0.5;
@@ -49,7 +46,7 @@ public class EntityMinecart extends Entity implements IInventory {
 
     public EntityMinecart(World world) {
         super(world);
-        this.al = new ItemStack[36];
+        this.al = new ItemStack[27]; //Craftbukkit
         this.a = 0;
         this.b = 0;
         this.c = 1;

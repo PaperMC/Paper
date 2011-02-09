@@ -16,7 +16,7 @@ public class TileEntityDispenser extends TileEntity implements IInventory {
     public TileEntityDispenser() {}
 
     public int h_() {
-        return 9;
+        return this.e.length; //Craftbukkit
     }
 
     public ItemStack a(int i) {

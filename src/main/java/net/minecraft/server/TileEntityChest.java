@@ -2,7 +2,7 @@ package net.minecraft.server;
 
 public class TileEntityChest extends TileEntity implements IInventory {
 
-    private ItemStack[] e = new ItemStack[36];
+    private ItemStack[] e = new ItemStack[27]; //Craftbukkit
 
     // CraftBukkit start
     public ItemStack[] getContents() {
@@ -13,7 +13,7 @@ public class TileEntityChest extends TileEntity implements IInventory {
     public TileEntityChest() {}
 
     public int h_() {
-        return 27;
+        return this.e.length;
     }
 
     public ItemStack a(int i) {

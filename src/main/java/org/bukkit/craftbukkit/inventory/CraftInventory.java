@@ -179,7 +179,14 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
     }
 
     public int firstPartial(ItemStack item) {
-        return firstPartial(item.getTypeId());
+        CraftItemStack[] inventory = getContents();
+        for (int i = 0; i < inventory.length; i++) {
+            CraftItemStack cItem = inventory[i];
+            if (item != null && cItem.getTypeId() == item.getTypeId() && cItem.getAmount() < cItem.getMaxStackSize() && cItem.getDurability() == item.getDurability()) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     public HashMap<Integer, ItemStack> addItem(ItemStack... items) {
@@ -195,7 +202,7 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
             ItemStack item = items[i];
             while (true) {
                 // Do we already have a stack of it?
-                int firstPartial = firstPartial( item.getTypeId() );
+                int firstPartial = firstPartial(item);
 
                 // Drat! no partial stack
                 if (firstPartial == -1) {

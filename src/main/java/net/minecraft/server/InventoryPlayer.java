@@ -231,7 +231,7 @@ public class InventoryPlayer implements IInventory {
     }
 
     public int h_() {
-        return this.a.length + 4;
+        return this.a.length + this.b.length; //Craftbukkit
     }
 
     public ItemStack a(int i) {

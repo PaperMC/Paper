@@ -13,7 +13,7 @@ public class InventoryCraftResult implements IInventory {
     public InventoryCraftResult() {}
 
     public int h_() {
-        return 1;
+        return this.a.length; //Craftbukkit
     }
 
     public ItemStack a(int i) {
