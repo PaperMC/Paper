@@ -18,7 +18,9 @@ import joptsimple.OptionSet;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
-// CraftBukkit end
+import org.bukkit.event.Event;
+import org.bukkit.event.world.WorldEvent;
+//CraftBukkit end
 
 public class MinecraftServer implements ICommandListener, Runnable {
 
@@ -173,6 +175,9 @@ public class MinecraftServer implements ICommandListener, Runnable {
         // Craftbukkit start
         for (WorldServer world : worlds) {
             world.a(true, (IProgressUpdate) null);
+            
+            Event worldSaved = new WorldEvent( Event.Type.WORLD_SAVED, world.getWorld() );
+            server.getPluginManager().callEvent( worldSaved );
         }
         // Craftbukkit end
     }
@@ -351,6 +356,9 @@ public class MinecraftServer implements ICommandListener, Runnable {
                     // Craftbukkit start
                     for (WorldServer world : worlds) {
                         world.a(true, (IProgressUpdate) null);
+                        
+                        Event worldSaved = new WorldEvent( Event.Type.WORLD_SAVED, world.getWorld() );
+                        server.getPluginManager().callEvent( worldSaved );
                     }
                     
                     this.f.d();
