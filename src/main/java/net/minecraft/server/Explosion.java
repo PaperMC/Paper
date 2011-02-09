@@ -136,6 +136,9 @@ public class Explosion {
                     server.getPluginManager().callEvent(event);
                     if (!event.isCancelled()) {
                         entity.a(this.e, event.getDamage());
+                        entity.motX += d0 * d10;
+                        entity.motY += d1 * d10;
+                        entity.motZ += d2 * d10;
                     }
                 } else {
                     org.bukkit.entity.Entity damager = this.e.getBukkitEntity();
