@@ -158,4 +158,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public boolean isSneaking() {
         return entity.J();
     }
+    
+    public void updateInventory() {
+        entity.l();
+    }
 }
