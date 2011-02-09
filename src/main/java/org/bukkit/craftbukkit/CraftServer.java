@@ -4,7 +4,7 @@ import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -34,7 +34,7 @@ public final class CraftServer implements Server {
     private final CommandMap commandMap = new SimpleCommandMap(this);
     protected final MinecraftServer console;
     protected final ServerConfigurationManager server;
-    private final Map<String, World> worlds = new HashMap<String, World>();
+    private final Map<String, World> worlds = new LinkedHashMap<String, World>();
 
     public CraftServer(MinecraftServer console, ServerConfigurationManager server) {
         this.console = console;
