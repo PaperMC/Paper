@@ -73,11 +73,12 @@ public class CraftWorld implements World {
     }
 
     public Chunk[] getLoadedChunks() {
-        net.minecraft.server.Chunk[] chunks = (net.minecraft.server.Chunk[])provider.e.values().toArray();
+        Object[] chunks = provider.e.values().toArray();
         org.bukkit.Chunk[] craftChunks = new CraftChunk[chunks.length];
 
         for (int i = 0; i < chunks.length; i++) {
-            craftChunks[i] = chunks[i].bukkitChunk;
+            net.minecraft.server.Chunk chunk = (net.minecraft.server.Chunk)chunks[i];
+            craftChunks[i] = chunk.bukkitChunk;
         }
 
         return craftChunks;
@@ -122,6 +123,7 @@ public class CraftWorld implements World {
             provider.a(chunk);
         }
 
+        provider.a.remove(x, z);
         provider.a.remove(x, z);
         provider.e.remove(x, z);
         provider.f.remove(chunk);
