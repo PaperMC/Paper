@@ -78,7 +78,7 @@ public class LongHashset<V> extends LongHash<V> {
             if(outer == null) continue;
             for(int i = 0; i < outer.length ; i++) {
                 long[] inner = outer[i];
-                if(inner == null) continue;
+                if(inner == null || inner.length == 0) continue;
                 count--;
                 long ret = inner[inner.length - 1];
                 outer[i] = Arrays.copyOf(inner, inner.length - 1);
