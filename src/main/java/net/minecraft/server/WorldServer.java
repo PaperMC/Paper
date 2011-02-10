@@ -16,13 +16,13 @@ public class WorldServer extends World implements BlockChangeDelegate {
     public ChunkProviderServer A;
     public boolean B = false;
     public boolean C;
-    private MinecraftServer D;
+    public final MinecraftServer minecraftServer;
     private EntityList E = new EntityList();
     public PlayerManager manager; // Craftbukkit
 
     public WorldServer(MinecraftServer minecraftserver, File file1, String s, int i) {
         super(file1, s, (new Random()).nextLong(), WorldProvider.a(i));
-        this.D = minecraftserver;
+        this.minecraftServer = minecraftserver;
 
         // CraftBukkit start
         this.server = minecraftserver.server;
@@ -47,7 +47,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
     }
 
     public void a(Entity entity, boolean flag) {
-        if (!this.D.m && (entity instanceof EntityAnimal || entity instanceof EntityWaterAnimal)) {
+        if (!this.minecraftServer.m && (entity instanceof EntityAnimal || entity instanceof EntityWaterAnimal)) {
             entity.q();
         }
 
@@ -87,7 +87,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
             i1 = l;
         }
 
-        return i1 > 16 || this.D.f.g(entityhuman.name);
+        return i1 > this.minecraftServer.spawnProtection || this.minecraftServer.f.g(entityhuman.name);
     }
 
     protected void b(Entity entity) {
@@ -107,7 +107,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
     public void a(Entity entity, byte b0) {
         Packet38EntityStatus packet38entitystatus = new Packet38EntityStatus(entity.id, b0);
 
-        this.D.k.b(entity, packet38entitystatus);
+        this.minecraftServer.k.b(entity, packet38entitystatus);
     }
 
     public Explosion a(Entity entity, double d0, double d1, double d2, float f, boolean flag) {
@@ -119,12 +119,12 @@ public class WorldServer extends World implements BlockChangeDelegate {
         }
         // Craftbukkit end
 
-        this.D.f.a(d0, d1, d2, 64.0D, new Packet60Explosion(d0, d1, d2, f, explosion.g));
+        this.minecraftServer.f.a(d0, d1, d2, 64.0D, new Packet60Explosion(d0, d1, d2, f, explosion.g));
         return explosion;
     }
 
     public void c(int i, int j, int k, int l, int i1) {
         super.c(i, j, k, l, i1);
-        this.D.f.a((double) i, (double) j, (double) k, 64.0D, new Packet54PlayNoteBlock(i, j, k, l, i1));
+        this.minecraftServer.f.a((double) i, (double) j, (double) k, 64.0D, new Packet54PlayNoteBlock(i, j, k, l, i1));
     }
 }

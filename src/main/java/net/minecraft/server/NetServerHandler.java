@@ -325,7 +325,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             // CraftBukkit end
 
             if (packet14blockdig.e == 0) {
-                if (j1 > 16 || flag) {
+                if (j1 > this.d.spawnProtection || flag) {
                     // CraftBukkit start
                     if(blockId > 0) {
                         BlockDamageEvent event;
@@ -354,7 +354,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 }
                 // CraftBukkit end
             } else if (packet14blockdig.e == 1) {
-                if (j1 > 16 || flag) {
+                if (j1 > this.d.spawnProtection || flag) {
                     // CraftBukkit start
                     BlockDamageEvent event;
                     // If the amount of damage going to the block plus the current amount

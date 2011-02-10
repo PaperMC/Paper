@@ -100,7 +100,7 @@ public class ItemBlock extends Item {
 
                     // CraftBukkit hardcoded Spawn distance for now
                     // TODO make spawn size configurable
-                    boolean canBuild = distanceFromSpawn > 16 || thePlayer.isOp();
+                    boolean canBuild = distanceFromSpawn > ((WorldServer) world).minecraftServer.spawnProtection || thePlayer.isOp();
 
                     BlockPlaceEvent event = new BlockPlaceEvent(eventType, placedBlock, replacedBlockState, blockClicked, itemInHand, thePlayer, canBuild);
                     server.getPluginManager().callEvent(event);
