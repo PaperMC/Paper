@@ -206,7 +206,7 @@ public class ChunkProviderServer implements IChunkProvider {
                     chunk.e();
                     this.b(chunk);
                     this.a(chunk);
-                    // this.a.remove(chunkcoordinates); // CraftBukkit
+                    this.a.remove(chunkcoordinates);
                     this.e.remove(chunkcoordinates);
                     this.f.remove(chunk);
                 }
