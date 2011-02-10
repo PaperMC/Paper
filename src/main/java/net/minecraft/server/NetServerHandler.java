@@ -325,8 +325,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             // CraftBukkit end
 
             if (packet14blockdig.e == 0) {
-                if (j1 > 16 || flag) {
-                    // CraftBukkit start
+                // CraftBukkit start
+                if (j1 > this.d.spawnProtection || flag) {
                     if(blockId > 0) {
                         BlockDamageEvent event;
                         // If the amount of damage that the player is going to do to the block
@@ -341,8 +341,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                             this.e.c.a(i, j, k);
                         }
                     }
-                    // CraftBukkit end
                 }
+                // CraftBukkit end
             } else if (packet14blockdig.e == 2) {
                 // CraftBukkit start - Get last block that the player hit
                 // Otherwise the block is a Bedrock @(0,0,0)
@@ -354,8 +354,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 }
                 // CraftBukkit end
             } else if (packet14blockdig.e == 1) {
-                if (j1 > 16 || flag) {
-                    // CraftBukkit start
+                // CraftBukkit start
+                if (j1 > this.d.spawnProtection || flag) {
                     BlockDamageEvent event;
                     // If the amount of damage going to the block plus the current amount
                     // of damage is greater than 1, the block is going to break.
@@ -370,8 +370,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                     } else {
                         e.c.d = 0; // Reset the amount of damage if stopping break.
                     }
-                    // CraftBukkit end
                 }
+                // CraftBukkit end
             } else if (packet14blockdig.e == 3) {
                 double d5 = this.e.locX - ((double) i + 0.5D);
                 double d6 = this.e.locY - ((double) j + 0.5D);

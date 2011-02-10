@@ -16,7 +16,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
     public ChunkProviderServer A;
     public boolean B = false;
     public boolean C;
-    private MinecraftServer D;
+    public final MinecraftServer D;
     private EntityList E = new EntityList();
     public PlayerManager manager; // Craftbukkit
 
@@ -87,7 +87,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
             i1 = l;
         }
 
-        return i1 > 16 || this.D.f.g(entityhuman.name);
+        return i1 > this.D.spawnProtection || this.D.f.g(entityhuman.name); // CraftBukkit Configurable spawn protection start
     }
 
     protected void b(Entity entity) {

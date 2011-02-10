@@ -18,7 +18,9 @@ import joptsimple.OptionSet;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
-// CraftBukkit end
+import org.bukkit.event.Event;
+import org.bukkit.event.world.WorldEvent;
+//CraftBukkit end
 
 public class MinecraftServer implements ICommandListener, Runnable {
 
@@ -39,6 +41,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
     public boolean l;
     public boolean m;
     public boolean n;
+    public int spawnProtection; // CraftBukkit Configurable spawn protection start
     public List<WorldServer> worlds = new ArrayList<WorldServer>();
 
     // Craftbukkit start - adds argument OptionSet
@@ -71,6 +74,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
         this.l = this.d.a("online-mode", true);
         this.m = this.d.a("spawn-animals", true);
         this.n = this.d.a("pvp", true);
+        this.spawnProtection = this.d.a("spawn-protection", 16); // CraftBukkit Configurable spawn protection start
         InetAddress inetaddress = null;
 
         if (s.length() > 0) {
@@ -173,6 +177,9 @@ public class MinecraftServer implements ICommandListener, Runnable {
         // Craftbukkit start
         for (WorldServer world : worlds) {
             world.a(true, (IProgressUpdate) null);
+            
+            Event worldSaved = new WorldEvent( Event.Type.WORLD_SAVED, world.getWorld() );
+            server.getPluginManager().callEvent( worldSaved );
         }
         // Craftbukkit end
     }
@@ -351,6 +358,9 @@ public class MinecraftServer implements ICommandListener, Runnable {
                     // Craftbukkit start
                     for (WorldServer world : worlds) {
                         world.a(true, (IProgressUpdate) null);
+                        
+                        Event worldSaved = new WorldEvent( Event.Type.WORLD_SAVED, world.getWorld() );
+                        server.getPluginManager().callEvent( worldSaved );
                     }
                     
                     this.f.d();

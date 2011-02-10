@@ -82,7 +82,7 @@ public class LongHashtable<V> extends LongHash {
                 if(inner == null) continue;
                 for(Object entry : inner) {
                     if(entry == null) break;
-                    ret.add((V)entry);
+                    ret.add((V)((Entry)entry).value);
                 }
             }
         }
