@@ -41,7 +41,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
     public boolean l;
     public boolean m;
     public boolean n;
-	public int spawnProtection;
+    public int spawnProtection; // CraftBukkit Configurable spawn protection start
     public List<WorldServer> worlds = new ArrayList<WorldServer>();
 
     // Craftbukkit start - adds argument OptionSet
@@ -74,7 +74,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
         this.l = this.d.a("online-mode", true);
         this.m = this.d.a("spawn-animals", true);
         this.n = this.d.a("pvp", true);
-		this.spawnProtection = this.d.a("spawn-protection", 16);
+        this.spawnProtection = this.d.a("spawn-protection", 16); // CraftBukkit Configurable spawn protection start
         InetAddress inetaddress = null;
 
         if (s.length() > 0) {
