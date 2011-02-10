@@ -1,16 +1,7 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package net.minecraft.server;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-/**
- *
- * @author Nathan
- */
 public class LongHashset<V> extends LongHash<V> {
     long values[][][] = new long[256][][];
     int count = 0;
@@ -18,40 +9,44 @@ public class LongHashset<V> extends LongHash<V> {
     public boolean isEmpty() {
         return count == 0;
     }
+    
+    public void add(int msw, int lsw) {
+        add(toLong(msw, lsw));
+    }
 
-    public void add(long key, V value) {
-        int idx1 = (int) (key & 255);
-        int idx2 = (int) ((key >> 32) & 255);
-        long obj1[][] = values[idx1], obj2[];
-        if(obj1 == null) values[idx1] = obj1 = new long[256][];
-        obj2 = obj1[idx2];
-        if(obj2 == null) {
-            obj1[idx2] = obj2 = new long[1];
-            obj2[0] = key;
+    public void add(long key) {
+        int mainIdx = (int) (key & 255);
+        int outerIdx = (int) ((key >> 32) & 255);
+        long outer[][] = values[mainIdx], inner[];
+        if(outer == null) values[mainIdx] = outer = new long[256][];
+        inner = outer[outerIdx];
+        if(inner == null) {
+            outer[outerIdx] = inner = new long[1];
+            inner[0] = key;
             count++;
         }
         else {
             int i;
-            for(i = 0; i < obj2.length; i++) {
-                if(obj2[i] == key) {
+            for(i = 0; i < inner.length; i++) {
+                if(inner[i] == key) {
                     return;
                 }
             }
-            obj2 = Arrays.copyOf(obj2, i+1);
-            obj2[i] = key;
+            outer[0] = inner = Arrays.copyOf(inner, i+1);
+            inner[i] = key;
             count++;
         }
     }
     
     public boolean containsKey(long key) {
-        int idx1 = (int) (key & 255);
-        int idx2 = (int) ((key >> 32) & 255);
-        long obj1[][] = values[idx1], obj2[];
-        if(obj1 == null) return false;
-        obj2 = obj1[idx2];
-        if(obj2 == null) return false;
+        int mainIdx = (int) (key & 255);
+        int outerIdx = (int) ((key >> 32) & 255);
+        long outer[][] = values[mainIdx], inner[];
+        if(outer == null) return false;
+        inner = outer[outerIdx];
+        if(inner == null) return false;
         else {
-            for(long entry : obj2) {
+            for(long entry : inner) {
                 if(entry == key) return true;
             }
             return false;
@@ -59,33 +54,34 @@ public class LongHashset<V> extends LongHash<V> {
     }
     
     public void remove(long key) {
-        int idx1 = (int) (key & 255);
-        int idx2 = (int) ((key >> 32) & 255);
-        long obj1[][] = values[idx1], obj2[];
-        if(obj1 == null) return;
-        obj2 = obj1[idx2];
-        if(obj2 == null) return;
-        else {
-            int max = obj2.length - 1;
-            for(int i = 0; i <= max; i++) {
-                if(obj2[i] == key) {
-                    count--;
-                    if(i != max) {
-                        obj2[i] = obj2[max];
-                    }
-                    obj2 = Arrays.copyOf(obj2, max);
+        long[][] outer = this.values[(int) (key & 255)];
+        if (outer == null) return;
+
+        long[] inner = outer[(int) ((key >> 32) & 255)];
+        if (inner == null) return;
+        
+        int max = inner.length - 1;
+        for(int i = 0; i <= max; i++) {
+            if(inner[i] == key) {
+                count--;
+                if(i != max) {
+                    inner[i] = inner[max];
                 }
+                outer[(int) ((key >> 32) & 255)] = (max == 0 ? null : Arrays.copyOf(inner, max));
+                return;
             }
-        }        
+        }
     }
     
     public long popFirst() {
         for(long[][] outer : values) {
             if(outer == null) continue;
-            for(long[] inner : outer) {
+            for(int i = 0; i < outer.length ; i++) {
+                long[] inner = outer[i];
                 if(inner == null) continue;
+                count--;
                 long ret = inner[inner.length - 1];
-                inner = Arrays.copyOf(inner, inner.length - 1);
+                outer[i] = Arrays.copyOf(inner, inner.length - 1);
                 return ret;
             }
         }
