@@ -286,13 +286,18 @@ public class World implements IBlockAccess {
     Chunk lastChunkAccessed;
     int lastXAccessed = Integer.MIN_VALUE;
     int lastZAccessed = Integer.MIN_VALUE;
+    final Object chunkLock = new Object();
     public Chunk c(int i, int j) {
-        if(lastChunkAccessed == null || lastXAccessed != i || lastZAccessed != j) {
-            lastXAccessed = i;
-            lastZAccessed = j;
-            lastChunkAccessed = this.G.b(i, j);
+        Chunk result = null;
+        synchronized (chunkLock) {
+            if (lastChunkAccessed == null || lastXAccessed != i || lastZAccessed != j) {
+                lastXAccessed = i;
+                lastZAccessed = j;
+                lastChunkAccessed = this.G.b(i, j);
+            }
+            result = lastChunkAccessed;
         }
-        return lastChunkAccessed;
+        return result;
     }
     // CraftBukkit end
 
