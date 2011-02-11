@@ -19,6 +19,7 @@ import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.event.block.BlockRightClickEvent;
+import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.player.PlayerAnimationEvent;
 import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerItemEvent;
@@ -792,8 +793,21 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 j = packet130updatesign.c;
                 TileEntitySign tileentitysign = (TileEntitySign) tileentity;
 
+                // CraftBukkit start - SIGN_CHANGE hook
+                Player player = server.getPlayer(this.e);
+                SignChangeEvent modifyEvent = new SignChangeEvent(org.bukkit.event.Event.Type.SIGN_CHANGE, (CraftBlock) player.getWorld().getBlockAt(i, k, j), server.getPlayer(this.e), packet130updatesign.d);
+                server.getPluginManager().callEvent(modifyEvent);
+                if (modifyEvent.isCancelled()) {
+                    // Normally we would return here, but we have to update the sign with blank text if it's been cancelled
+                    // Otherwise the client will have bad text on their sign (client shows text changes as they type)
+                    for(int l = 0; l < 4; ++l) {
+                        modifyEvent.setLine(l, "");
+                    }
+                }
+                // CraftBukkit end
+
                 for (int l = 0; l < 4; ++l) {
-                    tileentitysign.e[l] = packet130updatesign.d[l];
+                    tileentitysign.e[l] = modifyEvent.getLine(l); // CraftBukkit
                 }
 
                 tileentitysign.d();
