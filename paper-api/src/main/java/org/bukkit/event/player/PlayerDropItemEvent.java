@@ -1,9 +1,9 @@
-
 package org.bukkit.event.player;
 
 import org.bukkit.entity.ItemDrop;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
+import org.bukkit.event.Event;
 
 /**
  * Thrown when a player drops an item from their inventory
@@ -12,8 +12,8 @@ public class PlayerDropItemEvent extends PlayerEvent implements Cancellable {
     private final ItemDrop drop;
     private boolean cancel = false;
 
-    public PlayerDropItemEvent(final Type type, final Player player, final ItemDrop drop) {
-        super(type, player);
+    public PlayerDropItemEvent(final Player player, final ItemDrop drop) {
+        super(Event.Type.PLAYER_DROP_ITEM, player);
         this.drop = drop;
     }
 
@@ -30,6 +30,10 @@ public class PlayerDropItemEvent extends PlayerEvent implements Cancellable {
      * Gets the cancellation state of this event. A cancelled event will not
      * be executed in the server, but will still pass to other plugins
      *
+     * If an item drop event is cancelled, the item will not be dropped and it
+     * will be added back to the players inventory.
+     * This will not fire an event.
+     *
      * @return true if this event is cancelled
      */
     public boolean isCancelled() {
@@ -39,6 +43,10 @@ public class PlayerDropItemEvent extends PlayerEvent implements Cancellable {
     /**
      * Sets the cancellation state of this event. A cancelled event will not
      * be executed in the server, but will still pass to other plugins
+     *
+     * If an item drop event is cancelled, the item will not be dropped and it
+     * will be added back to the players inventory.
+     * This will not fire an event.
      *
      * @param cancel true if you wish to cancel this event
      */
