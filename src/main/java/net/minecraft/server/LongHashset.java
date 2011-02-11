@@ -82,7 +82,6 @@ public class LongHashset<V> extends LongHash<V> {
                 count--;
                 long ret = inner[inner.length - 1];
                 outer[i] = Arrays.copyOf(inner, inner.length - 1);
-                System.err.println("Removing chunk (" + msw(ret) + ", " + lsw(ret) + ")");
                 return ret;
                 
             }

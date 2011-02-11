@@ -196,12 +196,11 @@ public class ChunkProviderServer implements IChunkProvider {
 
     public boolean a() {
         if (!this.g.C) {
+            // CraftBukkit start
             while (!this.a.isEmpty()) {
-                // CraftBukkit start
                 long chunkcoordinates = this.a.popFirst();
                 Chunk chunk = e.get(chunkcoordinates);
                 if (chunk == null) continue;
-                // CraftBukkit end
                 chunk.e();
                 this.b(chunk);
                 this.a(chunk);
@@ -209,6 +208,7 @@ public class ChunkProviderServer implements IChunkProvider {
                 this.e.remove(chunkcoordinates);
                 this.f.remove(chunk);
             }
+            // CraftBukkit end
 
             if (this.d != null) {
                 this.d.a();
