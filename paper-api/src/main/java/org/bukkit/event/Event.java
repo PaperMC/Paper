@@ -242,6 +242,13 @@ public abstract class Event {
         PLAYER_DROP_ITEM (Category.PLAYER),
 
         /**
+         * Called when a player picks an item up off the ground
+         *
+         * @see org.bukkit.event.player.PlayerPickupItemEvent
+         */
+        PLAYER_PICKUP_ITEM (Category.PLAYER),
+
+        /**
          * BLOCK EVENTS
          */
 
@@ -445,7 +452,7 @@ public abstract class Event {
          * @todo: add javadoc see comment
          */
         ITEM_SPAWN (Category.WORLD),
-        
+
         /**
          * Called when a world is saved
          * 
