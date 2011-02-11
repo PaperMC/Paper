@@ -331,6 +331,13 @@ public abstract class Event {
         LEAVES_DECAY (Category.BLOCK),
 
         /**
+         * Called when a sign is changed
+         *
+         * @see org.bukkit.event.block.SignChangeEvent
+         */
+        SIGN_CHANGE (Category.BLOCK),
+
+        /**
          * Called when a liquid attempts to flow into a block which already
          * contains a "breakable" block, such as redstone wire
          *

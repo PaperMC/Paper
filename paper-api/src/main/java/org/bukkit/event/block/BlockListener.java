@@ -95,6 +95,14 @@ public class BlockListener implements Listener {
     }
 
     /**
+     * Called when a sign is changed
+     *
+     * @param event Relevant event details
+     */
+    public void onSignChange(SignChangeEvent event) {
+    }
+
+    /**
      * Called when a block is destroyed from burning
      *
      * @param event Relevant event details
