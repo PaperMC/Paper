@@ -4,9 +4,12 @@ import java.util.List;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftItemDrop;
+import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+import org.bukkit.event.player.PlayerDropItemEvent;
 // CraftBukkit end
 
 public abstract class EntityHuman extends EntityLiving {
@@ -215,6 +218,22 @@ public abstract class EntityHuman extends EntityLiving {
                 entityitem.motY += (double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.1F);
                 entityitem.motZ += Math.sin((double) f1) * (double) f;
             }
+
+            // CraftBukkit start
+            Player player = (Player)this.getBukkitEntity();
+            CraftServer server = ((WorldServer)world).getServer();
+            CraftItemDrop drop = new CraftItemDrop(server, entityitem);
+            PlayerDropItemEvent event = new PlayerDropItemEvent(player, drop);
+            server.getPluginManager().callEvent(event);
+
+            if (event.isCancelled()) {
+                org.bukkit.inventory.ItemStack stack = drop.getItemStack();
+                stack.setAmount(1);
+                player.getInventory().addItem(stack);
+
+                return;
+            }
+            // CraftBukkit end
 
             this.a(entityitem);
         }
