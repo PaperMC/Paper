@@ -63,6 +63,14 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
     }
 
     /**
+     * Sets the amount of damage caused by the Block
+     * @return The amount of damage caused by the Block
+     */
+    public void setDamage(int damage) {
+        this.damage = damage;
+    }
+
+    /**
      * Gets the cause of the damage.
      * @return A DamageCause value detailing the cause of the damage.
      */
