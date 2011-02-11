@@ -196,20 +196,18 @@ public class ChunkProviderServer implements IChunkProvider {
 
     public boolean a() {
         if (!this.g.C) {
-            for (int i = 0; i < 100; ++i) {
-                if (!this.a.isEmpty()) {
-                    // CraftBukkit start
-                    long chunkcoordinates = this.a.popFirst();
-                    Chunk chunk = e.get(chunkcoordinates);
-                    if (chunk == null) continue;
-                    // CraftBukkit end
-                    chunk.e();
-                    this.b(chunk);
-                    this.a(chunk);
-                    this.a.remove(chunkcoordinates);
-                    this.e.remove(chunkcoordinates);
-                    this.f.remove(chunk);
-                }
+            while (!this.a.isEmpty()) {
+                // CraftBukkit start
+                long chunkcoordinates = this.a.popFirst();
+                Chunk chunk = e.get(chunkcoordinates);
+                if (chunk == null) continue;
+                // CraftBukkit end
+                chunk.e();
+                this.b(chunk);
+                this.a(chunk);
+                this.a.remove(chunkcoordinates);
+                this.e.remove(chunkcoordinates);
+                this.f.remove(chunk);
             }
 
             if (this.d != null) {

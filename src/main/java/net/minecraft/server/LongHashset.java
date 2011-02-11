@@ -32,7 +32,7 @@ public class LongHashset<V> extends LongHash<V> {
                     return;
                 }
             }
-            outer[0] = inner = Arrays.copyOf(inner, i+1);
+            outer[outerIdx] = inner = Arrays.copyOf(inner, i+1);
             inner[i] = key;
             count++;
         }
@@ -82,12 +82,14 @@ public class LongHashset<V> extends LongHash<V> {
                 count--;
                 long ret = inner[inner.length - 1];
                 outer[i] = Arrays.copyOf(inner, inner.length - 1);
+                System.err.println("Removing chunk (" + msw(ret) + ", " + lsw(ret) + ")");
                 return ret;
+                
             }
         }
         return 0;
     }
-
+    
     public long[] keys() {
         int index = 0;
         long ret[] = new long[count];
