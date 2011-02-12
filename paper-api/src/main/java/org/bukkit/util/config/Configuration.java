@@ -120,4 +120,13 @@ public class Configuration extends ConfigurationNode {
             throw new ConfigurationException("Root document must be an key-value structure");
         }
     }
+    
+    /**
+     * This method returns an empty ConfigurationNode for using as a 
+     * default in methods that select a node from a node list.
+     * @return
+     */
+    public static ConfigurationNode getEmptyNode() {
+        return new ConfigurationNode(new HashMap<String, Object>());
+    }
 }

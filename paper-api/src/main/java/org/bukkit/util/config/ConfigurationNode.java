@@ -13,7 +13,7 @@ import java.util.Map;
 public class ConfigurationNode {
     protected Map<String, Object> root;
     
-    ConfigurationNode(Map<String, Object> root) {
+    protected ConfigurationNode(Map<String, Object> root) {
         this.root = root;
     }
     
@@ -476,6 +476,35 @@ public class ConfigurationNode {
             return (Boolean)o;
         } else {
             return null;
+        }
+    }
+    
+    /**
+     * Remove the property at a location. This will override existing
+     * configuration data to have it conform to key/value mappings.
+     * 
+     * @param path
+     */
+    @SuppressWarnings("unchecked")
+    public void removeProperty(String path) {
+        if (!path.contains(".")) {
+            root.remove(path);
+            return;
+        }
+        
+        String[] parts = path.split("\\.");
+        Map<String, Object> node = root;
+        
+        for (int i = 0; i < parts.length; i++) {
+            Object o = node.get(parts[i]);
+            
+            // Found our target!
+            if (i == parts.length - 1) {
+                node.remove(parts[i]);
+                return;
+            }
+            
+            node = (Map<String, Object>)o;
         }
     }
 }
