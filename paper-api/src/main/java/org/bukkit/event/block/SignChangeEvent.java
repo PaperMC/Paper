@@ -19,12 +19,20 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
     }
 
     /**
+     * Gets the player for this event
+     *
+     * @return Player player
+     */
+    public Player getPlayer() {
+        return player;
+    }
+
+    /**
      * Gets all of the text lines from this event
      *
      * @return String[] of the event's text lines
      */
-    public String[] getLines()
-    {
+    public String[] getLines() {
         return lines;
     }
 
