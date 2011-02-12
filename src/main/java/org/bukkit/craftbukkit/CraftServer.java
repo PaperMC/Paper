@@ -148,7 +148,7 @@ public final class CraftServer implements Server {
     }
 
     public int getMaxPlayers() {
-        return server.getMaxPlayers();
+        return server.e;
     }
 
     public PluginManager getPluginManager() {

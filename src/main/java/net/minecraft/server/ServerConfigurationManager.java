@@ -29,7 +29,7 @@ public class ServerConfigurationManager {
     public List b = new ArrayList();
     public MinecraftServer c; // Craftbukkit - public
     // public PlayerManager d; // Craftbukkit - removed!
-    private int e;
+    public int e; // Craftbukkit - public
     private Set f = new HashSet();
     private Set g = new HashSet();
     private Set h = new HashSet();
@@ -40,10 +40,6 @@ public class ServerConfigurationManager {
 
     // CraftBukkit start
     private CraftServer server;
-
-    public int getMaxPlayers() {
-        return this.e;
-    }
 
     public ServerConfigurationManager(MinecraftServer minecraftserver) {
         minecraftserver.server = new CraftServer(minecraftserver, this);
