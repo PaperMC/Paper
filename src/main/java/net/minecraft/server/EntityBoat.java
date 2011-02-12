@@ -27,6 +27,7 @@ public class EntityBoat extends Entity {
     private double ak;
     private double al;
     private double am;
+    public double maxSpeed = 0.4D; // CraftBukkit
 
     // CraftBukkit start
     public void c(Entity entity) {
@@ -219,7 +220,7 @@ public class EntityBoat extends Entity {
                 this.motZ += this.passenger.motZ * 0.2D;
             }
 
-            d4 = 0.4D;
+            d4 = this.maxSpeed; // CraftBukkit
             if (this.motX < -d4) {
                 this.motX = -d4;
             }

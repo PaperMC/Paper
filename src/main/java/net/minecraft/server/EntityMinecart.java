@@ -31,13 +31,14 @@ public class EntityMinecart extends Entity implements IInventory {
     private double at;
 
     // CraftBukkit start
-    private boolean slowWhenEmpty = true;
-    private double derailedX = 0.5;
-    private double derailedY = 0.5;
-    private double derailedZ = 0.5;
-    private double flyingX = 0.94999998807907104;
-    private double flyingY = 0.94999998807907104;
-    private double flyingZ = 0.94999998807907104;
+    public boolean slowWhenEmpty = true;
+    public double derailedX = 0.5;
+    public double derailedY = 0.5;
+    public double derailedZ = 0.5;
+    public double flyingX = 0.95;
+    public double flyingY = 0.95;
+    public double flyingZ = 0.95;
+    public double maxSpeed = 0.4D;
 
     public ItemStack[] getContents() {
         return this.al;
@@ -224,7 +225,7 @@ public class EntityMinecart extends Entity implements IInventory {
                 --j;
             }
 
-            double d4 = 0.4D;
+            double d4 = this.maxSpeed; // CraftBukkit
             boolean flag = false;
 
             d0 = 0.0078125D;
@@ -326,7 +327,9 @@ public class EntityMinecart extends Entity implements IInventory {
                     this.a(this.locX, this.locY + (double) aint[1][1], this.locZ);
                 }
 
-                if (this.passenger != null) {
+                // CraftBukkit start
+                if (this.passenger != null || !slowWhenEmpty) {
+                // CraftBukkit end
                     this.motX *= 0.996999979019165D;
                     this.motY *= 0.0D;
                     this.motZ *= 0.996999979019165D;
@@ -412,16 +415,20 @@ public class EntityMinecart extends Entity implements IInventory {
                 }
 
                 if (this.onGround) {
-                    this.motX *= 0.5D;
-                    this.motY *= 0.5D;
-                    this.motZ *= 0.5D;
+                    // CraftBukkit start
+                    this.motX *= this.derailedX;
+                    this.motY *= this.derailedY;
+                    this.motZ *= this.derailedZ;
+                    // CraftBukkit start
                 }
 
                 this.c(this.motX, this.motY, this.motZ);
                 if (!this.onGround) {
-                    this.motX *= 0.949999988079071D;
-                    this.motY *= 0.949999988079071D;
-                    this.motZ *= 0.949999988079071D;
+                    // CraftBukkit start
+                    this.motX *= flyingX;
+                    this.motY *= flyingY;
+                    this.motZ *= flyingZ;
+                    // CraftBukkit start
                 }
             }
 
