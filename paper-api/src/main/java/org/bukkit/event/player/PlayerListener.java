@@ -131,6 +131,14 @@ public class PlayerListener implements Listener {
     }
 
     /**
+     * Called when a player picks an item up off the ground
+     *
+     * @param event Relevant event details
+     */
+    public void onPlayerPickupItem(PlayerPickupItemEvent event) {
+    }
+
+    /**
      * Called when a player toggles sneak mode
      *
      * @param event Relevant event details
