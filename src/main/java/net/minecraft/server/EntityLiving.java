@@ -480,7 +480,7 @@ public abstract class EntityLiving extends Entity {
             server.getPluginManager().callEvent(event);
 
             if (!event.isCancelled()){
-                this.a((Entity) null, i);
+                this.a((Entity) null, event.getDamage());
             }
             // CraftBukkit end
 
