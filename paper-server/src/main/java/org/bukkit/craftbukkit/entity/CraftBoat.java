@@ -17,6 +17,16 @@ public class CraftBoat extends CraftVehicle implements Boat {
         boat = entity;
     }
 
+    public double getMaxSpeed() {
+        return boat.maxSpeed;
+    }
+
+    public void setMaxSpeed(double speed) {
+        if (speed >= 0D) {
+            boat.maxSpeed = speed;
+        }
+    }
+
     @Override
     public String toString() {
         return "CraftBoat";
