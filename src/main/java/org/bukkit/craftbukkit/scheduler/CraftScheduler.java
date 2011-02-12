@@ -6,6 +6,8 @@ import java.util.Iterator;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.plugin.Plugin;
@@ -105,7 +107,6 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
 
     }
 
-
     // If the main thread cannot obtain the lock, it doesn't wait
     public void mainThreadHeartbeat(long currentTick) {
         if (mainThreadLock.tryLock()) {
@@ -175,6 +176,15 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
             schedulerQueue.notify();
         }
         return newTask.getIdNumber();
+    }
+
+    public <T> Future<T> callSyncMethod(Plugin plugin, Callable<T> task) {
+        CraftFuture<T> craftFuture = new CraftFuture<T>(this, task);
+        synchronized(craftFuture) {
+            int taskId = scheduleSyncDelayedTask(plugin, craftFuture);
+            craftFuture.setTaskId(taskId);
+        }
+        return craftFuture;
     }
 
     public void cancelTask(int taskId) {
