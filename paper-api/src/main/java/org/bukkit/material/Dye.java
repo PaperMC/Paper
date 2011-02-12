@@ -7,7 +7,7 @@ import org.bukkit.Material;
 /**
  * Represents dye
  */
-public class Dye extends MaterialData {
+public class Dye extends MaterialData implements Colorable {
     public Dye(final int type) {
         super(type);
     }

@@ -7,7 +7,7 @@ import org.bukkit.Material;
 /**
  * Represents a Wool/Cloth block
  */
-public class Wool extends MaterialData {
+public class Wool extends MaterialData implements Colorable {
     public Wool(final int type) {
         super(type);
     }

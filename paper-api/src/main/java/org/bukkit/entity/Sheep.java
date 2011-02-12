@@ -2,6 +2,7 @@
  * 
  */
 package org.bukkit.entity;
+import org.bukkit.material.Colorable;
 
 /**
  * Represents a Sheep.
@@ -9,6 +10,6 @@ package org.bukkit.entity;
  * @author Cogito
  *
  */
-public interface Sheep extends Animals {
+public interface Sheep extends Animals, Colorable {
 
 }
