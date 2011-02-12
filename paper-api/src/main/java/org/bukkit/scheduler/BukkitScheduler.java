@@ -1,6 +1,8 @@
 package org.bukkit.scheduler;
 
 import org.bukkit.plugin.Plugin;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 
 public interface BukkitScheduler {
 
@@ -69,6 +71,19 @@ public interface BukkitScheduler {
      * @return int Task id number (-1 if scheduling failed)
      */
     public int scheduleAsyncRepeatingTask(Plugin plugin, Runnable task, long delay, long period);
+
+    /**
+     * Calls a method on the main thread and returns a Future object
+     * This task will be executed by the main server thread
+     *
+     * Note:  The Future.get() methods must NOT be called from the main thread
+     * Note2: There is at least an average of 10ms latency until the isDone() method returns true
+     *
+     * @param Plugin Plugin that owns the task
+     * @param Callable Task to be executed
+     * @return Future Future object related to the task
+     */
+    public <T> Future<T> callSyncMethod(Plugin plugin, Callable<T> task);
 
     /**
      * Removes task from scheduler
