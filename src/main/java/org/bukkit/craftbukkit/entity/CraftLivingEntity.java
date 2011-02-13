@@ -9,11 +9,18 @@ import net.minecraft.server.EntitySnowball;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 
+import org.bukkit.block.Block;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Egg;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Snowball;
 import org.bukkit.entity.Vehicle;
+import org.bukkit.util.BlockIterator;
+
+import java.util.List;
+import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     private EntityLiving entity;
@@ -62,6 +69,53 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         EntitySnowball snowball = new EntitySnowball(world, entity);
         world.a(snowball);
         return (Snowball) snowball.getBukkitEntity();
+    }
+
+    public double getEyeHeight() {
+        return 1.0D;
+    }
+
+    public double getEyeHeight(boolean ignoreSneaking) {
+        return getEyeHeight();
+    }
+
+    private List<Block> getLineOfSight(HashSet<Byte> transparent, int maxDistance, int maxLength) {
+        if (maxDistance > 120) {
+            maxDistance = 120;
+        }
+        ArrayList<Block> blocks = new ArrayList();
+        Iterator<Block> itr = new BlockIterator(this, maxDistance);
+        while (itr.hasNext()) {
+            Block block = itr.next();
+            blocks.add(block);
+            if (maxLength != 0 && blocks.size() > maxLength) {
+                blocks.remove(0);
+            }
+            int id = block.getTypeId();
+            if (transparent == null) {
+                if (id != 0) {
+                    break;
+                }
+            } else {
+                if (!transparent.contains((byte)id)) {
+                    break;
+                }
+            }
+        }
+        return blocks;
+    }
+
+    public List<Block> getLineOfSight(HashSet<Byte> transparent, int maxDistance) {
+        return getLineOfSight(transparent, maxDistance, 0);
+    }
+
+    public Block getTargetBlock(HashSet<Byte> transparent, int maxDistance) {
+        List<Block> blocks = getLineOfSight(transparent, maxDistance, 1);
+        return blocks.get(0);
+    }
+
+    public List<Block> getLastTwoTargetBlocks(HashSet<Byte> transparent, int maxDistance) {
+        return getLineOfSight(transparent, maxDistance, 2);
     }
 
     public Arrow shootArrow() {
