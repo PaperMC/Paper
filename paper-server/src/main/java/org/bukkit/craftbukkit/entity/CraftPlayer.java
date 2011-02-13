@@ -58,6 +58,22 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         return entity;
     }
 
+    public double getEyeHeight() {
+        return getEyeHeight(false);
+    }
+
+    public double getEyeHeight(boolean ignoreSneaking) {
+        if(ignoreSneaking) {
+            return 1.62D;
+        } else {
+            if (isSneaking()) {
+                return 1.42D;
+            } else {
+                return 1.62D;
+            }
+        }
+    }
+
     public void setHandle(final EntityPlayer entity) {
         super.setHandle((EntityHuman) entity);
         this.entity = entity;
