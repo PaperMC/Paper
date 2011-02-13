@@ -245,8 +245,12 @@ public class EntityEgg extends Entity {
                             break;
                     }
 
-                    entity.c(this.locX, this.locY, this.locZ, this.yaw, 0.0F);
-                    this.world.a(entity);
+                    // The world we're spawning in accepts this creature
+                    boolean isAnimal = entity instanceof EntityAnimal || entity instanceof EntityWaterAnimal;
+                    if ((isAnimal && this.world.L) || (!isAnimal && this.world.K)) {
+                        entity.c(this.locX, this.locY, this.locZ, this.yaw, 0.0F);
+                        this.world.a(entity);
+                    }
                 }
             }
             // CraftBukkit end

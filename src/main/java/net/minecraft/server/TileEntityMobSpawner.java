@@ -49,6 +49,13 @@ public class TileEntityMobSpawner extends TileEntity {
                         return;
                     }
 
+                    // CraftBukkit start - The world we're spawning in accepts this creature
+                    boolean isAnimal = entityliving instanceof EntityAnimal || entityliving instanceof EntityWaterAnimal;
+                    if ((isAnimal && !this.a.L) || (!isAnimal && !this.a.K)) {
+                        return;
+                    }
+                    // CraftBukkit end
+
                     int j = this.a.a(entityliving.getClass(), AxisAlignedBB.b((double) this.b, (double) this.c, (double) this.d, (double) (this.b + 1), (double) (this.c + 1), (double) (this.d + 1)).b(8.0D, 4.0D, 8.0D)).size();
 
                     if (j >= 6) {

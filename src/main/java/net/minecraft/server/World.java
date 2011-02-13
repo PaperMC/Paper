@@ -61,8 +61,8 @@ public class World implements IBlockAccess {
     public boolean x;
     private ArrayList I = new ArrayList();
     private int J = 0;
-    private boolean K = true;
-    private boolean L = true;
+    public boolean K = true; // CraftBukkit private->public
+    public boolean L = true; // CraftBukkit private->public
     static int y = 0;
     private Set M = new HashSet();
     private int N;
@@ -1439,7 +1439,11 @@ public class World implements IBlockAccess {
     }
 
     public void f() {
-        SpawnerCreature.a(this, this.K, this.L);
+        // CraftBukkit start -- Only call spawner if we have players online and the world allows for mobs or animals
+        if ((this.K || this.L) && (this instanceof WorldServer && ((WorldServer) this).getServer().getHandle().b.size() > 0))
+            SpawnerCreature.a(this, this.K, this.L);
+        // CraftBukkit end
+
         this.G.a();
         int i = this.a(1.0F);
 

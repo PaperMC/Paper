@@ -47,9 +47,11 @@ public class WorldServer extends World implements BlockChangeDelegate {
     }
 
     public void a(Entity entity, boolean flag) {
-        if (!this.D.m && (entity instanceof EntityAnimal || entity instanceof EntityWaterAnimal)) {
-            entity.q();
-        }
+        // CraftBukkit start -- We prevent spawning in general, so this butching is not needed
+        //if (!this.D.m && (entity instanceof EntityAnimal || entity instanceof EntityWaterAnimal)) {
+        //    entity.q();
+        //}
+        // CraftBukkit end
 
         if (entity.passenger == null || !(entity.passenger instanceof EntityHuman)) {
             super.a(entity, flag);
