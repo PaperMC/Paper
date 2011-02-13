@@ -127,6 +127,19 @@ public class Vector implements Cloneable {
     }
 
     /**
+     * Copies another vector
+     *
+     * @param vec
+     * @return the same vector
+     */
+    public Vector copy(Vector vec) {
+        x = vec.x;
+        y = vec.y;
+        z = vec.z;
+        return this;
+    }
+
+    /**
      * Gets the magnitude of the vector, defined as sqrt(x^2+y^2+z^2). The value
      * of this method is not cached and uses a costly square-root function, so
      * do not repeatedly call this method to get the vector's magnitude. NaN

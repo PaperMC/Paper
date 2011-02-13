@@ -175,6 +175,26 @@ public class Location implements Cloneable {
         return pitch;
     }
 
+    /**
+     * Gets a Vector pointing in the direction that this Location is facing
+     *
+     * @return Vector
+     */
+    public Vector getDirection() {
+        Vector vector = new Vector();
+
+        double rotX = this.getYaw();
+        double rotY = this.getPitch();
+
+        vector.setY(-Math.sin(Math.toRadians(rotY)));
+
+        double h = Math.cos(Math.toRadians(rotY));
+        vector.setX(-h*Math.sin(Math.toRadians(rotX)));
+        vector.setZ(h*Math.cos(Math.toRadians(rotX)));
+
+        return vector;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {
