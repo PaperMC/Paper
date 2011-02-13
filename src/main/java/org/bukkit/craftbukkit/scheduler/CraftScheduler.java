@@ -20,6 +20,7 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
     private final CraftThreadManager craftThreadManager = new CraftThreadManager();
 
     private final LinkedList<Runnable> mainThreadQueue = new LinkedList<Runnable>();
+    private final LinkedList<Runnable> syncedTasks = new LinkedList<Runnable>();
 
     private final TreeMap<CraftTask,Boolean> schedulerQueue = new TreeMap<CraftTask,Boolean>();
 
@@ -111,10 +112,13 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
             try {
                 this.currentTick = currentTick;
                 while (!mainThreadQueue.isEmpty()) {
-                    mainThreadQueue.removeFirst().run();
+                    syncedTasks.addLast(mainThreadQueue.removeFirst());
                 }
             } finally {
                 mainThreadLock.unlock();
+            }
+            while(!syncedTasks.isEmpty()) {
+                syncedTasks.removeFirst().run();
             }
         }
     }
