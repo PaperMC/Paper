@@ -104,4 +104,18 @@ public interface BukkitScheduler {
      */
     public void cancelAllTasks();
 
+    /**
+     * Is the task currently running.
+     * 
+     * A repeating task might not be running currently, but will be running in the future.
+     * A task that has finished, and does not repeat, will not be running ever again.
+     * 
+     * Explicitly, a task is running if there exists a thread for it, and that thread is alive.
+     * 
+     * @param taskId the task to check.
+     * 
+     * @return if the task is currently running.
+     */
+    public boolean isCurrentlyRunning(int taskId);
+
 }
