@@ -53,6 +53,10 @@ public class CraftWorker implements Runnable {
         t.interrupt();
     }
 
+    public boolean isAlive() {
+        return t.isAlive();
+    }
+
     private static int getNextHashId() {
         synchronized (hashIdCounterSync) {
             return hashIdCounter++;

@@ -4,7 +4,7 @@ import java.lang.Comparable;
 
 import org.bukkit.plugin.Plugin;
 
-public class CraftTask implements Comparable {
+public class CraftTask implements Comparable<Object> {
 
     private final Runnable task;
     private final boolean syncTask;
