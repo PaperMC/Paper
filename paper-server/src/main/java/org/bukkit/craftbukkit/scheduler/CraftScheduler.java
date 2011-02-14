@@ -210,7 +210,7 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
                 }
             }
         }
-        craftThreadManager.interruptTask(plugin);
+        craftThreadManager.interruptTasks(plugin);
     }
 
     public void cancelAllTasks() {
@@ -220,4 +220,7 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
         craftThreadManager.interruptAllTasks();
     }
 
+    public boolean isCurrentlyRunning(int taskId){
+        return craftThreadManager.isAlive(taskId);
+    }
 }
