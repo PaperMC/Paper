@@ -118,6 +118,18 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         return entity.id;
     }
 
+    public int getFireTicks() {
+        return entity.fireTicks;
+    }
+
+    public int getMaxFireTicks() {
+        return entity.maxFireTicks;
+    }
+
+    public void setFireTicks(int ticks) {
+        entity.fireTicks = ticks;
+    }
+
     public Entity getHandle() {
         return entity;
     }
