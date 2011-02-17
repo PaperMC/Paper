@@ -1,42 +1,42 @@
 package org.bukkit.block;
 
-import org.bukkit.entity.MobType;
+import org.bukkit.entity.CreatureType;
+
 
 /**
- * Represents a mob spawner.
+ * Represents a creature spawner.
  * 
  * @author sk89q
- * 
- * @deprecated
+ * @author Cogito
  */
-public interface MobSpawner extends BlockState {
+public interface CreatureSpawner extends BlockState {
     /**
-     * Get the spawner's mob type.
+     * Get the spawner's creature type.
      * 
      * @return
      */
-    public MobType getMobType();
+    public CreatureType getCreatureType();
+    
+    /**
+     * Set the spawner creature type.
+     * 
+     * @param mobType
+     */
+    public void setCreatureType(CreatureType creatureType);
+    
+    /**
+     * Get the spawner's creature type.
+     * 
+     * @return
+     */
+    public String getCreatureTypeId();
     
     /**
      * Set the spawner mob type.
      * 
-     * @param mobType
+     * @param creatureType
      */
-    public void setMobType(MobType mobType);
-    
-    /**
-     * Get the spawner's mob type.
-     * 
-     * @return
-     */
-    public String getMobTypeId();
-    
-    /**
-     * Set the spawner mob type.
-     * 
-     * @param mobType
-     */
-    public void setMobTypeId(String mobType);
+    public void setCreatureTypeId(String creatureType);
     
     /**
      * Get the spawner's delay.

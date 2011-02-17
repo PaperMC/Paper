@@ -3,11 +3,8 @@ package org.bukkit.entity;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
-/**
- * @deprecated Should be using CreatureType
- *
- */
-public enum MobType {
+
+public enum CreatureType {
     CHICKEN("Chicken"),
     COW("Cow"),
     CREEPER("Creeper"),
@@ -22,16 +19,16 @@ public enum MobType {
 
     private String name;
 
-    private static final Map<String, MobType> mapping
-            = new HashMap<String, MobType>();
+    private static final Map<String, CreatureType> mapping
+            = new HashMap<String, CreatureType>();
 
     static {
-        for (MobType type : EnumSet.allOf(MobType.class)) {
+        for (CreatureType type : EnumSet.allOf(CreatureType.class)) {
             mapping.put(type.name, type);
         }
     }
 
-    private MobType(String name) {
+    private CreatureType(String name) {
         this.name = name;
     }
 
@@ -39,7 +36,7 @@ public enum MobType {
         return name;
     }
 
-    public static MobType fromName(String name) {
+    public static CreatureType fromName(String name) {
         return mapping.get(name);
     }
 }

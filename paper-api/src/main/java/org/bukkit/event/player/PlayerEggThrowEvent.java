@@ -1,5 +1,6 @@
 package org.bukkit.event.player;
 
+import org.bukkit.entity.CreatureType;
 import org.bukkit.entity.Egg;
 import org.bukkit.entity.MobType;
 import org.bukkit.entity.Player;
@@ -13,10 +14,10 @@ import org.bukkit.entity.Player;
 public class PlayerEggThrowEvent extends PlayerEvent {
     private Egg egg;
     private boolean hatching;
-    private MobType hatchType;
+    private CreatureType hatchType;
     private byte numHatches;
 
-    public PlayerEggThrowEvent(Type type, Player player, Egg egg, boolean hatching, byte numHatches, MobType hatchType) {
+    public PlayerEggThrowEvent(Type type, Player player, Egg egg, boolean hatching, byte numHatches, CreatureType hatchType) {
         super(type, player);
         this.egg = egg;
         this.hatching = hatching;
@@ -24,6 +25,13 @@ public class PlayerEggThrowEvent extends PlayerEvent {
         this.hatchType = hatchType;
     }
 
+    public PlayerEggThrowEvent(Type type, Player player, Egg egg, boolean hatching, byte numHatches, MobType hatchType) {
+        super(type, player);
+        this.egg = egg;
+        this.hatching = hatching;
+        this.numHatches = numHatches;
+        this.hatchType = CreatureType.fromName(hatchType.getName());
+    }
     /**
      * Get the egg.
      *
@@ -59,7 +67,7 @@ public class PlayerEggThrowEvent extends PlayerEvent {
      * @return The type of the mob being hatched by the egg
      */
     public MobType getHatchType() {
-        return hatchType;
+        return MobType.fromName(hatchType.getName());
     }
 
     /**
@@ -67,8 +75,19 @@ public class PlayerEggThrowEvent extends PlayerEvent {
      *
      * @param hatchType The type of the mob being hatched by the egg
      */
-    public void setHatchType(MobType hatchType) {
+    public void setHatchType(CreatureType hatchType) {
         this.hatchType = hatchType;
+    }
+
+    /**
+     * Change the type of mob being hatched by the egg
+     *
+     * @param hatchType The type of the mob being hatched by the egg
+     * 
+     * @deprecated
+     */
+    public void setHatchType(MobType hatchType) {
+        this.hatchType = CreatureType.fromName(hatchType.getName());
     }
 
     /**
