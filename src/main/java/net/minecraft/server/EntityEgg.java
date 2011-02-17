@@ -190,7 +190,7 @@ public class EntityEgg extends Entity {
             if (!hatching) {
                 numHatching = 0;
             }
-            CreatureType hatchingType = CreatureType.CHICKEN;
+            MobType hatchingType = MobType.CHICKEN;
 
             if (this.ak instanceof EntityPlayer) {
                 CraftServer server = ((WorldServer) this.world).getServer();
