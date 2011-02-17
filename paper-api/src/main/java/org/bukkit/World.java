@@ -5,6 +5,8 @@ import java.util.List;
 import org.bukkit.block.Block;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
+import org.bukkit.entity.Creature;
+import org.bukkit.entity.CreatureType;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemDrop;
 import org.bukkit.entity.LivingEntity;
@@ -236,6 +238,16 @@ public interface World {
      * @return
      */
     public Boat spawnBoat(Location loc);
+
+    /**
+     * Spawn a creature at the given location.
+     * 
+     * @param loc The location to spawn at.
+     * @param creatureType The creature to spawn.
+     * 
+     * @return The Creature if it was spawned, null otherwise.
+     */
+    public Creature spawnCreature(Location loc, CreatureType creatureType);
 
     /**
      * Get a list of all entities.
