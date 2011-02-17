@@ -43,10 +43,13 @@ public class PlayerListener implements Listener {
     }
 
     /**
-     * Called when a player attempts to use a command
+     * Called when a player attempts to use a command. Avoid using this
+     * when possible -- it won't be removed, but this is not how you
+     * handle commands.
      *
      * @param event Relevant event details
      */
+    @Deprecated
     public void onPlayerCommand(PlayerChatEvent event) {
     }
 
