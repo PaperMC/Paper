@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import net.minecraft.server.*;
+
 import org.bukkit.entity.Arrow;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Boat;
@@ -275,6 +276,20 @@ public class CraftWorld implements World {
         EntityBoat boat = new EntityBoat(world, loc.getX(), loc.getY(), loc.getZ());
         world.a(boat);
         return (Boat) boat.getBukkitEntity();
+    }
+
+    public Creature spawnCreature(Location loc, CreatureType creatureType) {
+        Creature creature;
+        try {
+            EntityCreature entityCreature = (EntityCreature) EntityTypes.a(creatureType.getName(), world);
+            entityCreature.a(loc.getX(), loc.getY(), loc.getZ());
+            creature = (Creature) CraftEntity.getEntity(server, entityCreature);
+            world.a(entityCreature);
+        } catch (Exception e) {
+            // if we fail, for any reason, return null.
+            creature = null;
+        }
+        return creature;
     }
 
     public boolean generateTree(Location loc, TreeType type) {
