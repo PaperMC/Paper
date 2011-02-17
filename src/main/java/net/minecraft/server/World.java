@@ -17,12 +17,15 @@ import java.util.Set;
 import java.util.TreeSet;
 
 // CraftBukkit start
+import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.Event;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockCanBuildEvent;
 import org.bukkit.event.block.BlockPhysicsEvent;
+import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.entity.MobType;
 // CraftBukkit end
 
 public class World implements IBlockAccess {
@@ -805,6 +808,48 @@ public class World implements IBlockAccess {
         if (entity instanceof EntityHuman) {
             flag = true;
         }
+
+        //CraftBukkit start
+        if (entity instanceof EntityLiving) {
+
+            MobType type = null;
+
+            if (entity instanceof EntityChicken) {
+                type = MobType.CHICKEN;
+            } else if (entity instanceof EntityCow) {
+                type = MobType.COW;
+            } else if (entity instanceof EntityCreeper) {
+                type = MobType.CREEPER;
+            } else if (entity instanceof EntityGhast) {
+                type = MobType.GHAST;
+            } else if (entity instanceof EntityPig) {
+                type = MobType.PIG;
+            } else if (entity instanceof EntityPigZombie) {
+                type = MobType.PIG_ZOMBIE;
+            } else if (entity instanceof EntitySheep) {
+                type = MobType.SHEEP;
+            } else if (entity instanceof EntitySkeleton) {
+                type = MobType.SKELETON;
+            } else if (entity instanceof EntitySpider) {
+                type = MobType.SPIDER;
+            } else if (entity instanceof EntityZombie) {
+                type = MobType.ZOMBIE;
+            }
+
+            if (type != null) {
+                CraftServer server = ((WorldServer)this).getServer();
+                Location loc = new Location(((WorldServer)this).getWorld(), entity.O, entity.P, entity.Q);
+
+                CreatureSpawnEvent cse;
+                cse = new CreatureSpawnEvent(entity.getBukkitEntity(), type, loc);
+                server.getPluginManager().callEvent(cse);
+
+                if (cse.isCancelled()) {
+                    return false;
+                }
+            }
+        }
+        //CraftBukkit end
 
         if (!flag && !this.f(i, j)) {
             return false;
