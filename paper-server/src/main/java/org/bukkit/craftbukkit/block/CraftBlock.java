@@ -278,7 +278,7 @@ public class CraftBlock implements Block {
             case DISPENSER:
                 return new CraftDispenser(this);
             case MOB_SPAWNER:
-                return new CraftMobSpawner(this);
+                return new CraftCreatureSpawner(this);
             case NOTE_BLOCK:
                 return new CraftNoteBlock(this);
             default:
