@@ -58,6 +58,13 @@ public interface Player extends HumanEntity, CommandSender {
     public void kickPlayer(String message);
 
     /**
+     * Says a message (or runs a command).
+     *
+     * @param msg message to print
+     */
+    public void chat(String msg);
+
+    /**
      * Makes the player perform the given command
      *
      * @param command Command to perform
