@@ -110,6 +110,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         entity.a.b(((Packet) (new Packet6SpawnPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()))));
     }
 
+    public void chat(String msg) {
+        entity.a.chat(msg);
+    }
+
     public boolean performCommand(String command) {
         return server.dispatchCommand(this, command);
     }

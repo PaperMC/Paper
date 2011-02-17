@@ -585,36 +585,48 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 }
             }
 
-            if (s.startsWith("/")) {
-                this.c(s);
-            } else {
-                // CraftBukkit start
-                Player player = getPlayer();
-                PlayerChatEvent event = new PlayerChatEvent(Type.PLAYER_CHAT, player, s);
-                server.getPluginManager().callEvent(event);
-                s = String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage());
-                if (event.isCancelled()) {
-                    return;
-                }
-                // CraftBukkit end
-
-                a.info(s);
-                this.d.f.a((Packet) (new Packet3Chat(s)));
-            }
+            // CraftBukkit start
+            chat(s);
+            // CraftBukkit end
         }
     }
+    
+    // CraftBukkit start
+    public boolean chat(String msg) {
+        if (msg.startsWith("/")) {
+            this.c(msg);
+            return true;
+        } else {
+            // CraftBukkit start
+            Player player = getPlayer();
+            PlayerChatEvent event = new PlayerChatEvent(Type.PLAYER_CHAT, player, msg);
+            server.getPluginManager().callEvent(event);
+            msg = String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage());
+            if (event.isCancelled()) {
+                return true;
+            }
+            // CraftBukkit end
+
+            a.info(msg);
+            this.d.f.a((Packet) (new Packet3Chat(msg)));
+        }
+        
+        return false;
+    }
+    // CraftBukkit end
 
     private void c(String s) {
         // CraftBukkit start
         CraftPlayer player = getPlayer();
-        boolean targetPluginFound = server.dispatchCommand(player, s.substring(1));
-        if (targetPluginFound) {
-            return;
-        }
 
         PlayerChatEvent event = new PlayerChatEvent(Type.PLAYER_COMMAND, player, s);
         server.getPluginManager().callEvent(event);
         if (event.isCancelled()) {
+            return;
+        }
+        
+        boolean targetPluginFound = server.dispatchCommand(player, s.substring(1));
+        if (targetPluginFound) {
             return;
         }
         s = event.getMessage();
