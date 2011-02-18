@@ -3,12 +3,15 @@ package net.minecraft.server;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 // CraftBukkit start
+import org.bukkit.ChatColor;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockDamageLevel;
 import org.bukkit.Location;
+import org.bukkit.command.CommandException;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
@@ -624,8 +627,17 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         if (event.isCancelled()) {
             return;
         }
-        
-        boolean targetPluginFound = server.dispatchCommand(player, s.substring(1));
+
+        boolean targetPluginFound = false;
+
+        try {
+            targetPluginFound = server.dispatchCommand(player, s.substring(1));
+        } catch (CommandException ex) {
+            player.sendMessage(ChatColor.RED + "An internal error occured while attempting to perform this command");
+            Logger.getLogger(NetServerHandler.class.getName()).log(Level.SEVERE, null, ex);
+            return;
+        }
+
         if (targetPluginFound) {
             return;
         }
