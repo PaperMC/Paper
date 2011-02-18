@@ -1,7 +1,6 @@
 package org.bukkit.command;
 
 import java.util.List;
-import org.bukkit.entity.Player;
 
 public interface CommandMap {
     /**
@@ -19,10 +18,12 @@ public interface CommandMap {
      */
     public boolean register(String label, String fallbackPrefix, Command command);
 
-    /** Looks for the requested command and executes it if found.
+    /**
+     * Looks for the requested command and executes it if found.
      *
-     *   @param cmdLine command + arguments. Example: "/test abc 123"
-     *   @return targetFound returns false if no target is found.
+     * @param cmdLine command + arguments. Example: "/test abc 123"
+     * @return targetFound returns false if no target is found.
+     * @throws CommandException Thrown when the executor for the given command fails with an unhandled exception
      */
     public boolean dispatch(CommandSender sender, String cmdLine);
 

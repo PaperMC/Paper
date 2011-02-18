@@ -1,7 +1,6 @@
 package org.bukkit.command;
 
 import org.bukkit.ChatColor;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 public final class PluginCommand extends Command {
@@ -14,7 +13,14 @@ public final class PluginCommand extends Command {
     }
 
     public boolean execute(CommandSender sender, String commandLabel, String[] args) {
-        boolean cmdSuccess = owningPlugin.onCommand(sender, this, commandLabel, args);
+        boolean cmdSuccess = false;
+        
+        try {
+            owningPlugin.onCommand(sender, this, commandLabel, args);
+        } catch (Throwable ex) {
+            throw new CommandException("Unhandled exception executing command '" + commandLabel + "' in plugin " + owningPlugin.getDescription().getFullName(), ex);
+        }
+
         if (!cmdSuccess && !usageMessage.isEmpty()) {
             String tmpMsg = usageMessage.replace("<command>", commandLabel);
             String[] usageLines = tmpMsg.split("\\n");

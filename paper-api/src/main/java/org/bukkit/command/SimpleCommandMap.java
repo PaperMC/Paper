@@ -8,7 +8,6 @@ import java.util.Map;
 import org.bukkit.ChatColor;
 import org.bukkit.Server;
 
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 
@@ -74,7 +73,13 @@ public final class SimpleCommandMap implements CommandMap {
         Command target = knownCommands.get(sentCommandLabel);
         boolean isRegisteredCommand = (target != null);
         if (isRegisteredCommand) {
-            target.execute(sender, sentCommandLabel, args);
+            try {
+                target.execute(sender, sentCommandLabel, args);
+            } catch (CommandException ex) {
+                throw ex;
+            } catch (Throwable ex) {
+                throw new CommandException("Unhandled exception executing '" + commandLine + "' in " + target, ex);
+            }
         }
         return isRegisteredCommand;
     }
