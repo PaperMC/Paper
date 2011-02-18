@@ -1,6 +1,7 @@
 
 package org.bukkit;
 
+import org.bukkit.block.Block;
 import org.bukkit.util.Vector;
 
 /**
@@ -43,6 +44,15 @@ public class Location implements Cloneable {
      */
     public World getWorld() {
         return world;
+    }
+
+    /**
+     * Gets the block at the represented location
+     *
+     * @return Block at the represented location
+     */
+    public Block getBlock() {
+        return world.getBlockAt(getBlockX(), getBlockY(), getBlockZ());
     }
 
     /**
