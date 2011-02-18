@@ -52,7 +52,7 @@ public class Location implements Cloneable {
      * @return Block at the represented location
      */
     public Block getBlock() {
-        return world.getBlockAt(getBlockX(), getBlockY(), getBlockZ());
+        return world.getBlockAt(this);
     }
 
     /**

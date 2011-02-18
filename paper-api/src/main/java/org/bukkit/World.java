@@ -34,6 +34,16 @@ public interface World {
      * @return Block at the given location
      */
     public Block getBlockAt(int x, int y, int z);
+    
+    /**
+     * Gets the block at the given location
+     *
+     * This block will always represent the latest state
+     *
+     * @param location Location of the block
+     * @return Block at the given location
+     */
+    public Block getBlockAt(Location location);
 
     /**
      * Gets the block type-id at the given location
@@ -46,12 +56,27 @@ public interface World {
     public int getBlockTypeIdAt(int x, int y, int z);
 
     /**
+     * Gets the block type-id at the given location
+     *
+     * @param location Location of the block
+     * @return TypeId of the block at the given location
+     */
+    public int getBlockTypeIdAt(Location location);
+
+    /**
      * Gets the highest non-air coordinate at the given (x,z) location
      * @param x X-coordinate of the blocks
      * @param z Z-coordinate of the blocks
      * @return Y-coordinate of the highest non-air block
      */
     public int getHighestBlockYAt(int x, int z);
+
+    /**
+     * Gets the highest non-air coordinate at the given location
+     * @param location Location of the blocks
+     * @return Y-coordinate of the highest non-air block
+     */
+    public int getHighestBlockYAt(Location location);
 
     /**
      * Gets the chunk at the given location
@@ -61,6 +86,14 @@ public interface World {
      * @return Chunk at the given location
      */
     public Chunk getChunkAt(int x, int z);
+
+    /**
+     * Gets the chunk at the given location
+     *
+     * @param location Location of the chunk
+     * @return Chunk at the given location
+     */
+    public Chunk getChunkAt(Location location);
 
     /**
      * Gets the chunk which contains the given block
