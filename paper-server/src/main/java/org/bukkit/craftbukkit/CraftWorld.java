@@ -353,6 +353,22 @@ public class CraftWorld implements World {
         return environment;
     }
 
+    public Block getBlockAt(Location location) {
+        return getBlockAt(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+    }
+
+    public int getBlockTypeIdAt(Location location) {
+        return getBlockTypeIdAt(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+    }
+
+    public int getHighestBlockYAt(Location location) {
+        return getHighestBlockYAt(location.getBlockX(), location.getBlockZ());
+    }
+
+    public Chunk getChunkAt(Location location) {
+        return getChunkAt(location.getBlockX() >> 4, location.getBlockZ() >> 4);
+    }
+
     private final class ChunkCoordinate {
         public final int x;
         public final int z;
