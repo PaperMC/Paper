@@ -16,7 +16,7 @@ public final class PluginCommand extends Command {
         boolean cmdSuccess = false;
         
         try {
-            owningPlugin.onCommand(sender, this, commandLabel, args);
+            cmdSuccess = owningPlugin.onCommand(sender, this, commandLabel, args);
         } catch (Throwable ex) {
             throw new CommandException("Unhandled exception executing command '" + commandLabel + "' in plugin " + owningPlugin.getDescription().getFullName(), ex);
         }
