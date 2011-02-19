@@ -63,4 +63,9 @@ public interface Entity {
      * @param ticks
      */
     public void setFireTicks(int ticks);
+    
+    /**
+     * Mark the entity's removal.
+     */
+    public void remove();
 }
