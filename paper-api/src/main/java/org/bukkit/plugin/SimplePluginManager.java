@@ -9,8 +9,9 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.PriorityQueue;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -29,7 +30,18 @@ public final class SimplePluginManager implements PluginManager {
     private final Map<Pattern, PluginLoader> fileAssociations = new HashMap<Pattern, PluginLoader>();
     private final List<Plugin> plugins = new ArrayList<Plugin>();
     private final Map<String, Plugin> lookupNames = new HashMap<String, Plugin>();
-    private final Map<Event.Type, PriorityQueue<RegisteredListener>> listeners = new EnumMap<Event.Type, PriorityQueue<RegisteredListener>>(Event.Type.class);
+    private final Map<Event.Type, SortedSet<RegisteredListener>> listeners = new EnumMap<Event.Type, SortedSet<RegisteredListener>>(Event.Type.class);
+    private final Comparator<RegisteredListener> comparer = new Comparator<RegisteredListener>() {
+        public int compare(RegisteredListener i, RegisteredListener j) {
+            int result = i.getPriority().compareTo(j.getPriority());
+
+            if ((result == 0) && (i != j)) {
+                result = 1;
+            }
+
+            return result;
+        }
+    };
 
     public SimplePluginManager(Server instance) {
         server = instance;
@@ -205,11 +217,10 @@ public final class SimplePluginManager implements PluginManager {
      * @param event Event details
      */
     public void callEvent(Event event) {
-        PriorityQueue<RegisteredListener> eventListeners = listeners.get(event.getType());
+        SortedSet<RegisteredListener> eventListeners = listeners.get(event.getType());
 
         if (eventListeners != null) {
             for (RegisteredListener registration : eventListeners) {
-                // NOTE: no need to check isEnabled as all disabled plugins have their listeners disabled
                 try {
                     registration.callEvent( event );
                 } catch (Throwable ex) {
@@ -228,7 +239,7 @@ public final class SimplePluginManager implements PluginManager {
      * @param plugin Plugin to register
      */
     public void registerEvent(Event.Type type, Listener listener, Priority priority, Plugin plugin) {
-        getEventListeners( type ).offer(new RegisteredListener(listener, priority, plugin, type));
+        getEventListeners( type ).add(new RegisteredListener(listener, priority, plugin, type));
     }
 
     /**
@@ -241,30 +252,23 @@ public final class SimplePluginManager implements PluginManager {
      * @param plugin Plugin to register
      */
     public void registerEvent(Event.Type type, Listener listener, EventExecutor executor, Priority priority, Plugin plugin) {
-        getEventListeners( type ).offer(new RegisteredListener(listener, executor, priority, plugin));
+        getEventListeners( type ).add(new RegisteredListener(listener, executor, priority, plugin));
     }
 
     /**
-     * Returns a PriorityQueue of RegisteredListener for the specified event type creating a new queue if needed
+     * Returns a SortedSet of RegisteredListener for the specified event type creating a new queue if needed
      *
      * @param type EventType to lookup
-     * @return PriorityQueue<RegisteredListener> the looked up or create queue matching the requested type
+     * @return SortedSet<RegisteredListener> the looked up or create queue matching the requested type
      */
-    private PriorityQueue<RegisteredListener> getEventListeners( Event.Type type )
-    {
-        PriorityQueue<RegisteredListener> eventListeners = listeners.get(type);
+    private SortedSet<RegisteredListener> getEventListeners(Event.Type type) {
+        SortedSet<RegisteredListener> eventListeners = listeners.get(type);
 
         if (eventListeners != null) {
             return eventListeners;
         }
 
-        eventListeners = new PriorityQueue<RegisteredListener>(
-            11, new Comparator<RegisteredListener>() {
-                public int compare(RegisteredListener i, RegisteredListener j) {
-                    return i.getPriority().compareTo(j.getPriority());
-                }
-            }
-        );
+        eventListeners = new TreeSet<RegisteredListener>(comparer);
         listeners.put(type, eventListeners);
         return eventListeners;
     }

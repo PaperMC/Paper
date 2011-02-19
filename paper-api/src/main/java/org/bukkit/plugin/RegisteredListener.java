@@ -3,7 +3,6 @@ package org.bukkit.plugin;
 
 import org.bukkit.event.Event;
 import org.bukkit.event.Listener;
-import org.bukkit.plugin.EventExecutor;
 
 /**
  * Stores relevant information for plugin listeners
