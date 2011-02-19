@@ -49,14 +49,14 @@ public class CraftCreatureSpawner extends CraftBlockState implements CreatureSpa
     }
 
     /** 
-     * @deprecated
+     * @deprecated Use getCreatureType() instead.
      */
     public MobType getMobType() {
         return MobType.fromName(spawner.h);
     }
 
     /** 
-     * @deprecated
+     * @deprecated Use setCreatureType() instead.
      */
     public void setMobType(MobType mobType) {
         spawner.h = mobType.getName();
@@ -64,14 +64,14 @@ public class CraftCreatureSpawner extends CraftBlockState implements CreatureSpa
     }
 
     /** 
-     * @deprecated
+     * @deprecated Use getCreatureTypeId() instead.
      */
     public String getMobTypeId() {
         return spawner.h;
     }
 
     /** 
-     * @deprecated
+     * @deprecated Use setCreatureTypeId() instead.
      */
     public void setMobTypeId(String mobType) {
         // Verify input
