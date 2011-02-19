@@ -83,7 +83,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
     public void a(String s) {
         // CraftBukkit start
-        String leaveMessage = "§e" + this.e.name + " left the game.";
+        String leaveMessage = "\u00A7e" + this.e.name + " left the game.";
         PlayerKickEvent kickEvent = new PlayerKickEvent(org.bukkit.event.Event.Type.PLAYER_KICK, server.getPlayer(this.e), s, leaveMessage);
         server.getPluginManager().callEvent(kickEvent);
         if (kickEvent.isCancelled()) {
@@ -551,7 +551,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
     public void a(String s, Object[] aobject) {
         a.info(this.e.name + " lost connection: " + s);
-        this.d.f.a((Packet) (new Packet3Chat("§e" + this.e.name + " left the game.")));
+        this.d.f.a((Packet) (new Packet3Chat("\u00A7e" + this.e.name + " left the game.")));
         this.d.f.c(this.e);
         this.c = true;
     }
@@ -669,10 +669,10 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             if (astring.length >= 3) {
                 s = s.substring(s.indexOf(" ")).trim();
                 s = s.substring(s.indexOf(" ")).trim();
-                s = "§7" + this.e.name + " whispers " + s;
+                s = "\u00A77" + this.e.name + " whispers " + s;
                 a.info(s + " to " + astring[1]);
                 if (!this.d.f.a(astring[1], (Packet) (new Packet3Chat(s)))) {
-                    this.b((Packet) (new Packet3Chat("§cThere\'s no player by that name online.")));
+                    this.b((Packet) (new Packet3Chat("\u00A7cThere\'s no player by that name online.")));
                 }
             }
         } else {
@@ -729,7 +729,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     }
 
     public void b(String s) {
-        this.b((Packet) (new Packet3Chat("§7" + s)));
+        this.b((Packet) (new Packet3Chat("\u00A77" + s)));
     }
 
     public String c() {

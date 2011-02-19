@@ -82,7 +82,7 @@ public class NetLoginHandler extends NetHandler {
             // Craftbukkit start
             netserverhandler.b((Packet) (new Packet1Login("", "", entityplayer.id, entityplayer.world.u, (byte) entityplayer.world.q.g)));
             netserverhandler.b((Packet) (new Packet6SpawnPosition(entityplayer.world.spawnX, entityplayer.world.spawnY, entityplayer.world.spawnZ)));
-            this.e.f.a((Packet) (new Packet3Chat("§e" + entityplayer.name + " joined the game.")));
+            this.e.f.a((Packet) (new Packet3Chat("\u00A7e" + entityplayer.name + " joined the game.")));
             this.e.f.a(entityplayer);
             netserverhandler.a(entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
             this.e.c.a(netserverhandler);
