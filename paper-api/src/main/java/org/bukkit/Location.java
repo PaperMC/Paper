@@ -15,10 +15,28 @@ public class Location implements Cloneable {
     private float pitch;
     private float yaw;
 
+    /**
+     * Constructs a new Location with the given coordinates
+     *
+     * @param world The world in which this location resides
+     * @param x The x-coordinate of this new location
+     * @param y The y-coordinate of this new location
+     * @param z The z-coordinate of this new location
+     */
     public Location(final World world, final double x, final double y, final double z) {
         this(world, x, y, z, 0, 0);
     }
 
+    /**
+     * Constructs a new Location with the given coordinates and direction
+     *
+     * @param world The world in which this location resides
+     * @param x The x-coordinate of this new location
+     * @param y The y-coordinate of this new location
+     * @param z The z-coordinate of this new location
+     * @param yaw The absolute rotation on the x-plane, in degrees
+     * @param pitch The absolute rotation on the y-plane, in degrees
+     */
     public Location(final World world, final double x, final double y, final double z, final float yaw, final float pitch) {
         this.world = world;
         this.x = x;
@@ -242,6 +260,11 @@ public class Location implements Cloneable {
         return "Location{" + "world=" + world + "x=" + x + "y=" + y + "z=" + z + "pitch=" + pitch + "yaw=" + yaw + '}';
     }
 
+    /**
+     * Constructs a new {@link Vector} based on this Location
+     *
+     * @return New Vector containing the coordinates represented by this Location
+     */
     public Vector toVector() {
         return new Vector(x, y, z);
     }
