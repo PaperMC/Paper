@@ -240,7 +240,7 @@ public class Explosion {
             }
 
             if (i1 > 0) {
-                Block.byId[i1].a(this.i, j, k, l, this.i.getData(j, k, l), 0.3F);
+                Block.byId[i1].a(this.i, j, k, l, this.i.getData(j, k, l), event.getYield()); //Modified by Craftbukkit
                 this.i.e(j, k, l, 0);
                 Block.byId[i1].a_(this.i, j, k, l);
             }

@@ -4,7 +4,8 @@ import java.util.List;
 import java.util.Random;
 
 // CraftBukkit start
-import org.bukkit.block.BlockFace;import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.block.BlockFace;
+import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
@@ -114,6 +115,15 @@ public class BlockPressurePlate extends Block {
         if (list.size() > 0) {
             flag1 = true;
         }
+
+        // Craftbukkit start
+        CraftWorld craftWorld = ((WorldServer) world).getWorld();
+        CraftServer server = ((WorldServer) world).getServer();
+        CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
+        BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, flag ? 1 : 0, flag1 ? 1 : 0);
+        server.getPluginManager().callEvent(eventRedstone);
+        flag1 = eventRedstone.getNewCurrent() > 0;
+        // Craftbukkit end
 
         if (flag1 && !flag) {
             world.c(i, j, k, 1);
