@@ -15,6 +15,7 @@ public class EntityExplodeEvent extends EntityEvent implements Cancellable {
     private boolean cancel;
     private Location location;
     private List blocks;
+    private float yield = 0.3F;
 
     public EntityExplodeEvent (Type type, Entity what, Location location, List<Block> blocks) {
         super(type.ENTITY_EXPLODE, what);
@@ -48,4 +49,18 @@ public class EntityExplodeEvent extends EntityEvent implements Cancellable {
         return location;
     }
 
+    /**
+     * Returns the percentage of blocks to drop from this explosion
+     * @return 
+     */
+    public float getYield() {
+        return yield;
+    }
+    
+    /**
+     * Sets the percentage of blocks to drop from this explosion
+     */
+    public void setYield(float yield) {
+        this.yield = yield;
+    }
 }
