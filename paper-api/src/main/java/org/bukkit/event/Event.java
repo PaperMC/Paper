@@ -179,6 +179,13 @@ public abstract class Event {
         PLAYER_COMMAND (Category.PLAYER),
 
         /**
+         * Called when a player early in the command handling process
+         *
+         * @see org.bukkit.event.player.PlayerChatEvent
+         */
+        PLAYER_COMMAND_PREPROCESS (Category.PLAYER),
+
+        /**
          * Called when a player leaves a server
          *
          * @see org.bukkit.event.player.PlayerEvent

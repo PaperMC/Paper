@@ -43,14 +43,21 @@ public class PlayerListener implements Listener {
     }
 
     /**
-     * Called when a player attempts to use a command. Avoid using this
-     * when possible -- it won't be removed, but this is not how you
-     * handle commands.
+     * Called when a player attempts to use a command.
      *
      * @param event Relevant event details
      */
     @Deprecated
     public void onPlayerCommand(PlayerChatEvent event) {
+    }
+
+    /**
+     * Called early in the command handling process. This event is only
+     * for very exceptional cases and you should not normally use it.
+     *
+     * @param event Relevant event details
+     */
+    public void onPlayerCommandPreprocess(PlayerChatEvent event) {
     }
 
     /**

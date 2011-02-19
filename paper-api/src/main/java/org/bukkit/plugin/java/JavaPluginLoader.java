@@ -150,6 +150,11 @@ public final class JavaPluginLoader implements PluginLoader {
                     ((PlayerListener)listener).onPlayerCommand( (PlayerChatEvent)event );
                 }
             };
+        case PLAYER_COMMAND_PREPROCESS:
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
+                    ((PlayerListener)listener).onPlayerCommandPreprocess( (PlayerChatEvent)event );
+                }
+            };
         case PLAYER_CHAT:
             return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((PlayerListener)listener).onPlayerChat( (PlayerChatEvent)event );
