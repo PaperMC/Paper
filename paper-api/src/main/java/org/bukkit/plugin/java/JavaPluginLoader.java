@@ -313,21 +313,6 @@ public final class JavaPluginLoader implements PluginLoader {
             };
 
         // Entity Events
-        case ENTITY_DAMAGEDBY_BLOCK:
-            return new EventExecutor() { public void execute( Listener listener, Event event ) {
-                    ((EntityListener)listener).onEntityDamageByBlock( (EntityDamageByBlockEvent)event );
-                }
-            };
-        case ENTITY_DAMAGEDBY_ENTITY:
-            return new EventExecutor() { public void execute( Listener listener, Event event ) {
-                    ((EntityListener)listener).onEntityDamageByEntity( (EntityDamageByEntityEvent)event );
-                }
-            };
-        case ENTITY_DAMAGEDBY_PROJECTILE:
-            return new EventExecutor() { public void execute( Listener listener, Event event ) {
-                    ((EntityListener)listener).onEntityDamageByProjectile( (EntityDamageByProjectileEvent)event );
-                }
-            };
         case ENTITY_DAMAGED:
             return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((EntityListener)listener).onEntityDamage( (EntityDamageEvent)event );

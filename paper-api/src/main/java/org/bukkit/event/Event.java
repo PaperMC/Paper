@@ -484,28 +484,6 @@ public abstract class Event {
         CREATURE_SPAWN (Category.LIVING_ENTITY),
 
         /**
-         * Called when a LivingEntity is damaged by the environment (for example,
-         * falling or lava)
-         *
-         * @see org.bukkit.event.entity.EntityDamageByBlockEvent
-         */
-        ENTITY_DAMAGEDBY_BLOCK (Category.LIVING_ENTITY),
-
-        /**
-         * Called when a LivingEntity is damaged by another LivingEntity
-         *
-         * @see org.bukkit.event.entity.EntityDamageByEntityEvent
-         */
-        ENTITY_DAMAGEDBY_ENTITY (Category.LIVING_ENTITY),
-
-        /**
-         * Called when a LivingEntity is damaged by a projectile Entity
-         *
-         * @see org.bukkit.event.entity.EntityDamageByProjectileEvent
-         */
-        ENTITY_DAMAGEDBY_PROJECTILE (Category.LIVING_ENTITY),
-
-        /**
          * Called when a LivingEntity is damaged with no source.
          *
          * @see org.bukkit.event.entity.EntityDamageEvent
