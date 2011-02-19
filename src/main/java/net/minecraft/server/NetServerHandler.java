@@ -622,7 +622,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         // CraftBukkit start
         CraftPlayer player = getPlayer();
 
-        PlayerChatEvent event = new PlayerChatEvent(Type.PLAYER_COMMAND, player, s);
+        PlayerChatEvent event = new PlayerChatEvent(Type.PLAYER_COMMAND_PREPROCESS, player, s);
         server.getPluginManager().callEvent(event);
         if (event.isCancelled()) {
             return;
@@ -641,6 +641,14 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         if (targetPluginFound) {
             return;
         }
+
+        // Legacy command handler
+        event = new PlayerChatEvent(Type.PLAYER_COMMAND, player, s);
+        server.getPluginManager().callEvent(event);
+        if (event.isCancelled()) {
+            return;
+        }
+        
         s = event.getMessage();
         player = (CraftPlayer) event.getPlayer();
         EntityPlayer e = player.getHandle();
