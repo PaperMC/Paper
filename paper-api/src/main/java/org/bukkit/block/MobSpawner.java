@@ -7,7 +7,7 @@ import org.bukkit.entity.MobType;
  * 
  * @author sk89q
  * 
- * @deprecated
+ * @deprecated Use CreatureSpawner instead.
  */
 public interface MobSpawner extends BlockState {
     /**

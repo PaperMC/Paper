@@ -84,7 +84,7 @@ public class PlayerEggThrowEvent extends PlayerEvent {
      *
      * @param hatchType The type of the mob being hatched by the egg
      * 
-     * @deprecated
+     * @deprecated Use setHatchType(CreatureType hatchType) instead.
      */
     public void setHatchType(MobType hatchType) {
         this.hatchType = CreatureType.fromName(hatchType.getName());
