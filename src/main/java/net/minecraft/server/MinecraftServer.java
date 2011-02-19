@@ -68,7 +68,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
         }
 
         a.info("Loading properties");
-        this.d = new PropertyManager(new File("server.properties"));
+        this.d = new PropertyManager(options); // Craftbukkit
         String s = this.d.a("server-ip", "");
 
         this.l = this.d.a("online-mode", true);
