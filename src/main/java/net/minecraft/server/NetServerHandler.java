@@ -17,6 +17,7 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.TextWrapper;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockDamageEvent;
@@ -593,7 +594,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             // CraftBukkit end
         }
     }
-    
+
     // CraftBukkit start
     public boolean chat(String msg) {
         if (msg.startsWith("/")) {
@@ -608,12 +609,14 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             if (event.isCancelled()) {
                 return true;
             }
-            // CraftBukkit end
 
             a.info(msg);
-            this.d.f.a((Packet) (new Packet3Chat(msg)));
+            for (final String line: TextWrapper.wrapText(msg)) {
+                this.d.f.a((Packet) (new Packet3Chat(line)));
+            }
+            // CraftBukkit end
         }
-        
+
         return false;
     }
     // CraftBukkit end
