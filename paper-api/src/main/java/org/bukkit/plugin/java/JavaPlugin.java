@@ -40,11 +40,11 @@ public abstract class JavaPlugin implements Plugin {
             ClassLoader cLoader) {
         initialize(pluginLoader, instance, desc, folder, plugin, cLoader);
         
-        System.out.println("Using the stupidly long constructor " + desc.getMain() + "(PluginLoader, Server, PluginDescriptionFile, File, File, ClassLoader) is no longer recommended. Go nag the plugin author of " + desc.getName() + " to remove it! (Nothing is broken, we just like to keep code clean.)");
+        server.getLogger().warning("Using the stupidly long constructor " + desc.getMain() + "(PluginLoader, Server, PluginDescriptionFile, File, File, ClassLoader) is no longer recommended. Go nag the plugin author of " + desc.getName() + " to remove it! (Nothing is broken, we just like to keep code clean.)");
 
         ArrayList<String> authors = desc.getAuthors();
         if (authors.size() > 0) {
-            System.out.println("Hint! It's probably someone called '" + authors.get(0) + "'");
+            server.getLogger().info("Hint! It's probably someone called '" + authors.get(0) + "'");
         }
     }
 
