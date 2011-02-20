@@ -28,6 +28,7 @@ public class CraftWorld implements World {
     private final Environment environment;
     private final CraftServer server;
     private final ChunkProviderServer provider;
+    private HashMap<Integer,CraftChunk> unloadedChunks = new HashMap<Integer, CraftChunk>();
 
     private static final Random rand = new Random();
 
@@ -43,6 +44,15 @@ public class CraftWorld implements World {
         }
 
         server.addWorld(this);
+    }
+
+    public void preserveChunk( CraftChunk chunk ) {
+        chunk.breakLink();
+        unloadedChunks.put( chunk.getX() << 16 + chunk.getZ(), chunk );
+    }
+
+    public CraftChunk popPreservedChunk( int x, int z ) {
+        return unloadedChunks.remove( x << 16 + z );
     }
 
     public Block getBlockAt(int x, int y, int z) {
