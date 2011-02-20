@@ -239,6 +239,9 @@ public final class SimplePluginManager implements PluginManager {
      * @param plugin Plugin to register
      */
     public void registerEvent(Event.Type type, Listener listener, Priority priority, Plugin plugin) {
+        if (!plugin.isEnabled()) {
+            System.out.println("Warning! Plugin '" + plugin.getDescription().getName() + "' (ver " + plugin.getDescription().getVersion() + ") is registering events before it is enabled. It may be misbehaving and the author needs to fix this.");
+        }
         getEventListeners( type ).add(new RegisteredListener(listener, priority, plugin, type));
     }
 
