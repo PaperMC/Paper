@@ -1,6 +1,7 @@
 
 package org.bukkit.craftbukkit;
 
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 
 import net.minecraft.server.WorldServer;
@@ -11,27 +12,38 @@ import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.block.CraftBlock;
 
 public class CraftChunk implements Chunk {
-    private net.minecraft.server.Chunk chunk;
+    private WeakReference<net.minecraft.server.Chunk> weakChunk;
     private final HashMap<Integer, Block> cache = new HashMap<Integer, Block>();
-
+    private WorldServer worldServer;
+    private int x;
+    private int z;
+    
     public CraftChunk(net.minecraft.server.Chunk chunk) {
-        this.chunk = chunk;
+        this.weakChunk = new WeakReference<net.minecraft.server.Chunk>(chunk);
+        worldServer = (WorldServer) getHandle().d;
+        x = getHandle().j;
+        z = getHandle().k;
     }
 
     public World getWorld() {
-        return ((WorldServer) chunk.d).getWorld();
+        return worldServer.getWorld();
     }
 
     public net.minecraft.server.Chunk getHandle() {
-        return chunk;
+        net.minecraft.server.Chunk c = weakChunk.get();
+        if (c == null) {
+            weakChunk = new WeakReference<net.minecraft.server.Chunk>(worldServer.c(x,z));
+            c = weakChunk.get();
+        }
+        return c;
     }
 
     public int getX() {
-        return chunk.j;
+        return x;
     }
 
     public int getZ() {
-        return chunk.k;
+        return z;
     }
 
     @Override
@@ -48,8 +60,5 @@ public class CraftChunk implements Chunk {
         }
         return block;
     }
-
-    public void breakLink() {
-        this.chunk = null;
-    }
 }
+

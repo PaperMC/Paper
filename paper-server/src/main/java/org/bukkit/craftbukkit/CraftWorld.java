@@ -47,12 +47,11 @@ public class CraftWorld implements World {
     }
 
     public void preserveChunk( CraftChunk chunk ) {
-        chunk.breakLink();
-        unloadedChunks.put( chunk.getX() << 16 + chunk.getZ(), chunk );
+        unloadedChunks.put( (chunk.getX() << 16) + chunk.getZ(), chunk );
     }
 
     public CraftChunk popPreservedChunk( int x, int z ) {
-        return unloadedChunks.remove( x << 16 + z );
+        return unloadedChunks.remove( (x << 16) + z );
     }
 
     public Block getBlockAt(int x, int y, int z) {
