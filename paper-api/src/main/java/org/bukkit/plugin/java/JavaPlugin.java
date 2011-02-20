@@ -2,6 +2,7 @@
 package org.bukkit.plugin.java;
 
 import java.io.File;
+import java.util.ArrayList;
 import org.bukkit.Server;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -15,13 +16,14 @@ import org.bukkit.util.config.Configuration;
  */
 public abstract class JavaPlugin implements Plugin {
     private boolean isEnabled = false;
-    private final PluginLoader loader;
-    private final Server server;
-    private final File file;
-    private final PluginDescriptionFile description;
-    private final File dataFolder;
-    private final ClassLoader classLoader;
-    private final Configuration config;
+    private boolean initialized = false;
+    private PluginLoader loader = null;
+    private Server server = null;
+    private File file = null;
+    private PluginDescriptionFile description = null;
+    private File dataFolder = null;
+    private ClassLoader classLoader = null;
+    private Configuration config = null;
 
     /**
      * Constructs a new Java plugin instance
@@ -36,14 +38,15 @@ public abstract class JavaPlugin implements Plugin {
     public JavaPlugin(PluginLoader pluginLoader, Server instance,
             PluginDescriptionFile desc, File folder, File plugin,
             ClassLoader cLoader) {
-        loader = pluginLoader;
-        server = instance;
-        file = plugin;
-        description = desc;
-        dataFolder = folder;
-        classLoader = cLoader;
-        config = new Configuration(new File(dataFolder, "config.yml"));
-        config.load();
+        System.out.println("Using the stupidly long constructor " + desc.getMain() + "(PluginLoader, Server, PluginDescriptionFile, File, File, ClassLoader) is no longer recommended. Go nag the plugin author of " + desc.getName() + " to remove it! (Nothing is broken, we just like to keep code clean.)");
+
+        ArrayList<String> authors = desc.getAuthors();
+        if (authors.size() > 0) {
+            System.out.println("Hint! It's probably someone called '" + authors.get(0) + "'");
+        }
+    }
+
+    public JavaPlugin() {
     }
 
     /**
@@ -144,5 +147,44 @@ public abstract class JavaPlugin implements Plugin {
      */
     public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args) {
         return false; // default implementation:  do nothing!
+    }
+
+    /**
+     * Initializes this plugin with the given variables.
+     *
+     * This method should never be called manually.
+     *
+     * @param loader PluginLoader that is responsible for this plugin
+     * @param server Server instance that is running this plugin
+     * @param description PluginDescriptionFile containing metadata on this plugin
+     * @param dataFolder Folder containing the plugin's data
+     * @param file File containing this plugin
+     * @param classLoader ClassLoader which holds this plugin
+     */
+    protected void initialize(PluginLoader loader, Server server,
+            PluginDescriptionFile description, File dataFolder, File file,
+            ClassLoader classLoader) {
+        if (initialized) {
+            throw new UnsupportedOperationException("Cannot reinitialize a plugin");
+        }
+
+        this.initialized = true;
+        this.loader = loader;
+        this.server = server;
+        this.file = file;
+        this.description = description;
+        this.dataFolder = dataFolder;
+        this.classLoader = classLoader;
+        this.config = new Configuration(new File(dataFolder, "config.yml"));
+        this.config.load();
+    }
+
+    /**
+     * Gets the initialization status of this plugin
+     *
+     * @return true if this plugin is initialized, otherwise false
+     */
+    public boolean isInitialized() {
+        return initialized;
     }
 }

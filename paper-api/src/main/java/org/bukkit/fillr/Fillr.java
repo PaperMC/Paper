@@ -13,12 +13,6 @@ public class Fillr extends JavaPlugin {
     public static final String VERSION = "1.0";
     public static final String DIRECTORY = "plugins";
 
-    public Fillr(PluginLoader pluginLoader, Server instance,
-            PluginDescriptionFile desc, File folder, File plugin,
-            ClassLoader cLoader) {
-        super(pluginLoader, instance, desc, folder, plugin, cLoader);
-    }
-
     public void onDisable() {
     }
 
