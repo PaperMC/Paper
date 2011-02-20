@@ -3,6 +3,7 @@ package org.bukkit;
 
 import org.bukkit.entity.Player;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.scheduler.BukkitScheduler;
@@ -113,4 +114,11 @@ public interface Server {
      * Reloads the server, refreshing settings and plugin information
      */
     public void reload();
+
+    /**
+     * Returns the primary logger associated with this server instance
+     *
+     * @return Logger associated with this server
+     */
+    public Logger getLogger();
 }

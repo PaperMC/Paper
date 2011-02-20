@@ -3,7 +3,6 @@ package org.bukkit.fillr;
 import org.bukkit.entity.Player;
 import java.io.File;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.bukkit.*;
 import org.bukkit.plugin.InvalidDescriptionException;
@@ -30,7 +29,7 @@ public class Getter {
             enablePlugin(reader);
             player.sendMessage("Loading " + reader.getName());
         } catch (Exception ex) {
-            Logger.getLogger(Getter.class.getName()).log(Level.SEVERE, null, ex);
+            server.getLogger().log(Level.SEVERE, null, ex);
         }
     }
 
@@ -41,9 +40,9 @@ public class Getter {
         try {
             server.getPluginManager().loadPlugin(plugin);
         } catch (InvalidPluginException ex) {
-            Logger.getLogger(Getter.class.getName()).log(Level.SEVERE, null, ex);
+            server.getLogger().log(Level.SEVERE, null, ex);
         } catch (InvalidDescriptionException ex) {
-            Logger.getLogger(Getter.class.getName()).log(Level.SEVERE, null, ex);
+            server.getLogger().log(Level.SEVERE, null, ex);
         }
     }
 }
