@@ -3,6 +3,7 @@ package net.minecraft.server;
 import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,6 +18,7 @@ import java.net.UnknownHostException;
 import joptsimple.OptionSet;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.LoggerOutputStream;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 import org.bukkit.event.Event;
 import org.bukkit.event.world.WorldEvent;
@@ -61,6 +63,12 @@ public class MinecraftServer implements ICommandListener, Runnable {
         threadcommandreader.setDaemon(true);
         threadcommandreader.start();
         ConsoleLogManager.a();
+
+        // Craftbukkit start
+        System.setOut(new PrintStream(new LoggerOutputStream(a, Level.INFO), true));
+        System.setErr(new PrintStream(new LoggerOutputStream(a, Level.SEVERE), true));
+        // Craftbukkit end
+
         a.info("Starting minecraft server version Beta 1.2_01");
         if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
             a.warning("**** NOT ENOUGH RAM!");
