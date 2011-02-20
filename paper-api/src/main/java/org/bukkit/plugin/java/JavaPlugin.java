@@ -38,6 +38,8 @@ public abstract class JavaPlugin implements Plugin {
     public JavaPlugin(PluginLoader pluginLoader, Server instance,
             PluginDescriptionFile desc, File folder, File plugin,
             ClassLoader cLoader) {
+        initialize(pluginLoader, instance, desc, folder, plugin, cLoader);
+        
         System.out.println("Using the stupidly long constructor " + desc.getMain() + "(PluginLoader, Server, PluginDescriptionFile, File, File, ClassLoader) is no longer recommended. Go nag the plugin author of " + desc.getName() + " to remove it! (Nothing is broken, we just like to keep code clean.)");
 
         ArrayList<String> authors = desc.getAuthors();
@@ -161,22 +163,20 @@ public abstract class JavaPlugin implements Plugin {
      * @param file File containing this plugin
      * @param classLoader ClassLoader which holds this plugin
      */
-    protected void initialize(PluginLoader loader, Server server,
+    protected final void initialize(PluginLoader loader, Server server,
             PluginDescriptionFile description, File dataFolder, File file,
             ClassLoader classLoader) {
-        if (initialized) {
-            throw new UnsupportedOperationException("Cannot reinitialize a plugin");
+        if (!initialized) {
+            this.initialized = true;
+            this.loader = loader;
+            this.server = server;
+            this.file = file;
+            this.description = description;
+            this.dataFolder = dataFolder;
+            this.classLoader = classLoader;
+            this.config = new Configuration(new File(dataFolder, "config.yml"));
+            this.config.load();
         }
-
-        this.initialized = true;
-        this.loader = loader;
-        this.server = server;
-        this.file = file;
-        this.description = description;
-        this.dataFolder = dataFolder;
-        this.classLoader = classLoader;
-        this.config = new Configuration(new File(dataFolder, "config.yml"));
-        this.config.load();
     }
 
     /**
