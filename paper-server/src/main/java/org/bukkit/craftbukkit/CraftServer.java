@@ -260,4 +260,8 @@ public final class CraftServer implements Server {
 
         pluginManager.callEvent(new WorldEvent(Type.WORLD_LOADED, world));
     }
+
+    public Logger getLogger() {
+        return MinecraftServer.a;
+    }
 }
