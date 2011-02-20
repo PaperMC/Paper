@@ -19,8 +19,7 @@ import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 // CraftBukkit end
 
-public class ChunkProviderServer implements IChunkProvider
-{
+public class ChunkProviderServer implements IChunkProvider {
     public LongHashset a = new LongHashset(); // CraftBukkit
     private Chunk b;
     private IChunkProvider c;
@@ -203,9 +202,8 @@ public class ChunkProviderServer implements IChunkProvider
             while (!this.a.isEmpty()) {
                 long chunkcoordinates = this.a.popFirst();
                 Chunk chunk = e.get(chunkcoordinates);
-                if (chunk == null) {
-                    continue;
-                }
+                if (chunk == null) continue;
+
                 ChunkUnloadEvent cue = new ChunkUnloadEvent(Type.CHUNK_UNLOADED, chunk.bukkitChunk);
                 server.getPluginManager().callEvent(cue);
                 if (!cue.isCancelled()) {

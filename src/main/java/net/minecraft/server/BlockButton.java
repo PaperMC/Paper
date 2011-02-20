@@ -249,8 +249,9 @@ public class BlockButton extends Block {
                 CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
                 BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, 1, 0);
                 server.getPluginManager().callEvent(eventRedstone);
-                if(eventRedstone.getNewCurrent() > 0) return;
+                if (eventRedstone.getNewCurrent() > 0) return;
                 // Craftbukkit end
+
                 world.c(i, j, k, l & 7);
                 world.h(i, j, k, this.id);
                 int i1 = l & 7;
