@@ -209,6 +209,8 @@ public class ChunkProviderServer implements IChunkProvider
                 ChunkUnloadEvent cue = new ChunkUnloadEvent(Type.CHUNK_UNLOADED, chunk.bukkitChunk);
                 server.getPluginManager().callEvent(cue);
                 if (!cue.isCancelled()) {
+                    g.getWorld().preserveChunk( (CraftChunk) chunk.bukkitChunk );
+
                     chunk.e();
                     this.b(chunk);
                     this.a(chunk);

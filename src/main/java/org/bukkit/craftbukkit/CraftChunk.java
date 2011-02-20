@@ -11,7 +11,7 @@ import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.block.CraftBlock;
 
 public class CraftChunk implements Chunk {
-    private final net.minecraft.server.Chunk chunk;
+    private net.minecraft.server.Chunk chunk;
     private final HashMap<Integer, Block> cache = new HashMap<Integer, Block>();
 
     public CraftChunk(net.minecraft.server.Chunk chunk) {
@@ -47,5 +47,9 @@ public class CraftChunk implements Chunk {
             this.cache.put( pos, block );
         }
         return block;
+    }
+
+    public void breakLink() {
+        this.chunk = null;
     }
 }

@@ -44,7 +44,10 @@ public class Chunk {
         }
 
         // CraftBukkit start
-        bukkitChunk = new org.bukkit.craftbukkit.CraftChunk( this );
+        bukkitChunk = ((WorldServer) world).getWorld().popPreservedChunk( i, j );
+        if (bukkitChunk == null) {
+            bukkitChunk = new org.bukkit.craftbukkit.CraftChunk( this );
+        }
     }
 
     public org.bukkit.Chunk bukkitChunk;
