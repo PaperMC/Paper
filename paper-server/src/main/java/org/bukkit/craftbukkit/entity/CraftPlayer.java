@@ -14,6 +14,7 @@ import net.minecraft.server.WorldServer;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.TextWrapper;
 import org.bukkit.entity.Player;
 
 public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -80,7 +81,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void sendMessage(String message) {
-        entity.a.b(new Packet3Chat(message));
+        for (final String line: TextWrapper.wrapText(message)) {
+            entity.a.b(new Packet3Chat(line));
+        }
     }
 
     public String getDisplayName() {
