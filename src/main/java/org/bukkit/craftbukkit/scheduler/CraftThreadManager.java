@@ -61,8 +61,8 @@ public class CraftThreadManager {
                     return craftWorker.isAlive();
                 }
             }
+            // didn't find it, so it must have been removed
+            return false;
         }
-        // didn't find it, so it must have been removed
-        return false;
     }
 }
