@@ -834,6 +834,8 @@ public class World implements IBlockAccess {
                 type = MobType.SPIDER;
             } else if (entity instanceof EntityZombie) {
                 type = MobType.ZOMBIE;
+            } else if (entity instanceof EntitySlime) {
+                type = MobType.SLIME;
             }
 
             if (type != null) {

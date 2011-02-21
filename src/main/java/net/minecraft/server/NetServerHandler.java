@@ -17,6 +17,7 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.TextWrapper;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockDamageEvent;
@@ -82,7 +83,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
     public void a(String s) {
         // CraftBukkit start
-        String leaveMessage = "§e" + this.e.name + " left the game.";
+        String leaveMessage = "\u00A7e" + this.e.name + " left the game.";
         PlayerKickEvent kickEvent = new PlayerKickEvent(org.bukkit.event.Event.Type.PLAYER_KICK, server.getPlayer(this.e), s, leaveMessage);
         server.getPluginManager().callEvent(kickEvent);
         if (kickEvent.isCancelled()) {
@@ -550,7 +551,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
     public void a(String s, Object[] aobject) {
         a.info(this.e.name + " lost connection: " + s);
-        this.d.f.a((Packet) (new Packet3Chat("§e" + this.e.name + " left the game.")));
+        this.d.f.a((Packet) (new Packet3Chat("\u00A7e" + this.e.name + " left the game.")));
         this.d.f.c(this.e);
         this.c = true;
     }
@@ -593,7 +594,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             // CraftBukkit end
         }
     }
-    
+
     // CraftBukkit start
     public boolean chat(String msg) {
         if (msg.startsWith("/")) {
@@ -608,12 +609,14 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             if (event.isCancelled()) {
                 return true;
             }
-            // CraftBukkit end
 
             a.info(msg);
-            this.d.f.a((Packet) (new Packet3Chat(msg)));
+            for (final String line: TextWrapper.wrapText(msg)) {
+                this.d.f.a((Packet) (new Packet3Chat(line)));
+            }
+            // CraftBukkit end
         }
-        
+
         return false;
     }
     // CraftBukkit end
@@ -622,7 +625,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         // CraftBukkit start
         CraftPlayer player = getPlayer();
 
-        PlayerChatEvent event = new PlayerChatEvent(Type.PLAYER_COMMAND, player, s);
+        PlayerChatEvent event = new PlayerChatEvent(Type.PLAYER_COMMAND_PREPROCESS, player, s);
         server.getPluginManager().callEvent(event);
         if (event.isCancelled()) {
             return;
@@ -641,6 +644,14 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         if (targetPluginFound) {
             return;
         }
+
+        // Legacy command handler
+        event = new PlayerChatEvent(Type.PLAYER_COMMAND, player, s);
+        server.getPluginManager().callEvent(event);
+        if (event.isCancelled()) {
+            return;
+        }
+        
         s = event.getMessage();
         player = (CraftPlayer) event.getPlayer();
         EntityPlayer e = player.getHandle();
@@ -658,10 +669,10 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             if (astring.length >= 3) {
                 s = s.substring(s.indexOf(" ")).trim();
                 s = s.substring(s.indexOf(" ")).trim();
-                s = "§7" + this.e.name + " whispers " + s;
+                s = "\u00A77" + this.e.name + " whispers " + s;
                 a.info(s + " to " + astring[1]);
                 if (!this.d.f.a(astring[1], (Packet) (new Packet3Chat(s)))) {
-                    this.b((Packet) (new Packet3Chat("§cThere\'s no player by that name online.")));
+                    this.b((Packet) (new Packet3Chat("\u00A7cThere\'s no player by that name online.")));
                 }
             }
         } else {
@@ -718,7 +729,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     }
 
     public void b(String s) {
-        this.b((Packet) (new Packet3Chat("§7" + s)));
+        this.b((Packet) (new Packet3Chat("\u00A77" + s)));
     }
 
     public String c() {

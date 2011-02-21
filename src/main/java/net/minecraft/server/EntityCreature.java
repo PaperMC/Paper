@@ -4,6 +4,7 @@ package net.minecraft.server;
 import org.bukkit.craftbukkit.entity.CraftMonster;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.craftbukkit.TrigMath;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
@@ -118,7 +119,7 @@ public class EntityCreature extends EntityLiving {
                 double d1 = vec3d.a - this.locX;
                 double d2 = vec3d.c - this.locZ;
                 double d3 = vec3d.b - (double) l1;
-                float f4 = (float) (Math.atan2(d2, d1) * 180.0D / 3.1415927410125732D) - 90.0F;
+                float f4 = (float) (TrigMath.atan2(d2, d1) * 180.0D / 3.1415927410125732D) - 90.0F;
                 float f5 = f4 - this.yaw;
 
                 for (this.by = this.bC; f5 < -180.0F; f5 += 360.0F) {

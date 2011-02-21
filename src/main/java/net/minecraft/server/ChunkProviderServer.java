@@ -10,15 +10,16 @@ import java.util.Set;
 
 // CraftBukkit start
 import org.bukkit.Location;
+import org.bukkit.Server;
 import org.bukkit.craftbukkit.CraftChunk;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.world.ChunkLoadEvent;
+import org.bukkit.event.world.ChunkUnloadEvent;
 // CraftBukkit end
 
 public class ChunkProviderServer implements IChunkProvider {
-
     public LongHashset a = new LongHashset(); // CraftBukkit
     private Chunk b;
     private IChunkProvider c;
@@ -39,7 +40,7 @@ public class ChunkProviderServer implements IChunkProvider {
         return this.e.containsKey(i, j);
     }
     // CraftBukkit end
-    
+
     public void c(int i, int j) {
         int k = i * 16 + 8 - this.g.spawnX;
         int l = j * 16 + 8 - this.g.spawnZ;
@@ -197,16 +198,23 @@ public class ChunkProviderServer implements IChunkProvider {
     public boolean a() {
         if (!this.g.C) {
             // CraftBukkit start
+            Server server = g.getServer();
             while (!this.a.isEmpty()) {
                 long chunkcoordinates = this.a.popFirst();
                 Chunk chunk = e.get(chunkcoordinates);
                 if (chunk == null) continue;
-                chunk.e();
-                this.b(chunk);
-                this.a(chunk);
-                this.a.remove(chunkcoordinates);
-                this.e.remove(chunkcoordinates);
-                this.f.remove(chunk);
+
+                ChunkUnloadEvent cue = new ChunkUnloadEvent(Type.CHUNK_UNLOADED, chunk.bukkitChunk);
+                server.getPluginManager().callEvent(cue);
+                if (!cue.isCancelled()) {
+                    g.getWorld().preserveChunk( (CraftChunk) chunk.bukkitChunk );
+
+                    chunk.e();
+                    this.b(chunk);
+                    this.a(chunk);
+                    this.e.remove(chunkcoordinates);
+                    this.f.remove(chunk);
+                }
             }
             // CraftBukkit end
 

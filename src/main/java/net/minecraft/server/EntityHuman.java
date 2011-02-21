@@ -4,6 +4,7 @@ import java.util.List;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.TrigMath;
 import org.bukkit.craftbukkit.entity.CraftItemDrop;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -124,7 +125,7 @@ public abstract class EntityHuman extends EntityLiving {
         this.as = this.at;
         super.o();
         float f = MathHelper.a(this.motX * this.motX + this.motZ * this.motZ);
-        float f1 = (float) Math.atan(-this.motY * 0.20000000298023224D) * 15.0F;
+        float f1 = (float) TrigMath.atan(-this.motY * 0.20000000298023224D) * 15.0F;
 
         if (f > 0.1F) {
             f = 0.1F;

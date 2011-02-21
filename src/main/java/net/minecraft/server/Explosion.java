@@ -29,9 +29,8 @@ public class Explosion {
     public Entity e;
     public float f;
     public Set g = new HashSet();
-    // Craftbukkit start
-    public boolean wasCanceled = false;
-    // Craftbukkit end
+
+    public boolean wasCanceled = false; // Craftbukkit
 
     public Explosion(World world, Entity entity, double d0, double d1, double d2, float f) {
         this.i = world;
@@ -240,7 +239,7 @@ public class Explosion {
             }
 
             if (i1 > 0) {
-                Block.byId[i1].a(this.i, j, k, l, this.i.getData(j, k, l), 0.3F);
+                Block.byId[i1].a(this.i, j, k, l, this.i.getData(j, k, l), event.getYield()); // Craftbukkit
                 this.i.e(j, k, l, 0);
                 Block.byId[i1].a_(this.i, j, k, l);
             }

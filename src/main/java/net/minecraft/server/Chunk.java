@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.bukkit.craftbukkit.CraftWorld;
+
 public class Chunk {
 
     public static boolean a;
@@ -44,7 +46,11 @@ public class Chunk {
         }
 
         // CraftBukkit start
-        bukkitChunk = new org.bukkit.craftbukkit.CraftChunk( this );
+        CraftWorld cw = ((WorldServer) world).getWorld();
+        bukkitChunk = (cw == null) ? null:cw.popPreservedChunk( i, j );
+        if (bukkitChunk == null) {
+            bukkitChunk = new org.bukkit.craftbukkit.CraftChunk( this );
+        }
     }
 
     public org.bukkit.Chunk bukkitChunk;

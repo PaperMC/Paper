@@ -46,7 +46,6 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
                     else if (entity instanceof EntityGiantZombie) { return new CraftGiant( server, (EntityGiantZombie) entity); }
                     else if (entity instanceof EntitySkeleton) { return new CraftSkeleton( server, (EntitySkeleton) entity); }
                     else if (entity instanceof EntitySpider) { return new CraftSpider( server, (EntitySpider) entity); }
-                    else if (entity instanceof EntitySlime) { return new CraftSlime( server, (EntitySlime) entity); }
 
                     else  { return new CraftMonster( server, (EntityMonster) entity); }
                 }
@@ -57,6 +56,8 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
                 }
                 else { return new CraftCreature( server, (EntityCreature) entity); }
             }
+            // Slimes are a special (and broken) case
+            else if (entity instanceof EntitySlime) { return new CraftSlime( server, (EntitySlime) entity); }
             // Flying
             else if (entity instanceof EntityFlying) {
                 if (entity instanceof EntityGhast) { return new CraftGhast( server, (EntityGhast) entity); }
@@ -128,6 +129,10 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     public void setFireTicks(int ticks) {
         entity.fireTicks = ticks;
+    }
+    
+    public void remove() {
+        entity.dead = true;
     }
 
     public Entity getHandle() {

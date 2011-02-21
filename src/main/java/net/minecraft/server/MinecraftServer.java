@@ -185,7 +185,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
         // Craftbukkit start
         for (WorldServer world : worlds) {
             world.a(true, (IProgressUpdate) null);
-            
+
             Event worldSaved = new WorldEvent( Event.Type.WORLD_SAVED, world.getWorld() );
             server.getPluginManager().callEvent( worldSaved );
         }
@@ -310,14 +310,14 @@ public class MinecraftServer implements ICommandListener, Runnable {
         }
 
         ((CraftScheduler) server.getScheduler()).mainThreadHeartbeat(this.h);
-        
+
         for (WorldServer world : worlds) {
             world.f();
 
             while (world.d()) {
                 ;
             }
-            
+
             world.c();
         }
         // Craftbukkit end
@@ -366,11 +366,11 @@ public class MinecraftServer implements ICommandListener, Runnable {
                     // Craftbukkit start
                     for (WorldServer world : worlds) {
                         world.a(true, (IProgressUpdate) null);
-                        
+
                         Event worldSaved = new WorldEvent( Event.Type.WORLD_SAVED, world.getWorld() );
                         server.getPluginManager().callEvent( worldSaved );
                     }
-                    
+
                     this.f.d();
                     // Craftbukkit end
 
@@ -398,11 +398,11 @@ public class MinecraftServer implements ICommandListener, Runnable {
                         s2 = s.substring(s.indexOf(" ")).trim();
                         this.f.e(s2);
                         this.a(s1, "Opping " + s2);
-                        this.f.a(s2, "§eYou are now op!");
+                        this.f.a(s2, "\u00A7eYou are now op!");
                     } else if (s.toLowerCase().startsWith("deop ")) {
                         s2 = s.substring(s.indexOf(" ")).trim();
                         this.f.f(s2);
-                        this.f.a(s2, "§eYou are no longer op!");
+                        this.f.a(s2, "\u00A7eYou are no longer op!");
                         this.a(s1, "De-opping " + s2);
                     } else if (s.toLowerCase().startsWith("ban-ip ")) {
                         s2 = s.substring(s.indexOf(" ")).trim();
@@ -507,14 +507,14 @@ public class MinecraftServer implements ICommandListener, Runnable {
                             } else if (s.toLowerCase().startsWith("say ")) {
                                 s = s.substring(s.indexOf(" ")).trim();
                                 a.info("[" + s1 + "] " + s);
-                                this.f.a((Packet) (new Packet3Chat("§d[Server] " + s)));
+                                this.f.a((Packet) (new Packet3Chat("\u00A7d[Server] " + s)));
                             } else if (s.toLowerCase().startsWith("tell ")) {
                                 astring = s.split(" ");
                                 if (astring.length >= 3) {
                                     s = s.substring(s.indexOf(" ")).trim();
                                     s = s.substring(s.indexOf(" ")).trim();
                                     a.info("[" + s1 + "->" + astring[1] + "] " + s);
-                                    s = "§7" + s1 + " whispers " + s;
+                                    s = "\u00A77" + s1 + " whispers " + s;
                                     a.info(s);
                                     if (!this.f.a(astring[1], (Packet) (new Packet3Chat(s)))) {
                                         icommandlistener.b("There\'s no player by that name online.");
@@ -554,7 +554,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
     private void a(String s, String s1) {
         String s2 = s + ": " + s1;
 
-        this.f.i("§7(" + s2 + ")");
+        this.f.i("\u00A77(" + s2 + ")");
         a.info(s2);
     }
 
