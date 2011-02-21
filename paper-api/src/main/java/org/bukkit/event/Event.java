@@ -1,9 +1,11 @@
 package org.bukkit.event;
 
+import java.io.Serializable;
+
 /**
  * Represents an event
  */
-public abstract class Event {
+public abstract class Event implements Serializable {
     private final Type type;
     private final String name;
 
