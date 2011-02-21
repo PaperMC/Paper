@@ -4,12 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 // CraftBukkit start
-import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.TrigMath;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -237,7 +235,7 @@ public abstract class EntityLiving extends Entity {
         if (f > 0.05F) {
             f3 = 1.0F;
             f2 = f * 3.0F;
-            f1 = (float) TrigMath.atan2(d1, d0) * 180.0F / 3.1415927F - 90.0F;
+            f1 = (float) TrigMath.atan2(d1, d0) * 180.0F / 3.1415927F - 90.0F; // Craftbukkit
         }
 
         if (this.aY > 0.0F) {

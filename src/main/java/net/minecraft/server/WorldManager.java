@@ -8,7 +8,7 @@ public class WorldManager implements IWorldAccess {
     // Craftbukkit - changed signature
     public WorldManager(MinecraftServer minecraftserver, WorldServer world) {
         this.a = minecraftserver;
-        this.world = world;
+        this.world = world; // Craftbukkit
     }
 
     public void a(String s, double d0, double d1, double d2, double d3, double d4, double d5) {}

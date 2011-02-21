@@ -1,6 +1,15 @@
 package net.minecraft.server;
 
+import java.util.List;
+import java.util.Random;
+
 // CraftBukkit start
+import org.bukkit.block.BlockFace;
+import org.bukkit.craftbukkit.entity.CraftVehicle;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Vehicle;
+import org.bukkit.event.vehicle.VehicleBlockCollisionEvent;
+import org.bukkit.event.vehicle.VehicleExitEvent;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.entity.EntityCombustEvent;
@@ -8,16 +17,6 @@ import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 // CraftBukkit end
-
-import java.util.List;
-import java.util.Random;
-import org.bukkit.block.BlockFace;
-import org.bukkit.craftbukkit.entity.CraftVehicle;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Vehicle;
-import org.bukkit.event.vehicle.VehicleBlockCollisionEvent;
-import org.bukkit.event.vehicle.VehicleCollisionEvent;
-import org.bukkit.event.vehicle.VehicleExitEvent;
 
 public abstract class Entity {
 

@@ -106,7 +106,7 @@ public class PlayerManager {
 
         for (int k = i - 10; k <= i + 10; ++k) {
             for (int l = j - 10; l <= j + 10; ++l) {
-                PlayerInstance playerinstance = this.a(k, l, false, ((WorldServer)entityplayer.world));
+                PlayerInstance playerinstance = this.a(k, l, false, ((WorldServer)entityplayer.world)); // Craftbukkit
 
                 if (playerinstance != null) {
                     playerinstance.b(entityplayer);
@@ -141,11 +141,11 @@ public class PlayerManager {
                 for (int k1 = i - 10; k1 <= i + 10; ++k1) {
                     for (int l1 = j - 10; l1 <= j + 10; ++l1) {
                         if (!this.a(k1, l1, k, l)) {
-                            this.a(k1, l1, true, ((WorldServer)entityplayer.world)).a(entityplayer);
+                            this.a(k1, l1, true, ((WorldServer)entityplayer.world)).a(entityplayer); // Craftbukkit
                         }
 
                         if (!this.a(k1 - i1, l1 - j1, i, j)) {
-                            PlayerInstance playerinstance = this.a(k1 - i1, l1 - j1, false, ((WorldServer)entityplayer.world));
+                            PlayerInstance playerinstance = this.a(k1 - i1, l1 - j1, false, ((WorldServer)entityplayer.world)); // Craftbukkit
 
                             if (playerinstance != null) {
                                 playerinstance.b(entityplayer);

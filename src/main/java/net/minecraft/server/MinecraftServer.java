@@ -30,7 +30,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
     public static HashMap b = new HashMap();
     public NetworkListenThread c;
     public PropertyManager d;
-    //public WorldServer e;
+    //public WorldServer e; // Craftbukkit - removed
     public ServerConfigurationManager f;
     private boolean o = true;
     public boolean g = false;
@@ -43,21 +43,21 @@ public class MinecraftServer implements ICommandListener, Runnable {
     public boolean l;
     public boolean m;
     public boolean n;
-    public int spawnProtection; // CraftBukkit Configurable spawn protection start
-    public List<WorldServer> worlds = new ArrayList<WorldServer>();
 
-    // Craftbukkit start - adds argument OptionSet
-    public MinecraftServer(OptionSet options) {
-        new ThreadSleepForever(this);
-        // CraftBukkit start
-        this.options = options;
-    }
+    // Craftbukkit start
+    public int spawnProtection;
+    public List<WorldServer> worlds = new ArrayList<WorldServer>();
     public CraftServer server;
     public OptionSet options;
     public ConsoleCommandSender console = new ConsoleCommandSender();
+    // Craftbukkit end
 
-    private boolean d() throws UnknownHostException {
-        // CraftBukkit end -- added throws UnknownHostException
+    public MinecraftServer(OptionSet options) { // Craftbukkit - adds argument OptionSet
+        new ThreadSleepForever(this);
+        this.options = options; // CraftBukkit
+    }
+
+    private boolean d() throws UnknownHostException { // CraftBukkit - added throws UnknownHostException
         ThreadCommandReader threadcommandreader = new ThreadCommandReader(this);
 
         threadcommandreader.setDaemon(true);
@@ -95,8 +95,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
 
         try {
             this.c = new NetworkListenThread(this, inetaddress, i);
-            // CraftBukkit: Be more generic; IOException -> Throwable
-        } catch (Throwable ioexception) {
+        } catch (Throwable ioexception) { // CraftBukkit - IOException -> Throwable
             a.warning("**** FAILED TO BIND TO PORT!");
             a.log(Level.WARNING, "The exception was: " + ioexception.toString());
             a.warning("Perhaps a server is already running on that port?");
@@ -194,10 +193,11 @@ public class MinecraftServer implements ICommandListener, Runnable {
 
     private void g() {
         a.info("Stopping server");
-        // CraftBukkit
+        // CraftBukkit start
         if(server != null) {
             server.disablePlugins();
         }
+        // Craftbukkit end
 
         if (this.f != null) {
             this.f.d();
@@ -570,8 +570,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
         this.p.add(iupdateplayerlistbox);
     }
 
-    // Craftbukkit start - replaces main(String args[])
-    public static void main(final OptionSet options) {
+    public static void main(final OptionSet options) { // Craftbukkit - replaces main(String args[])
         try {
             MinecraftServer minecraftserver = new MinecraftServer(options);
 

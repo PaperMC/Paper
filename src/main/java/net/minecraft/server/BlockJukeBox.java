@@ -4,7 +4,6 @@ package net.minecraft.server;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockInteractEvent;

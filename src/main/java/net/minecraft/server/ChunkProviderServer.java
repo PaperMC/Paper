@@ -9,11 +9,9 @@ import java.util.Map;
 import java.util.Set;
 
 // CraftBukkit start
-import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.craftbukkit.CraftChunk;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.Player;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
@@ -35,11 +33,9 @@ public class ChunkProviderServer implements IChunkProvider {
         this.c = ichunkprovider;
     }
 
-    // CraftBukkit start
     public boolean a(int i, int j) {
-        return this.e.containsKey(i, j);
+        return this.e.containsKey(i, j); // Craftbukkit - entire method removed
     }
-    // CraftBukkit end
 
     public void c(int i, int j) {
         int k = i * 16 + 8 - this.g.spawnX;

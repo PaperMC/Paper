@@ -6,7 +6,6 @@ import java.util.Random;
 import java.util.Set;
 
 // CraftBukkit start
-import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.event.block.BlockRedstoneEvent;
 // CraftBukkit end

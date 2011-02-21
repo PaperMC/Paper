@@ -16,7 +16,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
     public ChunkProviderServer A;
     public boolean B = false;
     public boolean C;
-    public final MinecraftServer D;
+    public final MinecraftServer D; // Craftbukkit
     private EntityList E = new EntityList();
     public PlayerManager manager; // Craftbukkit
 

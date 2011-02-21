@@ -3,11 +3,9 @@ package net.minecraft.server;
 import java.util.Random;
 
 // CraftBukkit start
-import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockInteractEvent;
@@ -167,29 +165,33 @@ public class BlockButton extends Block {
             if (j1 == 0) {
                 return true;
             } else {
-                //Allow the button to change the current
+                // Craftbukkit start
                 int old = (j1 != 8) ? 1 : 0;
                 int current = (j1 == 8) ? 1 : 0;
                 BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, old, current);
                 server.getPluginManager().callEvent(eventRedstone);
-                if ((eventRedstone.getNewCurrent() > 0) == (j1 == 8)) {
-                    world.c(i, j, k, i1 + j1);
-                    world.b(i, j, k, i, j, k);
-                    world.a((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.click", 0.3F, 0.6F);
-                    world.h(i, j, k, this.id);
-                    if (i1 == 1) {
-                        world.h(i - 1, j, k, this.id);
-                    } else if (i1 == 2) {
-                        world.h(i + 1, j, k, this.id);
-                    } else if (i1 == 3) {
-                        world.h(i, j, k - 1, this.id);
-                    } else if (i1 == 4) {
-                        world.h(i, j, k + 1, this.id);
-                    } else {
-                        world.h(i, j - 1, k, this.id);
-                    }
-                    world.i(i, j, k, this.id);
+                if ((eventRedstone.getNewCurrent() > 0) != (j1 == 8)) {
+                    return true;
                 }
+                // Craftbukkit end
+                
+                world.c(i, j, k, i1 + j1);
+                world.b(i, j, k, i, j, k);
+                world.a((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.click", 0.3F, 0.6F);
+                world.h(i, j, k, this.id);
+                if (i1 == 1) {
+                    world.h(i - 1, j, k, this.id);
+                } else if (i1 == 2) {
+                    world.h(i + 1, j, k, this.id);
+                } else if (i1 == 3) {
+                    world.h(i, j, k - 1, this.id);
+                } else if (i1 == 4) {
+                    world.h(i, j, k + 1, this.id);
+                } else {
+                    world.h(i, j - 1, k, this.id);
+                }
+
+                world.i(i, j, k, this.id);
                 return true;
             }
         }

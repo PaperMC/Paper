@@ -1,7 +1,6 @@
 package net.minecraft.server;
 
 //CraftBukkit start
-import org.bukkit.Server;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.event.entity.ExplosionPrimedEvent;

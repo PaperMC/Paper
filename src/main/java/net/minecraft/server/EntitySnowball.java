@@ -175,8 +175,8 @@ public class EntitySnowball extends Entity {
                 if (stick) {
                     ;
                 }
-                // CraftBukkit end
             }
+            // CraftBukkit end
 
             for (int k = 0; k < 8; ++k) {
                 this.world.a("snowballpoof", this.locX, this.locY, this.locZ, 0.0D, 0.0D, 0.0D);

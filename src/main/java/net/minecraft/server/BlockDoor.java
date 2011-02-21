@@ -6,7 +6,6 @@ import java.util.Random;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockInteractEvent;
@@ -88,7 +87,7 @@ public class BlockDoor extends Block {
                 BlockInteractEvent event = new BlockInteractEvent(eventType, block, who);
                 server.getPluginManager().callEvent(event);
 
-                // CraftBukkit the client updates the doors before the server does it's thing.
+                // The client updates the doors before the server does it's thing.
                 // Forcibly send correct data.
                 if (event.isCancelled()) {
                     ((EntityPlayer) entityhuman).a.b(new Packet53BlockChange(i, j, k, (WorldServer) world));

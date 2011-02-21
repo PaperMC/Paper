@@ -1,11 +1,9 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockInteractEvent;
@@ -152,7 +150,7 @@ public class BlockLever extends Block {
             BlockInteractEvent event = new BlockInteractEvent(eventType, block, who);
             server.getPluginManager().callEvent(event);
 
-            // CraftBukkit the client updates the doors before the server does it's thing.
+            // The client updates the doors before the server does it's thing.
             // Forcibly send correct data.
             if (event.isCancelled()) {
                 ((EntityPlayer) entityhuman).a.b(new Packet53BlockChange(i, j, k, (WorldServer) world));
@@ -170,25 +168,27 @@ public class BlockLever extends Block {
             BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, old, current);
             server.getPluginManager().callEvent(eventRedstone);
 
-            if ((eventRedstone.getNewCurrent() > 0) == (j1 == 8)) {
-                // CraftBukkit end
+            if ((eventRedstone.getNewCurrent() > 0) != (j1 == 8)) {
+                return true;
+            }
+            // CraftBukkit end
+            
+            world.c(i, j, k, i1 + j1);
+            world.b(i, j, k, i, j, k);
+            world.a((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.click", 0.3F, j1 > 0 ? 0.6F : 0.5F);
+            world.h(i, j, k, this.id);
+            if (i1 == 1) {
+                world.h(i - 1, j, k, this.id);
+            } else if (i1 == 2) {
+                world.h(i + 1, j, k, this.id);
+            } else if (i1 == 3) {
+                world.h(i, j, k - 1, this.id);
+            } else if (i1 == 4) {
+                world.h(i, j, k + 1, this.id);
+            } else {
+                world.h(i, j - 1, k, this.id);
+            }
 
-                world.c(i, j, k, i1 + j1);
-                world.b(i, j, k, i, j, k);
-                world.a((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.click", 0.3F, j1 > 0 ? 0.6F : 0.5F);
-                world.h(i, j, k, this.id);
-                if (i1 == 1) {
-                    world.h(i - 1, j, k, this.id);
-                } else if (i1 == 2) {
-                    world.h(i + 1, j, k, this.id);
-                } else if (i1 == 3) {
-                    world.h(i, j, k - 1, this.id);
-                } else if (i1 == 4) {
-                    world.h(i, j, k + 1, this.id);
-                } else {
-                    world.h(i, j - 1, k, this.id);
-                }
-            } // CraftBukkit
             return true;
         }
     }

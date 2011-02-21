@@ -3,7 +3,6 @@ package net.minecraft.server;
 import java.util.List;
 
 // CraftBukkit start
-import org.bukkit.entity.CreatureType;
 import org.bukkit.entity.Egg;
 import org.bukkit.entity.MobType;
 import org.bukkit.entity.Player;
@@ -184,7 +183,6 @@ public class EntityEgg extends Entity {
                 }
             }
 
-            // CraftBukkit start
             boolean hatching = !this.world.isStatic && this.random.nextInt(8) == 0;
             byte numHatching = (this.random.nextInt(32) == 0) ? (byte) 4 : (byte) 1;
             if (!hatching) {

@@ -26,7 +26,6 @@ public class ItemMinecart extends Item {
 
         if (i1 == Block.RAILS.id) {
             if (!world.isStatic) {
-
                 // CraftBukkit start - Minecarts
                 CraftWorld craftWorld = ((WorldServer) world).getWorld();
                 CraftServer craftServer = ((WorldServer) world).getServer();

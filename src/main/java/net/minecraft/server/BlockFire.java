@@ -137,18 +137,20 @@ public class BlockFire extends Block {
             org.bukkit.block.Block theBlock = (cworld.getBlockAt(i, j, k));
             BlockBurnEvent event = new BlockBurnEvent(theBlock);
             server.getPluginManager().callEvent(event);
-            if(!event.isCancelled()) {
-                if (random.nextInt(2) == 0) {
-                    world.e(i, j, k, this.id);
-                } else {
-                    world.e(i, j, k, 0);
-                }
-
-                if (flag) {
-                    Block.TNT.a(world, i, j, k, 0);
-                }
+            if(event.isCancelled()) {
+                return;
             }
             // CraftBukkit end
+            
+            if (random.nextInt(2) == 0) {
+                world.e(i, j, k, this.id);
+            } else {
+                world.e(i, j, k, 0);
+            }
+
+            if (flag) {
+                Block.TNT.a(world, i, j, k, 0);
+            }
         }
     }
 

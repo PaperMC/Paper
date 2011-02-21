@@ -7,7 +7,6 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.ExplosionPrimedEvent;
 // CraftBukkit end
@@ -149,9 +148,7 @@ public class EntityFireball extends Entity {
                     ;
                 }
             }
-            // CraftBukkit end
-
-            // Craftbukkit start
+            
             CraftServer server = ((WorldServer) this.world).getServer();
             org.bukkit.event.Event.Type eventType = ExplosionPrimedEvent.Type.EXPLOSION_PRIMED;
             ExplosionPrimedEvent event = new ExplosionPrimedEvent(eventType, CraftEntity.getEntity(server, this), 1.0F, false); 

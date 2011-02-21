@@ -28,7 +28,6 @@ public class ItemBlock extends Item {
             return false;
         }
 
-        // CraftBukkit store info of the clicked block
         CraftBlock blockClicked = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
         BlockFace faceClicked = CraftBlock.notchToBlockFace(l);
         // CraftBukkit end

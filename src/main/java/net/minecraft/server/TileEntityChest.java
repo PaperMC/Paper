@@ -13,7 +13,7 @@ public class TileEntityChest extends TileEntity implements IInventory {
     public TileEntityChest() {}
 
     public int h_() {
-        return this.e.length;
+        return this.e.length; // Craftbukkit
     }
 
     public ItemStack a(int i) {

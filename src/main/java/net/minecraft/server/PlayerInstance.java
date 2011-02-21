@@ -29,9 +29,7 @@ class PlayerInstance {
         this.d = j;
         this.e = new ChunkCoordIntPair(i, j);
 
-        // Craftbukkit start
-        playermanager.world.A.d(i, j);
-        // Craftbukkit end
+        playermanager.world.A.d(i, j); // Craftbukkit
     }
 
     public void a(EntityPlayer entityplayer) {
@@ -133,10 +131,13 @@ class PlayerInstance {
                 i = this.c * 16 + this.h;
                 j = this.j;
                 k = this.d * 16 + this.l;
-                this.a((Packet) (new Packet53BlockChange(i, j, k, a.world))); // Craftbukkit
-                if (Block.p[a.world.getTypeId(i, j, k)]) { // Craftbukkit
-                    this.a(a.world.getTileEntity(i, j, k)); // Craftbukkit
+
+                // Craftbukkit start
+                this.a((Packet) (new Packet53BlockChange(i, j, k, a.world)));
+                if (Block.p[a.world.getTypeId(i, j, k)]) {
+                    this.a(a.world.getTileEntity(i, j, k));
                 }
+                // Craftbukkit end
             } else {
                 int l;
 

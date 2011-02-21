@@ -16,22 +16,11 @@ import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.TextWrapper;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event.Type;
-import org.bukkit.event.block.BlockDamageEvent;
-import org.bukkit.event.block.BlockRedstoneEvent;
-import org.bukkit.event.block.BlockRightClickEvent;
-import org.bukkit.event.block.SignChangeEvent;
-import org.bukkit.event.player.PlayerAnimationEvent;
-import org.bukkit.event.player.PlayerChatEvent;
-import org.bukkit.event.player.PlayerItemEvent;
-import org.bukkit.event.player.PlayerItemHeldEvent;
-import org.bukkit.event.player.PlayerKickEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.event.player.PlayerToggleSneakEvent;
-import org.bukkit.plugin.Plugin;
+import org.bukkit.event.block.*;
+import org.bukkit.event.player.*;
 // CraftBukkit end
 
 public class NetServerHandler extends NetHandler implements ICommandListener {
@@ -500,9 +489,9 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             server.getPluginManager().callEvent(event);
 
             this.e.c.a(this.e, this.e.world, itemstack, i, j, k, l);
+            this.e.a.b((Packet) (new Packet53BlockChange(i, j, k, this.e.world)));
             // CraftBukkit end
 
-            this.e.a.b((Packet) (new Packet53BlockChange(i, j, k, this.e.world)));
             if (l == 0) {
                 --j;
             }
@@ -527,7 +516,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 ++i;
             }
 
-            this.e.a.b((Packet) (new Packet53BlockChange(i, j, k, this.e.world)));
+            this.e.a.b((Packet) (new Packet53BlockChange(i, j, k, this.e.world))); // Craftbukkit
         }
 
         if (itemstack != null && itemstack.count == 0) {
@@ -541,8 +530,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         this.e.activeContainer.a();
         this.e.am = false;
 
-        // CraftBukkit - Boolean flag
-        if (!ItemStack.a(this.e.inventory.e(), packet15place.e) || always) {
+        if (!ItemStack.a(this.e.inventory.e(), packet15place.e) || always) { // CraftBukkit
             this.b((Packet) (new Packet103SetSlot(this.e.activeContainer.f, slot.c, this.e.inventory.e())));
         }
 
@@ -589,9 +577,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 }
             }
 
-            // CraftBukkit start
-            chat(s);
-            // CraftBukkit end
+            chat(s); // CraftBukkit 
         }
     }
 
