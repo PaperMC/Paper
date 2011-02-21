@@ -223,4 +223,18 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
     public boolean isCurrentlyRunning(int taskId){
         return craftThreadManager.isAlive(taskId);
     }
+
+    public boolean isQueued(int taskId) {
+        synchronized (schedulerQueue) {
+            Iterator<CraftTask> itr = schedulerQueue.keySet().iterator();
+            while (itr.hasNext()) {
+                CraftTask current = itr.next();
+                if (current.getIdNumber() == taskId) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
 }
