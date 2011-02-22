@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 // CraftBukkit start
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.Event.Type;
@@ -168,11 +169,15 @@ public class ServerConfigurationManager {
         Location respawnLocation = new Location(respawnPlayer.getWorld(), entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch);
         PlayerRespawnEvent respawnEvent = new PlayerRespawnEvent(Event.Type.PLAYER_RESPAWN, respawnPlayer, respawnLocation );
         server.getPluginManager().callEvent(respawnEvent);
+        entityplayer1.world = ((CraftWorld)respawnEvent.getRespawnLocation().getWorld()).getHandle();
         entityplayer1.locX = respawnEvent.getRespawnLocation().getX();
         entityplayer1.locY = respawnEvent.getRespawnLocation().getY();
         entityplayer1.locZ = respawnEvent.getRespawnLocation().getZ();
         entityplayer1.yaw = respawnEvent.getRespawnLocation().getYaw();
         entityplayer1.pitch = respawnEvent.getRespawnLocation().getPitch();
+        entityplayer1.c = new ItemInWorldManager(((CraftWorld)respawnEvent.getRespawnLocation().getWorld()).getHandle());
+        entityplayer1.c.a = entityplayer1;
+        ((WorldServer)entityplayer1.world).A.d((int) entityplayer1.locX >> 4, (int) entityplayer1.locZ >> 4);
         // CraftBukkit end
 
         entityplayer1.a.b((Packet) (new Packet9Respawn()));
