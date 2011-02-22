@@ -8,7 +8,7 @@ import org.bukkit.util.Vector;
 import org.bukkit.entity.Creature;
 import org.bukkit.entity.CreatureType;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.ItemDrop;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.PoweredMinecart;
 import org.bukkit.entity.Minecart;
@@ -216,7 +216,7 @@ public interface World {
      * @param item ItemStack to drop
      * @return ItemDrop entity created as a result of this method
      */
-    public ItemDrop dropItem(Location location, ItemStack item);
+    public Item dropItem(Location location, ItemStack item);
 
     /**
      * Drops an item at the specified {@link Location} with a random offset
@@ -225,7 +225,7 @@ public interface World {
      * @param item ItemStack to drop
      * @return ItemDrop entity created as a result of this method
      */
-    public ItemDrop dropItemNaturally(Location location, ItemStack item);
+    public Item dropItemNaturally(Location location, ItemStack item);
 
     /**
      * Creates an {@link Arrow} entity at the given {@link Location}

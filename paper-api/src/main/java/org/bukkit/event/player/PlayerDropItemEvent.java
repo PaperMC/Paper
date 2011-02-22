@@ -1,6 +1,6 @@
 package org.bukkit.event.player;
 
-import org.bukkit.entity.ItemDrop;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
@@ -9,10 +9,10 @@ import org.bukkit.event.Event;
  * Thrown when a player drops an item from their inventory
  */
 public class PlayerDropItemEvent extends PlayerEvent implements Cancellable {
-    private final ItemDrop drop;
+    private final Item drop;
     private boolean cancel = false;
 
-    public PlayerDropItemEvent(final Player player, final ItemDrop drop) {
+    public PlayerDropItemEvent(final Player player, final Item drop) {
         super(Event.Type.PLAYER_DROP_ITEM, player);
         this.drop = drop;
     }
@@ -22,7 +22,7 @@ public class PlayerDropItemEvent extends PlayerEvent implements Cancellable {
      *
      * @return ItemDrop
      */
-    public ItemDrop getItemDrop() {
+    public Item getItemDrop() {
         return drop;
     }
 

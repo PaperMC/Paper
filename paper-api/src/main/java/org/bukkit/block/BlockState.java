@@ -104,7 +104,7 @@ public interface BlockState {
      *
      * @param type Type-Id to change this block to
      */
-    void setTypeId(int type);
+    boolean setTypeId(int type);
 
     /**
      * Attempts to update the block represented by this state, setting it to the
@@ -135,4 +135,6 @@ public interface BlockState {
      * @return true if the update was successful, otherwise false
      */
     boolean update(boolean force);
+
+    public byte getRawData();
 }

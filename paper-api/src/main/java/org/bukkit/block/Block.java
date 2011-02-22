@@ -201,4 +201,6 @@ public interface Block {
      * @return
      */
     boolean isBlockIndirectlyPowered();
+
+    public byte getRawData();
 }
