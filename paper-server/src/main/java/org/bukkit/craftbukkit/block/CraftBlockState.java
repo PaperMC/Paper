@@ -1,6 +1,7 @@
 
 package org.bukkit.craftbukkit.block;
 
+import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
@@ -29,7 +30,7 @@ public class CraftBlockState implements BlockState {
         this.light = block.getLightLevel();
         this.chunk = (CraftChunk)block.getChunk();
 
-        createData(block.getData());
+        createData(block.getRawData());
     }
 
     /**
@@ -83,8 +84,6 @@ public class CraftBlockState implements BlockState {
      * @param data New block specific metadata
      */
     public void setData(final MaterialData data) {
-        world.getHandle().c(x, y, z, data.getData());
-
         Material mat = getType();
 
         if ((mat == null) || (mat.getData() == null)) {
@@ -122,11 +121,11 @@ public class CraftBlockState implements BlockState {
      *
      * @param type Type-Id to change this block to
      */
-    public void setTypeId(final int type) {
+    public boolean setTypeId(final int type) {
         this.type = type;
-        world.getHandle().e(x, y, z, type);
 
         createData((byte)0);
+        return true;
     }
 
     /**
@@ -176,7 +175,7 @@ public class CraftBlockState implements BlockState {
                 }
             }
 
-            block.setData(data.getData());
+            block.setData(getRawData());
         }
 
         return true;
@@ -189,5 +188,17 @@ public class CraftBlockState implements BlockState {
         } else {
             this.data = mat.getNewData(data);
         }
+    }
+
+    public byte getRawData() {
+        return data.getData();
+    }
+
+    public Location getLocation() {
+        return new Location(world, x, y, z);
+    }
+
+    public void setData(byte data) {
+        createData(data);
     }
 }

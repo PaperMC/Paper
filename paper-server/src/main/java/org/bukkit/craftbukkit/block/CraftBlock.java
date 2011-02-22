@@ -4,14 +4,11 @@ package org.bukkit.craftbukkit.block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
-import org.bukkit.Location;
 
 import net.minecraft.server.BiomeBase;
 import org.bukkit.*;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.CraftChunk;
-import org.bukkit.craftbukkit.block.CraftBlockState;
-import org.bukkit.craftbukkit.block.CraftSign;
 import org.bukkit.util.BlockVector;
 
 public class CraftBlock implements Block {
@@ -99,7 +96,7 @@ public class CraftBlock implements Block {
      *
      * @return block specific metadata
      */
-    public byte getData() {
+    public byte getRawData() {
         return (byte) chunk.getHandle().b(this.x & 0xF, this.y & 0x7F, this.z & 0xF);
     }
 
@@ -261,6 +258,25 @@ public class CraftBlock implements Block {
             return BlockFace.SELF;
         }
     }
+    
+    public static int blockFaceToNotch(BlockFace face) {
+        switch(face) {
+            case DOWN:
+                return 0;
+            case UP:
+                return 1;
+            case EAST:
+                return 2;
+            case WEST:
+                return 3;
+            case NORTH:
+                return 4;
+            case SOUTH:
+                return 5;
+            default:
+                return 7; //Good as anything here, but technically invalid
+        }
+    }
 
     public BlockState getState() {
         Material material = getType();
@@ -330,5 +346,18 @@ public class CraftBlock implements Block {
     @Override
     public boolean equals( Object o ) {
         return this == o;
+    }
+
+    public boolean isBlockFacePowered(BlockFace face) {
+        return chunk.getHandle().d.j(x, y, z, blockFaceToNotch(face));
+    }
+
+    public boolean isBlockFaceIndirectlyPowered(BlockFace face) {
+        return chunk.getHandle().d.j(x, y, z, blockFaceToNotch(face));
+    }
+
+    @Deprecated
+    public byte getData() {
+        return getRawData();
     }
 }
