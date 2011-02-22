@@ -4,8 +4,8 @@ import java.util.List;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftItem;
 import org.bukkit.craftbukkit.TrigMath;
-import org.bukkit.craftbukkit.entity.CraftItemDrop;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -223,7 +223,7 @@ public abstract class EntityHuman extends EntityLiving {
             // CraftBukkit start
             Player player = (Player)this.getBukkitEntity();
             CraftServer server = ((WorldServer)world).getServer();
-            CraftItemDrop drop = new CraftItemDrop(server, entityitem);
+            CraftItem drop = new CraftItem(server, entityitem);
             PlayerDropItemEvent event = new PlayerDropItemEvent(player, drop);
             server.getPluginManager().callEvent(event);
 

@@ -116,7 +116,7 @@ public class ItemBlock extends Item {
                                 world.setTypeId(i, j, k, 20);
                             }
 
-                            world.setTypeIdAndData(i, j, k, replacedBlockState.getTypeId(), replacedBlockState.getData().getData());
+                            world.setTypeIdAndData(i, j, k, replacedBlockState.getTypeId(), replacedBlockState.getRawData());
                         }
 
                     } else {
