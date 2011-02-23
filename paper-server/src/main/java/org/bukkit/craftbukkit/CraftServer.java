@@ -9,10 +9,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import net.minecraft.server.ChunkCoordinates;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PropertyManager;
 import net.minecraft.server.ServerConfigurationManager;
+import net.minecraft.server.ServerNBTManager;
 import net.minecraft.server.WorldManager;
 import net.minecraft.server.WorldServer;
 import org.bukkit.*;
@@ -177,14 +179,14 @@ public final class CraftServer implements Server {
         console.d = config;
 
         boolean animals = config.a("spawn-monsters", console.m);
-        boolean monsters = config.a("spawn-monsters", console.worlds.get(0).k > 0);
+        boolean monsters = config.a("spawn-monsters", console.worlds.get(0).j > 0);
 
         console.l = config.a("online-mode", console.l);
         console.m = config.a("spawn-animals", console.m);
         console.n = config.a("pvp", console.n);
 
         for (WorldServer world : console.worlds) {
-            world.k = monsters ? 1 : 0;
+            world.j = monsters ? 1 : 0;
             world.a(monsters, animals);
         }
 
@@ -210,10 +212,10 @@ public final class CraftServer implements Server {
             throw new IllegalArgumentException("File exists with the name '" + name + "' and isn't a folder");
         }
 
-        WorldServer internal = new WorldServer(console, new File("."), name, environment == World.Environment.NETHER ? -1 : 0);
+        WorldServer internal = new WorldServer(console, new ServerNBTManager(new File("."), name, true), name, environment == World.Environment.NETHER ? -1 : 0);
 
         internal.a(new WorldManager(console, internal));
-        internal.k = 1;
+        internal.j = 1;
         internal.a(true, true);
         console.f.a(internal);
         console.worlds.add(internal);
@@ -236,9 +238,10 @@ public final class CraftServer implements Server {
                     i = l;
                 }
 
-                internal.A.d(internal.spawnX + j >> 4, internal.spawnZ + k >> 4);
+                ChunkCoordinates chunkcoordinates = internal.l();
+                internal.u.d(chunkcoordinates.a + j >> 4, chunkcoordinates.c + k >> 4);
 
-                while (internal.d()) {
+                while (internal.e()) {
                     ;
                 }
             }

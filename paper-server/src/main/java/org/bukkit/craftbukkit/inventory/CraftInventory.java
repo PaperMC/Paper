@@ -19,15 +19,15 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
     }
 
     public int getSize() {
-        return getInventory().h_();
+        return getInventory().m_();
     }
 
     public String getName() {
-        return getInventory().b();
+        return getInventory().c();
     }
 
     public CraftItemStack getItem(int index) {
-        return new CraftItemStack(getInventory().a(index));
+        return new CraftItemStack(getInventory().c_(index));
     }
 
     public CraftItemStack[] getContents() {
@@ -290,7 +290,7 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
     }
 
     private int getMaxItemStack() {
-        return getInventory().c();
+        return getInventory().n_();
     }
 
     public void remove(int materialId) {

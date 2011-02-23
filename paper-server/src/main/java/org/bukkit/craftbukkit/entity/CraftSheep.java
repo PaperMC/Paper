@@ -19,12 +19,12 @@ public class CraftSheep extends CraftAnimals implements Sheep {
 
     public DyeColor getColor() {
         EntitySheep entity = (EntitySheep) getHandle();
-        return DyeColor.getByData((byte) entity.e_());
+        return DyeColor.getByData((byte) entity.n());
     }
 
     public void setColor(DyeColor color) {
         EntitySheep entity = (EntitySheep) getHandle();
-        entity.a(color.getData());
+        entity.a_(color.getData());
     }
 
 }

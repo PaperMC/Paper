@@ -1,4 +1,3 @@
-
 package org.bukkit.craftbukkit.block;
 
 import org.bukkit.block.BlockFace;
@@ -349,7 +348,7 @@ public class CraftBlock implements Block {
     }
 
     public boolean isBlockFacePowered(BlockFace face) {
-        return chunk.getHandle().d.j(x, y, z, blockFaceToNotch(face));
+        return chunk.getHandle().d.i(x, y, z, blockFaceToNotch(face));
     }
 
     public boolean isBlockFaceIndirectlyPowered(BlockFace face) {

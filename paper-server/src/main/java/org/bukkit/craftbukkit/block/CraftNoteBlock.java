@@ -23,11 +23,11 @@ public class CraftNoteBlock extends CraftBlockState implements NoteBlock {
     }
 
     public byte getNote() {
-        return note.e;
+        return note.a;
     }
 
     public void setNote(byte n) {
-        note.e = n;
+        note.a = n;
     }
 
     public boolean play() {
