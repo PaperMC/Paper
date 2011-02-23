@@ -199,7 +199,7 @@ public enum Material {
     SUGAR(353),
     CAKE(354, 1),
     BED(355),
-    DIODE(100),
+    DIODE(356),
     GOLD_RECORD(2256, 1),
     GREEN_RECORD(2257, 1);
 
