@@ -126,7 +126,7 @@ public class ItemBlock extends Item {
                     } else {
                         world.f(i, j, k, a); // <-- world.b does this on success (tell the world)
 
-                        Block.byId[this.a].c(world, i, j, k, l);
+                        Block.byId[this.a].d(world, i, j, k, l);
                         Block.byId[this.a].a(world, i, j, k, (EntityLiving) entityhuman);
                         world.a((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), block.stepSound.c(), (block.stepSound.a() + 1.0F) / 2.0F, block.stepSound.b() * 0.8F);
                         --itemstack.count;
