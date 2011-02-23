@@ -17,7 +17,7 @@ public class ConsoleCommandHandler {
         String s = servercommand.a;
         ICommandListener icommandlistener = servercommand.b;
         String s1 = icommandlistener.c();
-        WorldServer worldserver = b.worlds.get(0); // Craftbukkit
+        WorldServer worldserver = this.b.worlds.get(0); // CraftBukkit
         ServerConfigurationManager serverconfigurationmanager = this.b.f;
 
         if (!s.toLowerCase().startsWith("help") && !s.toLowerCase().startsWith("?")) {

@@ -28,9 +28,8 @@ public class BlockFlowing extends BlockFluids {
     }
 
     public void a(World world, int i, int j, int k, Random random) {
-        // CraftBukkit start
+        // CraftBukkit
         CraftBlock source = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
-        // CraftBukkit end
 
         int l = this.g(world, i, j, k);
         byte b0 = 1;
@@ -96,8 +95,7 @@ public class BlockFlowing extends BlockFluids {
         }
 
         if (this.l(world, i, j - 1, k)) {
-            // CraftBukkit start
-            // Craftbucket send "down" to the server
+            // CraftBukkit start - send "down" to the server
             BlockFromToEvent event = new BlockFromToEvent(Type.BLOCK_FLOW, source, BlockFace.DOWN);
             ((WorldServer) world).getServer().getPluginManager().callEvent(event);
 

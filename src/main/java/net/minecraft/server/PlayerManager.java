@@ -10,14 +10,16 @@ public class PlayerManager {
     private List c = new ArrayList();
     private MinecraftServer d;
     private final int[][] e = new int[][] { { 1, 0}, { 0, 1}, { -1, 0}, { 0, -1}};
-    public WorldServer world; // Craftbukkit
 
-    // Craftbukkit - change of method signature
+    // CraftBukkit start
+    public WorldServer world;
+
+    // CraftBukkit - change of method signature
     public PlayerManager(MinecraftServer minecraftserver, WorldServer world) {
         this.d = minecraftserver;
-
-        this.world = world; // Craftbukkit
+        this.world = world;
     }
+    // CraftBukkit end
 
     public void a() {
         for (int i = 0; i < this.c.size(); ++i) {

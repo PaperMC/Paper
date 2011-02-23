@@ -156,7 +156,7 @@ public class EntityArrow extends Entity {
                 if (entity instanceof EntityLiving) {
                     CraftServer server = ((WorldServer) this.world).getServer();
 
-                    //TODO decide if we should create DamageCause.ARROW, DamageCause.PROJECTILE
+                    // TODO decide if we should create DamageCause.ARROW, DamageCause.PROJECTILE
                     // or leave as DamageCause.ENTITY_ATTACK
                     org.bukkit.entity.Entity shooter = (this.b == null) ? null : this.b.getBukkitEntity();
                     org.bukkit.entity.Entity damagee = movingobjectposition.g.getBukkitEntity();
@@ -167,7 +167,7 @@ public class EntityArrow extends Entity {
 
                     EntityDamageByProjectileEvent event = new EntityDamageByProjectileEvent(shooter, damagee, projectile, damageCause, damage);
                     server.getPluginManager().callEvent(event);
-                    if(!event.isCancelled()) {
+                    if (!event.isCancelled()) {
                         // this function returns if the arrow should stick in or not, i.e. !bounce
                         stick = movingobjectposition.g.a(this.b, event.getDamage());
                     } else {

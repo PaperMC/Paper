@@ -359,6 +359,7 @@ public class World implements IBlockAccess {
                 if (world != null) {
                     BlockPhysicsEvent event = new BlockPhysicsEvent(Event.Type.BLOCK_PHYSICS, world.getBlockAt(i, j, k), l);
                     ((WorldServer) this).getServer().getPluginManager().callEvent(event);
+
                     if (event.isCancelled()) {
                         return;
                     }
@@ -712,7 +713,7 @@ public class World implements IBlockAccess {
             flag = true;
         }
 
-        //CraftBukkit start
+        // CraftBukkit start
         if (entity instanceof EntityLiving) {
 
             MobType type = null;
@@ -742,14 +743,13 @@ public class World implements IBlockAccess {
             }
 
             if (type != null) {
-                CraftServer server = ((WorldServer)this).getServer();
+                CraftServer server = ((WorldServer) this).getServer();
                 Location loc = new Location(((WorldServer) this).getWorld(), entity.bi, entity.bj, entity.bk);
 
-                CreatureSpawnEvent cse;
-                cse = new CreatureSpawnEvent(entity.getBukkitEntity(), type, loc);
-                server.getPluginManager().callEvent(cse);
+                CreatureSpawnEvent event = new CreatureSpawnEvent(entity.getBukkitEntity(), type, loc);
+                server.getPluginManager().callEvent(event);
 
-                if (cse.isCancelled()) {
+                if (event.isCancelled()) {
                     return false;
                 }
             }
@@ -1408,8 +1408,9 @@ public class World implements IBlockAccess {
         }
 
         // CraftBukkit start -- Only call spawner if we have players online and the world allows for mobs or animals
-        if ((this.D || this.E) && (this instanceof WorldServer && ((WorldServer) this).getServer().getHandle().b.size() > 0))
+        if ((this.D || this.E) && (this instanceof WorldServer && ((WorldServer) this).getServer().getHandle().b.size() > 0)) {
             SpawnerCreature.a(this, this.D, this.E);
+        }
         // CraftBukkit end
 
         this.o.a();
@@ -1621,7 +1622,7 @@ public class World implements IBlockAccess {
             axisalignedbb = null;
         }
 
-        // Craftbukkit start - We dont want to allow the user to override the bounding box check
+        // CraftBukkit start - We dont want to allow the user to override the bounding box check
         boolean defaultReturn = axisalignedbb != null && !this.a(axisalignedbb) ? false : (block != Block.WATER && block != Block.STATIONARY_WATER && block != Block.LAVA && block != Block.STATIONARY_LAVA && block != Block.FIRE && block != Block.SNOW ? i > 0 && block == null && block1.a(this, j, k, l) : true);
 
         if (!defaultReturn) {

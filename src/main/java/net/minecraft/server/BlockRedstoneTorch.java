@@ -98,14 +98,14 @@ public class BlockRedstoneTorch extends BlockTorch {
             b.remove(0);
         }
 
-        // Craftbukkit start
+        // CraftBukkit start
         CraftBlock block = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
         BlockRedstoneEvent event = new BlockRedstoneEvent(block, flag ? 15 : 0, flag ? 0 : 15);
         ((WorldServer) world).getServer().getPluginManager().callEvent(event);
         if ((event.getNewCurrent() != 0) == flag) {
             return;
         }
-        // Craftbukkit end
+        // CraftBukkit end
 
         if (this.a) {
             if (flag) {
@@ -133,7 +133,8 @@ public class BlockRedstoneTorch extends BlockTorch {
     }
 
     public boolean c(World world, int i, int j, int k, int l) {
-        return l == 0 ? this.b((IBlockAccess) world, i, j, k, l) : false; // CraftBukkit -- cast to IBlockAccess
+        // CraftBukkit -- cast to IBlockAccess
+        return l == 0 ? this.b((IBlockAccess) world, i, j, k, l) : false;
     }
 
     public int a(int i, Random random) {

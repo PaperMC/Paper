@@ -68,7 +68,7 @@ public abstract class Entity {
     public int ticksLived;
     public int maxFireTicks;
     public int fireTicks;
-    public int maxAirTicks; // Craftbukkit: Make public
+    public int maxAirTicks; // CraftBukkit -- protected->public
     protected boolean bv;
     public int noDamageTicks;
     public int airTicks;
@@ -224,7 +224,7 @@ public abstract class Entity {
                 if (this.fireTicks % 20 == 0) {
                     // CraftBukkit start
                     // TODO: this event spams!
-                    if(this instanceof EntityLiving) {
+                    if (this instanceof EntityLiving) {
                         CraftServer server = ((WorldServer) this.world).getServer();
                         org.bukkit.entity.Entity damagee = this.getBukkitEntity();
                         DamageCause damageType = EntityDamageEvent.DamageCause.FIRE_TICK;
@@ -233,7 +233,7 @@ public abstract class Entity {
                         EntityDamageEvent event = new EntityDamageEvent(damagee, damageType, damageDone);
                         server.getPluginManager().callEvent(event);
 
-                        if (!event.isCancelled()){
+                        if (!event.isCancelled()) {
                             this.a((Entity) null, event.getDamage());
                         }
                     } else {
@@ -264,28 +264,28 @@ public abstract class Entity {
 
     protected void P() {
         if (!this.by) {
-            // CraftBukkit start
-            // TODO: this event spams!
-            if(this instanceof EntityLiving) {
+            // CraftBukkit start -- TODO: this event spams!
+            if (this instanceof EntityLiving) {
                 CraftServer server = ((WorldServer) this.world).getServer();
                 // TODO: shouldn't be sending null for the block.
-                org.bukkit.block.Block damager = null; //((WorldServer) this.l).getWorld().getBlockAt(i, j, k);
+                org.bukkit.block.Block damager = null; // ((WorldServer) this.l).getWorld().getBlockAt(i, j, k);
                 org.bukkit.entity.Entity damagee = this.getBukkitEntity();
                 DamageCause damageType = EntityDamageEvent.DamageCause.LAVA;
                 int damageDone = 4;
 
                 EntityDamageByBlockEvent event = new EntityDamageByBlockEvent(damager, damagee, damageType, damageDone);
                 server.getPluginManager().callEvent(event);
-                if (!event.isCancelled()){
+
+                if (!event.isCancelled()) {
                     this.a((Entity) null, event.getDamage());
                 }
 
-                if(this.fireTicks <= 0){
+                if (this.fireTicks <= 0) {
                     // not on fire yet
                     Type eventType = Type.ENTITY_COMBUST;
                     EntityCombustEvent combustEvent = new EntityCombustEvent(eventType, damagee);
                     server.getPluginManager().callEvent(combustEvent);
-                    if (!combustEvent.isCancelled()){
+                    if (!combustEvent.isCancelled()) {
                         this.fireTicks = 600;
                     }
                 } else {
@@ -476,10 +476,10 @@ public abstract class Entity {
             int i1;
             int j1;
 
-            // Craftbukkit start
+            // CraftBukkit start
             if ((this.bg) && (getBukkitEntity() instanceof Vehicle)) {
-                Vehicle vehicle = (Vehicle)getBukkitEntity();
-                org.bukkit.World wrld = ((WorldServer)world).getWorld();
+                Vehicle vehicle = (Vehicle) getBukkitEntity();
+                org.bukkit.World wrld = ((WorldServer) world).getWorld();
                 org.bukkit.block.Block block = wrld.getBlockAt(MathHelper.b(locX), MathHelper.b(locY - 0.20000000298023224D - (double) this.height), MathHelper.b(locZ));
 
                 if (d5 > d0) {
@@ -495,7 +495,7 @@ public abstract class Entity {
                 VehicleBlockCollisionEvent event = new VehicleBlockCollisionEvent(Type.VEHICLE_COLLISION_BLOCK, vehicle, block);
                 ((WorldServer) world).getServer().getPluginManager().callEvent(event);
             }
-            // Craftbukkit end
+            // CraftBukkit end
 
             if (this.bg && !flag) {
                 this.bf = (float) ((double) this.bf + (double) MathHelper.a(d9 * d9 + d10 * d10) * 0.6D);
@@ -547,7 +547,7 @@ public abstract class Entity {
                 if (!flag2) {
                     ++this.fireTicks;
                     // CraftBukkit start
-                    if (this.fireTicks <= 0){
+                    if (this.fireTicks <= 0) {
                         // not on fire yet
                         CraftServer server = ((WorldServer) this.world).getServer();
                         org.bukkit.entity.Entity damagee = this.getBukkitEntity();
@@ -556,7 +556,7 @@ public abstract class Entity {
                         EntityCombustEvent event = new EntityCombustEvent(eventType, damagee);
                         server.getPluginManager().callEvent(event);
 
-                        if (!event.isCancelled()){
+                        if (!event.isCancelled()) {
                             this.fireTicks = 300;
                         }
                     } else {
@@ -602,10 +602,11 @@ public abstract class Entity {
                 EntityDamageEvent event = new EntityDamageEvent(damagee, damageType, damageDone);
                 server.getPluginManager().callEvent(event);
 
-                if (!event.isCancelled()){
-                    this.a((Entity) null, event.getDamage());
+                if (event.isCancelled()) {
+                    return;
                 }
-                return;
+
+                i = event.getDamage();
             }
             // CraftBukkit end
             this.a((Entity) null, i);
@@ -843,18 +844,18 @@ public abstract class Entity {
         this.airTicks = nbttagcompound.d("Air");
         this.onGround = nbttagcompound.m("OnGround");
 
-        // Craftbukkit start
+        // CraftBukkit start
         if (nbttagcompound.b("World")) {
             String worldName = nbttagcompound.i("World");
 
-            for (WorldServer world : ((WorldServer)this.world).getServer().getServer().worlds) {
+            for (WorldServer world: ((WorldServer) this.world).getServer().getServer().worlds) {
                 if (world.q.j.equals(worldName)) {
                     this.world = world;
                     break;
                 }
             }
         }
-        // Craftbukkit end
+        // CraftBukkit end
 
         this.a(this.locX, this.locY, this.locZ);
         this.b(nbttagcompound);
@@ -1005,7 +1006,7 @@ public abstract class Entity {
 
     protected org.bukkit.entity.Entity bukkitEntity;
 
-    public org.bukkit.entity.Entity getBukkitEntity(){
+    public org.bukkit.entity.Entity getBukkitEntity() {
         if (bukkitEntity == null) {
             bukkitEntity = org.bukkit.craftbukkit.entity.CraftEntity.getEntity(((WorldServer) this.world).getServer(), this);
         }
@@ -1021,14 +1022,15 @@ public abstract class Entity {
         this.e = 0.0D;
         if (entity == null) {
             if (this.vehicle != null) {
-                // Craftbukkit start
+                // CraftBukkit start
                 if ((this.getBukkitEntity() instanceof LivingEntity) && (vehicle.getBukkitEntity() instanceof CraftVehicle)) {
-                    CraftVehicle cvehicle = (CraftVehicle)vehicle.getBukkitEntity();
-                    LivingEntity living = (LivingEntity)getBukkitEntity();
+                    CraftVehicle cvehicle = (CraftVehicle) vehicle.getBukkitEntity();
+                    LivingEntity living = (LivingEntity) getBukkitEntity();
+
                     VehicleExitEvent event = new VehicleExitEvent(Type.VEHICLE_EXIT, cvehicle, living);
-                    ((WorldServer)world).getServer().getPluginManager().callEvent(event);
+                    ((WorldServer) world).getServer().getPluginManager().callEvent(event);
                 }
-                // Craftbukkit end
+                // CraftBukkit end
 
                 this.c(this.vehicle.locX, this.vehicle.boundingBox.b + (double) this.vehicle.width, this.vehicle.locZ, this.yaw, this.pitch);
                 this.vehicle.passenger = null;
@@ -1036,14 +1038,15 @@ public abstract class Entity {
 
             this.vehicle = null;
         } else if (this.vehicle == entity) {
-            // Craftbukkit start
+            // CraftBukkit start
             if ((this.getBukkitEntity() instanceof LivingEntity) && (vehicle.getBukkitEntity() instanceof CraftVehicle)) {
-                CraftVehicle cvehicle = (CraftVehicle)vehicle.getBukkitEntity();
-                LivingEntity living = (LivingEntity)getBukkitEntity();
+                CraftVehicle cvehicle = (CraftVehicle) vehicle.getBukkitEntity();
+                LivingEntity living = (LivingEntity) getBukkitEntity();
+
                 VehicleExitEvent event = new VehicleExitEvent(Type.VEHICLE_EXIT, cvehicle, living);
-                ((WorldServer)world).getServer().getPluginManager().callEvent(event);
+                ((WorldServer) world).getServer().getPluginManager().callEvent(event);
             }
-            // Craftbukkit end
+            // CraftBukkit end
 
             this.vehicle.passenger = null;
             this.vehicle = null;

@@ -133,7 +133,7 @@ public class EntityFireball extends Entity {
                     EntityDamageByProjectileEvent event = new EntityDamageByProjectileEvent(shooter, damagee, projectile, damageCause, damage);
                     server.getPluginManager().callEvent(event);
 
-                    if(!event.isCancelled()) {
+                    if (!event.isCancelled()) {
                         // this function returns if the fireball should stick or not, i.e. !bounce
                         stick = movingobjectposition.g.a(this.j, event.getDamage());
                     } else {
@@ -144,20 +144,20 @@ public class EntityFireball extends Entity {
                     stick = movingobjectposition.g.a(this.j, 0);
                 }
                 if (stick) {
-                    // CraftBukkit end
                     ;
                 }
             }
 
             CraftServer server = ((WorldServer) this.world).getServer();
             org.bukkit.event.Event.Type eventType = ExplosionPrimedEvent.Type.EXPLOSION_PRIMED;
-            ExplosionPrimedEvent event = new ExplosionPrimedEvent(eventType, CraftEntity.getEntity(server, this), 1.0F, false); 
+
+            ExplosionPrimedEvent event = new ExplosionPrimedEvent(eventType, CraftEntity.getEntity(server, this), 1.0F, false);
             server.getPluginManager().callEvent(event);
-            if(!event.isCancelled()) {
+            if (!event.isCancelled()) {
                 this.world.a((Entity) null, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire());
                 this.C();
             }
-            // Craftbukkit end
+            // CraftBukkit end
         }
 
         this.locX += this.motX;

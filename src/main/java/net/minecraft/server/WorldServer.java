@@ -1,11 +1,11 @@
 package net.minecraft.server;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 // CraftBukkit start
+import java.io.File;
 import org.bukkit.BlockChangeDelegate;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -16,9 +16,9 @@ public class WorldServer extends World implements BlockChangeDelegate {
     public ChunkProviderServer u;
     public boolean v = false;
     public boolean w;
-    public final MinecraftServer x; // Craftbukkit - private -> public final
+    public final MinecraftServer x; // CraftBukkit - private -> public final
     private EntityList y = new EntityList();
-    public PlayerManager manager; // Craftbukkit
+    public PlayerManager manager; // CraftBukkit
 
     public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, String s, int i) {
         super(idatamanager, s, (new Random()).nextLong(), WorldProvider.a(i));
@@ -87,7 +87,8 @@ public class WorldServer extends World implements BlockChangeDelegate {
             i1 = l;
         }
 
-        return i1 > this.x.spawnProtection || this.x.f.h(entityhuman.name); // CraftBukkit Configurable spawn protection start
+        // CraftBukkit -- Configurable spawn protection
+        return i1 > this.x.spawnProtection || this.x.f.h(entityhuman.name);
     }
 
     protected void b(Entity entity) {
@@ -113,11 +114,11 @@ public class WorldServer extends World implements BlockChangeDelegate {
     public Explosion a(Entity entity, double d0, double d1, double d2, float f, boolean flag) {
         Explosion explosion = super.a(entity, d0, d1, d2, f, flag);
 
-        // Craftbukkit start
-        if(explosion.wasCanceled) {
+        // CraftBukkit start
+        if (explosion.wasCanceled) {
             return explosion;
         }
-        // Craftbukkit end
+        // CraftBukkit end
 
         this.x.f.a(d0, d1, d2, 64.0D, new Packet60Explosion(d0, d1, d2, f, explosion.g));
         return explosion;

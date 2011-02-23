@@ -42,8 +42,10 @@ public class EntitySkeleton extends EntityMonster {
                 CraftServer server = ((WorldServer) this.world).getServer();
                 Type eventType = Type.ENTITY_COMBUST;
                 org.bukkit.entity.Entity entity = this.getBukkitEntity();
+
                 EntityCombustEvent event = new EntityCombustEvent(eventType, entity);
                 server.getPluginManager().callEvent(event);
+
                 if (!event.isCancelled()) {
                     this.fireTicks = 300;
                 }
@@ -90,7 +92,7 @@ public class EntitySkeleton extends EntityMonster {
     }
 
     protected void o() {
-        // Craftbukkit start - whole method
+        // CraftBukkit start - whole method
         List<org.bukkit.inventory.ItemStack> loot = new ArrayList<org.bukkit.inventory.ItemStack>();
 
         int count = this.random.nextInt(3);
@@ -103,15 +105,16 @@ public class EntitySkeleton extends EntityMonster {
             loot.add(new org.bukkit.inventory.ItemStack(org.bukkit.Material.BONE, count));
         }
 
-        CraftEntity entity = (CraftEntity)getBukkitEntity();
+        CraftWorld cworld = ((WorldServer) world).getWorld();
+        Server server = ((WorldServer) world).getServer();
+        CraftEntity entity = (CraftEntity) getBukkitEntity();
+
         EntityDeathEvent event = new EntityDeathEvent(Type.ENTITY_DEATH, entity, loot);
-        CraftWorld cworld = ((WorldServer)world).getWorld();
-        Server server = ((WorldServer)world).getServer();
         server.getPluginManager().callEvent(event);
 
-        for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
+        for (org.bukkit.inventory.ItemStack stack: event.getDrops()) {
             cworld.dropItemNaturally(entity.getLocation(), stack);
         }
-        // Craftbukkit end
+        // CraftBukkit end
     }
 }

@@ -159,7 +159,8 @@ public class EntityTrackerEntry {
             double d1 = entityplayer.locZ - (double) (this.f / 32);
 
             if (d0 >= (double) (-this.b) && d0 <= (double) this.b && d1 >= (double) (-this.b) && d1 <= (double) this.b) {
-                if ((!this.n.contains(entityplayer)) && (this.a.world == entityplayer.world)) { // Craftbukkit
+                // CraftBukkit
+                if ((!this.n.contains(entityplayer)) && (this.a.world == entityplayer.world)) {
                     this.n.add(entityplayer);
                     entityplayer.a.b(this.b());
                     if (this.s) {

@@ -220,7 +220,8 @@ public class EntityBoat extends Entity {
                 this.motZ += this.passenger.motZ * 0.2D;
             }
 
-            d4 = this.maxSpeed; // CraftBukkit
+            // CraftBukkit
+            d4 = this.maxSpeed;
             if (this.motX < -d4) {
                 this.motX = -d4;
             }
@@ -325,7 +326,9 @@ public class EntityBoat extends Entity {
             Location from = new Location(world, prevX, prevY, prevZ, prevYaw, prevPitch);
             Location to = new Location(world, this.locX, this.locY, this.locZ, this.yaw, this.pitch);
             Vehicle vehicle = (Vehicle) this.getBukkitEntity();
+
             server.getPluginManager().callEvent(new VehicleEvent(Type.VEHICLE_UPDATE, vehicle));
+
             if (!from.equals(to)) {
                 VehicleMoveEvent event = new VehicleMoveEvent(Type.VEHICLE_MOVE, vehicle, from, to);
                 server.getPluginManager().callEvent(event);

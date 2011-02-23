@@ -5,7 +5,7 @@ public final class ItemStack {
     public int count;
     public int b;
     public int id;
-    public int damage; // Craftbukkit - make public
+    public int damage; // CraftBukkit - private->public
 
     public ItemStack(Block block) {
         this(block, 1);

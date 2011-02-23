@@ -24,6 +24,7 @@ public class EntityZombie extends EntityMonster {
                 CraftServer server = ((WorldServer) this.world).getServer();
                 EntityCombustEvent event = new EntityCombustEvent(Type.ENTITY_COMBUST, this.getBukkitEntity());
                 server.getPluginManager().callEvent(event);
+
                 if (!event.isCancelled()) {
                     this.fireTicks = 300;
                 }

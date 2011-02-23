@@ -1,6 +1,6 @@
 package net.minecraft.server;
 
-//CraftBukkit start
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.event.entity.ExplosionPrimedEvent;
@@ -55,11 +55,10 @@ public class EntityTNTPrimed extends Entity {
         }
 
         if (this.a-- <= 0) {
-            // Craftbukkit start
-            // Need to reverse the order of the explosion and the entity death so we have a location for the event.
+            // CraftBukkit start - Need to reverse the order of the explosion and the entity death so we have a location for the event.
             this.h();
             this.C();
-            // Craftbukkit end
+            // CraftBukkit end
         } else {
             this.world.a("smoke", this.locX, this.locY + 0.5D, this.locZ, 0.0D, 0.0D, 0.0D);
         }
@@ -68,15 +67,17 @@ public class EntityTNTPrimed extends Entity {
     private void h() {
         float f = 4.0F;
 
-        // Craftbukkit start
+        // CraftBukkit start
         CraftServer server = ((WorldServer) this.world).getServer();
         org.bukkit.event.Event.Type eventType = ExplosionPrimedEvent.Type.EXPLOSION_PRIMED;
+
         ExplosionPrimedEvent event = new ExplosionPrimedEvent(eventType, CraftEntity.getEntity(server, this), f, false);
         server.getPluginManager().callEvent(event);
+
         if (!event.isCancelled()) {
             this.world.a((Entity) null, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire());
         }
-        // Craftbukkit end
+        // CraftBukkit end
     }
 
     protected void a(NBTTagCompound nbttagcompound) {

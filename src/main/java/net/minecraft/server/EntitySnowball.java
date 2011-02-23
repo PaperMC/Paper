@@ -162,7 +162,7 @@ public class EntitySnowball extends Entity {
                     EntityDamageByProjectileEvent event = new EntityDamageByProjectileEvent(shooter, damagee, projectile, damageCause, damage);
                     server.getPluginManager().callEvent(event);
 
-                    if(!event.isCancelled()) {
+                    if (!event.isCancelled()) {
                         // this function returns if the snowball should stick or not, i.e. !bounce
                         stick = movingobjectposition.g.a(this.g, event.getDamage());
                     } else {

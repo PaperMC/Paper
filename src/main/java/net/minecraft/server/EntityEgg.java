@@ -167,7 +167,7 @@ public class EntityEgg extends Entity {
                     EntityDamageByProjectileEvent event = new EntityDamageByProjectileEvent(shooter, damagee, projectile, damageCause, damage);
                     server.getPluginManager().callEvent(event);
 
-                    if(!event.isCancelled()) {
+                    if (!event.isCancelled()) {
                         // this function returns if the egg should stick or not, i.e. !bounce
                         stick = movingobjectposition.g.a(this.g, event.getDamage());
                     } else {
@@ -184,7 +184,7 @@ public class EntityEgg extends Entity {
             }
 
             boolean hatching = !this.world.isStatic && this.random.nextInt(8) == 0;
-            byte numHatching = (this.random.nextInt(32) == 0) ? (byte) 4 : (byte) 1;
+            int numHatching = (this.random.nextInt(32) == 0) ? 4 : 1;
             if (!hatching) {
                 numHatching = 0;
             }
@@ -195,8 +195,9 @@ public class EntityEgg extends Entity {
                 Type eventType = Type.PLAYER_EGG_THROW;
                 Player player = (this.g == null) ? null : (Player) this.g.getBukkitEntity();
 
-                PlayerEggThrowEvent event = new PlayerEggThrowEvent(eventType, player, (Egg)this.getBukkitEntity(), hatching, numHatching, hatchingType);
+                PlayerEggThrowEvent event = new PlayerEggThrowEvent(eventType, player, (Egg) this.getBukkitEntity(), hatching, (byte) numHatching, hatchingType);
                 server.getPluginManager().callEvent(event);
+
                 hatching = event.isHatching();
                 numHatching = event.getNumHatches();
                 hatchingType = event.getHatchType();

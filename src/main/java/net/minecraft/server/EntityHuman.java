@@ -159,7 +159,8 @@ public abstract class EntityHuman extends EntityLiving {
         this.n = this.o;
         super.q();
         float f = MathHelper.a(this.motX * this.motX + this.motZ * this.motZ);
-        float f1 = (float) TrigMath.atan(-this.motY * 0.20000000298023224D) * 15.0F; // CraftBukkit
+        // CraftBukkit -- Math -> TrigMath
+        float f1 = (float) TrigMath.atan(-this.motY * 0.20000000298023224D) * 15.0F;
 
         if (f > 0.1F) {
             f = 0.1F;
@@ -255,9 +256,10 @@ public abstract class EntityHuman extends EntityLiving {
             }
 
             // CraftBukkit start
-            Player player = (Player)this.getBukkitEntity();
-            CraftServer server = ((WorldServer)world).getServer();
+            Player player = (Player) this.getBukkitEntity();
+            CraftServer server = ((WorldServer) world).getServer();
             CraftItem drop = new CraftItem(server, entityitem);
+
             PlayerDropItemEvent event = new PlayerDropItemEvent(player, drop);
             server.getPluginManager().callEvent(event);
 
@@ -416,21 +418,19 @@ public abstract class EntityHuman extends EntityLiving {
                 org.bukkit.entity.Entity damager = this.getBukkitEntity();
                 org.bukkit.entity.Entity damagee = (entity == null) ? null : entity.getBukkitEntity();
                 DamageCause damageType = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
-                int damageDone = i;
 
-                EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(damager, damagee, damageType, damageDone);
+                EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(damager, damagee, damageType, i);
                 server.getPluginManager().callEvent(event);
 
-                if (event.isCancelled()){
+                if (event.isCancelled()) {
                     return;
                 }
 
-                entity.a(this, event.getDamage());
-            } else {
-                entity.a(this, i);
+                i = event.getDamage();
             }
             // CraftBukkit end
 
+            entity.a(this, i);
             ItemStack itemstack = this.z();
 
             if (itemstack != null && entity instanceof EntityLiving) {

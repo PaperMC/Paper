@@ -48,13 +48,15 @@ public class EntityMonster extends EntityCreature implements IMonster {
             if (this.passenger != entity && this.vehicle != entity) {
                 if (entity != this) {
                     // CraftBukkit start
+                    CraftServer server = ((WorldServer) this.world).getServer();
                     org.bukkit.entity.Entity bukkitTarget = null;
                     if (entity != null) {
                         bukkitTarget = entity.getBukkitEntity();
                     }
+
                     EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), bukkitTarget, TargetReason.TARGET_ATTACKED_ENTITY);
-                    CraftServer server = ((WorldServer) this.world).getServer();
                     server.getPluginManager().callEvent(event);
+
                     if (!event.isCancelled()) {
                         if (event.getTarget() == null) {
                             this.d = null;
@@ -83,18 +85,18 @@ public class EntityMonster extends EntityCreature implements IMonster {
                 org.bukkit.entity.Entity damager = this.getBukkitEntity();
                 org.bukkit.entity.Entity damagee = (entity == null) ? null : entity.getBukkitEntity();
                 DamageCause damageType = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
-                int damageDone = this.c;
 
-                EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(damager, damagee, damageType, damageDone);
+                EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(damager, damagee, damageType, this.c);
                 server.getPluginManager().callEvent(event);
 
-                if (!event.isCancelled()){
+                if (!event.isCancelled()) {
                     entity.a(this, event.getDamage());
                 }
-            } else {
-                entity.a(this, this.c);
+                return;
             }
             // CraftBukkit end
+
+            entity.a(this, this.c);
         }
     }
 

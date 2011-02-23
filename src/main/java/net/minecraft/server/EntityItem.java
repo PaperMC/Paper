@@ -198,7 +198,7 @@ public class EntityItem extends Entity {
             if (this.c == 0) {
                 Player player = (Player) entityhuman.getBukkitEntity();
                 PlayerPickupItemEvent event = new PlayerPickupItemEvent(player, (Item) this.getBukkitEntity());
-                ((WorldServer)world).getServer().getPluginManager().callEvent(event);
+                ((WorldServer) world).getServer().getPluginManager().callEvent(event);
 
                 if (!event.isCancelled() && entityhuman.inventory.a(this.a)) {
                     this.world.a(this, "random.pop", 0.2F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);

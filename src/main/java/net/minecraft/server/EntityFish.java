@@ -202,7 +202,7 @@ public class EntityFish extends Entity {
                         EntityDamageByProjectileEvent event = new EntityDamageByProjectileEvent(shooter, damagee, projectile, damageCause, damage);
                         server.getPluginManager().callEvent(event);
 
-                        if(!event.isCancelled()) {
+                        if (!event.isCancelled()) {
                             // this function returns if the fish should stick or not, i.e. !bounce
                             stick = movingobjectposition.g.a(this.b, event.getDamage());
                         } else {
@@ -213,9 +213,9 @@ public class EntityFish extends Entity {
                         stick = movingobjectposition.g.a(this.b, 0);
                     }
                     if (!stick) {
+                        // CraftBukkit end
                         this.c = movingobjectposition.g;
                     }
-                    // CraftBukkit end
                 } else {
                     this.h = true;
                 }

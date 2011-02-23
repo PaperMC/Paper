@@ -67,7 +67,7 @@ public class BlockDispenser extends BlockContainer {
             CraftServer server = ((WorldServer) world).getServer();
             Type eventType = Type.BLOCK_INTERACT;
             CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
-            LivingEntity who = (entityhuman == null)?null:(LivingEntity)entityhuman.getBukkitEntity();
+            LivingEntity who = (entityhuman == null) ? null : (LivingEntity) entityhuman.getBukkitEntity();
 
             BlockInteractEvent event = new BlockInteractEvent(eventType, block, who);
             server.getPluginManager().callEvent(event);
@@ -84,7 +84,7 @@ public class BlockDispenser extends BlockContainer {
         }
     }
 
-    // Craftbukkit - following method should be public
+    // CraftBukkit - private->public
     public void b(World world, int i, int j, int k, Random random) {
         int l = world.getData(i, j, k);
         float f = 0.0F;

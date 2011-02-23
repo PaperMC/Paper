@@ -1,6 +1,6 @@
 package net.minecraft.server;
 
-//CraftBukkit start
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.event.entity.ExplosionPrimedEvent;
@@ -83,18 +83,20 @@ public class EntityCreeper extends EntityMonster {
             this.e(1);
             ++this.a;
             if (this.a >= 30) {
-                // Craftbukkit start
+                // CraftBukkit start
                 CraftServer server = ((WorldServer) this.world).getServer();
                 org.bukkit.event.Event.Type eventType = ExplosionPrimedEvent.Type.EXPLOSION_PRIMED;
-                ExplosionPrimedEvent event = new ExplosionPrimedEvent(eventType, CraftEntity.getEntity(server, this), 3.0F, false); 
+
+                ExplosionPrimedEvent event = new ExplosionPrimedEvent(eventType, CraftEntity.getEntity(server, this), 3.0F, false);
                 server.getPluginManager().callEvent(event);
-                if(!event.isCancelled()) {
+
+                if (!event.isCancelled()) {
                     this.world.a(this, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire());
                     this.C();
                 } else {
                     this.a = 0;
                 }
-                // Craftbukkit end
+                // CraftBukkit end
             }
 
             this.e = true;

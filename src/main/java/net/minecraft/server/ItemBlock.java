@@ -22,8 +22,7 @@ public class ItemBlock extends Item {
     }
 
     public boolean a(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
-        // CraftBukkit start
-        // Bail if we have nothing of the item in hand
+        // CraftBukkit start -- Bail if we have nothing of the item in hand
         if (itemstack.count == 0) {
             return false;
         }
@@ -101,7 +100,8 @@ public class ItemBlock extends Item {
 
                     int distanceFromSpawn = (int) Math.max(Math.abs(i - spawnX), Math.abs(k - spawnZ));
 
-                    boolean canBuild = distanceFromSpawn > ((WorldServer) world).x.spawnProtection || thePlayer.isOp(); // CraftBukkit Configurable spawn protection start
+                    // CraftBukkit Configurable spawn protection start
+                    boolean canBuild = distanceFromSpawn > ((WorldServer) world).x.spawnProtection || thePlayer.isOp();
 
                     BlockPlaceEvent event = new BlockPlaceEvent(eventType, placedBlock, replacedBlockState, blockClicked, itemInHand, thePlayer, canBuild);
                     server.getPluginManager().callEvent(event);

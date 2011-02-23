@@ -61,7 +61,8 @@ public class BlockFire extends Block {
             if (!world.d(i, j - 1, k) || l > 3) {
                 world.e(i, j, k, 0);
             }
-        } else if (!flag && !this.b((IBlockAccess)world, i, j - 1, k) && l == 15 && random.nextInt(4) == 0) { // CraftBukkit - Cast to IBlockAccess
+        // CraftBukkit - Cast to IBlockAccess
+        } else if (!flag && !this.b((IBlockAccess) world, i, j - 1, k) && l == 15 && random.nextInt(4) == 0) {
             world.e(i, j, k, 0);
         } else {
             if (l % 2 == 0 && l > 2) {
@@ -73,8 +74,8 @@ public class BlockFire extends Block {
                 this.a(world, i, j, k + 1, 300, random);
 
                 // CraftBukkit start - Call to stop spread of fire.
-                Server server = ((WorldServer)world).getServer();
-                CraftWorld cworld = ((WorldServer)world).getWorld();
+                Server server = ((WorldServer) world).getServer();
+                CraftWorld cworld = ((WorldServer) world).getWorld();
 
                 IgniteCause igniteCause = BlockIgniteEvent.IgniteCause.SPREAD;
                 Player thePlayer = null;
@@ -94,9 +95,9 @@ public class BlockFire extends Block {
 
                                 if (i2 > 0 && random.nextInt(l1) <= i2) {
                                     // CraftBukkit start - Call to stop spread of fire.
-                                    org.bukkit.block.Block theBlock = (cworld.getBlockAt(i1, k1, j1));
+                                    org.bukkit.block.Block theBlock = cworld.getBlockAt(i1, k1, j1);
 
-                                    if (theBlock.getTypeId() != Block.FIRE.id){
+                                    if (theBlock.getTypeId() != Block.FIRE.id) {
                                         BlockIgniteEvent event = new BlockIgniteEvent(theBlock, igniteCause, thePlayer);
                                         server.getPluginManager().callEvent(event);
                                         if (event.isCancelled()) {
@@ -130,16 +131,16 @@ public class BlockFire extends Block {
         if (random.nextInt(l) < i1) {
             boolean flag = world.getTypeId(i, j, k) == Block.TNT.id;
             // CraftBukkit start
-            Server server = ((WorldServer)world).getServer();
-            CraftWorld cworld = ((WorldServer)world).getWorld();
-            org.bukkit.block.Block theBlock = (cworld.getBlockAt(i, j, k));
+            Server server = ((WorldServer) world).getServer();
+            CraftWorld cworld = ((WorldServer) world).getWorld();
+            org.bukkit.block.Block theBlock = cworld.getBlockAt(i, j, k);
             BlockBurnEvent event = new BlockBurnEvent(theBlock);
             server.getPluginManager().callEvent(event);
-            if(event.isCancelled()) {
+            if (event.isCancelled()) {
                 return;
             }
             // CraftBukkit end
-            
+
             if (random.nextInt(2) == 0) {
                 world.e(i, j, k, this.id);
             } else {

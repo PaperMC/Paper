@@ -3,7 +3,6 @@ package net.minecraft.server;
 import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,6 +13,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 // CraftBukkit start
+import java.io.PrintStream;
 import java.net.UnknownHostException;
 import joptsimple.OptionSet;
 import org.bukkit.command.ConsoleCommandSender;
@@ -22,7 +22,7 @@ import org.bukkit.craftbukkit.LoggerOutputStream;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 import org.bukkit.event.Event;
 import org.bukkit.event.world.WorldEvent;
-//CraftBukkit end
+// CraftBukkit end
 
 public class MinecraftServer implements Runnable, ICommandListener {
 
@@ -30,7 +30,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
     public static HashMap b = new HashMap();
     public NetworkListenThread c;
     public PropertyManager d;
-    //public WorldServer e; // Craftbukkit - removed
+    // public WorldServer e; // CraftBukkit - removed
     public ServerConfigurationManager f;
     private ConsoleCommandHandler o;
     private boolean p = true;
@@ -45,7 +45,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
     public boolean m;
     public boolean n;
 
-    // Craftbukkit start
+    // CraftBukkit start
     public int spawnProtection;
     public List<WorldServer> worlds = new ArrayList<WorldServer>();
     public CraftServer server;
@@ -53,7 +53,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
     public ConsoleCommandSender console;
     // Craftbukkit end
 
-    public MinecraftServer(OptionSet options) { // Craftbukkit - adds argument OptionSet
+    public MinecraftServer(OptionSet options) { // CraftBukkit - adds argument OptionSet
         new ThreadSleepForever(this);
         this.options = options; // CraftBukkit
     }
@@ -66,10 +66,10 @@ public class MinecraftServer implements Runnable, ICommandListener {
         threadcommandreader.start();
         ConsoleLogManager.a();
 
-        // Craftbukkit start
+        // CraftBukkit start
         System.setOut(new PrintStream(new LoggerOutputStream(a, Level.INFO), true));
         System.setErr(new PrintStream(new LoggerOutputStream(a, Level.SEVERE), true));
-        // Craftbukkit end
+        // CraftBukkit end
 
         a.info("Starting minecraft server version Beta 1.3");
         if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
@@ -78,7 +78,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
         }
 
         a.info("Loading properties");
-        this.d = new PropertyManager(options); // Craftbukkit
+        this.d = new PropertyManager(options); // CraftBukkit
         String s = this.d.a("server-ip", "");
 
         this.l = this.d.a("online-mode", true);
@@ -130,18 +130,18 @@ public class MinecraftServer implements Runnable, ICommandListener {
 
         a.info("Preparing start region");
 
-        // Craftbukkit start
+        // CraftBukkit start
         WorldServer world = new WorldServer(this, new ServerNBTManager(new File("."), s, true), s, this.d.a("hellworld", false) ? -1 : 0);
         world.a(new WorldManager(this, world));
         world.j = this.d.a("spawn-monsters", true) ? 1 : 0;
         world.a(this.d.a("spawn-monsters", true), this.m);
         this.f.a(world);
         worlds.add(world);
-        // Craftbukkit end
+        // CraftBukkit end
 
         short short1 = 196;
         long i = System.currentTimeMillis();
-        ChunkCoordinates chunkcoordinates = worlds.get(0).l(); // Craftbukkit
+        ChunkCoordinates chunkcoordinates = worlds.get(0).l(); // CraftBukkit
 
         for (int j = -short1; j <= short1 && this.p; j += 16) {
             for (int k = -short1; k <= short1 && this.p; k += 16) {
@@ -159,15 +159,15 @@ public class MinecraftServer implements Runnable, ICommandListener {
                     i = l;
                 }
 
-                // Craftbukkit start
-                for (WorldServer worldserver : worlds) {
+                // CraftBukkit start
+                for (WorldServer worldserver: worlds) {
                     world.u.d(chunkcoordinates.a + j >> 4, chunkcoordinates.c + k >> 4);
 
                     while (world.e() && this.p) {
                         ;
                     }
                 }
-                // Craftbukkit end
+                // CraftBukkit end
             }
         }
 
@@ -190,30 +190,30 @@ public class MinecraftServer implements Runnable, ICommandListener {
     private void f() {
         a.info("Saving chunks");
 
-        // Craftbukkit start
-        for (WorldServer world : worlds) {
+        // CraftBukkit start
+        for (WorldServer world: worlds) {
             world.a(true, (IProgressUpdate) null);
             world.r();
 
-            Event worldSaved = new WorldEvent( Event.Type.WORLD_SAVED, world.getWorld() );
-            server.getPluginManager().callEvent( worldSaved );
+            WorldEvent event = new WorldEvent( Event.Type.WORLD_SAVED, world.getWorld() );
+            server.getPluginManager().callEvent( event );
         }
-        // Craftbukkit end
+        // CraftBukkit end
     }
 
     private void g() {
         a.info("Stopping server");
         // CraftBukkit start
-        if(server != null) {
+        if (server != null) {
             server.disablePlugins();
         }
-        // Craftbukkit end
+        // CraftBukkit end
 
         if (this.f != null) {
             this.f.d();
         }
 
-        if (this.worlds.size() > 0) { // Craftbukkit
+        if (this.worlds.size() > 0) { // CraftBukkit
             this.f();
         }
     }
@@ -243,7 +243,8 @@ public class MinecraftServer implements Runnable, ICommandListener {
 
                     j += l;
                     i = k;
-                    if (this.worlds.size() > 0 && this.worlds.get(0).q()) { // Craftbukkit - TODO - Replace with loop?
+                    // CraftBukkit - TODO - Replace with loop?
+                    if (this.worlds.size() > 0 && this.worlds.get(0).q()) {
                         this.h();
                         j = 0L;
                     } else {
@@ -314,7 +315,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
         Vec3D.a();
         ++this.h;
 
-        // Craftbukkit start
+        // CraftBukkit start
         if (this.h % 20 == 0) {
             for (int i = 0; i < this.f.b.size(); ++i) {
                 EntityPlayer entityplayer = (EntityPlayer) this.f.b.get(i);
@@ -324,7 +325,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
 
         ((CraftScheduler) server.getScheduler()).mainThreadHeartbeat(this.h);
 
-        for (WorldServer world : worlds) {
+        for (WorldServer world: worlds) {
             world.g();
 
             while (world.e()) {
@@ -333,8 +334,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
 
             world.d();
         }
-        // Craftbukkit end
-
+        // CraftBukkit end
         this.c.a();
         this.f.b();
         this.k.a();
@@ -358,12 +358,12 @@ public class MinecraftServer implements Runnable, ICommandListener {
         while (this.r.size() > 0) {
             ServerCommand servercommand = (ServerCommand) this.r.remove(0);
 
-            // Craftbukkit start
+            // CraftBukkit start
             if (server.dispatchCommand(console, servercommand.a)) {
                 continue;
             }
-            // Craftbukkit end
-            
+            // CraftBukkit end
+
             this.o.a(servercommand);
         }
     }
@@ -372,7 +372,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
         this.q.add(iupdateplayerlistbox);
     }
 
-    public static void main(final OptionSet options) { // Craftbukkit - replaces main(String args[])
+    public static void main(final OptionSet options) { // CraftBukkit - replaces main(String args[])
         try {
             MinecraftServer minecraftserver = new MinecraftServer(options);
 

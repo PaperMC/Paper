@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+// CraftBukkit
 import org.bukkit.craftbukkit.CraftWorld;
 
 public class Chunk {
@@ -47,7 +48,7 @@ public class Chunk {
 
         // CraftBukkit start
         CraftWorld cw = ((WorldServer) world).getWorld();
-        bukkitChunk = (cw == null) ? null:cw.popPreservedChunk( i, j );
+        bukkitChunk = (cw == null) ? null : cw.popPreservedChunk( i, j );
         if (bukkitChunk == null) {
             bukkitChunk = new org.bukkit.craftbukkit.CraftChunk( this );
         }
@@ -358,7 +359,8 @@ public class Chunk {
 
         if (i != this.j || j != this.k) {
             System.out.println("Wrong location! " + entity);
-            System.out.println("" + entity.locX + "," + entity.locZ + "(" + i + "," + j + ") vs " + this.j + "," + this.k); // CraftBukkit
+            // CraftBukkit
+            System.out.println("" + entity.locX + "," + entity.locZ + "(" + i + "," + j + ") vs " + this.j + "," + this.k);
             Thread.dumpStack();
         }
 

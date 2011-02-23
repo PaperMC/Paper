@@ -34,14 +34,14 @@ public class PropertyManager {
     private OptionSet options = null;
 
     public PropertyManager(final OptionSet options) {
-        this((File)options.valueOf("config"));
+        this((File) options.valueOf("config"));
 
         this.options = options;
     }
 
     private <T> T getOverride(String name, T value) {
         if ((options != null) && (options.has(name))) {
-            return (T)options.valueOf(name);
+            return (T) options.valueOf(name);
         }
 
         return value;

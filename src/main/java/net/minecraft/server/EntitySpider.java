@@ -49,9 +49,10 @@ public class EntitySpider extends EntityMonster {
 
         if (f1 > 0.5F && this.random.nextInt(100) == 0) {
             // CraftBukkit start
-            EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), null, TargetReason.FORGOT_TARGET);
             CraftServer server = ((WorldServer) this.world).getServer();
+            EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), null, TargetReason.FORGOT_TARGET);
             server.getPluginManager().callEvent(event);
+
             if (!event.isCancelled()) {
                 if (event.getTarget() == null) {
                     this.d = null;

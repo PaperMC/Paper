@@ -156,7 +156,7 @@ public class BlockLever extends Block {
                 return true;
             }
             // CraftBukkit end
-            
+
             world.c(i, j, k, i1 + j1);
             world.b(i, j, k, i, j, k);
             world.a((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.click", 0.3F, j1 > 0 ? 0.6F : 0.5F);

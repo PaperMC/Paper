@@ -76,13 +76,15 @@ public class EntityPigZombie extends EntityZombie {
 
     private void c(Entity entity) {
         // CraftBukkit start
+        CraftServer server = ((WorldServer) this.world).getServer();
         org.bukkit.entity.Entity bukkitTarget = null;
         if (entity != null) {
             bukkitTarget = entity.getBukkitEntity();
         }
+
         EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), bukkitTarget, TargetReason.PIG_ZOMBIE_TARGET);
-        CraftServer server = ((WorldServer) this.world).getServer();
         server.getPluginManager().callEvent(event);
+
         if (!event.isCancelled()) {
             if (event.getTarget() == null) {
                 this.d = null;

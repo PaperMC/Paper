@@ -73,7 +73,8 @@ public class EntityTracker {
 
             this.a.add(entitytrackerentry);
             this.b.a(entity.id, entitytrackerentry);
-            entitytrackerentry.b(entity.world.d); // Craftbukkit
+            // CraftBukkit
+            entitytrackerentry.b(entity.world.d); // CraftBukkit
         }
     }
 
@@ -104,7 +105,8 @@ public class EntityTracker {
         while (iterator.hasNext()) {
             EntityTrackerEntry entitytrackerentry = (EntityTrackerEntry) iterator.next();
 
-            entitytrackerentry.a(entitytrackerentry.a.world.d); // Craftbukkit
+            // CraftBukkit
+            entitytrackerentry.a(entitytrackerentry.a.world.d);
             if (entitytrackerentry.m && entitytrackerentry.a instanceof EntityPlayer) {
                 arraylist.add((EntityPlayer) entitytrackerentry.a);
             }

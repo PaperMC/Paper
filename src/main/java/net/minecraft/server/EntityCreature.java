@@ -10,8 +10,8 @@ import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
 
 public class EntityCreature extends EntityLiving {
 
-    public PathEntity a; // Craftbukkit - public
-    public Entity d; // Craftbukkit - public
+    public PathEntity a; // CraftBukkit - public
+    public Entity d; // CraftBukkit - public
     protected boolean e = false;
 
     public EntityCreature(World world) {
@@ -29,6 +29,7 @@ public class EntityCreature extends EntityLiving {
                 EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), target.getBukkitEntity(), TargetReason.CLOSEST_PLAYER);
                 CraftServer server = ((WorldServer) this.world).getServer();
                 server.getPluginManager().callEvent(event);
+
                 if (!event.isCancelled()) {
                     if (event.getTarget() == null) {
                         this.d = null;
@@ -46,6 +47,7 @@ public class EntityCreature extends EntityLiving {
             EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), null, TargetReason.TARGET_DIED);
             CraftServer server = ((WorldServer) this.world).getServer();
             server.getPluginManager().callEvent(event);
+
             if (!event.isCancelled()) {
                 if (event.getTarget() == null) {
                     this.d = null;
@@ -115,7 +117,8 @@ public class EntityCreature extends EntityLiving {
                 double d1 = vec3d.a - this.locX;
                 double d2 = vec3d.c - this.locZ;
                 double d3 = vec3d.b - (double) l1;
-                float f4 = (float) (TrigMath.atan2(d2, d1) * 180.0D / 3.1415927410125732D) - 90.0F; // Craftbukkit
+                // CraftBukkit -- Math -> TrigMath
+                float f4 = (float) (TrigMath.atan2(d2, d1) * 180.0D / 3.1415927410125732D) - 90.0F;
                 float f5 = f4 - this.yaw;
 
                 for (this.av = this.az; f5 < -180.0F; f5 += 360.0F) {

@@ -3,12 +3,12 @@ package net.minecraft.server;
 public class WorldManager implements IWorldAccess {
 
     private MinecraftServer a;
-    public WorldServer world; // Craftbukkit
+    public WorldServer world; // CraftBukkit
 
-    // Craftbukkit - changed signature
+    // CraftBukkit - changed signature
     public WorldManager(MinecraftServer minecraftserver, WorldServer world) {
         this.a = minecraftserver;
-        this.world = world; // Craftbukkit
+        this.world = world; // CraftBukkit
     }
 
     public void a(String s, double d0, double d1, double d2, double d3, double d4, double d5) {}
@@ -28,7 +28,8 @@ public class WorldManager implements IWorldAccess {
     public void a() {}
 
     public void a(int i, int j, int k) {
-        this.a.f.a(i, j, k, world); // Craftbukkit
+        // CraftBukkit
+        this.a.f.a(i, j, k, world);
     }
 
     public void a(String s, int i, int j, int k) {}

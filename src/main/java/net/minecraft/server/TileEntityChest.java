@@ -2,7 +2,7 @@ package net.minecraft.server;
 
 public class TileEntityChest extends TileEntity implements IInventory {
 
-    private ItemStack[] a = new ItemStack[27]; //Craftbukkit
+    private ItemStack[] a = new ItemStack[27]; // CraftBukkit
 
     // CraftBukkit start
     public ItemStack[] getContents() {

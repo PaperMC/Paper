@@ -103,7 +103,7 @@ public class ItemInWorldManager {
 
     public boolean d(int i, int j, int k) {
         // CraftBukkit start
-        if (this.a instanceof EntityPlayer){
+        if (this.a instanceof EntityPlayer) {
             CraftServer server = ((WorldServer) this.b).getServer();
             org.bukkit.block.Block block = ((WorldServer) this.b).getWorld().getBlockAt(i, j, k);
             org.bukkit.entity.Player player = (org.bukkit.entity.Player) this.a.getBukkitEntity();
@@ -111,7 +111,7 @@ public class ItemInWorldManager {
             BlockBreakEvent event = new BlockBreakEvent(block,player);
             server.getPluginManager().callEvent(event);
 
-            if (event.isCancelled()){
+            if (event.isCancelled()) {
                 return true;
             }
         }

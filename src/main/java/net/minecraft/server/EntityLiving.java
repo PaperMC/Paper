@@ -124,10 +124,11 @@ public abstract class EntityLiving extends Entity {
             CraftServer server = ((WorldServer) this.world).getServer();
             org.bukkit.entity.Entity victim = this.getBukkitEntity();
             DamageCause damageType = EntityDamageEvent.DamageCause.SUFFOCATION;
+
             EntityDamageEvent event = new EntityDamageEvent(victim, damageType, 1);
             server.getPluginManager().callEvent(event);
 
-            if (!event.isCancelled()){
+            if (!event.isCancelled()) {
                 this.a((Entity) null, 1);
             }
             // CraftBukkit end
@@ -161,7 +162,7 @@ public abstract class EntityLiving extends Entity {
                 EntityDamageEvent event = new EntityDamageEvent(damagee, damageType, damageDone);
                 server.getPluginManager().callEvent(event);
 
-                if (!event.isCancelled()){
+                if (!event.isCancelled()) {
                     this.a((Entity) null, event.getDamage());
                 }
                 // CraftBukkit end
@@ -239,7 +240,8 @@ public abstract class EntityLiving extends Entity {
         if (f > 0.05F) {
             f3 = 1.0F;
             f2 = f * 3.0F;
-            f1 = (float) TrigMath.atan2(d1, d0) * 180.0F / 3.1415927F - 90.0F; // Craftbukkit
+            // CraftBukkit -- Math -> TrigMath
+            f1 = (float) TrigMath.atan2(d1, d0) * 180.0F / 3.1415927F - 90.0F;
         }
 
         if (this.V > 0.0F) {
@@ -446,25 +448,26 @@ public abstract class EntityLiving extends Entity {
     }
 
     protected void o() {
-        // Craftbukkit start - whole method
+        int i = this.h();
+
+        // CraftBukkit start - whole method
         List<org.bukkit.inventory.ItemStack> loot = new ArrayList<org.bukkit.inventory.ItemStack>();
-        int drop = this.h();
         int count = random.nextInt(3);
 
-        if ((drop > 0) && (count > 0)) {
-            loot.add(new org.bukkit.inventory.ItemStack(drop, count));
+        if ((i > 0) && (count > 0)) {
+            loot.add(new org.bukkit.inventory.ItemStack(i, count));
         }
 
-        CraftEntity entity = (CraftEntity)getBukkitEntity();
+        CraftEntity entity = (CraftEntity) getBukkitEntity();
         EntityDeathEvent event = new EntityDeathEvent(Type.ENTITY_DEATH, entity, loot);
-        CraftWorld cworld = ((WorldServer)world).getWorld();
-        Server server = ((WorldServer)world).getServer();
+        CraftWorld cworld = ((WorldServer) world).getWorld();
+        Server server = ((WorldServer) world).getServer();
         server.getPluginManager().callEvent(event);
 
-        for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
+        for (org.bukkit.inventory.ItemStack stack: event.getDrops()) {
             cworld.dropItemNaturally(entity.getLocation(), stack);
         }
-        // Craftbukkit end
+        // CraftBukkit end
     }
 
     protected int h() {
@@ -479,10 +482,11 @@ public abstract class EntityLiving extends Entity {
             CraftServer server = ((WorldServer) this.world).getServer();
             org.bukkit.entity.Entity victim = this.getBukkitEntity();
             DamageCause damageType = EntityDamageEvent.DamageCause.FALL;
+
             EntityDamageEvent event = new EntityDamageEvent(victim, damageType, i);
             server.getPluginManager().callEvent(event);
 
-            if (!event.isCancelled()){
+            if (!event.isCancelled()) {
                 this.a((Entity) null, event.getDamage());
             }
             // CraftBukkit end

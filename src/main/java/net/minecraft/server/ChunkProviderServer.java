@@ -23,8 +23,8 @@ public class ChunkProviderServer implements IChunkProvider {
     private IChunkProvider c;
     private IChunkLoader d;
     public LongHashtable<Chunk> e = new LongHashtable<Chunk>(); // CraftBukkit
-    public List f = new ArrayList(); // Craftbukkit
-    public WorldServer g; // Craftbukkit
+    public List f = new ArrayList(); // CraftBukkit
+    public WorldServer g; // CraftBukkit
 
     public ChunkProviderServer(WorldServer worldserver, IChunkLoader ichunkloader, IChunkProvider ichunkprovider) {
         this.b = new EmptyChunk(worldserver, new byte['\u8000'], 0, 0);
@@ -34,7 +34,7 @@ public class ChunkProviderServer implements IChunkProvider {
     }
 
     public boolean a(int i, int j) {
-        return this.e.containsKey(i, j); // Craftbukkit - entire method removed
+        return this.e.containsKey(i, j); // CraftBukkit
     }
 
     public void c(int i, int j) {
@@ -109,7 +109,7 @@ public class ChunkProviderServer implements IChunkProvider {
         return chunk == null ? (this.g.r ? this.d(i, j) : this.b) : chunk;
     }
 
-    public Chunk e(int i, int j) { // Craftbukkit - public
+    public Chunk e(int i, int j) { // CraftBukkit - private->public
         if (this.d == null) {
             return null;
         } else {
@@ -128,7 +128,7 @@ public class ChunkProviderServer implements IChunkProvider {
         }
     }
 
-    public void a(Chunk chunk) { // Craftbukkit - public
+    public void a(Chunk chunk) { // CraftBukkit - private->public
         if (this.d != null) {
             try {
                 this.d.b(this.g, chunk);
@@ -138,7 +138,7 @@ public class ChunkProviderServer implements IChunkProvider {
         }
     }
 
-    public void b(Chunk chunk) { // Craftbukkit - public
+    public void b(Chunk chunk) { // CraftBukkit - private->public
         if (this.d != null) {
             try {
                 chunk.r = this.g.k();
@@ -201,9 +201,9 @@ public class ChunkProviderServer implements IChunkProvider {
                 Chunk chunk = e.get(chunkcoordinates);
                 if (chunk == null) continue;
 
-                ChunkUnloadEvent cue = new ChunkUnloadEvent(Type.CHUNK_UNLOADED, chunk.bukkitChunk);
-                server.getPluginManager().callEvent(cue);
-                if (!cue.isCancelled()) {
+                ChunkUnloadEvent event = new ChunkUnloadEvent(Type.CHUNK_UNLOADED, chunk.bukkitChunk);
+                server.getPluginManager().callEvent(event);
+                if (!event.isCancelled()) {
                     g.getWorld().preserveChunk( (CraftChunk) chunk.bukkitChunk );
 
                     chunk.e();

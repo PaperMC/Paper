@@ -103,14 +103,14 @@ public class BlockRedstoneWire extends Block {
             }
         }
 
-        // Craftbukkit start
+        // CraftBukkit start
         if (k1 != l1) {
             CraftBlock block = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
             BlockRedstoneEvent event = new BlockRedstoneEvent(block, k1, l1);
             ((WorldServer) world).getServer().getPluginManager().callEvent(event);
             l1 = event.getNewCurrent();
         }
-        // Craftbukkit end
+        // CraftBukkit end
 
         if (k1 != l1) {
             world.h = true;
@@ -293,7 +293,8 @@ public class BlockRedstoneWire extends Block {
     }
 
     public boolean c(World world, int i, int j, int k, int l) {
-        return !this.a ? false : this.b((IBlockAccess) world, i, j, k, l); // CraftBukkit -- cast to IBlockAccess
+        // CraftBukkit -- cast to IBlockAccess
+        return !this.a ? false : this.b((IBlockAccess) world, i, j, k, l);
     }
 
     public boolean b(IBlockAccess iblockaccess, int i, int j, int k, int l) {
