@@ -1,5 +1,7 @@
 package org.bukkit.command;
 
+import org.bukkit.Server;
+
 
 public interface CommandSender {
     /**
@@ -24,4 +26,11 @@ public interface CommandSender {
      */
     @Deprecated
     public boolean isPlayer();
+
+    /**
+     * Returns the server instance that this player is running through
+     *
+     * @return Server instance
+     */
+    public Server getServer();
 }

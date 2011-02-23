@@ -2,6 +2,7 @@
 package org.bukkit.entity;
 
 import org.bukkit.Location;
+import org.bukkit.Server;
 import org.bukkit.World;
 
 /**
@@ -68,4 +69,11 @@ public interface Entity {
      * Mark the entity's removal.
      */
     public void remove();
+
+    /**
+     * Gets the {@link Server} that contains this Entity
+     *
+     * @return Server instance running this Entity
+     */
+    public Server getServer();
 }
