@@ -1,6 +1,7 @@
 
 package org.bukkit.command;
 
+import org.bukkit.ChatColor;
 import org.bukkit.Server;
 
 /**
@@ -14,7 +15,7 @@ public class ConsoleCommandSender implements CommandSender {
     }
 
     public void sendMessage(String message) {
-        System.out.println(message.replaceAll("(?i)\u00A7[0-F]", ""));
+        System.out.println(ChatColor.stripColor(message));
     }
 
     public boolean isOp() {
