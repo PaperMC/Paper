@@ -28,7 +28,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public boolean isOp() {
-        return server.getHandle().g(getName());
+        return server.getHandle().h(getName());
     }
 
     public boolean isPlayer() {
