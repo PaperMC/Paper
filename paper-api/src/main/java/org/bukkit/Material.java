@@ -38,6 +38,7 @@ public enum Material {
     DISPENSER(23),
     SANDSTONE(24),
     NOTE_BLOCK(25),
+    BED_BLOCK(26),
     WOOL(35, Wool.class),
     YELLOW_FLOWER(37),
     RED_ROSE(38),
@@ -95,6 +96,8 @@ public enum Material {
     PORTAL(90),
     JACK_O_LANTERN(91),
     CAKE_BLOCK(92, 1),
+    DIODE_BLOCK_OFF(93),
+    DIODE_BLOCK_ON(94),
     // ----- Item Separator -----
     IRON_SPADE(256, 1, 250),
     IRON_PICKAXE(257, 1, 250),
@@ -195,6 +198,8 @@ public enum Material {
     BONE(352),
     SUGAR(353),
     CAKE(354, 1),
+    BED(99),
+    DIODE(100),
     GOLD_RECORD(2256, 1),
     GREEN_RECORD(2257, 1);
 
