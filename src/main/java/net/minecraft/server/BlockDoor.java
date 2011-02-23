@@ -26,6 +26,29 @@ public class BlockDoor extends Block {
         this.a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, f1, 0.5F + f);
     }
 
+    public int a(int i, int j) {
+        if (i != 0 && i != 1) {
+            int k = this.d(j);
+
+            if ((k == 0 || k == 2) ^ i <= 3) {
+                return this.textureId;
+            } else {
+                int l = k / 2 + (i & 1 ^ k);
+
+                l += (j & 4) / 4;
+                int i1 = this.textureId - (j & 8) * 2;
+
+                if ((l & 1) != 0) {
+                    i1 = -i1;
+                }
+
+                return i1;
+            }
+        } else {
+            return this.textureId;
+        }
+    }
+
     public boolean a() {
         return false;
     }
@@ -103,9 +126,9 @@ public class BlockDoor extends Block {
                 world.c(i, j, k, l ^ 4);
                 world.b(i, j - 1, k, i, j, k);
                 if (Math.random() < 0.5D) {
-                    world.a((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.door_open", 1.0F, world.l.nextFloat() * 0.1F + 0.9F);
+                    world.a((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.door_open", 1.0F, world.k.nextFloat() * 0.1F + 0.9F);
                 } else {
-                    world.a((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.door_close", 1.0F, world.l.nextFloat() * 0.1F + 0.9F);
+                    world.a((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.door_close", 1.0F, world.k.nextFloat() * 0.1F + 0.9F);
                 }
 
                 return true;
@@ -131,15 +154,15 @@ public class BlockDoor extends Block {
                 world.c(i, j, k, l ^ 4);
                 world.b(i, j - 1, k, i, j, k);
                 if (Math.random() < 0.5D) {
-                    world.a((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.door_open", 1.0F, world.l.nextFloat() * 0.1F + 0.9F);
+                    world.a((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.door_open", 1.0F, world.k.nextFloat() * 0.1F + 0.9F);
                 } else {
-                    world.a((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.door_close", 1.0F, world.l.nextFloat() * 0.1F + 0.9F);
+                    world.a((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.door_close", 1.0F, world.k.nextFloat() * 0.1F + 0.9F);
                 }
             }
         }
     }
 
-    public void b(World world, int i, int j, int k, int l) {
+    public void a(World world, int i, int j, int k, int l) {
         int i1 = world.getData(i, j, k);
 
         if ((i1 & 8) != 0) {
@@ -148,7 +171,7 @@ public class BlockDoor extends Block {
             }
 
             if (l > 0 && Block.byId[l].c()) {
-                this.b(world, i, j - 1, k, l);
+                this.a(world, i, j - 1, k, l);
             }
         } else {
             boolean flag = false;
@@ -167,7 +190,9 @@ public class BlockDoor extends Block {
             }
 
             if (flag) {
-                this.a_(world, i, j, k, i1);
+                if (!world.isStatic) {
+                    this.b_(world, i, j, k, i1);
+                }
             } else if (l > 0 && Block.byId[l].c()) {
                 boolean flag1 = world.p(i, j, k) || world.p(i, j + 1, k);
 

@@ -160,7 +160,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             newEntity.inventory.e = newEntity;
             newEntity.activeContainer = entity.activeContainer;
             newEntity.defaultContainer = entity.defaultContainer;
-            newWorld.A.d((int) location.getBlockX() >> 4, (int) location.getBlockZ() >> 4);
+            newWorld.u.d((int) location.getBlockX() >> 4, (int) location.getBlockZ() >> 4);
 
             newEntity.a.a(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
             newWorld.manager.a(newEntity);

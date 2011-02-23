@@ -2,49 +2,49 @@ package net.minecraft.server;
 
 public class Slot {
 
-    public final int a; // CraftBukkit: private -> public
-    public final IInventory b; // CraftBukkit: private -> public
+    public final int d; // CraftBukkit: private -> public
+    public final IInventory e; // CraftBukkit: private -> public
+    public int a;
+    public int b;
     public int c;
-    public int d;
-    public int e;
 
     public Slot(IInventory iinventory, int i, int j, int k) {
-        this.b = iinventory;
-        this.a = i;
-        this.d = j;
-        this.e = k;
+        this.e = iinventory;
+        this.d = i;
+        this.b = j;
+        this.c = k;
     }
 
-    public void b() {
-        this.d();
+    public void a() {
+        this.c();
     }
 
     public boolean a(ItemStack itemstack) {
         return true;
     }
 
-    public ItemStack c() {
-        return this.b.a(this.a);
+    public ItemStack b() {
+        return this.e.c_(this.d);
     }
 
     public void b(ItemStack itemstack) {
-        this.b.a(this.a, itemstack);
-        this.d();
+        this.e.a(this.d, itemstack);
+        this.c();
     }
 
-    public void d() {
-        this.b.d();
+    public void c() {
+        this.e.h();
     }
 
-    public int a() {
-        return this.b.c();
+    public int d() {
+        return this.e.n_();
     }
 
     public ItemStack a(int i) {
-        return this.b.b(this.a, i);
+        return this.e.a(this.d, i);
     }
 
     public boolean a(IInventory iinventory, int i) {
-        return iinventory == this.b && i == this.a;
+        return iinventory == this.e && i == this.d;
     }
 }

@@ -23,7 +23,7 @@ public class InventoryPlayer implements IInventory {
         this.e = entityhuman;
     }
 
-    public ItemStack e() {
+    public ItemStack b() {
         return this.a[this.c];
     }
 
@@ -39,7 +39,7 @@ public class InventoryPlayer implements IInventory {
 
     private int c(ItemStack itemstack) {
         for (int i = 0; i < this.a.length; ++i) {
-            if (this.a[i] != null && this.a[i].id == itemstack.id && this.a[i].c() && this.a[i].count < this.a[i].b() && this.a[i].count < this.c() && (!this.a[i].e() || this.a[i].h() == itemstack.h())) {
+            if (this.a[i] != null && this.a[i].id == itemstack.id && this.a[i].c() && this.a[i].count < this.a[i].b() && this.a[i].count < this.n_() && (!this.a[i].e() || this.a[i].h() == itemstack.h())) {
                 return i;
             }
         }
@@ -79,8 +79,8 @@ public class InventoryPlayer implements IInventory {
                 l = this.a[k].b() - this.a[k].count;
             }
 
-            if (l > this.c() - this.a[k].count) {
-                l = this.c() - this.a[k].count;
+            if (l > this.n_() - this.a[k].count) {
+                l = this.n_() - this.a[k].count;
             }
 
             if (l == 0) {
@@ -94,7 +94,7 @@ public class InventoryPlayer implements IInventory {
         }
     }
 
-    public void f() {
+    public void e() {
         for (int i = 0; i < this.a.length; ++i) {
             if (this.a[i] != null && this.a[i].b > 0) {
                 --this.a[i].b;
@@ -135,7 +135,7 @@ public class InventoryPlayer implements IInventory {
         }
     }
 
-    public ItemStack b(int i, int j) {
+    public ItemStack a(int i, int j) {
         ItemStack[] aitemstack = this.a;
 
         if (i >= this.a.length) {
@@ -213,9 +213,9 @@ public class InventoryPlayer implements IInventory {
         this.a = new ItemStack[36];
         this.b = new ItemStack[4];
 
-        for (int i = 0; i < nbttaglist.b(); ++i) {
+        for (int i = 0; i < nbttaglist.c(); ++i) {
             NBTTagCompound nbttagcompound = (NBTTagCompound) nbttaglist.a(i);
-            int j = nbttagcompound.b("Slot") & 255;
+            int j = nbttagcompound.c("Slot") & 255;
             ItemStack itemstack = new ItemStack(nbttagcompound);
 
             if (itemstack.a() != null) {
@@ -230,11 +230,11 @@ public class InventoryPlayer implements IInventory {
         }
     }
 
-    public int h_() {
-        return this.a.length + this.b.length; //Craftbukkit
+    public int m_() {
+        return this.a.length + 4;
     }
 
-    public ItemStack a(int i) {
+    public ItemStack c_(int i) {
         ItemStack[] aitemstack = this.a;
 
         if (i >= aitemstack.length) {
@@ -245,16 +245,16 @@ public class InventoryPlayer implements IInventory {
         return aitemstack[i];
     }
 
-    public String b() {
+    public String c() {
         return "Inventory";
     }
 
-    public int c() {
+    public int n_() {
         return 64;
     }
 
     public int a(Entity entity) {
-        ItemStack itemstack = this.a(this.c);
+        ItemStack itemstack = this.c_(this.c);
 
         return itemstack != null ? itemstack.a(entity) : 1;
     }
@@ -263,13 +263,13 @@ public class InventoryPlayer implements IInventory {
         if (block.material != Material.STONE && block.material != Material.ORE && block.material != Material.SNOW_BLOCK && block.material != Material.SNOW_LAYER) {
             return true;
         } else {
-            ItemStack itemstack = this.a(this.c);
+            ItemStack itemstack = this.c_(this.c);
 
             return itemstack != null ? itemstack.b(block) : false;
         }
     }
 
-    public int g() {
+    public int f() {
         int i = 0;
         int j = 0;
         int k = 0;
@@ -282,7 +282,7 @@ public class InventoryPlayer implements IInventory {
 
                 j += k1;
                 k += i1;
-                int l1 = ((ItemArmor) this.b[l].a()).bh;
+                int l1 = ((ItemArmor) this.b[l].a()).bj;
 
                 i += l1;
             }
@@ -307,7 +307,7 @@ public class InventoryPlayer implements IInventory {
         }
     }
 
-    public void h() {
+    public void g() {
         int i;
 
         for (i = 0; i < this.a.length; ++i) {
@@ -325,7 +325,7 @@ public class InventoryPlayer implements IInventory {
         }
     }
 
-    public void d() {
+    public void h() {
         this.d = true;
     }
 
@@ -339,6 +339,6 @@ public class InventoryPlayer implements IInventory {
     }
 
     public boolean a_(EntityHuman entityhuman) {
-        return this.e.dead ? false : entityhuman.b((Entity) this.e) <= 64.0D;
+        return this.e.dead ? false : entityhuman.g(this.e) <= 64.0D;
     }
 }

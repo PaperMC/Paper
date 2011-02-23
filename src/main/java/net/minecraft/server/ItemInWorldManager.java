@@ -9,82 +9,100 @@ public class ItemInWorldManager {
 
     private World b;
     public EntityHuman a;
-    private float c;
-    public float d = 0.0F; // CraftBukkit private -> public
+    public float c = 0.0F; // CraftBukkit private -> public
+    private int d;
     private int e = 0;
     private float f = 0.0F;
     private int g;
     private int h;
     private int i;
+    private int j;
+    private boolean k;
+    private int l;
+    private int m;
+    private int n;
+    private int o;
 
     public ItemInWorldManager(World world) {
         this.b = world;
     }
 
-    public void a(int i, int j, int k) {
-        int l = this.b.getTypeId(i, j, k);
-
-        if (l > 0 && this.d == 0.0F) {
-            Block.byId[l].b(this.b, i, j, k, this.a);
-        }
-
-        if (l > 0 && Block.byId[l].a(this.a) >= 1.0F) {
-            this.c(i, j, k);
-        }
-    }
-
     public void a() {
-        this.d = 0.0F;
-        this.e = 0;
-    }
+        ++this.j;
+        if (this.k) {
+            int i = this.j - this.o;
+            int j = this.b.getTypeId(this.l, this.m, this.n);
 
-    public void a(int i, int j, int k, int l) {
-        if (this.e > 0) {
-            --this.e;
-        } else {
-            if (i == this.g && j == this.h && k == this.i) {
-                int i1 = this.b.getTypeId(i, j, k);
+            if (j != 0) {
+                Block block = Block.byId[j];
+                float f = block.a(this.a) * (float) (i + 1);
 
-                if (i1 == 0) {
-                    return;
-                }
-
-                Block block = Block.byId[i1];
-
-                this.d += block.a(this.a);
-                ++this.f;
-                if (this.d >= 1.0F) {
-                    this.c(i, j, k);
-                    this.d = 0.0F;
-                    this.c = 0.0F;
-                    this.f = 0.0F;
-                    this.e = 5;
+                if (f >= 1.0F) {
+                    this.k = false;
+                    this.d(this.l, this.m, this.n);
                 }
             } else {
-                this.d = 0.0F;
-                this.c = 0.0F;
-                this.f = 0.0F;
-                this.g = i;
-                this.h = j;
-                this.i = k;
+                this.k = false;
             }
         }
     }
 
-    public boolean b(int i, int j, int k) {
+    public void a(int i, int j, int k) {
+        this.d = this.j;
+        int l = this.b.getTypeId(i, j, k);
+
+        if (l > 0) {
+            Block.byId[l].b(this.b, i, j, k, this.a);
+        }
+
+        if (l > 0 && Block.byId[l].a(this.a) >= 1.0F) {
+            this.d(i, j, k);
+        } else {
+            this.g = i;
+            this.h = j;
+            this.i = k;
+        }
+    }
+
+    public void b(int i, int j, int k) {
+        if (i == this.g && j == this.h && k == this.i) {
+            int l = this.j - this.d;
+            int i1 = this.b.getTypeId(i, j, k);
+
+            if (i1 != 0) {
+                Block block = Block.byId[i1];
+                float f = block.a(this.a) * (float) (l + 1);
+
+                if (f >= 1.0F) {
+                    this.d(i, j, k);
+                } else if (!this.k) {
+                    this.k = true;
+                    this.l = i;
+                    this.m = j;
+                    this.n = k;
+                    this.o = this.d;
+                }
+            }
+        }
+
+        this.c = 0.0F;
+        this.e = 0;
+    }
+
+    public boolean c(int i, int j, int k) {
         Block block = Block.byId[this.b.getTypeId(i, j, k)];
         int l = this.b.getData(i, j, k);
         boolean flag = this.b.e(i, j, k, 0);
 
         if (block != null && flag) {
-            block.a(this.b, i, j, k, l);
+            block.b(this.b, i, j, k, l);
         }
 
         return flag;
     }
 
-    public boolean c(int i, int j, int k) {
-        //CraftBukkit start
+    public boolean d(int i, int j, int k) {
+        // CraftBukkit start
         if (this.a instanceof EntityPlayer){
             CraftServer server = ((WorldServer) this.b).getServer();
             org.bukkit.block.Block block = ((WorldServer) this.b).getWorld().getBlockAt(i, j, k);
@@ -97,23 +115,24 @@ public class ItemInWorldManager {
                 return true;
             }
         }
-        //CraftBukkit end
+        // CraftBukkit end
 
         int l = this.b.getTypeId(i, j, k);
         int i1 = this.b.getData(i, j, k);
-        boolean flag = this.b(i, j, k);
-        ItemStack itemstack = this.a.P();
+        boolean flag = this.c(i, j, k);
+        ItemStack itemstack = this.a.z();
 
         if (itemstack != null) {
             itemstack.a(l, i, j, k);
             if (itemstack.count == 0) {
                 itemstack.a(this.a);
-                this.a.Q();
+                this.a.A();
             }
         }
 
         if (flag && this.a.b(Block.byId[l])) {
-            Block.byId[l].g(this.b, i, j, k, i1);
+            Block.byId[l].a_(this.b, i, j, k, i1);
+            ((EntityPlayer) this.a).a.b((Packet) (new Packet53BlockChange(i, j, k, this.b)));
         }
 
         return flag;

@@ -24,13 +24,13 @@ public class EntityBoat extends Entity {
     private int d;
     private double e;
     private double f;
-    private double ak;
-    private double al;
-    private double am;
+    private double g;
+    private double h;
+    private double i;
     public double maxSpeed = 0.4D; // CraftBukkit
 
     // CraftBukkit start
-    public void c(Entity entity) {
+    public void h(Entity entity) {
         CraftServer server = ((WorldServer) this.world).getServer();
         Type eventType = Type.VEHICLE_COLLISION_ENTITY;
         Vehicle vehicle = (Vehicle) this.getBukkitEntity();
@@ -43,7 +43,7 @@ public class EntityBoat extends Entity {
             return;
         }
 
-        super.c(entity);
+        super.h(entity);
     }
     // CraftBukkit end
 
@@ -52,23 +52,23 @@ public class EntityBoat extends Entity {
         this.a = 0;
         this.b = 0;
         this.c = 1;
-        this.i = true;
+        this.aC = true;
         this.a(1.5F, 0.6F);
         this.height = this.width / 2.0F;
-        this.M = false;
+        this.bg = false;
     }
 
     protected void a() {}
 
-    public AxisAlignedBB d(Entity entity) {
+    public AxisAlignedBB a_(Entity entity) {
         return entity.boundingBox;
     }
 
-    public AxisAlignedBB u() {
+    public AxisAlignedBB d() {
         return this.boundingBox;
     }
 
-    public boolean z() {
+    public boolean e_() {
         return true;
     }
 
@@ -114,7 +114,7 @@ public class EntityBoat extends Entity {
             this.c = -this.c;
             this.b = 10;
             this.a += i * 10;
-            this.y();
+            this.R();
             if (this.a > 40) {
                 int j;
 
@@ -126,7 +126,7 @@ public class EntityBoat extends Entity {
                     this.a(Item.STICK.id, 1, 0.0F);
                 }
 
-                this.q();
+                this.C();
             }
 
             return true;
@@ -135,11 +135,11 @@ public class EntityBoat extends Entity {
         }
     }
 
-    public boolean c_() {
+    public boolean d_() {
         return !this.dead;
     }
 
-    public void b_() {
+    public void f_() {
         // CraftBukkit start
         double prevX = this.locX;
         double prevY = this.locY;
@@ -148,7 +148,7 @@ public class EntityBoat extends Entity {
         float prevPitch = this.pitch;
         // CraftBukkit end
 
-        super.b_();
+        super.f_();
         if (this.b > 0) {
             --this.b;
         }
@@ -182,9 +182,9 @@ public class EntityBoat extends Entity {
             if (this.d > 0) {
                 d3 = this.locX + (this.e - this.locX) / (double) this.d;
                 d4 = this.locY + (this.f - this.locY) / (double) this.d;
-                d5 = this.locZ + (this.ak - this.locZ) / (double) this.d;
+                d5 = this.locZ + (this.g - this.locZ) / (double) this.d;
 
-                for (d6 = this.al - (double) this.yaw; d6 < -180.0D; d6 += 360.0D) {
+                for (d6 = this.h - (double) this.yaw; d6 < -180.0D; d6 += 360.0D) {
                     ;
                 }
 
@@ -193,10 +193,10 @@ public class EntityBoat extends Entity {
                 }
 
                 this.yaw = (float) ((double) this.yaw + d6 / (double) this.d);
-                this.pitch = (float) ((double) this.pitch + (this.am - (double) this.pitch) / (double) this.d);
+                this.pitch = (float) ((double) this.pitch + (this.i - (double) this.pitch) / (double) this.d);
                 --this.d;
                 this.a(d3, d4, d5);
-                this.b(this.yaw, this.pitch);
+                this.c(this.yaw, this.pitch);
             } else {
                 d3 = this.locX + this.motX;
                 d4 = this.locY + this.motY;
@@ -269,9 +269,9 @@ public class EntityBoat extends Entity {
                 }
             }
 
-            if (this.B && d5 > 0.15D) {
+            if (this.aV && d5 > 0.15D) {
                 if (!this.world.isStatic) {
-                    this.q();
+                    this.C();
 
                     int k;
 
@@ -317,7 +317,7 @@ public class EntityBoat extends Entity {
             }
 
             this.yaw = (float) ((double) this.yaw + d13);
-            this.b(this.yaw, this.pitch);
+            this.c(this.yaw, this.pitch);
 
             // CraftBukkit start
             CraftServer server = ((WorldServer) this.world).getServer();
@@ -338,8 +338,8 @@ public class EntityBoat extends Entity {
                 for (int l = 0; l < list.size(); ++l) {
                     Entity entity = (Entity) list.get(l);
 
-                    if (entity != this.passenger && entity.z() && entity instanceof EntityBoat) {
-                        entity.c((Entity) this);
+                    if (entity != this.passenger && entity.e_() && entity instanceof EntityBoat) {
+                        entity.h(this);
                     }
                 }
             }
@@ -350,12 +350,12 @@ public class EntityBoat extends Entity {
         }
     }
 
-    public void E() {
+    public void h_() {
         if (this.passenger != null) {
             double d0 = Math.cos((double) this.yaw * 3.141592653589793D / 180.0D) * 0.4D;
             double d1 = Math.sin((double) this.yaw * 3.141592653589793D / 180.0D) * 0.4D;
 
-            this.passenger.a(this.locX + d0, this.locY + this.k() + this.passenger.F(), this.locZ + d1);
+            this.passenger.a(this.locX + d0, this.locY + this.k() + this.passenger.B(), this.locZ + d1);
         }
     }
 
@@ -382,7 +382,7 @@ public class EntityBoat extends Entity {
                 }
                 // CraftBukkit end
 
-                entityhuman.e(this);
+                entityhuman.b((Entity) this);
             }
 
             return true;

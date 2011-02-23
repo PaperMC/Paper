@@ -38,21 +38,21 @@ public class BlockJukeBox extends Block {
             }
             // CraftBukkit end
 
-            this.f(world, i, j, k, l);
+            this.e(world, i, j, k, l);
             return true;
         } else {
             return false;
         }
     }
 
-    public void f(World world, int i, int j, int k, int l) {
+    public void e(World world, int i, int j, int k, int l) {
         world.a((String) null, i, j, k);
         world.c(i, j, k, 0);
         int i1 = Item.GOLD_RECORD.id + l - 1;
         float f = 0.7F;
-        double d0 = (double) (world.l.nextFloat() * f) + (double) (1.0F - f) * 0.5D;
-        double d1 = (double) (world.l.nextFloat() * f) + (double) (1.0F - f) * 0.2D + 0.6D;
-        double d2 = (double) (world.l.nextFloat() * f) + (double) (1.0F - f) * 0.5D;
+        double d0 = (double) (world.k.nextFloat() * f) + (double) (1.0F - f) * 0.5D;
+        double d1 = (double) (world.k.nextFloat() * f) + (double) (1.0F - f) * 0.2D + 0.6D;
+        double d2 = (double) (world.k.nextFloat() * f) + (double) (1.0F - f) * 0.5D;
         EntityItem entityitem = new EntityItem(world, (double) i + d0, (double) j + d1, (double) k + d2, new ItemStack(i1, 1, 0));
 
         entityitem.c = 10;
@@ -62,7 +62,7 @@ public class BlockJukeBox extends Block {
     public void a(World world, int i, int j, int k, int l, float f) {
         if (!world.isStatic) {
             if (l > 0) {
-                this.f(world, i, j, k, l);
+                this.e(world, i, j, k, l);
             }
 
             super.a(world, i, j, k, l, f);

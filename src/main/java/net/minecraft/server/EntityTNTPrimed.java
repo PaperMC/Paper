@@ -13,7 +13,7 @@ public class EntityTNTPrimed extends Entity {
     public EntityTNTPrimed(World world) {
         super(world);
         this.a = 0;
-        this.i = true;
+        this.aC = true;
         this.a(0.98F, 0.98F);
         this.height = this.width / 2.0F;
     }
@@ -26,7 +26,7 @@ public class EntityTNTPrimed extends Entity {
         this.motX = (double) (-MathHelper.a(f * 3.1415927F / 180.0F) * 0.02F);
         this.motY = 0.20000000298023224D;
         this.motZ = (double) (-MathHelper.b(f * 3.1415927F / 180.0F) * 0.02F);
-        this.M = false;
+        this.bg = false;
         this.a = 80;
         this.lastX = d0;
         this.lastY = d1;
@@ -35,11 +35,11 @@ public class EntityTNTPrimed extends Entity {
 
     protected void a() {}
 
-    public boolean c_() {
+    public boolean d_() {
         return !this.dead;
     }
 
-    public void b_() {
+    public void f_() {
         this.lastX = this.locX;
         this.lastY = this.locY;
         this.lastZ = this.locZ;
@@ -57,21 +57,23 @@ public class EntityTNTPrimed extends Entity {
         if (this.a-- <= 0) {
             // Craftbukkit start
             // Need to reverse the order of the explosion and the entity death so we have a location for the event.
-            this.d();
-            this.q();
+            this.h();
+            this.C();
             // Craftbukkit end
         } else {
             this.world.a("smoke", this.locX, this.locY + 0.5D, this.locZ, 0.0D, 0.0D, 0.0D);
         }
     }
 
-    private void d() {
+    private void h() {
+        float f = 4.0F;
+
         // Craftbukkit start
         CraftServer server = ((WorldServer) this.world).getServer();
         org.bukkit.event.Event.Type eventType = ExplosionPrimedEvent.Type.EXPLOSION_PRIMED;
-        ExplosionPrimedEvent event = new ExplosionPrimedEvent(eventType, CraftEntity.getEntity(server, this), 4.0F, false); 
+        ExplosionPrimedEvent event = new ExplosionPrimedEvent(eventType, CraftEntity.getEntity(server, this), f, false);
         server.getPluginManager().callEvent(event);
-        if(!event.isCancelled()) {
+        if (!event.isCancelled()) {
             this.world.a((Entity) null, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire());
         }
         // Craftbukkit end
@@ -82,6 +84,6 @@ public class EntityTNTPrimed extends Entity {
     }
 
     protected void b(NBTTagCompound nbttagcompound) {
-        this.a = nbttagcompound.b("Fuse");
+        this.a = nbttagcompound.c("Fuse");
     }
 }

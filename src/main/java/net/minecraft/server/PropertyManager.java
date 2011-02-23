@@ -90,4 +90,10 @@ public class PropertyManager {
             return flag;
         }
     }
+
+    public void b(String s, boolean flag) {
+        flag = getOverride(s, flag); // CraftBukkit
+        this.b.setProperty(s, "" + flag);
+        this.b();
+    }
 }

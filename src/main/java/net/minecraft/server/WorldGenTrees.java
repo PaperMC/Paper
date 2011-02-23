@@ -18,7 +18,7 @@ public class WorldGenTrees extends WorldGenerator {
         // then allows plugins to catch manually-invoked generation events
         return generate((BlockChangeDelegate)world, random, i, j, k);
     }
-    
+
     public boolean generate(BlockChangeDelegate world, Random random, int i, int j, int k) {
         // CraftBukkit end
         int l = random.nextInt(3) + 4;

@@ -33,9 +33,9 @@ public class CraftWorld implements World {
     public CraftWorld(WorldServer world) {
         this.world = world;
         this.server = world.getServer();
-        this.provider = world.A;
+        this.provider = world.u;
 
-        if (world.q instanceof WorldProviderHell) {
+        if (world.m instanceof WorldProviderHell) {
             environment = Environment.NETHER;
         } else {
             environment = Environment.NORMAL;
@@ -65,7 +65,8 @@ public class CraftWorld implements World {
     }
 
     public Location getSpawnLocation() {
-        return new Location(this, world.spawnX, world.e(world.spawnX, world.spawnZ), world.spawnZ);
+        ChunkCoordinates spawn = world.l();
+        return new Location(this, spawn.a, world.e(spawn.a, spawn.c), spawn.c);
     }
 
     public Chunk getChunkAt(int x, int z) {
@@ -225,9 +226,9 @@ public class CraftWorld implements World {
     }
 
     public org.bukkit.entity.Item dropItemNaturally(Location loc, ItemStack item) {
-        double xs = world.l.nextFloat() * 0.7F + (1.0F - 0.7F) * 0.5D;
-        double ys = world.l.nextFloat() * 0.7F + (1.0F - 0.7F) * 0.5D;
-        double zs = world.l.nextFloat() * 0.7F + (1.0F - 0.7F) * 0.5D;
+        double xs = world.k.nextFloat() * 0.7F + (1.0F - 0.7F) * 0.5D;
+        double ys = world.k.nextFloat() * 0.7F + (1.0F - 0.7F) * 0.5D;
+        double zs = world.k.nextFloat() * 0.7F + (1.0F - 0.7F) * 0.5D;
         loc = loc.clone();
         loc.setX(loc.getX() + xs);
         loc.setY(loc.getY() + ys);
@@ -324,11 +325,11 @@ public class CraftWorld implements World {
     }
 
     public String getName() {
-        return world.w;
+        return world.q.j;
     }
 
     public long getId() {
-        return world.u;
+        return world.q.b();
     }
 
     @Override
@@ -349,11 +350,11 @@ public class CraftWorld implements World {
     }
 
     public long getFullTime() {
-        return world.e;
+        return world.k();
     }
 
     public void setFullTime(long time) {
-        world.e = time;
+        world.a(time);
     }
 
     public Environment getEnvironment() {

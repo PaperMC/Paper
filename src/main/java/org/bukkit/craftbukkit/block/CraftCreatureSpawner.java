@@ -41,11 +41,11 @@ public class CraftCreatureSpawner extends CraftBlockState implements CreatureSpa
     }
     
     public int getDelay() {
-        return spawner.e;
+        return spawner.a;
     }
 
     public void setDelay(int delay) {
-        spawner.e = delay;
+        spawner.a = delay;
     }
 
     /** 

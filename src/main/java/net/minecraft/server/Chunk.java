@@ -95,7 +95,7 @@ public class Chunk {
                     i = l;
                 }
 
-                if (!this.d.q.e) {
+                if (!this.d.m.e) {
                     int j1 = 15;
                     int k1 = 127;
 
@@ -122,50 +122,7 @@ public class Chunk {
         this.o = true;
     }
 
-    public void c() {
-        byte b0 = 32;
-
-        for (int i = 0; i < 16; ++i) {
-            for (int j = 0; j < 16; ++j) {
-                int k = i << 11 | j << 7;
-
-                int l;
-                int i1;
-
-                for (l = 0; l < 128; ++l) {
-                    i1 = Block.s[this.b[k + l]];
-                    if (i1 > 0) {
-                        this.g.a(i, l, j, i1);
-                    }
-                }
-
-                l = 15;
-
-                for (i1 = b0 - 2; i1 < 128 && l > 0; this.g.a(i, i1, j, l)) {
-                    ++i1;
-                    byte b1 = this.b[k + i1];
-                    int j1 = Block.q[b1];
-                    int k1 = Block.s[b1];
-
-                    if (j1 == 0) {
-                        j1 = 1;
-                    }
-
-                    l -= j1;
-                    if (k1 > l) {
-                        l = k1;
-                    }
-
-                    if (l < 0) {
-                        l = 0;
-                    }
-                }
-            }
-        }
-
-        this.d.a(EnumSkyBlock.BLOCK, this.j * 16, b0 - 1, this.k * 16, this.j * 16 + 16, b0 + 1, this.k * 16 + 16);
-        this.o = true;
-    }
+    public void c() {}
 
     private void c(int i, int j) {
         int k = this.b(i, j);
@@ -290,7 +247,7 @@ public class Chunk {
             }
 
             this.e.a(i, j, k, i1);
-            if (!this.d.q.e) {
+            if (!this.d.m.e) {
                 if (Block.q[b0] != 0) {
                     if (j >= j1) {
                         this.g(i, j + 1, k);
@@ -415,15 +372,15 @@ public class Chunk {
             k = this.m.length - 1;
         }
 
-        entity.ag = true;
+        entity.bA = true;
         entity.chunkX = this.j;
-        entity.ai = k;
+        entity.bC = k;
         entity.chunkZ = this.k;
         this.m[k].add(entity);
     }
 
     public void b(Entity entity) {
-        this.a(entity, entity.ai);
+        this.a(entity, entity.bC);
     }
 
     public void a(Entity entity, int i) {
@@ -463,9 +420,9 @@ public class Chunk {
     }
 
     public void a(TileEntity tileentity) {
-        int i = tileentity.b - this.j * 16;
-        int j = tileentity.c;
-        int k = tileentity.d - this.k * 16;
+        int i = tileentity.e - this.j * 16;
+        int j = tileentity.f;
+        int k = tileentity.g - this.k * 16;
 
         this.a(i, j, k, tileentity);
     }
@@ -473,10 +430,10 @@ public class Chunk {
     public void a(int i, int j, int k, TileEntity tileentity) {
         ChunkPosition chunkposition = new ChunkPosition(i, j, k);
 
-        tileentity.a = this.d;
-        tileentity.b = this.j * 16 + i;
-        tileentity.c = j;
-        tileentity.d = this.k * 16 + k;
+        tileentity.d = this.d;
+        tileentity.e = this.j * 16 + i;
+        tileentity.f = j;
+        tileentity.g = this.k * 16 + k;
         if (this.a(i, j, k) != 0 && Block.byId[this.a(i, j, k)] instanceof BlockContainer) {
             if (this.c) {
                 if (this.l.get(chunkposition) != null) {
@@ -577,10 +534,10 @@ public class Chunk {
             return false;
         } else {
             if (flag) {
-                if (this.q && this.d.e != this.r) {
+                if (this.q && this.d.k() != this.r) {
                     return true;
                 }
-            } else if (this.q && this.d.e >= this.r + 600L) {
+            } else if (this.q && this.d.k() >= this.r + 600L) {
                 return true;
             }
 
@@ -634,7 +591,7 @@ public class Chunk {
     }
 
     public Random a(long i) {
-        return new Random(this.d.u + (long) (this.j * this.j * 4987142) + (long) (this.j * 5947611) + (long) (this.k * this.k) * 4392871L + (long) (this.k * 389711) ^ i);
+        return new Random(this.d.j() + (long) (this.j * this.j * 4987142) + (long) (this.j * 5947611) + (long) (this.k * this.k) * 4392871L + (long) (this.k * 389711) ^ i);
     }
 
     public boolean g() {

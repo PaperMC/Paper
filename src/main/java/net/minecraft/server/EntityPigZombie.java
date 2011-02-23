@@ -18,22 +18,22 @@ public class EntityPigZombie extends EntityZombie {
     public EntityPigZombie(World world) {
         super(world);
         this.texture = "/mob/pigzombie.png";
-        this.bC = 0.5F;
+        this.az = 0.5F;
         this.c = 5;
-        this.ae = true;
+        this.by = true;
     }
 
-    public void b_() {
-        this.bC = this.d != null ? 0.95F : 0.5F;
+    public void f_() {
+        this.az = this.d != null ? 0.95F : 0.5F;
         if (this.b > 0 && --this.b == 0) {
             this.world.a(this, "mob.zombiepig.zpigangry", this.i() * 2.0F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 1.8F);
         }
 
-        super.b_();
+        super.f_();
     }
 
     public boolean b() {
-        return this.world.k > 0 && this.world.a(this.boundingBox) && this.world.a((Entity) this, this.boundingBox).size() == 0 && !this.world.b(this.boundingBox);
+        return this.world.j > 0 && this.world.a(this.boundingBox) && this.world.a((Entity) this, this.boundingBox).size() == 0 && !this.world.b(this.boundingBox);
     }
 
     public void a(NBTTagCompound nbttagcompound) {
@@ -43,15 +43,15 @@ public class EntityPigZombie extends EntityZombie {
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
-        this.a = nbttagcompound.c("Anger");
+        this.a = nbttagcompound.d("Anger");
     }
 
     protected Entity l() {
         return this.a == 0 ? null : super.l();
     }
 
-    public void o() {
-        super.o();
+    public void q() {
+        super.q();
     }
 
     public boolean a(Entity entity, int i) {
@@ -64,17 +64,17 @@ public class EntityPigZombie extends EntityZombie {
                 if (entity1 instanceof EntityPigZombie) {
                     EntityPigZombie entitypigzombie = (EntityPigZombie) entity1;
 
-                    entitypigzombie.g(entity);
+                    entitypigzombie.c(entity);
                 }
             }
 
-            this.g(entity);
+            this.c(entity);
         }
 
         return super.a(entity, i);
     }
 
-    private void g(Entity entity) {
+    private void c(Entity entity) {
         // CraftBukkit start
         org.bukkit.entity.Entity bukkitTarget = null;
         if (entity != null) {

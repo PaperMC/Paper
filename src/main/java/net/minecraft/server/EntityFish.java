@@ -14,20 +14,20 @@ public class EntityFish extends Entity {
     private int d = -1;
     private int e = -1;
     private int f = -1;
-    private int ak = 0;
-    private boolean al = false;
+    private int g = 0;
+    private boolean h = false;
     public int a = 0;
     public EntityHuman b;
-    private int am;
-    private int an = 0;
-    private int ao = 0;
+    private int i;
+    private int j = 0;
+    private int k = 0;
     public Entity c = null;
-    private int ap;
-    private double aq;
-    private double ar;
-    private double as;
-    private double at;
-    private double au;
+    private int l;
+    private double m;
+    private double n;
+    private double o;
+    private double p;
+    private double q;
 
     public EntityFish(World world) {
         super(world);
@@ -74,19 +74,19 @@ public class EntityFish extends Entity {
 
         this.lastYaw = this.yaw = (float) (Math.atan2(d0, d2) * 180.0D / 3.1415927410125732D);
         this.lastPitch = this.pitch = (float) (Math.atan2(d1, (double) f3) * 180.0D / 3.1415927410125732D);
-        this.am = 0;
+        this.i = 0;
     }
 
-    public void b_() {
-        super.b_();
-        if (this.ap > 0) {
-            double d0 = this.locX + (this.aq - this.locX) / (double) this.ap;
-            double d1 = this.locY + (this.ar - this.locY) / (double) this.ap;
-            double d2 = this.locZ + (this.as - this.locZ) / (double) this.ap;
+    public void f_() {
+        super.f_();
+        if (this.l > 0) {
+            double d0 = this.locX + (this.m - this.locX) / (double) this.l;
+            double d1 = this.locY + (this.n - this.locY) / (double) this.l;
+            double d2 = this.locZ + (this.o - this.locZ) / (double) this.l;
 
             double d3;
 
-            for (d3 = this.at - (double) this.yaw; d3 < -180.0D; d3 += 360.0D) {
+            for (d3 = this.p - (double) this.yaw; d3 < -180.0D; d3 += 360.0D) {
                 ;
             }
 
@@ -94,18 +94,17 @@ public class EntityFish extends Entity {
                 d3 -= 360.0D;
             }
 
-            this.yaw = (float) ((double) this.yaw + d3 / (double) this.ap);
-            this.pitch = (float) ((double) this.pitch + (this.au - (double) this.pitch) / (double) this.ap);
-            --this.ap;
+            this.yaw = (float) ((double) this.yaw + d3 / (double) this.l);
+            this.pitch = (float) ((double) this.pitch + (this.q - (double) this.pitch) / (double) this.l);
+            --this.l;
             this.a(d0, d1, d2);
-            this.b(this.yaw, this.pitch);
+            this.c(this.yaw, this.pitch);
         } else {
             if (!this.world.isStatic) {
-                ItemStack itemstack = this.b.P();
+                ItemStack itemstack = this.b.z();
 
-                // CraftBukkit - cast this.b to Entity
-                if (this.b.dead || !this.b.B() || itemstack == null || itemstack.a() != Item.FISHING_ROD || this.b((Entity) this.b) > 1024.0D) {
-                    this.q();
+                if (this.b.dead || !this.b.J() || itemstack == null || itemstack.a() != Item.FISHING_ROD || this.g(this.b) > 1024.0D) {
+                    this.C();
                     this.b.hookedFish = null;
                     return;
                 }
@@ -126,26 +125,26 @@ public class EntityFish extends Entity {
                 --this.a;
             }
 
-            if (this.al) {
+            if (this.h) {
                 int i = this.world.getTypeId(this.d, this.e, this.f);
 
-                if (i == this.ak) {
-                    ++this.am;
-                    if (this.am == 1200) {
-                        this.q();
+                if (i == this.g) {
+                    ++this.i;
+                    if (this.i == 1200) {
+                        this.C();
                     }
 
                     return;
                 }
 
-                this.al = false;
+                this.h = false;
                 this.motX *= (double) (this.random.nextFloat() * 0.2F);
                 this.motY *= (double) (this.random.nextFloat() * 0.2F);
                 this.motZ *= (double) (this.random.nextFloat() * 0.2F);
-                this.am = 0;
-                this.an = 0;
+                this.i = 0;
+                this.j = 0;
             } else {
-                ++this.an;
+                ++this.j;
             }
 
             Vec3D vec3d = Vec3D.b(this.locX, this.locY, this.locZ);
@@ -167,7 +166,7 @@ public class EntityFish extends Entity {
             for (int j = 0; j < list.size(); ++j) {
                 Entity entity1 = (Entity) list.get(j);
 
-                if (entity1.c_() && (entity1 != this.b || this.an >= 5)) {
+                if (entity1.d_() && (entity1 != this.b || this.j >= 5)) {
                     float f = 0.3F;
                     AxisAlignedBB axisalignedbb = entity1.boundingBox.b((double) f, (double) f, (double) f);
                     MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
@@ -214,15 +213,15 @@ public class EntityFish extends Entity {
                         stick = movingobjectposition.g.a(this.b, 0);
                     }
                     if (!stick) {
-                        c = movingobjectposition.g;
+                        this.c = movingobjectposition.g;
                     }
                     // CraftBukkit end
                 } else {
-                    this.al = true;
+                    this.h = true;
                 }
             }
 
-            if (!this.al) {
+            if (!this.h) {
                 this.c(this.motX, this.motY, this.motZ);
                 float f1 = MathHelper.a(this.motX * this.motX + this.motZ * this.motZ);
 
@@ -248,7 +247,7 @@ public class EntityFish extends Entity {
                 this.yaw = this.lastYaw + (this.yaw - this.lastYaw) * 0.2F;
                 float f2 = 0.92F;
 
-                if (this.onGround || this.B) {
+                if (this.onGround || this.aV) {
                     f2 = 0.5F;
                 }
 
@@ -266,10 +265,10 @@ public class EntityFish extends Entity {
                 }
 
                 if (d6 > 0.0D) {
-                    if (this.ao > 0) {
-                        --this.ao;
+                    if (this.k > 0) {
+                        --this.k;
                     } else if (this.random.nextInt(500) == 0) {
-                        this.ao = this.random.nextInt(30) + 10;
+                        this.k = this.random.nextInt(30) + 10;
                         this.motY -= 0.20000000298023224D;
                         this.world.a(this, "random.splash", 0.25F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
                         float f3 = (float) MathHelper.b(this.boundingBox.b);
@@ -292,7 +291,7 @@ public class EntityFish extends Entity {
                     }
                 }
 
-                if (this.ao > 0) {
+                if (this.k > 0) {
                     this.motY -= (double) (this.random.nextFloat() * this.random.nextFloat() * this.random.nextFloat()) * 0.2D;
                 }
 
@@ -315,21 +314,21 @@ public class EntityFish extends Entity {
         nbttagcompound.a("xTile", (short) this.d);
         nbttagcompound.a("yTile", (short) this.e);
         nbttagcompound.a("zTile", (short) this.f);
-        nbttagcompound.a("inTile", (byte) this.ak);
+        nbttagcompound.a("inTile", (byte) this.g);
         nbttagcompound.a("shake", (byte) this.a);
-        nbttagcompound.a("inGround", (byte) (this.al ? 1 : 0));
+        nbttagcompound.a("inGround", (byte) (this.h ? 1 : 0));
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        this.d = nbttagcompound.c("xTile");
-        this.e = nbttagcompound.c("yTile");
-        this.f = nbttagcompound.c("zTile");
-        this.ak = nbttagcompound.b("inTile") & 255;
-        this.a = nbttagcompound.b("shake") & 255;
-        this.al = nbttagcompound.b("inGround") == 1;
+        this.d = nbttagcompound.d("xTile");
+        this.e = nbttagcompound.d("yTile");
+        this.f = nbttagcompound.d("zTile");
+        this.g = nbttagcompound.c("inTile") & 255;
+        this.a = nbttagcompound.c("shake") & 255;
+        this.h = nbttagcompound.c("inGround") == 1;
     }
 
-    public int d() {
+    public int h() {
         byte b0 = 0;
 
         if (this.c != null) {
@@ -343,7 +342,7 @@ public class EntityFish extends Entity {
             this.c.motY += d1 * d4 + (double) MathHelper.a(d3) * 0.08D;
             this.c.motZ += d2 * d4;
             b0 = 3;
-        } else if (this.ao > 0) {
+        } else if (this.k > 0) {
             EntityItem entityitem = new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.RAW_FISH));
             double d5 = this.b.locX - this.locX;
             double d6 = this.b.locY - this.locY;
@@ -358,11 +357,11 @@ public class EntityFish extends Entity {
             b0 = 1;
         }
 
-        if (this.al) {
+        if (this.h) {
             b0 = 2;
         }
 
-        this.q();
+        this.C();
         this.b.hookedFish = null;
         return b0;
     }

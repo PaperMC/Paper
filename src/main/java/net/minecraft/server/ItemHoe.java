@@ -52,14 +52,14 @@ public class ItemHoe extends Item {
 
                 world.e(i, j, k, block.id);
                 itemstack.b(1);
-                if (world.l.nextInt(8) == 0 && i1 == Block.GRASS.id) {
+                if (world.k.nextInt(8) == 0 && i1 == Block.GRASS.id) {
                     byte b0 = 1;
 
                     for (int j1 = 0; j1 < b0; ++j1) {
                         float f = 0.7F;
-                        float f1 = world.l.nextFloat() * f + (1.0F - f) * 0.5F;
+                        float f1 = world.k.nextFloat() * f + (1.0F - f) * 0.5F;
                         float f2 = 1.2F;
-                        float f3 = world.l.nextFloat() * f + (1.0F - f) * 0.5F;
+                        float f3 = world.k.nextFloat() * f + (1.0F - f) * 0.5F;
                         EntityItem entityitem = new EntityItem(world, (double) ((float) i + f1), (double) ((float) j + f2), (double) ((float) k + f3), new ItemStack(Item.SEEDS));
 
                         entityitem.c = 10;

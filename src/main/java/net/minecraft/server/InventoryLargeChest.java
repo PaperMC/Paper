@@ -8,9 +8,9 @@ public class InventoryLargeChest implements IInventory {
 
     // CraftBukkit start
     public ItemStack[] getContents() {
-        ItemStack[] result = new ItemStack[h_()];
+        ItemStack[] result = new ItemStack[m_()];
         for (int i = 0; i < result.length; i++) {
-            result[i] = a(i);
+            result[i] = c_(i);
         }
         return result;
     }
@@ -22,37 +22,37 @@ public class InventoryLargeChest implements IInventory {
         this.c = iinventory1;
     }
 
-    public int h_() {
-        return this.b.h_() + this.c.h_();
+    public int m_() {
+        return this.b.m_() + this.c.m_();
     }
 
-    public String b() {
+    public String c() {
         return this.a;
     }
 
-    public ItemStack a(int i) {
-        return i >= this.b.h_() ? this.c.a(i - this.b.h_()) : this.b.a(i);
+    public ItemStack c_(int i) {
+        return i >= this.b.m_() ? this.c.c_(i - this.b.m_()) : this.b.c_(i);
     }
 
-    public ItemStack b(int i, int j) {
-        return i >= this.b.h_() ? this.c.b(i - this.b.h_(), j) : this.b.b(i, j);
+    public ItemStack a(int i, int j) {
+        return i >= this.b.m_() ? this.c.a(i - this.b.m_(), j) : this.b.a(i, j);
     }
 
     public void a(int i, ItemStack itemstack) {
-        if (i >= this.b.h_()) {
-            this.c.a(i - this.b.h_(), itemstack);
+        if (i >= this.b.m_()) {
+            this.c.a(i - this.b.m_(), itemstack);
         } else {
             this.b.a(i, itemstack);
         }
     }
 
-    public int c() {
-        return this.b.c();
+    public int n_() {
+        return this.b.n_();
     }
 
-    public void d() {
-        this.b.d();
-        this.c.d();
+    public void h() {
+        this.b.h();
+        this.c.h();
     }
 
     public boolean a_(EntityHuman entityhuman) {

@@ -39,7 +39,7 @@ public class BlockWorkbench extends Block {
             }
             // CraftBukkit end
 
-            entityhuman.a(i, j, k);
+            entityhuman.b(i, j, k);
             return true;
         }
     }

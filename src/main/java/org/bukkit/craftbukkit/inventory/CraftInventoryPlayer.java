@@ -19,7 +19,7 @@ public class CraftInventoryPlayer extends CraftInventory implements PlayerInvent
     }
 
     public CraftItemStack getItemInHand() {
-        return new CraftItemStack( getInventory().e() );
+        return new CraftItemStack( getInventory().b() );
     }
 
     public void setItemInHand(ItemStack stack) {

@@ -20,29 +20,29 @@ public class InventoryCrafting implements IInventory {
         this.b = i;
     }
 
-    public int h_() {
+    public int m_() {
         return this.a.length;
     }
 
-    public ItemStack a(int i) {
-        return i >= this.h_() ? null : this.a[i];
+    public ItemStack c_(int i) {
+        return i >= this.m_() ? null : this.a[i];
     }
 
-    public ItemStack a(int i, int j) {
+    public ItemStack b(int i, int j) {
         if (i >= 0 && i < this.b) {
             int k = i + j * this.b;
 
-            return this.a(k);
+            return this.c_(k);
         } else {
             return null;
         }
     }
 
-    public String b() {
+    public String c() {
         return "Crafting";
     }
 
-    public ItemStack b(int i, int j) {
+    public ItemStack a(int i, int j) {
         if (this.a[i] != null) {
             ItemStack itemstack;
 
@@ -70,11 +70,11 @@ public class InventoryCrafting implements IInventory {
         this.c.a((IInventory) this);
     }
 
-    public int c() {
+    public int n_() {
         return 64;
     }
 
-    public void d() {}
+    public void h() {}
 
     public boolean a_(EntityHuman entityhuman) {
         return true;

@@ -13,7 +13,7 @@ public class EntitySpider extends EntityMonster {
         super(world);
         this.texture = "/mob/spider.png";
         this.a(1.4F, 0.9F);
-        this.bC = 0.8F;
+        this.az = 0.8F;
     }
 
     public double k() {
@@ -21,7 +21,7 @@ public class EntitySpider extends EntityMonster {
     }
 
     protected Entity l() {
-        float f = this.b(1.0F);
+        float f = this.c(1.0F);
 
         if (f < 0.5F) {
             double d0 = 16.0D;
@@ -45,7 +45,7 @@ public class EntitySpider extends EntityMonster {
     }
 
     protected void a(Entity entity, float f) {
-        float f1 = this.b(1.0F);
+        float f1 = this.c(1.0F);
 
         if (f1 > 0.5F && this.random.nextInt(100) == 0) {
             // CraftBukkit start
@@ -91,6 +91,6 @@ public class EntitySpider extends EntityMonster {
     }
 
     public boolean m() {
-        return this.B;
+        return this.aV;
     }
 }

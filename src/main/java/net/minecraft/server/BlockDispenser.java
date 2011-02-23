@@ -101,7 +101,7 @@ public class BlockDispenser extends BlockContainer {
         }
 
         TileEntityDispenser tileentitydispenser = (TileEntityDispenser) world.getTileEntity(i, j, k);
-        ItemStack itemstack = tileentitydispenser.e();
+        ItemStack itemstack = tileentitydispenser.b();
         double d0 = (double) i + (double) f * 0.5D + 0.5D;
         double d1 = (double) j + 0.5D;
         double d2 = (double) k + (double) f1 * 0.5D + 0.5D;
@@ -157,12 +157,12 @@ public class BlockDispenser extends BlockContainer {
         }
     }
 
-    public void b(World world, int i, int j, int k, int l) {
+    public void a(World world, int i, int j, int k, int l) {
         if (l > 0 && Block.byId[l].c()) {
             boolean flag = world.p(i, j, k) || world.p(i, j + 1, k);
 
             if (flag) {
-                world.i(i, j, k, this.id);
+                world.c(i, j, k, this.id, this.b());
             }
         }
     }

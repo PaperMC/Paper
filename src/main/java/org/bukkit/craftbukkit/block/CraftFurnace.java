@@ -32,25 +32,25 @@ public class CraftFurnace extends CraftBlockState implements Furnace {
         boolean result = super.update(force);
 
         if (result) {
-            furnace.d();
+            furnace.h();
         }
 
         return result;
     }
 
     public short getBurnTime() {
-        return (short)furnace.e;
+        return (short)furnace.a;
     }
 
     public void setBurnTime(short burnTime) {
-        furnace.e = burnTime;
+        furnace.a = burnTime;
     }
 
     public short getCookTime() {
-        return (short)furnace.g;
+        return (short)furnace.c;
     }
 
     public void setCookTime(short cookTime) {
-        furnace.g = cookTime;
+        furnace.c = cookTime;
     }
 }

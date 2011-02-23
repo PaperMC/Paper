@@ -2,40 +2,40 @@ package net.minecraft.server;
 
 public class TileEntityChest extends TileEntity implements IInventory {
 
-    private ItemStack[] e = new ItemStack[27]; //Craftbukkit
+    private ItemStack[] a = new ItemStack[27]; //Craftbukkit
 
     // CraftBukkit start
     public ItemStack[] getContents() {
-        return e;
+        return a;
     }
     // CraftBukkit end
 
     public TileEntityChest() {}
 
-    public int h_() {
-        return this.e.length; // Craftbukkit
+    public int m_() {
+        return 27;
     }
 
-    public ItemStack a(int i) {
-        return this.e[i];
+    public ItemStack c_(int i) {
+        return this.a[i];
     }
 
-    public ItemStack b(int i, int j) {
-        if (this.e[i] != null) {
+    public ItemStack a(int i, int j) {
+        if (this.a[i] != null) {
             ItemStack itemstack;
 
-            if (this.e[i].count <= j) {
-                itemstack = this.e[i];
-                this.e[i] = null;
-                this.d();
+            if (this.a[i].count <= j) {
+                itemstack = this.a[i];
+                this.a[i] = null;
+                this.h();
                 return itemstack;
             } else {
-                itemstack = this.e[i].a(j);
-                if (this.e[i].count == 0) {
-                    this.e[i] = null;
+                itemstack = this.a[i].a(j);
+                if (this.a[i].count == 0) {
+                    this.a[i] = null;
                 }
 
-                this.d();
+                this.h();
                 return itemstack;
             }
         } else {
@@ -44,30 +44,30 @@ public class TileEntityChest extends TileEntity implements IInventory {
     }
 
     public void a(int i, ItemStack itemstack) {
-        this.e[i] = itemstack;
-        if (itemstack != null && itemstack.count > this.c()) {
-            itemstack.count = this.c();
+        this.a[i] = itemstack;
+        if (itemstack != null && itemstack.count > this.n_()) {
+            itemstack.count = this.n_();
         }
 
-        this.d();
+        this.h();
     }
 
-    public String b() {
+    public String c() {
         return "Chest";
     }
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        NBTTagList nbttaglist = nbttagcompound.k("Items");
+        NBTTagList nbttaglist = nbttagcompound.l("Items");
 
-        this.e = new ItemStack[this.h_()];
+        this.a = new ItemStack[this.m_()];
 
-        for (int i = 0; i < nbttaglist.b(); ++i) {
+        for (int i = 0; i < nbttaglist.c(); ++i) {
             NBTTagCompound nbttagcompound1 = (NBTTagCompound) nbttaglist.a(i);
-            int j = nbttagcompound1.b("Slot") & 255;
+            int j = nbttagcompound1.c("Slot") & 255;
 
-            if (j >= 0 && j < this.e.length) {
-                this.e[j] = new ItemStack(nbttagcompound1);
+            if (j >= 0 && j < this.a.length) {
+                this.a[j] = new ItemStack(nbttagcompound1);
             }
         }
     }
@@ -76,12 +76,12 @@ public class TileEntityChest extends TileEntity implements IInventory {
         super.b(nbttagcompound);
         NBTTagList nbttaglist = new NBTTagList();
 
-        for (int i = 0; i < this.e.length; ++i) {
-            if (this.e[i] != null) {
+        for (int i = 0; i < this.a.length; ++i) {
+            if (this.a[i] != null) {
                 NBTTagCompound nbttagcompound1 = new NBTTagCompound();
 
                 nbttagcompound1.a("Slot", (byte) i);
-                this.e[i].a(nbttagcompound1);
+                this.a[i].a(nbttagcompound1);
                 nbttaglist.a((NBTBase) nbttagcompound1);
             }
         }
@@ -89,11 +89,11 @@ public class TileEntityChest extends TileEntity implements IInventory {
         nbttagcompound.a("Items", (NBTBase) nbttaglist);
     }
 
-    public int c() {
+    public int n_() {
         return 64;
     }
 
     public boolean a_(EntityHuman entityhuman) {
-        return this.a.getTileEntity(this.b, this.c, this.d) != this ? false : entityhuman.d((double) this.b + 0.5D, (double) this.c + 0.5D, (double) this.d + 0.5D) <= 64.0D;
+        return this.d.getTileEntity(this.e, this.f, this.g) != this ? false : entityhuman.d((double) this.e + 0.5D, (double) this.f + 0.5D, (double) this.g + 0.5D) <= 64.0D;
     }
 }

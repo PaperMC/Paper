@@ -64,12 +64,12 @@ public class EntityTrackerEntry {
             int k = MathHelper.b(this.a.locZ * 32.0D);
             int l = MathHelper.d(this.a.yaw * 256.0F / 360.0F);
             int i1 = MathHelper.d(this.a.pitch * 256.0F / 360.0F);
-            boolean flag = i != this.d || j != this.e || k != this.f;
-            boolean flag1 = l != this.g || i1 != this.h;
             int j1 = i - this.d;
             int k1 = j - this.e;
             int l1 = k - this.f;
             Object object = null;
+            boolean flag = Math.abs(i) >= 8 || Math.abs(j) >= 8 || Math.abs(k) >= 8;
+            boolean flag1 = Math.abs(l - this.g) >= 8 || Math.abs(i1 - this.h) >= 8;
 
             if (j1 >= -128 && j1 < 128 && k1 >= -128 && k1 < 128 && l1 >= -128 && l1 < 128) {
                 if (flag && flag1) {
@@ -78,8 +78,6 @@ public class EntityTrackerEntry {
                     object = new Packet31RelEntityMove(this.a.id, (byte) j1, (byte) k1, (byte) l1);
                 } else if (flag1) {
                     object = new Packet32EntityLook(this.a.id, (byte) l, (byte) i1);
-                } else {
-                    object = new Packet30Entity(this.a.id);
                 }
             } else {
                 object = new Packet34EntityTeleport(this.a.id, i, j, k, (byte) l, (byte) i1);
@@ -104,22 +102,27 @@ public class EntityTrackerEntry {
                 this.a((Packet) object);
             }
 
-            DataWatcher datawatcher = this.a.p();
+            DataWatcher datawatcher = this.a.O();
 
             if (datawatcher.a()) {
                 this.b((Packet) (new Packet40EntityMetadata(this.a.id, datawatcher)));
             }
 
-            this.d = i;
-            this.e = j;
-            this.f = k;
-            this.g = l;
-            this.h = i1;
+            if (flag) {
+                this.d = i;
+                this.e = j;
+                this.f = k;
+            }
+
+            if (flag1) {
+                this.g = l;
+                this.h = i1;
+            }
         }
 
-        if (this.a.E) {
+        if (this.a.aY) {
             this.b((Packet) (new Packet28EntityVelocity(this.a)));
-            this.a.E = false;
+            this.a.aY = false;
         }
     }
 
@@ -163,7 +166,7 @@ public class EntityTrackerEntry {
                         entityplayer.a.b((Packet) (new Packet28EntityVelocity(this.a.id, this.a.motX, this.a.motY, this.a.motZ)));
                     }
 
-                    ItemStack[] aitemstack = this.a.I();
+                    ItemStack[] aitemstack = this.a.k_();
 
                     if (aitemstack != null) {
                         for (int i = 0; i < aitemstack.length; ++i) {

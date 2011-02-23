@@ -29,14 +29,14 @@ class PlayerInstance {
         this.d = j;
         this.e = new ChunkCoordIntPair(i, j);
 
-        playermanager.world.A.d(i, j); // Craftbukkit
+        playermanager.world.u.d(i, j); // Craftbukkit
     }
 
     public void a(EntityPlayer entityplayer) {
         if (this.b.contains(entityplayer)) {
             throw new IllegalStateException("Failed to add player. " + entityplayer + " already is in chunk " + this.c + ", " + this.d);
         } else {
-            entityplayer.ak.add(this.e);
+            entityplayer.g.add(this.e);
             entityplayer.a.b((Packet) (new Packet50PreChunk(this.e.a, this.e.b, true)));
             this.b.add(entityplayer);
             entityplayer.f.add(this.e);
@@ -56,11 +56,11 @@ class PlayerInstance {
                     PlayerManager.c(this.a).remove(this);
                 }
 
-                ((WorldServer)entityplayer.world).A.c(this.c, this.d); // Craftbukkit
+                ((WorldServer)entityplayer.world).u.c(this.c, this.d); // Craftbukkit
             }
 
             entityplayer.f.remove(this.e);
-            if (entityplayer.ak.contains(this.e)) {
+            if (entityplayer.g.contains(this.e)) {
                 entityplayer.a.b((Packet) (new Packet50PreChunk(this.c, this.d, false)));
             }
         }
@@ -115,7 +115,7 @@ class PlayerInstance {
         for (int i = 0; i < this.b.size(); ++i) {
             EntityPlayer entityplayer = (EntityPlayer) this.b.get(i);
 
-            if (entityplayer.ak.contains(this.e)) {
+            if (entityplayer.g.contains(this.e)) {
                 entityplayer.a.b(packet);
             }
         }
@@ -178,7 +178,7 @@ class PlayerInstance {
 
     private void a(TileEntity tileentity) {
         if (tileentity != null) {
-            Packet packet = tileentity.g();
+            Packet packet = tileentity.e();
 
             if (packet != null) {
                 this.a(packet);

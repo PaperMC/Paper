@@ -3,9 +3,9 @@ package net.minecraft.server;
 public class TileEntityFurnace extends TileEntity implements IInventory {
 
     private ItemStack[] h = new ItemStack[3];
-    public int e = 0;
-    public int f = 0;
-    public int g = 0;
+    public int a = 0;
+    public int b = 0;
+    public int c = 0;
 
     // CraftBukkit start
     public ItemStack[] getContents() {
@@ -15,15 +15,15 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
 
     public TileEntityFurnace() {}
 
-    public int h_() {
+    public int m_() {
         return this.h.length;
     }
 
-    public ItemStack a(int i) {
+    public ItemStack c_(int i) {
         return this.h[i];
     }
 
-    public ItemStack b(int i, int j) {
+    public ItemStack a(int i, int j) {
         if (this.h[i] != null) {
             ItemStack itemstack;
 
@@ -46,39 +46,39 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
 
     public void a(int i, ItemStack itemstack) {
         this.h[i] = itemstack;
-        if (itemstack != null && itemstack.count > this.c()) {
-            itemstack.count = this.c();
+        if (itemstack != null && itemstack.count > this.n_()) {
+            itemstack.count = this.n_();
         }
     }
 
-    public String b() {
+    public String c() {
         return "Furnace";
     }
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        NBTTagList nbttaglist = nbttagcompound.k("Items");
+        NBTTagList nbttaglist = nbttagcompound.l("Items");
 
-        this.h = new ItemStack[this.h_()];
+        this.h = new ItemStack[this.m_()];
 
-        for (int i = 0; i < nbttaglist.b(); ++i) {
+        for (int i = 0; i < nbttaglist.c(); ++i) {
             NBTTagCompound nbttagcompound1 = (NBTTagCompound) nbttaglist.a(i);
-            byte b0 = nbttagcompound1.b("Slot");
+            byte b0 = nbttagcompound1.c("Slot");
 
             if (b0 >= 0 && b0 < this.h.length) {
                 this.h[b0] = new ItemStack(nbttagcompound1);
             }
         }
 
-        this.e = nbttagcompound.c("BurnTime");
-        this.g = nbttagcompound.c("CookTime");
-        this.f = this.a(this.h[1]);
+        this.a = nbttagcompound.d("BurnTime");
+        this.c = nbttagcompound.d("CookTime");
+        this.b = this.a(this.h[1]);
     }
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
-        nbttagcompound.a("BurnTime", (short) this.e);
-        nbttagcompound.a("CookTime", (short) this.g);
+        nbttagcompound.a("BurnTime", (short) this.a);
+        nbttagcompound.a("CookTime", (short) this.c);
         NBTTagList nbttaglist = new NBTTagList();
 
         for (int i = 0; i < this.h.length; ++i) {
@@ -94,26 +94,26 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         nbttagcompound.a("Items", (NBTBase) nbttaglist);
     }
 
-    public int c() {
+    public int n_() {
         return 64;
     }
 
-    public boolean e() {
-        return this.e > 0;
+    public boolean f() {
+        return this.a > 0;
     }
 
-    public void f() {
-        boolean flag = this.e > 0;
+    public void i_() {
+        boolean flag = this.a > 0;
         boolean flag1 = false;
 
-        if (this.e > 0) {
-            --this.e;
+        if (this.a > 0) {
+            --this.a;
         }
 
-        if (!this.a.isStatic) {
-            if (this.e == 0 && this.i()) {
-                this.f = this.e = this.a(this.h[1]);
-                if (this.e > 0) {
+        if (!this.d.isStatic) {
+            if (this.a == 0 && this.i()) {
+                this.b = this.a = this.a(this.h[1]);
+                if (this.a > 0) {
                     flag1 = true;
                     if (this.h[1] != null) {
                         --this.h[1].count;
@@ -124,25 +124,25 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
                 }
             }
 
-            if (this.e() && this.i()) {
-                ++this.g;
-                if (this.g == 200) {
-                    this.g = 0;
-                    this.h();
+            if (this.f() && this.i()) {
+                ++this.c;
+                if (this.c == 200) {
+                    this.c = 0;
+                    this.g();
                     flag1 = true;
                 }
             } else {
-                this.g = 0;
+                this.c = 0;
             }
 
-            if (flag != this.e > 0) {
+            if (flag != this.a > 0) {
                 flag1 = true;
-                BlockFurnace.a(this.e > 0, this.a, this.b, this.c, this.d);
+                BlockFurnace.a(this.a > 0, this.d, this.e, this.f, this.g);
             }
         }
 
         if (flag1) {
-            this.d();
+            this.h();
         }
     }
 
@@ -152,11 +152,11 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         } else {
             ItemStack itemstack = FurnaceRecipes.a().a(this.h[0].a().id);
 
-            return itemstack == null ? false : (this.h[2] == null ? true : (!this.h[2].a(itemstack) ? false : (this.h[2].count < this.c() && this.h[2].count < this.h[2].b() ? true : this.h[2].count < itemstack.b())));
+            return itemstack == null ? false : (this.h[2] == null ? true : (!this.h[2].a(itemstack) ? false : (this.h[2].count < this.n_() && this.h[2].count < this.h[2].b() ? true : this.h[2].count < itemstack.b())));
         }
     }
 
-    public void h() {
+    public void g() {
         if (this.i()) {
             ItemStack itemstack = FurnaceRecipes.a().a(this.h[0].a().id);
 
@@ -184,6 +184,6 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
     }
 
     public boolean a_(EntityHuman entityhuman) {
-        return this.a.getTileEntity(this.b, this.c, this.d) != this ? false : entityhuman.d((double) this.b + 0.5D, (double) this.c + 0.5D, (double) this.d + 0.5D) <= 64.0D;
+        return this.d.getTileEntity(this.e, this.f, this.g) != this ? false : entityhuman.d((double) this.e + 0.5D, (double) this.f + 0.5D, (double) this.g + 0.5D) <= 64.0D;
     }
 }

@@ -55,9 +55,9 @@ public class BlockCactus extends Block {
         return !super.a(world, i, j, k) ? false : this.f(world, i, j, k);
     }
 
-    public void b(World world, int i, int j, int k, int l) {
+    public void a(World world, int i, int j, int k, int l) {
         if (!this.f(world, i, j, k)) {
-            this.a_(world, i, j, k, world.getData(i, j, k));
+            this.b_(world, i, j, k, world.getData(i, j, k));
             world.e(i, j, k, 0);
         }
     }

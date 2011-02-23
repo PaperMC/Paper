@@ -72,9 +72,9 @@ public final class ItemStack {
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        this.id = nbttagcompound.c("id");
-        this.count = nbttagcompound.b("Count");
-        this.damage = nbttagcompound.c("Damage");
+        this.id = nbttagcompound.d("id");
+        this.count = nbttagcompound.c("Count");
+        this.damage = nbttagcompound.d("Damage");
     }
 
     public int b() {

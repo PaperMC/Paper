@@ -24,7 +24,7 @@ import org.bukkit.event.Event;
 import org.bukkit.event.world.WorldEvent;
 //CraftBukkit end
 
-public class MinecraftServer implements ICommandListener, Runnable {
+public class MinecraftServer implements Runnable, ICommandListener {
 
     public static Logger a = Logger.getLogger("Minecraft");
     public static HashMap b = new HashMap();
@@ -32,13 +32,14 @@ public class MinecraftServer implements ICommandListener, Runnable {
     public PropertyManager d;
     //public WorldServer e; // Craftbukkit - removed
     public ServerConfigurationManager f;
-    private boolean o = true;
+    private ConsoleCommandHandler o;
+    private boolean p = true;
     public boolean g = false;
     int h = 0;
     public String i;
     public int j;
-    private List p = new ArrayList();
-    private List q = Collections.synchronizedList(new ArrayList());
+    private List q = new ArrayList();
+    private List r = Collections.synchronizedList(new ArrayList());
     public EntityTracker k;
     public boolean l;
     public boolean m;
@@ -58,6 +59,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
     }
 
     private boolean d() throws UnknownHostException { // CraftBukkit - added throws UnknownHostException
+        this.o = new ConsoleCommandHandler(this);
         ThreadCommandReader threadcommandreader = new ThreadCommandReader(this);
 
         threadcommandreader.setDaemon(true);
@@ -69,7 +71,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
         System.setErr(new PrintStream(new LoggerOutputStream(a, Level.SEVERE), true));
         // Craftbukkit end
 
-        a.info("Starting minecraft server version Beta 1.2_01");
+        a.info("Starting minecraft server version Beta 1.3");
         if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
             a.warning("**** NOT ENOUGH RAM!");
             a.warning("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
@@ -111,21 +113,27 @@ public class MinecraftServer implements ICommandListener, Runnable {
 
         this.f = new ServerConfigurationManager(this);
         this.k = new EntityTracker(this);
+        long j = System.nanoTime();
         String s1 = this.d.a("level-name", "world");
 
         a.info("Preparing level \"" + s1 + "\"");
-        this.c(s1);
-        a.info("Done! For help, type \"help\" or \"?\"");
+        this.a((Convertable) (new WorldLoaderServer(new File("."))), s1);
+        a.info("Done (" + (System.nanoTime() - j) + "ns)! For help, type \"help\" or \"?\"");
         return true;
     }
 
-    private void c(String s) {
+    private void a(Convertable convertable, String s) {
+        if (convertable.a(s)) {
+            a.info("Converting map!");
+            convertable.a(s, new ConvertProgressUpdater(this));
+        }
+
         a.info("Preparing start region");
 
         // Craftbukkit start
-        WorldServer world = new WorldServer(this, new File("."), s, this.d.a("hellworld", false) ? -1 : 0);
+        WorldServer world = new WorldServer(this, new ServerNBTManager(new File("."), s, true), s, this.d.a("hellworld", false) ? -1 : 0);
         world.a(new WorldManager(this, world));
-        world.k = this.d.a("spawn-monsters", true) ? 1 : 0;
+        world.j = this.d.a("spawn-monsters", true) ? 1 : 0;
         world.a(this.d.a("spawn-monsters", true), this.m);
         this.f.a(world);
         worlds.add(world);
@@ -133,9 +141,10 @@ public class MinecraftServer implements ICommandListener, Runnable {
 
         short short1 = 196;
         long i = System.currentTimeMillis();
+        ChunkCoordinates chunkcoordinates = worlds.get(0).l(); // Craftbukkit
 
-        for (int j = -short1; j <= short1 && this.o; j += 16) {
-            for (int k = -short1; k <= short1 && this.o; k += 16) {
+        for (int j = -short1; j <= short1 && this.p; j += 16) {
+            for (int k = -short1; k <= short1 && this.p; k += 16) {
                 long l = System.currentTimeMillis();
 
                 if (l < i) {
@@ -152,9 +161,9 @@ public class MinecraftServer implements ICommandListener, Runnable {
 
                 // Craftbukkit start
                 for (WorldServer worldserver : worlds) {
-                    world.A.d(world.spawnX + j >> 4, world.spawnZ + k >> 4);
+                    world.u.d(chunkcoordinates.a + j >> 4, chunkcoordinates.c + k >> 4);
 
-                    while (world.d() && this.o) {
+                    while (world.e() && this.p) {
                         ;
                     }
                 }
@@ -184,6 +193,7 @@ public class MinecraftServer implements ICommandListener, Runnable {
         // Craftbukkit start
         for (WorldServer world : worlds) {
             world.a(true, (IProgressUpdate) null);
+            world.r();
 
             Event worldSaved = new WorldEvent( Event.Type.WORLD_SAVED, world.getWorld() );
             server.getPluginManager().callEvent( worldSaved );
@@ -209,16 +219,15 @@ public class MinecraftServer implements ICommandListener, Runnable {
     }
 
     public void a() {
-        this.o = false;
+        this.p = false;
     }
 
     public void run() {
         try {
             if (this.d()) {
                 long i = System.currentTimeMillis();
-                long j = 0L;
 
-                while (this.o) {
+                for (long j = 0L; this.p; Thread.sleep(1L)) {
                     long k = System.currentTimeMillis();
                     long l = k - i;
 
@@ -234,16 +243,18 @@ public class MinecraftServer implements ICommandListener, Runnable {
 
                     j += l;
                     i = k;
-
-                    while (j > 50L) {
-                        j -= 50L;
+                    if (this.worlds.size() > 0 && this.worlds.get(0).q()) { // Craftbukkit - TODO - Replace with loop?
                         this.h();
+                        j = 0L;
+                    } else {
+                        while (j > 50L) {
+                            j -= 50L;
+                            this.h();
+                        }
                     }
-
-                    Thread.sleep(1L);
                 }
             } else {
-                while (this.o) {
+                while (this.p) {
                     this.b();
 
                     try {
@@ -253,11 +264,11 @@ public class MinecraftServer implements ICommandListener, Runnable {
                     }
                 }
             }
-        } catch (Exception exception) {
-            exception.printStackTrace();
-            a.log(Level.SEVERE, "Unexpected exception", exception);
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
+            a.log(Level.SEVERE, "Unexpected exception", throwable);
 
-            while (this.o) {
+            while (this.p) {
                 this.b();
 
                 try {
@@ -270,6 +281,8 @@ public class MinecraftServer implements ICommandListener, Runnable {
             try {
                 this.g();
                 this.g = true;
+            } catch (Throwable throwable1) {
+                throwable1.printStackTrace();
             } finally {
                 System.exit(0);
             }
@@ -305,20 +318,20 @@ public class MinecraftServer implements ICommandListener, Runnable {
         if (this.h % 20 == 0) {
             for (int i = 0; i < this.f.b.size(); ++i) {
                 EntityPlayer entityplayer = (EntityPlayer) this.f.b.get(i);
-                entityplayer.a.b((Packet) (new Packet4UpdateTime(entityplayer.world.e)));
+                entityplayer.a.b((Packet) (new Packet4UpdateTime(entityplayer.world.k())));
             }
         }
 
         ((CraftScheduler) server.getScheduler()).mainThreadHeartbeat(this.h);
 
         for (WorldServer world : worlds) {
-            world.f();
+            world.g();
 
-            while (world.d()) {
+            while (world.e()) {
                 ;
             }
 
-            world.c();
+            world.d();
         }
         // Craftbukkit end
 
@@ -326,8 +339,8 @@ public class MinecraftServer implements ICommandListener, Runnable {
         this.f.b();
         this.k.a();
 
-        for (j = 0; j < this.p.size(); ++j) {
-            ((IUpdatePlayerListBox) this.p.get(j)).a();
+        for (j = 0; j < this.q.size(); ++j) {
+            ((IUpdatePlayerListBox) this.q.get(j)).a();
         }
 
         try {
@@ -338,236 +351,25 @@ public class MinecraftServer implements ICommandListener, Runnable {
     }
 
     public void a(String s, ICommandListener icommandlistener) {
-        this.q.add(new ServerCommand(s, icommandlistener));
+        this.r.add(new ServerCommand(s, icommandlistener));
     }
 
     public void b() {
-        while (this.q.size() > 0) {
-            ServerCommand servercommand = (ServerCommand) this.q.remove(0);
-            String s = servercommand.a;
-            ICommandListener icommandlistener = servercommand.b;
-            String s1 = icommandlistener.c();
+        while (this.r.size() > 0) {
+            ServerCommand servercommand = (ServerCommand) this.r.remove(0);
 
             // Craftbukkit start
-            if (server.dispatchCommand(console, s)) {
+            if (server.dispatchCommand(console, servercommand.a)) {
                 continue;
             }
             // Craftbukkit end
-
-            if (!s.toLowerCase().startsWith("help") && !s.toLowerCase().startsWith("?")) {
-                if (s.toLowerCase().startsWith("list")) {
-                    icommandlistener.b("Connected players: " + this.f.c());
-                } else if (s.toLowerCase().startsWith("stop")) {
-                    this.a(s1, "Stopping the server..");
-                    this.o = false;
-                } else if (s.toLowerCase().startsWith("save-all")) {
-                    this.a(s1, "Forcing save..");
-
-                    // Craftbukkit start
-                    for (WorldServer world : worlds) {
-                        world.a(true, (IProgressUpdate) null);
-
-                        Event worldSaved = new WorldEvent( Event.Type.WORLD_SAVED, world.getWorld() );
-                        server.getPluginManager().callEvent( worldSaved );
-                    }
-
-                    this.f.d();
-                    // Craftbukkit end
-
-                    this.a(s1, "Save complete.");
-                } else if (s.toLowerCase().startsWith("save-off")) {
-                    this.a(s1, "Disabling level saving..");
-
-                    // Craftbukkit start
-                    for (WorldServer world : worlds) {
-                        world.C = true;
-                    }
-                    // Craftbukkit end
-                } else if (s.toLowerCase().startsWith("save-on")) {
-                    this.a(s1, "Enabling level saving..");
-
-                    // Craftbukkit start
-                    for (WorldServer world : worlds) {
-                        world.C = false;
-                    }
-                    // Craftbukkit end
-                } else {
-                    String s2;
-
-                    if (s.toLowerCase().startsWith("op ")) {
-                        s2 = s.substring(s.indexOf(" ")).trim();
-                        this.f.e(s2);
-                        this.a(s1, "Opping " + s2);
-                        this.f.a(s2, "\u00A7eYou are now op!");
-                    } else if (s.toLowerCase().startsWith("deop ")) {
-                        s2 = s.substring(s.indexOf(" ")).trim();
-                        this.f.f(s2);
-                        this.f.a(s2, "\u00A7eYou are no longer op!");
-                        this.a(s1, "De-opping " + s2);
-                    } else if (s.toLowerCase().startsWith("ban-ip ")) {
-                        s2 = s.substring(s.indexOf(" ")).trim();
-                        this.f.c(s2);
-                        this.a(s1, "Banning ip " + s2);
-                    } else if (s.toLowerCase().startsWith("pardon-ip ")) {
-                        s2 = s.substring(s.indexOf(" ")).trim();
-                        this.f.d(s2);
-                        this.a(s1, "Pardoning ip " + s2);
-                    } else {
-                        EntityPlayer entityplayer;
-
-                        if (s.toLowerCase().startsWith("ban ")) {
-                            s2 = s.substring(s.indexOf(" ")).trim();
-                            this.f.a(s2);
-                            this.a(s1, "Banning " + s2);
-                            entityplayer = this.f.h(s2);
-                            if (entityplayer != null) {
-                                entityplayer.a.a("Banned by admin");
-                            }
-                        } else if (s.toLowerCase().startsWith("pardon ")) {
-                            s2 = s.substring(s.indexOf(" ")).trim();
-                            this.f.b(s2);
-                            this.a(s1, "Pardoning " + s2);
-                        } else if (s.toLowerCase().startsWith("kick ")) {
-                            s2 = s.substring(s.indexOf(" ")).trim();
-                            entityplayer = null;
-
-                            for (int i = 0; i < this.f.b.size(); ++i) {
-                                EntityPlayer entityplayer1 = (EntityPlayer) this.f.b.get(i);
-
-                                if (entityplayer1.name.equalsIgnoreCase(s2)) {
-                                    entityplayer = entityplayer1;
-                                }
-                            }
-
-                            if (entityplayer != null) {
-                                entityplayer.a.a("Kicked by admin");
-                                this.a(s1, "Kicking " + entityplayer.name);
-                            } else {
-                                icommandlistener.b("Can\'t find user " + s2 + ". No kick.");
-                            }
-                        } else {
-                            String[] astring;
-                            EntityPlayer entityplayer2;
-
-                            if (s.toLowerCase().startsWith("tp ")) {
-                                astring = s.split(" ");
-                                if (astring.length == 3) {
-                                    entityplayer = this.f.h(astring[1]);
-                                    entityplayer2 = this.f.h(astring[2]);
-                                    if (entityplayer == null) {
-                                        icommandlistener.b("Can\'t find user " + astring[1] + ". No tp.");
-                                    } else if (entityplayer2 == null) {
-                                        icommandlistener.b("Can\'t find user " + astring[2] + ". No tp.");
-                                    } else {
-                                        entityplayer.a.a(entityplayer2.locX, entityplayer2.locY, entityplayer2.locZ, entityplayer2.yaw, entityplayer2.pitch);
-                                        this.a(s1, "Teleporting " + astring[1] + " to " + astring[2] + ".");
-                                    }
-                                } else {
-                                    icommandlistener.b("Syntax error, please provice a source and a target.");
-                                }
-                            } else if (s.toLowerCase().startsWith("give ")) {
-                                astring = s.split(" ");
-                                if (astring.length != 3 && astring.length != 4) {
-                                    return;
-                                }
-
-                                String s3 = astring[1];
-
-                                entityplayer2 = this.f.h(s3);
-                                if (entityplayer2 != null) {
-                                    try {
-                                        int j = Integer.parseInt(astring[2]);
-
-                                        if (Item.byId[j] != null) {
-                                            this.a(s1, "Giving " + entityplayer2.name + " some " + j);
-                                            int k = 1;
-
-                                            if (astring.length > 3) {
-                                                k = this.b(astring[3], 1);
-                                            }
-
-                                            if (k < 1) {
-                                                k = 1;
-                                            }
-
-                                            if (k > 64) {
-                                                k = 64;
-                                            }
-
-                                            entityplayer2.b(new ItemStack(j, k, 0));
-                                        } else {
-                                            icommandlistener.b("There\'s no item with id " + j);
-                                        }
-                                    } catch (NumberFormatException numberformatexception) {
-                                        icommandlistener.b("There\'s no item with id " + astring[2]);
-                                    }
-                                } else {
-                                    icommandlistener.b("Can\'t find user " + s3);
-                                }
-                            } else if (s.toLowerCase().startsWith("say ")) {
-                                s = s.substring(s.indexOf(" ")).trim();
-                                a.info("[" + s1 + "] " + s);
-                                this.f.a((Packet) (new Packet3Chat("\u00A7d[Server] " + s)));
-                            } else if (s.toLowerCase().startsWith("tell ")) {
-                                astring = s.split(" ");
-                                if (astring.length >= 3) {
-                                    s = s.substring(s.indexOf(" ")).trim();
-                                    s = s.substring(s.indexOf(" ")).trim();
-                                    a.info("[" + s1 + "->" + astring[1] + "] " + s);
-                                    s = "\u00A77" + s1 + " whispers " + s;
-                                    a.info(s);
-                                    if (!this.f.a(astring[1], (Packet) (new Packet3Chat(s)))) {
-                                        icommandlistener.b("There\'s no player by that name online.");
-                                    }
-                                }
-                            } else {
-                                a.info("Unknown console command. Type \"help\" for help.");
-                            }
-                        }
-                    }
-                }
-            } else {
-                icommandlistener.b("To run the server without a gui, start it like this:");
-                icommandlistener.b("   java -Xmx1024M -Xms1024M -jar minecraft_server.jar nogui");
-                icommandlistener.b("Console commands:");
-                icommandlistener.b("   help  or  ?               shows this message");
-                icommandlistener.b("   kick <player>             removes a player from the server");
-                icommandlistener.b("   ban <player>              bans a player from the server");
-                icommandlistener.b("   pardon <player>           pardons a banned player so that they can connect again");
-                icommandlistener.b("   ban-ip <ip>               bans an IP address from the server");
-                icommandlistener.b("   pardon-ip <ip>            pardons a banned IP address so that they can connect again");
-                icommandlistener.b("   op <player>               turns a player into an op");
-                icommandlistener.b("   deop <player>             removes op status from a player");
-                icommandlistener.b("   tp <player1> <player2>    moves one player to the same location as another player");
-                icommandlistener.b("   give <player> <id> [num]  gives a player a resource");
-                icommandlistener.b("   tell <player> <message>   sends a private message to a player");
-                icommandlistener.b("   stop                      gracefully stops the server");
-                icommandlistener.b("   save-all                  forces a server-wide level save");
-                icommandlistener.b("   save-off                  disables terrain saving (useful for backup scripts)");
-                icommandlistener.b("   save-on                   re-enables terrain saving");
-                icommandlistener.b("   list                      lists all currently connected players");
-                icommandlistener.b("   say <message>             broadcasts a message to all players");
-            }
-        }
-    }
-
-    private void a(String s, String s1) {
-        String s2 = s + ": " + s1;
-
-        this.f.i("\u00A77(" + s2 + ")");
-        a.info(s2);
-    }
-
-    private int b(String s, int i) {
-        try {
-            return Integer.parseInt(s);
-        } catch (NumberFormatException numberformatexception) {
-            return i;
+            
+            this.o.a(servercommand);
         }
     }
 
     public void a(IUpdatePlayerListBox iupdateplayerlistbox) {
-        this.p.add(iupdateplayerlistbox);
+        this.q.add(iupdateplayerlistbox);
     }
 
     public static void main(final OptionSet options) { // Craftbukkit - replaces main(String args[])
@@ -595,6 +397,6 @@ public class MinecraftServer implements ICommandListener, Runnable {
     }
 
     public static boolean a(MinecraftServer minecraftserver) {
-        return minecraftserver.o;
+        return minecraftserver.p;
     }
 }

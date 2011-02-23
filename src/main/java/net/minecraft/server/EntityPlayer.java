@@ -21,21 +21,21 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public double d;
     public double e;
     public List f = new LinkedList();
-    public Set ak = new HashSet();
-    public double al;
-    private int bD = -99999999;
-    private int bE = 60;
-    private ItemStack[] bF = new ItemStack[] { null, null, null, null, null};
-    private int bG = 0;
-    public boolean am;
+    public Set g = new HashSet();
+    private int bE = -99999999;
+    private int bF = 60;
+    private ItemStack[] bG = new ItemStack[] { null, null, null, null, null};
+    private int bH = 0;
+    public boolean h;
 
     public EntityPlayer(MinecraftServer minecraftserver, World world, String s, ItemInWorldManager iteminworldmanager) {
         super(world);
-        int i = world.spawnX;
-        int j = world.spawnZ;
-        int k = world.spawnY;
+        ChunkCoordinates chunkcoordinates = world.l();
+        int i = chunkcoordinates.a;
+        int j = chunkcoordinates.c;
+        int k = chunkcoordinates.b;
 
-        if (!world.q.e) {
+        if (!world.m.e) {
             i += this.random.nextInt(20) - 10;
             k = world.e(i, j);
             j += this.random.nextInt(20) - 10;
@@ -43,7 +43,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
         this.c((double) i + 0.5D, (double) k, (double) j + 0.5D, 0.0F, 0.0F);
         this.b = minecraftserver;
-        this.S = 0.0F;
+        this.bm = 0.0F;
         iteminworldmanager.a = this;
         this.name = s;
         this.c = iteminworldmanager;
@@ -54,29 +54,38 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         this.activeContainer.a((ICrafting) this);
     }
 
-    public ItemStack[] I() {
-        return this.bF;
+    public ItemStack[] k_() {
+        return this.bG;
     }
 
-    public void b_() {
-        --this.bE;
+    protected void l_() {
+        this.height = 0.0F;
+    }
+
+    public float p() {
+        return 1.62F;
+    }
+
+    public void f_() {
+        this.c.a();
+        --this.bF;
         this.activeContainer.a();
 
         for (int i = 0; i < 5; ++i) {
-            ItemStack itemstack = this.a(i);
+            ItemStack itemstack = this.b_(i);
 
-            if (itemstack != this.bF[i]) {
+            if (itemstack != this.bG[i]) {
                 this.b.k.a(this, new Packet5EntityEquipment(this.id, i, itemstack));
-                this.bF[i] = itemstack;
+                this.bG[i] = itemstack;
             }
         }
     }
 
-    public ItemStack a(int i) {
-        return i == 0 ? this.inventory.e() : this.inventory.b[i - 1];
+    public ItemStack b_(int i) {
+        return i == 0 ? this.inventory.b() : this.inventory.b[i - 1];
     }
 
-    public void f(Entity entity) {
+    public void a(Entity entity) {
         // Craftbukkit start
         List<org.bukkit.inventory.ItemStack> loot = new ArrayList<org.bukkit.inventory.ItemStack>();
 
@@ -105,7 +114,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     }
 
     public boolean a(Entity entity, int i) {
-        if (this.bE > 0) {
+        if (this.bF > 0) {
             return false;
         } else {
             if (!this.b.n) {
@@ -126,59 +135,46 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         }
     }
 
-    public void d(int i) {
-        super.d(i);
+    public void b(int i) {
+        super.b(i);
     }
 
-    public void n() {
-        super.b_();
-        ChunkCoordIntPair chunkcoordintpair = null;
-        double d0 = 0.0D;
+    public void a(boolean flag) {
+        super.f_();
+        if (flag && !this.f.isEmpty()) {
+            ChunkCoordIntPair chunkcoordintpair = (ChunkCoordIntPair) this.f.get(0);
 
-        for (int i = 0; i < this.f.size(); ++i) {
-            ChunkCoordIntPair chunkcoordintpair1 = (ChunkCoordIntPair) this.f.get(i);
-            double d1 = chunkcoordintpair1.a(this);
+            if (chunkcoordintpair != null) {
+                boolean flag1 = false;
 
-            if (i == 0 || d1 < d0) {
-                chunkcoordintpair = chunkcoordintpair1;
-                d0 = chunkcoordintpair1.a(this);
-            }
-        }
+                if (this.a.b() < 2) {
+                    flag1 = true;
+                }
 
-        if (chunkcoordintpair != null) {
-            boolean flag = false;
+                if (flag1) {
+                    this.f.remove(chunkcoordintpair);
 
-            if (d0 < 1024.0D) {
-                flag = true;
-            }
+                    // CraftBukkit start
+                    this.a.b((Packet) (new Packet51MapChunk(chunkcoordintpair.a * 16, 0, chunkcoordintpair.b * 16, 16, 128, 16, this.world)));
+                    List list = ((WorldServer) world).d(chunkcoordintpair.a * 16, 0, chunkcoordintpair.b * 16, chunkcoordintpair.a * 16 + 16, 128, chunkcoordintpair.b * 16 + 16);
+                    // CraftBukkit end
 
-            if (this.a.b() < 2) {
-                flag = true;
-            }
-
-            if (flag) {
-                this.f.remove(chunkcoordintpair);
-
-                // Craftbukkit start
-                this.a.b((Packet) (new Packet51MapChunk(chunkcoordintpair.a * 16, 0, chunkcoordintpair.b * 16, 16, 128, 16, this.world)));
-                List list = ((WorldServer)world).d(chunkcoordintpair.a * 16, 0, chunkcoordintpair.b * 16, chunkcoordintpair.a * 16 + 16, 128, chunkcoordintpair.b * 16 + 16);
-                // Craftbukkit end
-
-                for (int j = 0; j < list.size(); ++j) {
-                    this.a((TileEntity) list.get(j));
+                    for (int i = 0; i < list.size(); ++i) {
+                        this.a((TileEntity) list.get(i));
+                    }
                 }
             }
         }
 
-        if (this.health != this.bD) {
+        if (this.health != this.bE) {
             this.a.b((Packet) (new Packet8UpdateHealth(this.health)));
-            this.bD = this.health;
+            this.bE = this.health;
         }
     }
 
     private void a(TileEntity tileentity) {
         if (tileentity != null) {
-            Packet packet = tileentity.g();
+            Packet packet = tileentity.e();
 
             if (packet != null) {
                 this.a.b(packet);
@@ -186,13 +182,11 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         }
     }
 
-    public void o() {
-        this.motX = this.motY = this.motZ = 0.0D;
-        this.bA = false;
-        super.o();
+    public void q() {
+        super.q();
     }
 
-    public void c(Entity entity, int i) {
+    public void b(Entity entity, int i) {
         if (!entity.dead) {
             if (entity instanceof EntityItem) {
                 this.b.k.a(entity, new Packet22Collect(entity.id, this.id));
@@ -203,29 +197,45 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             }
         }
 
-        super.c(entity, i);
+        super.b(entity, i);
         this.activeContainer.a();
     }
 
-    public void K() {
-        if (!this.au) {
-            this.av = -1;
-            this.au = true;
+    public void r() {
+        if (!this.p) {
+            this.q = -1;
+            this.p = true;
             this.b.k.a(this, new Packet18ArmAnimation(this, 1));
         }
     }
 
-    public float w() {
-        return 1.62F;
+    public void s() {}
+
+    public boolean a(int i, int j, int k) {
+        if (super.a(i, j, k)) {
+            this.b.k.a(this, new Packet17(this, 0, i, j, k));
+            return true;
+        } else {
+            return false;
+        }
     }
 
-    public void e(Entity entity) {
+    public void a(boolean flag, boolean flag1) {
+        if (this.E()) {
+            this.b.k.b(this, new Packet18ArmAnimation(this, 3));
+        }
+
+        super.a(flag, flag1);
+        this.a.a(this.locX, this.locY, this.locZ, this.yaw, this.pitch);
+    }
+
+    public void b(Entity entity) {
         // CraftBukkit start
         setPassengerOf(entity);
     }
 
     public void setPassengerOf(Entity entity) {
-        // e(null) doesn't really fly for overloaded methods,
+        // b(null) doesn't really fly for overloaded methods,
         // so this method is needed
 
         super.setPassengerOf(entity);
@@ -240,45 +250,45 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         super.a(d0, flag);
     }
 
-    private void U() {
-        this.bG = this.bG % 100 + 1;
+    private void V() {
+        this.bH = this.bH % 100 + 1;
     }
 
-    public void a(int i, int j, int k) {
-        this.U();
-        this.a.b((Packet) (new Packet100OpenWindow(this.bG, 1, "Crafting", 9)));
+    public void b(int i, int j, int k) {
+        this.V();
+        this.a.b((Packet) (new Packet100OpenWindow(this.bH, 1, "Crafting", 9)));
         this.activeContainer = new ContainerWorkbench(this.inventory, this.world, i, j, k);
-        this.activeContainer.f = this.bG;
+        this.activeContainer.f = this.bH;
         this.activeContainer.a((ICrafting) this);
     }
 
     public void a(IInventory iinventory) {
-        this.U();
-        this.a.b((Packet) (new Packet100OpenWindow(this.bG, 0, iinventory.b(), iinventory.h_())));
+        this.V();
+        this.a.b((Packet) (new Packet100OpenWindow(this.bH, 0, iinventory.c(), iinventory.m_())));
         this.activeContainer = new ContainerChest(this.inventory, iinventory);
-        this.activeContainer.f = this.bG;
+        this.activeContainer.f = this.bH;
         this.activeContainer.a((ICrafting) this);
     }
 
     public void a(TileEntityFurnace tileentityfurnace) {
-        this.U();
-        this.a.b((Packet) (new Packet100OpenWindow(this.bG, 2, tileentityfurnace.b(), tileentityfurnace.h_())));
+        this.V();
+        this.a.b((Packet) (new Packet100OpenWindow(this.bH, 2, tileentityfurnace.c(), tileentityfurnace.m_())));
         this.activeContainer = new ContainerFurnace(this.inventory, tileentityfurnace);
-        this.activeContainer.f = this.bG;
+        this.activeContainer.f = this.bH;
         this.activeContainer.a((ICrafting) this);
     }
 
     public void a(TileEntityDispenser tileentitydispenser) {
-        this.U();
-        this.a.b((Packet) (new Packet100OpenWindow(this.bG, 3, tileentitydispenser.b(), tileentitydispenser.h_())));
+        this.V();
+        this.a.b((Packet) (new Packet100OpenWindow(this.bH, 3, tileentitydispenser.c(), tileentitydispenser.m_())));
         this.activeContainer = new ContainerDispenser(this.inventory, tileentitydispenser);
-        this.activeContainer.f = this.bG;
+        this.activeContainer.f = this.bH;
         this.activeContainer.a((ICrafting) this);
     }
 
     public void a(Container container, int i, ItemStack itemstack) {
         if (!(container.a(i) instanceof SlotResult)) {
-            if (!this.am) {
+            if (!this.h) {
                 this.a.b((Packet) (new Packet103SetSlot(container.f, i, itemstack)));
             }
         }
@@ -295,19 +305,28 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
     public void a(ItemStack itemstack) {}
 
-    public void L() {
+    public void t() {
         this.a.b((Packet) (new Packet101CloseWindow(this.activeContainer.f)));
-        this.N();
+        this.v();
     }
 
-    public void M() {
-        if (!this.am) {
+    public void u() {
+        if (!this.h) {
             this.a.b((Packet) (new Packet103SetSlot(-1, -1, this.inventory.i())));
         }
     }
 
-    public void N() {
+    public void v() {
         this.activeContainer.a((EntityHuman) this);
         this.activeContainer = this.defaultContainer;
+    }
+
+    public void a(float f, float f1, boolean flag, boolean flag1, float f2, float f3) {
+        this.au = f;
+        this.av = f1;
+        this.ax = flag;
+        this.b(flag1);
+        this.pitch = f2;
+        this.yaw = f3;
     }
 }

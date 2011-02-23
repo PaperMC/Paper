@@ -67,12 +67,12 @@ public class ItemBlock extends Item {
             /* We store the old data so we can undo it. Snow(78) and half-steps(44) are special in that they replace the block itself,
              * rather than the block touching the face we clicked on.
              */
-            int typeId = blockClicked.getTypeId(); 
+            int typeId = blockClicked.getTypeId();
             org.bukkit.block.Block replacedBlock = blockClicked.getFace(faceClicked);
 
             if (typeId == Block.SNOW.id || (typeId == Block.STEP.id && itemstack.id == Block.STEP.id && faceClicked == BlockFace.UP))
                 replacedBlock = blockClicked;
-            
+
             final BlockState replacedBlockState = new CraftBlockState(replacedBlock);
             // CraftBukkit end
 
@@ -95,9 +95,13 @@ public class ItemBlock extends Item {
                     org.bukkit.inventory.ItemStack itemInHand = new CraftItemStack(itemstack);
                     Player thePlayer = (entityhuman ==null) ? null : (Player) entityhuman.getBukkitEntity();
 
-                    int distanceFromSpawn = (int) Math.max(Math.abs(i - world.spawnX), Math.abs(k - world.spawnZ));
+                    ChunkCoordinates chunkcoordinates = world.l();
+                    int spawnX = chunkcoordinates.a;
+                    int spawnZ = chunkcoordinates.c;
 
-                    boolean canBuild = distanceFromSpawn > ((WorldServer) world).D.spawnProtection || thePlayer.isOp(); // CraftBukkit Configurable spawn protection start
+                    int distanceFromSpawn = (int) Math.max(Math.abs(i - spawnX), Math.abs(k - spawnZ));
+
+                    boolean canBuild = distanceFromSpawn > ((WorldServer) world).x.spawnProtection || thePlayer.isOp(); // CraftBukkit Configurable spawn protection start
 
                     BlockPlaceEvent event = new BlockPlaceEvent(eventType, placedBlock, replacedBlockState, blockClicked, itemInHand, thePlayer, canBuild);
                     server.getPluginManager().callEvent(event);

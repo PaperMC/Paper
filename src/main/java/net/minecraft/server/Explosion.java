@@ -64,7 +64,7 @@ public class Explosion {
                         d3 /= d6;
                         d4 /= d6;
                         d5 /= d6;
-                        float f1 = this.f * (0.7F + this.i.l.nextFloat() * 0.6F);
+                        float f1 = this.f * (0.7F + this.i.k.nextFloat() * 0.6F);
 
                         d0 = this.b;
                         d1 = this.c;
@@ -179,7 +179,7 @@ public class Explosion {
     }
 
     public void b() {
-        this.i.a(this.b, this.c, this.d, "random.explode", 4.0F, (1.0F + (this.i.l.nextFloat() - this.i.l.nextFloat()) * 0.2F) * 0.7F);
+        this.i.a(this.b, this.c, this.d, "random.explode", 4.0F, (1.0F + (this.i.k.nextFloat() - this.i.k.nextFloat()) * 0.2F) * 0.7F);
         ArrayList arraylist = new ArrayList();
 
         arraylist.addAll(this.g);
@@ -217,9 +217,9 @@ public class Explosion {
             int i1 = this.i.getTypeId(j, k, l);
 
             for (int j1 = 0; j1 < 1; ++j1) {
-                double d0 = (double) ((float) j + this.i.l.nextFloat());
-                double d1 = (double) ((float) k + this.i.l.nextFloat());
-                double d2 = (double) ((float) l + this.i.l.nextFloat());
+                double d0 = (double) ((float) j + this.i.k.nextFloat());
+                double d1 = (double) ((float) k + this.i.k.nextFloat());
+                double d2 = (double) ((float) l + this.i.k.nextFloat());
                 double d3 = d0 - this.b;
                 double d4 = d1 - this.c;
                 double d5 = d2 - this.d;
@@ -230,7 +230,7 @@ public class Explosion {
                 d5 /= d6;
                 double d7 = 0.5D / (d6 / (double) this.f + 0.1D);
 
-                d7 *= (double) (this.i.l.nextFloat() * this.i.l.nextFloat() + 0.3F);
+                d7 *= (double) (this.i.k.nextFloat() * this.i.k.nextFloat() + 0.3F);
                 d3 *= d7;
                 d4 *= d7;
                 d5 *= d7;
@@ -241,7 +241,7 @@ public class Explosion {
             if (i1 > 0) {
                 Block.byId[i1].a(this.i, j, k, l, this.i.getData(j, k, l), event.getYield()); // Craftbukkit
                 this.i.e(j, k, l, 0);
-                Block.byId[i1].a_(this.i, j, k, l);
+                Block.byId[i1].c(this.i, j, k, l);
             }
         }
     }

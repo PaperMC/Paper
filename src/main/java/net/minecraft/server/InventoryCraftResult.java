@@ -12,19 +12,19 @@ public class InventoryCraftResult implements IInventory {
 
     public InventoryCraftResult() {}
 
-    public int h_() {
-        return this.a.length; //Craftbukkit
+    public int m_() {
+        return 1;
     }
 
-    public ItemStack a(int i) {
+    public ItemStack c_(int i) {
         return this.a[i];
     }
 
-    public String b() {
+    public String c() {
         return "Result";
     }
 
-    public ItemStack b(int i, int j) {
+    public ItemStack a(int i, int j) {
         if (this.a[i] != null) {
             ItemStack itemstack = this.a[i];
 
@@ -39,11 +39,11 @@ public class InventoryCraftResult implements IInventory {
         this.a[i] = itemstack;
     }
 
-    public int c() {
+    public int n_() {
         return 64;
     }
 
-    public void d() {}
+    public void h() {}
 
     public boolean a_(EntityHuman entityhuman) {
         return true;

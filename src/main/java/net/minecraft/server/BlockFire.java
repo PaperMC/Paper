@@ -54,7 +54,7 @@ public class BlockFire extends Block {
 
         if (l < 15) {
             world.c(i, j, k, l + 1);
-            world.i(i, j, k, this.id);
+            world.c(i, j, k, this.id, this.b());
         }
 
         if (!flag && !this.g(world, i, j, k)) {
@@ -112,18 +112,16 @@ public class BlockFire extends Block {
                     }
                 }
             }
-        }
 
-        // Craftbukkit start - won't be needed next port hopefully
-        if(l == 15) {
-            this.a(world, i + 1, j, k, 1, random);
-            this.a(world, i - 1, j, k, 1, random);
-            this.a(world, i, j - 1, k, 1, random);
-            this.a(world, i, j + 1, k, 1, random);
-            this.a(world, i, j, k - 1, 1, random);
-            this.a(world, i, j, k + 1, 1, random);
+            if (l == 15) {
+                this.a(world, i + 1, j, k, 1, random);
+                this.a(world, i - 1, j, k, 1, random);
+                this.a(world, i, j - 1, k, 1, random);
+                this.a(world, i, j + 1, k, 1, random);
+                this.a(world, i, j, k - 1, 1, random);
+                this.a(world, i, j, k + 1, 1, random);
+            }
         }
-        // Craftbukkit end
     }
 
     private void a(World world, int i, int j, int k, int l, Random random) {
@@ -149,7 +147,7 @@ public class BlockFire extends Block {
             }
 
             if (flag) {
-                Block.TNT.a(world, i, j, k, 0);
+                Block.TNT.b(world, i, j, k, 0);
             }
         }
     }
@@ -167,13 +165,13 @@ public class BlockFire extends Block {
         if (!world.isEmpty(i, j, k)) {
             return 0;
         } else {
-            int l = this.f(world, i + 1, j, k, b0);
+            int l = this.g(world, i + 1, j, k, b0);
 
-            l = this.f(world, i - 1, j, k, l);
-            l = this.f(world, i, j - 1, k, l);
-            l = this.f(world, i, j + 1, k, l);
-            l = this.f(world, i, j, k - 1, l);
-            l = this.f(world, i, j, k + 1, l);
+            l = this.g(world, i - 1, j, k, l);
+            l = this.g(world, i, j - 1, k, l);
+            l = this.g(world, i, j + 1, k, l);
+            l = this.g(world, i, j, k - 1, l);
+            l = this.g(world, i, j, k + 1, l);
             return l;
         }
     }
@@ -186,7 +184,7 @@ public class BlockFire extends Block {
         return this.a[iblockaccess.getTypeId(i, j, k)] > 0;
     }
 
-    public int f(World world, int i, int j, int k, int l) {
+    public int g(World world, int i, int j, int k, int l) {
         int i1 = this.a[world.getTypeId(i, j, k)];
 
         return i1 > l ? i1 : l;
@@ -196,18 +194,18 @@ public class BlockFire extends Block {
         return world.d(i, j - 1, k) || this.g(world, i, j, k);
     }
 
-    public void b(World world, int i, int j, int k, int l) {
+    public void a(World world, int i, int j, int k, int l) {
         if (!world.d(i, j - 1, k) && !this.g(world, i, j, k)) {
             world.e(i, j, k, 0);
         }
     }
 
     public void e(World world, int i, int j, int k) {
-        if (world.getTypeId(i, j - 1, k) != Block.OBSIDIAN.id || !Block.PORTAL.b_(world, i, j, k)) {
+        if (world.getTypeId(i, j - 1, k) != Block.OBSIDIAN.id || !Block.PORTAL.a_(world, i, j, k)) {
             if (!world.d(i, j - 1, k) && !this.g(world, i, j, k)) {
                 world.e(i, j, k, 0);
             } else {
-                world.i(i, j, k, this.id);
+                world.c(i, j, k, this.id, this.b());
             }
         }
     }

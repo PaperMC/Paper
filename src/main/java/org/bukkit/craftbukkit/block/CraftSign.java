@@ -1,4 +1,3 @@
-
 package org.bukkit.craftbukkit.block;
 
 import net.minecraft.server.TileEntitySign;
@@ -18,15 +17,15 @@ public class CraftSign extends CraftBlockState implements Sign {
     }
 
     public String[] getLines() {
-        return sign.e;
+        return sign.a;
     }
 
     public String getLine(int index) throws IndexOutOfBoundsException {
-        return sign.e[index];
+        return sign.a[index];
     }
 
     public void setLine(int index, String line) throws IndexOutOfBoundsException {
-        sign.e[index] = line;
+        sign.a[index] = line;
     }
 
     @Override
@@ -34,7 +33,7 @@ public class CraftSign extends CraftBlockState implements Sign {
         boolean result = super.update(force);
 
         if (result) {
-            sign.d();
+            sign.h();
         }
 
         return result;

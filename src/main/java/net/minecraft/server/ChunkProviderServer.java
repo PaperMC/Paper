@@ -38,8 +38,9 @@ public class ChunkProviderServer implements IChunkProvider {
     }
 
     public void c(int i, int j) {
-        int k = i * 16 + 8 - this.g.spawnX;
-        int l = j * 16 + 8 - this.g.spawnZ;
+        ChunkCoordinates chunkcoordinates = this.g.l();
+        int k = i * 16 + 8 - chunkcoordinates.a;
+        int l = j * 16 + 8 - chunkcoordinates.c;
         short short1 = 128;
 
         if (k < -short1 || k > short1 || l < -short1 || l > short1) {
@@ -105,7 +106,7 @@ public class ChunkProviderServer implements IChunkProvider {
     public Chunk b(int i, int j) {
         Chunk chunk = (Chunk) this.e.get(i, j); // CraftBukkit
 
-        return chunk == null ? (this.g.x ? this.d(i, j) : this.b) : chunk;
+        return chunk == null ? (this.g.r ? this.d(i, j) : this.b) : chunk;
     }
 
     public Chunk e(int i, int j) { // Craftbukkit - public
@@ -116,7 +117,7 @@ public class ChunkProviderServer implements IChunkProvider {
                 Chunk chunk = this.d.a(this.g, i, j);
 
                 if (chunk != null) {
-                    chunk.r = this.g.e;
+                    chunk.r = this.g.k();
                 }
 
                 return chunk;
@@ -140,7 +141,7 @@ public class ChunkProviderServer implements IChunkProvider {
     public void b(Chunk chunk) { // Craftbukkit - public
         if (this.d != null) {
             try {
-                chunk.r = this.g.e;
+                chunk.r = this.g.k();
                 this.d.a(this.g, chunk);
             } catch (Exception ioexception) { // CraftBukkit - IOException -> Exception
                 ioexception.printStackTrace();
@@ -192,7 +193,7 @@ public class ChunkProviderServer implements IChunkProvider {
     }
 
     public boolean a() {
-        if (!this.g.C) {
+        if (!this.g.w) {
             // CraftBukkit start
             Server server = g.getServer();
             while (!this.a.isEmpty()) {
@@ -223,6 +224,6 @@ public class ChunkProviderServer implements IChunkProvider {
     }
 
     public boolean b() {
-        return !this.g.C;
+        return !this.g.w;
     }
 }

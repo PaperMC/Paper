@@ -2,19 +2,19 @@ package net.minecraft.server;
 
 public interface IInventory {
 
-    int h_();
+    int m_();
 
-    ItemStack a(int i);
+    ItemStack c_(int i);
 
-    ItemStack b(int i, int j);
+    ItemStack a(int i, int j);
 
     void a(int i, ItemStack itemstack);
 
-    String b();
+    String c();
 
-    int c();
+    int n_();
 
-    void d();
+    void h();
 
     boolean a_(EntityHuman entityhuman);
 
