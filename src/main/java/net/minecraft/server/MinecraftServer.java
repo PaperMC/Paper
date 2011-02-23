@@ -50,7 +50,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
     public List<WorldServer> worlds = new ArrayList<WorldServer>();
     public CraftServer server;
     public OptionSet options;
-    public ConsoleCommandSender console = new ConsoleCommandSender();
+    public ConsoleCommandSender console;
     // Craftbukkit end
 
     public MinecraftServer(OptionSet options) { // Craftbukkit - adds argument OptionSet

@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 
 // CraftBukkit start
 import org.bukkit.Location;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.Player;
@@ -47,6 +48,7 @@ public class ServerConfigurationManager {
 
     public ServerConfigurationManager(MinecraftServer minecraftserver) {
         minecraftserver.server = new CraftServer(minecraftserver, this);
+        minecraftserver.console = new ConsoleCommandSender(minecraftserver.server);
         server = minecraftserver.server;
         // CraftBukkit end
 
