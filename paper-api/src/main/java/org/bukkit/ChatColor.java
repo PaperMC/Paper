@@ -103,6 +103,16 @@ public enum ChatColor {
         return colors.get(code);
     }
 
+    /**
+     * Strips the given message of all color codes
+     *
+     * @param input String to strip of color
+     * @return A copy of the input string, without any coloring
+     */
+    public static String stripColor(final String input) {
+        return input.replaceAll("(?i)\u00A7[0-F]", "");
+    }
+
     static {
         for (ChatColor color : ChatColor.values()) {
             colors.put(color.getCode(), color);
