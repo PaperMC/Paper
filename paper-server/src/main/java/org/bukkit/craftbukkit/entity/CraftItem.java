@@ -11,6 +11,7 @@ public class CraftItem extends CraftEntity implements Item {
 
     public CraftItem(CraftServer server, EntityItem entity) {
         super(server, entity);
+        this.item = entity;
     }
 
     public ItemStack getItemStack() {
