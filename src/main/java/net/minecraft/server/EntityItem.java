@@ -202,7 +202,7 @@ public class EntityItem extends Entity {
 
                 if (!event.isCancelled() && entityhuman.inventory.a(this.a)) {
                     this.world.a(this, "random.pop", 0.2F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
-                    entityhuman.c(this, i);
+                    entityhuman.b(this, i);
                     this.C();
                 }
             }
