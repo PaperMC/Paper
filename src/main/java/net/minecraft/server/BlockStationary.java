@@ -58,7 +58,7 @@ public class BlockStationary extends BlockFluids {
                 if (j1 == 0) {
                     if (this.j(world, i - 1, j, k) || this.j(world, i + 1, j, k) || this.j(world, i, j, k - 1) || this.j(world, i, j, k + 1) || this.j(world, i, j - 1, k) || this.j(world, i, j + 1, k)) {
                         // CraftBukkit start: prevent lava putting something on fire.
-                        org.bukkit.block.Block theBlock = cworld.getBlockAt(k, l, i1);
+                        org.bukkit.block.Block theBlock = cworld.getBlockAt(i, j, k);
 
                         if (theBlock.getTypeId() != Block.FIRE.id){
                             BlockIgniteEvent event = new BlockIgniteEvent(theBlock, igniteCause, thePlayer);
