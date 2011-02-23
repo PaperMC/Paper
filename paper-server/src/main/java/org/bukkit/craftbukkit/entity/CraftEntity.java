@@ -173,4 +173,8 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     public String toString() {
         return "CraftEntity{" + "id=" + getEntityId() + '}';
     }
+
+    public CraftServer getServer() {
+        return server;
+    }
 }

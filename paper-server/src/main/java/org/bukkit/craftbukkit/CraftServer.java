@@ -30,7 +30,7 @@ import org.bukkit.event.world.WorldEvent;
 public final class CraftServer implements Server {
     private final String serverName = "Craftbukkit";
     private final String serverVersion;
-    private final String protocolVersion = "1.2_01";
+    private final String protocolVersion = "1.3";
     private final PluginManager pluginManager = new SimplePluginManager(this);
     private final BukkitScheduler scheduler =  new CraftScheduler(this);
     private final CommandMap commandMap = new SimpleCommandMap(this);
