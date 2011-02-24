@@ -10,11 +10,14 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.minecraft.server.ChunkCoordinates;
+import net.minecraft.server.ConvertProgressUpdater;
+import net.minecraft.server.Convertable;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PropertyManager;
 import net.minecraft.server.ServerConfigurationManager;
 import net.minecraft.server.ServerNBTManager;
+import net.minecraft.server.WorldLoaderServer;
 import net.minecraft.server.WorldManager;
 import net.minecraft.server.WorldServer;
 import org.bukkit.*;
@@ -210,6 +213,12 @@ public final class CraftServer implements Server {
         
         if ((folder.exists()) && (!folder.isDirectory())) {
             throw new IllegalArgumentException("File exists with the name '" + name + "' and isn't a folder");
+        }
+
+        Convertable converter = new WorldLoaderServer(folder);
+        if (converter.a(name)) {
+            getLogger().info("Converting world '" + name + "'");
+            converter.a(name, new ConvertProgressUpdater(console));
         }
 
         WorldServer internal = new WorldServer(console, new ServerNBTManager(new File("."), name, true), name, environment == World.Environment.NETHER ? -1 : 0);
