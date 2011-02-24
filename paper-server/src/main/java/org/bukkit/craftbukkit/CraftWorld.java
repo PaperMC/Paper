@@ -448,4 +448,21 @@ public class CraftWorld implements World {
 
         return list;
     }
+
+    public List<Player> getPlayers() {
+        List<Player> list = new ArrayList<Player>();
+
+        for (Object o : world.b) {
+            if (o instanceof net.minecraft.server.Entity) {
+                net.minecraft.server.Entity mcEnt = (net.minecraft.server.Entity)o;
+                Entity bukkitEntity = mcEnt.getBukkitEntity();
+                
+                if ((bukkitEntity != null) && (bukkitEntity instanceof Player)) {
+                    list.add((Player)bukkitEntity);
+                }
+            }
+        }
+
+        return list;
+    }
 }
