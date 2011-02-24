@@ -40,7 +40,9 @@ public class LongHashtable<V> extends LongHash
     }
 
     public V get(long key) {
-        return containsKey(key) ? (V) cache.value : null;
+        synchronized(this) {
+            return containsKey(key) ? (V) cache.value : null;
+        }
     }
 
     public boolean containsKey(long key) {
