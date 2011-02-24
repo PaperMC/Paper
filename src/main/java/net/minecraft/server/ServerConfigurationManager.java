@@ -348,7 +348,7 @@ public class ServerConfigurationManager {
 
             bufferedreader.close();
         } catch (Exception exception) {
-            a.warning("Failed to load ip ban list: " + exception);
+            a.warning("Failed to load ops: " + exception);  // CraftBukkit corrected text
         }
     }
 
@@ -365,7 +365,7 @@ public class ServerConfigurationManager {
 
             printwriter.close();
         } catch (Exception exception) {
-            a.warning("Failed to save ip ban list: " + exception);
+            a.warning("Failed to save ops: " + exception); // CraftBukkit corrected text
         }
     }
 
