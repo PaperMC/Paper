@@ -203,12 +203,6 @@ public class World implements IBlockAccess {
             }
             result = lastChunkAccessed;
         }
-        if(result.j != i || result.k != j) {
-            if(this instanceof WorldServer) {
-                WorldServer ws = (WorldServer) this;
-                MinecraftServer.a.severe("Chunk fetched was not the chunk requested.");
-            }
-        }
         return result;
     }
     // CraftBukkit end

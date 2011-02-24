@@ -10,10 +10,29 @@ public class LongHashtable<V> extends LongHash
 
     public void put(int msw, int lsw, V value) {
         put(toLong(msw, lsw), value);
+        if(value instanceof Chunk) {
+            Chunk c = (Chunk)value;
+            if(msw != c.j || lsw != c.k) {
+                MinecraftServer.a.info("Chunk (" + c.j + ", " + c.k +") stored at  (" + msw + ", " + lsw + ")");
+                Throwable x = new Throwable();
+                x.fillInStackTrace();
+                x.printStackTrace();
+            }
+        }
     }
 
     public V get(int msw, int lsw) {
-        return get(toLong(msw, lsw));
+        V value = get(toLong(msw, lsw));
+        if(value instanceof Chunk) {
+            Chunk c = (Chunk)value;
+            if(msw != c.j || lsw != c.k) {
+                MinecraftServer.a.info("Chunk (" + c.j + ", " + c.k +") stored at  (" + msw + ", " + lsw + ")");
+                Throwable x = new Throwable();
+                x.fillInStackTrace();
+                x.printStackTrace();
+            }
+        }
+        return value;
     }
 
     public void put(long key, V value) {
