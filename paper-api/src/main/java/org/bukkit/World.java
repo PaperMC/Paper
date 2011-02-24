@@ -3,18 +3,9 @@ package org.bukkit;
 
 import java.util.List;
 import org.bukkit.block.Block;
+import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
-import org.bukkit.entity.Creature;
-import org.bukkit.entity.CreatureType;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Item;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.PoweredMinecart;
-import org.bukkit.entity.Minecart;
-import org.bukkit.entity.StorageMinecart;
-import org.bukkit.entity.Arrow;
-import org.bukkit.entity.Boat;
 
 /**
  * Represents a world, which may contain entities, chunks and blocks
@@ -311,6 +302,13 @@ public interface World {
      * @return A List of all LivingEntities currently residing in this world
      */
     public List<LivingEntity> getLivingEntities();
+
+    /**
+     * Get a list of all players in this World
+     *
+     * @return A list of all Players currently residing in this world
+     */
+    public List<Player> getPlayers();
 
     /**
      * Gets the unique name of this world
