@@ -849,8 +849,13 @@ public abstract class Entity {
             String worldName = nbttagcompound.i("World");
 
             for (WorldServer world: ((WorldServer) this.world).getServer().getServer().worlds) {
-                if (world.q.j.equals(worldName)) {
+                if ((world.q.j.equals(worldName)) && (world != this.world)) {
                     this.world = world;
+                    if (this instanceof EntityHuman) {
+                        EntityPlayer player = (EntityPlayer)this;
+                        player.c = new ItemInWorldManager(world);
+                        player.c.a = player;
+                    }
                     break;
                 }
             }
