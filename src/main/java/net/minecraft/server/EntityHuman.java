@@ -357,6 +357,22 @@ public abstract class EntityHuman extends EntityLiving {
                 }
             }
 
+            // CraftBukkit start - this is here instead of EntityMonster because EntityLiving(s) that aren't monsters
+            // also damage the player in this way. For example, EntitySlime.
+            if (entity instanceof EntityLiving) {
+                CraftServer server = ((WorldServer) this.world).getServer();
+                org.bukkit.entity.Entity damager = entity.getBukkitEntity();
+                org.bukkit.entity.Entity damagee = this.getBukkitEntity();
+                DamageCause damageType = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
+                EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(damager, damagee, damageType, i);
+                server.getPluginManager().callEvent(event);
+
+                if (event.isCancelled()) {
+                    return false;
+                }
+            }
+            // CraftBukkit end
+
             return i == 0 ? false : super.a(entity, i);
         }
     }

@@ -79,8 +79,10 @@ public class EntityMonster extends EntityCreature implements IMonster {
     protected void a(Entity entity, float f) {
         if ((double) f < 1.5D && entity.boundingBox.e > this.boundingBox.b && entity.boundingBox.b < this.boundingBox.e) {
             this.attackTicks = 20;
-            // CraftBukkit start
-            if (entity instanceof EntityLiving) {
+            // CraftBukkit start - this is still duplicated here and EntityHuman because it's possible for an EntityMonster
+            // to damage another EntityMonster, and we want to catch those events.
+            // This does not fire events for slime attacks, as they're not an EntityMonster.
+            if (entity instanceof EntityLiving && !(entity instanceof EntityHuman)) {
                 CraftServer server = ((WorldServer) this.world).getServer();
                 org.bukkit.entity.Entity damager = this.getBukkitEntity();
                 org.bukkit.entity.Entity damagee = (entity == null) ? null : entity.getBukkitEntity();
