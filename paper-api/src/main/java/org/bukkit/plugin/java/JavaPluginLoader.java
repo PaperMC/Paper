@@ -421,9 +421,8 @@ public final class JavaPluginLoader implements PluginLoader {
         if (!plugin.isEnabled()) {
             JavaPlugin jPlugin = (JavaPlugin)plugin;
 
-            server.getPluginManager().callEvent(new PluginEvent(Event.Type.PLUGIN_ENABLE, plugin));
-
             jPlugin.setEnabled(true);
+            server.getPluginManager().callEvent(new PluginEvent(Event.Type.PLUGIN_ENABLE, plugin));
         }
     }
 
@@ -436,9 +435,9 @@ public final class JavaPluginLoader implements PluginLoader {
             JavaPlugin jPlugin = (JavaPlugin)plugin;
             ClassLoader cloader = jPlugin.getClassLoader();
 
-            server.getPluginManager().callEvent(new PluginEvent(Event.Type.PLUGIN_DISABLE, plugin));
-
             jPlugin.setEnabled(false);
+
+            server.getPluginManager().callEvent(new PluginEvent(Event.Type.PLUGIN_DISABLE, plugin));
 
             if (cloader instanceof PluginClassLoader) {
                 PluginClassLoader loader = (PluginClassLoader)cloader;
