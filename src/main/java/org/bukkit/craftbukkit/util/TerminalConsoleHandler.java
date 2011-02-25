@@ -16,12 +16,14 @@ public class TerminalConsoleHandler extends ConsoleHandler {
 
     @Override
     public synchronized void flush() {
-        super.flush();
         try {
-            reader.redrawLine();
+            reader.printString(ConsoleReader.RESET_LINE + "");
+            reader.flushConsole();
+            super.flush();
+            reader.drawLine();
+            reader.flushConsole();
         } catch (IOException ex) {
             Logger.getLogger(TerminalConsoleHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-
 }
