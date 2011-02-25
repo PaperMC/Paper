@@ -17,6 +17,7 @@ import org.bukkit.Location;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.command.ColouredConsoleSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.Event.Type;
@@ -48,7 +49,7 @@ public class ServerConfigurationManager {
 
     public ServerConfigurationManager(MinecraftServer minecraftserver) {
         minecraftserver.server = new CraftServer(minecraftserver, this);
-        minecraftserver.console = new ConsoleCommandSender(minecraftserver.server);
+        minecraftserver.console = new ColouredConsoleSender(minecraftserver.server);
         server = minecraftserver.server;
         // CraftBukkit end
 

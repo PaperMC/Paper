@@ -6,6 +6,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import java.util.logging.Handler; // CraftBukkit
+import jline.ConsoleReader;
+import org.bukkit.craftbukkit.util.ShortConsoleLogFormatter;
+import org.bukkit.craftbukkit.util.TerminalConsoleHandler;
 
 public class ConsoleLogManager {
 
@@ -14,11 +17,12 @@ public class ConsoleLogManager {
 
     public ConsoleLogManager() {}
 
-    public static void a() {
+    // Craftbukkit - change of method signature!
+    public static void a(ConsoleReader reader) {
         ConsoleLogFormatter consolelogformatter = new ConsoleLogFormatter();
 
         a.setUseParentHandlers(false);
-        ConsoleHandler consolehandler = new ConsoleHandler();
+        ConsoleHandler consolehandler = new TerminalConsoleHandler(reader);
 
         // CraftBukkit start
         for (Handler handler: global.getHandlers()) {
@@ -26,7 +30,7 @@ public class ConsoleLogManager {
         }
         // CraftBukkit end
 
-        consolehandler.setFormatter(consolelogformatter);
+        consolehandler.setFormatter(new ShortConsoleLogFormatter()); // Craftbukkit
         a.addHandler(consolehandler);
         global.addHandler(consolehandler); // CraftBukkit
 

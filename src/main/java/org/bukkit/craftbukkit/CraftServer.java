@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import jline.ConsoleReader;
 import net.minecraft.server.ChunkCoordinates;
 import net.minecraft.server.ConvertProgressUpdater;
 import net.minecraft.server.Convertable;
@@ -275,5 +276,9 @@ public final class CraftServer implements Server {
 
     public Logger getLogger() {
         return MinecraftServer.a;
+    }
+
+    public ConsoleReader getReader() {
+        return console.reader;
     }
 }

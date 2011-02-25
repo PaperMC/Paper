@@ -15,10 +15,12 @@ import java.util.logging.Logger;
 // CraftBukkit start
 import java.io.PrintStream;
 import java.net.UnknownHostException;
+import jline.ConsoleReader;
 import joptsimple.OptionSet;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.LoggerOutputStream;
+import org.bukkit.craftbukkit.command.ColouredConsoleSender;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 import org.bukkit.event.Event;
 import org.bukkit.event.world.WorldEvent;
@@ -50,12 +52,21 @@ public class MinecraftServer implements Runnable, ICommandListener {
     public List<WorldServer> worlds = new ArrayList<WorldServer>();
     public CraftServer server;
     public OptionSet options;
-    public ConsoleCommandSender console;
+    public ColouredConsoleSender console;
+    public ConsoleReader reader;
     // Craftbukkit end
 
     public MinecraftServer(OptionSet options) { // CraftBukkit - adds argument OptionSet
         new ThreadSleepForever(this);
-        this.options = options; // CraftBukkit
+
+         // CraftBukkit start
+        this.options = options;
+        try {
+            this.reader = new ConsoleReader();
+        } catch (IOException ex) {
+            Logger.getLogger(MinecraftServer.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        // CraftBukkit end
     }
 
     private boolean d() throws UnknownHostException { // CraftBukkit - added throws UnknownHostException
@@ -64,7 +75,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
 
         threadcommandreader.setDaemon(true);
         threadcommandreader.start();
-        ConsoleLogManager.a();
+        ConsoleLogManager.a(reader); // Craftbukkit
 
         // CraftBukkit start
         System.setOut(new PrintStream(new LoggerOutputStream(a, Level.INFO), true));
