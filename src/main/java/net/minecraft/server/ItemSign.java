@@ -59,7 +59,7 @@ public class ItemSign extends Item {
                 Type eventType = Type.PLAYER_ITEM;
                 Player who = (entityhuman == null) ? null : (Player) entityhuman.getBukkitEntity();
                 org.bukkit.inventory.ItemStack itemInHand = new CraftItemStack(itemstack);
-                BlockFace blockface = CraftBlock.notchToBlockFace(1);
+                BlockFace blockface = CraftBlock.notchToBlockFace(l);
 
                 PlayerItemEvent event = new PlayerItemEvent(eventType, who, itemInHand, blockClicked, blockface);
                 craftServer.getPluginManager().callEvent(event);
