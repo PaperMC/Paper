@@ -198,7 +198,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
         server.loadPlugins(); // CraftBukkit
     }
 
-    private void f() {
+    void f() { //CraftBukkit - private -> default
         a.info("Saving chunks");
 
         // CraftBukkit start
@@ -209,6 +209,8 @@ public class MinecraftServer implements Runnable, ICommandListener {
             WorldEvent event = new WorldEvent( Event.Type.WORLD_SAVED, world.getWorld() );
             server.getPluginManager().callEvent( event );
         }
+
+        this.f.d(); // CraftBukkit - player data should be saved whenever a save happens.
         // CraftBukkit end
     }
 

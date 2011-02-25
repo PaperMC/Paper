@@ -28,7 +28,7 @@ public class ConsoleCommandHandler {
                 this.b.a();
             } else if (s.toLowerCase().startsWith("save-all")) {
                 this.a(s1, "Forcing save..");
-                worldserver.a(true, (IProgressUpdate) null);
+                this.b.f(); // CraftBukkit - We should save all worlds on save-all.
                 this.a(s1, "Save complete.");
             } else if (s.toLowerCase().startsWith("save-off")) {
                 this.a(s1, "Disabling level saving..");
