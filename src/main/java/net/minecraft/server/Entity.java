@@ -477,7 +477,7 @@ public abstract class Entity {
             int j1;
 
             // CraftBukkit start
-            if ((this.bg) && (getBukkitEntity() instanceof Vehicle)) {
+            if ((this.aV) && (getBukkitEntity() instanceof Vehicle)) {
                 Vehicle vehicle = (Vehicle) getBukkitEntity();
                 org.bukkit.World wrld = ((WorldServer) world).getWorld();
                 org.bukkit.block.Block block = wrld.getBlockAt(MathHelper.b(locX), MathHelper.b(locY - 0.20000000298023224D - (double) this.height), MathHelper.b(locZ));
