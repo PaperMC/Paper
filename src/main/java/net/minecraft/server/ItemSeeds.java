@@ -35,7 +35,7 @@ public class ItemSeeds extends Item {
                 Player who = (entityhuman == null) ? null : (Player) entityhuman.getBukkitEntity();
                 org.bukkit.inventory.ItemStack itemInHand = new CraftItemStack(itemstack);
                 org.bukkit.block.Block blockClicked = craftWorld.getBlockAt(i, j, k);
-                BlockFace blockface = CraftBlock.notchToBlockFace(1);
+                BlockFace blockface = CraftBlock.notchToBlockFace(l);
 
                 PlayerItemEvent event = new PlayerItemEvent(eventType, who, itemInHand, blockClicked, blockface);
                 craftServer.getPluginManager().callEvent(event);

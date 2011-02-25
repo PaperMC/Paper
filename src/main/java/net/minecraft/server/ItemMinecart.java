@@ -34,7 +34,7 @@ public class ItemMinecart extends Item {
                 Player who = (entityhuman == null) ? null : (Player) entityhuman.getBukkitEntity();
                 org.bukkit.inventory.ItemStack itemInHand = new CraftItemStack(itemstack);
                 org.bukkit.block.Block blockClicked = craftWorld.getBlockAt(i, j, k);
-                BlockFace blockFace = CraftBlock.notchToBlockFace(1);
+                BlockFace blockFace = CraftBlock.notchToBlockFace(l);
 
                 PlayerItemEvent event = new PlayerItemEvent(eventType, who, itemInHand, blockClicked, blockFace);
                 craftServer.getPluginManager().callEvent(event);
