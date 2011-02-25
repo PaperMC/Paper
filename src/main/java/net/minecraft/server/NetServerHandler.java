@@ -56,6 +56,10 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     private int lastY;
     private int lastZ;
 
+    private double lastPosX = Double.MIN_VALUE;
+    private double lastPosY = Double.MIN_VALUE;
+    private double lastPosZ = Double.MIN_VALUE;
+
     // Store the last block right clicked and what type it was
     private CraftBlock lastRightClicked;
     private BlockFace lastRightClickedFace;
@@ -111,7 +115,10 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         Player player = getPlayer();
         Location from = new Location(player.getWorld(), i, j, k, this.e.yaw, this.e.pitch);
         Location to = player.getLocation();
-        if (!from.equals(to)) {
+
+        // Prevent 40 event-calls for less than a single pixel of movement >.>
+        double delta = Math.pow( this.lastPosX - this.i, 2) + Math.pow( this.lastPosY - this.j, 2) + Math.pow( this.lastPosZ - this.k, 2);
+        if (delta > 1f/256) {
             PlayerMoveEvent event = new PlayerMoveEvent(Type.PLAYER_MOVE, player, from, to);
             server.getPluginManager().callEvent(event);
 
@@ -123,6 +130,10 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             this.e.locZ = to.getZ();
             this.e.yaw = to.getYaw();
             this.e.pitch = to.getPitch();
+
+            this.lastPosX = this.e.locX;
+            this.lastPosY = this.e.locY;
+            this.lastPosZ = this.e.locZ;
         }
         // CraftBukkit end
 
