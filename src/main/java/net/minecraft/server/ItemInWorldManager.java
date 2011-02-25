@@ -112,7 +112,8 @@ public class ItemInWorldManager {
             server.getPluginManager().callEvent(event);
 
             if (event.isCancelled()) {
-                return true;
+                MinecraftServer.a.info("A plugin cancelled the block break event");
+                return false;
             }
         }
         // CraftBukkit end
