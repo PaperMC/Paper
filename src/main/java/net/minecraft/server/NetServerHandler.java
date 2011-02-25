@@ -58,6 +58,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
     // Store the last block right clicked and what type it was
     private CraftBlock lastRightClicked;
+    private BlockFace lastRightClickedFace;
     private int lastMaterial;
 
     public CraftPlayer getPlayer() {
@@ -415,28 +416,25 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         boolean flag = ((WorldServer) this.e.world).v = this.d.f.h(this.e.name);
 
         CraftBlock blockClicked = null;
-        BlockFace blockFace = null;
+        BlockFace blockFace = BlockFace.SELF;
 
         if (packet15place.d == 255) {
             // CraftBukkit ITEM_USE -- if we have a lastRightClicked then it could be a usable location
-            if (packet15place.e != null && packet15place.e.id == lastMaterial) {
-                blockClicked = lastRightClicked;
-            } else if (lastMaterial == 0) {
-                blockClicked = lastRightClicked;
+            if ((packet15place.e != null && packet15place.e.id == lastMaterial) || lastMaterial == 0) {
+                blockClicked = this.lastRightClicked;
+                blockFace = this.lastRightClickedFace;
             }
-            lastRightClicked = null;
-            lastMaterial = 0;
+            this.lastRightClicked = null;
+            this.lastRightClickedFace = null;
+            this.lastMaterial = 0;
         } else {
             // CraftBukkit RIGHTCLICK or BLOCK_PLACE .. or nothing
             blockClicked = (CraftBlock) ((WorldServer) e.world).getWorld().getBlockAt(packet15place.a, packet15place.b, packet15place.c);
-            lastRightClicked = blockClicked;
-            lastMaterial = (packet15place.e == null) ? 0 : packet15place.e.id;
-        }
-
-        if (blockClicked != null && itemstack != null) {
             blockFace = CraftBlock.notchToBlockFace(packet15place.d);
-        } else {
-            blockFace = BlockFace.SELF;
+
+            this.lastRightClicked = blockClicked;
+            this.lastMaterial = (packet15place.e == null) ? 0 : packet15place.e.id;
+            this.lastRightClickedFace = blockFace;
         }
 
         // CraftBukkit if rightclick decremented the item, always send the update packet.
@@ -484,6 +482,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             int j = packet15place.b;
             int k = packet15place.c;
             int l = packet15place.d;
+
             // CraftBukkit
             ChunkCoordinates chunkcoordinates = this.e.world.l();
             int i1 = (int) MathHelper.e((float) (i - chunkcoordinates.a));
@@ -502,6 +501,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             this.e.c.a(this.e, this.e.world, itemstack, i, j, k, l);
             this.e.a.b((Packet) (new Packet53BlockChange(i, j, k, this.e.world)));
             // CraftBukkit end
+
             if (l == 0) {
                 --j;
             }
