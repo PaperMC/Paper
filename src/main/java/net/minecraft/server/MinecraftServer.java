@@ -129,7 +129,13 @@ public class MinecraftServer implements Runnable, ICommandListener {
 
         a.info("Preparing level \"" + s1 + "\"");
         this.a((Convertable) (new WorldLoaderServer(new File("."))), s1);
-        a.info("Done (" + (System.nanoTime() - j) + "ns)! For help, type \"help\" or \"?\"");
+
+        // CraftBukkit start
+        long elapsed = System.nanoTime() - j;
+        String time = String.format( "%.3fs", elapsed / 10000000000.0D );
+        a.info("Done (" + time + ")! For help, type \"help\" or \"?\"");
+        // CraftBukkit end
+
         return true;
     }
 
