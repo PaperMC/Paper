@@ -126,9 +126,28 @@ public class PlayerManager {
             int i1 = i - k;
             int j1 = j - l;
 
+            // Craftbukkit start
+            if (!this.a(i, j, k, l)) {
+                this.a(i, j, true).a(entityplayer);
+            }
+
+            if (!this.a(i - i1, j - j1, i, j)) {
+                PlayerInstance playerinstance = this.a(i - i1, j - j1, false);
+
+                if (playerinstance != null) {
+                    playerinstance.b(entityplayer);
+                }
+            }
+            // Craftbukkit end
+
             if (i1 != 0 || j1 != 0) {
                 for (int k1 = i - 10; k1 <= i + 10; ++k1) {
                     for (int l1 = j - 10; l1 <= j + 10; ++l1) {
+                        // Craftbukkit start
+                        if ((k1 == i) && (l1 == j)) {
+                            continue;
+                        }
+                        // Craftbukkit end
                         if (!this.a(k1, l1, k, l)) {
                             this.a(k1, l1, true).a(entityplayer);
                         }
