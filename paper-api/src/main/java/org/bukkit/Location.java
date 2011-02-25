@@ -98,7 +98,7 @@ public class Location implements Cloneable {
      * @return block X
      */
     public int getBlockX() {
-        return (int)Math.floor(x);
+        return locToBlock(x);
     }
 
     /**
@@ -126,7 +126,7 @@ public class Location implements Cloneable {
      * @return block y
      */
     public int getBlockY() {
-        return (int)Math.floor(y);
+        return locToBlock(y);
     }
 
     /**
@@ -154,7 +154,7 @@ public class Location implements Cloneable {
      * @return block z
      */
     public int getBlockZ() {
-        return (int)Math.floor(z);
+        return locToBlock(z);
     }
 
     /**
@@ -272,5 +272,15 @@ public class Location implements Cloneable {
     @Override
     public Location clone() {
         return new Location(world, x, y, z, yaw, pitch);
+    }
+
+    /**
+     * Safely converts a double (location coordinate) to an int (block coordinate)
+     *
+     * @param loc Precise coordinate
+     * @return Block coordinate
+     */
+    public static int locToBlock(double loc) {
+        return (int)Math.floor(loc);
     }
 }
