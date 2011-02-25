@@ -25,29 +25,6 @@ public abstract class JavaPlugin implements Plugin {
     private ClassLoader classLoader = null;
     private Configuration config = null;
 
-    /**
-     * Constructs a new Java plugin instance
-     *
-     * @param pluginLoader PluginLoader that is responsible for this plugin
-     * @param instance Server instance that is running this plugin
-     * @param desc PluginDescriptionFile containing metadata on this plugin
-     * @param folder Folder containing the plugin's data
-     * @param plugin File containing this plugin
-     * @param cLoader ClassLoader which holds this plugin
-     */
-    public JavaPlugin(PluginLoader pluginLoader, Server instance,
-            PluginDescriptionFile desc, File folder, File plugin,
-            ClassLoader cLoader) {
-        initialize(pluginLoader, instance, desc, folder, plugin, cLoader);
-        
-        server.getLogger().warning("Using the stupidly long constructor " + desc.getMain() + "(PluginLoader, Server, PluginDescriptionFile, File, File, ClassLoader) is no longer recommended. Go nag the plugin author of " + desc.getName() + " to remove it! (Nothing is broken, we just like to keep code clean.)");
-
-        ArrayList<String> authors = desc.getAuthors();
-        if (authors.size() > 0) {
-            server.getLogger().info("Hint! It's probably someone called '" + authors.get(0) + "'");
-        }
-    }
-
     public JavaPlugin() {
     }
 

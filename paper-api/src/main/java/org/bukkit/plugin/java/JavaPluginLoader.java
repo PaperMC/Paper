@@ -72,14 +72,9 @@ public final class JavaPluginLoader implements PluginLoader {
             Class<?> jarClass = Class.forName(description.getMain(), true, loader);
             Class<? extends JavaPlugin> plugin = jarClass.asSubclass(JavaPlugin.class);
 
-            try {
-                Constructor<? extends JavaPlugin> constructor = plugin.getConstructor(PluginLoader.class, Server.class, PluginDescriptionFile.class, File.class, File.class, ClassLoader.class);
-                result = constructor.newInstance(this, server, description, dataFolder, file, loader);
-            } catch (NoSuchMethodException ex) {
-                Constructor<? extends JavaPlugin> constructor = plugin.getConstructor();
-                result = constructor.newInstance();
-            }
-
+            Constructor<? extends JavaPlugin> constructor = plugin.getConstructor();
+            result = constructor.newInstance();
+            
             result.initialize(this, server, description, dataFolder, file, loader);
         } catch (Throwable ex) {
             throw new InvalidPluginException(ex);
