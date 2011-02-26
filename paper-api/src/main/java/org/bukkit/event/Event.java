@@ -174,13 +174,6 @@ public abstract class Event implements Serializable {
         PLAYER_CHAT (Category.PLAYER),
 
         /**
-         * Called when a player attempts to use a command
-         *
-         * @see org.bukkit.event.player.PlayerChatEvent
-         */
-        PLAYER_COMMAND (Category.PLAYER),
-
-        /**
          * Called when a player early in the command handling process
          *
          * @see org.bukkit.event.player.PlayerChatEvent

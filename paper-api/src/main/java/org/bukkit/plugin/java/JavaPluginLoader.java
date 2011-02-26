@@ -140,11 +140,6 @@ public final class JavaPluginLoader implements PluginLoader {
                     ((PlayerListener)listener).onPlayerKick( (PlayerKickEvent)event );
                 }
             };
-        case PLAYER_COMMAND:
-            return new EventExecutor() { public void execute( Listener listener, Event event ) {
-                    ((PlayerListener)listener).onPlayerCommand( (PlayerChatEvent)event );
-                }
-            };
         case PLAYER_COMMAND_PREPROCESS:
             return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((PlayerListener)listener).onPlayerCommandPreprocess( (PlayerChatEvent)event );

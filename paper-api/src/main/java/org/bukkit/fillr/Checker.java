@@ -4,6 +4,7 @@ import org.bukkit.entity.Player;
 import java.io.*;
 import java.util.jar.*;
 import org.bukkit.*;
+import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.*;
 
 public class Checker {
@@ -12,22 +13,22 @@ public class Checker {
 	/**
 	 * Checks all the plugins in plugins/ for updates
 	 * 
-	 * @param player
+	 * @param sender
 	 *            The player to send info to
 	 */
-	void check(Player player) {
+	void check(CommandSender sender) {
 		File folder = new File(DIRECTORY);
 		File[] files = folder.listFiles(new PluginFilter());
 		if (files.length == 0) {
-			player.sendMessage("No plugins to update.");
+			sender.sendMessage("No plugins to update.");
 		} else {
-			player.sendMessage("Status for " + files.length + " plugins:");
+			sender.sendMessage("Status for " + files.length + " plugins:");
 			for (File file : files) {
 				PluginDescriptionFile pdfFile = Checker.getPDF(file);
 				if (pdfFile == null) {
 					continue;
 				}
-				checkForUpdate(file, player);
+				checkForUpdate(file, sender);
 			}
 		}
 	}
@@ -37,16 +38,16 @@ public class Checker {
 	 * 
 	 * @param file
 	 *            The plugin file to check for an update
-	 * @param player
+	 * @param sender
 	 *            The player to send info to
 	 */
-	private void checkForUpdate(File file, Player player) {
+	private void checkForUpdate(File file, CommandSender sender) {
 		PluginDescriptionFile pdfFile = Checker.getPDF(file);
 		FillReader reader = needsUpdate(pdfFile);
 		if (reader != null) {
-			player.sendMessage(ChatColor.RED + reader.getName() + " " + pdfFile.getVersion() + " has an update to " + reader.getCurrVersion());
+			sender.sendMessage(ChatColor.RED + reader.getName() + " " + pdfFile.getVersion() + " has an update to " + reader.getCurrVersion());
 		} else {
-			player.sendMessage(pdfFile.getName() + " " + pdfFile.getVersion() + " is up to date!");
+			sender.sendMessage(pdfFile.getName() + " " + pdfFile.getVersion() + " is up to date!");
 		}
 	}
 
