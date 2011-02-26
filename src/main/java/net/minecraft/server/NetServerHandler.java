@@ -623,8 +623,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
             msg = String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage());
             a.info(msg);
-            for (final String line: TextWrapper.wrapText(msg)) {
-                this.d.f.a((Packet) (new Packet3Chat(line)));
+            for (Player recipient : event.getRecipients()) {
+                recipient.sendMessage(msg);
             }
             // CraftBukkit end
         }
