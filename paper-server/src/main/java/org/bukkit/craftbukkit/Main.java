@@ -2,6 +2,9 @@ package org.bukkit.craftbukkit;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.Format;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
@@ -53,6 +56,11 @@ public class Main {
                         .withRequiredArg()
                         .ofType(Integer.class)
                         .describedAs("Server size");
+
+                acceptsAll(asList("d", "date-format"), "Format of the date to display in the console (for log entries)")
+                        .withRequiredArg()
+                        .ofType(SimpleDateFormat.class)
+                        .describedAs("Log date format");
             }
         };
 

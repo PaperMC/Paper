@@ -5,9 +5,35 @@ import java.io.StringWriter;
 import java.text.SimpleDateFormat;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
+import joptsimple.OptionException;
+import joptsimple.OptionSet;
+import net.minecraft.server.MinecraftServer;
 
 public class ShortConsoleLogFormatter extends Formatter {
-    private final SimpleDateFormat date = new SimpleDateFormat("HH:mm:ss");
+    private final SimpleDateFormat date;
+
+    public ShortConsoleLogFormatter(MinecraftServer server) {
+        OptionSet options = server.options;
+        SimpleDateFormat date = null;
+
+        if (options.has("date-format")) {
+            try {
+                Object object = options.valueOf("date-format");
+
+                if ((object != null) && (object instanceof SimpleDateFormat)) {
+                    date = (SimpleDateFormat)object;
+                }
+            } catch (OptionException ex) {
+                System.err.println("Given date format is not valid. Falling back to default.");
+            } finally {
+                if (date == null) {
+                    date = new SimpleDateFormat("HH:mm:ss");
+                }
+            }
+        }
+
+        this.date = date;
+    }
 
     @Override
     public String format(LogRecord record) {
