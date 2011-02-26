@@ -25,11 +25,11 @@ public class ShortConsoleLogFormatter extends Formatter {
                 }
             } catch (OptionException ex) {
                 System.err.println("Given date format is not valid. Falling back to default.");
-            } finally {
-                if (date == null) {
-                    date = new SimpleDateFormat("HH:mm:ss");
-                }
             }
+        }
+
+        if (date == null) {
+            date = new SimpleDateFormat("HH:mm:ss");
         }
 
         this.date = date;
