@@ -657,17 +657,6 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             return;
         }
 
-        // Legacy command handler
-        event = new PlayerChatEvent(Type.PLAYER_COMMAND, player, s);
-        server.getPluginManager().callEvent(event);
-
-        if (event.isCancelled()) {
-            return;
-        }
-
-        s = event.getMessage();
-        player = (CraftPlayer) event.getPlayer();
-        EntityPlayer e = player.getHandle();
         // CraftBukkit stop
 
         if (s.toLowerCase().startsWith("/me ")) {
