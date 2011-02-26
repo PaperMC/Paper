@@ -130,4 +130,9 @@ public interface Server {
      * @return PluginCommand if found, otherwise null
      */
     public PluginCommand getPluginCommand(String name);
+
+    /**
+     * Writes loaded players to disk
+     */
+    public void savePlayers();
 }
