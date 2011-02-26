@@ -262,7 +262,7 @@ public final class CraftServer implements Server {
                 }
             }
         }
-        
+
         return new CraftWorld(internal);
     }
 
@@ -296,5 +296,9 @@ public final class CraftServer implements Server {
         } else {
             return null;
         }
+    }
+
+    public void savePlayers() {
+        server.d();
     }
 }

@@ -42,7 +42,7 @@ public class World implements IBlockAccess {
     public boolean l = false;
     public final WorldProvider m;
     protected List n = new ArrayList();
-    protected IChunkProvider o;
+    public IChunkProvider o; // CraftBukkit protected->public
     protected final IDataManager p;
     public WorldData q; // CraftBukkit protected->public
     public boolean r;
