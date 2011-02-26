@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import java.text.SimpleDateFormat;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
@@ -18,11 +19,11 @@ public class ConsoleLogManager {
     public ConsoleLogManager() {}
 
     // Craftbukkit - change of method signature!
-    public static void a(ConsoleReader reader) {
+    public static void a(MinecraftServer server) {
         ConsoleLogFormatter consolelogformatter = new ConsoleLogFormatter();
 
         a.setUseParentHandlers(false);
-        ConsoleHandler consolehandler = new TerminalConsoleHandler(reader);
+        ConsoleHandler consolehandler = new TerminalConsoleHandler(server.reader); // Craftbukkit
 
         // CraftBukkit start
         for (Handler handler: global.getHandlers()) {
@@ -30,7 +31,7 @@ public class ConsoleLogManager {
         }
         // CraftBukkit end
 
-        consolehandler.setFormatter(new ShortConsoleLogFormatter()); // Craftbukkit
+        consolehandler.setFormatter(new ShortConsoleLogFormatter(server)); // Craftbukkit
         a.addHandler(consolehandler);
         global.addHandler(consolehandler); // CraftBukkit
 

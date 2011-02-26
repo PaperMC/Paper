@@ -75,7 +75,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
 
         threadcommandreader.setDaemon(true);
         threadcommandreader.start();
-        ConsoleLogManager.a(reader); // Craftbukkit
+        ConsoleLogManager.a(this); // Craftbukkit
 
         // CraftBukkit start
         System.setOut(new PrintStream(new LoggerOutputStream(a, Level.INFO), true));
