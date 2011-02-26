@@ -474,4 +474,12 @@ public class CraftWorld implements World {
 
         return list;
     }
+
+    public void save() {
+        // Writes level.dat
+        world.r();
+
+        // Saves all chunks/regions
+        world.o.a(true, null);
+    }
 }
