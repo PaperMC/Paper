@@ -74,10 +74,16 @@ public final class CraftServer implements Server {
 
     private void loadPlugin(Plugin plugin) {
         List<Command> pluginCommands = PluginCommandYamlParser.parse(plugin);
+
         if (!pluginCommands.isEmpty()) {
             commandMap.registerAll(plugin.getDescription().getName(), pluginCommands);
         }
-        pluginManager.enablePlugin(plugin);
+
+        try {
+            pluginManager.enablePlugin(plugin);
+        } catch (Throwable ex) {
+            Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, ex.getMessage() + " loading " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
+        }
     }
 
     public String getName() {
