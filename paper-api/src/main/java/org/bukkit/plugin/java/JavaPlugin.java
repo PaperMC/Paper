@@ -2,10 +2,8 @@
 package org.bukkit.plugin.java;
 
 import java.io.File;
-import java.util.ArrayList;
 import org.bukkit.Server;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoader;
@@ -119,13 +117,6 @@ public abstract class JavaPlugin implements Plugin {
                 onDisable();
             }
         }
-    }
-
-    /**
-     * Called when a command registered by this plugin is received.
-     */
-    public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args) {
-        return false; // default implementation:  do nothing!
     }
 
     /**

@@ -3,8 +3,6 @@ package org.bukkit.command;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bukkit.command.CommandSender;
-
 public abstract class Command {
     private final String name;
     private List<String> aliases;

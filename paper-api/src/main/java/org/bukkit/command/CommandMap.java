@@ -31,4 +31,12 @@ public interface CommandMap {
      * Clears all registered commands.
      */
     public void clearCommands();
+
+    /**
+     * Gets the command registered to the specified name
+     *
+     * @param name Name of the command to retrieve
+     * @return Command with the specified name
+     */
+    public Command getCommand(String name);
 }

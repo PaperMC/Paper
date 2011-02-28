@@ -3,14 +3,13 @@ package org.bukkit.plugin;
 
 import java.io.File;
 import org.bukkit.Server;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.util.config.Configuration;
 
 /**
  * Represents a Plugin
  */
-public interface Plugin {
+public interface Plugin extends CommandExecutor {
     /**
      * Returns the folder that the plugin data's files are located in. The
      * folder may not yet exist.
@@ -63,11 +62,4 @@ public interface Plugin {
      * Called when this plugin is enabled
      */
     public void onEnable();
-
-    /**
-     * Called when a command registered by this plugin is received.
-     * @param commandLabel
-     * @return TODO
-     */
-    public boolean onCommand(CommandSender sender, Command command, String commandLabel, String[] args);
 }

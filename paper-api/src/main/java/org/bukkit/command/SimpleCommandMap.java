@@ -23,7 +23,7 @@ public final class SimpleCommandMap implements CommandMap {
     private void setDefaultCommands(final Server server) {
         register("bukkit", new VersionCommand("version", server));
         register("bukkit", new ReloadCommand("reload", server));
-        register("bukkit", new PluginsCommand("plugins",server));
+        register("bukkit", new PluginsCommand("plugins", server));
     }
 
     /**
@@ -89,6 +89,10 @@ public final class SimpleCommandMap implements CommandMap {
             knownCommands.clear();
             setDefaultCommands(server);
         }
+    }
+
+    public Command getCommand(String name) {
+        return knownCommands.get(name);
     }
 
     private static class VersionCommand extends Command {
