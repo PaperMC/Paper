@@ -53,11 +53,13 @@ public final class SimpleCommandMap implements CommandMap {
      * {@inheritDoc}
      */
     public boolean register(String name, String fallbackPrefix, Command command) {
-        boolean nameInUse = (knownCommands.get(name) != null);
-        if (nameInUse)
+        boolean nameInUse = (getCommand(name) != null);
+        
+        if (nameInUse) {
             name = fallbackPrefix + ":" + name;
+        }
 
-        knownCommands.put(name, command);
+        knownCommands.put(name.toLowerCase(), command);
         return !nameInUse;
     }
 
@@ -70,7 +72,7 @@ public final class SimpleCommandMap implements CommandMap {
 
         args = Arrays.copyOfRange(args, 1, args.length);
 
-        Command target = knownCommands.get(sentCommandLabel);
+        Command target = getCommand(sentCommandLabel);
         boolean isRegisteredCommand = (target != null);
         if (isRegisteredCommand) {
             try {
@@ -92,7 +94,7 @@ public final class SimpleCommandMap implements CommandMap {
     }
 
     public Command getCommand(String name) {
-        return knownCommands.get(name);
+        return knownCommands.get(name.toLowerCase());
     }
 
     private static class VersionCommand extends Command {
