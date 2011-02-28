@@ -32,4 +32,13 @@ public final class PluginCommand extends Command {
     public void setExecutor(CommandExecutor executor) {
         this.executor = executor;
     }
+
+    /**
+     * Gets the owner of this PluginCommand
+     *
+     * @return Plugin that owns this command
+     */
+    public Plugin getPlugin() {
+        return owningPlugin;
+    }
 }

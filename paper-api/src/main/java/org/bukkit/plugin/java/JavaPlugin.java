@@ -6,6 +6,7 @@ import org.bukkit.Server;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoader;
@@ -158,7 +159,31 @@ public abstract class JavaPlugin implements Plugin {
         return initialized;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         return false;
+    }
+
+    /**
+     * Gets the command with the given name, specific to this plugin
+     *
+     * @param name Name or alias of the command
+     * @return PluginCommand if found, otherwise null
+     */
+    public PluginCommand getCommand(String name) {
+        String alias = name.toLowerCase();
+        PluginCommand command = getServer().getPluginCommand(alias);
+
+        if ((command != null) && (command.getPlugin() != this)) {
+            command = getServer().getPluginCommand(getDescription().getName().toLowerCase() + ":" + alias);
+        }
+
+        if ((command != null) && (command.getPlugin() == this)) {
+            return command;
+        } else {
+            return null;
+        }
     }
 }
