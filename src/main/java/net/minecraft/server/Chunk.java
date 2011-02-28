@@ -2,11 +2,13 @@ package net.minecraft.server;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
 // CraftBukkit
+import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftWorld;
 
 public class Chunk {
@@ -473,6 +475,22 @@ public class Chunk {
         this.d.c.removeAll(this.l.values());
 
         for (int i = 0; i < this.m.length; ++i) {
+            Iterator<Object> iter = this.m[i].iterator();
+
+            // Craftbukkit start
+            while(iter.hasNext()) {
+                Entity e = (Entity)iter.next();
+                int cx = Location.locToBlock(e.locX) >> 4;
+                int cz = Location.locToBlock(e.locZ) >> 4;
+
+                if ((e instanceof EntityPlayer) && ((cx != this.j) || (cz != this.k))) {
+                    EntityPlayer player = (EntityPlayer)e;
+                    iter.remove();   // Do not pass along players, as doing so can get them stuck outside of time.
+                                     // (which for example disables inventory icon updates and prevents block breaking)
+                }
+            }
+            // Craftbukkit end
+
             this.d.b(this.m[i]);
         }
     }
