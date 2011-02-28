@@ -112,7 +112,6 @@ public class ItemInWorldManager {
             server.getPluginManager().callEvent(event);
 
             if (event.isCancelled()) {
-                MinecraftServer.a.info("A plugin cancelled the block break event");
                 return false;
             }
         }

@@ -340,29 +340,24 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             if (packet14blockdig.e == 0) {
                 // CraftBukkit start
                 if (i1 > this.d.spawnProtection || flag) {
-//                    if (blockId > 0) {
-                        BlockDamageEvent event;
-                        // If the amount of damage that the player is going to do to the block
-                        // is >= 1, then the block is going to break (eg, flowers, torches)
-                        if (damage >= 1.0F) {
-                            // if we are destroying either a redstone wire with a current greater than 0 or
-                            // a redstone torch that is on, then we should notify plugins that this block has
-                            // returned to a current value of 0 (since it will once the redstone is destroyed)
-                            if ((blockId == Block.REDSTONE_WIRE.id && block.getRawData() > 0) || blockId == Block.REDSTONE_TORCH_ON.id) {
-                                server.getPluginManager().callEvent( new BlockRedstoneEvent(block, (blockId == Block.REDSTONE_WIRE.id ? block.getRawData() : 15), 0));
-                            }
-                            event = new BlockDamageEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.BROKEN, player);
-                        } else {
-                            event = new BlockDamageEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.STARTED, player);
+                    BlockDamageEvent event;
+                    // If the amount of damage that the player is going to do to the block
+                    // is >= 1, then the block is going to break (eg, flowers, torches)
+                    if (damage >= 1.0F) {
+                        // if we are destroying either a redstone wire with a current greater than 0 or
+                        // a redstone torch that is on, then we should notify plugins that this block has
+                        // returned to a current value of 0 (since it will once the redstone is destroyed)
+                        if ((blockId == Block.REDSTONE_WIRE.id && block.getRawData() > 0) || blockId == Block.REDSTONE_TORCH_ON.id) {
+                            server.getPluginManager().callEvent( new BlockRedstoneEvent(block, (blockId == Block.REDSTONE_WIRE.id ? block.getRawData() : 15), 0));
                         }
-                        server.getPluginManager().callEvent(event);
-                        if (!event.isCancelled()) {
-                            this.e.c.a(i, j, k);
-                        }
-                        else {
-                            MinecraftServer.a.info("A plugin cancelled the block start break event");
-                        }
-//                    }
+                        event = new BlockDamageEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.BROKEN, player);
+                    } else {
+                        event = new BlockDamageEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.STARTED, player);
+                    }
+                    server.getPluginManager().callEvent(event);
+                    if (!event.isCancelled()) {
+                        this.e.c.a(i, j, k);
+                    }
                 }
             } else if (packet14blockdig.e == 2) {
                 // CraftBukkit start - Get last block that the player hit
@@ -372,33 +367,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 server.getPluginManager().callEvent(event);
                 if (!event.isCancelled()) {
                     this.e.c.b(i, j, k);
-                } else {
-                    MinecraftServer.a.info("A plugin cancelled the block stop break event");
                 }
                 // CraftBukkit end
-//            } else if (packet14blockdig.e == 1) {
-//                // CraftBukkit start
-//                if (i1 > this.d.spawnProtection || flag) {
-//                    BlockDamageEvent event;
-//                    // If the amount of damage going to the block plus the current amount
-//                    // of damage is greater than 1, the block is going to break.
-//                    if (this.e.c.c + damage  >= 1.0F) {
-//                        // if we are destroying either a redstone wire with a current greater than 0 or
-//                        // a redstone torch that is on, then we should notify plugins that this block has
-//                        // returned to a current value of 0 (since it will once the redstone is destroyed)
-//                        if ((blockId == Block.REDSTONE_WIRE.id && block.getRawData() > 0) || blockId == Block.REDSTONE_TORCH_ON.id) {
-//                            server.getPluginManager().callEvent( new BlockRedstoneEvent(block, (blockId == Block.REDSTONE_WIRE.id ? block.getRawData() : 15), 0));
-//                        }
-//                        event = new BlockDamageEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.BROKEN, player);
-//                    } else {
-//                        event = new BlockDamageEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.DIGGING, player);
-//                    }
-//                    server.getPluginManager().callEvent(event);
-//                    if (event.isCancelled()) {
-//                        this.e.c.c = 0; // Reset the amount of damage if stopping break.
-//                    }
-//                }
-//                // CraftBukkit end
             } else if (packet14blockdig.e == 3) {
                 double d4 = this.e.locX - ((double) i + 0.5D);
                 double d5 = this.e.locY - ((double) j + 0.5D);
