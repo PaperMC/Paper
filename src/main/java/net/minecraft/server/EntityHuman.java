@@ -370,6 +370,8 @@ public abstract class EntityHuman extends EntityLiving {
                 if (event.isCancelled()) {
                     return false;
                 }
+
+                i = event.getDamage();
             }
             // CraftBukkit end
 

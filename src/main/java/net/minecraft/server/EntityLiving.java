@@ -124,12 +124,13 @@ public abstract class EntityLiving extends Entity {
             CraftServer server = ((WorldServer) this.world).getServer();
             org.bukkit.entity.Entity victim = this.getBukkitEntity();
             DamageCause damageType = EntityDamageEvent.DamageCause.SUFFOCATION;
+            int damage = 1;
 
-            EntityDamageEvent event = new EntityDamageEvent(victim, damageType, 1);
+            EntityDamageEvent event = new EntityDamageEvent(victim, damageType, damage);
             server.getPluginManager().callEvent(event);
 
             if (!event.isCancelled()) {
-                this.a((Entity) null, 1);
+                this.a((Entity) null, event.getDamage());
             }
             // CraftBukkit end
         }
