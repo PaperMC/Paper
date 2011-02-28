@@ -287,4 +287,14 @@ public final class CraftServer implements Server {
     public ConsoleReader getReader() {
         return console.reader;
     }
+
+    public PluginCommand getPluginCommand(String name) {
+        Command command = commandMap.getCommand(name);
+
+        if (command instanceof PluginCommand) {
+            return (PluginCommand)command;
+        } else {
+            return null;
+        }
+    }
 }
