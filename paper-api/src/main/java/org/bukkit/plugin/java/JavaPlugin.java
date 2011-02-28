@@ -3,7 +3,9 @@ package org.bukkit.plugin.java;
 
 import java.io.File;
 import org.bukkit.Server;
+import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoader;
@@ -154,5 +156,9 @@ public abstract class JavaPlugin implements Plugin {
      */
     public boolean isInitialized() {
         return initialized;
+    }
+
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        return false;
     }
 }
