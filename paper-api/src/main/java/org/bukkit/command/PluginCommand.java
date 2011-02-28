@@ -2,6 +2,9 @@ package org.bukkit.command;
 
 import org.bukkit.plugin.Plugin;
 
+/**
+ * Represents a {@link Command} belonging to a plugin
+ */
 public final class PluginCommand extends Command {
     private final Plugin owningPlugin;
     private CommandExecutor executor;
@@ -13,6 +16,14 @@ public final class PluginCommand extends Command {
         this.usageMessage = "";
     }
 
+    /**
+     * Executes the command, returning its success
+     *
+     * @param sender Source object which is executing this command
+     * @param commandLabel The alias of the command used
+     * @param args All arguments passed to the command, split via ' '
+     * @return true if the command was successful, otherwise false
+     */
     public boolean execute(CommandSender sender, String commandLabel, String[] args) {
         boolean success = false;
 
@@ -29,8 +40,22 @@ public final class PluginCommand extends Command {
         return success;
     }
 
+    /**
+     * Sets the {@link CommandExecutor} to run when parsing this command
+     *
+     * @param executor New executor to run
+     */
     public void setExecutor(CommandExecutor executor) {
         this.executor = executor;
+    }
+
+    /**
+     * Gets the {@link CommandExecutor} associated with this command
+     *
+     * @return CommandExecutor object linked to this command
+     */
+    public CommandExecutor getExecutor() {
+        return executor;
     }
 
     /**
