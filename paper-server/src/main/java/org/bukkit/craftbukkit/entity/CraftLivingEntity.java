@@ -23,15 +23,12 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 public class CraftLivingEntity extends CraftEntity implements LivingEntity {
-    private EntityLiving entity;
-
     public CraftLivingEntity(final CraftServer server, final EntityLiving entity) {
         super(server, entity);
-        this.entity = entity;
     }
 
     public int getHealth() {
-        return entity.health;
+        return getHandle().health;
     }
 
     public void setHealth(int health) {
@@ -39,12 +36,12 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             throw new IllegalArgumentException("Health must be between 0 and 200");
         }
 
-        entity.health = health;
+        getHandle().health = health;
     }
 
     @Override
     public EntityLiving getHandle() {
-        return entity;
+        return (EntityLiving) entity;
     }
 
     public void setHandle(final EntityLiving entity) {
@@ -59,14 +56,14 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     public Egg throwEgg() {
         net.minecraft.server.World world = ((CraftWorld)getWorld()).getHandle();
-        EntityEgg egg = new EntityEgg(world, entity);
+        EntityEgg egg = new EntityEgg(world, getHandle());
         world.a(egg);
         return (Egg) egg.getBukkitEntity();
     }
 
     public Snowball throwSnowball() {
         net.minecraft.server.World world = ((CraftWorld)getWorld()).getHandle();
-        EntitySnowball snowball = new EntitySnowball(world, entity);
+        EntitySnowball snowball = new EntitySnowball(world, getHandle());
         world.a(snowball);
         return (Snowball) snowball.getBukkitEntity();
     }
@@ -120,30 +117,30 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     public Arrow shootArrow() {
         net.minecraft.server.World world = ((CraftWorld)getWorld()).getHandle();
-        EntityArrow arrow = new EntityArrow(world, entity);
+        EntityArrow arrow = new EntityArrow(world, getHandle());
         world.a(arrow);
         return (Arrow) arrow.getBukkitEntity();
     }
 
     public boolean isInsideVehicle() {
-        return entity.vehicle != null;
+        return getHandle().vehicle != null;
     }
 
     public boolean leaveVehicle() {
-        if (entity.vehicle == null) {
+        if (getHandle().vehicle == null) {
             return false;
         }
 
-        entity.setPassengerOf(null);
+        getHandle().setPassengerOf(null);
         return true;
     }
 
     public Vehicle getVehicle() {
-        if (entity.vehicle == null) {
+        if (getHandle().vehicle == null) {
             return null;
         }
 
-        org.bukkit.entity.Entity vehicle = (entity.vehicle.getBukkitEntity());
+        org.bukkit.entity.Entity vehicle = (getHandle().vehicle.getBukkitEntity());
         if (vehicle instanceof Vehicle) {
             return (Vehicle) vehicle;
         }
@@ -152,18 +149,18 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public int getRemainingAir() {
-        return entity.airTicks;
+        return getHandle().airTicks;
     }
 
     public void setRemainingAir(int ticks) {
-        entity.airTicks = ticks;
+        getHandle().airTicks = ticks;
     }
 
     public int getMaximumAir() {
-        return entity.maxAirTicks;
+        return getHandle().maxAirTicks;
     }
 
     public void setMaximumAir(int ticks) {
-        entity.maxAirTicks = ticks;
+        getHandle().maxAirTicks = ticks;
     }
 }

@@ -18,13 +18,10 @@ import org.bukkit.craftbukkit.TextWrapper;
 import org.bukkit.entity.Player;
 
 public class CraftPlayer extends CraftHumanEntity implements Player {
-    private EntityPlayer entity;
     private String name;
 
     public CraftPlayer(CraftServer server, EntityPlayer entity) {
         super(server, entity);
-        this.name = getName();
-        this.entity = entity;
     }
 
     public boolean isOp() {
@@ -46,7 +43,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public InetSocketAddress getAddress() {
-        SocketAddress addr = entity.a.b.b();
+        SocketAddress addr = getHandle().a.b.b();
         if (addr instanceof InetSocketAddress) {
             return (InetSocketAddress) addr;
         } else {
@@ -56,7 +53,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public EntityPlayer getHandle() {
-        return entity;
+        return (EntityPlayer) entity;
     }
 
     public double getEyeHeight() {
@@ -82,7 +79,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public void sendMessage(String message) {
         for (final String line: TextWrapper.wrapText(message)) {
-            entity.a.b(new Packet3Chat(line));
+            getHandle().a.b(new Packet3Chat(line));
         }
     }
 
@@ -122,15 +119,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void kickPlayer(String message) {
-        entity.a.a(message == null ? "" : message);
+        getHandle().a.a(message == null ? "" : message);
     }
 
     public void setCompassTarget(Location loc) {
-        entity.a.b(((Packet) (new Packet6SpawnPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()))));
+        getHandle().a.b(((Packet) (new Packet6SpawnPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()))));
     }
 
     public void chat(String msg) {
-        entity.a.chat(msg);
+        getHandle().a.chat(msg);
     }
 
     public boolean performCommand(String command) {
@@ -142,6 +139,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         WorldServer oldWorld = ((CraftWorld)getWorld()).getHandle();
         WorldServer newWorld = ((CraftWorld)location.getWorld()).getHandle();
         ServerConfigurationManager manager = server.getHandle();
+        EntityPlayer entity = getHandle();
 
         if (oldWorld != newWorld) {
             manager.c.k.a(entity);
@@ -168,21 +166,21 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             manager.b.add(newEntity);
 
             entity.a.e = newEntity;
-            entity = newEntity;
+            this.entity = newEntity;
         } else {
             entity.a.a(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         }
     }
 
     public void setSneaking(boolean sneak) {
-        entity.b(sneak);
+        getHandle().b(sneak);
     }
 
     public boolean isSneaking() {
-        return entity.U();
+        return getHandle().U();
     }
-    
+
     public void updateInventory() {
-        entity.l();
+        getHandle().l();
     }
 }

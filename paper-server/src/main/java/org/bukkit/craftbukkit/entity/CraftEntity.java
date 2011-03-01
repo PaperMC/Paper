@@ -10,7 +10,7 @@ import org.bukkit.util.Vector;
 
 public abstract class CraftEntity implements org.bukkit.entity.Entity {
     protected final CraftServer server;
-    private Entity entity;
+    protected Entity entity;
 
     public CraftEntity(final CraftServer server, final Entity entity) {
         this.server = server;

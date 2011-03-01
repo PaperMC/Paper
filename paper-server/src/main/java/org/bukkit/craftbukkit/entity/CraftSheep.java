@@ -7,9 +7,13 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Sheep;
 
 public class CraftSheep extends CraftAnimals implements Sheep {
-
     public CraftSheep(CraftServer server, EntitySheep entity) {
         super(server, entity);
+    }
+
+    @Override
+    public EntitySheep getHandle() {
+        return (EntitySheep) entity;
     }
 
     @Override
@@ -18,13 +22,11 @@ public class CraftSheep extends CraftAnimals implements Sheep {
     }
 
     public DyeColor getColor() {
-        EntitySheep entity = (EntitySheep) getHandle();
-        return DyeColor.getByData((byte) entity.n());
+        return DyeColor.getByData((byte) getHandle().n());
     }
 
     public void setColor(DyeColor color) {
-        EntitySheep entity = (EntitySheep) getHandle();
-        entity.a_(color.getData());
+        getHandle().a_(color.getData());
     }
 
 }
