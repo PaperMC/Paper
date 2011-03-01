@@ -56,15 +56,6 @@ public class EntityMinecart extends Entity implements IInventory {
         this.a(0.98F, 0.7F);
         this.height = this.width / 2.0F;
         this.bg = false;
-
-        // CraftBukkit start
-        CraftServer server = ((WorldServer) this.world).getServer();
-        Type eventType = Type.VEHICLE_CREATE;
-        Vehicle vehicle = (Vehicle) this.getBukkitEntity();
-
-        VehicleCreateEvent event = new VehicleCreateEvent(eventType, vehicle);
-        server.getPluginManager().callEvent(event);
-        // CraftBukkit end
     }
 
     protected void a() {}
@@ -91,6 +82,15 @@ public class EntityMinecart extends Entity implements IInventory {
         this.lastY = d1;
         this.lastZ = d2;
         this.d = i;
+
+        // CraftBukkit start
+        CraftServer server = ((WorldServer) this.world).getServer();
+        Type eventType = Type.VEHICLE_CREATE;
+        Vehicle vehicle = (Vehicle) this.getBukkitEntity();
+
+        VehicleCreateEvent event = new VehicleCreateEvent(eventType, vehicle);
+        server.getPluginManager().callEvent(event);
+        // CraftBukkit end
     }
 
     public double k() {
