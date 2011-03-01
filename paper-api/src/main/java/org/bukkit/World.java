@@ -335,6 +335,13 @@ public interface World {
     public Location getSpawnLocation();
 
     /**
+     * Sets the spawn location of the world
+     * 
+     * @return True if it was successfully set.
+     */
+    public boolean setSpawnLocation(int x, int y, int z);
+
+    /**
      * Gets the relative in-game time of this world.
      *
      * The relative time is analogous to hours * 1000
