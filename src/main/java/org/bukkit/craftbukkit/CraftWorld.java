@@ -68,7 +68,16 @@ public class CraftWorld implements World {
         ChunkCoordinates spawn = world.l();
         return new Location(this, spawn.a, world.e(spawn.a, spawn.c), spawn.c);
     }
-
+    
+    public boolean setSpawnLocation(int x, int y, int z) {
+        try {
+            world.q.a(x, y, z);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
     public Chunk getChunkAt(int x, int z) {
         return this.provider.d(x,z).bukkitChunk;
     }
