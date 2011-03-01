@@ -3,13 +3,13 @@
  * and open the template in the editor.
  */
 
-package net.minecraft.server;
+package org.bukkit.craftbukkit.util;
 
 /**
  *
  * @author Nathan
  */
-public abstract class LongHash<V> {
+public abstract class LongHash {
     static long toLong(int msw, int lsw) {
         return ((long)msw << 32) + lsw - Integer.MIN_VALUE;
     }

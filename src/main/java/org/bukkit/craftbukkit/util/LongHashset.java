@@ -1,8 +1,7 @@
-package net.minecraft.server;
-import java.util.ArrayList;
+package org.bukkit.craftbukkit.util;
 import java.util.Arrays;
 
-public class LongHashset<V> extends LongHash<V> {
+public class LongHashset extends LongHash {
     long values[][][] = new long[256][][];
     int count = 0;
     

@@ -1,7 +1,9 @@
-package net.minecraft.server;
+package org.bukkit.craftbukkit.util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import net.minecraft.server.Chunk;
+import net.minecraft.server.MinecraftServer;
 
 public class LongHashtable<V> extends LongHash
 {
@@ -35,7 +37,7 @@ public class LongHashtable<V> extends LongHash
         return value;
     }
 
-    public void put(long key, V value) {
+    public synchronized void put(long key, V value) {
         int mainIdx = (int) (key & 255);
         int outerIdx = (int) ((key >> 32) & 255);
         Object outer[][] = this.values[mainIdx], inner[];
@@ -58,13 +60,11 @@ public class LongHashtable<V> extends LongHash
         }
     }
 
-    public V get(long key) {
-        synchronized(this) {
-            return containsKey(key) ? (V) cache.value : null;
-        }
+    public synchronized V get(long key) {
+        return containsKey(key) ? (V) cache.value : null;
     }
 
-    public boolean containsKey(long key) {
+    public synchronized boolean containsKey(long key) {
         if (cache != null && cache.key == key)
             return true;
         int mainIdx = (int) (key & 255);
@@ -89,7 +89,7 @@ public class LongHashtable<V> extends LongHash
         }
     }
 
-    public void remove(long key) {
+    public synchronized void remove(long key) {
         Object[][] outer = this.values[(int) (key & 255)];
         if (outer == null) return;
 
@@ -115,7 +115,7 @@ public class LongHashtable<V> extends LongHash
         }        
     }
     
-    public ArrayList<V> values() {
+    public synchronized ArrayList<V> values() {
         ArrayList<V> ret = new ArrayList<V>();
         for (Object[][] outer : this.values) {
             if (outer == null)

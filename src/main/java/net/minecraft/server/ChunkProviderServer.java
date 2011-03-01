@@ -12,6 +12,8 @@ import java.util.Set;
 import org.bukkit.Server;
 import org.bukkit.craftbukkit.CraftChunk;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.util.LongHashset;
+import org.bukkit.craftbukkit.util.LongHashtable;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
