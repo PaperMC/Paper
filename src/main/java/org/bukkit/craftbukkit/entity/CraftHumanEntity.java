@@ -9,22 +9,20 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.CraftServer;
 
 public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
-    private EntityHuman entity;
     private CraftInventoryPlayer inventory;
 
     public CraftHumanEntity(final CraftServer server, final EntityHuman entity) {
         super(server, entity);
-        this.entity = entity;
         this.inventory = new CraftInventoryPlayer( entity.inventory );
     }
 
     public String getName() {
-        return entity.name;
+        return getHandle().name;
     }
 
     @Override
     public EntityHuman getHandle() {
-        return entity;
+        return (EntityHuman) entity;
     }
 
     public void setHandle(final EntityHuman entity) {

@@ -16,4 +16,8 @@ public class CraftMonster extends CraftCreature implements Monster {
         return "CraftMonster";
     }
 
+    @Override
+    public EntityMonster getHandle() {
+        return (EntityMonster) entity;
+    }
 }
