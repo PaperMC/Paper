@@ -8,7 +8,6 @@ import net.minecraft.server.ItemInWorldManager;
 import net.minecraft.server.Packet;
 import net.minecraft.server.Packet3Chat;
 import net.minecraft.server.Packet6SpawnPosition;
-import net.minecraft.server.Packet9Respawn;
 import net.minecraft.server.ServerConfigurationManager;
 import net.minecraft.server.WorldServer;
 import org.bukkit.Location;
