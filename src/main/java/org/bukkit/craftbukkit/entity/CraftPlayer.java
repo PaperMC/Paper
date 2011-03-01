@@ -22,6 +22,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public CraftPlayer(CraftServer server, EntityPlayer entity) {
         super(server, entity);
+        name = getName();
     }
 
     public boolean isOp() {
