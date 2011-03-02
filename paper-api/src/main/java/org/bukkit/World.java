@@ -201,6 +201,24 @@ public interface World {
     public boolean unloadChunkRequest(int x, int z, boolean safe);
 
     /**
+     * Regenerates the {@link Chunk} at the specified coordinates
+     *
+     * @param x X-coordinate of the chunk
+     * @param z Z-coordinate of the chunk
+     * @return Whether the chunk was actually regenerated
+     */
+    public boolean regenerateChunk(int x, int z);
+
+    /**
+     * Resends the {@link Chunk} to all clients
+     *
+     * @param x X-coordinate of the chunk
+     * @param z Z-coordinate of the chunk
+     * @return Whether the chunk was actually refreshed
+     */
+    public boolean refreshChunk(int x, int z);
+
+    /**
      * Drops an item at the specified {@link Location}
      *
      * @param location Location to drop the item
