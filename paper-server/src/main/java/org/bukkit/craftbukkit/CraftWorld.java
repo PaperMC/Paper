@@ -162,10 +162,10 @@ public class CraftWorld implements World {
             // This is larger than the distance of loaded chunks that actually surround a player
             // The player is the center of a 21x21 chunk grid, so the edge is 10 chunks (160 blocks) away from the player
             if (Math.abs(loc.getBlockX() - (x << 4)) <= 256 && Math.abs(loc.getBlockZ() - (z << 4)) <= 256) {
-                return false;
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     public boolean loadChunk(int x, int z, boolean generate) {
