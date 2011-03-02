@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import net.minecraft.server.Chunk;
 import net.minecraft.server.MinecraftServer;
+import static org.bukkit.craftbukkit.util.Java15Compat.Arrays_copyOf;
 
 public class LongHashtable<V> extends LongHash
 {
@@ -55,7 +56,7 @@ public class LongHashtable<V> extends LongHash
                     return;
                 }
             }
-            outer[outerIdx] = inner = Arrays.copyOf(inner, i + i);
+            outer[outerIdx] = inner = Arrays_copyOf(inner, i + i);
             inner[i] = new Entry(key, value);
         }
     }
