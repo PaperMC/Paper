@@ -149,6 +149,48 @@ public class CraftWorld implements World {
         return true;
     }
 
+    public boolean regenerateChunk(int x, int z) {
+        unloadChunk(x, z, false, false);
+
+        provider.a.remove(x, z);
+
+        net.minecraft.server.Chunk chunk = null;
+
+        if(provider.c == null) {
+            chunk = provider.b;
+        } else {
+            chunk = provider.c.b(x, z);
+        }
+
+        chunkLoadPostProcess(chunk, x, z);
+
+        refreshChunk(x, z);
+
+        return chunk != null;
+    }
+
+    public boolean refreshChunk(int x, int z) {
+        if(!isChunkLoaded(x, z)) {
+            return false;
+        }
+
+        int px = x<<4;
+        int pz = z<<4;
+
+        // If there are more than 10 updates to a chunk at once, it carries out the update as a cuboid
+        // This flags 16 blocks in a line along the bottom for update and then flags a block at the opposite corner at the top
+        // The cuboid that contains these 17 blocks covers the entire chunk
+        // The server will compress the chunk and send it to all clients
+
+        for(int xx = px; xx < (px + 16); xx++) {
+            world.g(xx, 0, pz);
+        }
+        world.g(px, 127, pz+15);
+
+        return true;
+    }
+
+
     public boolean isChunkInUse(int x, int z) {
         Player[] players = server.getOnlinePlayers();
         
@@ -180,31 +222,35 @@ public class CraftWorld implements World {
         if (chunk == null) {
             chunk = provider.e(x, z);
 
-            if (chunk != null) {
-                provider.e.put(x, z, chunk);
-                provider.f.add(chunk);
-
-                chunk.c();
-                chunk.d();
-
-                if (!chunk.n && provider.a(x + 1, z + 1) && provider.a(x, z + 1) && provider.a(x + 1, z)) {
-                    provider.a(provider, x, z);
-                }
-
-                if (provider.a(x - 1, z) && !provider.b(x - 1, z).n && provider.a(x - 1, z + 1) && provider.a(x, z + 1) && provider.a(x - 1, z)) {
-                    provider.a(provider, x - 1, z);
-                }
-
-                if (provider.a(x, z - 1) && !provider.b(x, z - 1).n && provider.a(x + 1, z - 1) && provider.a(x, z - 1) && provider.a(x + 1, z)) {
-                    provider.a(provider, x, z - 1);
-                }
-
-                if (provider.a(x - 1, z - 1) && !provider.b(x - 1, z - 1).n && provider.a(x - 1, z - 1) && provider.a(x, z - 1) && provider.a(x - 1, z)) {
-                    provider.a(provider, x - 1, z - 1);
-                }
-            }
+            chunkLoadPostProcess(chunk, x, z);
         }
         return chunk != null;
+    }
+
+    private void chunkLoadPostProcess(net.minecraft.server.Chunk chunk, int x, int z) {
+        if (chunk != null) {
+            provider.e.put(x, z, chunk);
+            provider.f.add(chunk);
+
+            chunk.c();
+            chunk.d();
+
+            if (!chunk.n && provider.a(x + 1, z + 1) && provider.a(x, z + 1) && provider.a(x + 1, z)) {
+                provider.a(provider, x, z);
+            }
+
+            if (provider.a(x - 1, z) && !provider.b(x - 1, z).n && provider.a(x - 1, z + 1) && provider.a(x, z + 1) && provider.a(x - 1, z)) {
+                provider.a(provider, x - 1, z);
+            }
+
+            if (provider.a(x, z - 1) && !provider.b(x, z - 1).n && provider.a(x + 1, z - 1) && provider.a(x, z - 1) && provider.a(x + 1, z)) {
+                provider.a(provider, x, z - 1);
+            }
+
+            if (provider.a(x - 1, z - 1) && !provider.b(x - 1, z - 1).n && provider.a(x - 1, z - 1) && provider.a(x, z - 1) && provider.a(x - 1, z)) {
+                provider.a(provider, x - 1, z - 1);
+            }
+        }
     }
 
     public boolean isChunkLoaded(Chunk chunk) {

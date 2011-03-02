@@ -21,8 +21,8 @@ import org.bukkit.event.world.ChunkUnloadEvent;
 
 public class ChunkProviderServer implements IChunkProvider {
     public LongHashset a = new LongHashset(); // CraftBukkit
-    private Chunk b;
-    private IChunkProvider c;
+    public Chunk b; // CraftBukkit
+    public IChunkProvider c; // CraftBukkit
     private IChunkLoader d;
     public LongHashtable<Chunk> e = new LongHashtable<Chunk>(); // CraftBukkit
     public List f = new ArrayList(); // CraftBukkit
