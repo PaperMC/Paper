@@ -17,7 +17,7 @@ public class EntityTracker {
         this.d = minecraftserver.f.a();
     }
 
-    public void a(Entity entity) {
+    public synchronized void a(Entity entity) {
         if (entity instanceof EntityPlayer) {
             this.a(entity, 512, 2);
             EntityPlayer entityplayer = (EntityPlayer) entity;
@@ -61,7 +61,7 @@ public class EntityTracker {
         this.a(entity, i, j, false);
     }
 
-    public void a(Entity entity, int i, int j, boolean flag) {
+    public synchronized void a(Entity entity, int i, int j, boolean flag) {
         if (i > this.d) {
             i = this.d;
         }
@@ -78,7 +78,7 @@ public class EntityTracker {
         }
     }
 
-    public void b(Entity entity) {
+    public synchronized void b(Entity entity) {
         if (entity instanceof EntityPlayer) {
             EntityPlayer entityplayer = (EntityPlayer) entity;
             Iterator iterator = this.a.iterator();
@@ -98,7 +98,7 @@ public class EntityTracker {
         }
     }
 
-    public void a() {
+    public synchronized void a() {
         ArrayList arraylist = new ArrayList();
         Iterator iterator = this.a.iterator();
 
@@ -126,7 +126,7 @@ public class EntityTracker {
         }
     }
 
-    public void a(Entity entity, Packet packet) {
+    public synchronized void a(Entity entity, Packet packet) {
         EntityTrackerEntry entitytrackerentry = (EntityTrackerEntry) this.b.a(entity.id);
 
         if (entitytrackerentry != null) {
@@ -134,7 +134,7 @@ public class EntityTracker {
         }
     }
 
-    public void b(Entity entity, Packet packet) {
+    public synchronized void b(Entity entity, Packet packet) {
         EntityTrackerEntry entitytrackerentry = (EntityTrackerEntry) this.b.a(entity.id);
 
         if (entitytrackerentry != null) {
@@ -142,7 +142,7 @@ public class EntityTracker {
         }
     }
 
-    public void a(EntityPlayer entityplayer) {
+    public synchronized void a(EntityPlayer entityplayer) {
         Iterator iterator = this.a.iterator();
 
         while (iterator.hasNext()) {
