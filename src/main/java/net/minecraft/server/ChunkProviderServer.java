@@ -207,7 +207,7 @@ public class ChunkProviderServer implements IChunkProvider {
         if (!this.g.w) {
             // CraftBukkit start
             Server server = g.getServer();
-            while (!this.a.isEmpty()) {
+            for (int i = 0; i < 50 && !this.a.isEmpty(); i++) {
                 long chunkcoordinates = this.a.popFirst();
                 Chunk chunk = e.get(chunkcoordinates);
                 if (chunk == null) continue;
