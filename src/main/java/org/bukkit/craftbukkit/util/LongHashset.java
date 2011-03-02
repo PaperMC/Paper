@@ -1,5 +1,5 @@
 package org.bukkit.craftbukkit.util;
-import java.util.Arrays;
+import static org.bukkit.craftbukkit.util.Java15Compat.Arrays_copyOf;
 
 public class LongHashset extends LongHash {
     long values[][][] = new long[256][][];
@@ -31,7 +31,7 @@ public class LongHashset extends LongHash {
                     return;
                 }
             }
-            outer[outerIdx] = inner = Arrays.copyOf(inner, i+1);
+            outer[outerIdx] = inner = Arrays_copyOf(inner, i+1);
             inner[i] = key;
             count++;
         }
@@ -66,7 +66,7 @@ public class LongHashset extends LongHash {
                 if(i != max) {
                     inner[i] = inner[max];
                 }
-                outer[(int) ((key >> 32) & 255)] = (max == 0 ? null : Arrays.copyOf(inner, max));
+                outer[(int) ((key >> 32) & 255)] = (max == 0 ? null : Arrays_copyOf(inner, max));
                 return;
             }
         }
@@ -80,7 +80,7 @@ public class LongHashset extends LongHash {
                 if(inner == null || inner.length == 0) continue;
                 count--;
                 long ret = inner[inner.length - 1];
-                outer[i] = Arrays.copyOf(inner, inner.length - 1);
+                outer[i] = Arrays_copyOf(inner, inner.length - 1);
                 return ret;
                 
             }
