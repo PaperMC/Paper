@@ -16,7 +16,6 @@ public class BlockFromToEvent extends BlockEvent implements Cancellable {
     public BlockFromToEvent(final Event.Type type, final Block block, final BlockFace face) {
         super(type, block);
         this.face = face;
-        this.to = block.getRelative(face.getModX(), face.getModY(), face.getModZ());
         this.cancel = false;
     }
 
@@ -35,7 +34,10 @@ public class BlockFromToEvent extends BlockEvent implements Cancellable {
      * @return Block the faced block
      */
     public Block getToBlock() {
-        return to; 
+        if (to == null) {
+            to = block.getRelative(face.getModX(), face.getModY(), face.getModZ());
+        }
+        return to;
     }
 
     public boolean isCancelled() {
