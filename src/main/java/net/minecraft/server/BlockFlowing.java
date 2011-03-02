@@ -2,12 +2,12 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-// CraftBukkit start
 import org.bukkit.block.BlockFace;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockFromToEvent;
-// CraftBukkit end
 
 public class BlockFlowing extends BlockFluids {
 
@@ -28,8 +28,11 @@ public class BlockFlowing extends BlockFluids {
     }
 
     public void a(World world, int i, int j, int k, Random random) {
-        // CraftBukkit
-        CraftBlock source = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
+        // CraftBukkit start
+        CraftWorld cworld = ((WorldServer) world).getWorld();
+        CraftServer server = ((WorldServer) world).getServer();
+        CraftBlock source = cworld == null ? null : (CraftBlock) cworld.getBlockAt(i, j, k);
+        // CraftBukkit end
 
         int l = this.g(world, i, j, k);
         byte b0 = 1;
@@ -97,7 +100,9 @@ public class BlockFlowing extends BlockFluids {
         if (this.l(world, i, j - 1, k)) {
             // CraftBukkit start - send "down" to the server
             BlockFromToEvent event = new BlockFromToEvent(Type.BLOCK_FLOW, source, BlockFace.DOWN);
-            ((WorldServer) world).getServer().getPluginManager().callEvent(event);
+            if (server != null) {
+                server.getPluginManager().callEvent(event);
+            }
 
             if (!event.isCancelled()) {
                 if (l >= 8) {
@@ -125,7 +130,11 @@ public class BlockFlowing extends BlockFluids {
             for (BlockFace currentFace: faces) {
                 if (aboolean[index]) {
                     BlockFromToEvent event = new BlockFromToEvent(Type.BLOCK_FLOW, source, currentFace);
-                    ((WorldServer) world).getServer().getPluginManager().callEvent(event);
+
+                    if (server != null) {
+                        server.getPluginManager().callEvent(event);
+                    }
+
                     if (!event.isCancelled()) {
                         this.g(world, i + currentFace.getModX(), j, k + currentFace.getModZ(), i1);
                     }
