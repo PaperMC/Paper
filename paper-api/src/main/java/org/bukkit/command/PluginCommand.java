@@ -33,7 +33,7 @@ public final class PluginCommand extends Command {
             throw new CommandException("Unhandled exception executing command '" + commandLabel + "' in plugin " + owningPlugin.getDescription().getFullName(), ex);
         }
 
-        if (!success && !usageMessage.isEmpty()) {
+        if (!success && usageMessage.length() > 0) {
             sender.sendMessage(usageMessage.replace("<command>", commandLabel));
         }
         
