@@ -114,12 +114,14 @@ public class BlockPressurePlate extends Block {
         }
 
         // CraftBukkit start
-        CraftWorld craftWorld = ((WorldServer) world).getWorld();
-        CraftServer server = ((WorldServer) world).getServer();
-        CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
-        BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, flag ? 1 : 0, flag1 ? 1 : 0);
-        server.getPluginManager().callEvent(eventRedstone);
-        flag1 = eventRedstone.getNewCurrent() > 0;
+        if (flag != flag1) {
+            CraftWorld craftWorld = ((WorldServer) world).getWorld();
+            CraftServer server = ((WorldServer) world).getServer();
+            CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
+            BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, flag ? 1 : 0, flag1 ? 1 : 0);
+            server.getPluginManager().callEvent(eventRedstone);
+            flag1 = eventRedstone.getNewCurrent() > 0;
+        }
         // CraftBukkit end
 
         if (flag1 && !flag) {
