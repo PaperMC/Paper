@@ -4,6 +4,7 @@ package org.bukkit.entity;
 import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.World;
+import org.bukkit.util.Vector;
 
 /**
  * Represents a base entity in the world
@@ -15,6 +16,20 @@ public interface Entity {
      * @return Location containing the position of this entity
      */
     public Location getLocation();
+
+    /**
+     * Gets this entity's current momentum
+     *
+     * @return Current travelling momentum of this entity
+     */
+    public Vector getMomentum();
+
+    /**
+     * Sets this entity's momentum
+     *
+     * @param vector New momentum to travel with
+     */
+    public void setMomentum(Vector vector);
 
     /**
      * Gets the current world this entity resides in
