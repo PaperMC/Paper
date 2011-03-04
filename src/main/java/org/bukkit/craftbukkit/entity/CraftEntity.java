@@ -177,4 +177,14 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     public CraftServer getServer() {
         return server;
     }
+
+    public Vector getMomentum() {
+        return new Vector(entity.motX, entity.motY, entity.motZ);
+    }
+
+    public void setMomentum(Vector value) {
+        entity.motX = value.getX();
+        entity.motY = value.getY();
+        entity.motZ = value.getZ();
+    }
 }
