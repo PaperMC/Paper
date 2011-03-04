@@ -30,7 +30,7 @@ public class CraftBlockState implements BlockState {
         this.light = block.getLightLevel();
         this.chunk = (CraftChunk)block.getChunk();
 
-        createData(block.getRawData());
+        createData(block.getData());
     }
 
     /**

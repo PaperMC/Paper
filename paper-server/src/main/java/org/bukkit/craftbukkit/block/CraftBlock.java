@@ -95,7 +95,7 @@ public class CraftBlock implements Block {
      *
      * @return block specific metadata
      */
-    public byte getRawData() {
+    public byte getData() {
         return (byte) chunk.getHandle().b(this.x & 0xF, this.y & 0x7F, this.z & 0xF);
     }
 
@@ -353,10 +353,5 @@ public class CraftBlock implements Block {
 
     public boolean isBlockFaceIndirectlyPowered(BlockFace face) {
         return chunk.getHandle().d.j(x, y, z, blockFaceToNotch(face));
-    }
-
-    @Deprecated
-    public byte getData() {
-        return getRawData();
     }
 }
