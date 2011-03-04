@@ -347,8 +347,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                         // if we are destroying either a redstone wire with a current greater than 0 or
                         // a redstone torch that is on, then we should notify plugins that this block has
                         // returned to a current value of 0 (since it will once the redstone is destroyed)
-                        if ((blockId == Block.REDSTONE_WIRE.id && block.getRawData() > 0) || blockId == Block.REDSTONE_TORCH_ON.id) {
-                            server.getPluginManager().callEvent( new BlockRedstoneEvent(block, (blockId == Block.REDSTONE_WIRE.id ? block.getRawData() : 15), 0));
+                        if ((blockId == Block.REDSTONE_WIRE.id && block.getData() > 0) || blockId == Block.REDSTONE_TORCH_ON.id) {
+                            server.getPluginManager().callEvent( new BlockRedstoneEvent(block, (blockId == Block.REDSTONE_WIRE.id ? block.getData() : 15), 0));
                         }
                         event = new BlockDamageEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.BROKEN, player);
                     } else {
