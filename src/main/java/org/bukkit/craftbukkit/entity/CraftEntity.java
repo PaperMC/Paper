@@ -100,6 +100,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         entity.motX = vel.getX();
         entity.motY = vel.getY();
         entity.motZ = vel.getZ();
+        entity.aY = true;
     }
 
     public World getWorld() {
@@ -179,12 +180,10 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public Vector getMomentum() {
-        return new Vector(entity.motX, entity.motY, entity.motZ);
+        return getVelocity();
     }
 
     public void setMomentum(Vector value) {
-        entity.motX = value.getX();
-        entity.motY = value.getY();
-        entity.motZ = value.getZ();
+        setVelocity(value);
     }
 }
