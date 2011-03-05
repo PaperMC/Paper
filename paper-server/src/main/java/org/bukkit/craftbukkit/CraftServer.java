@@ -47,7 +47,7 @@ public final class CraftServer implements Server {
         this.server = server;
         this.serverVersion = CraftServer.class.getPackage().getImplementationVersion();
 
-        pluginManager.RegisterInterface(JavaPluginLoader.class);
+        pluginManager.registerInterface(JavaPluginLoader.class);
         Logger.getLogger("Minecraft").log(Level.INFO, "This server is running " + getName() + " version " + getVersion());
     }
 
