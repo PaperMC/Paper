@@ -21,15 +21,33 @@ public interface Entity {
      * Gets this entity's current momentum
      *
      * @return Current travelling momentum of this entity
+     * @deprecated See {@link #getVelocity()}
      */
+    @Deprecated
     public Vector getMomentum();
 
     /**
      * Sets this entity's momentum
      *
      * @param vector New momentum to travel with
+     * @deprecated See {@link #setVelocity(org.bukkit.util.Vector)}
      */
+    @Deprecated
     public void setMomentum(Vector vector);
+
+    /**
+     * Sets this entity's velocity
+     *
+     * @param velocity New velocity to travel with
+     */
+    public void setVelocity(Vector velocity);
+
+    /**
+     * Gets this entity's current velocity
+     *
+     * @return Current travelling velocity of this entity
+     */
+    public Vector getVelocity();
 
     /**
      * Gets the current world this entity resides in
