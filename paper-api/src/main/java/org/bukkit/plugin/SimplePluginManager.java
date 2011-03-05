@@ -53,7 +53,7 @@ public final class SimplePluginManager implements PluginManager {
      * @param loader Class name of the PluginLoader to register
      * @throws IllegalArgumentException Thrown when the given Class is not a valid PluginLoader
      */
-    public void RegisterInterface(Class<? extends PluginLoader> loader) throws IllegalArgumentException {
+    public void registerInterface(Class<? extends PluginLoader> loader) throws IllegalArgumentException {
         PluginLoader instance;
 
         if (PluginLoader.class.isAssignableFrom(loader)) {
@@ -62,7 +62,8 @@ public final class SimplePluginManager implements PluginManager {
                 constructor = loader.getConstructor(Server.class);
                 instance = constructor.newInstance(server);
             } catch (NoSuchMethodException ex) {
-                throw new IllegalArgumentException(String.format("Class %s does not have a public %s(Server) constructor", loader.getName()), ex);
+                String className = loader.getName();
+                throw new IllegalArgumentException(String.format("Class %s does not have a public %s(Server) constructor", className,className), ex);
             } catch (Exception ex) {
                 throw new IllegalArgumentException(String.format("Unexpected exception %s while attempting to construct a new instance of %s", ex.getClass().getName(), loader.getName()), ex);
             }

@@ -110,6 +110,9 @@ public enum ChatColor {
      * @return A copy of the input string, without any coloring
      */
     public static String stripColor(final String input) {
+        if (input == null)
+            return null;
+        
         return input.replaceAll("(?i)\u00A7[0-F]", "");
     }
 

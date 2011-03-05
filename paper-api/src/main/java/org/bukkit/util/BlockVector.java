@@ -102,6 +102,10 @@ public class BlockVector extends Vector {
      */
     @Override
     public BlockVector clone() {
-        return new BlockVector(x, y, z);
+        BlockVector v = (BlockVector)super.clone();
+        v.x = x;
+        v.y = y;
+        v.z = z;
+        return v;
     }
 }

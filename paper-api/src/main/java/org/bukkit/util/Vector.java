@@ -522,7 +522,7 @@ public class Vector implements Cloneable {
 
         return Math.abs(x - other.x) < epsilon
                 && Math.abs(y - other.y) < epsilon
-                && Math.abs(z - other.z) < epsilon;
+                && Math.abs(z - other.z) < epsilon && (this.getClass().equals(obj.getClass()));
     }
 
     /**
@@ -546,7 +546,16 @@ public class Vector implements Cloneable {
      */
     @Override
     public Vector clone() {
-        return new Vector(x, y, z);
+        try {
+            Vector v = (Vector)super.clone();
+            v.x = x;
+            v.y = y;
+            v.z = z;
+            return v;            
+        } catch (CloneNotSupportedException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**

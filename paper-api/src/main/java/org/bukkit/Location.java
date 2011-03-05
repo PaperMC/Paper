@@ -271,7 +271,19 @@ public class Location implements Cloneable {
 
     @Override
     public Location clone() {
-        return new Location(world, x, y, z, yaw, pitch);
+        try {
+            Location l = (Location)super.clone();
+            l.world = world;
+            l.x = x;
+            l.y = y;
+            l.z = z;
+            l.yaw = yaw;
+            l.pitch = pitch;
+            return l;
+        } catch (CloneNotSupportedException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**

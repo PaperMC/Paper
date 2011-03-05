@@ -7,10 +7,8 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.entity.LivingEntity;
 
 import java.util.Iterator;
-import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.lang.IllegalStateException;
-import java.lang.Exception;
 
 /**
  * This class performs ray tracing and iterates along blocks on a line
@@ -23,7 +21,7 @@ public class BlockIterator implements Iterator<Block> {
     private final World  world;
     private final int    maxDistance;
 
-    private final int    gridSize = 1<<24;
+    private static final int    gridSize = 1<<24;
 
     private boolean      end = false;
 

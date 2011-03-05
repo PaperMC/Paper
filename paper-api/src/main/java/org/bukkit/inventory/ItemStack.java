@@ -182,11 +182,19 @@ public class ItemStack {
     }
 
     @Override
-    public boolean equals(Object object) {
-        return false;
-    }
-
-    public boolean equals(ItemStack item) {
+    public boolean equals(Object obj) {
+        if (!(obj instanceof ItemStack))
+            return false;
+        
+        ItemStack item = (ItemStack)obj;
         return item.getAmount() == getAmount() && item.getTypeId() == getTypeId();
     }
+    
+    @Override
+    public int hashCode() {
+        int hash = 11;
+        hash = hash * 19 + 7 * getTypeId(); // Overriding hashCode since equals is overridden, it's just 
+        hash = hash * 7 + 23 * getAmount(); // too bad these are mutable values... Q_Q
+        return hash;
+    } 
 }

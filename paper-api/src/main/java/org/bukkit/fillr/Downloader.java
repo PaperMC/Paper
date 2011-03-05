@@ -130,7 +130,7 @@ public class Downloader {
 	 *            The file to backup
 	 */
 	private static void backupFile(File file) {
-		if (file.exists()) {
+		if (file != null  && file.exists()) {
 			System.out.println("Backing up old file: " + file.getName());
 			if (!new File(BACKUP).exists()) {
 				new File(BACKUP).mkdir();
