@@ -1,15 +1,9 @@
 package net.minecraft.server;
 
 import java.util.Random;
-
-// CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.event.Event.Type;
-import org.bukkit.event.block.BlockInteractEvent;
-// CraftBukkit end
+import org.bukkit.event.block.BlockRedstoneEvent;
 
 public class BlockDoor extends Block {
 
@@ -100,25 +94,6 @@ public class BlockDoor extends Block {
 
                 return true;
             } else {
-                // CraftBukkit start - Interact Door
-                CraftWorld craftWorld = ((WorldServer) world).getWorld();
-                CraftServer server = ((WorldServer) world).getServer();
-                Type eventType = Type.BLOCK_INTERACT;
-                CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
-                LivingEntity who = (entityhuman == null) ? null : (LivingEntity) entityhuman.getBukkitEntity();
-
-                BlockInteractEvent event = new BlockInteractEvent(eventType, block, who);
-                server.getPluginManager().callEvent(event);
-
-                // The client updates the doors before the server does it's thing.
-                // Forcibly send correct data.
-                if (event.isCancelled()) {
-                    ((EntityPlayer) entityhuman).a.b(new Packet53BlockChange(i, j, k, (WorldServer) world));
-                    ((EntityPlayer) entityhuman).a.b(new Packet53BlockChange(i, j + 1, k, (WorldServer) world));
-                    return true;
-                }
-                // CraftBukkit end
-
                 if (world.getTypeId(i, j + 1, k) == this.id) {
                     world.c(i, j + 1, k, (l ^ 4) + 8);
                 }
@@ -196,7 +171,15 @@ public class BlockDoor extends Block {
             } else if (l > 0 && Block.byId[l].c()) {
                 boolean flag1 = world.p(i, j, k) || world.p(i, j + 1, k);
 
-                this.a(world, i, j, k, flag1);
+                //Craftbukkit start
+                CraftWorld craftWorld = ((WorldServer) world).getWorld();
+                CraftServer server = ((WorldServer) world).getServer();
+                org.bukkit.block.Block block = craftWorld.getBlockAt(i, j, k);
+                int power = block.getBlockPower();
+                BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, (world.getData(i, j, k) & 4) > 0 ? 15: 0, flag1 ? 15 : 0);
+                server.getPluginManager().callEvent(eventRedstone);            
+                this.a(world, i, j, k, eventRedstone.getNewCurrent());
+                //Craftbukkit end
             }
         }
     }
