@@ -2,7 +2,6 @@ package org.bukkit.event.player;
 
 import org.bukkit.entity.CreatureType;
 import org.bukkit.entity.Egg;
-import org.bukkit.entity.MobType;
 import org.bukkit.entity.Player;
 
 
@@ -25,13 +24,6 @@ public class PlayerEggThrowEvent extends PlayerEvent {
         this.hatchType = hatchType;
     }
 
-    public PlayerEggThrowEvent(Type type, Player player, Egg egg, boolean hatching, byte numHatches, MobType hatchType) {
-        super(type, player);
-        this.egg = egg;
-        this.hatching = hatching;
-        this.numHatches = numHatches;
-        this.hatchType = CreatureType.fromName(hatchType.getName());
-    }
     /**
      * Get the egg.
      *
@@ -62,12 +54,12 @@ public class PlayerEggThrowEvent extends PlayerEvent {
     }
 
     /**
-     * Get the type of the mob being hatched (MobType.CHICKEN by default)
+     * Get the type of the mob being hatched (CreatureType.CHICKEN by default)
      *
      * @return The type of the mob being hatched by the egg
      */
-    public MobType getHatchType() {
-        return MobType.fromName(hatchType.getName());
+    public CreatureType getHatchType() {
+        return CreatureType.fromName(hatchType.getName());
     }
 
     /**
@@ -79,16 +71,6 @@ public class PlayerEggThrowEvent extends PlayerEvent {
         this.hatchType = hatchType;
     }
 
-    /**
-     * Change the type of mob being hatched by the egg
-     *
-     * @param hatchType The type of the mob being hatched by the egg
-     * 
-     * @deprecated Use setHatchType(CreatureType hatchType) instead.
-     */
-    public void setHatchType(MobType hatchType) {
-        this.hatchType = CreatureType.fromName(hatchType.getName());
-    }
 
     /**
      * Get the number of mob hatches from the egg. By default the number
