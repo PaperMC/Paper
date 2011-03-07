@@ -27,6 +27,10 @@ public final class PluginCommand extends Command {
     public boolean execute(CommandSender sender, String commandLabel, String[] args) {
         boolean success = false;
 
+        if (!owningPlugin.isEnabled()) {
+            return false;
+        }
+
         try {
             success = executor.onCommand(sender, this, commandLabel, args);
         } catch (Throwable ex) {
