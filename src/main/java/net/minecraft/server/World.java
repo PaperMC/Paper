@@ -12,12 +12,12 @@ import java.util.TreeSet;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.entity.CreatureType;
 import org.bukkit.event.Event;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockCanBuildEvent;
 import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
-import org.bukkit.entity.MobType;
 // CraftBukkit end
 
 public class World implements IBlockAccess {
@@ -716,30 +716,30 @@ public class World implements IBlockAccess {
         // CraftBukkit start
         if (entity instanceof EntityLiving) {
 
-            MobType type = null;
+            CreatureType type = null;
 
             if (entity instanceof EntityChicken) {
-                type = MobType.CHICKEN;
+                type = CreatureType.CHICKEN;
             } else if (entity instanceof EntityCow) {
-                type = MobType.COW;
+                type = CreatureType.COW;
             } else if (entity instanceof EntityCreeper) {
-                type = MobType.CREEPER;
+                type = CreatureType.CREEPER;
             } else if (entity instanceof EntityGhast) {
-                type = MobType.GHAST;
+                type = CreatureType.GHAST;
             } else if (entity instanceof EntityPig) {
-                type = MobType.PIG;
+                type = CreatureType.PIG;
             } else if (entity instanceof EntityPigZombie) {
-                type = MobType.PIG_ZOMBIE;
+                type = CreatureType.PIG_ZOMBIE;
             } else if (entity instanceof EntitySheep) {
-                type = MobType.SHEEP;
+                type = CreatureType.SHEEP;
             } else if (entity instanceof EntitySkeleton) {
-                type = MobType.SKELETON;
+                type = CreatureType.SKELETON;
             } else if (entity instanceof EntitySpider) {
-                type = MobType.SPIDER;
+                type = CreatureType.SPIDER;
             } else if (entity instanceof EntityZombie) {
-                type = MobType.ZOMBIE;
+                type = CreatureType.ZOMBIE;
             } else if (entity instanceof EntitySlime) {
-                type = MobType.SLIME;
+                type = CreatureType.SLIME;
             }
 
             if (type != null) {

@@ -3,12 +3,10 @@ package org.bukkit.craftbukkit.block;
 import net.minecraft.server.TileEntityMobSpawner;
 import org.bukkit.block.Block;
 import org.bukkit.block.CreatureSpawner;
-import org.bukkit.block.MobSpawner;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.CreatureType;
-import org.bukkit.entity.MobType;
 
-public class CraftCreatureSpawner extends CraftBlockState implements CreatureSpawner, MobSpawner {
+public class CraftCreatureSpawner extends CraftBlockState implements CreatureSpawner {
     private final CraftWorld world;
     private final TileEntityMobSpawner spawner;
 
@@ -48,37 +46,4 @@ public class CraftCreatureSpawner extends CraftBlockState implements CreatureSpa
         spawner.a = delay;
     }
 
-    /** 
-     * @deprecated Use getCreatureType() instead.
-     */
-    public MobType getMobType() {
-        return MobType.fromName(spawner.h);
-    }
-
-    /** 
-     * @deprecated Use setCreatureType() instead.
-     */
-    public void setMobType(MobType mobType) {
-        spawner.h = mobType.getName();
-        
-    }
-
-    /** 
-     * @deprecated Use getCreatureTypeId() instead.
-     */
-    public String getMobTypeId() {
-        return spawner.h;
-    }
-
-    /** 
-     * @deprecated Use setCreatureTypeId() instead.
-     */
-    public void setMobTypeId(String mobType) {
-        // Verify input
-        MobType type = MobType.fromName(mobType);
-        if (type == null) {
-            return;
-        }
-        spawner.h = type.getName();
-    }
 }

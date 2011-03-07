@@ -3,8 +3,8 @@ package net.minecraft.server;
 import java.util.List;
 
 // CraftBukkit start
+import org.bukkit.entity.CreatureType;
 import org.bukkit.entity.Egg;
-import org.bukkit.entity.MobType;
 import org.bukkit.entity.Player;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.Event.Type;
@@ -188,7 +188,8 @@ public class EntityEgg extends Entity {
             if (!hatching) {
                 numHatching = 0;
             }
-            MobType hatchingType = MobType.CHICKEN;
+
+            CreatureType hatchingType = CreatureType.CHICKEN;
 
             if (this.g instanceof EntityPlayer) {
                 CraftServer server = ((WorldServer) this.world).getServer();
