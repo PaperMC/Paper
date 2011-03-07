@@ -7,6 +7,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -18,6 +19,7 @@ public final class PluginDescriptionFile {
     private static final Yaml yaml = new Yaml(new SafeConstructor());
     private String name = null;
     private String main = null;
+    private ArrayList<String> depend = null;
     private String version = null;
     private Object commands = null;
     private String description = null;
@@ -99,6 +101,10 @@ public final class PluginDescriptionFile {
         return commands;
     }
 
+    public Object getDepend() {
+        return depend;
+    }
+
     /**
      * Gets the description of this plugin
      *
@@ -149,6 +155,14 @@ public final class PluginDescriptionFile {
             }
         }
 
+        if (map.containsKey("depend")) {
+            try {
+                depend = (ArrayList<String>)map.get("depend");
+            } catch (ClassCastException ex) {
+                throw new InvalidDescriptionException(ex, "depend is of wrong type");
+            }
+        }
+
         if (map.containsKey("website")) {
             try {
                 website = (String)map.get("website");
@@ -191,6 +205,7 @@ public final class PluginDescriptionFile {
         map.put("version", version);
 
         if (commands != null) map.put("command", commands);
+        if (depend != null) map.put("depend", depend);
         if (website != null) map.put("website", website);
         if (description != null) map.put("description", description);
 

@@ -9,6 +9,9 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.ArrayList;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
@@ -36,12 +39,13 @@ public final class JavaPluginLoader implements PluginLoader {
             Pattern.compile("\\.jar$"),
     };
     private final Map<String, Class<?>> classes = new HashMap<String, Class<?>>();
+    private final Map<String, File> files = new HashMap<String, File>();
 
     public JavaPluginLoader(Server instance) {
         server = instance;
     }
 
-    public Plugin loadPlugin(File file) throws InvalidPluginException, InvalidDescriptionException {
+    public Plugin loadPlugin(File file) throws InvalidPluginException, InvalidDescriptionException, UnknownDependencyException {
         JavaPlugin result = null;
         PluginDescriptionFile description = null;
 
@@ -67,8 +71,37 @@ public final class JavaPluginLoader implements PluginLoader {
 
         File dataFolder = getDataFolder(file);
 
+        ArrayList<String> depend;
         try {
-            ClassLoader loader = new PluginClassLoader(this, new URL[]{file.toURI().toURL()}, getClass().getClassLoader());
+            depend = (ArrayList)description.getDepend();
+            if(depend == null) {
+                depend = new ArrayList<String>();
+            }
+        } catch (ClassCastException ex) {
+             throw new InvalidPluginException(ex);
+        }
+
+        ArrayList<File> dependFiles = new ArrayList<File>();
+
+        for(String pluginName : depend) {
+            if(files == null) {
+                throw new UnknownDependencyException(pluginName);
+            }
+            File current = files.get(pluginName);
+            if(current == null) {
+                throw new UnknownDependencyException(pluginName);
+            }
+            dependFiles.add(current);
+        }
+
+        try {
+            URL[] urls = new URL[dependFiles.size() + 1];
+            urls[0] = file.toURI().toURL();
+            int cnt = 1;
+            for(File f : dependFiles) {
+                urls[cnt++] = f.toURI().toURL();
+            }
+            ClassLoader loader = new PluginClassLoader(this, urls, getClass().getClassLoader());
             Class<?> jarClass = Class.forName(description.getMain(), true, loader);
             Class<? extends JavaPlugin> plugin = jarClass.asSubclass(JavaPlugin.class);
 
@@ -79,6 +112,8 @@ public final class JavaPluginLoader implements PluginLoader {
         } catch (Throwable ex) {
             throw new InvalidPluginException(ex);
         }
+
+        files.put(description.getName(), file);
 
         return (Plugin)result;
     }
@@ -112,7 +147,9 @@ public final class JavaPluginLoader implements PluginLoader {
     }
 
     public void setClass(final String name, final Class<?> clazz) {
-        classes.put(name, clazz);
+        if(!classes.containsKey(name)) {
+            classes.put(name, clazz);
+        }
     }
 
     public EventExecutor createExecutor( Event.Type type, Listener listener ) {
@@ -428,6 +465,8 @@ public final class JavaPluginLoader implements PluginLoader {
             jPlugin.setEnabled(false);
 
             server.getPluginManager().callEvent(new PluginEvent(Event.Type.PLUGIN_DISABLE, plugin));
+
+            files.remove(jPlugin.getDescription().getName());
 
             if (cloader instanceof PluginClassLoader) {
                 PluginClassLoader loader = (PluginClassLoader)cloader;

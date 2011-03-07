@@ -98,6 +98,8 @@ public class Updater {
         File plugin = new File(DIRECTORY, name + ".jar");
         try {
             server.getPluginManager().loadPlugin(plugin);
+        } catch (UnknownDependencyException ex) {
+            server.getLogger().log(Level.SEVERE, null, ex);
         } catch (InvalidPluginException ex) {
             server.getLogger().log(Level.SEVERE, null, ex);
         } catch (InvalidDescriptionException ex) {

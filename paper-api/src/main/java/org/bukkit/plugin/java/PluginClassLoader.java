@@ -24,17 +24,25 @@ public class PluginClassLoader extends URLClassLoader {
         Class<?> result = classes.get(name);
 
         if (result == null) {
-            result = loader.getClassByName(name);
+            ClassNotFoundException ex = null;
 
-            if (result == null) {
+            try {
                 result = super.findClass(name);
-
-                if (result != null) {
-                    loader.setClass(name, result);
-                }
+            } catch (ClassNotFoundException e) {
+                ex = e;
             }
 
-            classes.put(name, result);
+            if (result != null) {
+                loader.setClass(name, result);
+            } else {
+                result = loader.getClassByName(name);
+            }
+
+            if (result != null ) {
+                classes.put(name, result);
+            } else {
+                throw ex;
+            }
         }
 
         return result;

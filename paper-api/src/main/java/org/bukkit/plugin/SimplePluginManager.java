@@ -12,6 +12,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -88,19 +91,45 @@ public final class SimplePluginManager implements PluginManager {
         List<Plugin> result = new ArrayList<Plugin>();
         File[] files = directory.listFiles();
 
-        for (File file : files) {
-            Plugin plugin = null;
+        boolean allFailed = false;
+        boolean finalPass = false;
 
-            try {
-                plugin = loadPlugin(file);
-            } catch (InvalidPluginException ex) {
-                server.getLogger().log(Level.SEVERE, "Could not load " + file.getPath() + " in " + directory.getPath() + ": " + ex.getMessage(), ex);
-            } catch (InvalidDescriptionException ex) {
-                server.getLogger().log(Level.SEVERE, "Could not load " + file.getPath() + " in " + directory.getPath() + ": " + ex.getMessage(), ex);
+        LinkedList<File> filesList = new LinkedList(Arrays.asList(files));
+
+        while(!allFailed || finalPass) {
+            allFailed = true;
+            Iterator<File> itr = filesList.iterator();
+            while(itr.hasNext()) {
+                File file = itr.next();
+                Plugin plugin = null;
+
+                try {
+                    plugin = loadPlugin(file);
+                    itr.remove();
+                } catch (UnknownDependencyException ex) {
+                    if(finalPass) {
+                        server.getLogger().log(Level.SEVERE, "Could not load " + file.getPath() + " in " + directory.getPath() + ": " + ex.getMessage(), ex);
+                        itr.remove();
+                    } else {
+                        plugin = null;
+                    }
+                } catch (InvalidPluginException ex) {
+                    server.getLogger().log(Level.SEVERE, "Could not load " + file.getPath() + " in " + directory.getPath() + ": " + ex.getMessage(), ex);
+                    itr.remove();
+                } catch (InvalidDescriptionException ex) {
+                    server.getLogger().log(Level.SEVERE, "Could not load " + file.getPath() + " in " + directory.getPath() + ": " + ex.getMessage(), ex);
+                    itr.remove();
+                }
+
+                if (plugin != null) {
+                    result.add(plugin);
+                    allFailed = false;
+                }
             }
-
-            if (plugin != null) {
-                result.add(plugin);
+            if(finalPass) {
+                break;
+            } else if(allFailed) {
+                finalPass = true;
             }
         }
 
@@ -117,7 +146,7 @@ public final class SimplePluginManager implements PluginManager {
      * @throws InvalidPluginException Thrown when the specified file is not a valid plugin
      * @throws InvalidDescriptionException Thrown when the specified file contains an invalid description
      */
-    public Plugin loadPlugin(File file) throws InvalidPluginException, InvalidDescriptionException {
+    public Plugin loadPlugin(File file) throws InvalidPluginException, InvalidDescriptionException, UnknownDependencyException {
         Set<Pattern> filters = fileAssociations.keySet();
         Plugin result = null;
 
