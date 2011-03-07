@@ -2,6 +2,8 @@
 package org.bukkit;
 
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
+import org.bukkit.entity.Entity;
 
 /**
  * Represents a chunk of blocks
@@ -38,4 +40,8 @@ public interface Chunk {
      * @return the Block
      */
     Block getBlock(int x, int y, int z);
+    
+    Entity[] getEntities();
+    
+    BlockState[] getTileEntities();
 }
