@@ -3,13 +3,16 @@ package org.bukkit.craftbukkit;
 
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
+import net.minecraft.server.ChunkPosition;
 
 import net.minecraft.server.WorldServer;
 
 import org.bukkit.Chunk;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.entity.Entity;
 import org.bukkit.craftbukkit.util.SoftMap;
 
 public class CraftChunk implements Chunk {
@@ -60,6 +63,31 @@ public class CraftChunk implements Chunk {
             this.cache.put( pos, block );
         }
         return block;
+    }
+
+    public Entity[] getEntities() {
+        int count = 0, index = 0;
+        net.minecraft.server.Chunk chunk = getHandle();
+        for (int i = 0; i < 8; i++) {
+            count += chunk.m[i].size();
+        }
+        Entity[] entities = new Entity[count];        
+        for (int i = 0; i < 8; i++) {
+            for (net.minecraft.server.Entity entity : (net.minecraft.server.Entity[])chunk.m[i].toArray()) {
+                entities[index++] = entity.getBukkitEntity();
+            }
+        }
+        return entities;
+    }
+
+    public BlockState[] getTileEntities() {
+        int index = 0;
+        net.minecraft.server.Chunk chunk = getHandle();
+        BlockState[] entities = new BlockState[chunk.l.size()];
+        for (ChunkPosition position : (ChunkPosition[])chunk.l.keySet().toArray()) {
+            entities[index++] = worldServer.getWorld().getBlockAt(position.a, position.b, position.c).getState();
+        }
+        return entities;
     }
 }
 
