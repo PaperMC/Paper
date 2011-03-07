@@ -142,7 +142,6 @@ public class CraftWorld implements World {
         }
 
         provider.a.remove(x, z);
-        provider.a.remove(x, z);
         provider.e.remove(x, z);
         provider.f.remove(chunk);
         
