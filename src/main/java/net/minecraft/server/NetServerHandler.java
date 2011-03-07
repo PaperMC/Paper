@@ -52,9 +52,11 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     private final CraftServer server;
 
     // Get position of last block hit for BlockDamageLevel.STOPPED
-    private double lastPosX = Double.MIN_VALUE;
-    private double lastPosY = Double.MIN_VALUE;
-    private double lastPosZ = Double.MIN_VALUE;
+    private double lastPosX = Double.MAX_VALUE;
+    private double lastPosY = Double.MAX_VALUE;
+    private double lastPosZ = Double.MAX_VALUE;
+    private float lastPitch = Float.MAX_VALUE;
+    private float lastYaw = Float.MAX_VALUE;
 
     // Store the last block right clicked and what type it was
     private CraftBlock lastRightClicked;
@@ -110,12 +112,14 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
         // CraftBukkit start
         Player player = getPlayer();
-        Location from = new Location(player.getWorld(), i, j, k, this.e.yaw, this.e.pitch);
+        Location from = new Location(player.getWorld(), lastPosX, lastPosY, lastPosZ, lastYaw, lastPitch);
         Location to = player.getLocation();
 
         // Prevent 40 event-calls for less than a single pixel of movement >.>
         double delta = Math.pow( this.lastPosX - this.i, 2) + Math.pow( this.lastPosY - this.j, 2) + Math.pow( this.lastPosZ - this.k, 2);
-        if (delta > 1f/256) {
+        float deltaAngle = Math.abs(this.lastYaw - this.e.yaw) +  Math.abs(this.lastPitch - this.e.pitch);
+
+        if (delta > 1f/256 || deltaAngle > 10f) {
             PlayerMoveEvent event = new PlayerMoveEvent(Type.PLAYER_MOVE, player, from, to);
             server.getPluginManager().callEvent(event);
 
@@ -131,6 +135,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             this.lastPosX = this.e.locX;
             this.lastPosY = this.e.locY;
             this.lastPosZ = this.e.locZ;
+            this.lastYaw = this.e.yaw;
+            this.lastPitch = this.e.pitch;
         }
         // CraftBukkit end
 
