@@ -163,4 +163,12 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public void setMaximumAir(int ticks) {
         getHandle().maxAirTicks = ticks;
     }
+
+    public void damage(int amount) {
+        entity.a((Entity)null, amount);
+    }
+
+    public void damage(int amount, org.bukkit.entity.Entity source) {
+        entity.a(((CraftEntity)source).getHandle(), amount);
+    }
 }
