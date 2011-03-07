@@ -49,11 +49,12 @@ public final class CraftServer implements Server {
         this.server = server;
         this.serverVersion = CraftServer.class.getPackage().getImplementationVersion();
 
-        pluginManager.registerInterface(JavaPluginLoader.class);
         Logger.getLogger("Minecraft").log(Level.INFO, "This server is running " + getName() + " version " + getVersion());
     }
 
     public void loadPlugins() {
+        pluginManager.registerInterface(JavaPluginLoader.class);
+
         File pluginFolder = (File)console.options.valueOf("plugins");
 
         if (pluginFolder.exists()) {
