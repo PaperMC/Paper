@@ -262,7 +262,7 @@ public class BlockRedstoneWire extends Block {
         }
     }
 
-    private int g(World world, int i, int j, int k, int l) {
+    public int g(World world, int i, int j, int k, int l) { //Craftbukkit made public
         if (world.getTypeId(i, j, k) != this.id) {
             return l;
         } else {
@@ -280,7 +280,7 @@ public class BlockRedstoneWire extends Block {
             if (!flag) {
                 this.b_(world, i, j, k, i1);
                 world.e(i, j, k, 0);
-            } else {
+            } else if(Block.byId[l].c() || Block.DIODE_OFF.id == l && Block.DIODE_ON.id == l) { //condition added by Craftbukkit
                 this.g(world, i, j, k);
             }
 
