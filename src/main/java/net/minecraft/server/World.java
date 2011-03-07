@@ -1625,7 +1625,7 @@ public class World implements IBlockAccess {
         // CraftBukkit start - We dont want to allow the user to override the bounding box check
         boolean defaultReturn = axisalignedbb != null && !this.a(axisalignedbb) ? false : (block != Block.WATER && block != Block.STATIONARY_WATER && block != Block.LAVA && block != Block.STATIONARY_LAVA && block != Block.FIRE && block != Block.SNOW ? i > 0 && block == null && block1.a(this, j, k, l) : true);
 
-        if (!defaultReturn) {
+        if (axisalignedbb != null && !this.a(axisalignedbb)) {
             return false;
         }
 
