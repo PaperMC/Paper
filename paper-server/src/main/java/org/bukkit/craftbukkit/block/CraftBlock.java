@@ -90,6 +90,14 @@ public class CraftBlock implements Block {
         chunk.getHandle().d.c(x, y, z, data);
     }
 
+    public void setData(final byte data, boolean applyPhysics) {
+        if(applyPhysics) {
+            chunk.getHandle().d.c(x, y, z, data);
+        } else {
+            chunk.getHandle().d.d(x, y, z, data);
+        }
+    }
+
     /**
      * Gets the metadata for this block
      *
@@ -116,6 +124,22 @@ public class CraftBlock implements Block {
      */
     public boolean setTypeId(final int type) {
         return chunk.getHandle().d.e(x, y, z, type);
+    }
+    
+    public boolean setTypeId(final int type, final boolean applyPhysics) {
+        if(applyPhysics) {
+            return setTypeId(type);
+        } else {
+            return chunk.getHandle().d.setTypeId(x, y, z, type);
+        }
+    }
+
+    public boolean setTypeIdAndData(final int type, final byte data, final boolean applyPhysics) {
+        if(applyPhysics) {
+            return chunk.getHandle().d.b(x, y, z, type, data);
+        } else {
+            return chunk.getHandle().d.setTypeIdAndData(x, y, z, type, data);
+        }
     }
 
     /**
