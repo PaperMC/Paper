@@ -776,6 +776,17 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         // CraftBukkit start
         if (this.e.world.f(packet130updatesign.a, packet130updatesign.b, packet130updatesign.c)) {
             TileEntity tileentity = this.e.world.getTileEntity(packet130updatesign.a, packet130updatesign.b, packet130updatesign.c);
+            if (tileentity instanceof TileEntitySign) {
+                TileEntitySign sign = (TileEntitySign)tileentity;
+                if (!sign.fresh) {
+                    int x = packet130updatesign.a;
+                    int y = packet130updatesign.b;
+                    int z = packet130updatesign.c;
+                    server.getLogger().severe("Player " + getPlayer().getName() + "/" + getPlayer().getAddress().toString() + " just tried to change the sign text at " +
+                            x + "," + y + "," + z + " - very likely an exploit attempt. Recommend ban.");
+                    return;
+                }
+            }
             // CraftBukkit end
 
             int i;
@@ -817,6 +828,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                     for (int l = 0; l < 4; ++l) {
                         event.setLine(l, "");
                     }
+                } else {
+                    tileentitysign.fresh = false;
                 }
                 // CraftBukkit end
 
