@@ -101,7 +101,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         for (int i = 0; i < inventory.b.length; ++i) {
             if (inventory.b[i] != null) {
                 loot.add(new CraftItemStack(inventory.b[i]));
-                inventory.a[i] = null;
+                inventory.b[i] = null;
             }
         }
 
