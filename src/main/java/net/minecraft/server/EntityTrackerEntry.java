@@ -70,11 +70,6 @@ public class EntityTrackerEntry {
             Object object = null;
             boolean flag = Math.abs(i) >= 8 || Math.abs(j) >= 8 || Math.abs(k) >= 8;
             boolean flag1 = Math.abs(l - this.g) >= 8 || Math.abs(i1 - this.h) >= 8;
-            
-            // CraftBukkit - Create relative movement packet only if distance is greater than zero.
-            int distanceSquared = j1*j1+k1*k1+l1*l1; 
-            flag = (distanceSquared > 0) && flag;
-            // CraftBukkit stop
 
             if (j1 >= -128 && j1 < 128 && k1 >= -128 && k1 < 128 && l1 >= -128 && l1 < 128) {
                 if (flag && flag1) {
