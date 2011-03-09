@@ -10,10 +10,11 @@ import org.bukkit.Chunk;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.util.SoftMap;
 
 public class CraftChunk implements Chunk {
     private WeakReference<net.minecraft.server.Chunk> weakChunk;
-    private final HashMap<Integer, Block> cache = new HashMap<Integer, Block>();
+    private final SoftMap<Integer, Block> cache = new SoftMap<Integer, Block>();
     private WorldServer worldServer;
     private int x;
     private int z;
