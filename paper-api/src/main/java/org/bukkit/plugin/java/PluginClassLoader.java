@@ -21,10 +21,16 @@ public class PluginClassLoader extends URLClassLoader {
 
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
+        return findClass(name, true);
+    }
+
+    protected Class<?> findClass(String name, boolean checkGlobal) throws ClassNotFoundException {
         Class<?> result = classes.get(name);
 
         if (result == null) {
-            result = loader.getClassByName(name);
+            if(checkGlobal) {
+                result = loader.getClassByName(name);
+            }
 
             if (result == null) {
                 result = super.findClass(name);
