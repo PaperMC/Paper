@@ -20,7 +20,11 @@ public class TerminalConsoleHandler extends ConsoleHandler {
             reader.printString(ConsoleReader.RESET_LINE + "");
             reader.flushConsole();
             super.flush();
-            reader.drawLine();
+            try {
+                reader.drawLine();
+            } catch (Throwable ex) {
+                reader.getCursorBuffer().clearBuffer();
+            }
             reader.flushConsole();
         } catch (IOException ex) {
             Logger.getLogger(TerminalConsoleHandler.class.getName()).log(Level.SEVERE, null, ex);
