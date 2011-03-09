@@ -6,6 +6,8 @@ import net.minecraft.server.EntityArrow;
 import net.minecraft.server.EntityEgg;
 import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntitySnowball;
+
+import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 
@@ -170,5 +172,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     public void damage(int amount, org.bukkit.entity.Entity source) {
         entity.a(((CraftEntity)source).getHandle(), amount);
+    }
+
+    public Location getEyeLocation() {
+        Location loc = getLocation();
+        loc.setY(loc.getY() + getEyeHeight());
+        return loc;
     }
 }
