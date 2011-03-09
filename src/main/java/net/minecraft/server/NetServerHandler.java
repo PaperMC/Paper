@@ -783,7 +783,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                     int y = packet130updatesign.b;
                     int z = packet130updatesign.c;
                     server.getLogger().severe("Player " + getPlayer().getName() + "/" + getPlayer().getAddress().toString() + " just tried to change the sign text at " +
-                            x + "," + y + "," + z + " - very likely an exploit attempt. Recommend ban.");
+                            x + "," + y + "," + z + " - very likely an exploit attempt. Recommend ban, and sending a package of joy their way.");
+                    this.d.f.a(new Packet1Login("", "", 0, 0, (byte)0));
                     return;
                 }
             }
