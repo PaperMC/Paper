@@ -24,7 +24,11 @@ public class InventoryPlayer implements IInventory {
     }
 
     public ItemStack b() {
-        return this.a[this.c];
+        if (this.c < this.a.length) {
+            return this.a[this.c];
+        } else {
+            return null;
+        }
     }
 
     private int d(int i) {
