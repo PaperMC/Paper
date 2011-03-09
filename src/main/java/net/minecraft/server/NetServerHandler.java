@@ -568,7 +568,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 " just send an invalid ItemInHandIndex: " + packet16blockitemswitch.a +
                 " - very likely a crashing exploit attempt. Recommend ban, and sending a package of joy their way."
             );
-            this.d.f.a(new Packet1Login("", "", 0, 0, (byte)0));
+            this.b(new Packet1Login("", "", 0, 0, (byte)0));
+            this.a("Exploits.");
             return;
         }
 
@@ -807,7 +808,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                     int z = packet130updatesign.c;
                     server.getLogger().severe("Player " + getPlayer().getName() + "/" + getPlayer().getAddress().toString() + " just tried to change the sign text at " +
                             x + "," + y + "," + z + " - very likely an exploit attempt. Recommend ban, and sending a package of joy their way.");
-                    this.d.f.a(new Packet1Login("", "", 0, 0, (byte)0));
+                    this.b(new Packet1Login("", "", 0, 0, (byte)0));
+                    this.a("Exploits.");
                     return;
                 }
             }
