@@ -25,6 +25,7 @@ import org.bukkit.event.player.*;
 
 public class NetServerHandler extends NetHandler implements ICommandListener {
 
+    private static final int PLACE_DISTANCE_SQUARED = 6 * 6; // CraftBukkit here for now
     public static Logger a = Logger.getLogger("Minecraft");
     public NetworkManager b;
     public boolean c = false;
@@ -436,6 +437,14 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
             PlayerItemEvent event = new PlayerItemEvent(eventType, who, itemInHand, blockClicked, blockFace);
 
+            if (blockClicked != null && blockFace != null) {
+                CraftBlock block = (CraftBlock)blockClicked.getFace(blockFace);
+                Location eyeLoc = getPlayer().getEyeLocation();
+                if (Math.pow(eyeLoc.getX() - block.getX(), 2) + Math.pow(eyeLoc.getY() - block.getY(), 2) + Math.pow(eyeLoc.getZ() - block.getZ(), 2) > PLACE_DISTANCE_SQUARED) {
+                    return;
+                }
+            }
+
             // CraftBukkit We still call this event even in spawn protection.
             // Don't call this event if using Buckets / signs
             switch (itemInHand.getType()) {
@@ -474,6 +483,10 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             }
 
             // CraftBukkit start - spawn protection moved to ItemBlock!!!
+            Location eyeLoc = getPlayer().getEyeLocation();
+            if (Math.pow(eyeLoc.getX() - i, 2) + Math.pow(eyeLoc.getY() - j, 2) + Math.pow(eyeLoc.getZ() - k, 2) > PLACE_DISTANCE_SQUARED) {
+                return;
+            }
             CraftItemStack craftItem = new CraftItemStack(itemstack);
             Player player = getPlayer();
             BlockRightClickEvent event = new BlockRightClickEvent(Type.BLOCK_RIGHTCLICKED, blockClicked, blockFace, craftItem, player);
