@@ -564,10 +564,11 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     }
 
     public void a(Packet16BlockItemSwitch packet16blockitemswitch) {
+     // CraftBukkit start
         if (packet16blockitemswitch.a < 0 || packet16blockitemswitch.a > 8) {
             server.getLogger().severe(
                 "Player " + getPlayer().getName() + "/" + getPlayer().getAddress().toString() +
-                " just send an invalid ItemInHandIndex: " + packet16blockitemswitch.a +
+                " just sent an invalid ItemInHandIndex: " + packet16blockitemswitch.a +
                 " - very likely a crashing exploit attempt. Recommend ban, and sending a package of joy their way."
             );
             this.b(new Packet1Login("", "", 0, 0, (byte)0));
@@ -575,7 +576,6 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             return;
         }
 
-        // CraftBukkit start
         PlayerItemHeldEvent event = new PlayerItemHeldEvent(Type.PLAYER_ITEM_HELD, getPlayer(), e.inventory.c, packet16blockitemswitch.a);
         server.getPluginManager().callEvent(event);
         // CraftBukkit end
