@@ -13,11 +13,11 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.entity.Entity;
-import org.bukkit.craftbukkit.util.SoftMap;
+import org.bukkit.craftbukkit.util.ConcurrentSoftMap;
 
 public class CraftChunk implements Chunk {
     private WeakReference<net.minecraft.server.Chunk> weakChunk;
-    private final SoftMap<Integer, Block> cache = new SoftMap<Integer, Block>();
+    private final ConcurrentSoftMap<Integer, Block> cache = new ConcurrentSoftMap<Integer, Block>();
     private WorldServer worldServer;
     private int x;
     private int z;
@@ -63,8 +63,13 @@ public class CraftChunk implements Chunk {
         int pos = (x & 0xF) << 11 | (z & 0xF) << 7 | (y & 0x7F);
         Block block = this.cache.get( pos );
         if (block == null) {
-            block = new CraftBlock( this, (getX() << 4) | (x & 0xF), y & 0x7F, (getZ() << 4) | (z & 0xF) );
-            this.cache.put( pos, block );
+            Block newBlock = new CraftBlock( this, (getX() << 4) | (x & 0xF), y & 0x7F, (getZ() << 4) | (z & 0xF) );
+            Block oldBlock = this.cache.put( pos, newBlock );
+            if(oldBlock == null) {
+                block = newBlock;
+            } else {
+                block = oldBlock;
+            } 
         }
         return block;
     }
