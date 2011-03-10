@@ -545,9 +545,11 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     }
 
     public void a(String s, Object[] aobject) {
-        a.info(this.e.name + " lost connection: " + s);
-        this.d.f.a((Packet) (new Packet3Chat("\u00A7e" + this.e.name + " left the game.")));
-        this.d.f.c(this.e);
+        if (!this.c) {
+            a.info(this.e.name + " lost connection: " + s);
+            this.d.f.a((Packet) (new Packet3Chat("\u00A7e" + this.e.name + " left the game.")));
+            this.d.f.c(this.e);
+        }
         this.c = true;
     }
 
