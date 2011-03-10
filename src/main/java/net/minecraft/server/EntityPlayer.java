@@ -334,4 +334,11 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         this.pitch = f2;
         this.yaw = f3;
     }
+
+    // Craftbukkit start
+    @Override
+    public String toString() {
+        return super.toString() + "(" + name + " at " + locX + "," + locY + "," + locZ + ")";
+    }
+    // Craftbukkit end
 }
