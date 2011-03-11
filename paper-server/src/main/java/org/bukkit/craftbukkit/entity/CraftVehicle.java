@@ -19,7 +19,7 @@ public abstract class CraftVehicle extends CraftEntity implements Vehicle {
     }
 
     public boolean setPassenger(Entity passenger) {
-        if(passenger instanceof CraftEntity){
+        if (passenger instanceof CraftEntity){
             ((CraftEntity)passenger).getHandle().setPassengerOf(getHandle());
             return true;
         } else {

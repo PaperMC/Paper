@@ -118,7 +118,7 @@ public final class CraftServer implements Server {
                     found = player;
                     delta = curDelta;
                 }
-                if(curDelta == 0) break;
+                if (curDelta == 0) break;
             }
         }
         return found;

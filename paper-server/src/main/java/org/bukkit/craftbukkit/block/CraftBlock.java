@@ -92,7 +92,7 @@ public class CraftBlock implements Block {
     }
 
     public void setData(final byte data, boolean applyPhysics) {
-        if(applyPhysics) {
+        if (applyPhysics) {
             chunk.getHandle().d.c(x, y, z, data);
         } else {
             chunk.getHandle().d.d(x, y, z, data);
@@ -128,7 +128,7 @@ public class CraftBlock implements Block {
     }
     
     public boolean setTypeId(final int type, final boolean applyPhysics) {
-        if(applyPhysics) {
+        if (applyPhysics) {
             return setTypeId(type);
         } else {
             return chunk.getHandle().d.setTypeId(x, y, z, type);
@@ -136,7 +136,7 @@ public class CraftBlock implements Block {
     }
 
     public boolean setTypeIdAndData(final int type, final byte data, final boolean applyPhysics) {
-        if(applyPhysics) {
+        if (applyPhysics) {
             return chunk.getHandle().d.b(x, y, z, type, data);
         } else {
             return chunk.getHandle().d.setTypeIdAndData(x, y, z, type, data);
@@ -383,12 +383,12 @@ public class CraftBlock implements Block {
         int power = 0;
         BlockRedstoneWire wire = (BlockRedstoneWire) net.minecraft.server.Block.REDSTONE_WIRE;
         net.minecraft.server.World world = chunk.getHandle().d;
-        if((face == BlockFace.DOWN || face == BlockFace.SELF) && world.i(x, y - 1, z, 0)) power = wire.g(world, x, y - 1, z, power);
-        if((face == BlockFace.UP || face == BlockFace.SELF) && world.i(x, y + 1, z, 1)) power = wire.g(world, x, y + 1, z, power);
-        if((face == BlockFace.EAST || face == BlockFace.SELF) && world.i(x, y, z - 1, 2)) power = wire.g(world, x, y, z - 1, power);
-        if((face == BlockFace.WEST || face == BlockFace.SELF) && world.i(x, y, z + 1, 3)) power = wire.g(world, x, y, z + 1, power);
-        if((face == BlockFace.NORTH || face == BlockFace.SELF) && world.i(x - 1, y, z, 4)) power = wire.g(world, x - 1, y, z, power);
-        if((face == BlockFace.SOUTH || face == BlockFace.SELF) && world.i(x + 1, y, z, 5)) power = wire.g(world, x + 1, y, z, power);
+        if ((face == BlockFace.DOWN || face == BlockFace.SELF) && world.i(x, y - 1, z, 0)) power = wire.g(world, x, y - 1, z, power);
+        if ((face == BlockFace.UP || face == BlockFace.SELF) && world.i(x, y + 1, z, 1)) power = wire.g(world, x, y + 1, z, power);
+        if ((face == BlockFace.EAST || face == BlockFace.SELF) && world.i(x, y, z - 1, 2)) power = wire.g(world, x, y, z - 1, power);
+        if ((face == BlockFace.WEST || face == BlockFace.SELF) && world.i(x, y, z + 1, 3)) power = wire.g(world, x, y, z + 1, power);
+        if ((face == BlockFace.NORTH || face == BlockFace.SELF) && world.i(x - 1, y, z, 4)) power = wire.g(world, x - 1, y, z, power);
+        if ((face == BlockFace.SOUTH || face == BlockFace.SELF) && world.i(x + 1, y, z, 5)) power = wire.g(world, x + 1, y, z, power);
         return face == BlockFace.SELF ? power - 1 : power;
     }
     

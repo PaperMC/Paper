@@ -25,7 +25,7 @@ public class CraftFuture<T> implements Runnable, Future<T> {
 
     public void run() {
         synchronized(this) {
-            if(cancelled) {
+            if (cancelled) {
                 return;
             }
             running = true;
@@ -51,7 +51,7 @@ public class CraftFuture<T> implements Runnable, Future<T> {
 
     public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         synchronized(this) {
-            if(isDone()) {
+            if (isDone()) {
                 return getResult();
             }
             this.wait(TimeUnit.MILLISECONDS.convert(timeout, unit));
@@ -60,10 +60,10 @@ public class CraftFuture<T> implements Runnable, Future<T> {
     }
 
     public T getResult() throws ExecutionException {
-        if(cancelled) {
+        if (cancelled) {
             throw new CancellationException();
         }
-        if(e!=null) {
+        if (e!=null) {
             throw new ExecutionException(e);
         }
         return returnStore.getObject();
@@ -83,14 +83,14 @@ public class CraftFuture<T> implements Runnable, Future<T> {
 
     public boolean cancel(boolean mayInterruptIfRunning) {
         synchronized(this) {
-            if(cancelled) {
+            if (cancelled) {
                 return false;
             }
             cancelled = true;
-            if(taskId!=-1) {
+            if (taskId!=-1) {
                 craftScheduler.cancelTask(taskId);
             }
-            if(!running && !done) {
+            if (!running && !done) {
                 return true;
             } else {
                 return false;
