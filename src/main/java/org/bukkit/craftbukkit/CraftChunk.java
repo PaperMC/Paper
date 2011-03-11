@@ -36,11 +36,15 @@ public class CraftChunk implements Chunk {
     public net.minecraft.server.Chunk getHandle() {
         net.minecraft.server.Chunk c = weakChunk.get();
         if (c == null) {
-            weakChunk = new WeakReference<net.minecraft.server.Chunk>(worldServer.c(x,z));
-            c = weakChunk.get();
+            c = worldServer.c(x,z);
+            weakChunk = new WeakReference<net.minecraft.server.Chunk>(c);
         }
         return c;
     }
+
+    void breakLink() {
+        weakChunk.clear();
+    } 
 
     public int getX() {
         return x;
