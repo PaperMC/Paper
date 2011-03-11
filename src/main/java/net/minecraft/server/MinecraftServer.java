@@ -204,7 +204,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
         server.loadPlugins(); // CraftBukkit
     }
 
-    void f() { //CraftBukkit - private -> default
+    void f() { // CraftBukkit - private -> default
         a.info("Saving chunks");
 
         // CraftBukkit start

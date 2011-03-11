@@ -61,7 +61,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public double getEyeHeight(boolean ignoreSneaking) {
-        if(ignoreSneaking) {
+        if (ignoreSneaking) {
             return 1.62D;
         } else {
             if (isSneaking()) {

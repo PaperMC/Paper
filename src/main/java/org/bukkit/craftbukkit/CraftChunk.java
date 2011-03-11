@@ -73,7 +73,9 @@ public class CraftChunk implements Chunk {
         }
         Entity[] entities = new Entity[count];        
         for (int i = 0; i < 8; i++) {
-            for (net.minecraft.server.Entity entity : (net.minecraft.server.Entity[])chunk.m[i].toArray()) {
+            for (Object obj : (net.minecraft.server.Entity[])chunk.m[i].toArray()) {
+                if (!(obj instanceof net.minecraft.server.Entity)) continue; 
+                net.minecraft.server.Entity entity = (net.minecraft.server.Entity) obj;
                 entities[index++] = entity.getBukkitEntity();
             }
         }
@@ -84,7 +86,9 @@ public class CraftChunk implements Chunk {
         int index = 0;
         net.minecraft.server.Chunk chunk = getHandle();
         BlockState[] entities = new BlockState[chunk.l.size()];
-        for (ChunkPosition position : (ChunkPosition[])chunk.l.keySet().toArray()) {
+        for (Object obj : chunk.l.keySet().toArray()) {
+            if (!(obj instanceof ChunkPosition)) continue; 
+            ChunkPosition position = (ChunkPosition) obj;
             entities[index++] = worldServer.getWorld().getBlockAt(position.a, position.b, position.c).getState();
         }
         return entities;

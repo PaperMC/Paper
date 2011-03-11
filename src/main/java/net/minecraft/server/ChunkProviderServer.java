@@ -109,8 +109,8 @@ public class ChunkProviderServer implements IChunkProvider {
         Chunk chunk = (Chunk) this.e.get(i, j); // CraftBukkit
 
         chunk = chunk == null ? (this.g.r ? this.d(i, j) : this.b) : chunk;
-        if(chunk == this.b) return chunk;
-        if(i != chunk.j || j != chunk.k) {
+        if (chunk == this.b) return chunk;
+        if (i != chunk.j || j != chunk.k) {
             MinecraftServer.a.info("Chunk (" + chunk.j + ", " + chunk.k +") stored at  (" + i + ", " + j + ")");
             MinecraftServer.a.info(chunk.getClass().getName());
             Throwable x = new Throwable();

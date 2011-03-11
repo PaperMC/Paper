@@ -51,9 +51,9 @@ public class BlockPumpkin extends Block {
         world.c(i, j, k, l);
     }
 
-    //Craftbukkit start
+    // Craftbukkit start
     public void a(World world, int i, int j, int k, int l) {
-        if(net.minecraft.server.Block.byId[l].c()) {
+        if (net.minecraft.server.Block.byId[l].c()) {
             CraftWorld craftWorld = ((WorldServer) world).getWorld();
             CraftServer server = ((WorldServer) world).getServer();
             org.bukkit.block.Block block = craftWorld.getBlockAt(i, j, k);
@@ -62,5 +62,5 @@ public class BlockPumpkin extends Block {
             server.getPluginManager().callEvent(eventRedstone);            
         }
     }
-    //Craftbukkit end
+    // Craftbukkit end
 }

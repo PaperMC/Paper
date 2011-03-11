@@ -155,7 +155,7 @@ public class CraftWorld implements World {
 
         net.minecraft.server.Chunk chunk = null;
 
-        if(provider.c == null) {
+        if (provider.c == null) {
             chunk = provider.b;
         } else {
             chunk = provider.c.b(x, z);
@@ -169,7 +169,7 @@ public class CraftWorld implements World {
     }
 
     public boolean refreshChunk(int x, int z) {
-        if(!isChunkLoaded(x, z)) {
+        if (!isChunkLoaded(x, z)) {
             return false;
         }
 

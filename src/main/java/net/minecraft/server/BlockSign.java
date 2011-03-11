@@ -105,8 +105,8 @@ public class BlockSign extends BlockContainer {
 
         super.a(world, i, j, k, l);
         
-        //Craftbukkit start
-        if(net.minecraft.server.Block.byId[l].c()) {
+        // Craftbukkit start
+        if (net.minecraft.server.Block.byId[l].c()) {
             CraftWorld craftWorld = ((WorldServer) world).getWorld();
             CraftServer server = ((WorldServer) world).getServer();
             Block block = craftWorld.getBlockAt(i, j, k);
@@ -114,6 +114,6 @@ public class BlockSign extends BlockContainer {
             BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, power, power);
             server.getPluginManager().callEvent(eventRedstone);            
         }
-        //Craftbukkit end
+        // Craftbukkit end
     }
 }

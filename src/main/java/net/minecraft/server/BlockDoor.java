@@ -171,15 +171,18 @@ public class BlockDoor extends Block {
             } else if (l > 0 && Block.byId[l].c()) {
                 boolean flag1 = world.p(i, j, k) || world.p(i, j + 1, k);
 
-                //Craftbukkit start
+                // Craftbukkit start
                 CraftWorld craftWorld = ((WorldServer) world).getWorld();
                 CraftServer server = ((WorldServer) world).getServer();
                 org.bukkit.block.Block block = craftWorld.getBlockAt(i, j, k);
+                org.bukkit.block.Block blockTop = craftWorld.getBlockAt(i, j + 1, k);
                 int power = block.getBlockPower();
-                BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, (world.getData(i, j, k) & 4) > 0 ? 15: 0, flag1 ? 15 : 0);
+                int powerTop = blockTop.getBlockPower();
+                if (powerTop > power) power = powerTop;
+                BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, (world.getData(i, j, k) & 4) > 0 ? 15: 0, power);
                 server.getPluginManager().callEvent(eventRedstone);            
-                this.a(world, i, j, k, eventRedstone.getNewCurrent());
-                //Craftbukkit end
+                this.a(world, i, j, k, eventRedstone.getNewCurrent() > 0);
+                // Craftbukkit end
             }
         }
     }

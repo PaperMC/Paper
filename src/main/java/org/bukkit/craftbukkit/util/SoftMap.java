@@ -100,13 +100,13 @@ public class SoftMap<K,V> {
 
     private V fastGet(K key) {
         SoftMapReference<K,V> ref = map.get(key);
-        if(ref==null) {
+        if (ref==null) {
             return null;
         }
         V value = ref.get();
-        if(value!=null) {
+        if (value!=null) {
             strongReferenceQueue.addFirst(value);
-            if(strongReferenceQueue.size() > strongReferenceSize) {
+            if (strongReferenceQueue.size() > strongReferenceSize) {
                 strongReferenceQueue.removeLast();
             }
         }
@@ -146,7 +146,7 @@ public class SoftMap<K,V> {
     private void fastPut(K key, V value) {
         map.put(key, new SoftMapReference<K,V>(key, value, queue));
         strongReferenceQueue.addFirst(value);
-        if(strongReferenceQueue.size() > strongReferenceSize) {
+        if (strongReferenceQueue.size() > strongReferenceSize) {
             strongReferenceQueue.removeLast();
         }
     }
@@ -167,7 +167,7 @@ public class SoftMap<K,V> {
     public V remove(K key) {
         emptyQueue();
         SoftMapReference<K,V> ref = map.remove(key);
-        if(ref != null) {
+        if (ref != null) {
             return ref.get();
         }
         return null;
