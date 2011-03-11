@@ -115,7 +115,11 @@ public class Configuration extends ConfigurationNode {
     @SuppressWarnings("unchecked")
     private void read(Object input) throws ConfigurationException {
         try {
-            root = (Map<String, Object>)input;
+            if ( null == input ) {
+                root = new HashMap<String, Object>();
+            } else {
+                root = (Map<String, Object>)input;
+            }
         } catch (ClassCastException e) {
             throw new ConfigurationException("Root document must be an key-value structure");
         }
