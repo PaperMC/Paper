@@ -29,37 +29,32 @@ public class LongHashset extends LongHash
     public void add(long key) {
         int mainIdx = (int) (key & 255);
         int outerIdx = (int) ((key >> 32) & 255);
-        rl.lock();
+        wl.lock();
         try {
-            wl.lock();
-            try {
-                long outer[][] = values[mainIdx], inner[];
-                if (outer == null)
-                    values[mainIdx] = outer = new long[256][];
-                inner = outer[outerIdx];
-                if (inner == null) {
-                    synchronized (this) {
-                        outer[outerIdx] = inner = new long[1];
-                        inner[0] = key;
-                        count++;
-                    }
-                } else {
-                    int i;
-                    for (i = 0; i < inner.length; i++) {
-                        if (inner[i] == key) {
-                            return;
-                        }
-                    }
-                    inner = Arrays_copyOf(inner, i + 1);
-                    outer[outerIdx] = inner;
-                    inner[i] = key;
+            long outer[][] = values[mainIdx], inner[];
+            if (outer == null)
+                values[mainIdx] = outer = new long[256][];
+            inner = outer[outerIdx];
+            if (inner == null) {
+                synchronized (this) {
+                    outer[outerIdx] = inner = new long[1];
+                    inner[0] = key;
                     count++;
                 }
-            } finally {
-                wl.unlock();
+            } else {
+                int i;
+                for (i = 0; i < inner.length; i++) {
+                    if (inner[i] == key) {
+                        return;
+                    }
+                }
+                inner = Arrays_copyOf(inner, i + 1);
+                outer[outerIdx] = inner;
+                inner[i] = key;
+                count++;
             }
         } finally {
-            rl.unlock();
+            wl.unlock();
         }
     }
 
@@ -87,7 +82,7 @@ public class LongHashset extends LongHash
     }
 
     public void remove(long key) {
-        rl.lock();
+        wl.lock();
         try {
             long[][] outer = this.values[(int) (key & 255)];
             if (outer == null)
@@ -100,26 +95,21 @@ public class LongHashset extends LongHash
             int max = inner.length - 1;
             for (int i = 0; i <= max; i++) {
                 if (inner[i] == key) {
-                    wl.lock();
-                    try {
-                        count--;
-                        if (i != max) {
-                            inner[i] = inner[max];
-                        }
-                        outer[(int) ((key >> 32) & 255)] = (max == 0 ? null : Arrays_copyOf(inner, max));
-                    } finally {
-                        wl.unlock();
+                    count--;
+                    if (i != max) {
+                        inner[i] = inner[max];
                     }
+                    outer[(int) ((key >> 32) & 255)] = (max == 0 ? null : Arrays_copyOf(inner, max));
                     return;
                 }
             }
         } finally {
-            rl.unlock();
+            wl.unlock();
         }
     }
 
     public long popFirst() {
-        rl.lock();
+        wl.lock();
         try {
             for (long[][] outer : values) {
                 if (outer == null)
@@ -128,20 +118,14 @@ public class LongHashset extends LongHash
                     long[] inner = outer[i];
                     if (inner == null || inner.length == 0)
                         continue;
-                    wl.lock();
-                    try {
-                        count--;
-                        long ret = inner[inner.length - 1];
-                        outer[i] = Arrays_copyOf(inner, inner.length - 1);
-                        return ret;
-                    } finally {
-                        wl.unlock();
-                    }
-
+                    count--;
+                    long ret = inner[inner.length - 1];
+                    outer[i] = Arrays_copyOf(inner, inner.length - 1);
+                    return ret;
                 }
             }
         } finally {
-            rl.unlock();
+            wl.unlock();
         }
         return 0;
     }
