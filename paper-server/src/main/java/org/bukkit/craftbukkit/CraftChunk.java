@@ -89,7 +89,7 @@ public class CraftChunk implements Chunk {
         for (Object obj : chunk.l.keySet().toArray()) {
             if (!(obj instanceof ChunkPosition)) continue; 
             ChunkPosition position = (ChunkPosition) obj;
-            entities[index++] = worldServer.getWorld().getBlockAt(position.a, position.b, position.c).getState();
+            entities[index++] = worldServer.getWorld().getBlockAt(position.a + (chunk.j << 4), position.b, position.c + (chunk.k << 4)).getState();
         }
         return entities;
     }
