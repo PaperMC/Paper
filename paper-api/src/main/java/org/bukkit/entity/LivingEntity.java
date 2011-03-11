@@ -3,6 +3,8 @@ package org.bukkit.entity;
 
 import java.util.HashSet;
 import java.util.List;
+
+import org.bukkit.Location;
 import org.bukkit.block.Block;
 
 /**
@@ -37,6 +39,13 @@ public interface LivingEntity extends Entity {
      * @return Height of the entity's eyes above its Location
      */
     public double getEyeHeight(boolean ignoreSneaking);
+
+    /**
+     * Get a Location detailing the current eye position of the LivingEntity.
+     *
+     * @return a Location at the eyes of the LivingEntity.
+     */
+    public Location getEyeLocation();
 
     /**
      * Gets all blocks along the player's line of sight

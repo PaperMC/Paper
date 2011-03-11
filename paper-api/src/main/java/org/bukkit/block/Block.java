@@ -4,7 +4,6 @@ import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.Location;
-import org.bukkit.block.BlockState;
 
 /**
  * Represents a block. This is a live object, and only one Block may exist for
@@ -136,6 +135,8 @@ public interface Block {
      * @param data New block specific metadata
      */
     void setData(byte data);
+    
+    void setData(byte data, boolean applyPhyiscs);
 
     /**
      * Sets the type of this block
@@ -151,6 +152,10 @@ public interface Block {
      * @return whether the block was changed
      */
     boolean setTypeId(int type);
+    
+    boolean setTypeId(int type, boolean applyPhysics);
+    
+    boolean setTypeIdAndData(int type, byte data, boolean applyPhyiscs);
 
     /**
      * Gets the face relation of this block compared to the given block<br />
@@ -201,4 +206,33 @@ public interface Block {
      * @return
      */
     boolean isBlockIndirectlyPowered();
+
+    /**
+     * Returns true if the block face is being powered by Redstone.
+     *
+     * @return
+     */
+    boolean isBlockFacePowered(BlockFace face);
+
+    /**
+     * Returns true if the block face is being indirectly powered by Redstone.
+     *
+     * @return
+     */
+    boolean isBlockFaceIndirectlyPowered(BlockFace face);
+   
+    /**
+     * Returns the redstone power being provided to this block face
+     * 
+     * @param face the face of the block to query or BlockFace.SELF for the block itself
+     * @return 
+     */
+    int getBlockPower(BlockFace face);
+
+    /**
+     * Returns the redstone power being provided to this block
+     * 
+     * @return 
+     */
+    int getBlockPower();
 }
