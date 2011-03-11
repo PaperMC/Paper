@@ -45,6 +45,7 @@ public class CraftWorld implements World {
     }
 
     public void preserveChunk( CraftChunk chunk ) {
+        chunk.breakLink();
         unloadedChunks.put( (chunk.getX() << 16) + chunk.getZ(), chunk );
     }
 
@@ -141,6 +142,7 @@ public class CraftWorld implements World {
             provider.a(chunk);
         }
 
+        preserveChunk((CraftChunk)chunk.bukkitChunk);
         provider.a.remove(x, z);
         provider.e.remove(x, z);
         provider.f.remove(chunk);
