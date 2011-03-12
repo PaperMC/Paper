@@ -49,6 +49,13 @@ public interface Player extends HumanEntity, CommandSender {
      * @return the player's address
      */
     public InetSocketAddress getAddress();
+    
+    /**
+     * Sends this sender a message raw
+     *
+     * @param message Message to be displayed
+     */
+    public void sendRawMessage(String message);
 
     /**
      * Kicks player with custom kick message.
