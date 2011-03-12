@@ -13,7 +13,12 @@ public class ConsoleCommandHandler {
         this.b = minecraftserver;
     }
 
-    public void a(ServerCommand servercommand) {
+    // CraftBukkit - All calls to the following below:
+    // this.a( String s1, String msg );
+    // are changed to:
+    // this.notify( ICommandListener icommandlistener, String msg );
+
+    public boolean a(ServerCommand servercommand) { // CraftBukkit - returns boolean
         String s = servercommand.a;
         ICommandListener icommandlistener = servercommand.b;
         String s1 = icommandlistener.c();
@@ -24,17 +29,17 @@ public class ConsoleCommandHandler {
             if (s.toLowerCase().startsWith("list")) {
                 icommandlistener.b("Connected players: " + serverconfigurationmanager.c());
             } else if (s.toLowerCase().startsWith("stop")) {
-                this.a(s1, "Stopping the server..");
+                this.notify(icommandlistener, "Stopping the server.."); // CraftBukkit - notify command sender
                 this.b.a();
             } else if (s.toLowerCase().startsWith("save-all")) {
-                this.a(s1, "Forcing save..");
+                this.notify(icommandlistener, "Forcing save.."); // CraftBukkit - notify command sender
                 this.b.f(); // CraftBukkit - We should save all worlds on save-all.
-                this.a(s1, "Save complete.");
+                this.notify(icommandlistener, "Save complete."); // CraftBukkit - notify command sender
             } else if (s.toLowerCase().startsWith("save-off")) {
-                this.a(s1, "Disabling level saving..");
+                this.notify(icommandlistener, "Disabling level saving.."); // CraftBukkit - notify command sender
                 worldserver.w = true;
             } else if (s.toLowerCase().startsWith("save-on")) {
-                this.a(s1, "Enabling level saving..");
+                this.notify(icommandlistener, "Enabling level saving.."); // CraftBukkit - notify command sender
                 worldserver.w = false;
             } else {
                 String s2;
@@ -42,28 +47,28 @@ public class ConsoleCommandHandler {
                 if (s.toLowerCase().startsWith("op ")) {
                     s2 = s.substring(s.indexOf(" ")).trim();
                     serverconfigurationmanager.e(s2);
-                    this.a(s1, "Opping " + s2);
+                    this.notify(icommandlistener, "Opping " + s2); // CraftBukkit - notify command sender
                     serverconfigurationmanager.a(s2, "\u00A7eYou are now op!");
                 } else if (s.toLowerCase().startsWith("deop ")) {
                     s2 = s.substring(s.indexOf(" ")).trim();
                     serverconfigurationmanager.f(s2);
                     serverconfigurationmanager.a(s2, "\u00A7eYou are no longer op!");
-                    this.a(s1, "De-opping " + s2);
+                    this.notify(icommandlistener, "De-opping " + s2); // CraftBukkit - notify command sender
                 } else if (s.toLowerCase().startsWith("ban-ip ")) {
                     s2 = s.substring(s.indexOf(" ")).trim();
                     serverconfigurationmanager.c(s2);
-                    this.a(s1, "Banning ip " + s2);
+                    this.notify(icommandlistener, "Banning ip " + s2); // CraftBukkit - notify command sender
                 } else if (s.toLowerCase().startsWith("pardon-ip ")) {
                     s2 = s.substring(s.indexOf(" ")).trim();
                     serverconfigurationmanager.d(s2);
-                    this.a(s1, "Pardoning ip " + s2);
+                    this.notify(icommandlistener, "Pardoning ip " + s2); // CraftBukkit - notify command sender
                 } else {
                     EntityPlayer entityplayer;
 
                     if (s.toLowerCase().startsWith("ban ")) {
                         s2 = s.substring(s.indexOf(" ")).trim();
                         serverconfigurationmanager.a(s2);
-                        this.a(s1, "Banning " + s2);
+                        this.notify(icommandlistener, "Banning " + s2); // CraftBukkit - notify command sender
                         entityplayer = serverconfigurationmanager.i(s2);
                         if (entityplayer != null) {
                             entityplayer.a.a("Banned by admin");
@@ -71,12 +76,16 @@ public class ConsoleCommandHandler {
                     } else if (s.toLowerCase().startsWith("pardon ")) {
                         s2 = s.substring(s.indexOf(" ")).trim();
                         serverconfigurationmanager.b(s2);
-                        this.a(s1, "Pardoning " + s2);
+                        this.notify(icommandlistener, "Pardoning " + s2); // CraftBukkit - notify command sender
                     } else {
                         int i;
 
                         if (s.toLowerCase().startsWith("kick ")) {
-                            s2 = s.substring(s.indexOf(" ")).trim();
+                            // CraftBukkit - Start - Add kick message compatibility
+                            String[] parts = s.split(" ");
+                            s2 = ( parts.length >= 2 ) ? parts[1] : "";
+                            // CraftBukkit - End
+                            // s2 = s.substring(s.indexOf(" ")).trim(); // CraftBukkit - Removed
                             entityplayer = null;
 
                             for (i = 0; i < serverconfigurationmanager.b.size(); ++i) {
@@ -89,7 +98,7 @@ public class ConsoleCommandHandler {
 
                             if (entityplayer != null) {
                                 entityplayer.a.a("Kicked by admin");
-                                this.a(s1, "Kicking " + entityplayer.name);
+                                this.notify(icommandlistener, "Kicking " + entityplayer.name); // CraftBukkit - notify command sender
                             } else {
                                 icommandlistener.b("Can\'t find user " + s2 + ". No kick.");
                             }
@@ -108,7 +117,7 @@ public class ConsoleCommandHandler {
                                         icommandlistener.b("Can\'t find user " + astring[2] + ". No tp.");
                                     } else {
                                         entityplayer.a.a(entityplayer2.locX, entityplayer2.locY, entityplayer2.locZ, entityplayer2.yaw, entityplayer2.pitch);
-                                        this.a(s1, "Teleporting " + astring[1] + " to " + astring[2] + ".");
+                                        this.notify(icommandlistener, "Teleporting " + astring[1] + " to " + astring[2] + "."); // CraftBukkit - notify command sender
                                     }
                                 } else {
                                     icommandlistener.b("Syntax error, please provice a source and a target.");
@@ -119,7 +128,7 @@ public class ConsoleCommandHandler {
                                 if (s.toLowerCase().startsWith("give ")) {
                                     astring = s.split(" ");
                                     if (astring.length != 3 && astring.length != 4) {
-                                        return;
+                                        return true;
                                     }
 
                                     s3 = astring[1];
@@ -129,7 +138,7 @@ public class ConsoleCommandHandler {
                                             int j = Integer.parseInt(astring[2]);
 
                                             if (Item.byId[j] != null) {
-                                                this.a(s1, "Giving " + entityplayer2.name + " some " + j);
+                                                this.notify(icommandlistener, "Giving " + entityplayer2.name + " some " + j); // CraftBukkit - notify command sender
                                                 int k = 1;
 
                                                 if (astring.length > 3) {
@@ -157,7 +166,7 @@ public class ConsoleCommandHandler {
                                 } else if (s.toLowerCase().startsWith("time ")) {
                                     astring = s.split(" ");
                                     if (astring.length != 3) {
-                                        return;
+                                        return true;
                                     }
 
                                     s3 = astring[1];
@@ -166,10 +175,10 @@ public class ConsoleCommandHandler {
                                         i = Integer.parseInt(astring[2]);
                                         if ("add".equalsIgnoreCase(s3)) {
                                             worldserver.a(worldserver.k() + (long) i);
-                                            this.a(s1, "Added " + i + " to time");
+                                            this.notify(icommandlistener, "Added " + i + " to time"); // CraftBukkit - notify command sender
                                         } else if ("set".equalsIgnoreCase(s3)) {
                                             worldserver.a((long) i);
-                                            this.a(s1, "Set time to " + i);
+                                            this.notify(icommandlistener, "Set time to " + i); // CraftBukkit - notify command sender
                                         } else {
                                             icommandlistener.b("Unknown method, use either \"add\" or \"set\"");
                                         }
@@ -195,7 +204,8 @@ public class ConsoleCommandHandler {
                                 } else if (s.toLowerCase().startsWith("whitelist ")) {
                                     this.a(s1, s, icommandlistener);
                                 } else {
-                                    a.info("Unknown console command. Type \"help\" for help.");
+                                    icommandlistener.b("Unknown console command. Type \"help\" for help."); // CraftBukkit - Send to listener not log
+                                    return false;
                                 }
                             }
                         }
@@ -205,6 +215,8 @@ public class ConsoleCommandHandler {
         } else {
             this.a(icommandlistener);
         }
+
+        return true;
     }
 
     private void a(String s, String s1, ICommandListener icommandlistener) {
@@ -214,10 +226,10 @@ public class ConsoleCommandHandler {
             String s2 = astring[1].toLowerCase();
 
             if ("on".equals(s2)) {
-                this.a(s, "Turned on white-listing");
+                this.notify(icommandlistener, "Turned on white-listing"); // CraftBukkit - notify command sender
                 this.b.d.b("white-list", true);
             } else if ("off".equals(s2)) {
-                this.a(s, "Turned off white-listing");
+                this.notify(icommandlistener, "Turned off white-listing"); // CraftBukkit - notify command sender
                 this.b.d.b("white-list", false);
             } else if ("list".equals(s2)) {
                 Set set = this.b.f.e();
@@ -236,14 +248,14 @@ public class ConsoleCommandHandler {
                 if ("add".equals(s2) && astring.length == 3) {
                     s5 = astring[2].toLowerCase();
                     this.b.f.k(s5);
-                    this.a(s, "Added " + s5 + " to white-list");
+                    this.notify(icommandlistener, "Added " + s5 + " to white-list"); // CraftBukkit - notify command sender
                 } else if ("remove".equals(s2) && astring.length == 3) {
                     s5 = astring[2].toLowerCase();
                     this.b.f.l(s5);
-                    this.a(s, "Removed " + s5 + " from white-list");
+                    this.notify(icommandlistener, "Removed " + s5 + " from white-list"); // CraftBukkit - notify command sender
                 } else if ("reload".equals(s2)) {
                     this.b.f.f();
-                    this.a(s, "Reloaded white-list from file");
+                    this.notify(icommandlistener, "Reloaded white-list from file"); // CraftBukkit - notify command sender
                 }
             }
         }
@@ -273,9 +285,18 @@ public class ConsoleCommandHandler {
         icommandlistener.b("   time <add|set> <amount>   adds to or sets the world time (0-24000)");
     }
 
+    // CraftBukkit start
+    // Notify sender and ops / log
+    private void notify(ICommandListener commandListener, String msg ) {
+        commandListener.b( msg );
+        this.a( commandListener.c(), msg );
+    }
+    // CraftBukkit end
+
     private void a(String s, String s1) {
         String s2 = s + ": " + s1;
 
+        // CraftBukkit - This notifies ops and logs
         this.b.f.j("\u00A77(" + s2 + ")");
         a.info(s2);
     }

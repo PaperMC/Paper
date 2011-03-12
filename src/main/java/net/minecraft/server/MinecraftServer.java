@@ -34,7 +34,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
     public PropertyManager d;
     // public WorldServer e; // CraftBukkit - removed
     public ServerConfigurationManager f;
-    private ConsoleCommandHandler o;
+    public ConsoleCommandHandler o; // CraftBukkit - made public
     private boolean p = true;
     public boolean g = false;
     int h = 0;
@@ -377,13 +377,8 @@ public class MinecraftServer implements Runnable, ICommandListener {
         while (this.r.size() > 0) {
             ServerCommand servercommand = (ServerCommand) this.r.remove(0);
 
-            // CraftBukkit start
-            if (server.dispatchCommand(console, servercommand.a)) {
-                continue;
-            }
-            // CraftBukkit end
-
-            this.o.a(servercommand);
+            server.dispatchCommand(console, servercommand); // CraftBukkit
+            // this.o.a(servercommand); // CraftBukkit - Removed its now called in server.displatchCommand
         }
     }
 

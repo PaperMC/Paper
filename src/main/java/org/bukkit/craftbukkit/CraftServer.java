@@ -21,6 +21,8 @@ import net.minecraft.server.ServerNBTManager;
 import net.minecraft.server.WorldLoaderServer;
 import net.minecraft.server.WorldManager;
 import net.minecraft.server.WorldServer;
+import net.minecraft.server.ServerCommand;
+import net.minecraft.server.ICommandListener;
 import org.bukkit.*;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
@@ -163,6 +165,33 @@ public final class CraftServer implements Server {
         return server.e;
     }
 
+    // NOTE: These are dependent on the corrisponding call in MinecraftServer
+    // so if that changes this will need to as well
+    public int getPort() {
+        return this.getConfigInt("server-port", 25565);
+    }
+
+    public String getIp() {
+        return this.getConfigString("server-ip", "");
+    }
+
+    public String getServerName()
+    {
+        return this.getConfigString("server-name", "Unknown Server");
+    }
+
+    // NOTE: Temporary calls through to server.properies until its replaced
+    private String getConfigString(String variable, String defaultValue)
+    {
+        return this.console.d.a(variable, defaultValue);
+    }
+
+    private int getConfigInt(String variable, int defaultValue)
+    {
+        return this.console.d.a(variable, defaultValue);
+    }
+    // End Temporary calls
+
     public PluginManager getPluginManager() {
         return pluginManager;
     }
@@ -179,8 +208,27 @@ public final class CraftServer implements Server {
         return server;
     }
 
+
+    // NOTE: Should only be called from MinecraftServer.b()
+    public boolean dispatchCommand(CommandSender sender, ServerCommand serverCommand) {
+        if ( commandMap.dispatch(sender, serverCommand.a) ) {
+            return true;
+        }
+        return console.o.a(serverCommand);
+    }
+
     public boolean dispatchCommand(CommandSender sender, String commandLine) {
-        return commandMap.dispatch(sender, commandLine);
+        // CraftBukkit native commands
+        if (commandMap.dispatch(sender, commandLine)) {
+            return true;
+        }
+
+        if ( ! sender.isOp() ) {
+            return false;
+        }
+
+        // See if the server can process this command
+        return console.o.a(new ServerCommand(commandLine, new CommandListener(sender)));
     }
 
     public void reload() {
@@ -207,7 +255,7 @@ public final class CraftServer implements Server {
 
     @Override
     public String toString() {
-        return "CraftServer{" + "serverName=" + serverName + "serverVersion=" + serverVersion + "protocolVersion=" + protocolVersion + '}';
+        return "CraftServer{" + "serverName=" + serverName + ",serverVersion=" + serverVersion + ",protocolVersion=" + protocolVersion + '}';
     }
 
     public World createWorld(String name, World.Environment environment) {
@@ -217,7 +265,7 @@ public final class CraftServer implements Server {
         if (world != null) {
             return world;
         }
-        
+
         if ((folder.exists()) && (!folder.isDirectory())) {
             throw new IllegalArgumentException("File exists with the name '" + name + "' and isn't a folder");
         }
@@ -300,5 +348,24 @@ public final class CraftServer implements Server {
 
     public void savePlayers() {
         server.d();
+    }
+
+    // Inner class to capture the output of default server commands
+    class CommandListener implements ICommandListener {
+        private final CommandSender commandSender;
+        private final String prefix;
+        CommandListener(CommandSender commandSender) {
+            this.commandSender = commandSender;
+            String[] parts = commandSender.getClass().getName().split( "\\." );
+            this.prefix = parts[parts.length-1];
+        }
+
+        public void b(String msg) {
+            this.commandSender.sendMessage(msg);
+        }
+
+        public String c() {
+            return this.prefix;
+        }
     }
 }
