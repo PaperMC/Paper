@@ -77,6 +77,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         this.entity = entity;
     }
 
+    public void sendRawMessage(String message) {
+        getHandle().a.b(new Packet3Chat(message));
+    }
+
     public void sendMessage(String message) {
         for (final String line: TextWrapper.wrapText(message)) {
             getHandle().a.b(new Packet3Chat(line));
