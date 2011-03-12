@@ -38,7 +38,9 @@ public final class PluginCommand extends Command {
         }
 
         if (!success && usageMessage.length() > 0) {
-            sender.sendMessage(usageMessage.replace("<command>", commandLabel));
+            for (String line: usageMessage.replace("<command>", commandLabel).split("\n")) {
+                sender.sendMessage( line );
+            }
         }
         
         return success;
