@@ -5,9 +5,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
-public class LongHashset extends LongHash
-{
-    long values[][][] = new long[256][][];
+public class LongHashset extends LongHash {
+    long[][][] values = new long[256][][];
     int count = 0;
     ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
     ReadLock rl = rwl.readLock();
@@ -16,7 +15,7 @@ public class LongHashset extends LongHash
     public boolean isEmpty() {
         rl.lock();
         try {
-            return count == 0;
+            return this.count == 0;
         } finally {
             rl.unlock();
         }
@@ -27,19 +26,20 @@ public class LongHashset extends LongHash
     }
 
     public void add(long key) {
-        int mainIdx = (int) (key & 255);
-        int outerIdx = (int) ((key >> 32) & 255);
         wl.lock();
         try {
-            long outer[][] = values[mainIdx], inner[];
-            if (outer == null)
-                values[mainIdx] = outer = new long[256][];
-            inner = outer[outerIdx];
+            int mainIdx = (int) (key & 255);
+            long outer[][] = this.values[mainIdx];
+            if (outer == null) this.values[mainIdx] = outer = new long[256][];
+
+            int outerIdx = (int) ((key >> 32) & 255);
+            long inner[] = outer[outerIdx];
+
             if (inner == null) {
                 synchronized (this) {
                     outer[outerIdx] = inner = new long[1];
                     inner[0] = key;
-                    count++;
+                    this.count++;
                 }
             } else {
                 int i;
@@ -51,7 +51,7 @@ public class LongHashset extends LongHash
                 inner = Arrays_copyOf(inner, i + 1);
                 outer[outerIdx] = inner;
                 inner[i] = key;
-                count++;
+                this.count++;
             }
         } finally {
             wl.unlock();
@@ -59,23 +59,18 @@ public class LongHashset extends LongHash
     }
 
     public boolean containsKey(long key) {
-        int mainIdx = (int) (key & 255);
-        int outerIdx = (int) ((key >> 32) & 255);
         rl.lock();
         try {
-            long outer[][] = values[mainIdx], inner[];
-            if (outer == null)
-                return false;
-            inner = outer[outerIdx];
-            if (inner == null)
-                return false;
-            else {
-                for (long entry : inner) {
-                    if (entry == key)
-                        return true;
-                }
-                return false;
+            long[][] outer = this.values[(int) (key & 255)];
+            if (outer == null) return false;
+
+            long[] inner = outer[(int) ((key >> 32) & 255)];
+            if (inner == null) return false;
+
+            for (long entry: inner) {
+                if (entry == key) return true;
             }
+            return false;
         } finally {
             rl.unlock();
         }
@@ -85,20 +80,19 @@ public class LongHashset extends LongHash
         wl.lock();
         try {
             long[][] outer = this.values[(int) (key & 255)];
-            if (outer == null)
-                return;
+            if (outer == null) return;
 
             long[] inner = outer[(int) ((key >> 32) & 255)];
-            if (inner == null)
-                return;
+            if (inner == null) return;
 
             int max = inner.length - 1;
             for (int i = 0; i <= max; i++) {
                 if (inner[i] == key) {
-                    count--;
+                    this.count--;
                     if (i != max) {
                         inner[i] = inner[max];
                     }
+
                     outer[(int) ((key >> 32) & 255)] = (max == 0 ? null : Arrays_copyOf(inner, max));
                     return;
                 }
@@ -111,16 +105,17 @@ public class LongHashset extends LongHash
     public long popFirst() {
         wl.lock();
         try {
-            for (long[][] outer : values) {
-                if (outer == null)
-                    continue;
+            for (long[][] outer: this.values) {
+                if (outer == null) continue;
+
                 for (int i = 0; i < outer.length; i++) {
                     long[] inner = outer[i];
-                    if (inner == null || inner.length == 0)
-                        continue;
-                    count--;
+                    if (inner == null || inner.length == 0) continue;
+
+                    this.count--;
                     long ret = inner[inner.length - 1];
                     outer[i] = Arrays_copyOf(inner, inner.length - 1);
+
                     return ret;
                 }
             }
@@ -134,14 +129,14 @@ public class LongHashset extends LongHash
         int index = 0;
         rl.lock();
         try {
-            long ret[] = new long[count];
-            for (long[][] outer : values) {
-                if (outer == null)
-                    continue;
-                for (long[] inner : outer) {
-                    if (inner == null)
-                        continue;
-                    for (long entry : inner) {
+            long[] ret = new long[this.count];
+            for (long[][] outer: this.values) {
+                if (outer == null) continue;
+
+                for (long[] inner: outer) {
+                    if (inner == null) continue;
+
+                    for (long entry: inner) {
                         ret[index++] = entry;
                     }
                 }
