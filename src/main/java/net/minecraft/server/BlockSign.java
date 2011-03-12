@@ -106,7 +106,7 @@ public class BlockSign extends BlockContainer {
         super.a(world, i, j, k, l);
         
         // Craftbukkit start
-        if (net.minecraft.server.Block.byId[l].c()) {
+        if (net.minecraft.server.Block.byId[l] != null && net.minecraft.server.Block.byId[l].c()) {
             CraftWorld craftWorld = ((WorldServer) world).getWorld();
             CraftServer server = ((WorldServer) world).getServer();
             Block block = craftWorld.getBlockAt(i, j, k);
