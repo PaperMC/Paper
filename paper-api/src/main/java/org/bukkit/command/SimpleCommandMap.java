@@ -196,16 +196,16 @@ public final class SimpleCommandMap implements CommandMap {
                 server.reload();
                 sender.sendMessage(ChatColor.GREEN + "Reload complete.");
             } else {
-                sender.sendMessage(ChatColor.RED + "You do not have sufficient access" + " to reload this server.");
+                sender.sendMessage(ChatColor.RED + "You do not have sufficient access to reload this server.");
             }
             return true;
         }
     }
-    
+
     private static class PluginsCommand extends Command {
-        
+
         private final Server server;
-        
+
         public PluginsCommand(String name, Server server) {
             super(name);
             this.server = server;
@@ -213,13 +213,13 @@ public final class SimpleCommandMap implements CommandMap {
             this.usageMessage = "/plugins";
             this.setAliases(Arrays.asList("pl"));
         }
-        
+
         @Override
         public boolean execute(CommandSender sender, String currentAlias, String[] args) {
             sender.sendMessage("Plugins: " + getPluginList());
             return true;
         }
-        
+
         private String getPluginList() {
             StringBuilder pluginList = new StringBuilder();
             Plugin[] plugins = server.getPluginManager().getPlugins();
