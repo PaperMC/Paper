@@ -59,6 +59,12 @@ public interface Plugin extends CommandExecutor {
     public void onDisable();
 
     /**
+     * Called after a plugin is loaded but before it has been enabled.
+     * When mulitple plugins are loaded, the onLoad() for all plugins is called before any onEnable() is called.
+     */
+    public void onLoad();
+
+    /**
      * Called when this plugin is enabled
      */
     public void onEnable();
