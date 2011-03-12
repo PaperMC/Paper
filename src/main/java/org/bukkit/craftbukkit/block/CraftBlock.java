@@ -139,7 +139,11 @@ public class CraftBlock implements Block {
         if (applyPhysics) {
             return chunk.getHandle().d.b(x, y, z, type, data);
         } else {
-            return chunk.getHandle().d.setTypeIdAndData(x, y, z, type, data);
+            boolean success = chunk.getHandle().d.setTypeIdAndData(x, y, z, type, data);
+            if(success) {
+                chunk.getHandle().d.g(x, y, z);
+            }
+            return success;
         }
     }
 
