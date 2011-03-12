@@ -28,7 +28,7 @@ public interface CommandSender {
     public boolean isPlayer();
 
     /**
-     * Returns the server instance that this player is running through
+     * Returns the server instance that this command is running on
      *
      * @return Server instance
      */
