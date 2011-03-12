@@ -282,7 +282,7 @@ public class BlockRedstoneWire extends Block {
                 world.e(i, j, k, 0);
             } else 
             // Craftbukkit
-            if ((Block.byId[l] != null && Block.byId[l].c()) || Block.DIODE_OFF.id == l && Block.DIODE_ON.id == l) { 
+            if ((Block.byId[l] != null && Block.byId[l].c()) || Block.DIODE_OFF.id == l || Block.DIODE_ON.id == l) { 
                 this.g(world, i, j, k);
             }
 
