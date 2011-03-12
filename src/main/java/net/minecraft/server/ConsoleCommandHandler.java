@@ -85,7 +85,6 @@ public class ConsoleCommandHandler {
                             String[] parts = s.split(" ");
                             s2 = ( parts.length >= 2 ) ? parts[1] : "";
                             // CraftBukkit - End
-                            // s2 = s.substring(s.indexOf(" ")).trim(); // CraftBukkit - Removed
                             entityplayer = null;
 
                             for (i = 0; i < serverconfigurationmanager.b.size(); ++i) {
