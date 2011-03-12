@@ -60,6 +60,13 @@ public final class CraftServer implements Server {
             try {
                 Plugin[] plugins = pluginManager.loadPlugins(pluginFolder);
                 for (Plugin plugin : plugins) {
+                    try {
+                        plugin.onLoad();
+                    } catch (AbstractMethodError ame) {
+                        Logger.getLogger("Minecraft").warning("Plugin: " + plugin.getDescription().getName() + " does not support the onLoad() method");
+                    }
+                }
+                for (Plugin plugin : plugins) {
                     loadPlugin(plugin);
                 }
             } catch (Throwable ex) {
