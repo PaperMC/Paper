@@ -389,7 +389,7 @@ public class CraftBlock implements Block {
         if ((face == BlockFace.WEST || face == BlockFace.SELF) && world.i(x, y, z + 1, 3)) power = wire.g(world, x, y, z + 1, power);
         if ((face == BlockFace.NORTH || face == BlockFace.SELF) && world.i(x - 1, y, z, 4)) power = wire.g(world, x - 1, y, z, power);
         if ((face == BlockFace.SOUTH || face == BlockFace.SELF) && world.i(x + 1, y, z, 5)) power = wire.g(world, x + 1, y, z, power);
-        return face == BlockFace.SELF ? power - 1 : power;
+        return power > 0 ? power : (face == BlockFace.SELF ? isBlockIndirectlyPowered() : isBlockFaceIndirectlyPowered(face)) ? 15 : 0;
     }
     
     public int getBlockPower() {
