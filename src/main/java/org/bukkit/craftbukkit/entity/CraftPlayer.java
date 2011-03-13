@@ -17,11 +17,9 @@ import org.bukkit.craftbukkit.TextWrapper;
 import org.bukkit.entity.Player;
 
 public class CraftPlayer extends CraftHumanEntity implements Player {
-    private String name;
 
     public CraftPlayer(CraftServer server, EntityPlayer entity) {
         super(server, entity);
-        name = getName();
     }
 
     public boolean isOp() {
@@ -88,11 +86,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public String getDisplayName() {
-        return name;
+        return getHandle().displayName;
     }
 
     public void setDisplayName(final String name) {
-        this.name = name;
+        getHandle().displayName = name;
     }
 
     @Override

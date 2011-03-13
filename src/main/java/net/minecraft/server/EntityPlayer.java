@@ -50,7 +50,13 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         this.name = s;
         this.c = iteminworldmanager;
         this.height = 0.0F;
+
+        // CraftBukkit start
+        this.displayName = this.name;
     }
+
+    public String displayName;
+    // CraftBukkit end
 
     public void l() {
         this.activeContainer.a((ICrafting) this);
