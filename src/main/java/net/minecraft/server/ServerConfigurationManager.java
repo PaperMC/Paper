@@ -169,6 +169,7 @@ public class ServerConfigurationManager {
 
         entityplayer1.id = entityplayer.id;
         entityplayer1.a = entityplayer.a;
+        entityplayer1.displayName = entityplayer.displayName; // CraftBukkit
         ((WorldServer) entityplayer.world).u.d((int) entityplayer1.locX >> 4, (int) entityplayer1.locZ >> 4);
 
         while (entityplayer.world.a(entityplayer1, entityplayer1.boundingBox).size() != 0) {
