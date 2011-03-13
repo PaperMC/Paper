@@ -139,14 +139,14 @@ public abstract class Event implements Serializable {
          */
 
         /**
-         * Called when a player joins a server
+         * Called when a player enters the world on a server
          *
          * @see org.bukkit.event.player.PlayerEvent
          */
         PLAYER_JOIN (Category.PLAYER),
 
         /**
-         * Called when a player is attempting to join a server
+         * Called when a player is attempting to connect to the server
          *
          * @see org.bukkit.event.player.PlayerLoginEvent
          */
@@ -259,7 +259,7 @@ public abstract class Event implements Serializable {
          *
          * @see org.bukkit.event.block.BlockDamageEvent
          */
-        BLOCK_DAMAGED (Category.BLOCK),
+        BLOCK_DAMAGE (Category.BLOCK),
 
         /**
          * Called when a block is undergoing a universe physics
@@ -277,7 +277,7 @@ public abstract class Event implements Serializable {
          *
          * @see org.bukkit.event.block.BlockFromToEvent
          */
-        BLOCK_FLOW (Category.BLOCK),
+        BLOCK_FROMTO (Category.BLOCK),
 
         /**
          * Called when a block is being set on fire from another block, such as
@@ -302,14 +302,14 @@ public abstract class Event implements Serializable {
          *
          * @see org.bukkit.event.block.BlockRightClickEvent
          */
-        BLOCK_RIGHTCLICKED (Category.BLOCK),
+        BLOCK_RIGHTCLICK (Category.BLOCK),
 
         /**
          * Called when a player is attempting to place a block
          *
          * @see org.bukkit.event.block.BlockPlaceEvent
          */
-        BLOCK_PLACED (Category.BLOCK),
+        BLOCK_PLACE (Category.BLOCK),
 
         /**
          * Called when an entity interacts with a block (lever, door, pressure plate, chest, furnace)
@@ -338,14 +338,6 @@ public abstract class Event implements Serializable {
          * @see org.bukkit.event.block.SignChangeEvent
          */
         SIGN_CHANGE (Category.BLOCK),
-
-        /**
-         * Called when a liquid attempts to flow into a block which already
-         * contains a "breakable" block, such as redstone wire
-         *
-         * @todo: add javadoc see comment
-         */
-        LIQUID_DESTROY (Category.BLOCK),
 
         /**
          * Called when a block changes redstone current. Only triggered on blocks
@@ -439,14 +431,14 @@ public abstract class Event implements Serializable {
          *
          * @see org.bukkit.event.world.ChunkLoadEvent
          */
-        CHUNK_LOADED (Category.WORLD),
+        CHUNK_LOAD (Category.WORLD),
 
         /**
          * Called when a chunk is unloaded
          *
          * @see org.bukkit.event.world.ChunkUnloadEvent
          */
-        CHUNK_UNLOADED (Category.WORLD),
+        CHUNK_UNLOAD (Category.WORLD),
 
         /**
          * Called when a chunk needs to be generated
@@ -466,12 +458,12 @@ public abstract class Event implements Serializable {
          * Called when a world is saved
          * 
          */
-        WORLD_SAVED (Category.WORLD),
+        WORLD_SAVE (Category.WORLD),
 
         /**
          * Called when a World is loaded
          */
-        WORLD_LOADED (Category.WORLD),
+        WORLD_LOAD (Category.WORLD),
 
         /**
          * LIVING_ENTITY EVENTS
@@ -490,7 +482,7 @@ public abstract class Event implements Serializable {
          *
          * @see org.bukkit.event.entity.EntityDamageEvent
          */
-        ENTITY_DAMAGED(Category.LIVING_ENTITY),
+        ENTITY_DAMAGE (Category.LIVING_ENTITY),
 
         /**
          * Called when a LivingEntity dies
@@ -525,7 +517,7 @@ public abstract class Event implements Serializable {
          * 
          * @see org.bukkit.event.entity.EntityExplodeTriggerEvent
          */
-        EXPLOSION_PRIMED (Category.LIVING_ENTITY),
+        EXPLOSION_PRIME (Category.LIVING_ENTITY),
 
         /**
          * Called when an entity targets another entity

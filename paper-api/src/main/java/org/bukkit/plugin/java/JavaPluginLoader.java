@@ -254,17 +254,17 @@ public final class JavaPluginLoader implements PluginLoader {
                     ((BlockListener)listener).onBlockCanBuild( (BlockCanBuildEvent)event );
                 }
             };
-        case BLOCK_RIGHTCLICKED:
+        case BLOCK_RIGHTCLICK:
             return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((BlockListener)listener).onBlockRightClick( (BlockRightClickEvent)event );
                 }
             };
-        case BLOCK_PLACED:
+        case BLOCK_PLACE:
             return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((BlockListener)listener).onBlockPlace( (BlockPlaceEvent)event );
                 }
             };
-        case BLOCK_DAMAGED:
+        case BLOCK_DAMAGE:
             return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((BlockListener)listener).onBlockDamage( (BlockDamageEvent)event );
                 }
@@ -274,7 +274,7 @@ public final class JavaPluginLoader implements PluginLoader {
                     ((BlockListener)listener).onBlockInteract( (BlockInteractEvent)event );
                 }
             };
-        case BLOCK_FLOW:
+        case BLOCK_FROMTO:
             return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((BlockListener)listener).onBlockFlow( (BlockFromToEvent)event );
                 }
@@ -313,12 +313,12 @@ public final class JavaPluginLoader implements PluginLoader {
         // Server Events
         case PLUGIN_ENABLE:
             return new EventExecutor() { public void execute( Listener listener, Event event ) {
-                    ((ServerListener)listener).onPluginEnabled( (PluginEvent)event );
+                    ((ServerListener)listener).onPluginEnable( (PluginEvent)event );
                 }
             };
         case PLUGIN_DISABLE:
             return new EventExecutor() { public void execute( Listener listener, Event event ) {
-                    ((ServerListener)listener).onPluginDisabled( (PluginEvent)event );
+                    ((ServerListener)listener).onPluginDisable( (PluginEvent)event );
                 }
             };
 
@@ -329,29 +329,29 @@ public final class JavaPluginLoader implements PluginLoader {
             };
 
         // World Events
-        case CHUNK_LOADED:
+        case CHUNK_LOAD:
             return new EventExecutor() { public void execute( Listener listener, Event event ) {
-                    ((WorldListener)listener).onChunkLoaded( (ChunkLoadEvent)event );
+                    ((WorldListener)listener).onChunkLoad( (ChunkLoadEvent)event );
                 }
             };
-        case CHUNK_UNLOADED:
+        case CHUNK_UNLOAD:
             return new EventExecutor() { public void execute( Listener listener, Event event ) {
-                    ((WorldListener)listener).onChunkUnloaded( (ChunkUnloadEvent)event );
+                    ((WorldListener)listener).onChunkUnload( (ChunkUnloadEvent)event );
                 }
             };
-        case WORLD_SAVED:
+        case WORLD_SAVE:
             return new EventExecutor() { public void execute( Listener listener, Event event ) {
-                    ((WorldListener)listener).onWorldSaved( (WorldEvent)event );
+                    ((WorldListener)listener).onWorldSave( (WorldEvent)event );
                 }
             };
-        case WORLD_LOADED:
+        case WORLD_LOAD:
             return new EventExecutor() { public void execute( Listener listener, Event event ) {
-                    ((WorldListener)listener).onWorldLoaded( (WorldEvent)event );
+                    ((WorldListener)listener).onWorldLoad( (WorldEvent)event );
                 }
             };
 
         // Entity Events
-        case ENTITY_DAMAGED:
+        case ENTITY_DAMAGE:
             return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((EntityListener)listener).onEntityDamage( (EntityDamageEvent)event );
                 }
@@ -371,9 +371,9 @@ public final class JavaPluginLoader implements PluginLoader {
                     ((EntityListener)listener).onEntityExplode( (EntityExplodeEvent)event );
                 }
             };
-        case EXPLOSION_PRIMED:
+        case EXPLOSION_PRIME:
             return new EventExecutor() { public void execute( Listener listener, Event event ) {
-                    ((EntityListener)listener).onExplosionPrimed( (ExplosionPrimedEvent)event );
+                    ((EntityListener)listener).onExplosionPrime( (ExplosionPrimeEvent)event );
                 }
             };
         case ENTITY_TARGET:

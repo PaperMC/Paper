@@ -12,7 +12,7 @@ public class WorldListener implements Listener {
      *
      * @param event Relevant event details
      */
-    public void onChunkLoaded(ChunkLoadEvent event) {
+    public void onChunkLoad(ChunkLoadEvent event) {
     }
 
     /**
@@ -20,7 +20,7 @@ public class WorldListener implements Listener {
      *
      * @param event Relevant event details
      */
-    public void onChunkUnloaded(ChunkUnloadEvent event) {
+    public void onChunkUnload(ChunkUnloadEvent event) {
     }
 
     /**
@@ -28,7 +28,7 @@ public class WorldListener implements Listener {
     *
     * param event Relevant event details
     */
-    public void onWorldSaved(WorldEvent event) {
+    public void onWorldSave(WorldEvent event) {
     }
 
     /**
@@ -36,6 +36,6 @@ public class WorldListener implements Listener {
      *
      * @param event Relevant event details
      */
-    public void onWorldLoaded(WorldEvent event) {
+    public void onWorldLoad(WorldEvent event) {
     }
 }

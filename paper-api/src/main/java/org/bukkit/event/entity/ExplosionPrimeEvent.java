@@ -3,13 +3,13 @@ package org.bukkit.event.entity;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 
-public class ExplosionPrimedEvent extends EntityEvent implements Cancellable {
+public class ExplosionPrimeEvent extends EntityEvent implements Cancellable {
     private boolean cancel;
     private float radius;
     private boolean fire;
 
-    public ExplosionPrimedEvent(Type type, Entity what, float radius, boolean fire) {
-        super(type.EXPLOSION_PRIMED, what);
+    public ExplosionPrimeEvent(Type type, Entity what, float radius, boolean fire) {
+        super(type.EXPLOSION_PRIME, what);
         this.cancel = false;
         this.radius = radius;
         this.fire = fire;
