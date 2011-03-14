@@ -270,8 +270,9 @@ public final class SimplePluginManager implements PluginManager {
      */
     public void registerEvent(Event.Type type, Listener listener, Priority priority, Plugin plugin) {
         if (!plugin.isEnabled()) {
-            server.getLogger().warning("Plugin '" + plugin.getDescription().getName() + "' (ver " + plugin.getDescription().getVersion() + ") is registering events before it is enabled. It may be misbehaving and the author needs to fix this.");
+            throw new IllegalPluginAccessException("Plugin attempted to register " + type + " while not enabled");
         }
+
         getEventListeners( type ).add(new RegisteredListener(listener, priority, plugin, type));
     }
 
@@ -285,6 +286,10 @@ public final class SimplePluginManager implements PluginManager {
      * @param plugin Plugin to register
      */
     public void registerEvent(Event.Type type, Listener listener, EventExecutor executor, Priority priority, Plugin plugin) {
+        if (!plugin.isEnabled()) {
+            throw new IllegalPluginAccessException("Plugin attempted to register " + type + " while not enabled");
+        }
+
         getEventListeners( type ).add(new RegisteredListener(listener, executor, priority, plugin));
     }
 
