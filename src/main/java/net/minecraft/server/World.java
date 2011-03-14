@@ -289,21 +289,27 @@ public class World implements IBlockAccess {
     }
 
     public boolean e(int i, int j, int k, int l) {
+        // Craftbukkit start
+        int old = this.getTypeId(i, j, k);
         if (this.setTypeId(i, j, k, l)) {
-            this.f(i, j, k, l);
+            this.f(i, j, k, l == 0 ? old : l);
             return true;
         } else {
             return false;
         }
+        // Craftbukkit end
     }
 
     public boolean b(int i, int j, int k, int l, int i1) {
+        // Craftbukkit start
+        int old = this.getTypeId(i, j, k);
         if (this.setTypeIdAndData(i, j, k, l, i1)) {
-            this.f(i, j, k, l);
+            this.f(i, j, k, l == 0 ? old : l);
             return true;
         } else {
             return false;
         }
+        // Craftbukkit end
     }
 
     public void g(int i, int j, int k) {
