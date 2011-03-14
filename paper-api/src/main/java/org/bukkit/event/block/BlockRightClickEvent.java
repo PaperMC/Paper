@@ -31,18 +31,6 @@ public class BlockRightClickEvent extends BlockEvent  {
         return player;
     }
 
-
-    /**
-     * Get the block that this block was placed against
-     *
-     * @return Block the block that the new block was placed against
-     * @deprecated use getBlock
-     */
-    @Deprecated
-    public Block getBlockAgainst() {
-        return clickedBlock;
-    }
-
     /**
      * @return BlockFace the direction this block was clicked
      */

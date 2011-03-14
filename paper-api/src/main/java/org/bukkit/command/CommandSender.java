@@ -19,15 +19,6 @@ public interface CommandSender {
     public boolean isOp();
 
     /**
-     * Checks if this sender is a player
-     *
-     * @return true if they are
-     * @deprecated Use instanceof
-     */
-    @Deprecated
-    public boolean isPlayer();
-
-    /**
      * Returns the server instance that this command is running on
      *
      * @return Server instance

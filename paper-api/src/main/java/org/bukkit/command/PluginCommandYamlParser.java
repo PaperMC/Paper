@@ -26,7 +26,7 @@ public class PluginCommandYamlParser {
                 Object aliases = entry.getValue().get("aliases");
 
                 if (description != null)
-                    newCmd.setTooltip(description.toString());
+                    newCmd.setDescription(description.toString());
 
                 if (usage != null) {
                     newCmd.setUsage(usage.toString());

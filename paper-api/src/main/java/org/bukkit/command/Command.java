@@ -56,14 +56,6 @@ public abstract class Command {
     }
 
     /**
-     * @deprecated Use {@link #getDescription()}
-     */
-    @Deprecated
-    public String getTooltip() {
-        return getDescription();
-    }
-
-    /**
      * Gets an example usage of this command
      *
      * @return One or more example usages
@@ -91,15 +83,6 @@ public abstract class Command {
      */
     public Command setDescription(String description) {
         this.description = description;
-        return this;
-    }
-
-    /**
-     * @deprecated Use {@link #setDescription(description)}
-     */
-    @Deprecated
-    public Command setTooltip(String tooltip) {
-        this.description = tooltip;
         return this;
     }
 
