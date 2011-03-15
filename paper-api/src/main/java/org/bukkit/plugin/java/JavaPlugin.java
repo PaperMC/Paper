@@ -186,4 +186,8 @@ public abstract class JavaPlugin implements Plugin {
             return null;
         }
     }
+
+    public void onLoad() {
+        // Empty!
+    }
 }
