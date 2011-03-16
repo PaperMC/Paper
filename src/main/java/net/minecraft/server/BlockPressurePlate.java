@@ -68,24 +68,6 @@ public class BlockPressurePlate extends Block {
     public void a(World world, int i, int j, int k, Entity entity) {
         if (!world.isStatic) {
             if (world.getData(i, j, k) != 1) {
-
-                // CraftBukkit start - Interact Pressure Plate
-                if (entity instanceof EntityLiving) {
-                    CraftServer server = ((WorldServer) world).getServer();
-                    CraftWorld craftWorld = ((WorldServer) world).getWorld();
-                    Type eventType = Type.BLOCK_INTERACT;
-                    CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
-                    org.bukkit.entity.LivingEntity who = (entity == null) ? null : (LivingEntity) entity.getBukkitEntity();
-
-                    BlockInteractEvent event = new BlockInteractEvent(eventType, block, who);
-                    server.getPluginManager().callEvent(event);
-
-                    if (event.isCancelled()) {
-                        return;
-                    }
-                }
-                // CraftBukkit end
-
                 this.g(world, i, j, k);
             }
         }
@@ -113,13 +95,32 @@ public class BlockPressurePlate extends Block {
             flag1 = true;
         }
 
-        // CraftBukkit start
+        // CraftBukkit start - Interact Pressure Plate
+        CraftServer server = ((WorldServer) world).getServer();
+        CraftWorld craftWorld = ((WorldServer) world).getWorld();
+        CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
+
         if (flag != flag1) {
-            CraftWorld craftWorld = ((WorldServer) world).getWorld();
-            CraftServer server = ((WorldServer) world).getServer();
-            CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
+            if (flag1) {
+                for (Object object: list) {
+                    if (object != null && object instanceof EntityLiving) {
+                        EntityLiving entity = (EntityLiving) object;
+                        Type eventType = Type.BLOCK_INTERACT;
+                        org.bukkit.entity.LivingEntity who = (LivingEntity) entity.getBukkitEntity();
+
+                        BlockInteractEvent event = new BlockInteractEvent(eventType, block, who);
+                        server.getPluginManager().callEvent(event);
+
+                        if (event.isCancelled()) {
+                            return;
+                        }
+                    }
+                }
+            }
+
             BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, flag ? 1 : 0, flag1 ? 1 : 0);
             server.getPluginManager().callEvent(eventRedstone);
+
             flag1 = eventRedstone.getNewCurrent() > 0;
         }
         // CraftBukkit end
