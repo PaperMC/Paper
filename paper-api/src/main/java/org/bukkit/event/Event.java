@@ -545,6 +545,13 @@ public abstract class Event implements Serializable {
         VEHICLE_CREATE (Category.VEHICLE),
 
         /**
+         * Called when a vehicle is destroyed
+         *
+         * @see org.bukkit.event.vehicle.VehicleDestroyEvent
+         */
+        VEHICLE_DESTROY (Category.VEHICLE),
+
+        /**
          * Called when a vehicle is damaged by a LivingEntity
          *
          * @see org.bukkit.event.vehicle.VehicleDamageEvent

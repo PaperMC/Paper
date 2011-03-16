@@ -70,6 +70,14 @@ public class VehicleListener implements Listener {
     }
 
     /**
+     * Called when a vehicle is destroyed.
+     *
+     * @param event
+     */
+    public void onVehicleDestroy(VehicleDestroyEvent event) {
+    }
+
+    /**
      * Called when a vehicle goes through an update cycle
      *
      * @param event

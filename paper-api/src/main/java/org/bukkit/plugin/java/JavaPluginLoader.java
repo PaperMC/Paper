@@ -455,6 +455,11 @@ public final class JavaPluginLoader implements PluginLoader {
                     ((VehicleListener) listener).onVehicleDamage((VehicleDamageEvent) event);
                 }
             };
+        case VEHICLE_DESTROY:
+            return new EventExecutor() { public void execute( Listener listener, Event event ) {
+                    ((VehicleListener)listener).onVehicleDestroy( (VehicleDestroyEvent)event );
+                }
+            };
         case VEHICLE_COLLISION_BLOCK:
             return new EventExecutor() {
                 public void execute(Listener listener, Event event) {
