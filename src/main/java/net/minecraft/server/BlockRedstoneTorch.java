@@ -7,6 +7,7 @@ import java.util.Random;
 // CraftBukkit start
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.event.block.BlockRedstoneEvent;
+import org.bukkit.plugin.PluginManager;
 // CraftBukkit end
 
 public class BlockRedstoneTorch extends BlockTorch {
@@ -100,15 +101,22 @@ public class BlockRedstoneTorch extends BlockTorch {
 
         // CraftBukkit start
         CraftBlock block = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
-        BlockRedstoneEvent event = new BlockRedstoneEvent(block, flag ? 15 : 0, flag ? 0 : 15);
-        ((WorldServer) world).getServer().getPluginManager().callEvent(event);
-        if ((event.getNewCurrent() != 0) == flag) {
-            return;
-        }
+        PluginManager man = ((WorldServer) world).getServer().getPluginManager();
+        int oldCurrent = this.a ? 15 : 0;
+        BlockRedstoneEvent event = new BlockRedstoneEvent(block, oldCurrent, oldCurrent);
         // CraftBukkit end
 
         if (this.a) {
             if (flag) {
+                // CraftBukkit start
+                if (oldCurrent != 0) {
+                    event.setNewCurrent(0);
+                    man.callEvent(event);
+                    if (event.getNewCurrent() != 0) {
+                        return;
+                    }
+                }
+                // CraftBukkit end
                 world.b(i, j, k, Block.REDSTONE_TORCH_OFF.id, world.getData(i, j, k));
                 if (this.a(world, i, j, k, true)) {
                     world.a((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), "random.fizz", 0.5F, 2.6F + (world.k.nextFloat() - world.k.nextFloat()) * 0.8F);
@@ -123,6 +131,15 @@ public class BlockRedstoneTorch extends BlockTorch {
                 }
             }
         } else if (!flag && !this.a(world, i, j, k, false)) {
+            // CraftBukkit start
+            if (oldCurrent != 15) {
+                event.setNewCurrent(15);
+                man.callEvent(event);
+                if (event.getNewCurrent() != 15) {
+                    return;
+                }
+            }
+            // CraftBukkit end
             world.b(i, j, k, Block.REDSTONE_TORCH_ON.id, world.getData(i, j, k));
         }
     }
