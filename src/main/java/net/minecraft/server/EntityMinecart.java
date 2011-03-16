@@ -120,6 +120,17 @@ public class EntityMinecart extends Entity implements IInventory {
             this.W();
             this.a += i * 10;
             if (this.a > 40) {
+
+                // CraftBukkit start
+                VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, passenger);
+                ((WorldServer) this.world).getServer().getPluginManager().callEvent(destroyEvent);
+
+                if (destroyEvent.isCancelled()) {
+                    this.a = 40; // Maximize damage so this doesn't get triggered again right away
+                    return true;
+                }
+                // CraftBukkit end
+
                 this.a(Item.MINECART.id, 1, 0.0F);
                 if (this.d == 1) {
                     this.a(Block.CHEST.id, 1, 0.0F);

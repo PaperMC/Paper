@@ -9,6 +9,7 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.event.vehicle.VehicleCreateEvent;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
+import org.bukkit.event.vehicle.VehicleDestroyEvent;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.event.vehicle.VehicleEntityCollisionEvent;
 import org.bukkit.event.vehicle.VehicleMoveEvent;
@@ -116,6 +117,17 @@ public class EntityBoat extends Entity {
             this.a += i * 10;
             this.W();
             if (this.a > 40) {
+
+                // CraftBukkit start
+                VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, attacker);
+                ((WorldServer) this.world).getServer().getPluginManager().callEvent(destroyEvent);
+
+                if (destroyEvent.isCancelled()) {
+                    this.a = 40; // Maximize damage so this doesn't get triggered again right away
+                    return true;
+                }
+                // CraftBukkit end
+
                 int j;
 
                 for (j = 0; j < 3; ++j) {
