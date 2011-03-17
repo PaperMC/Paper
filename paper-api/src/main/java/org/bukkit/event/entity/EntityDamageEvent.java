@@ -145,6 +145,12 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          */
         ENTITY_EXPLOSION,
         /**
+         * Damage caused by falling into the void
+         *
+         * Damage: 4 for players
+         */
+        VOID,
+        /**
          * Custom damage.
          *
          * Damage: variable
