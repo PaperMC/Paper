@@ -10,6 +10,7 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.TrigMath;
 import org.bukkit.event.Event.Type;
+import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityDeathEvent;
@@ -796,7 +797,21 @@ public abstract class EntityLiving extends Entity {
     }
 
     protected void M() {
-        this.a((Entity) null, 4);
+        // CraftBukkit start
+        CraftServer server = ((WorldServer) this.world).getServer();
+        DamageCause damageType = EntityDamageEvent.DamageCause.VOID;
+        org.bukkit.block.Block damager = null;
+        org.bukkit.entity.Entity damagee = this.getBukkitEntity();
+        int damageDone = 4;
+        EntityDamageByBlockEvent event = new EntityDamageByBlockEvent(damager, damagee, damageType, damageDone);
+        server.getPluginManager().callEvent(event);
+
+        if (event.isCancelled()) {
+            return;
+        }
+        damageDone = event.getDamage();
+        this.a((Entity) null, damageDone);
+        // CraftBukkit end
     }
 
     public Vec3D N() {
