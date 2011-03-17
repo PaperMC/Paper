@@ -746,6 +746,8 @@ public class World implements IBlockAccess {
                 type = CreatureType.ZOMBIE;
             } else if (entity instanceof EntitySlime) {
                 type = CreatureType.SLIME;
+            } else if (entity instanceof EntitySquid) {
+                type = CreatureType.SQUID;
             }
 
             if (type != null) {
