@@ -67,19 +67,21 @@ public class ItemBlock extends Item {
              * rather than the block touching the face we clicked on.
              */
             int typeId = blockClicked.getTypeId();
-            org.bukkit.block.Block replacedBlock = blockClicked.getFace(faceClicked);
+            org.bukkit.block.Block placedBlock = blockClicked.getFace(faceClicked);
 
             if (typeId == Block.SNOW.id || (typeId == Block.STEP.id && itemstack.id == Block.STEP.id && faceClicked == BlockFace.UP))
-                replacedBlock = blockClicked;
+                placedBlock = blockClicked;
 
-            final BlockState replacedBlockState = new CraftBlockState(replacedBlock);
+            final BlockState replacedBlockState = new CraftBlockState(placedBlock);
             // CraftBukkit end
 
             if (world.a(this.a, i, j, k, false)) {
                 Block block = Block.byId[this.a];
 
                 // CraftBukkit start - This executes the placement of the block
-                /*
+                /**
+                 * @see net.minecraft.server.World#b(int i, int j, int k, int l, int i1)
+                 * 
                  * This replaces world.b(IIIII), we're doing this because we need to
                  * hook between the 'placement' and the informing to 'world' so we can
                  * sanely undo this.
@@ -90,9 +92,8 @@ public class ItemBlock extends Item {
                 if (world.setTypeIdAndData(i, j, k, a, a(itemstack.h()))) { // <-- world.b does this to place the block
                     org.bukkit.Server server = ((WorldServer) world).getServer();
                     Type eventType = Type.BLOCK_PLACED;
-                    org.bukkit.block.Block placedBlock = blockClicked.getFace(faceClicked) ;
                     org.bukkit.inventory.ItemStack itemInHand = new CraftItemStack(itemstack);
-                    Player thePlayer = (entityhuman ==null) ? null : (Player) entityhuman.getBukkitEntity();
+                    Player thePlayer = (entityhuman == null) ? null : (Player) entityhuman.getBukkitEntity();
 
                     ChunkCoordinates chunkcoordinates = world.l();
                     int spawnX = chunkcoordinates.a;
