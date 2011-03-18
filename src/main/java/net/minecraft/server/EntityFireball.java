@@ -8,7 +8,7 @@ import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
-import org.bukkit.event.entity.ExplosionPrimedEvent;
+import org.bukkit.event.entity.ExplosionPrimeEvent;
 // CraftBukkit end
 
 public class EntityFireball extends Entity {
@@ -149,9 +149,9 @@ public class EntityFireball extends Entity {
             }
 
             CraftServer server = ((WorldServer) this.world).getServer();
-            org.bukkit.event.Event.Type eventType = ExplosionPrimedEvent.Type.EXPLOSION_PRIMED;
+            org.bukkit.event.Event.Type eventType = ExplosionPrimeEvent.Type.EXPLOSION_PRIME;
 
-            ExplosionPrimedEvent event = new ExplosionPrimedEvent(eventType, CraftEntity.getEntity(server, this), 1.0F, false);
+            ExplosionPrimeEvent event = new ExplosionPrimeEvent(eventType, CraftEntity.getEntity(server, this), 1.0F, false);
             server.getPluginManager().callEvent(event);
             if (!event.isCancelled()) {
                 // give 'this' instead of (Entity) null so we know what causes the damage

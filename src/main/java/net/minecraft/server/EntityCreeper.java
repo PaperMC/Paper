@@ -3,7 +3,7 @@ package net.minecraft.server;
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.event.entity.ExplosionPrimedEvent;
+import org.bukkit.event.entity.ExplosionPrimeEvent;
 // CraftBukkit end
 
 public class EntityCreeper extends EntityMonster {
@@ -85,9 +85,9 @@ public class EntityCreeper extends EntityMonster {
             if (this.a >= 30) {
                 // CraftBukkit start
                 CraftServer server = ((WorldServer) this.world).getServer();
-                org.bukkit.event.Event.Type eventType = ExplosionPrimedEvent.Type.EXPLOSION_PRIMED;
+                org.bukkit.event.Event.Type eventType = ExplosionPrimeEvent.Type.EXPLOSION_PRIME;
 
-                ExplosionPrimedEvent event = new ExplosionPrimedEvent(eventType, CraftEntity.getEntity(server, this), 3.0F, false);
+                ExplosionPrimeEvent event = new ExplosionPrimeEvent(eventType, CraftEntity.getEntity(server, this), 3.0F, false);
                 server.getPluginManager().callEvent(event);
 
                 if (!event.isCancelled()) {

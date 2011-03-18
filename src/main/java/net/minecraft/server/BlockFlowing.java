@@ -99,7 +99,7 @@ public class BlockFlowing extends BlockFluids {
 
         if (this.l(world, i, j - 1, k)) {
             // CraftBukkit start - send "down" to the server
-            BlockFromToEvent event = new BlockFromToEvent(Type.BLOCK_FLOW, source, BlockFace.DOWN);
+            BlockFromToEvent event = new BlockFromToEvent(Type.BLOCK_FROMTO, source, BlockFace.DOWN);
             if (server != null) {
                 server.getPluginManager().callEvent(event);
             }
@@ -129,7 +129,7 @@ public class BlockFlowing extends BlockFluids {
             int index = 0;
             for (BlockFace currentFace: faces) {
                 if (aboolean[index]) {
-                    BlockFromToEvent event = new BlockFromToEvent(Type.BLOCK_FLOW, source, currentFace);
+                    BlockFromToEvent event = new BlockFromToEvent(Type.BLOCK_FROMTO, source, currentFace);
 
                     if (server != null) {
                         server.getPluginManager().callEvent(event);

@@ -351,9 +351,9 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                         if ((blockId == Block.REDSTONE_WIRE.id && block.getData() > 0) || blockId == Block.REDSTONE_TORCH_ON.id) {
                             server.getPluginManager().callEvent( new BlockRedstoneEvent(block, (blockId == Block.REDSTONE_WIRE.id ? block.getData() : 15), 0));
                         }
-                        event = new BlockDamageEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.BROKEN, player);
+                        event = new BlockDamageEvent(Type.BLOCK_DAMAGE, block, BlockDamageLevel.BROKEN, player);
                     } else {
-                        event = new BlockDamageEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.STARTED, player);
+                        event = new BlockDamageEvent(Type.BLOCK_DAMAGE, block, BlockDamageLevel.STARTED, player);
                     }
                     server.getPluginManager().callEvent(event);
                     if (!event.isCancelled()) {
@@ -364,7 +364,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 // CraftBukkit start - Get last block that the player hit
                 // Otherwise the block is a Bedrock @(0,0,0)
                 block = (CraftBlock) player.getWorld().getBlockAt(lastX, lastY, lastZ);
-                BlockDamageEvent event = new BlockDamageEvent(Type.BLOCK_DAMAGED, block, BlockDamageLevel.STOPPED, player);
+                BlockDamageEvent event = new BlockDamageEvent(Type.BLOCK_DAMAGE, block, BlockDamageLevel.STOPPED, player);
                 server.getPluginManager().callEvent(event);
                 if (!event.isCancelled()) {
                     this.e.c.b(i, j, k);
@@ -489,7 +489,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             }
             CraftItemStack craftItem = new CraftItemStack(itemstack);
             Player player = getPlayer();
-            BlockRightClickEvent event = new BlockRightClickEvent(Type.BLOCK_RIGHTCLICKED, blockClicked, blockFace, craftItem, player);
+            BlockRightClickEvent event = new BlockRightClickEvent(Type.BLOCK_RIGHTCLICK, blockClicked, blockFace, craftItem, player);
             server.getPluginManager().callEvent(event);
 
             this.e.c.a(this.e, this.e.world, itemstack, i, j, k, l);

@@ -212,7 +212,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
             world.a(true, (IProgressUpdate) null);
             world.r();
 
-            WorldEvent event = new WorldEvent( Event.Type.WORLD_SAVED, world.getWorld() );
+            WorldEvent event = new WorldEvent( Event.Type.WORLD_SAVE, world.getWorld() );
             server.getPluginManager().callEvent( event );
         }
 

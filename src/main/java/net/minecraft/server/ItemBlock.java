@@ -91,7 +91,7 @@ public class ItemBlock extends Item {
                  */
                 if (world.setTypeIdAndData(i, j, k, a, a(itemstack.h()))) { // <-- world.b does this to place the block
                     org.bukkit.Server server = ((WorldServer) world).getServer();
-                    Type eventType = Type.BLOCK_PLACED;
+                    Type eventType = Type.BLOCK_PLACE;
                     org.bukkit.inventory.ItemStack itemInHand = new CraftItemStack(itemstack);
                     Player thePlayer = (entityhuman == null) ? null : (Player) entityhuman.getBukkitEntity();
 

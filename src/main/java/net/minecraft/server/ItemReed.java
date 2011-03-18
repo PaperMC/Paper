@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.Material;
+import org.bukkit.event.player.PlayerVegetationPlantEvent;
 // CraftBukkit end
 
 public class ItemReed extends Item {
@@ -91,7 +92,7 @@ public class ItemReed extends Item {
                  */
                 if (world.setTypeId(i, j, k, this.a)) { // <-- world.e does this to place the block
                     org.bukkit.Server server = ((WorldServer) world).getServer();
-                    Type eventType = Type.BLOCK_PLACED;
+                    Type eventType = Type.BLOCK_PLACE;
                     org.bukkit.inventory.ItemStack itemInHand = new CraftItemStack(itemstack);
                     Player thePlayer = (entityhuman == null) ? null : (Player) entityhuman.getBukkitEntity();
 

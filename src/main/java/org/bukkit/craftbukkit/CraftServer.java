@@ -332,7 +332,7 @@ public final class CraftServer implements Server {
     protected void addWorld(World world) {
         worlds.put(world.getName().toLowerCase(), world);
 
-        pluginManager.callEvent(new WorldEvent(Type.WORLD_LOADED, world));
+        pluginManager.callEvent(new WorldEvent(Type.WORLD_LOAD, world));
     }
 
     public Logger getLogger() {
