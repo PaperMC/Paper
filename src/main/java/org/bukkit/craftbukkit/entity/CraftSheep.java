@@ -29,4 +29,12 @@ public class CraftSheep extends CraftAnimals implements Sheep {
         getHandle().a_(color.getData());
     }
 
+    public boolean isSheared() {
+        return getHandle().j_();
+    }
+
+    public void setSheared(boolean flag) {
+        getHandle().a(flag);
+    }
+
 }
