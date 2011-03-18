@@ -138,6 +138,8 @@ public class ServerConfigurationManager {
             event.disallow(PlayerLoginEvent.Result.KICK_BANNED, "Your IP address is banned from this server!");
         } else if (this.b.size() >= this.e) {
             event.disallow(PlayerLoginEvent.Result.KICK_FULL, "The server is full!");
+        } else {
+            event.disallow(PlayerLoginEvent.Result.ALLOWED, s2);
         }
 
         server.getPluginManager().callEvent(event);
