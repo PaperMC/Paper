@@ -16,4 +16,15 @@ public class CraftSlime extends CraftLivingEntity implements Slime {
         return "CraftSlime";
     }
 
+    public EntitySlime getHandle() {
+        return (EntitySlime) super.getHandle();
+    }
+
+    public int getSize() {
+        return getHandle().c;
+    }
+
+    public void setSize(int size) {
+        getHandle().e(size);
+    }
 }
