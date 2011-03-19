@@ -303,9 +303,9 @@ public interface World {
      * 
      * @param loc The location to spawn the creature
      * @param type The creature to spawn
-     * @return Resulting Creature of this method, or null if it was unsuccessful
+     * @return Resulting LivingEntity of this method, or null if it was unsuccessful
      */
-    public Creature spawnCreature(Location loc, CreatureType type);
+    public LivingEntity spawnCreature(Location loc, CreatureType type);
 
     /**
      * Get a list of all entities in this World
