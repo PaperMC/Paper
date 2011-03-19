@@ -342,10 +342,10 @@ public class CraftWorld implements World {
         return (Boat) boat.getBukkitEntity();
     }
 
-    public Creature spawnCreature(Location loc, CreatureType creatureType) {
-        Creature creature;
+    public LivingEntity spawnCreature(Location loc, CreatureType creatureType) {
+        LivingEntity creature;
         try {
-            EntityCreature entityCreature = (EntityCreature) EntityTypes.a(creatureType.getName(), world);
+            EntityLiving entityCreature = (EntityLiving) EntityTypes.a(creatureType.getName(), world);
             entityCreature.a(loc.getX(), loc.getY(), loc.getZ());
             creature = (Creature) CraftEntity.getEntity(server, entityCreature);
             world.a(entityCreature);
