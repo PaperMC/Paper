@@ -139,7 +139,7 @@ public class ServerConfigurationManager {
         if (this.f.contains(s.trim().toLowerCase())) {
             event.disallow(PlayerLoginEvent.Result.KICK_BANNED, "You are banned from this server!");
         } else if (!this.g(s)) {
-            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, "You are not white-listed on this server!");
+            event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, "You are not white-listed on this server!");
         } else if (this.g.contains(s2)) {
             event.disallow(PlayerLoginEvent.Result.KICK_BANNED, "Your IP address is banned from this server!");
         } else if (this.b.size() >= this.e) {
