@@ -1637,7 +1637,7 @@ public class World implements IBlockAccess {
             return false;
         }
 
-        BlockCanBuildEvent event = new BlockCanBuildEvent(Type.BLOCK_CANBUILD, ((WorldServer) this).getWorld().getBlockAt(j, k, l), i1, defaultReturn);
+        BlockCanBuildEvent event = new BlockCanBuildEvent(Type.BLOCK_CANBUILD, ((WorldServer) this).getWorld().getBlockAt(j, k, l), i, defaultReturn);
         ((WorldServer) this).getServer().getPluginManager().callEvent(event);
 
         return event.isBuildable();
