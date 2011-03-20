@@ -243,6 +243,18 @@ public final class JavaPluginLoader implements PluginLoader {
                 }
             };
 
+        case PLAYER_BUCKET_EMPTY:
+            return new EventExecutor() { public void execute( Listener listener, Event event) {
+                    ((PlayerListener) listener).onPlayerBucketEmpty((PlayerBucketEmptyEvent) event);
+                }
+            };
+
+        case PLAYER_BUCKET_FILL:
+            return new EventExecutor() { public void execute( Listener listener, Event event) {
+                    ((PlayerListener) listener).onPlayerBucketFill((PlayerBucketFillEvent) event);
+                }
+            };
+
         // Block Events
         case BLOCK_PHYSICS:
             return new EventExecutor() { public void execute( Listener listener, Event event ) {

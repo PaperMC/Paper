@@ -146,4 +146,20 @@ public class PlayerListener implements Listener {
      */
     public void onPlayerToggleSneak(PlayerToggleSneakEvent event) {
     }
+
+    /**
+     * Called when a player fills a bucket
+     * 
+     * @param event Relevant event details
+     */
+    public void onPlayerBucketFill(PlayerBucketFillEvent event) {
+    }
+
+    /**
+     * Called when a player empties a bucket
+     * 
+     * @param event Relevant event details
+     */
+    public void onPlayerBucketEmpty(PlayerBucketEmptyEvent event) {
+    }
 }

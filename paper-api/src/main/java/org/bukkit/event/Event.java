@@ -251,6 +251,20 @@ public abstract class Event implements Serializable {
         PLAYER_PICKUP_ITEM (Category.PLAYER),
 
         /**
+         * Called when a player empties a bucket
+         * 
+         * @see org.bukkit.event.player.PlayerBucketEmptyEvent
+         */
+        PLAYER_BUCKET_EMPTY(Category.PLAYER),
+
+        /**
+         * Called when a player fills a bucket
+         * 
+         * @see org.bukkit.event.player.PlayerBucketFillEvent
+         */
+        PLAYER_BUCKET_FILL(Category.PLAYER),
+
+        /**
          * BLOCK EVENTS
          */
 
