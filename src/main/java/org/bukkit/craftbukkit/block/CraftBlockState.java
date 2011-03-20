@@ -10,6 +10,7 @@ import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.CraftChunk;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.material.MaterialData;
+import net.minecraft.server.WorldServer;
 
 public class CraftBlockState implements BlockState {
     private final CraftWorld world;
@@ -31,6 +32,10 @@ public class CraftBlockState implements BlockState {
         this.chunk = (CraftChunk)block.getChunk();
 
         createData(block.getData());
+    }
+
+    public static BlockState getBlockState( net.minecraft.server.World world, int x, int y, int z) {
+        return new CraftBlockState( ((WorldServer) world).getWorld().getBlockAt(x, y, z) );
     }
 
     /**

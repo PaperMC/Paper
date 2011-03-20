@@ -1,14 +1,10 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import org.bukkit.block.BlockFace;
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.entity.Player;
-import org.bukkit.event.Event.Type;
-import org.bukkit.event.player.PlayerItemEvent;
+import org.bukkit.block.BlockState;
+import org.bukkit.craftbukkit.block.CraftBlockState;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.block.BlockPlaceEvent;
 // CraftBukkit end
 
 public class ItemRedstone extends Item {
@@ -18,11 +14,7 @@ public class ItemRedstone extends Item {
     }
 
     public boolean a(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
-        // CraftBukkit start - store the clicked block
-        CraftWorld craftWorld = ((WorldServer) world).getWorld();
-        CraftServer craftServer = ((WorldServer) world).getServer();
-        org.bukkit.block.Block blockClicked = craftWorld.getBlockAt(i, j, k);
-        // CraftBukkit end
+        int clickedX = i, clickedY = j, clickedZ = k; // CraftBukkit;
 
         if (l == 0) {
             --j;
@@ -52,22 +44,20 @@ public class ItemRedstone extends Item {
             return false;
         } else {
             if (Block.REDSTONE_WIRE.a(world, i, j, k)) {
-                // CraftBukkit start - Redstone
-                Type eventType = Type.PLAYER_ITEM;
-                Player who = (entityhuman == null) ? null : (Player) entityhuman.getBukkitEntity();
-                org.bukkit.inventory.ItemStack itemInHand = new CraftItemStack(itemstack);
-                BlockFace blockface = CraftBlock.notchToBlockFace(l);
+                BlockState blockState = CraftBlockState.getBlockState(world, i, j, k); // CraftBukkit
 
-                PlayerItemEvent event = new PlayerItemEvent(eventType, who, itemInHand, blockClicked, blockface);
-                craftServer.getPluginManager().callEvent(event);
+                world.e(i, j, k, Block.REDSTONE_WIRE.id);
 
-                if (event.isCancelled()) {
+                // CraftBukkit start - redstone
+                BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ, Block.REDSTONE_WIRE);
+
+                if (event.isCancelled() || !event.canBuild()) {
+                    event.getBlockPlaced().setTypeIdAndData(blockState.getTypeId(), blockState.getRawData(), false);
                     return false;
                 }
                 // CraftBukkit end
 
-                --itemstack.count;
-                world.e(i, j, k, Block.REDSTONE_WIRE.id);
+                --itemstack.count; // CraftBukkit -- ORDER MATTERS
             }
 
             return true;

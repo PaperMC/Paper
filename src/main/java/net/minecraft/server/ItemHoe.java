@@ -1,14 +1,10 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import org.bukkit.block.BlockFace;
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.entity.Player;
-import org.bukkit.event.Event.Type;
-import org.bukkit.event.player.PlayerItemEvent;
+import org.bukkit.block.BlockState;
+import org.bukkit.craftbukkit.block.CraftBlockState;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.block.BlockPlaceEvent;
 // CraftBukkit end
 
 public class ItemHoe extends Item {
@@ -32,25 +28,18 @@ public class ItemHoe extends Item {
             if (world.isStatic) {
                 return true;
             } else {
-                // CraftBukkit start - Hoes
-                CraftWorld craftWorld = ((WorldServer) world).getWorld();
-                CraftServer craftServer = ((WorldServer) world).getServer();
+                BlockState blockState = CraftBlockState.getBlockState(world, i, j, k); // CraftBukkit
 
-                Type eventType = Type.PLAYER_ITEM;
-                Player who = (entityhuman == null) ? null : (Player) entityhuman.getBukkitEntity();
-                org.bukkit.inventory.ItemStack itemInHand = new CraftItemStack(itemstack);
-                org.bukkit.block.Block blockClicked = craftWorld.getBlockAt(i, j, k);
-                BlockFace blockFace = CraftBlock.notchToBlockFace(l);
+                world.e(i, j, k, block.id);
 
-                PlayerItemEvent event = new PlayerItemEvent(eventType, who, itemInHand, blockClicked, blockFace);
-                craftServer.getPluginManager().callEvent(event);
-
-                if (event.isCancelled()) {
+                // CraftBukkit start - Hoes - blockface -1 for 'SELF'
+                BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, i, j, k, block);
+                if (event.isCancelled() || !event.canBuild()) {
+                    event.getBlockPlaced().setTypeId(blockState.getTypeId());
                     return false;
                 }
                 // CraftBukkit end
 
-                world.e(i, j, k, block.id);
                 itemstack.b(1);
                 if (world.k.nextInt(8) == 0 && i1 == Block.GRASS.id) {
                     byte b0 = 1;
