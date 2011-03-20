@@ -12,6 +12,7 @@ import java.util.TreeSet;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.entity.CreatureType;
 import org.bukkit.event.Event;
 import org.bukkit.event.Event.Type;
@@ -721,45 +722,9 @@ public class World implements IBlockAccess {
 
         // CraftBukkit start
         if (entity instanceof EntityLiving) {
-
-            CreatureType type = null;
-
-            if (entity instanceof EntityChicken) {
-                type = CreatureType.CHICKEN;
-            } else if (entity instanceof EntityCow) {
-                type = CreatureType.COW;
-            } else if (entity instanceof EntityCreeper) {
-                type = CreatureType.CREEPER;
-            } else if (entity instanceof EntityGhast) {
-                type = CreatureType.GHAST;
-            } else if (entity instanceof EntityPig) {
-                type = CreatureType.PIG;
-            } else if (entity instanceof EntityPigZombie) {
-                type = CreatureType.PIG_ZOMBIE;
-            } else if (entity instanceof EntitySheep) {
-                type = CreatureType.SHEEP;
-            } else if (entity instanceof EntitySkeleton) {
-                type = CreatureType.SKELETON;
-            } else if (entity instanceof EntitySpider) {
-                type = CreatureType.SPIDER;
-            } else if (entity instanceof EntityZombie) {
-                type = CreatureType.ZOMBIE;
-            } else if (entity instanceof EntitySlime) {
-                type = CreatureType.SLIME;
-            } else if (entity instanceof EntitySquid) {
-                type = CreatureType.SQUID;
-            }
-
-            if (type != null) {
-                CraftServer server = ((WorldServer) this).getServer();
-                Location loc = new Location(((WorldServer) this).getWorld(), entity.bi, entity.bj, entity.bk);
-
-                CreatureSpawnEvent event = new CreatureSpawnEvent(entity.getBukkitEntity(), type, loc);
-                server.getPluginManager().callEvent(event);
-
-                if (event.isCancelled()) {
-                    return false;
-                }
+            CreatureSpawnEvent event = CraftEventFactory.callCreatureSpawnEvent((EntityLiving) entity);
+            if (event.isCancelled()) {
+                return false;
             }
         }
         // CraftBukkit end
@@ -1609,9 +1574,20 @@ public class World implements IBlockAccess {
     }
 
     public void a(List list) {
-        this.b.addAll(list);
-
+        // CraftBukkit start
+        Entity entity = null;
         for (int i = 0; i < list.size(); ++i) {
+            entity = (Entity) list.get(i);
+            // CraftBukkit start
+            if (entity instanceof EntityLiving) {
+                CreatureSpawnEvent event = CraftEventFactory.callCreatureSpawnEvent((EntityLiving) entity);
+                if (event.isCancelled()) {
+                    continue;
+                }
+            }
+
+            this.b.add(entity);
+            // CraftBukkit end
             this.b((Entity) list.get(i));
         }
     }

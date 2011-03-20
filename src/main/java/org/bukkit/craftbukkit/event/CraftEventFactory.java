@@ -1,12 +1,26 @@
 package org.bukkit.craftbukkit.event;
 
 import net.minecraft.server.ChunkCoordinates;
+import net.minecraft.server.EntityChicken;
+import net.minecraft.server.EntityCow;
+import net.minecraft.server.EntityCreeper;
+import net.minecraft.server.EntityGhast;
 import net.minecraft.server.EntityHuman;
+import net.minecraft.server.EntityLiving;
+import net.minecraft.server.EntityPig;
+import net.minecraft.server.EntityPigZombie;
+import net.minecraft.server.EntitySheep;
+import net.minecraft.server.EntitySkeleton;
+import net.minecraft.server.EntitySlime;
+import net.minecraft.server.EntitySpider;
+import net.minecraft.server.EntitySquid;
+import net.minecraft.server.EntityZombie;
 import net.minecraft.server.Item;
 import net.minecraft.server.ItemStack;
 import net.minecraft.server.World;
 import net.minecraft.server.WorldServer;
 
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -15,11 +29,14 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.entity.CreatureType;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.event.player.PlayerEvent;
@@ -146,6 +163,9 @@ public class CraftEventFactory {
         return event;
     }
 
+    /**
+     * BlockDamageEvent
+     */
     public static BlockDamageEvent callBlockDamageEvent(EntityHuman who, int x, int y, int z, ItemStack itemstack, boolean instaBreak) {
         Player player = (who == null) ? null : (Player) who.getBukkitEntity();
         CraftItemStack itemInHand = new CraftItemStack(itemstack);
@@ -158,6 +178,46 @@ public class CraftEventFactory {
         BlockDamageEvent event = new BlockDamageEvent(player, blockClicked, itemInHand, instaBreak);
         craftServer.getPluginManager().callEvent(event);
 
+        return event;
+    }
+
+    /**
+     * CreatureSpawnEvent
+     */
+    public static CreatureSpawnEvent callCreatureSpawnEvent(EntityLiving entityliving) {
+        org.bukkit.entity.Entity entity = entityliving.getBukkitEntity();
+        CraftServer craftServer = (CraftServer) entity.getServer();
+
+        CreatureType type = null;
+
+        if (entity instanceof EntityChicken) {
+            type = CreatureType.CHICKEN;
+        } else if (entity instanceof EntityCow) {
+            type = CreatureType.COW;
+        } else if (entity instanceof EntityCreeper) {
+            type = CreatureType.CREEPER;
+        } else if (entity instanceof EntityGhast) {
+            type = CreatureType.GHAST;
+        } else if (entity instanceof EntityPig) {
+            type = CreatureType.PIG;
+        } else if (entity instanceof EntityPigZombie) {
+            type = CreatureType.PIG_ZOMBIE;
+        } else if (entity instanceof EntitySheep) {
+            type = CreatureType.SHEEP;
+        } else if (entity instanceof EntitySkeleton) {
+            type = CreatureType.SKELETON;
+        } else if (entity instanceof EntitySheep) {
+            type = CreatureType.SPIDER;
+        } else if (entity instanceof EntityZombie) {
+            type = CreatureType.ZOMBIE;
+        } else if (entity instanceof EntitySlime) {
+            type = CreatureType.SLIME;
+        } else if (entity instanceof EntitySquid) {
+            type = CreatureType.SQUID;
+        }
+
+        CreatureSpawnEvent event = new CreatureSpawnEvent(entity, type, entity.getLocation());
+        craftServer.getPluginManager().callEvent(event);
         return event;
     }
 }
