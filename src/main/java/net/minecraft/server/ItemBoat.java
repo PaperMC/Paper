@@ -1,14 +1,9 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import org.bukkit.block.BlockFace;
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.entity.Player;
-import org.bukkit.event.Event.Type;
-import org.bukkit.event.player.PlayerItemEvent;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.player.PlayerInteractEvent;
 // CraftBukkit end
 
 public class ItemBoat extends Item {
@@ -46,17 +41,7 @@ public class ItemBoat extends Item {
 
                 if (!world.isStatic) {
                     // CraftBukkit start - Boat placement
-                    CraftWorld craftWorld = ((WorldServer) world).getWorld();
-                    CraftServer craftServer = ((WorldServer) world).getServer();
-
-                    Type eventType = Type.PLAYER_ITEM;
-                    Player who = (entityhuman == null) ? null : (Player) entityhuman.getBukkitEntity();
-                    org.bukkit.inventory.ItemStack itemInHand = new CraftItemStack(itemstack);
-                    org.bukkit.block.Block blockClicked = craftWorld.getBlockAt(i, j, k);
-                    BlockFace blockFace = CraftBlock.notchToBlockFace(movingobjectposition.e);
-
-                    PlayerItemEvent event = new PlayerItemEvent(eventType, who, itemInHand, blockClicked, blockFace);
-                    craftServer.getPluginManager().callEvent(event);
+                    PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(entityhuman, Action.RIGHT_CLICK_BLOCK, i, j, k, movingobjectposition.e, itemstack);
 
                     if (event.isCancelled()) {
                         return itemstack;

@@ -34,6 +34,7 @@ public class ItemSeeds extends Item {
                     return false;
                 }
                 // CraftBukkit end
+
                 --itemstack.count;
                 return true;
             } else {

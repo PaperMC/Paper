@@ -1,8 +1,12 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.Event;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.player.PlayerInteractEvent;
 // CraftBukkit end
 
 public class ItemInWorldManager {
@@ -51,9 +55,18 @@ public class ItemInWorldManager {
         this.d = this.j;
         int l = this.b.getTypeId(i, j, k);
 
-        if (l > 0) {
+        // CraftBukkit start
+        // Swings at air do *NOT* exist.
+        if (l <= 0) {
+            return;
+        }
+
+        PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.a, Action.LEFT_CLICK_BLOCK , i, j, k, -1, this.a.inventory.b());
+
+        if (event.useInteractedBlock() != Event.Result.DENY) {
             Block.byId[l].b(this.b, i, j, k, this.a);
         }
+        // CraftBukkit end
 
         if (l > 0 && Block.byId[l].a(this.a) >= 1.0F) {
             this.d(i, j, k);
@@ -157,6 +170,18 @@ public class ItemInWorldManager {
     public boolean a(EntityHuman entityhuman, World world, ItemStack itemstack, int i, int j, int k, int l) {
         int i1 = world.getTypeId(i, j, k);
 
-        return i1 > 0 && Block.byId[i1].a(world, i, j, k, entityhuman) ? true : (itemstack == null ? false : itemstack.a(entityhuman, world, i, j, k, l));
+        // CraftBukkit start - Interact
+        boolean result = false;
+        if (i1 > 0) {
+            PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(entityhuman, Action.RIGHT_CLICK_BLOCK, i, j, k, l, itemstack);
+            if (event.useInteractedBlock() != Event.Result.DENY) {
+                result = Block.byId[i1].a(world, i, j, k, entityhuman);
+            }
+            if (itemstack != null && event.useItemInHand() != Event.Result.DENY && (!result || event.useItemInHand() == Event.Result.ALLOW)) {
+                result = itemstack.a(entityhuman, world, i, j, k, l);
+            }
+        }
+        return result;
     }
+    // CraftBukkit end
 }

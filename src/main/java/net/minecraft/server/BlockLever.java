@@ -4,9 +4,6 @@ package net.minecraft.server;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.event.Event.Type;
-import org.bukkit.event.block.BlockInteractEvent;
 import org.bukkit.event.block.BlockRedstoneEvent;
 // CraftBukkit end
 
@@ -124,29 +121,15 @@ public class BlockLever extends Block {
         if (world.isStatic) {
             return true;
         } else {
-            // CraftBukkit start - Interact Lever
-            CraftWorld craftWorld = ((WorldServer) world).getWorld();
-            CraftServer server = ((WorldServer) world).getServer();
-            Type eventType = Type.BLOCK_INTERACT;
-            CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
-            LivingEntity who = (entityhuman == null) ? null : (LivingEntity) entityhuman.getBukkitEntity();
-
-            BlockInteractEvent event = new BlockInteractEvent(eventType, block, who);
-            server.getPluginManager().callEvent(event);
-
-            // The client updates the doors before the server does it's thing.
-            // Forcibly send correct data.
-            if (event.isCancelled()) {
-                ((EntityPlayer) entityhuman).a.b(new Packet53BlockChange(i, j, k, (WorldServer) world));
-                return true;
-            }
-            // CraftBukkit end
-
             int l = world.getData(i, j, k);
             int i1 = l & 7;
             int j1 = 8 - (l & 8);
 
-            // CraftBukkit start
+            // CraftBukkit start - Interact Lever
+            CraftWorld craftWorld = ((WorldServer) world).getWorld();
+            CraftServer server = ((WorldServer) world).getServer();
+            CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
+
             int old = (j1 != 8) ? 1 : 0;
             int current = (j1 == 8) ? 1 : 0;
             BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, old, current);

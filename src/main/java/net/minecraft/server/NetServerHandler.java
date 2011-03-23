@@ -15,6 +15,7 @@ import org.bukkit.command.CommandException;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.TextWrapper;
 import org.bukkit.entity.Player;
@@ -93,6 +94,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         this.b.c();
         this.d.f.a((Packet) (new Packet3Chat( event.getLeaveMessage() )));
         // CraftBukkit end
+
         this.d.f.c(this.e);
         this.c = true;
     }
@@ -401,7 +403,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         BlockFace blockFace = BlockFace.SELF;
 
         if (packet15place.d == 255) {
-            // CraftBukkit ITEM_USE -- if we have a lastRightClicked then it could be a usable location
+            // CraftBukkit -- if we have a lastRightClicked then it could be a usable location
             if ((packet15place.e != null && packet15place.e.id == lastMaterial) || lastMaterial == 0) {
                 blockClicked = this.lastRightClicked;
                 blockFace = this.lastRightClickedFace;
@@ -410,7 +412,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             this.lastRightClickedFace = null;
             this.lastMaterial = 0;
         } else {
-            // CraftBukkit RIGHTCLICK or BLOCK_PLACE .. or nothing
+            // CraftBukkit -- RIGHTCLICK or BLOCK_PLACE .. or nothing
             blockClicked = (CraftBlock) ((WorldServer) e.world).getWorld().getBlockAt(packet15place.a, packet15place.b, packet15place.c);
             blockFace = CraftBlock.notchToBlockFace(packet15place.d);
 
@@ -430,20 +432,17 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 return;
             }
 
-            // CraftBukkit start
-            Type eventType = Type.PLAYER_ITEM;
-            Player who = (this.e == null) ? null : (Player) this.e.getBukkitEntity();
-            org.bukkit.inventory.ItemStack itemInHand = new CraftItemStack(itemstack);
-
-            PlayerItemEvent event = new PlayerItemEvent(eventType, who, itemInHand, blockClicked, blockFace);
-
+            // CraftBukkit start - Check if we can actually do something over this large a distance
             if (blockClicked != null && blockFace != null) {
-                CraftBlock block = (CraftBlock)blockClicked.getFace(blockFace);
+                CraftBlock block = (CraftBlock) blockClicked.getFace(blockFace);
                 Location eyeLoc = getPlayer().getEyeLocation();
                 if (Math.pow(eyeLoc.getX() - block.getX(), 2) + Math.pow(eyeLoc.getY() - block.getY(), 2) + Math.pow(eyeLoc.getZ() - block.getZ(), 2) > PLACE_DISTANCE_SQUARED) {
                     return;
                 }
             }
+
+            PlayerInteractEvent event = null;
+            org.bukkit.inventory.ItemStack itemInHand = new CraftItemStack(itemstack);
 
             // CraftBukkit We still call this event even in spawn protection.
             // Don't call this event if using Buckets / signs
@@ -454,15 +453,15 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 case LAVA_BUCKET:
                     break;
                 default:
-                    server.getPluginManager().callEvent(event);
+                    event = CraftEventFactory.callPlayerInteractEvent(this.e, Action.RIGHT_CLICK_BLOCK, packet15place.a, packet15place.b, packet15place.c, packet15place.d, itemstack);
             }
 
-            if (!event.isCancelled()) {
+            if (event != null && !event.isCancelled()) {
                 int itemstackAmount = itemstack.count;
                 this.e.c.a(this.e, this.e.world, itemstack);
 
                 // CraftBukkit notch decrements the counter by 1 in the above method with food,
-                // snowballs and so forth, but he does it in a place that doesnt cause the
+                // snowballs and so forth, but he does it in a place that doesn't cause the
                 // inventory update packet to get sent
                 always = (itemstack.count != itemstackAmount);
             }
@@ -483,14 +482,11 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             }
 
             // CraftBukkit start - spawn protection moved to ItemBlock!!!
+            // Check if we can actually do something over this large a distance
             Location eyeLoc = getPlayer().getEyeLocation();
             if (Math.pow(eyeLoc.getX() - i, 2) + Math.pow(eyeLoc.getY() - j, 2) + Math.pow(eyeLoc.getZ() - k, 2) > PLACE_DISTANCE_SQUARED) {
                 return;
             }
-            CraftItemStack craftItem = new CraftItemStack(itemstack);
-            Player player = getPlayer();
-            BlockRightClickEvent event = new BlockRightClickEvent(Type.BLOCK_RIGHTCLICK, blockClicked, blockFace, craftItem, player);
-            server.getPluginManager().callEvent(event);
 
             this.e.c.a(this.e, this.e.world, itemstack, i, j, k, l);
             this.e.a.b((Packet) (new Packet53BlockChange(i, j, k, this.e.world)));
@@ -689,7 +685,30 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
     public void a(Packet18ArmAnimation packet18armanimation) {
         if (packet18armanimation.b == 1) {
-            // CraftBukkit start - Arm swing animation
+            // CraftBukkit -- raytrace to look for 'rogue armswings'
+            float f = 1.0F;
+            float f1 = this.e.lastPitch + (this.e.pitch - this.e.lastPitch) * f;
+            float f2 = this.e.lastYaw + (this.e.yaw - this.e.lastYaw) * f;
+            double d0 = this.e.lastX + (this.e.locX - this.e.lastX) * (double) f;
+            double d1 = this.e.lastY + (this.e.locY - this.e.lastY) * (double) f + 1.62D - (double) this.e.height;
+            double d2 = this.e.lastZ + (this.e.locZ - this.e.lastZ) * (double) f;
+            Vec3D vec3d = Vec3D.b(d0, d1, d2);
+
+            float f3 = MathHelper.b(-f2 * 0.017453292F - 3.1415927F);
+            float f4 = MathHelper.a(-f2 * 0.017453292F - 3.1415927F);
+            float f5 = -MathHelper.b(-f1 * 0.017453292F);
+            float f6 = MathHelper.a(-f1 * 0.017453292F);
+            float f7 = f4 * f5;
+            float f8 = f3 * f5;
+            double d3 = 5.0D;
+            Vec3D vec3d1 = vec3d.c((double) f7 * d3, (double) f6 * d3, (double) f8 * d3);
+            MovingObjectPosition movingobjectposition = this.e.world.a(vec3d, vec3d1, true);
+
+            if (movingobjectposition == null || movingobjectposition.a != EnumMovingObjectType.TILE) {
+                CraftEventFactory.callPlayerInteractEvent(this.e, Action.LEFT_CLICK_AIR, this.e.inventory.b());
+            }
+
+            // Arm swing animation
             Player player = getPlayer();
             PlayerAnimationEvent event = new PlayerAnimationEvent(Type.PLAYER_ANIMATION, player);
             server.getPluginManager().callEvent(event);

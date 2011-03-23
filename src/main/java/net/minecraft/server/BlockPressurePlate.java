@@ -7,10 +7,10 @@ import java.util.Random;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.event.Event.Type;
-import org.bukkit.event.block.BlockInteractEvent;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockRedstoneEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 // CraftBukkit end
 
 public class BlockPressurePlate extends Block {
@@ -96,20 +96,11 @@ public class BlockPressurePlate extends Block {
         }
 
         // CraftBukkit start - Interact Pressure Plate
-        CraftServer server = ((WorldServer) world).getServer();
-        CraftWorld craftWorld = ((WorldServer) world).getWorld();
-        CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
-
         if (flag != flag1) {
             if (flag1) {
                 for (Object object: list) {
-                    if (object != null && object instanceof EntityLiving) {
-                        EntityLiving entity = (EntityLiving) object;
-                        Type eventType = Type.BLOCK_INTERACT;
-                        org.bukkit.entity.LivingEntity who = (LivingEntity) entity.getBukkitEntity();
-
-                        BlockInteractEvent event = new BlockInteractEvent(eventType, block, who);
-                        server.getPluginManager().callEvent(event);
+                    if (object != null && object instanceof EntityHuman) {
+                        PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent((EntityHuman) object, Action.PHYSICAL, i, j, k, -1, null);
 
                         if (event.isCancelled()) {
                             return;
@@ -117,6 +108,10 @@ public class BlockPressurePlate extends Block {
                     }
                 }
             }
+
+            CraftServer server = ((WorldServer) world).getServer();
+            CraftWorld craftWorld = ((WorldServer) world).getWorld();
+            CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
 
             BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, flag ? 1 : 0, flag1 ? 1 : 0);
             server.getPluginManager().callEvent(eventRedstone);

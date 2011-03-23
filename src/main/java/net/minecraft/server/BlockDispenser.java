@@ -1,12 +1,6 @@
 package net.minecraft.server;
 
 import java.util.Random;
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.event.Event.Type;
-import org.bukkit.event.block.BlockInteractEvent;
 
 public class BlockDispenser extends BlockContainer {
 
@@ -62,21 +56,6 @@ public class BlockDispenser extends BlockContainer {
         if (world.isStatic) {
             return true;
         } else {
-            // CraftBukkit start - Interact Dispenser
-            CraftWorld craftWorld = ((WorldServer) world).getWorld();
-            CraftServer server = ((WorldServer) world).getServer();
-            Type eventType = Type.BLOCK_INTERACT;
-            CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
-            LivingEntity who = (entityhuman == null) ? null : (LivingEntity) entityhuman.getBukkitEntity();
-
-            BlockInteractEvent event = new BlockInteractEvent(eventType, block, who);
-            server.getPluginManager().callEvent(event);
-
-            if (event.isCancelled()) {
-                return true;
-            }
-            // CraftBukkit end
-
             TileEntityDispenser tileentitydispenser = (TileEntityDispenser) world.getTileEntity(i, j, k);
 
             entityhuman.a(tileentitydispenser);

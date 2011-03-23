@@ -1,9 +1,12 @@
 package net.minecraft.server;
 
 import java.util.Random;
+
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.block.BlockRedstoneEvent;
+// CraftBukkit end
 
 public class BlockDoor extends Block {
 
@@ -179,8 +182,9 @@ public class BlockDoor extends Block {
                 int power = block.getBlockPower();
                 int powerTop = blockTop.getBlockPower();
                 if (powerTop > power) power = powerTop;
+
                 BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, (world.getData(i, j, k) & 4) > 0 ? 15: 0, power);
-                server.getPluginManager().callEvent(eventRedstone);            
+                server.getPluginManager().callEvent(eventRedstone);
                 this.a(world, i, j, k, eventRedstone.getNewCurrent() > 0);
                 // Craftbukkit end
             }

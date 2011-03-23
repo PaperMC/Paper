@@ -6,9 +6,6 @@ import java.util.Random;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.event.Event.Type;
-import org.bukkit.event.block.BlockInteractEvent;
 import org.bukkit.event.block.BlockRedstoneEvent;
 // CraftBukkit end
 
@@ -126,21 +123,6 @@ public class BlockButton extends Block {
     }
 
     public boolean a(World world, int i, int j, int k, EntityHuman entityhuman) {
-        // CraftBukkit start - Interact Button
-        CraftWorld craftWorld = ((WorldServer) world).getWorld();
-        CraftServer server = ((WorldServer) world).getServer();
-        Type eventType = Type.BLOCK_INTERACT;
-        CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
-        LivingEntity who = (entityhuman == null) ? null : (LivingEntity) entityhuman.getBukkitEntity();
-
-        BlockInteractEvent event = new BlockInteractEvent(eventType, block, who);
-        server.getPluginManager().callEvent(event);
-
-        if (event.isCancelled()) {
-            return true;
-        }
-        // CraftBukkit end
-
         int l = world.getData(i, j, k);
         int i1 = l & 7;
         int j1 = 8 - (l & 8);
@@ -149,6 +131,10 @@ public class BlockButton extends Block {
             return true;
         } else {
             // CraftBukkit start
+            CraftWorld craftWorld = ((WorldServer) world).getWorld();
+            CraftServer server = ((WorldServer) world).getServer();
+            CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
+
             int old = (j1 != 8) ? 1 : 0;
             int current = (j1 == 8) ? 1 : 0;
             BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, old, current);

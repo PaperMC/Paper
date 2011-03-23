@@ -17,10 +17,12 @@ import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event.Type;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.event.player.PlayerEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 
 public class CraftEventFactory {
     private static boolean canBuild(CraftWorld world, Player player, int x, int z) {
@@ -96,6 +98,48 @@ public class CraftEventFactory {
             ((PlayerBucketFillEvent) event).setCancelled(!canBuild(craftWorld, player, clickedX, clickedZ));
         }
 
+        craftServer.getPluginManager().callEvent(event);
+
+        return event;
+    }
+
+    /**
+     * Player Interact event
+     */
+    
+    public static PlayerInteractEvent callPlayerInteractEvent(EntityHuman who, Action action, ItemStack itemstack) {
+        if (action != Action.LEFT_CLICK_AIR && action != Action.RIGHT_CLICK_AIR) {
+            throw new IllegalArgumentException();
+        }
+        return callPlayerInteractEvent(who, action, 0, 255, 0, 0, itemstack);
+    }
+    public static PlayerInteractEvent callPlayerInteractEvent(EntityHuman who, Action action, int clickedX, int clickedY, int clickedZ, int clickedFace, ItemStack itemstack) {
+        Player player = (who == null) ? null : (Player) who.getBukkitEntity();
+        CraftItemStack itemInHand = new CraftItemStack(itemstack);
+
+        CraftWorld craftWorld = (CraftWorld) player.getWorld();
+        CraftServer craftServer = (CraftServer) player.getServer();
+
+        Block blockClicked = craftWorld.getBlockAt(clickedX, clickedY, clickedZ);
+        BlockFace blockFace = CraftBlock.notchToBlockFace(clickedFace);
+
+        if (clickedY == 255) {
+            blockClicked = null;
+            switch (action) {
+                case LEFT_CLICK_BLOCK:
+                    action = Action.LEFT_CLICK_AIR;
+                    break;
+                case RIGHT_CLICK_BLOCK:
+                    action = Action.RIGHT_CLICK_AIR;
+                    break;
+            }
+        }
+
+        if (itemInHand.getType() == Material.AIR || itemInHand.getAmount() == 0) {
+            itemInHand = null;
+        }
+
+        PlayerInteractEvent event = new PlayerInteractEvent(player, action, itemInHand, blockClicked, blockFace);
         craftServer.getPluginManager().callEvent(event);
 
         return event;
