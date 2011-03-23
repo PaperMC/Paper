@@ -76,11 +76,11 @@ public class PlayerListener implements Listener {
     }
 
     /**
-     * Called when a player uses an item
+     * Called when a player interacts
      *
      * @param event Relevant event details
      */
-    public void onPlayerItem(PlayerItemEvent event) {
+    public void onPlayerInteract(PlayerInteractEvent event) {
     }
 
     /**

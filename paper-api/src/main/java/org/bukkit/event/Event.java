@@ -213,7 +213,7 @@ public abstract class Event implements Serializable {
          *
          * @see org.bukkit.event.player.PlayerItemEvent
          */
-        PLAYER_ITEM (Category.PLAYER),
+        PLAYER_INTERACT (Category.PLAYER),
 
         /**
          * Called when a player throws an egg and it might hatch
@@ -314,23 +314,9 @@ public abstract class Event implements Serializable {
         /**
          * Called when a player is attempting to place a block
          *
-         * @see org.bukkit.event.block.BlockRightClickEvent
-         */
-        BLOCK_RIGHTCLICK (Category.BLOCK),
-
-        /**
-         * Called when a player is attempting to place a block
-         *
          * @see org.bukkit.event.block.BlockPlaceEvent
          */
         BLOCK_PLACE (Category.BLOCK),
-
-        /**
-         * Called when an entity interacts with a block (lever, door, pressure plate, chest, furnace)
-         *
-         * @see org.bukkit.event.block.BlockInteractEvent
-         */
-        BLOCK_INTERACT (Category.BLOCK),
 
         /**
          * Called when a block is destroyed from being burnt by fire
@@ -623,5 +609,27 @@ public abstract class Event implements Serializable {
         public Category getCategory() {
             return category;
         }
+    }
+
+    public enum Result {
+        /**
+         * Deny the event.
+         * Depending on the event, the action indicated by the event will either not take place or will be reverted.
+         * Some actions may not be denied.
+         */
+        DENY,
+
+        /**
+         * Neither deny nor allow the event.
+         * The server will proceed with its normal handling.
+         */
+        DEFAULT,
+
+        /**
+         * Allow / Force the event.
+         * The action indicated by the event will take place if possible, even if the server would not normally allow the action.
+         * Some actions may not be allowed.
+         */
+        ALLOW;
     }
 }

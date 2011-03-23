@@ -61,22 +61,6 @@ public class BlockListener implements Listener {
     }
 
     /**
-     * Called when a block is interacted with
-     *
-     * @param event Relevant event details
-     */
-    public void onBlockInteract(BlockInteractEvent event) {
-    }
-
-    /**
-     * Called when a player right clicks a block
-     *
-     * @param event Relevant event details
-     */
-    public void onBlockRightClick(BlockRightClickEvent event) {
-    }
-
-    /**
      * Called when redstone changes
      * From: the source of the redstone change
      * To: The redstone dust that changed

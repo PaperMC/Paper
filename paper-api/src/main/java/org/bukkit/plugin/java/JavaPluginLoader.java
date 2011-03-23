@@ -197,9 +197,9 @@ public final class JavaPluginLoader implements PluginLoader {
                     ((PlayerListener)listener).onPlayerTeleport( (PlayerMoveEvent)event );
                 }
             };
-        case PLAYER_ITEM:
+        case PLAYER_INTERACT:
             return new EventExecutor() { public void execute( Listener listener, Event event ) {
-                    ((PlayerListener)listener).onPlayerItem( (PlayerItemEvent)event );
+                    ((PlayerListener)listener).onPlayerInteract( (PlayerInteractEvent)event );
                 }
             };
         case PLAYER_LOGIN:
@@ -266,11 +266,6 @@ public final class JavaPluginLoader implements PluginLoader {
                     ((BlockListener)listener).onBlockCanBuild( (BlockCanBuildEvent)event );
                 }
             };
-        case BLOCK_RIGHTCLICK:
-            return new EventExecutor() { public void execute( Listener listener, Event event ) {
-                    ((BlockListener)listener).onBlockRightClick( (BlockRightClickEvent)event );
-                }
-            };
         case BLOCK_PLACE:
             return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((BlockListener)listener).onBlockPlace( (BlockPlaceEvent)event );
@@ -279,11 +274,6 @@ public final class JavaPluginLoader implements PluginLoader {
         case BLOCK_DAMAGE:
             return new EventExecutor() { public void execute( Listener listener, Event event ) {
                     ((BlockListener)listener).onBlockDamage( (BlockDamageEvent)event );
-                }
-            };
-        case BLOCK_INTERACT:
-            return new EventExecutor() { public void execute( Listener listener, Event event ) {
-                    ((BlockListener)listener).onBlockInteract( (BlockInteractEvent)event );
                 }
             };
         case BLOCK_FROMTO:
