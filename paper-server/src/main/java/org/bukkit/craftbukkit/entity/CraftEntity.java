@@ -107,13 +107,23 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         return ((WorldServer)entity.world).getWorld();
     }
 
-    public void teleportTo(Location location) {
+    public boolean teleport(Location location) {
         entity.world = ((CraftWorld)location.getWorld()).getHandle();
         entity.b(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+        // entity.b() throws no event, and so cannot be cancelled
+        return true;
+    }
+
+    public boolean teleport(org.bukkit.entity.Entity destination) {
+        return teleport(destination.getLocation());
+    }
+
+    public void teleportTo(Location location) {
+        teleport(location);
     }
 
     public void teleportTo(org.bukkit.entity.Entity destination) {
-        teleportTo(destination.getLocation());
+        teleport(destination);
     }
 
     public int getEntityId() {

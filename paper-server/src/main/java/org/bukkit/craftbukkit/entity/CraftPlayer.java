@@ -137,18 +137,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
-    public void teleportTo(Location location) {
+    public boolean teleport(Location location) {
         WorldServer oldWorld = ((CraftWorld)getWorld()).getHandle();
         WorldServer newWorld = ((CraftWorld)location.getWorld()).getHandle();
         ServerConfigurationManager manager = server.getHandle();
         EntityPlayer entity = getHandle();
+        boolean teleportSuccess;
 
         if (oldWorld != newWorld) {
-            manager.c.k.a(entity);
-            manager.c.k.b(entity);
-            oldWorld.manager.b(entity);
-            manager.b.remove(entity);
-            oldWorld.e(entity);
 
             EntityPlayer newEntity = new EntityPlayer(manager.c, newWorld, entity.name, new ItemInWorldManager(newWorld));
 
@@ -160,17 +156,31 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             newEntity.inventory.e = newEntity;
             newEntity.activeContainer = entity.activeContainer;
             newEntity.defaultContainer = entity.defaultContainer;
+            newEntity.locX = location.getX();
+            newEntity.locY = location.getY();
+            newEntity.locZ = location.getZ();
             newWorld.u.d((int) location.getBlockX() >> 4, (int) location.getBlockZ() >> 4);
 
-            newEntity.a.a(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
-            newWorld.manager.a(newEntity);
-            newWorld.a(newEntity);
-            manager.b.add(newEntity);
+            teleportSuccess = newEntity.a.teleport(location);
 
-            entity.a.e = newEntity;
-            this.entity = newEntity;
+            if (teleportSuccess) {
+                manager.c.k.a(entity);
+                manager.c.k.b(entity);
+                oldWorld.manager.b(entity);
+                manager.b.remove(entity);
+                oldWorld.e(entity);
+
+                newWorld.manager.a(newEntity);
+                newWorld.a(newEntity);
+                manager.b.add(newEntity);
+
+                entity.a.e = newEntity;
+                this.entity = newEntity;
+            }
+
+            return teleportSuccess;
         } else {
-            entity.a.a(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+            return entity.a.teleport(location);
         }
     }
 
