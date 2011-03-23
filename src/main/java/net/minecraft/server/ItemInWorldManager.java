@@ -64,7 +64,15 @@ public class ItemInWorldManager {
 
         PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.a, Action.LEFT_CLICK_BLOCK , i, j, k, -1, this.a.inventory.b());
 
-        if (event.useInteractedBlock() != Event.Result.DENY) {
+        if (event.useInteractedBlock() == Event.Result.DENY) {
+            // If we denied a door from opening, we need to send a correcting update to the client, as it already opened the door.
+            if (l == Block.WOODEN_DOOR.id) {
+                // For some reason *BOTH* the bottom/top part have to be marked updated.
+                boolean bottom = (this.b.getData(i, j, k) & 8) == 0;
+                ((EntityPlayer) this.a).a.b((Packet) (new Packet53BlockChange(i, j, k, this.b)));
+                ((EntityPlayer) this.a).a.b((Packet) (new Packet53BlockChange(i, j + (bottom ? 1 : -1), k, this.b)));
+            }
+        } else {
             Block.byId[l].b(this.b, i, j, k, this.a);
         }
 
@@ -187,7 +195,13 @@ public class ItemInWorldManager {
         boolean result = false;
         if (i1 > 0) {
             PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(entityhuman, Action.RIGHT_CLICK_BLOCK, i, j, k, l, itemstack);
-            if (event.useInteractedBlock() != Event.Result.DENY) {
+            if (event.useInteractedBlock() == Event.Result.DENY) {
+                // If we denied a door from opening, we need to send a correcting update to the client, as it already opened the door.
+                if (i1 == Block.WOODEN_DOOR.id) {
+                    boolean bottom = (world.getData(i, j, k) & 8) == 0;
+                    ((EntityPlayer) entityhuman).a.b((Packet) (new Packet53BlockChange(i, j + (bottom ? 1 : -1), k, world)));
+                }
+            } else {
                 result = Block.byId[i1].a(world, i, j, k, entityhuman);
             }
             if (itemstack != null && event.useItemInHand() != Event.Result.DENY && (!result || event.useItemInHand() == Event.Result.ALLOW)) {
