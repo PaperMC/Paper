@@ -258,7 +258,11 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         }
     }
 
-    // CraftBukkit start -- Delegate for a(double, double, double, float, float)
+    public void a(double d0, double d1, double d2, float f, float f1) {
+        // CraftBukkit start -- Delegate to teleport(Location)
+        teleport(new Location(getPlayer().getWorld(), d0, d1, d2, f, f1));
+    }
+
     public boolean teleport(Location dest) {
         // Note: the world in location is used only for the event
         // Inter-world teleportation is handled in CraftPlayer.teleport()
@@ -280,25 +284,17 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         d2 = to.getZ();
         f = to.getYaw();
         f1 = to.getPitch();
+        // CraftBukkit end
 
-        // net.minecraft.server start
         this.l = false;
         this.i = d0;
         this.j = d1;
         this.k = d2;
         this.e.b(d0, d1, d2, f, f1);
         this.e.a.b((Packet) (new Packet13PlayerLookMove(d0, d1 + 1.6200000047683716D, d1, d2, f, f1, false)));
-        // net.minecraft.server end
 
-        // Returns TRUE if the teleport was successful
+        // CraftBukkit -- Returns TRUE if the teleport was successful
         return !event.isCancelled();
-    }
-    // CraftBukkit end
-
-    public void a(double d0, double d1, double d2, float f, float f1) {
-        // CraftBukkit start -- Delegate to teleport(Location)
-        teleport(new Location(getPlayer().getWorld(), d0, d1, d2, f, f1));
-        // CraftBukkit end
     }
 
     public void a(Packet14BlockDig packet14blockdig) {
