@@ -159,4 +159,51 @@ public interface LivingEntity extends Entity {
      * @param source Entity which to attribute this damage from
      */
     public void damage(int amount, Entity source);
+
+    /**
+     * Returns the entities current maximum noDamageTicks
+     * This is the time in ticks the entity will become unable to take
+     * equal or less damage than the lastDamage
+     * 
+     * @return noDamageTicks
+     */
+    public int getMaximumNoDamageTicks();
+
+    /**
+     * Sets the entities current maximum noDamageTicks
+     * 
+     * @param ticks maximumNoDamageTicks
+     */
+    public void setMaximumNoDamageTicks(int ticks);
+
+    /**
+     * Returns the entities lastDamage taken in the current noDamageTicks time.
+     * Only damage higher than this amount will further damage the entity.
+     * 
+     * @return lastDamage
+     */
+    public int getLastDamage();
+
+    /**
+     * Sets the entities current maximum noDamageTicks
+     * 
+     * @param damage last damage
+     */
+    public void setLastDamage(int damage);
+
+    /**
+     * Returns the entities current noDamageTicks
+     * 
+     * @return noDamageTicks
+     */
+    public int getNoDamageTicks();
+
+    /**
+     * Sets the entities current noDamageTicks
+     * 
+     * @param ticks NoDamageTicks
+     */
+    public void setNoDamageTicks(int ticks);
+
+    
 }
