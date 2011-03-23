@@ -61,7 +61,7 @@ public abstract class EntityLiving extends Entity {
     protected double ap;
     protected double aq;
     float ar = 0.0F;
-    protected int lastDamage = 0;
+    public int lastDamage = 0; // CraftBukkit protected -> public
     protected int at = 0;
     protected float au;
     protected float av;
