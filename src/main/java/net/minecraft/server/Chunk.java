@@ -7,9 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-// CraftBukkit
+// CraftBukkit start
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftWorld;
+// CraftBukkit end
 
 public class Chunk {
 

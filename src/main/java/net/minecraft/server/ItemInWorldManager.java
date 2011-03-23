@@ -14,7 +14,7 @@ public class ItemInWorldManager {
 
     private World b;
     public EntityHuman a;
-    public float c = 0.0F; // CraftBukkit private -> public
+    private float c = 0.0F;
     private int d;
     private int e = 0;
     private float f = 0.0F;

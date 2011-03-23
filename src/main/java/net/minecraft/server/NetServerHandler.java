@@ -16,7 +16,6 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.TextWrapper;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.*;
@@ -496,11 +495,13 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     }
 
     public void a(String s, Object[] aobject) {
+        // CraftBukkit start -- rarely it would send a disconnect line twice
         if (!this.c) {
             a.info(this.e.name + " lost connection: " + s);
             this.d.f.a((Packet) (new Packet3Chat("\u00A7e" + this.e.name + " left the game.")));
             this.d.f.c(this.e);
         }
+        // CraftBukkit end
         this.c = true;
     }
 
@@ -841,7 +842,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 }
 
                 tileentitysign.h();
-                this.e.world.g(i, k, j); // CraftBukkit
+                // CraftBukkit
+                this.e.world.g(i, k, j);
             }
         }
     }

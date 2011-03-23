@@ -6,10 +6,11 @@ import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import java.util.logging.Handler; // CraftBukkit
-import jline.ConsoleReader;
+// CraftBukkit start
+import java.util.logging.Handler;
 import org.bukkit.craftbukkit.util.ShortConsoleLogFormatter;
 import org.bukkit.craftbukkit.util.TerminalConsoleHandler;
+// CraftBukkit end
 
 public class ConsoleLogManager {
 

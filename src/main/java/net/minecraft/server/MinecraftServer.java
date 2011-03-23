@@ -17,7 +17,6 @@ import java.io.PrintStream;
 import java.net.UnknownHostException;
 import jline.ConsoleReader;
 import joptsimple.OptionSet;
-import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.LoggerOutputStream;
 import org.bukkit.craftbukkit.command.ColouredConsoleSender;

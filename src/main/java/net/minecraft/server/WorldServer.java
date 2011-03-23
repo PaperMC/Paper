@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Random;
 
 // CraftBukkit start
-import java.io.File;
 import org.bukkit.BlockChangeDelegate;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
