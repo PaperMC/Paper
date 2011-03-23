@@ -42,6 +42,23 @@ public interface Entity {
      * Teleports this entity to the given location
      *
      * @param location New location to teleport this entity to
+     * @return <code>true</code> if the teleport was successful
+     */
+    public boolean teleport(Location location);
+
+    /**
+     * Teleports this entity to the target Entity
+     *
+     * @param destination Entity to teleport this entity to
+     * @return <code>true</code> if the teleport was successful
+     */
+    public boolean teleport(Entity destination);
+
+    /**
+     * Teleports this entity to the given location
+     *
+     * @param location New location to teleport this entity to
+     * @deprecated use {@link #teleport(Location)}
      */
     public void teleportTo(Location location);
 
@@ -49,6 +66,7 @@ public interface Entity {
      * Teleports this entity to the target Entity
      *
      * @param destination Entity to teleport this entity to
+     * @deprecated use {@link #teleport(Entity)}
      */
     public void teleportTo(Entity destination);
 
