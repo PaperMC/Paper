@@ -123,17 +123,20 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         float deltaAngle = Math.abs(this.lastYaw - this.e.yaw) +  Math.abs(this.lastPitch - this.e.pitch);
 
         if (delta > 1f/256 || deltaAngle > 10f) {
-            PlayerMoveEvent event = new PlayerMoveEvent(Type.PLAYER_MOVE, player, from, to);
-            server.getPluginManager().callEvent(event);
+            // Skip the first time we do this
+            if (lastPosX != Double.MAX_VALUE) {
+                PlayerMoveEvent event = new PlayerMoveEvent(Type.PLAYER_MOVE, player, from, to);
+                server.getPluginManager().callEvent(event);
+    
+                from = event.getFrom();
+                to = event.isCancelled() ? from : event.getTo();
 
-            from = event.getFrom();
-            to = event.isCancelled() ? from : event.getTo();
-
-            this.e.locX = to.getX();
-            this.e.locY = to.getY();
-            this.e.locZ = to.getZ();
-            this.e.yaw = to.getYaw();
-            this.e.pitch = to.getPitch();
+                this.e.locX = to.getX();
+                this.e.locY = to.getY();
+                this.e.locZ = to.getZ();
+                this.e.yaw = to.getYaw();
+                this.e.pitch = to.getPitch();
+            }
 
             this.lastPosX = this.e.locX;
             this.lastPosY = this.e.locY;
