@@ -179,4 +179,28 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         loc.setY(loc.getY() + getEyeHeight());
         return loc;
     }
+
+    public int getMaximumNoDamageTicks() {
+        return getHandle().maxNoDamageTicks;
+    }
+
+    public void setMaximumNoDamageTicks(int ticks) {
+        getHandle().maxNoDamageTicks = ticks;
+    }
+
+    public int getLastDamage() {
+        return getHandle().lastDamage;
+    }
+
+    public void setLastDamage(int damage) {
+        getHandle().lastDamage = damage;
+    }
+
+    public int getNoDamageTicks() {
+        return getHandle().noDamageTicks;
+    }
+
+    public void setNoDamageTicks(int ticks) {
+        getHandle().noDamageTicks = ticks;
+    }
 }
