@@ -1,22 +1,24 @@
 package org.bukkit.event.block;
 
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockDamageLevel;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
+import org.bukkit.inventory.ItemStack;
 
 /**
  * @author tkelly
  */
 public class BlockDamageEvent extends BlockEvent implements Cancellable {
     private Player player;
-    private BlockDamageLevel damageLevel;
+    private boolean instaBreak;
     private boolean cancel;
+    private ItemStack itemstack;
 
-    public BlockDamageEvent(Type type, Block block, BlockDamageLevel level, Player player) {
-        super(type, block);
-        this.damageLevel = level;
+    public BlockDamageEvent(Player player, Block block, ItemStack itemInHand, boolean instaBreak) {
+        super(Type.BLOCK_DAMAGE, block);
+        this.instaBreak = instaBreak;
         this.player = player;
+        this.itemstack = itemstack;
         this.cancel = false;
     }
 
@@ -30,13 +32,30 @@ public class BlockDamageEvent extends BlockEvent implements Cancellable {
     }
 
     /**
-     * Returns the level of damage to the block
+     * Returns if the block is set to instantly break
      *
-     * @return
+     * @return boolean If the block should instantly break
      */
-    public BlockDamageLevel getDamageLevel() {
-        return damageLevel;
+    public boolean getInstaBreak() {
+        return instaBreak;
     }
+    
+    /**
+     * Set if the block should instantly break
+     */
+    public void setInstaBreak(boolean bool) {
+        this.instaBreak = bool;
+    }
+
+    /**
+     * Returns the ItemStack in hand
+     * 
+     * @return Currently wielding itemstack
+     */
+    public ItemStack getItemInHand() {
+        return itemstack;
+    }
+    
 
     public boolean isCancelled() {
         return cancel;
