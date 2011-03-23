@@ -2,6 +2,7 @@ package net.minecraft.server;
 
 // CraftBukkit start
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.Event;
@@ -66,9 +67,21 @@ public class ItemInWorldManager {
         if (event.useInteractedBlock() != Event.Result.DENY) {
             Block.byId[l].b(this.b, i, j, k, this.a);
         }
-        // CraftBukkit end
 
-        if (l > 0 && Block.byId[l].a(this.a) >= 1.0F) {
+        // Handle hitting a block
+        float toolDamage = Block.byId[l].a(this.a);
+        BlockDamageEvent blockEvent = CraftEventFactory.callBlockDamageEvent(this.a, i, j, k, this.a.inventory.b(), toolDamage >= 1.0f);
+
+        if (blockEvent.isCancelled()) {
+            return;
+        }
+
+        if (blockEvent.getInstaBreak()) {
+            toolDamage = 2.0f;
+        }
+
+        if (toolDamage >= 1.0F) {
+            // CraftBukkit end
             this.d(i, j, k);
         } else {
             this.g = i;

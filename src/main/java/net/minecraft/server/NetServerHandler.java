@@ -9,7 +9,6 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 import org.bukkit.ChatColor;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.BlockDamageLevel;
 import org.bukkit.Location;
 import org.bukkit.command.CommandException;
 import org.bukkit.craftbukkit.block.CraftBlock;
@@ -54,10 +53,6 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     private final CraftServer server;
 
     // Get position of last block hit for BlockDamageLevel.STOPPED
-    private int lastX;
-    private int lastY;
-    private int lastZ;
-
     private double lastPosX = Double.MIN_VALUE;
     private double lastPosY = Double.MIN_VALUE;
     private double lastPosZ = Double.MIN_VALUE;
@@ -330,48 +325,13 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 i1 = l;
             }
 
-            // CraftBukkit start
-            CraftPlayer player = getPlayer();
-            CraftBlock block = (CraftBlock) player.getWorld().getBlockAt(i, j, k);
-            int blockId = block.getTypeId();
-            float damage = 0;
-            if (Block.byId[blockId] != null) {
-                damage = Block.byId[blockId].a(player.getHandle()); // Get amount of damage going to block
-            }
-            // CraftBukkit end
-
             if (packet14blockdig.e == 0) {
-                // CraftBukkit start
+                // CraftBukkit
                 if (i1 > this.d.spawnProtection || flag) {
-                    BlockDamageEvent event;
-                    // If the amount of damage that the player is going to do to the block
-                    // is >= 1, then the block is going to break (eg, flowers, torches)
-                    if (damage >= 1.0F) {
-                        // if we are destroying either a redstone wire with a current greater than 0 or
-                        // a redstone torch that is on, then we should notify plugins that this block has
-                        // returned to a current value of 0 (since it will once the redstone is destroyed)
-                        if ((blockId == Block.REDSTONE_WIRE.id && block.getData() > 0) || blockId == Block.REDSTONE_TORCH_ON.id) {
-                            server.getPluginManager().callEvent( new BlockRedstoneEvent(block, (blockId == Block.REDSTONE_WIRE.id ? block.getData() : 15), 0));
-                        }
-                        event = new BlockDamageEvent(Type.BLOCK_DAMAGE, block, BlockDamageLevel.BROKEN, player);
-                    } else {
-                        event = new BlockDamageEvent(Type.BLOCK_DAMAGE, block, BlockDamageLevel.STARTED, player);
-                    }
-                    server.getPluginManager().callEvent(event);
-                    if (!event.isCancelled()) {
-                        this.e.c.a(i, j, k);
-                    }
+                    this.e.c.a(i, j, k);
                 }
             } else if (packet14blockdig.e == 2) {
-                // CraftBukkit start - Get last block that the player hit
-                // Otherwise the block is a Bedrock @(0,0,0)
-                block = (CraftBlock) player.getWorld().getBlockAt(lastX, lastY, lastZ);
-                BlockDamageEvent event = new BlockDamageEvent(Type.BLOCK_DAMAGE, block, BlockDamageLevel.STOPPED, player);
-                server.getPluginManager().callEvent(event);
-                if (!event.isCancelled()) {
-                    this.e.c.b(i, j, k);
-                }
-                // CraftBukkit end
+                this.e.c.b(i, j, k);
             } else if (packet14blockdig.e == 3) {
                 double d4 = this.e.locX - ((double) i + 0.5D);
                 double d5 = this.e.locY - ((double) j + 0.5D);
@@ -384,20 +344,15 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 }
             }
 
-            // CraftBukkit start
-            lastX = i;
-            lastY = j;
-            lastZ = k;
-
+            // CraftBukkit
             ((WorldServer) this.e.world).v = false;
-            // CraftBukkit end
         }
     }
 
     public void a(Packet15Place packet15place) {
         ItemStack itemstack = this.e.inventory.b();
-        // CraftBukkit start
-        boolean flag = ((WorldServer) this.e.world).v = this.d.f.h(this.e.name);
+        // CraftBukkit start - spawn protection moved to ItemBlock!!!
+        //boolean flag = this.d.e.v = this.d.f.h(this.e.name);
 
         CraftBlock blockClicked = null;
         BlockFace blockFace = BlockFace.SELF;

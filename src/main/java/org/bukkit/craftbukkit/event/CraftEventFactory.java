@@ -18,6 +18,7 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
@@ -140,6 +141,21 @@ public class CraftEventFactory {
         }
 
         PlayerInteractEvent event = new PlayerInteractEvent(player, action, itemInHand, blockClicked, blockFace);
+        craftServer.getPluginManager().callEvent(event);
+
+        return event;
+    }
+
+    public static BlockDamageEvent callBlockDamageEvent(EntityHuman who, int x, int y, int z, ItemStack itemstack, boolean instaBreak) {
+        Player player = (who == null) ? null : (Player) who.getBukkitEntity();
+        CraftItemStack itemInHand = new CraftItemStack(itemstack);
+
+        CraftWorld craftWorld = (CraftWorld) player.getWorld();
+        CraftServer craftServer = (CraftServer) player.getServer();
+
+        Block blockClicked = craftWorld.getBlockAt(x, y, z);
+
+        BlockDamageEvent event = new BlockDamageEvent(player, blockClicked, itemInHand, instaBreak);
         craftServer.getPluginManager().callEvent(event);
 
         return event;
