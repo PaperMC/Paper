@@ -58,6 +58,9 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     private float lastPitch = Float.MAX_VALUE;
     private float lastYaw = Float.MAX_VALUE;
 
+    // For the packet15 hack :(
+    Long lastPacket;
+
     // Store the last block right clicked and what type it was
     private CraftBlock lastRightClicked;
     private BlockFace lastRightClickedFace;
@@ -368,68 +371,45 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     }
 
     public void a(Packet15Place packet15place) {
-        ItemStack itemstack = this.e.inventory.b();
-        // CraftBukkit start - spawn protection moved to ItemBlock!!!
-        //boolean flag = this.d.e.v = this.d.f.h(this.e.name);
-
-        CraftBlock blockClicked = null;
-        BlockFace blockFace = BlockFace.SELF;
+        // CraftBukkit
+        // This is a horrible hack needed because the client sends 2 packets on 'right mouse click'
+        // aimed at a block. We shouldn't need to get the second packet if the data is handled
+        // but we cannot know what the client will do, so we might still get it
+        //
+        // If the time between packets is small enough, and the 'signature' similar, we discard the
+        // second one. This sadly has to remain until Mojang makes their packets saner. :(
+        //  -- Grum
 
         if (packet15place.d == 255) {
-            // CraftBukkit -- if we have a lastRightClicked then it could be a usable location
-            if ((packet15place.e != null && packet15place.e.id == lastMaterial) || lastMaterial == 0) {
-                blockClicked = this.lastRightClicked;
-                blockFace = this.lastRightClickedFace;
+            if (packet15place.e != null && packet15place.e.id == lastMaterial && lastPacket != null && packet15place.j - lastPacket < 100) {
+                lastPacket = null;
+                return;
             }
-            this.lastRightClicked = null;
-            this.lastRightClickedFace = null;
-            this.lastMaterial = 0;
         } else {
-            // CraftBukkit -- RIGHTCLICK or BLOCK_PLACE .. or nothing
-            blockClicked = (CraftBlock) ((WorldServer) e.world).getWorld().getBlockAt(packet15place.a, packet15place.b, packet15place.c);
-            blockFace = CraftBlock.notchToBlockFace(packet15place.d);
-
-            this.lastRightClicked = blockClicked;
-            this.lastMaterial = (packet15place.e == null) ? 0 : packet15place.e.id;
-            this.lastRightClickedFace = blockFace;
+            lastMaterial = packet15place.e == null ? -1 : packet15place.e.id;
+            lastPacket = packet15place.j;
         }
 
         // CraftBukkit if rightclick decremented the item, always send the update packet.
         // this is not here for CraftBukkit's own functionality; rather it is to fix
         // a notch bug where the item doesn't update correctly.
         boolean always = false;
+
         // CraftBukkit end
+
+        ItemStack itemstack = this.e.inventory.b();
+
+        // boolean flag = this.d.e.v = this.d.f.h(this.e.name); // CraftBukkit
 
         if (packet15place.d == 255) {
             if (itemstack == null) {
                 return;
             }
 
-            // CraftBukkit start - Check if we can actually do something over this large a distance
-            if (blockClicked != null && blockFace != null) {
-                CraftBlock block = (CraftBlock) blockClicked.getFace(blockFace);
-                Location eyeLoc = getPlayer().getEyeLocation();
-                if (Math.pow(eyeLoc.getX() - block.getX(), 2) + Math.pow(eyeLoc.getY() - block.getY(), 2) + Math.pow(eyeLoc.getZ() - block.getZ(), 2) > PLACE_DISTANCE_SQUARED) {
-                    return;
-                }
-            }
-
-            PlayerInteractEvent event = null;
-            org.bukkit.inventory.ItemStack itemInHand = new CraftItemStack(itemstack);
-
-            // CraftBukkit We still call this event even in spawn protection.
             // Don't call this event if using Buckets / signs
-            switch (itemInHand.getType()) {
-                case SIGN:
-                case BUCKET:
-                case WATER_BUCKET:
-                case LAVA_BUCKET:
-                    break;
-                default:
-                    event = CraftEventFactory.callPlayerInteractEvent(this.e, Action.RIGHT_CLICK_BLOCK, packet15place.a, packet15place.b, packet15place.c, packet15place.d, itemstack);
-            }
+            PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.e, Action.RIGHT_CLICK_AIR, itemstack);
 
-            if (event != null && !event.isCancelled()) {
+            if (!event.isCancelled()) {
                 int itemstackAmount = itemstack.count;
                 this.e.c.a(this.e, this.e.world, itemstack);
 
