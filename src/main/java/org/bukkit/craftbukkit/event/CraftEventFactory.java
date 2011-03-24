@@ -5,6 +5,7 @@ import net.minecraft.server.EntityChicken;
 import net.minecraft.server.EntityCow;
 import net.minecraft.server.EntityCreeper;
 import net.minecraft.server.EntityGhast;
+import net.minecraft.server.EntityGiantZombie;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntityPig;
@@ -198,6 +199,8 @@ public class CraftEventFactory {
             type = CreatureType.CREEPER;
         } else if (entityliving instanceof EntityGhast) {
             type = CreatureType.GHAST;
+        } else if (entityliving instanceof EntityGiantZombie) {
+            type = CreatureType.GIANT;
         } else if (entityliving instanceof EntityPig) {
             type = CreatureType.PIG;
         } else if (entityliving instanceof EntityPigZombie) {
