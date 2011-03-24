@@ -185,6 +185,12 @@ public class ItemInWorldManager {
 
     public boolean a(EntityHuman entityhuman, World world, ItemStack itemstack) {
         int i = itemstack.count;
+
+        PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(entityhuman, Action.RIGHT_CLICK_AIR, itemstack);
+        if (event.useItemInHand() == Event.Result.DENY) {
+            return false;
+        }
+
         ItemStack itemstack1 = itemstack.a(world, entityhuman);
 
         if (itemstack1 == itemstack && (itemstack1 == null || itemstack1.count == i)) {

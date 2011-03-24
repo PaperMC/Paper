@@ -17,6 +17,7 @@ import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.*;
 import org.bukkit.event.player.*;
@@ -410,17 +411,13 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             }
 
             // CraftBukkit start
-            PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.e, Action.RIGHT_CLICK_AIR, itemstack);
+            int itemstackAmount = itemstack.count;
+            this.e.c.a(this.e, this.e.world, itemstack);
 
-            if (!event.isCancelled()) {
-                int itemstackAmount = itemstack.count;
-                this.e.c.a(this.e, this.e.world, itemstack);
-
-                // CraftBukkit notch decrements the counter by 1 in the above method with food,
-                // snowballs and so forth, but he does it in a place that doesn't cause the
-                // inventory update packet to get sent
-                always = (itemstack.count != itemstackAmount);
-            }
+            // CraftBukkit notch decrements the counter by 1 in the above method with food,
+            // snowballs and so forth, but he does it in a place that doesn't cause the
+            // inventory update packet to get sent
+            always = (itemstack.count != itemstackAmount);
             // CraftBukkit end
         } else {
             int i = packet15place.a;
