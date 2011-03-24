@@ -30,7 +30,7 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
         this.blockClicked = clickedBlock;
         this.blockFace = clickedFace;
 
-        useItemInHand = item == null ? Result.DENY : Result.ALLOW;
+        useItemInHand = item == null ? Result.DENY : Result.DEFAULT;
         useClickedBlock = clickedBlock == null ? Result.DENY : Result.ALLOW;
     }
 
