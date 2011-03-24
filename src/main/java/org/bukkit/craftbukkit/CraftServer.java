@@ -318,7 +318,7 @@ public final class CraftServer implements Server {
             }
         }
 
-        return new CraftWorld(internal);
+        return internal.getWorld();
     }
 
     public MinecraftServer getServer() {
