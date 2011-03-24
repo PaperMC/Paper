@@ -374,7 +374,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     }
 
     public void a(Packet15Place packet15place) {
-        // CraftBukkit
+        // CraftBukkit start
         // This is a horrible hack needed because the client sends 2 packets on 'right mouse click'
         // aimed at a block. We shouldn't need to get the second packet if the data is handled
         // but we cannot know what the client will do, so we might still get it
@@ -409,7 +409,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 return;
             }
 
-            // Don't call this event if using Buckets / signs
+            // CraftBukkit start
             PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.e, Action.RIGHT_CLICK_AIR, itemstack);
 
             if (!event.isCancelled()) {

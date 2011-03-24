@@ -204,7 +204,8 @@ public class ItemInWorldManager {
             } else {
                 result = Block.byId[i1].a(world, i, j, k, entityhuman);
             }
-            if (itemstack != null && event.useItemInHand() != Event.Result.DENY && (!result || event.useItemInHand() == Event.Result.ALLOW)) {
+            // If we have 'true' and no explicit deny *or* an explicit allow -- run the item part of the hook
+            if (itemstack != null && ((!result && event.useItemInHand() != Event.Result.DENY) || event.useItemInHand() == Event.Result.ALLOW)) {
                 result = itemstack.a(entityhuman, world, i, j, k, l);
             }
         }
