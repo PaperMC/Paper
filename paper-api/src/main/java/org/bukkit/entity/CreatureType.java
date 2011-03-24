@@ -9,6 +9,7 @@ public enum CreatureType {
     COW("Cow"),
     CREEPER("Creeper"),
     GHAST("Ghast"),
+    GIANT("Giant"),
     PIG("Pig"),
     PIG_ZOMBIE("PigZombie"),
     SHEEP("Sheep"),
