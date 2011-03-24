@@ -78,6 +78,13 @@ public class ItemInWorldManager {
 
         // Handle hitting a block
         float toolDamage = Block.byId[l].a(this.a);
+        if (event.useItemInHand() == Event.Result.DENY) {
+            // If we 'insta destroyed' then the client needs to be informed.
+            if (toolDamage > 1.0f) {
+                ((EntityPlayer) this.a).a.b((Packet) (new Packet53BlockChange(i, j, k, this.b)));
+            }
+            return;
+        }
         BlockDamageEvent blockEvent = CraftEventFactory.callBlockDamageEvent(this.a, i, j, k, this.a.inventory.b(), toolDamage >= 1.0f);
 
         if (blockEvent.isCancelled()) {
@@ -117,6 +124,10 @@ public class ItemInWorldManager {
                     this.o = this.d;
                 }
             }
+        // CraftBukkit start -- force blockreset to client
+        } else {
+            ((EntityPlayer) this.a).a.b((Packet) (new Packet53BlockChange(i, j, k, this.b)));
+            // CraftBukkit end
         }
 
         this.c = 0.0F;
