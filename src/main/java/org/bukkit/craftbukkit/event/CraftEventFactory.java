@@ -190,29 +190,29 @@ public class CraftEventFactory {
 
         CreatureType type = null;
 
-        if (entity instanceof EntityChicken) {
+        if (entityliving instanceof EntityChicken) {
             type = CreatureType.CHICKEN;
-        } else if (entity instanceof EntityCow) {
+        } else if (entityliving instanceof EntityCow) {
             type = CreatureType.COW;
-        } else if (entity instanceof EntityCreeper) {
+        } else if (entityliving instanceof EntityCreeper) {
             type = CreatureType.CREEPER;
-        } else if (entity instanceof EntityGhast) {
+        } else if (entityliving instanceof EntityGhast) {
             type = CreatureType.GHAST;
-        } else if (entity instanceof EntityPig) {
+        } else if (entityliving instanceof EntityPig) {
             type = CreatureType.PIG;
-        } else if (entity instanceof EntityPigZombie) {
+        } else if (entityliving instanceof EntityPigZombie) {
             type = CreatureType.PIG_ZOMBIE;
-        } else if (entity instanceof EntitySheep) {
+        } else if (entityliving instanceof EntitySheep) {
             type = CreatureType.SHEEP;
-        } else if (entity instanceof EntitySkeleton) {
+        } else if (entityliving instanceof EntitySkeleton) {
             type = CreatureType.SKELETON;
-        } else if (entity instanceof EntitySheep) {
+        } else if (entityliving instanceof EntitySpider) {
             type = CreatureType.SPIDER;
-        } else if (entity instanceof EntityZombie) {
+        } else if (entityliving instanceof EntityZombie) {
             type = CreatureType.ZOMBIE;
-        } else if (entity instanceof EntitySlime) {
+        } else if (entityliving instanceof EntitySlime) {
             type = CreatureType.SLIME;
-        } else if (entity instanceof EntitySquid) {
+        } else if (entityliving instanceof EntitySquid) {
             type = CreatureType.SQUID;
         }
 
