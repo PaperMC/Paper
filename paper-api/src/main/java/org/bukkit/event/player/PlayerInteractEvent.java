@@ -30,7 +30,7 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
         this.blockClicked = clickedBlock;
         this.blockFace = clickedFace;
 
-        useItemInHand = item == null ? Result.DENY : Result.DEFAULT;
+        useItemInHand = Result.DEFAULT;
         useClickedBlock = clickedBlock == null ? Result.DENY : Result.ALLOW;
     }
 
@@ -65,6 +65,7 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
      */
     public void setCancelled(boolean cancel) {
         setUseInteractedBlock(cancel ? Result.DENY : useInteractedBlock() == Result.DENY ? Result.DEFAULT : useInteractedBlock());
+        setUseItemInHand(cancel ? Result.DENY : useItemInHand() == Result.DENY ? Result.DEFAULT : useItemInHand());
     }
 
     /**
