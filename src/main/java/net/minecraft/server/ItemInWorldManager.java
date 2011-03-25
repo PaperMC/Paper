@@ -186,11 +186,6 @@ public class ItemInWorldManager {
     public boolean a(EntityHuman entityhuman, World world, ItemStack itemstack) {
         int i = itemstack.count;
 
-        PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(entityhuman, Action.RIGHT_CLICK_AIR, itemstack);
-        if (event.useItemInHand() == Event.Result.DENY) {
-            return false;
-        }
-
         ItemStack itemstack1 = itemstack.a(world, entityhuman);
 
         if (itemstack1 == itemstack && (itemstack1 == null || itemstack1.count == i)) {
@@ -220,10 +215,14 @@ public class ItemInWorldManager {
                 }
             } else {
                 result = Block.byId[i1].a(world, i, j, k, entityhuman);
+                if (itemstack != null && !result) {
+                    result = itemstack.a(entityhuman, world, i, j, k, l);
+                }
             }
+
             // If we have 'true' and no explicit deny *or* an explicit allow -- run the item part of the hook
             if (itemstack != null && ((!result && event.useItemInHand() != Event.Result.DENY) || event.useItemInHand() == Event.Result.ALLOW)) {
-                result = itemstack.a(entityhuman, world, i, j, k, l);
+                this.a(entityhuman, world, itemstack);
             }
         }
         return result;

@@ -412,7 +412,10 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
             // CraftBukkit start
             int itemstackAmount = itemstack.count;
-            this.e.c.a(this.e, this.e.world, itemstack);
+            PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.e, Action.RIGHT_CLICK_AIR, itemstack);
+            if (event.useItemInHand() != Event.Result.DENY) {
+                this.e.c.a(this.e, this.e.world, itemstack);
+            }
 
             // CraftBukkit notch decrements the counter by 1 in the above method with food,
             // snowballs and so forth, but he does it in a place that doesn't cause the
