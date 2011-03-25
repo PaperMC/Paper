@@ -3,6 +3,9 @@ CraftBukkit
 
 A Bukkit (Minecraft Server API) implementation
 
+Website: [http://bukkit.org](http://bukkit.org)  
+Bugs/Suggestions: [http://leaky.bukkit.org](http://leaky.bukkit.org)
+
 Compilation
 -----------
 
