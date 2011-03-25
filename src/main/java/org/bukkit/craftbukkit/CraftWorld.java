@@ -67,7 +67,7 @@ public class CraftWorld implements World {
 
     public Location getSpawnLocation() {
         ChunkCoordinates spawn = world.l();
-        return new Location(this, spawn.a, world.e(spawn.a, spawn.c), spawn.c);
+        return new Location(this, spawn.a, spawn.b, spawn.c);
     }
     
     public boolean setSpawnLocation(int x, int y, int z) {
