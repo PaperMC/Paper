@@ -125,7 +125,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void setCompassTarget(Location loc) {
-        getHandle().a.b(((Packet) (new Packet6SpawnPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()))));
+        // Do not directly assign here, from the packethandler we'll assign it.
+        getHandle().a.b((Packet) new Packet6SpawnPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
+    }
+
+    public Location getCompassTarget() {
+        return getHandle().compassTarget;
     }
 
     public void chat(String msg) {
@@ -159,6 +164,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             newEntity.locX = location.getX();
             newEntity.locY = location.getY();
             newEntity.locZ = location.getZ();
+            newEntity.compassTarget = entity.compassTarget;
             newWorld.u.d((int) location.getBlockX() >> 4, (int) location.getBlockZ() >> 4);
 
             teleportSuccess = newEntity.a.teleport(location);
@@ -176,6 +182,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
                 entity.a.e = newEntity;
                 this.entity = newEntity;
+
+                setCompassTarget(getCompassTarget());
             }
 
             return teleportSuccess;

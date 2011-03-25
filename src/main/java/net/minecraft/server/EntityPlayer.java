@@ -7,6 +7,8 @@ import java.util.Set;
 
 // CraftBukkit start
 import java.util.ArrayList;
+
+import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftEntity;
@@ -56,6 +58,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     }
 
     public String displayName;
+    public Location compassTarget;
     // CraftBukkit end
 
     public void l() {

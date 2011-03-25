@@ -63,8 +63,6 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     Long lastPacket;
 
     // Store the last block right clicked and what type it was
-    private CraftBlock lastRightClicked;
-    private BlockFace lastRightClickedFace;
     private int lastMaterial;
 
     public CraftPlayer getPlayer() {
@@ -513,6 +511,12 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     }
 
     public void b(Packet packet) {
+        // CraftBukkit
+        if (packet instanceof Packet6SpawnPosition) {
+            Packet6SpawnPosition packet6 = (Packet6SpawnPosition) packet;
+            this.e.compassTarget = new Location(getPlayer().getWorld(), packet6.a, packet6.b, packet6.c);
+        }
+        // CraftBukkit
         this.b.a(packet);
         this.g = this.f;
     }
