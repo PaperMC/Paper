@@ -164,6 +164,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             newEntity.locX = location.getX();
             newEntity.locY = location.getY();
             newEntity.locZ = location.getZ();
+            newEntity.displayName = entity.displayName;
             newEntity.compassTarget = entity.compassTarget;
             newWorld.u.d((int) location.getBlockX() >> 4, (int) location.getBlockZ() >> 4);
 
