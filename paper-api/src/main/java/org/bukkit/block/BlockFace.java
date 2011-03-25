@@ -55,4 +55,33 @@ public enum BlockFace {
     public int getModZ() {
         return modZ;
     }
+    
+    public BlockFace getOppositeFace() {
+        switch (this) {
+        case NORTH:
+            return BlockFace.SOUTH;
+        case SOUTH:
+            return BlockFace.NORTH;
+        case EAST:
+            return BlockFace.WEST;
+        case WEST:
+            return BlockFace.EAST;
+        case UP:
+            return BlockFace.DOWN;
+        case DOWN:
+            return BlockFace.UP;
+        case NORTH_EAST:
+            return BlockFace.SOUTH_WEST;
+        case NORTH_WEST:
+            return BlockFace.SOUTH_EAST;
+        case SOUTH_EAST:
+            return BlockFace.NORTH_WEST;
+        case SOUTH_WEST:
+            return BlockFace.NORTH_EAST;
+        case SELF:
+            return BlockFace.SELF;
+        }
+        
+        return BlockFace.SELF;
+    }
 }
