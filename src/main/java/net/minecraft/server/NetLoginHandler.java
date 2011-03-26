@@ -83,7 +83,7 @@ public class NetLoginHandler extends NetHandler {
             ChunkCoordinates chunkcoordinates = entityplayer.world.l();
             netserverhandler.b((Packet) (new Packet1Login("", "", entityplayer.id, entityplayer.world.j(), (byte) entityplayer.world.m.g)));
             netserverhandler.b((Packet) (new Packet6SpawnPosition(chunkcoordinates.a, chunkcoordinates.b, chunkcoordinates.c)));
-            this.e.f.a((Packet) (new Packet3Chat("\u00A7e" + entityplayer.name + " joined the game.")));
+            // this.e.f.a((Packet) (new Packet3Chat("\u00A7e" + entityplayer.name + " joined the game.")));  // CraftBukkit - message moved to join event
             this.e.f.a(entityplayer);
             netserverhandler.a(entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
             this.e.c.a(netserverhandler);

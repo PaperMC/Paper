@@ -90,7 +90,10 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         // Send the possibly modified leave message
         this.b.a((Packet) (new Packet255KickDisconnect( event.getReason() )));
         this.b.c();
-        this.d.f.a((Packet) (new Packet3Chat( event.getLeaveMessage() )));
+        leaveMessage = event.getLeaveMessage();
+        if (leaveMessage != null) {
+            this.d.f.a((Packet) (new Packet3Chat(leaveMessage)));
+        }
         // CraftBukkit end
 
         this.d.f.c(this.e);

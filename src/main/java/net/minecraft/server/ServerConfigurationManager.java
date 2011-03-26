@@ -21,6 +21,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.player.PlayerEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 // CraftBukkit end
@@ -94,7 +95,15 @@ public class ServerConfigurationManager {
 
         entityplayer.world.a(entityplayer);
 
-        server.getPluginManager().callEvent(new PlayerEvent(PlayerEvent.Type.PLAYER_JOIN, server.getPlayer(entityplayer)));
+        PlayerJoinEvent playerJoinEvent = new PlayerJoinEvent(PlayerEvent.Type.PLAYER_JOIN, server.getPlayer(entityplayer), "\u00A7e" + entityplayer.name + " joined the game.");
+
+        server.getPluginManager().callEvent(playerJoinEvent);
+
+        String joinMessage = playerJoinEvent.getJoinMessage();
+
+        if (joinMessage != null) {
+            this.c.f.a((Packet) (new Packet3Chat(joinMessage)));
+        }
 
         ((WorldServer) entityplayer.world).manager.a(entityplayer);
         // CraftBukkit end
