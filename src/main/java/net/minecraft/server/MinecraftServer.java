@@ -21,9 +21,8 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.LoggerOutputStream;
 import org.bukkit.craftbukkit.command.ColouredConsoleSender;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
-import org.bukkit.event.Event;
-import org.bukkit.event.world.WorldEvent;
-// CraftBukkit end
+import org.bukkit.event.world.WorldSaveEvent;
+
 
 public class MinecraftServer implements Runnable, ICommandListener {
 
@@ -211,7 +210,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
             world.a(true, (IProgressUpdate) null);
             world.r();
 
-            WorldEvent event = new WorldEvent( Event.Type.WORLD_SAVE, world.getWorld() );
+            WorldSaveEvent event = new WorldSaveEvent( world.getWorld() );
             server.getPluginManager().callEvent( event );
         }
 
