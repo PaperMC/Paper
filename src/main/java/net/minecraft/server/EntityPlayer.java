@@ -13,7 +13,6 @@ import org.bukkit.Server;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.event.Event;
 import org.bukkit.event.entity.EntityDeathEvent;
 // CraftBukkit end
 
@@ -118,7 +117,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         CraftWorld cworld = ((WorldServer) world).getWorld();
         Server server = ((WorldServer) world).getServer();
 
-        EntityDeathEvent event = new EntityDeathEvent(Event.Type.ENTITY_DEATH, craftEntity, loot);
+        EntityDeathEvent event = new EntityDeathEvent(craftEntity, loot);
         server.getPluginManager().callEvent(event);
 
         for (org.bukkit.inventory.ItemStack stack: event.getDrops()) {

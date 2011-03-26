@@ -7,7 +7,6 @@ import org.bukkit.entity.CreatureType;
 import org.bukkit.entity.Egg;
 import org.bukkit.entity.Player;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.event.Event.Type;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
@@ -193,10 +192,9 @@ public class EntityEgg extends Entity {
 
             if (this.g instanceof EntityPlayer) {
                 CraftServer server = ((WorldServer) this.world).getServer();
-                Type eventType = Type.PLAYER_EGG_THROW;
                 Player player = (this.g == null) ? null : (Player) this.g.getBukkitEntity();
 
-                PlayerEggThrowEvent event = new PlayerEggThrowEvent(eventType, player, (Egg) this.getBukkitEntity(), hatching, (byte) numHatching, hatchingType);
+                PlayerEggThrowEvent event = new PlayerEggThrowEvent(player, (Egg) this.getBukkitEntity(), hatching, (byte) numHatching, hatchingType);
                 server.getPluginManager().callEvent(event);
 
                 hatching = event.isHatching();

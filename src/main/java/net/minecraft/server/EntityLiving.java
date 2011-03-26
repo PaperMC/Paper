@@ -9,7 +9,6 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.TrigMath;
-import org.bukkit.event.Event.Type;
 import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
@@ -461,7 +460,7 @@ public abstract class EntityLiving extends Entity {
         }
 
         CraftEntity entity = (CraftEntity) getBukkitEntity();
-        EntityDeathEvent event = new EntityDeathEvent(Type.ENTITY_DEATH, entity, loot);
+        EntityDeathEvent event = new EntityDeathEvent(entity, loot);
         CraftWorld cworld = ((WorldServer) world).getWorld();
         Server server = ((WorldServer) world).getServer();
         server.getPluginManager().callEvent(event);

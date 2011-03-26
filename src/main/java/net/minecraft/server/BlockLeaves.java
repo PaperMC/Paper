@@ -5,7 +5,6 @@ import java.util.Random;
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.LeavesDecayEvent;
 // CraftBukkit end
 
@@ -127,7 +126,7 @@ public class BlockLeaves extends BlockLeavesBase {
         // CraftBukkit start
         CraftServer server = ((WorldServer) world).getServer();
         CraftWorld cworld = ((WorldServer) world).getWorld();
-        LeavesDecayEvent event = new LeavesDecayEvent(Type.LEAVES_DECAY, cworld.getBlockAt(i, j, k));
+        LeavesDecayEvent event = new LeavesDecayEvent(cworld.getBlockAt(i, j, k));
         server.getPluginManager().callEvent(event);
 
         if (event.isCancelled()) return;

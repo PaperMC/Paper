@@ -2,7 +2,6 @@
 package org.bukkit.craftbukkit;
 
 import java.lang.ref.WeakReference;
-import java.util.HashMap;
 import net.minecraft.server.ChunkPosition;
 
 import net.minecraft.server.WorldServer;

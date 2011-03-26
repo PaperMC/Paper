@@ -11,7 +11,6 @@ import org.bukkit.entity.Vehicle;
 import org.bukkit.event.vehicle.VehicleBlockCollisionEvent;
 import org.bukkit.event.vehicle.VehicleExitEvent;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.event.Event.Type;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -282,8 +281,7 @@ public abstract class Entity {
 
                 if (this.fireTicks <= 0) {
                     // not on fire yet
-                    Type eventType = Type.ENTITY_COMBUST;
-                    EntityCombustEvent combustEvent = new EntityCombustEvent(eventType, damagee);
+                    EntityCombustEvent combustEvent = new EntityCombustEvent(damagee);
                     server.getPluginManager().callEvent(combustEvent);
                     if (!combustEvent.isCancelled()) {
                         this.fireTicks = 600;
@@ -492,7 +490,7 @@ public abstract class Entity {
                     block = block.getFace(BlockFace.EAST);
                 }
 
-                VehicleBlockCollisionEvent event = new VehicleBlockCollisionEvent(Type.VEHICLE_COLLISION_BLOCK, vehicle, block);
+                VehicleBlockCollisionEvent event = new VehicleBlockCollisionEvent(vehicle, block);
                 ((WorldServer) world).getServer().getPluginManager().callEvent(event);
             }
             // CraftBukkit end
@@ -551,9 +549,8 @@ public abstract class Entity {
                         // not on fire yet
                         CraftServer server = ((WorldServer) this.world).getServer();
                         org.bukkit.entity.Entity damagee = this.getBukkitEntity();
-                        Type eventType = Type.ENTITY_COMBUST;
 
-                        EntityCombustEvent event = new EntityCombustEvent(eventType, damagee);
+                        EntityCombustEvent event = new EntityCombustEvent(damagee);
                         server.getPluginManager().callEvent(event);
 
                         if (!event.isCancelled()) {
@@ -1037,7 +1034,7 @@ public abstract class Entity {
                     CraftVehicle cvehicle = (CraftVehicle) vehicle.getBukkitEntity();
                     LivingEntity living = (LivingEntity) getBukkitEntity();
 
-                    VehicleExitEvent event = new VehicleExitEvent(Type.VEHICLE_EXIT, cvehicle, living);
+                    VehicleExitEvent event = new VehicleExitEvent(cvehicle, living);
                     ((WorldServer) world).getServer().getPluginManager().callEvent(event);
                 }
                 // CraftBukkit end
@@ -1053,7 +1050,7 @@ public abstract class Entity {
                 CraftVehicle cvehicle = (CraftVehicle) vehicle.getBukkitEntity();
                 LivingEntity living = (LivingEntity) getBukkitEntity();
 
-                VehicleExitEvent event = new VehicleExitEvent(Type.VEHICLE_EXIT, cvehicle, living);
+                VehicleExitEvent event = new VehicleExitEvent(cvehicle, living);
                 ((WorldServer) world).getServer().getPluginManager().callEvent(event);
             }
             // CraftBukkit end

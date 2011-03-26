@@ -9,13 +9,8 @@ import java.util.Set;
 import java.util.TreeSet;
 
 // CraftBukkit start
-import org.bukkit.Location;
-import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.entity.CreatureType;
-import org.bukkit.event.Event;
-import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockCanBuildEvent;
 import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
@@ -364,7 +359,7 @@ public class World implements IBlockAccess {
                 // CraftBukkit start
                 CraftWorld world = ((WorldServer) this).getWorld();
                 if (world != null) {
-                    BlockPhysicsEvent event = new BlockPhysicsEvent(Event.Type.BLOCK_PHYSICS, world.getBlockAt(i, j, k), l);
+                    BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(i, j, k), l);
                     ((WorldServer) this).getServer().getPluginManager().callEvent(event);
 
                     if (event.isCancelled()) {
@@ -1613,7 +1608,7 @@ public class World implements IBlockAccess {
             return false;
         }
 
-        BlockCanBuildEvent event = new BlockCanBuildEvent(Type.BLOCK_CANBUILD, ((WorldServer) this).getWorld().getBlockAt(j, k, l), i, defaultReturn);
+        BlockCanBuildEvent event = new BlockCanBuildEvent(((WorldServer) this).getWorld().getBlockAt(j, k, l), i, defaultReturn);
         ((WorldServer) this).getServer().getPluginManager().callEvent(event);
 
         return event.isBuildable();

@@ -14,7 +14,6 @@ import org.bukkit.craftbukkit.CraftChunk;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.LongHashset;
 import org.bukkit.craftbukkit.util.LongHashtable;
-import org.bukkit.event.Event.Type;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 // CraftBukkit end
@@ -81,7 +80,7 @@ public class ChunkProviderServer implements IChunkProvider {
                  * the World constructor. We can't reliably alter that, so we have
                  * no way of creating a CraftWorld/CraftServer at that point.
                  */
-                server.getPluginManager().callEvent(new ChunkLoadEvent(Type.CHUNK_LOAD, chunk.bukkitChunk));
+                server.getPluginManager().callEvent(new ChunkLoadEvent(chunk.bukkitChunk));
             }
             // CraftBukkit end
 
@@ -212,7 +211,7 @@ public class ChunkProviderServer implements IChunkProvider {
                 Chunk chunk = e.get(chunkcoordinates);
                 if (chunk == null) continue;
 
-                ChunkUnloadEvent event = new ChunkUnloadEvent(Type.CHUNK_UNLOAD, chunk.bukkitChunk);
+                ChunkUnloadEvent event = new ChunkUnloadEvent(chunk.bukkitChunk);
                 server.getPluginManager().callEvent(event);
                 if (!event.isCancelled()) {
                     g.getWorld().preserveChunk( (CraftChunk) chunk.bukkitChunk );

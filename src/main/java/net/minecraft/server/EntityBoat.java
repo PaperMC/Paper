@@ -7,14 +7,13 @@ import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.Vehicle;
-import org.bukkit.event.Event.Type;
 import org.bukkit.event.vehicle.VehicleCreateEvent;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.event.vehicle.VehicleEntityCollisionEvent;
-import org.bukkit.event.vehicle.VehicleEvent;
 import org.bukkit.event.vehicle.VehicleMoveEvent;
 // CraftBukkit end
+import org.bukkit.event.vehicle.VehicleUpdateEvent;
 
 public class EntityBoat extends Entity {
 
@@ -32,11 +31,10 @@ public class EntityBoat extends Entity {
     // CraftBukkit start
     public void h(Entity entity) {
         CraftServer server = ((WorldServer) this.world).getServer();
-        Type eventType = Type.VEHICLE_COLLISION_ENTITY;
         Vehicle vehicle = (Vehicle) this.getBukkitEntity();
         org.bukkit.entity.Entity hitEntity = (entity == null) ? null : entity.getBukkitEntity();
 
-        VehicleEntityCollisionEvent event = new VehicleEntityCollisionEvent(eventType, vehicle, hitEntity);
+        VehicleEntityCollisionEvent event = new VehicleEntityCollisionEvent(vehicle, hitEntity);
         server.getPluginManager().callEvent(event);
 
         if (event.isCancelled()) {
@@ -84,9 +82,8 @@ public class EntityBoat extends Entity {
 
         // CraftBukkit start
         CraftServer server = ((WorldServer) world).getServer();
-        Type eventType = Type.VEHICLE_CREATE;
         Vehicle vehicle = (Vehicle) this.getBukkitEntity();
-        VehicleCreateEvent event = new VehicleCreateEvent(eventType, vehicle);
+        VehicleCreateEvent event = new VehicleCreateEvent(vehicle);
         server.getPluginManager().callEvent(event);
         // CraftBukkit end
     }
@@ -98,12 +95,11 @@ public class EntityBoat extends Entity {
     public boolean a(Entity entity, int i) {
         if (!this.world.isStatic && !this.dead) {
             // CraftBukkit start
-            Type eventType = Type.VEHICLE_DAMAGE;
             Vehicle vehicle = (Vehicle) this.getBukkitEntity();
             org.bukkit.entity.Entity attacker = (entity == null) ? null : entity.getBukkitEntity();
             int damage = i;
 
-            VehicleDamageEvent event = new VehicleDamageEvent(eventType, vehicle, attacker, damage);
+            VehicleDamageEvent event = new VehicleDamageEvent(vehicle, attacker, damage);
             ((WorldServer) this.world).getServer().getPluginManager().callEvent(event);
 
             if (event.isCancelled()) {
@@ -327,10 +323,10 @@ public class EntityBoat extends Entity {
             Location to = new Location(world, this.locX, this.locY, this.locZ, this.yaw, this.pitch);
             Vehicle vehicle = (Vehicle) this.getBukkitEntity();
 
-            server.getPluginManager().callEvent(new VehicleEvent(Type.VEHICLE_UPDATE, vehicle));
+            server.getPluginManager().callEvent(new VehicleUpdateEvent(vehicle));
 
             if (!from.equals(to)) {
-                VehicleMoveEvent event = new VehicleMoveEvent(Type.VEHICLE_MOVE, vehicle, from, to);
+                VehicleMoveEvent event = new VehicleMoveEvent(vehicle, from, to);
                 server.getPluginManager().callEvent(event);
             }
             // CraftBukkit end
@@ -373,11 +369,10 @@ public class EntityBoat extends Entity {
             if (!this.world.isStatic) {
                 // CraftBukkit start
                 CraftServer server = ((WorldServer) this.world).getServer();
-                Type eventType = Type.VEHICLE_ENTER;
                 Vehicle vehicle = (Vehicle) this.getBukkitEntity();
                 org.bukkit.entity.Entity player = entityhuman.getBukkitEntity();
 
-                VehicleEnterEvent event = new VehicleEnterEvent(eventType, vehicle, player);
+                VehicleEnterEvent event = new VehicleEnterEvent(vehicle, player);
                 server.getPluginManager().callEvent(event);
 
                 if (event.isCancelled()) {

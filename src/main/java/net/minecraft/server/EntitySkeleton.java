@@ -7,7 +7,6 @@ import org.bukkit.Server;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.event.Event.Type;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 // CraftBukkit end
@@ -40,10 +39,9 @@ public class EntitySkeleton extends EntityMonster {
             if (f > 0.5F && this.world.i(MathHelper.b(this.locX), MathHelper.b(this.locY), MathHelper.b(this.locZ)) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
                 // CraftBukkit start
                 CraftServer server = ((WorldServer) this.world).getServer();
-                Type eventType = Type.ENTITY_COMBUST;
                 org.bukkit.entity.Entity entity = this.getBukkitEntity();
 
-                EntityCombustEvent event = new EntityCombustEvent(eventType, entity);
+                EntityCombustEvent event = new EntityCombustEvent(entity);
                 server.getPluginManager().callEvent(event);
 
                 if (!event.isCancelled()) {
@@ -109,7 +107,7 @@ public class EntitySkeleton extends EntityMonster {
         Server server = ((WorldServer) world).getServer();
         CraftEntity entity = (CraftEntity) getBukkitEntity();
 
-        EntityDeathEvent event = new EntityDeathEvent(Type.ENTITY_DEATH, entity, loot);
+        EntityDeathEvent event = new EntityDeathEvent(entity, loot);
         server.getPluginManager().callEvent(event);
 
         for (org.bukkit.inventory.ItemStack stack: event.getDrops()) {

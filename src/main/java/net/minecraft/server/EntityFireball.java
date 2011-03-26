@@ -149,9 +149,8 @@ public class EntityFireball extends Entity {
             }
 
             CraftServer server = ((WorldServer) this.world).getServer();
-            org.bukkit.event.Event.Type eventType = ExplosionPrimeEvent.Type.EXPLOSION_PRIME;
 
-            ExplosionPrimeEvent event = new ExplosionPrimeEvent(eventType, CraftEntity.getEntity(server, this), 1.0F, false);
+            ExplosionPrimeEvent event = new ExplosionPrimeEvent(CraftEntity.getEntity(server, this), 1.0F, false);
             server.getPluginManager().callEvent(event);
             if (!event.isCancelled()) {
                 // give 'this' instead of (Entity) null so we know what causes the damage

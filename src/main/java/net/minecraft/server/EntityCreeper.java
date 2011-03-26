@@ -85,9 +85,8 @@ public class EntityCreeper extends EntityMonster {
             if (this.a >= 30) {
                 // CraftBukkit start
                 CraftServer server = ((WorldServer) this.world).getServer();
-                org.bukkit.event.Event.Type eventType = ExplosionPrimeEvent.Type.EXPLOSION_PRIME;
 
-                ExplosionPrimeEvent event = new ExplosionPrimeEvent(eventType, CraftEntity.getEntity(server, this), 3.0F, false);
+                ExplosionPrimeEvent event = new ExplosionPrimeEvent(CraftEntity.getEntity(server, this), 3.0F, false);
                 server.getPluginManager().callEvent(event);
 
                 if (!event.isCancelled()) {

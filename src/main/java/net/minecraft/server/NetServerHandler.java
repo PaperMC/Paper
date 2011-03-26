@@ -8,17 +8,14 @@ import java.util.logging.Logger;
 // CraftBukkit start
 import java.util.logging.Level;
 import org.bukkit.ChatColor;
-import org.bukkit.block.BlockFace;
 import org.bukkit.Location;
 import org.bukkit.command.CommandException;
 import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
-import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.*;
 import org.bukkit.event.player.*;
 // CraftBukkit end
@@ -81,7 +78,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     public void a(String s) {
         // CraftBukkit start
         String leaveMessage = "\u00A7e" + this.e.name + " left the game.";
-        PlayerKickEvent event = new PlayerKickEvent(org.bukkit.event.Event.Type.PLAYER_KICK, server.getPlayer(this.e), s, leaveMessage);
+        PlayerKickEvent event = new PlayerKickEvent(server.getPlayer(this.e), s, leaveMessage);
         server.getPluginManager().callEvent(event);
         if (event.isCancelled()) {
             // Do not kick the player
@@ -127,7 +124,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         if (delta > 1f/256 || deltaAngle > 10f) {
             // Skip the first time we do this
             if (lastPosX != Double.MAX_VALUE) {
-                PlayerMoveEvent event = new PlayerMoveEvent(Type.PLAYER_MOVE, player, from, to);
+                PlayerMoveEvent event = new PlayerMoveEvent(player, from, to);
                 server.getPluginManager().callEvent(event);
     
                 from = event.getFrom();
@@ -284,7 +281,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         Player player = getPlayer();
         Location from = player.getLocation();
         Location to = dest.clone();
-        PlayerMoveEvent event = new PlayerMoveEvent(Type.PLAYER_TELEPORT, player, from, to);
+        PlayerMoveEvent event = new PlayerMoveEvent(player, from, to);
         server.getPluginManager().callEvent(event);
 
         from = event.getFrom();
@@ -538,7 +535,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             return;
         }
 
-        PlayerItemHeldEvent event = new PlayerItemHeldEvent(Type.PLAYER_ITEM_HELD, getPlayer(), e.inventory.c, packet16blockitemswitch.a);
+        PlayerItemHeldEvent event = new PlayerItemHeldEvent(getPlayer(), e.inventory.c, packet16blockitemswitch.a);
         server.getPluginManager().callEvent(event);
         // CraftBukkit end
 
@@ -572,7 +569,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         } else {
             // CraftBukkit start
             Player player = getPlayer();
-            PlayerChatEvent event = new PlayerChatEvent(Type.PLAYER_CHAT, player, msg);
+            PlayerChatEvent event = new PlayerChatEvent(player, msg);
             server.getPluginManager().callEvent(event);
 
             if (event.isCancelled()) {
@@ -595,7 +592,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         // CraftBukkit start
         CraftPlayer player = getPlayer();
 
-        PlayerChatEvent event = new PlayerChatEvent(Type.PLAYER_COMMAND_PREPROCESS, player, s);
+        PlayerChatEvent event = new PlayerChatEvent(player, s);
         server.getPluginManager().callEvent(event);
         if (event.isCancelled()) {
             return;
@@ -676,7 +673,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
             // Arm swing animation
             Player player = getPlayer();
-            PlayerAnimationEvent event = new PlayerAnimationEvent(Type.PLAYER_ANIMATION, player);
+            PlayerAnimationEvent event = new PlayerAnimationEvent(player);
             server.getPluginManager().callEvent(event);
             // CraftBukkit end
 
@@ -688,7 +685,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         // CraftBukkit: Toggle Sneak
         if (packet19entityaction.b == 1 || packet19entityaction.b == 2) {
             Player player = getPlayer();
-            PlayerToggleSneakEvent event = new PlayerToggleSneakEvent(Type.PLAYER_TOGGLE_SNEAK, player);
+            PlayerToggleSneakEvent event = new PlayerToggleSneakEvent(player);
             server.getPluginManager().callEvent(event);
             if (event.isCancelled()) {
                 return;
@@ -832,7 +829,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
                 // CraftBukkit start - SIGN_CHANGE hook
                 Player player = server.getPlayer(this.e);
-                SignChangeEvent event = new SignChangeEvent(org.bukkit.event.Event.Type.SIGN_CHANGE, (CraftBlock) player.getWorld().getBlockAt(i, k, j), server.getPlayer(this.e), packet130updatesign.d);
+                SignChangeEvent event = new SignChangeEvent((CraftBlock) player.getWorld().getBlockAt(i, k, j), server.getPlayer(this.e), packet130updatesign.d);
                 server.getPluginManager().callEvent(event);
 
                 if (event.isCancelled()) {

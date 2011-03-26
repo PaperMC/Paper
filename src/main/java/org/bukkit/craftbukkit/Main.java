@@ -2,8 +2,6 @@ package org.bukkit.craftbukkit;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.List;

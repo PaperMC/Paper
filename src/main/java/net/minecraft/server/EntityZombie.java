@@ -2,7 +2,6 @@ package net.minecraft.server;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.event.Event.Type;
 import org.bukkit.event.entity.EntityCombustEvent;
 // CraftBukkit end
 
@@ -22,7 +21,7 @@ public class EntityZombie extends EntityMonster {
             if (f > 0.5F && this.world.i(MathHelper.b(this.locX), MathHelper.b(this.locY), MathHelper.b(this.locZ)) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
                 // CraftBukkit start
                 CraftServer server = ((WorldServer) this.world).getServer();
-                EntityCombustEvent event = new EntityCombustEvent(Type.ENTITY_COMBUST, this.getBukkitEntity());
+                EntityCombustEvent event = new EntityCombustEvent(this.getBukkitEntity());
                 server.getPluginManager().callEvent(event);
 
                 if (!event.isCancelled()) {

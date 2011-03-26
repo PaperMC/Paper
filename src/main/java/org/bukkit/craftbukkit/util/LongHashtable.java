@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.util;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import net.minecraft.server.Chunk;
 import net.minecraft.server.MinecraftServer;
 import static org.bukkit.craftbukkit.util.Java15Compat.Arrays_copyOf;

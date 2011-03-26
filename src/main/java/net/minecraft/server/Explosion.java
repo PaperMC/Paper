@@ -201,8 +201,7 @@ public class Explosion {
             }
         }
 
-        org.bukkit.event.Event.Type eventType = EntityExplodeEvent.Type.ENTITY_EXPLODE;
-        EntityExplodeEvent event = new EntityExplodeEvent(eventType, explode, location, blockList);
+        EntityExplodeEvent event = new EntityExplodeEvent(explode, location, blockList);
         server.getPluginManager().callEvent(event);
 
         if (event.isCancelled()) {

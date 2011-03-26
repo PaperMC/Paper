@@ -6,7 +6,6 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.BlockFromToEvent;
 
 public class BlockFlowing extends BlockFluids {
@@ -99,7 +98,7 @@ public class BlockFlowing extends BlockFluids {
 
         if (this.l(world, i, j - 1, k)) {
             // CraftBukkit start - send "down" to the server
-            BlockFromToEvent event = new BlockFromToEvent(Type.BLOCK_FROMTO, source, BlockFace.DOWN);
+            BlockFromToEvent event = new BlockFromToEvent(source, BlockFace.DOWN);
             if (server != null) {
                 server.getPluginManager().callEvent(event);
             }
@@ -129,7 +128,7 @@ public class BlockFlowing extends BlockFluids {
             int index = 0;
             for (BlockFace currentFace: faces) {
                 if (aboolean[index]) {
-                    BlockFromToEvent event = new BlockFromToEvent(Type.BLOCK_FROMTO, source, currentFace);
+                    BlockFromToEvent event = new BlockFromToEvent(source, currentFace);
 
                     if (server != null) {
                         server.getPluginManager().callEvent(event);
