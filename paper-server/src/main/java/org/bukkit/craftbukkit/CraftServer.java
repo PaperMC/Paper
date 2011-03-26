@@ -2,6 +2,8 @@ package org.bukkit.craftbukkit;
 
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
+import org.bukkit.event.world.WorldLoadEvent;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -30,8 +32,6 @@ import org.bukkit.plugin.SimplePluginManager;
 import org.bukkit.plugin.java.JavaPluginLoader;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
-import org.bukkit.event.Event.Type;
-import org.bukkit.event.world.WorldEvent;
 
 public final class CraftServer implements Server {
     private final String serverName = "Craftbukkit";
@@ -334,7 +334,7 @@ public final class CraftServer implements Server {
     protected void addWorld(World world) {
         worlds.put(world.getName().toLowerCase(), world);
 
-        pluginManager.callEvent(new WorldEvent(Type.WORLD_LOAD, world));
+        pluginManager.callEvent(new WorldLoadEvent(world));
     }
 
     public Logger getLogger() {
