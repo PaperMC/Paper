@@ -168,7 +168,7 @@ public final class JavaPluginLoader implements PluginLoader {
         case PLAYER_JOIN:
             return new EventExecutor() {
                 public void execute( Listener listener, Event event ) {
-                    ((PlayerListener)listener).onPlayerJoin( (PlayerEvent)event );
+                    ((PlayerListener)listener).onPlayerJoin( (PlayerJoinEvent)event );
                 }
             };
         case PLAYER_QUIT:
