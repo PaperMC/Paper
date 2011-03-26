@@ -51,10 +51,13 @@ public class Step extends MaterialData {
         switch (material) {
         case SANDSTONE:
             setData((byte) 0x1);
+            break;
         case WOOD:
             setData((byte) 0x2);
+            break;
         case COBBLESTONE:
             setData((byte) 0x3);
+            break;
         case STONE:
         default:
             setData((byte) 0x0);
