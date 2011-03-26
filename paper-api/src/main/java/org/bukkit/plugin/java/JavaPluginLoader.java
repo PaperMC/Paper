@@ -509,7 +509,7 @@ public final class JavaPluginLoader implements PluginLoader {
             }
 
             jPlugin.setEnabled(true);
-            server.getPluginManager().callEvent(new PluginEvent(Event.Type.PLUGIN_ENABLE, plugin));
+            server.getPluginManager().callEvent(new PluginEnableEvent(plugin));
         }
     }
 
@@ -524,7 +524,7 @@ public final class JavaPluginLoader implements PluginLoader {
 
             jPlugin.setEnabled(false);
 
-            server.getPluginManager().callEvent(new PluginEvent(Event.Type.PLUGIN_DISABLE, plugin));
+            server.getPluginManager().callEvent(new PluginDisableEvent(plugin));
 
             loaders.remove(jPlugin.getDescription().getName());
 
