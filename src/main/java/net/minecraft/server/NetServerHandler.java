@@ -218,6 +218,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 if (d4 > 1.65D || d4 < 0.1D) {
                     this.a("Illegal stance");
                     a.warning(this.e.name + " had an illegal stance: " + d4);
+                    d4 = 1.62D; // CraftBukkit - reset the stance to 'the normal' height
                 }
             }
 
