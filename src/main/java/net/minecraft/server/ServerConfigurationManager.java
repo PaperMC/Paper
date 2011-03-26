@@ -18,7 +18,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.command.ColouredConsoleSender;
 import org.bukkit.entity.Player;
-import org.bukkit.event.player.PlayerEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
@@ -118,7 +118,7 @@ public class ServerConfigurationManager {
 
         // CraftBukkit start
         ((WorldServer) entityplayer.world).manager.b(entityplayer);
-        server.getPluginManager().callEvent(new PlayerEvent(PlayerEvent.Type.PLAYER_QUIT, server.getPlayer(entityplayer))); // CraftBukkit
+        server.getPluginManager().callEvent(new PlayerQuitEvent(server.getPlayer(entityplayer))); // CraftBukkit
         // CraftBukkit end
     }
 

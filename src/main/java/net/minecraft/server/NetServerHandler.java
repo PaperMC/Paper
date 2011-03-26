@@ -126,7 +126,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             if (lastPosX != Double.MAX_VALUE) {
                 PlayerMoveEvent event = new PlayerMoveEvent(player, from, to);
                 server.getPluginManager().callEvent(event);
-    
+
                 from = event.getFrom();
                 to = event.isCancelled() ? from : event.getTo();
 
@@ -282,7 +282,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         Player player = getPlayer();
         Location from = player.getLocation();
         Location to = dest.clone();
-        PlayerMoveEvent event = new PlayerMoveEvent(player, from, to);
+        PlayerTeleportEvent event = new PlayerTeleportEvent(player, from, to);
         server.getPluginManager().callEvent(event);
 
         from = event.getFrom();
@@ -593,7 +593,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         // CraftBukkit start
         CraftPlayer player = getPlayer();
 
-        PlayerChatEvent event = new PlayerChatEvent(player, s);
+        PlayerCommandPreprocessEvent event = new PlayerCommandPreprocessEvent(player, s);
         server.getPluginManager().callEvent(event);
         if (event.isCancelled()) {
             return;
