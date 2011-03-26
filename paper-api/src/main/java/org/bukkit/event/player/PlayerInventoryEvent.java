@@ -10,8 +10,8 @@ import org.bukkit.inventory.Inventory;
 public class PlayerInventoryEvent extends PlayerEvent {
     protected Inventory inventory;
 
-    public PlayerInventoryEvent(final Type type, final Player player, final Inventory inventory) {
-        super(type, player);
+    public PlayerInventoryEvent(final Player player, final Inventory inventory) {
+        super(Type.PLAYER_INTERACT, player);
         this.inventory = inventory;
     }
 

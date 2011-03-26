@@ -14,11 +14,11 @@ import org.bukkit.event.Cancellable;
 public class EntityExplodeEvent extends EntityEvent implements Cancellable {
     private boolean cancel;
     private Location location;
-    private List blocks;
+    private List<Block> blocks;
     private float yield = 0.3F;
 
-    public EntityExplodeEvent (Type type, Entity what, Location location, List<Block> blocks) {
-        super(type.ENTITY_EXPLODE, what);
+    public EntityExplodeEvent (Entity what, Location location, List<Block> blocks) {
+        super(Type.ENTITY_EXPLODE, what);
         this.location = location;
         this.cancel = false;
         this.blocks = blocks;

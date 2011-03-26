@@ -2,7 +2,6 @@ package org.bukkit.event.block;
 
 import org.bukkit.block.Block;
 import org.bukkit.Material;
-import org.bukkit.event.Event;
 
 /**
  * Thrown when a block physics check is called
@@ -13,8 +12,8 @@ public class BlockPhysicsEvent extends BlockEvent {
     private final int changed;
     private boolean cancel = false;
 
-    public BlockPhysicsEvent(final Event.Type type, final Block block, final int changed) {
-        super(type, block);
+    public BlockPhysicsEvent(final Block block, final int changed) {
+        super(Type.BLOCK_PHYSICS, block);
         this.changed = changed;
     }
 

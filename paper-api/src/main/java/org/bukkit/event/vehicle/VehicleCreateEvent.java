@@ -8,8 +8,7 @@ import org.bukkit.entity.Vehicle;
  * @author sk89q
  */
 public class VehicleCreateEvent extends VehicleEvent {
-    public VehicleCreateEvent(Type type, Vehicle vehicle) {
-        
-        super(type, vehicle);
+    public VehicleCreateEvent(Vehicle vehicle) {
+        super(Type.VEHICLE_CREATE, vehicle);
     }
 }

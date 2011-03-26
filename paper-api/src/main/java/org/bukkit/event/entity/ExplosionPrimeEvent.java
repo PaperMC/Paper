@@ -8,8 +8,8 @@ public class ExplosionPrimeEvent extends EntityEvent implements Cancellable {
     private float radius;
     private boolean fire;
 
-    public ExplosionPrimeEvent(Type type, Entity what, float radius, boolean fire) {
-        super(type.EXPLOSION_PRIME, what);
+    public ExplosionPrimeEvent(Entity what, float radius, boolean fire) {
+        super(Type.EXPLOSION_PRIME, what);
         this.cancel = false;
         this.radius = radius;
         this.fire = fire;

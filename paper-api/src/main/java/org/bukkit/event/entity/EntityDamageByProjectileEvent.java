@@ -3,7 +3,6 @@ package org.bukkit.event.entity;
 import java.util.Random;
 
 import org.bukkit.entity.Entity;
-import org.bukkit.event.Event;
 
 public class EntityDamageByProjectileEvent extends EntityDamageByEntityEvent {
 
@@ -11,7 +10,7 @@ public class EntityDamageByProjectileEvent extends EntityDamageByEntityEvent {
     private boolean bounce;
 
     public EntityDamageByProjectileEvent(Entity damager, Entity damagee, Entity projectile, DamageCause cause, int damage) {
-        super(Event.Type.ENTITY_DAMAGE, damager, damagee, cause, damage);
+        super(damager, damagee, cause, damage);
         this.projectile = projectile;
         Random random = new Random();
         this.bounce = random.nextBoolean();

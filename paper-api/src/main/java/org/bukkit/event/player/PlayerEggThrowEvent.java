@@ -4,7 +4,6 @@ import org.bukkit.entity.CreatureType;
 import org.bukkit.entity.Egg;
 import org.bukkit.entity.Player;
 
-
 /**
  *
  * @author tkelly
@@ -16,8 +15,8 @@ public class PlayerEggThrowEvent extends PlayerEvent {
     private CreatureType hatchType;
     private byte numHatches;
 
-    public PlayerEggThrowEvent(Type type, Player player, Egg egg, boolean hatching, byte numHatches, CreatureType hatchType) {
-        super(type, player);
+    public PlayerEggThrowEvent(Player player, Egg egg, boolean hatching, byte numHatches, CreatureType hatchType) {
+        super(Type.PLAYER_EGG_THROW, player);
         this.egg = egg;
         this.hatching = hatching;
         this.numHatches = numHatches;

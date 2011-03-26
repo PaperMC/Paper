@@ -5,8 +5,8 @@ import org.bukkit.entity.Player;
 public class PlayerJoinEvent extends PlayerEvent {
     private String joinMessage;
 
-    public PlayerJoinEvent(Type eventType, Player playerJoined, String joinMessage) {
-        super(eventType, playerJoined);
+    public PlayerJoinEvent(Player playerJoined, String joinMessage) {
+        super(Type.PLAYER_JOIN, playerJoined);
         this.joinMessage = joinMessage;
     }
 

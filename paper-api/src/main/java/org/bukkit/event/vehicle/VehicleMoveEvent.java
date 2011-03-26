@@ -11,11 +11,10 @@ import org.bukkit.entity.Vehicle;
 public class VehicleMoveEvent extends VehicleEvent {
     private Location from;
     private Location to;
-    
-    public VehicleMoveEvent(Type type, Vehicle vehicle,
-            Location from, Location to) {
-        super(type, vehicle);
-        
+
+    public VehicleMoveEvent(Vehicle vehicle, Location from, Location to) {
+        super(Type.VEHICLE_MOVE, vehicle);
+
         this.from = from;
         this.to = to;
     }

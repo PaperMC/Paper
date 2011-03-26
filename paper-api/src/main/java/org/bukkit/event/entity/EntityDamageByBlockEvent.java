@@ -3,7 +3,6 @@ package org.bukkit.event.entity;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
-import org.bukkit.event.Event;
 
 /**
  * Stores details for damage events where the damager is a block
@@ -12,9 +11,8 @@ public class EntityDamageByBlockEvent extends EntityDamageEvent implements Cance
 
     private Block damager;
 
-    public EntityDamageByBlockEvent(Block damager, Entity damagee, DamageCause cause, int damage)
-    {
-        super(Event.Type.ENTITY_DAMAGE, damagee, cause, damage);
+    public EntityDamageByBlockEvent(Block damager, Entity damagee, DamageCause cause, int damage) {
+        super(Type.ENTITY_DAMAGE, damagee, cause, damage);
         this.damager = damager;
     }
 

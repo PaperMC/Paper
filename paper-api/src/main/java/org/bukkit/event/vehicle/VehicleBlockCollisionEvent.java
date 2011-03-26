@@ -11,8 +11,8 @@ import org.bukkit.entity.Vehicle;
 public class VehicleBlockCollisionEvent extends VehicleCollisionEvent {
     private Block block;
     
-    public VehicleBlockCollisionEvent(Type type, Vehicle vehicle, Block block) {
-        super(type, vehicle);
+    public VehicleBlockCollisionEvent(Vehicle vehicle, Block block) {
+        super(Type.VEHICLE_COLLISION_BLOCK, vehicle);
         this.block = block;
     }
     

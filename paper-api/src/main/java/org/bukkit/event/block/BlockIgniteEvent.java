@@ -11,7 +11,6 @@ import org.bukkit.event.Event;
  * Represents a block ignite event.
  */
 public class BlockIgniteEvent extends BlockEvent implements Cancellable {
-
     private IgniteCause cause;
     private boolean cancel;
     private Player thePlayer;

@@ -12,8 +12,8 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
     private Player player;
     private String[] lines;
 
-    public SignChangeEvent(final Type type, final Block theBlock, final Player thePlayer, String[] theLines) {
-        super(type, theBlock);
+    public SignChangeEvent(final Block theBlock, final Player thePlayer, String[] theLines) {
+        super(Type.SIGN_CHANGE, theBlock);
         this.player = thePlayer;
         this.lines = theLines;
     }

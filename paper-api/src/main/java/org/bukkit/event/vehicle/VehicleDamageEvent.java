@@ -14,8 +14,8 @@ public class VehicleDamageEvent extends VehicleEvent implements Cancellable {
     private int damage;
     private boolean cancelled;
     
-    public VehicleDamageEvent(Type type, Vehicle vehicle, Entity attacker, int damage) {
-        super(type, vehicle);
+    public VehicleDamageEvent(Vehicle vehicle, Entity attacker, int damage) {
+        super(Type.ENTITY_DAMAGE, vehicle);
         this.attacker = attacker;
         this.damage = damage;
     }

@@ -15,8 +15,8 @@ public class PlayerAnimationEvent extends PlayerEvent {
 	 * @param type The event type
 	 * @param player The player instance
 	 */
-	public PlayerAnimationEvent(final Type type, final Player player) {
-        super(type, player);
+	public PlayerAnimationEvent(final Player player) {
+        super(Type.PLAYER_ANIMATION, player);
 
         // Only supported animation type for now:
         animationType = PlayerAnimationType.ARM_SWING;
@@ -27,9 +27,8 @@ public class PlayerAnimationEvent extends PlayerEvent {
      *
      * @returns the animation type
      */
-    public PlayerAnimationType getAnimationType()
-    {
-    	return animationType;
+    public PlayerAnimationType getAnimationType() {
+        return animationType;
     }
 
 }

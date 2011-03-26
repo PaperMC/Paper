@@ -4,7 +4,6 @@ package org.bukkit.plugin.java;
 import java.io.File;
 import org.bukkit.Server;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.Plugin;

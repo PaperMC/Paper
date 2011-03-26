@@ -1,6 +1,5 @@
 package org.bukkit.fillr;
 
-import org.bukkit.entity.Player;
 import java.io.*;
 import java.util.jar.*;
 import org.bukkit.*;

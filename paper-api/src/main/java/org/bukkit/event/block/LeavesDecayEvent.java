@@ -10,8 +10,8 @@ import org.bukkit.event.Cancellable;
 public class LeavesDecayEvent extends BlockEvent implements Cancellable {
     private boolean cancel = false;
 
-    public LeavesDecayEvent(final Type type, final Block block) {
-        super(type, block);
+    public LeavesDecayEvent(final Block block) {
+        super(Type.LEAVES_DECAY, block);
     }
 
     /**

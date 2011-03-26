@@ -12,13 +12,12 @@ import org.bukkit.event.Cancellable;
 public class VehicleEnterEvent extends VehicleEvent implements Cancellable {
     private boolean cancelled;
     private Entity entered;
-    
-    public VehicleEnterEvent(Type type, Vehicle vehicle, Entity entered) {
-        super(type, vehicle);
-        
+
+    public VehicleEnterEvent(Vehicle vehicle, Entity entered) {
+        super(Type.VEHICLE_ENTER, vehicle);
         this.entered = entered;
     }
-    
+
     /**
      * Get the entity that entered the vehicle.
      * 

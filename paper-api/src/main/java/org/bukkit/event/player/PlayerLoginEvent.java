@@ -10,8 +10,8 @@ public class PlayerLoginEvent extends PlayerEvent {
     private Result result;
     private String message;
 
-    public PlayerLoginEvent(final Type type, final Player player) {
-        super(type, player);
+    public PlayerLoginEvent(final Player player) {
+        super(Type.PLAYER_LOGIN, player);
         this.result = Result.ALLOWED;
         this.message = "";
     }

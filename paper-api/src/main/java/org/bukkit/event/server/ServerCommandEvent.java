@@ -7,7 +7,7 @@ import org.bukkit.event.Event;
  * Server Command events
  */
 public class ServerCommandEvent extends Event {
-    public ServerCommandEvent(final Type type) {
-        super(type);
+    public ServerCommandEvent() {
+        super(Type.SERVER_COMMAND);
     }
 }

@@ -7,11 +7,11 @@ import org.bukkit.event.Cancellable;
 /**
  * Called when a chunk is unloaded
  */
-public class ChunkUnloadEvent extends ChunkLoadEvent implements Cancellable {
+public class ChunkUnloadEvent extends ChunkEvent implements Cancellable {
     private boolean cancel = false;
 
-    public ChunkUnloadEvent(final Type type, final Chunk chunk) {
-        super(type, chunk);
+    public ChunkUnloadEvent(final Chunk chunk) {
+        super(Type.CHUNK_UNLOAD, chunk);
     }
 
     /**

@@ -4,7 +4,6 @@ package org.bukkit.event.player;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
-import org.bukkit.event.Event;
 
 /**
  * Thrown when a player picks an item up from the ground
@@ -14,7 +13,7 @@ public class PlayerPickupItemEvent extends PlayerEvent implements Cancellable {
     private boolean cancel = false;
 
     public PlayerPickupItemEvent(final Player player, final Item item) {
-        super(Event.Type.PLAYER_PICKUP_ITEM, player);
+        super(Type.PLAYER_PICKUP_ITEM, player);
         this.item = item;
     }
 

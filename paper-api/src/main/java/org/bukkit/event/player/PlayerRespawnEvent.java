@@ -6,8 +6,8 @@ import org.bukkit.entity.Player;
 public class PlayerRespawnEvent extends PlayerEvent {
     private Location respawnLocation;
 
-    public PlayerRespawnEvent(Type type, Player respawnPlayer, Location respawnLocation) {
-        super(type, respawnPlayer);
+    public PlayerRespawnEvent(Player respawnPlayer, Location respawnLocation) {
+        super(Type.PLAYER_RESPAWN, respawnPlayer);
         this.respawnLocation = respawnLocation;
     }
 

@@ -1,6 +1,5 @@
 package org.bukkit.event.player;
 
-
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 
@@ -11,10 +10,9 @@ import org.bukkit.event.Cancellable;
 public class PlayerToggleSneakEvent extends PlayerEvent implements Cancellable{
     private boolean cancel = false;
 
-    public PlayerToggleSneakEvent(final Type type, final Player player) {
-        super(type, player);
+    public PlayerToggleSneakEvent(final Player player) {
+        super(Type.PLAYER_TOGGLE_SNEAK, player);
     }
-    
 
     /**
      * Gets the cancellation state of this event. A cancelled event will not

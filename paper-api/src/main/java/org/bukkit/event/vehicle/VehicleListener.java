@@ -73,6 +73,6 @@ public class VehicleListener implements Listener {
      *
      * @param event
      */
-    public void onVehicleUpdate(VehicleEvent event) {
+    public void onVehicleUpdate(VehicleUpdateEvent event) {
     }
 }

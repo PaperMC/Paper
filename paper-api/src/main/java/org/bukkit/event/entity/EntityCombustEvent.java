@@ -10,8 +10,8 @@ import org.bukkit.event.Cancellable;
 public class EntityCombustEvent extends EntityEvent implements Cancellable {
     private boolean cancel;
 
-    public EntityCombustEvent(Type type, Entity what) {
-        super(type, what);
+    public EntityCombustEvent(Entity what) {
+        super(Type.ENTITY_COMBUST, what);
         this.cancel = false;
     }
 
