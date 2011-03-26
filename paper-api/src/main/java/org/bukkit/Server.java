@@ -64,6 +64,14 @@ public interface Server {
     public String getServerName();
 
     /**
+     * Get an ID of this server. The ID is a simple generally alphanumeric
+     * ID that can be used for uniquely identifying this server.
+     *
+     * @return The ID of this server
+     */
+    public String getServerId();
+
+    /**
      * Broadcast a message to all players.
      *
      * @param message the message
