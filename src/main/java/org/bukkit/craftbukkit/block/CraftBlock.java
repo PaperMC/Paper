@@ -331,7 +331,7 @@ public class CraftBlock implements Block {
     }
 
     public Biome getBiome() {
-        BiomeBase base = chunk.getHandle().d.a().a(chunk.getX(), chunk.getZ());
+        BiomeBase base = chunk.getHandle().d.a().a(x, z);
 
         if (base == BiomeBase.RAINFOREST) {
             return Biome.RAINFOREST;
