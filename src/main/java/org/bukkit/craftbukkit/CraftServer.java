@@ -182,21 +182,23 @@ public final class CraftServer implements Server {
         return this.getConfigString("server-ip", "");
     }
 
-    public String getServerName()
-    {
+    public String getServerName() {
         return this.getConfigString("server-name", "Unknown Server");
     }
 
+    public String getServerId() {
+        return this.getConfigString("server-id", "unnamed");
+    }
+
     // NOTE: Temporary calls through to server.properies until its replaced
-    private String getConfigString(String variable, String defaultValue)
-    {
+    private String getConfigString(String variable, String defaultValue) {
         return this.console.d.a(variable, defaultValue);
     }
 
-    private int getConfigInt(String variable, int defaultValue)
-    {
+    private int getConfigInt(String variable, int defaultValue) {
         return this.console.d.a(variable, defaultValue);
     }
+
     // End Temporary calls
 
     public PluginManager getPluginManager() {
