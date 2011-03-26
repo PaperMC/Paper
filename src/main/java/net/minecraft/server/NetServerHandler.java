@@ -351,7 +351,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             if (packet14blockdig.e == 0) {
                 // CraftBukkit
                 if (i1 > this.d.spawnProtection || flag) {
-                    this.e.c.a(i, j, k);
+                    // CraftBukkit add face argument
+                    this.e.c.a(i, j, k, packet14blockdig.d);
                 }
             } else if (packet14blockdig.e == 2) {
                 this.e.c.b(i, j, k);

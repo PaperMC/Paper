@@ -52,7 +52,8 @@ public class ItemInWorldManager {
         }
     }
 
-    public void a(int i, int j, int k) {
+    // CraftBukkit added face
+    public void a(int i, int j, int k, int face) {
         this.d = this.j;
         int l = this.b.getTypeId(i, j, k);
 
@@ -62,7 +63,7 @@ public class ItemInWorldManager {
             return;
         }
 
-        PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.a, Action.LEFT_CLICK_BLOCK , i, j, k, -1, this.a.inventory.b());
+        PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.a, Action.LEFT_CLICK_BLOCK , i, j, k, face, this.a.inventory.b());
 
         if (event.useInteractedBlock() == Event.Result.DENY) {
             // If we denied a door from opening, we need to send a correcting update to the client, as it already opened the door.
