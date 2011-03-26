@@ -23,7 +23,7 @@ public class PlayerListener implements Listener {
      *
      * @param event Relevant event details
      */
-    public void onPlayerQuit(PlayerEvent event) {
+    public void onPlayerQuit(PlayerQuitEvent event) {
     }
 
     /**
@@ -48,7 +48,7 @@ public class PlayerListener implements Listener {
      *
      * @param event Relevant event details
      */
-    public void onPlayerCommandPreprocess(PlayerChatEvent event) {
+    public void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent event) {
     }
 
     /**
@@ -64,7 +64,7 @@ public class PlayerListener implements Listener {
      *
      * @param event Relevant event details
      */
-    public void onPlayerTeleport(PlayerMoveEvent event) {
+    public void onPlayerTeleport(PlayerTeleportEvent event) {
     }
 
     /**

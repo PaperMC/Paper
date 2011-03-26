@@ -96,7 +96,7 @@ public final class JavaPluginLoader implements PluginLoader {
 
             Constructor<? extends JavaPlugin> constructor = plugin.getConstructor();
             result = constructor.newInstance();
-            
+
             result.initialize(this, server, description, dataFolder, file, loader);
         } catch (Throwable ex) {
             throw new InvalidPluginException(ex);
@@ -169,7 +169,7 @@ public final class JavaPluginLoader implements PluginLoader {
         case PLAYER_QUIT:
             return new EventExecutor() {
                 public void execute(Listener listener, Event event) {
-                    ((PlayerListener) listener).onPlayerQuit((PlayerEvent) event);
+                    ((PlayerListener) listener).onPlayerQuit((PlayerQuitEvent) event);
                 }
             };
         case PLAYER_RESPAWN:
@@ -187,7 +187,7 @@ public final class JavaPluginLoader implements PluginLoader {
         case PLAYER_COMMAND_PREPROCESS:
             return new EventExecutor() {
                 public void execute(Listener listener, Event event) {
-                    ((PlayerListener) listener).onPlayerCommandPreprocess((PlayerChatEvent) event);
+                    ((PlayerListener) listener).onPlayerCommandPreprocess((PlayerCommandPreprocessEvent) event);
                 }
             };
         case PLAYER_CHAT:
@@ -205,7 +205,7 @@ public final class JavaPluginLoader implements PluginLoader {
         case PLAYER_TELEPORT:
             return new EventExecutor() {
                 public void execute(Listener listener, Event event) {
-                    ((PlayerListener) listener).onPlayerTeleport((PlayerMoveEvent) event);
+                    ((PlayerListener) listener).onPlayerTeleport((PlayerTeleportEvent) event);
                 }
             };
         case PLAYER_INTERACT:
@@ -303,7 +303,7 @@ public final class JavaPluginLoader implements PluginLoader {
         case BLOCK_FROMTO:
             return new EventExecutor() {
                 public void execute(Listener listener, Event event) {
-                    ((BlockListener) listener).onBlockFlow((BlockFromToEvent) event);
+                    ((BlockListener) listener).onBlockFromTo((BlockFromToEvent) event);
                 }
             };
         case LEAVES_DECAY:
@@ -539,3 +539,4 @@ public final class JavaPluginLoader implements PluginLoader {
         }
     }
 }
+
