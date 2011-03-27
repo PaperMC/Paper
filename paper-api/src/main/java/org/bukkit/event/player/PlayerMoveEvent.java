@@ -4,9 +4,10 @@ package org.bukkit.event.player;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
+import org.bukkit.event.Event;
 
 /**
- * Holds information for player movement and teleportation events
+ * Holds information for player movement events
  */
 public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
     private boolean cancel = false;
@@ -15,6 +16,12 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
 
     public PlayerMoveEvent(final Player player, final Location from, final Location to) {
         super(Type.PLAYER_MOVE, player);
+        this.from = from;
+        this.to = to;
+    }
+
+    PlayerMoveEvent(final Event.Type type, final Player player, final Location from, final Location to) {
+        super(type, player);
         this.from = from;
         this.to = to;
     }
