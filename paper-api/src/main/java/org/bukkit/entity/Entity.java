@@ -6,6 +6,8 @@ import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.util.Vector;
 
+import java.util.List;
+
 /**
  * Represents a base entity in the world
  */
@@ -69,6 +71,16 @@ public interface Entity {
      * @deprecated use {@link #teleport(Entity)}
      */
     public void teleportTo(Entity destination);
+
+    /**
+     * Returns a list of entities within a bounding box defined by x,y,z centered around player
+     *
+     * @param x Size of the box along x axis
+     * @param y Size of the box along y axis
+     * @param z Size of the box along z axis
+     * @return List<Entity> List of entities nearby
+     */
+    public List<org.bukkit.entity.Entity> getNearbyEntities(double x, double y, double z);
 
     /**
      * Returns a unique id for this entity
