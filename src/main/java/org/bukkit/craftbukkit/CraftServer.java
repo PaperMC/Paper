@@ -319,7 +319,7 @@ public final class CraftServer implements Server {
                 }
             }
         }
-
+        pluginManager.callEvent(new WorldLoadEvent(internal.getWorld()));
         return internal.getWorld();
     }
 
@@ -333,8 +333,6 @@ public final class CraftServer implements Server {
 
     protected void addWorld(World world) {
         worlds.put(world.getName().toLowerCase(), world);
-
-        pluginManager.callEvent(new WorldLoadEvent(world));
     }
 
     public Logger getLogger() {
