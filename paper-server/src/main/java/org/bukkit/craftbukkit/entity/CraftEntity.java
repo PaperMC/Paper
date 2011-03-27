@@ -1,12 +1,14 @@
 package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.*;
-import net.minecraft.server.WorldServer;
+
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.util.Vector;
+
+import java.util.List;
 
 public abstract class CraftEntity implements org.bukkit.entity.Entity {
     protected final CraftServer server;
@@ -125,6 +127,15 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     public void teleportTo(org.bukkit.entity.Entity destination) {
         teleport(destination);
+    }
+
+    public List<org.bukkit.entity.Entity> getNearbyEntities(double x, double y, double z){
+        List<Entity> notchEntityList = entity.world.b(entity, entity.boundingBox.b(x,y,z));
+        List<org.bukkit.entity.Entity> bukkitEntityList = new java.util.ArrayList<org.bukkit.entity.Entity>(notchEntityList.size());
+        for (Entity e: notchEntityList){
+            bukkitEntityList.add(e.getBukkitEntity());
+        }
+        return bukkitEntityList;
     }
 
     public int getEntityId() {
