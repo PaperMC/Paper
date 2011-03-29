@@ -347,7 +347,7 @@ public class CraftWorld implements World {
         try {
             EntityLiving entityCreature = (EntityLiving) EntityTypes.a(creatureType.getName(), world);
             entityCreature.a(loc.getX(), loc.getY(), loc.getZ());
-            creature = (Creature) CraftEntity.getEntity(server, entityCreature);
+            creature = (LivingEntity) CraftEntity.getEntity(server, entityCreature);
             world.a(entityCreature);
         } catch (Exception e) {
             // if we fail, for any reason, return null.
