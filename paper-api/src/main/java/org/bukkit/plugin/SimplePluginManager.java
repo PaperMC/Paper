@@ -253,6 +253,13 @@ public final class SimplePluginManager implements PluginManager {
             for (RegisteredListener registration : eventListeners) {
                 try {
                     registration.callEvent( event );
+                } catch (AuthorNagException ex) {
+                    server.getLogger().log(Level.SEVERE, String.format(
+                        "Nag author: %s of %s about the following:",
+                        registration.getPlugin().getDescription().getAuthors().get(0),
+                        registration.getPlugin().getDescription().getName(),
+                        ex.getMessage()
+                    ));
                 } catch (Throwable ex) {
                     server.getLogger().log(Level.SEVERE, "Could not pass event " + event.getType() + " to " + registration.getPlugin().getDescription().getName(), ex);
                 }
