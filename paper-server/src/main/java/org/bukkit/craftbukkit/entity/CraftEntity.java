@@ -196,4 +196,30 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     public void setMomentum(Vector value) {
         setVelocity(value);
     }
+
+    public CraftEntity getPassenger() {
+        return isEmpty() ? null : (CraftEntity) getHandle().passenger.getBukkitEntity();
+    }
+
+    public boolean setPassenger(org.bukkit.entity.Entity passenger) {
+        if (passenger instanceof CraftEntity){
+            ((CraftEntity) passenger).getHandle().setPassengerOf(getHandle());
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isEmpty() {
+        return getHandle().passenger == null;
+    }
+
+    public boolean eject() {
+        if (getHandle().passenger == null) {
+            return false;
+        }
+
+        getHandle().passenger.setPassengerOf(null);
+        return true;
+    }
 }
