@@ -21,6 +21,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.LoggerOutputStream;
 import org.bukkit.craftbukkit.command.ColouredConsoleSender;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
+import org.bukkit.craftbukkit.util.ServerShutdownThread;
 import org.bukkit.event.world.WorldSaveEvent;
 
 
@@ -64,6 +65,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
         } catch (IOException ex) {
             Logger.getLogger(MinecraftServer.class.getName()).log(Level.SEVERE, null, ex);
         }
+        Runtime.getRuntime().addShutdownHook(new ServerShutdownThread(this));
         // CraftBukkit end
     }
 
@@ -218,7 +220,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
         // CraftBukkit end
     }
 
-    private void g() {
+    public void g() { // Craftbukkit: private -> public
         a.info("Stopping server");
         // CraftBukkit start
         if (server != null) {
