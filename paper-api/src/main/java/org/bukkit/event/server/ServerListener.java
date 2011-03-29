@@ -30,4 +30,8 @@ public class ServerListener implements Listener {
      */
     public void onServerCommand(ServerCommandEvent event) {
     }
+
+    // Prevent compilation of old signatures TODO: Remove after 1.4
+    @Deprecated public final void onPluginDisable(PluginEvent event) {}
+    @Deprecated public final void onPluginEnable(PluginEvent event) {}
 }

@@ -38,4 +38,8 @@ public class WorldListener implements Listener {
      */
     public void onWorldLoad(WorldLoadEvent event) {
     }
+
+    // Prevent compilation of old signatures TODO: Remove after 1.4
+    @Deprecated public final void onWorldLoad(WorldEvent event) {}
+    @Deprecated public final void onWorldSave(WorldEvent event) {}
 }

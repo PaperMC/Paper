@@ -162,4 +162,10 @@ public class PlayerListener implements Listener {
      */
     public void onPlayerBucketEmpty(PlayerBucketEmptyEvent event) {
     }
+
+    // Prevent compilation of old signatures TODO: Remove after 1.4
+    @Deprecated public final void onPlayerQuit(PlayerEvent event) {}
+    @Deprecated public final void onPlayerCommandPreprocess(PlayerChatEvent event) {}
+    @Deprecated public final void onPlayerTeleport(PlayerMoveEvent event) {}
+    @Deprecated public final void onPlayerJoin(PlayerEvent event) {}
 }
