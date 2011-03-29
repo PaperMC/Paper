@@ -455,6 +455,13 @@ public abstract class Event implements Serializable {
         ITEM_SPAWN (Category.WORLD),
 
         /**
+         * Called when a World's spawn is changed
+         *
+         * @see org.bukkit.event.world.SpawnChangeEvent
+         */
+        SPAWN_CHANGE (Category.WORLD),
+
+        /**
          * Called when a world is saved
          * 
          */

@@ -25,6 +25,14 @@ public class WorldListener implements Listener {
     }
 
     /**
+     * Called when a World's spawn is changed
+     *
+     * @param event Relevant event details
+     */
+    public void onSpawnChange(SpawnChangeEvent event) {
+    }
+
+    /**
     * Called when a world is saved
     *
     * @param event Relevant event details

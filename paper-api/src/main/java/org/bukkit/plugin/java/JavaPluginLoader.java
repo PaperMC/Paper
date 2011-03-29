@@ -379,6 +379,12 @@ public final class JavaPluginLoader implements PluginLoader {
                     ((WorldListener) listener).onChunkUnload((ChunkUnloadEvent) event);
                 }
             };
+        case SPAWN_CHANGE:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((WorldListener) listener).onSpawnChange((SpawnChangeEvent) event);
+                }
+            };
         case WORLD_SAVE:
             return new EventExecutor() {
                 public void execute(Listener listener, Event event) {
