@@ -68,4 +68,16 @@ public interface Plugin extends CommandExecutor {
      * Called when this plugin is enabled
      */
     public void onEnable();
+
+    /**
+     * Simple boolean if we can still nag to the logs about things
+     * @return boolean whether we can nag
+     */
+    public boolean isNaggable();
+
+    /**
+     * Set naggable state
+     * @param canNag is this plugin still naggable?
+     */
+    public void setNaggable(boolean canNag);
 }
