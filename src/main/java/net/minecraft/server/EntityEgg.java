@@ -218,6 +218,9 @@ public class EntityEgg extends Entity {
                         case GHAST:
                             entity = new EntityGhast(this.world);
                             break;
+                        case GIANT:
+                            entity = new EntityGiantZombie(this.world);
+                            break;
                         case PIG:
                             entity = new EntityPig(this.world);
                             break;
