@@ -11,6 +11,7 @@ import java.util.Random;
 import net.minecraft.server.*;
 
 import org.bukkit.entity.Arrow;
+import org.bukkit.event.world.SpawnChangeEvent;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Boat;
 import org.bukkit.Chunk;
@@ -72,7 +73,13 @@ public class CraftWorld implements World {
     
     public boolean setSpawnLocation(int x, int y, int z) {
         try {
+            Location previousLocation = getSpawnLocation();
             world.q.a(x, y, z);
+
+            // Notify anyone who's listening.
+            SpawnChangeEvent event = new SpawnChangeEvent(this, previousLocation);
+            server.getPluginManager().callEvent(event);
+
             return true;
         } catch (Exception e) {
             return false;
