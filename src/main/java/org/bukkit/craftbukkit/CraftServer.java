@@ -50,6 +50,8 @@ public final class CraftServer implements Server {
         this.server = server;
         this.serverVersion = CraftServer.class.getPackage().getImplementationVersion();
 
+        Bukkit.setServer(this);
+
         Logger.getLogger("Minecraft").log(Level.INFO, "This server is running " + getName() + " version " + getVersion());
     }
 
