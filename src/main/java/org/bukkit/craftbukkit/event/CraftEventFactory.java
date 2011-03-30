@@ -200,8 +200,6 @@ public class CraftEventFactory {
             type = CreatureType.GHAST;
         } else if (entityliving instanceof EntityGiantZombie) {
             type = CreatureType.GIANT;
-        } else if (entityliving instanceof EntityMonster) {
-            type = CreatureType.MONSTER;
         } else if (entityliving instanceof EntityPig) {
             type = CreatureType.PIG;
         } else if (entityliving instanceof EntityPigZombie) {
@@ -218,6 +216,9 @@ public class CraftEventFactory {
             type = CreatureType.SQUID;
         } else if (entityliving instanceof EntityZombie) {
             type = CreatureType.ZOMBIE;
+        // Supertype of many, last!
+        } else if (entityliving instanceof EntityMonster) {
+            type = CreatureType.MONSTER;
         }
 
         CreatureSpawnEvent event = new CreatureSpawnEvent(entity, type, entity.getLocation());
