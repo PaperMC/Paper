@@ -41,7 +41,7 @@ public class BlockListener implements Listener {
     }
 
     // Prevent compilation of old signatures TODO: Remove after 1.4
-    @Deprecated public final void onBlockFlow(BlockFromToEvent event) {}
+    @Deprecated public void onBlockFlow(BlockFromToEvent event) {}
 
     /**
      * Called when a block gets ignited
