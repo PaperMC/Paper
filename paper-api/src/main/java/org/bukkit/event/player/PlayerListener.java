@@ -2,6 +2,7 @@
 package org.bukkit.event.player;
 
 import org.bukkit.event.Listener;
+import org.bukkit.plugin.AuthorNagException;
 
 /**
  * Handles all events thrown in relation to a Player
@@ -16,6 +17,8 @@ public class PlayerListener implements Listener {
      * @param event Relevant event details
      */
     public void onPlayerJoin(PlayerJoinEvent event) {
+        onPlayerJoin((PlayerEvent)event);
+        throw new AuthorNagException("onPlayerJoin has been replaced with a new signature, (PlayerJoinEvent)");
     }
 
     /**
@@ -24,6 +27,8 @@ public class PlayerListener implements Listener {
      * @param event Relevant event details
      */
     public void onPlayerQuit(PlayerQuitEvent event) {
+        onPlayerQuit((PlayerEvent)event);
+        throw new AuthorNagException("onPlayerQuit has been replaced with a new signature, (PlayerQuitEvent)");
     }
 
     /**
@@ -49,6 +54,8 @@ public class PlayerListener implements Listener {
      * @param event Relevant event details
      */
     public void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent event) {
+        onPlayerCommandPreprocess((PlayerChatEvent)event);
+        throw new AuthorNagException("onPlayerCommandPreprocess has been replaced with a new signature, (PlayerCommandPreprocessEvent)");
     }
 
     /**
@@ -65,6 +72,8 @@ public class PlayerListener implements Listener {
      * @param event Relevant event details
      */
     public void onPlayerTeleport(PlayerTeleportEvent event) {
+        onPlayerTeleport((PlayerMoveEvent)event);
+        throw new AuthorNagException("onPlayerTeleport has been replaced with a new signature, (PlayerTeleportEvent)");
     }
 
     /**
@@ -163,9 +172,9 @@ public class PlayerListener implements Listener {
     public void onPlayerBucketEmpty(PlayerBucketEmptyEvent event) {
     }
 
-    // Prevent compilation of old signatures TODO: Remove after 1.4
-    @Deprecated public final void onPlayerQuit(PlayerEvent event) {}
-    @Deprecated public final void onPlayerCommandPreprocess(PlayerChatEvent event) {}
-    @Deprecated public final void onPlayerTeleport(PlayerMoveEvent event) {}
-    @Deprecated public final void onPlayerJoin(PlayerEvent event) {}
+    // TODO: Remove after RB
+    @Deprecated public void onPlayerQuit(PlayerEvent event) {}
+    @Deprecated public void onPlayerCommandPreprocess(PlayerChatEvent event) {}
+    @Deprecated public void onPlayerTeleport(PlayerMoveEvent event) {}
+    @Deprecated public void onPlayerJoin(PlayerEvent event) {}
 }

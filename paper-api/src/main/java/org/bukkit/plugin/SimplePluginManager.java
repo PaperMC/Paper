@@ -258,7 +258,7 @@ public final class SimplePluginManager implements PluginManager {
                     if (plugin.isNaggable()) {
                         plugin.setNaggable(false);
                         server.getLogger().log(Level.SEVERE, String.format(
-                            "Nag author: %s of %s about the following:",
+                            "Nag author: '%s' of '%s' about the following: %s",
                             plugin.getDescription().getAuthors().get(0),
                             plugin.getDescription().getName(),
                             ex.getMessage()
