@@ -59,6 +59,12 @@ public class Main {
                         .withRequiredArg()
                         .ofType(SimpleDateFormat.class)
                         .describedAs("Log date format");
+
+                acceptsAll(asList("b", "bukkit-settings"), "File for bukkit settings")
+                        .withRequiredArg()
+                        .ofType(File.class)
+                        .defaultsTo(new File("bukkit.yml"))
+                        .describedAs("Yml file");
             }
         };
 
