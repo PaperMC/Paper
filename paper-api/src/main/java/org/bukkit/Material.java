@@ -98,6 +98,7 @@ public enum Material {
     CAKE_BLOCK(92, 1, Cake.class),
     DIODE_BLOCK_OFF(93, Diode.class),
     DIODE_BLOCK_ON(94, Diode.class),
+    LOCKED_CHEST(95),
     // ----- Item Separator -----
     IRON_SPADE(256, 1, 250),
     IRON_PICKAXE(257, 1, 250),
@@ -200,6 +201,7 @@ public enum Material {
     CAKE(354, 1),
     BED(355),
     DIODE(356),
+    COOKIE(357),
     GOLD_RECORD(2256, 1),
     GREEN_RECORD(2257, 1);
 
