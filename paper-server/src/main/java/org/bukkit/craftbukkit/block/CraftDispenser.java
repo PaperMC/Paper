@@ -49,7 +49,7 @@ public class CraftDispenser extends CraftBlockState implements Dispenser {
         boolean result = super.update(force);
 
         if (result) {
-            dispenser.h();
+            dispenser.i();
         }
 
         return result;

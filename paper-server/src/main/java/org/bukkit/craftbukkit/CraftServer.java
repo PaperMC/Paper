@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jline.ConsoleReader;
@@ -36,7 +37,7 @@ import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 public final class CraftServer implements Server {
     private final String serverName = "Craftbukkit";
     private final String serverVersion;
-    private final String protocolVersion = "1.3";
+    private final String protocolVersion = "1.4";
     private final PluginManager pluginManager = new SimplePluginManager(this);
     private final BukkitScheduler scheduler =  new CraftScheduler(this);
     private final CommandMap commandMap = new SimpleCommandMap(this);
@@ -269,6 +270,10 @@ public final class CraftServer implements Server {
     }
 
     public World createWorld(String name, World.Environment environment) {
+        return createWorld(name, environment, (new Random()).nextLong());
+    }
+
+    public World createWorld(String name, World.Environment environment, long seed) {
         File folder = new File(name);
         World world = getWorld(name);
 
@@ -286,7 +291,7 @@ public final class CraftServer implements Server {
             converter.a(name, new ConvertProgressUpdater(console));
         }
 
-        WorldServer internal = new WorldServer(console, new ServerNBTManager(new File("."), name, true), name, environment == World.Environment.NETHER ? -1 : 0);
+        WorldServer internal = new WorldServer(console, new ServerNBTManager(new File("."), name, true), name, environment == World.Environment.NETHER ? -1 : 0, seed);
 
         internal.a(new WorldManager(console, internal));
         internal.j = 1;
@@ -312,10 +317,10 @@ public final class CraftServer implements Server {
                     i = l;
                 }
 
-                ChunkCoordinates chunkcoordinates = internal.l();
+                ChunkCoordinates chunkcoordinates = internal.m();
                 internal.u.d(chunkcoordinates.a + j >> 4, chunkcoordinates.c + k >> 4);
 
-                while (internal.e()) {
+                while (internal.f()) {
                     ;
                 }
             }

@@ -22,7 +22,7 @@ public class CraftSheep extends CraftAnimals implements Sheep {
     }
 
     public DyeColor getColor() {
-        return DyeColor.getByData((byte) getHandle().n());
+        return DyeColor.getByData((byte) getHandle().o());
     }
 
     public void setColor(DyeColor color) {
