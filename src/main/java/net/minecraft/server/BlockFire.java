@@ -166,13 +166,13 @@ public class BlockFire extends Block {
         if (!world.isEmpty(i, j, k)) {
             return 0;
         } else {
-            int l = this.g(world, i + 1, j, k, b0);
+            int l = this.f(world, i + 1, j, k, b0);
 
-            l = this.g(world, i - 1, j, k, l);
-            l = this.g(world, i, j - 1, k, l);
-            l = this.g(world, i, j + 1, k, l);
-            l = this.g(world, i, j, k - 1, l);
-            l = this.g(world, i, j, k + 1, l);
+            l = this.f(world, i - 1, j, k, l);
+            l = this.f(world, i, j - 1, k, l);
+            l = this.f(world, i, j + 1, k, l);
+            l = this.f(world, i, j, k - 1, l);
+            l = this.f(world, i, j, k + 1, l);
             return l;
         }
     }
@@ -185,7 +185,7 @@ public class BlockFire extends Block {
         return this.a[iblockaccess.getTypeId(i, j, k)] > 0;
     }
 
-    public int g(World world, int i, int j, int k, int l) {
+    public int f(World world, int i, int j, int k, int l) {
         int i1 = this.a[world.getTypeId(i, j, k)];
 
         return i1 > l ? i1 : l;

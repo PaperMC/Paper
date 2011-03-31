@@ -23,7 +23,7 @@ public class ThreadCommandReader extends Thread {
             ConsoleReader reader = a.reader;
             String line = null;
             while ((!this.a.g) && (MinecraftServer.a(this.a)) && ((line = reader.readLine(">", null)) != null)) {
-                this.a.a(line, (ICommandListener) this.a);
+                this.a.a(line, this.a);
             }
         } catch (IOException ex) {
             Logger.getLogger(ThreadCommandReader.class.getName()).log(Level.SEVERE, null, ex);

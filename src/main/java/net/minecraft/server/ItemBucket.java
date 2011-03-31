@@ -15,7 +15,6 @@ public class ItemBucket extends Item {
     public ItemBucket(int i, int j) {
         super(i);
         this.maxStackSize = 1;
-        this.durability = 64;
         this.a = j;
     }
 

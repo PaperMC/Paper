@@ -53,7 +53,13 @@ public final class ItemStack {
     }
 
     public boolean a(EntityHuman entityhuman, World world, int i, int j, int k, int l) {
-        return this.a().a(this, entityhuman, world, i, j, k, l);
+        boolean flag = this.a().a(this, entityhuman, world, i, j, k, l);
+
+        if (flag) {
+            entityhuman.a(StatisticList.A[this.id], 1);
+        }
+
+        return flag;
     }
 
     public float a(Block block) {
@@ -109,10 +115,14 @@ public final class ItemStack {
         return Item.byId[this.id].d();
     }
 
-    public void b(int i) {
+    public void a(int i, Entity entity) {
         if (this.d()) {
             this.damage += i;
             if (this.damage > this.i()) {
+                if (entity instanceof EntityHuman) {
+                    ((EntityHuman) entity).a(StatisticList.B[this.id], 1);
+                }
+
                 --this.count;
                 if (this.count < 0) {
                     this.count = 0;
@@ -123,12 +133,20 @@ public final class ItemStack {
         }
     }
 
-    public void a(EntityLiving entityliving) {
-        Item.byId[this.id].a(this, entityliving);
+    public void a(EntityLiving entityliving, EntityHuman entityhuman) {
+        boolean flag = Item.byId[this.id].a(this, entityliving, (EntityLiving) entityhuman);
+
+        if (flag) {
+            entityhuman.a(StatisticList.A[this.id], 1);
+        }
     }
 
-    public void a(int i, int j, int k, int l) {
-        Item.byId[this.id].a(this, i, j, k, l);
+    public void a(int i, int j, int k, int l, EntityHuman entityhuman) {
+        boolean flag = Item.byId[this.id].a(this, i, j, k, l, entityhuman);
+
+        if (flag) {
+            entityhuman.a(StatisticList.A[this.id], 1);
+        }
     }
 
     public int a(Entity entity) {
@@ -141,8 +159,8 @@ public final class ItemStack {
 
     public void a(EntityHuman entityhuman) {}
 
-    public void b(EntityLiving entityliving) {
-        Item.byId[this.id].b(this, entityliving);
+    public void a(EntityLiving entityliving) {
+        Item.byId[this.id].a(this, entityliving);
     }
 
     public ItemStack j() {

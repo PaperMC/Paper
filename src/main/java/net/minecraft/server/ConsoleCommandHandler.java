@@ -81,10 +81,10 @@ public class ConsoleCommandHandler {
                         int i;
 
                         if (s.toLowerCase().startsWith("kick ")) {
-                            // CraftBukkit - Start - Add kick message compatibility
+                            // CraftBukkit start - Add kick message compatibility
                             String[] parts = s.split(" ");
                             s2 = ( parts.length >= 2 ) ? parts[1] : "";
-                            // CraftBukkit - End
+                            // CraftBukkit end
                             entityplayer = null;
 
                             for (i = 0; i < serverconfigurationmanager.b.size(); ++i) {

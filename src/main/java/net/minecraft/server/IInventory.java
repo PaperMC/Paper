@@ -2,7 +2,7 @@ package net.minecraft.server;
 
 public interface IInventory {
 
-    int m_();
+    int q_();
 
     ItemStack c_(int i);
 
@@ -12,9 +12,9 @@ public interface IInventory {
 
     String c();
 
-    int n_();
+    int r_();
 
-    void h();
+    void i();
 
     boolean a_(EntityHuman entityhuman);
 

@@ -31,7 +31,7 @@ public class EntityFish extends Entity {
 
     public EntityFish(World world) {
         super(world);
-        this.a(0.25F, 0.25F);
+        this.b(0.25F, 0.25F);
     }
 
     protected void a() {}
@@ -40,7 +40,7 @@ public class EntityFish extends Entity {
         super(world);
         this.b = entityhuman;
         this.b.hookedFish = this;
-        this.a(0.25F, 0.25F);
+        this.b(0.25F, 0.25F);
         this.c(entityhuman.locX, entityhuman.locY + 1.62D - (double) entityhuman.height, entityhuman.locZ, entityhuman.yaw, entityhuman.pitch);
         this.locX -= (double) (MathHelper.b(this.yaw / 180.0F * 3.1415927F) * 0.16F);
         this.locY -= 0.10000000149011612D;
@@ -101,10 +101,10 @@ public class EntityFish extends Entity {
             this.c(this.yaw, this.pitch);
         } else {
             if (!this.world.isStatic) {
-                ItemStack itemstack = this.b.z();
+                ItemStack itemstack = this.b.A();
 
-                if (this.b.dead || !this.b.J() || itemstack == null || itemstack.a() != Item.FISHING_ROD || this.g(this.b) > 1024.0D) {
-                    this.C();
+                if (this.b.dead || !this.b.N() || itemstack == null || itemstack.a() != Item.FISHING_ROD || this.g(this.b) > 1024.0D) {
+                    this.D();
                     this.b.hookedFish = null;
                     return;
                 }
@@ -131,7 +131,7 @@ public class EntityFish extends Entity {
                 if (i == this.g) {
                     ++this.i;
                     if (this.i == 1200) {
-                        this.C();
+                        this.D();
                     }
 
                     return;
@@ -247,7 +247,7 @@ public class EntityFish extends Entity {
                 this.yaw = this.lastYaw + (this.yaw - this.lastYaw) * 0.2F;
                 float f2 = 0.92F;
 
-                if (this.onGround || this.aV) {
+                if (this.onGround || this.aW) {
                     f2 = 0.5F;
                 }
 
@@ -354,6 +354,7 @@ public class EntityFish extends Entity {
             entityitem.motY = d6 * d9 + (double) MathHelper.a(d8) * 0.08D;
             entityitem.motZ = d7 * d9;
             this.world.a((Entity) entityitem);
+            this.b.a(StatisticList.x, 1);
             b0 = 1;
         }
 
@@ -361,7 +362,7 @@ public class EntityFish extends Entity {
             b0 = 2;
         }
 
-        this.C();
+        this.D();
         this.b.hookedFish = null;
         return b0;
     }

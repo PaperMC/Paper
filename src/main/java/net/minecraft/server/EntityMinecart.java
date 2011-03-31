@@ -51,10 +51,13 @@ public class EntityMinecart extends Entity implements IInventory {
         this.b = 0;
         this.c = 1;
         this.i = false;
-        this.aC = true;
-        this.a(0.98F, 0.7F);
+        this.aD = true;
+        this.b(0.98F, 0.7F);
         this.height = this.width / 2.0F;
-        this.bg = false;
+    }
+
+    protected boolean l() {
+        return false;
     }
 
     protected void a() {}
@@ -114,7 +117,7 @@ public class EntityMinecart extends Entity implements IInventory {
 
             this.c = -this.c;
             this.b = 10;
-            this.R();
+            this.W();
             this.a += i * 10;
             if (this.a > 40) {
                 this.a(Item.MINECART.id, 1, 0.0F);
@@ -124,7 +127,7 @@ public class EntityMinecart extends Entity implements IInventory {
                     this.a(Block.FURNACE.id, 1, 0.0F);
                 }
 
-                this.C();
+                this.D();
             }
 
             return true;
@@ -137,8 +140,8 @@ public class EntityMinecart extends Entity implements IInventory {
         return !this.dead;
     }
 
-    public void C() {
-        for (int i = 0; i < this.m_(); ++i) {
+    public void D() {
+        for (int i = 0; i < this.q_(); ++i) {
             ItemStack itemstack = this.c_(i);
 
             if (itemstack != null) {
@@ -165,7 +168,7 @@ public class EntityMinecart extends Entity implements IInventory {
             }
         }
 
-        super.C();
+        super.D();
     }
 
     public void f_() {
@@ -593,7 +596,7 @@ public class EntityMinecart extends Entity implements IInventory {
         } else if (this.d == 1) {
             NBTTagList nbttaglist = nbttagcompound.l("Items");
 
-            this.h = new ItemStack[this.m_()];
+            this.h = new ItemStack[this.q_()];
 
             for (int i = 0; i < nbttaglist.c(); ++i) {
                 NBTTagCompound nbttagcompound1 = (NBTTagCompound) nbttaglist.a(i);
@@ -692,7 +695,7 @@ public class EntityMinecart extends Entity implements IInventory {
         }
     }
 
-    public int m_() {
+    public int q_() {
         return 27;
     }
 
@@ -723,8 +726,8 @@ public class EntityMinecart extends Entity implements IInventory {
 
     public void a(int i, ItemStack itemstack) {
         this.h[i] = itemstack;
-        if (itemstack != null && itemstack.count > this.n_()) {
-            itemstack.count = this.n_();
+        if (itemstack != null && itemstack.count > this.r_()) {
+            itemstack.count = this.r_();
         }
     }
 
@@ -732,11 +735,11 @@ public class EntityMinecart extends Entity implements IInventory {
         return "Minecart";
     }
 
-    public int n_() {
+    public int r_() {
         return 64;
     }
 
-    public void h() {}
+    public void i() {}
 
     public boolean a(EntityHuman entityhuman) {
         if (this.d == 0) {

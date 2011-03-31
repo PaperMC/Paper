@@ -23,12 +23,12 @@ public class EntityArrow extends Entity {
 
     public EntityArrow(World world) {
         super(world);
-        this.a(0.5F, 0.5F);
+        this.b(0.5F, 0.5F);
     }
 
     public EntityArrow(World world, double d0, double d1, double d2) {
         super(world);
-        this.a(0.5F, 0.5F);
+        this.b(0.5F, 0.5F);
         this.a(d0, d1, d2);
         this.height = 0.0F;
     }
@@ -36,8 +36,8 @@ public class EntityArrow extends Entity {
     public EntityArrow(World world, EntityLiving entityliving) {
         super(world);
         this.b = entityliving;
-        this.a(0.5F, 0.5F);
-        this.c(entityliving.locX, entityliving.locY + (double) entityliving.p(), entityliving.locZ, entityliving.yaw, entityliving.pitch);
+        this.b(0.5F, 0.5F);
+        this.c(entityliving.locX, entityliving.locY + (double) entityliving.q(), entityliving.locZ, entityliving.yaw, entityliving.pitch);
         this.locX -= (double) (MathHelper.b(this.yaw / 180.0F * 3.1415927F) * 0.16F);
         this.locY -= 0.10000000149011612D;
         this.locZ -= (double) (MathHelper.a(this.yaw / 180.0F * 3.1415927F) * 0.16F);
@@ -92,7 +92,7 @@ public class EntityArrow extends Entity {
             if (i == this.f) {
                 ++this.h;
                 if (this.h == 1200) {
-                    this.C();
+                    this.D();
                 }
 
                 return;
@@ -180,7 +180,7 @@ public class EntityArrow extends Entity {
                 if (stick) {
                 // CraftBukkit end
                     this.world.a(this, "random.drr", 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
-                    this.C();
+                    this.D();
                 } else {
                     this.motX *= -0.10000000149011612D;
                     this.motY *= -0.10000000149011612D;
@@ -274,7 +274,7 @@ public class EntityArrow extends Entity {
             if (this.g && this.b == entityhuman && this.a <= 0 && entityhuman.inventory.a(new ItemStack(Item.ARROW, 1))) {
                 this.world.a(this, "random.pop", 0.2F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
                 entityhuman.b(this, 1);
-                this.C();
+                this.D();
             }
         }
     }

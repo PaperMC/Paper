@@ -33,7 +33,7 @@ public class CraftSign extends CraftBlockState implements Sign {
         boolean result = super.update(force);
 
         if (result) {
-            sign.h();
+            sign.i();
         }
 
         return result;

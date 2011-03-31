@@ -5,14 +5,14 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
-// CraftBukkit stop
+// CraftBukkit end
 
 public class EntitySpider extends EntityMonster {
 
     public EntitySpider(World world) {
         super(world);
         this.texture = "/mob/spider.png";
-        this.a(1.4F, 0.9F);
+        this.b(1.4F, 0.9F);
         this.az = 0.8F;
     }
 
@@ -20,7 +20,11 @@ public class EntitySpider extends EntityMonster {
         return (double) this.width * 0.75D - 0.5D;
     }
 
-    protected Entity l() {
+    protected boolean l() {
+        return false;
+    }
+
+    protected Entity m() {
         float f = this.c(1.0F);
 
         if (f < 0.5F) {
@@ -91,7 +95,7 @@ public class EntitySpider extends EntityMonster {
         return Item.STRING.id;
     }
 
-    public boolean m() {
-        return this.aV;
+    public boolean n() {
+        return this.aW;
     }
 }

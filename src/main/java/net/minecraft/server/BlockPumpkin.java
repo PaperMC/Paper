@@ -1,8 +1,10 @@
 package net.minecraft.server;
 
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.block.BlockRedstoneEvent;
+// CraftBukkit end
 
 public class BlockPumpkin extends Block {
 
@@ -58,8 +60,9 @@ public class BlockPumpkin extends Block {
             CraftServer server = ((WorldServer) world).getServer();
             org.bukkit.block.Block block = craftWorld.getBlockAt(i, j, k);
             int power = block.getBlockPower();
+
             BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, power, power);
-            server.getPluginManager().callEvent(eventRedstone);            
+            server.getPluginManager().callEvent(eventRedstone);
         }
     }
     // Craftbukkit end

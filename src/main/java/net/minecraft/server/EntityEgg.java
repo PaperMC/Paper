@@ -27,7 +27,7 @@ public class EntityEgg extends Entity {
 
     public EntityEgg(World world) {
         super(world);
-        this.a(0.25F, 0.25F);
+        this.b(0.25F, 0.25F);
     }
 
     protected void a() {}
@@ -35,8 +35,8 @@ public class EntityEgg extends Entity {
     public EntityEgg(World world, EntityLiving entityliving) {
         super(world);
         this.g = entityliving;
-        this.a(0.25F, 0.25F);
-        this.c(entityliving.locX, entityliving.locY + (double) entityliving.p(), entityliving.locZ, entityliving.yaw, entityliving.pitch);
+        this.b(0.25F, 0.25F);
+        this.c(entityliving.locX, entityliving.locY + (double) entityliving.q(), entityliving.locZ, entityliving.yaw, entityliving.pitch);
         this.locX -= (double) (MathHelper.b(this.yaw / 180.0F * 3.1415927F) * 0.16F);
         this.locY -= 0.10000000149011612D;
         this.locZ -= (double) (MathHelper.a(this.yaw / 180.0F * 3.1415927F) * 0.16F);
@@ -53,7 +53,7 @@ public class EntityEgg extends Entity {
     public EntityEgg(World world, double d0, double d1, double d2) {
         super(world);
         this.h = 0;
-        this.a(0.25F, 0.25F);
+        this.b(0.25F, 0.25F);
         this.a(d0, d1, d2);
         this.height = 0.0F;
     }
@@ -95,7 +95,7 @@ public class EntityEgg extends Entity {
             if (i == this.e) {
                 ++this.h;
                 if (this.h == 1200) {
-                    this.C();
+                    this.D();
                 }
 
                 return;
@@ -261,7 +261,7 @@ public class EntityEgg extends Entity {
                 this.world.a("snowballpoof", this.locX, this.locY, this.locZ, 0.0D, 0.0D, 0.0D);
             }
 
-            this.C();
+            this.D();
         }
 
         this.locX += this.motX;
@@ -331,7 +331,7 @@ public class EntityEgg extends Entity {
         if (this.f && this.g == entityhuman && this.a <= 0 && entityhuman.inventory.a(new ItemStack(Item.ARROW, 1))) {
             this.world.a(this, "random.pop", 0.2F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
             entityhuman.b(this, 1);
-            this.C();
+            this.D();
         }
     }
 }

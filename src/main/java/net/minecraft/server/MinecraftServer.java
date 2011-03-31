@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -82,7 +83,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
         System.setErr(new PrintStream(new LoggerOutputStream(a, Level.SEVERE), true));
         // CraftBukkit end
 
-        a.info("Starting minecraft server version Beta 1.3");
+        a.info("Starting minecraft server version Beta 1.4");
         if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
             a.warning("**** NOT ENOUGH RAM!");
             a.warning("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
@@ -126,9 +127,19 @@ public class MinecraftServer implements Runnable, ICommandListener {
         this.k = new EntityTracker(this);
         long j = System.nanoTime();
         String s1 = this.d.a("level-name", "world");
+        String s2 = this.d.a("level-seed", "");
+        long k = (new Random()).nextLong();
+
+        if (s2.length() > 0) {
+            try {
+                k = Long.parseLong(s2);
+            } catch (NumberFormatException numberformatexception) {
+                k = (long) s2.hashCode();
+            }
+        }
 
         a.info("Preparing level \"" + s1 + "\"");
-        this.a((Convertable) (new WorldLoaderServer(new File("."))), s1);
+        this.a(new WorldLoaderServer(new File(".")), s1, k);
 
         // CraftBukkit start
         long elapsed = System.nanoTime() - j;
@@ -139,7 +150,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
         return true;
     }
 
-    private void a(Convertable convertable, String s) {
+    private void a(Convertable convertable, String s, long i) {
         if (convertable.a(s)) {
             a.info("Converting map!");
             convertable.a(s, new ConvertProgressUpdater(this));
@@ -148,7 +159,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
         a.info("Preparing start region");
 
         // CraftBukkit start
-        WorldServer world = new WorldServer(this, new ServerNBTManager(new File("."), s, true), s, this.d.a("hellworld", false) ? -1 : 0);
+        WorldServer world = new WorldServer(this, new ServerNBTManager(new File("."), s, true), s, this.d.a("hellworld", false) ? -1 : 0, i);
         world.a(new WorldManager(this, world));
         world.j = this.d.a("spawn-monsters", true) ? 1 : 0;
         world.a(this.d.a("spawn-monsters", true), this.m);
@@ -157,30 +168,30 @@ public class MinecraftServer implements Runnable, ICommandListener {
         // CraftBukkit end
 
         short short1 = 196;
-        long i = System.currentTimeMillis();
-        ChunkCoordinates chunkcoordinates = worlds.get(0).l(); // CraftBukkit
+        long j = System.currentTimeMillis();
+        ChunkCoordinates chunkcoordinates = worlds.get(0).m(); // CraftBukkit
 
-        for (int j = -short1; j <= short1 && this.p; j += 16) {
-            for (int k = -short1; k <= short1 && this.p; k += 16) {
-                long l = System.currentTimeMillis();
+        for (int k = -short1; k <= short1 && this.p; k += 16) {
+            for (int l = -short1; l <= short1 && this.p; l += 16) {
+                long i1 = System.currentTimeMillis();
 
-                if (l < i) {
-                    i = l;
+                if (i1 < j) {
+                    j = i1;
                 }
 
-                if (l > i + 1000L) {
-                    int i1 = (short1 * 2 + 1) * (short1 * 2 + 1);
-                    int j1 = (j + short1) * (short1 * 2 + 1) + k + 1;
+                if (i1 > j + 1000L) {
+                    int j1 = (short1 * 2 + 1) * (short1 * 2 + 1);
+                    int k1 = (k + short1) * (short1 * 2 + 1) + l + 1;
 
-                    this.a("Preparing spawn area", j1 * 100 / i1);
-                    i = l;
+                    this.a("Preparing spawn area", k1 * 100 / j1);
+                    j = i1;
                 }
 
                 // CraftBukkit start
                 for (WorldServer worldserver: worlds) {
-                    world.u.d(chunkcoordinates.a + j >> 4, chunkcoordinates.c + k >> 4);
+                    world.u.c(chunkcoordinates.a + k >> 4, chunkcoordinates.c + l >> 4);
 
-                    while (world.e() && this.p) {
+                    while (world.f() && this.p) {
                         ;
                     }
                 }
@@ -210,7 +221,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
         // CraftBukkit start
         for (WorldServer world: worlds) {
             world.a(true, (IProgressUpdate) null);
-            world.r();
+            world.t();
 
             WorldSaveEvent event = new WorldSaveEvent( world.getWorld() );
             server.getPluginManager().callEvent( event );
@@ -263,7 +274,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
                     j += l;
                     i = k;
                     // CraftBukkit - TODO - Replace with loop?
-                    if (this.worlds.size() > 0 && this.worlds.get(0).q()) {
+                    if (this.worlds.size() > 0 && this.worlds.get(0).s()) {
                         this.h();
                         j = 0L;
                     } else {
@@ -338,20 +349,20 @@ public class MinecraftServer implements Runnable, ICommandListener {
         if (this.h % 20 == 0) {
             for (int i = 0; i < this.f.b.size(); ++i) {
                 EntityPlayer entityplayer = (EntityPlayer) this.f.b.get(i);
-                entityplayer.a.b((Packet) (new Packet4UpdateTime(entityplayer.world.k())));
+                entityplayer.a.b((Packet) (new Packet4UpdateTime(entityplayer.world.l())));
             }
         }
 
         ((CraftScheduler) server.getScheduler()).mainThreadHeartbeat(this.h);
 
         for (WorldServer world: worlds) {
-            world.g();
+            world.h();
 
-            while (world.e()) {
+            while (world.f()) {
                 ;
             }
 
-            world.d();
+            world.e();
         }
         // CraftBukkit end
         this.c.a();
@@ -404,6 +415,10 @@ public class MinecraftServer implements Runnable, ICommandListener {
 
     public void b(String s) {
         a.info(s);
+    }
+
+    public void c(String s) {
+        a.warning(s);
     }
 
     public String c() {

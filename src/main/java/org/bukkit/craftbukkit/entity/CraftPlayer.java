@@ -158,7 +158,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             newEntity.health = entity.health;
             newEntity.fireTicks = entity.fireTicks;
             newEntity.inventory = entity.inventory;
-            newEntity.inventory.e = newEntity;
+            newEntity.inventory.d = newEntity;
             newEntity.activeContainer = entity.activeContainer;
             newEntity.defaultContainer = entity.defaultContainer;
             newEntity.locX = location.getX();
@@ -194,14 +194,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void setSneaking(boolean sneak) {
-        getHandle().b(sneak);
+        getHandle().e(sneak);
     }
 
     public boolean isSneaking() {
-        return getHandle().U();
+        return getHandle().Z();
     }
 
     public void updateInventory() {
-        getHandle().l();
+        getHandle().m();
     }
 }

@@ -78,7 +78,7 @@ public class BlockButton extends Block {
             }
 
             if (flag) {
-                this.b_(world, i, j, k, world.getData(i, j, k));
+                this.a_(world, i, j, k, world.getData(i, j, k));
                 world.e(i, j, k, 0);
             }
         }
@@ -86,7 +86,7 @@ public class BlockButton extends Block {
 
     private boolean h(World world, int i, int j, int k) {
         if (!this.a(world, i, j, k)) {
-            this.b_(world, i, j, k, world.getData(i, j, k));
+            this.a_(world, i, j, k, world.getData(i, j, k));
             world.e(i, j, k, 0);
             return false;
         } else {

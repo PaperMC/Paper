@@ -1,12 +1,12 @@
 package net.minecraft.server;
 
-import java.text.SimpleDateFormat;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 // CraftBukkit start
+import java.text.SimpleDateFormat;
 import java.util.logging.Handler;
 import org.bukkit.craftbukkit.util.ShortConsoleLogFormatter;
 import org.bukkit.craftbukkit.util.TerminalConsoleHandler;
@@ -24,17 +24,17 @@ public class ConsoleLogManager {
         ConsoleLogFormatter consolelogformatter = new ConsoleLogFormatter();
 
         a.setUseParentHandlers(false);
-        ConsoleHandler consolehandler = new TerminalConsoleHandler(server.reader); // Craftbukkit
-
         // CraftBukkit start
+        ConsoleHandler consolehandler = new TerminalConsoleHandler(server.reader);
+
         for (Handler handler: global.getHandlers()) {
             global.removeHandler(handler);
         }
-        // CraftBukkit end
 
-        consolehandler.setFormatter(new ShortConsoleLogFormatter(server)); // Craftbukkit
+        consolehandler.setFormatter(new ShortConsoleLogFormatter(server));
+        global.addHandler(consolehandler);
+        // CraftBukkit end
         a.addHandler(consolehandler);
-        global.addHandler(consolehandler); // CraftBukkit
 
         try {
             FileHandler filehandler = new FileHandler("server.log", true);

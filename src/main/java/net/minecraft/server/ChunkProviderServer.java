@@ -19,13 +19,16 @@ import org.bukkit.event.world.ChunkUnloadEvent;
 // CraftBukkit end
 
 public class ChunkProviderServer implements IChunkProvider {
-    public LongHashset a = new LongHashset(); // CraftBukkit
-    public Chunk b; // CraftBukkit
-    public IChunkProvider c; // CraftBukkit
+
+    // CraftBukkit start
+    public LongHashset a = new LongHashset();
+    public Chunk b;
+    public IChunkProvider c;
     private IChunkLoader d;
-    public LongHashtable<Chunk> e = new LongHashtable<Chunk>(); // CraftBukkit
-    public List f = new ArrayList(); // CraftBukkit
-    public WorldServer g; // CraftBukkit
+    public LongHashtable<Chunk> e = new LongHashtable<Chunk>();
+    public List f = new ArrayList();
+    public WorldServer g;
+    // CraftBukkit end
 
     public ChunkProviderServer(WorldServer worldserver, IChunkLoader ichunkloader, IChunkProvider ichunkprovider) {
         this.b = new EmptyChunk(worldserver, new byte['\u8000'], 0, 0);
@@ -38,8 +41,8 @@ public class ChunkProviderServer implements IChunkProvider {
         return this.e.containsKey(i, j); // CraftBukkit
     }
 
-    public void c(int i, int j) {
-        ChunkCoordinates chunkcoordinates = this.g.l();
+    public void d(int i, int j) {
+        ChunkCoordinates chunkcoordinates = this.g.m();
         int k = i * 16 + 8 - chunkcoordinates.a;
         int l = j * 16 + 8 - chunkcoordinates.c;
         short short1 = 128;
@@ -49,7 +52,7 @@ public class ChunkProviderServer implements IChunkProvider {
         }
     }
 
-    public Chunk d(int i, int j) {
+    public Chunk c(int i, int j) {
         // CraftBukkit start
         this.a.remove(i, j);
         Chunk chunk = (Chunk) this.e.get(i, j);
@@ -105,9 +108,10 @@ public class ChunkProviderServer implements IChunkProvider {
     }
 
     public Chunk b(int i, int j) {
-        Chunk chunk = (Chunk) this.e.get(i, j); // CraftBukkit
+        // CraftBukkit start
+        Chunk chunk = (Chunk) this.e.get(i, j);
 
-        chunk = chunk == null ? (this.g.r ? this.d(i, j) : this.b) : chunk;
+        chunk = chunk == null ? (this.g.r ? this.c(i, j) : this.b) : chunk;
         if (chunk == this.b) return chunk;
         if (i != chunk.j || j != chunk.k) {
             MinecraftServer.a.info("Chunk (" + chunk.j + ", " + chunk.k +") stored at  (" + i + ", " + j + ")");
@@ -117,9 +121,11 @@ public class ChunkProviderServer implements IChunkProvider {
             x.printStackTrace();
         }
         return chunk;
+        // CraftBukkit end
     }
 
-    public Chunk e(int i, int j) { // CraftBukkit - private->public
+    // CraftBukkit - private->public
+    public Chunk e(int i, int j) {
         if (this.d == null) {
             return null;
         } else {
@@ -127,7 +133,7 @@ public class ChunkProviderServer implements IChunkProvider {
                 Chunk chunk = this.d.a(this.g, i, j);
 
                 if (chunk != null) {
-                    chunk.r = this.g.k();
+                    chunk.r = this.g.l();
                 }
 
                 return chunk;
@@ -138,7 +144,8 @@ public class ChunkProviderServer implements IChunkProvider {
         }
     }
 
-    public void a(Chunk chunk) { // CraftBukkit - private->public
+    // CraftBukkit - private->public
+    public void a(Chunk chunk) {
         if (this.d != null) {
             try {
                 this.d.b(this.g, chunk);
@@ -148,10 +155,11 @@ public class ChunkProviderServer implements IChunkProvider {
         }
     }
 
-    public void b(Chunk chunk) { // CraftBukkit - private->public
+    // CraftBukkit - private->public
+    public void b(Chunk chunk) {
         if (this.d != null) {
             try {
-                chunk.r = this.g.k();
+                chunk.r = this.g.l();
                 this.d.a(this.g, chunk);
             } catch (Exception ioexception) { // CraftBukkit - IOException -> Exception
                 ioexception.printStackTrace();

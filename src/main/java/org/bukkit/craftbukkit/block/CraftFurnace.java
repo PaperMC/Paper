@@ -32,7 +32,7 @@ public class CraftFurnace extends CraftBlockState implements Furnace {
         boolean result = super.update(force);
 
         if (result) {
-            furnace.h();
+            furnace.i();
         }
 
         return result;

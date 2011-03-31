@@ -17,7 +17,7 @@ public class ItemFlintAndSteel extends Item {
     public ItemFlintAndSteel(int i) {
         super(i);
         this.maxStackSize = 1;
-        this.durability = 64;
+        this.d(64);
     }
 
     public boolean a(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
@@ -63,7 +63,7 @@ public class ItemFlintAndSteel extends Item {
             boolean preventFire = eventIgnite.isCancelled();
 
             if (preventFire) {
-                itemstack.b(1);
+                itemstack.a(1, entityhuman);
                 return false;
             }
             // CraftBukkit end
@@ -83,7 +83,7 @@ public class ItemFlintAndSteel extends Item {
             // CraftBukkit end
         }
 
-        itemstack.b(1);
+        itemstack.a(1, entityhuman);
         return true;
     }
 }

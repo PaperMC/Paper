@@ -30,7 +30,7 @@ class PlayerInstance {
         this.e = new ChunkCoordIntPair(i, j);
 
         // CraftBukkit
-        playermanager.world.u.d(i, j);
+        playermanager.world.u.c(i, j);
     }
 
     public void a(EntityPlayer entityplayer) {
@@ -58,7 +58,7 @@ class PlayerInstance {
                 }
 
                 // CraftBukkit
-                ((WorldServer) entityplayer.world).u.c(this.c, this.d);
+                ((WorldServer) entityplayer.world).u.d(this.c, this.d);
             }
 
             entityplayer.f.remove(this.e);

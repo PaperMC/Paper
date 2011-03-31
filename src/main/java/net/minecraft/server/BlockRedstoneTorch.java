@@ -21,7 +21,7 @@ public class BlockRedstoneTorch extends BlockTorch {
 
     private boolean a(World world, int i, int j, int k, boolean flag) {
         if (flag) {
-            b.add(new RedstoneUpdateInfo(i, j, k, world.k()));
+            b.add(new RedstoneUpdateInfo(i, j, k, world.l()));
         }
 
         int l = 0;
@@ -95,7 +95,7 @@ public class BlockRedstoneTorch extends BlockTorch {
     public void a(World world, int i, int j, int k, Random random) {
         boolean flag = this.g(world, i, j, k);
 
-        while (b.size() > 0 && world.k() - ((RedstoneUpdateInfo) b.get(0)).d > 100L) {
+        while (b.size() > 0 && world.l() - ((RedstoneUpdateInfo) b.get(0)).d > 100L) {
             b.remove(0);
         }
 

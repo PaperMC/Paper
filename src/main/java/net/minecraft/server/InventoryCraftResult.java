@@ -12,7 +12,7 @@ public class InventoryCraftResult implements IInventory {
 
     public InventoryCraftResult() {}
 
-    public int m_() {
+    public int q_() {
         return 1;
     }
 
@@ -39,11 +39,11 @@ public class InventoryCraftResult implements IInventory {
         this.a[i] = itemstack;
     }
 
-    public int n_() {
+    public int r_() {
         return 64;
     }
 
-    public void h() {}
+    public void i() {}
 
     public boolean a_(EntityHuman entityhuman) {
         return true;

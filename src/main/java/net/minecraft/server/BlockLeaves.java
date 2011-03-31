@@ -132,7 +132,7 @@ public class BlockLeaves extends BlockLeavesBase {
         if (event.isCancelled()) return;
         // CraftBukkit end
 
-        this.b_(world, i, j, k, world.getData(i, j, k));
+        this.a_(world, i, j, k, world.getData(i, j, k));
         world.e(i, j, k, 0);
     }
 

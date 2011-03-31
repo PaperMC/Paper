@@ -15,7 +15,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
 
     public TileEntityFurnace() {}
 
-    public int m_() {
+    public int q_() {
         return this.h.length;
     }
 
@@ -46,8 +46,8 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
 
     public void a(int i, ItemStack itemstack) {
         this.h[i] = itemstack;
-        if (itemstack != null && itemstack.count > this.n_()) {
-            itemstack.count = this.n_();
+        if (itemstack != null && itemstack.count > this.r_()) {
+            itemstack.count = this.r_();
         }
     }
 
@@ -59,7 +59,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         super.a(nbttagcompound);
         NBTTagList nbttaglist = nbttagcompound.l("Items");
 
-        this.h = new ItemStack[this.m_()];
+        this.h = new ItemStack[this.q_()];
 
         for (int i = 0; i < nbttaglist.c(); ++i) {
             NBTTagCompound nbttagcompound1 = (NBTTagCompound) nbttaglist.a(i);
@@ -94,7 +94,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         nbttagcompound.a("Items", (NBTBase) nbttaglist);
     }
 
-    public int n_() {
+    public int r_() {
         return 64;
     }
 
@@ -111,7 +111,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         }
 
         if (!this.d.isStatic) {
-            if (this.a == 0 && this.i()) {
+            if (this.a == 0 && this.h()) {
                 this.b = this.a = this.a(this.h[1]);
                 if (this.a > 0) {
                     flag1 = true;
@@ -124,7 +124,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
                 }
             }
 
-            if (this.f() && this.i()) {
+            if (this.f() && this.h()) {
                 ++this.c;
                 if (this.c == 200) {
                     this.c = 0;
@@ -142,22 +142,22 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         }
 
         if (flag1) {
-            this.h();
+            this.i();
         }
     }
 
-    private boolean i() {
+    private boolean h() {
         if (this.h[0] == null) {
             return false;
         } else {
             ItemStack itemstack = FurnaceRecipes.a().a(this.h[0].a().id);
 
-            return itemstack == null ? false : (this.h[2] == null ? true : (!this.h[2].a(itemstack) ? false : (this.h[2].count < this.n_() && this.h[2].count < this.h[2].b() ? true : this.h[2].count < itemstack.b())));
+            return itemstack == null ? false : (this.h[2] == null ? true : (!this.h[2].a(itemstack) ? false : (this.h[2].count < this.r_() && this.h[2].count < this.h[2].b() ? true : this.h[2].count < itemstack.b())));
         }
     }
 
     public void g() {
-        if (this.i()) {
+        if (this.h()) {
             ItemStack itemstack = FurnaceRecipes.a().a(this.h[0].a().id);
 
             if (this.h[2] == null) {

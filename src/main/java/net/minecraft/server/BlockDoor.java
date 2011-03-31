@@ -169,7 +169,7 @@ public class BlockDoor extends Block {
 
             if (flag) {
                 if (!world.isStatic) {
-                    this.b_(world, i, j, k, i1);
+                    this.a_(world, i, j, k, i1);
                 }
             } else if (l > 0 && Block.byId[l].c()) {
                 boolean flag1 = world.p(i, j, k) || world.p(i, j + 1, k);

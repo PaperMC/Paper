@@ -33,7 +33,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
     public EntityPlayer(MinecraftServer minecraftserver, World world, String s, ItemInWorldManager iteminworldmanager) {
         super(world);
-        ChunkCoordinates chunkcoordinates = world.l();
+        ChunkCoordinates chunkcoordinates = world.m();
         int i = chunkcoordinates.a;
         int j = chunkcoordinates.c;
         int k = chunkcoordinates.b;
@@ -60,7 +60,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public Location compassTarget;
     // CraftBukkit end
 
-    public void l() {
+    public void m() {
         this.activeContainer.a((ICrafting) this);
     }
 
@@ -72,7 +72,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         this.height = 0.0F;
     }
 
-    public float p() {
+    public float q() {
         return 1.62F;
     }
 
@@ -195,8 +195,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         }
     }
 
-    public void q() {
-        super.q();
+    public void r() {
+        super.r();
     }
 
     public void b(Entity entity, int i) {
@@ -214,7 +214,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         this.activeContainer.a();
     }
 
-    public void r() {
+    public void m_() {
         if (!this.p) {
             this.q = -1;
             this.p = true;
@@ -222,23 +222,24 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         }
     }
 
-    public void s() {}
+    public void t() {}
 
-    public boolean a(int i, int j, int k) {
-        if (super.a(i, j, k)) {
+    public EnumBedError a(int i, int j, int k) {
+        EnumBedError enumbederror = super.a(i, j, k);
+
+        if (enumbederror == EnumBedError.OK) {
             this.b.k.a(this, new Packet17(this, 0, i, j, k));
-            return true;
-        } else {
-            return false;
         }
+
+        return enumbederror;
     }
 
-    public void a(boolean flag, boolean flag1) {
-        if (this.E()) {
+    public void a(boolean flag, boolean flag1, boolean flag2) {
+        if (this.F()) {
             this.b.k.b(this, new Packet18ArmAnimation(this, 3));
         }
 
-        super.a(flag, flag1);
+        super.a(flag, flag1, flag2);
         this.a.a(this.locX, this.locY, this.locZ, this.yaw, this.pitch);
     }
 
@@ -263,12 +264,12 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         super.a(d0, flag);
     }
 
-    private void V() {
+    private void aa() {
         this.bH = this.bH % 100 + 1;
     }
 
     public void b(int i, int j, int k) {
-        this.V();
+        this.aa();
         this.a.b((Packet) (new Packet100OpenWindow(this.bH, 1, "Crafting", 9)));
         this.activeContainer = new ContainerWorkbench(this.inventory, this.world, i, j, k);
         this.activeContainer.f = this.bH;
@@ -276,24 +277,24 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     }
 
     public void a(IInventory iinventory) {
-        this.V();
-        this.a.b((Packet) (new Packet100OpenWindow(this.bH, 0, iinventory.c(), iinventory.m_())));
+        this.aa();
+        this.a.b((Packet) (new Packet100OpenWindow(this.bH, 0, iinventory.c(), iinventory.q_())));
         this.activeContainer = new ContainerChest(this.inventory, iinventory);
         this.activeContainer.f = this.bH;
         this.activeContainer.a((ICrafting) this);
     }
 
     public void a(TileEntityFurnace tileentityfurnace) {
-        this.V();
-        this.a.b((Packet) (new Packet100OpenWindow(this.bH, 2, tileentityfurnace.c(), tileentityfurnace.m_())));
+        this.aa();
+        this.a.b((Packet) (new Packet100OpenWindow(this.bH, 2, tileentityfurnace.c(), tileentityfurnace.q_())));
         this.activeContainer = new ContainerFurnace(this.inventory, tileentityfurnace);
         this.activeContainer.f = this.bH;
         this.activeContainer.a((ICrafting) this);
     }
 
     public void a(TileEntityDispenser tileentitydispenser) {
-        this.V();
-        this.a.b((Packet) (new Packet100OpenWindow(this.bH, 3, tileentitydispenser.c(), tileentitydispenser.m_())));
+        this.aa();
+        this.a.b((Packet) (new Packet100OpenWindow(this.bH, 3, tileentitydispenser.c(), tileentitydispenser.q_())));
         this.activeContainer = new ContainerDispenser(this.inventory, tileentitydispenser);
         this.activeContainer.f = this.bH;
         this.activeContainer.a((ICrafting) this);
@@ -309,7 +310,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
     public void a(Container container, List list) {
         this.a.b((Packet) (new Packet104WindowItems(container.f, list)));
-        this.a.b((Packet) (new Packet103SetSlot(-1, -1, this.inventory.i())));
+        this.a.b((Packet) (new Packet103SetSlot(-1, -1, this.inventory.j())));
     }
 
     public void a(Container container, int i, int j) {
@@ -318,18 +319,18 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
     public void a(ItemStack itemstack) {}
 
-    public void t() {
-        this.a.b((Packet) (new Packet101CloseWindow(this.activeContainer.f)));
-        this.v();
-    }
-
     public void u() {
-        if (!this.h) {
-            this.a.b((Packet) (new Packet103SetSlot(-1, -1, this.inventory.i())));
-        }
+        this.a.b((Packet) (new Packet101CloseWindow(this.activeContainer.f)));
+        this.w();
     }
 
     public void v() {
+        if (!this.h) {
+            this.a.b((Packet) (new Packet103SetSlot(-1, -1, this.inventory.j())));
+        }
+    }
+
+    public void w() {
         this.activeContainer.a((EntityHuman) this);
         this.activeContainer = this.defaultContainer;
     }
@@ -338,7 +339,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         this.au = f;
         this.av = f1;
         this.ax = flag;
-        this.b(flag1);
+        this.e(flag1);
         this.pitch = f2;
         this.yaw = f3;
     }

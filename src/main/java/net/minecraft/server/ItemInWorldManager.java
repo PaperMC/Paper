@@ -16,38 +16,36 @@ public class ItemInWorldManager {
     public EntityHuman a;
     private float c = 0.0F;
     private int d;
-    private int e = 0;
-    private float f = 0.0F;
+    private int e;
+    private int f;
     private int g;
     private int h;
-    private int i;
+    private boolean i;
     private int j;
-    private boolean k;
+    private int k;
     private int l;
     private int m;
-    private int n;
-    private int o;
 
     public ItemInWorldManager(World world) {
         this.b = world;
     }
 
     public void a() {
-        ++this.j;
-        if (this.k) {
-            int i = this.j - this.o;
-            int j = this.b.getTypeId(this.l, this.m, this.n);
+        ++this.h;
+        if (this.i) {
+            int i = this.h - this.m;
+            int j = this.b.getTypeId(this.j, this.k, this.l);
 
             if (j != 0) {
                 Block block = Block.byId[j];
                 float f = block.a(this.a) * (float) (i + 1);
 
                 if (f >= 1.0F) {
-                    this.k = false;
-                    this.d(this.l, this.m, this.n);
+                    this.i = false;
+                    this.d(this.j, this.k, this.l);
                 }
             } else {
-                this.k = false;
+                this.i = false;
             }
         }
     }
@@ -100,15 +98,15 @@ public class ItemInWorldManager {
             // CraftBukkit end
             this.d(i, j, k);
         } else {
-            this.g = i;
-            this.h = j;
-            this.i = k;
+            this.e = i;
+            this.f = j;
+            this.g = k;
         }
     }
 
     public void b(int i, int j, int k) {
-        if (i == this.g && j == this.h && k == this.i) {
-            int l = this.j - this.d;
+        if (i == this.e && j == this.f && k == this.g) {
+            int l = this.h - this.d;
             int i1 = this.b.getTypeId(i, j, k);
 
             if (i1 != 0) {
@@ -117,12 +115,12 @@ public class ItemInWorldManager {
 
                 if (f >= 1.0F) {
                     this.d(i, j, k);
-                } else if (!this.k) {
-                    this.k = true;
-                    this.l = i;
-                    this.m = j;
-                    this.n = k;
-                    this.o = this.d;
+                } else if (!this.i) {
+                    this.i = true;
+                    this.j = i;
+                    this.k = j;
+                    this.l = k;
+                    this.m = this.d;
                 }
             }
         // CraftBukkit start -- force blockreset to client
@@ -166,18 +164,18 @@ public class ItemInWorldManager {
         int l = this.b.getTypeId(i, j, k);
         int i1 = this.b.getData(i, j, k);
         boolean flag = this.c(i, j, k);
-        ItemStack itemstack = this.a.z();
+        ItemStack itemstack = this.a.A();
 
         if (itemstack != null) {
-            itemstack.a(l, i, j, k);
+            itemstack.a(l, i, j, k, this.a);
             if (itemstack.count == 0) {
                 itemstack.a(this.a);
-                this.a.A();
+                this.a.B();
             }
         }
 
         if (flag && this.a.b(Block.byId[l])) {
-            Block.byId[l].a_(this.b, i, j, k, i1);
+            Block.byId[l].a(this.b, this.a, i, j, k, i1);
             ((EntityPlayer) this.a).a.b((Packet) (new Packet53BlockChange(i, j, k, this.b)));
         }
 
@@ -186,7 +184,6 @@ public class ItemInWorldManager {
 
     public boolean a(EntityHuman entityhuman, World world, ItemStack itemstack) {
         int i = itemstack.count;
-
         ItemStack itemstack1 = itemstack.a(world, entityhuman);
 
         if (itemstack1 == itemstack && (itemstack1 == null || itemstack1.count == i)) {

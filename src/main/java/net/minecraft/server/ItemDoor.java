@@ -14,7 +14,6 @@ public class ItemDoor extends Item {
     public ItemDoor(int i, Material material) {
         super(i);
         this.a = material;
-        this.durability = 64;
         this.maxStackSize = 1;
     }
 

@@ -50,7 +50,7 @@ public class CraftEventFactory {
         if (spawnSize <= 0) return true;
         if (player.isOp()) return true;
 
-        ChunkCoordinates chunkcoordinates = worldServer.l();
+        ChunkCoordinates chunkcoordinates = worldServer.m();
 
         int distanceFromSpawn = (int) Math.max(Math.abs(x - chunkcoordinates.a), Math.abs(z - chunkcoordinates.c));
         return distanceFromSpawn > spawnSize;

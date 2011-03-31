@@ -46,12 +46,12 @@ public class EntityPigZombie extends EntityZombie {
         this.a = nbttagcompound.d("Anger");
     }
 
-    protected Entity l() {
-        return this.a == 0 ? null : super.l();
+    protected Entity m() {
+        return this.a == 0 ? null : super.m();
     }
 
-    public void q() {
-        super.q();
+    public void r() {
+        super.r();
     }
 
     public boolean a(Entity entity, int i) {
@@ -64,17 +64,17 @@ public class EntityPigZombie extends EntityZombie {
                 if (entity1 instanceof EntityPigZombie) {
                     EntityPigZombie entitypigzombie = (EntityPigZombie) entity1;
 
-                    entitypigzombie.c(entity);
+                    entitypigzombie.d(entity);
                 }
             }
 
-            this.c(entity);
+            this.d(entity);
         }
 
         return super.a(entity, i);
     }
 
-    private void c(Entity entity) {
+    private void d(Entity entity) {
         // CraftBukkit start
         CraftServer server = ((WorldServer) this.world).getServer();
         org.bukkit.entity.Entity bukkitTarget = null;

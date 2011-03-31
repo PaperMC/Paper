@@ -57,8 +57,8 @@ public class NetLoginHandler extends NetHandler {
 
     public void a(Packet1Login packet1login) {
         this.g = packet1login.b;
-        if (packet1login.a != 9) {
-            if (packet1login.a > 9) {
+        if (packet1login.a != 10) {
+            if (packet1login.a > 10) {
                 this.a("Outdated server!");
             } else {
                 this.a("Outdated client!");
@@ -80,17 +80,17 @@ public class NetLoginHandler extends NetHandler {
             NetServerHandler netserverhandler = new NetServerHandler(this.e, this.b, entityplayer);
 
             // CraftBukkit start
-            ChunkCoordinates chunkcoordinates = entityplayer.world.l();
-            netserverhandler.b((Packet) (new Packet1Login("", "", entityplayer.id, entityplayer.world.j(), (byte) entityplayer.world.m.g)));
+            ChunkCoordinates chunkcoordinates = entityplayer.world.m();
+            netserverhandler.b((Packet) (new Packet1Login("", "", entityplayer.id, entityplayer.world.k(), (byte) entityplayer.world.m.g)));
             netserverhandler.b((Packet) (new Packet6SpawnPosition(chunkcoordinates.a, chunkcoordinates.b, chunkcoordinates.c)));
             // this.e.f.a((Packet) (new Packet3Chat("\u00A7e" + entityplayer.name + " joined the game.")));  // CraftBukkit - message moved to join event
             this.e.f.a(entityplayer);
             netserverhandler.a(entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
             this.e.c.a(netserverhandler);
-            netserverhandler.b((Packet) (new Packet4UpdateTime(entityplayer.world.k())));
+            netserverhandler.b((Packet) (new Packet4UpdateTime(entityplayer.world.l())));
             // CraftBukkit end
 
-            entityplayer.l();
+            entityplayer.m();
         }
 
         this.c = true;

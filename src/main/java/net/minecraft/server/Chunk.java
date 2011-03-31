@@ -2,12 +2,12 @@ package net.minecraft.server;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
 // CraftBukkit start
+import java.util.Iterator;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftWorld;
 // CraftBukkit end
@@ -90,7 +90,7 @@ public class Chunk {
 
                 int i1;
 
-                for (i1 = j << 11 | k << 7; l > 0 && Block.q[this.b[i1 + l - 1]] == 0; --l) {
+                for (i1 = j << 11 | k << 7; l > 0 && Block.q[this.b[i1 + l - 1] & 255] == 0; --l) {
                     ;
                 }
 
@@ -104,7 +104,7 @@ public class Chunk {
                     int k1 = 127;
 
                     do {
-                        j1 -= Block.q[this.b[i1 + k1]];
+                        j1 -= Block.q[this.b[i1 + k1] & 255];
                         if (j1 > 0) {
                             this.f.a(j, k1, k, j1);
                         }
@@ -159,7 +159,7 @@ public class Chunk {
             i1 = j;
         }
 
-        for (int j1 = i << 11 | k << 7; i1 > 0 && Block.q[this.b[j1 + i1 - 1]] == 0; --i1) {
+        for (int j1 = i << 11 | k << 7; i1 > 0 && Block.q[this.b[j1 + i1 - 1] & 255] == 0; --i1) {
             ;
         }
 
@@ -231,7 +231,7 @@ public class Chunk {
     }
 
     public int a(int i, int j, int k) {
-        return this.b[i << 11 | k << 7 | j];
+        return this.b[i << 11 | k << 7 | j] & 255;
     }
 
     public boolean a(int i, int j, int k, int l, int i1) {
@@ -245,14 +245,14 @@ public class Chunk {
             int l1 = this.j * 16 + i;
             int i2 = this.k * 16 + k;
 
-            this.b[i << 11 | k << 7 | j] = b0;
+            this.b[i << 11 | k << 7 | j] = (byte) (b0 & 255);
             if (k1 != 0 && !this.d.isStatic) {
                 Block.byId[k1].b(this.d, l1, j, i2);
             }
 
             this.e.a(i, j, k, i1);
             if (!this.d.m.e) {
-                if (Block.q[b0] != 0) {
+                if (Block.q[b0 & 255] != 0) {
                     if (j >= j1) {
                         this.g(i, j + 1, k);
                     }
@@ -286,13 +286,13 @@ public class Chunk {
             int k1 = this.j * 16 + i;
             int l1 = this.k * 16 + k;
 
-            this.b[i << 11 | k << 7 | j] = b0;
+            this.b[i << 11 | k << 7 | j] = (byte) (b0 & 255);
             if (j1 != 0) {
                 Block.byId[j1].b(this.d, k1, j, l1);
             }
 
             this.e.a(i, j, k, 0);
-            if (Block.q[b0] != 0) {
+            if (Block.q[b0 & 255] != 0) {
                 if (j >= i1) {
                     this.g(i, j + 1, k);
                 }
@@ -555,10 +555,10 @@ public class Chunk {
             return false;
         } else {
             if (flag) {
-                if (this.q && this.d.k() != this.r) {
+                if (this.q && this.d.l() != this.r) {
                     return true;
                 }
-            } else if (this.q && this.d.k() >= this.r + 600L) {
+            } else if (this.q && this.d.l() >= this.r + 600L) {
                 return true;
             }
 
@@ -612,10 +612,20 @@ public class Chunk {
     }
 
     public Random a(long i) {
-        return new Random(this.d.j() + (long) (this.j * this.j * 4987142) + (long) (this.j * 5947611) + (long) (this.k * this.k) * 4392871L + (long) (this.k * 389711) ^ i);
+        return new Random(this.d.k() + (long) (this.j * this.j * 4987142) + (long) (this.j * 5947611) + (long) (this.k * this.k) * 4392871L + (long) (this.k * 389711) ^ i);
     }
 
     public boolean g() {
         return false;
+    }
+
+    public void h() {
+        for (int i = 0; i < this.b.length; ++i) {
+            byte b0 = this.b[i];
+
+            if (b0 != 0 && Block.byId[b0 & 255] == null) {
+                this.b[i] = 0;
+            }
+        }
     }
 }

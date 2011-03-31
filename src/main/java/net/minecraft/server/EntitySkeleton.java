@@ -32,8 +32,8 @@ public class EntitySkeleton extends EntityMonster {
         return "mob.skeletonhurt";
     }
 
-    public void q() {
-        if (this.world.c()) {
+    public void r() {
+        if (this.world.d()) {
             float f = this.c(1.0F);
 
             if (f > 0.5F && this.world.i(MathHelper.b(this.locX), MathHelper.b(this.locY), MathHelper.b(this.locZ)) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
@@ -51,7 +51,7 @@ public class EntitySkeleton extends EntityMonster {
             }
         }
 
-        super.q();
+        super.r();
     }
 
     protected void a(Entity entity, float f) {
@@ -89,7 +89,7 @@ public class EntitySkeleton extends EntityMonster {
         return Item.ARROW.id;
     }
 
-    protected void o() {
+    protected void p() {
         // CraftBukkit start - whole method
         List<org.bukkit.inventory.ItemStack> loot = new ArrayList<org.bukkit.inventory.ItemStack>();
 

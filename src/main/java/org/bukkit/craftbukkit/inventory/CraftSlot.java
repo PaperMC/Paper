@@ -20,6 +20,6 @@ public class CraftSlot implements org.bukkit.inventory.Slot {
     }
 
     public ItemStack getItem() {
-        return new CraftItemStack( slot.b() );
+        return new CraftItemStack( slot.a() );
     }
 }

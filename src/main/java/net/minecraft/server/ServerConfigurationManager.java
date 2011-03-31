@@ -72,7 +72,7 @@ public class ServerConfigurationManager {
     public void a(WorldServer worldserver) {
         // CraftBukkit start
         if (this.n == null) {
-            this.n = worldserver.m().d();
+            this.n = worldserver.o().d();
         }
         // CraftBukkit end
     }
@@ -85,7 +85,7 @@ public class ServerConfigurationManager {
         this.b.add(entityplayer);
         this.n.b(entityplayer);
         // CraftBukkit start
-        ((WorldServer) entityplayer.world).u.d((int) entityplayer.locX >> 4, (int) entityplayer.locZ >> 4);
+        ((WorldServer) entityplayer.world).u.c((int) entityplayer.locX >> 4, (int) entityplayer.locZ >> 4);
 
         while (entityplayer.world.a(entityplayer, entityplayer.boundingBox).size() != 0) {
             entityplayer.a(entityplayer.locX, entityplayer.locY + 1.0D, entityplayer.locZ);
@@ -173,12 +173,25 @@ public class ServerConfigurationManager {
         ((WorldServer) entityplayer.world).manager.b(entityplayer);
         this.b.remove(entityplayer);
         entityplayer.world.e(entityplayer);
+        ChunkCoordinates chunkcoordinates = entityplayer.H();
         EntityPlayer entityplayer1 = new EntityPlayer(this.c, entityplayer.world, entityplayer.name, new ItemInWorldManager(entityplayer.world));
 
         entityplayer1.id = entityplayer.id;
         entityplayer1.a = entityplayer.a;
         entityplayer1.displayName = entityplayer.displayName; // CraftBukkit
         entityplayer1.compassTarget = entityplayer.compassTarget; // CraftBukkit
+
+        if (chunkcoordinates != null) {
+            ChunkCoordinates chunkcoordinates1 = EntityHuman.a(entityplayer.world, chunkcoordinates);
+
+            if (chunkcoordinates1 != null) {
+                entityplayer1.c((double) ((float) chunkcoordinates1.a + 0.5F), (double) ((float) chunkcoordinates1.b + 0.1F), (double) ((float) chunkcoordinates1.c + 0.5F), 0.0F, 0.0F);
+                entityplayer1.a(chunkcoordinates);
+            } else {
+                entityplayer1.a.b((Packet) (new Packet70Bed(0)));
+            }
+        }
+        
         ((WorldServer) entityplayer.world).u.d((int) entityplayer1.locX >> 4, (int) entityplayer1.locZ >> 4);
 
         while (entityplayer.world.a(entityplayer1, entityplayer1.boundingBox).size() != 0) {
@@ -206,12 +219,12 @@ public class ServerConfigurationManager {
         entityplayer1.a.b((Packet) (new Packet9Respawn()));
         entityplayer1.a.a(entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch);
         // CraftBukkit start
-        ((WorldServer) entityplayer1.world).manager.a(entityplayer1);
         entityplayer.world.a(entityplayer1);
+        ((WorldServer) entityplayer1.world).manager.a(entityplayer1);
         // CraftBukkit end
         this.b.add(entityplayer1);
-        entityplayer1.l();
-        entityplayer1.s();
+        entityplayer1.m();
+        entityplayer1.t();
         return entityplayer1;
     }
 

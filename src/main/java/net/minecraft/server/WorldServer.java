@@ -19,8 +19,8 @@ public class WorldServer extends World implements BlockChangeDelegate {
     private EntityList y = new EntityList();
     public PlayerManager manager; // CraftBukkit
 
-    public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, String s, int i) {
-        super(idatamanager, s, (new Random()).nextLong(), WorldProvider.a(i));
+    public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, String s, int i, long j) {
+        super(idatamanager, s, j, WorldProvider.a(i));
         this.x = minecraftserver;
 
         // CraftBukkit start
@@ -44,7 +44,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
     public void a(Entity entity, boolean flag) {
         // CraftBukkit start -- We prevent spawning in general, so this butchering is not needed
         //if (!this.x.m && (entity instanceof EntityAnimal || entity instanceof EntityWaterAnimal)) {
-        //    entity.C();
+        //    entity.D();
         //}
         // CraftBukkit end
 
@@ -128,7 +128,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
         this.x.f.a((double) i, (double) j, (double) k, 64.0D, new Packet54PlayNoteBlock(i, j, k, l, i1));
     }
 
-    public void r() {
+    public void t() {
         this.p.e();
     }
 }

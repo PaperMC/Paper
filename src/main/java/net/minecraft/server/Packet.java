@@ -67,8 +67,6 @@ public abstract class Packet {
         boolean flag = false;
         Packet packet = null;
 
-        datainputstream.mark(16384);
-
         int i;
 
         try {
@@ -85,7 +83,6 @@ public abstract class Packet {
             packet.a(datainputstream);
         } catch (EOFException eofexception) {
             System.out.println("Reached end of stream");
-            datainputstream.reset();
             return null;
         }
 
@@ -217,6 +214,7 @@ public abstract class Packet {
         b(53, Packet53BlockChange.class);
         b(54, Packet54PlayNoteBlock.class);
         b(60, Packet60Explosion.class);
+        b(70, Packet70Bed.class);
         b(100, Packet100OpenWindow.class);
         b(101, Packet101CloseWindow.class);
         //b(102, Packet102WindowClick.class);

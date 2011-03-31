@@ -17,6 +17,7 @@ public class EntityTracker {
         this.d = minecraftserver.f.a();
     }
 
+    // CraftBukkit -- synchronized
     public synchronized void a(Entity entity) {
         if (entity instanceof EntityPlayer) {
             this.a(entity, 512, 2);
@@ -61,6 +62,7 @@ public class EntityTracker {
         this.a(entity, i, j, false);
     }
 
+    // CraftBukkit -- synchronized
     public synchronized void a(Entity entity, int i, int j, boolean flag) {
         if (i > this.d) {
             i = this.d;
@@ -78,6 +80,7 @@ public class EntityTracker {
         }
     }
 
+    // CraftBukkit -- synchronized
     public synchronized void b(Entity entity) {
         if (entity instanceof EntityPlayer) {
             EntityPlayer entityplayer = (EntityPlayer) entity;
@@ -98,6 +101,7 @@ public class EntityTracker {
         }
     }
 
+    // CraftBukkit -- synchronized
     public synchronized void a() {
         ArrayList arraylist = new ArrayList();
         Iterator iterator = this.a.iterator();
@@ -126,6 +130,7 @@ public class EntityTracker {
         }
     }
 
+    // CraftBukkit -- synchronized
     public synchronized void a(Entity entity, Packet packet) {
         EntityTrackerEntry entitytrackerentry = (EntityTrackerEntry) this.b.a(entity.id);
 
@@ -134,6 +139,7 @@ public class EntityTracker {
         }
     }
 
+    // CraftBukkit -- synchronized
     public synchronized void b(Entity entity, Packet packet) {
         EntityTrackerEntry entitytrackerentry = (EntityTrackerEntry) this.b.a(entity.id);
 
@@ -142,6 +148,7 @@ public class EntityTracker {
         }
     }
 
+    // CraftBukkit -- synchronized
     public synchronized void a(EntityPlayer entityplayer) {
         Iterator iterator = this.a.iterator();
 

@@ -102,7 +102,7 @@ public class EntityTrackerEntry {
                 this.a((Packet) object);
             }
 
-            DataWatcher datawatcher = this.a.O();
+            DataWatcher datawatcher = this.a.T();
 
             if (datawatcher.a()) {
                 this.b((Packet) (new Packet40EntityMetadata(this.a.id, datawatcher)));
@@ -120,9 +120,9 @@ public class EntityTrackerEntry {
             }
         }
 
-        if (this.a.aY) {
+        if (this.a.aZ) {
             this.b((Packet) (new Packet28EntityVelocity(this.a)));
-            this.a.aY = false;
+            this.a.aZ = false;
         }
     }
 

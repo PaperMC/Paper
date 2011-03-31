@@ -2,11 +2,13 @@ package net.minecraft.server;
 
 import java.util.Random;
 
+// CraftBukkit Start
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.event.block.BlockFromToEvent;
+// CraftBukkit end
 
 public class BlockFlowing extends BlockFluids {
 
@@ -47,11 +49,11 @@ public class BlockFlowing extends BlockFluids {
             byte b1 = -100;
 
             this.a = 0;
-            int j1 = this.f(world, i - 1, j, k, b1);
+            int j1 = this.e(world, i - 1, j, k, b1);
 
-            j1 = this.f(world, i + 1, j, k, j1);
-            j1 = this.f(world, i, j, k - 1, j1);
-            j1 = this.f(world, i, j, k + 1, j1);
+            j1 = this.e(world, i + 1, j, k, j1);
+            j1 = this.e(world, i, j, k - 1, j1);
+            j1 = this.e(world, i, j, k + 1, j1);
             i1 = j1 + b0;
             if (i1 >= 8 || j1 < 0) {
                 i1 = -1;
@@ -135,7 +137,7 @@ public class BlockFlowing extends BlockFluids {
                     }
 
                     if (!event.isCancelled()) {
-                        this.g(world, i + currentFace.getModX(), j, k + currentFace.getModZ(), i1);
+                        this.f(world, i + currentFace.getModX(), j, k + currentFace.getModZ(), i1);
                     }
                 }
                 index++;
@@ -144,7 +146,7 @@ public class BlockFlowing extends BlockFluids {
         }
     }
 
-    private void g(World world, int i, int j, int k, int l) {
+    private void f(World world, int i, int j, int k, int l) {
         if (this.l(world, i, j, k)) {
             int i1 = world.getTypeId(i, j, k);
 
@@ -152,7 +154,7 @@ public class BlockFlowing extends BlockFluids {
                 if (this.material == Material.LAVA) {
                     this.h(world, i, j, k);
                 } else {
-                    Block.byId[i1].b_(world, i, j, k, world.getData(i, j, k));
+                    Block.byId[i1].a_(world, i, j, k, world.getData(i, j, k));
                 }
             }
 
@@ -268,7 +270,7 @@ public class BlockFlowing extends BlockFluids {
         }
     }
 
-    protected int f(World world, int i, int j, int k, int l) {
+    protected int e(World world, int i, int j, int k, int l) {
         int i1 = this.g(world, i, j, k);
 
         if (i1 < 0) {

@@ -12,7 +12,7 @@ public class ItemHoe extends Item {
     public ItemHoe(int i, EnumToolMaterial enumtoolmaterial) {
         super(i);
         this.maxStackSize = 1;
-        this.durability = enumtoolmaterial.a();
+        this.d(enumtoolmaterial.a());
     }
 
     public boolean a(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
@@ -40,7 +40,7 @@ public class ItemHoe extends Item {
                 }
                 // CraftBukkit end
 
-                itemstack.b(1);
+                itemstack.a(1, entityhuman);
                 if (world.k.nextInt(8) == 0 && i1 == Block.GRASS.id) {
                     byte b0 = 1;
 

@@ -15,29 +15,29 @@ public class Slot {
         this.c = k;
     }
 
-    public void a() {
-        this.c();
+    public void a(ItemStack itemstack) {
+        this.b();
     }
 
-    public boolean a(ItemStack itemstack) {
+    public boolean b(ItemStack itemstack) {
         return true;
     }
 
-    public ItemStack b() {
+    public ItemStack a() {
         return this.e.c_(this.d);
     }
 
-    public void b(ItemStack itemstack) {
+    public void c(ItemStack itemstack) {
         this.e.a(this.d, itemstack);
-        this.c();
+        this.b();
     }
 
-    public void c() {
-        this.e.h();
+    public void b() {
+        this.e.i();
     }
 
-    public int d() {
-        return this.e.n_();
+    public int c() {
+        return this.e.r_();
     }
 
     public ItemStack a(int i) {
@@ -46,5 +46,9 @@ public class Slot {
 
     public boolean a(IInventory iinventory, int i) {
         return iinventory == this.e && i == this.d;
+    }
+
+    public boolean d() {
+        return false;
     }
 }

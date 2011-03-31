@@ -12,8 +12,8 @@ import org.bukkit.event.vehicle.VehicleDamageEvent;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.event.vehicle.VehicleEntityCollisionEvent;
 import org.bukkit.event.vehicle.VehicleMoveEvent;
-// CraftBukkit end
 import org.bukkit.event.vehicle.VehicleUpdateEvent;
+// CraftBukkit end
 
 public class EntityBoat extends Entity {
 
@@ -26,9 +26,10 @@ public class EntityBoat extends Entity {
     private double g;
     private double h;
     private double i;
-    public double maxSpeed = 0.4D; // CraftBukkit
 
     // CraftBukkit start
+    public double maxSpeed = 0.4D;
+
     public void h(Entity entity) {
         CraftServer server = ((WorldServer) this.world).getServer();
         Vehicle vehicle = (Vehicle) this.getBukkitEntity();
@@ -50,10 +51,13 @@ public class EntityBoat extends Entity {
         this.a = 0;
         this.b = 0;
         this.c = 1;
-        this.aC = true;
-        this.a(1.5F, 0.6F);
+        this.aD = true;
+        this.b(1.5F, 0.6F);
         this.height = this.width / 2.0F;
-        this.bg = false;
+    }
+
+    protected boolean l() {
+        return false;
     }
 
     protected void a() {}
@@ -110,7 +114,7 @@ public class EntityBoat extends Entity {
             this.c = -this.c;
             this.b = 10;
             this.a += i * 10;
-            this.R();
+            this.W();
             if (this.a > 40) {
                 int j;
 
@@ -122,7 +126,7 @@ public class EntityBoat extends Entity {
                     this.a(Item.STICK.id, 1, 0.0F);
                 }
 
-                this.C();
+                this.D();
             }
 
             return true;
@@ -266,9 +270,9 @@ public class EntityBoat extends Entity {
                 }
             }
 
-            if (this.aV && d5 > 0.15D) {
+            if (this.aW && d5 > 0.15D) {
                 if (!this.world.isStatic) {
-                    this.C();
+                    this.D();
 
                     int k;
 
@@ -354,7 +358,7 @@ public class EntityBoat extends Entity {
             double d0 = Math.cos((double) this.yaw * 3.141592653589793D / 180.0D) * 0.4D;
             double d1 = Math.sin((double) this.yaw * 3.141592653589793D / 180.0D) * 0.4D;
 
-            this.passenger.a(this.locX + d0, this.locY + this.k() + this.passenger.B(), this.locZ + d1);
+            this.passenger.a(this.locX + d0, this.locY + this.k() + this.passenger.C(), this.locZ + d1);
         }
     }
 
