@@ -93,7 +93,10 @@ public class Configuration extends ConfigurationNode {
     public boolean save() {
         FileOutputStream stream = null;
         
-        file.getParentFile().mkdirs();
+        File parent = file.getParentFile();
+        if (parent != null) {
+            parent.mkdirs();
+        }
         
         try {
             stream = new FileOutputStream(file);
