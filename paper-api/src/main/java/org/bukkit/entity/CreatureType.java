@@ -18,7 +18,8 @@ public enum CreatureType {
     SLIME("Slime"),
     SPIDER("Spider"),
     SQUID("Squid"),
-    ZOMBIE("Zombie");
+    ZOMBIE("Zombie"),
+    WOLF("Wolf");
 
     private String name;
 
