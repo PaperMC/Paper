@@ -16,6 +16,7 @@ import net.minecraft.server.EntitySkeleton;
 import net.minecraft.server.EntitySlime;
 import net.minecraft.server.EntitySpider;
 import net.minecraft.server.EntitySquid;
+import net.minecraft.server.EntityWolf;
 import net.minecraft.server.EntityZombie;
 import net.minecraft.server.Item;
 import net.minecraft.server.ItemStack;
@@ -200,6 +201,8 @@ public class CraftEventFactory {
             type = CreatureType.GHAST;
         } else if (entityliving instanceof EntityGiantZombie) {
             type = CreatureType.GIANT;
+        } else if (entityliving instanceof EntityWolf) {
+            type = CreatureType.WOLF;
         } else if (entityliving instanceof EntityPig) {
             type = CreatureType.PIG;
         } else if (entityliving instanceof EntityPigZombie) {
