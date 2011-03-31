@@ -139,6 +139,9 @@ public final class PluginDescriptionFile {
 
         try {
             main = map.get("main").toString();
+            if (main.startsWith("org.bukkit.")) {
+                throw new InvalidDescriptionException("main may not be within the org.bukkit namespace");
+            }
         } catch (NullPointerException ex) {
             throw new InvalidDescriptionException(ex, "main is not defined");
         } catch (ClassCastException ex) {
