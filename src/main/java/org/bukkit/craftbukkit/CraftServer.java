@@ -1,5 +1,9 @@
 package org.bukkit.craftbukkit;
 
+import com.avaje.ebean.config.DataSourceConfig;
+import com.avaje.ebean.config.ServerConfig;
+import com.avaje.ebean.config.dbplatform.SQLitePlatform;
+import com.avaje.ebeaninternal.server.lib.sql.TransactionIsolation;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.world.WorldLoadEvent;
@@ -33,6 +37,7 @@ import org.bukkit.plugin.SimplePluginManager;
 import org.bukkit.plugin.java.JavaPluginLoader;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
+import org.bukkit.util.config.Configuration;
 
 public final class CraftServer implements Server {
     private final String serverName = "Craftbukkit";
@@ -44,6 +49,7 @@ public final class CraftServer implements Server {
     protected final MinecraftServer console;
     protected final ServerConfigurationManager server;
     private final Map<String, World> worlds = new LinkedHashMap<String, World>();
+    private final Configuration configuration;
 
     public CraftServer(MinecraftServer console, ServerConfigurationManager server) {
         this.console = console;
@@ -53,6 +59,19 @@ public final class CraftServer implements Server {
         Bukkit.setServer(this);
 
         Logger.getLogger("Minecraft").log(Level.INFO, "This server is running " + getName() + " version " + getVersion());
+
+        configuration = new Configuration((File)console.options.valueOf("bukkit-settings"));
+        configuration.load();
+        loadConfigDefaults();
+        configuration.save();
+    }
+
+    private void loadConfigDefaults() {
+        configuration.getString("database.url", "jdbc:sqlite:{DIR}database.db");
+        configuration.getString("database.username", "bukkit");
+        configuration.getString("database.password", "walrus");
+        configuration.getString("database.driver", "org.sqlite.JDBC");
+        configuration.getString("database.isolation", "SERIALIZABLE");
     }
 
     public void loadPlugins() {
@@ -363,6 +382,22 @@ public final class CraftServer implements Server {
 
     public void savePlayers() {
         server.d();
+    }
+
+    public void configureDbConfig(ServerConfig config) {
+        DataSourceConfig ds = new DataSourceConfig();
+        ds.setDriver(configuration.getString("database.driver"));
+        ds.setUrl(configuration.getString("database.url"));
+        ds.setUsername(configuration.getString("database.username"));
+        ds.setPassword(configuration.getString("database.password"));
+        ds.setIsolationLevel(TransactionIsolation.getLevel(configuration.getString("database.isolation")));
+
+        if (ds.getDriver().contains("sqlite")) {
+            config.setDatabasePlatform(new SQLitePlatform());
+            config.getDatabasePlatform().getDbDdlSyntax().setIdentity("");
+        }
+
+        config.setDataSourceConfig(ds);
     }
 
     // Inner class to capture the output of default server commands
