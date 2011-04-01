@@ -101,7 +101,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         entity.motX = vel.getX();
         entity.motY = vel.getY();
         entity.motZ = vel.getZ();
-        entity.aY = true;
+        entity.aZ = true;
     }
 
     public World getWorld() {
