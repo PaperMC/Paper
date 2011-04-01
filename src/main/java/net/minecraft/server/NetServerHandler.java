@@ -813,7 +813,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
                 // CraftBukkit start - SIGN_CHANGE hook
                 Player player = server.getPlayer(this.e);
-                SignChangeEvent event = new SignChangeEvent((CraftBlock) player.getWorld().getBlockAt(j, k, j), server.getPlayer(this.e), packet130updatesign.d);
+                SignChangeEvent event = new SignChangeEvent((CraftBlock) player.getWorld().getBlockAt(j, k, i), server.getPlayer(this.e), packet130updatesign.d);
                 server.getPluginManager().callEvent(event);
 
                 if (event.isCancelled()) {
@@ -832,7 +832,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
                 tileentitysign1.i();
                 // CraftBukkit
-                this.e.world.g(j, k, j);
+                this.e.world.g(j, k, i);
             }
         }
     }
