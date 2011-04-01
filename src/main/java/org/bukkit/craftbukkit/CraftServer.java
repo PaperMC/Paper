@@ -67,7 +67,7 @@ public final class CraftServer implements Server {
     }
 
     private void loadConfigDefaults() {
-        configuration.getString("database.url", "jdbc:sqlite:{DIR}database.db");
+        configuration.getString("database.url", "jdbc:sqlite:{DIR}{NAME}.db");
         configuration.getString("database.username", "bukkit");
         configuration.getString("database.password", "walrus");
         configuration.getString("database.driver", "org.sqlite.JDBC");
