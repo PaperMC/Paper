@@ -406,7 +406,7 @@ public class CraftWorld implements World {
     }
 
     public long getFullTime() {
-        return world.k();
+        return world.l();
     }
 
     public void setFullTime(long time) {
