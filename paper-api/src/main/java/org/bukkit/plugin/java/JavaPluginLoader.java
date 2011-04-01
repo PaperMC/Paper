@@ -24,6 +24,7 @@ import org.bukkit.event.server.*;
 import org.bukkit.event.vehicle.*;
 import org.bukkit.event.world.*;
 import org.bukkit.plugin.*;
+import org.yaml.snakeyaml.error.YAMLException;
 
 /**
  * Represents a Java plugin loader, allowing plugins in the form of .jar
@@ -61,6 +62,8 @@ public final class JavaPluginLoader implements PluginLoader {
             stream.close();
             jar.close();
         } catch (IOException ex) {
+            throw new InvalidPluginException(ex);
+        } catch (YAMLException ex) {
             throw new InvalidPluginException(ex);
         }
 
