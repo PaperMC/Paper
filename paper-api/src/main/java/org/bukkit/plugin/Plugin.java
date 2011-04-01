@@ -1,6 +1,7 @@
 
 package org.bukkit.plugin;
 
+import com.avaje.ebean.EbeanServer;
 import java.io.File;
 import org.bukkit.Server;
 import org.bukkit.command.CommandExecutor;
@@ -80,4 +81,11 @@ public interface Plugin extends CommandExecutor {
      * @param canNag is this plugin still naggable?
      */
     public void setNaggable(boolean canNag);
+
+    /**
+     * Gets the {@link EbeanServer} tied to this plugin
+     *
+     * @return Ebean server instance
+     */
+    public EbeanServer getDatabase();
 }

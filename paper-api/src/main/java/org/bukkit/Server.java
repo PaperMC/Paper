@@ -1,6 +1,7 @@
 
 package org.bukkit;
 
+import com.avaje.ebean.config.ServerConfig;
 import org.bukkit.entity.Player;
 import java.util.List;
 import java.util.logging.Logger;
@@ -186,4 +187,11 @@ public interface Server {
      * @throws CommandException Thrown when the executor for the given command fails with an unhandled exception
      */
     public boolean dispatchCommand(CommandSender sender, String commandLine);
+
+    /**
+     * Populates a given {@link ServerConfig} with values attributes to this server
+     *
+     * @param config ServerConfig to populate
+     */
+    public void configureDbConfig(ServerConfig config);
 }

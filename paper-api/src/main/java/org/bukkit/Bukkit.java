@@ -31,7 +31,7 @@ public final class Bukkit {
      */
     public static void setServer(Server server) {
         if (Bukkit.server != null) {
-            throw new UnsupportedOperationException("Cannot redelcare singleton Server");
+            throw new UnsupportedOperationException("Cannot redefine singleton Server");
         }
 
         Bukkit.server = server;
