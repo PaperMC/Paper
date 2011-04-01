@@ -5,6 +5,8 @@ import com.avaje.ebean.EbeanServer;
 import com.avaje.ebean.EbeanServerFactory;
 import com.avaje.ebean.config.DataSourceConfig;
 import com.avaje.ebean.config.ServerConfig;
+import com.avaje.ebeaninternal.api.SpiEbeanServer;
+import com.avaje.ebeaninternal.server.ddl.DdlGenerator;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -240,5 +242,19 @@ public abstract class JavaPlugin implements Plugin {
 
     public EbeanServer getDatabase() {
         return ebean;
+    }
+
+    protected void installDDL() {
+        SpiEbeanServer serv = (SpiEbeanServer)getDatabase();
+        DdlGenerator gen = serv.getDdlGenerator();
+
+        gen.runScript(false, gen.generateCreateDdl());
+    }
+
+    protected void removeDDL() {
+        SpiEbeanServer serv = (SpiEbeanServer)getDatabase();
+        DdlGenerator gen = serv.getDdlGenerator();
+
+        gen.runScript(true, gen.generateDropDdl());
     }
 }
