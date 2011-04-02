@@ -418,6 +418,12 @@ public class CraftWorld implements World {
 
     public void setFullTime(long time) {
         world.a(time);
+
+        //Forces the client to update to the new time immediately
+        for (Player p: getPlayers()) {
+            CraftPlayer cp = (CraftPlayer) p;
+            cp.getHandle().a.b(new Packet4UpdateTime(time));
+        }
     }
 
     public Environment getEnvironment() {
