@@ -70,6 +70,20 @@ public class MaterialData {
      * @return New ItemStack containing a copy of this MaterialData
      */
     public ItemStack toItemStack() {
-        return new ItemStack(type);
+        return new ItemStack(type, 0, data);
+    }
+
+    /**
+     * Creates a new ItemStack based on this MaterialData
+     *
+     * @return New ItemStack containing a copy of this MaterialData
+     */
+    public ItemStack toItemStack(int amount) {
+        return new ItemStack(type, amount, data);
+    }
+    
+    @Override
+    public String toString() {
+        return getItemType() + "(" + getData() + ")";
     }
 }

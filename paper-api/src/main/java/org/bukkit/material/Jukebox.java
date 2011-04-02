@@ -1,15 +1,28 @@
 package org.bukkit.material;
 
+import java.util.HashSet;
+
 import org.bukkit.Material;
 
 public class Jukebox extends MaterialData {
+    private static HashSet<Material> recordTypes = new HashSet<Material>();
+    static {
+        recordTypes.add(Material.GOLD_RECORD);
+        recordTypes.add(Material.GREEN_RECORD);
+    }
+    
+    public Jukebox() {
+        super(Material.JUKEBOX);
+    }
 
     public Jukebox(int type) {
         super(type);
     }
 
     public Jukebox(Material type) {
-        super(type);
+        super((recordTypes.contains(type)) ? Material.JUKEBOX : type);
+        if(recordTypes.contains(type))
+            setPlaying(type);
     }
 
     public Jukebox(int type, byte data) {
@@ -55,4 +68,10 @@ public class Jukebox extends MaterialData {
             setData((byte) 0x0);
         }
     }
+    
+    @Override
+    public String toString() {
+        return super.toString() + " playing " + getPlaying();
+    }
+
 }

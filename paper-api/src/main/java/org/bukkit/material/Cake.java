@@ -3,6 +3,9 @@ package org.bukkit.material;
 import org.bukkit.Material;
 
 public class Cake extends MaterialData {
+    public Cake() {
+        super(Material.CAKE_BLOCK);
+    }
 
     public Cake(int type) {
         super(type);
@@ -58,4 +61,10 @@ public class Cake extends MaterialData {
         if (n > 6) n = 6;
         setData((byte) (6 - n));
     }
+    
+    @Override
+    public String toString() {
+        return super.toString() + " " + getSlicesEaten() + "/" + getSlicesRemaining() + " slices eaten/remaining";
+    }
+
 }

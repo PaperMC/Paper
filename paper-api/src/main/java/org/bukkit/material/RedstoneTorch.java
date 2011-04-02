@@ -7,6 +7,10 @@ import org.bukkit.Material;
  * Represents a redstone torch
  */
 public class RedstoneTorch extends Torch implements Redstone {
+    public RedstoneTorch() {
+        super(Material.REDSTONE_TORCH_ON);
+    }
+    
     public RedstoneTorch(final int type) {
         super(type);
     }
@@ -31,5 +35,10 @@ public class RedstoneTorch extends Torch implements Redstone {
      */
     public boolean isPowered() {
         return getItemType() == Material.REDSTONE_TORCH_ON;
+    }
+    
+    @Override
+    public String toString() {
+        return super.toString() + " " + (isPowered() ? "" : "NOT ") + "POWERED";
     }
 }

@@ -1,5 +1,7 @@
 package org.bukkit.material;
 
+import java.util.HashSet;
+
 import org.bukkit.Material;
 
 /**
@@ -7,12 +9,26 @@ import org.bukkit.Material;
  * @author sunkid
  */
 public class Step extends MaterialData {
+    private static HashSet<Material> stepTypes = new HashSet<Material>();
+    static {
+        stepTypes.add(Material.SANDSTONE);
+        stepTypes.add(Material.WOOD);
+        stepTypes.add(Material.COBBLESTONE);
+        stepTypes.add(Material.STONE);
+    }
+    
+    public Step() {
+        super(Material.STEP);
+    }
+    
     public Step(final int type) {
         super(type);
     }
 
     public Step(final Material type) {
-        super(type);
+        super((stepTypes.contains(type)) ? Material.STEP : type);
+        if(stepTypes.contains(type))
+            setMaterial(type);
     }
 
     public Step(final int type, final byte data) {
@@ -62,5 +78,10 @@ public class Step extends MaterialData {
         default:
             setData((byte) 0x0);
         }
+    }
+    
+    @Override
+    public String toString() {
+        return getMaterial() + " " + super.toString();
     }
 }

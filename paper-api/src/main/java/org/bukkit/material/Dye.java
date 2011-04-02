@@ -8,6 +8,10 @@ import org.bukkit.Material;
  * Represents dye
  */
 public class Dye extends MaterialData implements Colorable {
+    public Dye() {
+        super(Material.INK_SACK);
+    }
+    
     public Dye(final int type) {
         super(type);
     }
@@ -30,7 +34,7 @@ public class Dye extends MaterialData implements Colorable {
      * @return DyeColor of this dye
      */
     public DyeColor getColor() {
-        return DyeColor.getByData(getData());
+        return DyeColor.getByData((byte) (15 - getData()));
     }
 
     /**
@@ -39,6 +43,11 @@ public class Dye extends MaterialData implements Colorable {
      * @param color New color of this dye
      */
     public void setColor(DyeColor color) {
-        setData(color.getData());
+        setData((byte) (15 - color.getData()));
+    }
+    
+    @Override
+    public String toString() {
+        return getColor() + " DYE(" + getData() + ")";
     }
 }
