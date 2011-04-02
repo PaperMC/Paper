@@ -111,14 +111,16 @@ public class ServerConfigurationManager {
         ((WorldServer) entityplayer.world).manager.c(entityplayer); // CraftBukkit
     }
 
-    public void c(EntityPlayer entityplayer) {
+    public String c(EntityPlayer entityplayer) { // CraftBukkit - changed return type
         this.n.a(entityplayer);
         entityplayer.world.d(entityplayer); // CraftBukkit
         this.b.remove(entityplayer);
 
         // CraftBukkit start
         ((WorldServer) entityplayer.world).manager.b(entityplayer);
-        server.getPluginManager().callEvent(new PlayerQuitEvent(server.getPlayer(entityplayer))); // CraftBukkit
+        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(server.getPlayer(entityplayer), "\u00A7e" + entityplayer.name + " left the game.");
+        server.getPluginManager().callEvent(playerQuitEvent);
+        return playerQuitEvent.getQuitMessage();
         // CraftBukkit end
     }
 

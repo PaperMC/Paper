@@ -500,8 +500,10 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         // CraftBukkit start -- rarely it would send a disconnect line twice
         if (!this.c) {
             a.info(this.e.name + " lost connection: " + s);
-            this.d.f.a((Packet) (new Packet3Chat("\u00A7e" + this.e.name + " left the game.")));
-            this.d.f.c(this.e);
+            String quitMessage = this.d.f.c(this.e);
+            if (quitMessage != null) {
+                this.d.f.a((Packet) (new Packet3Chat(quitMessage)));
+            }
         }
         // CraftBukkit end
         this.c = true;
