@@ -104,6 +104,11 @@ public interface Entity {
     public void remove();
 
     /**
+     * Returns true if this entity has been marked for removal.
+     */
+    public boolean isDead();
+
+    /**
      * Gets the {@link Server} that contains this Entity
      *
      * @return Server instance running this Entity
