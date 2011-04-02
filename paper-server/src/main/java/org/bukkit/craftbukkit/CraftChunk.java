@@ -79,12 +79,12 @@ public class CraftChunk implements Chunk {
         for (int i = 0; i < 8; i++) {
             count += chunk.m[i].size();
         }
-        Entity[] entities = new Entity[count];        
+
+        Entity[] entities = new Entity[count];
         for (int i = 0; i < 8; i++) {
-            for (Object obj : (net.minecraft.server.Entity[])chunk.m[i].toArray()) {
-                if (!(obj instanceof net.minecraft.server.Entity)) continue; 
-                net.minecraft.server.Entity entity = (net.minecraft.server.Entity) obj;
-                entities[index++] = entity.getBukkitEntity();
+            for (Object obj: chunk.m[i].toArray()) {
+                if (!(obj instanceof net.minecraft.server.Entity)) continue;
+                entities[index++] = ((net.minecraft.server.Entity) obj).getBukkitEntity();
             }
         }
         return entities;
