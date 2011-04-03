@@ -107,16 +107,16 @@ public final class SimplePluginManager implements PluginManager {
                     itr.remove();
                 } catch (UnknownDependencyException ex) {
                     if(finalPass) {
-                        server.getLogger().log(Level.SEVERE, "Could not load " + file.getPath() + " in " + directory.getPath() + ": " + ex.getMessage(), ex);
+                        server.getLogger().log(Level.SEVERE, "Could not load '" + file.getPath() + "' in folder '" + directory.getPath() + "': " + ex.getMessage(), ex);
                         itr.remove();
                     } else {
                         plugin = null;
                     }
                 } catch (InvalidPluginException ex) {
-                    server.getLogger().log(Level.SEVERE, "Could not load " + file.getPath() + " in " + directory.getPath() + ": " + ex.getMessage(), ex);
+                    server.getLogger().log(Level.SEVERE, "Could not load '" + file.getPath() + "' in folder '" + directory.getPath() + "': ", ex.getCause());
                     itr.remove();
                 } catch (InvalidDescriptionException ex) {
-                    server.getLogger().log(Level.SEVERE, "Could not load " + file.getPath() + " in " + directory.getPath() + ": " + ex.getMessage(), ex);
+                    server.getLogger().log(Level.SEVERE, "Could not load '" + file.getPath() + "' in folder '" + directory.getPath() + "': " + ex.getMessage(), ex);
                     itr.remove();
                 }
 

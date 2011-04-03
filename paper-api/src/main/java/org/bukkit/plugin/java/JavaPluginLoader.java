@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.ArrayList;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.logging.Level;
 import java.util.regex.Pattern;
 import org.bukkit.Server;
 import org.bukkit.event.CustomEventListener;
@@ -67,7 +68,39 @@ public final class JavaPluginLoader implements PluginLoader {
             throw new InvalidPluginException(ex);
         }
 
-        File dataFolder = getDataFolder(file);
+        File dataFolder = new File(file.getParentFile(), description.getName());
+        File oldDataFolder = getDataFolder(file);
+
+        // Found old data folder
+        if (dataFolder.isDirectory() && oldDataFolder.isDirectory()) {
+            server.getLogger().log( Level.INFO, String.format(
+                "While loading %s (%s) found old-data folder: %s next to the new one: %s",
+                description.getName(),
+                file,
+                oldDataFolder,
+                dataFolder
+            ));
+        } else if (oldDataFolder.isDirectory() && !dataFolder.exists()) {
+            if (!oldDataFolder.renameTo(dataFolder)) {
+                throw new InvalidPluginException(new Exception("Unable to rename old data folder: '" + oldDataFolder + "' to: '" + dataFolder + "'"));
+            }
+            server.getLogger().log( Level.INFO, String.format(
+                "While loading %s (%s) renamed data folder: '%s' to '%s'",
+                description.getName(),
+                file,
+                oldDataFolder,
+                dataFolder
+            ));
+        }
+
+        if (dataFolder.exists() && !dataFolder.isDirectory()) {
+            throw new InvalidPluginException(new Exception(String.format(
+                "Projected datafolder: '%s' for %s (%s) exists and is not a directory",
+                dataFolder,
+                description.getName(),
+                file
+            )));
+        }
 
         ArrayList<String> depend;
         try {
