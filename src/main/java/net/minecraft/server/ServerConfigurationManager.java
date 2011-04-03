@@ -39,7 +39,7 @@ public class ServerConfigurationManager {
     private File k;
     private File l;
     private File m;
-    private PlayerFileData n;
+    public PlayerFileData n; // CraftBukkit - private->public
     private boolean o;
 
     // CraftBukkit start
