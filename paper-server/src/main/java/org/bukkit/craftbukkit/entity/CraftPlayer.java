@@ -201,6 +201,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         return getHandle().Z();
     }
 
+    public void loadData() {
+        server.getHandle().n.b(getHandle());
+    }
+
+    public void saveData() {
+        server.getHandle().n.a(getHandle());
+    }
+
     public void updateInventory() {
         getHandle().m();
     }
