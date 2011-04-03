@@ -132,6 +132,10 @@ public final class PluginDescriptionFile {
     private void loadMap(Map<String, Object> map) throws InvalidDescriptionException {
         try {
             name = map.get("name").toString();
+
+            if (!name.matches("^[A-Za-z0-9()\\[\\]{}_.-]+$")) {
+                throw new InvalidDescriptionException("name '" + name +  "' contains invalid characters.");
+            }
         } catch (NullPointerException ex) {
             throw new InvalidDescriptionException(ex, "name is not defined");
         } catch (ClassCastException ex) {
