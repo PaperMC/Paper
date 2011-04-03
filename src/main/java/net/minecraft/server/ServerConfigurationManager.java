@@ -112,16 +112,18 @@ public class ServerConfigurationManager {
     }
 
     public String c(EntityPlayer entityplayer) { // CraftBukkit - changed return type
+        // CraftBukkit start
+        // Quitting must be before we do final save of data, in case plugins need to modify it
+        ((WorldServer) entityplayer.world).manager.b(entityplayer);
+        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(server.getPlayer(entityplayer), "\u00A7e" + entityplayer.name + " left the game.");
+        server.getPluginManager().callEvent(playerQuitEvent);
+        // CraftBukkit end
+
         this.n.a(entityplayer);
         entityplayer.world.d(entityplayer); // CraftBukkit
         this.b.remove(entityplayer);
 
-        // CraftBukkit start
-        ((WorldServer) entityplayer.world).manager.b(entityplayer);
-        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(server.getPlayer(entityplayer), "\u00A7e" + entityplayer.name + " left the game.");
-        server.getPluginManager().callEvent(playerQuitEvent);
-        return playerQuitEvent.getQuitMessage();
-        // CraftBukkit end
+        return playerQuitEvent.getQuitMessage(); // CraftBukkit
     }
 
     public EntityPlayer a(NetLoginHandler netloginhandler, String s, String s1) {
