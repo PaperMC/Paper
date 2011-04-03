@@ -133,7 +133,7 @@ public final class PluginDescriptionFile {
         try {
             name = map.get("name").toString();
 
-            if (!name.matches("^[A-Za-z0-9_.-]+$")) {
+            if (!name.matches("^[A-Za-z0-9 _.-]+$")) {
                 throw new InvalidDescriptionException("name '" + name +  "' contains invalid characters.");
             }
         } catch (NullPointerException ex) {
