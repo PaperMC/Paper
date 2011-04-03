@@ -31,7 +31,7 @@ public class ItemInWorldManager {
     }
 
     public void a() {
-        ++this.h;
+        this.h = (int) (System.currentTimeMillis() / 50); // CraftBukkit
         if (this.i) {
             int i = this.h - this.m;
             int j = this.b.getTypeId(this.j, this.k, this.l);
@@ -52,7 +52,7 @@ public class ItemInWorldManager {
 
     // CraftBukkit added face
     public void a(int i, int j, int k, int face) {
-        this.d = this.j;
+        this.d = (int) (System.currentTimeMillis() / 50); // CraftBukkit
         int l = this.b.getTypeId(i, j, k);
 
         // CraftBukkit start
@@ -106,6 +106,7 @@ public class ItemInWorldManager {
 
     public void b(int i, int j, int k) {
         if (i == this.e && j == this.f && k == this.g) {
+            this.h = (int) (System.currentTimeMillis() / 50); // CraftBukkit
             int l = this.h - this.d;
             int i1 = this.b.getTypeId(i, j, k);
 
