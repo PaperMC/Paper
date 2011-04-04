@@ -532,6 +532,14 @@ public abstract class Event implements Serializable {
          * @see org.bukkit.event.entity.EntityTargetEvent
          */
         ENTITY_TARGET (Category.LIVING_ENTITY),
+        
+        /**
+         * Called when an entity interacts with a block
+         * This event specifically excludes player entities
+         * 
+         * @see org.bukkit.event.entity.EntityInteractEvent
+         */
+        ENTITY_INTERACT (Category.LIVING_ENTITY),
 
         /**
          * VEHICLE EVENTS

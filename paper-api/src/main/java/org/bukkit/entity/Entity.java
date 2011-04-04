@@ -156,4 +156,17 @@ public interface Entity {
      * @return
      */
     public abstract boolean eject();
+    
+    /**
+     * Returns the distance this entity has fallen
+     * @return 
+     */
+    public float getFallDistance();
+    
+    /**
+     * Sets the fall distance for this entity
+     * @param distance 
+     */
+    public void setFallDistance(float distance);
+
 }
