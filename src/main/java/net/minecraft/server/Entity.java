@@ -52,7 +52,7 @@ public abstract class Entity {
     public float width;
     public float bf;
     public float bg;
-    protected float fallDistance;
+    public float fallDistance; // Craftbukkit made public
     private int b;
     public double bi;
     public double bj;

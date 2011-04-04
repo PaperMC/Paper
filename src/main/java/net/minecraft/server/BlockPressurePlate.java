@@ -8,8 +8,10 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockRedstoneEvent;
+import org.bukkit.event.entity.EntityInteractEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 // CraftBukkit end
 
@@ -99,10 +101,16 @@ public class BlockPressurePlate extends Block {
         if (flag != flag1) {
             if (flag1) {
                 for (Object object: list) {
-                    if (object != null && object instanceof EntityHuman) {
-                        PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent((EntityHuman) object, Action.PHYSICAL, i, j, k, -1, null);
-
-                        if (event.isCancelled()) {
+                    if (object != null) {
+                        Cancellable cancellable;
+                        if (object instanceof EntityHuman) {
+                            cancellable = CraftEventFactory.callPlayerInteractEvent((EntityHuman) object, Action.PHYSICAL, i, j, k, -1, null);
+                        }
+                        else if (object instanceof Entity) {
+                            cancellable = new EntityInteractEvent(((Entity) object).getBukkitEntity(), ((WorldServer)world).getWorld().getBlockAt(i, j, k));
+                        }
+                        else continue;
+                        if (cancellable.isCancelled()) {
                             return;
                         }
                     }
