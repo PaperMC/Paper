@@ -238,4 +238,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         getHandle().passenger.setPassengerOf(null);
         return true;
     }
+    
+    public float getFallDistance() {
+        return getHandle().fallDistance;
+    }
+    
+    public void setFallDistance(float distance) {
+        getHandle().fallDistance = distance;
+    }
 }
