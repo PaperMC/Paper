@@ -72,7 +72,9 @@ public final class JavaPluginLoader implements PluginLoader {
         File oldDataFolder = getDataFolder(file);
 
         // Found old data folder
-        if (dataFolder.isDirectory() && oldDataFolder.isDirectory()) {
+        if (dataFolder.equals(oldDataFolder)) {
+            // They are equal -- nothing needs to be done!
+        } else if (dataFolder.isDirectory() && oldDataFolder.isDirectory()) {
             server.getLogger().log( Level.INFO, String.format(
                 "While loading %s (%s) found old-data folder: %s next to the new one: %s",
                 description.getName(),
