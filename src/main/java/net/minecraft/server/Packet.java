@@ -6,6 +6,10 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+// Craftbukkit start
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+// Craftbukkit end
 
 public abstract class Packet {
 
@@ -85,6 +89,16 @@ public abstract class Packet {
             System.out.println("Reached end of stream");
             return null;
         }
+
+        // Craftbukkit start
+        catch (SocketTimeoutException exception) {
+            System.out.println("Read timed out");
+            return null;
+        } catch (SocketException exception) {
+            System.out.println("Connection reset");
+            return null;
+        }
+        // Craftbukkit end
 
         PacketCounter packetcounter = (PacketCounter) c.get(Integer.valueOf(i));
 
