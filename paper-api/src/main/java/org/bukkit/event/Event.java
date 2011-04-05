@@ -265,6 +265,12 @@ public abstract class Event implements Serializable {
         PLAYER_BUCKET_FILL(Category.PLAYER),
 
         /**
+         * Called when a player interacts with the inventory
+         *
+         * @see org.bukkit.event.player.PlayerInventoryEvent
+         */
+        PLAYER_INVENTORY(Category.PLAYER),
+        /**
          * BLOCK EVENTS
          */
 
