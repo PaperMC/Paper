@@ -242,6 +242,15 @@ public class EntityEgg extends Entity {
                         case SQUID:
                             entity = new EntitySquid(this.world);
                             break;
+                        case SLIME:
+                            entity = new EntitySlime(this.world);
+                            break;
+                        case WOLF:
+                            entity = new EntityWolf(this.world);
+                            break;
+                        case MONSTER:
+                            entity = new EntityMonster(this.world);
+                            break;
                         default:
                             entity = new EntityChicken(this.world);
                             break;
