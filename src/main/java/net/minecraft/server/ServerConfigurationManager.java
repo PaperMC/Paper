@@ -196,7 +196,7 @@ public class ServerConfigurationManager {
             }
         }
         
-        ((WorldServer) entityplayer.world).u.d((int) entityplayer1.locX >> 4, (int) entityplayer1.locZ >> 4);
+        ((WorldServer) entityplayer.world).u.c((int) entityplayer1.locX >> 4, (int) entityplayer1.locZ >> 4);
 
         while (entityplayer.world.a(entityplayer1, entityplayer1.boundingBox).size() != 0) {
             entityplayer1.a(entityplayer1.locX, entityplayer1.locY + 1.0D, entityplayer1.locZ);
@@ -217,7 +217,7 @@ public class ServerConfigurationManager {
         entityplayer1.pitch = respawnEvent.getRespawnLocation().getPitch();
         entityplayer1.c = new ItemInWorldManager(((CraftWorld) respawnEvent.getRespawnLocation().getWorld()).getHandle());
         entityplayer1.c.a = entityplayer1;
-        ((WorldServer) entityplayer1.world).u.d((int) entityplayer1.locX >> 4, (int) entityplayer1.locZ >> 4);
+        ((WorldServer) entityplayer1.world).u.c((int) entityplayer1.locX >> 4, (int) entityplayer1.locZ >> 4);
         // CraftBukkit end
 
         entityplayer1.a.b((Packet) (new Packet9Respawn()));
