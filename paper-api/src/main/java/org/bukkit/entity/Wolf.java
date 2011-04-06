@@ -32,4 +32,33 @@ public interface Wolf extends Animals {
      * @param sitting true if sitting
      */
     public void setSitting(boolean sitting);
+
+    /**
+     * Check if this wolf is tame
+     * 
+     * @return true if tame
+     */
+    public boolean isTame();
+
+    /**
+     * Sets if wolf is tame
+     * 
+     * @param tame true if tame
+     */
+    public void setTame(boolean tame);
+
+    /**
+     * Gets the name of the current owning player
+     * 
+     * @return owners name, "" or null if unowned
+     */
+    public String getOwner();
+
+    /**
+     * Set the wolf to be owned by given player (also is tamed)
+     * 
+     * @param player name of owner, or null/"" if setting to unowned
+     */
+    public void setOwner(String player);
+
 }
