@@ -35,7 +35,7 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
         net.minecraft.server.ItemStack[] mcItems = getInventory().getContents();
 
         for (int i = 0; i < mcItems.length; i++ ) {
-            items[i] = new CraftItemStack(mcItems[i]);
+            items[i] = mcItems[i] == null ? null : new CraftItemStack(mcItems[i]);
         }
 
         return items;
