@@ -339,7 +339,7 @@ public final class CraftServer implements Server {
                 }
 
                 ChunkCoordinates chunkcoordinates = internal.m();
-                internal.u.d(chunkcoordinates.a + j >> 4, chunkcoordinates.c + k >> 4);
+                internal.u.c(chunkcoordinates.a + j >> 4, chunkcoordinates.c + k >> 4);
 
                 while (internal.f()) {
                     ;
