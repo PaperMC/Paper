@@ -11,6 +11,7 @@ import org.bukkit.entity.Vehicle;
 import org.bukkit.event.vehicle.VehicleBlockCollisionEvent;
 import org.bukkit.event.vehicle.VehicleExitEvent;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -144,8 +145,26 @@ public abstract class Entity {
     }
 
     protected void c(float f, float f1) {
+        // Craftbukkit start
+        if ((f == Float.POSITIVE_INFINITY) || (f == Float.NEGATIVE_INFINITY) || (f == Float.NaN)) {
+            if (this instanceof EntityPlayer) {
+                System.err.println(getBukkitEntity() + " was caught trying to crash the server with an invalid yaw");
+                ((CraftPlayer)this.getBukkitEntity()).kickPlayer("Nope");
+            }
+            f = 0;
+        }
+
+        if ((f1 == Float.POSITIVE_INFINITY) || (f1 == Float.NEGATIVE_INFINITY) || (f1 == Float.NaN)) {
+            if (this instanceof EntityPlayer) {
+                System.err.println(getBukkitEntity() + " was caught trying to crash the server with an invalid pitch");
+                ((CraftPlayer)this.getBukkitEntity()).kickPlayer("Nope");
+            }
+            f1 = 0;
+        }
+
         this.yaw = f % 360f;
         this.pitch = f1 % 360f;
+        // Craftbukkit end
     }
 
     public void a(double d0, double d1, double d2) {
