@@ -172,6 +172,22 @@ public class PlayerListener implements Listener {
     public void onPlayerBucketEmpty(PlayerBucketEmptyEvent event) {
     }
 
+    /**
+     * Called when a player enters a bed
+     * 
+     * @param event Relevant event details
+     */
+    public void onPlayerBedEnter(PlayerBedEnterEvent event) {
+    }
+
+    /**
+     * Called when a player leaves a bed
+     * 
+     * @param event Relevant event details
+     */
+    public void onPlayerBedLeave(PlayerBedLeaveEvent event) {
+    }
+
     // TODO: Remove after RB
     @Deprecated public void onPlayerQuit(PlayerEvent event) {}
     @Deprecated public void onPlayerCommandPreprocess(PlayerChatEvent event) {}

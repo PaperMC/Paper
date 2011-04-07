@@ -312,6 +312,18 @@ public final class JavaPluginLoader implements PluginLoader {
                     ((PlayerListener) listener).onPlayerBucketFill((PlayerBucketFillEvent) event);
                 }
             };
+        case PLAYER_BED_ENTER:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((PlayerListener) listener).onPlayerBedEnter((PlayerBedEnterEvent) event);
+                }
+            };
+        case PLAYER_BED_LEAVE:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((PlayerListener) listener).onPlayerBedLeave((PlayerBedLeaveEvent) event);
+                }
+            };
 
         // Block Events
         case BLOCK_PHYSICS:
