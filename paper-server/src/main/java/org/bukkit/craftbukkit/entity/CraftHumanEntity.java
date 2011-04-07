@@ -47,4 +47,14 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     public String toString() {
         return "CraftHumanEntity{" + "id=" + getEntityId() + "name=" + getName() + '}';
     }
+
+    @Override
+    public boolean isSleeping() {
+        return getHandle().sleeping;
+    }
+
+    @Override
+    public int getSleepTicks() {
+        return getHandle().sleepTicks;
+    }
 }
