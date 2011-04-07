@@ -173,7 +173,13 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
     }
 
     public int firstEmpty() {
-        return first(Material.AIR);
+        ItemStack[] inventory = getContents();
+        for (int i = 0; i < inventory.length; i++) {
+            if (inventory[i] == null) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     public int firstPartial(int materialId) {
