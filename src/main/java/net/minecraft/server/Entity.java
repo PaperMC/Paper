@@ -144,8 +144,8 @@ public abstract class Entity {
     }
 
     protected void c(float f, float f1) {
-        this.yaw = f;
-        this.pitch = f1;
+        this.yaw = f % 360f;
+        this.pitch = f1 % 360f;
     }
 
     public void a(double d0, double d1, double d2) {
