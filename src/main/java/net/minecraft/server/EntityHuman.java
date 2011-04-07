@@ -11,6 +11,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+import org.bukkit.event.player.PlayerBedEnterEvent;
+import org.bukkit.event.player.PlayerBedLeaveEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 // CraftBukkit end
 
@@ -33,9 +35,13 @@ public abstract class EntityHuman extends EntityLiving {
     public double w;
     public double x;
     public double y;
-    private boolean sleeping;
+    // CraftBukkit start
+    public boolean sleeping;
+    // CraftBukkit end
     private ChunkCoordinates b;
-    private int sleepTicks;
+    // CraftBukkit start
+    public int sleepTicks;
+    // CraftBukkit end
     public float z;
     public float A;
     private ChunkCoordinates d;
@@ -547,6 +553,20 @@ public abstract class EntityHuman extends EntityLiving {
             } else if (this.world.d()) {
                 return EnumBedError.NOT_POSSIBLE_NOW;
             } else if (Math.abs(this.locX - (double) i) <= 3.0D && Math.abs(this.locY - (double) j) <= 2.0D && Math.abs(this.locZ - (double) k) <= 3.0D) {
+                // CraftBukkit start
+                if (this.getBukkitEntity() instanceof Player) {
+                    Player player = (Player) this.getBukkitEntity();
+                    CraftServer server = ((WorldServer) world).getServer();
+                    org.bukkit.block.Block bed = ((WorldServer) world).getWorld().getBlockAt(i, j, k);
+                    PlayerBedEnterEvent event = new PlayerBedEnterEvent(player, bed);
+                    server.getPluginManager().callEvent(event);
+                    
+                    if (event.isCancelled()) {
+                        return EnumBedError.OTHER_PROBLEM;
+                    }
+                }
+                // CraftBukkit end
+                
                 this.b(0.2F, 0.2F);
                 this.height = 0.2F;
                 if (this.world.f(i, j, k)) {
@@ -636,6 +656,16 @@ public abstract class EntityHuman extends EntityLiving {
         if (!this.world.isStatic && flag1) {
             this.world.q();
         }
+
+        // CraftBukkit start
+        if (this.getBukkitEntity() instanceof Player) {
+            Player player = (Player) this.getBukkitEntity();
+            CraftServer server = ((WorldServer) world).getServer();
+            org.bukkit.block.Block bed = ((WorldServer) world).getWorld().getBlockAt(this.b.a, this.b.b, this.b.c);
+            PlayerBedLeaveEvent event = new PlayerBedLeaveEvent(player, bed);
+            server.getPluginManager().callEvent(event);
+        }
+        // CraftBukkit end
 
         if (flag) {
             this.sleepTicks = 0;
