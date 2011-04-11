@@ -1808,12 +1808,24 @@ public class World implements IBlockAccess {
         while (iterator.hasNext()) {
             EntityHuman entityhuman = (EntityHuman) iterator.next();
 
-            if (!entityhuman.F()) {
+            // CraftBukkit start
+            if (!entityhuman.F() && !entityhuman.fauxSleeping) {
+            // CraftBukkit end
                 this.A = false;
                 break;
             }
         }
     }
+
+    // CraftBukkit start
+    // Calls the method that checks to see if players are sleeping
+    // Called by CraftPlayer.setPermanentSleeping()
+    public void checkSleepStatus() {
+        if (!isStatic) {
+            q();
+        }
+    }
+    // CraftBukkit end
 
     protected void r() {
         this.A = false;
@@ -1831,16 +1843,26 @@ public class World implements IBlockAccess {
     public boolean s() {
         if (this.A && !this.isStatic) {
             Iterator iterator = this.d.iterator();
+            
+            // CraftBukkit start
+            boolean foundActualSleepers = false;
+            
+            // This allows us to assume that some people are in bed
+            // but not really, allowing time to pass in spite of AFKers
 
             EntityHuman entityhuman;
 
             do {
                 if (!iterator.hasNext()) {
-                    return true;
+                    return foundActualSleepers;
                 }
 
                 entityhuman = (EntityHuman) iterator.next();
-            } while (entityhuman.G());
+                if (entityhuman.G()) {
+                    foundActualSleepers = true;
+                }
+            } while (entityhuman.G() || entityhuman.fauxSleeping);
+            // CraftBukkit end
 
             return false;
         } else {

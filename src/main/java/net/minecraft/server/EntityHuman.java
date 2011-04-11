@@ -37,6 +37,7 @@ public abstract class EntityHuman extends EntityLiving {
     public double y;
     // CraftBukkit start
     public boolean sleeping;
+    public boolean fauxSleeping;
     // CraftBukkit end
     private ChunkCoordinates b;
     // CraftBukkit start

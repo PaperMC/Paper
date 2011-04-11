@@ -212,4 +212,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void updateInventory() {
         getHandle().m();
     }
+
+    public void setSleepingIgnored(boolean isSleeping) {
+        getHandle().fauxSleeping = isSleeping;
+        ((CraftWorld)getWorld()).getHandle().checkSleepStatus();
+    }
+
+    public boolean isSleepingIgnored() {
+        return getHandle().fauxSleeping;
+    }
 }
