@@ -166,6 +166,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             newEntity.locZ = location.getZ();
             newEntity.displayName = entity.displayName;
             newEntity.compassTarget = entity.compassTarget;
+            newEntity.fauxSleeping = entity.fauxSleeping;
             newWorld.u.c((int) location.getBlockX() >> 4, (int) location.getBlockZ() >> 4);
 
             teleportSuccess = newEntity.a.teleport(location);
