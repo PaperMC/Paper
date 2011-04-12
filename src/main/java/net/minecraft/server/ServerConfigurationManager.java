@@ -184,7 +184,8 @@ public class ServerConfigurationManager {
         entityplayer1.a = entityplayer.a;
         entityplayer1.displayName = entityplayer.displayName; // CraftBukkit
         entityplayer1.compassTarget = entityplayer.compassTarget; // CraftBukkit
-
+        entityplayer1.fauxSleeping = entityplayer.fauxSleeping; // CraftBukkit
+        
         if (chunkcoordinates != null) {
             ChunkCoordinates chunkcoordinates1 = EntityHuman.a(entityplayer.world, chunkcoordinates);
 
