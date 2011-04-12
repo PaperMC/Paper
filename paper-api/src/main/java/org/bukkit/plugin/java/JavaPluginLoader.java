@@ -19,6 +19,7 @@ import org.bukkit.event.CustomEventListener;
 import org.bukkit.event.Event;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
+import org.bukkit.event.painting.*;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.player.*;
 import org.bukkit.event.server.*;
@@ -448,6 +449,20 @@ public final class JavaPluginLoader implements PluginLoader {
             return new EventExecutor() {
                 public void execute(Listener listener, Event event) {
                     ((WorldListener) listener).onWorldLoad((WorldLoadEvent) event);
+                }
+            };
+
+        //Painting Events
+        case PAINTING_PLACE:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((EntityListener) listener).onPaintingPlace((PaintingPlaceEvent) event);
+                }
+            };
+        case PAINTING_BREAK:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((EntityListener) listener).onPaintingBreak((PaintingBreakEvent) event);
                 }
             };
 

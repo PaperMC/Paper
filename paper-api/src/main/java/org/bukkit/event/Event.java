@@ -91,7 +91,12 @@ public abstract class Event implements Serializable {
          * @see Category.LIVING_ENTITY
          */
         PLAYER,
-
+        
+        /**
+         * Represents Entity-based events
+         */
+        ENTITY,
+        
         /**
          * Represents Block-based events
          */
@@ -499,6 +504,24 @@ public abstract class Event implements Serializable {
          * Called when a World is loaded
          */
         WORLD_LOAD (Category.WORLD),
+
+        /**
+         * ENTITY EVENTS
+         */
+
+        /**
+         * Called when a painting is placed by player
+         *
+         * @see org.bukkit.event.painting.PaintingCreateEvent
+         */
+        PAINTING_PLACE (Category.ENTITY),
+
+        /**
+         * Called when a painting is removed
+         *
+         * @see org.bukkit.event.painting.PaintingRemoveEvent
+         */
+        PAINTING_BREAK (Category.ENTITY),
 
         /**
          * LIVING_ENTITY EVENTS
