@@ -662,7 +662,12 @@ public abstract class EntityHuman extends EntityLiving {
         if (this.getBukkitEntity() instanceof Player) {
             Player player = (Player) this.getBukkitEntity();
             CraftServer server = ((WorldServer) world).getServer();
-            org.bukkit.block.Block bed = ((WorldServer) world).getWorld().getBlockAt(this.b.a, this.b.b, this.b.c);
+            org.bukkit.block.Block bed;
+            if (chunkcoordinates != null) {
+                bed = ((WorldServer) world).getWorld().getBlockAt(chunkcoordinates.a, chunkcoordinates.b, chunkcoordinates.c);
+            } else {
+                bed = ((WorldServer) world).getWorld().getBlockAt(player.getLocation());
+            }
             PlayerBedLeaveEvent event = new PlayerBedLeaveEvent(player, bed);
             server.getPluginManager().callEvent(event);
         }
