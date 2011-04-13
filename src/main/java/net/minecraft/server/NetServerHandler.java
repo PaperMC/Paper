@@ -149,12 +149,6 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             player.kickPlayer("Nope!");
             return;
         }
-
-        if (Math.abs(packet10flying.c) > 32000000) {
-            System.err.println(player.getName() + " was caught trying to crash the server with an invalid position.");
-            player.kickPlayer("Nope!");
-            return;
-        }
         // CraftBukkit end
 
         if (this.l) {
