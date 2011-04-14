@@ -149,6 +149,30 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             player.kickPlayer("Nope!");
             return;
         }
+
+        if (Double.isNaN(packet10flying.a) || packet10flying.a == Double.POSITIVE_INFINITY || packet10flying.a == Double.NEGATIVE_INFINITY) {
+            System.err.println(player.getName() + " was caught trying to set an invalid position.");
+            player.kickPlayer("Nope!");
+            return;
+        }
+
+        if (Double.isNaN(packet10flying.b) || packet10flying.b == Double.POSITIVE_INFINITY || packet10flying.b == Double.NEGATIVE_INFINITY) {
+            System.err.println(player.getName() + " was caught trying to set an invalid position.");
+            player.kickPlayer("Nope!");
+            return;
+        }
+
+        if (Double.isNaN(packet10flying.c) || packet10flying.c == Double.POSITIVE_INFINITY || packet10flying.c == Double.NEGATIVE_INFINITY) {
+            System.err.println(player.getName() + " was caught trying to set an invalid position.");
+            player.kickPlayer("Nope!");
+            return;
+        }
+
+        if (Double.isNaN(packet10flying.d) || packet10flying.d == Double.POSITIVE_INFINITY || packet10flying.d == Double.NEGATIVE_INFINITY) {
+            System.err.println(player.getName() + " was caught trying to set an invalid position.");
+            player.kickPlayer("Nope!");
+            return;
+        }
         // CraftBukkit end
 
         if (this.l) {
