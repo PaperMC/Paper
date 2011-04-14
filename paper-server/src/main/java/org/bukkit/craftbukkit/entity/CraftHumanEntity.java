@@ -48,12 +48,10 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         return "CraftHumanEntity{" + "id=" + getEntityId() + "name=" + getName() + '}';
     }
 
-    @Override
     public boolean isSleeping() {
         return getHandle().sleeping;
     }
 
-    @Override
     public int getSleepTicks() {
         return getHandle().sleepTicks;
     }
