@@ -3,6 +3,8 @@ package org.bukkit;
 
 import com.avaje.ebean.config.ServerConfig;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Recipe;
+
 import java.util.List;
 import java.util.logging.Logger;
 import org.bukkit.command.PluginCommand;
@@ -194,4 +196,11 @@ public interface Server {
      * @param config ServerConfig to populate
      */
     public void configureDbConfig(ServerConfig config);
+
+    /**
+     * Adds a recipe to the crafting manager.
+     * @param recipe The recipe to add.
+     * @return True to indicate that the recipe was added.
+     */
+    public boolean addRecipe(Recipe recipe);
 }
