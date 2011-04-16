@@ -21,6 +21,12 @@ public class NetLoginHandler extends NetHandler {
         this.b = new NetworkManager(socket, s, this);
         this.b.d = 0;
     }
+    
+    // CraftBukkit start
+    public Socket getSocket() {
+        return b.f;
+    }
+    // CraftBukkit end
 
     public void a() {
         if (this.h != null) {
@@ -67,7 +73,7 @@ public class NetLoginHandler extends NetHandler {
             if (!this.e.l) {
                 this.b(packet1login);
             } else {
-                (new ThreadLoginVerifier(this, packet1login)).start();
+                (new ThreadLoginVerifier(this, packet1login, e.server)).start();
             }
         }
     }

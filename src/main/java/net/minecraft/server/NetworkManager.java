@@ -18,7 +18,7 @@ public class NetworkManager {
     public static int b;
     public static int c;
     private Object e = new Object();
-    private Socket f;
+    public Socket f; // CraftBukkit private->public
     private final SocketAddress g;
     private DataInputStream h;
     private DataOutputStream i;
