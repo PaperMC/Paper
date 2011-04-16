@@ -8,6 +8,10 @@ import net.minecraft.server.IWorldAccess;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.world.WorldLoadEvent;
+import org.bukkit.inventory.FurnaceRecipe;
+import org.bukkit.inventory.Recipe;
+import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.inventory.ShapelessRecipe;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -37,6 +41,10 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.SimplePluginManager;
 import org.bukkit.plugin.java.JavaPluginLoader;
 import org.bukkit.scheduler.BukkitScheduler;
+import org.bukkit.craftbukkit.inventory.CraftFurnaceRecipe;
+import org.bukkit.craftbukkit.inventory.CraftRecipe;
+import org.bukkit.craftbukkit.inventory.CraftShapedRecipe;
+import org.bukkit.craftbukkit.inventory.CraftShapelessRecipe;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 import org.bukkit.util.config.Configuration;
 
@@ -419,5 +427,25 @@ public final class CraftServer implements Server {
         public String getName() {
             return this.prefix;
         }
+    }
+
+    @Override
+    public boolean addRecipe(Recipe recipe) {
+        CraftRecipe toAdd;
+        if(recipe instanceof CraftRecipe) {
+            toAdd = (CraftRecipe) recipe;
+        } else {
+            if (recipe instanceof ShapedRecipe) {
+                toAdd = CraftShapedRecipe.fromBukkitRecipe((ShapedRecipe) recipe);
+            } else if (recipe instanceof ShapelessRecipe) {
+                toAdd = CraftShapelessRecipe.fromBukkitRecipe((ShapelessRecipe) recipe);
+            } else if (recipe instanceof FurnaceRecipe) {
+                toAdd = CraftFurnaceRecipe.fromBukkitRecipe((FurnaceRecipe) recipe);
+            } else {
+                return false;
+            }
+        }
+        toAdd.addToCraftingManager();
+        return true;
     }
 }
