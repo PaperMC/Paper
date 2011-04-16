@@ -152,7 +152,8 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         } else {
             ItemStack itemstack = FurnaceRecipes.a().a(this.items[0].getItem().id);
 
-            return itemstack == null ? false : (this.items[2] == null ? true : (!this.items[2].a(itemstack) ? false : (this.items[2].count < this.getMaxStackSize() && this.items[2].count < this.items[2].b() ? true : this.items[2].count < itemstack.b())));
+            // CraftBukkit - consider resultant count instead of current count
+            return itemstack == null ? false : (this.items[2] == null ? true : (!this.items[2].a(itemstack) ? false : (this.items[2].count+itemstack.count <= this.getMaxStackSize() && this.items[2].count < this.items[2].b() ? true : this.items[2].count+itemstack.count <= itemstack.b())));
         }
     }
 
@@ -162,8 +163,8 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
 
             if (this.items[2] == null) {
                 this.items[2] = itemstack.j();
-            } else if (this.items[2].id == itemstack.id) {
-                ++this.items[2].count;
+            } else if (this.items[2].id == itemstack.id && this.items[2].damage == itemstack.damage) { // CraftBukkit - compare damage too
+                this.items[2].count += itemstack.count; // CraftBukkit - increment by count instead of 1
             }
 
             --this.items[0].count;
