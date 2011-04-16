@@ -101,6 +101,14 @@ public class PlayerListener implements Listener {
     }
 
     /**
+     * Called when a player has just been authenticated
+     *
+     * @param event Relevant event details
+     */
+    public void onPlayerPreLogin(PlayerPreLoginEvent event) {
+    }
+
+    /**
      * Called when a player throws an egg and it might hatch
      *
      * @param event Relevant event details

@@ -75,8 +75,10 @@ public final class SimplePluginManager implements PluginManager {
 
         Pattern[] patterns = instance.getPluginFileFilters();
 
-        for (Pattern pattern : patterns) {
-            fileAssociations.put(pattern, instance);
+        synchronized (this) {
+            for (Pattern pattern : patterns) {
+                fileAssociations.put(pattern, instance);
+            }
         }
     }
 
@@ -145,7 +147,7 @@ public final class SimplePluginManager implements PluginManager {
      * @throws InvalidPluginException Thrown when the specified file is not a valid plugin
      * @throws InvalidDescriptionException Thrown when the specified file contains an invalid description
      */
-    public Plugin loadPlugin(File file) throws InvalidPluginException, InvalidDescriptionException, UnknownDependencyException {
+    public synchronized Plugin loadPlugin(File file) throws InvalidPluginException, InvalidDescriptionException, UnknownDependencyException {
         Set<Pattern> filters = fileAssociations.keySet();
         Plugin result = null;
 
@@ -175,11 +177,11 @@ public final class SimplePluginManager implements PluginManager {
      * @param name Name of the plugin to check
      * @return Plugin if it exists, otherwise null
      */
-    public Plugin getPlugin(String name) {
+    public synchronized Plugin getPlugin(String name) {
         return lookupNames.get(name);
     }
 
-    public Plugin[] getPlugins() {
+    public synchronized Plugin[] getPlugins() {
         return plugins.toArray(new Plugin[0]);
     }
 
@@ -246,7 +248,7 @@ public final class SimplePluginManager implements PluginManager {
      * @param type Type of player related event to call
      * @param event Event details
      */
-    public void callEvent(Event event) {
+    public synchronized void callEvent(Event event) {
         SortedSet<RegisteredListener> eventListeners = listeners.get(event.getType());
 
         if (eventListeners != null) {

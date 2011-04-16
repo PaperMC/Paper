@@ -153,6 +153,13 @@ public abstract class Event implements Serializable {
         PLAYER_LOGIN (Category.PLAYER),
 
         /**
+         * Called when a player has just been authenticated
+         *
+         * @see org.bukkit.event.player.PlayerPreLoginEvent
+         */
+        PLAYER_PRELOGIN (Category.PLAYER),
+
+        /**
          * Called when a player respawns
          *
          * @see org.bukkit.event.player.PlayerEvent

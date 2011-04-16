@@ -258,6 +258,12 @@ public final class JavaPluginLoader implements PluginLoader {
                     ((PlayerListener) listener).onPlayerLogin((PlayerLoginEvent) event);
                 }
             };
+        case PLAYER_PRELOGIN:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((PlayerListener) listener).onPlayerPreLogin((PlayerPreLoginEvent) event);
+                }
+            };
         case PLAYER_EGG_THROW:
             return new EventExecutor() {
                 public void execute(Listener listener, Event event) {
