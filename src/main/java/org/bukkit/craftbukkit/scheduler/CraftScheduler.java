@@ -168,6 +168,10 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
     }
 
     public int scheduleSyncRepeatingTask(Plugin plugin, Runnable task, long delay, long period) {
+        if (plugin == null) throw new IllegalArgumentException("Plugin can not null");
+        if (task == null) throw new IllegalArgumentException("Task can not null");
+        if (delay < 0) throw new IllegalArgumentException("Delay cannot be less than 0");
+        
         CraftTask newTask = new CraftTask(plugin, task, true, getCurrentTick()+delay, period);
         synchronized (schedulerQueue) {
             schedulerQueue.put(newTask, true);
@@ -185,6 +189,10 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
     }
 
     public int scheduleAsyncRepeatingTask(Plugin plugin, Runnable task, long delay, long period) {
+        if (plugin == null) throw new IllegalArgumentException("Plugin can not null");
+        if (task == null) throw new IllegalArgumentException("Task can not null");
+        if (delay < 0) throw new IllegalArgumentException("Delay cannot be less than 0");
+        
         CraftTask newTask = new CraftTask(plugin, task, false, getCurrentTick()+delay, period);
         synchronized (schedulerQueue) {
             schedulerQueue.put(newTask, false);
