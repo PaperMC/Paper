@@ -8,6 +8,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.plugin.Plugin;
@@ -17,12 +19,14 @@ import org.bukkit.craftbukkit.scheduler.CraftTask;
 
 public class CraftScheduler implements BukkitScheduler, Runnable {
 
+    private static final Logger logger = Logger.getLogger("Minecraft");
+    
     private final CraftServer server;
 
     private final CraftThreadManager craftThreadManager = new CraftThreadManager();
 
-    private final LinkedList<Runnable> mainThreadQueue = new LinkedList<Runnable>();
-    private final LinkedList<Runnable> syncedTasks = new LinkedList<Runnable>();
+    private final LinkedList<CraftTask> mainThreadQueue = new LinkedList<CraftTask>();
+    private final LinkedList<CraftTask> syncedTasks = new LinkedList<CraftTask>();
 
     private final TreeMap<CraftTask,Boolean> schedulerQueue = new TreeMap<CraftTask,Boolean>();
 
@@ -93,7 +97,7 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
 
     void processTask(CraftTask task) {
         if (task.isSync()) {
-            addToMainThreadQueue(task.getTask());
+            addToMainThreadQueue(task);
         } else {
             craftThreadManager.executeTask(task.getTask(), task.getOwner(), task.getIdNumber());
         }
@@ -119,7 +123,18 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
                 mainThreadLock.unlock();
             }
             while(!syncedTasks.isEmpty()) {
-                syncedTasks.removeFirst().run();
+                CraftTask task = syncedTasks.removeFirst();
+                try {
+                    task.getTask().run();
+                } catch (Throwable t) {
+                    // Bad plugin!
+                    logger.log(Level.WARNING, 
+                            "Task of '" + task.getOwner().getDescription().getName()
+                            + "' generated an exception", t);
+                    synchronized (schedulerQueue) {
+                        schedulerQueue.remove(task);
+                    }
+                }
             }
         }
     }
@@ -135,7 +150,7 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
         return tempTick;
     }
 
-    void addToMainThreadQueue(Runnable task) {
+    void addToMainThreadQueue(CraftTask task) {
         mainThreadLock.lock();
         try {
             mainThreadQueue.addLast(task);
