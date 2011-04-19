@@ -148,7 +148,7 @@ public abstract class Entity {
         // Craftbukkit start
         if ((f == Float.POSITIVE_INFINITY) || (f == Float.NEGATIVE_INFINITY) || (Float.isNaN(f))) {
             if (this instanceof EntityPlayer) {
-                System.err.println(getBukkitEntity() + " was caught trying to crash the server with an invalid yaw");
+                System.err.println(((CraftPlayer)this.getBukkitEntity()).getName() + " was caught trying to crash the server with an invalid yaw");
                 ((CraftPlayer)this.getBukkitEntity()).kickPlayer("Nope");
             }
             f = 0;
@@ -156,7 +156,7 @@ public abstract class Entity {
 
         if ((f1 == Float.POSITIVE_INFINITY) || (f1 == Float.NEGATIVE_INFINITY) || (Float.isNaN(f1))) {
             if (this instanceof EntityPlayer) {
-                System.err.println(getBukkitEntity() + " was caught trying to crash the server with an invalid pitch");
+                System.err.println(((CraftPlayer)this.getBukkitEntity()).getName() + " was caught trying to crash the server with an invalid pitch");
                 ((CraftPlayer)this.getBukkitEntity()).kickPlayer("Nope");
             }
             f1 = 0;
