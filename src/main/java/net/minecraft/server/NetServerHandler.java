@@ -252,25 +252,13 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 }
             }
 
-            if (packet10flying.i) {
-                f2 = packet10flying.e;
-                f3 = packet10flying.f;
-            }
-
-            this.e.a(true);
-            this.e.bl = 0.0F;
-            this.e.b(this.i, this.j, this.k, f2, f3);
+            // Craftbukkit start - better fix for invalid position issues; should be fixed in 1.5
             d4 = d1 - this.e.locX;
             double d6 = d2 - this.e.locY;
             double d7 = d3 - this.e.locZ;
             float f4 = 0.0625F;
-            // CraftBukkit
-            boolean flag = this.e.world.a(this.e, this.e.boundingBox.b().e((double) f4, (double) f4, (double) f4)).size() == 0;
 
-            this.e.c(d4, d6, d7);
-            d4 = d1 - this.e.locX;
-            d6 = d2 - this.e.locY;
-            if (d6 > -0.5D || d6 < 0.5D) {
+             if (d6 > -0.5D || d6 < 0.5D) {
                 d6 = 0.0D;
             }
 
@@ -278,12 +266,35 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             double d8 = d4 * d4 + d6 * d6 + d7 * d7;
             boolean flag1 = false;
 
-            if (d8 > 0.0625D && !this.e.F()) {
+            if (d8 > 6.25D && !this.e.F()) {
                 flag1 = true;
-                a.warning(this.e.name + " moved wrongly!");
-                System.out.println("Got position " + d1 + ", " + d2 + ", " + d3);
-                System.out.println("Expected " + this.e.locX + ", " + this.e.locY + ", " + this.e.locZ);
+                a.warning(this.e.name + " was caught moving faster than the maximum allowed speed. Possible malicious activity?");
+                this.a(this.i, this.j, this.k, f2, f3);
+                return;
             }
+
+            this.e.c(d4, d6, d7);
+            d4 = d1 - this.e.locX;
+            d6 = d2 - this.e.locY;
+
+            if (d6 > -0.5D || d6 < 0.5D) {
+                d6 = 0.0D;
+            }
+
+            d7 = d3 - this.e.locZ;
+
+            if (packet10flying.i) {
+                f2 = packet10flying.e;
+                f3 = packet10flying.f;
+            }
+            // Craftbukkit end
+
+            this.e.a(true);
+            this.e.bl = 0.0F;
+            this.e.b(this.i, this.j, this.k, f2, f3);
+
+            // CraftBukkit
+            boolean flag = this.e.world.a(this.e, this.e.boundingBox.b().e((double) f4, (double) f4, (double) f4)).size() == 0;
 
             this.e.b(d1, d2, d3, f2, f3);
             // CraftBukkit
