@@ -17,7 +17,7 @@ public class EntityFish extends Entity {
     private int g = 0;
     private boolean h = false;
     public int a = 0;
-    public EntityHuman b;
+    public EntityHuman owner;
     private int i;
     private int j = 0;
     private int k = 0;
@@ -38,20 +38,20 @@ public class EntityFish extends Entity {
 
     public EntityFish(World world, EntityHuman entityhuman) {
         super(world);
-        this.b = entityhuman;
-        this.b.hookedFish = this;
+        this.owner = entityhuman;
+        this.owner.hookedFish = this;
         this.b(0.25F, 0.25F);
-        this.c(entityhuman.locX, entityhuman.locY + 1.62D - (double) entityhuman.height, entityhuman.locZ, entityhuman.yaw, entityhuman.pitch);
-        this.locX -= (double) (MathHelper.b(this.yaw / 180.0F * 3.1415927F) * 0.16F);
+        this.setPositionRotation(entityhuman.locX, entityhuman.locY + 1.62D - (double) entityhuman.height, entityhuman.locZ, entityhuman.yaw, entityhuman.pitch);
+        this.locX -= (double) (MathHelper.cos(this.yaw / 180.0F * 3.1415927F) * 0.16F);
         this.locY -= 0.10000000149011612D;
-        this.locZ -= (double) (MathHelper.a(this.yaw / 180.0F * 3.1415927F) * 0.16F);
-        this.a(this.locX, this.locY, this.locZ);
+        this.locZ -= (double) (MathHelper.sin(this.yaw / 180.0F * 3.1415927F) * 0.16F);
+        this.setPosition(this.locX, this.locY, this.locZ);
         this.height = 0.0F;
         float f = 0.4F;
 
-        this.motX = (double) (-MathHelper.a(this.yaw / 180.0F * 3.1415927F) * MathHelper.b(this.pitch / 180.0F * 3.1415927F) * f);
-        this.motZ = (double) (MathHelper.b(this.yaw / 180.0F * 3.1415927F) * MathHelper.b(this.pitch / 180.0F * 3.1415927F) * f);
-        this.motY = (double) (-MathHelper.a(this.pitch / 180.0F * 3.1415927F) * f);
+        this.motX = (double) (-MathHelper.sin(this.yaw / 180.0F * 3.1415927F) * MathHelper.cos(this.pitch / 180.0F * 3.1415927F) * f);
+        this.motZ = (double) (MathHelper.cos(this.yaw / 180.0F * 3.1415927F) * MathHelper.cos(this.pitch / 180.0F * 3.1415927F) * f);
+        this.motY = (double) (-MathHelper.sin(this.pitch / 180.0F * 3.1415927F) * f);
         this.a(this.motX, this.motY, this.motZ, 1.5F, 1.0F);
     }
 
@@ -97,15 +97,15 @@ public class EntityFish extends Entity {
             this.yaw = (float) ((double) this.yaw + d3 / (double) this.l);
             this.pitch = (float) ((double) this.pitch + (this.q - (double) this.pitch) / (double) this.l);
             --this.l;
-            this.a(d0, d1, d2);
+            this.setPosition(d0, d1, d2);
             this.c(this.yaw, this.pitch);
         } else {
             if (!this.world.isStatic) {
-                ItemStack itemstack = this.b.A();
+                ItemStack itemstack = this.owner.A();
 
-                if (this.b.dead || !this.b.N() || itemstack == null || itemstack.a() != Item.FISHING_ROD || this.g(this.b) > 1024.0D) {
-                    this.D();
-                    this.b.hookedFish = null;
+                if (this.owner.dead || !this.owner.N() || itemstack == null || itemstack.getItem() != Item.FISHING_ROD || this.g(this.owner) > 1024.0D) {
+                    this.die();
+                    this.owner.hookedFish = null;
                     return;
                 }
 
@@ -131,7 +131,7 @@ public class EntityFish extends Entity {
                 if (i == this.g) {
                     ++this.i;
                     if (this.i == 1200) {
-                        this.D();
+                        this.die();
                     }
 
                     return;
@@ -147,14 +147,14 @@ public class EntityFish extends Entity {
                 ++this.j;
             }
 
-            Vec3D vec3d = Vec3D.b(this.locX, this.locY, this.locZ);
-            Vec3D vec3d1 = Vec3D.b(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
+            Vec3D vec3d = Vec3D.create(this.locX, this.locY, this.locZ);
+            Vec3D vec3d1 = Vec3D.create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
             MovingObjectPosition movingobjectposition = this.world.a(vec3d, vec3d1);
 
-            vec3d = Vec3D.b(this.locX, this.locY, this.locZ);
-            vec3d1 = Vec3D.b(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
+            vec3d = Vec3D.create(this.locX, this.locY, this.locZ);
+            vec3d1 = Vec3D.create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
             if (movingobjectposition != null) {
-                vec3d1 = Vec3D.b(movingobjectposition.f.a, movingobjectposition.f.b, movingobjectposition.f.c);
+                vec3d1 = Vec3D.create(movingobjectposition.f.a, movingobjectposition.f.b, movingobjectposition.f.c);
             }
 
             Entity entity = null;
@@ -166,7 +166,7 @@ public class EntityFish extends Entity {
             for (int j = 0; j < list.size(); ++j) {
                 Entity entity1 = (Entity) list.get(j);
 
-                if (entity1.d_() && (entity1 != this.b || this.j >= 5)) {
+                if (entity1.d_() && (entity1 != this.owner || this.j >= 5)) {
                     float f = 0.3F;
                     AxisAlignedBB axisalignedbb = entity1.boundingBox.b((double) f, (double) f, (double) f);
                     MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
@@ -186,14 +186,14 @@ public class EntityFish extends Entity {
             }
 
             if (movingobjectposition != null) {
-                if (movingobjectposition.g != null) {
+                if (movingobjectposition.entity != null) {
                     // CraftBukkit start
                     // TODO add EntityDamagedByProjectileEvent : fishing hook?
                     boolean stick;
-                    if (movingobjectposition.g instanceof EntityLiving) {
+                    if (movingobjectposition.entity instanceof EntityLiving) {
                         CraftServer server = ((WorldServer) this.world).getServer();
-                        org.bukkit.entity.Entity shooter = (this.b == null) ? null : this.b.getBukkitEntity();
-                        org.bukkit.entity.Entity damagee = movingobjectposition.g.getBukkitEntity();
+                        org.bukkit.entity.Entity shooter = (this.owner == null) ? null : this.owner.getBukkitEntity();
+                        org.bukkit.entity.Entity damagee = movingobjectposition.entity.getBukkitEntity();
                         org.bukkit.entity.Entity projectile = this.getBukkitEntity();
                         DamageCause damageCause = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
                         int damage = 0;
@@ -204,17 +204,17 @@ public class EntityFish extends Entity {
 
                         if (!event.isCancelled()) {
                             // this function returns if the fish should stick or not, i.e. !bounce
-                            stick = movingobjectposition.g.a(this.b, event.getDamage());
+                            stick = movingobjectposition.entity.damageEntity(this.owner, event.getDamage());
                         } else {
                             // event was cancelled, get if the fish should bounce or not
                             stick = !event.getBounce();
                         }
                     } else {
-                        stick = movingobjectposition.g.a(this.b, 0);
+                        stick = movingobjectposition.entity.damageEntity(this.owner, 0);
                     }
                     if (!stick) {
                         // CraftBukkit end
-                        this.c = movingobjectposition.g;
+                        this.c = movingobjectposition.entity;
                     }
                 } else {
                     this.h = true;
@@ -222,7 +222,7 @@ public class EntityFish extends Entity {
             }
 
             if (!this.h) {
-                this.c(this.motX, this.motY, this.motZ);
+                this.move(this.motX, this.motY, this.motZ);
                 float f1 = MathHelper.a(this.motX * this.motX + this.motZ * this.motZ);
 
                 this.yaw = (float) (Math.atan2(this.motX, this.motZ) * 180.0D / 3.1415927410125732D);
@@ -247,7 +247,7 @@ public class EntityFish extends Entity {
                 this.yaw = this.lastYaw + (this.yaw - this.lastYaw) * 0.2F;
                 float f2 = 0.92F;
 
-                if (this.onGround || this.aW) {
+                if (this.onGround || this.positionChanged) {
                     f2 = 0.5F;
                 }
 
@@ -270,8 +270,8 @@ public class EntityFish extends Entity {
                     } else if (this.random.nextInt(500) == 0) {
                         this.k = this.random.nextInt(30) + 10;
                         this.motY -= 0.20000000298023224D;
-                        this.world.a(this, "random.splash", 0.25F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
-                        float f3 = (float) MathHelper.b(this.boundingBox.b);
+                        this.world.makeSound(this, "random.splash", 0.25F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
+                        float f3 = (float) MathHelper.floor(this.boundingBox.b);
 
                         int l;
                         float f4;
@@ -305,7 +305,7 @@ public class EntityFish extends Entity {
                 this.motX *= (double) f2;
                 this.motY *= (double) f2;
                 this.motZ *= (double) f2;
-                this.a(this.locX, this.locY, this.locZ);
+                this.setPosition(this.locX, this.locY, this.locZ);
             }
         }
     }
@@ -332,9 +332,9 @@ public class EntityFish extends Entity {
         byte b0 = 0;
 
         if (this.c != null) {
-            double d0 = this.b.locX - this.locX;
-            double d1 = this.b.locY - this.locY;
-            double d2 = this.b.locZ - this.locZ;
+            double d0 = this.owner.locX - this.locX;
+            double d1 = this.owner.locY - this.locY;
+            double d2 = this.owner.locZ - this.locZ;
             double d3 = (double) MathHelper.a(d0 * d0 + d1 * d1 + d2 * d2);
             double d4 = 0.1D;
 
@@ -344,17 +344,17 @@ public class EntityFish extends Entity {
             b0 = 3;
         } else if (this.k > 0) {
             EntityItem entityitem = new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.RAW_FISH));
-            double d5 = this.b.locX - this.locX;
-            double d6 = this.b.locY - this.locY;
-            double d7 = this.b.locZ - this.locZ;
+            double d5 = this.owner.locX - this.locX;
+            double d6 = this.owner.locY - this.locY;
+            double d7 = this.owner.locZ - this.locZ;
             double d8 = (double) MathHelper.a(d5 * d5 + d6 * d6 + d7 * d7);
             double d9 = 0.1D;
 
             entityitem.motX = d5 * d9;
             entityitem.motY = d6 * d9 + (double) MathHelper.a(d8) * 0.08D;
             entityitem.motZ = d7 * d9;
-            this.world.a((Entity) entityitem);
-            this.b.a(StatisticList.x, 1);
+            this.world.addEntity(entityitem);
+            this.owner.a(StatisticList.x, 1);
             b0 = 1;
         }
 
@@ -362,8 +362,8 @@ public class EntityFish extends Entity {
             b0 = 2;
         }
 
-        this.D();
-        this.b.hookedFish = null;
+        this.die();
+        this.owner.hookedFish = null;
         return b0;
     }
 }

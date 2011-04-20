@@ -20,8 +20,8 @@ public class BlockStationary extends BlockFluids {
         }
     }
 
-    public void a(World world, int i, int j, int k, int l) {
-        super.a(world, i, j, k, l);
+    public void doPhysics(World world, int i, int j, int k, int l) {
+        super.doPhysics(world, i, j, k, l);
         if (world.getTypeId(i, j, k) == this.id) {
             this.i(world, i, j, k);
         }
@@ -31,7 +31,7 @@ public class BlockStationary extends BlockFluids {
         int l = world.getData(i, j, k);
 
         world.h = true;
-        world.setTypeIdAndData(i, j, k, this.id - 1, l);
+        world.setRawTypeIdAndData(i, j, k, this.id - 1, l);
         world.b(i, j, k, i, j, k);
         world.c(i, j, k, this.id - 1, this.b());
         world.h = false;
@@ -69,7 +69,7 @@ public class BlockStationary extends BlockFluids {
                         }
                         // CraftBukkit end
 
-                        world.e(i, j, k, Block.FIRE.id);
+                        world.setTypeId(i, j, k, Block.FIRE.id);
                         return;
                     }
                 } else if (Block.byId[j1].material.isSolid()) {

@@ -44,7 +44,7 @@ public class EntityCow extends EntityAnimal {
     }
 
     public boolean a(EntityHuman entityhuman) {
-        ItemStack itemstack = entityhuman.inventory.b();
+        ItemStack itemstack = entityhuman.inventory.getItemInHand();
 
         if (itemstack != null && itemstack.id == Item.BUCKET.id) {
             // CraftBukkit start - got milk?
@@ -59,7 +59,7 @@ public class EntityCow extends EntityAnimal {
             byte data = itemInHand.getData() == null ? (byte) 0 : itemInHand.getData().getData();
             itemstack = new ItemStack(itemInHand.getTypeId(), itemInHand.getAmount(), data );
 
-            entityhuman.inventory.a(entityhuman.inventory.c, itemstack);
+            entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, itemstack);
             // CraftBukkit end
 
             return true;

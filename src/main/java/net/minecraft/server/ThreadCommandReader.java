@@ -10,23 +10,23 @@ import jline.ConsoleReader;
 
 public class ThreadCommandReader extends Thread {
 
-    final MinecraftServer a;
+    final MinecraftServer server;
 
     public ThreadCommandReader(MinecraftServer minecraftserver) {
-        this.a = minecraftserver;
+        this.server = minecraftserver;
     }
 
     public void run() {
         // Craftbukkit start - whole method, nuked to oblivion! :o
 
         try {
-            ConsoleReader reader = a.reader;
+            ConsoleReader reader = this.server.reader;
             String line = null;
-            while ((!this.a.g) && (MinecraftServer.a(this.a)) && ((line = reader.readLine(">", null)) != null)) {
-                this.a.a(line, this.a);
+            while ((!this.server.isStopped) && (MinecraftServer.isRunning(this.server)) && ((line = reader.readLine(">", null)) != null)) {
+                this.server.issueCommand(line, (ICommandListener) this.server);
             }
-        } catch (IOException ex) {
-            Logger.getLogger(ThreadCommandReader.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ioexception) {
+            Logger.getLogger(ThreadCommandReader.class.getName()).log(Level.SEVERE, null, ioexception);
         }
         // Craftbukkit end
     }

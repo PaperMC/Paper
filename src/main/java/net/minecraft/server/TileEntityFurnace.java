@@ -2,39 +2,39 @@ package net.minecraft.server;
 
 public class TileEntityFurnace extends TileEntity implements IInventory {
 
-    private ItemStack[] h = new ItemStack[3];
-    public int a = 0;
+    private ItemStack[] items = new ItemStack[3];
+    public int burnTime = 0;
     public int b = 0;
-    public int c = 0;
+    public int cookTime = 0;
 
     // CraftBukkit start
     public ItemStack[] getContents() {
-        return h;
+        return items;
     }
     // CraftBukkit end
 
     public TileEntityFurnace() {}
 
-    public int q_() {
-        return this.h.length;
+    public int getSize() {
+        return this.items.length;
     }
 
-    public ItemStack c_(int i) {
-        return this.h[i];
+    public ItemStack getItem(int i) {
+        return this.items[i];
     }
 
     public ItemStack a(int i, int j) {
-        if (this.h[i] != null) {
+        if (this.items[i] != null) {
             ItemStack itemstack;
 
-            if (this.h[i].count <= j) {
-                itemstack = this.h[i];
-                this.h[i] = null;
+            if (this.items[i].count <= j) {
+                itemstack = this.items[i];
+                this.items[i] = null;
                 return itemstack;
             } else {
-                itemstack = this.h[i].a(j);
-                if (this.h[i].count == 0) {
-                    this.h[i] = null;
+                itemstack = this.items[i].a(j);
+                if (this.items[i].count == 0) {
+                    this.items[i] = null;
                 }
 
                 return itemstack;
@@ -44,14 +44,14 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         }
     }
 
-    public void a(int i, ItemStack itemstack) {
-        this.h[i] = itemstack;
-        if (itemstack != null && itemstack.count > this.r_()) {
-            itemstack.count = this.r_();
+    public void setItem(int i, ItemStack itemstack) {
+        this.items[i] = itemstack;
+        if (itemstack != null && itemstack.count > this.getMaxStackSize()) {
+            itemstack.count = this.getMaxStackSize();
         }
     }
 
-    public String c() {
+    public String getName() {
         return "Furnace";
     }
 
@@ -59,34 +59,34 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         super.a(nbttagcompound);
         NBTTagList nbttaglist = nbttagcompound.l("Items");
 
-        this.h = new ItemStack[this.q_()];
+        this.items = new ItemStack[this.getSize()];
 
         for (int i = 0; i < nbttaglist.c(); ++i) {
             NBTTagCompound nbttagcompound1 = (NBTTagCompound) nbttaglist.a(i);
             byte b0 = nbttagcompound1.c("Slot");
 
-            if (b0 >= 0 && b0 < this.h.length) {
-                this.h[b0] = new ItemStack(nbttagcompound1);
+            if (b0 >= 0 && b0 < this.items.length) {
+                this.items[b0] = new ItemStack(nbttagcompound1);
             }
         }
 
-        this.a = nbttagcompound.d("BurnTime");
-        this.c = nbttagcompound.d("CookTime");
-        this.b = this.a(this.h[1]);
+        this.burnTime = nbttagcompound.d("BurnTime");
+        this.cookTime = nbttagcompound.d("CookTime");
+        this.b = this.a(this.items[1]);
     }
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
-        nbttagcompound.a("BurnTime", (short) this.a);
-        nbttagcompound.a("CookTime", (short) this.c);
+        nbttagcompound.a("BurnTime", (short) this.burnTime);
+        nbttagcompound.a("CookTime", (short) this.cookTime);
         NBTTagList nbttaglist = new NBTTagList();
 
-        for (int i = 0; i < this.h.length; ++i) {
-            if (this.h[i] != null) {
+        for (int i = 0; i < this.items.length; ++i) {
+            if (this.items[i] != null) {
                 NBTTagCompound nbttagcompound1 = new NBTTagCompound();
 
                 nbttagcompound1.a("Slot", (byte) i);
-                this.h[i].a(nbttagcompound1);
+                this.items[i].a(nbttagcompound1);
                 nbttaglist.a((NBTBase) nbttagcompound1);
             }
         }
@@ -94,81 +94,81 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         nbttagcompound.a("Items", (NBTBase) nbttaglist);
     }
 
-    public int r_() {
+    public int getMaxStackSize() {
         return 64;
     }
 
     public boolean f() {
-        return this.a > 0;
+        return this.burnTime > 0;
     }
 
     public void i_() {
-        boolean flag = this.a > 0;
+        boolean flag = this.burnTime > 0;
         boolean flag1 = false;
 
-        if (this.a > 0) {
-            --this.a;
+        if (this.burnTime > 0) {
+            --this.burnTime;
         }
 
-        if (!this.d.isStatic) {
-            if (this.a == 0 && this.h()) {
-                this.b = this.a = this.a(this.h[1]);
-                if (this.a > 0) {
+        if (!this.world.isStatic) {
+            if (this.burnTime == 0 && this.h()) {
+                this.b = this.burnTime = this.a(this.items[1]);
+                if (this.burnTime > 0) {
                     flag1 = true;
-                    if (this.h[1] != null) {
-                        --this.h[1].count;
-                        if (this.h[1].count == 0) {
-                            this.h[1] = null;
+                    if (this.items[1] != null) {
+                        --this.items[1].count;
+                        if (this.items[1].count == 0) {
+                            this.items[1] = null;
                         }
                     }
                 }
             }
 
             if (this.f() && this.h()) {
-                ++this.c;
-                if (this.c == 200) {
-                    this.c = 0;
+                ++this.cookTime;
+                if (this.cookTime == 200) {
+                    this.cookTime = 0;
                     this.g();
                     flag1 = true;
                 }
             } else {
-                this.c = 0;
+                this.cookTime = 0;
             }
 
-            if (flag != this.a > 0) {
+            if (flag != this.burnTime > 0) {
                 flag1 = true;
-                BlockFurnace.a(this.a > 0, this.d, this.e, this.f, this.g);
+                BlockFurnace.a(this.burnTime > 0, this.world, this.e, this.f, this.g);
             }
         }
 
         if (flag1) {
-            this.i();
+            this.update();
         }
     }
 
     private boolean h() {
-        if (this.h[0] == null) {
+        if (this.items[0] == null) {
             return false;
         } else {
-            ItemStack itemstack = FurnaceRecipes.a().a(this.h[0].a().id);
+            ItemStack itemstack = FurnaceRecipes.a().a(this.items[0].getItem().id);
 
-            return itemstack == null ? false : (this.h[2] == null ? true : (!this.h[2].a(itemstack) ? false : (this.h[2].count < this.r_() && this.h[2].count < this.h[2].b() ? true : this.h[2].count < itemstack.b())));
+            return itemstack == null ? false : (this.items[2] == null ? true : (!this.items[2].a(itemstack) ? false : (this.items[2].count < this.getMaxStackSize() && this.items[2].count < this.items[2].b() ? true : this.items[2].count < itemstack.b())));
         }
     }
 
     public void g() {
         if (this.h()) {
-            ItemStack itemstack = FurnaceRecipes.a().a(this.h[0].a().id);
+            ItemStack itemstack = FurnaceRecipes.a().a(this.items[0].getItem().id);
 
-            if (this.h[2] == null) {
-                this.h[2] = itemstack.j();
-            } else if (this.h[2].id == itemstack.id) {
-                ++this.h[2].count;
+            if (this.items[2] == null) {
+                this.items[2] = itemstack.j();
+            } else if (this.items[2].id == itemstack.id) {
+                ++this.items[2].count;
             }
 
-            --this.h[0].count;
-            if (this.h[0].count <= 0) {
-                this.h[0] = null;
+            --this.items[0].count;
+            if (this.items[0].count <= 0) {
+                this.items[0] = null;
             }
         }
     }
@@ -177,13 +177,13 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         if (itemstack == null) {
             return 0;
         } else {
-            int i = itemstack.a().id;
+            int i = itemstack.getItem().id;
 
             return i < 256 && Block.byId[i].material == Material.WOOD ? 300 : (i == Item.STICK.id ? 100 : (i == Item.COAL.id ? 1600 : (i == Item.LAVA_BUCKET.id ? 20000 : 0)));
         }
     }
 
     public boolean a_(EntityHuman entityhuman) {
-        return this.d.getTileEntity(this.e, this.f, this.g) != this ? false : entityhuman.d((double) this.e + 0.5D, (double) this.f + 0.5D, (double) this.g + 0.5D) <= 64.0D;
+        return this.world.getTileEntity(this.e, this.f, this.g) != this ? false : entityhuman.d((double) this.e + 0.5D, (double) this.f + 0.5D, (double) this.g + 0.5D) <= 64.0D;
     }
 }

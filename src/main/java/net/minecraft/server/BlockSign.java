@@ -73,7 +73,7 @@ public class BlockSign extends BlockContainer {
         return Item.SIGN.id;
     }
 
-    public void a(World world, int i, int j, int k, int l) {
+    public void doPhysics(World world, int i, int j, int k, int l) {
         boolean flag = false;
 
         if (this.b) {
@@ -103,17 +103,18 @@ public class BlockSign extends BlockContainer {
 
         if (flag) {
             this.a_(world, i, j, k, world.getData(i, j, k));
-            world.e(i, j, k, 0);
+            world.setTypeId(i, j, k, 0);
         }
 
-        super.a(world, i, j, k, l);
+        super.doPhysics(world, i, j, k, l);
 
         // CraftBukkit start
-        if (net.minecraft.server.Block.byId[l] != null && net.minecraft.server.Block.byId[l].c()) {
+        if (net.minecraft.server.Block.byId[l] != null && net.minecraft.server.Block.byId[l].isPowerSource()) {
             CraftWorld craftWorld = ((WorldServer) world).getWorld();
             CraftServer server = ((WorldServer) world).getServer();
             Block block = craftWorld.getBlockAt(i, j, k);
             int power = block.getBlockPower();
+
             BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, power, power);
             server.getPluginManager().callEvent(eventRedstone);
         }

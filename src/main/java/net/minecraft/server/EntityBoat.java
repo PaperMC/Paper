@@ -18,7 +18,7 @@ import org.bukkit.event.vehicle.VehicleUpdateEvent;
 
 public class EntityBoat extends Entity {
 
-    public int a;
+    public int damage;
     public int b;
     public int c;
     private int d;
@@ -31,7 +31,8 @@ public class EntityBoat extends Entity {
     // CraftBukkit start
     public double maxSpeed = 0.4D;
 
-    public void h(Entity entity) {
+    @Override
+    public void collide(Entity entity) {
         CraftServer server = ((WorldServer) this.world).getServer();
         Vehicle vehicle = (Vehicle) this.getBukkitEntity();
         org.bukkit.entity.Entity hitEntity = (entity == null) ? null : entity.getBukkitEntity();
@@ -43,13 +44,13 @@ public class EntityBoat extends Entity {
             return;
         }
 
-        super.h(entity);
+        super.collide(entity);
     }
     // CraftBukkit end
 
     public EntityBoat(World world) {
         super(world);
-        this.a = 0;
+        this.damage = 0;
         this.b = 0;
         this.c = 1;
         this.aD = true;
@@ -77,7 +78,7 @@ public class EntityBoat extends Entity {
 
     public EntityBoat(World world, double d0, double d1, double d2) {
         this(world);
-        this.a(d0, d1 + (double) this.height, d2);
+        this.setPosition(d0, d1 + (double) this.height, d2);
         this.motX = 0.0D;
         this.motY = 0.0D;
         this.motZ = 0.0D;
@@ -97,7 +98,7 @@ public class EntityBoat extends Entity {
         return (double) this.width * 0.0D - 0.30000001192092896D;
     }
 
-    public boolean a(Entity entity, int i) {
+    public boolean damageEntity(Entity entity, int i) {
         if (!this.world.isStatic && !this.dead) {
             // CraftBukkit start
             Vehicle vehicle = (Vehicle) this.getBukkitEntity();
@@ -114,16 +115,16 @@ public class EntityBoat extends Entity {
 
             this.c = -this.c;
             this.b = 10;
-            this.a += i * 10;
+            this.damage += i * 10;
             this.W();
-            if (this.a > 40) {
+            if (this.damage > 40) {
 
                 // CraftBukkit start
                 VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, attacker);
                 ((WorldServer) this.world).getServer().getPluginManager().callEvent(destroyEvent);
 
                 if (destroyEvent.isCancelled()) {
-                    this.a = 40; // Maximize damage so this doesn't get triggered again right away
+                    this.damage = 40; // Maximize damage so this doesn't get triggered again right away
                     return true;
                 }
                 // CraftBukkit end
@@ -138,7 +139,7 @@ public class EntityBoat extends Entity {
                     this.a(Item.STICK.id, 1, 0.0F);
                 }
 
-                this.D();
+                this.die();
             }
 
             return true;
@@ -165,8 +166,8 @@ public class EntityBoat extends Entity {
             --this.b;
         }
 
-        if (this.a > 0) {
-            --this.a;
+        if (this.damage > 0) {
+            --this.damage;
         }
 
         this.lastX = this.locX;
@@ -207,13 +208,13 @@ public class EntityBoat extends Entity {
                 this.yaw = (float) ((double) this.yaw + d6 / (double) this.d);
                 this.pitch = (float) ((double) this.pitch + (this.i - (double) this.pitch) / (double) this.d);
                 --this.d;
-                this.a(d3, d4, d5);
+                this.setPosition(d3, d4, d5);
                 this.c(this.yaw, this.pitch);
             } else {
                 d3 = this.locX + this.motX;
                 d4 = this.locY + this.motY;
                 d5 = this.locZ + this.motZ;
-                this.a(d3, d4, d5);
+                this.setPosition(d3, d4, d5);
                 if (this.onGround) {
                     this.motX *= 0.5D;
                     this.motY *= 0.5D;
@@ -256,7 +257,7 @@ public class EntityBoat extends Entity {
                 this.motZ *= 0.5D;
             }
 
-            this.c(this.motX, this.motY, this.motZ);
+            this.move(this.motX, this.motY, this.motZ);
             d5 = Math.sqrt(this.motX * this.motX + this.motZ * this.motZ);
             double d7;
 
@@ -282,9 +283,9 @@ public class EntityBoat extends Entity {
                 }
             }
 
-            if (this.aW && d5 > 0.15D) {
+            if (this.positionChanged && d5 > 0.15D) {
                 if (!this.world.isStatic) {
-                    this.D();
+                    this.die();
 
                     int k;
 
@@ -354,7 +355,7 @@ public class EntityBoat extends Entity {
                     Entity entity = (Entity) list.get(l);
 
                     if (entity != this.passenger && entity.e_() && entity instanceof EntityBoat) {
-                        entity.h(this);
+                        entity.collide(this);
                     }
                 }
             }
@@ -370,7 +371,7 @@ public class EntityBoat extends Entity {
             double d0 = Math.cos((double) this.yaw * 3.141592653589793D / 180.0D) * 0.4D;
             double d1 = Math.sin((double) this.yaw * 3.141592653589793D / 180.0D) * 0.4D;
 
-            this.passenger.a(this.locX + d0, this.locY + this.k() + this.passenger.C(), this.locZ + d1);
+            this.passenger.setPosition(this.locX + d0, this.locY + this.k() + this.passenger.C(), this.locZ + d1);
         }
     }
 
@@ -396,7 +397,7 @@ public class EntityBoat extends Entity {
                 }
                 // CraftBukkit end
 
-                entityhuman.b((Entity) this);
+                entityhuman.mount(this);
             }
 
             return true;

@@ -13,7 +13,7 @@ public class WorldData {
     private long g;
     private NBTTagCompound h;
     private int i;
-    public String j; // CraftBukkit private->public
+    public String name; // CraftBukkit private->public
     private int k;
 
     public WorldData(NBTTagCompound nbttagcompound) {
@@ -24,9 +24,9 @@ public class WorldData {
         this.e = nbttagcompound.f("Time");
         this.f = nbttagcompound.f("LastPlayed");
         this.g = nbttagcompound.f("SizeOnDisk");
-        this.j = nbttagcompound.i("LevelName");
+        this.name = nbttagcompound.getString("LevelName");
         this.k = nbttagcompound.e("version");
-        if (nbttagcompound.b("Player")) {
+        if (nbttagcompound.hasKey("Player")) {
             this.h = nbttagcompound.k("Player");
             this.i = this.h.e("Dimension");
         }
@@ -34,7 +34,7 @@ public class WorldData {
 
     public WorldData(long i, String s) {
         this.a = i;
-        this.j = s;
+        this.name = s;
     }
 
     public WorldData(WorldData worlddata) {
@@ -47,7 +47,7 @@ public class WorldData {
         this.g = worlddata.g;
         this.h = worlddata.h;
         this.i = worlddata.i;
-        this.j = worlddata.j;
+        this.name = worlddata.name;
         this.k = worlddata.k;
     }
 
@@ -84,7 +84,7 @@ public class WorldData {
         nbttagcompound.a("Time", this.e);
         nbttagcompound.a("SizeOnDisk", this.g);
         nbttagcompound.a("LastPlayed", System.currentTimeMillis());
-        nbttagcompound.a("LevelName", this.j);
+        nbttagcompound.setString("LevelName", this.name);
         nbttagcompound.a("version", this.k);
         if (nbttagcompound1 != null) {
             nbttagcompound.a("Player", nbttagcompound1);
@@ -127,14 +127,14 @@ public class WorldData {
         this.g = i;
     }
 
-    public void a(int i, int j, int k) {
+    public void setSpawn(int i, int j, int k) {
         this.b = i;
         this.c = j;
         this.d = k;
     }
 
     public void a(String s) {
-        this.j = s;
+        this.name = s;
     }
 
     public int i() {

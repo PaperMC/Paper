@@ -77,9 +77,9 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         else if (entity instanceof EntityItem) { return new CraftItem( server, (EntityItem) entity); }
         else if (entity instanceof EntityMinecart) {
             EntityMinecart mc = (EntityMinecart) entity;
-            if (mc.d == CraftMinecart.Type.StorageMinecart.getId()) {
+            if (mc.type == CraftMinecart.Type.StorageMinecart.getId()) {
                 return new CraftStorageMinecart(server, mc);
-            } else if (mc.d == CraftMinecart.Type.PoweredMinecart.getId()) {
+            } else if (mc.type == CraftMinecart.Type.PoweredMinecart.getId()) {
                 return new CraftPoweredMinecart(server, mc);
             } else {
                 return new CraftMinecart(server, mc);
@@ -103,7 +103,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         entity.motX = vel.getX();
         entity.motY = vel.getY();
         entity.motZ = vel.getZ();
-        entity.aZ = true;
+        entity.velocityChanged = true;
     }
 
     public World getWorld() {
@@ -112,8 +112,8 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     public boolean teleport(Location location) {
         entity.world = ((CraftWorld)location.getWorld()).getHandle();
-        entity.b(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
-        // entity.b() throws no event, and so cannot be cancelled
+        entity.setLocation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+        // entity.setLocation() throws no event, and so cannot be cancelled
         return true;
     }
 
@@ -153,7 +153,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     public void setFireTicks(int ticks) {
         entity.fireTicks = ticks;
     }
-    
+
     public void remove() {
         entity.dead = true;
     }
@@ -238,11 +238,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         getHandle().passenger.setPassengerOf(null);
         return true;
     }
-    
+
     public float getFallDistance() {
         return getHandle().fallDistance;
     }
-    
+
     public void setFallDistance(float distance) {
         getHandle().fallDistance = distance;
     }

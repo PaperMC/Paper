@@ -42,10 +42,10 @@ public abstract class Entity {
     public float lastPitch;
     public final AxisAlignedBB boundingBox;
     public boolean onGround;
-    public boolean aW;
+    public boolean positionChanged;
     public boolean aX;
     public boolean aY;
-    public boolean aZ;
+    public boolean velocityChanged;
     public boolean ba;
     public boolean dead;
     public float height;
@@ -88,7 +88,7 @@ public abstract class Entity {
         this.boundingBox = AxisAlignedBB.a(0.0D, 0.0D, 0.0D, 0.0D, 0.0D, 0.0D);
         this.onGround = false;
         this.aY = false;
-        this.aZ = false;
+        this.velocityChanged = false;
         this.ba = true;
         this.dead = false;
         this.height = 0.0F;
@@ -116,7 +116,7 @@ public abstract class Entity {
         this.datawatcher = new DataWatcher();
         this.bA = false;
         this.world = world;
-        this.a(0.0D, 0.0D, 0.0D);
+        this.setPosition(0.0D, 0.0D, 0.0D);
         this.datawatcher.a(0, Byte.valueOf((byte) 0));
         this.a();
     }
@@ -135,7 +135,7 @@ public abstract class Entity {
         return this.id;
     }
 
-    public void D() {
+    public void die() {
         this.dead = true;
     }
 
@@ -148,16 +148,16 @@ public abstract class Entity {
         // Craftbukkit start
         if ((f == Float.POSITIVE_INFINITY) || (f == Float.NEGATIVE_INFINITY) || (Float.isNaN(f))) {
             if (this instanceof EntityPlayer) {
-                System.err.println(((CraftPlayer)this.getBukkitEntity()).getName() + " was caught trying to crash the server with an invalid yaw");
-                ((CraftPlayer)this.getBukkitEntity()).kickPlayer("Nope");
+                System.err.println(((CraftPlayer) this.getBukkitEntity()).getName() + " was caught trying to crash the server with an invalid yaw");
+                ((CraftPlayer) this.getBukkitEntity()).kickPlayer("Nope");
             }
             f = 0;
         }
 
         if ((f1 == Float.POSITIVE_INFINITY) || (f1 == Float.NEGATIVE_INFINITY) || (Float.isNaN(f1))) {
             if (this instanceof EntityPlayer) {
-                System.err.println(((CraftPlayer)this.getBukkitEntity()).getName() + " was caught trying to crash the server with an invalid pitch");
-                ((CraftPlayer)this.getBukkitEntity()).kickPlayer("Nope");
+                System.err.println(((CraftPlayer) this.getBukkitEntity()).getName() + " was caught trying to crash the server with an invalid pitch");
+                ((CraftPlayer) this.getBukkitEntity()).kickPlayer("Nope");
             }
             f1 = 0;
         }
@@ -167,7 +167,7 @@ public abstract class Entity {
         // Craftbukkit end
     }
 
-    public void a(double d0, double d1, double d2) {
+    public void setPosition(double d0, double d1, double d2) {
         this.locX = d0;
         this.locY = d1;
         this.locZ = d2;
@@ -201,8 +201,8 @@ public abstract class Entity {
                     f = 1.0F;
                 }
 
-                this.world.a(this, "random.splash", f, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
-                float f1 = (float) MathHelper.b(this.boundingBox.b);
+                this.world.makeSound(this, "random.splash", f, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
+                float f1 = (float) MathHelper.floor(this.boundingBox.b);
 
                 int i;
                 float f2;
@@ -250,10 +250,10 @@ public abstract class Entity {
                         server.getPluginManager().callEvent(event);
 
                         if (!event.isCancelled()) {
-                            this.a((Entity) null, event.getDamage());
+                            this.damageEntity((Entity) null, event.getDamage());
                         }
                     } else {
-                        this.a((Entity) null, 1);
+                        this.damageEntity((Entity) null, 1);
                     }
                     // CraftBukkit end
                 }
@@ -293,7 +293,7 @@ public abstract class Entity {
                 server.getPluginManager().callEvent(event);
 
                 if (!event.isCancelled()) {
-                    this.a((Entity) null, event.getDamage());
+                    this.damageEntity((Entity) null, event.getDamage());
                 }
 
                 if (this.fireTicks <= 0) {
@@ -311,23 +311,23 @@ public abstract class Entity {
             }
             // CraftBukkit end
 
-            this.a((Entity) null, 4);
+            this.damageEntity((Entity) null, 4);
             this.fireTicks = 600;
         }
     }
 
     protected void R() {
-        this.D();
+        this.die();
     }
 
     public boolean b(double d0, double d1, double d2) {
         AxisAlignedBB axisalignedbb = this.boundingBox.c(d0, d1, d2);
-        List list = this.world.a(this, axisalignedbb);
+        List list = this.world.getEntities(this, axisalignedbb);
 
         return list.size() > 0 ? false : !this.world.b(axisalignedbb);
     }
 
-    public void c(double d0, double d1, double d2) {
+    public void move(double d0, double d1, double d2) {
         if (this.bn) {
             this.boundingBox.d(d0, d1, d2);
             this.locX = (this.boundingBox.a + this.boundingBox.d) / 2.0D;
@@ -339,13 +339,13 @@ public abstract class Entity {
             double d5 = d0;
             double d6 = d1;
             double d7 = d2;
-            AxisAlignedBB axisalignedbb = this.boundingBox.b();
-            boolean flag = this.onGround && this.Z();
+            AxisAlignedBB axisalignedbb = this.boundingBox.clone();
+            boolean flag = this.onGround && this.isSneaking();
 
             if (flag) {
                 double d8;
 
-                for (d8 = 0.05D; d0 != 0.0D && this.world.a(this, this.boundingBox.c(d0, -1.0D, 0.0D)).size() == 0; d5 = d0) {
+                for (d8 = 0.05D; d0 != 0.0D && this.world.getEntities(this, this.boundingBox.c(d0, -1.0D, 0.0D)).size() == 0; d5 = d0) {
                     if (d0 < d8 && d0 >= -d8) {
                         d0 = 0.0D;
                     } else if (d0 > 0.0D) {
@@ -355,7 +355,7 @@ public abstract class Entity {
                     }
                 }
 
-                for (; d2 != 0.0D && this.world.a(this, this.boundingBox.c(0.0D, -1.0D, d2)).size() == 0; d7 = d2) {
+                for (; d2 != 0.0D && this.world.getEntities(this, this.boundingBox.c(0.0D, -1.0D, d2)).size() == 0; d7 = d2) {
                     if (d2 < d8 && d2 >= -d8) {
                         d2 = 0.0D;
                     } else if (d2 > 0.0D) {
@@ -366,7 +366,7 @@ public abstract class Entity {
                 }
             }
 
-            List list = this.world.a(this, this.boundingBox.a(d0, d1, d2));
+            List list = this.world.getEntities(this, this.boundingBox.a(d0, d1, d2));
 
             for (int i = 0; i < list.size(); ++i) {
                 d1 = ((AxisAlignedBB) list.get(i)).b(this.boundingBox, d1);
@@ -417,10 +417,10 @@ public abstract class Entity {
                 d0 = d5;
                 d1 = (double) this.bm;
                 d2 = d7;
-                AxisAlignedBB axisalignedbb1 = this.boundingBox.b();
+                AxisAlignedBB axisalignedbb1 = this.boundingBox.clone();
 
                 this.boundingBox.b(axisalignedbb);
-                list = this.world.a(this, this.boundingBox.a(d5, d1, d7));
+                list = this.world.getEntities(this, this.boundingBox.a(d5, d1, d7));
 
                 for (k = 0; k < list.size(); ++k) {
                     d1 = ((AxisAlignedBB) list.get(k)).b(this.boundingBox, d1);
@@ -468,10 +468,10 @@ public abstract class Entity {
             this.locX = (this.boundingBox.a + this.boundingBox.d) / 2.0D;
             this.locY = this.boundingBox.b + (double) this.height - (double) this.bl;
             this.locZ = (this.boundingBox.c + this.boundingBox.f) / 2.0D;
-            this.aW = d5 != d0 || d7 != d2;
+            this.positionChanged = d5 != d0 || d7 != d2;
             this.aX = d6 != d1;
             this.onGround = d6 != d1 && d6 < 0.0D;
-            this.aY = this.aW || this.aX;
+            this.aY = this.positionChanged || this.aX;
             this.a(d1, this.onGround);
             if (d5 != d0) {
                 this.motX = 0.0D;
@@ -492,10 +492,10 @@ public abstract class Entity {
             int j1;
 
             // CraftBukkit start
-            if ((this.aW) && (getBukkitEntity() instanceof Vehicle)) {
+            if ((this.positionChanged) && (getBukkitEntity() instanceof Vehicle)) {
                 Vehicle vehicle = (Vehicle) getBukkitEntity();
                 org.bukkit.World wrld = ((WorldServer) world).getWorld();
-                org.bukkit.block.Block block = wrld.getBlockAt(MathHelper.b(locX), MathHelper.b(locY - 0.20000000298023224D - (double) this.height), MathHelper.b(locZ));
+                org.bukkit.block.Block block = wrld.getBlockAt(MathHelper.floor(locX), MathHelper.floor(locY - 0.20000000298023224D - (double) this.height), MathHelper.floor(locZ));
 
                 if (d5 > d0) {
                     block = block.getFace(BlockFace.SOUTH);
@@ -514,9 +514,9 @@ public abstract class Entity {
 
             if (this.l() && !flag) {
                 this.bg = (float) ((double) this.bg + (double) MathHelper.a(d9 * d9 + d10 * d10) * 0.6D);
-                l = MathHelper.b(this.locX);
-                i1 = MathHelper.b(this.locY - 0.20000000298023224D - (double) this.height);
-                j1 = MathHelper.b(this.locZ);
+                l = MathHelper.floor(this.locX);
+                i1 = MathHelper.floor(this.locY - 0.20000000298023224D - (double) this.height);
+                j1 = MathHelper.floor(this.locZ);
                 k = this.world.getTypeId(l, i1, j1);
                 if (this.bg > (float) this.b && k > 0) {
                     ++this.b;
@@ -524,21 +524,21 @@ public abstract class Entity {
 
                     if (this.world.getTypeId(l, i1 + 1, j1) == Block.SNOW.id) {
                         stepsound = Block.SNOW.stepSound;
-                        this.world.a(this, stepsound.c(), stepsound.a() * 0.15F, stepsound.b());
+                        this.world.makeSound(this, stepsound.getName(), stepsound.getVolume1() * 0.15F, stepsound.getVolume2());
                     } else if (!Block.byId[k].material.isLiquid()) {
-                        this.world.a(this, stepsound.c(), stepsound.a() * 0.15F, stepsound.b());
+                        this.world.makeSound(this, stepsound.getName(), stepsound.getVolume1() * 0.15F, stepsound.getVolume2());
                     }
 
                     Block.byId[k].b(this.world, l, i1, j1, this);
                 }
             }
 
-            l = MathHelper.b(this.boundingBox.a);
-            i1 = MathHelper.b(this.boundingBox.b);
-            j1 = MathHelper.b(this.boundingBox.c);
-            k = MathHelper.b(this.boundingBox.d);
-            int k1 = MathHelper.b(this.boundingBox.e);
-            int l1 = MathHelper.b(this.boundingBox.f);
+            l = MathHelper.floor(this.boundingBox.a);
+            i1 = MathHelper.floor(this.boundingBox.b);
+            j1 = MathHelper.floor(this.boundingBox.c);
+            k = MathHelper.floor(this.boundingBox.d);
+            int k1 = MathHelper.floor(this.boundingBox.e);
+            int l1 = MathHelper.floor(this.boundingBox.f);
 
             if (this.world.a(l, i1, j1, k, k1, l1)) {
                 for (int i2 = l; i2 <= k; ++i2) {
@@ -583,7 +583,7 @@ public abstract class Entity {
             }
 
             if (flag2 && this.fireTicks > 0) {
-                this.world.a(this, "random.fizz", 0.7F, 1.6F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
+                this.world.makeSound(this, "random.fizz", 0.7F, 1.6F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
                 this.fireTicks = -this.maxFireTicks;
             }
         }
@@ -620,14 +620,14 @@ public abstract class Entity {
                 EntityDamageEvent event = new EntityDamageEvent(damagee, damageType, damageDone);
                 server.getPluginManager().callEvent(event);
 
-                if (event.isCancelled() || event.getDamage() == 0) {
+                if (event.isCancelled()) {
                     return;
                 }
 
                 i = event.getDamage();
             }
             // CraftBukkit end
-            this.a((Entity) null, i);
+            this.damageEntity((Entity) null, i);
         }
     }
 
@@ -639,9 +639,9 @@ public abstract class Entity {
 
     public boolean a(Material material) {
         double d0 = this.locY + (double) this.q();
-        int i = MathHelper.b(this.locX);
-        int j = MathHelper.d((float) MathHelper.b(d0));
-        int k = MathHelper.b(this.locZ);
+        int i = MathHelper.floor(this.locX);
+        int j = MathHelper.d((float) MathHelper.floor(d0));
+        int k = MathHelper.floor(this.locZ);
         int l = this.world.getTypeId(i, j, k);
 
         if (l != 0 && Block.byId[l].material == material) {
@@ -673,8 +673,8 @@ public abstract class Entity {
             f3 = f2 / f3;
             f *= f3;
             f1 *= f3;
-            float f4 = MathHelper.a(this.yaw * 3.1415927F / 180.0F);
-            float f5 = MathHelper.b(this.yaw * 3.1415927F / 180.0F);
+            float f4 = MathHelper.sin(this.yaw * 3.1415927F / 180.0F);
+            float f5 = MathHelper.cos(this.yaw * 3.1415927F / 180.0F);
 
             this.motX += (double) (f * f5 - f1 * f4);
             this.motZ += (double) (f1 * f5 + f * f4);
@@ -682,15 +682,15 @@ public abstract class Entity {
     }
 
     public float c(float f) {
-        int i = MathHelper.b(this.locX);
+        int i = MathHelper.floor(this.locX);
         double d0 = (this.boundingBox.e - this.boundingBox.b) * 0.66D;
-        int j = MathHelper.b(this.locY - (double) this.height + d0);
-        int k = MathHelper.b(this.locZ);
+        int j = MathHelper.floor(this.locY - (double) this.height + d0);
+        int k = MathHelper.floor(this.locZ);
 
-        return this.world.a(MathHelper.b(this.boundingBox.a), MathHelper.b(this.boundingBox.b), MathHelper.b(this.boundingBox.c), MathHelper.b(this.boundingBox.d), MathHelper.b(this.boundingBox.e), MathHelper.b(this.boundingBox.f)) ? this.world.l(i, j, k) : 0.0F;
+        return this.world.a(MathHelper.floor(this.boundingBox.a), MathHelper.floor(this.boundingBox.b), MathHelper.floor(this.boundingBox.c), MathHelper.floor(this.boundingBox.d), MathHelper.floor(this.boundingBox.e), MathHelper.floor(this.boundingBox.f)) ? this.world.l(i, j, k) : 0.0F;
     }
 
-    public void b(double d0, double d1, double d2, float f, float f1) {
+    public void setLocation(double d0, double d1, double d2, float f, float f1) {
         this.lastX = this.locX = d0;
         this.lastY = this.locY = d1;
         this.lastZ = this.locZ = d2;
@@ -707,17 +707,17 @@ public abstract class Entity {
             this.lastYaw -= 360.0F;
         }
 
-        this.a(this.locX, this.locY, this.locZ);
+        this.setPosition(this.locX, this.locY, this.locZ);
         this.c(f, f1);
     }
 
-    public void c(double d0, double d1, double d2, float f, float f1) {
+    public void setPositionRotation(double d0, double d1, double d2, float f, float f1) {
         this.bi = this.lastX = this.locX = d0;
         this.bj = this.lastY = this.locY = d1 + (double) this.height;
         this.bk = this.lastZ = this.locZ = d2;
         this.yaw = f;
         this.pitch = f1;
-        this.a(this.locX, this.locY, this.locZ);
+        this.setPosition(this.locX, this.locY, this.locZ);
     }
 
     public float f(Entity entity) {
@@ -754,7 +754,7 @@ public abstract class Entity {
 
     public void b(EntityHuman entityhuman) {}
 
-    public void h(Entity entity) {
+    public void collide(Entity entity) {
         if (entity.passenger != this && entity.vehicle != this) {
             double d0 = entity.locX - this.locX;
             double d1 = entity.locZ - this.locZ;
@@ -789,10 +789,10 @@ public abstract class Entity {
     }
 
     protected void W() {
-        this.aZ = true;
+        this.velocityChanged = true;
     }
 
-    public boolean a(Entity entity, int i) {
+    public boolean damageEntity(Entity entity, int i) {
         this.W();
         return false;
     }
@@ -811,7 +811,7 @@ public abstract class Entity {
         String s = this.X();
 
         if (!this.dead && s != null) {
-            nbttagcompound.a("id", s);
+            nbttagcompound.setString("id", s);
             this.d(nbttagcompound);
             return true;
         } else {
@@ -827,7 +827,7 @@ public abstract class Entity {
         nbttagcompound.a("Fire", (short) this.fireTicks);
         nbttagcompound.a("Air", (short) this.airTicks);
         nbttagcompound.a("OnGround", this.onGround);
-        nbttagcompound.a("World", world.q.j); // CraftBukkit
+        nbttagcompound.setString("World", world.worldData.name); // CraftBukkit
         this.a(nbttagcompound);
     }
 
@@ -836,7 +836,7 @@ public abstract class Entity {
         NBTTagList nbttaglist1 = nbttagcompound.l("Motion");
         NBTTagList nbttaglist2 = nbttagcompound.l("Rotation");
 
-        this.a(0.0D, 0.0D, 0.0D);
+        this.setPosition(0.0D, 0.0D, 0.0D);
         this.motX = ((NBTTagDouble) nbttaglist1.a(0)).a;
         this.motY = ((NBTTagDouble) nbttaglist1.a(1)).a;
         this.motZ = ((NBTTagDouble) nbttaglist1.a(2)).a;
@@ -868,16 +868,16 @@ public abstract class Entity {
         this.onGround = nbttagcompound.m("OnGround");
 
         // CraftBukkit start
-        if (nbttagcompound.b("World")) {
-            String worldName = nbttagcompound.i("World");
+        if (nbttagcompound.hasKey("World")) {
+            String worldName = nbttagcompound.getString("World");
 
             for (WorldServer world: ((WorldServer) this.world).getServer().getServer().worlds) {
-                if ((world.q.j.equals(worldName)) && (world != this.world)) {
+                if ((world.worldData.name.equals(worldName)) && (world != this.world)) {
                     this.world = world;
                     if (this instanceof EntityHuman) {
                         EntityPlayer player = (EntityPlayer)this;
-                        player.c = new ItemInWorldManager(world);
-                        player.c.a = player;
+                        player.itemInWorldManager = new ItemInWorldManager(world);
+                        player.itemInWorldManager.player = player;
                     }
                     break;
                 }
@@ -885,7 +885,7 @@ public abstract class Entity {
         }
         // CraftBukkit end
 
-        this.a(this.locX, this.locY, this.locZ);
+        this.setPosition(this.locX, this.locY, this.locZ);
         this.b(nbttagcompound);
     }
 
@@ -936,8 +936,8 @@ public abstract class Entity {
     public EntityItem a(ItemStack itemstack, float f) {
         EntityItem entityitem = new EntityItem(this.world, this.locX, this.locY + (double) f, this.locZ, itemstack);
 
-        entityitem.c = 10;
-        this.world.a((Entity) entityitem);
+        entityitem.pickupDelay = 10;
+        this.world.addEntity(entityitem);
         return entityitem;
     }
 
@@ -946,9 +946,9 @@ public abstract class Entity {
     }
 
     public boolean E() {
-        int i = MathHelper.b(this.locX);
-        int j = MathHelper.b(this.locY + (double) this.q());
-        int k = MathHelper.b(this.locZ);
+        int i = MathHelper.floor(this.locX);
+        int j = MathHelper.floor(this.locY + (double) this.q());
+        int k = MathHelper.floor(this.locZ);
 
         return this.world.d(i, j, k);
     }
@@ -1016,7 +1016,7 @@ public abstract class Entity {
     }
 
     public void h_() {
-        this.passenger.a(this.locX, this.locY + this.k() + this.passenger.C(), this.locZ);
+        this.passenger.setPosition(this.locX, this.locY + this.k() + this.passenger.C(), this.locZ);
     }
 
     public double C() {
@@ -1027,7 +1027,7 @@ public abstract class Entity {
         return (double) this.width * 0.75D;
     }
 
-    public void b(Entity entity) {
+    public void mount(Entity entity) {
         // CraftBukkit start
         setPassengerOf(entity);
     }
@@ -1060,7 +1060,7 @@ public abstract class Entity {
                 }
                 // CraftBukkit end
 
-                this.c(this.vehicle.locX, this.vehicle.boundingBox.b + (double) this.vehicle.width, this.vehicle.locZ, this.yaw, this.pitch);
+                this.setPositionRotation(this.vehicle.locX, this.vehicle.boundingBox.b + (double) this.vehicle.width, this.vehicle.locZ, this.yaw, this.pitch);
                 this.vehicle.passenger = null;
             }
 
@@ -1078,7 +1078,7 @@ public abstract class Entity {
 
             this.vehicle.passenger = null;
             this.vehicle = null;
-            this.c(entity.locX, entity.boundingBox.b + (double) entity.width, entity.locZ, this.yaw, this.pitch);
+            this.setPositionRotation(entity.locX, entity.boundingBox.b + (double) entity.width, entity.locZ, this.yaw, this.pitch);
         } else {
             if (this.vehicle != null) {
                 this.vehicle.passenger = null;
@@ -1099,15 +1099,15 @@ public abstract class Entity {
 
     public void Y() {}
 
-    public ItemStack[] k_() {
+    public ItemStack[] getEquipment() {
         return null;
     }
 
-    public boolean Z() {
+    public boolean isSneaking() {
         return this.d(1);
     }
 
-    public void e(boolean flag) {
+    public void setSneak(boolean flag) {
         this.a(1, flag);
     }
 

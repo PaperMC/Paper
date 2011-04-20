@@ -20,7 +20,7 @@ public class ConsoleLogManager {
     public ConsoleLogManager() {}
 
     // Craftbukkit - change of method signature!
-    public static void a(MinecraftServer server) {
+    public static void init(MinecraftServer server) {
         ConsoleLogFormatter consolelogformatter = new ConsoleLogFormatter();
 
         a.setUseParentHandlers(false);
@@ -34,6 +34,7 @@ public class ConsoleLogManager {
         consolehandler.setFormatter(new ShortConsoleLogFormatter(server));
         global.addHandler(consolehandler);
         // CraftBukkit end
+
         a.addHandler(consolehandler);
 
         try {

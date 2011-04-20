@@ -2,15 +2,15 @@ package net.minecraft.server;
 
 public class Slot {
 
-    public final int d; // CraftBukkit: private -> public
-    public final IInventory e; // CraftBukkit: private -> public
+    public final int index; // CraftBukkit: private -> public
+    public final IInventory inventory; // CraftBukkit: private -> public
     public int a;
     public int b;
     public int c;
 
     public Slot(IInventory iinventory, int i, int j, int k) {
-        this.e = iinventory;
-        this.d = i;
+        this.inventory = iinventory;
+        this.index = i;
         this.b = j;
         this.c = k;
     }
@@ -19,33 +19,33 @@ public class Slot {
         this.b();
     }
 
-    public boolean b(ItemStack itemstack) {
+    public boolean isAllowed(ItemStack itemstack) {
         return true;
     }
 
-    public ItemStack a() {
-        return this.e.c_(this.d);
+    public ItemStack getItem() {
+        return this.inventory.getItem(this.index);
     }
 
     public void c(ItemStack itemstack) {
-        this.e.a(this.d, itemstack);
+        this.inventory.setItem(this.index, itemstack);
         this.b();
     }
 
     public void b() {
-        this.e.i();
+        this.inventory.update();
     }
 
     public int c() {
-        return this.e.r_();
+        return this.inventory.getMaxStackSize();
     }
 
     public ItemStack a(int i) {
-        return this.e.a(this.d, i);
+        return this.inventory.a(this.index, i);
     }
 
     public boolean a(IInventory iinventory, int i) {
-        return iinventory == this.e && i == this.d;
+        return iinventory == this.inventory && i == this.index;
     }
 
     public boolean d() {

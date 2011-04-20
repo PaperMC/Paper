@@ -6,6 +6,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
 // Craftbukkit start
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -15,7 +16,7 @@ public abstract class Packet {
 
     private static Map a = new HashMap();
     private static Map b = new HashMap();
-    public final long j = System.currentTimeMillis();
+    public final long timestamp = System.currentTimeMillis();
     public boolean k = false;
     private static HashMap c;
     private static int d;

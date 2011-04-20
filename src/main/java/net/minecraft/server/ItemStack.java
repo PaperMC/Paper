@@ -48,12 +48,12 @@ public final class ItemStack {
         return new ItemStack(this.id, i, this.damage);
     }
 
-    public Item a() {
+    public Item getItem() {
         return Item.byId[this.id];
     }
 
-    public boolean a(EntityHuman entityhuman, World world, int i, int j, int k, int l) {
-        boolean flag = this.a().a(this, entityhuman, world, i, j, k, l);
+    public boolean placeItem(EntityHuman entityhuman, World world, int i, int j, int k, int l) {
+        boolean flag = this.getItem().a(this, entityhuman, world, i, j, k, l);
 
         if (flag) {
             entityhuman.a(StatisticList.A[this.id], 1);
@@ -63,11 +63,11 @@ public final class ItemStack {
     }
 
     public float a(Block block) {
-        return this.a().a(this, block);
+        return this.getItem().a(this, block);
     }
 
     public ItemStack a(World world, EntityHuman entityhuman) {
-        return this.a().a(this, world, entityhuman);
+        return this.getItem().a(this, world, entityhuman);
     }
 
     public NBTTagCompound a(NBTTagCompound nbttagcompound) {
@@ -84,7 +84,7 @@ public final class ItemStack {
     }
 
     public int b() {
-        return this.a().b();
+        return this.getItem().getMaxStackSize();
     }
 
     public boolean c() {
@@ -107,7 +107,7 @@ public final class ItemStack {
         return this.damage;
     }
 
-    public int h() {
+    public int getData() {
         return this.damage;
     }
 
@@ -115,7 +115,7 @@ public final class ItemStack {
         return Item.byId[this.id].d();
     }
 
-    public void a(int i, Entity entity) {
+    public void damage(int i, Entity entity) {
         if (this.d()) {
             this.damage += i;
             if (this.damage > this.i()) {
@@ -167,7 +167,7 @@ public final class ItemStack {
         return new ItemStack(this.id, this.count, this.damage);
     }
 
-    public static boolean a(ItemStack itemstack, ItemStack itemstack1) {
+    public static boolean equals(ItemStack itemstack, ItemStack itemstack1) {
         return itemstack == null && itemstack1 == null ? true : (itemstack != null && itemstack1 != null ? itemstack.c(itemstack1) : false);
     }
 

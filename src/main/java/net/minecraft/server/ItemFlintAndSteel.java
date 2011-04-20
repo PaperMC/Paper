@@ -63,15 +63,15 @@ public class ItemFlintAndSteel extends Item {
             boolean preventFire = eventIgnite.isCancelled();
 
             if (preventFire) {
-                itemstack.a(1, entityhuman);
+                itemstack.damage(1, entityhuman);
                 return false;
             }
             // CraftBukkit end
 
             BlockState blockState = CraftBlockState.getBlockState(world, i, j, k); // CraftBukkit
 
-            world.a((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "fire.ignite", 1.0F, b.nextFloat() * 0.4F + 0.8F);
-            world.e(i, j, k, Block.FIRE.id);
+            world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "fire.ignite", 1.0F, b.nextFloat() * 0.4F + 0.8F);
+            world.setTypeId(i, j, k, Block.FIRE.id);
 
             // CraftBukkit start
             BlockPlaceEvent placeEvent = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ, Block.FIRE.id);
@@ -83,7 +83,7 @@ public class ItemFlintAndSteel extends Item {
             // CraftBukkit end
         }
 
-        itemstack.a(1, entityhuman);
+        itemstack.damage(1, entityhuman);
         return true;
     }
 }

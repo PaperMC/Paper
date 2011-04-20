@@ -23,11 +23,11 @@ public class CraftNoteBlock extends CraftBlockState implements NoteBlock {
     }
 
     public byte getNote() {
-        return note.a;
+        return note.note;
     }
 
     public void setNote(byte n) {
-        note.a = n;
+        note.note = n;
     }
 
     public boolean play() {
@@ -35,7 +35,7 @@ public class CraftNoteBlock extends CraftBlockState implements NoteBlock {
 
         synchronized (block) {
             if (block.getType() == Material.NOTE_BLOCK) {
-                note.a(world.getHandle(), getX(), getY(), getZ());
+                note.play(world.getHandle(), getX(), getY(), getZ());
                 return true;
             } else {
                 return false;

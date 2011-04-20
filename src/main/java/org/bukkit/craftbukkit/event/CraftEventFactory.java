@@ -46,14 +46,14 @@ import org.bukkit.event.player.PlayerInteractEvent;
 public class CraftEventFactory {
     private static boolean canBuild(CraftWorld world, Player player, int x, int z) {
         WorldServer worldServer = world.getHandle();
-        int spawnSize = worldServer.x.spawnProtection;
+        int spawnSize = worldServer.server.spawnProtection;
 
         if (spawnSize <= 0) return true;
         if (player.isOp()) return true;
 
-        ChunkCoordinates chunkcoordinates = worldServer.m();
+        ChunkCoordinates chunkcoordinates = worldServer.getSpawn();
 
-        int distanceFromSpawn = (int) Math.max(Math.abs(x - chunkcoordinates.a), Math.abs(z - chunkcoordinates.c));
+        int distanceFromSpawn = (int) Math.max(Math.abs(x - chunkcoordinates.x), Math.abs(z - chunkcoordinates.z));
         return distanceFromSpawn > spawnSize;
     }
 

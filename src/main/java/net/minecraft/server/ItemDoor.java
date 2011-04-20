@@ -32,10 +32,10 @@ public class ItemDoor extends Item {
                 block = Block.IRON_DOOR_BLOCK;
             }
 
-            if (!block.a(world, i, j, k)) {
+            if (!block.canPlace(world, i, j, k)) {
                 return false;
             } else {
-                int i1 = MathHelper.b((double) ((entityhuman.yaw + 180.0F) * 4.0F / 360.0F) - 0.5D) & 3;
+                int i1 = MathHelper.floor((double) ((entityhuman.yaw + 180.0F) * 4.0F / 360.0F) - 0.5D) & 3;
                 byte b0 = 0;
                 byte b1 = 0;
 
@@ -74,8 +74,8 @@ public class ItemDoor extends Item {
 
                 BlockState blockState = CraftBlockState.getBlockState(world, i, j, k); // CraftBukkit
 
-                world.e(i, j, k, block.id);
-                world.c(i, j, k, i1);
+                world.setTypeId(i, j, k, block.id);
+                world.setData(i, j, k, i1);
 
                 // CraftBukkit start - bed
                 BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ, block);
@@ -86,8 +86,8 @@ public class ItemDoor extends Item {
                 }
                 // CraftBukkit end
 
-                world.e(i, j + 1, k, block.id);
-                world.c(i, j + 1, k, i1 + 8);
+                world.setTypeId(i, j + 1, k, block.id);
+                world.setData(i, j + 1, k, i1 + 8);
                 --itemstack.count;
                 return true;
             }

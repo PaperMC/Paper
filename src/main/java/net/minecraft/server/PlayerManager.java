@@ -8,7 +8,7 @@ public class PlayerManager {
     private List a = new ArrayList();
     private PlayerList b = new PlayerList();
     private List c = new ArrayList();
-    private MinecraftServer d;
+    private MinecraftServer server;
     private final int[][] e = new int[][] { { 1, 0}, { 0, 1}, { -1, 0}, { 0, -1}};
 
     // CraftBukkit start
@@ -16,12 +16,12 @@ public class PlayerManager {
 
     // CraftBukkit - change of method signature
     public PlayerManager(MinecraftServer minecraftserver, WorldServer world) {
-        this.d = minecraftserver;
         this.world = world;
+        // CraftBukkit end
+        this.server = minecraftserver;
     }
-    // CraftBukkit end
 
-    public void a() {
+    public void flush() {
         for (int i = 0; i < this.c.size(); ++i) {
             ((PlayerInstance) this.c.get(i)).a();
         }
@@ -41,7 +41,7 @@ public class PlayerManager {
         return playerinstance;
     }
 
-    public void a(int i, int j, int k) {
+    public void flagDirty(int i, int j, int k) {
         int l = i >> 4;
         int i1 = k >> 4;
         PlayerInstance playerinstance = this.a(l, i1, false);
@@ -51,7 +51,7 @@ public class PlayerManager {
         }
     }
 
-    public void a(EntityPlayer entityplayer) {
+    public void addPlayer(EntityPlayer entityplayer) {
         int i = (int) entityplayer.locX >> 4;
         int j = (int) entityplayer.locZ >> 4;
 
@@ -89,7 +89,7 @@ public class PlayerManager {
         this.a.add(entityplayer);
     }
 
-    public void b(EntityPlayer entityplayer) {
+    public void removePlayer(EntityPlayer entityplayer) {
         int i = (int) entityplayer.d >> 4;
         int j = (int) entityplayer.e >> 4;
 
@@ -113,7 +113,7 @@ public class PlayerManager {
         return i1 >= -10 && i1 <= 10 ? j1 >= -10 && j1 <= 10 : false;
     }
 
-    public void c(EntityPlayer entityplayer) {
+    public void movePlayer(EntityPlayer entityplayer) {
         int i = (int) entityplayer.locX >> 4;
         int j = (int) entityplayer.locZ >> 4;
         double d0 = entityplayer.d - entityplayer.locX;
@@ -128,8 +128,8 @@ public class PlayerManager {
 
             // Craftbukkit start
             if (i1 > 10 || i1 < -10 || j1 > 10 || j1 < -10) {
-                b(entityplayer);
-                a(entityplayer);
+                this.removePlayer(entityplayer);
+                this.addPlayer(entityplayer);
                 return;
             }
             // Craftbukkit end
@@ -162,7 +162,7 @@ public class PlayerManager {
     }
 
     static MinecraftServer a(PlayerManager playermanager) {
-        return playermanager.d;
+        return playermanager.server;
     }
 
     static PlayerList b(PlayerManager playermanager) {

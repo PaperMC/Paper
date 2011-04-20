@@ -53,17 +53,16 @@ public class BlockFire extends Block {
         int l = world.getData(i, j, k);
 
         if (l < 15) {
-            world.c(i, j, k, l + 1);
+            world.setData(i, j, k, l + 1);
             world.c(i, j, k, this.id, this.b());
         }
 
         if (!flag && !this.g(world, i, j, k)) {
             if (!world.d(i, j - 1, k) || l > 3) {
-                world.e(i, j, k, 0);
+                world.setTypeId(i, j, k, 0);
             }
-        // CraftBukkit - Cast to IBlockAccess
-        } else if (!flag && !this.b((IBlockAccess) world, i, j - 1, k) && l == 15 && random.nextInt(4) == 0) {
-            world.e(i, j, k, 0);
+        } else if (!flag && !this.b(world, i, j - 1, k) && l == 15 && random.nextInt(4) == 0) {
+            world.setTypeId(i, j, k, 0);
         } else {
             if (l % 2 == 0 && l > 2) {
                 this.a(world, i + 1, j, k, 300, random);
@@ -106,7 +105,7 @@ public class BlockFire extends Block {
                                     }
                                     // CraftBukkit end
 
-                                    world.e(i1, k1, j1, this.id);
+                                    world.setTypeId(i1, k1, j1, this.id);
                                 }
                             }
                         }
@@ -142,21 +141,18 @@ public class BlockFire extends Block {
             // CraftBukkit end
 
             if (random.nextInt(2) == 0) {
-                world.e(i, j, k, this.id);
+                world.setTypeId(i, j, k, this.id);
             } else {
-                world.e(i, j, k, 0);
+                world.setTypeId(i, j, k, 0);
             }
 
             if (flag) {
-                Block.TNT.b(world, i, j, k, 0);
+                Block.TNT.postBreak(world, i, j, k, 0);
             }
         }
     }
 
-    // CraftBukkit start -- fix cast to IBlockAccess
-    private boolean g(World world1, int i, int j, int k) {
-        IBlockAccess world = (IBlockAccess) world1;
-        // CraftBukkit end
+    private boolean g(World world, int i, int j, int k) {
         return this.b(world, i + 1, j, k) ? true : (this.b(world, i - 1, j, k) ? true : (this.b(world, i, j - 1, k) ? true : (this.b(world, i, j + 1, k) ? true : (this.b(world, i, j, k - 1) ? true : this.b(world, i, j, k + 1)))));
     }
 
@@ -191,20 +187,20 @@ public class BlockFire extends Block {
         return i1 > l ? i1 : l;
     }
 
-    public boolean a(World world, int i, int j, int k) {
+    public boolean canPlace(World world, int i, int j, int k) {
         return world.d(i, j - 1, k) || this.g(world, i, j, k);
     }
 
-    public void a(World world, int i, int j, int k, int l) {
+    public void doPhysics(World world, int i, int j, int k, int l) {
         if (!world.d(i, j - 1, k) && !this.g(world, i, j, k)) {
-            world.e(i, j, k, 0);
+            world.setTypeId(i, j, k, 0);
         }
     }
 
     public void e(World world, int i, int j, int k) {
         if (world.getTypeId(i, j - 1, k) != Block.OBSIDIAN.id || !Block.PORTAL.a_(world, i, j, k)) {
             if (!world.d(i, j - 1, k) && !this.g(world, i, j, k)) {
-                world.e(i, j, k, 0);
+                world.setTypeId(i, j, k, 0);
             } else {
                 world.c(i, j, k, this.id, this.b());
             }

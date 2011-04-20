@@ -21,17 +21,17 @@ public class BlockLever extends Block {
         return false;
     }
 
-    public boolean a(World world, int i, int j, int k) {
+    public boolean canPlace(World world, int i, int j, int k) {
         return world.d(i - 1, j, k) ? true : (world.d(i + 1, j, k) ? true : (world.d(i, j, k - 1) ? true : (world.d(i, j, k + 1) ? true : world.d(i, j - 1, k))));
     }
 
-    public void d(World world, int i, int j, int k, int l) {
+    public void postPlace(World world, int i, int j, int k, int l) {
         int i1 = world.getData(i, j, k);
         int j1 = i1 & 8;
 
         i1 &= 7;
         if (l == 1 && world.d(i, j - 1, k)) {
-            i1 = 5 + world.k.nextInt(2);
+            i1 = 5 + world.random.nextInt(2);
         }
 
         if (l == 2 && world.d(i, j, k + 1)) {
@@ -50,10 +50,10 @@ public class BlockLever extends Block {
             i1 = 1;
         }
 
-        world.c(i, j, k, i1 + j1);
+        world.setData(i, j, k, i1 + j1);
     }
 
-    public void a(World world, int i, int j, int k, int l) {
+    public void doPhysics(World world, int i, int j, int k, int l) {
         if (this.g(world, i, j, k)) {
             int i1 = world.getData(i, j, k) & 7;
             boolean flag = false;
@@ -80,15 +80,15 @@ public class BlockLever extends Block {
 
             if (flag) {
                 this.a_(world, i, j, k, world.getData(i, j, k));
-                world.e(i, j, k, 0);
+                world.setTypeId(i, j, k, 0);
             }
         }
     }
 
     private boolean g(World world, int i, int j, int k) {
-        if (!this.a(world, i, j, k)) {
+        if (!this.canPlace(world, i, j, k)) {
             this.a_(world, i, j, k, world.getData(i, j, k));
-            world.e(i, j, k, 0);
+            world.setTypeId(i, j, k, 0);
             return false;
         } else {
             return true;
@@ -114,10 +114,10 @@ public class BlockLever extends Block {
     }
 
     public void b(World world, int i, int j, int k, EntityHuman entityhuman) {
-        this.a(world, i, j, k, entityhuman);
+        this.interact(world, i, j, k, entityhuman);
     }
 
-    public boolean a(World world, int i, int j, int k, EntityHuman entityhuman) {
+    public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman) {
         if (world.isStatic) {
             return true;
         } else {
@@ -140,47 +140,47 @@ public class BlockLever extends Block {
             }
             // CraftBukkit end
 
-            world.c(i, j, k, i1 + j1);
+            world.setData(i, j, k, i1 + j1);
             world.b(i, j, k, i, j, k);
-            world.a((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.click", 0.3F, j1 > 0 ? 0.6F : 0.5F);
-            world.h(i, j, k, this.id);
+            world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.click", 0.3F, j1 > 0 ? 0.6F : 0.5F);
+            world.applyPhysics(i, j, k, this.id);
             if (i1 == 1) {
-                world.h(i - 1, j, k, this.id);
+                world.applyPhysics(i - 1, j, k, this.id);
             } else if (i1 == 2) {
-                world.h(i + 1, j, k, this.id);
+                world.applyPhysics(i + 1, j, k, this.id);
             } else if (i1 == 3) {
-                world.h(i, j, k - 1, this.id);
+                world.applyPhysics(i, j, k - 1, this.id);
             } else if (i1 == 4) {
-                world.h(i, j, k + 1, this.id);
+                world.applyPhysics(i, j, k + 1, this.id);
             } else {
-                world.h(i, j - 1, k, this.id);
+                world.applyPhysics(i, j - 1, k, this.id);
             }
 
             return true;
         }
     }
 
-    public void b(World world, int i, int j, int k) {
+    public void remove(World world, int i, int j, int k) {
         int l = world.getData(i, j, k);
 
         if ((l & 8) > 0) {
-            world.h(i, j, k, this.id);
+            world.applyPhysics(i, j, k, this.id);
             int i1 = l & 7;
 
             if (i1 == 1) {
-                world.h(i - 1, j, k, this.id);
+                world.applyPhysics(i - 1, j, k, this.id);
             } else if (i1 == 2) {
-                world.h(i + 1, j, k, this.id);
+                world.applyPhysics(i + 1, j, k, this.id);
             } else if (i1 == 3) {
-                world.h(i, j, k - 1, this.id);
+                world.applyPhysics(i, j, k - 1, this.id);
             } else if (i1 == 4) {
-                world.h(i, j, k + 1, this.id);
+                world.applyPhysics(i, j, k + 1, this.id);
             } else {
-                world.h(i, j - 1, k, this.id);
+                world.applyPhysics(i, j - 1, k, this.id);
             }
         }
 
-        super.b(world, i, j, k);
+        super.remove(world, i, j, k);
     }
 
     public boolean b(IBlockAccess iblockaccess, int i, int j, int k, int l) {
@@ -199,7 +199,7 @@ public class BlockLever extends Block {
         }
     }
 
-    public boolean c() {
+    public boolean isPowerSource() {
         return true;
     }
 }

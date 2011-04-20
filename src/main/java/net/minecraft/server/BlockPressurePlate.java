@@ -40,13 +40,13 @@ public class BlockPressurePlate extends Block {
         return false;
     }
 
-    public boolean a(World world, int i, int j, int k) {
+    public boolean canPlace(World world, int i, int j, int k) {
         return world.d(i, j - 1, k);
     }
 
     public void e(World world, int i, int j, int k) {}
 
-    public void a(World world, int i, int j, int k, int l) {
+    public void doPhysics(World world, int i, int j, int k, int l) {
         boolean flag = false;
 
         if (!world.d(i, j - 1, k)) {
@@ -55,7 +55,7 @@ public class BlockPressurePlate extends Block {
 
         if (flag) {
             this.a_(world, i, j, k, world.getData(i, j, k));
-            world.e(i, j, k, 0);
+            world.setTypeId(i, j, k, 0);
         }
     }
 
@@ -129,19 +129,19 @@ public class BlockPressurePlate extends Block {
         // CraftBukkit end
 
         if (flag1 && !flag) {
-            world.c(i, j, k, 1);
-            world.h(i, j, k, this.id);
-            world.h(i, j - 1, k, this.id);
+            world.setData(i, j, k, 1);
+            world.applyPhysics(i, j, k, this.id);
+            world.applyPhysics(i, j - 1, k, this.id);
             world.b(i, j, k, i, j, k);
-            world.a((double) i + 0.5D, (double) j + 0.1D, (double) k + 0.5D, "random.click", 0.3F, 0.6F);
+            world.makeSound((double) i + 0.5D, (double) j + 0.1D, (double) k + 0.5D, "random.click", 0.3F, 0.6F);
         }
 
         if (!flag1 && flag) {
-            world.c(i, j, k, 0);
-            world.h(i, j, k, this.id);
-            world.h(i, j - 1, k, this.id);
+            world.setData(i, j, k, 0);
+            world.applyPhysics(i, j, k, this.id);
+            world.applyPhysics(i, j - 1, k, this.id);
             world.b(i, j, k, i, j, k);
-            world.a((double) i + 0.5D, (double) j + 0.1D, (double) k + 0.5D, "random.click", 0.3F, 0.5F);
+            world.makeSound((double) i + 0.5D, (double) j + 0.1D, (double) k + 0.5D, "random.click", 0.3F, 0.5F);
         }
 
         if (flag1) {
@@ -149,15 +149,15 @@ public class BlockPressurePlate extends Block {
         }
     }
 
-    public void b(World world, int i, int j, int k) {
+    public void remove(World world, int i, int j, int k) {
         int l = world.getData(i, j, k);
 
         if (l > 0) {
-            world.h(i, j, k, this.id);
-            world.h(i, j - 1, k, this.id);
+            world.applyPhysics(i, j, k, this.id);
+            world.applyPhysics(i, j - 1, k, this.id);
         }
 
-        super.b(world, i, j, k);
+        super.remove(world, i, j, k);
     }
 
     public void a(IBlockAccess iblockaccess, int i, int j, int k) {
@@ -179,7 +179,7 @@ public class BlockPressurePlate extends Block {
         return world.getData(i, j, k) == 0 ? false : l == 1;
     }
 
-    public boolean c() {
+    public boolean isPowerSource() {
         return true;
     }
 }

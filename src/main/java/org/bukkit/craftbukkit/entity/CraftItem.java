@@ -15,11 +15,11 @@ public class CraftItem extends CraftEntity implements Item {
     }
 
     public ItemStack getItemStack() {
-        return new CraftItemStack(item.a);
+        return new CraftItemStack(item.itemStack);
     }
 
     public void setItemStack(ItemStack stack) {
-        item.a = new net.minecraft.server.ItemStack(stack.getTypeId(), stack.getAmount(), stack.getDurability());
+        item.itemStack = new net.minecraft.server.ItemStack(stack.getTypeId(), stack.getAmount(), stack.getDurability());
     }
 
     @Override

@@ -4,45 +4,50 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLEncoder;
+
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.player.PlayerPreLoginEvent;
+// CraftBukkit end
 
 class ThreadLoginVerifier extends Thread {
 
-    final Packet1Login a;
+    final Packet1Login loginPacket;
 
-    final NetLoginHandler b;
-    
+    final NetLoginHandler netLoginHandler;
+
     // CraftBukkit start
     CraftServer server;
 
     ThreadLoginVerifier(NetLoginHandler netloginhandler, Packet1Login packet1login, CraftServer server) {
         this.server = server;
         // CraftBukkit end
-        this.b = netloginhandler;
-        this.a = packet1login;
+        this.netLoginHandler = netloginhandler;
+        this.loginPacket = packet1login;
     }
 
     public void run() {
         try {
-            String s = NetLoginHandler.a(this.b);
-            URL url = new URL("http://www.minecraft.net/game/checkserver.jsp?user=" + URLEncoder.encode(this.a.b, "UTF-8") + "&serverId=" + URLEncoder.encode(s, "UTF-8"));
+            String s = NetLoginHandler.a(this.netLoginHandler);
+            URL url = new URL("http://www.minecraft.net/game/checkserver.jsp?user=" + URLEncoder.encode(this.loginPacket.name, "UTF-8") + "&serverId=" + URLEncoder.encode(s, "UTF-8"));
             BufferedReader bufferedreader = new BufferedReader(new InputStreamReader(url.openStream()));
             String s1 = bufferedreader.readLine();
 
             bufferedreader.close();
             if (s1.equals("YES")) {
-                PlayerPreLoginEvent event = new PlayerPreLoginEvent(this.a.b, b.getSocket().getInetAddress());
+                // CraftBukkit start
+                PlayerPreLoginEvent event = new PlayerPreLoginEvent(this.loginPacket.name, this.netLoginHandler.getSocket().getInetAddress());
                 server.getPluginManager().callEvent(event);
-                
+
                 if (event.getResult() != PlayerPreLoginEvent.Result.ALLOWED) {
-                    this.b.a(event.getKickMessage());
+                    this.netLoginHandler.disconnect(event.getKickMessage());
                     return;
                 }
-                
-                NetLoginHandler.a(this.b, this.a);
+                // CraftBukkit end
+
+                NetLoginHandler.a(this.netLoginHandler, this.loginPacket);
             } else {
-                this.b.a("Failed to verify username!");
+                this.netLoginHandler.disconnect("Failed to verify username!");
             }
         } catch (Exception exception) {
             exception.printStackTrace();

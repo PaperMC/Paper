@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
-// CraftBukkit end
+// CraftBukkit stop
 
 public class EntitySpider extends EntityMonster {
 
@@ -24,7 +24,7 @@ public class EntitySpider extends EntityMonster {
         return false;
     }
 
-    protected Entity m() {
+    protected Entity findTarget() {
         float f = this.c(1.0F);
 
         if (f < 0.5F) {
@@ -59,9 +59,9 @@ public class EntitySpider extends EntityMonster {
 
             if (!event.isCancelled()) {
                 if (event.getTarget() == null) {
-                    this.d = null;
+                    this.target = null;
                 } else {
-                    this.d = ((CraftEntity) event.getTarget()).getHandle();
+                    this.target = ((CraftEntity) event.getTarget()).getHandle();
                 }
                 return;
             }
@@ -96,6 +96,6 @@ public class EntitySpider extends EntityMonster {
     }
 
     public boolean n() {
-        return this.aW;
+        return this.positionChanged;
     }
 }

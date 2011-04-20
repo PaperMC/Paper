@@ -8,9 +8,9 @@ public class InventoryLargeChest implements IInventory {
 
     // CraftBukkit start
     public ItemStack[] getContents() {
-        ItemStack[] result = new ItemStack[q_()];
+        ItemStack[] result = new ItemStack[getSize()];
         for (int i = 0; i < result.length; i++) {
-            result[i] = c_(i);
+            result[i] = getItem(i);
         }
         return result;
     }
@@ -22,37 +22,37 @@ public class InventoryLargeChest implements IInventory {
         this.c = iinventory1;
     }
 
-    public int q_() {
-        return this.b.q_() + this.c.q_();
+    public int getSize() {
+        return this.b.getSize() + this.c.getSize();
     }
 
-    public String c() {
+    public String getName() {
         return this.a;
     }
 
-    public ItemStack c_(int i) {
-        return i >= this.b.q_() ? this.c.c_(i - this.b.q_()) : this.b.c_(i);
+    public ItemStack getItem(int i) {
+        return i >= this.b.getSize() ? this.c.getItem(i - this.b.getSize()) : this.b.getItem(i);
     }
 
     public ItemStack a(int i, int j) {
-        return i >= this.b.q_() ? this.c.a(i - this.b.q_(), j) : this.b.a(i, j);
+        return i >= this.b.getSize() ? this.c.a(i - this.b.getSize(), j) : this.b.a(i, j);
     }
 
-    public void a(int i, ItemStack itemstack) {
-        if (i >= this.b.q_()) {
-            this.c.a(i - this.b.q_(), itemstack);
+    public void setItem(int i, ItemStack itemstack) {
+        if (i >= this.b.getSize()) {
+            this.c.setItem(i - this.b.getSize(), itemstack);
         } else {
-            this.b.a(i, itemstack);
+            this.b.setItem(i, itemstack);
         }
     }
 
-    public int r_() {
-        return this.b.r_();
+    public int getMaxStackSize() {
+        return this.b.getMaxStackSize();
     }
 
-    public void i() {
-        this.b.i();
-        this.c.i();
+    public void update() {
+        this.b.update();
+        this.c.update();
     }
 
     public boolean a_(EntityHuman entityhuman) {

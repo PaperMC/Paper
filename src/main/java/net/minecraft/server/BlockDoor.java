@@ -51,7 +51,7 @@ public class BlockDoor extends Block {
     }
 
     public AxisAlignedBB d(World world, int i, int j, int k) {
-        this.a((IBlockAccess) world, i, j, k);
+        this.a(world, i, j, k);
         return super.d(world, i, j, k);
     }
 
@@ -81,10 +81,10 @@ public class BlockDoor extends Block {
     }
 
     public void b(World world, int i, int j, int k, EntityHuman entityhuman) {
-        this.a(world, i, j, k, entityhuman);
+        this.interact(world, i, j, k, entityhuman);
     }
 
-    public boolean a(World world, int i, int j, int k, EntityHuman entityhuman) {
+    public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman) {
         if (this.material == Material.ORE) {
             return true;
         } else {
@@ -92,21 +92,21 @@ public class BlockDoor extends Block {
 
             if ((l & 8) != 0) {
                 if (world.getTypeId(i, j - 1, k) == this.id) {
-                    this.a(world, i, j - 1, k, entityhuman);
+                    this.interact(world, i, j - 1, k, entityhuman);
                 }
 
                 return true;
             } else {
                 if (world.getTypeId(i, j + 1, k) == this.id) {
-                    world.c(i, j + 1, k, (l ^ 4) + 8);
+                    world.setData(i, j + 1, k, (l ^ 4) + 8);
                 }
 
-                world.c(i, j, k, l ^ 4);
+                world.setData(i, j, k, l ^ 4);
                 world.b(i, j - 1, k, i, j, k);
                 if (Math.random() < 0.5D) {
-                    world.a((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.door_open", 1.0F, world.k.nextFloat() * 0.1F + 0.9F);
+                    world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.door_open", 1.0F, world.random.nextFloat() * 0.1F + 0.9F);
                 } else {
-                    world.a((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.door_close", 1.0F, world.k.nextFloat() * 0.1F + 0.9F);
+                    world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.door_close", 1.0F, world.random.nextFloat() * 0.1F + 0.9F);
                 }
 
                 return true;
@@ -114,56 +114,56 @@ public class BlockDoor extends Block {
         }
     }
 
-    public void a(World world, int i, int j, int k, boolean flag) {
+    public void setDoor(World world, int i, int j, int k, boolean flag) {
         int l = world.getData(i, j, k);
 
         if ((l & 8) != 0) {
             if (world.getTypeId(i, j - 1, k) == this.id) {
-                this.a(world, i, j - 1, k, flag);
+                this.setDoor(world, i, j - 1, k, flag);
             }
         } else {
             boolean flag1 = (world.getData(i, j, k) & 4) > 0;
 
             if (flag1 != flag) {
                 if (world.getTypeId(i, j + 1, k) == this.id) {
-                    world.c(i, j + 1, k, (l ^ 4) + 8);
+                    world.setData(i, j + 1, k, (l ^ 4) + 8);
                 }
 
-                world.c(i, j, k, l ^ 4);
+                world.setData(i, j, k, l ^ 4);
                 world.b(i, j - 1, k, i, j, k);
                 if (Math.random() < 0.5D) {
-                    world.a((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.door_open", 1.0F, world.k.nextFloat() * 0.1F + 0.9F);
+                    world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.door_open", 1.0F, world.random.nextFloat() * 0.1F + 0.9F);
                 } else {
-                    world.a((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.door_close", 1.0F, world.k.nextFloat() * 0.1F + 0.9F);
+                    world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.door_close", 1.0F, world.random.nextFloat() * 0.1F + 0.9F);
                 }
             }
         }
     }
 
-    public void a(World world, int i, int j, int k, int l) {
+    public void doPhysics(World world, int i, int j, int k, int l) {
         int i1 = world.getData(i, j, k);
 
         if ((i1 & 8) != 0) {
             if (world.getTypeId(i, j - 1, k) != this.id) {
-                world.e(i, j, k, 0);
+                world.setTypeId(i, j, k, 0);
             }
 
-            if (l > 0 && Block.byId[l].c()) {
-                this.a(world, i, j - 1, k, l);
+            if (l > 0 && Block.byId[l].isPowerSource()) {
+                this.doPhysics(world, i, j - 1, k, l);
             }
         } else {
             boolean flag = false;
 
             if (world.getTypeId(i, j + 1, k) != this.id) {
-                world.e(i, j, k, 0);
+                world.setTypeId(i, j, k, 0);
                 flag = true;
             }
 
             if (!world.d(i, j - 1, k)) {
-                world.e(i, j, k, 0);
+                world.setTypeId(i, j, k, 0);
                 flag = true;
                 if (world.getTypeId(i, j + 1, k) == this.id) {
-                    world.e(i, j + 1, k, 0);
+                    world.setTypeId(i, j + 1, k, 0);
                 }
             }
 
@@ -171,8 +171,8 @@ public class BlockDoor extends Block {
                 if (!world.isStatic) {
                     this.a_(world, i, j, k, i1);
                 }
-            } else if (l > 0 && Block.byId[l].c()) {
-                boolean flag1 = world.p(i, j, k) || world.p(i, j + 1, k);
+            } else if (l > 0 && Block.byId[l].isPowerSource()) {
+                boolean flag1 = world.isBlockIndirectlyPowered(i, j, k) || world.isBlockIndirectlyPowered(i, j + 1, k);
 
                 // Craftbukkit start
                 CraftWorld craftWorld = ((WorldServer) world).getWorld();
@@ -185,8 +185,11 @@ public class BlockDoor extends Block {
 
                 BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, (world.getData(i, j, k) & 4) > 0 ? 15: 0, power);
                 server.getPluginManager().callEvent(eventRedstone);
-                this.a(world, i, j, k, eventRedstone.getNewCurrent() > 0);
+
+                flag1 = eventRedstone.getNewCurrent() > 0;
                 // Craftbukkit end
+
+                this.setDoor(world, i, j, k, flag1);
             }
         }
     }
@@ -196,7 +199,7 @@ public class BlockDoor extends Block {
     }
 
     public MovingObjectPosition a(World world, int i, int j, int k, Vec3D vec3d, Vec3D vec3d1) {
-        this.a((IBlockAccess) world, i, j, k);
+        this.a(world, i, j, k);
         return super.a(world, i, j, k, vec3d, vec3d1);
     }
 
@@ -204,7 +207,7 @@ public class BlockDoor extends Block {
         return (i & 4) == 0 ? i - 1 & 3 : i & 3;
     }
 
-    public boolean a(World world, int i, int j, int k) {
-        return j >= 127 ? false : world.d(i, j - 1, k) && super.a(world, i, j, k) && super.a(world, i, j + 1, k);
+    public boolean canPlace(World world, int i, int j, int k) {
+        return j >= 127 ? false : world.d(i, j - 1, k) && super.canPlace(world, i, j, k) && super.canPlace(world, i, j + 1, k);
     }
 }

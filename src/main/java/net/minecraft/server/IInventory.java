@@ -2,19 +2,19 @@ package net.minecraft.server;
 
 public interface IInventory {
 
-    int q_();
+    int getSize();
 
-    ItemStack c_(int i);
+    ItemStack getItem(int i);
 
     ItemStack a(int i, int j);
 
-    void a(int i, ItemStack itemstack);
+    void setItem(int i, ItemStack itemstack);
 
-    String c();
+    String getName();
 
-    int r_();
+    int getMaxStackSize();
 
-    void i();
+    void update();
 
     boolean a_(EntityHuman entityhuman);
 

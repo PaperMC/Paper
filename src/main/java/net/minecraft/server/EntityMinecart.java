@@ -12,16 +12,16 @@ import org.bukkit.event.vehicle.*;
 
 public class EntityMinecart extends Entity implements IInventory {
 
-    private ItemStack[] h;
-    public int a;
+    private ItemStack[] items;
+    public int damage;
     public int b;
     public int c;
     private boolean i;
-    public int d;
+    public int type;
     public int e;
     public double f;
     public double g;
-    private static final int[][][] j = new int[][][] { { { 0, 0, -1}, { 0, 0, 1}}, { { -1, 0, 0}, { 1, 0, 0}}, { { -1, -1, 0}, { 1, 0, 0}}, { { -1, 0, 0}, { 1, -1, 0}}, { { 0, 0, -1}, { 0, -1, 1}}, { { 0, -1, -1}, { 0, 0, 1}}, { { 0, 0, 1}, { 1, 0, 0}}, { { 0, 0, 1}, { -1, 0, 0}}, { { 0, 0, -1}, { -1, 0, 0}}, { { 0, 0, -1}, { 1, 0, 0}}};
+    private static final int[][][] matrix = new int[][][] { { { 0, 0, -1}, { 0, 0, 1}}, { { -1, 0, 0}, { 1, 0, 0}}, { { -1, -1, 0}, { 1, 0, 0}}, { { -1, 0, 0}, { 1, -1, 0}}, { { 0, 0, -1}, { 0, -1, 1}}, { { 0, -1, -1}, { 0, 0, 1}}, { { 0, 0, 1}, { 1, 0, 0}}, { { 0, 0, 1}, { -1, 0, 0}}, { { 0, 0, -1}, { -1, 0, 0}}, { { 0, 0, -1}, { 1, 0, 0}}};
     private int k;
     private double l;
     private double m;
@@ -40,14 +40,14 @@ public class EntityMinecart extends Entity implements IInventory {
     public double maxSpeed = 0.4D;
 
     public ItemStack[] getContents() {
-        return this.h;
+        return this.items;
     }
     // CraftBukkit end
 
     public EntityMinecart(World world) {
         super(world);
-        this.h = new ItemStack[27]; // CraftBukkit
-        this.a = 0;
+        this.items = new ItemStack[27]; // CraftBukkit
+        this.damage = 0;
         this.b = 0;
         this.c = 1;
         this.i = false;
@@ -76,14 +76,14 @@ public class EntityMinecart extends Entity implements IInventory {
 
     public EntityMinecart(World world, double d0, double d1, double d2, int i) {
         this(world);
-        this.a(d0, d1 + (double) this.height, d2);
+        this.setPosition(d0, d1 + (double) this.height, d2);
         this.motX = 0.0D;
         this.motY = 0.0D;
         this.motZ = 0.0D;
         this.lastX = d0;
         this.lastY = d1;
         this.lastZ = d2;
-        this.d = i;
+        this.type = i;
 
         // CraftBukkit start
         CraftServer server = ((WorldServer) this.world).getServer();
@@ -98,7 +98,7 @@ public class EntityMinecart extends Entity implements IInventory {
         return (double) this.width * 0.0D - 0.30000001192092896D;
     }
 
-    public boolean a(Entity entity, int i) {
+    public boolean damageEntity(Entity entity, int i) {
         if (!this.world.isStatic && !this.dead) {
             // CraftBukkit start
             Vehicle vehicle = (Vehicle) this.getBukkitEntity();
@@ -118,27 +118,27 @@ public class EntityMinecart extends Entity implements IInventory {
             this.c = -this.c;
             this.b = 10;
             this.W();
-            this.a += i * 10;
-            if (this.a > 40) {
+            this.damage += i * 10;
+            if (this.damage > 40) {
 
                 // CraftBukkit start
                 VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, passenger);
                 ((WorldServer) this.world).getServer().getPluginManager().callEvent(destroyEvent);
 
                 if (destroyEvent.isCancelled()) {
-                    this.a = 40; // Maximize damage so this doesn't get triggered again right away
+                    this.damage = 40; // Maximize damage so this doesn't get triggered again right away
                     return true;
                 }
                 // CraftBukkit end
 
                 this.a(Item.MINECART.id, 1, 0.0F);
-                if (this.d == 1) {
+                if (this.type == 1) {
                     this.a(Block.CHEST.id, 1, 0.0F);
-                } else if (this.d == 2) {
+                } else if (this.type == 2) {
                     this.a(Block.FURNACE.id, 1, 0.0F);
                 }
 
-                this.D();
+                this.die();
             }
 
             return true;
@@ -151,9 +151,9 @@ public class EntityMinecart extends Entity implements IInventory {
         return !this.dead;
     }
 
-    public void D() {
-        for (int i = 0; i < this.q_(); ++i) {
-            ItemStack itemstack = this.c_(i);
+    public void die() {
+        for (int i = 0; i < this.getSize(); ++i) {
+            ItemStack itemstack = this.getItem(i);
 
             if (itemstack != null) {
                 float f = this.random.nextFloat() * 0.8F + 0.1F;
@@ -168,18 +168,18 @@ public class EntityMinecart extends Entity implements IInventory {
                     }
 
                     itemstack.count -= j;
-                    EntityItem entityitem = new EntityItem(this.world, this.locX + (double) f, this.locY + (double) f1, this.locZ + (double) f2, new ItemStack(itemstack.id, j, itemstack.h()));
+                    EntityItem entityitem = new EntityItem(this.world, this.locX + (double) f, this.locY + (double) f1, this.locZ + (double) f2, new ItemStack(itemstack.id, j, itemstack.getData()));
                     float f3 = 0.05F;
 
                     entityitem.motX = (double) ((float) this.random.nextGaussian() * f3);
                     entityitem.motY = (double) ((float) this.random.nextGaussian() * f3 + 0.2F);
                     entityitem.motZ = (double) ((float) this.random.nextGaussian() * f3);
-                    this.world.a((Entity) entityitem);
+                    this.world.addEntity(entityitem);
                 }
             }
         }
 
-        super.D();
+        super.die();
     }
 
     public void f_() {
@@ -195,8 +195,8 @@ public class EntityMinecart extends Entity implements IInventory {
             --this.b;
         }
 
-        if (this.a > 0) {
-            --this.a;
+        if (this.damage > 0) {
+            --this.damage;
         }
 
         double d0;
@@ -218,10 +218,10 @@ public class EntityMinecart extends Entity implements IInventory {
                 this.yaw = (float) ((double) this.yaw + d0 / (double) this.k);
                 this.pitch = (float) ((double) this.pitch + (this.p - (double) this.pitch) / (double) this.k);
                 --this.k;
-                this.a(d1, d2, d3);
+                this.setPosition(d1, d2, d3);
                 this.c(this.yaw, this.pitch);
             } else {
-                this.a(this.locX, this.locY, this.locZ);
+                this.setPosition(this.locX, this.locY, this.locZ);
                 this.c(this.yaw, this.pitch);
             }
         } else {
@@ -229,9 +229,9 @@ public class EntityMinecart extends Entity implements IInventory {
             this.lastY = this.locY;
             this.lastZ = this.locZ;
             this.motY -= 0.03999999910593033D;
-            int i = MathHelper.b(this.locX);
-            int j = MathHelper.b(this.locY);
-            int k = MathHelper.b(this.locZ);
+            int i = MathHelper.floor(this.locX);
+            int j = MathHelper.floor(this.locY);
+            int k = MathHelper.floor(this.locZ);
 
             if (this.world.getTypeId(i, j - 1, k) == Block.RAILS.id) {
                 --j;
@@ -267,8 +267,7 @@ public class EntityMinecart extends Entity implements IInventory {
                     this.motZ -= d0;
                 }
 
-                // CraftBukkit -- be explicit.
-                int[][] aint = EntityMinecart.j[l];
+                int[][] aint = matrix[l];
                 double d5 = (double) (aint[1][0] - aint[0][0]);
                 double d6 = (double) (aint[1][2] - aint[0][2]);
                 double d7 = Math.sqrt(d5 * d5 + d6 * d6);
@@ -310,7 +309,7 @@ public class EntityMinecart extends Entity implements IInventory {
 
                 this.locX = d11 + d5 * d10;
                 this.locZ = d12 + d6 * d10;
-                this.a(this.locX, this.locY + (double) this.height, this.locZ);
+                this.setPosition(this.locX, this.locY + (double) this.height, this.locZ);
                 d15 = this.motX;
                 d17 = this.motZ;
                 if (this.passenger != null) {
@@ -334,11 +333,11 @@ public class EntityMinecart extends Entity implements IInventory {
                     d17 = d4;
                 }
 
-                this.c(d15, 0.0D, d17);
-                if (aint[0][1] != 0 && MathHelper.b(this.locX) - i == aint[0][0] && MathHelper.b(this.locZ) - k == aint[0][2]) {
-                    this.a(this.locX, this.locY + (double) aint[0][1], this.locZ);
-                } else if (aint[1][1] != 0 && MathHelper.b(this.locX) - i == aint[1][0] && MathHelper.b(this.locZ) - k == aint[1][2]) {
-                    this.a(this.locX, this.locY + (double) aint[1][1], this.locZ);
+                this.move(d15, 0.0D, d17);
+                if (aint[0][1] != 0 && MathHelper.floor(this.locX) - i == aint[0][0] && MathHelper.floor(this.locZ) - k == aint[0][2]) {
+                    this.setPosition(this.locX, this.locY + (double) aint[0][1], this.locZ);
+                } else if (aint[1][1] != 0 && MathHelper.floor(this.locX) - i == aint[1][0] && MathHelper.floor(this.locZ) - k == aint[1][2]) {
+                    this.setPosition(this.locX, this.locY + (double) aint[1][1], this.locZ);
                 }
 
                 // CraftBukkit
@@ -347,7 +346,7 @@ public class EntityMinecart extends Entity implements IInventory {
                     this.motY *= 0.0D;
                     this.motZ *= 0.996999979019165D;
                 } else {
-                    if (this.d == 2) {
+                    if (this.type == 2) {
                         d16 = (double) MathHelper.a(this.f * this.f + this.g * this.g);
                         if (d16 > 0.01D) {
                             flag = true;
@@ -383,11 +382,11 @@ public class EntityMinecart extends Entity implements IInventory {
                         this.motZ = this.motZ / d9 * (d9 + d19);
                     }
 
-                    this.a(this.locX, vec3d1.b, this.locZ);
+                    this.setPosition(this.locX, vec3d1.b, this.locZ);
                 }
 
-                int i1 = MathHelper.b(this.locX);
-                int j1 = MathHelper.b(this.locZ);
+                int i1 = MathHelper.floor(this.locX);
+                int j1 = MathHelper.floor(this.locZ);
 
                 if (i1 != i || j1 != k) {
                     d9 = Math.sqrt(this.motX * this.motX + this.motZ * this.motZ);
@@ -395,7 +394,7 @@ public class EntityMinecart extends Entity implements IInventory {
                     this.motZ = d9 * (double) (j1 - k);
                 }
 
-                if (this.d == 2) {
+                if (this.type == 2) {
                     double d20 = (double) MathHelper.a(this.f * this.f + this.g * this.g);
 
                     if (d20 > 0.01D && this.motX * this.motX + this.motZ * this.motZ > 0.0010D) {
@@ -435,7 +434,7 @@ public class EntityMinecart extends Entity implements IInventory {
                     // CraftBukkit start
                 }
 
-                this.c(this.motX, this.motY, this.motZ);
+                this.move(this.motX, this.motY, this.motZ);
                 if (!this.onGround) {
                     // CraftBukkit start
                     this.motX *= flyingX;
@@ -495,7 +494,7 @@ public class EntityMinecart extends Entity implements IInventory {
                     Entity entity = (Entity) list.get(k1);
 
                     if (entity != this.passenger && entity.e_() && entity instanceof EntityMinecart) {
-                        entity.h(this);
+                        entity.collide(this);
                     }
                 }
             }
@@ -516,9 +515,9 @@ public class EntityMinecart extends Entity implements IInventory {
     }
 
     public Vec3D g(double d0, double d1, double d2) {
-        int i = MathHelper.b(d0);
-        int j = MathHelper.b(d1);
-        int k = MathHelper.b(d2);
+        int i = MathHelper.floor(d0);
+        int j = MathHelper.floor(d1);
+        int k = MathHelper.floor(d2);
 
         if (this.world.getTypeId(i, j - 1, k) == Block.RAILS.id) {
             --j;
@@ -532,7 +531,7 @@ public class EntityMinecart extends Entity implements IInventory {
                 d1 = (double) (j + 1);
             }
 
-            int[][] aint = EntityMinecart.j[l]; // CraftBukkit -- be explicit
+            int[][] aint = matrix[l];
             double d3 = 0.0D;
             double d4 = (double) i + 0.5D + (double) aint[0][0] * 0.5D;
             double d5 = (double) j + 0.5D + (double) aint[0][1] * 0.5D;
@@ -569,27 +568,27 @@ public class EntityMinecart extends Entity implements IInventory {
                 d1 += 0.5D;
             }
 
-            return Vec3D.b(d0, d1, d2);
+            return Vec3D.create(d0, d1, d2);
         } else {
             return null;
         }
     }
 
     protected void a(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("Type", this.d);
-        if (this.d == 2) {
+        nbttagcompound.a("Type", this.type);
+        if (this.type == 2) {
             nbttagcompound.a("PushX", this.f);
             nbttagcompound.a("PushZ", this.g);
             nbttagcompound.a("Fuel", (short) this.e);
-        } else if (this.d == 1) {
+        } else if (this.type == 1) {
             NBTTagList nbttaglist = new NBTTagList();
 
-            for (int i = 0; i < this.h.length; ++i) {
-                if (this.h[i] != null) {
+            for (int i = 0; i < this.items.length; ++i) {
+                if (this.items[i] != null) {
                     NBTTagCompound nbttagcompound1 = new NBTTagCompound();
 
                     nbttagcompound1.a("Slot", (byte) i);
-                    this.h[i].a(nbttagcompound1);
+                    this.items[i].a(nbttagcompound1);
                     nbttaglist.a((NBTBase) nbttagcompound1);
                 }
             }
@@ -599,28 +598,28 @@ public class EntityMinecart extends Entity implements IInventory {
     }
 
     protected void b(NBTTagCompound nbttagcompound) {
-        this.d = nbttagcompound.e("Type");
-        if (this.d == 2) {
+        this.type = nbttagcompound.e("Type");
+        if (this.type == 2) {
             this.f = nbttagcompound.h("PushX");
             this.g = nbttagcompound.h("PushZ");
             this.e = nbttagcompound.d("Fuel");
-        } else if (this.d == 1) {
+        } else if (this.type == 1) {
             NBTTagList nbttaglist = nbttagcompound.l("Items");
 
-            this.h = new ItemStack[this.q_()];
+            this.items = new ItemStack[this.getSize()];
 
             for (int i = 0; i < nbttaglist.c(); ++i) {
                 NBTTagCompound nbttagcompound1 = (NBTTagCompound) nbttaglist.a(i);
                 int j = nbttagcompound1.c("Slot") & 255;
 
-                if (j >= 0 && j < this.h.length) {
-                    this.h[j] = new ItemStack(nbttagcompound1);
+                if (j >= 0 && j < this.items.length) {
+                    this.items[j] = new ItemStack(nbttagcompound1);
                 }
             }
         }
     }
 
-    public void h(Entity entity) {
+    public void collide(Entity entity) {
         if (!this.world.isStatic) {
             if (entity != this.passenger) {
                 // CraftBukkit start
@@ -635,14 +634,14 @@ public class EntityMinecart extends Entity implements IInventory {
                     return;
                 }
 
-                if (entity instanceof EntityLiving && !(entity instanceof EntityHuman) && this.d == 0 && this.motX * this.motX + this.motZ * this.motZ > 0.01D && this.passenger == null && entity.vehicle == null) {
+                if (entity instanceof EntityLiving && !(entity instanceof EntityHuman) && this.type == 0 && this.motX * this.motX + this.motZ * this.motZ > 0.01D && this.passenger == null && entity.vehicle == null) {
                     if (!collsionEvent.isPickupCancelled()) {
 
                         VehicleEnterEvent enterEvent = new VehicleEnterEvent(vehicle, hitEntity);
                         server.getPluginManager().callEvent(enterEvent);
 
                         if (!enterEvent.isCancelled()) {
-                            entity.b((Entity) this);
+                            entity.mount(this);
                         }
                     }
                 }
@@ -675,13 +674,13 @@ public class EntityMinecart extends Entity implements IInventory {
                         double d4 = entity.motX + this.motX;
                         double d5 = entity.motZ + this.motZ;
 
-                        if (((EntityMinecart) entity).d == 2 && this.d != 2) {
+                        if (((EntityMinecart) entity).type == 2 && this.type != 2) {
                             this.motX *= 0.20000000298023224D;
                             this.motZ *= 0.20000000298023224D;
                             this.f(entity.motX - d0, 0.0D, entity.motZ - d1);
                             entity.motX *= 0.699999988079071D;
                             entity.motZ *= 0.699999988079071D;
-                        } else if (((EntityMinecart) entity).d != 2 && this.d == 2) {
+                        } else if (((EntityMinecart) entity).type != 2 && this.type == 2) {
                             entity.motX *= 0.20000000298023224D;
                             entity.motZ *= 0.20000000298023224D;
                             entity.f(this.motX + d0, 0.0D, this.motZ + d1);
@@ -706,26 +705,26 @@ public class EntityMinecart extends Entity implements IInventory {
         }
     }
 
-    public int q_() {
+    public int getSize() {
         return 27;
     }
 
-    public ItemStack c_(int i) {
-        return this.h[i];
+    public ItemStack getItem(int i) {
+        return this.items[i];
     }
 
     public ItemStack a(int i, int j) {
-        if (this.h[i] != null) {
+        if (this.items[i] != null) {
             ItemStack itemstack;
 
-            if (this.h[i].count <= j) {
-                itemstack = this.h[i];
-                this.h[i] = null;
+            if (this.items[i].count <= j) {
+                itemstack = this.items[i];
+                this.items[i] = null;
                 return itemstack;
             } else {
-                itemstack = this.h[i].a(j);
-                if (this.h[i].count == 0) {
-                    this.h[i] = null;
+                itemstack = this.items[i].a(j);
+                if (this.items[i].count == 0) {
+                    this.items[i] = null;
                 }
 
                 return itemstack;
@@ -735,25 +734,25 @@ public class EntityMinecart extends Entity implements IInventory {
         }
     }
 
-    public void a(int i, ItemStack itemstack) {
-        this.h[i] = itemstack;
-        if (itemstack != null && itemstack.count > this.r_()) {
-            itemstack.count = this.r_();
+    public void setItem(int i, ItemStack itemstack) {
+        this.items[i] = itemstack;
+        if (itemstack != null && itemstack.count > this.getMaxStackSize()) {
+            itemstack.count = this.getMaxStackSize();
         }
     }
 
-    public String c() {
+    public String getName() {
         return "Minecart";
     }
 
-    public int r_() {
+    public int getMaxStackSize() {
         return 64;
     }
 
-    public void i() {}
+    public void update() {}
 
     public boolean a(EntityHuman entityhuman) {
-        if (this.d == 0) {
+        if (this.type == 0) {
             if (this.passenger != null && this.passenger instanceof EntityHuman && this.passenger != entityhuman) {
                 return true;
             }
@@ -772,18 +771,18 @@ public class EntityMinecart extends Entity implements IInventory {
                 }
                 // CraftBukkit end
 
-                entityhuman.b((Entity) this);
+                entityhuman.mount(this);
             }
-        } else if (this.d == 1) {
+        } else if (this.type == 1) {
             if (!this.world.isStatic) {
                 entityhuman.a((IInventory) this);
             }
-        } else if (this.d == 2) {
-            ItemStack itemstack = entityhuman.inventory.b();
+        } else if (this.type == 2) {
+            ItemStack itemstack = entityhuman.inventory.getItemInHand();
 
             if (itemstack != null && itemstack.id == Item.COAL.id) {
                 if (--itemstack.count == 0) {
-                    entityhuman.inventory.a(entityhuman.inventory.c, (ItemStack) null);
+                    entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, (ItemStack) null);
                 }
 
                 this.e += 1200;

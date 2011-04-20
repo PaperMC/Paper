@@ -6,11 +6,11 @@ import java.util.List;
 class PlayerInstance {
 
     private List b;
-    private int c;
-    private int d;
+    private int chunkX;
+    private int chunkZ;
     private ChunkCoordIntPair e;
-    private short[] f;
-    private int g;
+    private short[] dirtyBlocks;
+    private int dirtyCount;
     private int h;
     private int i;
     private int j;
@@ -18,27 +18,27 @@ class PlayerInstance {
     private int l;
     private int m;
 
-    final PlayerManager a;
+    final PlayerManager playerManager;
 
     public PlayerInstance(PlayerManager playermanager, int i, int j) {
-        this.a = playermanager;
+        this.playerManager = playermanager;
         this.b = new ArrayList();
-        this.f = new short[10];
-        this.g = 0;
-        this.c = i;
-        this.d = j;
+        this.dirtyBlocks = new short[10];
+        this.dirtyCount = 0;
+        this.chunkX = i;
+        this.chunkZ = j;
         this.e = new ChunkCoordIntPair(i, j);
 
         // CraftBukkit
-        playermanager.world.u.c(i, j);
+        playermanager.world.chunkProviderServer.getChunkAt(i, j);
     }
 
     public void a(EntityPlayer entityplayer) {
         if (this.b.contains(entityplayer)) {
-            throw new IllegalStateException("Failed to add player. " + entityplayer + " already is in chunk " + this.c + ", " + this.d);
+            throw new IllegalStateException("Failed to add player. " + entityplayer + " already is in chunk " + this.chunkX + ", " + this.chunkZ);
         } else {
             entityplayer.g.add(this.e);
-            entityplayer.a.b((Packet) (new Packet50PreChunk(this.e.a, this.e.b, true)));
+            entityplayer.netServerHandler.sendPacket(new Packet50PreChunk(this.e.x, this.e.z, true));
             this.b.add(entityplayer);
             entityplayer.f.add(this.e);
         }
@@ -46,31 +46,31 @@ class PlayerInstance {
 
     public void b(EntityPlayer entityplayer) {
         if (!this.b.contains(entityplayer)) {
-            (new IllegalStateException("Failed to remove player. " + entityplayer + " isn\'t in chunk " + this.c + ", " + this.d)).printStackTrace();
+            (new IllegalStateException("Failed to remove player. " + entityplayer + " isn\'t in chunk " + this.chunkX + ", " + this.chunkZ)).printStackTrace();
         } else {
             this.b.remove(entityplayer);
             if (this.b.size() == 0) {
-                long i = (long) this.c + 2147483647L | (long) this.d + 2147483647L << 32;
+                long i = (long) this.chunkX + 2147483647L | (long) this.chunkZ + 2147483647L << 32;
 
-                PlayerManager.b(this.a).b(i);
-                if (this.g > 0) {
-                    PlayerManager.c(this.a).remove(this);
+                PlayerManager.b(this.playerManager).b(i);
+                if (this.dirtyCount > 0) {
+                    PlayerManager.c(this.playerManager).remove(this);
                 }
 
                 // CraftBukkit
-                ((WorldServer) entityplayer.world).u.d(this.c, this.d);
+                ((WorldServer) entityplayer.world).chunkProviderServer.queueUnload(this.chunkX, this.chunkZ);
             }
 
             entityplayer.f.remove(this.e);
             if (entityplayer.g.contains(this.e)) {
-                entityplayer.a.b((Packet) (new Packet50PreChunk(this.c, this.d, false)));
+                entityplayer.netServerHandler.sendPacket(new Packet50PreChunk(this.chunkX, this.chunkZ, false));
             }
         }
     }
 
     public void a(int i, int j, int k) {
-        if (this.g == 0) {
-            PlayerManager.c(this.a).add(this);
+        if (this.dirtyCount == 0) {
+            PlayerManager.c(this.playerManager).add(this);
             this.h = this.i = i;
             this.j = this.k = j;
             this.l = this.m = k;
@@ -100,95 +100,95 @@ class PlayerInstance {
             this.m = k;
         }
 
-        if (this.g < 10) {
+        if (this.dirtyCount < 10) {
             short short1 = (short) (i << 12 | k << 8 | j);
 
-            for (int l = 0; l < this.g; ++l) {
-                if (this.f[l] == short1) {
+            for (int l = 0; l < this.dirtyCount; ++l) {
+                if (this.dirtyBlocks[l] == short1) {
                     return;
                 }
             }
 
-            this.f[this.g++] = short1;
+            this.dirtyBlocks[this.dirtyCount++] = short1;
         }
     }
 
-    public void a(Packet packet) {
+    public void sendAll(Packet packet) {
         for (int i = 0; i < this.b.size(); ++i) {
             EntityPlayer entityplayer = (EntityPlayer) this.b.get(i);
 
             if (entityplayer.g.contains(this.e)) {
-                entityplayer.a.b(packet);
+                entityplayer.netServerHandler.sendPacket(packet);
             }
         }
     }
 
     public void a() {
-        if (this.g != 0) {
+        if (this.dirtyCount != 0) {
             int i;
             int j;
             int k;
 
-            if (this.g == 1) {
-                i = this.c * 16 + this.h;
+            if (this.dirtyCount == 1) {
+                i = this.chunkX * 16 + this.h;
                 j = this.j;
-                k = this.d * 16 + this.l;
+                k = this.chunkZ * 16 + this.l;
 
                 // CraftBukkit start
-                this.a((Packet) (new Packet53BlockChange(i, j, k, a.world)));
-                if (Block.p[a.world.getTypeId(i, j, k)]) {
-                    this.a(a.world.getTileEntity(i, j, k));
+                this.sendAll(new Packet53BlockChange(i, j, k, this.playerManager.world));
+                if (Block.isTileEntity[this.playerManager.world.getTypeId(i, j, k)]) {
+                    this.sendTileEntity(this.playerManager.world.getTileEntity(i, j, k));
                 }
                 // CraftBukkit end
             } else {
                 int l;
 
-                if (this.g == 10) {
+                if (this.dirtyCount == 10) {
                     this.j = this.j / 2 * 2;
                     this.k = (this.k / 2 + 1) * 2;
-                    i = this.h + this.c * 16;
+                    i = this.h + this.chunkX * 16;
                     j = this.j;
-                    k = this.l + this.d * 16;
+                    k = this.l + this.chunkZ * 16;
                     l = this.i - this.h + 1;
                     int i1 = this.k - this.j + 2;
                     int j1 = this.m - this.l + 1;
 
                     // CraftBukkit start
-                    this.a((Packet) (new Packet51MapChunk(i, j, k, l, i1, j1, a.world)));
-                    List list = a.world.d(i, j, k, i + l, j + i1, k + j1);
+                    this.sendAll(new Packet51MapChunk(i, j, k, l, i1, j1, this.playerManager.world));
+                    List list = this.playerManager.world.getTileEntities(i, j, k, i + l, j + i1, k + j1);
                     // CraftBukkit end
 
                     for (int k1 = 0; k1 < list.size(); ++k1) {
-                        this.a((TileEntity) list.get(k1));
+                        this.sendTileEntity((TileEntity) list.get(k1));
                     }
                 } else {
                     // CraftBukkit
-                    this.a((Packet) (new Packet52MultiBlockChange(this.c, this.d, this.f, this.g, a.world)));
+                    this.sendAll(new Packet52MultiBlockChange(this.chunkX, this.chunkZ, this.dirtyBlocks, this.dirtyCount, this.playerManager.world));
 
-                    for (i = 0; i < this.g; ++i) {
-                        j = this.c * 16 + (this.g >> 12 & 15);
-                        k = this.g & 255;
-                        l = this.d * 16 + (this.g >> 8 & 15);
+                    for (i = 0; i < this.dirtyCount; ++i) {
+                        j = this.chunkX * 16 + (this.dirtyCount >> 12 & 15);
+                        k = this.dirtyCount & 255;
+                        l = this.chunkZ * 16 + (this.dirtyCount >> 8 & 15);
                         // CraftBukkit start
-                        if (Block.p[a.world.getTypeId(j, k, l)]) {
+                        if (Block.isTileEntity[this.playerManager.world.getTypeId(j, k, l)]) {
                             System.out.println("Sending!");
-                            this.a(a.world.getTileEntity(j, k, l));
+                            this.sendTileEntity(this.playerManager.world.getTileEntity(j, k, l));
                         }
                         // CraftBukkit end
                     }
                 }
             }
 
-            this.g = 0;
+            this.dirtyCount = 0;
         }
     }
 
-    private void a(TileEntity tileentity) {
+    private void sendTileEntity(TileEntity tileentity) {
         if (tileentity != null) {
             Packet packet = tileentity.e();
 
             if (packet != null) {
-                this.a(packet);
+                this.sendAll(packet);
             }
         }
     }

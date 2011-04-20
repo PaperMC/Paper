@@ -11,14 +11,14 @@ public class EntityZombie extends EntityMonster {
         super(world);
         this.texture = "/mob/zombie.png";
         this.az = 0.5F;
-        this.c = 5;
+        this.damage = 5;
     }
 
     public void r() {
         if (this.world.d()) {
             float f = this.c(1.0F);
 
-            if (f > 0.5F && this.world.i(MathHelper.b(this.locX), MathHelper.b(this.locY), MathHelper.b(this.locZ)) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
+            if (f > 0.5F && this.world.isChunkLoaded(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ)) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
                 // CraftBukkit start
                 CraftServer server = ((WorldServer) this.world).getServer();
                 EntityCombustEvent event = new EntityCombustEvent(this.getBukkitEntity());

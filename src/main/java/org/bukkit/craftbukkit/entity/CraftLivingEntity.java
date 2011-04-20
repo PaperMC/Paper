@@ -59,14 +59,14 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public Egg throwEgg() {
         net.minecraft.server.World world = ((CraftWorld)getWorld()).getHandle();
         EntityEgg egg = new EntityEgg(world, getHandle());
-        world.a(egg);
+        world.addEntity(egg);
         return (Egg) egg.getBukkitEntity();
     }
 
     public Snowball throwSnowball() {
         net.minecraft.server.World world = ((CraftWorld)getWorld()).getHandle();
         EntitySnowball snowball = new EntitySnowball(world, getHandle());
-        world.a(snowball);
+        world.addEntity(snowball);
         return (Snowball) snowball.getBukkitEntity();
     }
 
@@ -120,7 +120,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public Arrow shootArrow() {
         net.minecraft.server.World world = ((CraftWorld)getWorld()).getHandle();
         EntityArrow arrow = new EntityArrow(world, getHandle());
-        world.a(arrow);
+        world.addEntity(arrow);
         return (Arrow) arrow.getBukkitEntity();
     }
 
@@ -167,11 +167,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public void damage(int amount) {
-        entity.a((Entity)null, amount);
+        entity.damageEntity((Entity) null, amount);
     }
 
     public void damage(int amount, org.bukkit.entity.Entity source) {
-        entity.a(((CraftEntity)source).getHandle(), amount);
+        entity.damageEntity(((CraftEntity) source).getHandle(), amount);
     }
 
     public Location getEyeLocation() {

@@ -1,10 +1,14 @@
 package net.minecraft.server;
 
 import java.util.Random;
+
+// CraftBukkit start
+import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityInteractEvent;
+// CraftBukkit end
 
 public class BlockSoil extends Block {
 
@@ -31,34 +35,36 @@ public class BlockSoil extends Block {
     public void a(World world, int i, int j, int k, Random random) {
         if (random.nextInt(5) == 0) {
             if (this.h(world, i, j, k)) {
-                world.c(i, j, k, 7);
+                world.setData(i, j, k, 7);
             } else {
                 int l = world.getData(i, j, k);
 
                 if (l > 0) {
-                    world.c(i, j, k, l - 1);
+                    world.setData(i, j, k, l - 1);
                 } else if (!this.g(world, i, j, k)) {
-                    world.e(i, j, k, Block.DIRT.id);
+                    world.setTypeId(i, j, k, Block.DIRT.id);
                 }
             }
         }
     }
 
     public void b(World world, int i, int j, int k, Entity entity) {
-        // CraftBukkit start - Interact Soil
-        Cancellable cancellable;
-        if (entity instanceof EntityHuman) {
-            cancellable = CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, Action.PHYSICAL, i, j, k, -1, null);
-        }
-        else {
-            cancellable = new EntityInteractEvent(entity.getBukkitEntity(), ((WorldServer)world).getWorld().getBlockAt(i, j, k));
-        }
-        if (!cancellable.isCancelled()) {
-            if (world.k.nextInt(4) == 0) {
-                world.e(i, j, k, Block.DIRT.id);
+        if (world.random.nextInt(4) == 0) {
+            // CraftBukkit start - Interact Soil
+            Cancellable cancellable;
+            if (entity instanceof EntityHuman) {
+                cancellable = CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, Action.PHYSICAL, i, j, k, -1, null);
+            } else {
+                cancellable = new EntityInteractEvent(entity.getBukkitEntity(), ((WorldServer) world).getWorld().getBlockAt(i, j, k));
+                Bukkit.getServer().getPluginManager().callEvent((EntityInteractEvent) cancellable);
             }
+            if (cancellable.isCancelled()) {
+                return;
+            }
+            // Craftbukkit end
+
+            world.setTypeId(i, j, k, Block.DIRT.id);
         }
-        // Craftbukkit end
     }
 
     private boolean g(World world, int i, int j, int k) {
@@ -89,12 +95,12 @@ public class BlockSoil extends Block {
         return false;
     }
 
-    public void a(World world, int i, int j, int k, int l) {
-        super.a(world, i, j, k, l);
+    public void doPhysics(World world, int i, int j, int k, int l) {
+        super.doPhysics(world, i, j, k, l);
         Material material = world.getMaterial(i, j + 1, k);
 
         if (material.isBuildable()) {
-            world.e(i, j, k, Block.DIRT.id);
+            world.setTypeId(i, j, k, Block.DIRT.id);
         }
     }
 

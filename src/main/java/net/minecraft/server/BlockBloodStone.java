@@ -13,8 +13,8 @@ public class BlockBloodStone extends Block {
     }
 
     // Craftbukkit start
-    public void a(World world, int i, int j, int k, int l) {
-        if (net.minecraft.server.Block.byId[l] != null && net.minecraft.server.Block.byId[l].c()) {
+    public void doPhysics(World world, int i, int j, int k, int l) {
+        if (net.minecraft.server.Block.byId[l] != null && net.minecraft.server.Block.byId[l].isPowerSource()) {
             CraftWorld craftWorld = ((WorldServer) world).getWorld();
             CraftServer server = ((WorldServer) world).getServer();
             org.bukkit.block.Block block = craftWorld.getBlockAt(i, j, k);

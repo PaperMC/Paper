@@ -19,7 +19,7 @@ public class BlockLeaves extends BlockLeavesBase {
         this.a(true);
     }
 
-    public void b(World world, int i, int j, int k) {
+    public void remove(World world, int i, int j, int k) {
         byte b0 = 1;
         int l = b0 + 1;
 
@@ -32,7 +32,7 @@ public class BlockLeaves extends BlockLeavesBase {
                         if (l1 == Block.LEAVES.id) {
                             int i2 = world.getData(i + i1, j + j1, k + k1);
 
-                            world.d(i + i1, j + j1, k + k1, i2 | 4);
+                            world.setRawData(i + i1, j + j1, k + k1, i2 | 4);
                         }
                     }
                 }
@@ -114,7 +114,7 @@ public class BlockLeaves extends BlockLeavesBase {
 
                 l1 = this.a[k1 * j1 + k1 * b1 + k1];
                 if (l1 >= 0) {
-                    world.c(i, j, k, l & -5);
+                    world.setData(i, j, k, l & -5);
                 } else {
                     this.g(world, i, j, k);
                 }
@@ -133,7 +133,7 @@ public class BlockLeaves extends BlockLeavesBase {
         // CraftBukkit end
 
         this.a_(world, i, j, k, world.getData(i, j, k));
-        world.e(i, j, k, 0);
+        world.setTypeId(i, j, k, 0);
     }
 
     public int a(Random random) {

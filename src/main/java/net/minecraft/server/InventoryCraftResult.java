@@ -2,48 +2,48 @@ package net.minecraft.server;
 
 public class InventoryCraftResult implements IInventory {
 
-    private ItemStack[] a = new ItemStack[1];
+    private ItemStack[] items = new ItemStack[1];
 
     // CraftBukkit start
     public ItemStack[] getContents() {
-        return a;
+        return items;
     }
     // CraftBukkit end
 
     public InventoryCraftResult() {}
 
-    public int q_() {
+    public int getSize() {
         return 1;
     }
 
-    public ItemStack c_(int i) {
-        return this.a[i];
+    public ItemStack getItem(int i) {
+        return this.items[i];
     }
 
-    public String c() {
+    public String getName() {
         return "Result";
     }
 
     public ItemStack a(int i, int j) {
-        if (this.a[i] != null) {
-            ItemStack itemstack = this.a[i];
+        if (this.items[i] != null) {
+            ItemStack itemstack = this.items[i];
 
-            this.a[i] = null;
+            this.items[i] = null;
             return itemstack;
         } else {
             return null;
         }
     }
 
-    public void a(int i, ItemStack itemstack) {
-        this.a[i] = itemstack;
+    public void setItem(int i, ItemStack itemstack) {
+        this.items[i] = itemstack;
     }
 
-    public int r_() {
+    public int getMaxStackSize() {
         return 64;
     }
 
-    public void i() {}
+    public void update() {}
 
     public boolean a_(EntityHuman entityhuman) {
         return true;

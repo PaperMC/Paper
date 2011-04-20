@@ -61,7 +61,7 @@ public class WorldGenTaiga1 extends WorldGenerator {
             } else {
                 l1 = world.getTypeId(i, j - 1, k);
                 if ((l1 == Block.GRASS.id || l1 == Block.DIRT.id) && j < 128 - l - 1) {
-                    world.setTypeId(i, j - 1, k, Block.DIRT.id);
+                    world.setRawTypeId(i, j - 1, k, Block.DIRT.id);
                     l2 = 0;
 
                     for (i2 = j + l; i2 >= j + i1; --i2) {
@@ -72,7 +72,7 @@ public class WorldGenTaiga1 extends WorldGenerator {
                                 int j3 = i3 - k;
 
                                 if ((Math.abs(k2) != l2 || Math.abs(j3) != l2 || l2 <= 0) && !Block.o[world.getTypeId(j2, i2, i3)]) {
-                                    world.setTypeIdAndData(j2, i2, i3, Block.LEAVES.id, 1);
+                                    world.setRawTypeIdAndData(j2, i2, i3, Block.LEAVES.id, 1);
                                 }
                             }
                         }
@@ -87,7 +87,7 @@ public class WorldGenTaiga1 extends WorldGenerator {
                     for (i2 = 0; i2 < l - 1; ++i2) {
                         j2 = world.getTypeId(i, j + i2, k);
                         if (j2 == 0 || j2 == Block.LEAVES.id) {
-                            world.setTypeIdAndData(i, j + i2, k, Block.LOG.id, 1);
+                            world.setRawTypeIdAndData(i, j + i2, k, Block.LOG.id, 1);
                         }
                     }
 

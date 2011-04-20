@@ -2,59 +2,59 @@ package net.minecraft.server;
 
 public class InventoryCrafting implements IInventory {
 
-    private ItemStack[] a;
+    private ItemStack[] items;
     private int b;
     private Container c;
 
     // CraftBukkit start
     public ItemStack[] getContents() {
-        return a;
+        return items;
     }
     // CraftBukkit end
 
     public InventoryCrafting(Container container, int i, int j) {
         int k = i * j;
 
-        this.a = new ItemStack[k];
+        this.items = new ItemStack[k];
         this.c = container;
         this.b = i;
     }
 
-    public int q_() {
-        return this.a.length;
+    public int getSize() {
+        return this.items.length;
     }
 
-    public ItemStack c_(int i) {
-        return i >= this.q_() ? null : this.a[i];
+    public ItemStack getItem(int i) {
+        return i >= this.getSize() ? null : this.items[i];
     }
 
     public ItemStack b(int i, int j) {
         if (i >= 0 && i < this.b) {
             int k = i + j * this.b;
 
-            return this.c_(k);
+            return this.getItem(k);
         } else {
             return null;
         }
     }
 
-    public String c() {
+    public String getName() {
         return "Crafting";
     }
 
     public ItemStack a(int i, int j) {
-        if (this.a[i] != null) {
+        if (this.items[i] != null) {
             ItemStack itemstack;
 
-            if (this.a[i].count <= j) {
-                itemstack = this.a[i];
-                this.a[i] = null;
+            if (this.items[i].count <= j) {
+                itemstack = this.items[i];
+                this.items[i] = null;
                 this.c.a((IInventory) this);
                 return itemstack;
             } else {
-                itemstack = this.a[i].a(j);
-                if (this.a[i].count == 0) {
-                    this.a[i] = null;
+                itemstack = this.items[i].a(j);
+                if (this.items[i].count == 0) {
+                    this.items[i] = null;
                 }
 
                 this.c.a((IInventory) this);
@@ -65,16 +65,16 @@ public class InventoryCrafting implements IInventory {
         }
     }
 
-    public void a(int i, ItemStack itemstack) {
-        this.a[i] = itemstack;
+    public void setItem(int i, ItemStack itemstack) {
+        this.items[i] = itemstack;
         this.c.a((IInventory) this);
     }
 
-    public int r_() {
+    public int getMaxStackSize() {
         return 64;
     }
 
-    public void i() {}
+    public void update() {}
 
     public boolean a_(EntityHuman entityhuman) {
         return true;

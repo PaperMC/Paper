@@ -12,7 +12,7 @@ import org.bukkit.plugin.PluginManager;
 
 public class BlockRedstoneTorch extends BlockTorch {
 
-    private boolean a = false;
+    private boolean isOn = false;
     private static List b = new ArrayList();
 
     public int a(int i, int j) {
@@ -21,7 +21,7 @@ public class BlockRedstoneTorch extends BlockTorch {
 
     private boolean a(World world, int i, int j, int k, boolean flag) {
         if (flag) {
-            b.add(new RedstoneUpdateInfo(i, j, k, world.l()));
+            b.add(new RedstoneUpdateInfo(i, j, k, world.getTime()));
         }
 
         int l = 0;
@@ -42,7 +42,7 @@ public class BlockRedstoneTorch extends BlockTorch {
 
     protected BlockRedstoneTorch(int i, int j, boolean flag) {
         super(i, j);
-        this.a = flag;
+        this.isOn = flag;
         this.a(true);
     }
 
@@ -55,29 +55,29 @@ public class BlockRedstoneTorch extends BlockTorch {
             super.e(world, i, j, k);
         }
 
-        if (this.a) {
-            world.h(i, j - 1, k, this.id);
-            world.h(i, j + 1, k, this.id);
-            world.h(i - 1, j, k, this.id);
-            world.h(i + 1, j, k, this.id);
-            world.h(i, j, k - 1, this.id);
-            world.h(i, j, k + 1, this.id);
+        if (this.isOn) {
+            world.applyPhysics(i, j - 1, k, this.id);
+            world.applyPhysics(i, j + 1, k, this.id);
+            world.applyPhysics(i - 1, j, k, this.id);
+            world.applyPhysics(i + 1, j, k, this.id);
+            world.applyPhysics(i, j, k - 1, this.id);
+            world.applyPhysics(i, j, k + 1, this.id);
         }
     }
 
-    public void b(World world, int i, int j, int k) {
-        if (this.a) {
-            world.h(i, j - 1, k, this.id);
-            world.h(i, j + 1, k, this.id);
-            world.h(i - 1, j, k, this.id);
-            world.h(i + 1, j, k, this.id);
-            world.h(i, j, k - 1, this.id);
-            world.h(i, j, k + 1, this.id);
+    public void remove(World world, int i, int j, int k) {
+        if (this.isOn) {
+            world.applyPhysics(i, j - 1, k, this.id);
+            world.applyPhysics(i, j + 1, k, this.id);
+            world.applyPhysics(i - 1, j, k, this.id);
+            world.applyPhysics(i + 1, j, k, this.id);
+            world.applyPhysics(i, j, k - 1, this.id);
+            world.applyPhysics(i, j, k + 1, this.id);
         }
     }
 
     public boolean b(IBlockAccess iblockaccess, int i, int j, int k, int l) {
-        if (!this.a) {
+        if (!this.isOn) {
             return false;
         } else {
             int i1 = iblockaccess.getData(i, j, k);
@@ -89,24 +89,24 @@ public class BlockRedstoneTorch extends BlockTorch {
     private boolean g(World world, int i, int j, int k) {
         int l = world.getData(i, j, k);
 
-        return l == 5 && world.j(i, j - 1, k, 0) ? true : (l == 3 && world.j(i, j, k - 1, 2) ? true : (l == 4 && world.j(i, j, k + 1, 3) ? true : (l == 1 && world.j(i - 1, j, k, 4) ? true : l == 2 && world.j(i + 1, j, k, 5))));
+        return l == 5 && world.isBlockFaceIndirectlyPowered(i, j - 1, k, 0) ? true : (l == 3 && world.isBlockFaceIndirectlyPowered(i, j, k - 1, 2) ? true : (l == 4 && world.isBlockFaceIndirectlyPowered(i, j, k + 1, 3) ? true : (l == 1 && world.isBlockFaceIndirectlyPowered(i - 1, j, k, 4) ? true : l == 2 && world.isBlockFaceIndirectlyPowered(i + 1, j, k, 5))));
     }
 
     public void a(World world, int i, int j, int k, Random random) {
         boolean flag = this.g(world, i, j, k);
 
-        while (b.size() > 0 && world.l() - ((RedstoneUpdateInfo) b.get(0)).d > 100L) {
+        while (b.size() > 0 && world.getTime() - ((RedstoneUpdateInfo) b.get(0)).d > 100L) {
             b.remove(0);
         }
 
         // CraftBukkit start
         CraftBlock block = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
         PluginManager man = ((WorldServer) world).getServer().getPluginManager();
-        int oldCurrent = this.a ? 15 : 0;
+        int oldCurrent = this.isOn ? 15 : 0;
         BlockRedstoneEvent event = new BlockRedstoneEvent(block, oldCurrent, oldCurrent);
         // CraftBukkit end
 
-        if (this.a) {
+        if (this.isOn) {
             if (flag) {
                 // CraftBukkit start
                 if (oldCurrent != 0) {
@@ -117,9 +117,9 @@ public class BlockRedstoneTorch extends BlockTorch {
                     }
                 }
                 // CraftBukkit end
-                world.b(i, j, k, Block.REDSTONE_TORCH_OFF.id, world.getData(i, j, k));
+                world.setTypeIdAndData(i, j, k, Block.REDSTONE_TORCH_OFF.id, world.getData(i, j, k));
                 if (this.a(world, i, j, k, true)) {
-                    world.a((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), "random.fizz", 0.5F, 2.6F + (world.k.nextFloat() - world.k.nextFloat()) * 0.8F);
+                    world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), "random.fizz", 0.5F, 2.6F + (world.random.nextFloat() - world.random.nextFloat()) * 0.8F);
 
                     for (int l = 0; l < 5; ++l) {
                         double d0 = (double) i + random.nextDouble() * 0.6D + 0.2D;
@@ -140,25 +140,24 @@ public class BlockRedstoneTorch extends BlockTorch {
                 }
             }
             // CraftBukkit end
-            world.b(i, j, k, Block.REDSTONE_TORCH_ON.id, world.getData(i, j, k));
+            world.setTypeIdAndData(i, j, k, Block.REDSTONE_TORCH_ON.id, world.getData(i, j, k));
         }
     }
 
-    public void a(World world, int i, int j, int k, int l) {
-        super.a(world, i, j, k, l);
+    public void doPhysics(World world, int i, int j, int k, int l) {
+        super.doPhysics(world, i, j, k, l);
         world.c(i, j, k, this.id, this.b());
     }
 
     public boolean c(World world, int i, int j, int k, int l) {
-        // CraftBukkit -- cast to IBlockAccess
-        return l == 0 ? this.b((IBlockAccess) world, i, j, k, l) : false;
+        return l == 0 ? this.b(world, i, j, k, l) : false;
     }
 
     public int a(int i, Random random) {
         return Block.REDSTONE_TORCH_ON.id;
     }
 
-    public boolean c() {
+    public boolean isPowerSource() {
         return true;
     }
 }

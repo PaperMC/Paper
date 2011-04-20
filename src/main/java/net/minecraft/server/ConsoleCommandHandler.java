@@ -7,39 +7,36 @@ import java.util.logging.Logger;
 public class ConsoleCommandHandler {
 
     private static Logger a = Logger.getLogger("Minecraft");
-    private MinecraftServer b;
+    private MinecraftServer server;
+    private ICommandListener listener; // CraftBukkit
 
     public ConsoleCommandHandler(MinecraftServer minecraftserver) {
-        this.b = minecraftserver;
+        this.server = minecraftserver;
     }
 
-    // CraftBukkit - All calls to the following below:
-    // this.a( String s1, String msg );
-    // are changed to:
-    // this.notify( ICommandListener icommandlistener, String msg );
-
-    public boolean a(ServerCommand servercommand) { // CraftBukkit - returns boolean
-        String s = servercommand.a;
+    public boolean handle(ServerCommand servercommand) { // CraftBukkit - returns boolean
+        String s = servercommand.command;
         ICommandListener icommandlistener = servercommand.b;
-        String s1 = icommandlistener.c();
-        WorldServer worldserver = this.b.worlds.get(0); // CraftBukkit
-        ServerConfigurationManager serverconfigurationmanager = this.b.f;
+        String s1 = icommandlistener.getName();
+        WorldServer worldserver = this.server.worlds.get(0); // CraftBukkit
+        listener = icommandlistener; // CraftBukkit
+        ServerConfigurationManager serverconfigurationmanager = this.server.serverConfigurationManager;
 
         if (!s.toLowerCase().startsWith("help") && !s.toLowerCase().startsWith("?")) {
             if (s.toLowerCase().startsWith("list")) {
-                icommandlistener.b("Connected players: " + serverconfigurationmanager.c());
+                icommandlistener.sendMessage("Connected players: " + serverconfigurationmanager.c());
             } else if (s.toLowerCase().startsWith("stop")) {
-                this.notify(icommandlistener, "Stopping the server.."); // CraftBukkit - notify command sender
-                this.b.a();
+                this.print(s1, "Stopping the server..");
+                this.server.a();
             } else if (s.toLowerCase().startsWith("save-all")) {
-                this.notify(icommandlistener, "Forcing save.."); // CraftBukkit - notify command sender
-                this.b.f(); // CraftBukkit - We should save all worlds on save-all.
-                this.notify(icommandlistener, "Save complete."); // CraftBukkit - notify command sender
+                this.print(s1, "Forcing save..");
+                this.server.saveChunks(); // CraftBukkit - We should save all worlds on save-all.
+                this.print(s1, "Save complete.");
             } else if (s.toLowerCase().startsWith("save-off")) {
-                this.notify(icommandlistener, "Disabling level saving.."); // CraftBukkit - notify command sender
+                this.print(s1, "Disabling level saving..");
                 worldserver.w = true;
             } else if (s.toLowerCase().startsWith("save-on")) {
-                this.notify(icommandlistener, "Enabling level saving.."); // CraftBukkit - notify command sender
+                this.print(s1, "Enabling level saving..");
                 worldserver.w = false;
             } else {
                 String s2;
@@ -47,36 +44,36 @@ public class ConsoleCommandHandler {
                 if (s.toLowerCase().startsWith("op ")) {
                     s2 = s.substring(s.indexOf(" ")).trim();
                     serverconfigurationmanager.e(s2);
-                    this.notify(icommandlistener, "Opping " + s2); // CraftBukkit - notify command sender
+                    this.print(s1, "Opping " + s2);
                     serverconfigurationmanager.a(s2, "\u00A7eYou are now op!");
                 } else if (s.toLowerCase().startsWith("deop ")) {
                     s2 = s.substring(s.indexOf(" ")).trim();
                     serverconfigurationmanager.f(s2);
                     serverconfigurationmanager.a(s2, "\u00A7eYou are no longer op!");
-                    this.notify(icommandlistener, "De-opping " + s2); // CraftBukkit - notify command sender
+                    this.print(s1, "De-opping " + s2);
                 } else if (s.toLowerCase().startsWith("ban-ip ")) {
                     s2 = s.substring(s.indexOf(" ")).trim();
                     serverconfigurationmanager.c(s2);
-                    this.notify(icommandlistener, "Banning ip " + s2); // CraftBukkit - notify command sender
+                    this.print(s1, "Banning ip " + s2);
                 } else if (s.toLowerCase().startsWith("pardon-ip ")) {
                     s2 = s.substring(s.indexOf(" ")).trim();
                     serverconfigurationmanager.d(s2);
-                    this.notify(icommandlistener, "Pardoning ip " + s2); // CraftBukkit - notify command sender
+                    this.print(s1, "Pardoning ip " + s2);
                 } else {
                     EntityPlayer entityplayer;
 
                     if (s.toLowerCase().startsWith("ban ")) {
                         s2 = s.substring(s.indexOf(" ")).trim();
                         serverconfigurationmanager.a(s2);
-                        this.notify(icommandlistener, "Banning " + s2); // CraftBukkit - notify command sender
+                        this.print(s1, "Banning " + s2);
                         entityplayer = serverconfigurationmanager.i(s2);
                         if (entityplayer != null) {
-                            entityplayer.a.a("Banned by admin");
+                            entityplayer.netServerHandler.disconnect("Banned by admin");
                         }
                     } else if (s.toLowerCase().startsWith("pardon ")) {
                         s2 = s.substring(s.indexOf(" ")).trim();
                         serverconfigurationmanager.b(s2);
-                        this.notify(icommandlistener, "Pardoning " + s2); // CraftBukkit - notify command sender
+                        this.print(s1, "Pardoning " + s2);
                     } else {
                         int i;
 
@@ -87,8 +84,8 @@ public class ConsoleCommandHandler {
                             // CraftBukkit end
                             entityplayer = null;
 
-                            for (i = 0; i < serverconfigurationmanager.b.size(); ++i) {
-                                EntityPlayer entityplayer1 = (EntityPlayer) serverconfigurationmanager.b.get(i);
+                            for (i = 0; i < serverconfigurationmanager.players.size(); ++i) {
+                                EntityPlayer entityplayer1 = (EntityPlayer) serverconfigurationmanager.players.get(i);
 
                                 if (entityplayer1.name.equalsIgnoreCase(s2)) {
                                     entityplayer = entityplayer1;
@@ -96,10 +93,10 @@ public class ConsoleCommandHandler {
                             }
 
                             if (entityplayer != null) {
-                                entityplayer.a.a("Kicked by admin");
-                                this.notify(icommandlistener, "Kicking " + entityplayer.name); // CraftBukkit - notify command sender
+                                entityplayer.netServerHandler.disconnect("Kicked by admin");
+                                this.print(s1, "Kicking " + entityplayer.name);
                             } else {
-                                icommandlistener.b("Can\'t find user " + s2 + ". No kick.");
+                                icommandlistener.sendMessage("Can\'t find user " + s2 + ". No kick.");
                             }
                         } else {
                             String[] astring;
@@ -111,15 +108,15 @@ public class ConsoleCommandHandler {
                                     entityplayer = serverconfigurationmanager.i(astring[1]);
                                     entityplayer2 = serverconfigurationmanager.i(astring[2]);
                                     if (entityplayer == null) {
-                                        icommandlistener.b("Can\'t find user " + astring[1] + ". No tp.");
+                                        icommandlistener.sendMessage("Can\'t find user " + astring[1] + ". No tp.");
                                     } else if (entityplayer2 == null) {
-                                        icommandlistener.b("Can\'t find user " + astring[2] + ". No tp.");
+                                        icommandlistener.sendMessage("Can\'t find user " + astring[2] + ". No tp.");
                                     } else {
-                                        entityplayer.a.a(entityplayer2.locX, entityplayer2.locY, entityplayer2.locZ, entityplayer2.yaw, entityplayer2.pitch);
-                                        this.notify(icommandlistener, "Teleporting " + astring[1] + " to " + astring[2] + "."); // CraftBukkit - notify command sender
+                                        entityplayer.netServerHandler.a(entityplayer2.locX, entityplayer2.locY, entityplayer2.locZ, entityplayer2.yaw, entityplayer2.pitch);
+                                        this.print(s1, "Teleporting " + astring[1] + " to " + astring[2] + ".");
                                     }
                                 } else {
-                                    icommandlistener.b("Syntax error, please provice a source and a target.");
+                                    icommandlistener.sendMessage("Syntax error, please provice a source and a target.");
                                 }
                             } else {
                                 String s3;
@@ -127,7 +124,7 @@ public class ConsoleCommandHandler {
                                 if (s.toLowerCase().startsWith("give ")) {
                                     astring = s.split(" ");
                                     if (astring.length != 3 && astring.length != 4) {
-                                        return true;
+                                        return true; // CraftBukkit
                                     }
 
                                     s3 = astring[1];
@@ -137,7 +134,7 @@ public class ConsoleCommandHandler {
                                             int j = Integer.parseInt(astring[2]);
 
                                             if (Item.byId[j] != null) {
-                                                this.notify(icommandlistener, "Giving " + entityplayer2.name + " some " + j); // CraftBukkit - notify command sender
+                                                this.print(s1, "Giving " + entityplayer2.name + " some " + j);
                                                 int k = 1;
 
                                                 if (astring.length > 3) {
@@ -154,18 +151,18 @@ public class ConsoleCommandHandler {
 
                                                 entityplayer2.b(new ItemStack(j, k, 0));
                                             } else {
-                                                icommandlistener.b("There\'s no item with id " + j);
+                                                icommandlistener.sendMessage("There\'s no item with id " + j);
                                             }
                                         } catch (NumberFormatException numberformatexception) {
-                                            icommandlistener.b("There\'s no item with id " + astring[2]);
+                                            icommandlistener.sendMessage("There\'s no item with id " + astring[2]);
                                         }
                                     } else {
-                                        icommandlistener.b("Can\'t find user " + s3);
+                                        icommandlistener.sendMessage("Can\'t find user " + s3);
                                     }
                                 } else if (s.toLowerCase().startsWith("time ")) {
                                     astring = s.split(" ");
                                     if (astring.length != 3) {
-                                        return true;
+                                        return true; // CraftBukkit
                                     }
 
                                     s3 = astring[1];
@@ -173,21 +170,21 @@ public class ConsoleCommandHandler {
                                     try {
                                         i = Integer.parseInt(astring[2]);
                                         if ("add".equalsIgnoreCase(s3)) {
-                                            worldserver.a(worldserver.k() + (long) i);
-                                            this.notify(icommandlistener, "Added " + i + " to time"); // CraftBukkit - notify command sender
+                                            worldserver.setTime(worldserver.getTime() + (long) i);
+                                            this.print(s1, "Added " + i + " to time");
                                         } else if ("set".equalsIgnoreCase(s3)) {
-                                            worldserver.a((long) i);
-                                            this.notify(icommandlistener, "Set time to " + i); // CraftBukkit - notify command sender
+                                            worldserver.setTime((long) i);
+                                            this.print(s1, "Set time to " + i);
                                         } else {
-                                            icommandlistener.b("Unknown method, use either \"add\" or \"set\"");
+                                            icommandlistener.sendMessage("Unknown method, use either \"add\" or \"set\"");
                                         }
                                     } catch (NumberFormatException numberformatexception1) {
-                                        icommandlistener.b("Unable to convert time value, " + astring[2]);
+                                        icommandlistener.sendMessage("Unable to convert time value, " + astring[2]);
                                     }
                                 } else if (s.toLowerCase().startsWith("say ")) {
                                     s = s.substring(s.indexOf(" ")).trim();
                                     a.info("[" + s1 + "] " + s);
-                                    serverconfigurationmanager.a((Packet) (new Packet3Chat("\u00A7d[Server] " + s)));
+                                    serverconfigurationmanager.sendAll(new Packet3Chat("\u00A7d[Server] " + s));
                                 } else if (s.toLowerCase().startsWith("tell ")) {
                                     astring = s.split(" ");
                                     if (astring.length >= 3) {
@@ -197,14 +194,14 @@ public class ConsoleCommandHandler {
                                         s = "\u00A77" + s1 + " whispers " + s;
                                         a.info(s);
                                         if (!serverconfigurationmanager.a(astring[1], (Packet) (new Packet3Chat(s)))) {
-                                            icommandlistener.b("There\'s no player by that name online.");
+                                            icommandlistener.sendMessage("There\'s no player by that name online.");
                                         }
                                     }
                                 } else if (s.toLowerCase().startsWith("whitelist ")) {
                                     this.a(s1, s, icommandlistener);
                                 } else {
-                                    icommandlistener.b("Unknown console command. Type \"help\" for help."); // CraftBukkit - Send to listener not log
-                                    return false;
+                                    icommandlistener.sendMessage("Unknown console command. Type \"help\" for help."); // CraftBukkit
+                                    return false; // CraftBukkit
                                 }
                             }
                         }
@@ -215,23 +212,24 @@ public class ConsoleCommandHandler {
             this.a(icommandlistener);
         }
 
-        return true;
+        return true; // CraftBukkit
     }
 
     private void a(String s, String s1, ICommandListener icommandlistener) {
         String[] astring = s1.split(" ");
+        listener = icommandlistener; // CraftBukkit
 
         if (astring.length >= 2) {
             String s2 = astring[1].toLowerCase();
 
             if ("on".equals(s2)) {
-                this.notify(icommandlistener, "Turned on white-listing"); // CraftBukkit - notify command sender
-                this.b.d.b("white-list", true);
+                this.print(s, "Turned on white-listing");
+                this.server.propertyManager.b("white-list", true);
             } else if ("off".equals(s2)) {
-                this.notify(icommandlistener, "Turned off white-listing"); // CraftBukkit - notify command sender
-                this.b.d.b("white-list", false);
+                this.print(s, "Turned off white-listing");
+                this.server.propertyManager.b("white-list", false);
             } else if ("list".equals(s2)) {
-                Set set = this.b.f.e();
+                Set set = this.server.serverConfigurationManager.e();
                 String s3 = "";
 
                 String s4;
@@ -240,63 +238,55 @@ public class ConsoleCommandHandler {
                     s4 = (String) iterator.next();
                 }
 
-                icommandlistener.b("White-listed players: " + s3);
+                icommandlistener.sendMessage("White-listed players: " + s3);
             } else {
                 String s5;
 
                 if ("add".equals(s2) && astring.length == 3) {
                     s5 = astring[2].toLowerCase();
-                    this.b.f.k(s5);
-                    this.notify(icommandlistener, "Added " + s5 + " to white-list"); // CraftBukkit - notify command sender
+                    this.server.serverConfigurationManager.k(s5);
+                    this.print(s, "Added " + s5 + " to white-list");
                 } else if ("remove".equals(s2) && astring.length == 3) {
                     s5 = astring[2].toLowerCase();
-                    this.b.f.l(s5);
-                    this.notify(icommandlistener, "Removed " + s5 + " from white-list"); // CraftBukkit - notify command sender
+                    this.server.serverConfigurationManager.l(s5);
+                    this.print(s, "Removed " + s5 + " from white-list");
                 } else if ("reload".equals(s2)) {
-                    this.b.f.f();
-                    this.notify(icommandlistener, "Reloaded white-list from file"); // CraftBukkit - notify command sender
+                    this.server.serverConfigurationManager.f();
+                    this.print(s, "Reloaded white-list from file");
                 }
             }
         }
     }
 
     private void a(ICommandListener icommandlistener) {
-        icommandlistener.b("To run the server without a gui, start it like this:");
-        icommandlistener.b("   java -Xmx1024M -Xms1024M -jar minecraft_server.jar nogui");
-        icommandlistener.b("Console commands:");
-        icommandlistener.b("   help  or  ?               shows this message");
-        icommandlistener.b("   kick <player>             removes a player from the server");
-        icommandlistener.b("   ban <player>              bans a player from the server");
-        icommandlistener.b("   pardon <player>           pardons a banned player so that they can connect again");
-        icommandlistener.b("   ban-ip <ip>               bans an IP address from the server");
-        icommandlistener.b("   pardon-ip <ip>            pardons a banned IP address so that they can connect again");
-        icommandlistener.b("   op <player>               turns a player into an op");
-        icommandlistener.b("   deop <player>             removes op status from a player");
-        icommandlistener.b("   tp <player1> <player2>    moves one player to the same location as another player");
-        icommandlistener.b("   give <player> <id> [num]  gives a player a resource");
-        icommandlistener.b("   tell <player> <message>   sends a private message to a player");
-        icommandlistener.b("   stop                      gracefully stops the server");
-        icommandlistener.b("   save-all                  forces a server-wide level save");
-        icommandlistener.b("   save-off                  disables terrain saving (useful for backup scripts)");
-        icommandlistener.b("   save-on                   re-enables terrain saving");
-        icommandlistener.b("   list                      lists all currently connected players");
-        icommandlistener.b("   say <message>             broadcasts a message to all players");
-        icommandlistener.b("   time <add|set> <amount>   adds to or sets the world time (0-24000)");
+        icommandlistener.sendMessage("To run the server without a gui, start it like this:");
+        icommandlistener.sendMessage("   java -Xmx1024M -Xms1024M -jar minecraft_server.jar nogui");
+        icommandlistener.sendMessage("Console commands:");
+        icommandlistener.sendMessage("   help  or  ?               shows this message");
+        icommandlistener.sendMessage("   kick <player>             removes a player from the server");
+        icommandlistener.sendMessage("   ban <player>              bans a player from the server");
+        icommandlistener.sendMessage("   pardon <player>           pardons a banned player so that they can connect again");
+        icommandlistener.sendMessage("   ban-ip <ip>               bans an IP address from the server");
+        icommandlistener.sendMessage("   pardon-ip <ip>            pardons a banned IP address so that they can connect again");
+        icommandlistener.sendMessage("   op <player>               turns a player into an op");
+        icommandlistener.sendMessage("   deop <player>             removes op status from a player");
+        icommandlistener.sendMessage("   tp <player1> <player2>    moves one player to the same location as another player");
+        icommandlistener.sendMessage("   give <player> <id> [num]  gives a player a resource");
+        icommandlistener.sendMessage("   tell <player> <message>   sends a private message to a player");
+        icommandlistener.sendMessage("   stop                      gracefully stops the server");
+        icommandlistener.sendMessage("   save-all                  forces a server-wide level save");
+        icommandlistener.sendMessage("   save-off                  disables terrain saving (useful for backup scripts)");
+        icommandlistener.sendMessage("   save-on                   re-enables terrain saving");
+        icommandlistener.sendMessage("   list                      lists all currently connected players");
+        icommandlistener.sendMessage("   say <message>             broadcasts a message to all players");
+        icommandlistener.sendMessage("   time <add|set> <amount>   adds to or sets the world time (0-24000)");
     }
 
-    // CraftBukkit start
-    // Notify sender and ops / log
-    private void notify(ICommandListener commandListener, String msg ) {
-        commandListener.b( msg );
-        this.a( commandListener.c(), msg );
-    }
-    // CraftBukkit end
-
-    private void a(String s, String s1) {
+    private void print(String s, String s1) {
+        listener.sendMessage(s1); // CraftBukkit
         String s2 = s + ": " + s1;
 
-        // CraftBukkit - This notifies ops and logs
-        this.b.f.j("\u00A77(" + s2 + ")");
+        this.server.serverConfigurationManager.j("\u00A77(" + s2 + ")");
         a.info(s2);
     }
 

@@ -121,7 +121,7 @@ public class WorldGenBigTree extends WorldGenerator {
                     if (l1 != 0 && l1 != 18) {
                         ++k1;
                     } else {
-                        this.c.setTypeId(aint1[0], aint1[1], aint1[2], l);
+                        this.c.setRawTypeId(aint1[0], aint1[1], aint1[2], l);
                         ++k1;
                     }
                 }
@@ -194,10 +194,10 @@ public class WorldGenBigTree extends WorldGenerator {
             int j = 0;
 
             for (int k = aint2[b1] + b4; j != k; j += b4) {
-                aint3[b1] = MathHelper.b((double) (aint[b1] + j) + 0.5D);
-                aint3[b2] = MathHelper.b((double) aint[b2] + (double) j * d0 + 0.5D);
-                aint3[b3] = MathHelper.b((double) aint[b3] + (double) j * d1 + 0.5D);
-                this.c.setTypeId(aint3[0], aint3[1], aint3[2], i);
+                aint3[b1] = MathHelper.floor((double) (aint[b1] + j) + 0.5D);
+                aint3[b2] = MathHelper.floor((double) aint[b2] + (double) j * d0 + 0.5D);
+                aint3[b3] = MathHelper.floor((double) aint[b3] + (double) j * d1 + 0.5D);
+                this.c.setRawTypeId(aint3[0], aint3[1], aint3[2], i);
             }
         }
     }

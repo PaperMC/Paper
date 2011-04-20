@@ -24,28 +24,28 @@ import org.bukkit.craftbukkit.command.ColouredConsoleSender;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 import org.bukkit.craftbukkit.util.ServerShutdownThread;
 import org.bukkit.event.world.WorldSaveEvent;
-
+// CraftBukkit
 
 public class MinecraftServer implements Runnable, ICommandListener {
 
-    public static Logger a = Logger.getLogger("Minecraft");
+    public static Logger log = Logger.getLogger("Minecraft");
     public static HashMap b = new HashMap();
-    public NetworkListenThread c;
-    public PropertyManager d;
-    // public WorldServer e; // CraftBukkit - removed
-    public ServerConfigurationManager f;
-    public ConsoleCommandHandler o; // CraftBukkit - made public
-    private boolean p = true;
-    public boolean g = false;
-    int h = 0;
+    public NetworkListenThread networkListenThread;
+    public PropertyManager propertyManager;
+    // public WorldServer worldServer; // CraftBukkit - removed
+    public ServerConfigurationManager serverConfigurationManager;
+    public ConsoleCommandHandler consoleCommandHandler; // CraftBukkit - made public
+    private boolean isRunning = true;
+    public boolean isStopped = false;
+    int ticks = 0;
     public String i;
     public int j;
     private List q = new ArrayList();
     private List r = Collections.synchronizedList(new ArrayList());
-    public EntityTracker k;
-    public boolean l;
-    public boolean m;
-    public boolean n;
+    public EntityTracker tracker;
+    public boolean onlineMode;
+    public boolean spawnAnimals;
+    public boolean pvpMode;
 
     // CraftBukkit start
     public int spawnProtection;
@@ -70,64 +70,64 @@ public class MinecraftServer implements Runnable, ICommandListener {
         // CraftBukkit end
     }
 
-    private boolean d() throws UnknownHostException { // CraftBukkit - added throws UnknownHostException
-        this.o = new ConsoleCommandHandler(this);
+    private boolean init() throws UnknownHostException { // CraftBukkit - added throws UnknownHostException
+        this.consoleCommandHandler = new ConsoleCommandHandler(this);
         ThreadCommandReader threadcommandreader = new ThreadCommandReader(this);
 
         threadcommandreader.setDaemon(true);
         threadcommandreader.start();
-        ConsoleLogManager.a(this); // Craftbukkit
+        ConsoleLogManager.init(this); // Craftbukkit
 
         // CraftBukkit start
-        System.setOut(new PrintStream(new LoggerOutputStream(a, Level.INFO), true));
-        System.setErr(new PrintStream(new LoggerOutputStream(a, Level.SEVERE), true));
+        System.setOut(new PrintStream(new LoggerOutputStream(log, Level.INFO), true));
+        System.setErr(new PrintStream(new LoggerOutputStream(log, Level.SEVERE), true));
         // CraftBukkit end
 
-        a.info("Starting minecraft server version Beta 1.4");
+        log.info("Starting minecraft server version Beta 1.3");
         if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
-            a.warning("**** NOT ENOUGH RAM!");
-            a.warning("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
+            log.warning("**** NOT ENOUGH RAM!");
+            log.warning("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
         }
 
-        a.info("Loading properties");
-        this.d = new PropertyManager(options); // CraftBukkit
-        String s = this.d.a("server-ip", "");
+        log.info("Loading properties");
+        this.propertyManager = new PropertyManager(new File("server.properties"));
+        String s = this.propertyManager.getString("server-ip", "");
 
-        this.l = this.d.a("online-mode", true);
-        this.m = this.d.a("spawn-animals", true);
-        this.n = this.d.a("pvp", true);
-        this.spawnProtection = this.d.a("spawn-protection", 16); // CraftBukkit Configurable spawn protection start
+        this.onlineMode = this.propertyManager.getBoolean("online-mode", true);
+        this.spawnAnimals = this.propertyManager.getBoolean("spawn-animals", true);
+        this.pvpMode = this.propertyManager.getBoolean("pvp", true);
+        this.spawnProtection = this.propertyManager.getInt("spawn-protection", 16); // CraftBukkit Configurable spawn protection start
         InetAddress inetaddress = null;
 
         if (s.length() > 0) {
             inetaddress = InetAddress.getByName(s);
         }
 
-        int i = this.d.a("server-port", 25565);
+        int i = this.propertyManager.getInt("server-port", 25565);
 
-        a.info("Starting Minecraft server on " + (s.length() == 0 ? "*" : s) + ":" + i);
+        log.info("Starting Minecraft server on " + (s.length() == 0 ? "*" : s) + ":" + i);
 
         try {
-            this.c = new NetworkListenThread(this, inetaddress, i);
+            this.networkListenThread = new NetworkListenThread(this, inetaddress, i);
         } catch (Throwable ioexception) { // CraftBukkit - IOException -> Throwable
-            a.warning("**** FAILED TO BIND TO PORT!");
-            a.log(Level.WARNING, "The exception was: " + ioexception.toString());
-            a.warning("Perhaps a server is already running on that port?");
+            log.warning("**** FAILED TO BIND TO PORT!");
+            log.log(Level.WARNING, "The exception was: " + ioexception.toString());
+            log.warning("Perhaps a server is already running on that port?");
             return false;
         }
 
-        if (!this.l) {
-            a.warning("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
-            a.warning("The server will make no attempt to authenticate usernames. Beware.");
-            a.warning("While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.");
-            a.warning("To change this, set \"online-mode\" to \"true\" in the server.settings file.");
+        if (!this.onlineMode) {
+            log.warning("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
+            log.warning("The server will make no attempt to authenticate usernames. Beware.");
+            log.warning("While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.");
+            log.warning("To change this, set \"online-mode\" to \"true\" in the server.settings file.");
         }
 
-        this.f = new ServerConfigurationManager(this);
-        this.k = new EntityTracker(this);
+        this.serverConfigurationManager = new ServerConfigurationManager(this);
+        this.tracker = new EntityTracker(this);
         long j = System.nanoTime();
-        String s1 = this.d.a("level-name", "world");
-        String s2 = this.d.a("level-seed", "");
+        String s1 = this.propertyManager.getString("level-name", "world");
+        String s2 = this.propertyManager.getString("level-seed", "");
         long k = (new Random()).nextLong();
 
         if (s2.length() > 0) {
@@ -138,41 +138,41 @@ public class MinecraftServer implements Runnable, ICommandListener {
             }
         }
 
-        a.info("Preparing level \"" + s1 + "\"");
+        log.info("Preparing level \"" + s1 + "\"");
         this.a(new WorldLoaderServer(new File(".")), s1, k);
 
         // CraftBukkit start
         long elapsed = System.nanoTime() - j;
         String time = String.format( "%.3fs", elapsed / 10000000000.0D );
-        a.info("Done (" + time + ")! For help, type \"help\" or \"?\"");
+        log.info("Done (" + time + ")! For help, type \"help\" or \"?\"");
         // CraftBukkit end
 
         return true;
     }
 
     private void a(Convertable convertable, String s, long i) {
-        if (convertable.a(s)) {
-            a.info("Converting map!");
-            convertable.a(s, new ConvertProgressUpdater(this));
+        if (convertable.isConvertable(s)) {
+            log.info("Converting map!");
+            convertable.convert(s, new ConvertProgressUpdater(this));
         }
 
-        a.info("Preparing start region");
+        log.info("Preparing start region");
 
         // CraftBukkit start
-        WorldServer world = new WorldServer(this, new ServerNBTManager(new File("."), s, true), s, this.d.a("hellworld", false) ? -1 : 0, i);
-        world.a(new WorldManager(this, world));
-        world.j = this.d.a("spawn-monsters", true) ? 1 : 0;
-        world.a(this.d.a("spawn-monsters", true), this.m);
-        this.f.a(world);
+        WorldServer world = new WorldServer(this, new ServerNBTManager(new File("."), s, true), s, this.propertyManager.getBoolean("hellworld", false) ? -1 : 0, i);
+        world.addIWorldAccess(new WorldManager(this, world));
+        world.spawnMonsters = this.propertyManager.getBoolean("spawn-monsters", true) ? 1 : 0;
+        world.setSpawnFlags(this.propertyManager.getBoolean("spawn-monsters", true), this.spawnAnimals);
+        this.serverConfigurationManager.setPlayerFileData(world);
         worlds.add(world);
         // CraftBukkit end
 
         short short1 = 196;
         long j = System.currentTimeMillis();
-        ChunkCoordinates chunkcoordinates = worlds.get(0).m(); // CraftBukkit
+        ChunkCoordinates chunkcoordinates = world.getSpawn(); // CraftBukkit
 
-        for (int k = -short1; k <= short1 && this.p; k += 16) {
-            for (int l = -short1; l <= short1 && this.p; l += 16) {
+        for (int k = -short1; k <= short1 && this.isRunning; k += 16) {
+            for (int l = -short1; l <= short1 && this.isRunning; l += 16) {
                 long i1 = System.currentTimeMillis();
 
                 if (i1 < j) {
@@ -189,9 +189,9 @@ public class MinecraftServer implements Runnable, ICommandListener {
 
                 // CraftBukkit start
                 for (WorldServer worldserver: worlds) {
-                    world.u.c(chunkcoordinates.a + k >> 4, chunkcoordinates.c + l >> 4);
+                    world.chunkProviderServer.getChunkAt(chunkcoordinates.x + k >> 4, chunkcoordinates.z + l >> 4);
 
-                    while (world.f() && this.p) {
+                    while (world.doLighting() && this.isRunning) {
                         ;
                     }
                 }
@@ -205,7 +205,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
     private void a(String s, int i) {
         this.i = s;
         this.j = i;
-        a.info(s + ": " + i + "%");
+        log.info(s + ": " + i + "%");
     }
 
     private void e() {
@@ -215,66 +215,66 @@ public class MinecraftServer implements Runnable, ICommandListener {
         server.loadPlugins(); // CraftBukkit
     }
 
-    void f() { // CraftBukkit - private -> default
-        a.info("Saving chunks");
+    void saveChunks() { // CraftBukkit - private -> default
+        log.info("Saving chunks");
 
         // CraftBukkit start
         for (WorldServer world: worlds) {
-            world.a(true, (IProgressUpdate) null);
-            world.t();
+            world.save(true, (IProgressUpdate) null);
+            world.saveLevel();
 
             WorldSaveEvent event = new WorldSaveEvent( world.getWorld() );
             server.getPluginManager().callEvent( event );
         }
 
-        this.f.d(); // CraftBukkit - player data should be saved whenever a save happens.
+        this.serverConfigurationManager.savePlayers(); // CraftBukkit - player data should be saved whenever a save happens.
         // CraftBukkit end
     }
 
-    public void g() { // Craftbukkit: private -> public
-        a.info("Stopping server");
+    public void stop() { // Craftbukkit: private -> public
+        log.info("Stopping server");
         // CraftBukkit start
         if (server != null) {
             server.disablePlugins();
         }
         // CraftBukkit end
 
-        if (this.f != null) {
-            this.f.d();
+        if (this.serverConfigurationManager != null) {
+            this.serverConfigurationManager.savePlayers();
         }
 
         if (this.worlds.size() > 0) { // CraftBukkit
-            this.f();
+            this.saveChunks();
         }
     }
 
     public void a() {
-        this.p = false;
+        this.isRunning = false;
     }
 
     public void run() {
         try {
-            if (this.d()) {
+            if (this.init()) {
                 long i = System.currentTimeMillis();
 
-                for (long j = 0L; this.p; Thread.sleep(1L)) {
+                for (long j = 0L; this.isRunning; Thread.sleep(1L)) {
                     long k = System.currentTimeMillis();
                     long l = k - i;
 
                     if (l > 2000L) {
-                        a.warning("Can\'t keep up! Did the system time change, or is the server overloaded?");
+                        log.warning("Can\'t keep up! Did the system time change, or is the server overloaded?");
                         l = 2000L;
                     }
 
                     if (l < 0L) {
-                        a.warning("Time ran backwards! Did the system time change?");
+                        log.warning("Time ran backwards! Did the system time change?");
                         l = 0L;
                     }
 
                     j += l;
                     i = k;
                     // CraftBukkit - TODO - Replace with loop?
-                    if (this.worlds.size() > 0 && this.worlds.get(0).s()) {
+                    if (this.worlds.size() > 0 && this.worlds.get(0).everyoneDeeplySleeping()) {
                         this.h();
                         j = 0L;
                     } else {
@@ -285,7 +285,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
                     }
                 }
             } else {
-                while (this.p) {
+                while (this.isRunning) {
                     this.b();
 
                     try {
@@ -297,9 +297,9 @@ public class MinecraftServer implements Runnable, ICommandListener {
             }
         } catch (Throwable throwable) {
             throwable.printStackTrace();
-            a.log(Level.SEVERE, "Unexpected exception", throwable);
+            log.log(Level.SEVERE, "Unexpected exception", throwable);
 
-            while (this.p) {
+            while (this.isRunning) {
                 this.b();
 
                 try {
@@ -310,8 +310,8 @@ public class MinecraftServer implements Runnable, ICommandListener {
             }
         } finally {
             try {
-                this.g();
-                this.g = true;
+                this.stop();
+                this.isStopped = true;
             } catch (Throwable throwable1) {
                 throwable1.printStackTrace();
             } finally {
@@ -343,31 +343,31 @@ public class MinecraftServer implements Runnable, ICommandListener {
 
         AxisAlignedBB.a();
         Vec3D.a();
-        ++this.h;
+        ++this.ticks;
 
         // CraftBukkit start
-        if (this.h % 20 == 0) {
-            for (int i = 0; i < this.f.b.size(); ++i) {
-                EntityPlayer entityplayer = (EntityPlayer) this.f.b.get(i);
-                entityplayer.a.b((Packet) (new Packet4UpdateTime(entityplayer.world.l())));
+        if (this.ticks % 20 == 0) {
+            for (int i = 0; i < this.serverConfigurationManager.players.size(); ++i) {
+                EntityPlayer entityplayer = (EntityPlayer) this.serverConfigurationManager.players.get(i);
+                entityplayer.netServerHandler.sendPacket(new Packet4UpdateTime(entityplayer.world.getTime()));
             }
         }
 
-        ((CraftScheduler) server.getScheduler()).mainThreadHeartbeat(this.h);
+        ((CraftScheduler) server.getScheduler()).mainThreadHeartbeat(this.ticks);
 
         for (WorldServer world: worlds) {
-            world.h();
+            world.doTick();
 
-            while (world.f()) {
+            while (world.doLighting()) {
                 ;
             }
 
-            world.e();
+            world.cleanUp();
         }
         // CraftBukkit end
-        this.c.a();
-        this.f.b();
-        this.k.a();
+        this.networkListenThread.a();
+        this.serverConfigurationManager.b();
+        this.tracker.a();
 
         for (j = 0; j < this.q.size(); ++j) {
             ((IUpdatePlayerListBox) this.q.get(j)).a();
@@ -376,11 +376,11 @@ public class MinecraftServer implements Runnable, ICommandListener {
         try {
             this.b();
         } catch (Exception exception) {
-            a.log(Level.WARNING, "Unexpected exception while parsing console command", exception);
+            log.log(Level.WARNING, "Unexpected exception while parsing console command", exception);
         }
     }
 
-    public void a(String s, ICommandListener icommandlistener) {
+    public void issueCommand(String s, ICommandListener icommandlistener) {
         this.r.add(new ServerCommand(s, icommandlistener));
     }
 
@@ -388,8 +388,8 @@ public class MinecraftServer implements Runnable, ICommandListener {
         while (this.r.size() > 0) {
             ServerCommand servercommand = (ServerCommand) this.r.remove(0);
 
+            // this.consoleCommandHandler.a(servercommand); // CraftBukkit - Removed its now called in server.displatchCommand
             server.dispatchCommand(console, servercommand); // CraftBukkit
-            // this.o.a(servercommand); // CraftBukkit - Removed its now called in server.displatchCommand
         }
     }
 
@@ -405,7 +405,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
 
             (new ThreadServerApplication("Server thread", minecraftserver)).start();
         } catch (Exception exception) {
-            a.log(Level.SEVERE, "Failed to start the minecraft server", exception);
+            log.log(Level.SEVERE, "Failed to start the minecraft server", exception);
         }
     }
 
@@ -413,19 +413,19 @@ public class MinecraftServer implements Runnable, ICommandListener {
         return new File(s);
     }
 
-    public void b(String s) {
-        a.info(s);
+    public void sendMessage(String s) {
+        log.info(s);
     }
 
     public void c(String s) {
-        a.warning(s);
+        log.warning(s);
     }
 
-    public String c() {
+    public String getName() {
         return "CONSOLE";
     }
 
-    public static boolean a(MinecraftServer minecraftserver) {
-        return minecraftserver.p;
+    public static boolean isRunning(MinecraftServer minecraftserver) {
+        return minecraftserver.isRunning;
     }
 }

@@ -32,7 +32,7 @@ public class CraftChest extends CraftBlockState implements Chest {
         boolean result = super.update(force);
 
         if (result) {
-            chest.i();
+            chest.update();
         }
 
         return result;

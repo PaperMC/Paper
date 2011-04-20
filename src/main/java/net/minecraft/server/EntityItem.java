@@ -8,10 +8,10 @@ import org.bukkit.event.player.PlayerPickupItemEvent;
 
 public class EntityItem extends Entity {
 
-    public ItemStack a;
+    public ItemStack itemStack;
     private int e;
     public int b = 0;
-    public int c;
+    public int pickupDelay;
     private int f = 5;
     public float d = (float) (Math.random() * 3.141592653589793D * 2.0D);
 
@@ -19,8 +19,8 @@ public class EntityItem extends Entity {
         super(world);
         this.b(0.25F, 0.25F);
         this.height = this.width / 2.0F;
-        this.a(d0, d1, d2);
-        this.a = itemstack;
+        this.setPosition(d0, d1, d2);
+        this.itemStack = itemstack;
         this.yaw = (float) (Math.random() * 360.0D);
         this.motX = (double) ((float) (Math.random() * 0.20000000298023224D - 0.10000000149011612D));
         this.motY = 0.20000000298023224D;
@@ -41,28 +41,28 @@ public class EntityItem extends Entity {
 
     public void f_() {
         super.f_();
-        if (this.c > 0) {
-            --this.c;
+        if (this.pickupDelay > 0) {
+            --this.pickupDelay;
         }
 
         this.lastX = this.locX;
         this.lastY = this.locY;
         this.lastZ = this.locZ;
         this.motY -= 0.03999999910593033D;
-        if (this.world.getMaterial(MathHelper.b(this.locX), MathHelper.b(this.locY), MathHelper.b(this.locZ)) == Material.LAVA) {
+        if (this.world.getMaterial(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ)) == Material.LAVA) {
             this.motY = 0.20000000298023224D;
             this.motX = (double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F);
             this.motZ = (double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F);
-            this.world.a(this, "random.fizz", 0.4F, 2.0F + this.random.nextFloat() * 0.4F);
+            this.world.makeSound(this, "random.fizz", 0.4F, 2.0F + this.random.nextFloat() * 0.4F);
         }
 
         this.g(this.locX, this.locY, this.locZ);
-        this.c(this.motX, this.motY, this.motZ);
+        this.move(this.motX, this.motY, this.motZ);
         float f = 0.98F;
 
         if (this.onGround) {
             f = 0.58800006F;
-            int i = this.world.getTypeId(MathHelper.b(this.locX), MathHelper.b(this.boundingBox.b) - 1, MathHelper.b(this.locZ));
+            int i = this.world.getTypeId(MathHelper.floor(this.locX), MathHelper.floor(this.boundingBox.b) - 1, MathHelper.floor(this.locZ));
 
             if (i > 0) {
                 f = Block.byId[i].frictionFactor * 0.98F;
@@ -79,7 +79,7 @@ public class EntityItem extends Entity {
         ++this.e;
         ++this.b;
         if (this.b >= 6000) {
-            this.D();
+            this.die();
         }
     }
 
@@ -88,9 +88,9 @@ public class EntityItem extends Entity {
     }
 
     private boolean g(double d0, double d1, double d2) {
-        int i = MathHelper.b(d0);
-        int j = MathHelper.b(d1);
-        int k = MathHelper.b(d2);
+        int i = MathHelper.floor(d0);
+        int j = MathHelper.floor(d1);
+        int k = MathHelper.floor(d2);
         double d3 = d0 - (double) i;
         double d4 = d1 - (double) j;
         double d5 = d2 - (double) k;
@@ -166,14 +166,14 @@ public class EntityItem extends Entity {
     }
 
     protected void a(int i) {
-        this.a((Entity) null, i);
+        this.damageEntity((Entity) null, i);
     }
 
-    public boolean a(Entity entity, int i) {
+    public boolean damageEntity(Entity entity, int i) {
         this.W();
         this.f -= i;
         if (this.f <= 0) {
-            this.D();
+            this.die();
         }
 
         return false;
@@ -182,7 +182,7 @@ public class EntityItem extends Entity {
     public void a(NBTTagCompound nbttagcompound) {
         nbttagcompound.a("Health", (short) ((byte) this.f));
         nbttagcompound.a("Age", (short) this.b);
-        nbttagcompound.a("Item", this.a.a(new NBTTagCompound()));
+        nbttagcompound.a("Item", this.itemStack.a(new NBTTagCompound()));
     }
 
     public void b(NBTTagCompound nbttagcompound) {
@@ -190,26 +190,27 @@ public class EntityItem extends Entity {
         this.b = nbttagcompound.d("Age");
         NBTTagCompound nbttagcompound1 = nbttagcompound.k("Item");
 
-        this.a = new ItemStack(nbttagcompound1);
+        this.itemStack = new ItemStack(nbttagcompound1);
     }
 
     public void b(EntityHuman entityhuman) {
         if (!this.world.isStatic) {
-            int i = this.a.count;
+            int i = this.itemStack.count;
 
             // CraftBukkit start
-            if (this.c == 0) {
+            if (this.pickupDelay == 0) {
                 Player player = (Player) entityhuman.getBukkitEntity();
                 PlayerPickupItemEvent event = new PlayerPickupItemEvent(player, (Item) this.getBukkitEntity());
                 ((WorldServer) world).getServer().getPluginManager().callEvent(event);
 
-                if (!event.isCancelled() && entityhuman.inventory.a(this.a)) {
-                    this.world.a(this, "random.pop", 0.2F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
-                    entityhuman.b(this, i);
-                    this.D();
+                if (event.isCancelled() || !entityhuman.inventory.canHold(this.itemStack)) {
+                    return;
                 }
+                // CraftBukkit end
+                this.world.makeSound(this, "random.pop", 0.2F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
+                entityhuman.receive(this, i);
+                this.die();
             }
-            // CraftBukkit end
         }
     }
 }

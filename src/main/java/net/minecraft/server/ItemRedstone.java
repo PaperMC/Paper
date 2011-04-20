@@ -43,10 +43,10 @@ public class ItemRedstone extends Item {
         if (!world.isEmpty(i, j, k)) {
             return false;
         } else {
-            if (Block.REDSTONE_WIRE.a(world, i, j, k)) {
+            if (Block.REDSTONE_WIRE.canPlace(world, i, j, k)) {
                 BlockState blockState = CraftBlockState.getBlockState(world, i, j, k); // CraftBukkit
 
-                world.e(i, j, k, Block.REDSTONE_WIRE.id);
+                world.setTypeId(i, j, k, Block.REDSTONE_WIRE.id);
 
                 // CraftBukkit start - redstone
                 BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ, Block.REDSTONE_WIRE);

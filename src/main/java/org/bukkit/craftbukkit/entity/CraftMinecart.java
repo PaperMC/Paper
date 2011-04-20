@@ -39,11 +39,11 @@ public class CraftMinecart extends CraftVehicle implements Minecart {
     }
 
     public void setDamage(int damage) {
-        minecart.a = damage;
+        minecart.damage = damage;
     }
 
     public int getDamage() {
-        return minecart.a;
+        return minecart.damage;
     }
 
     public double getMaxSpeed() {

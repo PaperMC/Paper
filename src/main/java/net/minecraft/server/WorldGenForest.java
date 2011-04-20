@@ -59,7 +59,7 @@ public class WorldGenForest extends WorldGenerator {
             } else {
                 i1 = world.getTypeId(i, j - 1, k);
                 if ((i1 == Block.GRASS.id || i1 == Block.DIRT.id) && j < 128 - l - 1) {
-                    world.setTypeId(i, j - 1, k, Block.DIRT.id);
+                    world.setRawTypeId(i, j - 1, k, Block.DIRT.id);
 
                     int i2;
 
@@ -74,7 +74,7 @@ public class WorldGenForest extends WorldGenerator {
                                 int l2 = k2 - k;
 
                                 if ((Math.abs(j2) != k1 || Math.abs(l2) != k1 || random.nextInt(2) != 0 && j1 != 0) && !Block.o[world.getTypeId(l1, i2, k2)]) {
-                                    world.setTypeIdAndData(l1, i2, k2, Block.LEAVES.id, 2);
+                                    world.setRawTypeIdAndData(l1, i2, k2, Block.LEAVES.id, 2);
                                 }
                             }
                         }
@@ -83,7 +83,7 @@ public class WorldGenForest extends WorldGenerator {
                     for (i2 = 0; i2 < l; ++i2) {
                         j1 = world.getTypeId(i, j + i2, k);
                         if (j1 == 0 || j1 == Block.LEAVES.id) {
-                            world.setTypeIdAndData(i, j + i2, k, Block.LOG.id, 2);
+                            world.setRawTypeIdAndData(i, j + i2, k, Block.LOG.id, 2);
                         }
                     }
 

@@ -13,7 +13,7 @@ import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
 
 public class EntityMonster extends EntityCreature implements IMonster {
 
-    protected int c = 2;
+    protected int damage = 2;
 
     public EntityMonster(World world) {
         super(world);
@@ -32,19 +32,19 @@ public class EntityMonster extends EntityCreature implements IMonster {
 
     public void f_() {
         super.f_();
-        if (this.world.j == 0) {
-            this.D();
+        if (this.world.spawnMonsters == 0) {
+            this.die();
         }
     }
 
-    protected Entity m() {
+    protected Entity findTarget() {
         EntityHuman entityhuman = this.world.a(this, 16.0D);
 
         return entityhuman != null && this.e(entityhuman) ? entityhuman : null;
     }
 
-    public boolean a(Entity entity, int i) {
-        if (super.a(entity, i)) {
+    public boolean damageEntity(Entity entity, int i) {
+        if (super.damageEntity(entity, i)) {
             if (this.passenger != entity && this.vehicle != entity) {
                 if (entity != this) {
                     // CraftBukkit start
@@ -59,9 +59,9 @@ public class EntityMonster extends EntityCreature implements IMonster {
 
                     if (!event.isCancelled()) {
                         if (event.getTarget() == null) {
-                            this.d = null;
+                            this.target = null;
                         } else {
-                            this.d = ((CraftEntity) event.getTarget()).getHandle();
+                            this.target = ((CraftEntity) event.getTarget()).getHandle();
                         }
                     }
                     // CraftBukkit end
@@ -88,17 +88,17 @@ public class EntityMonster extends EntityCreature implements IMonster {
                 org.bukkit.entity.Entity damagee = (entity == null) ? null : entity.getBukkitEntity();
                 DamageCause damageType = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
 
-                EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(damager, damagee, damageType, this.c);
+                EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(damager, damagee, damageType, this.damage);
                 server.getPluginManager().callEvent(event);
 
-                if (!event.isCancelled() && event.getDamage() != 0) {
-                    entity.a(this, event.getDamage());
+                if (!event.isCancelled()) {
+                    entity.damageEntity(this, event.getDamage());
                 }
                 return;
             }
             // CraftBukkit end
 
-            entity.a(this, this.c);
+            entity.damageEntity(this, this.damage);
         }
     }
 
@@ -115,14 +115,14 @@ public class EntityMonster extends EntityCreature implements IMonster {
     }
 
     public boolean b() {
-        int i = MathHelper.b(this.locX);
-        int j = MathHelper.b(this.boundingBox.b);
-        int k = MathHelper.b(this.locZ);
+        int i = MathHelper.floor(this.locX);
+        int j = MathHelper.floor(this.boundingBox.b);
+        int k = MathHelper.floor(this.locZ);
 
         if (this.world.a(EnumSkyBlock.SKY, i, j, k) > this.random.nextInt(32)) {
             return false;
         } else {
-            int l = this.world.j(i, j, k);
+            int l = this.world.getLightLevel(i, j, k);
 
             return l <= this.random.nextInt(8) && super.b();
         }
