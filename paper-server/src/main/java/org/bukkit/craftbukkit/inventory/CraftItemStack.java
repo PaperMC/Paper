@@ -121,6 +121,6 @@ public class CraftItemStack extends ItemStack {
 
     @Override
     public int getMaxStackSize() {
-        return item.a().b();
+        return item.getItem().getMaxStackSize();
     }
 }

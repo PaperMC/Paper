@@ -19,23 +19,23 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
     }
 
     public int getSize() {
-        return getInventory().q_();
+        return getInventory().getSize();
     }
 
     public String getName() {
-        return getInventory().c();
+        return getInventory().getName();
     }
 
-    public ItemStack getItem(int index) {
-        return new CraftItemStack(getInventory().c_(index));
+    public CraftItemStack getItem(int index) {
+        return new CraftItemStack(getInventory().getItem(index));
     }
 
-    public ItemStack[] getContents() {
-        ItemStack[] items = new ItemStack[getSize()];
+    public CraftItemStack[] getContents() {
+        CraftItemStack[] items = new CraftItemStack[getSize()];
         net.minecraft.server.ItemStack[] mcItems = getInventory().getContents();
 
         for (int i = 0; i < mcItems.length; i++ ) {
-            items[i] = mcItems[i] == null ? null : new CraftItemStack(mcItems[i]);
+            items[i] = new CraftItemStack(mcItems[i]);
         }
 
         return items;
@@ -59,12 +59,12 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
     }
 
     public void setItem(int index, ItemStack item) {
-        getInventory().a(index, (item == null ? null : new net.minecraft.server.ItemStack( item.getTypeId(), item.getAmount(), item.getDurability())));
+        getInventory().setItem(index, (item == null ? null : new net.minecraft.server.ItemStack( item.getTypeId(), item.getAmount(), item.getDurability())));
     }
 
     public boolean contains(int materialId) {
         for (ItemStack item: getContents()) {
-            if (item != null && item.getTypeId() == materialId) {
+            if (item.getTypeId() == materialId) {
                 return true;
             }
         }
@@ -86,15 +86,15 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
         }
         return false;
     }
-    
+
     public boolean contains(int materialId, int amount) {
         int amt = 0;
         for (ItemStack item: getContents()) {
-            if (item != null && item.getTypeId() == materialId) {
-                amt += item.getAmount();
+            if (item.getTypeId() == materialId && item.getAmount() >= amount) {
+                return true;
             }
         }
-        return amt >= amount;
+        return false;
     }
 
     public boolean contains(Material material, int amount) {
@@ -107,13 +107,13 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
         }
         int amt = 0;
         for (ItemStack i: getContents()) {
-            if (item.equals(i)) {
-                amt += item.getAmount();
+            if (item.equals(i) && item.getAmount() >= amount) {
+                return true;
             }
         }
-        return amt >= amount;
+        return false;
     }
-    
+
     public HashMap<Integer, ItemStack> all(int materialId) {
         HashMap<Integer, ItemStack> slots = new HashMap<Integer, ItemStack>();
 
@@ -312,7 +312,7 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
     }
 
     private int getMaxItemStack() {
-        return getInventory().r_();
+        return getInventory().getMaxStackSize();
     }
 
     public void remove(int materialId) {

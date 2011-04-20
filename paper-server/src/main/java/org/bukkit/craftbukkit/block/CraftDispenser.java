@@ -36,7 +36,7 @@ public class CraftDispenser extends CraftBlockState implements Dispenser {
         synchronized (block) {
             if (block.getType() == Material.DISPENSER) {
                 BlockDispenser dispense = (BlockDispenser)net.minecraft.server.Block.DISPENSER;
-                dispense.b(world.getHandle(), getX(), getY(), getZ(), new Random());
+                dispense.dispense(world.getHandle(), getX(), getY(), getZ(), new Random());
                 return true;
             } else {
                 return false;
@@ -49,7 +49,7 @@ public class CraftDispenser extends CraftBlockState implements Dispenser {
         boolean result = super.update(force);
 
         if (result) {
-            dispenser.i();
+            dispenser.update();
         }
 
         return result;

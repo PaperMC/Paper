@@ -127,11 +127,11 @@ public final class CraftServer implements Server {
     }
 
     public Player[] getOnlinePlayers() {
-        List<EntityPlayer> online = server.b;
+        List<EntityPlayer> online = server.players;
         Player[] players = new Player[online.size()];
 
         for (int i = 0; i < players.length; i++) {
-            players[i] = online.get(i).a.getPlayer();
+            players[i] = online.get(i).netServerHandler.getPlayer();
         }
 
         return players;
@@ -167,7 +167,7 @@ public final class CraftServer implements Server {
     }
 
     public Player getPlayer(final EntityPlayer entity) {
-        return entity.a.getPlayer();
+        return entity.netServerHandler.getPlayer();
     }
 
     public List<Player> matchPlayer(String partialName) {
@@ -192,7 +192,7 @@ public final class CraftServer implements Server {
     }
 
     public int getMaxPlayers() {
-        return server.e;
+        return server.maxPlayers;
     }
 
     // NOTE: These are dependent on the corrisponding call in MinecraftServer
@@ -215,11 +215,11 @@ public final class CraftServer implements Server {
 
     // NOTE: Temporary calls through to server.properies until its replaced
     private String getConfigString(String variable, String defaultValue) {
-        return this.console.d.a(variable, defaultValue);
+        return this.console.propertyManager.getString(variable, defaultValue);
     }
 
     private int getConfigInt(String variable, int defaultValue) {
-        return this.console.d.a(variable, defaultValue);
+        return this.console.propertyManager.getInt(variable, defaultValue);
     }
 
     // End Temporary calls
@@ -243,10 +243,10 @@ public final class CraftServer implements Server {
 
     // NOTE: Should only be called from MinecraftServer.b()
     public boolean dispatchCommand(CommandSender sender, ServerCommand serverCommand) {
-        if ( commandMap.dispatch(sender, serverCommand.a) ) {
+        if ( commandMap.dispatch(sender, serverCommand.command) ) {
             return true;
         }
-        return console.o.a(serverCommand);
+        return console.consoleCommandHandler.handle(serverCommand);
     }
 
     public boolean dispatchCommand(CommandSender sender, String commandLine) {
@@ -260,24 +260,24 @@ public final class CraftServer implements Server {
         }
 
         // See if the server can process this command
-        return console.o.a(new ServerCommand(commandLine, new CommandListener(sender)));
+        return console.consoleCommandHandler.handle(new ServerCommand(commandLine, new CommandListener(sender)));
     }
 
     public void reload() {
         PropertyManager config = new PropertyManager(console.options);
 
-        console.d = config;
+        console.propertyManager = config;
 
-        boolean animals = config.a("spawn-monsters", console.m);
-        boolean monsters = config.a("spawn-monsters", console.worlds.get(0).j > 0);
+        boolean animals = config.getBoolean("spawn-monsters", console.spawnAnimals);
+        boolean monsters = config.getBoolean("spawn-monsters", console.worlds.get(0).spawnMonsters > 0);
 
-        console.l = config.a("online-mode", console.l);
-        console.m = config.a("spawn-animals", console.m);
-        console.n = config.a("pvp", console.n);
+        console.onlineMode = config.getBoolean("online-mode", console.onlineMode);
+        console.spawnAnimals = config.getBoolean("spawn-animals", console.spawnAnimals);
+        console.pvpMode = config.getBoolean("pvp", console.pvpMode);
 
         for (WorldServer world : console.worlds) {
-            world.j = monsters ? 1 : 0;
-            world.a(monsters, animals);
+            world.spawnMonsters = monsters ? 1 : 0;
+            world.setSpawnFlags(monsters, animals);
         }
 
         pluginManager.clearPlugins();
@@ -307,17 +307,17 @@ public final class CraftServer implements Server {
         }
 
         Convertable converter = new WorldLoaderServer(folder);
-        if (converter.a(name)) {
+        if (converter.isConvertable(name)) {
             getLogger().info("Converting world '" + name + "'");
-            converter.a(name, new ConvertProgressUpdater(console));
+            converter.convert(name, new ConvertProgressUpdater(console));
         }
 
         WorldServer internal = new WorldServer(console, new ServerNBTManager(new File("."), name, true), name, environment == World.Environment.NETHER ? -1 : 0, seed);
 
-        internal.a(new WorldManager(console, internal));
-        internal.j = 1;
-        internal.a(true, true);
-        console.f.a(internal);
+        internal.addIWorldAccess(new WorldManager(console, internal));
+        internal.spawnMonsters = 1;
+        internal.setSpawnFlags(true, true);
+        console.serverConfigurationManager.setPlayerFileData(internal);
         console.worlds.add(internal);
 
         short short1 = 196;
@@ -338,10 +338,10 @@ public final class CraftServer implements Server {
                     i = l;
                 }
 
-                ChunkCoordinates chunkcoordinates = internal.m();
-                internal.u.c(chunkcoordinates.a + j >> 4, chunkcoordinates.c + k >> 4);
+                ChunkCoordinates chunkcoordinates = internal.getSpawn();
+                internal.chunkProviderServer.getChunkAt(chunkcoordinates.x + j >> 4, chunkcoordinates.z + k >> 4);
 
-                while (internal.f()) {
+                while (internal.doLighting()) {
                     ;
                 }
             }
@@ -363,7 +363,7 @@ public final class CraftServer implements Server {
     }
 
     public Logger getLogger() {
-        return MinecraftServer.a;
+        return MinecraftServer.log;
     }
 
     public ConsoleReader getReader() {
@@ -381,7 +381,7 @@ public final class CraftServer implements Server {
     }
 
     public void savePlayers() {
-        server.d();
+        server.savePlayers();
     }
 
     public void configureDbConfig(ServerConfig config) {
@@ -410,11 +410,11 @@ public final class CraftServer implements Server {
             this.prefix = parts[parts.length-1];
         }
 
-        public void b(String msg) {
+        public void sendMessage(String msg) {
             this.commandSender.sendMessage(msg);
         }
 
-        public String c() {
+        public String getName() {
             return this.prefix;
         }
     }

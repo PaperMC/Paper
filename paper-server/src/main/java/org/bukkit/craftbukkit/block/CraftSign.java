@@ -17,15 +17,15 @@ public class CraftSign extends CraftBlockState implements Sign {
     }
 
     public String[] getLines() {
-        return sign.a;
+        return sign.lines;
     }
 
     public String getLine(int index) throws IndexOutOfBoundsException {
-        return sign.a[index];
+        return sign.lines[index];
     }
 
     public void setLine(int index, String line) throws IndexOutOfBoundsException {
-        sign.a[index] = line;
+        sign.lines[index] = line;
     }
 
     @Override
@@ -33,7 +33,7 @@ public class CraftSign extends CraftBlockState implements Sign {
         boolean result = super.update(force);
 
         if (result) {
-            sign.i();
+            sign.update();
         }
 
         return result;

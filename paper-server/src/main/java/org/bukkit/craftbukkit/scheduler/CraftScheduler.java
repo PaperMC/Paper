@@ -20,7 +20,7 @@ import org.bukkit.craftbukkit.scheduler.CraftTask;
 public class CraftScheduler implements BukkitScheduler, Runnable {
 
     private static final Logger logger = Logger.getLogger("Minecraft");
-    
+
     private final CraftServer server;
 
     private final CraftThreadManager craftThreadManager = new CraftThreadManager();

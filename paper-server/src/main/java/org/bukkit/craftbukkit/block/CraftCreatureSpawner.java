@@ -18,15 +18,15 @@ public class CraftCreatureSpawner extends CraftBlockState implements CreatureSpa
     }
 
     public CreatureType getCreatureType() {
-        return CreatureType.fromName(spawner.h);
+        return CreatureType.fromName(spawner.mobName);
     }
 
     public void setCreatureType(CreatureType creatureType) {
-        spawner.h = creatureType.getName();
+        spawner.mobName = creatureType.getName();
     }
 
     public String getCreatureTypeId() {
-        return spawner.h;
+        return spawner.mobName;
     }
 
     public void setCreatureTypeId(String creatureType) {
@@ -35,15 +35,15 @@ public class CraftCreatureSpawner extends CraftBlockState implements CreatureSpa
         if (type == null) {
             return;
         }
-        spawner.h = type.getName();
+        spawner.mobName = type.getName();
     }
-    
+
     public int getDelay() {
-        return spawner.a;
+        return spawner.spawnDelay;
     }
 
     public void setDelay(int delay) {
-        spawner.a = delay;
+        spawner.spawnDelay = delay;
     }
 
 }

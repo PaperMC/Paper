@@ -12,14 +12,14 @@ public class CraftSlot implements org.bukkit.inventory.Slot {
     }
 
     public Inventory getInventory() {
-        return new CraftInventory( slot.e );
+        return new CraftInventory( slot.inventory );
     }
 
     public int getIndex() {
-        return slot.d;
+        return slot.index;
     }
 
     public ItemStack getItem() {
-        return new CraftItemStack( slot.a() );
+        return new CraftItemStack( slot.getItem() );
     }
 }

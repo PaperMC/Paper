@@ -23,7 +23,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public boolean isOp() {
-        return server.getHandle().h(getName());
+        return server.getHandle().isOp(getName());
     }
 
     public boolean isPlayer() {
@@ -31,7 +31,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public boolean isOnline() {
-        for (Object obj: server.getHandle().b) {
+        for (Object obj: server.getHandle().players) {
             EntityPlayer player = (EntityPlayer) obj;
             if (player.name.equalsIgnoreCase(getName())) {
                 return true;
@@ -41,7 +41,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public InetSocketAddress getAddress() {
-        SocketAddress addr = getHandle().a.b.b();
+        SocketAddress addr = getHandle().netServerHandler.networkManager.getSocketAddress();
         if (addr instanceof InetSocketAddress) {
             return (InetSocketAddress) addr;
         } else {
@@ -76,12 +76,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void sendRawMessage(String message) {
-        getHandle().a.b(new Packet3Chat(message));
+        getHandle().netServerHandler.sendPacket(new Packet3Chat(message));
     }
 
     public void sendMessage(String message) {
         for (final String line: TextWrapper.wrapText(message)) {
-            getHandle().a.b(new Packet3Chat(line));
+            getHandle().netServerHandler.sendPacket(new Packet3Chat(line));
         }
     }
 
@@ -121,12 +121,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void kickPlayer(String message) {
-        getHandle().a.a(message == null ? "" : message);
+        getHandle().netServerHandler.disconnect(message == null ? "" : message);
     }
 
     public void setCompassTarget(Location loc) {
         // Do not directly assign here, from the packethandler we'll assign it.
-        getHandle().a.b((Packet) new Packet6SpawnPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
+        getHandle().netServerHandler.sendPacket(new Packet6SpawnPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
     }
 
     public Location getCompassTarget() {
@@ -134,7 +134,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void chat(String msg) {
-        getHandle().a.chat(msg);
+        getHandle().netServerHandler.chat(msg);
     }
 
     public boolean performCommand(String command) {
@@ -151,10 +151,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         if (oldWorld != newWorld) {
 
-            EntityPlayer newEntity = new EntityPlayer(manager.c, newWorld, entity.name, new ItemInWorldManager(newWorld));
+            EntityPlayer newEntity = new EntityPlayer(manager.server, newWorld, entity.name, new ItemInWorldManager(newWorld));
 
             newEntity.id = entity.id;
-            newEntity.a = entity.a;
+            newEntity.netServerHandler = entity.netServerHandler;
             newEntity.health = entity.health;
             newEntity.fireTicks = entity.fireTicks;
             newEntity.inventory = entity.inventory;
@@ -167,22 +167,22 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             newEntity.displayName = entity.displayName;
             newEntity.compassTarget = entity.compassTarget;
             newEntity.fauxSleeping = entity.fauxSleeping;
-            newWorld.u.c((int) location.getBlockX() >> 4, (int) location.getBlockZ() >> 4);
+            newWorld.chunkProviderServer.getChunkAt((int) location.getBlockX() >> 4, (int) location.getBlockZ() >> 4);
 
-            teleportSuccess = newEntity.a.teleport(location);
+            teleportSuccess = newEntity.netServerHandler.teleport(location);
 
             if (teleportSuccess) {
-                manager.c.k.a(entity);
-                manager.c.k.b(entity);
-                oldWorld.manager.b(entity);
-                manager.b.remove(entity);
-                oldWorld.e(entity);
+                manager.server.tracker.trackPlayer(entity);
+                manager.server.tracker.untrackEntity(entity);
+                oldWorld.manager.removePlayer(entity);
+                manager.players.remove(entity);
+                oldWorld.removeEntity(entity);
 
-                newWorld.manager.a(newEntity);
-                newWorld.a(newEntity);
-                manager.b.add(newEntity);
+                newWorld.manager.addPlayer(newEntity);
+                newWorld.addEntity(newEntity);
+                manager.players.add(newEntity);
 
-                entity.a.e = newEntity;
+                entity.netServerHandler.player = newEntity;
                 this.entity = newEntity;
 
                 setCompassTarget(getCompassTarget());
@@ -190,33 +190,33 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
             return teleportSuccess;
         } else {
-            return entity.a.teleport(location);
+            return entity.netServerHandler.teleport(location);
         }
     }
 
     public void setSneaking(boolean sneak) {
-        getHandle().e(sneak);
+        getHandle().setSneak(sneak);
     }
 
     public boolean isSneaking() {
-        return getHandle().Z();
+        return getHandle().isSneaking();
     }
 
     public void loadData() {
-        server.getHandle().n.b(getHandle());
+        server.getHandle().playerFileData.b(getHandle());
     }
 
     public void saveData() {
-        server.getHandle().n.a(getHandle());
+        server.getHandle().playerFileData.a(getHandle());
     }
 
     public void updateInventory() {
-        getHandle().m();
+        getHandle().syncInventory();
     }
 
     public void setSleepingIgnored(boolean isSleeping) {
         getHandle().fauxSleeping = isSleeping;
-        ((CraftWorld)getWorld()).getHandle().checkSleepStatus();
+        ((CraftWorld) getWorld()).getHandle().checkSleepStatus();
     }
 
     public boolean isSleepingIgnored() {

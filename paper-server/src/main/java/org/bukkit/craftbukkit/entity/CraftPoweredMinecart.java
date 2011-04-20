@@ -10,8 +10,7 @@ import org.bukkit.entity.PoweredMinecart;
  *
  * @author sk89q
  */
-public class CraftPoweredMinecart extends CraftMinecart
-        implements PoweredMinecart {
+public class CraftPoweredMinecart extends CraftMinecart implements PoweredMinecart {
     public CraftPoweredMinecart(CraftServer server, EntityMinecart entity) {
         super(server, entity);
     }

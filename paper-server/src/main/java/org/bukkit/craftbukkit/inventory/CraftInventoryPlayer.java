@@ -19,7 +19,7 @@ public class CraftInventoryPlayer extends CraftInventory implements PlayerInvent
     }
 
     public CraftItemStack getItemInHand() {
-        return new CraftItemStack( getInventory().b() );
+        return new CraftItemStack( getInventory().getItemInHand() );
     }
 
     public void setItemInHand(ItemStack stack) {
@@ -27,22 +27,22 @@ public class CraftInventoryPlayer extends CraftInventory implements PlayerInvent
     }
 
     public int getHeldItemSlot() {
-        return getInventory().c;
+        return getInventory().itemInHandIndex;
     }
 
-    public ItemStack getHelmet() {
+    public CraftItemStack getHelmet() {
         return getItem( getSize() + 3 );
     }
 
-    public ItemStack getChestplate() {
+    public CraftItemStack getChestplate() {
         return getItem( getSize() + 2 );
     }
 
-    public ItemStack getLeggings() {
+    public CraftItemStack getLeggings() {
         return getItem( getSize() + 1 );
     }
 
-    public ItemStack getBoots() {
+    public CraftItemStack getBoots() {
         return getItem( getSize() + 0 );
     }
 
