@@ -20,18 +20,18 @@ public class EntityMonster extends EntityCreature implements IMonster {
         this.health = 20;
     }
 
-    public void r() {
+    public void u() {
         float f = this.c(1.0F);
 
         if (f > 0.5F) {
-            this.at += 2;
+            this.au += 2;
         }
 
-        super.r();
+        super.u();
     }
 
-    public void f_() {
-        super.f_();
+    public void p_() {
+        super.p_();
         if (this.world.spawnMonsters == 0) {
             this.die();
         }
@@ -106,15 +106,15 @@ public class EntityMonster extends EntityCreature implements IMonster {
         return 0.5F - this.world.l(i, j, k);
     }
 
-    public void a(NBTTagCompound nbttagcompound) {
-        super.a(nbttagcompound);
-    }
-
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
     }
 
-    public boolean b() {
+    public void a(NBTTagCompound nbttagcompound) {
+        super.a(nbttagcompound);
+    }
+
+    public boolean d() {
         int i = MathHelper.floor(this.locX);
         int j = MathHelper.floor(this.boundingBox.b);
         int k = MathHelper.floor(this.locZ);
@@ -124,7 +124,15 @@ public class EntityMonster extends EntityCreature implements IMonster {
         } else {
             int l = this.world.getLightLevel(i, j, k);
 
-            return l <= this.random.nextInt(8) && super.b();
+            if (this.world.u()) {
+                int i1 = this.world.f;
+
+                this.world.f = 10;
+                l = this.world.getLightLevel(i, j, k);
+                this.world.f = i1;
+            }
+
+            return l <= this.random.nextInt(8) && super.d();
         }
     }
 }

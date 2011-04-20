@@ -34,10 +34,10 @@ public class ConsoleCommandHandler {
                 this.print(s1, "Save complete.");
             } else if (s.toLowerCase().startsWith("save-off")) {
                 this.print(s1, "Disabling level saving..");
-                worldserver.w = true;
+                worldserver.y = true;
             } else if (s.toLowerCase().startsWith("save-on")) {
                 this.print(s1, "Enabling level saving..");
-                worldserver.w = false;
+                worldserver.y = false;
             } else {
                 String s2;
 

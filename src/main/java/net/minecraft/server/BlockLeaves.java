@@ -32,7 +32,7 @@ public class BlockLeaves extends BlockLeavesBase {
                         if (l1 == Block.LEAVES.id) {
                             int i2 = world.getData(i + i1, j + j1, k + k1);
 
-                            world.setRawData(i + i1, j + j1, k + k1, i2 | 4);
+                            world.setRawData(i + i1, j + j1, k + k1, i2 | 8);
                         }
                     }
                 }
@@ -44,7 +44,7 @@ public class BlockLeaves extends BlockLeavesBase {
         if (!world.isStatic) {
             int l = world.getData(i, j, k);
 
-            if ((l & 4) != 0) {
+            if ((l & 8) != 0) {
                 byte b0 = 4;
                 int i1 = b0 + 1;
                 byte b1 = 32;
@@ -114,7 +114,7 @@ public class BlockLeaves extends BlockLeavesBase {
 
                 l1 = this.a[k1 * j1 + k1 * b1 + k1];
                 if (l1 >= 0) {
-                    world.setData(i, j, k, l & -5);
+                    world.setData(i, j, k, l & -9);
                 } else {
                     this.g(world, i, j, k);
                 }
@@ -137,11 +137,15 @@ public class BlockLeaves extends BlockLeavesBase {
     }
 
     public int a(Random random) {
-        return random.nextInt(16) == 0 ? 1 : 0;
+        return random.nextInt(20) == 0 ? 1 : 0;
     }
 
     public int a(int i, Random random) {
         return Block.SAPLING.id;
+    }
+
+    protected int b(int i) {
+        return i & 3;
     }
 
     public boolean a() {

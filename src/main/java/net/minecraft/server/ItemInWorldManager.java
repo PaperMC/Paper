@@ -114,7 +114,7 @@ public class ItemInWorldManager {
                 Block block = Block.byId[i1];
                 float f = block.getDamage(this.player) * (float) (l + 1);
 
-                if (f >= 1.0F) {
+                if (f >= 0.7F) {
                     this.d(i, j, k);
                 } else if (!this.i) {
                     this.i = true;
@@ -164,13 +164,13 @@ public class ItemInWorldManager {
         int l = this.world.getTypeId(i, j, k);
         int i1 = this.world.getData(i, j, k);
         boolean flag = this.c(i, j, k);
-        ItemStack itemstack = this.player.A();
+        ItemStack itemstack = this.player.D();
 
         if (itemstack != null) {
             itemstack.a(l, i, j, k, this.player);
             if (itemstack.count == 0) {
                 itemstack.a(this.player);
-                this.player.B();
+                this.player.E();
             }
         }
 

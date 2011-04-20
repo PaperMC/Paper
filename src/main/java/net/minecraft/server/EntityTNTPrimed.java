@@ -13,7 +13,7 @@ public class EntityTNTPrimed extends Entity {
     public EntityTNTPrimed(World world) {
         super(world);
         this.a = 0;
-        this.aD = true;
+        this.aE = true;
         this.b(0.98F, 0.98F);
         this.height = this.width / 2.0F;
     }
@@ -32,17 +32,17 @@ public class EntityTNTPrimed extends Entity {
         this.lastZ = d2;
     }
 
-    protected void a() {}
+    protected void b() {}
 
-    protected boolean l() {
+    protected boolean n() {
         return false;
     }
 
-    public boolean d_() {
+    public boolean o_() {
         return !this.dead;
     }
 
-    public void f_() {
+    public void p_() {
         this.lastX = this.locX;
         this.lastY = this.locY;
         this.lastZ = this.locZ;
@@ -83,11 +83,11 @@ public class EntityTNTPrimed extends Entity {
         // CraftBukkit end
     }
 
-    protected void a(NBTTagCompound nbttagcompound) {
+    protected void b(NBTTagCompound nbttagcompound) {
         nbttagcompound.a("Fuse", (byte) this.a);
     }
 
-    protected void b(NBTTagCompound nbttagcompound) {
+    protected void a(NBTTagCompound nbttagcompound) {
         this.a = nbttagcompound.c("Fuse");
     }
 }

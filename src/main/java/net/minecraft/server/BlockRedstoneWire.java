@@ -113,10 +113,10 @@ public class BlockRedstoneWire extends Block {
         // CraftBukkit end
 
         if (k1 != l1) {
-            world.h = true;
+            world.j = true;
             world.setData(i, j, k, l1);
             world.b(i, j, k, i, j, k);
-            world.h = false;
+            world.j = false;
 
             for (i2 = 0; i2 < 4; ++i2) {
                 j2 = i;

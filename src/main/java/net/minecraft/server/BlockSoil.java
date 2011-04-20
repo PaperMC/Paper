@@ -17,7 +17,7 @@ public class BlockSoil extends Block {
         this.textureId = 87;
         this.a(true);
         this.a(0.0F, 0.0F, 0.0F, 1.0F, 0.9375F, 1.0F);
-        this.e(255);
+        this.f(255);
     }
 
     public AxisAlignedBB d(World world, int i, int j, int k) {
@@ -34,9 +34,7 @@ public class BlockSoil extends Block {
 
     public void a(World world, int i, int j, int k, Random random) {
         if (random.nextInt(5) == 0) {
-            if (this.h(world, i, j, k)) {
-                world.setData(i, j, k, 7);
-            } else {
+            if (!this.h(world, i, j, k) && !world.q(i, j + 1, k)) {
                 int l = world.getData(i, j, k);
 
                 if (l > 0) {
@@ -44,6 +42,8 @@ public class BlockSoil extends Block {
                 } else if (!this.g(world, i, j, k)) {
                     world.setTypeId(i, j, k, Block.DIRT.id);
                 }
+            } else {
+                world.setData(i, j, k, 7);
             }
         }
     }

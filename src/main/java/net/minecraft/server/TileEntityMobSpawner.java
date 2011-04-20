@@ -19,7 +19,7 @@ public class TileEntityMobSpawner extends TileEntity {
         return this.world.a((double) this.e + 0.5D, (double) this.f + 0.5D, (double) this.g + 0.5D, 16.0D) != null;
     }
 
-    public void i_() {
+    public void g_() {
         this.c = this.b;
         if (this.a()) {
             double d0 = (double) ((float) this.e + this.world.random.nextFloat());
@@ -69,7 +69,7 @@ public class TileEntityMobSpawner extends TileEntity {
                         double d5 = (double) this.g + (this.world.random.nextDouble() - this.world.random.nextDouble()) * 4.0D;
 
                         entityliving.setPositionRotation(d3, d4, d5, this.world.random.nextFloat() * 360.0F, 0.0F);
-                        if (entityliving.b()) {
+                        if (entityliving.d()) {
                             this.world.addEntity(entityliving);
 
                             for (int k = 0; k < 20; ++k) {
@@ -80,13 +80,13 @@ public class TileEntityMobSpawner extends TileEntity {
                                 this.world.a("flame", d0, d1, d2, 0.0D, 0.0D, 0.0D);
                             }
 
-                            entityliving.M();
+                            entityliving.O();
                             this.c();
                         }
                     }
                 }
 
-                super.i_();
+                super.g_();
             }
         }
     }

@@ -34,7 +34,7 @@ public class EntityFish extends Entity {
         this.b(0.25F, 0.25F);
     }
 
-    protected void a() {}
+    protected void b() {}
 
     public EntityFish(World world, EntityHuman entityhuman) {
         super(world);
@@ -77,8 +77,8 @@ public class EntityFish extends Entity {
         this.i = 0;
     }
 
-    public void f_() {
-        super.f_();
+    public void p_() {
+        super.p_();
         if (this.l > 0) {
             double d0 = this.locX + (this.m - this.locX) / (double) this.l;
             double d1 = this.locY + (this.n - this.locY) / (double) this.l;
@@ -101,9 +101,9 @@ public class EntityFish extends Entity {
             this.c(this.yaw, this.pitch);
         } else {
             if (!this.world.isStatic) {
-                ItemStack itemstack = this.owner.A();
+                ItemStack itemstack = this.owner.D();
 
-                if (this.owner.dead || !this.owner.N() || itemstack == null || itemstack.getItem() != Item.FISHING_ROD || this.g(this.owner) > 1024.0D) {
+                if (this.owner.dead || !this.owner.P() || itemstack == null || itemstack.getItem() != Item.FISHING_ROD || this.g(this.owner) > 1024.0D) {
                     this.die();
                     this.owner.hookedFish = null;
                     return;
@@ -166,7 +166,7 @@ public class EntityFish extends Entity {
             for (int j = 0; j < list.size(); ++j) {
                 Entity entity1 = (Entity) list.get(j);
 
-                if (entity1.d_() && (entity1 != this.owner || this.j >= 5)) {
+                if (entity1.o_() && (entity1 != this.owner || this.j >= 5)) {
                     float f = 0.3F;
                     AxisAlignedBB axisalignedbb = entity1.boundingBox.b((double) f, (double) f, (double) f);
                     MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
@@ -267,26 +267,34 @@ public class EntityFish extends Entity {
                 if (d6 > 0.0D) {
                     if (this.k > 0) {
                         --this.k;
-                    } else if (this.random.nextInt(500) == 0) {
-                        this.k = this.random.nextInt(30) + 10;
-                        this.motY -= 0.20000000298023224D;
-                        this.world.makeSound(this, "random.splash", 0.25F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
-                        float f3 = (float) MathHelper.floor(this.boundingBox.b);
+                    } else {
+                        short short1 = 500;
 
-                        int l;
-                        float f4;
-                        float f5;
-
-                        for (l = 0; (float) l < 1.0F + this.length * 20.0F; ++l) {
-                            f4 = (this.random.nextFloat() * 2.0F - 1.0F) * this.length;
-                            f5 = (this.random.nextFloat() * 2.0F - 1.0F) * this.length;
-                            this.world.a("bubble", this.locX + (double) f4, (double) (f3 + 1.0F), this.locZ + (double) f5, this.motX, this.motY - (double) (this.random.nextFloat() * 0.2F), this.motZ);
+                        if (this.world.q(MathHelper.floor(this.locX), MathHelper.floor(this.locY) + 1, MathHelper.floor(this.locZ))) {
+                            short1 = 300;
                         }
 
-                        for (l = 0; (float) l < 1.0F + this.length * 20.0F; ++l) {
-                            f4 = (this.random.nextFloat() * 2.0F - 1.0F) * this.length;
-                            f5 = (this.random.nextFloat() * 2.0F - 1.0F) * this.length;
-                            this.world.a("splash", this.locX + (double) f4, (double) (f3 + 1.0F), this.locZ + (double) f5, this.motX, this.motY, this.motZ);
+                        if (this.random.nextInt(short1) == 0) {
+                            this.k = this.random.nextInt(30) + 10;
+                            this.motY -= 0.20000000298023224D;
+                            this.world.makeSound(this, "random.splash", 0.25F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
+                            float f3 = (float) MathHelper.floor(this.boundingBox.b);
+
+                            float f4;
+                            int l;
+                            float f5;
+
+                            for (l = 0; (float) l < 1.0F + this.length * 20.0F; ++l) {
+                                f5 = (this.random.nextFloat() * 2.0F - 1.0F) * this.length;
+                                f4 = (this.random.nextFloat() * 2.0F - 1.0F) * this.length;
+                                this.world.a("bubble", this.locX + (double) f5, (double) (f3 + 1.0F), this.locZ + (double) f4, this.motX, this.motY - (double) (this.random.nextFloat() * 0.2F), this.motZ);
+                            }
+
+                            for (l = 0; (float) l < 1.0F + this.length * 20.0F; ++l) {
+                                f5 = (this.random.nextFloat() * 2.0F - 1.0F) * this.length;
+                                f4 = (this.random.nextFloat() * 2.0F - 1.0F) * this.length;
+                                this.world.a("splash", this.locX + (double) f5, (double) (f3 + 1.0F), this.locZ + (double) f4, this.motX, this.motY, this.motZ);
+                            }
                         }
                     }
                 }
@@ -310,7 +318,7 @@ public class EntityFish extends Entity {
         }
     }
 
-    public void a(NBTTagCompound nbttagcompound) {
+    public void b(NBTTagCompound nbttagcompound) {
         nbttagcompound.a("xTile", (short) this.d);
         nbttagcompound.a("yTile", (short) this.e);
         nbttagcompound.a("zTile", (short) this.f);
@@ -319,7 +327,7 @@ public class EntityFish extends Entity {
         nbttagcompound.a("inGround", (byte) (this.h ? 1 : 0));
     }
 
-    public void b(NBTTagCompound nbttagcompound) {
+    public void a(NBTTagCompound nbttagcompound) {
         this.d = nbttagcompound.d("xTile");
         this.e = nbttagcompound.d("yTile");
         this.f = nbttagcompound.d("zTile");
@@ -354,7 +362,7 @@ public class EntityFish extends Entity {
             entityitem.motY = d6 * d9 + (double) MathHelper.a(d8) * 0.08D;
             entityitem.motZ = d7 * d9;
             this.world.addEntity(entityitem);
-            this.owner.a(StatisticList.x, 1);
+            this.owner.a(StatisticList.B, 1);
             b0 = 1;
         }
 

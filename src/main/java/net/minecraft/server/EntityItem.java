@@ -1,7 +1,6 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 // CraftBukkit end
@@ -27,7 +26,7 @@ public class EntityItem extends Entity {
         this.motZ = (double) ((float) (Math.random() * 0.20000000298023224D - 0.10000000149011612D));
     }
 
-    protected boolean l() {
+    protected boolean n() {
         return false;
     }
 
@@ -37,10 +36,10 @@ public class EntityItem extends Entity {
         this.height = this.width / 2.0F;
     }
 
-    protected void a() {}
+    protected void b() {}
 
-    public void f_() {
-        super.f_();
+    public void p_() {
+        super.p_();
         if (this.pickupDelay > 0) {
             --this.pickupDelay;
         }
@@ -83,7 +82,7 @@ public class EntityItem extends Entity {
         }
     }
 
-    public boolean g_() {
+    public boolean f_() {
         return this.world.a(this.boundingBox, Material.WATER, this);
     }
 
@@ -170,7 +169,7 @@ public class EntityItem extends Entity {
     }
 
     public boolean damageEntity(Entity entity, int i) {
-        this.W();
+        this.ab();
         this.f -= i;
         if (this.f <= 0) {
             this.die();
@@ -179,13 +178,13 @@ public class EntityItem extends Entity {
         return false;
     }
 
-    public void a(NBTTagCompound nbttagcompound) {
+    public void b(NBTTagCompound nbttagcompound) {
         nbttagcompound.a("Health", (short) ((byte) this.f));
         nbttagcompound.a("Age", (short) this.b);
         nbttagcompound.a("Item", this.itemStack.a(new NBTTagCompound()));
     }
 
-    public void b(NBTTagCompound nbttagcompound) {
+    public void a(NBTTagCompound nbttagcompound) {
         this.f = nbttagcompound.d("Health") & 255;
         this.b = nbttagcompound.d("Age");
         NBTTagCompound nbttagcompound1 = nbttagcompound.k("Item");
@@ -200,13 +199,22 @@ public class EntityItem extends Entity {
             // CraftBukkit start
             if (this.pickupDelay == 0) {
                 Player player = (Player) entityhuman.getBukkitEntity();
-                PlayerPickupItemEvent event = new PlayerPickupItemEvent(player, (Item) this.getBukkitEntity());
+                PlayerPickupItemEvent event = new PlayerPickupItemEvent(player, (org.bukkit.entity.Item) this.getBukkitEntity());
                 ((WorldServer) world).getServer().getPluginManager().callEvent(event);
 
                 if (event.isCancelled() || !entityhuman.inventory.canHold(this.itemStack)) {
                     return;
                 }
                 // CraftBukkit end
+
+                if (this.itemStack.id == Block.LOG.id) {
+                    entityhuman.a((Statistic) AchievementList.g);
+                }
+
+                if (this.itemStack.id == Item.LEATHER.id) {
+                    entityhuman.a((Statistic) AchievementList.t);
+                }
+
                 this.world.makeSound(this, "random.pop", 0.2F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
                 entityhuman.receive(this, i);
                 this.die();

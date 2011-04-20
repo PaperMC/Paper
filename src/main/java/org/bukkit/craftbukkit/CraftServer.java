@@ -42,7 +42,7 @@ import org.bukkit.util.config.Configuration;
 public final class CraftServer implements Server {
     private final String serverName = "Craftbukkit";
     private final String serverVersion;
-    private final String protocolVersion = "1.4";
+    private final String protocolVersion = "1.5_02";
     private final PluginManager pluginManager = new SimplePluginManager(this);
     private final BukkitScheduler scheduler =  new CraftScheduler(this);
     private final CommandMap commandMap = new SimpleCommandMap(this);

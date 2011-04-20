@@ -15,31 +15,31 @@ public class EntityCow extends EntityAnimal {
         this.b(0.9F, 1.3F);
     }
 
-    public void a(NBTTagCompound nbttagcompound) {
-        super.a(nbttagcompound);
-    }
-
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
     }
 
-    protected String e() {
-        return "mob.cow";
-    }
-
-    protected String f() {
-        return "mob.cowhurt";
+    public void a(NBTTagCompound nbttagcompound) {
+        super.a(nbttagcompound);
     }
 
     protected String g() {
+        return "mob.cow";
+    }
+
+    protected String h() {
         return "mob.cowhurt";
     }
 
-    protected float i() {
+    protected String i() {
+        return "mob.cowhurt";
+    }
+
+    protected float k() {
         return 0.4F;
     }
 
-    protected int h() {
+    protected int j() {
         return Item.LEATHER.id;
     }
 

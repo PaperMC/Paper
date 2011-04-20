@@ -37,7 +37,7 @@ public class EntityArrow extends Entity {
         super(world);
         this.shooter = entityliving;
         this.b(0.5F, 0.5F);
-        this.setPositionRotation(entityliving.locX, entityliving.locY + (double) entityliving.q(), entityliving.locZ, entityliving.yaw, entityliving.pitch);
+        this.setPositionRotation(entityliving.locX, entityliving.locY + (double) entityliving.s(), entityliving.locZ, entityliving.yaw, entityliving.pitch);
         this.locX -= (double) (MathHelper.cos(this.yaw / 180.0F * 3.1415927F) * 0.16F);
         this.locY -= 0.10000000149011612D;
         this.locZ -= (double) (MathHelper.sin(this.yaw / 180.0F * 3.1415927F) * 0.16F);
@@ -49,7 +49,7 @@ public class EntityArrow extends Entity {
         this.a(this.motX, this.motY, this.motZ, 1.5F, 1.0F);
     }
 
-    protected void a() {}
+    protected void b() {}
 
     public void a(double d0, double d1, double d2, float f, float f1) {
         float f2 = MathHelper.a(d0 * d0 + d1 * d1 + d2 * d2);
@@ -73,8 +73,8 @@ public class EntityArrow extends Entity {
         this.h = 0;
     }
 
-    public void f_() {
-        super.f_();
+    public void p_() {
+        super.p_();
         if (this.lastPitch == 0.0F && this.lastYaw == 0.0F) {
             float f = MathHelper.a(this.motX * this.motX + this.motZ * this.motZ);
 
@@ -127,7 +127,7 @@ public class EntityArrow extends Entity {
         for (int j = 0; j < list.size(); ++j) {
             Entity entity1 = (Entity) list.get(j);
 
-            if (entity1.d_() && (entity1 != this.shooter || this.i >= 5)) {
+            if (entity1.o_() && (entity1 != this.shooter || this.i >= 5)) {
                 f1 = 0.3F;
                 AxisAlignedBB axisalignedbb = entity1.boundingBox.b((double) f1, (double) f1, (double) f1);
                 MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
@@ -234,7 +234,7 @@ public class EntityArrow extends Entity {
         float f3 = 0.99F;
 
         f1 = 0.03F;
-        if (this.g_()) {
+        if (this.Z()) {
             for (int k = 0; k < 4; ++k) {
                 float f4 = 0.25F;
 
@@ -251,7 +251,7 @@ public class EntityArrow extends Entity {
         this.setPosition(this.locX, this.locY, this.locZ);
     }
 
-    public void a(NBTTagCompound nbttagcompound) {
+    public void b(NBTTagCompound nbttagcompound) {
         nbttagcompound.a("xTile", (short) this.c);
         nbttagcompound.a("yTile", (short) this.d);
         nbttagcompound.a("zTile", (short) this.e);
@@ -260,7 +260,7 @@ public class EntityArrow extends Entity {
         nbttagcompound.a("inGround", (byte) (this.g ? 1 : 0));
     }
 
-    public void b(NBTTagCompound nbttagcompound) {
+    public void a(NBTTagCompound nbttagcompound) {
         this.c = nbttagcompound.d("xTile");
         this.d = nbttagcompound.d("yTile");
         this.e = nbttagcompound.d("zTile");

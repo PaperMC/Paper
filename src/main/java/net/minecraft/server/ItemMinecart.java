@@ -19,7 +19,7 @@ public class ItemMinecart extends Item {
     public boolean a(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
         int i1 = world.getTypeId(i, j, k);
 
-        if (i1 == Block.RAILS.id) {
+        if (BlockMinecartTrack.c(i1)) {
             if (!world.isStatic) {
                 // CraftBukkit start - Minecarts
                 PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(entityhuman, Action.RIGHT_CLICK_BLOCK, i, j, k, l, itemstack);

@@ -50,7 +50,7 @@ public class CraftWorld implements World {
         unloadedChunks.put( (chunk.getX() << 16) + chunk.getZ(), chunk );
     }
 
-    public CraftChunk popPreservedChunk( int x, int z ) {
+    public Chunk popPreservedChunk( int x, int z ) {
         return unloadedChunks.remove( (x << 16) + z );
     }
 

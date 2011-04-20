@@ -2,7 +2,6 @@ package net.minecraft.server;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 // CraftBukkit start
 import org.bukkit.BlockChangeDelegate;
@@ -14,10 +13,9 @@ public class WorldServer extends World implements BlockChangeDelegate {
 
     public ChunkProviderServer chunkProviderServer;
     public boolean weirdIsOpCache = false;
-    public boolean w;
+    public boolean y;
     public final MinecraftServer server; // CraftBukkit - private -> public final
-    private EntityList y = new EntityList();
-    public PlayerManager manager; // CraftBukkit
+    private EntityList A = new EntityList();
 
     public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, String s, int i, long j) {
         super(idatamanager, s, j, WorldProvider.a(i));
@@ -29,6 +27,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
         this.manager = new PlayerManager(minecraftserver, this);
     }
 
+    public PlayerManager manager;
     private final CraftWorld world;
     private final CraftServer cserver;
 
@@ -58,7 +57,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
     }
 
     protected IChunkProvider b() {
-        IChunkLoader ichunkloader = this.p.a(this.worldProvider);
+        IChunkLoader ichunkloader = this.r.a(this.worldProvider);
 
         this.chunkProviderServer = new ChunkProviderServer(this, ichunkloader, this.worldProvider.c());
         return this.chunkProviderServer;
@@ -90,18 +89,27 @@ public class WorldServer extends World implements BlockChangeDelegate {
         return i1 > this.server.spawnProtection || this.server.serverConfigurationManager.isOp(entityhuman.name);
     }
 
-    protected void b(Entity entity) {
-        super.b(entity);
-        this.y.a(entity.id, entity);
-    }
-
     protected void c(Entity entity) {
         super.c(entity);
-        this.y.d(entity.id);
+        this.A.a(entity.id, entity);
+    }
+
+    protected void d(Entity entity) {
+        super.d(entity);
+        this.A.d(entity.id);
     }
 
     public Entity getEntity(int i) {
-        return (Entity) this.y.a(i);
+        return (Entity) this.A.a(i);
+    }
+
+    public boolean a(Entity entity) {
+        if (super.a(entity)) {
+            this.server.serverConfigurationManager.a(entity.locX, entity.locY, entity.locZ, 512.0D, new Packet71Weather(entity));
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public void a(Entity entity, byte b0) {
@@ -129,6 +137,19 @@ public class WorldServer extends World implements BlockChangeDelegate {
     }
 
     public void saveLevel() {
-        this.p.e();
+        this.r.e();
+    }
+
+    protected void i() {
+        boolean flag = this.v();
+
+        super.i();
+        if (flag != this.v()) {
+            if (flag) {
+                this.server.serverConfigurationManager.sendAll(new Packet70Bed(2));
+            } else {
+                this.server.serverConfigurationManager.sendAll(new Packet70Bed(1));
+            }
+        }
     }
 }

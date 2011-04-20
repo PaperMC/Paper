@@ -71,7 +71,7 @@ public class ServerConfigurationManager {
 
     public void setPlayerFileData(WorldServer worldserver) {
         if (this.playerFileData != null) return; // CraftBukkit
-        this.playerFileData = worldserver.o().d();
+        this.playerFileData = worldserver.p().d();
     }
 
     public int a() {
@@ -118,11 +118,12 @@ public class ServerConfigurationManager {
         this.playerFileData.a(entityplayer);
         entityplayer.world.kill(entityplayer); // CraftBukkit
         this.players.remove(entityplayer);
+        ((WorldServer) entityplayer.world).manager.removePlayer(entityplayer);
 
         return playerQuitEvent.getQuitMessage(); // CraftBukkit
     }
 
-    public EntityPlayer a(NetLoginHandler netloginhandler, String s, String s1) {
+    public EntityPlayer a(NetLoginHandler netloginhandler, String s) {
         // CraftBukkit start - note: this entire method needs to be changed
         // Instead of kicking then returning, we need to store the kick reason
         // in the event, check with plugins to see if it's ok, and THEN kick
@@ -173,7 +174,7 @@ public class ServerConfigurationManager {
         ((WorldServer) entityplayer.world).manager.removePlayer(entityplayer);
         this.players.remove(entityplayer);
         entityplayer.world.removeEntity(entityplayer);
-        ChunkCoordinates chunkcoordinates = entityplayer.H();
+        ChunkCoordinates chunkcoordinates = entityplayer.K();
         EntityPlayer entityplayer1 = new EntityPlayer(this.server, entityplayer.world, entityplayer.name, new ItemInWorldManager(entityplayer.world));
 
         entityplayer1.id = entityplayer.id;
@@ -225,7 +226,7 @@ public class ServerConfigurationManager {
         // CraftBukkit end
         this.players.add(entityplayer1);
         entityplayer1.syncInventory();
-        entityplayer1.t();
+        entityplayer1.w();
         return entityplayer1;
     }
 

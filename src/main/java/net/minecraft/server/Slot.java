@@ -16,7 +16,7 @@ public class Slot {
     }
 
     public void a(ItemStack itemstack) {
-        this.b();
+        this.c();
     }
 
     public boolean isAllowed(ItemStack itemstack) {
@@ -27,16 +27,20 @@ public class Slot {
         return this.inventory.getItem(this.index);
     }
 
-    public void c(ItemStack itemstack) {
-        this.inventory.setItem(this.index, itemstack);
-        this.b();
+    public boolean b() {
+        return this.getItem() != null;
     }
 
-    public void b() {
+    public void c(ItemStack itemstack) {
+        this.inventory.setItem(this.index, itemstack);
+        this.c();
+    }
+
+    public void c() {
         this.inventory.update();
     }
 
-    public int c() {
+    public int d() {
         return this.inventory.getMaxStackSize();
     }
 
@@ -48,7 +52,7 @@ public class Slot {
         return iinventory == this.inventory && i == this.index;
     }
 
-    public boolean d() {
+    public boolean e() {
         return false;
     }
 }

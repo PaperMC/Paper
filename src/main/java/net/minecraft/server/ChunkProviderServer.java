@@ -208,7 +208,7 @@ public class ChunkProviderServer implements IChunkProvider {
     }
 
     public boolean unloadChunks() {
-        if (!this.world.w) {
+        if (!this.world.y) {
             // CraftBukkit start
             Server server = this.world.getServer();
             for (int i = 0; i < 50 && !this.unloadQueue.isEmpty(); i++) {
@@ -240,6 +240,6 @@ public class ChunkProviderServer implements IChunkProvider {
     }
 
     public boolean b() {
-        return !this.world.w;
+        return !this.world.y;
     }
 }

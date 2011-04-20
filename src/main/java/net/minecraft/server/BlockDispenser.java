@@ -23,29 +23,31 @@ public class BlockDispenser extends BlockContainer {
     }
 
     private void g(World world, int i, int j, int k) {
-        int l = world.getTypeId(i, j, k - 1);
-        int i1 = world.getTypeId(i, j, k + 1);
-        int j1 = world.getTypeId(i - 1, j, k);
-        int k1 = world.getTypeId(i + 1, j, k);
-        byte b0 = 3;
+        if (!world.isStatic) {
+            int l = world.getTypeId(i, j, k - 1);
+            int i1 = world.getTypeId(i, j, k + 1);
+            int j1 = world.getTypeId(i - 1, j, k);
+            int k1 = world.getTypeId(i + 1, j, k);
+            byte b0 = 3;
 
-        if (Block.o[l] && !Block.o[i1]) {
-            b0 = 3;
+            if (Block.o[l] && !Block.o[i1]) {
+                b0 = 3;
+            }
+
+            if (Block.o[i1] && !Block.o[l]) {
+                b0 = 2;
+            }
+
+            if (Block.o[j1] && !Block.o[k1]) {
+                b0 = 5;
+            }
+
+            if (Block.o[k1] && !Block.o[j1]) {
+                b0 = 4;
+            }
+
+            world.setData(i, j, k, b0);
         }
-
-        if (Block.o[i1] && !Block.o[l]) {
-            b0 = 2;
-        }
-
-        if (Block.o[j1] && !Block.o[k1]) {
-            b0 = 5;
-        }
-
-        if (Block.o[k1] && !Block.o[j1]) {
-            b0 = 4;
-        }
-
-        world.setData(i, j, k, b0);
     }
 
     public int a(int i) {

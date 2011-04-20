@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.entity;
 import net.minecraft.server.*;
 
 import org.bukkit.Location;
+import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -201,7 +202,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         return "CraftEntity{" + "id=" + getEntityId() + '}';
     }
 
-    public CraftServer getServer() {
+    public Server getServer() {
         return server;
     }
 
@@ -213,7 +214,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         setVelocity(value);
     }
 
-    public CraftEntity getPassenger() {
+    public org.bukkit.entity.Entity getPassenger() {
         return isEmpty() ? null : (CraftEntity) getHandle().passenger.getBukkitEntity();
     }
 

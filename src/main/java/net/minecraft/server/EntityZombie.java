@@ -10,11 +10,11 @@ public class EntityZombie extends EntityMonster {
     public EntityZombie(World world) {
         super(world);
         this.texture = "/mob/zombie.png";
-        this.az = 0.5F;
+        this.aA = 0.5F;
         this.damage = 5;
     }
 
-    public void r() {
+    public void u() {
         if (this.world.d()) {
             float f = this.c(1.0F);
 
@@ -31,22 +31,22 @@ public class EntityZombie extends EntityMonster {
             }
         }
 
-        super.r();
-    }
-
-    protected String e() {
-        return "mob.zombie";
-    }
-
-    protected String f() {
-        return "mob.zombiehurt";
+        super.u();
     }
 
     protected String g() {
+        return "mob.zombie";
+    }
+
+    protected String h() {
+        return "mob.zombiehurt";
+    }
+
+    protected String i() {
         return "mob.zombiedeath";
     }
 
-    protected int h() {
+    protected int j() {
         return Item.FEATHER.id;
     }
 }

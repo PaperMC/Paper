@@ -1,14 +1,15 @@
 package net.minecraft.server;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.io.IOException; // CraftBukkit -- instead of SocketException
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import java.io.IOException; // CraftBukkit
 
 public class NetworkManager {
 
@@ -42,10 +43,13 @@ public class NetworkManager {
         this.n = nethandler;
 
         try {
-            socket.setSoTimeout(30000); // Craftbukkit start
+            socket.setSoTimeout(30000);
             socket.setTrafficClass(24);
+
+            // CraftBukkit start -- cant compile these outside the try
             this.input = new DataInputStream(socket.getInputStream());
             this.output = new DataOutputStream(socket.getOutputStream());
+            // CraftBukkit end
         } catch (IOException socketexception) {
             System.err.println(socketexception.getMessage());
         }
@@ -106,6 +110,8 @@ public class NetworkManager {
 
             if (flag) {
                 Thread.sleep(10L);
+            } else {
+                this.output.flush();
             }
         } catch (InterruptedException interruptedexception) {
             ;
@@ -118,7 +124,7 @@ public class NetworkManager {
 
     private void f() {
         try {
-            Packet packet = Packet.b(this.input);
+            Packet packet = Packet.a(this.input, this.n.c());
 
             if (packet != null) {
                 this.k.add(packet);

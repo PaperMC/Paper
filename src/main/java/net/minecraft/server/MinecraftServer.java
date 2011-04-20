@@ -40,12 +40,13 @@ public class MinecraftServer implements Runnable, ICommandListener {
     int ticks = 0;
     public String i;
     public int j;
-    private List q = new ArrayList();
-    private List r = Collections.synchronizedList(new ArrayList());
+    private List r = new ArrayList();
+    private List s = Collections.synchronizedList(new ArrayList());
     public EntityTracker tracker;
     public boolean onlineMode;
     public boolean spawnAnimals;
     public boolean pvpMode;
+    public boolean o;
 
     // CraftBukkit start
     public int spawnProtection;
@@ -83,7 +84,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
         System.setErr(new PrintStream(new LoggerOutputStream(log, Level.SEVERE), true));
         // CraftBukkit end
 
-        log.info("Starting minecraft server version Beta 1.3");
+        log.info("Starting minecraft server version Beta 1.5_02");
         if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
             log.warning("**** NOT ENOUGH RAM!");
             log.warning("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
@@ -96,6 +97,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
         this.onlineMode = this.propertyManager.getBoolean("online-mode", true);
         this.spawnAnimals = this.propertyManager.getBoolean("spawn-animals", true);
         this.pvpMode = this.propertyManager.getBoolean("pvp", true);
+        this.o = this.propertyManager.getBoolean("allow-flight", false);
         this.spawnProtection = this.propertyManager.getInt("spawn-protection", 16); // CraftBukkit Configurable spawn protection start
         InetAddress inetaddress = null;
 
@@ -369,8 +371,8 @@ public class MinecraftServer implements Runnable, ICommandListener {
         this.serverConfigurationManager.b();
         this.tracker.a();
 
-        for (j = 0; j < this.q.size(); ++j) {
-            ((IUpdatePlayerListBox) this.q.get(j)).a();
+        for (j = 0; j < this.r.size(); ++j) {
+            ((IUpdatePlayerListBox) this.r.get(j)).a();
         }
 
         try {
@@ -381,23 +383,25 @@ public class MinecraftServer implements Runnable, ICommandListener {
     }
 
     public void issueCommand(String s, ICommandListener icommandlistener) {
-        this.r.add(new ServerCommand(s, icommandlistener));
+        this.s.add(new ServerCommand(s, icommandlistener));
     }
 
     public void b() {
-        while (this.r.size() > 0) {
-            ServerCommand servercommand = (ServerCommand) this.r.remove(0);
+        while (this.s.size() > 0) {
+            ServerCommand servercommand = (ServerCommand) this.s.remove(0);
 
-            // this.consoleCommandHandler.a(servercommand); // CraftBukkit - Removed its now called in server.displatchCommand
+            // this.consoleCommandHandler.handle(servercommand); // CraftBukkit - Removed its now called in server.displatchCommand
             server.dispatchCommand(console, servercommand); // CraftBukkit
         }
     }
 
     public void a(IUpdatePlayerListBox iupdateplayerlistbox) {
-        this.q.add(iupdateplayerlistbox);
+        this.r.add(iupdateplayerlistbox);
     }
 
     public static void main(final OptionSet options) { // CraftBukkit - replaces main(String args[])
+        StatisticList.a();
+
         try {
             MinecraftServer minecraftserver = new MinecraftServer(options);
 

@@ -56,7 +56,7 @@ public final class ItemStack {
         boolean flag = this.getItem().a(this, entityhuman, world, i, j, k, l);
 
         if (flag) {
-            entityhuman.a(StatisticList.A[this.id], 1);
+            entityhuman.a(StatisticList.E[this.id], 1);
         }
 
         return flag;
@@ -120,7 +120,7 @@ public final class ItemStack {
             this.damage += i;
             if (this.damage > this.i()) {
                 if (entity instanceof EntityHuman) {
-                    ((EntityHuman) entity).a(StatisticList.B[this.id], 1);
+                    ((EntityHuman) entity).a(StatisticList.F[this.id], 1);
                 }
 
                 --this.count;
@@ -137,7 +137,7 @@ public final class ItemStack {
         boolean flag = Item.byId[this.id].a(this, entityliving, (EntityLiving) entityhuman);
 
         if (flag) {
-            entityhuman.a(StatisticList.A[this.id], 1);
+            entityhuman.a(StatisticList.E[this.id], 1);
         }
     }
 
@@ -145,7 +145,7 @@ public final class ItemStack {
         boolean flag = Item.byId[this.id].a(this, i, j, k, l, entityhuman);
 
         if (flag) {
-            entityhuman.a(StatisticList.A[this.id], 1);
+            entityhuman.a(StatisticList.E[this.id], 1);
         }
     }
 

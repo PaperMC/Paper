@@ -27,7 +27,7 @@ public class BlockPumpkin extends Block {
                 ++k;
             }
 
-            return j == 0 && i == 2 ? k : (j == 1 && i == 5 ? k : (j == 2 && i == 3 ? k : (j == 3 && i == 4 ? k : this.textureId + 16)));
+            return j == 2 && i == 2 ? k : (j == 3 && i == 5 ? k : (j == 0 && i == 3 ? k : (j == 1 && i == 4 ? k : this.textureId + 16)));
         }
     }
 
@@ -42,11 +42,11 @@ public class BlockPumpkin extends Block {
     public boolean canPlace(World world, int i, int j, int k) {
         int l = world.getTypeId(i, j, k);
 
-        return (l == 0 || Block.byId[l].material.isLiquid()) && world.d(i, j - 1, k);
+        return (l == 0 || Block.byId[l].material.isReplacable()) && world.d(i, j - 1, k);
     }
 
     public void postPlace(World world, int i, int j, int k, EntityLiving entityliving) {
-        int l = MathHelper.floor((double) (entityliving.yaw * 4.0F / 360.0F) + 0.5D) & 3;
+        int l = MathHelper.floor((double) (entityliving.yaw * 4.0F / 360.0F) + 2.5D) & 3;
 
         world.setData(i, j, k, l);
     }

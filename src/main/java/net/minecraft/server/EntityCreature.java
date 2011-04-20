@@ -18,12 +18,12 @@ public class EntityCreature extends EntityLiving {
         super(world);
     }
 
-    protected boolean u() {
+    protected boolean w() {
         return false;
     }
 
     protected void c_() {
-        this.e = this.u();
+        this.e = this.w();
         float f = 16.0F;
 
         if (this.target == null) {
@@ -46,7 +46,7 @@ public class EntityCreature extends EntityLiving {
             if (this.target != null) {
                 this.pathEntity = this.world.findPath(this, this.target, f);
             }
-        } else if (!this.target.N()) {
+        } else if (!this.target.P()) {
             // CraftBukkit start
             EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), null, TargetReason.TARGET_DIED);
             CraftServer server = ((WorldServer) this.world).getServer();
@@ -97,9 +97,9 @@ public class EntityCreature extends EntityLiving {
             }
         }
 
-        int l1 = MathHelper.floor(this.boundingBox.b);
-        boolean flag1 = this.g_();
-        boolean flag2 = this.V();
+        int l1 = MathHelper.floor(this.boundingBox.b + 0.5D);
+        boolean flag1 = this.Z();
+        boolean flag2 = this.aa();
 
         this.pitch = 0.0F;
         if (this.pathEntity != null && this.random.nextInt(100) != 0) {
@@ -116,7 +116,7 @@ public class EntityCreature extends EntityLiving {
                 }
             }
 
-            this.ax = false;
+            this.ay = false;
             if (vec3d != null) {
                 double d1 = vec3d.a - this.locX;
                 double d2 = vec3d.c - this.locZ;
@@ -125,7 +125,7 @@ public class EntityCreature extends EntityLiving {
                 float f4 = (float) (TrigMath.atan2(d2, d1) * 180.0D / 3.1415927410125732D) - 90.0F;
                 float f5 = f4 - this.yaw;
 
-                for (this.av = this.az; f5 < -180.0F; f5 += 360.0F) {
+                for (this.aw = this.aA; f5 < -180.0F; f5 += 360.0F) {
                     ;
                 }
 
@@ -149,12 +149,12 @@ public class EntityCreature extends EntityLiving {
 
                     this.yaw = (float) (Math.atan2(d5, d4) * 180.0D / 3.1415927410125732D) - 90.0F;
                     f5 = (f6 - this.yaw + 90.0F) * 3.1415927F / 180.0F;
-                    this.au = -MathHelper.sin(f5) * this.av * 1.0F;
-                    this.av = MathHelper.cos(f5) * this.av * 1.0F;
+                    this.av = -MathHelper.sin(f5) * this.aw * 1.0F;
+                    this.aw = MathHelper.cos(f5) * this.aw * 1.0F;
                 }
 
                 if (d3 > 0.0D) {
-                    this.ax = true;
+                    this.ay = true;
                 }
             }
 
@@ -162,12 +162,12 @@ public class EntityCreature extends EntityLiving {
                 this.a(this.target, 30.0F, 30.0F);
             }
 
-            if (this.positionChanged) {
-                this.ax = true;
+            if (this.positionChanged && !this.C()) {
+                this.ay = true;
             }
 
             if (this.random.nextFloat() < 0.8F && (flag1 || flag2)) {
-                this.ax = true;
+                this.ay = true;
             }
         } else {
             super.c_();
@@ -185,15 +185,15 @@ public class EntityCreature extends EntityLiving {
         return null;
     }
 
-    public boolean b() {
+    public boolean d() {
         int i = MathHelper.floor(this.locX);
         int j = MathHelper.floor(this.boundingBox.b);
         int k = MathHelper.floor(this.locZ);
 
-        return super.b() && this.a(i, j, k) >= 0.0F;
+        return super.d() && this.a(i, j, k) >= 0.0F;
     }
 
-    public boolean z() {
+    public boolean C() {
         return this.pathEntity != null;
     }
 
@@ -201,7 +201,7 @@ public class EntityCreature extends EntityLiving {
         this.pathEntity = pathentity;
     }
 
-    public Entity A() {
+    public Entity D() {
         return this.target;
     }
 

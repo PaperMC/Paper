@@ -180,7 +180,7 @@ public class Explosion {
         }
     }
 
-    public void b() {
+    public void a(boolean flag) {
         this.world.makeSound(this.posX, this.posY, this.posZ, "random.explode", 4.0F, (1.0F + (this.world.random.nextFloat() - this.world.random.nextFloat()) * 0.2F) * 0.7F);
         ArrayList arraylist = new ArrayList();
 
@@ -196,7 +196,7 @@ public class Explosion {
         for (int j = arraylist.size() - 1; j >= 0; j--) {
             ChunkPosition cpos = (ChunkPosition) arraylist.get(j);
             org.bukkit.block.Block block = world.getBlockAt(cpos.x, cpos.y, cpos.z);
-            if (!block.getType().equals(org.bukkit.Material.AIR)) {
+            if (block.getType() != org.bukkit.Material.AIR) {
                 blockList.add(block);
             }
         }
@@ -217,7 +217,7 @@ public class Explosion {
             int l = chunkposition.z;
             int i1 = this.world.getTypeId(j, k, l);
 
-            for (int j1 = 0; j1 < 1; ++j1) {
+            if (flag) {
                 double d0 = (double) ((float) j + this.world.random.nextFloat());
                 double d1 = (double) ((float) k + this.world.random.nextFloat());
                 double d2 = (double) ((float) l + this.world.random.nextFloat());

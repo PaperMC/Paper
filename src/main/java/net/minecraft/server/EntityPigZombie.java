@@ -18,31 +18,31 @@ public class EntityPigZombie extends EntityZombie {
     public EntityPigZombie(World world) {
         super(world);
         this.texture = "/mob/pigzombie.png";
-        this.az = 0.5F;
+        this.aA = 0.5F;
         this.damage = 5;
-        this.by = true;
+        this.bz = true;
     }
 
-    public void f_() {
-        this.az = this.target != null ? 0.95F : 0.5F;
+    public void p_() {
+        this.aA = this.target != null ? 0.95F : 0.5F;
         if (this.soundDelay > 0 && --this.soundDelay == 0) {
-            this.world.makeSound(this, "mob.zombiepig.zpigangry", this.i() * 2.0F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 1.8F);
+            this.world.makeSound(this, "mob.zombiepig.zpigangry", this.k() * 2.0F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 1.8F);
         }
 
-        super.f_();
+        super.p_();
     }
 
-    public boolean b() {
-        return this.world.spawnMonsters > 0 && this.world.containsEntity(this.boundingBox) && this.world.getEntities(this, this.boundingBox).size() == 0 && !this.world.b(this.boundingBox);
-    }
-
-    public void a(NBTTagCompound nbttagcompound) {
-        super.a(nbttagcompound);
-        nbttagcompound.a("Anger", (short) this.angerLevel);
+    public boolean d() {
+        return this.world.spawnMonsters > 0 && this.world.containsEntity(this.boundingBox) && this.world.getEntities(this, this.boundingBox).size() == 0 && !this.world.c(this.boundingBox);
     }
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
+        nbttagcompound.a("Anger", (short) this.angerLevel);
+    }
+
+    public void a(NBTTagCompound nbttagcompound) {
+        super.a(nbttagcompound);
         this.angerLevel = nbttagcompound.d("Anger");
     }
 
@@ -50,8 +50,8 @@ public class EntityPigZombie extends EntityZombie {
         return this.angerLevel == 0 ? null : super.findTarget();
     }
 
-    public void r() {
-        super.r();
+    public void u() {
+        super.u();
     }
 
     public boolean damageEntity(Entity entity, int i) {
@@ -101,19 +101,19 @@ public class EntityPigZombie extends EntityZombie {
         this.soundDelay = this.random.nextInt(40);
     }
 
-    protected String e() {
+    protected String g() {
         return "mob.zombiepig.zpig";
     }
 
-    protected String f() {
+    protected String h() {
         return "mob.zombiepig.zpighurt";
     }
 
-    protected String g() {
+    protected String i() {
         return "mob.zombiepig.zpigdeath";
     }
 
-    protected int h() {
+    protected int j() {
         return Item.GRILLED_PORK.id;
     }
 }

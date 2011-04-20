@@ -3,10 +3,13 @@ package net.minecraft.server;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+
+// CraftBukkit start
 import java.io.PrintStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jline.ConsoleReader;
+// CraftBukkit end
 
 public class ThreadCommandReader extends Thread {
 

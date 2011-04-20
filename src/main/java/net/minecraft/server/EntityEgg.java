@@ -30,13 +30,13 @@ public class EntityEgg extends Entity {
         this.b(0.25F, 0.25F);
     }
 
-    protected void a() {}
+    protected void b() {}
 
     public EntityEgg(World world, EntityLiving entityliving) {
         super(world);
         this.thrower = entityliving;
         this.b(0.25F, 0.25F);
-        this.setPositionRotation(entityliving.locX, entityliving.locY + (double) entityliving.q(), entityliving.locZ, entityliving.yaw, entityliving.pitch);
+        this.setPositionRotation(entityliving.locX, entityliving.locY + (double) entityliving.s(), entityliving.locZ, entityliving.yaw, entityliving.pitch);
         this.locX -= (double) (MathHelper.cos(this.yaw / 180.0F * 3.1415927F) * 0.16F);
         this.locY -= 0.10000000149011612D;
         this.locZ -= (double) (MathHelper.sin(this.yaw / 180.0F * 3.1415927F) * 0.16F);
@@ -80,11 +80,11 @@ public class EntityEgg extends Entity {
         this.h = 0;
     }
 
-    public void f_() {
-        this.bi = this.locX;
-        this.bj = this.locY;
-        this.bk = this.locZ;
-        super.f_();
+    public void p_() {
+        this.bk = this.locX;
+        this.bl = this.locY;
+        this.bm = this.locZ;
+        super.p_();
         if (this.a > 0) {
             --this.a;
         }
@@ -129,7 +129,7 @@ public class EntityEgg extends Entity {
             for (int j = 0; j < list.size(); ++j) {
                 Entity entity1 = (Entity) list.get(j);
 
-                if (entity1.d_() && (entity1 != this.thrower || this.i >= 5)) {
+                if (entity1.o_() && (entity1 != this.thrower || this.i >= 5)) {
                     float f = 0.3F;
                     AxisAlignedBB axisalignedbb = entity1.boundingBox.b((double) f, (double) f, (double) f);
                     MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
@@ -301,7 +301,7 @@ public class EntityEgg extends Entity {
         float f2 = 0.99F;
         float f3 = 0.03F;
 
-        if (this.g_()) {
+        if (this.Z()) {
             for (int i1 = 0; i1 < 4; ++i1) {
                 float f4 = 0.25F;
 
@@ -318,7 +318,7 @@ public class EntityEgg extends Entity {
         this.setPosition(this.locX, this.locY, this.locZ);
     }
 
-    public void a(NBTTagCompound nbttagcompound) {
+    public void b(NBTTagCompound nbttagcompound) {
         nbttagcompound.a("xTile", (short) this.b);
         nbttagcompound.a("yTile", (short) this.c);
         nbttagcompound.a("zTile", (short) this.d);
@@ -327,7 +327,7 @@ public class EntityEgg extends Entity {
         nbttagcompound.a("inGround", (byte) (this.f ? 1 : 0));
     }
 
-    public void b(NBTTagCompound nbttagcompound) {
+    public void a(NBTTagCompound nbttagcompound) {
         this.b = nbttagcompound.d("xTile");
         this.c = nbttagcompound.d("yTile");
         this.d = nbttagcompound.d("zTile");

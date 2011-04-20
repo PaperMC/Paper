@@ -11,19 +11,19 @@ public class CraftWolf extends CraftAnimals implements Wolf {
     }
 
     public boolean isAngry() {
-        return getHandle().x();
+        return getHandle().isAngry();
     }
 
     public void setAngry(boolean angry) {
-        getHandle().c(angry);
+        getHandle().setAngry(angry);
     }
 
     public boolean isSitting() {
-        return getHandle().y();
+        return getHandle().isSitting();
     }
 
     public void setSitting(boolean sitting) {
-        getHandle().d(sitting);
+        getHandle().setSitting(sitting);
     }
 
     @Override

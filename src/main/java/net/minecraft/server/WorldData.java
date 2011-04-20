@@ -15,6 +15,10 @@ public class WorldData {
     private int i;
     public String name; // CraftBukkit private->public
     private int k;
+    private boolean l;
+    private int m;
+    private boolean n;
+    private int o;
 
     public WorldData(NBTTagCompound nbttagcompound) {
         this.a = nbttagcompound.f("RandomSeed");
@@ -26,6 +30,10 @@ public class WorldData {
         this.g = nbttagcompound.f("SizeOnDisk");
         this.name = nbttagcompound.getString("LevelName");
         this.k = nbttagcompound.e("version");
+        this.m = nbttagcompound.e("rainTime");
+        this.l = nbttagcompound.m("raining");
+        this.o = nbttagcompound.e("thunderTime");
+        this.n = nbttagcompound.m("thundering");
         if (nbttagcompound.hasKey("Player")) {
             this.h = nbttagcompound.k("Player");
             this.i = this.h.e("Dimension");
@@ -49,6 +57,10 @@ public class WorldData {
         this.i = worlddata.i;
         this.name = worlddata.name;
         this.k = worlddata.k;
+        this.m = worlddata.m;
+        this.l = worlddata.l;
+        this.o = worlddata.o;
+        this.n = worlddata.n;
     }
 
     public NBTTagCompound a() {
@@ -86,6 +98,10 @@ public class WorldData {
         nbttagcompound.a("LastPlayed", System.currentTimeMillis());
         nbttagcompound.setString("LevelName", this.name);
         nbttagcompound.a("version", this.k);
+        nbttagcompound.a("rainTime", this.m);
+        nbttagcompound.a("raining", this.l);
+        nbttagcompound.a("thunderTime", this.o);
+        nbttagcompound.a("thundering", this.n);
         if (nbttagcompound1 != null) {
             nbttagcompound.a("Player", nbttagcompound1);
         }
@@ -143,5 +159,37 @@ public class WorldData {
 
     public void a(int i) {
         this.k = i;
+    }
+
+    public boolean j() {
+        return this.n;
+    }
+
+    public void a(boolean flag) {
+        this.n = flag;
+    }
+
+    public int k() {
+        return this.o;
+    }
+
+    public void b(int i) {
+        this.o = i;
+    }
+
+    public boolean l() {
+        return this.l;
+    }
+
+    public void b(boolean flag) {
+        this.l = flag;
+    }
+
+    public int m() {
+        return this.m;
+    }
+
+    public void c(int i) {
+        this.m = i;
     }
 }

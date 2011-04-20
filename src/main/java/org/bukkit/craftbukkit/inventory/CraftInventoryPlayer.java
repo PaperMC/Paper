@@ -18,7 +18,7 @@ public class CraftInventoryPlayer extends CraftInventory implements PlayerInvent
         return super.getSize() - 4;
     }
 
-    public CraftItemStack getItemInHand() {
+    public ItemStack getItemInHand() {
         return new CraftItemStack( getInventory().getItemInHand() );
     }
 

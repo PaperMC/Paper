@@ -13,14 +13,14 @@ public class EntitySpider extends EntityMonster {
         super(world);
         this.texture = "/mob/spider.png";
         this.b(1.4F, 0.9F);
-        this.az = 0.8F;
+        this.aA = 0.8F;
     }
 
-    public double k() {
+    public double m() {
         return (double) this.width * 0.75D - 0.5D;
     }
 
-    protected boolean l() {
+    protected boolean n() {
         return false;
     }
 
@@ -36,15 +36,15 @@ public class EntitySpider extends EntityMonster {
         }
     }
 
-    protected String e() {
-        return "mob.spider";
-    }
-
-    protected String f() {
-        return "mob.spider";
-    }
-
     protected String g() {
+        return "mob.spider";
+    }
+
+    protected String h() {
+        return "mob.spider";
+    }
+
+    protected String i() {
         return "mob.spiderdeath";
     }
 
@@ -83,19 +83,19 @@ public class EntitySpider extends EntityMonster {
         }
     }
 
-    public void a(NBTTagCompound nbttagcompound) {
-        super.a(nbttagcompound);
-    }
-
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
     }
 
-    protected int h() {
+    public void a(NBTTagCompound nbttagcompound) {
+        super.a(nbttagcompound);
+    }
+
+    protected int j() {
         return Item.STRING.id;
     }
 
-    public boolean n() {
+    public boolean p() {
         return this.positionChanged;
     }
 }
