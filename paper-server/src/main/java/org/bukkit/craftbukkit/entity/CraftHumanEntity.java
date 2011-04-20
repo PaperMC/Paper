@@ -4,8 +4,8 @@ package org.bukkit.craftbukkit.entity;
 import net.minecraft.server.EntityHuman;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.craftbukkit.inventory.CraftInventoryPlayer;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.CraftServer;
 
 public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
@@ -31,11 +31,11 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         this.inventory = new CraftInventoryPlayer( entity.inventory );
     }
 
-    public CraftInventoryPlayer getInventory() {
+    public PlayerInventory getInventory() {
         return inventory;
     }
 
-    public CraftItemStack getItemInHand() {
+    public ItemStack getItemInHand() {
         return getInventory().getItemInHand();
     }
 
