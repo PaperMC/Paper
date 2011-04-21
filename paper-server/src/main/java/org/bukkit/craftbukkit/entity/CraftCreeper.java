@@ -21,9 +21,9 @@ public class CraftCreeper extends CraftMonster implements Creeper {
 
     public void setPowered(boolean powered) {
         if (powered) {
-            getHandle().W().b(17, 1);
+            getHandle().W().b(17, (byte)1);
         } else {
-            getHandle().W().b(17, 0);
+            getHandle().W().b(17, (byte)0);
         }
     }
 
