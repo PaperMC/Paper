@@ -118,9 +118,9 @@ public class ServerConfigurationManager {
         this.playerFileData.a(entityplayer);
         entityplayer.world.kill(entityplayer); // CraftBukkit
         this.players.remove(entityplayer);
-        ((WorldServer) entityplayer.world).manager.removePlayer(entityplayer);
 
         return playerQuitEvent.getQuitMessage(); // CraftBukkit
+        // CraftBukkit end
     }
 
     public EntityPlayer a(NetLoginHandler netloginhandler, String s) {

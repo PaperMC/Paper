@@ -46,8 +46,7 @@ class PlayerInstance {
 
     public void b(EntityPlayer entityplayer) {
         if (!this.b.contains(entityplayer)) {
-            // CraftBukkit
-            // (new IllegalStateException("Failed to remove player. " + entityplayer + " isn\'t in chunk " + this.chunkX + ", " + this.chunkZ)).printStackTrace();
+            (new IllegalStateException("Failed to remove player. " + entityplayer + " isn\'t in chunk " + this.chunkX + ", " + this.chunkZ)).printStackTrace();
         } else {
             this.b.remove(entityplayer);
             if (this.b.size() == 0) {
