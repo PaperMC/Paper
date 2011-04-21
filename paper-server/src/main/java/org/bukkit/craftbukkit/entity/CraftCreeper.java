@@ -15,4 +15,16 @@ public class CraftCreeper extends CraftMonster implements Creeper {
         return "CraftCreeper";
     }
 
+    public boolean isPowered() {
+        return getHandle().W().a(17) == 1;
+    }
+
+    public void setPowered(boolean powered) {
+        if (powered) {
+            getHandle().W().a(17, 1);
+        } else {
+            getHandle().W().a(17, 0);
+        }
+    }
+
 }
