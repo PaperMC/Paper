@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Random;
 
 // CraftBukkit start
+import org.bukkit.Bukkit;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.entity.CraftVehicle;
 import org.bukkit.entity.LivingEntity;
@@ -14,6 +15,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageByBlockEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 // CraftBukkit end
@@ -1144,7 +1146,17 @@ public abstract class Entity {
     }
 
     public void a(EntityWeatherStorm entityweatherstorm) {
-        this.a(5);
+        // Craftbukkit start
+        int damage = 5;
+        EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(entityweatherstorm.getBukkitEntity(), getBukkitEntity(), DamageCause.LIGHTNING, damage);
+        Bukkit.getServer().getPluginManager().callEvent(event);
+        damage = event.getDamage();
+        if (event.isCancelled()) {
+            return;
+        }
+        
+        this.a(damage);
+        // Craftbukkit end
         ++this.fireTicks;
         if (this.fireTicks == 0) {
             this.fireTicks = 300;
