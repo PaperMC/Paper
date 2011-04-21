@@ -275,6 +275,7 @@ public final class CraftServer implements Server {
         console.onlineMode = config.getBoolean("online-mode", console.onlineMode);
         console.spawnAnimals = config.getBoolean("spawn-animals", console.spawnAnimals);
         console.pvpMode = config.getBoolean("pvp", console.pvpMode);
+        console.o = config.getBoolean("allow-flight", console.o);
 
         for (WorldServer world : console.worlds) {
             world.spawnMonsters = monsters ? 1 : 0;
