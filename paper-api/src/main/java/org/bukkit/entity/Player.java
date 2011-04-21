@@ -2,7 +2,10 @@
 package org.bukkit.entity;
 
 import java.net.InetSocketAddress;
+import org.bukkit.Achievement;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Statistic;
 import org.bukkit.command.CommandSender;
 
 /**
@@ -135,4 +138,43 @@ public interface Player extends HumanEntity, CommandSender {
      * @deprecated This method should not be relied upon as it is a temporary work-around for a larger, more complicated issue.
      */
     public void updateInventory();
+
+    /**
+     * Awards this player the given achievement
+     *
+     * @param achievement Achievement to award
+     */
+    public void awardAchievement(Achievement achievement);
+
+    /**
+     * Increments the given statistic for this player
+     *
+     * @param statistic Statistic to increment
+     */
+    public void incrementStatistic(Statistic statistic);
+
+    /**
+     * Increments the given statistic for this player
+     *
+     * @param statistic Statistic to increment
+     * @param amount Amount to increment this statistic by
+     */
+    public void incrementStatistic(Statistic statistic, int amount);
+
+    /**
+     * Increments the given statistic for this player for the given material
+     *
+     * @param statistic Statistic to increment
+     * @param material Material to offset the statistic with
+     */
+    public void incrementStatistic(Statistic statistic, Material material);
+
+    /**
+     * Increments the given statistic for this player for the given material
+     *
+     * @param statistic Statistic to increment
+     * @param material Material to offset the statistic with
+     * @param amount Amount to increment this statistic by
+     */
+    public void incrementStatistic(Statistic statistic, Material material, int amount);
 }
