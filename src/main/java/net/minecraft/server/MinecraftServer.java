@@ -162,7 +162,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
 
         // CraftBukkit start
         WorldServer world = new WorldServer(this, new ServerNBTManager(new File("."), s, true), s, this.propertyManager.getBoolean("hellworld", false) ? -1 : 0, i);
-        world.addIWorldAccess(new WorldManager(this, world));
+        world.addIWorldAccess((IWorldAccess)new WorldManager(this, world));
         world.spawnMonsters = this.propertyManager.getBoolean("spawn-monsters", true) ? 1 : 0;
         world.setSpawnFlags(this.propertyManager.getBoolean("spawn-monsters", true), this.spawnAnimals);
         this.serverConfigurationManager.setPlayerFileData(world);

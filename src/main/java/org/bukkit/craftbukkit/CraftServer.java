@@ -4,6 +4,7 @@ import com.avaje.ebean.config.DataSourceConfig;
 import com.avaje.ebean.config.ServerConfig;
 import com.avaje.ebean.config.dbplatform.SQLitePlatform;
 import com.avaje.ebeaninternal.server.lib.sql.TransactionIsolation;
+import net.minecraft.server.IWorldAccess;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.world.WorldLoadEvent;
@@ -314,7 +315,7 @@ public final class CraftServer implements Server {
 
         WorldServer internal = new WorldServer(console, new ServerNBTManager(new File("."), name, true), name, environment == World.Environment.NETHER ? -1 : 0, seed);
 
-        internal.addIWorldAccess(new WorldManager(console, internal));
+        internal.addIWorldAccess((IWorldAccess)new WorldManager(console, internal));
         internal.spawnMonsters = 1;
         internal.setSpawnFlags(true, true);
         console.serverConfigurationManager.setPlayerFileData(internal);
