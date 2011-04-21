@@ -30,19 +30,19 @@ public class CraftInventoryPlayer extends CraftInventory implements PlayerInvent
         return getInventory().itemInHandIndex;
     }
 
-    public CraftItemStack getHelmet() {
+    public ItemStack getHelmet() {
         return getItem( getSize() + 3 );
     }
 
-    public CraftItemStack getChestplate() {
+    public ItemStack getChestplate() {
         return getItem( getSize() + 2 );
     }
 
-    public CraftItemStack getLeggings() {
+    public ItemStack getLeggings() {
         return getItem( getSize() + 1 );
     }
 
-    public CraftItemStack getBoots() {
+    public ItemStack getBoots() {
         return getItem( getSize() + 0 );
     }
 

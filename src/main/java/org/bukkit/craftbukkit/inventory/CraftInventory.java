@@ -26,16 +26,16 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
         return getInventory().getName();
     }
 
-    public CraftItemStack getItem(int index) {
+    public ItemStack getItem(int index) {
         return new CraftItemStack(getInventory().getItem(index));
     }
 
-    public CraftItemStack[] getContents() {
-        CraftItemStack[] items = new CraftItemStack[getSize()];
+    public ItemStack[] getContents() {
+        ItemStack[] items = new ItemStack[getSize()];
         net.minecraft.server.ItemStack[] mcItems = getInventory().getContents();
 
         for (int i = 0; i < mcItems.length; i++ ) {
-            items[i] = new CraftItemStack(mcItems[i]);
+            items[i] = mcItems[i] == null ? null : new CraftItemStack(mcItems[i]);
         }
 
         return items;
@@ -64,7 +64,7 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
 
     public boolean contains(int materialId) {
         for (ItemStack item: getContents()) {
-            if (item.getTypeId() == materialId) {
+            if (item != null && item.getTypeId() == materialId) {
                 return true;
             }
         }
@@ -90,11 +90,11 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
     public boolean contains(int materialId, int amount) {
         int amt = 0;
         for (ItemStack item: getContents()) {
-            if (item.getTypeId() == materialId && item.getAmount() >= amount) {
-                return true;
+            if (item != null && item.getTypeId() == materialId) {
+                amt += item.getAmount();
             }
         }
-        return false;
+        return amt >= amount;
     }
 
     public boolean contains(Material material, int amount) {
@@ -107,11 +107,11 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
         }
         int amt = 0;
         for (ItemStack i: getContents()) {
-            if (item.equals(i) && item.getAmount() >= amount) {
-                return true;
+            if (item.equals(i)) {
+                amt += item.getAmount();
             }
         }
-        return false;
+        return amt >= amount;
     }
 
     public HashMap<Integer, ItemStack> all(int materialId) {
