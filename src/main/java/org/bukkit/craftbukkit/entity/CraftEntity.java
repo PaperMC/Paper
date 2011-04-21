@@ -76,6 +76,13 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         else if (entity instanceof EntityFireball) { return new CraftFireball( server, (EntityFireball) entity); }
         else if (entity instanceof EntityFish) { return new CraftFish( server, (EntityFish) entity); }
         else if (entity instanceof EntityItem) { return new CraftItem( server, (EntityItem) entity); }
+        else if (entity instanceof EntityWeather) {
+            if (entity instanceof EntityWeatherStorm) {
+                return new CraftWeatherStorm(server, (EntityWeatherStorm)entity);
+            } else {
+                return new CraftWeather(server, (EntityWeather)entity);
+            }
+        }
         else if (entity instanceof EntityMinecart) {
             EntityMinecart mc = (EntityMinecart) entity;
             if (mc.type == CraftMinecart.Type.StorageMinecart.getId()) {
