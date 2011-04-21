@@ -6,11 +6,15 @@ import net.minecraft.server.EntityHuman;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.ItemInWorldManager;
 import net.minecraft.server.Packet;
+import net.minecraft.server.Packet200Statistic;
 import net.minecraft.server.Packet3Chat;
 import net.minecraft.server.Packet6SpawnPosition;
 import net.minecraft.server.ServerConfigurationManager;
 import net.minecraft.server.WorldServer;
+import org.bukkit.Achievement;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Statistic;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.TextWrapper;
@@ -221,5 +225,47 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public boolean isSleepingIgnored() {
         return getHandle().fauxSleeping;
+    }
+
+    public void awardAchievement(Achievement achievement) {
+        sendStatistic(achievement.getId(), 1);
+    }
+
+    public void incrementStatistic(Statistic statistic) {
+        incrementStatistic(statistic, 1);
+    }
+
+    public void incrementStatistic(Statistic statistic, int amount) {
+        sendStatistic(statistic.getId(), amount);
+    }
+
+    public void incrementStatistic(Statistic statistic, Material material) {
+        incrementStatistic(statistic, material, 1);
+    }
+
+    public void incrementStatistic(Statistic statistic, Material material, int amount) {
+        if (!statistic.isSubstatistic()) {
+            throw new IllegalArgumentException("Given statistic is not a substatistic");
+        }
+        if (statistic.isBlock() != material.isBlock()) {
+            throw new IllegalArgumentException("Given material is not valid for this substatistic");
+        }
+
+        int mat = material.getId();
+
+        if (!material.isBlock()) {
+            mat -= 255;
+        }
+        
+        sendStatistic(statistic.getId() + mat, amount);
+    }
+
+    private void sendStatistic(int id, int amount) {
+        while (amount > Byte.MAX_VALUE) {
+            sendStatistic(id, Byte.MAX_VALUE);
+            amount -= Byte.MAX_VALUE;
+        }
+        
+        getHandle().netServerHandler.sendPacket(new Packet200Statistic(id, amount));
     }
 }
