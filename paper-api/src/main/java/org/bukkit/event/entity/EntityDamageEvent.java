@@ -151,6 +151,12 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          */
         VOID,
         /**
+         * Damage caused by being struck by lightning
+         * 
+         * Damage: 5
+         */
+        LIGHTNING,
+        /**
          * Custom damage.
          *
          * Damage: variable
