@@ -22,8 +22,8 @@ public class EntityWeatherStorm extends EntityWeather {
         super(world);
 
         // CraftBukkit start
-        CraftWorld cworld = ((WorldServer) world).getWorld();
-        CraftServer server = ((WorldServer) world).getServer();
+        cworld = ((WorldServer) world).getWorld();
+        server = ((WorldServer) world).getServer();
         // CraftBukkit end
         
         this.setPositionRotation(d0, d1, d2, 0.0F, 0.0F);
