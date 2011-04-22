@@ -363,7 +363,6 @@ public class CraftWorld implements World {
         return creature;
     }
 
-    @Override
     public LightningStrike strikeLightning(Location loc) {
         EntityWeatherStorm lightning = new EntityWeatherStorm(world, loc.getX(), loc.getY(), loc.getZ());
         world.a(lightning);
@@ -548,5 +547,28 @@ public class CraftWorld implements World {
 
         // Saves all chunks/regions
         world.chunkProvider.saveChunks(true, null);
+    }
+
+    public boolean hasStorm() {
+        return world.worldData.l();
+    }
+
+    public void setStorm(boolean hasStorm) {
+        world.worldData.b(hasStorm);
+        
+        // These numbers are from Minecraft
+        if (hasStorm) {
+            setWeatherDuration(rand.nextInt(12000) + 12000);
+        } else {
+            setWeatherDuration(rand.nextInt(168000) + 12000);
+        }
+    }
+
+    public int getWeatherDuration() {
+        return world.worldData.m();
+    }
+
+    public void setWeatherDuration(int duration) {
+        world.worldData.c(duration);
     }
 }
