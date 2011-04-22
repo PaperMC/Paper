@@ -124,7 +124,7 @@ public class CraftBlock implements Block {
      * @return whether the block was changed
      */
     public boolean setTypeId(final int type) {
-        return chunk.getHandle().world.setRawTypeId(x, y, z, type);
+        return chunk.getHandle().world.setTypeId(x, y, z, type);
     }
 
     public boolean setTypeId(final int type, final boolean applyPhysics) {
