@@ -409,6 +409,35 @@ public interface World {
      * @see #setTime(long) Sets the relative time of this world
      */
     public void setFullTime(long time);
+    
+    /**
+     * Returns whether the world has an ongoing storm.
+     * 
+     * @return Whether there is an ongoing storm
+     */
+    public boolean hasStorm();
+    
+    /**
+     * Set whether there is a storm. A duration will be set for the new
+     * current conditions.
+     * 
+     * @param hasStorm Whether there is rain and snow
+     */
+    public void setStorm(boolean hasStorm);
+    
+    /**
+     * Get the remaining time in ticks of the current conditions.
+     * 
+     * @return Time in ticks
+     */
+    public int getWeatherDuration();
+    
+    /**
+     * Set the remaining time in ticks of the current conditions.
+     * 
+     * @param duration Time in ticks
+     */
+    public void setWeatherDuration(int duration);
 
     /**
      * Gets the {@link Environment} type of this world
