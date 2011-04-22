@@ -306,6 +306,14 @@ public interface World {
      * @return Resulting LivingEntity of this method, or null if it was unsuccessful
      */
     public LivingEntity spawnCreature(Location loc, CreatureType type);
+    
+    /**
+     * Strikes lightning at the given {@link Location}
+     * 
+     * @param loc The location to strike lightning
+     * @return
+     */
+    public LightningStrike strikeLightning(Location loc);
 
     /**
      * Get a list of all entities in this World
