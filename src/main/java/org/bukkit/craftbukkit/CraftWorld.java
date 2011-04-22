@@ -363,6 +363,13 @@ public class CraftWorld implements World {
         return creature;
     }
 
+    @Override
+    public LightningStrike strikeLightning(Location loc) {
+        EntityWeatherStorm lightning = new EntityWeatherStorm(world, loc.getX(), loc.getY(), loc.getZ());
+        world.a(lightning);
+        return new CraftLightningStrike(server, lightning);
+    }
+
     public boolean generateTree(Location loc, TreeType type) {
         return generateTree(loc, type, world);
     }
