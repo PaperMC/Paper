@@ -91,7 +91,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
         }
 
         log.info("Loading properties");
-        this.propertyManager = new PropertyManager(new File("server.properties"));
+        this.propertyManager = new PropertyManager(options); // CraftBukkit - CLI argument support
         String s = this.propertyManager.getString("server-ip", "");
 
         this.onlineMode = this.propertyManager.getBoolean("online-mode", true);
