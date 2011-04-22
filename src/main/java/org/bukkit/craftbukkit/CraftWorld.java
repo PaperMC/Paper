@@ -571,4 +571,27 @@ public class CraftWorld implements World {
     public void setWeatherDuration(int duration) {
         world.worldData.c(duration);
     }
+
+    public boolean isThundering() {
+        return world.worldData.j();
+    }
+
+    public void setThundering(boolean thundering) {
+        world.worldData.a(thundering);
+        
+        // These numbers are from Minecraft
+        if (thundering) {
+            setThunderDuration(rand.nextInt(12000) + 3600);
+        } else {
+            setThunderDuration(rand.nextInt(168000) + 12000);
+        }
+    }
+    
+    public int getThunderDuration() {
+        return world.worldData.k();
+    }
+
+    public void setThunderDuration(int duration) {
+        world.worldData.b(duration);        
+    }
 }
