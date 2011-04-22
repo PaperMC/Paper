@@ -438,6 +438,34 @@ public interface World {
      * @param duration Time in ticks
      */
     public void setWeatherDuration(int duration);
+    
+    /**
+     * Returns whether there is thunder.
+     * 
+     * @return Whether there is thunder
+     */
+    public boolean isThundering();
+    
+    /**
+     * Set whether it is thundering.
+     * 
+     * @param thundering Whether it is thundering
+     */
+    public void setThundering(boolean thundering);
+    
+    /**
+     * Get the thundering duration.
+     * 
+     * @return Duration in ticks
+     */
+    public int getThunderDuration();
+    
+    /**
+     * Set the thundering duration.
+     * 
+     * @param duration Duration in ticks 
+     */
+    public void setThunderDuration(int duration);
 
     /**
      * Gets the {@link Environment} type of this world
