@@ -490,6 +490,13 @@ public interface World {
     }
 
     /**
+     * Gets the Seed for this world.
+     *
+     * @return This worlds Seed
+     */
+    public long getSeed();
+
+    /**
      * Saves world to disk
      */
     public void save();
