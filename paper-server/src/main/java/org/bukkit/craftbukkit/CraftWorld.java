@@ -594,4 +594,8 @@ public class CraftWorld implements World {
     public void setThunderDuration(int duration) {
         world.worldData.b(duration);        
     }
+
+    public long getSeed() {
+        return world.worldData.b();
+    }
 }
