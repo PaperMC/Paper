@@ -9,6 +9,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+// CraftBukkit start
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+// CraftBukkit end
+
 public abstract class Packet {
 
     private static Map a = new HashMap();
@@ -83,6 +88,16 @@ public abstract class Packet {
             System.out.println("Reached end of stream");
             return null;
         }
+
+        // CraftBukkit start
+        catch (SocketTimeoutException exception) {
+            System.out.println("Read timed out");
+            return null;
+        } catch (SocketException exception) {
+            System.out.println("Connection reset");
+            return null;
+        }
+        // CraftBukkit end
 
         PacketCounter packetcounter = (PacketCounter) e.get(Integer.valueOf(i));
 
