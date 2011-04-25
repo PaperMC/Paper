@@ -69,6 +69,11 @@ public final class SimpleCommandMap implements CommandMap {
      */
     public boolean dispatch(CommandSender sender, String commandLine) {
         String[] args = commandLine.split(" ");
+
+        if (args.length == 0) {
+            return false;
+        }
+
         String sentCommandLabel = args[0].toLowerCase();
 
         args = Arrays_copyOfRange(args, 1, args.length);
