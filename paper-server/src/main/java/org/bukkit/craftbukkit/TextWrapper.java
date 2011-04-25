@@ -2,6 +2,8 @@ package org.bukkit.craftbukkit;
 
 import java.util.regex.Pattern;
 
+import javax.sound.sampled.LineListener;
+
 public class TextWrapper {
     private static final int[] characterWidths = new int[] {
         1, 9, 9, 8, 8, 8, 8, 7, 9, 8, 9, 9, 8, 9, 9, 9,
@@ -21,50 +23,70 @@ public class TextWrapper {
         8, 7, 7, 8, 7, 8, 8, 8, 7, 8, 8, 7, 9, 9, 6, 7,
         7, 7, 7, 7, 9, 6, 7, 8, 7, 6, 6, 9, 7, 6, 7, 1
     };
+    private static final char COLOR_CHAR = '\u00A7';
     private static final int CHAT_WINDOW_WIDTH = 320;
-    private static final Pattern pattern = Pattern.compile("\n.*\u00A7", Pattern.DOTALL);
+    private static final int CHAT_STRING_LENGTH = 119;
+    private static final String allowedChars = net.minecraft.server.FontAllowedCharacters.a;
 
     public static String[] wrapText(final String text) {
         final StringBuilder out = new StringBuilder();
         char colorChar = 'f';
         int lineWidth = 0;
-        int lineCount = 0;
-        boolean hasColored = true;
+        int lineLenght = 0;
+
+        // Go over the message char by char.
         for (int i = 0; i < text.length(); i++) {
             char ch = text.charAt(i);
-            if (ch == '\u00A7' && i < text.length() - 1) {
-                colorChar = text.charAt(++i);
-                hasColored = false;
-                continue;
-            } else if (ch >= characterWidths.length) {
-                ch = (char) (characterWidths.length - 1);
-            }
-            final int width = characterWidths[(int) ch];
-            if (lineWidth + width >= CHAT_WINDOW_WIDTH) {
-                out.append('\n');
-                lineCount++;
-                if (colorChar != 'f') {
-                    out.append('\u00A7');
-                    out.append(colorChar);
+
+            // Get the color
+            if (ch == COLOR_CHAR && i < text.length() - 1) {
+                // We might need a linebreak ... so ugly ;(
+                if (lineLenght + 2 > CHAT_STRING_LENGTH) {
+                    out.append('\n');
+                    lineLenght = 0;
+                    if (colorChar != 'f') {
+                        out.append(COLOR_CHAR).append(colorChar);
+                        lineLenght += 2;
+                    }
                 }
-                out.append(ch);
+                colorChar = text.charAt(++i);
+                out.append(COLOR_CHAR).append(colorChar);
+                lineLenght += 2;
+                continue;
+            }
+
+            // Figure out if it's allowed
+            int index = allowedChars.indexOf(ch);
+            if (index == -1) {
+                // Invalid character .. skip it.
+                continue;
+            } else {
+                // Sadly needed as the allowedChars string misses the first
+                index += 32;
+            }
+
+            // Find the width
+            final int width = characterWidths[ index ];
+
+            // See if we need a linebreak
+            if (lineLenght + 1 > CHAT_STRING_LENGTH || lineWidth + width >= CHAT_WINDOW_WIDTH) {
+                out.append('\n');
+                lineLenght = 0;
+
+                // Re-apply the last color if it isn't the default
+                if (colorChar != 'f') {
+                    out.append(COLOR_CHAR).append(colorChar);
+                    lineLenght += 2;
+                }
                 lineWidth = width;
             } else {
-                if (!hasColored) {
-                    out.append('\u00A7');
-                    out.append(colorChar);
-                    hasColored = true;
-                }
-                out.append(ch);
                 lineWidth += width;
             }
+            out.append(ch);
+            lineLenght++;
         }
 
-        // See if we need to split the string
-        String result = out.toString();
-        if (pattern.matcher(result).find()) return result.split("\n");
-
-        if (lineCount > 0) result.replace("\n", "");
-        return new String[] {result};
+        // Return it split
+        return out.toString().split("\n");
     }
 }

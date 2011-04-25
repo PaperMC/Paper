@@ -5,7 +5,6 @@ import java.net.SocketAddress;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.ItemInWorldManager;
-import net.minecraft.server.Packet;
 import net.minecraft.server.Packet200Statistic;
 import net.minecraft.server.Packet3Chat;
 import net.minecraft.server.Packet6SpawnPosition;
@@ -17,7 +16,6 @@ import org.bukkit.Material;
 import org.bukkit.Statistic;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.TextWrapper;
 import org.bukkit.entity.Player;
 
 public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -84,9 +82,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void sendMessage(String message) {
-        for (final String line: TextWrapper.wrapText(message)) {
-            getHandle().netServerHandler.sendPacket(new Packet3Chat(line));
-        }
+        this.sendRawMessage(message);
     }
 
     public String getDisplayName() {
@@ -256,7 +252,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (!material.isBlock()) {
             mat -= 255;
         }
-        
+
         sendStatistic(statistic.getId() + mat, amount);
     }
 
@@ -265,7 +261,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             sendStatistic(id, Byte.MAX_VALUE);
             amount -= Byte.MAX_VALUE;
         }
-        
+
         getHandle().netServerHandler.sendPacket(new Packet200Statistic(id, amount));
     }
 }
