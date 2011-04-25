@@ -116,6 +116,10 @@ public class ItemStack {
      * @return MaterialData for this item
      */
     public MaterialData getData() {
+        if (Material.getMaterial(getTypeId()).getData() != null) {
+            data = Material.getMaterial(getTypeId()).getNewData((byte)this.durability);
+        }
+
         return data;
     }
 
