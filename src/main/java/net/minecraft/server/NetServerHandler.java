@@ -356,6 +356,15 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         d2 = to.getZ();
         f = to.getYaw();
         f1 = to.getPitch();
+
+        // TODO: make sure this is the best way to address this.
+        if (Float.isNaN(f)) {
+            f = 0;
+        }
+
+        if (Float.isNaN(f1)) {
+            f1 = 0;
+        }
         // CraftBukkit end
 
         this.m = false;
