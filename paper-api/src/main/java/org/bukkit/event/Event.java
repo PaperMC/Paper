@@ -108,7 +108,12 @@ public abstract class Event implements Serializable {
         LIVING_ENTITY,
 
         /**
-         * Represents Vehicle-based events
+         * Represents Weather-based events
+         */
+        WEATHER,
+
+        /**
+         * Vehicle-based events
          */
         VEHICLE,
 
@@ -591,6 +596,45 @@ public abstract class Event implements Serializable {
          * @see org.bukkit.event.entity.EntityInteractEvent
          */
         ENTITY_INTERACT (Category.LIVING_ENTITY),
+
+        /**
+         * Called when a creeper gains or loses a power shell
+         *
+         * @see org.bukkit.event.entity.CreeperPowerEvent
+         */
+        CREEPER_POWER (Category.LIVING_ENTITY),
+
+        /**
+         * Called when a pig is zapped, zombifying it
+         *
+         * @see org.bukkit.event.entity.PigZapEvent
+         */
+        PIG_ZAP (Category.LIVING_ENTITY),
+
+        /**
+         * WEATHER EVENTS
+         */
+
+        /**
+         * Called when a lightning entity strikes somewhere
+         *
+         * @see org.bukkit.event.weather.LightningStrikeEvent
+         */
+        LIGHTNING_STRIKE (Category.WEATHER),
+
+        /**
+         * Called when the weather in a world changes
+         *
+         * @see org.bukkit.event.weather.WeatherChangeEvent
+         */
+        WEATHER_CHANGE (Category.WEATHER),
+
+        /**
+         * Called when the thunder state in a world changes
+         *
+         * @see org.bukkit.event.weather.ThunderChangeEvent
+         */
+        THUNDER_CHANGE (Category.WEATHER),
 
         /**
          * VEHICLE EVENTS

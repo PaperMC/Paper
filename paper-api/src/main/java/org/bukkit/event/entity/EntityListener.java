@@ -40,4 +40,10 @@ public class EntityListener implements Listener {
 
     public void onPaintingBreak(PaintingBreakEvent event){
     }
+
+    public void onPigZap(PigZapEvent event) {
+    }
+
+    public void onCreeperPower(CreeperPowerEvent event) {
+    }
 }
