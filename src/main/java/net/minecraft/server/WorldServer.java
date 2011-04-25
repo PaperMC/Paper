@@ -7,6 +7,7 @@ import java.util.List;
 import org.bukkit.BlockChangeDelegate;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.event.weather.LightningStrikeEvent;
 
 public class WorldServer extends World implements BlockChangeDelegate {
 // CraftBukkit end
@@ -105,8 +106,15 @@ public class WorldServer extends World implements BlockChangeDelegate {
 
     public boolean a(Entity entity) {
         if (super.a(entity)) {
-            this.server.serverConfigurationManager.a(entity.locX, entity.locY, entity.locZ, 512.0D, new Packet71Weather(entity));
-            return true;
+            CraftServer server = cserver;
+
+            LightningStrikeEvent lightning = new LightningStrikeEvent((org.bukkit.World) world, entity.getBukkitEntity());
+            server.getPluginManager().callEvent(lightning);
+            if (!lightning.isCancelled()) {
+                this.server.serverConfigurationManager.a(entity.locX, entity.locY, entity.locZ, 512.0D, new Packet71Weather(entity));
+                return true;
+            }
+            return false;
         } else {
             return false;
         }

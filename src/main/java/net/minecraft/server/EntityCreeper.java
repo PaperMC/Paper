@@ -4,6 +4,7 @@ package net.minecraft.server;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.event.entity.ExplosionPrimeEvent;
+import org.bukkit.event.entity.CreeperPowerEvent;
 // CraftBukkit end
 
 public class EntityCreeper extends EntityMonster {
@@ -125,6 +126,16 @@ public class EntityCreeper extends EntityMonster {
 
     public void a(EntityWeatherStorm entityweatherstorm) {
         super.a(entityweatherstorm);
-        this.datawatcher.b(17, Byte.valueOf((byte) 1));
+        // CraftBukkit start
+        CraftServer server = ((WorldServer) this.world).getServer();
+        org.bukkit.entity.Entity entity = this.getBukkitEntity();
+
+        CreeperPowerEvent event = new CreeperPowerEvent(entity, entityweatherstorm.getBukkitEntity(), CreeperPowerEvent.PowerCause.LIGHTNING);
+        server.getPluginManager().callEvent(event);
+
+        if (!event.isCancelled()) {
+            this.datawatcher.b(17, Byte.valueOf((byte) 1));
+        }
+        // CraftBukkit end
     }
 }

@@ -9,11 +9,14 @@ import java.util.Set;
 import java.util.TreeSet;
 
 // CraftBukkit start
+import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.block.BlockCanBuildEvent;
 import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.event.weather.WeatherChangeEvent;
+import org.bukkit.event.weather.ThunderChangeEvent;
 // CraftBukkit end
 
 public class World implements IBlockAccess {
@@ -1490,7 +1493,13 @@ public class World implements IBlockAccess {
                 --i;
                 this.worldData.b(i);
                 if (i <= 0) {
-                    this.worldData.a(!this.worldData.j());
+                    CraftServer server = ((WorldServer) this).getServer();
+
+                    ThunderChangeEvent thunder = new ThunderChangeEvent(((WorldServer) this).getWorld(), !this.worldData.j());
+                    server.getPluginManager().callEvent(thunder);
+                    if (!thunder.isCancelled()) {
+                        this.worldData.a(!this.worldData.j());
+                    }
                 }
             }
 
@@ -1506,7 +1515,13 @@ public class World implements IBlockAccess {
                 --j;
                 this.worldData.c(j);
                 if (j <= 0) {
-                    this.worldData.b(!this.worldData.l());
+                    CraftServer server = ((WorldServer) this).getServer();
+
+                    WeatherChangeEvent weather = new WeatherChangeEvent(((WorldServer) this).getWorld(), !this.worldData.l());
+                    server.getPluginManager().callEvent(weather);
+                    if (!weather.isCancelled()) {
+                        this.worldData.b(!this.worldData.l());
+                    }
                 }
             }
 
@@ -1543,10 +1558,23 @@ public class World implements IBlockAccess {
     }
 
     private void y() {
-        this.worldData.c(0);
-        this.worldData.b(false);
-        this.worldData.b(0);
-        this.worldData.a(false);
+        // CraftBukkit start
+        CraftServer server = ((WorldServer) this).getServer();
+
+        WeatherChangeEvent weather = new WeatherChangeEvent((org.bukkit.World) this, false);
+        server.getPluginManager().callEvent(weather);
+
+        ThunderChangeEvent thunder = new ThunderChangeEvent((org.bukkit.World) this, false);
+        server.getPluginManager().callEvent(thunder);
+        if (!weather.isCancelled()) {
+            this.worldData.c(0);
+            this.worldData.b(false);
+        }
+        if (!thunder.isCancelled()) {
+            this.worldData.b(0);
+            this.worldData.a(false);
+        }
+        //CraftBukkit end
     }
 
     protected void j() {
