@@ -147,30 +147,35 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         }
 
         if (Math.abs(packet10flying.x) > 32000000 || Math.abs(packet10flying.z) > 32000000) {
+            player.teleport(player.getServer().getWorld(player.getWorld().getName()).getSpawnLocation());
             System.err.println(player.getName() + " was caught trying to crash the server with an invalid position.");
             player.kickPlayer("Nope!");
             return;
         }
 
         if (Double.isNaN(packet10flying.x) || packet10flying.x == Double.POSITIVE_INFINITY || packet10flying.x == Double.NEGATIVE_INFINITY) {
+            player.teleport(player.getServer().getWorld(player.getWorld().getName()).getSpawnLocation());
             System.err.println(player.getName() + " was caught trying to set an invalid position.");
             player.kickPlayer("Nope!");
             return;
         }
 
         if (Double.isNaN(packet10flying.y) || packet10flying.y == Double.POSITIVE_INFINITY || packet10flying.y == Double.NEGATIVE_INFINITY) {
+            player.teleport(player.getServer().getWorld(player.getWorld().getName()).getSpawnLocation());
             System.err.println(player.getName() + " was caught trying to set an invalid position.");
             player.kickPlayer("Nope!");
             return;
         }
 
         if (Double.isNaN(packet10flying.z) || packet10flying.z == Double.POSITIVE_INFINITY || packet10flying.z == Double.NEGATIVE_INFINITY) {
+            player.teleport(player.getServer().getWorld(player.getWorld().getName()).getSpawnLocation());
             System.err.println(player.getName() + " was caught trying to set an invalid position.");
             player.kickPlayer("Nope!");
             return;
         }
 
         if (Double.isNaN(packet10flying.stance) || packet10flying.stance == Double.POSITIVE_INFINITY || packet10flying.stance == Double.NEGATIVE_INFINITY) {
+            player.teleport(player.getServer().getWorld(player.getWorld().getName()).getSpawnLocation());
             System.err.println(player.getName() + " was caught trying to set an invalid position.");
             player.kickPlayer("Nope!");
             return;
