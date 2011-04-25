@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Random;
 
 // CraftBukkit start
+import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
@@ -108,6 +109,7 @@ public class BlockPressurePlate extends Block {
                         }
                         else if (object instanceof Entity) {
                             cancellable = new EntityInteractEvent(((Entity) object).getBukkitEntity(), ((WorldServer)world).getWorld().getBlockAt(i, j, k));
+                            ((CraftServer)Bukkit.getServer()).getPluginManager().callEvent((EntityInteractEvent) cancellable);
                         }
                         else continue;
                         if (cancellable.isCancelled()) {
