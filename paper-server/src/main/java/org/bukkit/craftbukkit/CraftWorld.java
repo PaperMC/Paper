@@ -11,6 +11,8 @@ import java.util.Random;
 import net.minecraft.server.*;
 
 import org.bukkit.entity.Arrow;
+import org.bukkit.event.weather.WeatherChangeEvent;
+import org.bukkit.event.weather.ThunderChangeEvent;
 import org.bukkit.event.world.SpawnChangeEvent;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Boat;
@@ -121,16 +123,16 @@ public class CraftWorld implements World {
     public boolean unloadChunk(int x, int z, boolean save) {
         return unloadChunk(x, z, save, false);
     }
-    
+
     public boolean unloadChunkRequest(int x, int z) {
         return unloadChunkRequest(x, z, true);
     }
-    
+
     public boolean unloadChunkRequest(int x, int z, boolean safe) {
         if (safe && isChunkInUse(x, z)) {
             return false;
         }
-        
+
         provider.queueUnload(x, z);
 
         return true;
@@ -554,13 +556,19 @@ public class CraftWorld implements World {
     }
 
     public void setStorm(boolean hasStorm) {
-        world.worldData.b(hasStorm);
-        
-        // These numbers are from Minecraft
-        if (hasStorm) {
-            setWeatherDuration(rand.nextInt(12000) + 12000);
-        } else {
-            setWeatherDuration(rand.nextInt(168000) + 12000);
+        CraftServer server = world.getServer();
+
+        WeatherChangeEvent weather = new WeatherChangeEvent((org.bukkit.World) this, hasStorm);
+        server.getPluginManager().callEvent(weather);
+        if (!weather.isCancelled()) {
+            world.worldData.b(hasStorm);
+
+            // These numbers are from Minecraft
+            if (hasStorm) {
+                setWeatherDuration(rand.nextInt(12000) + 12000);
+            } else {
+                setWeatherDuration(rand.nextInt(168000) + 12000);
+            }
         }
     }
 
@@ -577,22 +585,28 @@ public class CraftWorld implements World {
     }
 
     public void setThundering(boolean thundering) {
-        world.worldData.a(thundering);
-        
-        // These numbers are from Minecraft
-        if (thundering) {
-            setThunderDuration(rand.nextInt(12000) + 3600);
-        } else {
-            setThunderDuration(rand.nextInt(168000) + 12000);
+        CraftServer server = world.getServer();
+
+        ThunderChangeEvent thunder = new ThunderChangeEvent((org.bukkit.World) this, thundering);
+        server.getPluginManager().callEvent(thunder);
+        if (!thunder.isCancelled()) {
+            world.worldData.a(thundering);
+
+            // These numbers are from Minecraft
+            if (thundering) {
+                setThunderDuration(rand.nextInt(12000) + 3600);
+            } else {
+                setThunderDuration(rand.nextInt(168000) + 12000);
+            }
         }
     }
-    
+
     public int getThunderDuration() {
         return world.worldData.k();
     }
 
     public void setThunderDuration(int duration) {
-        world.worldData.b(duration);        
+        world.worldData.b(duration);
     }
 
     public long getSeed() {

@@ -1,8 +1,11 @@
 package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntityCreeper;
+import net.minecraft.server.WorldServer;
+
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Creeper;
+import org.bukkit.event.entity.CreeperPowerEvent;
 
 public class CraftCreeper extends CraftMonster implements Creeper {
 
@@ -20,11 +23,28 @@ public class CraftCreeper extends CraftMonster implements Creeper {
     }
 
     public void setPowered(boolean powered) {
+        // CraftBukkit start
+        CraftServer server = this.server;
+        org.bukkit.entity.Entity entity = this.getHandle().getBukkitEntity();
+
         if (powered) {
-            getHandle().W().b(17, (byte)1);
+            CreeperPowerEvent event = new CreeperPowerEvent(entity, CreeperPowerEvent.PowerCause.SET_ON);
+            server.getPluginManager().callEvent(event);
+
+            if (!event.isCancelled()) {
+                getHandle().W().b(17, (byte)1);
+            }
         } else {
-            getHandle().W().b(17, (byte)0);
+            CreeperPowerEvent event = new CreeperPowerEvent(entity, CreeperPowerEvent.PowerCause.SET_OFF);
+            server.getPluginManager().callEvent(event);
+
+            if (!event.isCancelled()) {
+                getHandle().W().b(17, (byte)0);
+            }
         }
+
+        // CraftBukkit end
+
     }
 
 }
