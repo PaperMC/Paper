@@ -14,6 +14,7 @@ import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.TextWrapper;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.block.*;
@@ -579,9 +580,15 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         if (packet instanceof Packet6SpawnPosition) {
             Packet6SpawnPosition packet6 = (Packet6SpawnPosition) packet;
             this.player.compassTarget = new Location(getPlayer().getWorld(), packet6.x, packet6.y, packet6.z);
+        } else if (packet instanceof Packet3Chat) {
+            String message = ((Packet3Chat) packet).a;
+            for (final String line: TextWrapper.wrapText(message)) {
+                this.networkManager.a(new Packet3Chat(line));
+            }
+            packet = null;
         }
+        if (packet != null) this.networkManager.a(packet);
         // CraftBukkit
-        this.networkManager.a(packet);
         this.g = this.f;
     }
 

@@ -150,9 +150,9 @@ public abstract class Packet {
         }
     }
 
-    public abstract void a(DataInputStream datainputstream);
+    public abstract void a(DataInputStream datainputstream) throws IOException; // CraftBukkit
 
-    public abstract void a(DataOutputStream dataoutputstream);
+    public abstract void a(DataOutputStream dataoutputstream) throws IOException; // CraftBukkit
 
     public abstract void a(NetHandler nethandler);
 
