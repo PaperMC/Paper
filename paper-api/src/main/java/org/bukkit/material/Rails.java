@@ -5,15 +5,13 @@ import org.bukkit.block.BlockFace;
 
 /**
  * Represents minecart rails.
- * 
- * @author sunkid
  */
 public class Rails extends MaterialData {
 
     public Rails() {
         super(Material.RAILS);
     }
-    
+
     public Rails(final int type) {
         super(type);
     }
@@ -34,7 +32,7 @@ public class Rails extends MaterialData {
      * @return the whether this track is set on a slope
      */
     public boolean isOnSlope() {
-        byte d = getData();
+        byte d = getConvertedData();
         return (d == 0x2 || d == 0x3 || d == 0x4 || d == 0x5);
     }
 
@@ -42,7 +40,7 @@ public class Rails extends MaterialData {
      * @return the whether this track is set as a curve
      */
     public boolean isCurve() {
-        byte d = getData();
+        byte d = getConvertedData();
         return (d == 0x6 || d == 0x7 || d == 0x8 || d == 0x9);
     }
 
@@ -54,7 +52,7 @@ public class Rails extends MaterialData {
      *         returned.
      */
     public BlockFace getDirection() {
-        byte d = getData();
+        byte d = getConvertedData();
         switch (d) {
         case 0x0:
         default:
@@ -79,9 +77,17 @@ public class Rails extends MaterialData {
             return BlockFace.NORTH_WEST;
         }
     }
-    
+
     @Override
     public String toString() {
         return super.toString() + " facing " + getDirection() + (isCurve() ? " on a curve" : (isOnSlope() ? " on a slope" : ""));
+    }
+
+    /**
+     * Return the data without the extended properties used by {@link PoweredRail} and {@link DetectorRail}. Overridden in {@link ExtendedRails}
+     * @return the data without the extended part
+     */
+    protected byte getConvertedData() {
+        return getData();
     }
 }

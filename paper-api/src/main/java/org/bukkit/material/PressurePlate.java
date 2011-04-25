@@ -4,14 +4,12 @@ import org.bukkit.Material;
 
 /**
  * Represents a pressure plate
- * @author CelticMinstrel
- *
  */
-public class PressurePlate extends MaterialData {
+public class PressurePlate extends MaterialData implements PressureSensor {
     public PressurePlate() {
         super(Material.WOOD_PLATE);
     }
-    
+
     public PressurePlate(int type) {
         super(type);
     }
