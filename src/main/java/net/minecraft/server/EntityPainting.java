@@ -206,7 +206,7 @@ public class EntityPainting extends Entity {
 
             // CraftBukkit start
             Painting painting = (Painting) getBukkitEntity();
-            PaintingBreakByEntityEvent event = new PaintingBreakByEntityEvent(painting,entity.getBukkitEntity());
+            PaintingBreakByEntityEvent event = new PaintingBreakByEntityEvent(painting, entity == null ? null : entity.getBukkitEntity());
             Bukkit.getServer().getPluginManager().callEvent(event);
             if (event.isCancelled()) {
                 return true;
