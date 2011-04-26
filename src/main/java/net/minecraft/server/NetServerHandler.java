@@ -570,8 +570,12 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         if (this.disconnected) return; // CraftBukkit -- rarely it would send a disconnect line twice
 
         a.info(this.player.name + " lost connection: " + s);
-        this.minecraftServer.serverConfigurationManager.sendAll(new Packet3Chat("\u00A7e" + this.player.name + " left the game."));
-        this.minecraftServer.serverConfigurationManager.disconnect(this.player);
+        // CraftBukkit start - we need to handle custom quit messages
+        String quitMessage = this.minecraftServer.serverConfigurationManager.disconnect(this.player);
+        if (quitMessage != null) {
+            this.minecraftServer.serverConfigurationManager.sendAll(new Packet3Chat(quitMessage));
+        }
+        // CraftBukkit end
         this.disconnected = true;
     }
 
