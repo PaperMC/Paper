@@ -1493,6 +1493,7 @@ public class World implements IBlockAccess {
                 --i;
                 this.worldData.b(i);
                 if (i <= 0) {
+                    // CraftBukkit start
                     CraftServer server = ((WorldServer) this).getServer();
 
                     ThunderChangeEvent thunder = new ThunderChangeEvent(((WorldServer) this).getWorld(), !this.worldData.j());
@@ -1500,6 +1501,7 @@ public class World implements IBlockAccess {
                     if (!thunder.isCancelled()) {
                         this.worldData.a(!this.worldData.j());
                     }
+                    // CraftBukkit end
                 }
             }
 
@@ -1515,6 +1517,7 @@ public class World implements IBlockAccess {
                 --j;
                 this.worldData.c(j);
                 if (j <= 0) {
+                    // CraftBukkit start
                     CraftServer server = ((WorldServer) this).getServer();
 
 
@@ -1523,6 +1526,7 @@ public class World implements IBlockAccess {
                     if (!weather.isCancelled()) {
                         this.worldData.b(!this.worldData.l());
                     }
+                    // CraftBukkit end
                 }
             }
 
