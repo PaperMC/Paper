@@ -50,62 +50,67 @@ public class BlockFire extends Block {
 
     public void a(World world, int i, int j, int k, Random random) {
         boolean flag = world.getTypeId(i, j - 1, k) == Block.NETHERRACK.id;
-        int l = world.getData(i, j, k);
 
-        if (l < 15) {
-            world.setData(i, j, k, l + 1);
-            world.c(i, j, k, this.id, this.b());
-        }
-
-        if (!flag && !this.g(world, i, j, k)) {
-            if (!world.d(i, j - 1, k) || l > 3) {
-                world.setTypeId(i, j, k, 0);
-            }
-        } else if (!flag && !this.b(world, i, j - 1, k) && l == 15 && random.nextInt(4) == 0) {
+        if (!flag && world.v() && (world.q(i, j, k) || world.q(i - 1, j, k) || world.q(i + 1, j, k) || world.q(i, j, k - 1) || world.q(i, j, k + 1))) {
             world.setTypeId(i, j, k, 0);
         } else {
-            if (l % 2 == 0 && l > 2) {
-                this.a(world, i + 1, j, k, 300, random);
-                this.a(world, i - 1, j, k, 300, random);
-                this.a(world, i, j - 1, k, 250, random);
-                this.a(world, i, j + 1, k, 250, random);
-                this.a(world, i, j, k - 1, 300, random);
-                this.a(world, i, j, k + 1, 300, random);
+            int l = world.getData(i, j, k);
 
-                // CraftBukkit start - Call to stop spread of fire.
-                Server server = ((WorldServer) world).getServer();
-                CraftWorld cworld = ((WorldServer) world).getWorld();
+            if (l < 15) {
+                world.setData(i, j, k, l + 1);
+                world.c(i, j, k, this.id, this.b());
+            }
 
-                IgniteCause igniteCause = BlockIgniteEvent.IgniteCause.SPREAD;
-                Player thePlayer = null;
-                // CraftBukkit
+            if (!flag && !this.g(world, i, j, k)) {
+                if (!world.d(i, j - 1, k) || l > 3) {
+                    world.setTypeId(i, j, k, 0);
+                }
+            } else if (!flag && !this.b(world, i, j - 1, k) && l == 15 && random.nextInt(4) == 0) {
+                world.setTypeId(i, j, k, 0);
+            } else {
+                if (l % 2 == 0 && l > 2) {
+                    this.a(world, i + 1, j, k, 300, random);
+                    this.a(world, i - 1, j, k, 300, random);
+                    this.a(world, i, j - 1, k, 250, random);
+                    this.a(world, i, j + 1, k, 250, random);
+                    this.a(world, i, j, k - 1, 300, random);
+                    this.a(world, i, j, k + 1, 300, random);
 
-                for (int i1 = i - 1; i1 <= i + 1; ++i1) {
-                    for (int j1 = k - 1; j1 <= k + 1; ++j1) {
-                        for (int k1 = j - 1; k1 <= j + 4; ++k1) {
-                            if (i1 != i || k1 != j || j1 != k) {
-                                int l1 = 100;
+                    // CraftBukkit start - Call to stop spread of fire.
+                    Server server = ((WorldServer) world).getServer();
+                    CraftWorld cworld = ((WorldServer) world).getWorld();
 
-                                if (k1 > j + 1) {
-                                    l1 += (k1 - (j + 1)) * 100;
-                                }
+                    IgniteCause igniteCause = BlockIgniteEvent.IgniteCause.SPREAD;
+                    Player thePlayer = null;
+                    // CraftBukkit
 
-                                int i2 = this.h(world, i1, k1, j1);
+                    for (int i1 = i - 1; i1 <= i + 1; ++i1) {
+                        for (int j1 = k - 1; j1 <= k + 1; ++j1) {
+                            for (int k1 = j - 1; k1 <= j + 4; ++k1) {
+                                if (i1 != i || k1 != j || j1 != k) {
+                                    int l1 = 100;
 
-                                if (i2 > 0 && random.nextInt(l1) <= i2) {
-                                    // CraftBukkit start - Call to stop spread of fire.
-                                    org.bukkit.block.Block theBlock = cworld.getBlockAt(i1, k1, j1);
-
-                                    if (theBlock.getTypeId() != Block.FIRE.id) {
-                                        BlockIgniteEvent event = new BlockIgniteEvent(theBlock, igniteCause, thePlayer);
-                                        server.getPluginManager().callEvent(event);
-                                        if (event.isCancelled()) {
-                                            continue;
-                                        }
+                                    if (k1 > j + 1) {
+                                        l1 += (k1 - (j + 1)) * 100;
                                     }
-                                    // CraftBukkit end
 
-                                    world.setTypeId(i1, k1, j1, this.id);
+                                    int i2 = this.h(world, i1, k1, j1);
+
+                                    if (i2 > 0 && random.nextInt(l1) <= i2 && (!world.v() || !world.q(i1, k1, j1)) && !world.q(i1 - 1, k1, k) && !world.q(i1 + 1, k1, j1) && !world.q(i1, k1, j1 - 1) && !world.q(i1, k1, j1 + 1)) {
+                                        // CraftBukkit start - Call to stop spread of fire.
+                                        org.bukkit.block.Block theBlock = cworld.getBlockAt(i1, k1, j1);
+
+                                        if (theBlock.getTypeId() != Block.FIRE.id) {
+                                            BlockIgniteEvent event = new BlockIgniteEvent(theBlock, igniteCause, thePlayer);
+                                            server.getPluginManager().callEvent(event);
+                                            if (event.isCancelled()) {
+                                                continue;
+                                            }
+                                        }
+                                        // CraftBukkit end
+
+                                        world.setTypeId(i1, k1, j1, this.id);
+                                    }
                                 }
                             }
                         }
@@ -140,7 +145,7 @@ public class BlockFire extends Block {
             }
             // CraftBukkit end
 
-            if (random.nextInt(2) == 0) {
+            if (random.nextInt(2) == 0 && !world.q(i, j, k)) {
                 world.setTypeId(i, j, k, this.id);
             } else {
                 world.setTypeId(i, j, k, 0);
@@ -173,7 +178,7 @@ public class BlockFire extends Block {
         }
     }
 
-    public boolean d() {
+    public boolean n_() {
         return false;
     }
 
