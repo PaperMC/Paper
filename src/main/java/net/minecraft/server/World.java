@@ -1517,6 +1517,7 @@ public class World implements IBlockAccess {
                 if (j <= 0) {
                     CraftServer server = ((WorldServer) this).getServer();
 
+
                     WeatherChangeEvent weather = new WeatherChangeEvent(((WorldServer) this).getWorld(), !this.worldData.l());
                     server.getPluginManager().callEvent(weather);
                     if (!weather.isCancelled()) {
@@ -1561,10 +1562,10 @@ public class World implements IBlockAccess {
         // CraftBukkit start
         CraftServer server = ((WorldServer) this).getServer();
 
-        WeatherChangeEvent weather = new WeatherChangeEvent((org.bukkit.World) this, false);
+        WeatherChangeEvent weather = new WeatherChangeEvent(((WorldServer) this).getWorld(), false);
         server.getPluginManager().callEvent(weather);
 
-        ThunderChangeEvent thunder = new ThunderChangeEvent((org.bukkit.World) this, false);
+        ThunderChangeEvent thunder = new ThunderChangeEvent(((WorldServer) this).getWorld(), false);
         server.getPluginManager().callEvent(thunder);
         if (!weather.isCancelled()) {
             this.worldData.c(0);
