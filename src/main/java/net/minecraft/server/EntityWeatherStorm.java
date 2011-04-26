@@ -1,31 +1,34 @@
 package net.minecraft.server;
 
 import java.util.List;
+
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.block.BlockIgniteEvent;
 import org.bukkit.event.block.BlockIgniteEvent.IgniteCause;
+// CraftBukkit end
 
 public class EntityWeatherStorm extends EntityWeather {
 
     private int b;
     public long a = 0L;
     private int c;
-    
+
     // CraftBukkit start
     private CraftWorld cworld;
     private CraftServer server;
     // CraftBukkit end
 
     public EntityWeatherStorm(World world, double d0, double d1, double d2) {
-        
+
         super(world);
 
         // CraftBukkit start
         cworld = ((WorldServer) world).getWorld();
         server = ((WorldServer) world).getServer();
         // CraftBukkit end
-        
+
         this.setPositionRotation(d0, d1, d2, 0.0F, 0.0F);
         this.b = 2;
         this.a = this.random.nextLong();
