@@ -105,7 +105,7 @@ public final class SimplePluginManager implements PluginManager {
                 Plugin plugin = null;
 
                 try {
-                    plugin = loadPlugin(file);
+                    plugin = loadPlugin(file, finalPass);
                     itr.remove();
                 } catch (UnknownDependencyException ex) {
                     if(finalPass) {
@@ -125,6 +125,7 @@ public final class SimplePluginManager implements PluginManager {
                 if (plugin != null) {
                     result.add(plugin);
                     allFailed = false;
+                    finalPass = false;
                 }
             }
             if(finalPass) {
@@ -148,6 +149,21 @@ public final class SimplePluginManager implements PluginManager {
      * @throws InvalidDescriptionException Thrown when the specified file contains an invalid description
      */
     public synchronized Plugin loadPlugin(File file) throws InvalidPluginException, InvalidDescriptionException, UnknownDependencyException {
+        return loadPlugin(file, true);
+    }
+
+    /**
+     * Loads the plugin in the specified file
+     *
+     * File must be valid according to the current enabled Plugin interfaces
+     *
+     * @param file File containing the plugin to load
+     * @param ignoreSoftDependencies Loader will ignore soft dependencies if this flag is set to true
+     * @return The Plugin loaded, or null if it was invalid
+     * @throws InvalidPluginException Thrown when the specified file is not a valid plugin
+     * @throws InvalidDescriptionException Thrown when the specified file contains an invalid description
+     */
+    public synchronized Plugin loadPlugin(File file, boolean ignoreSoftDependencies) throws InvalidPluginException, InvalidDescriptionException, UnknownDependencyException {
         Set<Pattern> filters = fileAssociations.keySet();
         Plugin result = null;
 
@@ -157,7 +173,7 @@ public final class SimplePluginManager implements PluginManager {
 
             if (match.find()) {
                 PluginLoader loader = fileAssociations.get(filter);
-                result = loader.loadPlugin(file);
+                result = loader.loadPlugin(file, ignoreSoftDependencies);
             }
         }
 

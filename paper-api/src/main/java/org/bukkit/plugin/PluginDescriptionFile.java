@@ -18,6 +18,7 @@ public final class PluginDescriptionFile {
     private String name = null;
     private String main = null;
     private ArrayList<String> depend = null;
+    private ArrayList<String> softDepend = null;
     private String version = null;
     private Object commands = null;
     private String description = null;
@@ -104,6 +105,10 @@ public final class PluginDescriptionFile {
         return depend;
     }
 
+    public Object getSoftDepend() {
+        return softDepend;
+    }
+
     /**
      * Gets the description of this plugin
      *
@@ -177,6 +182,14 @@ public final class PluginDescriptionFile {
             }
         }
 
+        if (map.containsKey("softdepend")) {
+            try {
+                softDepend = (ArrayList<String>)map.get("softdepend");
+            } catch (ClassCastException ex) {
+                throw new InvalidDescriptionException(ex, "softdepend is of wrong type");
+            }
+        }
+
         if (map.containsKey("database")) {
             try {
                 database = (Boolean)map.get("database");
@@ -229,6 +242,7 @@ public final class PluginDescriptionFile {
 
         if (commands != null) map.put("command", commands);
         if (depend != null) map.put("depend", depend);
+        if (softDepend != null) map.put("softdepend", softDepend);
         if (website != null) map.put("website", website);
         if (description != null) map.put("description", description);
 
