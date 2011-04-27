@@ -123,6 +123,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         for (org.bukkit.inventory.ItemStack stack: event.getDrops()) {
             cworld.dropItemNaturally(craftEntity.getLocation(), stack);
         }
+
+       this.x();
         // CraftBukkit end
     }
 
