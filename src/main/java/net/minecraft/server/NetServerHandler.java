@@ -855,69 +855,59 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         // CraftBukkit start
         if (((WorldServer) this.player.world).isLoaded(packet130updatesign.x, packet130updatesign.y, packet130updatesign.z)) {
             TileEntity tileentity = ((WorldServer) this.player.world).getTileEntity(packet130updatesign.x, packet130updatesign.y, packet130updatesign.z);
-            // CraftBukkit end
 
             if (tileentity instanceof TileEntitySign) {
                 TileEntitySign tileentitysign = (TileEntitySign) tileentity;
 
                 if (!tileentitysign.a()) {
                     this.minecraftServer.c("Player " + this.player.name + " just tried to change non-editable sign");
+                    this.sendPacket(new Packet130UpdateSign(packet130updatesign.x, packet130updatesign.y, packet130updatesign.z, tileentitysign.lines));
                     return;
                 }
-            }
 
-            int i;
-            int j;
+                int i;
+                int j;
 
-            for (j = 0; j < 4; ++j) {
-                boolean flag = true;
+                for (j = 0; j < 4; ++j) {
+                    boolean flag = true;
 
-                if (packet130updatesign.lines[j].length() > 15) {
-                    flag = false;
-                } else {
-                    for (i = 0; i < packet130updatesign.lines[j].length(); ++i) {
-                        if (FontAllowedCharacters.a.indexOf(packet130updatesign.lines[j].charAt(i)) < 0) {
-                            flag = false;
+                    if (packet130updatesign.lines[j].length() > 15) {
+                        flag = false;
+                    } else {
+                        for (i = 0; i < packet130updatesign.lines[j].length(); ++i) {
+                            if (FontAllowedCharacters.a.indexOf(packet130updatesign.lines[j].charAt(i)) < 0) {
+                                flag = false;
+                            }
                         }
                     }
-                }
 
-                if (!flag) {
-                    packet130updatesign.lines[j] = "!?";
-                }
-            }
-
-            if (tileentity instanceof TileEntitySign) {
-                j = packet130updatesign.x;
-                int k = packet130updatesign.y;
-
-                i = packet130updatesign.z;
-                TileEntitySign tileentitysign1 = (TileEntitySign) tileentity;
-
-                // CraftBukkit start - SIGN_CHANGE hook
-                Player player = server.getPlayer(this.player);
-                SignChangeEvent event = new SignChangeEvent((CraftBlock) player.getWorld().getBlockAt(j, k, i), server.getPlayer(this.player), packet130updatesign.lines);
-                server.getPluginManager().callEvent(event);
-
-                if (event.isCancelled()) {
-                    // Normally we would return here, but we have to update the sign with blank text if it's been cancelled
-                    // Otherwise the client will have bad text on their sign (client shows text changes as they type)
-                    for (int l = 0; l < 4; ++l) {
-                        event.setLine(l, "");
+                    if (!flag) {
+                        packet130updatesign.lines[j] = "!?";
                     }
                 }
-                // CraftBukkit end
 
-                for (int l = 0; l < 4; ++l) {
-                    tileentitysign1.lines[l] = event.getLine(l);
-                    // CraftBukkit
+                if (tileentity instanceof TileEntitySign) {
+                    j = packet130updatesign.x;
+                    int k = packet130updatesign.y;
+                    i = packet130updatesign.z;
+
+                    Player player = server.getPlayer(this.player);
+                    SignChangeEvent event = new SignChangeEvent((CraftBlock) player.getWorld().getBlockAt(j, k, i), server.getPlayer(this.player), packet130updatesign.lines);
+                    server.getPluginManager().callEvent(event);
+
+                    if (!event.isCancelled()) {
+                        for (int l = 0; l < 4; ++l) {
+                            tileentitysign.lines[l] = event.getLine(l);
+                        }
+                        tileentitysign.setEditable(false);
+                    }
+
+                    tileentitysign.update();
+                    ((WorldServer) this.player.world).notify(j, k, i);
                 }
-
-                tileentitysign1.update();
-                // CraftBukkit
-                ((WorldServer) this.player.world).notify(j, k, i);
             }
         }
+        // CraftBukkit end
     }
 
     public boolean c() {

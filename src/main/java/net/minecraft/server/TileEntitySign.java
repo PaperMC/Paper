@@ -47,4 +47,10 @@ public class TileEntitySign extends TileEntity {
     public boolean a() {
         return this.c;
     }
+
+    // CraftBukkit start
+    public void setEditable(boolean editable) {
+        this.c = editable;
+    }
+    // CraftBukkit end
 }
