@@ -7,15 +7,15 @@ import org.bukkit.entity.Player;
  */
 public class PlayerAnimationEvent extends PlayerEvent {
 
-	private PlayerAnimationType animationType;
+    private PlayerAnimationType animationType;
 
-	/*
-	 * Construct a new event
-	 *
-	 * @param type The event type
-	 * @param player The player instance
-	 */
-	public PlayerAnimationEvent(final Player player) {
+    /*
+     * Construct a new event
+     *
+     * @param type The event type
+     * @param player The player instance
+     */
+    public PlayerAnimationEvent(final Player player) {
         super(Type.PLAYER_ANIMATION, player);
 
         // Only supported animation type for now:
@@ -30,5 +30,4 @@ public class PlayerAnimationEvent extends PlayerEvent {
     public PlayerAnimationType getAnimationType() {
         return animationType;
     }
-
 }
