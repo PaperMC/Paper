@@ -40,6 +40,13 @@ public interface PlayerInventory extends Inventory {
     public ItemStack getBoots();
 
     /**
+     * Put the given ItemStacks into the armor slots
+     *
+     *  @param items The ItemStacks to use as armour
+     */
+    public void setArmorContents(ItemStack[] items);
+
+    /**
      * Put the given ItemStack into the helmet slot
      * This does not check if the ItemStack is a helmet
      * 
