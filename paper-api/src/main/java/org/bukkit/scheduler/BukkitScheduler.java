@@ -3,6 +3,7 @@ package org.bukkit.scheduler;
 import org.bukkit.plugin.Plugin;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+import java.util.List;
 
 public interface BukkitScheduler {
 
@@ -22,7 +23,7 @@ public interface BukkitScheduler {
      * This task will be executed by the main server thread
      *
      * @param Plugin Plugin that owns the task
-     * @param Runnable Task to be executed 
+     * @param Runnable Task to be executed
      * @return int Task id number (-1 if scheduling failed)
      */
     public int scheduleSyncDelayedTask(Plugin plugin, Runnable task);
@@ -32,7 +33,7 @@ public interface BukkitScheduler {
      * This task will be executed by the main server thread
      *
      * @param Plugin Plugin that owns the task
-     * @param Runnable Task to be executed 
+     * @param Runnable Task to be executed
      * @param long Delay in server ticks before executing first repeat
      * @param long Period in server ticks of the task
      * @return int Task id number (-1 if scheduling failed)
@@ -106,27 +107,44 @@ public interface BukkitScheduler {
 
     /**
      * Check if the task currently running.
-     * 
+     *
      * A repeating task might not be running currently, but will be running in the future.
      * A task that has finished, and does not repeat, will not be running ever again.
-     * 
+     *
      * Explicitly, a task is running if there exists a thread for it, and that thread is alive.
-     * 
+     *
      * @param taskId The task to check.
-     * 
+     *
      * @return If the task is currently running.
      */
     public boolean isCurrentlyRunning(int taskId);
 
     /**
      * Check if the task queued to be run later.
-     * 
+     *
      * If a repeating task is currently running, it might not be queued now but could be in the future.
      * A task that is not queued, and not running, will not be queued again.
-     * 
+     *
      * @param taskId The task to check.
-     * 
+     *
      * @return If the task is queued to be run.
      */
     public boolean isQueued(int taskId);
+
+    /**
+     * Returns a list of all active workers.
+     *
+     * This list contains asynch tasks that are being executed by separate threads.
+     *
+     * @return Active workers
+     */
+    public List<BukkitWorker> getActiveWorkers();
+
+    /**
+     * Returns a list of all pending tasks.  The ordering of the tasks is not related to their order of execution.
+     *
+     * @return Active workers
+     */
+    public List<BukkitTask> getPendingTasks();
+
 }
