@@ -1,8 +1,9 @@
 package org.bukkit.craftbukkit.scheduler;
 
 import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitWorker;
 
-public class CraftWorker implements Runnable {
+public class CraftWorker implements Runnable, BukkitWorker {
 
     private static int hashIdCounter = 1;
     private static Object hashIdCounterSync = new Object();
@@ -49,6 +50,10 @@ public class CraftWorker implements Runnable {
         return owner;
     }
 
+    public Thread getThread() {
+        return t;
+    }
+
     public void interrupt() {
         t.interrupt();
     }
@@ -70,7 +75,6 @@ public class CraftWorker implements Runnable {
 
     @Override
     public boolean equals( Object other ) {
-
         if (other == null) {
             return false;
         }

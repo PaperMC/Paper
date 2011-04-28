@@ -3,8 +3,9 @@ package org.bukkit.craftbukkit.scheduler;
 import java.lang.Comparable;
 
 import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitTask;
 
-public class CraftTask implements Comparable<Object> {
+public class CraftTask implements Comparable<Object>, BukkitTask {
 
     private final Runnable task;
     private final boolean syncTask;
@@ -44,7 +45,7 @@ public class CraftTask implements Comparable<Object> {
         return task;
     }
 
-    boolean isSync() {
+    public boolean isSync() {
         return syncTask;
     }
 
@@ -56,12 +57,16 @@ public class CraftTask implements Comparable<Object> {
         return period;
     }
 
-    Plugin getOwner() {
+    public Plugin getOwner() {
         return owner;
     }
 
     void updateExecution() {
         executionTick += period;
+    }
+
+    public int getTaskId() {
+        return getIdNumber();
     }
 
     int getIdNumber() {
@@ -104,6 +109,4 @@ public class CraftTask implements Comparable<Object> {
     public int hashCode() {
         return getIdNumber();
     }
-
-
 }

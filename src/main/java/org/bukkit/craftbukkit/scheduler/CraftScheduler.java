@@ -3,6 +3,8 @@ package org.bukkit.craftbukkit.scheduler;
 import java.util.LinkedList;
 import java.util.TreeMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.ArrayList;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -12,6 +14,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bukkit.scheduler.BukkitScheduler;
+import org.bukkit.scheduler.BukkitWorker;
+import org.bukkit.scheduler.BukkitTask;
+
 import org.bukkit.plugin.Plugin;
 
 import org.bukkit.craftbukkit.CraftServer;
@@ -35,6 +40,7 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
 
     // This lock locks the mainThreadQueue and the currentTick value
     private final Lock mainThreadLock = new ReentrantLock();
+    private final Lock syncedTasksLock = new ReentrantLock();
 
     public void run() {
 
@@ -113,28 +119,33 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
 
     // If the main thread cannot obtain the lock, it doesn't wait
     public void mainThreadHeartbeat(long currentTick) {
-        if (mainThreadLock.tryLock()) {
+        if (syncedTasksLock.tryLock()) {
             try {
-                this.currentTick = currentTick;
-                while (!mainThreadQueue.isEmpty()) {
-                    syncedTasks.addLast(mainThreadQueue.removeFirst());
-                }
-            } finally {
-                mainThreadLock.unlock();
-            }
-            while(!syncedTasks.isEmpty()) {
-                CraftTask task = syncedTasks.removeFirst();
-                try {
-                    task.getTask().run();
-                } catch (Throwable t) {
-                    // Bad plugin!
-                    logger.log(Level.WARNING, 
-                            "Task of '" + task.getOwner().getDescription().getName()
-                            + "' generated an exception", t);
-                    synchronized (schedulerQueue) {
-                        schedulerQueue.remove(task);
+                if (mainThreadLock.tryLock()) {
+                    try {
+                        this.currentTick = currentTick;
+                        while (!mainThreadQueue.isEmpty()) {
+                            syncedTasks.addLast(mainThreadQueue.removeFirst());
+                        }
+                    } finally {
+                        mainThreadLock.unlock();
                     }
                 }
+                long breakTime = System.currentTimeMillis() + 35; // max time spent in loop = 35ms
+                while (!syncedTasks.isEmpty() && System.currentTimeMillis() <= breakTime) {
+                    CraftTask task = syncedTasks.removeFirst();
+                    try {
+                        task.getTask().run();
+                    } catch (Throwable t) {
+                        // Bad plugin!
+                        logger.log(Level.WARNING, "Task of '" + task.getOwner().getDescription().getName() + "' generated an exception", t);
+                        synchronized (schedulerQueue) {
+                            schedulerQueue.remove(task);
+                        }
+                    }
+                }
+            } finally {
+                syncedTasksLock.unlock();
             }
         }
     }
@@ -159,6 +170,24 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
         }
     }
 
+    void wipeSyncedTasks() {
+        syncedTasksLock.lock();
+        try {
+            syncedTasks.clear();
+        } finally {
+            syncedTasksLock.unlock();
+        }
+    }
+
+    void wipeMainThreadQueue() {
+        mainThreadLock.lock();
+        try {
+            mainThreadQueue.clear();
+        } finally {
+            mainThreadLock.unlock();
+        }
+    }
+
     public int scheduleSyncDelayedTask(Plugin plugin, Runnable task, long delay) {
         return scheduleSyncRepeatingTask(plugin, task, delay, -1);
     }
@@ -168,10 +197,16 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
     }
 
     public int scheduleSyncRepeatingTask(Plugin plugin, Runnable task, long delay, long period) {
-        if (plugin == null) throw new IllegalArgumentException("Plugin can not null");
-        if (task == null) throw new IllegalArgumentException("Task can not null");
-        if (delay < 0) throw new IllegalArgumentException("Delay cannot be less than 0");
-        
+        if (plugin == null) {
+            throw new IllegalArgumentException("Plugin cannot be null");
+        }
+        if (task == null) {
+            throw new IllegalArgumentException("Task cannot be null");
+        }
+        if (delay < 0) {
+            throw new IllegalArgumentException("Delay cannot be less than 0");
+        }
+
         CraftTask newTask = new CraftTask(plugin, task, true, getCurrentTick()+delay, period);
         synchronized (schedulerQueue) {
             schedulerQueue.put(newTask, true);
@@ -189,10 +224,16 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
     }
 
     public int scheduleAsyncRepeatingTask(Plugin plugin, Runnable task, long delay, long period) {
-        if (plugin == null) throw new IllegalArgumentException("Plugin can not null");
-        if (task == null) throw new IllegalArgumentException("Task can not null");
-        if (delay < 0) throw new IllegalArgumentException("Delay cannot be less than 0");
-        
+        if (plugin == null) {
+            throw new IllegalArgumentException("Plugin cannot be null");
+        }
+        if (task == null) {
+            throw new IllegalArgumentException("Task cannot be null");
+        }
+        if (delay < 0) {
+            throw new IllegalArgumentException("Delay cannot be less than 0");
+        }
+
         CraftTask newTask = new CraftTask(plugin, task, false, getCurrentTick()+delay, period);
         synchronized (schedulerQueue) {
             schedulerQueue.put(newTask, false);
@@ -203,7 +244,7 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
 
     public <T> Future<T> callSyncMethod(Plugin plugin, Callable<T> task) {
         CraftFuture<T> craftFuture = new CraftFuture<T>(this, task);
-        synchronized(craftFuture) {
+        synchronized (craftFuture) {
             int taskId = scheduleSyncDelayedTask(plugin, craftFuture);
             craftFuture.setTaskId(taskId);
         }
@@ -224,15 +265,40 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
     }
 
     public void cancelTasks(Plugin plugin) {
-        synchronized (schedulerQueue) {
-            Iterator<CraftTask> itr = schedulerQueue.keySet().iterator();
-            while (itr.hasNext()) {
-                CraftTask current = itr.next();
-                if (current.getOwner().equals(plugin)) {
-                    itr.remove();
+        syncedTasksLock.lock();
+        try {
+            synchronized(schedulerQueue) {
+                mainThreadLock.lock();
+                try {
+                    Iterator<CraftTask> itr = schedulerQueue.keySet().iterator();
+                    while (itr.hasNext()) {
+                        CraftTask current = itr.next();
+                        if (current.getOwner().equals(plugin)) {
+                            itr.remove();
+                        }
+                    }
+                    itr = mainThreadQueue.iterator();
+                    while (itr.hasNext()) {
+                        CraftTask current = itr.next();
+                        if (current.getOwner().equals(plugin)) {
+                            itr.remove();
+                        }
+                    }
+                    itr = syncedTasks.iterator();
+                    while (itr.hasNext()) {
+                        CraftTask current = itr.next();
+                        if (current.getOwner().equals(plugin)) {
+                            itr.remove();
+                        }
+                    }
+                } finally {
+                    mainThreadLock.unlock();
                 }
             }
+        } finally {
+            syncedTasksLock.unlock();
         }
+
         craftThreadManager.interruptTasks(plugin);
     }
 
@@ -240,6 +306,9 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
         synchronized (schedulerQueue) {
             schedulerQueue.clear();
         }
+        wipeMainThreadQueue();
+        wipeSyncedTasks();
+
         craftThreadManager.interruptAllTasks();
     }
 
@@ -258,6 +327,42 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
             }
             return false;
         }
+    }
+
+    public List<BukkitWorker> getActiveWorkers() {
+        synchronized (craftThreadManager.workers) {
+            List<BukkitWorker> workerList = new ArrayList<BukkitWorker>(craftThreadManager.workers.size());
+            Iterator<CraftWorker> itr = craftThreadManager.workers.iterator();
+            while (itr.hasNext()) {
+                workerList.add((BukkitWorker)itr.next());
+            }
+            return workerList;
+        }
+    }
+
+    public List<BukkitTask> getPendingTasks() {
+        List<CraftTask> taskList = null;
+        syncedTasksLock.lock();
+        try {
+            synchronized (schedulerQueue) {
+                mainThreadLock.lock();
+                try {
+                    taskList = new ArrayList<CraftTask>(mainThreadQueue.size() + syncedTasks.size() + schedulerQueue.size());
+                    taskList.addAll(mainThreadQueue);
+                    taskList.addAll(syncedTasks);
+                    taskList.addAll(schedulerQueue.keySet());
+                } finally {
+                    mainThreadLock.unlock();
+                }
+            }
+        } finally {
+            syncedTasksLock.unlock();
+        }
+        List<BukkitTask> newTaskList = new ArrayList<BukkitTask>(taskList.size());
+        for (CraftTask craftTask : taskList) {
+            newTaskList.add((BukkitTask)craftTask);
+        }
+        return newTaskList;
     }
 
 }

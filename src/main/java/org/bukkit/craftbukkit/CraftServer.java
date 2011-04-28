@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.lang.InterruptedException;
 import jline.ConsoleReader;
 import net.minecraft.server.ChunkCoordinates;
 import net.minecraft.server.ConvertProgressUpdater;
@@ -45,6 +46,8 @@ import org.bukkit.craftbukkit.inventory.CraftFurnaceRecipe;
 import org.bukkit.craftbukkit.inventory.CraftRecipe;
 import org.bukkit.craftbukkit.inventory.CraftShapedRecipe;
 import org.bukkit.craftbukkit.inventory.CraftShapelessRecipe;
+import org.bukkit.scheduler.BukkitWorker;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 import org.bukkit.util.config.Configuration;
 
@@ -292,6 +295,32 @@ public final class CraftServer implements Server {
 
         pluginManager.clearPlugins();
         commandMap.clearCommands();
+
+        int pollCount = 0;
+
+        // Wait for at most 2.5 seconds for plugins to close their threads
+        while(pollCount < 50 && getScheduler().getActiveWorkers().size() > 0) {
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+            }
+            pollCount++;
+        }
+
+        List<BukkitWorker> overdueWorkers = getScheduler().getActiveWorkers();
+        for(BukkitWorker worker : overdueWorkers) {
+            Plugin plugin = worker.getOwner();
+            String author = "<NoAuthorGiven>";
+            if (plugin.getDescription().getAuthors().size() > 0) {
+                author = plugin.getDescription().getAuthors().get(0);
+            }
+            getLogger().log(Level.SEVERE, String.format(
+                "Nag author: '%s' of '%s' about the following: %s",
+                author,
+                plugin.getDescription().getName(),
+                "This plugin is not properly shutting down its async tasks when it is being reloaded.  This may cause conflicts with the newly loaded version of the plugin"
+            ));
+        }
         loadPlugins();
     }
 
