@@ -209,6 +209,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                     d4 = packet10flying.z;
                 }
 
+                this.player.onGround = packet10flying.g;
                 this.player.a(true);
                 this.player.move(d5, 0.0D, d4);
                 this.player.setLocation(d1, d2, d3, f, f1);
@@ -329,19 +330,10 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 this.h = 0;
             }
 
-            // CraftBukkit start
-            int coordX = (int)Math.floor(packet10flying.x);
-            int coordY = (int)Math.floor(packet10flying.y);
-            int coordZ = (int)Math.floor(packet10flying.z);
-
-            if (((Material)this.player.world.getMaterial(coordX, coordY - 1, coordZ)).isSolid()) {
-                this.player.onGround = true;
-            } else {
-                this.player.onGround = false;
-            }
+            this.player.onGround = packet10flying.g;
 
             this.minecraftServer.serverConfigurationManager.b(this.player);
-            this.player.b(this.player.locY - d0, this.player.onGround);
+            this.player.b(this.player.locY - d0, packet10flying.g);
             // CraftBukkit end
         }
     }
