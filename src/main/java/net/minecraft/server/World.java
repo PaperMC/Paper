@@ -57,6 +57,7 @@ public class World implements IBlockAccess {
     private int J = 0;
     public boolean allowMonsters = true; // CraftBukkit private->public
     public boolean allowAnimals = true; // CraftBukkit private->public
+    public boolean pvpMode; // CraftBukkit
     static int u = 0;
     private Set M = new HashSet();
     private int N;

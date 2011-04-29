@@ -612,4 +612,12 @@ public class CraftWorld implements World {
     public long getSeed() {
         return world.worldData.b();
     }
+
+    public boolean getPVP() {
+        return world.pvpMode;
+    }
+
+    public void setPVP(boolean pvp) {
+        world.pvpMode = pvp;
+    }
 }

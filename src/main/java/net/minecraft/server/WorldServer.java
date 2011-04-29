@@ -26,6 +26,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
         this.cserver = minecraftserver.server;
         this.world = new CraftWorld(this);
         this.manager = new PlayerManager(minecraftserver, this);
+        this.pvpMode = minecraftserver.pvpMode;
     }
 
     public PlayerManager manager;
