@@ -36,6 +36,10 @@ class ThreadLoginVerifier extends Thread {
             bufferedreader.close();
             if (s1.equals("YES")) {
                 // CraftBukkit start
+                if (this.netLoginHandler.getSocket() == null) {
+                    return;
+                }
+
                 PlayerPreLoginEvent event = new PlayerPreLoginEvent(this.loginPacket.name, this.netLoginHandler.getSocket().getInetAddress());
                 server.getPluginManager().callEvent(event);
 
