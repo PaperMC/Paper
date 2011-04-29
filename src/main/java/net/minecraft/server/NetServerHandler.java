@@ -147,35 +147,35 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         }
 
         if (Math.abs(packet10flying.x) > 32000000 || Math.abs(packet10flying.z) > 32000000) {
-            player.teleport(player.getServer().getWorld(player.getWorld().getName()).getSpawnLocation());
+            player.teleport(player.getWorld().getSpawnLocation());
             System.err.println(player.getName() + " was caught trying to crash the server with an invalid position.");
             player.kickPlayer("Nope!");
             return;
         }
 
         if (Double.isNaN(packet10flying.x) || packet10flying.x == Double.POSITIVE_INFINITY || packet10flying.x == Double.NEGATIVE_INFINITY) {
-            player.teleport(player.getServer().getWorld(player.getWorld().getName()).getSpawnLocation());
+            player.teleport(player.getWorld().getSpawnLocation());
             System.err.println(player.getName() + " was caught trying to set an invalid position.");
             player.kickPlayer("Nope!");
             return;
         }
 
         if (Double.isNaN(packet10flying.y) || packet10flying.y == Double.POSITIVE_INFINITY || packet10flying.y == Double.NEGATIVE_INFINITY) {
-            player.teleport(player.getServer().getWorld(player.getWorld().getName()).getSpawnLocation());
+            player.teleport(player.getWorld().getSpawnLocation());
             System.err.println(player.getName() + " was caught trying to set an invalid position.");
             player.kickPlayer("Nope!");
             return;
         }
 
         if (Double.isNaN(packet10flying.z) || packet10flying.z == Double.POSITIVE_INFINITY || packet10flying.z == Double.NEGATIVE_INFINITY) {
-            player.teleport(player.getServer().getWorld(player.getWorld().getName()).getSpawnLocation());
+            player.teleport(player.getWorld().getSpawnLocation());
             System.err.println(player.getName() + " was caught trying to set an invalid position.");
             player.kickPlayer("Nope!");
             return;
         }
 
         if (Double.isNaN(packet10flying.stance) || packet10flying.stance == Double.POSITIVE_INFINITY || packet10flying.stance == Double.NEGATIVE_INFINITY) {
-            player.teleport(player.getServer().getWorld(player.getWorld().getName()).getSpawnLocation());
+            player.teleport(player.getWorld().getSpawnLocation());
             System.err.println(player.getName() + " was caught trying to set an invalid position.");
             player.kickPlayer("Nope!");
             return;
@@ -209,7 +209,6 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                     d4 = packet10flying.z;
                 }
 
-                this.player.onGround = packet10flying.g;
                 this.player.a(true);
                 this.player.move(d5, 0.0D, d4);
                 this.player.setLocation(d1, d2, d3, f, f1);
@@ -330,9 +329,20 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 this.h = 0;
             }
 
-            this.player.onGround = packet10flying.g;
+            // CraftBukkit start
+            int coordX = (int)Math.floor(packet10flying.x);
+            int coordY = (int)Math.floor(packet10flying.y);
+            int coordZ = (int)Math.floor(packet10flying.z);
+
+            if (((Material)this.player.world.getMaterial(coordX, coordY - 1, coordZ)).isSolid()) {
+                this.player.onGround = true;
+            } else {
+                this.player.onGround = false;
+            }
+
             this.minecraftServer.serverConfigurationManager.b(this.player);
-            this.player.b(this.player.locY - d0, packet10flying.g);
+            this.player.b(this.player.locY - d0, this.player.onGround);
+            // CraftBukkit end
         }
     }
 
