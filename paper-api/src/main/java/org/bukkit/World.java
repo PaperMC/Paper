@@ -497,6 +497,18 @@ public interface World {
     public long getSeed();
 
     /**
+     * Gets the current PVP setting for this world.
+     * @return
+     */
+    public boolean getPVP();
+
+    /**
+     * Sets the PVP setting for this world.
+     * @param pvp True/False whether PVP should be Enabled.
+     */
+    public void setPVP(boolean pvp);
+
+    /**
      * Saves world to disk
      */
     public void save();
