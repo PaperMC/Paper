@@ -13,6 +13,7 @@ public class EntityItem extends Entity {
     public int pickupDelay;
     private int f = 5;
     public float d = (float) (Math.random() * 3.141592653589793D * 2.0D);
+    private int lastTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit
 
     public EntityItem(World world, double d0, double d1, double d2, ItemStack itemstack) {
         super(world);
@@ -40,9 +41,11 @@ public class EntityItem extends Entity {
 
     public void o_() {
         super.o_();
-        if (this.pickupDelay > 0) {
-            --this.pickupDelay;
-        }
+        // CraftBukkit start
+        int currentTick = (int) (System.currentTimeMillis() / 50);
+        this.pickupDelay -= (currentTick - this.lastTick);
+        this.lastTick = currentTick;
+        // CraftBukkit end
 
         this.lastX = this.locX;
         this.lastY = this.locY;
@@ -119,7 +122,7 @@ public class EntityItem extends Entity {
             int i = this.itemStack.count;
 
             // CraftBukkit start
-            if (this.pickupDelay == 0) {
+            if (this.pickupDelay <= 0) { // <-- == to <=
                 Player player = (Player) entityhuman.getBukkitEntity();
                 PlayerPickupItemEvent event = new PlayerPickupItemEvent(player, (org.bukkit.entity.Item) this.getBukkitEntity());
                 ((WorldServer) world).getServer().getPluginManager().callEvent(event);
