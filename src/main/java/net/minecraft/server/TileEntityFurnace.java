@@ -8,6 +8,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
     public int cookTime = 0;
 
     // CraftBukkit start
+    private int lastTick = (int) (System.currentTimeMillis() / 50);
     public ItemStack[] getContents() {
         return items;
     }
@@ -106,13 +107,22 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         boolean flag = this.burnTime > 0;
         boolean flag1 = false;
 
+        // CraftBukkit start
+        int currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit
+        int elapsedTicks = currentTick - this.lastTick;
+        this.lastTick = currentTick;
+        // CraftBukkit end
+
         if (this.burnTime > 0) {
-            --this.burnTime;
+            this.burnTime -= elapsedTicks; // CraftBukkit
         }
 
         if (!this.world.isStatic) {
-            if (this.burnTime == 0 && this.h()) {
-                this.b = this.burnTime = this.a(this.items[1]);
+            // CraftBukkit start -- handle multiple elapsed ticks
+            if (this.burnTime <= 0 && this.h()) { // CraftBukkit == to <=
+                this.b = this.a(this.items[1]);
+                this.burnTime += this.b;
+                // CraftBukkit end
                 if (this.burnTime > 0) {
                     flag1 = true;
                     if (this.items[1] != null) {
@@ -125,9 +135,11 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
             }
 
             if (this.f() && this.h()) {
-                ++this.cookTime;
-                if (this.cookTime == 200) {
-                    this.cookTime = 0;
+                // CraftBukkit start -- handle multiple elapsed ticks
+                this.cookTime += elapsedTicks;
+                if (this.cookTime >= 200) {
+                    this.cookTime %= 200;
+                    // CraftBukkit end
                     this.g();
                     flag1 = true;
                 }
