@@ -108,4 +108,12 @@ public class BlockListener implements Listener {
      */
     public void onBlockBreak(BlockBreakEvent event) {
     }
+
+    /**
+     * Called when a world is attempting to place a block during a snowfall
+     *
+     * @param event Relevant event details
+     */
+    public void onSnowForm(SnowFormEvent event) {
+    }
 }

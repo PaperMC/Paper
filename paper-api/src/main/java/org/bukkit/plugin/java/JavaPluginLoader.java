@@ -400,6 +400,12 @@ public final class JavaPluginLoader implements PluginLoader {
                     ((BlockListener) listener).onBlockBreak((BlockBreakEvent) event);
                 }
             };
+        case SNOW_FORM:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((BlockListener) listener).onSnowForm((SnowFormEvent) event);
+                }
+            };
 
         // Server Events
         case PLUGIN_ENABLE:
