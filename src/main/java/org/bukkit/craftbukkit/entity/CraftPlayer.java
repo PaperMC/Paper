@@ -7,6 +7,7 @@ import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.ItemInWorldManager;
 import net.minecraft.server.Packet200Statistic;
 import net.minecraft.server.Packet3Chat;
+import net.minecraft.server.Packet53BlockChange;
 import net.minecraft.server.Packet54PlayNoteBlock;
 import net.minecraft.server.Packet6SpawnPosition;
 import net.minecraft.server.ServerConfigurationManager;
@@ -145,6 +146,19 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void playNote(Location loc, byte instrument, byte note) {
         getHandle().netServerHandler.sendPacket(
                 new Packet54PlayNoteBlock(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), instrument, note));
+    }
+
+    public void sendBlockChange(Location loc, Material material, byte data) {
+        sendBlockChange(loc, material.getId(), data);
+    }
+
+    public void sendBlockChange(Location loc, int material, byte data) {
+        Packet53BlockChange packet = new Packet53BlockChange(
+                loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(),
+                ((CraftWorld) loc.getWorld()).getHandle());
+        packet.d = material;
+        packet.e = data;
+        getHandle().netServerHandler.sendPacket(packet);
     }
 
     @Override
