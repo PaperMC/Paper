@@ -458,7 +458,6 @@ public final class CraftServer implements Server {
         }
     }
 
-    @Override
     public boolean addRecipe(Recipe recipe) {
         CraftRecipe toAdd;
         if(recipe instanceof CraftRecipe) {
