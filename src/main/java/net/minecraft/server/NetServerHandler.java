@@ -798,6 +798,13 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
         if (entity != null && this.player.e(entity) && this.player.f(entity) < 4.0F) {
             if (packet7useentity.c == 0) {
+                // CraftBukkit start
+                PlayerInteractEntityEvent piee = new PlayerInteractEntityEvent((Player) getPlayer(), entity.getBukkitEntity());
+                server.getPluginManager().callEvent(piee);
+                if (piee.isCancelled()) {
+                    return;
+                }
+                // CraftBukkit end
                 this.player.c(entity);
             } else if (packet7useentity.c == 1) {
                 this.player.d(entity);
