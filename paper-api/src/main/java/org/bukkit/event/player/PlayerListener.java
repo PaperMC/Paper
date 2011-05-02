@@ -93,6 +93,14 @@ public class PlayerListener implements Listener {
     }
 
     /**
+     * Called when a player right clicks an entity.
+     *
+     * @param event Relevant event details
+     */
+    public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
+    }
+
+    /**
      * Called when a player attempts to log in to the server
      *
      * @param event Relevant event details

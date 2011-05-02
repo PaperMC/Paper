@@ -280,6 +280,12 @@ public final class JavaPluginLoader implements PluginLoader {
                     ((PlayerListener) listener).onPlayerInteract((PlayerInteractEvent) event);
                 }
             };
+        case PLAYER_INTERACT_ENTITY:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((PlayerListener) listener).onPlayerInteractEntity((PlayerInteractEntityEvent) event);
+                }
+            };
         case PLAYER_LOGIN:
             return new EventExecutor() {
                 public void execute(Listener listener, Event event) {

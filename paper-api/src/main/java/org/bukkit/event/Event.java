@@ -233,6 +233,13 @@ public abstract class Event implements Serializable {
         PLAYER_INTERACT (Category.PLAYER),
 
         /**
+         * Called when a player right clicks an entity
+         *
+         * @see org.bukkit.event.player.PlayerInteractEntityEvent
+         */
+        PLAYER_INTERACT_ENTITY (Category.PLAYER),
+
+        /**
          * Called when a player throws an egg and it might hatch
          *
          * @see org.bukkit.event.player.PlayerEggThrowEvent
