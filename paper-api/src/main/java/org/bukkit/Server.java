@@ -11,6 +11,7 @@ import org.bukkit.command.PluginCommand;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.ServicesManager;
 import org.bukkit.scheduler.BukkitScheduler;
 
 /**
@@ -117,6 +118,13 @@ public interface Server {
      * @return Scheduler for this Server instance
      */
     public BukkitScheduler getScheduler();
+
+    /**
+     * Gets a services manager
+     *
+     * @return Services manager
+     */
+    public ServicesManager getServicesManager();
 
     /**
      * Gets a list of all worlds on this server

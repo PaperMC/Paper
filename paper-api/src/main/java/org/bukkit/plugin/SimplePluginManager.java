@@ -245,6 +245,7 @@ public final class SimplePluginManager implements PluginManager {
         if (plugin.isEnabled()) {
             plugin.getPluginLoader().disablePlugin(plugin);
             server.getScheduler().cancelTasks(plugin);
+            server.getServicesManager().unregisterAll(plugin);
         }
     }
 
