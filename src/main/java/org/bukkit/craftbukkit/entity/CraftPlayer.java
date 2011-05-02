@@ -7,6 +7,7 @@ import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.ItemInWorldManager;
 import net.minecraft.server.Packet200Statistic;
 import net.minecraft.server.Packet3Chat;
+import net.minecraft.server.Packet54PlayNoteBlock;
 import net.minecraft.server.Packet6SpawnPosition;
 import net.minecraft.server.ServerConfigurationManager;
 import net.minecraft.server.WorldServer;
@@ -139,6 +140,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public boolean performCommand(String command) {
         return server.dispatchCommand(this, command);
+    }
+
+    public void playNote(Location loc, byte instrument, byte note) {
+        getHandle().netServerHandler.sendPacket(
+                new Packet54PlayNoteBlock(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), instrument, note));
     }
 
     @Override
