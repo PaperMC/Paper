@@ -42,4 +42,17 @@ public class CraftNoteBlock extends CraftBlockState implements NoteBlock {
             }
         }
     }
+
+    public boolean play(byte instrument, byte note) {
+        Block block = getBlock();
+
+        synchronized (block) {
+            if (block.getType() == Material.NOTE_BLOCK) {
+                world.getHandle().d(getX(), getY(), getZ(), instrument, note);
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
 }
