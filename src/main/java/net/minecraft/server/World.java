@@ -14,6 +14,7 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.block.BlockCanBuildEvent;
 import org.bukkit.event.block.BlockPhysicsEvent;
+import org.bukkit.event.block.SnowFormEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.weather.WeatherChangeEvent;
 import org.bukkit.event.weather.ThunderChangeEvent;
@@ -1521,7 +1522,6 @@ public class World implements IBlockAccess {
                     // CraftBukkit start
                     CraftServer server = ((WorldServer) this).getServer();
 
-
                     WeatherChangeEvent weather = new WeatherChangeEvent(((WorldServer) this).getWorld(), !this.worldData.l());
                     server.getPluginManager().callEvent(weather);
                     if (!weather.isCancelled()) {
@@ -1664,7 +1664,14 @@ public class World implements IBlockAccess {
                     l1 = chunk.getTypeId(l, k1 - 1, j1);
                     i2 = chunk.getTypeId(l, k1, j1);
                     if (i2 == 0 && Block.SNOW.canPlace(this, l + i, k1, j1 + j) && l1 != 0 && l1 != Block.ICE.id && Block.byId[l1].material.isSolid()) {
-                        this.setTypeId(l + i, k1, j1 + j, Block.SNOW.id);
+                        // CraftBukkit start
+                        SnowFormEvent snow = new SnowFormEvent(((WorldServer)this).getWorld().getBlockAt(l + i, k1, j1 + j));
+                        ((WorldServer)this).getServer().getPluginManager().callEvent(snow);
+                        if (!snow.isCancelled()) {
+                            this.setTypeId(l + i, k1, j1 + j, snow.getMaterial().getId());
+                            this.setData(l + i, k1, j1 + j, snow.getData());
+                        }
+                        // CraftBukkit end
                     }
 
                     if (l1 == Block.STATIONARY_WATER.id && chunk.getData(l, k1 - 1, j1) == 0) {
