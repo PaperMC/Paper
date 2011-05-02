@@ -7,7 +7,7 @@ import org.bukkit.inventory.PlayerInventory;
 /**
  * Represents a human entity, such as an NPC or a player
  */
-public interface HumanEntity extends LivingEntity {
+public interface HumanEntity extends LivingEntity, AnimalTamer {
     /**
      * Returns the name of this player
      *
