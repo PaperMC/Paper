@@ -91,12 +91,12 @@ public abstract class Event implements Serializable {
          * @see Category.LIVING_ENTITY
          */
         PLAYER,
-        
+
         /**
          * Represents Entity-based events
          */
         ENTITY,
-        
+
         /**
          * Represents Block-based events
          */
@@ -269,14 +269,14 @@ public abstract class Event implements Serializable {
 
         /**
          * Called when a player empties a bucket
-         * 
+         *
          * @see org.bukkit.event.player.PlayerBucketEmptyEvent
          */
         PLAYER_BUCKET_EMPTY(Category.PLAYER),
 
         /**
          * Called when a player fills a bucket
-         * 
+         *
          * @see org.bukkit.event.player.PlayerBucketFillEvent
          */
         PLAYER_BUCKET_FILL(Category.PLAYER),
@@ -287,21 +287,21 @@ public abstract class Event implements Serializable {
          * @see org.bukkit.event.player.PlayerInventoryEvent
          */
         PLAYER_INVENTORY(Category.PLAYER),
-        
+
         /**
          * Called when a player enter a bed
-         * 
+         *
          * @see org.bukkit.event.player.PlayerBedEnterEvent
          */
         PLAYER_BED_ENTER(Category.PLAYER),
-        
+
         /**
          * Called when a player leaves a bed
-         * 
+         *
          * @see org.bukkit.event.player.PlayerBedEnterEvent
          */
         PLAYER_BED_LEAVE(Category.PLAYER),
-        
+
         /**
          * BLOCK EVENTS
          */
@@ -501,7 +501,7 @@ public abstract class Event implements Serializable {
 
         /**
          * Called when a world is saved
-         * 
+         *
          */
         WORLD_SAVE (Category.WORLD),
 
@@ -570,14 +570,14 @@ public abstract class Event implements Serializable {
 
         /**
          * Called when an entity has made a decision to explode.
-         * 
+         *
          * Provides an opportunity to act on the entity, change the explosion radius,
          * or to change the fire-spread flag.
-         * 
+         *
          * Canceling the event negates the entity's decision to explode.
          * For EntityCreeper, this resets the fuse but does not kill the Entity.
          * For EntityFireball and EntityTNTPrimed....?
-         * 
+         *
          * @see org.bukkit.event.entity.EntityExplodeTriggerEvent
          */
         EXPLOSION_PRIME (Category.LIVING_ENTITY),
@@ -588,11 +588,11 @@ public abstract class Event implements Serializable {
          * @see org.bukkit.event.entity.EntityTargetEvent
          */
         ENTITY_TARGET (Category.LIVING_ENTITY),
-        
+
         /**
          * Called when an entity interacts with a block
          * This event specifically excludes player entities
-         * 
+         *
          * @see org.bukkit.event.entity.EntityInteractEvent
          */
         ENTITY_INTERACT (Category.LIVING_ENTITY),

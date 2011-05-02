@@ -33,7 +33,7 @@ public class BlockListener implements Listener {
      * Called when a block flows (water/lava)
      *
      * @param event Relevant event details
-     * @throws BukkitAuthorNagException 
+     * @throws BukkitAuthorNagException
      */
     public void onBlockFromTo(BlockFromToEvent event) {
         onBlockFlow(event);
