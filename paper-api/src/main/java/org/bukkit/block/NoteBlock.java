@@ -1,5 +1,7 @@
 package org.bukkit.block;
 
+import org.bukkit.entity.Player;
+
 /**
  * Represents a note.
  * 
@@ -19,6 +21,7 @@ public interface NoteBlock extends BlockState {
      * @param note
      */
     public void setNote(byte note);
+    
     /**
      * Attempts to play the note at block<br />
      * <br />
@@ -27,4 +30,11 @@ public interface NoteBlock extends BlockState {
      * @return true if successful, otherwise false
      */
     public boolean play();
+    
+    /**
+     * Plays an arbitrary note with an arbitrary instrument
+     *
+     * @return true if successful, otherwise false
+     */
+    public boolean play(byte instrument, byte note);
 }
