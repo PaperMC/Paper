@@ -39,7 +39,9 @@ import net.minecraft.server.ICommandListener;
 import org.bukkit.*;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.ServicesManager;
 import org.bukkit.plugin.SimplePluginManager;
+import org.bukkit.plugin.SimpleServicesManager;
 import org.bukkit.plugin.java.JavaPluginLoader;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.craftbukkit.inventory.CraftFurnaceRecipe;
@@ -56,6 +58,7 @@ public final class CraftServer implements Server {
     private final String serverVersion;
     private final String protocolVersion = "1.5_02";
     private final PluginManager pluginManager = new SimplePluginManager(this);
+    private final ServicesManager servicesManager = new SimpleServicesManager();
     private final BukkitScheduler scheduler =  new CraftScheduler(this);
     private final CommandMap commandMap = new SimpleCommandMap(this);
     protected final MinecraftServer console;
@@ -242,6 +245,10 @@ public final class CraftServer implements Server {
 
     public BukkitScheduler getScheduler() {
         return scheduler;
+    }
+
+    public ServicesManager getServicesManager() {
+        return servicesManager;
     }
 
     public List<World> getWorlds() {
