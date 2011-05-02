@@ -33,7 +33,7 @@ public class PlayerListener implements Listener {
 
     /**
      * Called when a player gets kicked from the server
-     * 
+     *
      * @param event Relevant event details
      */
     public void onPlayerKick(PlayerKickEvent event) {
@@ -78,7 +78,7 @@ public class PlayerListener implements Listener {
 
     /**
      * Called when a player respawns
-     * 
+     *
      * @param event Relevant event details
      */
     public void onPlayerRespawn(PlayerRespawnEvent event) {
@@ -166,7 +166,7 @@ public class PlayerListener implements Listener {
 
     /**
      * Called when a player fills a bucket
-     * 
+     *
      * @param event Relevant event details
      */
     public void onPlayerBucketFill(PlayerBucketFillEvent event) {
@@ -174,7 +174,7 @@ public class PlayerListener implements Listener {
 
     /**
      * Called when a player empties a bucket
-     * 
+     *
      * @param event Relevant event details
      */
     public void onPlayerBucketEmpty(PlayerBucketEmptyEvent event) {
@@ -182,7 +182,7 @@ public class PlayerListener implements Listener {
 
     /**
      * Called when a player enters a bed
-     * 
+     *
      * @param event Relevant event details
      */
     public void onPlayerBedEnter(PlayerBedEnterEvent event) {
@@ -190,7 +190,7 @@ public class PlayerListener implements Listener {
 
     /**
      * Called when a player leaves a bed
-     * 
+     *
      * @param event Relevant event details
      */
     public void onPlayerBedLeave(PlayerBedLeaveEvent event) {
