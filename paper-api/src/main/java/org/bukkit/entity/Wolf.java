@@ -34,12 +34,5 @@ public interface Wolf extends Animals, Tameable {
      * @param sitting true if sitting
      */
     public void setSitting(boolean sitting);
-    
-    /**
-     * Tells whether this wolf has an owner
-     * 
-     * @return
-     */
-    public boolean isTamed();
 
 }
