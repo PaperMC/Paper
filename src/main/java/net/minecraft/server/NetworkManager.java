@@ -96,7 +96,8 @@ public class NetworkManager {
                 Packet.a(packet, this.output);
             }
 
-            if ((flag || this.w-- <= 0) && !this.m.isEmpty() && (this.d == 0 || System.currentTimeMillis() - ((Packet) this.m.get(0)).timestamp >= (long) this.d)) {
+            // CraftBukkit - don't allow low priority packet to be sent unless it was placed in the queue before the first packet on the high priority queue
+            if ((flag || this.w-- <= 0) && !this.m.isEmpty() && (this.l.isEmpty() || ((Packet) this.l.get(0)).timestamp > ((Packet) this.m.get(0)).timestamp)) {
                 flag = false;
                 object = this.e;
                 synchronized (this.e) {
