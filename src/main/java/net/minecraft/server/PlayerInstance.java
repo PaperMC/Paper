@@ -37,8 +37,11 @@ class PlayerInstance {
         if (this.b.contains(entityplayer)) {
             throw new IllegalStateException("Failed to add player. " + entityplayer + " already is in chunk " + this.chunkX + ", " + this.chunkZ);
         } else {
-            entityplayer.g.add(this.e);
-            entityplayer.netServerHandler.sendPacket(new Packet50PreChunk(this.e.x, this.e.z, true));
+            // CraftBukkit start
+            if (entityplayer.g.add(this.e)) {
+                entityplayer.netServerHandler.sendPacket(new Packet50PreChunk(this.e.x, this.e.z, true));
+            }
+            // CraftBukkit end
             this.b.add(entityplayer);
             entityplayer.f.add(this.e);
         }
@@ -63,7 +66,7 @@ class PlayerInstance {
             }
 
             entityplayer.f.remove(this.e);
-            if (entityplayer.g.contains(this.e)) {
+            if (entityplayer.g.remove(this.e)) { // CraftBukkit - contains -> remove
                 entityplayer.netServerHandler.sendPacket(new Packet50PreChunk(this.chunkX, this.chunkZ, false));
             }
         }
