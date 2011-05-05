@@ -12,6 +12,7 @@ import net.minecraft.server.Packet54PlayNoteBlock;
 import net.minecraft.server.Packet6SpawnPosition;
 import net.minecraft.server.ServerConfigurationManager;
 import net.minecraft.server.WorldServer;
+import net.minecraft.server.ChunkCoordIntPair;
 import org.bukkit.Achievement;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -194,6 +195,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             if (teleportSuccess) {
                 manager.server.tracker.trackPlayer(entity);
                 manager.server.tracker.untrackEntity(entity);
+                int cx = (int) location.getBlockX() >> 4;
+                int cz = (int) location.getBlockZ() >> 4;
+                for (int x = -10 ; x <= 10 ; x++ ) {
+                    for (int z = -10 ; z <= 10 ; z++ ) {
+                        ChunkCoordIntPair chunkPosition = new ChunkCoordIntPair(cx + x, cz + z);
+                        if (entity.g.remove(chunkPosition)) {
+                            newEntity.g.add(chunkPosition);
+                        }
+                    }
+                }
                 oldWorld.manager.removePlayer(entity);
                 manager.players.remove(entity);
                 oldWorld.removeEntity(entity);
