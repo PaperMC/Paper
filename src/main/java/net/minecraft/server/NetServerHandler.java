@@ -830,13 +830,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     public void a(Packet102WindowClick packet102windowclick) {
         if (this.player.activeContainer.f == packet102windowclick.a && this.player.activeContainer.c(this.player)) {
             ItemStack itemstack = this.player.activeContainer.a(packet102windowclick.b, packet102windowclick.c, packet102windowclick.f, this.player);
-            // CraftBukkit start
-            boolean clickSuccessful = ItemStack.equals(packet102windowclick.e, itemstack);
-            if ((this.player.activeContainer instanceof ContainerWorkbench || this.player.activeContainer instanceof ContainerPlayer) && packet102windowclick.b == 0) {
-                clickSuccessful = false;
-            }
-            // CraftBukkit end
-            if (clickSuccessful) { // CraftBukkit - extracted to local variable
+            if (ItemStack.equals(packet102windowclick.e, itemstack)) {
                 this.player.netServerHandler.sendPacket(new Packet106Transaction(packet102windowclick.a, packet102windowclick.d, true));
                 this.player.h = true;
                 this.player.activeContainer.a();
