@@ -87,6 +87,7 @@ public final class CraftServer implements Server {
         configuration.getString("database.password", "walrus");
         configuration.getString("database.driver", "org.sqlite.JDBC");
         configuration.getString("database.isolation", "SERIALIZABLE");
+        configuration.getString("settings.update-folder", "update");
     }
 
     public void loadPlugins() {
@@ -238,6 +239,10 @@ public final class CraftServer implements Server {
     }
 
     // End Temporary calls
+
+    public String getUpdateFolder() {
+        return this.configuration.getString("settings.update-folder", "update");
+    }
 
     public PluginManager getPluginManager() {
         return pluginManager;
