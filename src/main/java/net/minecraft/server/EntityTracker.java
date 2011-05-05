@@ -69,7 +69,8 @@ public class EntityTracker {
         }
 
         if (this.b.b(entity.id)) {
-            throw new IllegalStateException("Entity is already tracked!");
+            // CraftBukkit - removed exception throw as tracking an already tracked entity theoretically shouldn't cause any issues.
+            //throw new IllegalStateException("Entity is already tracked!");
         } else {
             EntityTrackerEntry entitytrackerentry = new EntityTrackerEntry(entity, i, j, flag);
 
