@@ -24,6 +24,8 @@ import org.bukkit.event.Event;
 import org.bukkit.event.Event.Priority;
 import org.bukkit.event.Listener;
 
+import org.bukkit.util.FileUtil;
+
 /**
  * Handles all plugin management from the Server
  */
@@ -33,6 +35,7 @@ public final class SimplePluginManager implements PluginManager {
     private final List<Plugin> plugins = new ArrayList<Plugin>();
     private final Map<String, Plugin> lookupNames = new HashMap<String, Plugin>();
     private final Map<Event.Type, SortedSet<RegisteredListener>> listeners = new EnumMap<Event.Type, SortedSet<RegisteredListener>>(Event.Type.class);
+    private static File updateDirectory = null;
     private final Comparator<RegisteredListener> comparer = new Comparator<RegisteredListener>() {
         public int compare(RegisteredListener i, RegisteredListener j) {
             int result = i.getPriority().compareTo(j.getPriority());
@@ -96,6 +99,10 @@ public final class SimplePluginManager implements PluginManager {
         boolean finalPass = false;
 
         LinkedList<File> filesList = new LinkedList(Arrays.asList(files));
+
+         if (!(server.getUpdateFolder().equals(""))) {
+             updateDirectory = new File(directory, server.getUpdateFolder());
+         }
 
         while(!allFailed || finalPass) {
             allFailed = true;
@@ -164,6 +171,14 @@ public final class SimplePluginManager implements PluginManager {
      * @throws InvalidDescriptionException Thrown when the specified file contains an invalid description
      */
     public synchronized Plugin loadPlugin(File file, boolean ignoreSoftDependencies) throws InvalidPluginException, InvalidDescriptionException, UnknownDependencyException {
+         File updateFile = null;
+
+         if (updateDirectory != null && updateDirectory.isDirectory() && (updateFile = new File(updateDirectory, file.getName())).isFile()) {
+             if (FileUtil.copy(updateFile, file)) {
+                 updateFile.delete();
+             }
+        }
+
         Set<Pattern> filters = fileAssociations.keySet();
         Plugin result = null;
 
@@ -279,7 +294,7 @@ public final class SimplePluginManager implements PluginManager {
 
                         String author = "<NoAuthorGiven>";
                         if (plugin.getDescription().getAuthors().size() > 0) {
-                            author = plugin.getDescription().getAuthors().get(0); 
+                            author = plugin.getDescription().getAuthors().get(0);
                         }
                         server.getLogger().log(Level.SEVERE, String.format(
                             "Nag author: '%s' of '%s' about the following: %s",

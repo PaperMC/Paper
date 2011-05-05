@@ -84,6 +84,14 @@ public interface Server {
     public int broadcastMessage(String message);
 
     /**
+     * Gets the name of the update folder. The update folder is used to safely update
+     * plugins at the right moment on a plugin load.
+     *
+     * @return The name of the update folder
+     */
+    public String getUpdateFolder();
+
+    /**
      * Gets a player object by the given username
      *
      * This method may not return objects for offline players
