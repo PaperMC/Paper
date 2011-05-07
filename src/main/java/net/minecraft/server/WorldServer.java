@@ -109,7 +109,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
         if (super.a(entity)) {
             CraftServer server = cserver;
 
-            LightningStrikeEvent lightning = new LightningStrikeEvent((org.bukkit.World) world, entity.getBukkitEntity());
+            LightningStrikeEvent lightning = new LightningStrikeEvent((org.bukkit.World) world, (org.bukkit.entity.LightningStrike) entity.getBukkitEntity());
             server.getPluginManager().callEvent(lightning);
             if (!lightning.isCancelled()) {
                 this.server.serverConfigurationManager.a(entity.locX, entity.locY, entity.locZ, 512.0D, new Packet71Weather(entity));
