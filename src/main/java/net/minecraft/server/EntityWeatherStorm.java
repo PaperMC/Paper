@@ -18,13 +18,19 @@ public class EntityWeatherStorm extends EntityWeather {
     // CraftBukkit start
     private CraftWorld cworld;
     private CraftServer server;
-    // CraftBukkit end
+    public boolean isEffect = false;
 
     public EntityWeatherStorm(World world, double d0, double d1, double d2) {
+        this(world, d0, d1, d2, false);
+    }
+
+    public EntityWeatherStorm(World world, double d0, double d1, double d2, boolean isEffect) {
+    // CraftBukkit end
 
         super(world);
 
         // CraftBukkit start
+        this.isEffect = isEffect;
         cworld = ((WorldServer) world).getWorld();
         server = ((WorldServer) world).getServer();
         // CraftBukkit end
@@ -33,7 +39,9 @@ public class EntityWeatherStorm extends EntityWeather {
         this.b = 2;
         this.a = this.random.nextLong();
         this.c = this.random.nextInt(3) + 1;
-        if (world.spawnMonsters >= 2 && world.a(MathHelper.floor(d0), MathHelper.floor(d1), MathHelper.floor(d2), 10)) {
+        // CraftBukkit start
+        if (!isEffect && world.spawnMonsters >= 2 && world.a(MathHelper.floor(d0), MathHelper.floor(d1), MathHelper.floor(d2), 10)) {
+        // CraftBukkit end
             int i = MathHelper.floor(d0);
             int j = MathHelper.floor(d1);
             int k = MathHelper.floor(d2);
@@ -83,7 +91,9 @@ public class EntityWeatherStorm extends EntityWeather {
                 --this.c;
                 this.b = 1;
                 this.a = this.random.nextLong();
-                if (this.world.a(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ), 10)) {
+                // CraftBukkit start
+                if (!isEffect && this.world.a(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ), 10)) {
+                // CraftBukkit end
                     int i = MathHelper.floor(this.locX);
                     int j = MathHelper.floor(this.locY);
                     int k = MathHelper.floor(this.locZ);
@@ -102,7 +112,9 @@ public class EntityWeatherStorm extends EntityWeather {
             }
         }
 
-        if (this.b >= 0) {
+        // CraftBukkit start
+        if (!isEffect && this.b >= 0) {
+        // CraftBukkit end
             double d0 = 3.0D;
             List list = this.world.b((Entity) this, AxisAlignedBB.b(this.locX - d0, this.locY - d0, this.locZ - d0, this.locX + d0, this.locY + 6.0D + d0, this.locZ + d0));
 

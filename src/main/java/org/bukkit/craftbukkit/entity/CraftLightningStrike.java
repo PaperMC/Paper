@@ -14,4 +14,8 @@ public class CraftLightningStrike extends CraftEntity implements LightningStrike
     public EntityWeatherStorm getHandle() {
         return (EntityWeatherStorm)super.getHandle();
     }
+
+    public boolean isEffect() {
+        return ((EntityWeatherStorm) super.getHandle()).isEffect;
+    }
 }
