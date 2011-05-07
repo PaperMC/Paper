@@ -2,6 +2,7 @@ package org.bukkit.event.weather;
 
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.LightningStrike;
 import org.bukkit.event.Cancellable;
 
 /**
@@ -10,10 +11,10 @@ import org.bukkit.event.Cancellable;
 public class LightningStrikeEvent extends WeatherEvent implements Cancellable {
 
     private boolean canceled;
-    private Entity bolt;
+    private LightningStrike bolt;
     private World world;
 
-    public LightningStrikeEvent(World world, Entity bolt) {
+    public LightningStrikeEvent(World world, LightningStrike bolt) {
         super(Type.LIGHTNING_STRIKE, world);
         this.bolt = bolt;
         this.world = world;
@@ -44,7 +45,7 @@ public class LightningStrikeEvent extends WeatherEvent implements Cancellable {
      *
      * @return lightning entity
      */
-    public Entity getLightning() {
+    public LightningStrike getLightning() {
         return bolt;
     }
 
