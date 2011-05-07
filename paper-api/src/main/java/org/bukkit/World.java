@@ -314,6 +314,14 @@ public interface World {
      * @return
      */
     public LightningStrike strikeLightning(Location loc);
+    
+    /**
+     * Strikes lightning at the given {@link Location} without doing damage
+     * 
+     * @param loc The location to strike lightning
+     * @return
+     */
+    public LightningStrike strikeLightningEffect(Location loc);
 
     /**
      * Get a list of all entities in this World
