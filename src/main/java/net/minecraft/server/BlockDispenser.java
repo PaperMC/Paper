@@ -1,6 +1,15 @@
 package net.minecraft.server;
 
 import java.util.Random;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.Dispenser;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.event.block.BlockDamageEvent;
+import org.bukkit.event.block.BlockDispenseEvent;
+import org.bukkit.util.Vector;
 
 public class BlockDispenser extends BlockContainer {
 
@@ -82,7 +91,16 @@ public class BlockDispenser extends BlockContainer {
         }
 
         TileEntityDispenser tileentitydispenser = (TileEntityDispenser) world.getTileEntity(i, j, k);
-        ItemStack itemstack = tileentitydispenser.b();
+        // CraftBukkit start
+        int dispenseSlot = tileentitydispenser.findDispenseSlot();
+        ItemStack itemstack = null;
+        if (dispenseSlot > -1) {
+            itemstack = tileentitydispenser.getContents()[dispenseSlot];
+            
+            // Copy item stack, because we want it to have 1 item
+            itemstack = new ItemStack(itemstack.id, 1, itemstack.damage);
+        }
+        // CraftBukkit end
         double d0 = (double) i + (double) f * 0.5D + 0.5D;
         double d1 = (double) j + 0.5D;
         double d2 = (double) k + (double) f1 * 0.5D + 0.5D;
@@ -91,6 +109,37 @@ public class BlockDispenser extends BlockContainer {
             world.makeSound((double) i, (double) j, (double) k, "random.click", 1.0F, 1.2F);
         } else {
             double d3;
+            
+            // CraftBukkit start
+            d3 = random.nextDouble() * 0.1D + 0.2D;
+            double motX = (double) f * d3;
+            double motY = 0.20000000298023224D;
+            double motZ = (double) f1 * d3;
+            motX += random.nextGaussian() * 0.007499999832361937D * 6.0D;
+            motY += random.nextGaussian() * 0.007499999832361937D * 6.0D;
+            motZ += random.nextGaussian() * 0.007499999832361937D * 6.0D;
+
+            CraftWorld craftWorld = ((WorldServer) world).getWorld();
+            CraftServer server = ((WorldServer) world).getServer();
+            CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
+            org.bukkit.inventory.ItemStack bukkitItem = (new CraftItemStack(itemstack)).clone();
+            BlockDispenseEvent event = new BlockDispenseEvent(block, bukkitItem, new Vector(motX, motY, motZ));
+            server.getPluginManager().callEvent(event);
+            
+            if (event.isCancelled()) {
+                return;
+            }
+            
+            // Actually remove the item
+            tileentitydispenser.a(dispenseSlot, 1);
+
+            motX = event.getVelocity().getX();
+            motY = event.getVelocity().getY();
+            motZ = event.getVelocity().getZ();
+            
+            itemstack = new ItemStack(event.getItem().getTypeId(),
+                    event.getItem().getAmount(), event.getItem().getDurability());
+            // CraftBukkit end
 
             if (itemstack.id == Item.ARROW.id) {
                 EntityArrow entityarrow = new EntityArrow(world, d0, d1, d2);
@@ -114,12 +163,11 @@ public class BlockDispenser extends BlockContainer {
                 EntityItem entityitem = new EntityItem(world, d0, d1 - 0.3D, d2, itemstack);
 
                 d3 = random.nextDouble() * 0.1D + 0.2D;
-                entityitem.motX = (double) f * d3;
-                entityitem.motY = 0.20000000298023224D;
-                entityitem.motZ = (double) f1 * d3;
-                entityitem.motX += random.nextGaussian() * 0.007499999832361937D * 6.0D;
-                entityitem.motY += random.nextGaussian() * 0.007499999832361937D * 6.0D;
-                entityitem.motZ += random.nextGaussian() * 0.007499999832361937D * 6.0D;
+                // CraftBukkit start
+                entityitem.motX = motX;
+                entityitem.motY = motY;
+                entityitem.motZ = motZ;
+                // CraftBukkit end
                 world.addEntity(entityitem);
                 world.makeSound((double) i, (double) j, (double) k, "random.click", 1.0F, 1.0F);
             }
