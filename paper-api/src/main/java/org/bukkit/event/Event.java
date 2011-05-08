@@ -364,6 +364,13 @@ public abstract class Event implements Serializable {
         BLOCK_PLACE (Category.BLOCK),
 
         /**
+         * Called when a block dispenses something
+         *
+         * @see org.bukkit.event.block.BlockPlaceEvent
+         */
+        BLOCK_DISPENSE (Category.BLOCK),
+
+        /**
          * Called when a block is destroyed from being burnt by fire
          *
          * @see org.bukkit.event.block.BlockBurnEvent

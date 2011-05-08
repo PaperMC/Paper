@@ -195,6 +195,11 @@ public class ItemStack {
     }
     
     @Override
+    public ItemStack clone() {
+        return new ItemStack(type, amount, durability);
+    } 
+    
+    @Override
     public int hashCode() {
         int hash = 11;
         hash = hash * 19 + 7 * getTypeId(); // Overriding hashCode since equals is overridden, it's just 

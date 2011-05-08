@@ -116,4 +116,12 @@ public class BlockListener implements Listener {
      */
     public void onSnowForm(SnowFormEvent event) {
     }
+    
+    /**
+     * Called when a block is dispensing an item
+     * 
+     * @param event Relevant event details
+     */
+    public void onBlockDispense(BlockDispenseEvent event) {
+    }
 }
