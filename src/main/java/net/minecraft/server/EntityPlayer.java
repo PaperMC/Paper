@@ -102,14 +102,12 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         for (int i = 0; i < inventory.items.length; ++i) {
             if (inventory.items[i] != null) {
                 loot.add(new CraftItemStack(inventory.items[i]));
-                inventory.items[i] = null;
             }
         }
 
         for (int i = 0; i < inventory.armor.length; ++i) {
             if (inventory.armor[i] != null) {
                 loot.add(new CraftItemStack(inventory.armor[i]));
-                inventory.armor[i] = null;
             }
         }
 
@@ -119,6 +117,15 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
         EntityDeathEvent event = new EntityDeathEvent(craftEntity, loot);
         server.getPluginManager().callEvent(event);
+
+        // CraftBukkit - we clean the player's inventory after the EntityDeathEvent is called so plugins can get the exact state of the inventory.
+        for (int i = 0; i < inventory.items.length; ++i) {
+            inventory.items[i] = null;
+        }
+
+        for (int i = 0; i < inventory.armor.length; ++i) {
+            inventory.armor[i] = null;
+        }
 
         for (org.bukkit.inventory.ItemStack stack: event.getDrops()) {
             cworld.dropItemNaturally(craftEntity.getLocation(), stack);
@@ -132,7 +139,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         if (this.bG > 0) {
             return false;
         } else {
-            if (!this.world.pvpMode) { // CraftBukkit this.b.pvpMode -> this.world.pvpMode 
+            if (!this.world.pvpMode) { // CraftBukkit this.b.pvpMode -> this.world.pvpMode
                 if (entity instanceof EntityHuman) {
                     return false;
                 }
