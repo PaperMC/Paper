@@ -55,6 +55,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
     public OptionSet options;
     public ColouredConsoleSender console;
     public ConsoleReader reader;
+    public static int currentTick;
     // Craftbukkit end
 
     public MinecraftServer(OptionSet options) { // CraftBukkit - adds argument OptionSet
@@ -281,6 +282,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
                         j = 0L;
                     } else {
                         while (j > 50L) {
+                            MinecraftServer.currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit
                             j -= 50L;
                             this.h();
                         }

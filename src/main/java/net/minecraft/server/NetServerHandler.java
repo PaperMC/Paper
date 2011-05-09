@@ -38,6 +38,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     private double z;
     private boolean m = true;
     private Map n = new HashMap();
+    private int lastTick = MinecraftServer.currentTick; // CraftBukkit
 
     public NetServerHandler(MinecraftServer minecraftserver, NetworkManager networkmanager, EntityPlayer entityplayer) {
         this.minecraftServer = minecraftserver;
@@ -277,11 +278,15 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             double d7 = d3 - this.player.locZ;
             double d8 = d4 * d4 + d6 * d6 + d7 * d7;
 
-            if (d8 > 100.0D) {
-                a.warning(this.player.name + " moved too quickly!");
+            // CraftBukkit start - make the movement speed check behave properly under tick degradation.
+            int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
+            if (d8 > 100.0D * (elapsedTicks == 0 ? 1 : elapsedTicks)) {
+                a.warning(this.player.name + " moved too quickly! Elapsed ticks: " +  (elapsedTicks == 0 ? 1 : elapsedTicks) + ", Distance change: " + d8);
                 this.disconnect("You moved too quickly :( (Hacking?)");
                 return;
             }
+            this.lastTick = MinecraftServer.currentTick;
+            // CraftBukkit end
 
             float f4 = 0.0625F;
             // CraftBukkit
