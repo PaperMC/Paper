@@ -175,7 +175,7 @@ class PlayerInstance {
                         l = this.chunkZ * 16 + (this.dirtyCount >> 8 & 15);
                         // CraftBukkit start
                         if (Block.isTileEntity[this.playerManager.world.getTypeId(j, k, l)]) {
-                            System.out.println("Sending!");
+                            //System.out.println("Sending!"); // CraftBukkit
                             this.sendTileEntity(this.playerManager.world.getTileEntity(j, k, l));
                         }
                         // CraftBukkit end
