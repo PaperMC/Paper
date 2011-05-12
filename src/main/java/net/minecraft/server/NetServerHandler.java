@@ -181,9 +181,9 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             player.kickPlayer("Nope!");
             return;
         }
-        // CraftBukkit end
 
-        if (this.m) {
+        if (this.m && !this.player.dead) {
+        // CraftBukkit end
             double d1;
             double d2;
             double d3;
@@ -392,6 +392,12 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     }
 
     public void a(Packet14BlockDig packet14blockdig) {
+        // CraftBukkit start
+        if (this.player.dead) {
+            return;
+        }
+        // CraftBukkit end
+
         if (packet14blockdig.e == 4) {
             this.player.C();
         } else {
@@ -458,6 +464,10 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
     public void a(Packet15Place packet15place) {
         // CraftBukkit start
+        if (this.player.dead) {
+            return;
+        }
+
         // This is a horrible hack needed because the client sends 2 packets on 'right mouse click'
         // aimed at a block. We shouldn't need to get the second packet if the data is handled
         // but we cannot know what the client will do, so we might still get it
@@ -609,6 +619,12 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     }
 
     public void a(Packet16BlockItemSwitch packet16blockitemswitch) {
+        // CraftBukkit start
+        if (this.player.dead) {
+            return;
+        }
+        // CraftBukkit end
+
         if (packet16blockitemswitch.itemInHandIndex >= 0 && packet16blockitemswitch.itemInHandIndex <= InventoryPlayer.e()) {
             // CraftBukkit start
             PlayerItemHeldEvent event = new PlayerItemHeldEvent(getPlayer(), this.player.inventory.itemInHandIndex, packet16blockitemswitch.itemInHandIndex);
@@ -636,6 +652,9 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             }
 
             // CraftBukkit start
+            if (this.player.dead) {
+                return;
+            }
             chat(s);
         }
     }
@@ -645,7 +664,6 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             this.handleCommand(msg);
             return true;
         } else {
-            // CraftBukkit start
             Player player = getPlayer();
             PlayerChatEvent event = new PlayerChatEvent(player, msg);
             server.getPluginManager().callEvent(event);
@@ -659,7 +677,6 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             for (Player recipient : event.getRecipients()) {
                 recipient.sendMessage(msg);
             }
-            // CraftBukkit end
         }
 
         return false;
@@ -725,6 +742,12 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     }
 
     public void a(Packet18ArmAnimation packet18armanimation) {
+        // CraftBukkit start
+        if (this.player.dead) {
+            return;
+        }
+        // CraftBukkit end
+
         if (packet18armanimation.b == 1) {
             // CraftBukkit -- raytrace to look for 'rogue armswings'
             float f = 1.0F;
@@ -761,6 +784,10 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
     public void a(Packet19EntityAction packet19entityaction) {
         // CraftBukkit start
+        if (this.player.dead) {
+            return;
+        }
+
         if (packet19entityaction.animation == 1 || packet19entityaction.animation == 2) {
             Player player = getPlayer();
             PlayerToggleSneakEvent event = new PlayerToggleSneakEvent(player);
@@ -798,6 +825,12 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     }
 
     public void a(Packet7UseEntity packet7useentity) {
+        // CraftBukkit start
+        if (this.player.dead) {
+            return;
+        }
+        // CraftBukkit end
+
         // CraftBukkit
         Entity entity = ((WorldServer) this.player.world).getEntity(packet7useentity.target);
 
@@ -829,10 +862,22 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     }
 
     public void a(Packet101CloseWindow packet101closewindow) {
+        // CraftBukkit start
+        if (this.player.dead) {
+            return;
+        }
+        // CraftBukkit end
+
         this.player.z();
     }
 
     public void a(Packet102WindowClick packet102windowclick) {
+        // CraftBukkit start
+        if (this.player.dead) {
+            return;
+        }
+        // CraftBukkit end
+
         if (this.player.activeContainer.f == packet102windowclick.a && this.player.activeContainer.c(this.player)) {
             ItemStack itemstack = this.player.activeContainer.a(packet102windowclick.b, packet102windowclick.c, packet102windowclick.f, this.player);
             if (ItemStack.equals(packet102windowclick.e, itemstack)) {
@@ -857,6 +902,12 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     }
 
     public void a(Packet106Transaction packet106transaction) {
+        // CraftBukkit start
+        if (this.player.dead) {
+            return;
+        }
+        // CraftBukkit end
+
         Short oshort = (Short) this.n.get(Integer.valueOf(this.player.activeContainer.f));
 
         if (oshort != null && packet106transaction.b == oshort.shortValue() && this.player.activeContainer.f == packet106transaction.a && !this.player.activeContainer.c(this.player)) {
@@ -866,6 +917,10 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
     public void a(Packet130UpdateSign packet130updatesign) {
         // CraftBukkit start
+        if (this.player.dead) {
+            return;
+        }
+
         if (((WorldServer) this.player.world).isLoaded(packet130updatesign.x, packet130updatesign.y, packet130updatesign.z)) {
             TileEntity tileentity = ((WorldServer) this.player.world).getTileEntity(packet130updatesign.x, packet130updatesign.y, packet130updatesign.z);
 
