@@ -28,7 +28,7 @@ public class PluginClassLoader extends URLClassLoader {
         Class<?> result = classes.get(name);
 
         if (result == null) {
-            if(checkGlobal) {
+            if (checkGlobal) {
                 result = loader.getClassByName(name);
             }
 
