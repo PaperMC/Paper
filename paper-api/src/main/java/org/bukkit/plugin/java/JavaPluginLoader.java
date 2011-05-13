@@ -27,7 +27,6 @@ import org.bukkit.event.vehicle.*;
 import org.bukkit.event.world.*;
 import org.bukkit.event.weather.*;
 import org.bukkit.plugin.*;
-import org.bukkit.plugin.java.annotations.DontExport;
 import org.yaml.snakeyaml.error.YAMLException;
 
 /**
@@ -218,7 +217,7 @@ public final class JavaPluginLoader implements PluginLoader {
     }
 
     public void setClass(final String name, final Class<?> clazz) {
-        if ((!classes.containsKey(name)) && (clazz.getAnnotation(DontExport.class) != null)) {
+        if (!classes.containsKey(name)) {
             classes.put(name, clazz);
         }
     }
