@@ -9,7 +9,7 @@ import org.bukkit.inventory.Inventory;
 
 /**
  * Represents a furnace.
- * 
+ *
  * @author sk89q
  */
 public class CraftFurnace extends CraftBlockState implements Furnace {

@@ -59,7 +59,7 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
 
                             firstTick = first.getExecutionTick();
 
-                            if (currentTick >= firstTick ) {
+                            if (currentTick >= firstTick) {
                                 schedulerQueue.remove(first);
                                 processTask(first);
                                 if (first.getPeriod()>=0) {

@@ -34,7 +34,7 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
         ItemStack[] items = new ItemStack[getSize()];
         net.minecraft.server.ItemStack[] mcItems = getInventory().getContents();
 
-        for (int i = 0; i < mcItems.length; i++ ) {
+        for (int i = 0; i < mcItems.length; i++) {
             items[i] = mcItems[i] == null ? null : new CraftItemStack(mcItems[i]);
         }
 
@@ -48,18 +48,18 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
 
         net.minecraft.server.ItemStack[] mcItems = getInventory().getContents();
 
-        for (int i = 0; i < items.length; i++ ) {
+        for (int i = 0; i < items.length; i++) {
             ItemStack item = items[i];
             if (item == null || item.getTypeId() <= 0) {
                 mcItems[i] = null;
             } else {
-                mcItems[i] = new net.minecraft.server.ItemStack( item.getTypeId(), item.getAmount(), item.getDurability());
+                mcItems[i] = new net.minecraft.server.ItemStack(item.getTypeId(), item.getAmount(), item.getDurability());
             }
         }
     }
 
     public void setItem(int index, ItemStack item) {
-        getInventory().setItem(index, (item == null ? null : new net.minecraft.server.ItemStack( item.getTypeId(), item.getAmount(), item.getDurability())));
+        getInventory().setItem(index, (item == null ? null : new net.minecraft.server.ItemStack(item.getTypeId(), item.getAmount(), item.getDurability())));
     }
 
     public boolean contains(int materialId) {
@@ -121,7 +121,7 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
         for (int i = 0; i < inventory.length; i++) {
             ItemStack item = inventory[i];
             if (item != null && item.getTypeId() == materialId) {
-                slots.put( i, item );
+                slots.put(i, item);
             }
         }
         return slots;
@@ -137,7 +137,7 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
             ItemStack[] inventory = getContents();
             for (int i = 0; i < inventory.length; i++) {
                 if (item.equals(inventory[i])) {
-                    slots.put( i, inventory[i] );
+                    slots.put(i, inventory[i]);
                 }
             }
         }
@@ -238,11 +238,11 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
                     } else {
                         // More than a single stack!
                         if (item.getAmount() > getMaxItemStack()) {
-                            setItem( firstFree, new CraftItemStack(item.getTypeId(), getMaxItemStack(), item.getDurability()));
+                            setItem(firstFree, new CraftItemStack(item.getTypeId(), getMaxItemStack(), item.getDurability()));
                             item.setAmount(item.getAmount() - getMaxItemStack());
                         } else {
                             // Just store it
-                            setItem( firstFree, item );
+                            setItem(firstFree, item);
                             break;
                         }
                     }
@@ -256,13 +256,13 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
 
                     // Check if it fully fits
                     if (amount + partialAmount <= maxAmount) {
-                        partialItem.setAmount( amount + partialAmount );
+                        partialItem.setAmount(amount + partialAmount);
                         break;
                     }
 
                     // It fits partially
-                    partialItem.setAmount( maxAmount );
-                    item.setAmount( amount + partialAmount - maxAmount );
+                    partialItem.setAmount(maxAmount);
+                    item.setAmount(amount + partialAmount - maxAmount);
                 }
             }
         }
@@ -283,7 +283,7 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
 
                 // Drat! we don't have this type in the inventory
                 if (first == -1) {
-                    item.setAmount( toDelete );
+                    item.setAmount(toDelete);
                     leftover.put(i, item);
                     break;
                 } else {
@@ -293,11 +293,11 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
                     if (amount <= toDelete) {
                         toDelete -= amount;
                         // clear the slot, all used up
-                        clear( first );
+                        clear(first);
                     } else {
                         // split the stack and store
-                        itemStack.setAmount( amount - toDelete );
-                        setItem( first, itemStack );
+                        itemStack.setAmount(amount - toDelete);
+                        setItem(first, itemStack);
                         toDelete = 0;
                     }
                 }

@@ -245,11 +245,10 @@ public class CraftBlock implements Block {
         BlockFace[] values = BlockFace.values();
 
         for (BlockFace face : values) {
-            if (
-                    (this.getX() + face.getModX() == block.getX()) &&
-                    (this.getY() + face.getModY() == block.getY()) &&
-                    (this.getZ() + face.getModZ() == block.getZ())
-                ) {
+            if ((this.getX() + face.getModX() == block.getX()) &&
+                (this.getY() + face.getModY() == block.getY()) &&
+                (this.getZ() + face.getModZ() == block.getZ())
+            ) {
                 return face;
             }
         }
@@ -286,7 +285,7 @@ public class CraftBlock implements Block {
             return BlockFace.SELF;
         }
     }
-    
+
     public static int blockFaceToNotch(BlockFace face) {
         switch(face) {
             case DOWN:
@@ -302,7 +301,7 @@ public class CraftBlock implements Block {
             case SOUTH:
                 return 5;
             default:
-                return 7; //Good as anything here, but technically invalid
+                return 7; // Good as anything here, but technically invalid
         }
     }
 
@@ -371,7 +370,7 @@ public class CraftBlock implements Block {
     }
 
     @Override
-    public boolean equals( Object o ) {
+    public boolean equals(Object o) {
         return this == o;
     }
 

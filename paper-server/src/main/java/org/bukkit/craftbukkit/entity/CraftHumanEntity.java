@@ -13,7 +13,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     public CraftHumanEntity(final CraftServer server, final EntityHuman entity) {
         super(server, entity);
-        this.inventory = new CraftInventoryPlayer( entity.inventory );
+        this.inventory = new CraftInventoryPlayer(entity.inventory);
     }
 
     public String getName() {
@@ -28,7 +28,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     public void setHandle(final EntityHuman entity) {
         super.setHandle((EntityHuman)entity);
         this.entity = entity;
-        this.inventory = new CraftInventoryPlayer( entity.inventory );
+        this.inventory = new CraftInventoryPlayer(entity.inventory);
     }
 
     public PlayerInventory getInventory() {

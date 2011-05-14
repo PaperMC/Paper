@@ -43,7 +43,7 @@ public class CraftChunk implements Chunk {
 
     void breakLink() {
         weakChunk.clear();
-    } 
+    }
 
     public int getX() {
         return x;
@@ -60,15 +60,15 @@ public class CraftChunk implements Chunk {
 
     public Block getBlock(int x, int y, int z) {
         int pos = (x & 0xF) << 11 | (z & 0xF) << 7 | (y & 0x7F);
-        Block block = this.cache.get( pos );
+        Block block = this.cache.get(pos);
         if (block == null) {
-            Block newBlock = new CraftBlock( this, (getX() << 4) | (x & 0xF), y & 0x7F, (getZ() << 4) | (z & 0xF) );
-            Block oldBlock = this.cache.put( pos, newBlock );
+            Block newBlock = new CraftBlock(this, (getX() << 4) | (x & 0xF), y & 0x7F, (getZ() << 4) | (z & 0xF));
+            Block oldBlock = this.cache.put(pos, newBlock);
             if(oldBlock == null) {
                 block = newBlock;
             } else {
                 block = oldBlock;
-            } 
+            }
         }
         return block;
     }

@@ -12,7 +12,7 @@ public class CraftSlot implements org.bukkit.inventory.Slot {
     }
 
     public Inventory getInventory() {
-        return new CraftInventory( slot.inventory );
+        return new CraftInventory(slot.inventory);
     }
 
     public int getIndex() {
@@ -20,6 +20,6 @@ public class CraftSlot implements org.bukkit.inventory.Slot {
     }
 
     public ItemStack getItem() {
-        return new CraftItemStack( slot.getItem() );
+        return new CraftItemStack(slot.getItem());
     }
 }

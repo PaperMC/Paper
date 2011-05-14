@@ -91,7 +91,7 @@ public class CraftTask implements Comparable<Object>, BukkitTask {
     }
 
     @Override
-    public boolean equals( Object other ) {
+    public boolean equals(Object other) {
 
         if (other == null) {
             return false;

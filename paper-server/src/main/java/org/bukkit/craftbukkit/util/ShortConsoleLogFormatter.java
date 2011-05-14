@@ -55,5 +55,5 @@ public class ShortConsoleLogFormatter extends Formatter {
 
         return builder.toString();
     }
-    
+
 }
