@@ -11,7 +11,7 @@ import org.bukkit.event.Cancellable;
  */
 public class EntityInteractEvent extends EntityEvent implements Cancellable {
     protected Block block;
-    
+
     private boolean cancelled;
 
     public EntityInteractEvent(Entity entity, Block block) {

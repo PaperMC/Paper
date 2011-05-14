@@ -1,4 +1,3 @@
-
 package org.bukkit.plugin;
 
 import java.io.File;
@@ -12,6 +11,7 @@ import org.bukkit.event.Listener;
  * of plugins
  */
 public interface PluginLoader {
+
     /**
      * Loads the plugin contained in the specified file
      *

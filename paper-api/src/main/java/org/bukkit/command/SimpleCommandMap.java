@@ -34,7 +34,7 @@ public final class SimpleCommandMap implements CommandMap {
      */
     public void registerAll(String fallbackPrefix, List<Command> commands) {
         if (commands != null) {
-            for(Command c : commands) {
+            for (Command c : commands) {
                 register(fallbackPrefix, c);
             }
         }
@@ -42,6 +42,7 @@ public final class SimpleCommandMap implements CommandMap {
 
     private void register(String fallbackPrefix, Command command) {
         List<String> names = new ArrayList<String>();
+
         names.add(command.getName());
         names.addAll(command.getAliases());
 
@@ -55,7 +56,7 @@ public final class SimpleCommandMap implements CommandMap {
      */
     public boolean register(String name, String fallbackPrefix, Command command) {
         boolean nameInUse = (getCommand(name) != null);
-        
+
         if (nameInUse) {
             name = fallbackPrefix + ":" + name;
         }
@@ -63,7 +64,7 @@ public final class SimpleCommandMap implements CommandMap {
         knownCommands.put(name.toLowerCase(), command);
         return !nameInUse;
     }
-    
+
     /**
      * {@inheritDoc}
      */
@@ -80,6 +81,7 @@ public final class SimpleCommandMap implements CommandMap {
 
         Command target = getCommand(sentCommandLabel);
         boolean isRegisteredCommand = (target != null);
+
         if (isRegisteredCommand) {
             try {
                 target.execute(sender, sentCommandLabel, args);
@@ -117,8 +119,7 @@ public final class SimpleCommandMap implements CommandMap {
         @Override
         public boolean execute(CommandSender sender, String currentAlias, String[] args) {
             if (args.length == 0) {
-                sender.sendMessage("This server is running " + ChatColor.GREEN
-                        + server.getName() + ChatColor.WHITE + " version " + ChatColor.GREEN + server.getVersion());
+                sender.sendMessage("This server is running " + ChatColor.GREEN + server.getName() + ChatColor.WHITE + " version " + ChatColor.GREEN + server.getVersion());
                 sender.sendMessage("This server is also sporting some funky dev build of Bukkit!");
             } else {
                 StringBuilder name = new StringBuilder();
@@ -134,6 +135,7 @@ public final class SimpleCommandMap implements CommandMap {
 
                 if (plugin != null) {
                     PluginDescriptionFile desc = plugin.getDescription();
+
                     sender.sendMessage(ChatColor.GREEN + desc.getName() + ChatColor.WHITE + " version " + ChatColor.GREEN + desc.getVersion());
 
                     if (desc.getDescription() != null) {

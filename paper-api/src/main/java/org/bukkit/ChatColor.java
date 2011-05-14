@@ -7,6 +7,7 @@ import java.util.Map;
  * All supported color values for chat
  */
 public enum ChatColor {
+
     /**
      * Represents black
      */
@@ -110,9 +111,10 @@ public enum ChatColor {
      * @return A copy of the input string, without any coloring
      */
     public static String stripColor(final String input) {
-        if (input == null)
+        if (input == null) {
             return null;
-        
+        }
+
         return input.replaceAll("(?i)\u00A7[0-F]", "");
     }
 

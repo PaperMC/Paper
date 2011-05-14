@@ -25,5 +25,4 @@ public class PaintingEvent extends Event {
     public Painting getPainting() {
         return painting;
     }
-
 }

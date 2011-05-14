@@ -56,34 +56,33 @@ public class CreeperPowerEvent extends EntityEvent implements Cancellable {
         return bolt;
     }
 
-   /**
-    * Gets the cause of the creeper being (un)powered.
-    * @return A PowerCause value detailing the cause of change in power.
-    */
+    /**
+     * Gets the cause of the creeper being (un)powered.
+     * @return A PowerCause value detailing the cause of change in power.
+     */
     public PowerCause getCause() {
         return cause;
     }
 
-   /**
-    * An enum to specify the cause of the change in power
-    */
-     public enum PowerCause {
-         /**
-          * Power change caused by a lightning bolt
-          * Powered state: true
-          */
-         LIGHTNING,
+    /**
+     * An enum to specify the cause of the change in power
+     */
+    public enum PowerCause {
 
-         /**
-          * Power change caused by something else (probably a plugin)
-          * Powered state: true
-          */
-         SET_ON,
-
-         /**
-          * Power change caused by something else (probably a plugin)
-          * Powered state: false
-          */
-         SET_OFF
-     }
+        /**
+         * Power change caused by a lightning bolt
+         * Powered state: true
+         */
+        LIGHTNING,
+        /**
+         * Power change caused by something else (probably a plugin)
+         * Powered state: true
+         */
+        SET_ON,
+        /**
+         * Power change caused by something else (probably a plugin)
+         * Powered state: false
+         */
+        SET_OFF
+    }
 }

@@ -1,4 +1,3 @@
-
 package org.bukkit.plugin;
 
 import java.io.InputStream;
@@ -28,7 +27,7 @@ public final class PluginDescriptionFile {
 
     @SuppressWarnings("unchecked")
     public PluginDescriptionFile(final InputStream stream) throws InvalidDescriptionException {
-        loadMap((Map<String, Object>)yaml.load(stream));
+        loadMap((Map<String, Object>) yaml.load(stream));
     }
 
     /**
@@ -37,7 +36,7 @@ public final class PluginDescriptionFile {
      */
     @SuppressWarnings("unchecked")
     public PluginDescriptionFile(final Reader reader) throws InvalidDescriptionException {
-        loadMap((Map<String, Object>)yaml.load(reader));
+        loadMap((Map<String, Object>) yaml.load(reader));
     }
 
     /**
@@ -139,7 +138,7 @@ public final class PluginDescriptionFile {
             name = map.get("name").toString();
 
             if (!name.matches("^[A-Za-z0-9 _.-]+$")) {
-                throw new InvalidDescriptionException("name '" + name +  "' contains invalid characters.");
+                throw new InvalidDescriptionException("name '" + name + "' contains invalid characters.");
             }
         } catch (NullPointerException ex) {
             throw new InvalidDescriptionException(ex, "name is not defined");
@@ -176,7 +175,7 @@ public final class PluginDescriptionFile {
 
         if (map.containsKey("depend")) {
             try {
-                depend = (ArrayList<String>)map.get("depend");
+                depend = (ArrayList<String>) map.get("depend");
             } catch (ClassCastException ex) {
                 throw new InvalidDescriptionException(ex, "depend is of wrong type");
             }
@@ -184,7 +183,7 @@ public final class PluginDescriptionFile {
 
         if (map.containsKey("softdepend")) {
             try {
-                softDepend = (ArrayList<String>)map.get("softdepend");
+                softDepend = (ArrayList<String>) map.get("softdepend");
             } catch (ClassCastException ex) {
                 throw new InvalidDescriptionException(ex, "softdepend is of wrong type");
             }
@@ -192,7 +191,7 @@ public final class PluginDescriptionFile {
 
         if (map.containsKey("database")) {
             try {
-                database = (Boolean)map.get("database");
+                database = (Boolean) map.get("database");
             } catch (ClassCastException ex) {
                 throw new InvalidDescriptionException(ex, "database is of wrong type");
             }
@@ -200,7 +199,7 @@ public final class PluginDescriptionFile {
 
         if (map.containsKey("website")) {
             try {
-                website = (String)map.get("website");
+                website = (String) map.get("website");
             } catch (ClassCastException ex) {
                 throw new InvalidDescriptionException(ex, "website is of wrong type");
             }
@@ -208,7 +207,7 @@ public final class PluginDescriptionFile {
 
         if (map.containsKey("description")) {
             try {
-                description = (String)map.get("description");
+                description = (String) map.get("description");
             } catch (ClassCastException ex) {
                 throw new InvalidDescriptionException(ex, "description is of wrong type");
             }
@@ -216,7 +215,8 @@ public final class PluginDescriptionFile {
 
         if (map.containsKey("author")) {
             try {
-                String extra = (String)map.get("author");
+                String extra = (String) map.get("author");
+
                 authors.add(extra);
             } catch (ClassCastException ex) {
                 throw new InvalidDescriptionException(ex, "author is of wrong type");
@@ -225,7 +225,8 @@ public final class PluginDescriptionFile {
 
         if (map.containsKey("authors")) {
             try {
-                ArrayList<String> extra = (ArrayList<String>)map.get("authors");
+                ArrayList<String> extra = (ArrayList<String>) map.get("authors");
+
                 authors.addAll(extra);
             } catch (ClassCastException ex) {
                 throw new InvalidDescriptionException(ex, "authors are of wrong type");
@@ -235,16 +236,27 @@ public final class PluginDescriptionFile {
 
     private Map<String, Object> saveMap() {
         Map<String, Object> map = new HashMap<String, Object>();
+
         map.put("name", name);
         map.put("main", main);
         map.put("version", version);
         map.put("database", database);
 
-        if (commands != null) map.put("command", commands);
-        if (depend != null) map.put("depend", depend);
-        if (softDepend != null) map.put("softdepend", softDepend);
-        if (website != null) map.put("website", website);
-        if (description != null) map.put("description", description);
+        if (commands != null) {
+            map.put("command", commands);
+        }
+        if (depend != null) {
+            map.put("depend", depend);
+        }
+        if (softDepend != null) {
+            map.put("softdepend", softDepend);
+        }
+        if (website != null) {
+            map.put("website", website);
+        }
+        if (description != null) {
+            map.put("description", description);
+        }
 
         if (authors.size() == 1) {
             map.put("author", authors.get(0));

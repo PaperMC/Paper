@@ -29,15 +29,16 @@ public class PluginClassLoader extends URLClassLoader {
         // 1. Local first, this avoids IllegalAccessError exceptions for duplicate classes
         // 2. Global cache second which prevents ClassCastException's apparently
         Class<?> result = classes.get(name);
-        if ( null == result ) {
+
+        if (null == result) {
             try {
                 result = super.findClass(name);
                 classes.put(name, result);
                 loader.setClass(name, result);
-            } catch ( ClassNotFoundException e ) {
-                if ( checkGlobal ) {
+            } catch (ClassNotFoundException e) {
+                if (checkGlobal) {
                     result = loader.getClassByName(name);
-                    if ( null == result ) {
+                    if (null == result) {
                         // We really couldnt find it
                         throw new ClassNotFoundException(name);
                     }
@@ -52,7 +53,6 @@ public class PluginClassLoader extends URLClassLoader {
 
         return result;
     }
-
 
     public Set<String> getClasses() {
         return classes.keySet();

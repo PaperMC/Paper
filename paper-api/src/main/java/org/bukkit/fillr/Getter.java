@@ -19,8 +19,8 @@ public class Getter {
 
     public void get(String string, CommandSender sender) {
         FillReader reader = new FillReader(string);
-        sender.sendMessage("Downloading " + reader.getName() + " "
-                + reader.getCurrVersion());
+
+        sender.sendMessage("Downloading " + reader.getName() + " " + reader.getCurrVersion());
         try {
             Downloader.downloadJar(reader.getFile());
             if (reader.getNotes() != null && !reader.getNotes().equals("")) {
@@ -36,8 +36,10 @@ public class Getter {
 
     private void enablePlugin(FillReader update) {
         final String name = update.getName();
-        //TODO again with the implicit jar support...
+        // TODO again with the implicit jar support...
+
         File plugin = new File(DIRECTORY, name + ".jar");
+
         try {
             server.getPluginManager().loadPlugin(plugin);
         } catch (UnknownDependencyException ex) {

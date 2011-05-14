@@ -3,6 +3,7 @@ package org.bukkit.command;
 import java.util.List;
 
 public interface CommandMap {
+
     /**
      * Registers all the commands belonging to a certain plugin.
      * @param plugin

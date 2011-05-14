@@ -1,4 +1,3 @@
-
 package org.bukkit.plugin;
 
 import com.avaje.ebean.EbeanServer;
@@ -11,6 +10,7 @@ import org.bukkit.util.config.Configuration;
  * Represents a Plugin
  */
 public interface Plugin extends CommandExecutor {
+
     /**
      * Returns the folder that the plugin data's files are located in. The
      * folder may not yet exist.

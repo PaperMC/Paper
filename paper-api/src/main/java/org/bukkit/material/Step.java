@@ -16,19 +16,20 @@ public class Step extends MaterialData {
         stepTypes.add(Material.COBBLESTONE);
         stepTypes.add(Material.STONE);
     }
-    
+
     public Step() {
         super(Material.STEP);
     }
-    
+
     public Step(final int type) {
         super(type);
     }
 
     public Step(final Material type) {
         super((stepTypes.contains(type)) ? Material.STEP : type);
-        if(stepTypes.contains(type))
+        if (stepTypes.contains(type)) {
             setMaterial(type);
+        }
     }
 
     public Step(final int type, final byte data) {
@@ -48,10 +49,13 @@ public class Step extends MaterialData {
         switch ((int) getData()) {
         case 1:
             return Material.SANDSTONE;
+
         case 2:
             return Material.WOOD;
+
         case 3:
             return Material.COBBLESTONE;
+
         case 0:
         default:
             return Material.STONE;
@@ -68,18 +72,21 @@ public class Step extends MaterialData {
         case SANDSTONE:
             setData((byte) 0x1);
             break;
+
         case WOOD:
             setData((byte) 0x2);
             break;
+
         case COBBLESTONE:
             setData((byte) 0x3);
             break;
+
         case STONE:
         default:
             setData((byte) 0x0);
         }
     }
-    
+
     @Override
     public String toString() {
         return getMaterial() + " " + super.toString();

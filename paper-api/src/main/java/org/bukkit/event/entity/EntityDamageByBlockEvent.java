@@ -20,9 +20,7 @@ public class EntityDamageByBlockEvent extends EntityDamageEvent implements Cance
      * Returns the block that damaged the player.
      * @return Block that damaged the player
      */
-    public Block getDamager()
-    {
+    public Block getDamager() {
         return damager;
     }
-
 }

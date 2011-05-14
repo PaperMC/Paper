@@ -25,7 +25,7 @@ public class Cake extends MaterialData {
 
     /**
      * Gets the number of slices eaten from this cake
-     * 
+     *
      * @return The number of slices eaten
      */
     public int getSlicesEaten() {
@@ -34,7 +34,7 @@ public class Cake extends MaterialData {
 
     /**
      * Gets the number of slices remaining on this cake
-     * 
+     *
      * @return The number of slices remaining
      */
     public int getSlicesRemaining() {
@@ -43,7 +43,7 @@ public class Cake extends MaterialData {
 
     /**
      * Sets the number of slices eaten from this cake
-     * 
+     *
      * @param n The number of slices eaten
      */
     public void setSlicesEaten(int n) {
@@ -54,17 +54,18 @@ public class Cake extends MaterialData {
 
     /**
      * Sets the number of slices remaining on this cake
-     * 
+     *
      * @param n The number of slices remaining
      */
     public void setSlicesRemaining(int n) {
-        if (n > 6) n = 6;
+        if (n > 6) {
+            n = 6;
+        }
         setData((byte) (6 - n));
     }
-    
+
     @Override
     public String toString() {
         return super.toString() + " " + getSlicesEaten() + "/" + getSlicesRemaining() + " slices eaten/remaining";
     }
-
 }

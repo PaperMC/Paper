@@ -7,7 +7,7 @@ import org.bukkit.event.Cancellable;
  *
  * @author azi
  */
-public class PlayerToggleSneakEvent extends PlayerEvent implements Cancellable{
+public class PlayerToggleSneakEvent extends PlayerEvent implements Cancellable {
     private boolean cancel = false;
 
     public PlayerToggleSneakEvent(final Player player) {
@@ -23,7 +23,6 @@ public class PlayerToggleSneakEvent extends PlayerEvent implements Cancellable{
     public boolean isCancelled() {
         return cancel;
     }
-
 
     /**
      * Sets the cancellation state of this event. A cancelled event will not

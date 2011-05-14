@@ -1,4 +1,3 @@
-
 package org.bukkit;
 
 import org.bukkit.block.Block;
@@ -207,8 +206,9 @@ public class Location implements Cloneable {
         vector.setY(-Math.sin(Math.toRadians(rotY)));
 
         double h = Math.cos(Math.toRadians(rotY));
-        vector.setX(-h*Math.sin(Math.toRadians(rotX)));
-        vector.setZ(h*Math.cos(Math.toRadians(rotX)));
+
+        vector.setX(-h * Math.sin(Math.toRadians(rotX)));
+        vector.setZ(h * Math.cos(Math.toRadians(rotX)));
 
         return vector;
     }
@@ -222,6 +222,7 @@ public class Location implements Cloneable {
             return false;
         }
         final Location other = (Location) obj;
+
         if (this.world != other.world && (this.world == null || !this.world.equals(other.world))) {
             return false;
         }
@@ -246,6 +247,7 @@ public class Location implements Cloneable {
     @Override
     public int hashCode() {
         int hash = 3;
+
         hash = 19 * hash + (this.world != null ? this.world.hashCode() : 0);
         hash = 19 * hash + (int) (Double.doubleToLongBits(this.x) ^ (Double.doubleToLongBits(this.x) >>> 32));
         hash = 19 * hash + (int) (Double.doubleToLongBits(this.y) ^ (Double.doubleToLongBits(this.y) >>> 32));
@@ -272,7 +274,8 @@ public class Location implements Cloneable {
     @Override
     public Location clone() {
         try {
-            Location l = (Location)super.clone();
+            Location l = (Location) super.clone();
+
             l.world = world;
             l.x = x;
             l.y = y;
@@ -293,6 +296,6 @@ public class Location implements Cloneable {
      * @return Block coordinate
      */
     public static int locToBlock(double loc) {
-        return (int)Math.floor(loc);
+        return (int) Math.floor(loc);
     }
 }

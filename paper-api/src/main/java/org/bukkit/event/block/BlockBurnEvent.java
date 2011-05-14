@@ -1,5 +1,3 @@
-
-
 package org.bukkit.event.block;
 
 import org.bukkit.block.Block;

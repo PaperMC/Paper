@@ -5,10 +5,11 @@ package org.bukkit.util;
  * BlockVector in WorldEdit. BlockVectors can be used in hash sets and
  * hash maps. Be aware that BlockVectors are mutable, but it is important
  * that BlockVectors are never changed once put into a hash set or hash map.
- * 
+ *
  * @author sk89q
  */
 public class BlockVector extends Vector {
+
     /**
      * Construct the vector with all components as 0.
      */
@@ -65,7 +66,7 @@ public class BlockVector extends Vector {
         this.y = y;
         this.z = z;
     }
-    
+
     /**
      * Checks if another object is equivalent.
      *
@@ -77,9 +78,9 @@ public class BlockVector extends Vector {
         if (!(obj instanceof BlockVector)) {
             return false;
         }
-        BlockVector other = (BlockVector)obj;
-        return (int)other.getX() == (int)this.x && (int)other.getY() == (int)this.y
-                && (int)other.getZ() == (int)this.z;
+        BlockVector other = (BlockVector) obj;
+
+        return (int) other.getX() == (int) this.x && (int) other.getY() == (int) this.y && (int) other.getZ() == (int) this.z;
 
     }
 
@@ -90,9 +91,7 @@ public class BlockVector extends Vector {
      */
     @Override
     public int hashCode() {
-        return (Integer.valueOf((int)x).hashCode() >> 13) ^
-                (Integer.valueOf((int)y).hashCode() >> 7) ^
-                 Integer.valueOf((int)z).hashCode();
+        return (Integer.valueOf((int) x).hashCode() >> 13) ^ (Integer.valueOf((int) y).hashCode() >> 7) ^ Integer.valueOf((int) z).hashCode();
     }
 
     /**
@@ -102,7 +101,8 @@ public class BlockVector extends Vector {
      */
     @Override
     public BlockVector clone() {
-        BlockVector v = (BlockVector)super.clone();
+        BlockVector v = (BlockVector) super.clone();
+
         v.x = x;
         v.y = y;
         v.z = z;

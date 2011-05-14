@@ -66,8 +66,8 @@ public class EntityTargetEvent extends EntityEvent implements Cancellable {
     /**
      * An enum to specify the reason for the targeting
      */
-    public enum TargetReason
-    {
+    public enum TargetReason {
+
         /**
          * When the entity's target has died, and so it no longer targets it
          */

@@ -1,4 +1,3 @@
-
 package org.bukkit.event.entity;
 
 import java.util.List;
@@ -17,7 +16,7 @@ public class EntityExplodeEvent extends EntityEvent implements Cancellable {
     private List<Block> blocks;
     private float yield = 0.3F;
 
-    public EntityExplodeEvent (Entity what, Location location, List<Block> blocks) {
+    public EntityExplodeEvent(Entity what, Location location, List<Block> blocks) {
         super(Type.ENTITY_EXPLODE, what);
         this.location = location;
         this.cancel = false;
@@ -51,12 +50,12 @@ public class EntityExplodeEvent extends EntityEvent implements Cancellable {
 
     /**
      * Returns the percentage of blocks to drop from this explosion
-     * @return 
+     * @return
      */
     public float getYield() {
         return yield;
     }
-    
+
     /**
      * Sets the percentage of blocks to drop from this explosion
      */

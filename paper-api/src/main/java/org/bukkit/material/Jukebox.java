@@ -10,7 +10,7 @@ public class Jukebox extends MaterialData {
         recordTypes.add(Material.GOLD_RECORD);
         recordTypes.add(Material.GREEN_RECORD);
     }
-    
+
     public Jukebox() {
         super(Material.JUKEBOX);
     }
@@ -21,8 +21,9 @@ public class Jukebox extends MaterialData {
 
     public Jukebox(Material type) {
         super((recordTypes.contains(type)) ? Material.JUKEBOX : type);
-        if(recordTypes.contains(type))
+        if (recordTypes.contains(type)) {
             setPlaying(type);
+        }
     }
 
     public Jukebox(int type, byte data) {
@@ -35,7 +36,7 @@ public class Jukebox extends MaterialData {
 
     /**
      * Gets the type of record currently playing
-     * 
+     *
      * @return The type of record (Material.GOLD_RECORD or Material.GREEN_RECORD), or null for none.
      */
     public Material getPlaying() {
@@ -43,8 +44,10 @@ public class Jukebox extends MaterialData {
         default:
         case 0x0:
             return null;
+
         case 0x1:
             return Material.GOLD_RECORD;
+
         case 0x2:
             return Material.GREEN_RECORD;
         }
@@ -52,26 +55,30 @@ public class Jukebox extends MaterialData {
 
     /**
      * Sets the type of record currently playing
-     * 
+     *
      * @param rec The type of record (Material.GOLD_RECORD or Material.GREEN_RECORD), or null for none.
      */
     public void setPlaying(Material rec) {
-        if (rec == null) setData((byte) 0x0);
-        else switch (rec) {
-        case GOLD_RECORD:
-            setData((byte) 0x1);
-            break;
-        case GREEN_RECORD:
-            setData((byte) 0x2);
-            break;
-        default:
+        if (rec == null) {
             setData((byte) 0x0);
+        } else {
+            switch (rec) {
+            case GOLD_RECORD:
+                setData((byte) 0x1);
+                break;
+
+            case GREEN_RECORD:
+                setData((byte) 0x2);
+                break;
+
+            default:
+                setData((byte) 0x0);
+            }
         }
     }
-    
+
     @Override
     public String toString() {
         return super.toString() + " playing " + getPlaying();
     }
-
 }

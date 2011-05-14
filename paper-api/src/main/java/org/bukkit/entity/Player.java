@@ -1,4 +1,3 @@
-
 package org.bukkit.entity;
 
 import java.net.InetSocketAddress;
@@ -13,6 +12,7 @@ import org.bukkit.command.CommandSender;
  *
  */
 public interface Player extends HumanEntity, CommandSender {
+
     /**
      * Checks if this player is currently online
      *
@@ -59,7 +59,7 @@ public interface Player extends HumanEntity, CommandSender {
      * @return the player's address
      */
     public InetSocketAddress getAddress();
-    
+
     /**
      * Sends this sender a message raw
      *
@@ -112,53 +112,53 @@ public interface Player extends HumanEntity, CommandSender {
      * Note: This will overwrite the players current inventory, health, motion, etc, with the state from the saved dat file.
      */
     public void loadData();
-    
+
     /**
      * Sets whether the player is ignored as not sleeping. If everyone is
      * either sleeping or has this flag set, then time will advance to the
      * next day. If everyone has this flag set but no one is actually in bed,
      * then nothing will happen.
-     * 
+     *
      * @param isSleeping
      */
     public void setSleepingIgnored(boolean isSleeping);
-    
+
     /**
      * Returns whether the player is sleeping ignored.
-     * 
+     *
      * @return
      */
     public boolean isSleepingIgnored();
-    
+
     /**
      * Play a note for a player at a location. This requires a note block
      * at the particular location (as far as the client is concerned). This
      * will not work without a note block. This will not work with cake.
-     * 
+     *
      * @param loc
      * @param instrument
      * @param note
      * @return
      */
     public void playNote(Location loc, byte instrument, byte note);
-    
+
     /**
      * Send a block change. This fakes a block change packet for a user at
      * a certain location. This will not actually change the world in any way.
-     * 
+     *
      * @param loc
      * @param material
-     * @param data 
+     * @param data
      */
     public void sendBlockChange(Location loc, Material material, byte data);
-    
+
     /**
      * Send a block change. This fakes a block change packet for a user at
      * a certain location. This will not actually change the world in any way.
-     * 
+     *
      * @param loc
      * @param material
-     * @param data 
+     * @param data
      */
     public void sendBlockChange(Location loc, int material, byte data);
 

@@ -7,6 +7,7 @@ import org.bukkit.Material;
  * Interface to the various inventories
  */
 public interface Inventory {
+
     /**
      * Returns the size of the inventory
      *
@@ -35,7 +36,7 @@ public interface Inventory {
      * @param index The index where to put the ItemStack
      * @param item The ItemStack to set
      */
-     public void setItem(int index, ItemStack item);
+    public void setItem(int index, ItemStack item);
 
     /**
      * Stores the given ItemStacks in the inventory.
@@ -46,7 +47,7 @@ public interface Inventory {
      * @param items The ItemStacks to add
      * @return
      */
-     public HashMap<Integer, ItemStack> addItem(ItemStack... items);
+    public HashMap<Integer, ItemStack> addItem(ItemStack... items);
 
     /**
      * Removes the given ItemStacks from the inventory.
@@ -57,7 +58,7 @@ public interface Inventory {
      * @param items The ItemStacks to remove
      * @return
      */
-     public HashMap<Integer, ItemStack> removeItem(ItemStack... items);
+    public HashMap<Integer, ItemStack> removeItem(ItemStack... items);
 
     /**
      * Get all ItemStacks from the inventory
@@ -97,28 +98,28 @@ public interface Inventory {
      * @return If any matching ItemStacks were found
      */
     public boolean contains(ItemStack item);
-    
+
     /**
      * Check if the inventory contains any ItemStacks with the given materialId and at least the minimum amount specified
-     * 
+     *
      * @param materialId The materialId to check for
      * @param amount The minimum amount to look for
      * @return If any ItemStacks were found
      */
-    public boolean contains(int materialId, int amount); 
-    
+    public boolean contains(int materialId, int amount);
+
     /**
      * Check if the inventory contains any ItemStacks with the given material and at least the minimum amount specified
-     * 
+     *
      * @param material The material to check for
      * @return If any ItemStacks were found
      */
-    public boolean contains(Material material, int amount); 
-    
+    public boolean contains(Material material, int amount);
+
     /**
      * Check if the inventory contains any ItemStacks matching the given ItemStack and at least the minimum amount specified
      * This will only match if both the type and the amount of the stack match
-     * 
+     *
      * @param item The ItemStack to match against
      * @return If any matching ItemStacks were found
      */

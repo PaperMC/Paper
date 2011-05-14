@@ -1,4 +1,3 @@
-
 package org.bukkit.plugin;
 
 import org.bukkit.event.Event;
@@ -13,18 +12,18 @@ public class RegisteredListener {
     private final Plugin plugin;
     private final EventExecutor executor;
 
-    public RegisteredListener(final Listener pluginListener, final EventExecutor eventExecutor, final Event.Priority eventPriority, final Plugin registeredPlugin ) {
+    public RegisteredListener(final Listener pluginListener, final EventExecutor eventExecutor, final Event.Priority eventPriority, final Plugin registeredPlugin) {
         listener = pluginListener;
         priority = eventPriority;
         plugin = registeredPlugin;
         executor = eventExecutor;
     }
 
-    public RegisteredListener(final Listener pluginListener, final Event.Priority eventPriority, final Plugin registeredPlugin, Event.Type type ) {
+    public RegisteredListener(final Listener pluginListener, final Event.Priority eventPriority, final Plugin registeredPlugin, Event.Type type) {
         listener = pluginListener;
         priority = eventPriority;
         plugin = registeredPlugin;
-        executor = registeredPlugin.getPluginLoader().createExecutor( type, pluginListener );
+        executor = registeredPlugin.getPluginLoader().createExecutor(type, pluginListener);
     }
 
     /**
@@ -56,6 +55,6 @@ public class RegisteredListener {
      * @return Registered Priority
      */
     public void callEvent(Event event) {
-        executor.execute( listener, event );
+        executor.execute(listener, event);
     }
 }

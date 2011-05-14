@@ -1,4 +1,3 @@
-
 package org.bukkit.event.player;
 
 import java.net.InetAddress;
@@ -75,19 +74,19 @@ public class PlayerPreLoginEvent extends Event {
         this.result = result;
         this.message = message;
     }
-    
+
     /**
      * Gets the player name.
-     * 
+     *
      * @return
      */
     public String getName() {
         return name;
     }
-    
+
     /**
      * Gets the player IP address.
-     * 
+     *
      * @return
      */
     public InetAddress getAddress() {
@@ -98,26 +97,23 @@ public class PlayerPreLoginEvent extends Event {
      * Basic kick reasons for communicating to plugins
      */
     public enum Result {
+
         /**
          * The player is allowed to log in
          */
         ALLOWED,
-
         /**
          * The player is not allowed to log in, due to the server being full
          */
         KICK_FULL,
-
         /**
          * The player is not allowed to log in, due to them being banned
          */
         KICK_BANNED,
-        
         /**
          * The player is not allowed to log in, due to them not being on the white list
          */
         KICK_WHITELIST,
-        
         /**
          * The player is not allowed to log in, for reasons undefined
          */

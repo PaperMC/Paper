@@ -11,12 +11,12 @@ public class Crops extends MaterialData {
     public Crops() {
         super(Material.CROPS);
     }
-    
+
     public Crops(CropState state) {
         this();
         setState(state);
     }
-    
+
     public Crops(final int type) {
         super(type);
     }
@@ -43,7 +43,7 @@ public class Crops extends MaterialData {
     public CropState getSpecies() {
         return getState();
     }
-    
+
     /**
      * Gets the current growth state of this crop
      *
@@ -63,7 +63,7 @@ public class Crops extends MaterialData {
     public void setSpecies(CropState state) {
         setState(state);
     }
-    
+
     /**
      * Sets the growth state of this crop
      *
@@ -72,10 +72,9 @@ public class Crops extends MaterialData {
     public void setState(CropState state) {
         setData(state.getData());
     }
-    
+
     @Override
     public String toString() {
         return getState() + " " + super.toString();
     }
-
 }

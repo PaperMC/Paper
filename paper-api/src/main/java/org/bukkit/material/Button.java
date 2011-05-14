@@ -10,7 +10,7 @@ public class Button extends SimpleAttachableMaterialData implements Redstone {
     public Button() {
         super(Material.STONE_BUTTON);
     }
-    
+
     public Button(final int type) {
         super(type);
     }
@@ -30,7 +30,7 @@ public class Button extends SimpleAttachableMaterialData implements Redstone {
     /**
      * Gets the current state of this Material, indicating if it's powered or
      * unpowered
-     * 
+     *
      * @return true if powered, otherwise false
      */
     public boolean isPowered() {
@@ -39,7 +39,7 @@ public class Button extends SimpleAttachableMaterialData implements Redstone {
 
     /**
      * Sets the current state of this button
-     * 
+     *
      * @param bool
      *            whether or not the button is powered
      */
@@ -49,7 +49,7 @@ public class Button extends SimpleAttachableMaterialData implements Redstone {
 
     /**
      * Gets the face that this block is attached on
-     * 
+     *
      * @return BlockFace attached to
      */
     public BlockFace getAttachedFace() {
@@ -58,10 +58,13 @@ public class Button extends SimpleAttachableMaterialData implements Redstone {
         switch (data) {
         case 0x1:
             return BlockFace.NORTH;
+
         case 0x2:
             return BlockFace.SOUTH;
+
         case 0x3:
             return BlockFace.EAST;
+
         case 0x4:
             return BlockFace.WEST;
         }
@@ -79,12 +82,15 @@ public class Button extends SimpleAttachableMaterialData implements Redstone {
         case SOUTH:
             data |= 0x1;
             break;
+
         case NORTH:
             data |= 0x2;
             break;
+
         case WEST:
             data |= 0x3;
             break;
+
         case EAST:
             data |= 0x4;
             break;
@@ -92,10 +98,9 @@ public class Button extends SimpleAttachableMaterialData implements Redstone {
 
         setData(data);
     }
-    
+
     @Override
     public String toString() {
         return super.toString() + " " + (isPowered() ? "" : "NOT ") + "POWERED";
     }
-
 }

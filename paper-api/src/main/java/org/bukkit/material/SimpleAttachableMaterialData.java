@@ -13,7 +13,7 @@ public abstract class SimpleAttachableMaterialData extends MaterialData implemen
     public SimpleAttachableMaterialData(int type) {
         super(type);
     }
-    
+
     public SimpleAttachableMaterialData(int type, BlockFace direction) {
         this(type);
         setFacingDirection(direction);
@@ -44,5 +44,4 @@ public abstract class SimpleAttachableMaterialData extends MaterialData implemen
     public String toString() {
         return super.toString() + " facing " + getFacing();
     }
-
 }

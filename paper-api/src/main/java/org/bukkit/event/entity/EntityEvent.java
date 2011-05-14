@@ -9,8 +9,7 @@ import org.bukkit.event.Event;
 public class EntityEvent extends Event {
     protected Entity entity;
 
-    public EntityEvent(final Event.Type type, final Entity what)
-    {
+    public EntityEvent(final Event.Type type, final Entity what) {
         super(type);
         entity = what;
     }
@@ -19,8 +18,7 @@ public class EntityEvent extends Event {
      * Returns the Entity involved in this event
      * @return Entity who is involved in this event
      */
-    public final Entity getEntity()
-    {
+    public final Entity getEntity() {
         return entity;
     }
 }

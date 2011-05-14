@@ -1,4 +1,3 @@
-
 package org.bukkit.entity;
 
 import java.util.HashSet;
@@ -11,6 +10,7 @@ import org.bukkit.block.Block;
  * Represents a living entity, such as a monster or player
  */
 public interface LivingEntity extends Entity {
+
     /**
      * Gets the entity's health from 0-20, where 0 is dead and 20 is full
      *
@@ -57,7 +57,7 @@ public interface LivingEntity extends Entity {
      */
     public List<Block> getLineOfSight(HashSet<Byte> transparent, int maxDistance);
 
-     /**
+    /**
      * Gets the block that the player has targeted
      *
      * @param HashSet<Byte> HashSet containing all transparent block IDs. If set to null only air is considered transparent.
@@ -66,7 +66,7 @@ public interface LivingEntity extends Entity {
      */
     public Block getTargetBlock(HashSet<Byte> transparent, int maxDistance);
 
-     /**
+    /**
      * Gets the last two blocks along the player's line of sight.
      * The target block will be the last block in the list.
      *
@@ -164,14 +164,14 @@ public interface LivingEntity extends Entity {
      * Returns the entities current maximum noDamageTicks
      * This is the time in ticks the entity will become unable to take
      * equal or less damage than the lastDamage
-     * 
+     *
      * @return noDamageTicks
      */
     public int getMaximumNoDamageTicks();
 
     /**
      * Sets the entities current maximum noDamageTicks
-     * 
+     *
      * @param ticks maximumNoDamageTicks
      */
     public void setMaximumNoDamageTicks(int ticks);
@@ -179,31 +179,30 @@ public interface LivingEntity extends Entity {
     /**
      * Returns the entities lastDamage taken in the current noDamageTicks time.
      * Only damage higher than this amount will further damage the entity.
-     * 
+     *
      * @return lastDamage
      */
     public int getLastDamage();
 
     /**
      * Sets the entities current maximum noDamageTicks
-     * 
+     *
      * @param damage last damage
      */
     public void setLastDamage(int damage);
 
     /**
      * Returns the entities current noDamageTicks
-     * 
+     *
      * @return noDamageTicks
      */
     public int getNoDamageTicks();
 
     /**
      * Sets the entities current noDamageTicks
-     * 
+     *
      * @param ticks NoDamageTicks
      */
     public void setNoDamageTicks(int ticks);
 
-    
 }

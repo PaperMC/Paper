@@ -28,5 +28,4 @@ public class PlayerQuitEvent extends PlayerEvent {
     public void setQuitMessage(String quitMessage) {
         this.quitMessage = quitMessage;
     }
-
 }

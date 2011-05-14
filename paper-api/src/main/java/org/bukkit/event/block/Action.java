@@ -1,6 +1,7 @@
 package org.bukkit.event.block;
 
 public enum Action {
+
     /**
      * Left-clicking a block
      */

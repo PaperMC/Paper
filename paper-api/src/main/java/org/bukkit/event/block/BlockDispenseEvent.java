@@ -7,15 +7,15 @@ import org.bukkit.util.Vector;
 
 /**
  * Event called on dispense of an item from a block.
- * 
+ *
  * @author sk89q
  */
 public class BlockDispenseEvent extends BlockEvent implements Cancellable {
-    
+
     private boolean cancelled = false;
     private ItemStack item;
     private Vector velocity;
-    
+
     public BlockDispenseEvent(Block block, ItemStack dispensed, Vector velocity) {
         super(Type.BLOCK_DISPENSE, block);
         this.item = dispensed;
@@ -25,7 +25,7 @@ public class BlockDispenseEvent extends BlockEvent implements Cancellable {
     /**
      * Get the item that is being dispensed. Modifying the returned item
      * will have no effect.
-     * 
+     *
      * @return
      */
     public ItemStack getItem() {
@@ -34,26 +34,26 @@ public class BlockDispenseEvent extends BlockEvent implements Cancellable {
 
     /**
      * Set the item being dispensed.
-     * 
+     *
      * @param item
      */
     public void setItem(ItemStack item) {
         this.item = item;
     }
-    
+
     /**
      * Gets the velocity. Modifying the returned Vector will not
      * change the velocity.
-     * 
+     *
      * @return
      */
     public Vector getVelocity() {
         return velocity.clone();
     }
-    
+
     /**
      * Set the velocity.
-     * 
+     *
      * @param vel
      */
     public void setVelocity(Vector vel) {
@@ -73,5 +73,4 @@ public class BlockDispenseEvent extends BlockEvent implements Cancellable {
     public void setCancelled(boolean cancel) {
         cancelled = cancel;
     }
-
 }

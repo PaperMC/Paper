@@ -1,4 +1,3 @@
-
 package org.bukkit;
 
 import java.util.HashMap;
@@ -8,6 +7,7 @@ import java.util.Map;
  * All supported color values for dyes and cloth
  */
 public enum DyeColor {
+
     /**
      * Represents white dye
      */

@@ -33,6 +33,7 @@ public class Rails extends MaterialData {
      */
     public boolean isOnSlope() {
         byte d = getConvertedData();
+
         return (d == 0x2 || d == 0x3 || d == 0x4 || d == 0x5);
     }
 
@@ -41,6 +42,7 @@ public class Rails extends MaterialData {
      */
     public boolean isCurve() {
         byte d = getConvertedData();
+
         return (d == 0x6 || d == 0x7 || d == 0x8 || d == 0x9);
     }
 
@@ -53,26 +55,36 @@ public class Rails extends MaterialData {
      */
     public BlockFace getDirection() {
         byte d = getConvertedData();
+
         switch (d) {
         case 0x0:
         default:
             return BlockFace.WEST;
+
         case 0x1:
             return BlockFace.SOUTH;
+
         case 0x2:
             return BlockFace.SOUTH;
+
         case 0x3:
             return BlockFace.NORTH;
+
         case 0x4:
             return BlockFace.EAST;
+
         case 0x5:
             return BlockFace.WEST;
+
         case 0x6:
             return BlockFace.NORTH_EAST;
+
         case 0x7:
             return BlockFace.SOUTH_EAST;
+
         case 0x8:
             return BlockFace.SOUTH_WEST;
+
         case 0x9:
             return BlockFace.NORTH_WEST;
         }

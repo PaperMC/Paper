@@ -1,4 +1,3 @@
-
 package org.bukkit.event.server;
 
 import org.bukkit.plugin.Plugin;

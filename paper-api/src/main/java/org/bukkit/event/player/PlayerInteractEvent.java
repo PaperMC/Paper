@@ -83,14 +83,16 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
      * @return Material the material of the item used
      */
     public Material getMaterial() {
-        if (!hasItem()) return Material.AIR;
+        if (!hasItem()) {
+            return Material.AIR;
+        }
 
         return item.getType();
     }
 
     /**
      * Check if this event involved a block
-     * 
+     *
      * return boolean true if it did
      */
     public boolean hasBlock() {
@@ -99,7 +101,7 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
 
     /**
      * Check if this event involved an item
-     * 
+     *
      * return boolean true if it did
      */
     public boolean hasItem() {
@@ -113,7 +115,9 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
      * @return boolean true if the item in hand was a block
      */
     public boolean isBlockInHand() {
-        if (!hasItem()) return false;
+        if (!hasItem()) {
+            return false;
+        }
 
         return item.getType().isBlock();
     }

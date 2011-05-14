@@ -1,4 +1,3 @@
-
 package org.bukkit.inventory;
 
 import org.bukkit.Material;
@@ -89,7 +88,7 @@ public class ItemStack {
      */
     public void setTypeId(int type) {
         this.type = type;
-        createData((byte)0);
+        createData((byte) 0);
     }
 
     /**
@@ -117,7 +116,7 @@ public class ItemStack {
      */
     public MaterialData getData() {
         if (Material.getMaterial(getTypeId()).getData() != null) {
-            data = Material.getMaterial(getTypeId()).getNewData((byte)this.durability);
+            data = Material.getMaterial(getTypeId()).getNewData((byte) this.durability);
         }
 
         return data;
@@ -137,8 +136,7 @@ public class ItemStack {
             if ((data.getClass() == mat.getData()) || (data.getClass() == MaterialData.class)) {
                 this.data = data;
             } else {
-                throw new IllegalArgumentException("Provided data is not of type "
-                        + mat.getData().getName() + ", found " + data.getClass().getName());
+                throw new IllegalArgumentException("Provided data is not of type " + mat.getData().getName() + ", found " + data.getClass().getName());
             }
         }
     }
@@ -164,7 +162,7 @@ public class ItemStack {
     /**
      * Get the maximum stacksize for the material hold in this ItemStack
      * Returns -1 if it has no idea.
-     * 
+     *
      * @return The maximum you can stack this material to.
      */
     public int getMaxStackSize() {
@@ -173,6 +171,7 @@ public class ItemStack {
 
     private void createData(final byte data) {
         Material mat = Material.getMaterial(type);
+
         if (mat == null) {
             this.data = new MaterialData(type, data);
         } else {
@@ -182,28 +181,31 @@ public class ItemStack {
 
     @Override
     public String toString() {
-        return "ItemStack{"+getType().name()+" x "+getAmount()+"}";
+        return "ItemStack{" + getType().name() + " x " + getAmount() + "}";
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof ItemStack))
+        if (!(obj instanceof ItemStack)) {
             return false;
-        
-        ItemStack item = (ItemStack)obj;
+        }
+
+        ItemStack item = (ItemStack) obj;
+
         return item.getAmount() == getAmount() && item.getTypeId() == getTypeId();
     }
-    
+
     @Override
     public ItemStack clone() {
         return new ItemStack(type, amount, durability);
-    } 
-    
+    }
+
     @Override
     public int hashCode() {
         int hash = 11;
-        hash = hash * 19 + 7 * getTypeId(); // Overriding hashCode since equals is overridden, it's just 
+
+        hash = hash * 19 + 7 * getTypeId(); // Overriding hashCode since equals is overridden, it's just
         hash = hash * 7 + 23 * getAmount(); // too bad these are mutable values... Q_Q
         return hash;
-    } 
+    }
 }

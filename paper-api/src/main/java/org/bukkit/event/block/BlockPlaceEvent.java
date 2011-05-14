@@ -75,7 +75,6 @@ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
         return this.replacedBlockState;
     }
 
-
     /**
      * Get the block that this block was placed against
      *

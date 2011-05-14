@@ -6,7 +6,7 @@ import org.bukkit.event.Cancellable;
 
 /**
  * Raised when an entity enters a vehicle.
- * 
+ *
  * @author sk89q
  */
 public class VehicleEnterEvent extends VehicleEvent implements Cancellable {
@@ -20,7 +20,7 @@ public class VehicleEnterEvent extends VehicleEvent implements Cancellable {
 
     /**
      * Get the entity that entered the vehicle.
-     * 
+     *
      * @return
      */
     public Entity getEntered() {

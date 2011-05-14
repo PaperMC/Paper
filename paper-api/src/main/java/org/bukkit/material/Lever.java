@@ -10,7 +10,7 @@ public class Lever extends SimpleAttachableMaterialData implements Redstone {
     public Lever() {
         super(Material.LEVER);
     }
-    
+
     public Lever(final int type) {
         super(type);
     }
@@ -30,7 +30,7 @@ public class Lever extends SimpleAttachableMaterialData implements Redstone {
     /**
      * Gets the current state of this Material, indicating if it's powered or
      * unpowered
-     * 
+     *
      * @return true if powered, otherwise false
      */
     public boolean isPowered() {
@@ -39,7 +39,7 @@ public class Lever extends SimpleAttachableMaterialData implements Redstone {
 
     /**
      * Gets the face that this block is attached on
-     * 
+     *
      * @return BlockFace attached to
      */
     public BlockFace getAttachedFace() {
@@ -48,12 +48,16 @@ public class Lever extends SimpleAttachableMaterialData implements Redstone {
         switch (data) {
         case 0x1:
             return BlockFace.NORTH;
+
         case 0x2:
             return BlockFace.SOUTH;
+
         case 0x3:
             return BlockFace.EAST;
+
         case 0x4:
             return BlockFace.WEST;
+
         case 0x5:
         case 0x6:
             return BlockFace.DOWN;
@@ -74,6 +78,7 @@ public class Lever extends SimpleAttachableMaterialData implements Redstone {
             case EAST:
                 data |= 0x5;
                 break;
+
             case SOUTH:
             case NORTH:
                 data |= 0x6;
@@ -84,12 +89,15 @@ public class Lever extends SimpleAttachableMaterialData implements Redstone {
             case SOUTH:
                 data |= 0x1;
                 break;
+
             case NORTH:
                 data |= 0x2;
                 break;
+
             case WEST:
                 data |= 0x3;
                 break;
+
             case EAST:
                 data |= 0x4;
                 break;
@@ -97,10 +105,9 @@ public class Lever extends SimpleAttachableMaterialData implements Redstone {
         }
         setData(data);
     }
-    
+
     @Override
     public String toString() {
         return super.toString() + " facing " + getFacing() + " " + (isPowered() ? "" : "NOT ") + "POWERED";
     }
-
 }

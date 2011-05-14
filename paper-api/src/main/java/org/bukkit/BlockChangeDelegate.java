@@ -4,13 +4,14 @@ package org.bukkit;
  * A delegate for handling block changes. This serves as a direct interface
  * between generation algorithms in the server implementation and utilizing
  * code.
- * 
+ *
  * @author sk89q
  */
 public interface BlockChangeDelegate {
+
     /**
      * Set a block type at the specified coordinates.
-     * 
+     *
      * @param x
      * @param y
      * @param z
@@ -21,7 +22,7 @@ public interface BlockChangeDelegate {
 
     /**
      * Set a block type and data at the specified coordinates.
-     * 
+     *
      * @param x
      * @param y
      * @param z
@@ -30,7 +31,7 @@ public interface BlockChangeDelegate {
      * @return true if the block was set successfully
      */
     public boolean setRawTypeIdAndData(int x, int y, int z, int typeId, int data);
-    
+
     /**
      * Get the block type at the location.
      * @param x

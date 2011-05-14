@@ -1,4 +1,3 @@
-
 package org.bukkit.event.player;
 
 import org.bukkit.Location;

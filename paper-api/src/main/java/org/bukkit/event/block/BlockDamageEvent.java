@@ -39,7 +39,7 @@ public class BlockDamageEvent extends BlockEvent implements Cancellable {
     public boolean getInstaBreak() {
         return instaBreak;
     }
-    
+
     /**
      * Set if the block should instantly break
      */
@@ -49,13 +49,12 @@ public class BlockDamageEvent extends BlockEvent implements Cancellable {
 
     /**
      * Returns the ItemStack in hand
-     * 
+     *
      * @return Currently wielding itemstack
      */
     public ItemStack getItemInHand() {
         return itemstack;
     }
-    
 
     public boolean isCancelled() {
         return cancel;

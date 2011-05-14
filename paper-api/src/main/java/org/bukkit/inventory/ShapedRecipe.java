@@ -42,14 +42,15 @@ public class ShapedRecipe implements Recipe {
             }
         }
         this.rows = shape;
+
         // Remove character mappings for characters that no longer exist in the shape
         HashMap<Character, MaterialData> ingredientsTemp = this.ingredients;
+
         this.ingredients = new HashMap<Character, MaterialData>();
         for (char key : ingredientsTemp.keySet()) {
             try {
                 setIngredient(key, ingredientsTemp.get(key));
-            } catch (IllegalArgumentException e) {
-            }
+            } catch (IllegalArgumentException e) {}
         }
         return this;
     }
@@ -87,6 +88,7 @@ public class ShapedRecipe implements Recipe {
      */
     public ShapedRecipe setIngredient(char key, Material ingredient, int raw) {
         MaterialData data = ingredient.getNewData((byte) raw);
+
         if (data == null) {
             data = new MaterialData(ingredient, (byte) raw);
         }
@@ -95,6 +97,7 @@ public class ShapedRecipe implements Recipe {
 
     private boolean hasKey(char c) {
         String key = Character.toString(c);
+
         for (String row : rows) {
             if (row.contains(key)) {
                 return true;

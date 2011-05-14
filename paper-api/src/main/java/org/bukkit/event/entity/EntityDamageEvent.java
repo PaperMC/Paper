@@ -13,15 +13,13 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
     private boolean cancelled;
     private DamageCause cause;
 
-    public EntityDamageEvent(Entity damagee, DamageCause cause, int damage)
-    {
+    public EntityDamageEvent(Entity damagee, DamageCause cause, int damage) {
         super(Event.Type.ENTITY_DAMAGE, damagee);
         this.cause = cause;
         this.damage = damage;
     }
 
-    protected EntityDamageEvent(Event.Type type, Entity damagee, DamageCause cause, int damage)
-    {
+    protected EntityDamageEvent(Event.Type type, Entity damagee, DamageCause cause, int damage) {
         super(type, damagee);
         this.cause = cause;
         this.damage = damage;
@@ -57,8 +55,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      * Gets the amount of damage caused by the Block
      * @return The amount of damage caused by the Block
      */
-    public int getDamage()
-    {
+    public int getDamage() {
         return damage;
     }
 
@@ -74,16 +71,15 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      * Gets the cause of the damage.
      * @return A DamageCause value detailing the cause of the damage.
      */
-    public DamageCause getCause()
-    {
+    public DamageCause getCause() {
         return cause;
     }
 
     /**
      * An enum to specify the cause of the damage
      */
-    public enum DamageCause
-    {
+    public enum DamageCause {
+
         /**
          * Damage caused when an entity contacts a block such as a Cactus.
          *
@@ -152,7 +148,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
         VOID,
         /**
          * Damage caused by being struck by lightning
-         * 
+         *
          * Damage: 5
          */
         LIGHTNING,

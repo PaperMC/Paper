@@ -1,4 +1,3 @@
-
 package org.bukkit.material;
 
 import org.bukkit.DyeColor;
@@ -11,7 +10,7 @@ public class Dye extends MaterialData implements Colorable {
     public Dye() {
         super(Material.INK_SACK);
     }
-    
+
     public Dye(final int type) {
         super(type);
     }
@@ -45,7 +44,7 @@ public class Dye extends MaterialData implements Colorable {
     public void setColor(DyeColor color) {
         setData((byte) (15 - color.getData()));
     }
-    
+
     @Override
     public String toString() {
         return getColor() + " DYE(" + getData() + ")";

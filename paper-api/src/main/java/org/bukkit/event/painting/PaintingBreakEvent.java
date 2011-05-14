@@ -20,7 +20,7 @@ public class PaintingBreakEvent extends PaintingEvent implements Cancellable {
         this.cause = cause;
     }
 
-    public RemoveCause getCause(){
+    public RemoveCause getCause() {
         return cause;
     }
 
@@ -41,12 +41,10 @@ public class PaintingBreakEvent extends PaintingEvent implements Cancellable {
          * Removed by an entity
          */
         ENTITY,
-
         /**
          * Removed by the world - block destroyed behind, water flowing over etc
          */
         WORLD
 
     }
-
 }

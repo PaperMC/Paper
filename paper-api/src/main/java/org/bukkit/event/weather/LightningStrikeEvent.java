@@ -48,5 +48,4 @@ public class LightningStrikeEvent extends WeatherEvent implements Cancellable {
     public LightningStrike getLightning() {
         return bolt;
     }
-
 }

@@ -5,20 +5,20 @@ import org.bukkit.block.BlockFace;
 
 /**
  * Represents a dispenser.
- * 
+ *
  * @author sunkid
  */
 public class Dispenser extends FurnaceAndDispenser {
-    
+
     public Dispenser() {
         super(Material.DISPENSER);
     }
-    
+
     public Dispenser(BlockFace direction) {
         this();
         setFacingDirection(direction);
     }
-    
+
     public Dispenser(final int type) {
         super(type);
     }

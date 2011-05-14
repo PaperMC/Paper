@@ -55,8 +55,7 @@ public class BlockIgniteEvent extends BlockEvent implements Cancellable {
      * Gets the cause of block ignite.
      * @return An IgniteCause value detailing the cause of block ignition.
      */
-    public IgniteCause getCause()
-    {
+    public IgniteCause getCause() {
         return cause;
     }
 
@@ -73,6 +72,7 @@ public class BlockIgniteEvent extends BlockEvent implements Cancellable {
      * An enum to specify the cause of the ignite
      */
     public enum IgniteCause {
+
         /**
          * Block ignition caused by lava.
          */
@@ -90,5 +90,4 @@ public class BlockIgniteEvent extends BlockEvent implements Cancellable {
          */
         LIGHTNING,
     }
-
 }

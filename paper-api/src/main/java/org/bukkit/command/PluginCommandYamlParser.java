@@ -13,20 +13,23 @@ public class PluginCommandYamlParser {
     public static List<Command> parse(Plugin plugin) {
         List<Command> pluginCmds = new ArrayList<Command>();
         Object object = plugin.getDescription().getCommands();
-        if (object == null)
-            return pluginCmds;
 
-        Map<String, Map<String, Object>> map = (Map<String, Map<String, Object>>)object;
+        if (object == null) {
+            return pluginCmds;
+        }
+
+        Map<String, Map<String, Object>> map = (Map<String, Map<String, Object>>) object;
 
         if (map != null) {
-            for(Entry<String, Map<String, Object>> entry : map.entrySet()) {
-                Command newCmd = new PluginCommand(entry.getKey(),plugin);
+            for (Entry<String, Map<String, Object>> entry : map.entrySet()) {
+                Command newCmd = new PluginCommand(entry.getKey(), plugin);
                 Object description = entry.getValue().get("description");
                 Object usage = entry.getValue().get("usage");
                 Object aliases = entry.getValue().get("aliases");
 
-                if (description != null)
+                if (description != null) {
                     newCmd.setDescription(description.toString());
+                }
 
                 if (usage != null) {
                     newCmd.setUsage(usage.toString());
@@ -34,9 +37,9 @@ public class PluginCommandYamlParser {
 
                 if (aliases != null) {
                     List<String> aliasList = new ArrayList<String>();
-                    
+
                     if (aliases instanceof List) {
-                        for (Object o : (List<Object>)aliases) {
+                        for (Object o : (List<Object>) aliases) {
                             aliasList.add(o.toString());
                         }
                     } else {
@@ -51,5 +54,4 @@ public class PluginCommandYamlParser {
         }
         return pluginCmds;
     }
-
 }

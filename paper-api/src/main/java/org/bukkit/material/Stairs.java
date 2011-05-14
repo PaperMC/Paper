@@ -5,7 +5,7 @@ import org.bukkit.block.BlockFace;
 
 /**
  * Represents stairs.
- * 
+ *
  * @author sunkid
  */
 public class Stairs extends MaterialData implements Directional {
@@ -31,14 +31,18 @@ public class Stairs extends MaterialData implements Directional {
      */
     public BlockFace getAscendingDirection() {
         byte data = getData();
+
         switch (data) {
         case 0x0:
         default:
             return BlockFace.SOUTH;
+
         case 0x1:
             return BlockFace.NORTH;
+
         case 0x2:
             return BlockFace.WEST;
+
         case 0x3:
             return BlockFace.EAST;
         }
@@ -56,22 +60,26 @@ public class Stairs extends MaterialData implements Directional {
      */
     public void setFacingDirection(BlockFace face) {
         byte data;
+
         switch (face) {
         case NORTH:
         default:
             data = 0x0;
             break;
+
         case SOUTH:
             data = 0x1;
             break;
+
         case EAST:
             data = 0x2;
             break;
+
         case WEST:
             data = 0x3;
             break;
         }
-        
+
         setData(data);
     }
 
@@ -81,10 +89,9 @@ public class Stairs extends MaterialData implements Directional {
     public BlockFace getFacing() {
         return getDescendingDirection();
     }
-    
+
     @Override
     public String toString() {
         return super.toString() + " facing " + getFacing();
     }
-
 }

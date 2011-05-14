@@ -1,10 +1,10 @@
-
 package org.bukkit.command;
 
 /**
  * Represents a class which contains a single method for executing commands
  */
 public interface CommandExecutor {
+
     /**
      * Executes the given command, returning its success
      *

@@ -1,4 +1,3 @@
-
 package org.bukkit;
 
 import java.util.HashMap;
@@ -31,9 +30,9 @@ public enum Achievement {
     public final static int STATISTIC_OFFSET = 5242880;
     private final static Map<Integer, Achievement> achievements = new HashMap<Integer, Achievement>();
     private final int id;
-    
+
     private Achievement(int id) {
-       this.id = STATISTIC_OFFSET + id;
+        this.id = STATISTIC_OFFSET + id;
     }
 
     /**

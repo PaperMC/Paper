@@ -12,12 +12,12 @@ import org.bukkit.event.Cancellable;
 public class VehicleDestroyEvent extends VehicleEvent implements Cancellable {
     private Entity attacker;
     private boolean cancelled;
-    
+
     public VehicleDestroyEvent(Vehicle vehicle, Entity attacker) {
         super(Type.VEHICLE_DESTROY, vehicle);
         this.attacker = attacker;
     }
-    
+
     public Entity getAttacker() {
         return attacker;
     }
@@ -29,5 +29,4 @@ public class VehicleDestroyEvent extends VehicleEvent implements Cancellable {
     public void setCancelled(boolean cancel) {
         this.cancelled = cancel;
     }
-
 }

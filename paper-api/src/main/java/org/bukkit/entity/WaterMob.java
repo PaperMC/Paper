@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package org.bukkit.entity;
 
@@ -8,6 +8,4 @@ package org.bukkit.entity;
  * @author Cogito
  *
  */
-public interface WaterMob extends Creature {
-
-}
+public interface WaterMob extends Creature {}

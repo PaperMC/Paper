@@ -1,4 +1,3 @@
-
 package org.bukkit;
 
 import java.util.HashMap;
@@ -24,9 +23,9 @@ public enum Statistic {
     private final boolean isBlock;
 
     private Statistic(int id) {
-       this(id, false, false);
+        this(id, false, false);
     }
-    
+
     private Statistic(int id, boolean isBlock) {
         this(id, true, isBlock);
     }

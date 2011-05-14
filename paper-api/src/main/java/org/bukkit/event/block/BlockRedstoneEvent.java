@@ -1,4 +1,3 @@
-
 package org.bukkit.event.block;
 
 import org.bukkit.block.Block;
@@ -42,5 +41,4 @@ public class BlockRedstoneEvent extends BlockEvent {
     public void setNewCurrent(int newCurrent) {
         this.newCurrent = newCurrent;
     }
-
 }

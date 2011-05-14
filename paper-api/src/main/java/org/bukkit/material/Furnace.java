@@ -5,15 +5,15 @@ import org.bukkit.block.BlockFace;
 
 /**
  * Represents a furnace.
- * 
+ *
  * @author sunkid
  */
 public class Furnace extends FurnaceAndDispenser {
-    
+
     public Furnace() {
         super(Material.FURNACE);
     }
-    
+
     /**
      * Instantiate a furnace facing in a particular direction.
      * @param direction the direction the furnace's "opening" is facing
@@ -22,7 +22,7 @@ public class Furnace extends FurnaceAndDispenser {
         this();
         setFacingDirection(direction);
     }
-    
+
     public Furnace(final int type) {
         super(type);
     }

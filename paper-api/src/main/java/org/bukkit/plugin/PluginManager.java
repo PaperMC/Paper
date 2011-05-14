@@ -1,4 +1,3 @@
-
 package org.bukkit.plugin;
 
 import java.io.File;

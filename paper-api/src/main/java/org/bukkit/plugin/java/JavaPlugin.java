@@ -1,4 +1,3 @@
-
 package org.bukkit.plugin.java;
 
 import com.avaje.ebean.EbeanServer;
@@ -35,8 +34,7 @@ public abstract class JavaPlugin implements Plugin {
     private boolean naggable = true;
     private EbeanServer ebean = null;
 
-    public JavaPlugin() {
-    }
+    public JavaPlugin() {}
 
     /**
      * Returns the folder that the plugin data's files are located in. The
@@ -125,7 +123,7 @@ public abstract class JavaPlugin implements Plugin {
 
             if (isEnabled) {
                 onEnable();
-            }  else {
+            } else {
                 onDisable();
             }
         }
@@ -167,10 +165,12 @@ public abstract class JavaPlugin implements Plugin {
                 server.configureDbConfig(db);
 
                 DataSourceConfig ds = db.getDataSourceConfig();
+
                 ds.setUrl(replaceDatabaseString(ds.getUrl()));
                 getDataFolder().mkdirs();
 
                 ClassLoader previous = Thread.currentThread().getContextClassLoader();
+
                 Thread.currentThread().setContextClassLoader(classLoader);
                 ebean = EbeanServerFactory.create(db);
                 Thread.currentThread().setContextClassLoader(previous);
@@ -230,16 +230,14 @@ public abstract class JavaPlugin implements Plugin {
         }
     }
 
-    public void onLoad() {
-        // Empty!
-    }
+    public void onLoad() {} // Empty!
 
     public final boolean isNaggable() {
         return naggable;
     }
 
     public final void setNaggable(boolean canNag) {
-        this.naggable = canNag;;
+        this.naggable = canNag;
     }
 
     public EbeanServer getDatabase() {
@@ -247,14 +245,14 @@ public abstract class JavaPlugin implements Plugin {
     }
 
     protected void installDDL() {
-        SpiEbeanServer serv = (SpiEbeanServer)getDatabase();
+        SpiEbeanServer serv = (SpiEbeanServer) getDatabase();
         DdlGenerator gen = serv.getDdlGenerator();
 
         gen.runScript(false, gen.generateCreateDdl());
     }
 
     protected void removeDDL() {
-        SpiEbeanServer serv = (SpiEbeanServer)getDatabase();
+        SpiEbeanServer serv = (SpiEbeanServer) getDatabase();
         DdlGenerator gen = serv.getDdlGenerator();
 
         gen.runScript(true, gen.generateDropDdl());

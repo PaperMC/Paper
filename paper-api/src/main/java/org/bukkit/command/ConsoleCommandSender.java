@@ -1,4 +1,3 @@
-
 package org.bukkit.command;
 
 import org.bukkit.ChatColor;

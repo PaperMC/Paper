@@ -12,6 +12,7 @@ import org.bukkit.Location;
  * block which will not be modified.
  */
 public interface Block {
+
     /**
      * Gets the metadata for this block
      *
@@ -135,7 +136,7 @@ public interface Block {
      * @param data New block specific metadata
      */
     void setData(byte data);
-    
+
     void setData(byte data, boolean applyPhyiscs);
 
     /**
@@ -152,9 +153,9 @@ public interface Block {
      * @return whether the block was changed
      */
     boolean setTypeId(int type);
-    
+
     boolean setTypeId(int type, boolean applyPhysics);
-    
+
     boolean setTypeIdAndData(int type, byte data, boolean applyPhyiscs);
 
     /**
@@ -220,19 +221,19 @@ public interface Block {
      * @return
      */
     boolean isBlockFaceIndirectlyPowered(BlockFace face);
-   
+
     /**
      * Returns the redstone power being provided to this block face
-     * 
+     *
      * @param face the face of the block to query or BlockFace.SELF for the block itself
-     * @return 
+     * @return
      */
     int getBlockPower(BlockFace face);
 
     /**
      * Returns the redstone power being provided to this block
-     * 
-     * @return 
+     *
+     * @return
      */
     int getBlockPower();
 }

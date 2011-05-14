@@ -237,7 +237,7 @@ public enum Material {
 
     private Material(final int id, final int stack, final int durability, final Class<? extends MaterialData> data) {
         this.id = id;
-        this.durability = (short)durability;
+        this.durability = (short) durability;
         this.maxStack = stack;
         this.data = data;
     }
@@ -292,6 +292,7 @@ public enum Material {
 
         try {
             Constructor<? extends MaterialData> ctor = data.getConstructor(int.class, byte.class);
+
             return ctor.newInstance(id, raw);
         } catch (InstantiationException ex) {
             Logger.getLogger(Material.class.getName()).log(Level.SEVERE, null, ex);
@@ -354,11 +355,11 @@ public enum Material {
 
         try {
             result = getMaterial(Integer.parseInt(name));
-        } catch (NumberFormatException ex) {
-        }
+        } catch (NumberFormatException ex) {}
 
         if (result == null) {
             String filtered = name.toUpperCase();
+
             filtered = filtered.replaceAll("\\s+", "_").replaceAll("\\W", "");
             result = lookupName.get(filtered);
         }

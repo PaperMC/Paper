@@ -1,4 +1,3 @@
-
 package org.bukkit.plugin;
 
 /**
@@ -9,9 +8,7 @@ public class IllegalPluginAccessException extends RuntimeException {
     /**
      * Creates a new instance of <code>IllegalPluginAccessException</code> without detail message.
      */
-    public IllegalPluginAccessException() {
-    }
-
+    public IllegalPluginAccessException() {}
 
     /**
      * Constructs an instance of <code>IllegalPluginAccessException</code> with the specified detail message.

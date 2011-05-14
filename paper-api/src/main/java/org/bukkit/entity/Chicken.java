@@ -1,14 +1,12 @@
 /**
- * 
+ *
  */
 package org.bukkit.entity;
 
 /**
  * Represents a Chicken.
- * 
+ *
  * @author Cogito
  *
  */
-public interface Chicken extends Animals {
-
-}
+public interface Chicken extends Animals {}

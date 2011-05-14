@@ -11,12 +11,12 @@ public class Tree extends MaterialData {
     public Tree() {
         super(Material.LOG);
     }
-    
+
     public Tree(TreeSpecies species) {
         this();
         setSpecies(species);
     }
-    
+
     public Tree(final int type) {
         super(type);
     }
@@ -50,7 +50,7 @@ public class Tree extends MaterialData {
     public void setSpecies(TreeSpecies species) {
         setData(species.getData());
     }
-    
+
     @Override
     public String toString() {
         return getSpecies() + " " + super.toString();

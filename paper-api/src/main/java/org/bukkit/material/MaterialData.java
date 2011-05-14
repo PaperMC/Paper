@@ -1,4 +1,3 @@
-
 package org.bukkit.material;
 
 import org.bukkit.inventory.ItemStack;
@@ -12,11 +11,11 @@ public class MaterialData {
     private byte data = 0;
 
     public MaterialData(final int type) {
-        this(type, (byte)0);
+        this(type, (byte) 0);
     }
 
     public MaterialData(final Material type) {
-        this(type, (byte)0);
+        this(type, (byte) 0);
     }
 
     public MaterialData(final int type, final byte data) {
@@ -81,7 +80,7 @@ public class MaterialData {
     public ItemStack toItemStack(int amount) {
         return new ItemStack(type, amount, data);
     }
-    
+
     @Override
     public String toString() {
         return getItemType() + "(" + getData() + ")";

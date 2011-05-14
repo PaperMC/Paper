@@ -5,7 +5,7 @@ import org.bukkit.event.Event;
 
 /**
  * Represents a vehicle-related event.
- * 
+ *
  * @author sk89q
  */
 public class VehicleEvent extends Event {
@@ -18,7 +18,7 @@ public class VehicleEvent extends Event {
 
     /**
      * Get the vehicle.
-     * 
+     *
      * @return the vehicle
      */
     public final Vehicle getVehicle() {

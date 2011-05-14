@@ -70,7 +70,6 @@ public class PlayerEggThrowEvent extends PlayerEvent {
         this.hatchType = hatchType;
     }
 
-
     /**
      * Get the number of mob hatches from the egg. By default the number
      * will be he number the server would've done

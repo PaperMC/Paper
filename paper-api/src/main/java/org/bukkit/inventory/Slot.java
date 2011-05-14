@@ -4,6 +4,7 @@ package org.bukkit.inventory;
  * Represents a slot in an inventory
  */
 public interface Slot {
+
     /**
      * Gets the inventory this slot belongs to
      *

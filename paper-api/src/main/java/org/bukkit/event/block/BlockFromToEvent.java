@@ -29,7 +29,7 @@ public class BlockFromToEvent extends BlockEvent implements Cancellable {
 
     /**
      * Convenience method for getting the faced block
-     * 
+     *
      * @return Block the faced block
      */
     public Block getToBlock() {

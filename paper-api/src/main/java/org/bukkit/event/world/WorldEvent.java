@@ -1,4 +1,3 @@
-
 package org.bukkit.event.world;
 
 import org.bukkit.World;

@@ -2,8 +2,8 @@ package org.bukkit.command;
 
 import org.bukkit.Server;
 
-
 public interface CommandSender {
+
     /**
      * Sends this sender a message
      *

@@ -1,4 +1,3 @@
-
 package org.bukkit;
 
 /**
@@ -10,8 +9,7 @@ public final class Bukkit {
     /**
      * Static class cannot be initialized.
      */
-    private Bukkit() {
-    }
+    private Bukkit() {}
 
     /**
      * Gets the current {@link Server} singleton

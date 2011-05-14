@@ -6,7 +6,7 @@ import org.bukkit.event.Cancellable;
 
 /**
  * Raised when a living entity exits a vehicle.
- * 
+ *
  * @author sk89q
  */
 public class VehicleExitEvent extends VehicleEvent implements Cancellable {
@@ -17,10 +17,10 @@ public class VehicleExitEvent extends VehicleEvent implements Cancellable {
         super(Type.VEHICLE_EXIT, vehicle);
         this.exited = exited;
     }
-    
+
     /**
      * Get the living entity that exited the vehicle.
-     * 
+     *
      * @return
      */
     public LivingEntity getExited() {

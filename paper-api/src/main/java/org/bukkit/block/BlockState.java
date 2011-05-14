@@ -1,4 +1,3 @@
-
 package org.bukkit.block;
 
 import org.bukkit.Chunk;
@@ -15,6 +14,7 @@ import org.bukkit.material.MaterialData;
  * another type entirely, causing your BlockState to become invalid.
  */
 public interface BlockState {
+
     /**
      * Gets the block represented by this BlockState
      *

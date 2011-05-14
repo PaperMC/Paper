@@ -2,10 +2,8 @@ package org.bukkit.entity;
 
 /**
  * Represents an Animal.
- * 
+ *
  * @author Cogito
  *
  */
-public interface Animals extends Creature{
-
-}
+public interface Animals extends Creature {}

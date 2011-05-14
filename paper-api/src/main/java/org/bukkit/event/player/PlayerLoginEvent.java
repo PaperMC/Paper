@@ -1,4 +1,3 @@
-
 package org.bukkit.event.player;
 
 import org.bukkit.entity.Player;
@@ -81,26 +80,23 @@ public class PlayerLoginEvent extends PlayerEvent {
      * Basic kick reasons for communicating to plugins
      */
     public enum Result {
+
         /**
          * The player is allowed to log in
          */
         ALLOWED,
-
         /**
          * The player is not allowed to log in, due to the server being full
          */
         KICK_FULL,
-
         /**
          * The player is not allowed to log in, due to them being banned
          */
         KICK_BANNED,
-        
         /**
          * The player is not allowed to log in, due to them not being on the white list
          */
         KICK_WHITELIST,
-        
         /**
          * The player is not allowed to log in, for reasons undefined
          */

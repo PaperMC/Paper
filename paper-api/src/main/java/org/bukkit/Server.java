@@ -1,4 +1,3 @@
-
 package org.bukkit;
 
 import com.avaje.ebean.config.ServerConfig;
@@ -18,6 +17,7 @@ import org.bukkit.scheduler.BukkitScheduler;
  * Represents a server implementation
  */
 public interface Server {
+
     /**
      * Gets the name of this server implementation
      *

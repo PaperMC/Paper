@@ -1,10 +1,10 @@
-
 package org.bukkit.entity;
 
 /**
  * Represents a Wolf
  */
 public interface Wolf extends Animals, Tameable {
+
     /**
      * Checks if this wolf is angry
      *

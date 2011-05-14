@@ -8,7 +8,7 @@ import org.bukkit.entity.Painting;
  * @author Tanel Suurhans
  */
 
-public class PaintingBreakByWorldEvent extends PaintingBreakEvent{
+public class PaintingBreakByWorldEvent extends PaintingBreakEvent {
     public PaintingBreakByWorldEvent(final Painting painting) {
         super(painting, RemoveCause.WORLD);
     }

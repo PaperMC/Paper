@@ -171,8 +171,7 @@ public class Vector implements Cloneable {
      * @return the distance
      */
     public double distance(Vector o) {
-        return Math.sqrt(Math.pow(x - o.x, 2) + Math.pow(y - o.y, 2)
-                + Math.pow(z - o.z, 2));
+        return Math.sqrt(Math.pow(x - o.x, 2) + Math.pow(y - o.y, 2) + Math.pow(z - o.z, 2));
     }
 
     /**
@@ -181,8 +180,7 @@ public class Vector implements Cloneable {
      * @return the distance
      */
     public double distanceSquared(Vector o) {
-        return Math.pow(x - o.x, 2) + Math.pow(y - o.y, 2)
-                + Math.pow(z - o.z, 2);
+        return Math.pow(x - o.x, 2) + Math.pow(y - o.y, 2) + Math.pow(z - o.z, 2);
     }
 
     /**
@@ -193,7 +191,8 @@ public class Vector implements Cloneable {
      */
     public float angle(Vector other) {
         double dot = dot(other) / (length() * other.length());
-        return (float)Math.acos(dot);
+
+        return (float) Math.acos(dot);
     }
 
     /**
@@ -287,6 +286,7 @@ public class Vector implements Cloneable {
         double newX = y * o.z - o.y * z;
         double newY = z * o.x - o.z * x;
         double newZ = x * o.y - o.x * y;
+
         x = newX;
         y = newY;
         z = newZ;
@@ -330,9 +330,7 @@ public class Vector implements Cloneable {
      * @return whether this vector is in the AABB
      */
     public boolean isInAABB(Vector min, Vector max) {
-        return x >= min.x && x <= max.x
-                && y >= min.y && y <= max.y
-                && z >= min.z && z <= max.z;
+        return x >= min.x && x <= max.x && y >= min.y && y <= max.y && z >= min.z && z <= max.z;
     }
 
     /**
@@ -343,10 +341,7 @@ public class Vector implements Cloneable {
      * @return whether this vector is in the sphere
      */
     public boolean isInSphere(Vector origin, double radius) {
-        return (Math.pow(origin.x - x, 2)
-                + Math.pow(origin.y - y, 2)
-                + Math.pow(origin.z - z, 2))
-                <= Math.pow(radius, 2);
+        return (Math.pow(origin.x - x, 2) + Math.pow(origin.y - y, 2) + Math.pow(origin.z - z, 2)) <= Math.pow(radius, 2);
     }
 
     /**
@@ -365,7 +360,7 @@ public class Vector implements Cloneable {
      * @return block X
      */
     public int getBlockX() {
-        return (int)Math.floor(x);
+        return (int) Math.floor(x);
     }
 
     /**
@@ -384,7 +379,7 @@ public class Vector implements Cloneable {
      * @return block y
      */
     public int getBlockY() {
-        return (int)Math.floor(y);
+        return (int) Math.floor(y);
     }
 
     /**
@@ -403,7 +398,7 @@ public class Vector implements Cloneable {
      * @return block z
      */
     public int getBlockZ() {
-        return (int)Math.floor(z);
+        return (int) Math.floor(z);
     }
 
     /**
@@ -518,11 +513,9 @@ public class Vector implements Cloneable {
             return false;
         }
 
-        Vector other = (Vector)obj;
+        Vector other = (Vector) obj;
 
-        return Math.abs(x - other.x) < epsilon
-                && Math.abs(y - other.y) < epsilon
-                && Math.abs(z - other.z) < epsilon && (this.getClass().equals(obj.getClass()));
+        return Math.abs(x - other.x) < epsilon && Math.abs(y - other.y) < epsilon && Math.abs(z - other.z) < epsilon && (this.getClass().equals(obj.getClass()));
     }
 
     /**
@@ -533,6 +526,7 @@ public class Vector implements Cloneable {
     @Override
     public int hashCode() {
         int hash = 7;
+
         hash = 79 * hash + (int) (Double.doubleToLongBits(this.x) ^ (Double.doubleToLongBits(this.x) >>> 32));
         hash = 79 * hash + (int) (Double.doubleToLongBits(this.y) ^ (Double.doubleToLongBits(this.y) >>> 32));
         hash = 79 * hash + (int) (Double.doubleToLongBits(this.z) ^ (Double.doubleToLongBits(this.z) >>> 32));
@@ -547,11 +541,12 @@ public class Vector implements Cloneable {
     @Override
     public Vector clone() {
         try {
-            Vector v = (Vector)super.clone();
+            Vector v = (Vector) super.clone();
+
             v.x = x;
             v.y = y;
             v.z = z;
-            return v;            
+            return v;
         } catch (CloneNotSupportedException e) {
             e.printStackTrace();
         }
@@ -586,10 +581,10 @@ public class Vector implements Cloneable {
     public Location toLocation(World world, float yaw, float pitch) {
         return new Location(world, x, y, z, yaw, pitch);
     }
-    
+
     /**
      * Get the block vector of this vector.
-     * 
+     *
      * @return
      */
     public BlockVector toBlockVector() {
@@ -613,10 +608,7 @@ public class Vector implements Cloneable {
      * @return minimum
      */
     public static Vector getMinimum(Vector v1, Vector v2) {
-        return new Vector(
-                Math.min(v1.x, v2.x),
-                Math.min(v1.y, v2.y),
-                Math.min(v1.z, v2.z));
+        return new Vector(Math.min(v1.x, v2.x), Math.min(v1.y, v2.y), Math.min(v1.z, v2.z));
     }
 
     /**
@@ -627,10 +619,7 @@ public class Vector implements Cloneable {
      * @return maximum
      */
     public static Vector getMaximum(Vector v1, Vector v2) {
-        return new Vector(
-                Math.max(v1.x, v2.x),
-                Math.max(v1.y, v2.y),
-                Math.max(v1.z, v2.z));
+        return new Vector(Math.max(v1.x, v2.x), Math.max(v1.y, v2.y), Math.max(v1.z, v2.z));
     }
 
     /**
@@ -640,9 +629,6 @@ public class Vector implements Cloneable {
      * @return
      */
     public static Vector getRandom() {
-        return new Vector(
-                random.nextDouble(),
-                random.nextDouble(),
-                random.nextDouble());
+        return new Vector(random.nextDouble(), random.nextDouble(), random.nextDouble());
     }
 }

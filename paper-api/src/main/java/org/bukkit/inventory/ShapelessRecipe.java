@@ -87,6 +87,7 @@ public class ShapelessRecipe implements Recipe {
      */
     public ShapelessRecipe addIngredient(int count, Material ingredient, int rawdata) {
         MaterialData data = ingredient.getNewData((byte) rawdata);
+
         if (data == null) {
             data = new MaterialData(ingredient, (byte) rawdata);
         }

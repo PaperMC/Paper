@@ -11,12 +11,12 @@ public class Leaves extends MaterialData {
     public Leaves() {
         super(Material.LEAVES);
     }
-    
+
     public Leaves(TreeSpecies species) {
         this();
         setSpecies(species);
     }
-    
+
     public Leaves(final int type) {
         super(type);
     }
@@ -50,7 +50,7 @@ public class Leaves extends MaterialData {
     public void setSpecies(TreeSpecies species) {
         setData(species.getData());
     }
-    
+
     @Override
     public String toString() {
         return getSpecies() + " " + super.toString();

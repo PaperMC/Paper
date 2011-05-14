@@ -30,7 +30,7 @@ public abstract class Command {
 
     /**
      * Returns the name of this command
-     * 
+     *
      * @return Name of this command
      */
     public String getName() {

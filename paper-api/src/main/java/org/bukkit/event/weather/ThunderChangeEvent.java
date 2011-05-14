@@ -46,5 +46,4 @@ public class ThunderChangeEvent extends WeatherEvent implements Cancellable {
     public boolean toThunderState() {
         return to;
     }
-
 }

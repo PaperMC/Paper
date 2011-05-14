@@ -1,10 +1,10 @@
-
 package org.bukkit.entity;
 
 /**
  * Represents a Creeper
  */
 public interface Creeper extends Monster {
+
     /**
      * Checks if this Creeper is powered (Electrocuted)
      *

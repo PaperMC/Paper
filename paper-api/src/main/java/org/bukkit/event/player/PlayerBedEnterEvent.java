@@ -7,11 +7,11 @@ import org.bukkit.event.Cancellable;
 /**
  * This event is fired when the player is almost about to enter the bed.
  * It can be cancelled.
- * 
+ *
  * @author sk89q
  */
 public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
-    
+
     private boolean cancel = false;
     private Block bed;
 
@@ -37,14 +37,13 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
     public void setCancelled(boolean cancel) {
         this.cancel = cancel;
     }
-    
+
     /**
      * Returns the bed block.
-     * 
+     *
      * @return
      */
     public Block getBed() {
         return bed;
     }
-
 }

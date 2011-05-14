@@ -1,4 +1,3 @@
-
 package org.bukkit;
 
 import java.util.List;
@@ -11,6 +10,7 @@ import org.bukkit.util.Vector;
  * Represents a world, which may contain entities, chunks and blocks
  */
 public interface World {
+
     /**
      * Gets the {@link Block} at the given coordinates
      *
@@ -21,7 +21,7 @@ public interface World {
      * @see #getBlockTypeIdAt(int, int, int) Returns the current type ID of the block
      */
     public Block getBlockAt(int x, int y, int z);
-    
+
     /**
      * Gets the {@link Block} at the given {@link Location}
      *
@@ -300,24 +300,24 @@ public interface World {
 
     /**
      * Creates a creature at the given {@link Location}
-     * 
+     *
      * @param loc The location to spawn the creature
      * @param type The creature to spawn
      * @return Resulting LivingEntity of this method, or null if it was unsuccessful
      */
     public LivingEntity spawnCreature(Location loc, CreatureType type);
-    
+
     /**
      * Strikes lightning at the given {@link Location}
-     * 
+     *
      * @param loc The location to strike lightning
      * @return
      */
     public LightningStrike strikeLightning(Location loc);
-    
+
     /**
      * Strikes lightning at the given {@link Location} without doing damage
-     * 
+     *
      * @param loc The location to strike lightning
      * @return
      */
@@ -353,7 +353,7 @@ public interface World {
 
     /**
      * Gets a semi-unique identifier for this world.
-     * 
+     *
      * While it is highly unlikely that this may be shared with another World,
      * it is not guaranteed to be unique
      *
@@ -370,7 +370,7 @@ public interface World {
 
     /**
      * Sets the spawn location of the world
-     * 
+     *
      * @return True if it was successfully set.
      */
     public boolean setSpawnLocation(int x, int y, int z);
@@ -417,61 +417,61 @@ public interface World {
      * @see #setTime(long) Sets the relative time of this world
      */
     public void setFullTime(long time);
-    
+
     /**
      * Returns whether the world has an ongoing storm.
-     * 
+     *
      * @return Whether there is an ongoing storm
      */
     public boolean hasStorm();
-    
+
     /**
      * Set whether there is a storm. A duration will be set for the new
      * current conditions.
-     * 
+     *
      * @param hasStorm Whether there is rain and snow
      */
     public void setStorm(boolean hasStorm);
-    
+
     /**
      * Get the remaining time in ticks of the current conditions.
-     * 
+     *
      * @return Time in ticks
      */
     public int getWeatherDuration();
-    
+
     /**
      * Set the remaining time in ticks of the current conditions.
-     * 
+     *
      * @param duration Time in ticks
      */
     public void setWeatherDuration(int duration);
-    
+
     /**
      * Returns whether there is thunder.
-     * 
+     *
      * @return Whether there is thunder
      */
     public boolean isThundering();
-    
+
     /**
      * Set whether it is thundering.
-     * 
+     *
      * @param thundering Whether it is thundering
      */
     public void setThundering(boolean thundering);
-    
+
     /**
      * Get the thundering duration.
-     * 
+     *
      * @return Duration in ticks
      */
     public int getThunderDuration();
-    
+
     /**
      * Set the thundering duration.
-     * 
-     * @param duration Duration in ticks 
+     *
+     * @param duration Duration in ticks
      */
     public void setThunderDuration(int duration);
 
@@ -486,11 +486,11 @@ public interface World {
      * Represents various map environment types that a world may be
      */
     public enum Environment {
+
         /**
          * Represents the "normal"/"surface world" map
          */
         NORMAL,
-
         /**
          * Represents a nether based map
          */

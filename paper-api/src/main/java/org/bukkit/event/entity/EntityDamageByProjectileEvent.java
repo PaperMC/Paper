@@ -13,6 +13,7 @@ public class EntityDamageByProjectileEvent extends EntityDamageByEntityEvent {
         super(damager, damagee, cause, damage);
         this.projectile = projectile;
         Random random = new Random();
+
         this.bounce = random.nextBoolean();
     }
 
@@ -24,12 +25,11 @@ public class EntityDamageByProjectileEvent extends EntityDamageByEntityEvent {
         return projectile;
     }
 
-    public void setBounce(boolean bounce){
+    public void setBounce(boolean bounce) {
         this.bounce = bounce;
     }
 
-    public boolean getBounce(){
+    public boolean getBounce() {
         return bounce;
     }
-
 }

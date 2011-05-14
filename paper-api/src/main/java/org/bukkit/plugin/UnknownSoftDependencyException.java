@@ -41,5 +41,4 @@ public class UnknownSoftDependencyException extends UnknownDependencyException {
     public UnknownSoftDependencyException() {
         this(null, "Unknown dependency");
     }
-
 }

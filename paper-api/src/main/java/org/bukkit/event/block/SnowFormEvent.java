@@ -23,7 +23,7 @@ public class SnowFormEvent extends BlockEvent implements Cancellable {
      *
      * @return the material being placed by a snowfall
      */
-    public Material getMaterial(){
+    public Material getMaterial() {
         return material;
     }
 
@@ -32,7 +32,7 @@ public class SnowFormEvent extends BlockEvent implements Cancellable {
      *
      * @param material the material to be placed during a snowfall
      */
-    public void setMaterial(Material material){
+    public void setMaterial(Material material) {
         this.material = material;
     }
 
@@ -41,7 +41,7 @@ public class SnowFormEvent extends BlockEvent implements Cancellable {
      *
      * @return the data of the block being placed by a snowfall
      */
-    public byte getData(){
+    public byte getData() {
         return data;
     }
 
@@ -50,7 +50,7 @@ public class SnowFormEvent extends BlockEvent implements Cancellable {
      *
      * @param data
      */
-    public void setData(byte data){
+    public void setData(byte data) {
         this.data = data;
     }
 

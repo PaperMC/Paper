@@ -8,6 +8,7 @@ import java.util.Map;
  * @author sunkid
  */
 public enum CropState {
+
     /**
      * State when first seeded
      */

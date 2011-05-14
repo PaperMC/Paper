@@ -5,6 +5,7 @@ package org.bukkit.entity;
  * have very simple abilities.
  */
 public interface Creature extends LivingEntity {
+
     /**
      * Instructs this Creature to set the specified LivingEntity as its target.
      * Hostile creatures may attack their target, and friendly creatures may
