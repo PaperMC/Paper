@@ -48,6 +48,7 @@ public class ContainerWorkbench extends Container {
         if (super.g.size() < 1) {
             return;
         }
+
         EntityPlayer player = (EntityPlayer) super.g.get(0); // TODO: Is this _always_ correct? Seems like it.
         player.netServerHandler.sendPacket((Packet) (new Packet103SetSlot(player.activeContainer.f, 0, craftResult)));
         // CraftBukkit end

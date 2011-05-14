@@ -1,6 +1,8 @@
 package net.minecraft.server;
 
 import java.util.Random;
+
+// CraftBukkit start
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Dispenser;
 import org.bukkit.craftbukkit.CraftServer;
@@ -10,6 +12,7 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.block.BlockDispenseEvent;
 import org.bukkit.util.Vector;
+// CraftBukkit end
 
 public class BlockDispenser extends BlockContainer {
 
@@ -74,7 +77,7 @@ public class BlockDispenser extends BlockContainer {
         }
     }
 
-    // CraftBukkit - private->public
+    // CraftBukkit - private -> public
     public void dispense(World world, int i, int j, int k, Random random) {
         int l = world.getData(i, j, k);
         float f = 0.0F;
@@ -96,11 +99,12 @@ public class BlockDispenser extends BlockContainer {
         ItemStack itemstack = null;
         if (dispenseSlot > -1) {
             itemstack = tileentitydispenser.getContents()[dispenseSlot];
-            
+
             // Copy item stack, because we want it to have 1 item
             itemstack = new ItemStack(itemstack.id, 1, itemstack.damage);
         }
         // CraftBukkit end
+
         double d0 = (double) i + (double) f * 0.5D + 0.5D;
         double d1 = (double) j + 0.5D;
         double d2 = (double) k + (double) f1 * 0.5D + 0.5D;
@@ -109,7 +113,7 @@ public class BlockDispenser extends BlockContainer {
             world.makeSound((double) i, (double) j, (double) k, "random.click", 1.0F, 1.2F);
         } else {
             double d3;
-            
+
             // CraftBukkit start
             d3 = random.nextDouble() * 0.1D + 0.2D;
             double motX = (double) f * d3;
@@ -125,20 +129,19 @@ public class BlockDispenser extends BlockContainer {
             org.bukkit.inventory.ItemStack bukkitItem = (new CraftItemStack(itemstack)).clone();
             BlockDispenseEvent event = new BlockDispenseEvent(block, bukkitItem, new Vector(motX, motY, motZ));
             server.getPluginManager().callEvent(event);
-            
+
             if (event.isCancelled()) {
                 return;
             }
-            
+
             // Actually remove the item
             tileentitydispenser.a(dispenseSlot, 1);
 
             motX = event.getVelocity().getX();
             motY = event.getVelocity().getY();
             motZ = event.getVelocity().getZ();
-            
-            itemstack = new ItemStack(event.getItem().getTypeId(),
-                    event.getItem().getAmount(), event.getItem().getDurability());
+
+            itemstack = new ItemStack(event.getItem().getTypeId(), event.getItem().getAmount(), event.getItem().getDurability());
             // CraftBukkit end
 
             if (itemstack.id == Item.ARROW.id) {

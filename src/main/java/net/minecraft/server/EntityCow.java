@@ -57,7 +57,7 @@ public class EntityCow extends EntityAnimal {
 
             CraftItemStack itemInHand = (CraftItemStack) event.getItemStack();
             byte data = itemInHand.getData() == null ? (byte) 0 : itemInHand.getData().getData();
-            itemstack = new ItemStack(itemInHand.getTypeId(), itemInHand.getAmount(), data );
+            itemstack = new ItemStack(itemInHand.getTypeId(), itemInHand.getAmount(), data);
 
             entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, itemstack);
             // CraftBukkit end

@@ -163,8 +163,12 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
 
             if (this.items[2] == null) {
                 this.items[2] = itemstack.j();
-            } else if (this.items[2].id == itemstack.id && this.items[2].damage == itemstack.damage) { // CraftBukkit - compare damage too
-                this.items[2].count += itemstack.count; // CraftBukkit - increment by count instead of 1
+            } else if (this.items[2].id == itemstack.id) {
+                // CraftBukkit start - compare damage too
+                if (this.items[2].damage == itemstack.damage) {
+                    this.items[2].count += itemstack.count;
+                }
+                // CraftBukkit end
             }
 
             --this.items[0].count;

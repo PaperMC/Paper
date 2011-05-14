@@ -2,7 +2,7 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-// CraftBukkit Start
+// CraftBukkit start
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;

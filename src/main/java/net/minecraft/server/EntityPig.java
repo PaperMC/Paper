@@ -1,6 +1,6 @@
 package net.minecraft.server;
 
-//CraftBukkit start
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.entity.EntityCombustEvent;
@@ -42,8 +42,7 @@ public class EntityPig extends EntityAnimal {
     }
 
     public boolean a(EntityHuman entityhuman) {
-        if (this.x() && !this.world.isStatic
-                && (this.passenger == null || this.passenger == entityhuman)) {
+        if (this.x() && !this.world.isStatic && (this.passenger == null || this.passenger == entityhuman)) {
             entityhuman.mount(this);
             return true;
         } else {
@@ -69,8 +68,6 @@ public class EntityPig extends EntityAnimal {
 
     public void a(EntityWeatherStorm entityweatherstorm) {
         EntityPigZombie entitypigzombie = new EntityPigZombie(this.world);
-        entitypigzombie.setPositionRotation(this.locX, this.locY, this.locZ,
-                this.yaw, this.pitch);
 
         // CraftBukkit start
         CraftServer server = ((WorldServer) this.world).getServer();
@@ -79,11 +76,14 @@ public class EntityPig extends EntityAnimal {
         PigZapEvent event = new PigZapEvent(entity, entityweatherstorm.getBukkitEntity(), entitypigzombie.getBukkitEntity());
         server.getPluginManager().callEvent(event);
 
-        if (!event.isCancelled()) {
-            this.world.addEntity(entitypigzombie);
-            this.die();
+        if (event.isCancelled()) {
+            return;
         }
         // CraftBukkit end
+
+        entitypigzombie.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, this.pitch);
+        this.world.addEntity(entitypigzombie);
+        this.die();
     }
 
     protected void a(float f) {

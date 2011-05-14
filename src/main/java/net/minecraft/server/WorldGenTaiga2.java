@@ -2,8 +2,7 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-// CraftBukkit
-import org.bukkit.BlockChangeDelegate;
+import org.bukkit.BlockChangeDelegate; // CraftBukkit
 
 public class WorldGenTaiga2 extends WorldGenerator {
 

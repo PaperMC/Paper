@@ -267,7 +267,7 @@ public final class CraftServer implements Server {
 
     // NOTE: Should only be called from MinecraftServer.b()
     public boolean dispatchCommand(CommandSender sender, ServerCommand serverCommand) {
-        if ( commandMap.dispatch(sender, serverCommand.command) ) {
+        if (commandMap.dispatch(sender, serverCommand.command)) {
             return true;
         }
         return console.consoleCommandHandler.handle(serverCommand);
@@ -279,7 +279,7 @@ public final class CraftServer implements Server {
             return true;
         }
 
-        if ( ! sender.isOp() ) {
+        if (!sender.isOp()) {
             return false;
         }
 
@@ -457,7 +457,7 @@ public final class CraftServer implements Server {
         private final String prefix;
         CommandListener(CommandSender commandSender) {
             this.commandSender = commandSender;
-            String[] parts = commandSender.getClass().getName().split( "\\." );
+            String[] parts = commandSender.getClass().getName().split("\\.");
             this.prefix = parts[parts.length-1];
         }
 

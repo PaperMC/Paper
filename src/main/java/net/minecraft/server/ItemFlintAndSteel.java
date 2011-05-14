@@ -21,7 +21,7 @@ public class ItemFlintAndSteel extends Item {
     }
 
     public boolean a(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
-        int clickedX = i, clickedY = j, clickedZ = k; // CraftBukkit;
+        int clickedX = i, clickedY = j, clickedZ = k; // CraftBukkit
 
         if (l == 0) {
             --j;

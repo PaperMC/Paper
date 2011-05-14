@@ -2,8 +2,8 @@ package net.minecraft.server;
 
 public class Slot {
 
-    public final int index; // CraftBukkit: private -> public
-    public final IInventory inventory; // CraftBukkit: private -> public
+    public final int index; // CraftBukkit - private -> public
+    public final IInventory inventory; // CraftBukkit - private -> public
     public int a;
     public int b;
     public int c;

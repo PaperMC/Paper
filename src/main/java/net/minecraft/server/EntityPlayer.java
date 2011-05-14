@@ -131,7 +131,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             cworld.dropItemNaturally(craftEntity.getLocation(), stack);
         }
 
-       this.x();
+        this.x();
         // CraftBukkit end
     }
 
@@ -139,7 +139,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         if (this.bG > 0) {
             return false;
         } else {
-            if (!this.world.pvpMode) { // CraftBukkit this.b.pvpMode -> this.world.pvpMode
+            if (!this.world.pvpMode) { // CraftBukkit
                 if (entity instanceof EntityHuman) {
                     return false;
                 }
@@ -371,10 +371,10 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         }
     }
 
-    // Craftbukkit start
+    // CraftBukkit start
     @Override
     public String toString() {
         return super.toString() + "(" + name + " at " + locX + "," + locY + "," + locZ + ")";
     }
-    // Craftbukkit end
+    // CraftBukkit end
 }

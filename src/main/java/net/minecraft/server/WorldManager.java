@@ -28,7 +28,7 @@ public class WorldManager implements IWorldAccess {
     public void a() {}
 
     public void a(int i, int j, int k) {
-        // CraftBukkit -- add world argument
+        // CraftBukkit - add world argument
         this.server.serverConfigurationManager.flagDirty(i, j, k, world);
     }
 

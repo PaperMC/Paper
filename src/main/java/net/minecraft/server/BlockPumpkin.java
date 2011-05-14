@@ -1,8 +1,10 @@
 package net.minecraft.server;
 
+// CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.block.BlockRedstoneEvent;
+// CraftBukkit end
 
 public class BlockPumpkin extends Block {
 
@@ -51,7 +53,7 @@ public class BlockPumpkin extends Block {
         world.setData(i, j, k, l);
     }
 
-    // Craftbukkit start
+    // CraftBukkit start
     public void doPhysics(World world, int i, int j, int k, int l) {
         if (net.minecraft.server.Block.byId[l] != null && net.minecraft.server.Block.byId[l].isPowerSource()) {
             CraftWorld craftWorld = ((WorldServer) world).getWorld();
@@ -63,5 +65,5 @@ public class BlockPumpkin extends Block {
             server.getPluginManager().callEvent(eventRedstone);
         }
     }
-    // Craftbukkit end
+    // CraftBukkit end
 }

@@ -43,11 +43,11 @@ public class WorldServer extends World implements BlockChangeDelegate {
     // CraftBukkit end
 
     public void entityJoinedWorld(Entity entity, boolean flag) {
-        // CraftBukkit start -- We prevent spawning in general, so this butchering is not needed
-        //if (!this.server.spawnAnimals && (entity instanceof EntityAnimal || entity instanceof EntityWaterAnimal)) {
-        //    entity.die();
-        //}
-        // CraftBukkit end
+        /* CraftBukkit start - We prevent spawning in general, so this butchering is not needed
+        if (!this.server.spawnAnimals && (entity instanceof EntityAnimal || entity instanceof EntityWaterAnimal)) {
+            entity.die();
+        }
+        // CraftBukkit end */
 
         if (entity.passenger == null || !(entity.passenger instanceof EntityHuman)) {
             super.entityJoinedWorld(entity, flag);
@@ -87,7 +87,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
             i1 = l;
         }
 
-        // CraftBukkit -- Configurable spawn protection
+        // CraftBukkit - Configurable spawn protection
         return i1 > this.server.spawnProtection || this.server.serverConfigurationManager.isOp(entityhuman.name);
     }
 
@@ -107,15 +107,17 @@ public class WorldServer extends World implements BlockChangeDelegate {
 
     public boolean a(Entity entity) {
         if (super.a(entity)) {
-            CraftServer server = cserver;
-
+            // CraftBukkit start
             LightningStrikeEvent lightning = new LightningStrikeEvent((org.bukkit.World) world, (org.bukkit.entity.LightningStrike) entity.getBukkitEntity());
-            server.getPluginManager().callEvent(lightning);
-            if (!lightning.isCancelled()) {
-                this.server.serverConfigurationManager.a(entity.locX, entity.locY, entity.locZ, 512.0D, new Packet71Weather(entity));
-                return true;
+            this.cserver.getPluginManager().callEvent(lightning);
+
+            if (lightning.isCancelled()) {
+                return false;
             }
-            return false;
+            // CraftBukkit end
+
+            this.server.serverConfigurationManager.a(entity.locX, entity.locY, entity.locZ, 512.0D, new Packet71Weather(entity));
+            return true;
         } else {
             return false;
         }
@@ -128,9 +130,9 @@ public class WorldServer extends World implements BlockChangeDelegate {
     }
 
     public Explosion createExplosion(Entity entity, double d0, double d1, double d2, float f, boolean flag) {
+        // CraftBukkit start
         Explosion explosion = super.createExplosion(entity, d0, d1, d2, f, flag);
 
-        // CraftBukkit start
         if (explosion.wasCanceled) {
             return explosion;
         }

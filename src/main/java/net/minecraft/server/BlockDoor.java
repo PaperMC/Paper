@@ -174,7 +174,7 @@ public class BlockDoor extends Block {
             } else if (l > 0 && Block.byId[l].isPowerSource()) {
                 boolean flag1 = world.isBlockIndirectlyPowered(i, j, k) || world.isBlockIndirectlyPowered(i, j + 1, k);
 
-                // Craftbukkit start
+                // CraftBukkit start
                 CraftWorld craftWorld = ((WorldServer) world).getWorld();
                 CraftServer server = ((WorldServer) world).getServer();
                 org.bukkit.block.Block block = craftWorld.getBlockAt(i, j, k);
@@ -187,7 +187,7 @@ public class BlockDoor extends Block {
                 server.getPluginManager().callEvent(eventRedstone);
 
                 flag1 = eventRedstone.getNewCurrent() > 0;
-                // Craftbukkit end
+                // CraftBukkit end
 
                 this.setDoor(world, i, j, k, flag1);
             }

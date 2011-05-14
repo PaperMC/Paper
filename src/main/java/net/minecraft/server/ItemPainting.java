@@ -53,6 +53,7 @@ public class ItemPainting extends Item {
 
                     PaintingPlaceEvent event = new PaintingPlaceEvent(painting, who, blockClicked, blockFace);
                     Bukkit.getServer().getPluginManager().callEvent(event);
+
                     if (event.isCancelled()) {
                         return false;
                     }

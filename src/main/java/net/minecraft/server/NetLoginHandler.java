@@ -82,7 +82,7 @@ public class NetLoginHandler extends NetHandler {
         EntityPlayer entityplayer = this.server.serverConfigurationManager.a(this, packet1login.name);
 
         if (entityplayer != null) {
-            a.info(this.b() + " logged in with entity id " + entityplayer.id);
+            a.info(this.b() + " logged in with entity id " + entityplayer.id + " at (" + entityplayer.locX + ", " + entityplayer.locY + ", " + entityplayer.locZ + ")");
             ChunkCoordinates chunkcoordinates = entityplayer.world.getSpawn(); // CraftBukkit
             NetServerHandler netserverhandler = new NetServerHandler(this.server, this.networkManager, entityplayer);
 
@@ -91,6 +91,7 @@ public class NetLoginHandler extends NetHandler {
             if (((WorldServer) entityplayer.world).v()) { // CraftBukkit
                 netserverhandler.sendPacket(new Packet70Bed(1));
             }
+
             // this.server.serverConfigurationManager.sendAll(new Packet3Chat("\u00A7e" + entityplayer.name + " joined the game."));  // CraftBukkit - message moved to join event
             this.server.serverConfigurationManager.a(entityplayer);
             netserverhandler.a(entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);

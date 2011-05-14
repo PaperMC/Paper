@@ -13,7 +13,7 @@ public class WorldData {
     private long g;
     private NBTTagCompound h;
     private int i;
-    public String name; // CraftBukkit private->public
+    public String name; // CraftBukkit - private -> public
     private int k;
     private boolean l;
     private int m;

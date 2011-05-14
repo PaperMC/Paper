@@ -117,6 +117,7 @@ public class BlockRedstoneTorch extends BlockTorch {
                     }
                 }
                 // CraftBukkit end
+
                 world.setTypeIdAndData(i, j, k, Block.REDSTONE_TORCH_OFF.id, world.getData(i, j, k));
                 if (this.a(world, i, j, k, true)) {
                     world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), "random.fizz", 0.5F, 2.6F + (world.random.nextFloat() - world.random.nextFloat()) * 0.8F);
@@ -140,6 +141,7 @@ public class BlockRedstoneTorch extends BlockTorch {
                 }
             }
             // CraftBukkit end
+
             world.setTypeIdAndData(i, j, k, Block.REDSTONE_TORCH_ON.id, world.getData(i, j, k));
         }
     }

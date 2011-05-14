@@ -3,7 +3,7 @@ package net.minecraft.server;
 public class TileEntityMobSpawner extends TileEntity {
 
     public int spawnDelay = -1;
-    public String mobName = "Pig"; // CraftBukkit private -> public
+    public String mobName = "Pig"; // CraftBukkit - private -> public
     public double b;
     public double c = 0.0D;
 

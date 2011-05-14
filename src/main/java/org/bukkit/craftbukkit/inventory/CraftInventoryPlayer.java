@@ -19,11 +19,11 @@ public class CraftInventoryPlayer extends CraftInventory implements PlayerInvent
     }
 
     public ItemStack getItemInHand() {
-        return new CraftItemStack( getInventory().getItemInHand() );
+        return new CraftItemStack(getInventory().getItemInHand());
     }
 
     public void setItemInHand(ItemStack stack) {
-        setItem( getHeldItemSlot(), stack );
+        setItem(getHeldItemSlot(), stack);
     }
 
     public int getHeldItemSlot() {
@@ -31,42 +31,42 @@ public class CraftInventoryPlayer extends CraftInventory implements PlayerInvent
     }
 
     public ItemStack getHelmet() {
-        return getItem( getSize() + 3 );
+        return getItem(getSize() + 3);
     }
 
     public ItemStack getChestplate() {
-        return getItem( getSize() + 2 );
+        return getItem(getSize() + 2);
     }
 
     public ItemStack getLeggings() {
-        return getItem( getSize() + 1 );
+        return getItem(getSize() + 1);
     }
 
     public ItemStack getBoots() {
-        return getItem( getSize() + 0 );
+        return getItem(getSize() + 0);
     }
 
     public void setHelmet(ItemStack helmet) {
-        setItem( getSize() + 3, helmet );
+        setItem(getSize() + 3, helmet);
     }
 
     public void setChestplate(ItemStack chestplate) {
-        setItem( getSize() + 2, chestplate );
+        setItem(getSize() + 2, chestplate);
     }
 
     public void setLeggings(ItemStack leggings) {
-        setItem( getSize() + 1, leggings );
+        setItem(getSize() + 1, leggings);
     }
 
     public void setBoots(ItemStack boots) {
-        setItem( getSize() + 0, boots );
+        setItem(getSize() + 0, boots);
     }
 
     public CraftItemStack[] getArmorContents() {
         net.minecraft.server.ItemStack[] mcItems = getInventory().getArmorContents();
         CraftItemStack[] ret = new CraftItemStack[mcItems.length];
 
-        for (int i = 0; i < mcItems.length; i++ ) {
+        for (int i = 0; i < mcItems.length; i++) {
             ret[i] = new CraftItemStack(mcItems[i]);
         }
         return ret;

@@ -124,7 +124,7 @@ public class ChunkProviderServer implements IChunkProvider {
         // CraftBukkit end
     }
 
-    public Chunk loadChunk(int i, int j) {// CraftBukkit - private->public
+    public Chunk loadChunk(int i, int j) { // CraftBukkit - private -> public
         if (this.d == null) {
             return null;
         } else {
@@ -143,7 +143,7 @@ public class ChunkProviderServer implements IChunkProvider {
         }
     }
 
-    public void saveChunkNOP(Chunk chunk) { // CraftBukkit - private->public
+    public void saveChunkNOP(Chunk chunk) { // CraftBukkit - private -> public
         if (this.d != null) {
             try {
                 this.d.b(this.world, chunk);
@@ -153,7 +153,7 @@ public class ChunkProviderServer implements IChunkProvider {
         }
     }
 
-    public void saveChunk(Chunk chunk) { // CraftBukkit - private->public
+    public void saveChunk(Chunk chunk) { // CraftBukkit - private -> public
         if (this.d != null) {
             try {
                 chunk.r = this.world.getTime();
@@ -219,12 +219,12 @@ public class ChunkProviderServer implements IChunkProvider {
                 ChunkUnloadEvent event = new ChunkUnloadEvent(chunk.bukkitChunk);
                 server.getPluginManager().callEvent(event);
                 if (!event.isCancelled()) {
-                    this.world.getWorld().preserveChunk( (CraftChunk) chunk.bukkitChunk );
+                    this.world.getWorld().preserveChunk((CraftChunk) chunk.bukkitChunk);
 
                     chunk.removeEntities();
                     this.saveChunk(chunk);
                     this.saveChunkNOP(chunk);
-                    //this.unloadQueue.remove(integer);
+                    // this.unloadQueue.remove(integer);
                     this.chunks.remove(chunkcoordinates); // CraftBukkit
                     this.chunkList.remove(chunk);
                 }

@@ -116,15 +116,15 @@ public class BlockFire extends Block {
                         }
                     }
                 }
-            }
 
-            if (l == 15) {
-                this.a(world, i + 1, j, k, 1, random);
-                this.a(world, i - 1, j, k, 1, random);
-                this.a(world, i, j - 1, k, 1, random);
-                this.a(world, i, j + 1, k, 1, random);
-                this.a(world, i, j, k - 1, 1, random);
-                this.a(world, i, j, k + 1, 1, random);
+                if (l == 15) {
+                    this.a(world, i + 1, j, k, 1, random);
+                    this.a(world, i - 1, j, k, 1, random);
+                    this.a(world, i, j - 1, k, 1, random);
+                    this.a(world, i, j + 1, k, 1, random);
+                    this.a(world, i, j, k - 1, 1, random);
+                    this.a(world, i, j, k + 1, 1, random);
+                }
             }
         }
     }

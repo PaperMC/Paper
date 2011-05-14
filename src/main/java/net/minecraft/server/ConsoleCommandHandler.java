@@ -80,7 +80,7 @@ public class ConsoleCommandHandler {
                         if (s.toLowerCase().startsWith("kick ")) {
                             // CraftBukkit start - Add kick message compatibility
                             String[] parts = s.split(" ");
-                            s2 = ( parts.length >= 2 ) ? parts[1] : "";
+                            s2 = parts.length >= 2 ? parts[1] : "";
                             // CraftBukkit end
                             entityplayer = null;
 

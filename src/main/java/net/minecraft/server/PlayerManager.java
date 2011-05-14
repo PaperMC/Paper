@@ -126,13 +126,13 @@ public class PlayerManager {
             int i1 = i - k;
             int j1 = j - l;
 
-            // Craftbukkit start
+            // CraftBukkit start
             if (i1 > 10 || i1 < -10 || j1 > 10 || j1 < -10) {
                 this.removePlayer(entityplayer);
                 this.addPlayer(entityplayer);
                 return;
             }
-            // Craftbukkit end
+            // CraftBukkit end
 
             if (i1 != 0 || j1 != 0) {
                 for (int k1 = i - 10; k1 <= i + 10; ++k1) {

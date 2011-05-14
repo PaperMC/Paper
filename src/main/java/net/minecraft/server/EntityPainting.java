@@ -123,11 +123,11 @@ public class EntityPainting extends Entity {
         if (this.f++ == 100 && !this.world.isStatic) {
             this.f = 0;
             if (!this.h()) {
-
                 // CraftBukkit start
                 Painting painting = (Painting) getBukkitEntity();
                 PaintingBreakByWorldEvent event = new PaintingBreakByWorldEvent(painting);
                 Bukkit.getServer().getPluginManager().callEvent(event);
+
                 if (event.isCancelled()) {
                     return;
                 }
@@ -203,11 +203,11 @@ public class EntityPainting extends Entity {
 
     public boolean damageEntity(Entity entity, int i) {
         if (!this.dead && !this.world.isStatic) {
-
             // CraftBukkit start
             Painting painting = (Painting) getBukkitEntity();
             PaintingBreakByEntityEvent event = new PaintingBreakByEntityEvent(painting, entity == null ? null : entity.getBukkitEntity());
             Bukkit.getServer().getPluginManager().callEvent(event);
+
             if (event.isCancelled()) {
                 return true;
             }

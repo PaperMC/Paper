@@ -42,6 +42,7 @@ class PlayerInstance {
                 entityplayer.netServerHandler.sendPacket(new Packet50PreChunk(this.e.x, this.e.z, true));
             }
             // CraftBukkit end
+
             this.b.add(entityplayer);
             entityplayer.f.add(this.e);
         }
@@ -50,7 +51,7 @@ class PlayerInstance {
     public void b(EntityPlayer entityplayer) {
         if (!this.b.contains(entityplayer)) {
             // CraftBukkit - reduce console spam under certain conditions
-            //(new IllegalStateException("Failed to remove player. " + entityplayer + " isn\'t in chunk " + this.chunkX + ", " + this.chunkZ)).printStackTrace();
+            // (new IllegalStateException("Failed to remove player. " + entityplayer + " isn\'t in chunk " + this.chunkX + ", " + this.chunkZ)).printStackTrace();
         } else {
             this.b.remove(entityplayer);
             if (this.b.size() == 0) {
@@ -66,7 +67,8 @@ class PlayerInstance {
             }
 
             entityplayer.f.remove(this.e);
-            if (entityplayer.g.remove(this.e)) { // CraftBukkit - contains -> remove
+            // CraftBukkit - contains -> remove
+            if (entityplayer.g.remove(this.e)) {
                 entityplayer.netServerHandler.sendPacket(new Packet50PreChunk(this.chunkX, this.chunkZ, false));
             }
         }
@@ -173,9 +175,10 @@ class PlayerInstance {
                         j = this.chunkX * 16 + (this.dirtyCount >> 12 & 15);
                         k = this.dirtyCount & 255;
                         l = this.chunkZ * 16 + (this.dirtyCount >> 8 & 15);
+
                         // CraftBukkit start
                         if (Block.isTileEntity[this.playerManager.world.getTypeId(j, k, l)]) {
-                            //System.out.println("Sending!"); // CraftBukkit
+                            // System.out.println("Sending!"); // CraftBukkit
                             this.sendTileEntity(this.playerManager.world.getTileEntity(j, k, l));
                         }
                         // CraftBukkit end

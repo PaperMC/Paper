@@ -125,7 +125,7 @@ public class CraftEventFactory {
     /**
      * Player Interact event
      */
-    
+
     public static PlayerInteractEvent callPlayerInteractEvent(EntityHuman who, Action action, ItemStack itemstack) {
         if (action != Action.LEFT_CLICK_AIR && action != Action.RIGHT_CLICK_AIR) {
             throw new IllegalArgumentException();

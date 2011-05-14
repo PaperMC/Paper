@@ -78,7 +78,7 @@ public class ItemBucket extends Item {
                         // CraftBukkit end
 
                         world.setTypeId(i, j, k, 0);
-                        return new ItemStack(itemInHand.getTypeId(), itemInHand.getAmount(), data ); // CraftBukkit
+                        return new ItemStack(itemInHand.getTypeId(), itemInHand.getAmount(), data); // CraftBukkit
                     }
                 } else {
                     if (this.a < 0) {
@@ -91,10 +91,11 @@ public class ItemBucket extends Item {
 
                         CraftItemStack itemInHand = (CraftItemStack) event.getItemStack();
                         byte data = itemInHand.getData() == null ? (byte) 0 : itemInHand.getData().getData();
-                        return new ItemStack(itemInHand.getTypeId(), itemInHand.getAmount(), data );
-                        // CraftBukkit end
+                        return new ItemStack(itemInHand.getTypeId(), itemInHand.getAmount(), data);
                     }
-                    int clickedX = i, clickedY = j, clickedZ = k; // CraftBukkit
+
+                    int clickedX = i, clickedY = j, clickedZ = k;
+                    // CraftBukkit end
 
                     if (movingobjectposition.face == 0) {
                         --j;
@@ -142,12 +143,13 @@ public class ItemBucket extends Item {
                         // CraftBukkit start
                         CraftItemStack itemInHand = (CraftItemStack) event.getItemStack();
                         byte data = itemInHand.getData() == null ? (byte) 0 : itemInHand.getData().getData();
-                        return new ItemStack(itemInHand.getTypeId(), itemInHand.getAmount(), data );
+
+                        return new ItemStack(itemInHand.getTypeId(), itemInHand.getAmount(), data);
                         // CraftBukkit end
                     }
                 }
             } else if (this.a == 0 && movingobjectposition.entity instanceof EntityCow) {
-                // CraftBukkit start -- This codepath seems to be *NEVER* called 
+                // CraftBukkit start - This codepath seems to be *NEVER* called
                 Location loc = movingobjectposition.entity.getBukkitEntity().getLocation();
                 PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), -1, itemstack, Item.MILK_BUCKET);
 
@@ -157,7 +159,7 @@ public class ItemBucket extends Item {
 
                 CraftItemStack itemInHand = (CraftItemStack) event.getItemStack();
                 byte data = itemInHand.getData() == null ? (byte) 0 : itemInHand.getData().getData();
-                return new ItemStack(itemInHand.getTypeId(), itemInHand.getAmount(), data );
+                return new ItemStack(itemInHand.getTypeId(), itemInHand.getAmount(), data);
                 // CraftBukkit end
             }
 

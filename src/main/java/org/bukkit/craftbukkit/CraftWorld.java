@@ -47,13 +47,13 @@ public class CraftWorld implements World {
         server.addWorld(this);
     }
 
-    public void preserveChunk( CraftChunk chunk ) {
+    public void preserveChunk(CraftChunk chunk) {
         chunk.breakLink();
-        unloadedChunks.put( (chunk.getX() << 16) + chunk.getZ(), chunk );
+        unloadedChunks.put((chunk.getX() << 16) + chunk.getZ(), chunk);
     }
 
-    public Chunk popPreservedChunk( int x, int z ) {
-        return unloadedChunks.remove( (x << 16) + z );
+    public Chunk popPreservedChunk(int x, int z) {
+        return unloadedChunks.remove((x << 16) + z);
     }
 
     public Block getBlockAt(int x, int y, int z) {
@@ -97,7 +97,7 @@ public class CraftWorld implements World {
     }
 
     public boolean isChunkLoaded(int x, int z) {
-        return provider.isChunkLoaded( x, z );
+        return provider.isChunkLoaded(x, z);
     }
 
     public Chunk[] getLoadedChunks() {
@@ -285,7 +285,7 @@ public class CraftWorld implements World {
         EntityItem entity = new EntityItem(world, loc.getX(), loc.getY(), loc.getZ(), stack);
         entity.pickupDelay = 10;
         world.addEntity(entity);
-        //TODO this is inconsistent with how Entity.getBukkitEntity() works.
+        // TODO this is inconsistent with how Entity.getBukkitEntity() works.
         // However, this entity is not at the moment backed by a server entity class so it may be left.
         return new CraftItem(world.getServer(), entity);
     }
@@ -433,7 +433,7 @@ public class CraftWorld implements World {
     public void setFullTime(long time) {
         world.setTime(time);
 
-        //Forces the client to update to the new time immediately
+        // Forces the client to update to the new time immediately
         for (Player p: getPlayers()) {
             CraftPlayer cp = (CraftPlayer) p;
             cp.getHandle().netServerHandler.sendPacket(new Packet4UpdateTime(time));

@@ -43,6 +43,7 @@ public class EntityCreature extends EntityLiving {
                 }
             }
             // CraftBukkit end
+
             if (this.target != null) {
                 this.pathEntity = this.world.findPath(this, this.target, f);
             }
@@ -121,7 +122,7 @@ public class EntityCreature extends EntityLiving {
                 double d1 = vec3d.a - this.locX;
                 double d2 = vec3d.c - this.locZ;
                 double d3 = vec3d.b - (double) l1;
-                // CraftBukkit -- Math -> TrigMath
+                // CraftBukkit - Math -> TrigMath
                 float f4 = (float) (TrigMath.atan2(d2, d1) * 180.0D / 3.1415927410125732D) - 90.0F;
                 float f5 = f4 - this.yaw;
 

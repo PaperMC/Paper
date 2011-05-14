@@ -40,7 +40,7 @@ public abstract class EntityHuman extends EntityLiving {
     public boolean fauxSleeping;
     // CraftBukkit end
     private ChunkCoordinates a;
-    public int sleepTicks; // CraftBukkit (public)
+    public int sleepTicks; // CraftBukkit - private -> public
     public float A;
     public float B;
     private ChunkCoordinates c;
@@ -176,7 +176,7 @@ public abstract class EntityHuman extends EntityLiving {
         this.n = this.o;
         super.u();
         float f = MathHelper.a(this.motX * this.motX + this.motZ * this.motZ);
-        // CraftBukkit -- Math -> TrigMath
+        // CraftBukkit - Math -> TrigMath
         float f1 = (float) TrigMath.atan(-this.motY * 0.20000000298023224D) * 15.0F;
 
         if (f > 0.1F) {
@@ -679,12 +679,14 @@ public abstract class EntityHuman extends EntityLiving {
         if (this.getBukkitEntity() instanceof Player) {
             Player player = (Player) this.getBukkitEntity();
             CraftServer server = ((WorldServer) world).getServer();
+
             org.bukkit.block.Block bed;
             if (chunkcoordinates != null) {
                 bed = ((WorldServer) world).getWorld().getBlockAt(chunkcoordinates.x, chunkcoordinates.y, chunkcoordinates.z);
             } else {
                 bed = ((WorldServer) world).getWorld().getBlockAt(player.getLocation());
             }
+
             PlayerBedLeaveEvent event = new PlayerBedLeaveEvent(player, bed);
             server.getPluginManager().callEvent(event);
         }

@@ -60,7 +60,7 @@ public abstract class EntityLiving extends Entity {
     protected double aq;
     protected double ar;
     float as = 0.0F;
-    public int lastDamage = 0; // CraftBukkit protected -> public
+    public int lastDamage = 0; // CraftBukkit - protected -> public
     protected int au = 0;
     protected float av;
     protected float aw;
@@ -241,7 +241,7 @@ public abstract class EntityLiving extends Entity {
         if (f > 0.05F) {
             f3 = 1.0F;
             f2 = f * 3.0F;
-            // CraftBukkit -- Math -> TrigMath
+            // CraftBukkit - Math -> TrigMath
             f1 = (float) TrigMath.atan2(d1, d0) * 180.0F / 3.1415927F - 90.0F;
         }
 
@@ -837,6 +837,7 @@ public abstract class EntityLiving extends Entity {
         if (event.isCancelled() || event.getDamage() == 0) {
             return;
         }
+
         damageDone = event.getDamage();
         this.damageEntity((Entity) null, damageDone);
         // CraftBukkit end

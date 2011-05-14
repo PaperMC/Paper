@@ -51,9 +51,9 @@ public class Chunk {
 
         // CraftBukkit start
         CraftWorld cw = ((WorldServer) world).getWorld();
-        bukkitChunk = (cw == null) ? null : cw.popPreservedChunk( i, j );
+        bukkitChunk = (cw == null) ? null : cw.popPreservedChunk(i, j);
         if (bukkitChunk == null) {
-            bukkitChunk = new org.bukkit.craftbukkit.CraftChunk( this );
+            bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
         }
     }
 
@@ -476,20 +476,20 @@ public class Chunk {
         this.world.c.removeAll(this.tileEntities.values());
 
         for (int i = 0; i < this.entitySlices.length; ++i) {
-            // Craftbukkit start
+            // CraftBukkit start
             Iterator<Object> iter = this.entitySlices[i].iterator();
             while (iter.hasNext()) {
                 Entity entity = (Entity) iter.next();
                 int cx = Location.locToBlock(entity.locX) >> 4;
                 int cz = Location.locToBlock(entity.locZ) >> 4;
 
-                if ((entity instanceof EntityPlayer) && ((cx != this.x) || (cz != this.z))) {
-                    EntityPlayer player = (EntityPlayer) entity;
-                    iter.remove();   // Do not pass along players, as doing so can get them stuck outside of time.
-                                     // (which for example disables inventory icon updates and prevents block breaking)
+                // Do not pass along players, as doing so can get them stuck outside of time.
+                // (which for example disables inventory icon updates and prevents block breaking)
+                if (entity instanceof EntityPlayer && (cx != this.x || cz != this.z)) {
+                    iter.remove();
                 }
             }
-            // Craftbukkit end
+            // CraftBukkit end
 
             this.world.b(this.entitySlices[i]);
         }

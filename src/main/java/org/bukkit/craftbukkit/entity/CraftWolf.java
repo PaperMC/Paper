@@ -30,7 +30,7 @@ public class CraftWolf extends CraftAnimals implements Wolf {
     public void setSitting(boolean sitting) {
         getHandle().setSitting(sitting);
         // TODO determine what the following would do - it is affected every time a player makes their wolf sit or stand
-        //getHandle().ay = false;
+        // getHandle().ay = false;
         setPath((PathEntity) null);
     }
 
@@ -59,9 +59,9 @@ public class CraftWolf extends CraftAnimals implements Wolf {
             /* Set owner */
             // TODO persist owner to the persistence store
             if (owner instanceof Player) {
-                setOwnerName(((Player) owner).getName()); 
+                setOwnerName(((Player) owner).getName());
             } else {
-                setOwnerName(""); 
+                setOwnerName("");
             }
         } else {
             setTamed(false); /* Make him not tame */

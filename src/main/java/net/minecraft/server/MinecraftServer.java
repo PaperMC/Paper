@@ -56,7 +56,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
     public ColouredConsoleSender console;
     public ConsoleReader reader;
     public static int currentTick;
-    // Craftbukkit end
+    // CraftBukkit end
 
     public MinecraftServer(OptionSet options) { // CraftBukkit - adds argument OptionSet
         new ThreadSleepForever(this);
@@ -78,7 +78,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
 
         threadcommandreader.setDaemon(true);
         threadcommandreader.start();
-        ConsoleLogManager.init(this); // Craftbukkit
+        ConsoleLogManager.init(this); // CraftBukkit
 
         // CraftBukkit start
         System.setOut(new PrintStream(new LoggerOutputStream(log, Level.INFO), true));
@@ -99,7 +99,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
         this.spawnAnimals = this.propertyManager.getBoolean("spawn-animals", true);
         this.pvpMode = this.propertyManager.getBoolean("pvp", true);
         this.o = this.propertyManager.getBoolean("allow-flight", false);
-        this.spawnProtection = this.propertyManager.getInt("spawn-protection", 16); // CraftBukkit Configurable spawn protection start
+        this.spawnProtection = this.propertyManager.getInt("spawn-protection", 16); // CraftBukkit - Configurable spawn protection start
         InetAddress inetaddress = null;
 
         if (s.length() > 0) {
@@ -146,7 +146,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
 
         // CraftBukkit start
         long elapsed = System.nanoTime() - j;
-        String time = String.format( "%.3fs", elapsed / 10000000000.0D );
+        String time = String.format("%.3fs", elapsed / 10000000000.0D);
         log.info("Done (" + time + ")! For help, type \"help\" or \"?\"");
         // CraftBukkit end
 
@@ -226,15 +226,15 @@ public class MinecraftServer implements Runnable, ICommandListener {
             world.save(true, (IProgressUpdate) null);
             world.saveLevel();
 
-            WorldSaveEvent event = new WorldSaveEvent( world.getWorld() );
-            server.getPluginManager().callEvent( event );
+            WorldSaveEvent event = new WorldSaveEvent(world.getWorld());
+            server.getPluginManager().callEvent(event);
         }
 
         this.serverConfigurationManager.savePlayers(); // CraftBukkit - player data should be saved whenever a save happens.
         // CraftBukkit end
     }
 
-    public void stop() { // Craftbukkit: private -> public
+    public void stop() { // CraftBukkit - private -> public
         log.info("Stopping server");
         // CraftBukkit start
         if (server != null) {

@@ -262,9 +262,9 @@ public class EntityEgg extends Entity {
                         entity.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, 0.0F);
                         this.world.addEntity(entity);
                     }
+                    // CraftBukkit end
                 }
             }
-            // CraftBukkit end
 
             for (int l = 0; l < 8; ++l) {
                 this.world.a("snowballpoof", this.locX, this.locY, this.locZ, 0.0D, 0.0D, 0.0D);

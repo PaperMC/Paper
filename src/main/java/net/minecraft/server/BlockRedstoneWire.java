@@ -262,7 +262,7 @@ public class BlockRedstoneWire extends Block {
         }
     }
 
-    // Craftbukkit private->public
+    // CraftBukkit - private -> public
     public int getPower(World world, int i, int j, int k, int l) {
         if (world.getTypeId(i, j, k) != this.id) {
             return l;
@@ -282,7 +282,7 @@ public class BlockRedstoneWire extends Block {
                 this.a_(world, i, j, k, i1);
                 world.setTypeId(i, j, k, 0);
             } else {
-                // Craftbukkit
+                // CraftBukkit
                 if ((Block.byId[l] != null && Block.byId[l].isPowerSource()) || Block.DIODE_OFF.id == l || Block.DIODE_ON.id == l)
                 this.g(world, i, j, k);
             }

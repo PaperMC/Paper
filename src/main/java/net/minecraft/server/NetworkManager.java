@@ -6,7 +6,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.io.IOException; // CraftBukkit -- instead of SocketException
+import java.io.IOException; // CraftBukkit - instead of SocketException
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -17,7 +17,7 @@ public class NetworkManager {
     public static int b;
     public static int c;
     private Object e = new Object();
-    public Socket socket; // CraftBukkit -- private->public
+    public Socket socket; // CraftBukkit - private -> public
     private final SocketAddress g;
     private DataInputStream input;
     private DataOutputStream output;
@@ -46,7 +46,7 @@ public class NetworkManager {
             socket.setSoTimeout(30000);
             socket.setTrafficClass(24);
 
-            // CraftBukkit start -- cant compile these outside the try
+            // CraftBukkit start - cant compile these outside the try
             this.input = new DataInputStream(socket.getInputStream());
             this.output = new DataOutputStream(socket.getOutputStream());
             // CraftBukkit end

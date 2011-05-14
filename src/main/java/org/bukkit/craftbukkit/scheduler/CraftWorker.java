@@ -74,7 +74,7 @@ public class CraftWorker implements Runnable, BukkitWorker {
     }
 
     @Override
-    public boolean equals( Object other ) {
+    public boolean equals(Object other) {
         if (other == null) {
             return false;
         }

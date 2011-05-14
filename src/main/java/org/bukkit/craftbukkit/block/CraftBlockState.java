@@ -34,8 +34,8 @@ public class CraftBlockState implements BlockState {
         createData(block.getData());
     }
 
-    public static BlockState getBlockState( net.minecraft.server.World world, int x, int y, int z) {
-        return new CraftBlockState( ((WorldServer) world).getWorld().getBlockAt(x, y, z) );
+    public static BlockState getBlockState(net.minecraft.server.World world, int x, int y, int z) {
+        return new CraftBlockState(((WorldServer) world).getWorld().getBlockAt(x, y, z));
     }
 
     /**

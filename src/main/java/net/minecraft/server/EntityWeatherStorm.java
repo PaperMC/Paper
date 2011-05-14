@@ -39,9 +39,8 @@ public class EntityWeatherStorm extends EntityWeather {
         this.b = 2;
         this.a = this.random.nextLong();
         this.c = this.random.nextInt(3) + 1;
-        // CraftBukkit start
+        // CraftBukkit
         if (!isEffect && world.spawnMonsters >= 2 && world.a(MathHelper.floor(d0), MathHelper.floor(d1), MathHelper.floor(d2), 10)) {
-        // CraftBukkit end
             int i = MathHelper.floor(d0);
             int j = MathHelper.floor(d1);
             int k = MathHelper.floor(d2);
@@ -51,6 +50,7 @@ public class EntityWeatherStorm extends EntityWeather {
                 org.bukkit.block.Block theBlock = cworld.getBlockAt(i, j, k);
                 BlockIgniteEvent event = new BlockIgniteEvent(theBlock, IgniteCause.LIGHTNING, null);
                 ((WorldServer) world).getServer().getPluginManager().callEvent(event);
+
                 if (!event.isCancelled()) {
                     world.setTypeId(i, j, k, Block.FIRE.id);
                 }
@@ -112,9 +112,7 @@ public class EntityWeatherStorm extends EntityWeather {
             }
         }
 
-        // CraftBukkit start
-        if (!isEffect && this.b >= 0) {
-        // CraftBukkit end
+        if (this.b >= 0 && !isEffect) { // CraftBukkit
             double d0 = 3.0D;
             List list = this.world.b((Entity) this, AxisAlignedBB.b(this.locX - d0, this.locY - d0, this.locZ - d0, this.locX + d0, this.locY + 6.0D + d0, this.locZ + d0));
 

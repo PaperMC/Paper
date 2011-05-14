@@ -49,15 +49,15 @@ public class World implements IBlockAccess {
     public boolean n = false;
     public final WorldProvider worldProvider;
     protected List p = new ArrayList();
-    public IChunkProvider chunkProvider; // CraftBukkit protected->public
+    public IChunkProvider chunkProvider; // CraftBukkit - protected -> public
     protected final IDataManager r;
-    public WorldData worldData; // CraftBukkit protected->public
+    public WorldData worldData; // CraftBukkit - protected -> public
     public boolean isLoading;
     private boolean H;
     private ArrayList I = new ArrayList();
     private int J = 0;
-    public boolean allowMonsters = true; // CraftBukkit private->public
-    public boolean allowAnimals = true; // CraftBukkit private->public
+    public boolean allowMonsters = true; // CraftBukkit - private -> public
+    public boolean allowAnimals = true; // CraftBukkit - private -> public
     public boolean pvpMode; // CraftBukkit
     static int u = 0;
     private Set M = new HashSet();
@@ -302,7 +302,7 @@ public class World implements IBlockAccess {
     }
 
     public boolean setTypeId(int i, int j, int k, int l) {
-        // Craftbukkit start
+        // CraftBukkit start
         int old = this.getTypeId(i, j, k);
         if (this.setRawTypeId(i, j, k, l)) {
             this.update(i, j, k, l == 0 ? old : l);
@@ -310,11 +310,11 @@ public class World implements IBlockAccess {
         } else {
             return false;
         }
-        // Craftbukkit end
+        // CraftBukkit end
     }
 
     public boolean setTypeIdAndData(int i, int j, int k, int l, int i1) {
-        // Craftbukkit start
+        // CraftBukkit start
         int old = this.getTypeId(i, j, k);
         if (this.setRawTypeIdAndData(i, j, k, l, i1)) {
             this.update(i, j, k, l == 0 ? old : l);
@@ -322,7 +322,7 @@ public class World implements IBlockAccess {
         } else {
             return false;
         }
-        // Craftbukkit end
+        // CraftBukkit end
     }
 
     public void notify(int i, int j, int k) {
@@ -383,7 +383,7 @@ public class World implements IBlockAccess {
                         return;
                     }
                 }
-                // CraftBukkit stop
+                // CraftBukkit end
 
                 block.doPhysics(this, i, j, k, l);
             }
@@ -1441,7 +1441,7 @@ public class World implements IBlockAccess {
             }
         }
 
-        // CraftBukkit start -- Only call spawner if we have players online and the world allows for mobs or animals
+        // CraftBukkit start - Only call spawner if we have players online and the world allows for mobs or animals
         if ((this.allowMonsters || this.allowAnimals) && (this instanceof WorldServer && ((WorldServer) this).getServer().getHandle().players.size() > 0)) {
             SpawnerCreature.spawnEntities(this, this.allowMonsters, this.allowAnimals);
         }
@@ -1580,7 +1580,7 @@ public class World implements IBlockAccess {
             this.worldData.b(0);
             this.worldData.a(false);
         }
-        //CraftBukkit end
+        // CraftBukkit end
     }
 
     protected void j() {
@@ -1667,6 +1667,7 @@ public class World implements IBlockAccess {
                         // CraftBukkit start
                         SnowFormEvent snow = new SnowFormEvent(((WorldServer)this).getWorld().getBlockAt(l + i, k1, j1 + j));
                         ((WorldServer)this).getServer().getPluginManager().callEvent(snow);
+
                         if (!snow.isCancelled()) {
                             this.setTypeId(l + i, k1, j1 + j, snow.getMaterial().getId());
                             this.setData(l + i, k1, j1 + j, snow.getData());
@@ -1793,7 +1794,7 @@ public class World implements IBlockAccess {
         Entity entity = null;
         for (int i = 0; i < list.size(); ++i) {
             entity = (Entity) list.get(i);
-            // CraftBukkit start
+
             if (entity instanceof EntityLiving && !(entity instanceof EntityPlayer)) {
                 CreatureSpawnEvent event = CraftEventFactory.callCreatureSpawnEvent((EntityLiving) entity);
                 if (event.isCancelled()) {
@@ -1803,6 +1804,7 @@ public class World implements IBlockAccess {
 
             this.entityList.add(entity);
             // CraftBukkit end
+
             this.c((Entity) list.get(i));
         }
     }
@@ -1821,13 +1823,22 @@ public class World implements IBlockAccess {
             axisalignedbb = null;
         }
 
-        // CraftBukkit start - We dont want to allow the user to override the bounding box check
-        boolean defaultReturn = axisalignedbb != null && !this.containsEntity(axisalignedbb) ? false : (block != Block.WATER && block != Block.STATIONARY_WATER && block != Block.LAVA && block != Block.STATIONARY_LAVA && block != Block.FIRE && block != Block.SNOW ? i > 0 && block == null && block1.canPlace(this, j, k, l) : true);
+        // CraftBukkit - store the default action
+        boolean defaultReturn;
 
         if (axisalignedbb != null && !this.containsEntity(axisalignedbb)) {
-            return false;
+            // CraftBukkit
+            defaultReturn = false;
+        } else {
+            if (block == Block.WATER || block == Block.STATIONARY_WATER || block == Block.LAVA || block == Block.STATIONARY_LAVA || block == Block.FIRE || block == Block.SNOW) {
+                block = null;
+            }
+
+            // CraftBukkit
+            defaultReturn = i > 0 && block == null && block1.canPlace(this, j, k, l);
         }
 
+        // CraftBukkit start
         BlockCanBuildEvent event = new BlockCanBuildEvent(((WorldServer) this).getWorld().getBlockAt(j, k, l), i, defaultReturn);
         ((WorldServer) this).getServer().getPluginManager().callEvent(event);
 
@@ -2061,20 +2072,19 @@ public class World implements IBlockAccess {
         if (this.H && !this.isStatic) {
             Iterator iterator = this.players.iterator();
 
-            // CraftBukkit start
+            // CraftBukkit - This allows us to assume that some people are in bed but not really, allowing time to pass in spite of AFKers
             boolean foundActualSleepers = false;
-
-            // This allows us to assume that some people are in bed
-            // but not really, allowing time to pass in spite of AFKers
 
             EntityHuman entityhuman;
 
             do {
                 if (!iterator.hasNext()) {
+                    // CraftBukkit
                     return foundActualSleepers;
                 }
 
                 entityhuman = (EntityHuman) iterator.next();
+                // CraftBukkit start
                 if (entityhuman.isDeeplySleeping()) {
                     foundActualSleepers = true;
                 }

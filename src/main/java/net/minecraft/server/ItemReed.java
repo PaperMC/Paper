@@ -17,7 +17,7 @@ public class ItemReed extends Item {
     }
 
     public boolean a(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
-        int clickedX = i, clickedY = j, clickedZ = k; // CraftBukkit;
+        int clickedX = i, clickedY = j, clickedZ = k; // CraftBukkit
 
         if (world.getTypeId(i, j, k) == Block.SNOW.id) {
             l = 0;
@@ -57,7 +57,7 @@ public class ItemReed extends Item {
                 BlockState replacedBlockState = CraftBlockState.getBlockState(world, i, j, k); // CraftBukkit
                 /**
                  * @see net.minecraft.server.World#setTypeId(int i, int j, int k, int l)
-                 * 
+                 *
                  * This replaces world.setTypeId(IIII), we're doing this because we need to
                  * hook between the 'placement' and the informing to 'world' so we can
                  * sanely undo this.
@@ -69,7 +69,7 @@ public class ItemReed extends Item {
                     BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, replacedBlockState, clickedX, clickedY, clickedZ, block);
 
                     if (event.isCancelled() || !event.canBuild()) {
-                        // CraftBukkit Undo -- this only has reed, repeater and pie blocks
+                        // CraftBukkit - undo; this only has reed, repeater and pie blocks
                         world.setTypeIdAndData(i, j, k, replacedBlockState.getTypeId(), replacedBlockState.getRawData());
                     } else {
                         world.update(i, j, k, this.id); // <-- world.setTypeId does this on success (tell the world)

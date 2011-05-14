@@ -19,7 +19,7 @@ public class ConsoleLogManager {
 
     public ConsoleLogManager() {}
 
-    // Craftbukkit - change of method signature!
+    // CraftBukkit - change of method signature!
     public static void init(MinecraftServer server) {
         ConsoleLogFormatter consolelogformatter = new ConsoleLogFormatter();
 

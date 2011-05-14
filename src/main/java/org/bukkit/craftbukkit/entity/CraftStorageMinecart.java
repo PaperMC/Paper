@@ -17,7 +17,7 @@ public class CraftStorageMinecart extends CraftMinecart implements StorageMineca
 
     public CraftStorageMinecart(CraftServer server, EntityMinecart entity) {
         super(server, entity);
-        inventory = new CraftInventory( entity );
+        inventory = new CraftInventory(entity);
     }
 
     public Inventory getInventory() {

@@ -50,7 +50,7 @@ public class ItemInWorldManager {
         }
     }
 
-    // CraftBukkit added face
+    // CraftBukkit - added face
     public void dig(int i, int j, int k, int face) {
         this.d = (int) (System.currentTimeMillis() / 50); // CraftBukkit
         int l = this.world.getTypeId(i, j, k);
@@ -124,7 +124,7 @@ public class ItemInWorldManager {
                     this.m = this.d;
                 }
             }
-        // CraftBukkit start -- force blockreset to client
+        // CraftBukkit start - force blockreset to client
         } else {
             ((EntityPlayer) this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
             // CraftBukkit end
@@ -224,6 +224,6 @@ public class ItemInWorldManager {
             }
         }
         return result;
+        // CraftBukkit end
     }
-    // CraftBukkit end
 }

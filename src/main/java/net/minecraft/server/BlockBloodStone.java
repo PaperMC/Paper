@@ -12,7 +12,7 @@ public class BlockBloodStone extends Block {
         super(i, j, Material.STONE);
     }
 
-    // Craftbukkit start
+    // CraftBukkit start
     public void doPhysics(World world, int i, int j, int k, int l) {
         if (net.minecraft.server.Block.byId[l] != null && net.minecraft.server.Block.byId[l].isPowerSource()) {
             CraftWorld craftWorld = ((WorldServer) world).getWorld();
@@ -24,5 +24,5 @@ public class BlockBloodStone extends Block {
             server.getPluginManager().callEvent(eventRedstone);
         }
     }
-    // Craftbukkit end
+    // CraftBukkit end
 }

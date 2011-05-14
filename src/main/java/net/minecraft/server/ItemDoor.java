@@ -21,7 +21,7 @@ public class ItemDoor extends Item {
         if (l != 1) {
             return false;
         } else {
-            int clickedX = i, clickedY = j, clickedZ = k; // CraftBukkit;
+            int clickedX = i, clickedY = j, clickedZ = k; // CraftBukkit
 
             ++j;
             Block block;

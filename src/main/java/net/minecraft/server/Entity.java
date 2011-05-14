@@ -56,7 +56,7 @@ public abstract class Entity {
     public float width;
     public float bh;
     public float bi;
-    public float fallDistance; // Craftbukkit made public
+    public float fallDistance; // CraftBukkit - private -> public
     private int b;
     public double bk;
     public double bl;
@@ -69,7 +69,7 @@ public abstract class Entity {
     public int ticksLived;
     public int maxFireTicks;
     public int fireTicks;
-    public int maxAirTicks; // CraftBukkit -- protected->public
+    public int maxAirTicks; // CraftBukkit - protected - >public
     protected boolean bw;
     public int noDamageTicks;
     public int airTicks;
@@ -146,9 +146,8 @@ public abstract class Entity {
     }
 
     protected void c(float f, float f1) {
-        // Craftbukkit start
+        // CraftBukkit start - yaw was sometimes set to NaN, so we need to set it back to 0.
         if (Float.isNaN(f)) {
-            // CraftBukkit - yaw was sometimes set to NaN, so we need to set it back to 0.
             f = 0;
         }
 
@@ -160,8 +159,8 @@ public abstract class Entity {
             f = 0;
         }
 
+        // pitch was sometimes set to NaN, so we need to set it back to 0.
         if (Float.isNaN(f1)) {
-            // CraftBukkit - pitch was sometimes set to NaN, so we need to set it back to 0.
             f1 = 0;
         }
 
@@ -172,7 +171,7 @@ public abstract class Entity {
             }
             f1 = 0;
         }
-        // Craftbukkit end
+        // CraftBukkit end
 
         this.yaw = f % 360.0F;
         this.pitch = f1 % 360.0F;
@@ -291,7 +290,7 @@ public abstract class Entity {
 
     protected void X() {
         if (!this.bz) {
-            // CraftBukkit start -- TODO: this event spams!
+            // CraftBukkit start - TODO: this event spams!
             if (this instanceof EntityLiving) {
                 CraftServer server = ((WorldServer) this.world).getServer();
                 // TODO: shouldn't be sending null for the block.
@@ -882,8 +881,8 @@ public abstract class Entity {
         this.motX = ((NBTTagDouble) nbttaglist1.a(0)).a;
         this.motY = ((NBTTagDouble) nbttaglist1.a(1)).a;
         this.motZ = ((NBTTagDouble) nbttaglist1.a(2)).a;
-        // CraftBukkit Start
-        //Exempt Vehicles from notch's sanity check
+
+        // CraftBukkit start - Exempt Vehicles from notch's sanity check
         if (!(this.getBukkitEntity() instanceof CraftVehicle)) {
             if (Math.abs(this.motX) > 10.0D) {
                 this.motX = 0.0D;
@@ -897,7 +896,7 @@ public abstract class Entity {
                 this.motZ = 0.0D;
             }
         }
-        // CraftBukkit End
+        // CraftBukkit end
 
         this.lastX = this.bk = this.locX = ((NBTTagDouble) nbttaglist.a(0)).a;
         this.lastY = this.bl = this.locY = ((NBTTagDouble) nbttaglist.a(1)).a;
@@ -1168,17 +1167,19 @@ public abstract class Entity {
     }
 
     public void a(EntityWeatherStorm entityweatherstorm) {
-        // Craftbukkit start
+        // CraftBukkit start
         int damage = 5;
         EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(entityweatherstorm.getBukkitEntity(), getBukkitEntity(), DamageCause.LIGHTNING, damage);
         Bukkit.getServer().getPluginManager().callEvent(event);
         damage = event.getDamage();
+
         if (event.isCancelled()) {
             return;
         }
-        
+
         this.a(damage);
-        // Craftbukkit end
+        // CraftBukkit end
+
         ++this.fireTicks;
         if (this.fireTicks == 0) {
             this.fireTicks = 300;

@@ -197,8 +197,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
                 manager.server.tracker.untrackEntity(entity);
                 int cx = (int) location.getBlockX() >> 4;
                 int cz = (int) location.getBlockZ() >> 4;
-                for (int x = -10 ; x <= 10 ; x++ ) {
-                    for (int z = -10 ; z <= 10 ; z++ ) {
+                for (int x = -10 ; x <= 10 ; x++) {
+                    for (int z = -10 ; z <= 10 ; z++) {
                         ChunkCoordIntPair chunkPosition = new ChunkCoordIntPair(cx + x, cz + z);
                         if (entity.g.remove(chunkPosition)) {
                             newEntity.g.add(chunkPosition);

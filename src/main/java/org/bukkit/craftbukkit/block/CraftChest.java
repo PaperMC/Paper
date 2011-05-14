@@ -9,7 +9,7 @@ import org.bukkit.inventory.Inventory;
 
 /**
  * Represents a chest.
- * 
+ *
  * @author sk89q
  */
 public class CraftChest extends CraftBlockState implements Chest {

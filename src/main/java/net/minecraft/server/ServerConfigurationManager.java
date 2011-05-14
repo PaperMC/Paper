@@ -28,9 +28,9 @@ public class ServerConfigurationManager {
 
     public static Logger a = Logger.getLogger("Minecraft");
     public List players = new ArrayList();
-    public MinecraftServer server; // CraftBukkit - private->public
+    public MinecraftServer server; // CraftBukkit - private -> public
     // public PlayerManager d; // CraftBukkit - removed!
-    public int maxPlayers; // CraftBukkit - private->public
+    public int maxPlayers; // CraftBukkit - private -> public
     private Set banByName = new HashSet();
     private Set banByIP = new HashSet();
     private Set h = new HashSet();
@@ -39,7 +39,7 @@ public class ServerConfigurationManager {
     private File k;
     private File l;
     private File m;
-    public PlayerFileData playerFileData; // CraftBukkit private->public
+    public PlayerFileData playerFileData; // CraftBukkit - private - >public
     private boolean o;
 
     // CraftBukkit start
@@ -120,7 +120,6 @@ public class ServerConfigurationManager {
         this.players.remove(entityplayer);
 
         return playerQuitEvent.getQuitMessage(); // CraftBukkit
-        // CraftBukkit end
     }
 
     public EntityPlayer a(NetLoginHandler netloginhandler, String s) {
@@ -139,6 +138,7 @@ public class ServerConfigurationManager {
 
         if (this.banByName.contains(s.trim().toLowerCase())) {
             event.disallow(PlayerLoginEvent.Result.KICK_BANNED, "You are banned from this server!");
+            // return null // CraftBukkit
         } else if (!this.isWhitelisted(s)) {
             event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, "You are not white-listed on this server!");
         } else if (this.banByIP.contains(s2)) {
@@ -168,22 +168,28 @@ public class ServerConfigurationManager {
     }
 
     public EntityPlayer d(EntityPlayer entityplayer) {
-        // CraftBukkit start - every reference to this.minecraftServer.worldServer should be entityplayer.world
         this.server.tracker.trackPlayer(entityplayer);
         this.server.tracker.untrackEntity(entityplayer);
+        // CraftBukkit
         ((WorldServer) entityplayer.world).manager.removePlayer(entityplayer);
         this.players.remove(entityplayer);
+        // CraftBukkit
         entityplayer.world.removeEntity(entityplayer);
         ChunkCoordinates chunkcoordinates = entityplayer.K();
+        // CraftBukkit
         EntityPlayer entityplayer1 = new EntityPlayer(this.server, entityplayer.world, entityplayer.name, new ItemInWorldManager(entityplayer.world));
 
         entityplayer1.id = entityplayer.id;
         entityplayer1.netServerHandler = entityplayer.netServerHandler;
-        entityplayer1.displayName = entityplayer.displayName; // CraftBukkit
-        entityplayer1.compassTarget = entityplayer.compassTarget; // CraftBukkit
-        entityplayer1.fauxSleeping = entityplayer.fauxSleeping; // CraftBukkit
+
+        // CraftBukkit start - transfer internal variables
+        entityplayer1.displayName = entityplayer.displayName;
+        entityplayer1.compassTarget = entityplayer.compassTarget;
+        entityplayer1.fauxSleeping = entityplayer.fauxSleeping;
+        // CraftBukkit end
 
         if (chunkcoordinates != null) {
+            // CraftBukkit
             ChunkCoordinates chunkcoordinates1 = EntityHuman.getBed(entityplayer.world, chunkcoordinates);
 
             if (chunkcoordinates1 != null) {
@@ -194,8 +200,10 @@ public class ServerConfigurationManager {
             }
         }
 
+        // CraftBukkit
         ((WorldServer) entityplayer.world).chunkProviderServer.getChunkAt((int) entityplayer1.locX >> 4, (int) entityplayer1.locZ >> 4);
 
+        // CraftBukkit
         while (entityplayer.world.getEntities(entityplayer1, entityplayer1.boundingBox).size() != 0) {
             entityplayer1.setPosition(entityplayer1.locX, entityplayer1.locY + 1.0D, entityplayer1.locZ);
         }
@@ -204,7 +212,7 @@ public class ServerConfigurationManager {
         Player respawnPlayer = cserver.getPlayer(entityplayer);
         Location respawnLocation = new Location(respawnPlayer.getWorld(), entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch);
 
-        PlayerRespawnEvent respawnEvent = new PlayerRespawnEvent(respawnPlayer, respawnLocation );
+        PlayerRespawnEvent respawnEvent = new PlayerRespawnEvent(respawnPlayer, respawnLocation);
         cserver.getPluginManager().callEvent(respawnEvent);
 
         entityplayer1.world = ((CraftWorld) respawnEvent.getRespawnLocation().getWorld()).getHandle();
@@ -374,7 +382,8 @@ public class ServerConfigurationManager {
 
             bufferedreader.close();
         } catch (Exception exception) {
-            a.warning("Failed to load ops: " + exception);  // CraftBukkit corrected text
+            // CraftBukkit - corrected text
+            a.warning("Failed to load ops: " + exception);
         }
     }
 
@@ -391,7 +400,8 @@ public class ServerConfigurationManager {
 
             printwriter.close();
         } catch (Exception exception) {
-            a.warning("Failed to save ops: " + exception); // CraftBukkit corrected text
+            // CraftBukkit - corrected text
+            a.warning("Failed to save ops: " + exception);
         }
     }
 

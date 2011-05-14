@@ -53,7 +53,7 @@ public class StatisticList {
         F = b(F, "stat.breakItem", 16973824, 0, Block.byId.length);
         G = true;
         d();
-        //System.out.println(E); // CraftBukkit
+        // System.out.println(E); // CraftBukkit
     }
 
     public static void c() {
@@ -61,7 +61,7 @@ public class StatisticList {
         F = b(F, "stat.breakItem", 16973824, Block.byId.length, 32000);
         H = true;
         d();
-       //System.out.println(E); // CraftBukkit
+       // System.out.println(E); // CraftBukkit
     }
 
     public static void d() {

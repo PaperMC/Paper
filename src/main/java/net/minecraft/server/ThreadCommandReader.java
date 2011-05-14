@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 // CraftBukkit start
-import java.io.PrintStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jline.ConsoleReader;
@@ -20,17 +19,18 @@ public class ThreadCommandReader extends Thread {
     }
 
     public void run() {
-        // Craftbukkit start - whole method, nuked to oblivion! :o
+        // CraftBukkit
+        ConsoleReader bufferedreader = this.server.reader;
+        String s = null;
 
         try {
-            ConsoleReader reader = this.server.reader;
-            String line = null;
-            while ((!this.server.isStopped) && (MinecraftServer.isRunning(this.server)) && ((line = reader.readLine(">", null)) != null)) {
-                this.server.issueCommand(line, (ICommandListener) this.server);
+            // CraftBukkit
+            while (!this.server.isStopped && MinecraftServer.isRunning(this.server) && ((s = bufferedreader.readLine(">", null)) != null)) {
+                this.server.issueCommand(s, this.server);
             }
         } catch (IOException ioexception) {
+            // CraftBukkit
             Logger.getLogger(ThreadCommandReader.class.getName()).log(Level.SEVERE, null, ioexception);
         }
-        // Craftbukkit end
     }
 }

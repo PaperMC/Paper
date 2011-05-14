@@ -20,7 +20,7 @@ public class ItemSign extends Item {
         } else if (!world.getMaterial(i, j, k).isBuildable()) {
             return false;
         } else {
-            int clickedX = i, clickedY = j, clickedZ = k; // CraftBukkit;
+            int clickedX = i, clickedY = j, clickedZ = k; // CraftBukkit
 
             if (l == 1) {
                 ++j;

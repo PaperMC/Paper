@@ -22,6 +22,7 @@ class ThreadLoginVerifier extends Thread {
     ThreadLoginVerifier(NetLoginHandler netloginhandler, Packet1Login packet1login, CraftServer server) {
         this.server = server;
         // CraftBukkit end
+
         this.netLoginHandler = netloginhandler;
         this.loginPacket = packet1login;
     }
