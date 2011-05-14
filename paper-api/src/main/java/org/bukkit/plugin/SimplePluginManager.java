@@ -249,7 +249,7 @@ public final class SimplePluginManager implements PluginManager {
             try {
                 plugin.getPluginLoader().enablePlugin(plugin);
             } catch (Throwable ex) {
-                server.getLogger().log(Level.SEVERE, ex.getMessage() + " enabling " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
+                server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while enabling " + plugin.getDescription().getFullName() + " (Is it up to date?): " + ex.getMessage(), ex);
             }
         }
     }
@@ -264,11 +264,13 @@ public final class SimplePluginManager implements PluginManager {
         if (plugin.isEnabled()) {
             try {
                 plugin.getPluginLoader().disablePlugin(plugin);
-                server.getScheduler().cancelTasks(plugin);
-                server.getServicesManager().unregisterAll(plugin);
             } catch (Throwable ex) {
-                server.getLogger().log(Level.SEVERE, ex.getMessage() + " disabling " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
+                server.getLogger().log(Level.SEVERE, "Error occurredd (in the plugin loader) while disabling " + plugin.getDescription().getFullName() + " (Is it up to date?): " + ex.getMessage(), ex);
             }
+            
+            // Forced disable
+            server.getScheduler().cancelTasks(plugin);
+            server.getServicesManager().unregisterAll(plugin);
         }
     }
 
