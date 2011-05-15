@@ -25,31 +25,23 @@ public class PluginClassLoader extends URLClassLoader {
     }
 
     protected Class<?> findClass(String name, boolean checkGlobal) throws ClassNotFoundException {
-        // We use the following load order:
-        // 1. Local first, this avoids IllegalAccessError exceptions for duplicate classes
-        // 2. Global cache second which prevents ClassCastException's apparently
         Class<?> result = classes.get(name);
 
-        if (null == result) {
-            try {
+        if (result == null) {
+            if (checkGlobal) {
+                result = loader.getClassByName(name);
+            }
+
+            if (result == null) {
                 result = super.findClass(name);
-                classes.put(name, result);
-                loader.setClass(name, result);
-            } catch (ClassNotFoundException e) {
-                if (checkGlobal) {
-                    result = loader.getClassByName(name);
-                    if (null == result) {
-                        // We really couldnt find it
-                        throw new ClassNotFoundException(name);
-                    }
-                } else {
-                    throw e; // no more options just rethrow
+
+                if (result != null) {
+                    loader.setClass(name, result);
                 }
             }
-        }
 
-        // NOTE: setClass already does a not exists check
-        loader.setClass(name, result);
+            classes.put(name, result);
+        }
 
         return result;
     }
