@@ -229,8 +229,13 @@ public class MinecraftServer implements Runnable, ICommandListener {
             WorldSaveEvent event = new WorldSaveEvent(world.getWorld());
             server.getPluginManager().callEvent(event);
         }
+        // CraftBukkit end
 
-        this.serverConfigurationManager.savePlayers(); // CraftBukkit - player data should be saved whenever a save happens.
+        // CraftBukkit start - player data should be saved whenever a save happens and ONLY if saving is enabled.
+        WorldServer wserver = this.worlds.get(0);
+        if (!wserver.y) {
+            this.serverConfigurationManager.savePlayers();
+        }
         // CraftBukkit end
     }
 
