@@ -52,8 +52,7 @@ public class TileEntityDispenser extends TileEntity implements IInventory {
         int j = 1;
 
         for (int k = 0; k < this.items.length; ++k) {
-            if (this.items[k] != null && this.b.nextInt(j) == 0) {
-                if (this.items[k].count != 0) continue; // CraftBukkit
+            if (this.items[k] != null && this.items[k].count != 0 && this.b.nextInt(j) == 0) { // CraftBukkit
                 i = k;
                 ++j;
             }
