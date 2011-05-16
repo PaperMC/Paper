@@ -395,10 +395,6 @@ public abstract class EntityHuman extends EntityLiving {
             } else {
                 Object object = entity;
 
-                if (entity instanceof EntityArrow && ((EntityArrow) entity).shooter != null) {
-                    object = ((EntityArrow) entity).shooter;
-                }
-
                 // CraftBukkit start - this is here instead of EntityMonster because EntityLiving(s) that aren't monsters
                 // also damage the player in this way. For example, EntitySlime.
                 if (object instanceof EntityLiving) {
