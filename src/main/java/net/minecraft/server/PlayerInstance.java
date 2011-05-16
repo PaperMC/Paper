@@ -172,9 +172,11 @@ class PlayerInstance {
                     this.sendAll(new Packet52MultiBlockChange(this.chunkX, this.chunkZ, this.dirtyBlocks, this.dirtyCount, this.playerManager.world));
 
                     for (i = 0; i < this.dirtyCount; ++i) {
-                        j = this.chunkX * 16 + (this.dirtyCount >> 12 & 15);
-                        k = this.dirtyCount & 255;
-                        l = this.chunkZ * 16 + (this.dirtyCount >> 8 & 15);
+                        // CraftBukkit start - Fixes TileEntity updates occurring upon a multi-block change; dirtyCount -> dirtyBlocks[i]
+                        j = this.chunkX * 16 + (this.dirtyBlocks[i] >> 12 & 15);
+                        k = this.dirtyBlocks[i] & 255;
+                        l = this.chunkZ * 16 + (this.dirtyBlocks[i] >> 8 & 15);
+                        // CraftBukkit end
 
                         // CraftBukkit start
                         if (Block.isTileEntity[this.playerManager.world.getTypeId(j, k, l)]) {
