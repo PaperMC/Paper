@@ -6,6 +6,7 @@ import net.minecraft.server.EntityArrow;
 import net.minecraft.server.EntityEgg;
 import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntitySnowball;
+import net.minecraft.server.EntityPlayer;
 
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
@@ -36,6 +37,10 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public void setHealth(int health) {
         if ((health < 0) || (health > 200)) {
             throw new IllegalArgumentException("Health must be between 0 and 200");
+        }
+
+        if (entity instanceof EntityPlayer && health == 0) {
+            ((EntityPlayer)entity).a((Entity)null);
         }
 
         getHandle().health = health;
