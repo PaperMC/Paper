@@ -30,7 +30,9 @@ public class ConsoleCommandHandler {
                 this.server.a();
             } else if (s.toLowerCase().startsWith("save-all")) {
                 this.print(s1, "Forcing save..");
+                worldserver.y = false; // CraftBukkit - If save-all is used, we can assume saving should be turned on to allow for saving.
                 this.server.saveChunks(); // CraftBukkit - We should save all worlds on save-all.
+                worldserver.y = true; // CraftBukkit - Once done saving, we should turn it back off to avoid confusion.
                 this.print(s1, "Save complete.");
             } else if (s.toLowerCase().startsWith("save-off")) {
                 this.print(s1, "Disabling level saving..");
