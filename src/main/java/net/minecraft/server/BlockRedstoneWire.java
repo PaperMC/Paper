@@ -282,8 +282,6 @@ public class BlockRedstoneWire extends Block {
                 this.a_(world, i, j, k, i1);
                 world.setTypeId(i, j, k, 0);
             } else {
-                // CraftBukkit
-                if ((Block.byId[l] != null && Block.byId[l].isPowerSource()) || Block.DIODE_OFF.id == l || Block.DIODE_ON.id == l)
                 this.g(world, i, j, k);
             }
 
