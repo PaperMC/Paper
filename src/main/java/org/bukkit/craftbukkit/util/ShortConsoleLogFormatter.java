@@ -26,6 +26,8 @@ public class ShortConsoleLogFormatter extends Formatter {
             } catch (OptionException ex) {
                 System.err.println("Given date format is not valid. Falling back to default.");
             }
+        } else if (options.has("nojline")) {
+            date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         }
 
         if (date == null) {

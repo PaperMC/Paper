@@ -19,14 +19,24 @@ public class ThreadCommandReader extends Thread {
     }
 
     public void run() {
-        // CraftBukkit
+        // CraftBukkit start
         ConsoleReader bufferedreader = this.server.reader;
         String s = null;
+        String jlineTerminalSetting = org.bukkit.craftbukkit.Main.jlineTerminalSetting;
+        // CraftBukkit end
 
         try {
-            // CraftBukkit
-            while (!this.server.isStopped && MinecraftServer.isRunning(this.server) && ((s = bufferedreader.readLine(">", null)) != null)) {
-                this.server.issueCommand(s, this.server);
+            while (!this.server.isStopped && MinecraftServer.isRunning(this.server)) {
+                // CraftBukkit start - JLine disabling compatibility
+                if (jlineTerminalSetting != null && jlineTerminalSetting.equals("jline.UnsupportedTerminal")) {
+                    s = bufferedreader.readLine();
+                } else {
+                    s = bufferedreader.readLine(">", null);
+                }
+                if (s != null) {
+                    // CraftBukkit end
+                    this.server.issueCommand(s, this.server);
+                }
             }
         } catch (IOException ioexception) {
             // CraftBukkit

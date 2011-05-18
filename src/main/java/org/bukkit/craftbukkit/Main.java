@@ -12,6 +12,8 @@ import joptsimple.OptionSet;
 import net.minecraft.server.MinecraftServer;
 
 public class Main {
+    public static String jlineTerminalSetting = System.getProperty("jline.terminal");
+
     public static void main(String[] args) {
         // Todo: Installation script
         OptionParser parser = new OptionParser() {
@@ -65,6 +67,8 @@ public class Main {
                         .ofType(File.class)
                         .defaultsTo(new File("bukkit.yml"))
                         .describedAs("Yml file");
+
+                acceptsAll(asList("nojline"), "Disables jline and emulates the vanilla console");
             }
         };
 
@@ -84,6 +88,10 @@ public class Main {
             }
         } else {
             try {
+                if (options.has("nojline")) {
+                    System.setProperty("jline.terminal", "jline.UnsupportedTerminal");
+                    System.setProperty("user.language", "en");
+                }
                 MinecraftServer.main(options);
             } catch (Throwable t) {
                 t.printStackTrace();
