@@ -5,6 +5,7 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jline.ConsoleReader;
+import org.bukkit.craftbukkit.Main;
 
 public class TerminalConsoleHandler extends ConsoleHandler {
     private final ConsoleReader reader;
@@ -17,15 +18,19 @@ public class TerminalConsoleHandler extends ConsoleHandler {
     @Override
     public synchronized void flush() {
         try {
-            reader.printString(ConsoleReader.RESET_LINE + "");
-            reader.flushConsole();
-            super.flush();
-            try {
-                reader.drawLine();
-            } catch (Throwable ex) {
-                reader.getCursorBuffer().clearBuffer();
+            if (Main.useJline) {
+                reader.printString(ConsoleReader.RESET_LINE + "");
+                reader.flushConsole();
+                super.flush();
+                try {
+                    reader.drawLine();
+                } catch (Throwable ex) {
+                    reader.getCursorBuffer().clearBuffer();
+                }
+                reader.flushConsole();
+            } else {
+                super.flush();
             }
-            reader.flushConsole();
         } catch (IOException ex) {
             Logger.getLogger(TerminalConsoleHandler.class.getName()).log(Level.SEVERE, null, ex);
         }

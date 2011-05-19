@@ -12,7 +12,7 @@ import joptsimple.OptionSet;
 import net.minecraft.server.MinecraftServer;
 
 public class Main {
-    public static String jlineTerminalSetting;
+    public static boolean useJline = true;
 
     public static void main(String[] args) {
         // Todo: Installation script
@@ -88,11 +88,14 @@ public class Main {
             }
         } else {
             try {
+                useJline = !"jline.UnsupportedTerminal".equals(System.getProperty("jline.terminal"));
+                
                 if (options.has("nojline")) {
                     System.setProperty("jline.terminal", "jline.UnsupportedTerminal");
                     System.setProperty("user.language", "en");
+                    useJline = false;
                 }
-                jlineTerminalSetting = System.getProperty("jline.terminal");
+
                 MinecraftServer.main(options);
             } catch (Throwable t) {
                 t.printStackTrace();
