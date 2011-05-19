@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jline.ConsoleReader;
+import org.bukkit.craftbukkit.Main;
 // CraftBukkit end
 
 public class ThreadCommandReader extends Thread {
@@ -22,16 +23,15 @@ public class ThreadCommandReader extends Thread {
         // CraftBukkit start
         ConsoleReader bufferedreader = this.server.reader;
         String s = null;
-        String jlineTerminalSetting = org.bukkit.craftbukkit.Main.jlineTerminalSetting;
         // CraftBukkit end
 
         try {
             while (!this.server.isStopped && MinecraftServer.isRunning(this.server)) {
                 // CraftBukkit start - JLine disabling compatibility
-                if (jlineTerminalSetting != null && jlineTerminalSetting.equals("jline.UnsupportedTerminal")) {
-                    s = bufferedreader.readLine();
-                } else {
+                if (Main.useJline) {
                     s = bufferedreader.readLine(">", null);
+                } else {
+                    s = bufferedreader.readLine();
                 }
                 if (s != null) {
                     // CraftBukkit end
