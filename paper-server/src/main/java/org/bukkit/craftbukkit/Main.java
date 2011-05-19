@@ -12,7 +12,7 @@ import joptsimple.OptionSet;
 import net.minecraft.server.MinecraftServer;
 
 public class Main {
-    public static String jlineTerminalSetting = System.getProperty("jline.terminal");
+    public static String jlineTerminalSetting;
 
     public static void main(String[] args) {
         // Todo: Installation script
@@ -92,6 +92,7 @@ public class Main {
                     System.setProperty("jline.terminal", "jline.UnsupportedTerminal");
                     System.setProperty("user.language", "en");
                 }
+                jlineTerminalSetting = System.getProperty("jline.terminal");
                 MinecraftServer.main(options);
             } catch (Throwable t) {
                 t.printStackTrace();
