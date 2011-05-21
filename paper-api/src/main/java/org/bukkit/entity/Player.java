@@ -153,6 +153,25 @@ public interface Player extends HumanEntity, CommandSender {
     public void sendBlockChange(Location loc, Material material, byte data);
 
     /**
+     * Send a chunk change. This fakes a chunk change packet for a user at
+     * a certain location. The updated cuboid must be entirely within a single
+     * chunk.  This will not actually change the world in any way.
+     *
+     * At least one of the dimensions of the cuboid must be even. The size of the
+     * data buffer must be 2.5*sx*sy*sz and formatted in accordance with the Packet51
+     * format.
+     *
+     * @param loc The location of the cuboid
+     * @param sx The x size of the cuboid
+     * @param sy The y size of the cuboid
+     * @param sz The z size of the cuboid
+     * @param data The data to be sent
+     *
+     * @return true if the chunk change packet was sent
+     */
+    public boolean sendChunkChange(Location loc, int sx, int sy, int sz, byte[] data);
+
+    /**
      * Send a block change. This fakes a block change packet for a user at
      * a certain location. This will not actually change the world in any way.
      *
