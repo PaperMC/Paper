@@ -2,11 +2,13 @@ package org.bukkit.craftbukkit.entity;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.zip.Deflater;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.ItemInWorldManager;
 import net.minecraft.server.Packet200Statistic;
 import net.minecraft.server.Packet3Chat;
+import net.minecraft.server.Packet51MapChunk;
 import net.minecraft.server.Packet53BlockChange;
 import net.minecraft.server.Packet54PlayNoteBlock;
 import net.minecraft.server.Packet6SpawnPosition;
@@ -162,6 +164,33 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         packet.d = material;
         packet.e = data;
         getHandle().netServerHandler.sendPacket(packet);
+    }
+
+    public boolean sendChunkChange(Location loc, int sx, int sy, int sz, byte[] data) {
+        int x = loc.getBlockX();
+        int y = loc.getBlockY();
+        int z = loc.getBlockZ();
+
+        int cx = x >> 4;
+        int cz = z >> 4;
+
+        if (sx <= 0 || sy <= 0 || sz <= 0) {
+            return false;
+        }
+
+        if ((x + sx - 1) >> 4 != cx || (z + sz - 1) >> 4 != cz || y < 0 || y + sy > 128) {
+            return false;
+        }
+
+        if (data.length != (sx * sy * sz * 5) / 2) {
+            return false;
+        }
+
+        Packet51MapChunk packet = new Packet51MapChunk(x, y, z, sx, sy, sz, data);
+
+        getHandle().netServerHandler.sendPacket(packet);
+
+        return true;
     }
 
     @Override
