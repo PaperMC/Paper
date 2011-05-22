@@ -271,9 +271,17 @@ public final class SimplePluginManager implements PluginManager {
                 server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while disabling " + plugin.getDescription().getFullName() + " (Is it up to date?): " + ex.getMessage(), ex);
             }
 
-            // Forced disable
-            server.getScheduler().cancelTasks(plugin);
-            server.getServicesManager().unregisterAll(plugin);
+            try {
+                server.getScheduler().cancelTasks(plugin);
+            } catch (Throwable ex) {
+                server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while cancelling tasks for " + plugin.getDescription().getFullName() + " (Is it up to date?): " + ex.getMessage(), ex);
+            }
+
+            try {
+                server.getServicesManager().unregisterAll(plugin);
+            } catch (Throwable ex) {
+                server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while unregistering services for " + plugin.getDescription().getFullName() + " (Is it up to date?): " + ex.getMessage(), ex);
+            }
         }
     }
 
