@@ -6,18 +6,39 @@ public interface CommandMap {
 
     /**
      * Registers all the commands belonging to a certain plugin.
-     * @param plugin
-     * @return
+     * Caller can use:-
+     * command.getName() to determine the label registered for this command
+     * command.getAliases() to determine the aliases which where registered
+     *
+     * @param fallbackPrefix a prefix which is prepended to each command with a ':' one or more times to make the command unique
+     * @param commands a list of commands to register
      */
     public void registerAll(String fallbackPrefix, List<Command> commands);
 
     /**
      * Registers a command. Returns true on success; false if name is already taken and fallback had to be used.
+     * Caller can use:-
+     * command.getName() to determine the label registered for this command
+     * command.getAliases() to determine the aliases which where registered
      *
-     * @param a label for this command, without the '/'-prefix.
-     * @return Returns true if command was registered; false if label was already in use.
+     * @param label the label of the command, without the '/'-prefix.
+     * @param fallbackPrefix a prefix which is prepended to the command with a ':' one or more times to make the command unique
+     * @param command the command to register
+     * @return true if command was registered with the passed in label, false otherwise, which indicates the fallbackPrefix was used one or more times
      */
     public boolean register(String label, String fallbackPrefix, Command command);
+
+    /**
+     * Registers a command. Returns true on success; false if name is already taken and fallback had to be used.
+     * Caller can use:-
+     * command.getName() to determine the label registered for this command
+     * command.getAliases() to determine the aliases which where registered
+     *
+     * @param fallbackPrefix a prefix which is prepended to the command with a ':' one or more times to make the command unique
+     * @param command the command to register, from which label is determined from the command name
+     * @return true if command was registered with the passed in label, false otherwise, which indicates the fallbackPrefix was used one or more times
+     */
+    public boolean register(String fallbackPrefix, Command command);
 
     /**
      * Looks for the requested command and executes it if found.
@@ -26,7 +47,7 @@ public interface CommandMap {
      * @return targetFound returns false if no target is found.
      * @throws CommandException Thrown when the executor for the given command fails with an unhandled exception
      */
-    public boolean dispatch(CommandSender sender, String cmdLine);
+    public boolean dispatch(CommandSender sender, String cmdLine) throws CommandException;
 
     /**
      * Clears all registered commands.
@@ -37,7 +58,7 @@ public interface CommandMap {
      * Gets the command registered to the specified name
      *
      * @param name Name of the command to retrieve
-     * @return Command with the specified name
+     * @return Command with the specified name or null if a command with that label doesn't exist
      */
     public Command getCommand(String name);
 }

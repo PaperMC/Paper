@@ -8,14 +8,26 @@ import java.util.List;
  */
 public abstract class Command {
     private final String name;
+    private String nextLabel;
+    private String label;
     private List<String> aliases;
+    private List<String> activeAliases;
+    private CommandMap commandMap = null;
     protected String description = "";
     protected String usageMessage;
 
     protected Command(String name) {
+        this(name, "", "/" + name, new ArrayList<String>());
+    }
+
+    protected Command(String name, String description, String usageMessage, List<String> aliases) {
         this.name = name;
-        this.aliases = new ArrayList<String>();
-        this.usageMessage = "/" + name;
+        this.nextLabel = name;
+        this.label = name;
+        this.description = description;
+        this.usageMessage = usageMessage;
+        this.aliases = aliases;
+        this.activeAliases = new ArrayList<String>(aliases);
     }
 
     /**
@@ -38,12 +50,84 @@ public abstract class Command {
     }
 
     /**
-     * Returns a list of aliases registered to this command
+     * Returns the current lable for this command
+     *
+     * @return Label of this command or null if not registered
+     */
+    public String getLabel() {
+        return label;
+    }
+
+    /**
+     * Sets the label of this command
+     * If the command is currently registered the label change will only take effect after
+     * its been reregistered e.g. after a /reload
+     *
+     * @return returns true if the name change happened instantly or false if it was scheduled for reregistration
+     */
+    public boolean setLabel(String name) {
+        this.nextLabel = name;
+        if (!isRegistered()) {
+            this.label = name;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Registers this command to a CommandMap
+     * Once called it only allows changes the registered CommandMap
+     *
+     * @param commandMap the CommandMap to register this command to
+     * @return true if the registration was successful (the current registered CommandMap was the passed CommandMap or null) false otherwise
+     */
+    public boolean register(CommandMap commandMap) {
+        if (allowChangesFrom(commandMap)) {
+            this.commandMap = commandMap;
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Unregisters this command from the passed CommandMap applying any outstanding changes
+     *
+     * @param commandMap the CommandMap to unregister
+     * @return true if the unregistration was successfull (the current registered CommandMap was the passed CommandMap or null) false otherwise
+     */
+    public boolean unregister(CommandMap commandMap) {
+        if (allowChangesFrom(commandMap)) {
+            this.commandMap = null;
+            this.activeAliases = new ArrayList<String>(this.aliases);
+            this.label = this.nextLabel;
+            return true;
+        }
+
+        return false;
+    }
+
+
+    private boolean allowChangesFrom(CommandMap commandMap) {
+        return (null == this.commandMap || this.commandMap == commandMap);
+    }
+
+    /**
+     * Returns the current registered state of this command
+     *
+     * @return true if this command is currently registered false otherwise
+     */
+    public boolean isRegistered() {
+        return (null != this.commandMap);
+    }
+
+    /**
+     * Returns a list of active aliases of this command
      *
      * @return List of aliases
      */
     public List<String> getAliases() {
-        return aliases;
+        return activeAliases;
     }
 
     /**
@@ -65,13 +149,16 @@ public abstract class Command {
     }
 
     /**
-     * Sets the list of aliases registered to this command
+     * Sets the list of aliases to request on registration for this command
      *
      * @param aliases Aliases to register to this command
      * @return This command object, for linking
      */
     public Command setAliases(List<String> aliases) {
         this.aliases = aliases;
+        if (!isRegistered()) {
+            this.activeAliases = new ArrayList<String>(aliases);
+        }
         return this;
     }
 
