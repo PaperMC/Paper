@@ -695,17 +695,13 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             return;
         }
 
-        boolean targetPluginFound = false;
-
         try {
-            targetPluginFound = server.dispatchCommand(player, s.substring(1));
+            if (server.dispatchCommand(player, s.substring(1))) {
+                return;
+            }
         } catch (CommandException ex) {
             player.sendMessage(ChatColor.RED + "An internal error occurred while attempting to perform this command");
             Logger.getLogger(NetServerHandler.class.getName()).log(Level.SEVERE, null, ex);
-            return;
-        }
-
-        if (targetPluginFound) {
             return;
         }
         // CraftBukkit end
@@ -728,9 +724,10 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                     this.sendPacket(new Packet3Chat("\u00A7cThere\'s no player by that name online."));
                 }
             }
+
+        /* CraftBukkit start - No longer neaded as we have already handled it server.dispatchCommand above.
         } else {
             String s1;
-
             if (this.minecraftServer.serverConfigurationManager.isOp(this.player.name)) {
                 s1 = s.substring(1);
                 a.info(this.player.name + " issued server command: " + s1);
@@ -739,6 +736,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 s1 = s.substring(1);
                 a.info(this.player.name + " tried command: " + s1);
             }
+        */ // CraftBukkit end
         }
     }
 

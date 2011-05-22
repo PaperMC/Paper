@@ -3,6 +3,12 @@ package net.minecraft.server;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Logger;
+// Craftbukkit start
+import java.util.List;
+import org.bukkit.craftbukkit.command.ServerCommandListener;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.command.CommandSender;
+// Craftbukkit end
 
 public class ConsoleCommandHandler {
 
@@ -286,12 +292,37 @@ public class ConsoleCommandHandler {
     }
 
     private void print(String s, String s1) {
-        listener.sendMessage(s1); // CraftBukkit
         String s2 = s + ": " + s1;
 
-        this.server.serverConfigurationManager.j("\u00A77(" + s2 + ")");
+        // CraftBukkit start
+        listener.sendMessage(s1);
+        informOps("\u00A77(" + s2 + ")");
+        if (listener instanceof MinecraftServer) {
+            return; // Already logged so don't call a.info()
+        }
+        // CraftBukkit end
         a.info(s2);
     }
+
+    // CraftBukkit start
+    private void informOps(String msg) {
+        Packet3Chat packet3chat = new Packet3Chat(msg);
+        EntityPlayer sender = null;
+        if (listener instanceof ServerCommandListener) {
+            CommandSender commandSender = ((ServerCommandListener) listener).getSender();
+            if (commandSender instanceof CraftPlayer) {
+                sender = ((CraftPlayer) commandSender).getHandle();
+            }
+        }
+        List<EntityPlayer> players = server.serverConfigurationManager.players;
+        for (int i = 0; i < players.size(); ++i) {
+            EntityPlayer entityPlayer = (EntityPlayer) players.get(i);
+            if (sender != entityPlayer && server.serverConfigurationManager.isOp(entityPlayer.name)) {
+                entityPlayer.netServerHandler.sendPacket(packet3chat);
+            }
+        }
+    }
+    // CraftBukkit end
 
     private int a(String s, int i) {
         try {
