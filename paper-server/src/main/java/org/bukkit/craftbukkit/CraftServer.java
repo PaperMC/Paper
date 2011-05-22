@@ -48,6 +48,7 @@ import org.bukkit.craftbukkit.inventory.CraftFurnaceRecipe;
 import org.bukkit.craftbukkit.inventory.CraftRecipe;
 import org.bukkit.craftbukkit.inventory.CraftShapedRecipe;
 import org.bukkit.craftbukkit.inventory.CraftShapelessRecipe;
+import org.bukkit.craftbukkit.command.ServerCommandListener;
 import org.bukkit.scheduler.BukkitWorker;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
@@ -284,7 +285,7 @@ public final class CraftServer implements Server {
         }
 
         // See if the server can process this command
-        return console.consoleCommandHandler.handle(new ServerCommand(commandLine, new CommandListener(sender)));
+        return console.consoleCommandHandler.handle(new ServerCommand(commandLine, new ServerCommandListener(sender)));
     }
 
     public void reload() {
@@ -449,25 +450,6 @@ public final class CraftServer implements Server {
         }
 
         config.setDataSourceConfig(ds);
-    }
-
-    // Inner class to capture the output of default server commands
-    class CommandListener implements ICommandListener {
-        private final CommandSender commandSender;
-        private final String prefix;
-        CommandListener(CommandSender commandSender) {
-            this.commandSender = commandSender;
-            String[] parts = commandSender.getClass().getName().split("\\.");
-            this.prefix = parts[parts.length-1];
-        }
-
-        public void sendMessage(String msg) {
-            this.commandSender.sendMessage(msg);
-        }
-
-        public String getName() {
-            return this.prefix;
-        }
     }
 
     public boolean addRecipe(Recipe recipe) {
