@@ -293,7 +293,7 @@ public final class CraftServer implements Server {
 
         console.propertyManager = config;
 
-        boolean animals = config.getBoolean("spawn-monsters", console.spawnAnimals);
+        boolean animals = config.getBoolean("spawn-animals", console.spawnAnimals);
         boolean monsters = config.getBoolean("spawn-monsters", console.worlds.get(0).spawnMonsters > 0);
 
         console.onlineMode = config.getBoolean("online-mode", console.onlineMode);
