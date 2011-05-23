@@ -124,12 +124,16 @@ public final class SimpleCommandMap implements CommandMap {
         }
 
         try {
-            return target.execute(sender, sentCommandLabel, Arrays_copyOfRange(args, 1, args.length));
+            // Note: we don't return the result of target.execute as thats success / failure, we return handled (true) or not handled (false)
+            target.execute(sender, sentCommandLabel, Arrays_copyOfRange(args, 1, args.length));
         } catch (CommandException ex) {
             throw ex;
         } catch (Throwable ex) {
             throw new CommandException("Unhandled exception executing '" + commandLine + "' in " + target, ex);
         }
+
+        // return true as command was handled
+        return true;
     }
 
     public synchronized void clearCommands() {
