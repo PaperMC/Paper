@@ -882,22 +882,6 @@ public abstract class Entity {
         this.motY = ((NBTTagDouble) nbttaglist1.a(1)).a;
         this.motZ = ((NBTTagDouble) nbttaglist1.a(2)).a;
 
-        // CraftBukkit start - Exempt Vehicles from notch's sanity check
-        if (!(this.getBukkitEntity() instanceof CraftVehicle)) {
-            if (Math.abs(this.motX) > 10.0D) {
-                this.motX = 0.0D;
-            }
-
-            if (Math.abs(this.motY) > 10.0D) {
-                this.motY = 0.0D;
-            }
-
-            if (Math.abs(this.motZ) > 10.0D) {
-                this.motZ = 0.0D;
-            }
-        }
-        // CraftBukkit end
-
         this.lastX = this.bk = this.locX = ((NBTTagDouble) nbttaglist.a(0)).a;
         this.lastY = this.bl = this.locY = ((NBTTagDouble) nbttaglist.a(1)).a;
         this.lastZ = this.bm = this.locZ = ((NBTTagDouble) nbttaglist.a(2)).a;
@@ -928,6 +912,22 @@ public abstract class Entity {
 
         this.setPosition(this.locX, this.locY, this.locZ);
         this.a(nbttagcompound);
+
+        // CraftBukkit start - Exempt Vehicles from notch's sanity check
+        if (!(this.getBukkitEntity() instanceof CraftVehicle)) {
+            if (Math.abs(this.motX) > 10.0D) {
+                this.motX = 0.0D;
+            }
+
+            if (Math.abs(this.motY) > 10.0D) {
+                this.motY = 0.0D;
+            }
+
+            if (Math.abs(this.motZ) > 10.0D) {
+                this.motZ = 0.0D;
+            }
+        }
+        // CraftBukkit end
     }
 
     protected final String ac() {
