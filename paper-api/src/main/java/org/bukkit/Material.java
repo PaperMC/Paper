@@ -42,6 +42,8 @@ public enum Material {
     POWERED_RAIL(27, PoweredRail.class),
     DETECTOR_RAIL(28, DetectorRail.class),
     WEB(30),
+    LONG_GRASS(31),
+    DEAD_BUSH(32),
     WOOL(35, Wool.class),
     YELLOW_FLOWER(37),
     RED_ROSE(38),
@@ -102,6 +104,7 @@ public enum Material {
     DIODE_BLOCK_OFF(93, Diode.class),
     DIODE_BLOCK_ON(94, Diode.class),
     LOCKED_CHEST(95),
+    TRAP_DOOR(96, TrapDoor.class),
     // ----- Item Separator -----
     IRON_SPADE(256, 1, 250),
     IRON_PICKAXE(257, 1, 250),
@@ -205,6 +208,7 @@ public enum Material {
     BED(355),
     DIODE(356),
     COOKIE(357),
+    MAP(358),
     GOLD_RECORD(2256, 1),
     GREEN_RECORD(2257, 1);
 
