@@ -242,7 +242,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
             WorldSaveEvent event = new WorldSaveEvent(worldserver.getWorld());
             server.getPluginManager().callEvent(event);
         }
-        
+
         WorldServer world = this.worlds.get(0);
         if (!world.E) {
             this.serverConfigurationManager.savePlayers();
@@ -379,8 +379,10 @@ public class MinecraftServer implements Runnable, ICommandListener {
                     EntityPlayer entityplayer = (EntityPlayer) this.serverConfigurationManager.players.get(i);
                     entityplayer.netServerHandler.sendPacket(new Packet4UpdateTime(entityplayer.world.getTime()));
                 }
-                // Craftbukkit end
             }
+
+            ((CraftScheduler) server.getScheduler()).mainThreadHeartbeat(this.ticks);
+             // Craftbukkit end
 
             worldserver.doTick();
 
