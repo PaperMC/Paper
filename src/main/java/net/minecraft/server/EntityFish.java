@@ -32,12 +32,12 @@ public class EntityFish extends Entity {
     public EntityFish(World world) {
         super(world);
         this.b(0.25F, 0.25F);
+        this.bI = true;
     }
-
-    protected void b() {}
 
     public EntityFish(World world, EntityHuman entityhuman) {
         super(world);
+        this.bI = true;
         this.owner = entityhuman;
         this.owner.hookedFish = this;
         this.b(0.25F, 0.25F);
@@ -54,6 +54,8 @@ public class EntityFish extends Entity {
         this.motY = (double) (-MathHelper.sin(this.pitch / 180.0F * 3.1415927F) * f);
         this.a(this.motX, this.motY, this.motZ, 1.5F, 1.0F);
     }
+
+    protected void b() {}
 
     public void a(double d0, double d1, double d2, float f, float f1) {
         float f2 = MathHelper.a(d0 * d0 + d1 * d1 + d2 * d2);
@@ -103,7 +105,7 @@ public class EntityFish extends Entity {
             if (!this.world.isStatic) {
                 ItemStack itemstack = this.owner.D();
 
-                if (this.owner.dead || !this.owner.P() || itemstack == null || itemstack.getItem() != Item.FISHING_ROD || this.g(this.owner) > 1024.0D) {
+                if (this.owner.dead || !this.owner.Q() || itemstack == null || itemstack.getItem() != Item.FISHING_ROD || this.g(this.owner) > 1024.0D) {
                     this.die();
                     this.owner.hookedFish = null;
                     return;
@@ -270,7 +272,7 @@ public class EntityFish extends Entity {
                     } else {
                         short short1 = 500;
 
-                        if (this.world.q(MathHelper.floor(this.locX), MathHelper.floor(this.locY) + 1, MathHelper.floor(this.locZ))) {
+                        if (this.world.s(MathHelper.floor(this.locX), MathHelper.floor(this.locY) + 1, MathHelper.floor(this.locZ))) {
                             short1 = 300;
                         }
 

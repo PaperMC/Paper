@@ -91,9 +91,8 @@ public class EntityWeatherStorm extends EntityWeather {
                 --this.c;
                 this.b = 1;
                 this.a = this.random.nextLong();
-                // CraftBukkit start
+                // CraftBukkit
                 if (!isEffect && this.world.a(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ), 10)) {
-                // CraftBukkit end
                     int i = MathHelper.floor(this.locX);
                     int j = MathHelper.floor(this.locY);
                     int k = MathHelper.floor(this.locZ);
@@ -122,7 +121,7 @@ public class EntityWeatherStorm extends EntityWeather {
                 entity.a(this);
             }
 
-            this.world.i = 2;
+            this.world.n = 2;
         }
     }
 

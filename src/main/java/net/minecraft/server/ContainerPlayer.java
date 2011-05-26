@@ -75,4 +75,38 @@ public class ContainerPlayer extends Container {
     public boolean b(EntityHuman entityhuman) {
         return true;
     }
+
+    public ItemStack a(int i) {
+        ItemStack itemstack = null;
+        Slot slot = (Slot) this.e.get(i);
+
+        if (slot != null && slot.b()) {
+            ItemStack itemstack1 = slot.getItem();
+
+            itemstack = itemstack1.j();
+            if (i == 0) {
+                this.a(itemstack1, 9, 45, true);
+            } else if (i >= 9 && i < 36) {
+                this.a(itemstack1, 36, 45, false);
+            } else if (i >= 36 && i < 45) {
+                this.a(itemstack1, 9, 36, false);
+            } else {
+                this.a(itemstack1, 9, 45, false);
+            }
+
+            if (itemstack1.count == 0) {
+                slot.c((ItemStack) null);
+            } else {
+                slot.c();
+            }
+
+            if (itemstack1.count == itemstack.count) {
+                return null;
+            }
+
+            slot.a(itemstack1);
+        }
+
+        return itemstack;
+    }
 }

@@ -13,18 +13,18 @@ import org.bukkit.event.entity.ExplosionPrimeEvent;
 
 public class EntityFireball extends Entity {
 
-    private int e = -1;
     private int f = -1;
     private int g = -1;
-    private int h = 0;
-    private boolean i = false;
+    private int h = -1;
+    private int i = 0;
+    private boolean j = false;
     public int a = 0;
-    private EntityLiving shooter;
+    public EntityLiving shooter;
     private int k;
     private int l = 0;
-    public double b;
     public double c;
     public double d;
+    public double e;
 
     public EntityFireball(World world) {
         super(world);
@@ -46,9 +46,9 @@ public class EntityFireball extends Entity {
         d2 += this.random.nextGaussian() * 0.4D;
         double d3 = (double) MathHelper.a(d0 * d0 + d1 * d1 + d2 * d2);
 
-        this.b = d0 / d3 * 0.1D;
-        this.c = d1 / d3 * 0.1D;
-        this.d = d2 / d3 * 0.1D;
+        this.c = d0 / d3 * 0.1D;
+        this.d = d1 / d3 * 0.1D;
+        this.e = d2 / d3 * 0.1D;
     }
 
     public void p_() {
@@ -58,10 +58,10 @@ public class EntityFireball extends Entity {
             --this.a;
         }
 
-        if (this.i) {
-            int i = this.world.getTypeId(this.e, this.f, this.g);
+        if (this.j) {
+            int i = this.world.getTypeId(this.f, this.g, this.h);
 
-            if (i == this.h) {
+            if (i == this.i) {
                 ++this.k;
                 if (this.k == 1200) {
                     this.die();
@@ -70,7 +70,7 @@ public class EntityFireball extends Entity {
                 return;
             }
 
-            this.i = false;
+            this.j = false;
             this.motX *= (double) (this.random.nextFloat() * 0.2F);
             this.motY *= (double) (this.random.nextFloat() * 0.2F);
             this.motZ *= (double) (this.random.nextFloat() * 0.2F);
@@ -118,35 +118,36 @@ public class EntityFireball extends Entity {
         }
 
         if (movingobjectposition != null) {
-            // CraftBukkit start
-            if (movingobjectposition.entity != null) {
-                boolean stick;
-                if (movingobjectposition.entity instanceof EntityLiving) {
-                    CraftServer server = ((WorldServer) this.world).getServer();
-                    org.bukkit.entity.Entity shooter = (this.shooter == null) ? null : this.shooter.getBukkitEntity();
-                    org.bukkit.entity.Entity damagee = movingobjectposition.entity.getBukkitEntity();
-                    org.bukkit.entity.Entity projectile = this.getBukkitEntity();
-                    DamageCause damageCause = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
-                    int damage = 0;
+            if (!this.world.isStatic) {
+                // CraftBukkit start
+                if (movingobjectposition.entity != null) {
+                    boolean stick;
+                    if (movingobjectposition.entity instanceof EntityLiving) {
+                        CraftServer server = ((WorldServer) this.world).getServer();
+                        org.bukkit.entity.Entity shooter = (this.shooter == null) ? null : this.shooter.getBukkitEntity();
+                        org.bukkit.entity.Entity damagee = movingobjectposition.entity.getBukkitEntity();
+                        org.bukkit.entity.Entity projectile = this.getBukkitEntity();
+                        DamageCause damageCause = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
+                        int damage = 0;
 
-                    // TODO @see EntityArrow#162
-                    EntityDamageByProjectileEvent event = new EntityDamageByProjectileEvent(shooter, damagee, projectile, damageCause, damage);
-                    server.getPluginManager().callEvent(event);
+                        // TODO @see EntityArrow#162
+                        EntityDamageByProjectileEvent event = new EntityDamageByProjectileEvent(shooter, damagee, projectile, damageCause, damage);
+                        server.getPluginManager().callEvent(event);
 
-                    if (!event.isCancelled()) {
-                        // this function returns if the fireball should stick or not, i.e. !bounce
-                        stick = movingobjectposition.entity.damageEntity(this.shooter, event.getDamage());
+                        if (!event.isCancelled()) {
+                            // this function returns if the fireball should stick or not, i.e. !bounce
+                            stick = movingobjectposition.entity.damageEntity(this.shooter, event.getDamage());
+                        } else {
+                            // event was cancelled, get if the fireball should bounce or not
+                            stick = !event.getBounce();
+                        }
                     } else {
-                        // event was cancelled, get if the fireball should bounce or not
-                        stick = !event.getBounce();
+                        stick = movingobjectposition.entity.damageEntity(this.shooter, 0);
                     }
-                } else {
-                    stick = movingobjectposition.entity.damageEntity(this.shooter, 0);
+                    if (stick) {
+                        ;
+                    }
                 }
-                if (stick) {
-                    ;
-                }
-            }
 
             CraftServer server = ((WorldServer) this.world).getServer();
 
@@ -158,6 +159,9 @@ public class EntityFireball extends Entity {
                 this.die();
             }
             // CraftBukkit end
+            }
+
+            // this.die() // # CraftBukkit
         }
 
         this.locX += this.motX;
@@ -187,7 +191,7 @@ public class EntityFireball extends Entity {
         this.yaw = this.lastYaw + (this.yaw - this.lastYaw) * 0.2F;
         float f2 = 0.95F;
 
-        if (this.Z()) {
+        if (this.aa()) {
             for (int k = 0; k < 4; ++k) {
                 float f3 = 0.25F;
 
@@ -197,9 +201,9 @@ public class EntityFireball extends Entity {
             f2 = 0.8F;
         }
 
-        this.motX += this.b;
-        this.motY += this.c;
-        this.motZ += this.d;
+        this.motX += this.c;
+        this.motY += this.d;
+        this.motZ += this.e;
         this.motX *= (double) f2;
         this.motY *= (double) f2;
         this.motZ *= (double) f2;
@@ -208,21 +212,21 @@ public class EntityFireball extends Entity {
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("xTile", (short) this.e);
-        nbttagcompound.a("yTile", (short) this.f);
-        nbttagcompound.a("zTile", (short) this.g);
-        nbttagcompound.a("inTile", (byte) this.h);
+        nbttagcompound.a("xTile", (short) this.f);
+        nbttagcompound.a("yTile", (short) this.g);
+        nbttagcompound.a("zTile", (short) this.h);
+        nbttagcompound.a("inTile", (byte) this.i);
         nbttagcompound.a("shake", (byte) this.a);
-        nbttagcompound.a("inGround", (byte) (this.i ? 1 : 0));
+        nbttagcompound.a("inGround", (byte) (this.j ? 1 : 0));
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        this.e = nbttagcompound.d("xTile");
-        this.f = nbttagcompound.d("yTile");
-        this.g = nbttagcompound.d("zTile");
-        this.h = nbttagcompound.c("inTile") & 255;
+        this.f = nbttagcompound.d("xTile");
+        this.g = nbttagcompound.d("yTile");
+        this.h = nbttagcompound.d("zTile");
+        this.i = nbttagcompound.c("inTile") & 255;
         this.a = nbttagcompound.c("shake") & 255;
-        this.i = nbttagcompound.c("inGround") == 1;
+        this.j = nbttagcompound.c("inGround") == 1;
     }
 
     public boolean o_() {
@@ -230,17 +234,17 @@ public class EntityFireball extends Entity {
     }
 
     public boolean damageEntity(Entity entity, int i) {
-        this.ab();
+        this.ac();
         if (entity != null) {
-            Vec3D vec3d = entity.V();
+            Vec3D vec3d = entity.W();
 
             if (vec3d != null) {
                 this.motX = vec3d.a;
                 this.motY = vec3d.b;
                 this.motZ = vec3d.c;
-                this.b = this.motX * 0.1D;
-                this.c = this.motY * 0.1D;
-                this.d = this.motZ * 0.1D;
+                this.c = this.motX * 0.1D;
+                this.d = this.motY * 0.1D;
+                this.e = this.motZ * 0.1D;
             }
 
             return true;

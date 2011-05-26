@@ -72,7 +72,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
     public void a() {
         this.i = false;
-        this.networkManager.a();
+        this.networkManager.b();
         if (this.f - this.g > 20) {
             this.sendPacket(new Packet0KeepAlive());
         }
@@ -88,8 +88,9 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             return;
         }
         // Send the possibly modified leave message
-        this.sendPacket(new Packet255KickDisconnect(event.getReason()));
-        this.networkManager.c();
+        s = event.getReason();
+        this.sendPacket(new Packet255KickDisconnect(s));
+        this.networkManager.d();
         leaveMessage = event.getLeaveMessage();
         if (leaveMessage != null) {
             this.minecraftServer.serverConfigurationManager.sendAll(new Packet3Chat(leaveMessage));
@@ -105,6 +106,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     }
 
     public void a(Packet10Flying packet10flying) {
+        WorldServer worldserver = this.minecraftServer.a(this.player.dimension);
+
         this.i = true;
         double d0;
 
@@ -120,7 +123,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         Location from = new Location(player.getWorld(), lastPosX, lastPosY, lastPosZ, lastYaw, lastPitch);
         Location to = player.getLocation();
 
-        // Prevent 40 event-calls for less than a single pixel of movement >.>
+        // Prevent 40 event-calls for less than b single pixel of movement >.>
         double delta = Math.pow(this.lastPosX - this.x, 2) + Math.pow(this.lastPosY - this.y, 2) + Math.pow(this.lastPosZ - this.z, 2);
         float deltaAngle = Math.abs(this.lastYaw - this.player.yaw) +  Math.abs(this.lastPitch - this.player.pitch);
 
@@ -217,20 +220,18 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 this.player.motX = d5;
                 this.player.motZ = d4;
                 if (this.player.vehicle != null) {
-                    // CraftBukkit
-                    ((WorldServer) this.player.world).vehicleEnteredWorld(this.player.vehicle, true);
+                    worldserver.vehicleEnteredWorld(this.player.vehicle, true);
                 }
 
                 if (this.player.vehicle != null) {
                     this.player.vehicle.f();
                 }
 
-                this.minecraftServer.serverConfigurationManager.b(this.player);
+                this.minecraftServer.serverConfigurationManager.d(this.player);
                 this.x = this.player.locX;
                 this.y = this.player.locY;
                 this.z = this.player.locZ;
-                // CraftBukkit
-                ((WorldServer) this.player.world).playerJoinedWorld(this.player);
+                worldserver.playerJoinedWorld(this.player);
                 return;
             }
 
@@ -271,8 +272,12 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             }
 
             this.player.a(true);
-            this.player.bn = 0.0F;
+            this.player.bq = 0.0F;
             this.player.setLocation(this.x, this.y, this.z, f2, f3);
+            if (!this.m) {
+                return;
+            }
+
             d4 = d1 - this.player.locX;
             double d6 = d2 - this.player.locY;
             double d7 = d3 - this.player.locZ;
@@ -290,8 +295,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             // CraftBukkit end
 
             float f4 = 0.0625F;
-            // CraftBukkit
-            boolean flag = ((WorldServer) this.player.world).getEntities(this.player, this.player.boundingBox.clone().shrink((double) f4, (double) f4, (double) f4)).size() == 0;
+            boolean flag = worldserver.getEntities(this.player, this.player.boundingBox.clone().shrink((double) f4, (double) f4, (double) f4)).size() == 0;
 
             this.player.move(d4, d6, d7);
             d4 = d1 - this.player.locX;
@@ -312,8 +316,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             }
 
             this.player.setLocation(d1, d2, d3, f2, f3);
-            // CraftBukkit
-            boolean flag2 = ((WorldServer) this.player.world).getEntities(this.player, this.player.boundingBox.clone().shrink((double) f4, (double) f4, (double) f4)).size() == 0;
+            boolean flag2 = worldserver.getEntities(this.player, this.player.boundingBox.clone().shrink((double) f4, (double) f4, (double) f4)).size() == 0;
 
             if (flag && (flag1 || !flag2) && !this.player.isSleeping()) {
                 this.a(this.x, this.y, this.z, f2, f3);
@@ -322,8 +325,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
             AxisAlignedBB axisalignedbb = this.player.boundingBox.clone().b((double) f4, (double) f4, (double) f4).a(0.0D, -0.55D, 0.0D);
 
-            // CraftBukkit
-            if (!this.minecraftServer.o && !((WorldServer) this.player.world).b(axisalignedbb)) {
+            if (!this.minecraftServer.o && !worldserver.b(axisalignedbb)) {
                 if (d6 >= -0.03125D) {
                     ++this.h;
                     if (this.h > 80) {
@@ -337,9 +339,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             }
 
             this.player.onGround = packet10flying.g;
-            this.minecraftServer.serverConfigurationManager.b(this.player);
+            this.minecraftServer.serverConfigurationManager.d(this.player);
             this.player.b(this.player.locY - d0, packet10flying.g);
-            // CraftBukkit end
         }
     }
 
@@ -398,11 +399,12 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         }
         // CraftBukkit end
 
+        WorldServer worldserver = this.minecraftServer.a(this.player.dimension);
+
         if (packet14blockdig.e == 4) {
             this.player.C();
         } else {
-            // CraftBukkit
-            boolean flag = ((WorldServer) this.player.world).weirdIsOpCache = this.minecraftServer.serverConfigurationManager.isOp(this.player.name);
+            boolean flag = worldserver.weirdIsOpCache = worldserver.worldProvider.dimension != 0 || this.minecraftServer.serverConfigurationManager.isOp(this.player.name);
             boolean flag1 = false;
 
             if (packet14blockdig.e == 0) {
@@ -428,8 +430,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 }
             }
 
-            // CraftBukkit
-            ChunkCoordinates chunkcoordinates = ((WorldServer) this.player.world).getSpawn();
+            ChunkCoordinates chunkcoordinates = worldserver.getSpawn();
             int l = (int) MathHelper.abs((float) (i - chunkcoordinates.x));
             int i1 = (int) MathHelper.abs((float) (k - chunkcoordinates.z));
 
@@ -439,12 +440,17 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
             if (packet14blockdig.e == 0) {
                 // CraftBukkit
-                if (i1 > this.minecraftServer.spawnProtection || flag) {
+                if (i1 < this.minecraftServer.spawnProtection && !flag) {
+                    this.player.netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, worldserver));
+                } else {
                     // CraftBukkit - add face argument
                     this.player.itemInWorldManager.dig(i, j, k, packet14blockdig.face);
                 }
             } else if (packet14blockdig.e == 2) {
-                this.player.itemInWorldManager.b(i, j, k);
+                this.player.itemInWorldManager.a(i, j, k);
+                if (worldserver.getTypeId(i, j, k) != 0) {
+                    this.player.netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, worldserver));
+                }
             } else if (packet14blockdig.e == 3) {
                 double d4 = this.player.locX - ((double) i + 0.5D);
                 double d5 = this.player.locY - ((double) j + 0.5D);
@@ -452,24 +458,24 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 double d7 = d4 * d4 + d5 * d5 + d6 * d6;
 
                 if (d7 < 256.0D) {
-                    // CraftBukkit
-                    this.player.netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.player.world));
+                    this.player.netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, worldserver));
                 }
             }
 
-            // CraftBukkit
-            ((WorldServer) this.player.world).weirdIsOpCache = false;
+            worldserver.weirdIsOpCache = false;
         }
     }
 
     public void a(Packet15Place packet15place) {
+        WorldServer worldserver = this.minecraftServer.a(this.player.dimension);
+
         // CraftBukkit start
         if (this.player.dead) {
             return;
         }
 
-        // This is a horrible hack needed because the client sends 2 packets on 'right mouse click'
-        // aimed at a block. We shouldn't need to get the second packet if the data is handled
+        // This is b horrible hack needed because the client sends 2 packets on 'right mouse click'
+        // aimed at b block. We shouldn't need to get the second packet if the data is handled
         // but we cannot know what the client will do, so we might still get it
         //
         // If the time between packets is small enough, and the 'signature' similar, we discard the
@@ -488,13 +494,13 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
         // CraftBukkit - if rightclick decremented the item, always send the update packet.
         // this is not here for CraftBukkit's own functionality; rather it is to fix
-        // a notch bug where the item doesn't update correctly.
+        // b notch bug where the item doesn't update correctly.
         boolean always = false;
 
         // CraftBukkit end
 
         ItemStack itemstack = this.player.inventory.getItemInHand();
-        // boolean flag = this.minecraftServer.worldServer.weirdIsOpCache = this.minecraftServer.serverConfigurationManager.isOp(this.player.name);
+        boolean flag = worldserver.weirdIsOpCache = worldserver.worldProvider.dimension != 0 || this.minecraftServer.serverConfigurationManager.isOp(this.player.name);
 
         if (packet15place.face == 255) {
             if (itemstack == null) {
@@ -509,7 +515,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             }
 
             // CraftBukkit - notch decrements the counter by 1 in the above method with food,
-            // snowballs and so forth, but he does it in a place that doesn't cause the
+            // snowballs and so forth, but he does it in b place that doesn't cause the
             // inventory update packet to get sent
             always = (itemstack.count != itemstackAmount);
             // CraftBukkit end
@@ -518,7 +524,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             int j = packet15place.b;
             int k = packet15place.c;
             int l = packet15place.face;
-            ChunkCoordinates chunkcoordinates = ((WorldServer) this.player.world).getSpawn(); // CraftBukkit
+            ChunkCoordinates chunkcoordinates = worldserver.getSpawn();
             int i1 = (int) MathHelper.abs((float) (i - chunkcoordinates.x));
             int j1 = (int) MathHelper.abs((float) (k - chunkcoordinates.z));
 
@@ -526,17 +532,19 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 j1 = i1;
             }
 
-            // CraftBukkit start - spawn protection moved to ItemBlock!!!
-            // Check if we can actually do something over this large a distance
+            // CraftBukkit start - Check if we can actually do something over this large a distance
             Location eyeLoc = getPlayer().getEyeLocation();
             if (Math.pow(eyeLoc.getX() - i, 2) + Math.pow(eyeLoc.getY() - j, 2) + Math.pow(eyeLoc.getZ() - k, 2) > PLACE_DISTANCE_SQUARED) {
                 return;
             }
-
-            this.player.itemInWorldManager.interact(this.player, this.player.world, itemstack, i, j, k, l);
-            this.player.netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.player.world));
+            flag = true; // spawn protection moved to ItemBlock!!!
             // CraftBukkit end
 
+            if (j1 > 16 || flag) {
+                this.player.itemInWorldManager.interact(this.player, worldserver, itemstack, i, j, k, l);
+            }
+
+            this.player.netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, worldserver));
             if (l == 0) {
                 --j;
             }
@@ -561,10 +569,10 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 ++i;
             }
 
-            // CraftBukkit
-            this.player.netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.player.world));
+            this.player.netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, worldserver));
         }
 
+        itemstack = this.player.inventory.getItemInHand();
         if (itemstack != null && itemstack.count == 0) {
             this.player.inventory.items[this.player.inventory.itemInHandIndex] = null;
         }
@@ -580,12 +588,11 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             this.sendPacket(new Packet103SetSlot(this.player.activeContainer.f, slot.a, this.player.inventory.getItemInHand()));
         }
 
-        // CraftBukkit
-        ((WorldServer) this.player.world).weirdIsOpCache = false;
+        worldserver.weirdIsOpCache = false;
     }
 
     public void a(String s, Object[] aobject) {
-        if (this.disconnected) return; // CraftBukkit - rarely it would send a disconnect line twice
+        if (this.disconnected) return; // CraftBukkit - rarely it would send b disconnect line twice
 
         a.info(this.player.name + " lost connection: " + s);
         // CraftBukkit start - we need to handle custom quit messages
@@ -655,30 +662,29 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             }
 
             // CraftBukkit start
-            if (this.player.dead) {
-                return;
-            }
             chat(s);
         }
     }
 
-    public boolean chat(String msg) {
-        if (msg.startsWith("/")) {
-            this.handleCommand(msg);
-            return true;
-        } else {
-            Player player = getPlayer();
-            PlayerChatEvent event = new PlayerChatEvent(player, msg);
-            server.getPluginManager().callEvent(event);
-
-            if (event.isCancelled()) {
+    public boolean chat(String s) {
+        if (!this.player.dead) {
+            if (s.startsWith("/")) {
+                this.handleCommand(s);
                 return true;
-            }
+            } else {
+                Player player = getPlayer();
+                PlayerChatEvent event = new PlayerChatEvent(player, s);
+                server.getPluginManager().callEvent(event);
 
-            msg = String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage());
-            a.info(msg);
-            for (Player recipient : event.getRecipients()) {
-                recipient.sendMessage(msg);
+                if (event.isCancelled()) {
+                    return true;
+                }
+
+                s = String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage());
+                a.info(s);
+                for (Player recipient : event.getRecipients()) {
+                    recipient.sendMessage(s);
+                }
             }
         }
 
@@ -726,9 +732,10 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 }
             }
 
-        /* CraftBukkit start - No longer neaded as we have already handled it server.dispatchCommand above.
+        /* CraftBukkit start - No longer neaded av we have already handled it server.dispatchCommand above.
         } else {
             String s1;
+
             if (this.minecraftServer.serverConfigurationManager.isOp(this.player.name)) {
                 s1 = s.substring(1);
                 a.info(this.player.name + " issued server command: " + s1);
@@ -813,7 +820,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     }
 
     public int b() {
-        return this.networkManager.d();
+        return this.networkManager.e();
     }
 
     public void sendMessage(String s) {
@@ -831,10 +838,10 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         }
         // CraftBukkit end
 
-        // CraftBukkit
-        Entity entity = ((WorldServer) this.player.world).getEntity(packet7useentity.target);
+        WorldServer worldserver = this.minecraftServer.a(this.player.dimension);
+        Entity entity = worldserver.getEntity(packet7useentity.target);
 
-        if (entity != null && this.player.e(entity) && this.player.f(entity) < 4.0F) {
+        if (entity != null && this.player.e(entity) && this.player.g(entity) < 36.0D) {
             if (packet7useentity.c == 0) {
                 // CraftBukkit start
                 PlayerInteractEntityEvent piee = new PlayerInteractEntityEvent((Player) getPlayer(), entity.getBukkitEntity());
@@ -852,7 +859,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
     public void a(Packet9Respawn packet9respawn) {
         if (this.player.health <= 0) {
-            this.player = this.minecraftServer.serverConfigurationManager.d(this.player);
+            this.player = this.minecraftServer.serverConfigurationManager.a(this.player, 0);
 
             // CraftBukkit start
             CraftPlayer player = (CraftPlayer) getPlayer();
@@ -921,10 +928,12 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         if (this.player.dead) {
             return;
         }
+        // CraftBukkit end
+        //
+        WorldServer worldserver = this.minecraftServer.a(this.player.dimension);
 
-        if (((WorldServer) this.player.world).isLoaded(packet130updatesign.x, packet130updatesign.y, packet130updatesign.z)) {
-            TileEntity tileentity = ((WorldServer) this.player.world).getTileEntity(packet130updatesign.x, packet130updatesign.y, packet130updatesign.z);
-            // CraftBukkit end
+        if (worldserver.isLoaded(packet130updatesign.x, packet130updatesign.y, packet130updatesign.z)) {
+            TileEntity tileentity = worldserver.getTileEntity(packet130updatesign.x, packet130updatesign.y, packet130updatesign.z);
 
             if (tileentity instanceof TileEntitySign) {
                 TileEntitySign tileentitysign = (TileEntitySign) tileentity;
@@ -979,9 +988,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 // CraftBukkit end
 
                 tileentitysign1.update();
-
-                // CraftBukkit
-                ((WorldServer) this.player.world).notify(j, k, i);
+                worldserver.notify(j, k, i);
             }
         }
     }

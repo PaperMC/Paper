@@ -53,7 +53,7 @@ public class EntityBoat extends Entity {
         this.damage = 0;
         this.b = 0;
         this.c = 1;
-        this.aE = true;
+        this.aH = true;
         this.b(1.5F, 0.6F);
         this.height = this.width / 2.0F;
     }
@@ -116,7 +116,7 @@ public class EntityBoat extends Entity {
             this.c = -this.c;
             this.b = 10;
             this.damage += i * 10;
-            this.ab();
+            this.ac();
             if (this.damage > 40) {
 
                 // CraftBukkit start
@@ -226,29 +226,34 @@ public class EntityBoat extends Entity {
                 this.motZ *= 0.9900000095367432D;
             }
         } else {
-            d3 = d0 * 2.0D - 1.0D;
-            this.motY += 0.03999999910593033D * d3;
+            if (d0 < 1.0D) {
+                d3 = d0 * 2.0D - 1.0D;
+                this.motY += 0.03999999910593033D * d3;
+            } else {
+                this.motY += 0.0010000000474974513D;
+            }
+
             if (this.passenger != null) {
                 this.motX += this.passenger.motX * 0.2D;
                 this.motZ += this.passenger.motZ * 0.2D;
             }
 
             // CraftBukkit
-            d4 = this.maxSpeed;
-            if (this.motX < -d4) {
-                this.motX = -d4;
+            d3 = this.maxSpeed;
+            if (this.motX < -d3) {
+                this.motX = -d3;
             }
 
-            if (this.motX > d4) {
-                this.motX = d4;
+            if (this.motX > d3) {
+                this.motX = d3;
             }
 
-            if (this.motZ < -d4) {
-                this.motZ = -d4;
+            if (this.motZ < -d3) {
+                this.motZ = -d3;
             }
 
-            if (this.motZ > d4) {
-                this.motZ = d4;
+            if (this.motZ > d3) {
+                this.motZ = d3;
             }
 
             if (this.onGround) {
@@ -258,32 +263,30 @@ public class EntityBoat extends Entity {
             }
 
             this.move(this.motX, this.motY, this.motZ);
-            d5 = Math.sqrt(this.motX * this.motX + this.motZ * this.motZ);
-            double d7;
+            d4 = Math.sqrt(this.motX * this.motX + this.motZ * this.motZ);
+            if (d4 > 0.15D) {
+                d5 = Math.cos((double) this.yaw * 3.141592653589793D / 180.0D);
+                d6 = Math.sin((double) this.yaw * 3.141592653589793D / 180.0D);
 
-            if (d5 > 0.15D) {
-                d6 = Math.cos((double) this.yaw * 3.141592653589793D / 180.0D);
-                d7 = Math.sin((double) this.yaw * 3.141592653589793D / 180.0D);
-
-                for (int j = 0; (double) j < 1.0D + d5 * 60.0D; ++j) {
-                    double d8 = (double) (this.random.nextFloat() * 2.0F - 1.0F);
-                    double d9 = (double) (this.random.nextInt(2) * 2 - 1) * 0.7D;
+                for (int j = 0; (double) j < 1.0D + d4 * 60.0D; ++j) {
+                    double d7 = (double) (this.random.nextFloat() * 2.0F - 1.0F);
+                    double d8 = (double) (this.random.nextInt(2) * 2 - 1) * 0.7D;
+                    double d9;
                     double d10;
-                    double d11;
 
                     if (this.random.nextBoolean()) {
-                        d10 = this.locX - d6 * d8 * 0.8D + d7 * d9;
-                        d11 = this.locZ - d7 * d8 * 0.8D - d6 * d9;
-                        this.world.a("splash", d10, this.locY - 0.125D, d11, this.motX, this.motY, this.motZ);
+                        d9 = this.locX - d5 * d7 * 0.8D + d6 * d8;
+                        d10 = this.locZ - d6 * d7 * 0.8D - d5 * d8;
+                        this.world.a("splash", d9, this.locY - 0.125D, d10, this.motX, this.motY, this.motZ);
                     } else {
-                        d10 = this.locX + d6 + d7 * d8 * 0.7D;
-                        d11 = this.locZ + d7 - d6 * d8 * 0.7D;
-                        this.world.a("splash", d10, this.locY - 0.125D, d11, this.motX, this.motY, this.motZ);
+                        d9 = this.locX + d5 + d6 * d7 * 0.7D;
+                        d10 = this.locZ + d6 - d5 * d7 * 0.7D;
+                        this.world.a("splash", d9, this.locY - 0.125D, d10, this.motX, this.motY, this.motZ);
                     }
                 }
             }
 
-            if (this.positionChanged && d5 > 0.15D) {
+            if (this.positionChanged && d4 > 0.15D) {
                 if (!this.world.isStatic) {
                     this.die();
 
@@ -304,33 +307,33 @@ public class EntityBoat extends Entity {
             }
 
             this.pitch = 0.0F;
-            d6 = (double) this.yaw;
-            d7 = this.lastX - this.locX;
-            double d12 = this.lastZ - this.locZ;
+            d5 = (double) this.yaw;
+            d6 = this.lastX - this.locX;
+            double d11 = this.lastZ - this.locZ;
 
-            if (d7 * d7 + d12 * d12 > 0.0010D) {
-                d6 = (double) ((float) (Math.atan2(d12, d7) * 180.0D / 3.141592653589793D));
+            if (d6 * d6 + d11 * d11 > 0.0010D) {
+                d5 = (double) ((float) (Math.atan2(d11, d6) * 180.0D / 3.141592653589793D));
             }
 
-            double d13;
+            double d12;
 
-            for (d13 = d6 - (double) this.yaw; d13 >= 180.0D; d13 -= 360.0D) {
+            for (d12 = d5 - (double) this.yaw; d12 >= 180.0D; d12 -= 360.0D) {
                 ;
             }
 
-            while (d13 < -180.0D) {
-                d13 += 360.0D;
+            while (d12 < -180.0D) {
+                d12 += 360.0D;
             }
 
-            if (d13 > 20.0D) {
-                d13 = 20.0D;
+            if (d12 > 20.0D) {
+                d12 = 20.0D;
             }
 
-            if (d13 < -20.0D) {
-                d13 = -20.0D;
+            if (d12 < -20.0D) {
+                d12 = -20.0D;
             }
 
-            this.yaw = (float) ((double) this.yaw + d13);
+            this.yaw = (float) ((double) this.yaw + d12);
             this.c(this.yaw, this.pitch);
 
             // CraftBukkit start
@@ -349,14 +352,25 @@ public class EntityBoat extends Entity {
             // CraftBukkit end
 
             List list = this.world.b((Entity) this, this.boundingBox.b(0.20000000298023224D, 0.0D, 0.20000000298023224D));
+            int l;
 
             if (list != null && list.size() > 0) {
-                for (int l = 0; l < list.size(); ++l) {
+                for (l = 0; l < list.size(); ++l) {
                     Entity entity = (Entity) list.get(l);
 
                     if (entity != this.passenger && entity.d_() && entity instanceof EntityBoat) {
                         entity.collide(this);
                     }
+                }
+            }
+
+            for (l = 0; l < 4; ++l) {
+                int i1 = MathHelper.floor(this.locX + ((double) (l % 2) - 0.5D) * 0.8D);
+                int j1 = MathHelper.floor(this.locY);
+                int k1 = MathHelper.floor(this.locZ + ((double) (l / 2) - 0.5D) * 0.8D);
+
+                if (this.world.getTypeId(i1, j1, k1) == Block.SNOW.id) {
+                    this.world.setTypeId(i1, j1, k1, 0);
                 }
             }
 

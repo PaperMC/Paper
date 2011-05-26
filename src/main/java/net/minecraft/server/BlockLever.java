@@ -21,6 +21,14 @@ public class BlockLever extends Block {
         return false;
     }
 
+    public boolean b() {
+        return false;
+    }
+
+    public boolean canPlace(World world, int i, int j, int k, int l) {
+        return l == 1 && world.d(i, j - 1, k) ? true : (l == 2 && world.d(i, j, k + 1) ? true : (l == 3 && world.d(i, j, k - 1) ? true : (l == 4 && world.d(i + 1, j, k) ? true : l == 5 && world.d(i - 1, j, k))));
+    }
+
     public boolean canPlace(World world, int i, int j, int k) {
         return world.d(i - 1, j, k) ? true : (world.d(i + 1, j, k) ? true : (world.d(i, j, k - 1) ? true : (world.d(i, j, k + 1) ? true : world.d(i, j - 1, k))));
     }
@@ -30,6 +38,7 @@ public class BlockLever extends Block {
         int j1 = i1 & 8;
 
         i1 &= 7;
+        i1 = -1;
         if (l == 1 && world.d(i, j - 1, k)) {
             i1 = 5 + world.random.nextInt(2);
         }
@@ -50,7 +59,12 @@ public class BlockLever extends Block {
             i1 = 1;
         }
 
-        world.setData(i, j, k, i1 + j1);
+        if (i1 == -1) {
+            this.b_(world, i, j, k, world.getData(i, j, k));
+            world.setTypeId(i, j, k, 0);
+        } else {
+            world.setData(i, j, k, i1 + j1);
+        }
     }
 
     public void doPhysics(World world, int i, int j, int k, int l) {
@@ -78,8 +92,12 @@ public class BlockLever extends Block {
                 flag = true;
             }
 
+            if (!world.d(i, j - 1, k) && i1 == 6) {
+                flag = true;
+            }
+
             if (flag) {
-                this.a_(world, i, j, k, world.getData(i, j, k));
+                this.b_(world, i, j, k, world.getData(i, j, k));
                 world.setTypeId(i, j, k, 0);
             }
         }
@@ -87,7 +105,7 @@ public class BlockLever extends Block {
 
     private boolean g(World world, int i, int j, int k) {
         if (!this.canPlace(world, i, j, k)) {
-            this.a_(world, i, j, k, world.getData(i, j, k));
+            this.b_(world, i, j, k, world.getData(i, j, k));
             world.setTypeId(i, j, k, 0);
             return false;
         } else {
@@ -183,7 +201,7 @@ public class BlockLever extends Block {
         super.remove(world, i, j, k);
     }
 
-    public boolean b(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+    public boolean a(IBlockAccess iblockaccess, int i, int j, int k, int l) {
         return (iblockaccess.getData(i, j, k) & 8) > 0;
     }
 
@@ -195,7 +213,7 @@ public class BlockLever extends Block {
         } else {
             int j1 = i1 & 7;
 
-            return j1 == 5 && l == 1 ? true : (j1 == 4 && l == 2 ? true : (j1 == 3 && l == 3 ? true : (j1 == 2 && l == 4 ? true : j1 == 1 && l == 5)));
+            return j1 == 6 && l == 1 ? true : (j1 == 5 && l == 1 ? true : (j1 == 4 && l == 2 ? true : (j1 == 3 && l == 3 ? true : (j1 == 2 && l == 4 ? true : j1 == 1 && l == 5))));
         }
     }
 

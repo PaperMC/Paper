@@ -50,7 +50,9 @@ public class ItemBlock extends Item {
 
         if (itemstack.count == 0) {
             return false;
-        } else if (world.a(this.id, i, j, k, false)) {
+        } else if (j == 127 && Block.byId[this.id].material.isBuildable()) {
+            return false;
+        } else if (world.a(this.id, i, j, k, false, l)) {
             Block block = Block.byId[this.id];
 
             // CraftBukkit start - This executes the placement of the block
@@ -87,16 +89,17 @@ public class ItemBlock extends Item {
 
                         world.setTypeIdAndData(i, j, k, replacedBlockState.getTypeId(), replacedBlockState.getRawData());
                     }
+                    return true;
 
-                } else {
-                    world.update(i, j, k, this.id); // <-- world.setTypeIdAndData does this on success (tell the world)
-
-                    Block.byId[this.id].postPlace(world, i, j, k, l);
-                    Block.byId[this.id].postPlace(world, i, j, k, entityhuman);
-                    world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), block.stepSound.getName(), (block.stepSound.getVolume1() + 1.0F) / 2.0F, block.stepSound.getVolume2() * 0.8F);
-                    --itemstack.count;
                 }
+                world.update(i, j, k, this.id); // <-- world.setTypeIdAndData does this on success (tell the world)
+
                 // CraftBukkit end
+
+                Block.byId[this.id].postPlace(world, i, j, k, l);
+                Block.byId[this.id].postPlace(world, i, j, k, entityhuman);
+                world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), block.stepSound.getName(), (block.stepSound.getVolume1() + 1.0F) / 2.0F, block.stepSound.getVolume2() * 0.8F);
+                --itemstack.count;
             }
 
             return true;
@@ -106,6 +109,6 @@ public class ItemBlock extends Item {
     }
 
     public String a() {
-        return Block.byId[this.id].f();
+        return Block.byId[this.id].h();
     }
 }

@@ -13,7 +13,7 @@ public class EntitySpider extends EntityMonster {
         super(world);
         this.texture = "/mob/spider.png";
         this.b(1.4F, 0.9F);
-        this.aA = 0.8F;
+        this.aD = 0.8F;
     }
 
     public double m() {

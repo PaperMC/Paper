@@ -77,9 +77,9 @@ public class EntitySnowball extends Entity {
     }
 
     public void p_() {
-        this.bk = this.locX;
-        this.bl = this.locY;
-        this.bm = this.locZ;
+        this.bn = this.locX;
+        this.bo = this.locY;
+        this.bp = this.locZ;
         super.p_();
         if (this.a > 0) {
             --this.a;
@@ -213,7 +213,7 @@ public class EntitySnowball extends Entity {
         float f2 = 0.99F;
         float f3 = 0.03F;
 
-        if (this.Z()) {
+        if (this.aa()) {
             for (int l = 0; l < 4; ++l) {
                 float f4 = 0.25F;
 

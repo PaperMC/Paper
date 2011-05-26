@@ -46,7 +46,7 @@ public class BlockRedstoneTorch extends BlockTorch {
         this.a(true);
     }
 
-    public int b() {
+    public int c() {
         return 2;
     }
 
@@ -76,7 +76,7 @@ public class BlockRedstoneTorch extends BlockTorch {
         }
     }
 
-    public boolean b(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+    public boolean a(IBlockAccess iblockaccess, int i, int j, int k, int l) {
         if (!this.isOn) {
             return false;
         } else {
@@ -148,11 +148,11 @@ public class BlockRedstoneTorch extends BlockTorch {
 
     public void doPhysics(World world, int i, int j, int k, int l) {
         super.doPhysics(world, i, j, k, l);
-        world.c(i, j, k, this.id, this.b());
+        world.c(i, j, k, this.id, this.c());
     }
 
     public boolean c(World world, int i, int j, int k, int l) {
-        return l == 0 ? this.b(world, i, j, k, l) : false;
+        return l == 0 ? this.a(world, i, j, k, l) : false;
     }
 
     public int a(int i, Random random) {

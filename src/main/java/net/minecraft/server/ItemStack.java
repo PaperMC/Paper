@@ -92,11 +92,11 @@ public final class ItemStack {
     }
 
     public boolean d() {
-        return Item.byId[this.id].d() > 0;
+        return Item.byId[this.id].e() > 0;
     }
 
     public boolean e() {
-        return Item.byId[this.id].c();
+        return Item.byId[this.id].d();
     }
 
     public boolean f() {
@@ -111,8 +111,12 @@ public final class ItemStack {
         return this.damage;
     }
 
+    public void b(int i) {
+        this.damage = i;
+    }
+
     public int i() {
-        return Item.byId[this.id].d();
+        return Item.byId[this.id].e();
     }
 
     public void damage(int i, Entity entity) {
@@ -168,10 +172,10 @@ public final class ItemStack {
     }
 
     public static boolean equals(ItemStack itemstack, ItemStack itemstack1) {
-        return itemstack == null && itemstack1 == null ? true : (itemstack != null && itemstack1 != null ? itemstack.c(itemstack1) : false);
+        return itemstack == null && itemstack1 == null ? true : (itemstack != null && itemstack1 != null ? itemstack.d(itemstack1) : false);
     }
 
-    private boolean c(ItemStack itemstack) {
+    private boolean d(ItemStack itemstack) {
         return this.count != itemstack.count ? false : (this.id != itemstack.id ? false : this.damage == itemstack.damage);
     }
 
@@ -185,5 +189,22 @@ public final class ItemStack {
 
     public String toString() {
         return this.count + "x" + Item.byId[this.id].a() + "@" + this.damage;
+    }
+
+    public void a(World world, Entity entity, int i, boolean flag) {
+        if (this.b > 0) {
+            --this.b;
+        }
+
+        Item.byId[this.id].a(this, world, entity, i, flag);
+    }
+
+    public void b(World world, EntityHuman entityhuman) {
+        entityhuman.a(StatisticList.D[this.id], this.count);
+        Item.byId[this.id].c(this, world, entityhuman);
+    }
+
+    public boolean c(ItemStack itemstack) {
+        return this.id == itemstack.id && this.count == itemstack.count && this.damage == itemstack.damage;
     }
 }

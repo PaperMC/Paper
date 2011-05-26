@@ -3,6 +3,7 @@ package net.minecraft.server;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Logger;
+
 // Craftbukkit start
 import java.util.List;
 import org.bukkit.craftbukkit.command.ServerCommandListener;
@@ -24,7 +25,6 @@ public class ConsoleCommandHandler {
         String s = servercommand.command;
         ICommandListener icommandlistener = servercommand.b;
         String s1 = icommandlistener.getName();
-        WorldServer worldserver = this.server.worlds.get(0); // CraftBukkit
         listener = icommandlistener; // CraftBukkit
         ServerConfigurationManager serverconfigurationmanager = this.server.serverConfigurationManager;
 
@@ -34,183 +34,218 @@ public class ConsoleCommandHandler {
             } else if (s.toLowerCase().startsWith("stop")) {
                 this.print(s1, "Stopping the server..");
                 this.server.a();
-            } else if (s.toLowerCase().startsWith("save-all")) {
-                this.print(s1, "Forcing save..");
-                boolean save = worldserver.y; // CraftBukkit - record current save flag state.
-                worldserver.y = false; // CraftBukkit - If save-all is used, we can assume saving should be turned on to allow for saving.
-                this.server.saveChunks(); // CraftBukkit - We should save all worlds on save-all.
-                worldserver.y = save;  // CraftBukkit start - Once done saving, we should turn it back off to avoid confusion if it was originally off.
-                this.print(s1, "Save complete.");
-            } else if (s.toLowerCase().startsWith("save-off")) {
-                this.print(s1, "Disabling level saving..");
-                worldserver.y = true;
-            } else if (s.toLowerCase().startsWith("save-on")) {
-                this.print(s1, "Enabling level saving..");
-                worldserver.y = false;
             } else {
-                String s2;
+                int i;
+                WorldServer worldserver;
 
-                if (s.toLowerCase().startsWith("op ")) {
-                    s2 = s.substring(s.indexOf(" ")).trim();
-                    serverconfigurationmanager.e(s2);
-                    this.print(s1, "Opping " + s2);
-                    serverconfigurationmanager.a(s2, "\u00A7eYou are now op!");
-                } else if (s.toLowerCase().startsWith("deop ")) {
-                    s2 = s.substring(s.indexOf(" ")).trim();
-                    serverconfigurationmanager.f(s2);
-                    serverconfigurationmanager.a(s2, "\u00A7eYou are no longer op!");
-                    this.print(s1, "De-opping " + s2);
-                } else if (s.toLowerCase().startsWith("ban-ip ")) {
-                    s2 = s.substring(s.indexOf(" ")).trim();
-                    serverconfigurationmanager.c(s2);
-                    this.print(s1, "Banning ip " + s2);
-                } else if (s.toLowerCase().startsWith("pardon-ip ")) {
-                    s2 = s.substring(s.indexOf(" ")).trim();
-                    serverconfigurationmanager.d(s2);
-                    this.print(s1, "Pardoning ip " + s2);
+                if (s.toLowerCase().startsWith("save-all")) {
+                    this.print(s1, "Forcing save..");
+                    if (serverconfigurationmanager != null) {
+                        serverconfigurationmanager.savePlayers();
+                    }
+
+                    // Craftbukkit start
+                    for (i = 0; i < this.server.worlds.size(); ++i) {
+                        worldserver = this.server.worlds.get(i);
+                        boolean save = worldserver.E;
+                        worldserver.E = false;
+                        worldserver.save(true, (IProgressUpdate) null);
+                        worldserver.E = save;
+                    }
+                    // CraftBukkit end
+
+                    this.print(s1, "Save complete.");
+                } else if (s.toLowerCase().startsWith("save-off")) {
+                    this.print(s1, "Disabling level saving..");
+
+                    for (i = 0; i < this.server.worlds.size(); ++i) { // Craftbukkit start
+                        worldserver = this.server.worlds.get(i); // Craftbukkit start
+                        worldserver.E = true;
+                    }
+                } else if (s.toLowerCase().startsWith("save-on")) {
+                    this.print(s1, "Enabling level saving..");
+
+                    for (i = 0; i < this.server.worlds.size(); ++i) { // Craftbukkit start
+                        worldserver = this.server.worlds.get(i); // Craftbukkit start
+                        worldserver.E = false;
+                    }
                 } else {
-                    EntityPlayer entityplayer;
+                    String s2;
 
-                    if (s.toLowerCase().startsWith("ban ")) {
+                    if (s.toLowerCase().startsWith("op ")) {
                         s2 = s.substring(s.indexOf(" ")).trim();
-                        serverconfigurationmanager.a(s2);
-                        this.print(s1, "Banning " + s2);
-                        entityplayer = serverconfigurationmanager.i(s2);
-                        if (entityplayer != null) {
-                            entityplayer.netServerHandler.disconnect("Banned by admin");
-                        }
-                    } else if (s.toLowerCase().startsWith("pardon ")) {
+                        serverconfigurationmanager.e(s2);
+                        this.print(s1, "Opping " + s2);
+                        serverconfigurationmanager.a(s2, "\u00A7eYou are now op!");
+                    } else if (s.toLowerCase().startsWith("deop ")) {
                         s2 = s.substring(s.indexOf(" ")).trim();
-                        serverconfigurationmanager.b(s2);
-                        this.print(s1, "Pardoning " + s2);
+                        serverconfigurationmanager.f(s2);
+                        serverconfigurationmanager.a(s2, "\u00A7eYou are no longer op!");
+                        this.print(s1, "De-opping " + s2);
+                    } else if (s.toLowerCase().startsWith("ban-ip ")) {
+                        s2 = s.substring(s.indexOf(" ")).trim();
+                        serverconfigurationmanager.c(s2);
+                        this.print(s1, "Banning ip " + s2);
+                    } else if (s.toLowerCase().startsWith("pardon-ip ")) {
+                        s2 = s.substring(s.indexOf(" ")).trim();
+                        serverconfigurationmanager.d(s2);
+                        this.print(s1, "Pardoning ip " + s2);
                     } else {
-                        int i;
+                        EntityPlayer entityplayer;
 
-                        if (s.toLowerCase().startsWith("kick ")) {
-                            // CraftBukkit start - Add kick message compatibility
-                            String[] parts = s.split(" ");
-                            s2 = parts.length >= 2 ? parts[1] : "";
-                            // CraftBukkit end
-                            entityplayer = null;
-
-                            for (i = 0; i < serverconfigurationmanager.players.size(); ++i) {
-                                EntityPlayer entityplayer1 = (EntityPlayer) serverconfigurationmanager.players.get(i);
-
-                                if (entityplayer1.name.equalsIgnoreCase(s2)) {
-                                    entityplayer = entityplayer1;
-                                }
-                            }
-
+                        if (s.toLowerCase().startsWith("ban ")) {
+                            s2 = s.substring(s.indexOf(" ")).trim();
+                            serverconfigurationmanager.a(s2);
+                            this.print(s1, "Banning " + s2);
+                            entityplayer = serverconfigurationmanager.i(s2);
                             if (entityplayer != null) {
-                                entityplayer.netServerHandler.disconnect("Kicked by admin");
-                                this.print(s1, "Kicking " + entityplayer.name);
-                            } else {
-                                icommandlistener.sendMessage("Can\'t find user " + s2 + ". No kick.");
+                                entityplayer.netServerHandler.disconnect("Banned by admin");
                             }
+                        } else if (s.toLowerCase().startsWith("pardon ")) {
+                            s2 = s.substring(s.indexOf(" ")).trim();
+                            serverconfigurationmanager.b(s2);
+                            this.print(s1, "Pardoning " + s2);
                         } else {
-                            String[] astring;
-                            EntityPlayer entityplayer2;
+                            int j;
 
-                            if (s.toLowerCase().startsWith("tp ")) {
-                                astring = s.split(" ");
-                                if (astring.length == 3) {
-                                    entityplayer = serverconfigurationmanager.i(astring[1]);
-                                    entityplayer2 = serverconfigurationmanager.i(astring[2]);
-                                    if (entityplayer == null) {
-                                        icommandlistener.sendMessage("Can\'t find user " + astring[1] + ". No tp.");
-                                    } else if (entityplayer2 == null) {
-                                        icommandlistener.sendMessage("Can\'t find user " + astring[2] + ". No tp.");
-                                    } else {
-                                        entityplayer.netServerHandler.a(entityplayer2.locX, entityplayer2.locY, entityplayer2.locZ, entityplayer2.yaw, entityplayer2.pitch);
-                                        this.print(s1, "Teleporting " + astring[1] + " to " + astring[2] + ".");
+                            if (s.toLowerCase().startsWith("kick ")) {
+                                // CraftBukkit start - Add kick message compatibility
+                                String[] parts = s.split(" ");
+                                s2 = parts.length >= 2 ? parts[1] : "";
+                                // CraftBukkit end
+                                entityplayer = null;
+
+                                for (j = 0; j < serverconfigurationmanager.players.size(); ++j) {
+                                    EntityPlayer entityplayer1 = (EntityPlayer) serverconfigurationmanager.players.get(j);
+
+                                    if (entityplayer1.name.equalsIgnoreCase(s2)) {
+                                        entityplayer = entityplayer1;
                                     }
+                                }
+
+                                if (entityplayer != null) {
+                                    entityplayer.netServerHandler.disconnect("Kicked by admin");
+                                    this.print(s1, "Kicking " + entityplayer.name);
                                 } else {
-                                    icommandlistener.sendMessage("Syntax error, please provice a source and a target.");
+                                    icommandlistener.sendMessage("Can\'t find user " + s2 + ". No kick.");
                                 }
                             } else {
-                                String s3;
+                                EntityPlayer entityplayer2;
+                                String[] astring;
 
-                                if (s.toLowerCase().startsWith("give ")) {
+                                if (s.toLowerCase().startsWith("tp ")) {
                                     astring = s.split(" ");
-                                    if (astring.length != 3 && astring.length != 4) {
-                                        return true; // CraftBukkit
-                                    }
-
-                                    s3 = astring[1];
-                                    entityplayer2 = serverconfigurationmanager.i(s3);
-                                    if (entityplayer2 != null) {
-                                        try {
-                                            int j = Integer.parseInt(astring[2]);
-
-                                            if (Item.byId[j] != null) {
-                                                this.print(s1, "Giving " + entityplayer2.name + " some " + j);
-                                                int k = 1;
-
-                                                if (astring.length > 3) {
-                                                    k = this.a(astring[3], 1);
-                                                }
-
-                                                if (k < 1) {
-                                                    k = 1;
-                                                }
-
-                                                if (k > 64) {
-                                                    k = 64;
-                                                }
-
-                                                entityplayer2.b(new ItemStack(j, k, 0));
-                                            } else {
-                                                icommandlistener.sendMessage("There\'s no item with id " + j);
-                                            }
-                                        } catch (NumberFormatException numberformatexception) {
-                                            icommandlistener.sendMessage("There\'s no item with id " + astring[2]);
+                                    if (astring.length == 3) {
+                                        entityplayer = serverconfigurationmanager.i(astring[1]);
+                                        entityplayer2 = serverconfigurationmanager.i(astring[2]);
+                                        if (entityplayer == null) {
+                                            icommandlistener.sendMessage("Can\'t find user " + astring[1] + ". No tp.");
+                                        } else if (entityplayer2 == null) {
+                                            icommandlistener.sendMessage("Can\'t find user " + astring[2] + ". No tp.");
+                                        } else if (entityplayer.dimension != entityplayer2.dimension) {
+                                            icommandlistener.sendMessage("User " + astring[1] + " and " + astring[2] + " are in different dimensions. No tp.");
+                                        } else {
+                                            entityplayer.netServerHandler.a(entityplayer2.locX, entityplayer2.locY, entityplayer2.locZ, entityplayer2.yaw, entityplayer2.pitch);
+                                            this.print(s1, "Teleporting " + astring[1] + " to " + astring[2] + ".");
                                         }
                                     } else {
-                                        icommandlistener.sendMessage("Can\'t find user " + s3);
+                                        icommandlistener.sendMessage("Syntax error, please provice a source and a target.");
                                     }
-                                } else if (s.toLowerCase().startsWith("time ")) {
-                                    astring = s.split(" ");
-                                    if (astring.length != 3) {
-                                        return true; // CraftBukkit
-                                    }
-
-                                    s3 = astring[1];
-
-                                    try {
-                                        i = Integer.parseInt(astring[2]);
-                                        if ("add".equalsIgnoreCase(s3)) {
-                                            worldserver.setTime(worldserver.getTime() + (long) i);
-                                            this.print(s1, "Added " + i + " to time");
-                                        } else if ("set".equalsIgnoreCase(s3)) {
-                                            worldserver.setTime((long) i);
-                                            this.print(s1, "Set time to " + i);
-                                        } else {
-                                            icommandlistener.sendMessage("Unknown method, use either \"add\" or \"set\"");
-                                        }
-                                    } catch (NumberFormatException numberformatexception1) {
-                                        icommandlistener.sendMessage("Unable to convert time value, " + astring[2]);
-                                    }
-                                } else if (s.toLowerCase().startsWith("say ")) {
-                                    s = s.substring(s.indexOf(" ")).trim();
-                                    a.info("[" + s1 + "] " + s);
-                                    serverconfigurationmanager.sendAll(new Packet3Chat("\u00A7d[Server] " + s));
-                                } else if (s.toLowerCase().startsWith("tell ")) {
-                                    astring = s.split(" ");
-                                    if (astring.length >= 3) {
-                                        s = s.substring(s.indexOf(" ")).trim();
-                                        s = s.substring(s.indexOf(" ")).trim();
-                                        a.info("[" + s1 + "->" + astring[1] + "] " + s);
-                                        s = "\u00A77" + s1 + " whispers " + s;
-                                        a.info(s);
-                                        if (!serverconfigurationmanager.a(astring[1], (Packet) (new Packet3Chat(s)))) {
-                                            icommandlistener.sendMessage("There\'s no player by that name online.");
-                                        }
-                                    }
-                                } else if (s.toLowerCase().startsWith("whitelist ")) {
-                                    this.a(s1, s, icommandlistener);
                                 } else {
-                                    icommandlistener.sendMessage("Unknown console command. Type \"help\" for help."); // CraftBukkit
-                                    return false; // CraftBukkit
+                                    String s3;
+                                    int k;
+
+                                    if (s.toLowerCase().startsWith("give ")) {
+                                        astring = s.split(" ");
+                                        if (astring.length != 3 && astring.length != 4) {
+                                            return true; // CraftBukkit
+                                        }
+
+                                        s3 = astring[1];
+                                        entityplayer2 = serverconfigurationmanager.i(s3);
+                                        if (entityplayer2 != null) {
+                                            try {
+                                                k = Integer.parseInt(astring[2]);
+                                                if (Item.byId[k] != null) {
+                                                    this.print(s1, "Giving " + entityplayer2.name + " some " + k);
+                                                    int l = 1;
+
+                                                    if (astring.length > 3) {
+                                                        l = this.a(astring[3], 1);
+                                                    }
+
+                                                    if (l < 1) {
+                                                        l = 1;
+                                                    }
+
+                                                    if (l > 64) {
+                                                        l = 64;
+                                                    }
+
+                                                    entityplayer2.b(new ItemStack(k, l, 0));
+                                                } else {
+                                                    icommandlistener.sendMessage("There\'s no item with id " + k);
+                                                }
+                                            } catch (NumberFormatException numberformatexception) {
+                                                icommandlistener.sendMessage("There\'s no item with id " + astring[2]);
+                                            }
+                                        } else {
+                                            icommandlistener.sendMessage("Can\'t find user " + s3);
+                                        }
+                                    } else if (s.toLowerCase().startsWith("time ")) {
+                                        astring = s.split(" ");
+                                        if (astring.length != 3) {
+                                            return true; // CraftBukkit
+                                        }
+
+                                        s3 = astring[1];
+
+                                        try {
+                                            j = Integer.parseInt(astring[2]);
+                                            WorldServer worldserver1;
+
+                                            if ("add".equalsIgnoreCase(s3)) {
+                                                for (k = 0; k < this.server.worlds.size(); ++k) { // Craftbukkit start
+                                                    worldserver1 = this.server.worlds.get(k); // Craftbukkit start
+                                                    worldserver1.setTime(worldserver1.getTime() + (long) j);
+                                                }
+
+                                                this.print(s1, "Added " + j + " to time");
+                                            } else if ("set".equalsIgnoreCase(s3)) {
+                                                for (k = 0; k < this.server.worlds.size(); ++k) { // Craftbukkit start
+                                                    worldserver1 = this.server.worlds.get(k); // Craftbukkit start
+                                                    worldserver1.setTime((long) j);
+                                                }
+
+                                                this.print(s1, "Set time to " + j);
+                                            } else {
+                                                icommandlistener.sendMessage("Unknown method, use either \"add\" or \"set\"");
+                                            }
+                                        } catch (NumberFormatException numberformatexception1) {
+                                            icommandlistener.sendMessage("Unable to convert time value, " + astring[2]);
+                                        }
+                                    } else if (s.toLowerCase().startsWith("say ")) {
+                                        s = s.substring(s.indexOf(" ")).trim();
+                                        a.info("[" + s1 + "] " + s);
+                                        serverconfigurationmanager.sendAll(new Packet3Chat("\u00A7d[Server] " + s));
+                                    } else if (s.toLowerCase().startsWith("tell ")) {
+                                        astring = s.split(" ");
+                                        if (astring.length >= 3) {
+                                            s = s.substring(s.indexOf(" ")).trim();
+                                            s = s.substring(s.indexOf(" ")).trim();
+                                            a.info("[" + s1 + "->" + astring[1] + "] " + s);
+                                            s = "\u00A77" + s1 + " whispers " + s;
+                                            a.info(s);
+                                            if (!serverconfigurationmanager.a(astring[1], (Packet) (new Packet3Chat(s)))) {
+                                                icommandlistener.sendMessage("There\'s no player by that name online.");
+                                            }
+                                        }
+                                    } else if (s.toLowerCase().startsWith("whitelist ")) {
+                                        this.a(s1, s, icommandlistener);
+                                    } else {
+                                        icommandlistener.sendMessage("Unknown console command. Type \"help\" for help."); // CraftBukkit
+                                        return false; // CraftBukkit
+                                    }
                                 }
                             }
                         }

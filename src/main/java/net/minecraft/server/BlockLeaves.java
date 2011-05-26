@@ -114,7 +114,7 @@ public class BlockLeaves extends BlockLeavesBase {
 
                 l1 = this.a[k1 * j1 + k1 * b1 + k1];
                 if (l1 >= 0) {
-                    world.setData(i, j, k, l & -9);
+                    world.setRawData(i, j, k, l & -9);
                 } else {
                     this.g(world, i, j, k);
                 }
@@ -132,7 +132,7 @@ public class BlockLeaves extends BlockLeavesBase {
         if (event.isCancelled()) return;
         // CraftBukkit end
 
-        this.a_(world, i, j, k, world.getData(i, j, k));
+        this.b_(world, i, j, k, world.getData(i, j, k));
         world.setTypeId(i, j, k, 0);
     }
 

@@ -50,7 +50,7 @@ public class ItemReed extends Item {
         if (itemstack.count == 0) {
             return false;
         } else {
-            if (world.a(this.id, i, j, k, false)) {
+            if (world.a(this.id, i, j, k, false, l)) {
                 Block block = Block.byId[this.id];
 
                 // CraftBukkit start - This executes the placement of the block
@@ -71,15 +71,17 @@ public class ItemReed extends Item {
                     if (event.isCancelled() || !event.canBuild()) {
                         // CraftBukkit - undo; this only has reed, repeater and pie blocks
                         world.setTypeIdAndData(i, j, k, replacedBlockState.getTypeId(), replacedBlockState.getRawData());
-                    } else {
-                        world.update(i, j, k, this.id); // <-- world.setTypeId does this on success (tell the world)
 
-                        Block.byId[this.id].postPlace(world, i, j, k, l);
-                        Block.byId[this.id].postPlace(world, i, j, k, entityhuman);
-                        world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), block.stepSound.getName(), (block.stepSound.getVolume1() + 1.0F) / 2.0F, block.stepSound.getVolume2() * 0.8F);
-                        --itemstack.count;
+                        return true;
                     }
+
+                    world.update(i, j, k, this.id); // <-- world.setTypeId does this on success (tell the world)
                     // CraftBukkit end
+
+                    Block.byId[this.id].postPlace(world, i, j, k, l);
+                    Block.byId[this.id].postPlace(world, i, j, k, entityhuman);
+                    world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), block.stepSound.getName(), (block.stepSound.getVolume1() + 1.0F) / 2.0F, block.stepSound.getVolume2() * 0.8F);
+                    --itemstack.count;
                 }
             }
 

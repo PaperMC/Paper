@@ -74,20 +74,25 @@ public class ItemDoor extends Item {
 
                 BlockState blockState = CraftBlockState.getBlockState(world, i, j, k); // CraftBukkit
 
-                world.setTypeId(i, j, k, block.id);
-                world.setData(i, j, k, i1);
+                world.o = true;
+                world.setTypeIdAndData(i, j, k, block.id, i1);
 
                 // CraftBukkit start - bed
+                world.o = false;
+                world.applyPhysics(i, j, k, block.id);
                 BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ, block);
 
                 if (event.isCancelled() || !event.canBuild()) {
                     event.getBlockPlaced().setTypeIdAndData(blockState.getTypeId(), blockState.getRawData(), false);
                     return false;
                 }
-                // CraftBukkit end
 
-                world.setTypeId(i, j + 1, k, block.id);
-                world.setData(i, j + 1, k, i1 + 8);
+                world.o = true;
+                // CraftBukkit end
+                world.setTypeIdAndData(i, j + 1, k, block.id, i1 + 8);
+                world.o = false;
+                // world.applyPhysics(i, j, k, block.id); // CraftBukkit -- moved up
+                world.applyPhysics(i, j + 1, k, block.id);
                 --itemstack.count;
                 return true;
             }

@@ -19,7 +19,7 @@ public class NetLoginHandler extends NetHandler {
     public NetLoginHandler(MinecraftServer minecraftserver, Socket socket, String s) {
         this.server = minecraftserver;
         this.networkManager = new NetworkManager(socket, s, this);
-        this.networkManager.d = 0;
+        this.networkManager.f = 0;
     }
 
     // CraftBukkit start
@@ -37,7 +37,7 @@ public class NetLoginHandler extends NetHandler {
         if (this.f++ == 600) {
             this.disconnect("Took too long to log in");
         } else {
-            this.networkManager.a();
+            this.networkManager.b();
         }
     }
 
@@ -45,7 +45,7 @@ public class NetLoginHandler extends NetHandler {
         try {
             a.info("Disconnecting " + this.b() + ": " + s);
             this.networkManager.a((Packet) (new Packet255KickDisconnect(s)));
-            this.networkManager.c();
+            this.networkManager.d();
             this.c = true;
         } catch (Exception exception) {
             exception.printStackTrace();
@@ -63,8 +63,8 @@ public class NetLoginHandler extends NetHandler {
 
     public void a(Packet1Login packet1login) {
         this.g = packet1login.name;
-        if (packet1login.a != 11) {
-            if (packet1login.a > 11) {
+        if (packet1login.a != 13) {
+            if (packet1login.a > 13) {
                 this.disconnect("Outdated server!");
             } else {
                 this.disconnect("Outdated client!");
@@ -82,21 +82,21 @@ public class NetLoginHandler extends NetHandler {
         EntityPlayer entityplayer = this.server.serverConfigurationManager.a(this, packet1login.name);
 
         if (entityplayer != null) {
+            this.server.serverConfigurationManager.b(entityplayer);
+            entityplayer.a((World) this.server.a(entityplayer.dimension));
             a.info(this.b() + " logged in with entity id " + entityplayer.id + " at (" + entityplayer.locX + ", " + entityplayer.locY + ", " + entityplayer.locZ + ")");
-            ChunkCoordinates chunkcoordinates = entityplayer.world.getSpawn(); // CraftBukkit
+            WorldServer worldserver = this.server.a(entityplayer.dimension);
+            ChunkCoordinates chunkcoordinates = worldserver.getSpawn();
             NetServerHandler netserverhandler = new NetServerHandler(this.server, this.networkManager, entityplayer);
 
-            netserverhandler.sendPacket(new Packet1Login("", entityplayer.id, entityplayer.world.getSeed(), (byte) entityplayer.world.worldProvider.dimension)); // CraftBukkit
+            netserverhandler.sendPacket(new Packet1Login("", entityplayer.id, worldserver.getSeed(), (byte) worldserver.worldProvider.dimension));
             netserverhandler.sendPacket(new Packet6SpawnPosition(chunkcoordinates.x, chunkcoordinates.y, chunkcoordinates.z));
-            if (((WorldServer) entityplayer.world).v()) { // CraftBukkit
-                netserverhandler.sendPacket(new Packet70Bed(1));
-            }
-
+            this.server.serverConfigurationManager.a(entityplayer, worldserver);
             // this.server.serverConfigurationManager.sendAll(new Packet3Chat("\u00A7e" + entityplayer.name + " joined the game."));  // CraftBukkit - message moved to join event
-            this.server.serverConfigurationManager.a(entityplayer);
+            this.server.serverConfigurationManager.c(entityplayer);
             netserverhandler.a(entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
             this.server.networkListenThread.a(netserverhandler);
-            netserverhandler.sendPacket(new Packet4UpdateTime(entityplayer.world.getTime())); // CraftBukkit
+            netserverhandler.sendPacket(new Packet4UpdateTime(worldserver.getTime()));
             entityplayer.syncInventory();
         }
 

@@ -55,6 +55,7 @@ class ThreadLoginVerifier extends Thread {
                 this.netLoginHandler.disconnect("Failed to verify username!");
             }
         } catch (Exception exception) {
+            this.netLoginHandler.disconnect("Failed to verify username! [internal error " + exception + "]");
             exception.printStackTrace();
         }
     }

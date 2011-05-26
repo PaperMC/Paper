@@ -12,7 +12,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 
 public class ItemInWorldManager {
 
-    private World world;
+    private WorldServer world;
     public EntityHuman player;
     private float c = 0.0F;
     private int d;
@@ -26,8 +26,8 @@ public class ItemInWorldManager {
     private int l;
     private int m;
 
-    public ItemInWorldManager(World world) {
-        this.world = world;
+    public ItemInWorldManager(WorldServer worldserver) {
+        this.world = worldserver;
     }
 
     public void a() {
@@ -42,7 +42,7 @@ public class ItemInWorldManager {
 
                 if (f >= 1.0F) {
                     this.i = false;
-                    this.d(this.j, this.k, this.l);
+                    this.c(this.j, this.k, this.l);
                 }
             } else {
                 this.i = false;
@@ -50,33 +50,33 @@ public class ItemInWorldManager {
         }
     }
 
-    // CraftBukkit - added face
-    public void dig(int i, int j, int k, int face) {
+    public void dig(int i, int j, int k, int l) {
+        this.world.a((EntityHuman) null, i, j, k, l);
         this.d = (int) (System.currentTimeMillis() / 50); // CraftBukkit
-        int l = this.world.getTypeId(i, j, k);
+        int i1 = this.world.getTypeId(i, j, k);
 
         // CraftBukkit start
         // Swings at air do *NOT* exist.
-        if (l <= 0) {
+        if (i1 <= 0) {
             return;
         }
 
-        PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK , i, j, k, face, this.player.inventory.getItemInHand());
+        PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK , i, j, k, l, this.player.inventory.getItemInHand());
 
         if (event.useInteractedBlock() == Event.Result.DENY) {
             // If we denied a door from opening, we need to send a correcting update to the client, as it already opened the door.
-            if (l == Block.WOODEN_DOOR.id) {
+            if (i1 == Block.WOODEN_DOOR.id) {
                 // For some reason *BOTH* the bottom/top part have to be marked updated.
                 boolean bottom = (this.world.getData(i, j, k) & 8) == 0;
                 ((EntityPlayer) this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
                 ((EntityPlayer) this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j + (bottom ? 1 : -1), k, this.world));
             }
         } else {
-            Block.byId[l].b(this.world, i, j, k, this.player);
+            Block.byId[i1].b(this.world, i, j, k, this.player);
         }
 
         // Handle hitting a block
-        float toolDamage = Block.byId[l].getDamage(this.player);
+        float toolDamage = Block.byId[i1].getDamage(this.player);
         if (event.useItemInHand() == Event.Result.DENY) {
             // If we 'insta destroyed' then the client needs to be informed.
             if (toolDamage > 1.0f) {
@@ -96,7 +96,7 @@ public class ItemInWorldManager {
 
         if (toolDamage >= 1.0F) {
             // CraftBukkit end
-            this.d(i, j, k);
+            this.c(i, j, k);
         } else {
             this.e = i;
             this.f = j;
@@ -104,7 +104,7 @@ public class ItemInWorldManager {
         }
     }
 
-    public void b(int i, int j, int k) {
+    public void a(int i, int j, int k) {
         if (i == this.e && j == this.f && k == this.g) {
             this.currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit
             int l = this.currentTick - this.d;
@@ -115,7 +115,7 @@ public class ItemInWorldManager {
                 float f = block.getDamage(this.player) * (float) (l + 1);
 
                 if (f >= 0.7F) {
-                    this.d(i, j, k);
+                    this.c(i, j, k);
                 } else if (!this.i) {
                     this.i = true;
                     this.j = i;
@@ -133,7 +133,7 @@ public class ItemInWorldManager {
         this.c = 0.0F;
     }
 
-    public boolean c(int i, int j, int k) {
+    public boolean b(int i, int j, int k) {
         Block block = Block.byId[this.world.getTypeId(i, j, k)];
         int l = this.world.getData(i, j, k);
         boolean flag = this.world.setTypeId(i, j, k, 0);
@@ -145,7 +145,7 @@ public class ItemInWorldManager {
         return flag;
     }
 
-    public boolean d(int i, int j, int k) {
+    public boolean c(int i, int j, int k) {
         // CraftBukkit start
         if (this.player instanceof EntityPlayer) {
             CraftServer server = ((WorldServer) this.world).getServer();
@@ -163,7 +163,9 @@ public class ItemInWorldManager {
 
         int l = this.world.getTypeId(i, j, k);
         int i1 = this.world.getData(i, j, k);
-        boolean flag = this.c(i, j, k);
+
+        this.world.a(this.player, 2001, i, j, k, l + this.world.getData(i, j, k) * 256);
+        boolean flag = this.b(i, j, k);
         ItemStack itemstack = this.player.D();
 
         if (itemstack != null) {

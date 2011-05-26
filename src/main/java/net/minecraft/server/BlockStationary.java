@@ -30,11 +30,11 @@ public class BlockStationary extends BlockFluids {
     private void i(World world, int i, int j, int k) {
         int l = world.getData(i, j, k);
 
-        world.j = true;
+        world.o = true;
         world.setRawTypeIdAndData(i, j, k, this.id - 1, l);
         world.b(i, j, k, i, j, k);
-        world.c(i, j, k, this.id - 1, this.b());
-        world.j = false;
+        world.c(i, j, k, this.id - 1, this.c());
+        world.o = false;
     }
 
     public void a(World world, int i, int j, int k, Random random) {

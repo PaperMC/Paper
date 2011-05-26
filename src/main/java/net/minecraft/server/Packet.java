@@ -185,7 +185,7 @@ public abstract class Packet {
         a(23, true, false, Packet23VehicleSpawn.class);
         a(24, true, false, Packet24MobSpawn.class);
         a(25, true, false, Packet25EntityPainting.class);
-        a(27, false, false, Packet27.class); // CraftBukkit - true -> false; disabled unused packet.
+        a(27, false, false, Packet27.class); // CraftBukkit - true -> false; disabled unused packet. TODO -- check if needed
         a(28, true, false, Packet28EntityVelocity.class);
         a(29, true, false, Packet29DestroyEntity.class);
         a(30, true, false, Packet30Entity.class);
@@ -202,6 +202,7 @@ public abstract class Packet {
         a(53, true, false, Packet53BlockChange.class);
         a(54, true, false, Packet54PlayNoteBlock.class);
         a(60, true, false, Packet60Explosion.class);
+        a(61, true, false, Packet61.class);
         a(70, true, false, Packet70Bed.class);
         a(71, true, false, Packet71Weather.class);
         a(100, true, false, Packet100OpenWindow.class);
@@ -212,6 +213,7 @@ public abstract class Packet {
         a(105, true, false, Packet105CraftProgressBar.class);
         a(106, true, true, Packet106Transaction.class);
         a(130, true, true, Packet130UpdateSign.class);
+        a(131, true, false, Packet131.class);
         a(200, true, false, Packet200Statistic.class);
         a(255, true, true, Packet255KickDisconnect.class);
         e = new HashMap();

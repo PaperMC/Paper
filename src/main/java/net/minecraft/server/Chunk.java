@@ -377,15 +377,15 @@ public class Chunk {
             k = this.entitySlices.length - 1;
         }
 
-        entity.bB = true;
-        entity.chunkX = this.x;
-        entity.bD = k;
-        entity.chunkZ = this.z;
+        entity.bE = true;
+        entity.bF = this.x;
+        entity.bG = k;
+        entity.bH = this.z;
         this.entitySlices[k].add(entity);
     }
 
     public void b(Entity entity) {
-        this.a(entity, entity.bD);
+        this.a(entity, entity.bG);
     }
 
     public void a(Entity entity, int i) {
@@ -566,48 +566,64 @@ public class Chunk {
     }
 
     public int a(byte[] abyte, int i, int j, int k, int l, int i1, int j1, int k1) {
-        int l1;
-        int i2;
-        int j2;
-        int k2;
+        int l1 = l - i;
+        int i2 = i1 - j;
+        int j2 = j1 - k;
 
-        for (l1 = i; l1 < l; ++l1) {
-            for (i2 = k; i2 < j1; ++i2) {
-                j2 = l1 << 11 | i2 << 7 | j;
-                k2 = i1 - j;
-                System.arraycopy(this.b, j2, abyte, k1, k2);
-                k1 += k2;
+        if (l1 * i2 * j2 == this.b.length) {
+            System.arraycopy(this.b, 0, abyte, k1, this.b.length);
+            k1 += this.b.length;
+            System.arraycopy(this.e.a, 0, abyte, k1, this.e.a.length);
+            k1 += this.e.a.length;
+            System.arraycopy(this.g.a, 0, abyte, k1, this.g.a.length);
+            k1 += this.g.a.length;
+            System.arraycopy(this.f.a, 0, abyte, k1, this.f.a.length);
+            k1 += this.f.a.length;
+            return k1;
+        } else {
+            int k2;
+            int l2;
+            int i3;
+            int j3;
+
+            for (k2 = i; k2 < l; ++k2) {
+                for (l2 = k; l2 < j1; ++l2) {
+                    i3 = k2 << 11 | l2 << 7 | j;
+                    j3 = i1 - j;
+                    System.arraycopy(this.b, i3, abyte, k1, j3);
+                    k1 += j3;
+                }
             }
-        }
 
-        for (l1 = i; l1 < l; ++l1) {
-            for (i2 = k; i2 < j1; ++i2) {
-                j2 = (l1 << 11 | i2 << 7 | j) >> 1;
-                k2 = (i1 - j) / 2;
-                System.arraycopy(this.e.a, j2, abyte, k1, k2);
-                k1 += k2;
+            for (k2 = i; k2 < l; ++k2) {
+                for (l2 = k; l2 < j1; ++l2) {
+                    i3 = (k2 << 11 | l2 << 7 | j) >> 1;
+                    j3 = (i1 - j) / 2;
+                    System.arraycopy(this.e.a, i3, abyte, k1, j3);
+                    k1 += j3;
+                }
             }
-        }
 
-        for (l1 = i; l1 < l; ++l1) {
-            for (i2 = k; i2 < j1; ++i2) {
-                j2 = (l1 << 11 | i2 << 7 | j) >> 1;
-                k2 = (i1 - j) / 2;
-                System.arraycopy(this.g.a, j2, abyte, k1, k2);
-                k1 += k2;
+            for (k2 = i; k2 < l; ++k2) {
+                for (l2 = k; l2 < j1; ++l2) {
+                    i3 = (k2 << 11 | l2 << 7 | j) >> 1;
+                    j3 = (i1 - j) / 2;
+                    System.arraycopy(this.g.a, i3, abyte, k1, j3);
+                    k1 += j3;
+                }
             }
-        }
 
-        for (l1 = i; l1 < l; ++l1) {
-            for (i2 = k; i2 < j1; ++i2) {
-                j2 = (l1 << 11 | i2 << 7 | j) >> 1;
-                k2 = (i1 - j) / 2;
-                System.arraycopy(this.f.a, j2, abyte, k1, k2);
-                k1 += k2;
+            for (k2 = i; k2 < l; ++k2) {
+                for (l2 = k; l2 < j1; ++l2) {
+                    i3 = (k2 << 11 | l2 << 7 | j) >> 1;
+                    j3 = (i1 - j) / 2;
+                    System.arraycopy(this.f.a, i3, abyte, k1, j3);
+                    k1 += j3;
+                }
             }
-        }
 
-        return k1;
+            return k1;
+        }
     }
 
     public Random a(long i) {

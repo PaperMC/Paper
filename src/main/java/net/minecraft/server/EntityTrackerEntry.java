@@ -24,6 +24,7 @@ public class EntityTrackerEntry {
     private double q;
     private boolean r = false;
     private boolean isMoving;
+    private int t = 0;
     public boolean m = false;
     public Set trackedPlayers = new HashSet();
 
@@ -58,6 +59,7 @@ public class EntityTrackerEntry {
             this.scanPlayers(list);
         }
 
+        ++this.t;
         if (++this.l % this.c == 0) {
             int i = MathHelper.floor(this.tracker.locX * 32.0D);
             int j = MathHelper.floor(this.tracker.locY * 32.0D);
@@ -71,7 +73,7 @@ public class EntityTrackerEntry {
             boolean flag = Math.abs(i) >= 8 || Math.abs(j) >= 8 || Math.abs(k) >= 8;
             boolean flag1 = Math.abs(l - this.g) >= 8 || Math.abs(i1 - this.h) >= 8;
 
-            if (j1 >= -128 && j1 < 128 && k1 >= -128 && k1 < 128 && l1 >= -128 && l1 < 128) {
+            if (j1 >= -128 && j1 < 128 && k1 >= -128 && k1 < 128 && l1 >= -128 && l1 < 128 && this.t <= 400) {
                 if (flag && flag1) {
                     object = new Packet33RelEntityMoveLook(this.tracker.id, (byte) j1, (byte) k1, (byte) l1, (byte) l, (byte) i1);
                 } else if (flag) {
@@ -80,6 +82,10 @@ public class EntityTrackerEntry {
                     object = new Packet32EntityLook(this.tracker.id, (byte) l, (byte) i1);
                 }
             } else {
+                this.t = 0;
+                this.tracker.locX = (double) i / 32.0D;
+                this.tracker.locY = (double) j / 32.0D;
+                this.tracker.locZ = (double) k / 32.0D;
                 object = new Packet34EntityTeleport(this.tracker.id, i, j, k, (byte) l, (byte) i1);
             }
 
@@ -102,7 +108,7 @@ public class EntityTrackerEntry {
                 this.a((Packet) object);
             }
 
-            DataWatcher datawatcher = this.tracker.W();
+            DataWatcher datawatcher = this.tracker.X();
 
             if (datawatcher.a()) {
                 this.b((Packet) (new Packet40EntityMetadata(this.tracker.id, datawatcher)));
@@ -159,8 +165,7 @@ public class EntityTrackerEntry {
             double d1 = entityplayer.locZ - (double) (this.f / 32);
 
             if (d0 >= (double) (-this.b) && d0 <= (double) this.b && d1 >= (double) (-this.b) && d1 <= (double) this.b) {
-                // CraftBukkit
-                if ((!this.trackedPlayers.contains(entityplayer)) && (this.tracker.world == entityplayer.world)) {
+                if (!this.trackedPlayers.contains(entityplayer)) {
                     this.trackedPlayers.add(entityplayer);
                     entityplayer.netServerHandler.sendPacket(this.b());
                     if (this.isMoving) {
@@ -228,9 +233,19 @@ public class EntityTrackerEntry {
             } else if (this.tracker instanceof EntityFish) {
                 return new Packet23VehicleSpawn(this.tracker, 90);
             } else if (this.tracker instanceof EntityArrow) {
-                return new Packet23VehicleSpawn(this.tracker, 60);
+                EntityLiving entityliving = ((EntityArrow) this.tracker).shooter;
+
+                return new Packet23VehicleSpawn(this.tracker, 60, entityliving != null ? entityliving.id : this.tracker.id);
             } else if (this.tracker instanceof EntitySnowball) {
                 return new Packet23VehicleSpawn(this.tracker, 61);
+            } else if (this.tracker instanceof EntityFireball) {
+                EntityFireball entityfireball = (EntityFireball) this.tracker;
+                Packet23VehicleSpawn packet23vehiclespawn = new Packet23VehicleSpawn(this.tracker, 63, ((EntityFireball) this.tracker).shooter.id);
+
+                packet23vehiclespawn.e = (int) (entityfireball.c * 8000.0D);
+                packet23vehiclespawn.f = (int) (entityfireball.d * 8000.0D);
+                packet23vehiclespawn.g = (int) (entityfireball.e * 8000.0D);
+                return packet23vehiclespawn;
             } else if (this.tracker instanceof EntityEgg) {
                 return new Packet23VehicleSpawn(this.tracker, 62);
             } else if (this.tracker instanceof EntityTNTPrimed) {

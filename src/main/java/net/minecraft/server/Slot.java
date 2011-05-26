@@ -51,8 +51,4 @@ public class Slot {
     public boolean a(IInventory iinventory, int i) {
         return iinventory == this.inventory && i == this.index;
     }
-
-    public boolean e() {
-        return false;
-    }
 }

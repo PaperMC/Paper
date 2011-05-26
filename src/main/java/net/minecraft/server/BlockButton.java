@@ -20,12 +20,20 @@ public class BlockButton extends Block {
         return null;
     }
 
-    public int b() {
+    public int c() {
         return 20;
     }
 
     public boolean a() {
         return false;
+    }
+
+    public boolean b() {
+        return false;
+    }
+
+    public boolean canPlace(World world, int i, int j, int k, int l) {
+        return l == 2 && world.d(i, j, k + 1) ? true : (l == 3 && world.d(i, j, k - 1) ? true : (l == 4 && world.d(i + 1, j, k) ? true : l == 5 && world.d(i - 1, j, k)));
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
@@ -78,7 +86,7 @@ public class BlockButton extends Block {
             }
 
             if (flag) {
-                this.a_(world, i, j, k, world.getData(i, j, k));
+                this.b_(world, i, j, k, world.getData(i, j, k));
                 world.setTypeId(i, j, k, 0);
             }
         }
@@ -86,7 +94,7 @@ public class BlockButton extends Block {
 
     private boolean h(World world, int i, int j, int k) {
         if (!this.canPlace(world, i, j, k)) {
-            this.a_(world, i, j, k, world.getData(i, j, k));
+            this.b_(world, i, j, k, world.getData(i, j, k));
             world.setTypeId(i, j, k, 0);
             return false;
         } else {
@@ -160,7 +168,7 @@ public class BlockButton extends Block {
                 world.applyPhysics(i, j - 1, k, this.id);
             }
 
-            world.c(i, j, k, this.id, this.b());
+            world.c(i, j, k, this.id, this.c());
             return true;
         }
     }
@@ -188,7 +196,7 @@ public class BlockButton extends Block {
         super.remove(world, i, j, k);
     }
 
-    public boolean b(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+    public boolean a(IBlockAccess iblockaccess, int i, int j, int k, int l) {
         return (iblockaccess.getData(i, j, k) & 8) > 0;
     }
 

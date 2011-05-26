@@ -41,7 +41,7 @@ public class InventoryPlayer implements IInventory {
         return -1;
     }
 
-    private int c(ItemStack itemstack) {
+    private int d(ItemStack itemstack) {
         for (int i = 0; i < this.items.length; ++i) {
             if (this.items[i] != null && this.items[i].id == itemstack.id && this.items[i].c() && this.items[i].count < this.items[i].b() && this.items[i].count < this.getMaxStackSize() && (!this.items[i].e() || this.items[i].getData() == itemstack.getData())) {
                 return i;
@@ -61,10 +61,10 @@ public class InventoryPlayer implements IInventory {
         return -1;
     }
 
-    private int d(ItemStack itemstack) {
+    private int e(ItemStack itemstack) {
         int i = itemstack.id;
         int j = itemstack.count;
-        int k = this.c(itemstack);
+        int k = this.d(itemstack);
 
         if (k < 0) {
             k = this.k();
@@ -100,8 +100,8 @@ public class InventoryPlayer implements IInventory {
 
     public void f() {
         for (int i = 0; i < this.items.length; ++i) {
-            if (this.items[i] != null && this.items[i].b > 0) {
-                --this.items[i].b;
+            if (this.items[i] != null) {
+                this.items[i].a(this.d.world, this.d, i, this.itemInHandIndex == i);
             }
         }
     }
@@ -121,21 +121,25 @@ public class InventoryPlayer implements IInventory {
     }
 
     public boolean canHold(ItemStack itemstack) {
-        if (!itemstack.f()) {
-            itemstack.count = this.d(itemstack);
-            if (itemstack.count == 0) {
+        int i;
+
+        if (itemstack.f()) {
+            i = this.k();
+            if (i >= 0) {
+                this.items[i] = itemstack;
+                this.items[i].b = 5;
+                itemstack.count = 0;
                 return true;
+            } else {
+                return false;
             }
-        }
-
-        int i = this.k();
-
-        if (i >= 0) {
-            this.items[i] = itemstack;
-            this.items[i].b = 5;
-            return true;
         } else {
-            return false;
+            do {
+                i = itemstack.count;
+                itemstack.count = this.e(itemstack);
+            } while (itemstack.count > 0 && itemstack.count < i);
+
+            return itemstack.count < i;
         }
     }
 
@@ -286,7 +290,7 @@ public class InventoryPlayer implements IInventory {
 
                 j += k1;
                 k += i1;
-                int l1 = ((ItemArmor) this.armor[l].getItem()).bj;
+                int l1 = ((ItemArmor) this.armor[l].getItem()).bk;
 
                 i += l1;
             }
@@ -344,5 +348,23 @@ public class InventoryPlayer implements IInventory {
 
     public boolean a_(EntityHuman entityhuman) {
         return this.d.dead ? false : entityhuman.g(this.d) <= 64.0D;
+    }
+
+    public boolean c(ItemStack itemstack) {
+        int i;
+
+        for (i = 0; i < this.armor.length; ++i) {
+            if (this.armor[i] != null && this.armor[i].c(itemstack)) {
+                return true;
+            }
+        }
+
+        for (i = 0; i < this.items.length; ++i) {
+            if (this.items[i] != null && this.items[i].c(itemstack)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

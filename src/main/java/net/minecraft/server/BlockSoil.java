@@ -29,13 +29,17 @@ public class BlockSoil extends Block {
         return false;
     }
 
+    public boolean b() {
+        return false;
+    }
+
     public int a(int i, int j) {
         return i == 1 && j > 0 ? this.textureId - 1 : (i == 1 ? this.textureId : 2);
     }
 
     public void a(World world, int i, int j, int k, Random random) {
         if (random.nextInt(5) == 0) {
-            if (!this.h(world, i, j, k) && !world.q(i, j + 1, k)) {
+            if (!this.h(world, i, j, k) && !world.s(i, j + 1, k)) {
                 int l = world.getData(i, j, k);
 
                 if (l > 0) {

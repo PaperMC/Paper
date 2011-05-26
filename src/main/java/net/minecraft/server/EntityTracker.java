@@ -11,9 +11,11 @@ public class EntityTracker {
     private EntityList b = new EntityList();
     private MinecraftServer c;
     private int d;
+    private int e;
 
-    public EntityTracker(MinecraftServer minecraftserver) {
+    public EntityTracker(MinecraftServer minecraftserver, int i) {
         this.c = minecraftserver;
+        this.e = i;
         this.d = minecraftserver.serverConfigurationManager.a();
     }
 
@@ -34,11 +36,13 @@ public class EntityTracker {
         } else if (entity instanceof EntityFish) {
             this.a(entity, 64, 5, true);
         } else if (entity instanceof EntityArrow) {
-            this.a(entity, 64, 5, true);
+            this.a(entity, 64, 20, false);
+        } else if (entity instanceof EntityFireball) {
+            this.a(entity, 64, 10, false);
         } else if (entity instanceof EntitySnowball) {
-            this.a(entity, 64, 5, true);
+            this.a(entity, 64, 10, true);
         } else if (entity instanceof EntityEgg) {
-            this.a(entity, 64, 5, true);
+            this.a(entity, 64, 10, true);
         } else if (entity instanceof EntityItem) {
             this.a(entity, 64, 20, true);
         } else if (entity instanceof EntityMinecart) {
@@ -76,8 +80,7 @@ public class EntityTracker {
 
             this.a.add(entitytrackerentry);
             this.b.a(entity.id, entitytrackerentry);
-            // CraftBukkit
-            entitytrackerentry.scanPlayers(entity.world.players);
+            entitytrackerentry.scanPlayers(this.c.a(this.e).players);
         }
     }
 
@@ -110,8 +113,7 @@ public class EntityTracker {
         while (iterator.hasNext()) {
             EntityTrackerEntry entitytrackerentry = (EntityTrackerEntry) iterator.next();
 
-            // CraftBukkit
-            entitytrackerentry.track(entitytrackerentry.tracker.world.players);
+            entitytrackerentry.track(this.c.a(this.e).players);
             if (entitytrackerentry.m && entitytrackerentry.tracker instanceof EntityPlayer) {
                 arraylist.add((EntityPlayer) entitytrackerentry.tracker);
             }

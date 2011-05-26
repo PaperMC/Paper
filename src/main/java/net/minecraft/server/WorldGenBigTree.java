@@ -60,8 +60,8 @@ public class WorldGenBigTree extends WorldGenerator {
                 for (double d0 = 0.5D; j1 < i; ++j1) {
                     double d1 = this.j * (double) f * ((double) this.b.nextFloat() + 0.328D);
                     double d2 = (double) this.b.nextFloat() * 2.0D * 3.14159D;
-                    int k1 = (int) (d1 * Math.sin(d2) + (double) this.d[0] + d0);
-                    int l1 = (int) (d1 * Math.cos(d2) + (double) this.d[2] + d0);
+                    int k1 = MathHelper.floor(d1 * Math.sin(d2) + (double) this.d[0] + d0);
+                    int l1 = MathHelper.floor(d1 * Math.cos(d2) + (double) this.d[2] + d0);
                     int[] aint1 = new int[] { k1, j, l1};
                     int[] aint2 = new int[] { k1, j + this.n, l1};
 
@@ -291,8 +291,8 @@ public class WorldGenBigTree extends WorldGenerator {
 
             for (j = aint2[b1] + b4; i != j; i += b4) {
                 aint3[b1] = aint[b1] + i;
-                aint3[b2] = (int) ((double) aint[b2] + (double) i * d0);
-                aint3[b3] = (int) ((double) aint[b3] + (double) i * d1);
+                aint3[b2] = MathHelper.floor((double) aint[b2] + (double) i * d0);
+                aint3[b3] = MathHelper.floor((double) aint[b3] + (double) i * d1);
                 int k = this.c.getTypeId(aint3[0], aint3[1], aint3[2]);
 
                 if (k != 0 && k != 18) {

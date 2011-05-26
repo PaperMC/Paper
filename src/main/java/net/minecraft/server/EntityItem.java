@@ -86,90 +86,12 @@ public class EntityItem extends Entity {
         return this.world.a(this.boundingBox, Material.WATER, this);
     }
 
-    private boolean g(double d0, double d1, double d2) {
-        int i = MathHelper.floor(d0);
-        int j = MathHelper.floor(d1);
-        int k = MathHelper.floor(d2);
-        double d3 = d0 - (double) i;
-        double d4 = d1 - (double) j;
-        double d5 = d2 - (double) k;
-
-        if (Block.o[this.world.getTypeId(i, j, k)]) {
-            boolean flag = !Block.o[this.world.getTypeId(i - 1, j, k)];
-            boolean flag1 = !Block.o[this.world.getTypeId(i + 1, j, k)];
-            boolean flag2 = !Block.o[this.world.getTypeId(i, j - 1, k)];
-            boolean flag3 = !Block.o[this.world.getTypeId(i, j + 1, k)];
-            boolean flag4 = !Block.o[this.world.getTypeId(i, j, k - 1)];
-            boolean flag5 = !Block.o[this.world.getTypeId(i, j, k + 1)];
-            byte b0 = -1;
-            double d6 = 9999.0D;
-
-            if (flag && d3 < d6) {
-                d6 = d3;
-                b0 = 0;
-            }
-
-            if (flag1 && 1.0D - d3 < d6) {
-                d6 = 1.0D - d3;
-                b0 = 1;
-            }
-
-            if (flag2 && d4 < d6) {
-                d6 = d4;
-                b0 = 2;
-            }
-
-            if (flag3 && 1.0D - d4 < d6) {
-                d6 = 1.0D - d4;
-                b0 = 3;
-            }
-
-            if (flag4 && d5 < d6) {
-                d6 = d5;
-                b0 = 4;
-            }
-
-            if (flag5 && 1.0D - d5 < d6) {
-                d6 = 1.0D - d5;
-                b0 = 5;
-            }
-
-            float f = this.random.nextFloat() * 0.2F + 0.1F;
-
-            if (b0 == 0) {
-                this.motX = (double) (-f);
-            }
-
-            if (b0 == 1) {
-                this.motX = (double) f;
-            }
-
-            if (b0 == 2) {
-                this.motY = (double) (-f);
-            }
-
-            if (b0 == 3) {
-                this.motY = (double) f;
-            }
-
-            if (b0 == 4) {
-                this.motZ = (double) (-f);
-            }
-
-            if (b0 == 5) {
-                this.motZ = (double) f;
-            }
-        }
-
-        return false;
-    }
-
     protected void a(int i) {
         this.damageEntity((Entity) null, i);
     }
 
     public boolean damageEntity(Entity entity, int i) {
-        this.ab();
+        this.ac();
         this.f -= i;
         if (this.f <= 0) {
             this.die();
@@ -217,7 +139,9 @@ public class EntityItem extends Entity {
 
                 this.world.makeSound(this, "random.pop", 0.2F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
                 entityhuman.receive(this, i);
-                this.die();
+                if (this.itemStack.count <= 0) {
+                    this.die();
+                }
             }
         }
     }

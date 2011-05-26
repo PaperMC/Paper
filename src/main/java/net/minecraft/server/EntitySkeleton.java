@@ -63,7 +63,7 @@ public class EntitySkeleton extends EntityMonster {
                 EntityArrow entityarrow = new EntityArrow(this.world, this);
 
                 ++entityarrow.locY;
-                double d2 = entity.locY - 0.20000000298023224D - entityarrow.locY;
+                double d2 = entity.locY + (double) entity.s() - 0.20000000298023224D - entityarrow.locY;
                 float f1 = MathHelper.a(d0 * d0 + d1 * d1) * 0.2F;
 
                 this.world.makeSound(this, "random.bow", 1.0F, 1.0F / (this.random.nextFloat() * 0.4F + 0.8F));

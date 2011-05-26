@@ -69,4 +69,38 @@ public class ContainerWorkbench extends Container {
     public boolean b(EntityHuman entityhuman) {
         return this.c.getTypeId(this.h, this.i, this.j) != Block.WORKBENCH.id ? false : entityhuman.d((double) this.h + 0.5D, (double) this.i + 0.5D, (double) this.j + 0.5D) <= 64.0D;
     }
+
+    public ItemStack a(int i) {
+        ItemStack itemstack = null;
+        Slot slot = (Slot) this.e.get(i);
+
+        if (slot != null && slot.b()) {
+            ItemStack itemstack1 = slot.getItem();
+
+            itemstack = itemstack1.j();
+            if (i == 0) {
+                this.a(itemstack1, 10, 46, true);
+            } else if (i >= 10 && i < 37) {
+                this.a(itemstack1, 37, 46, false);
+            } else if (i >= 37 && i < 46) {
+                this.a(itemstack1, 10, 37, false);
+            } else {
+                this.a(itemstack1, 10, 46, false);
+            }
+
+            if (itemstack1.count == 0) {
+                slot.c((ItemStack) null);
+            } else {
+                slot.c();
+            }
+
+            if (itemstack1.count == itemstack.count) {
+                return null;
+            }
+
+            slot.a(itemstack1);
+        }
+
+        return itemstack;
+    }
 }

@@ -80,7 +80,7 @@ public class TileEntityMobSpawner extends TileEntity {
                                 this.world.a("flame", d0, d1, d2, 0.0D, 0.0D, 0.0D);
                             }
 
-                            entityliving.O();
+                            entityliving.P();
                             this.c();
                         }
                     }

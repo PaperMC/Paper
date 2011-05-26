@@ -16,12 +16,14 @@ import org.bukkit.util.Vector;
 
 public class BlockDispenser extends BlockContainer {
 
+    private Random a = new Random();
+
     protected BlockDispenser(int i) {
         super(i, Material.STONE);
         this.textureId = 45;
     }
 
-    public int b() {
+    public int c() {
         return 4;
     }
 
@@ -80,17 +82,17 @@ public class BlockDispenser extends BlockContainer {
     // CraftBukkit - private -> public
     public void dispense(World world, int i, int j, int k, Random random) {
         int l = world.getData(i, j, k);
-        float f = 0.0F;
-        float f1 = 0.0F;
+        byte b0 = 0;
+        byte b1 = 0;
 
         if (l == 3) {
-            f1 = 1.0F;
+            b1 = 1;
         } else if (l == 2) {
-            f1 = -1.0F;
+            b1 = -1;
         } else if (l == 5) {
-            f = 1.0F;
+            b0 = 1;
         } else {
-            f = -1.0F;
+            b0 = -1;
         }
 
         TileEntityDispenser tileentitydispenser = (TileEntityDispenser) world.getTileEntity(i, j, k);
@@ -105,20 +107,20 @@ public class BlockDispenser extends BlockContainer {
         }
         // CraftBukkit end
 
-        double d0 = (double) i + (double) f * 0.5D + 0.5D;
+        double d0 = (double) i + (double) b0 * 0.6D + 0.5D;
         double d1 = (double) j + 0.5D;
-        double d2 = (double) k + (double) f1 * 0.5D + 0.5D;
+        double d2 = (double) k + (double) b1 * 0.6D + 0.5D;
 
         if (itemstack == null) {
-            world.makeSound((double) i, (double) j, (double) k, "random.click", 1.0F, 1.2F);
+            world.e(1001, i, j, k, 0);
         } else {
             double d3;
 
             // CraftBukkit start
             d3 = random.nextDouble() * 0.1D + 0.2D;
-            double motX = (double) f * d3;
+            double motX = (double) b0 * d3;
             double motY = 0.20000000298023224D;
-            double motZ = (double) f1 * d3;
+            double motZ = (double) b1 * d3;
             motX += random.nextGaussian() * 0.007499999832361937D * 6.0D;
             motY += random.nextGaussian() * 0.007499999832361937D * 6.0D;
             motZ += random.nextGaussian() * 0.007499999832361937D * 6.0D;
@@ -147,45 +149,36 @@ public class BlockDispenser extends BlockContainer {
             if (itemstack.id == Item.ARROW.id) {
                 EntityArrow entityarrow = new EntityArrow(world, d0, d1, d2);
 
-                entityarrow.a((double) f, 0.10000000149011612D, (double) f1, 1.1F, 6.0F);
+                entityarrow.a((double) b0, 0.10000000149011612D, (double) b1, 1.1F, 6.0F);
+                entityarrow.a = true;
                 world.addEntity(entityarrow);
-                world.makeSound((double) i, (double) j, (double) k, "random.bow", 1.0F, 1.2F);
+                world.e(1002, i, j, k, 0);
             } else if (itemstack.id == Item.EGG.id) {
                 EntityEgg entityegg = new EntityEgg(world, d0, d1, d2);
 
-                entityegg.a((double) f, 0.10000000149011612D, (double) f1, 1.1F, 6.0F);
+                entityegg.a((double) b0, 0.10000000149011612D, (double) b1, 1.1F, 6.0F);
                 world.addEntity(entityegg);
-                world.makeSound((double) i, (double) j, (double) k, "random.bow", 1.0F, 1.2F);
+                world.e(1002, i, j, k, 0);
             } else if (itemstack.id == Item.SNOW_BALL.id) {
                 EntitySnowball entitysnowball = new EntitySnowball(world, d0, d1, d2);
 
-                entitysnowball.a((double) f, 0.10000000149011612D, (double) f1, 1.1F, 6.0F);
+                entitysnowball.a((double) b0, 0.10000000149011612D, (double) b1, 1.1F, 6.0F);
                 world.addEntity(entitysnowball);
-                world.makeSound((double) i, (double) j, (double) k, "random.bow", 1.0F, 1.2F);
+                world.e(1002, i, j, k, 0);
             } else {
                 EntityItem entityitem = new EntityItem(world, d0, d1 - 0.3D, d2, itemstack);
 
-                d3 = random.nextDouble() * 0.1D + 0.2D;
                 // CraftBukkit start
+                d3 = random.nextDouble() * 0.1D + 0.2D;
                 entityitem.motX = motX;
                 entityitem.motY = motY;
                 entityitem.motZ = motZ;
                 // CraftBukkit end
                 world.addEntity(entityitem);
-                world.makeSound((double) i, (double) j, (double) k, "random.click", 1.0F, 1.0F);
+                world.e(1000, i, j, k, 0);
             }
 
-            for (int i1 = 0; i1 < 10; ++i1) {
-                d3 = random.nextDouble() * 0.2D + 0.01D;
-                double d4 = d0 + (double) f * 0.01D + (random.nextDouble() - 0.5D) * (double) f1 * 0.5D;
-                double d5 = d1 + (random.nextDouble() - 0.5D) * 0.5D;
-                double d6 = d2 + (double) f1 * 0.01D + (random.nextDouble() - 0.5D) * (double) f * 0.5D;
-                double d7 = (double) f * d3 + random.nextGaussian() * 0.01D;
-                double d8 = -0.03D + random.nextGaussian() * 0.01D;
-                double d9 = (double) f1 * d3 + random.nextGaussian() * 0.01D;
-
-                world.a("smoke", d4, d5, d6, d7, d8, d9);
-            }
+            world.e(2000, i, j, k, b0 + 1 + (b1 + 1) * 3);
         }
     }
 
@@ -194,7 +187,7 @@ public class BlockDispenser extends BlockContainer {
             boolean flag = world.isBlockIndirectlyPowered(i, j, k) || world.isBlockIndirectlyPowered(i, j + 1, k);
 
             if (flag) {
-                world.c(i, j, k, this.id, this.b());
+                world.c(i, j, k, this.id, this.c());
             }
         }
     }
@@ -227,5 +220,38 @@ public class BlockDispenser extends BlockContainer {
         if (l == 3) {
             world.setData(i, j, k, 4);
         }
+    }
+
+    public void remove(World world, int i, int j, int k) {
+        TileEntityDispenser tileentitydispenser = (TileEntityDispenser) world.getTileEntity(i, j, k);
+
+        for (int l = 0; l < tileentitydispenser.getSize(); ++l) {
+            ItemStack itemstack = tileentitydispenser.getItem(l);
+
+            if (itemstack != null) {
+                float f = this.a.nextFloat() * 0.8F + 0.1F;
+                float f1 = this.a.nextFloat() * 0.8F + 0.1F;
+                float f2 = this.a.nextFloat() * 0.8F + 0.1F;
+
+                while (itemstack.count > 0) {
+                    int i1 = this.a.nextInt(21) + 10;
+
+                    if (i1 > itemstack.count) {
+                        i1 = itemstack.count;
+                    }
+
+                    itemstack.count -= i1;
+                    EntityItem entityitem = new EntityItem(world, (double) ((float) i + f), (double) ((float) j + f1), (double) ((float) k + f2), new ItemStack(itemstack.id, i1, itemstack.getData()));
+                    float f3 = 0.05F;
+
+                    entityitem.motX = (double) ((float) this.a.nextGaussian() * f3);
+                    entityitem.motY = (double) ((float) this.a.nextGaussian() * f3 + 0.2F);
+                    entityitem.motZ = (double) ((float) this.a.nextGaussian() * f3);
+                    world.addEntity(entityitem);
+                }
+            }
+        }
+
+        super.remove(world, i, j, k);
     }
 }

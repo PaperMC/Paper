@@ -40,6 +40,7 @@ public class CraftingManager {
         this.a(new ItemStack(Block.STEP, 3, 2), new Object[] { "###", Character.valueOf('#'), Block.WOOD});
         this.a(new ItemStack(Block.LADDER, 2), new Object[] { "# #", "###", "# #", Character.valueOf('#'), Item.STICK});
         this.a(new ItemStack(Item.WOOD_DOOR, 1), new Object[] { "##", "##", "##", Character.valueOf('#'), Block.WOOD});
+        this.a(new ItemStack(Block.TRAP_DOOR, 2), new Object[] { "###", "###", Character.valueOf('#'), Block.WOOD});
         this.a(new ItemStack(Item.IRON_DOOR, 1), new Object[] { "##", "##", "##", Character.valueOf('#'), Item.IRON_INGOT});
         this.a(new ItemStack(Item.SIGN, 1), new Object[] { "###", "###", " X ", Character.valueOf('#'), Block.WOOD, Character.valueOf('X'), Item.STICK});
         this.a(new ItemStack(Item.CAKE, 1), new Object[] { "AAA", "BEB", "CCC", Character.valueOf('A'), Item.MILK_BUCKET, Character.valueOf('B'), Item.SUGAR, Character.valueOf('C'), Item.WHEAT, Character.valueOf('E'), Item.EGG});
@@ -70,6 +71,7 @@ public class CraftingManager {
         this.a(new ItemStack(Item.DIODE, 1), new Object[] { "#X#", "III", Character.valueOf('#'), Block.REDSTONE_TORCH_ON, Character.valueOf('X'), Item.REDSTONE, Character.valueOf('I'), Block.STONE});
         this.a(new ItemStack(Item.WATCH, 1), new Object[] { " # ", "#X#", " # ", Character.valueOf('#'), Item.GOLD_INGOT, Character.valueOf('X'), Item.REDSTONE});
         this.a(new ItemStack(Item.COMPASS, 1), new Object[] { " # ", "#X#", " # ", Character.valueOf('#'), Item.IRON_INGOT, Character.valueOf('X'), Item.REDSTONE});
+        this.a(new ItemStack(Item.MAP, 1), new Object[] { "###", "#X#", "###", Character.valueOf('#'), Item.PAPER, Character.valueOf('X'), Item.COMPASS});
         this.a(new ItemStack(Block.STONE_BUTTON, 1), new Object[] { "#", "#", Character.valueOf('#'), Block.STONE});
         this.a(new ItemStack(Block.STONE_PLATE, 1), new Object[] { "##", Character.valueOf('#'), Block.STONE});
         this.a(new ItemStack(Block.WOOD_PLATE, 1), new Object[] { "##", Character.valueOf('#'), Block.WOOD});
@@ -79,7 +81,7 @@ public class CraftingManager {
         System.out.println(this.b.size() + " recipes");
     }
 
-    public void a(ItemStack itemstack, Object[] aobject) { // CraftBukkit - default -> public and Object... -> Object[]
+    public void a(ItemStack itemstack, Object... aobject) { // CraftBukkit - default -> public
         String s = "";
         int i = 0;
         int j = 0;
@@ -137,7 +139,7 @@ public class CraftingManager {
         this.b.add(new ShapedRecipes(j, k, aitemstack, itemstack));
     }
 
-    public void b(ItemStack itemstack, Object[] aobject) { // CraftBukkit - default -> public and Object... -> Object[]
+    public void b(ItemStack itemstack, Object... aobject) { // CraftBukkit - default -> public
         ArrayList arraylist = new ArrayList();
         Object[] aobject1 = aobject;
         int i = aobject.length;

@@ -11,15 +11,17 @@ import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 
 public class EntityArrow extends Entity {
 
-    private int c = -1;
     private int d = -1;
     private int e = -1;
-    private int f = 0;
-    private boolean g = false;
-    public int a = 0;
+    private int f = -1;
+    private int g = 0;
+    private int h = 0;
+    private boolean i = false;
+    public boolean a = false;
+    public int b = 0;
     public EntityLiving shooter;
-    private int h;
-    private int i = 0;
+    private int j;
+    private int k = 0;
 
     public EntityArrow(World world) {
         super(world);
@@ -36,6 +38,7 @@ public class EntityArrow extends Entity {
     public EntityArrow(World world, EntityLiving entityliving) {
         super(world);
         this.shooter = entityliving;
+        this.a = entityliving instanceof EntityHuman;
         this.b(0.5F, 0.5F);
         this.setPositionRotation(entityliving.locX, entityliving.locY + (double) entityliving.s(), entityliving.locZ, entityliving.yaw, entityliving.pitch);
         this.locX -= (double) (MathHelper.cos(this.yaw / 180.0F * 3.1415927F) * 0.16F);
@@ -70,7 +73,7 @@ public class EntityArrow extends Entity {
 
         this.lastYaw = this.yaw = (float) (Math.atan2(d0, d2) * 180.0D / 3.1415927410125732D);
         this.lastPitch = this.pitch = (float) (Math.atan2(d1, (double) f3) * 180.0D / 3.1415927410125732D);
-        this.h = 0;
+        this.j = 0;
     }
 
     public void p_() {
@@ -82,196 +85,208 @@ public class EntityArrow extends Entity {
             this.lastPitch = this.pitch = (float) (Math.atan2(this.motY, (double) f) * 180.0D / 3.1415927410125732D);
         }
 
-        if (this.a > 0) {
-            --this.a;
-        }
+        int i = this.world.getTypeId(this.d, this.e, this.f);
 
-        if (this.g) {
-            int i = this.world.getTypeId(this.c, this.d, this.e);
-
-            if (i == this.f) {
-                ++this.h;
-                if (this.h == 1200) {
-                    this.die();
-                }
-
-                return;
-            }
-
-            this.g = false;
-            this.motX *= (double) (this.random.nextFloat() * 0.2F);
-            this.motY *= (double) (this.random.nextFloat() * 0.2F);
-            this.motZ *= (double) (this.random.nextFloat() * 0.2F);
-            this.h = 0;
-            this.i = 0;
-        } else {
-            ++this.i;
-        }
-
-        Vec3D vec3d = Vec3D.create(this.locX, this.locY, this.locZ);
-        Vec3D vec3d1 = Vec3D.create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
-        MovingObjectPosition movingobjectposition = this.world.a(vec3d, vec3d1);
-
-        vec3d = Vec3D.create(this.locX, this.locY, this.locZ);
-        vec3d1 = Vec3D.create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
-        if (movingobjectposition != null) {
-            vec3d1 = Vec3D.create(movingobjectposition.f.a, movingobjectposition.f.b, movingobjectposition.f.c);
-        }
-
-        Entity entity = null;
-        List list = this.world.b((Entity) this, this.boundingBox.a(this.motX, this.motY, this.motZ).b(1.0D, 1.0D, 1.0D));
-        double d0 = 0.0D;
-
-        float f1;
-
-        for (int j = 0; j < list.size(); ++j) {
-            Entity entity1 = (Entity) list.get(j);
-
-            if (entity1.o_() && (entity1 != this.shooter || this.i >= 5)) {
-                f1 = 0.3F;
-                AxisAlignedBB axisalignedbb = entity1.boundingBox.b((double) f1, (double) f1, (double) f1);
-                MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
-
-                if (movingobjectposition1 != null) {
-                    double d1 = vec3d.a(movingobjectposition1.f);
-
-                    if (d1 < d0 || d0 == 0.0D) {
-                        entity = entity1;
-                        d0 = d1;
-                    }
-                }
+        if (i > 0) {
+            Block.byId[i].a(this.world, this.d, this.e, this.f);
+            if (Block.byId[i].d(this.world, this.d, this.e, this.f).a(Vec3D.create(this.locX, this.locY, this.locZ))) {
+                this.i = true;
             }
         }
 
-        if (entity != null) {
-            movingobjectposition = new MovingObjectPosition(entity);
+        if (this.b > 0) {
+            --this.b;
         }
 
-        float f2;
+        if (this.i) {
+            i = this.world.getTypeId(this.d, this.e, this.f);
+            int j = this.world.getData(this.d, this.e, this.f);
 
-        if (movingobjectposition != null) {
-            if (movingobjectposition.entity != null) {
-                // CraftBukkit start
-                boolean stick;
-                if (entity instanceof EntityLiving) {
-                    CraftServer server = ((WorldServer) this.world).getServer();
-
-                    // TODO decide if we should create DamageCause.ARROW, DamageCause.PROJECTILE
-                    // or leave as DamageCause.ENTITY_ATTACK
-                    org.bukkit.entity.Entity shooter = (this.shooter == null) ? null : this.shooter.getBukkitEntity();
-                    org.bukkit.entity.Entity damagee = movingobjectposition.entity.getBukkitEntity();
-                    org.bukkit.entity.Entity projectile = this.getBukkitEntity();
-                    // TODO deal with arrows being fired from a non-entity
-                    DamageCause damageCause = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
-                    int damage = 4;
-
-                    EntityDamageByProjectileEvent event = new EntityDamageByProjectileEvent(shooter, damagee, projectile, damageCause, damage);
-                    server.getPluginManager().callEvent(event);
-                    if (!event.isCancelled()) {
-                        // this function returns if the arrow should stick in or not, i.e. !bounce
-                        stick = movingobjectposition.entity.damageEntity(this.shooter, event.getDamage());
-                    } else {
-                        // event was cancelled, get if the arrow should bounce or not
-                        stick = !event.getBounce();
-                    }
-                } else {
-                    stick = movingobjectposition.entity.damageEntity(this.shooter, 4);
-                }
-                if (stick) {
-                // CraftBukkit end
-                    this.world.makeSound(this, "random.drr", 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
+            if (i == this.g && j == this.h) {
+                ++this.j;
+                if (this.j == 1200) {
                     this.die();
-                } else {
-                    this.motX *= -0.10000000149011612D;
-                    this.motY *= -0.10000000149011612D;
-                    this.motZ *= -0.10000000149011612D;
-                    this.yaw += 180.0F;
-                    this.lastYaw += 180.0F;
-                    this.i = 0;
                 }
             } else {
-                this.c = movingobjectposition.b;
-                this.d = movingobjectposition.c;
-                this.e = movingobjectposition.d;
-                this.f = this.world.getTypeId(this.c, this.d, this.e);
-                this.motX = (double) ((float) (movingobjectposition.f.a - this.locX));
-                this.motY = (double) ((float) (movingobjectposition.f.b - this.locY));
-                this.motZ = (double) ((float) (movingobjectposition.f.c - this.locZ));
-                f2 = MathHelper.a(this.motX * this.motX + this.motY * this.motY + this.motZ * this.motZ);
-                this.locX -= this.motX / (double) f2 * 0.05000000074505806D;
-                this.locY -= this.motY / (double) f2 * 0.05000000074505806D;
-                this.locZ -= this.motZ / (double) f2 * 0.05000000074505806D;
-                this.world.makeSound(this, "random.drr", 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
-                this.g = true;
-                this.a = 7;
+                this.i = false;
+                this.motX *= (double) (this.random.nextFloat() * 0.2F);
+                this.motY *= (double) (this.random.nextFloat() * 0.2F);
+                this.motZ *= (double) (this.random.nextFloat() * 0.2F);
+                this.j = 0;
+                this.k = 0;
             }
-        }
+        } else {
+            ++this.k;
+            Vec3D vec3d = Vec3D.create(this.locX, this.locY, this.locZ);
+            Vec3D vec3d1 = Vec3D.create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
+            MovingObjectPosition movingobjectposition = this.world.rayTrace(vec3d, vec3d1, false, true);
 
-        this.locX += this.motX;
-        this.locY += this.motY;
-        this.locZ += this.motZ;
-        f2 = MathHelper.a(this.motX * this.motX + this.motZ * this.motZ);
-        this.yaw = (float) (Math.atan2(this.motX, this.motZ) * 180.0D / 3.1415927410125732D);
-
-        for (this.pitch = (float) (Math.atan2(this.motY, (double) f2) * 180.0D / 3.1415927410125732D); this.pitch - this.lastPitch < -180.0F; this.lastPitch -= 360.0F) {
-            ;
-        }
-
-        while (this.pitch - this.lastPitch >= 180.0F) {
-            this.lastPitch += 360.0F;
-        }
-
-        while (this.yaw - this.lastYaw < -180.0F) {
-            this.lastYaw -= 360.0F;
-        }
-
-        while (this.yaw - this.lastYaw >= 180.0F) {
-            this.lastYaw += 360.0F;
-        }
-
-        this.pitch = this.lastPitch + (this.pitch - this.lastPitch) * 0.2F;
-        this.yaw = this.lastYaw + (this.yaw - this.lastYaw) * 0.2F;
-        float f3 = 0.99F;
-
-        f1 = 0.03F;
-        if (this.Z()) {
-            for (int k = 0; k < 4; ++k) {
-                float f4 = 0.25F;
-
-                this.world.a("bubble", this.locX - this.motX * (double) f4, this.locY - this.motY * (double) f4, this.locZ - this.motZ * (double) f4, this.motX, this.motY, this.motZ);
+            vec3d = Vec3D.create(this.locX, this.locY, this.locZ);
+            vec3d1 = Vec3D.create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
+            if (movingobjectposition != null) {
+                vec3d1 = Vec3D.create(movingobjectposition.f.a, movingobjectposition.f.b, movingobjectposition.f.c);
             }
 
-            f3 = 0.8F;
-        }
+            Entity entity = null;
+            List list = this.world.b((Entity) this, this.boundingBox.a(this.motX, this.motY, this.motZ).b(1.0D, 1.0D, 1.0D));
+            double d0 = 0.0D;
 
-        this.motX *= (double) f3;
-        this.motY *= (double) f3;
-        this.motZ *= (double) f3;
-        this.motY -= (double) f1;
-        this.setPosition(this.locX, this.locY, this.locZ);
+            float f1;
+
+            for (int k = 0; k < list.size(); ++k) {
+                Entity entity1 = (Entity) list.get(k);
+
+                if (entity1.o_() && (entity1 != this.shooter || this.k >= 5)) {
+                    f1 = 0.3F;
+                    AxisAlignedBB axisalignedbb = entity1.boundingBox.b((double) f1, (double) f1, (double) f1);
+                    MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
+
+                    if (movingobjectposition1 != null) {
+                        double d1 = vec3d.a(movingobjectposition1.f);
+
+                        if (d1 < d0 || d0 == 0.0D) {
+                            entity = entity1;
+                            d0 = d1;
+                        }
+                    }
+                }
+            }
+
+            if (entity != null) {
+                movingobjectposition = new MovingObjectPosition(entity);
+            }
+
+            float f2;
+
+            if (movingobjectposition != null) {
+                if (movingobjectposition.entity != null) {
+                    // CraftBukkit start
+                    boolean stick;
+                    if (entity instanceof EntityLiving) {
+                        CraftServer server = ((WorldServer) this.world).getServer();
+
+                        // TODO decide if we should create DamageCause.ARROW, DamageCause.PROJECTILE
+                        // or leave as DamageCause.ENTITY_ATTACK
+                        org.bukkit.entity.Entity shooter = (this.shooter == null) ? null : this.shooter.getBukkitEntity();
+                        org.bukkit.entity.Entity damagee = movingobjectposition.entity.getBukkitEntity();
+                        org.bukkit.entity.Entity projectile = this.getBukkitEntity();
+                        // TODO deal with arrows being fired from a non-entity
+                        DamageCause damageCause = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
+                        int damage = 4;
+
+                        EntityDamageByProjectileEvent event = new EntityDamageByProjectileEvent(shooter, damagee, projectile, damageCause, damage);
+                        server.getPluginManager().callEvent(event);
+                        if (!event.isCancelled()) {
+                            // this function returns if the arrow should stick in or not, i.e. !bounce
+                            stick = movingobjectposition.entity.damageEntity(this.shooter, event.getDamage());
+                        } else {
+                            // event was cancelled, get if the arrow should bounce or not
+                            stick = !event.getBounce();
+                        }
+                    } else {
+                        stick = movingobjectposition.entity.damageEntity(this.shooter, 4);
+                    }
+                    if (stick) {
+                    // CraftBukkit end
+                        this.world.makeSound(this, "random.drr", 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
+                        this.die();
+                    } else {
+                        this.motX *= -0.10000000149011612D;
+                        this.motY *= -0.10000000149011612D;
+                        this.motZ *= -0.10000000149011612D;
+                        this.yaw += 180.0F;
+                        this.lastYaw += 180.0F;
+                        this.k = 0;
+                    }
+                } else {
+                    this.d = movingobjectposition.b;
+                    this.e = movingobjectposition.c;
+                    this.f = movingobjectposition.d;
+                    this.g = this.world.getTypeId(this.d, this.e, this.f);
+                    this.h = this.world.getData(this.d, this.e, this.f);
+                    this.motX = (double) ((float) (movingobjectposition.f.a - this.locX));
+                    this.motY = (double) ((float) (movingobjectposition.f.b - this.locY));
+                    this.motZ = (double) ((float) (movingobjectposition.f.c - this.locZ));
+                    f2 = MathHelper.a(this.motX * this.motX + this.motY * this.motY + this.motZ * this.motZ);
+                    this.locX -= this.motX / (double) f2 * 0.05000000074505806D;
+                    this.locY -= this.motY / (double) f2 * 0.05000000074505806D;
+                    this.locZ -= this.motZ / (double) f2 * 0.05000000074505806D;
+                    this.world.makeSound(this, "random.drr", 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
+                    this.i = true;
+                    this.b = 7;
+                }
+            }
+
+            this.locX += this.motX;
+            this.locY += this.motY;
+            this.locZ += this.motZ;
+            f2 = MathHelper.a(this.motX * this.motX + this.motZ * this.motZ);
+            this.yaw = (float) (Math.atan2(this.motX, this.motZ) * 180.0D / 3.1415927410125732D);
+
+            for (this.pitch = (float) (Math.atan2(this.motY, (double) f2) * 180.0D / 3.1415927410125732D); this.pitch - this.lastPitch < -180.0F; this.lastPitch -= 360.0F) {
+                ;
+            }
+
+            while (this.pitch - this.lastPitch >= 180.0F) {
+                this.lastPitch += 360.0F;
+            }
+
+            while (this.yaw - this.lastYaw < -180.0F) {
+                this.lastYaw -= 360.0F;
+            }
+
+            while (this.yaw - this.lastYaw >= 180.0F) {
+                this.lastYaw += 360.0F;
+            }
+
+            this.pitch = this.lastPitch + (this.pitch - this.lastPitch) * 0.2F;
+            this.yaw = this.lastYaw + (this.yaw - this.lastYaw) * 0.2F;
+            float f3 = 0.99F;
+
+            f1 = 0.03F;
+            if (this.aa()) {
+                for (int l = 0; l < 4; ++l) {
+                    float f4 = 0.25F;
+
+                    this.world.a("bubble", this.locX - this.motX * (double) f4, this.locY - this.motY * (double) f4, this.locZ - this.motZ * (double) f4, this.motX, this.motY, this.motZ);
+                }
+
+                f3 = 0.8F;
+            }
+
+            this.motX *= (double) f3;
+            this.motY *= (double) f3;
+            this.motZ *= (double) f3;
+            this.motY -= (double) f1;
+            this.setPosition(this.locX, this.locY, this.locZ);
+        }
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("xTile", (short) this.c);
-        nbttagcompound.a("yTile", (short) this.d);
-        nbttagcompound.a("zTile", (short) this.e);
-        nbttagcompound.a("inTile", (byte) this.f);
-        nbttagcompound.a("shake", (byte) this.a);
-        nbttagcompound.a("inGround", (byte) (this.g ? 1 : 0));
+        nbttagcompound.a("xTile", (short) this.d);
+        nbttagcompound.a("yTile", (short) this.e);
+        nbttagcompound.a("zTile", (short) this.f);
+        nbttagcompound.a("inTile", (byte) this.g);
+        nbttagcompound.a("inData", (byte) this.h);
+        nbttagcompound.a("shake", (byte) this.b);
+        nbttagcompound.a("inGround", (byte) (this.i ? 1 : 0));
+        nbttagcompound.a("player", this.a);
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        this.c = nbttagcompound.d("xTile");
-        this.d = nbttagcompound.d("yTile");
-        this.e = nbttagcompound.d("zTile");
-        this.f = nbttagcompound.c("inTile") & 255;
-        this.a = nbttagcompound.c("shake") & 255;
-        this.g = nbttagcompound.c("inGround") == 1;
+        this.d = nbttagcompound.d("xTile");
+        this.e = nbttagcompound.d("yTile");
+        this.f = nbttagcompound.d("zTile");
+        this.g = nbttagcompound.c("inTile") & 255;
+        this.h = nbttagcompound.c("inData") & 255;
+        this.b = nbttagcompound.c("shake") & 255;
+        this.i = nbttagcompound.c("inGround") == 1;
+        this.a = nbttagcompound.m("player");
     }
 
     public void b(EntityHuman entityhuman) {
         if (!this.world.isStatic) {
-            if (this.g && this.shooter == entityhuman && this.a <= 0 && entityhuman.inventory.canHold(new ItemStack(Item.ARROW, 1))) {
+            if (this.i && this.a && this.b <= 0 && entityhuman.inventory.canHold(new ItemStack(Item.ARROW, 1))) {
                 this.world.makeSound(this, "random.pop", 0.2F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
                 entityhuman.receive(this, 1);
                 this.die();

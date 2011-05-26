@@ -5,20 +5,28 @@ import java.util.List;
 
 public class PlayerManager {
 
-    private List a = new ArrayList();
+    public List a = new ArrayList();
     private PlayerList b = new PlayerList();
     private List c = new ArrayList();
     private MinecraftServer server;
-    private final int[][] e = new int[][] { { 1, 0}, { 0, 1}, { -1, 0}, { 0, -1}};
+    private int e;
+    private int f;
+    private final int[][] g = new int[][] { { 1, 0}, { 0, 1}, { -1, 0}, { 0, -1}};
 
-    // CraftBukkit start
-    public WorldServer world;
+    public PlayerManager(MinecraftServer minecraftserver, int i, int j) {
+        if (j > 15) {
+            throw new IllegalArgumentException("Too big view radius!");
+        } else if (j < 3) {
+            throw new IllegalArgumentException("Too small view radius!");
+        } else {
+            this.f = j;
+            this.server = minecraftserver;
+            this.e = i;
+        }
+    }
 
-    // CraftBukkit - change of method signature
-    public PlayerManager(MinecraftServer minecraftserver, WorldServer world) {
-        this.world = world;
-        // CraftBukkit end
-        this.server = minecraftserver;
+    public WorldServer a() {
+        return this.server.a(this.e);
     }
 
     public void flush() {
@@ -58,32 +66,32 @@ public class PlayerManager {
         entityplayer.d = entityplayer.locX;
         entityplayer.e = entityplayer.locZ;
         int k = 0;
-        byte b0 = 10;
-        int l = 0;
+        int l = this.f;
         int i1 = 0;
+        int j1 = 0;
 
         this.a(i, j, true).a(entityplayer);
 
-        int j1;
+        int k1;
 
-        for (j1 = 1; j1 <= b0 * 2; ++j1) {
-            for (int k1 = 0; k1 < 2; ++k1) {
-                int[] aint = this.e[k++ % 4];
+        for (k1 = 1; k1 <= l * 2; ++k1) {
+            for (int l1 = 0; l1 < 2; ++l1) {
+                int[] aint = this.g[k++ % 4];
 
-                for (int l1 = 0; l1 < j1; ++l1) {
-                    l += aint[0];
-                    i1 += aint[1];
-                    this.a(i + l, j + i1, true).a(entityplayer);
+                for (int i2 = 0; i2 < k1; ++i2) {
+                    i1 += aint[0];
+                    j1 += aint[1];
+                    this.a(i + i1, j + j1, true).a(entityplayer);
                 }
             }
         }
 
         k %= 4;
 
-        for (j1 = 0; j1 < b0 * 2; ++j1) {
-            l += this.e[k][0];
-            i1 += this.e[k][1];
-            this.a(i + l, j + i1, true).a(entityplayer);
+        for (k1 = 0; k1 < l * 2; ++k1) {
+            i1 += this.g[k][0];
+            j1 += this.g[k][1];
+            this.a(i + i1, j + j1, true).a(entityplayer);
         }
 
         this.a.add(entityplayer);
@@ -93,8 +101,8 @@ public class PlayerManager {
         int i = (int) entityplayer.d >> 4;
         int j = (int) entityplayer.e >> 4;
 
-        for (int k = i - 10; k <= i + 10; ++k) {
-            for (int l = j - 10; l <= j + 10; ++l) {
+        for (int k = i - this.f; k <= i + this.f; ++k) {
+            for (int l = j - this.f; l <= j + this.f; ++l) {
                 PlayerInstance playerinstance = this.a(k, l, false);
 
                 if (playerinstance != null) {
@@ -110,7 +118,7 @@ public class PlayerManager {
         int i1 = i - k;
         int j1 = j - l;
 
-        return i1 >= -10 && i1 <= 10 ? j1 >= -10 && j1 <= 10 : false;
+        return i1 >= -this.f && i1 <= this.f ? j1 >= -this.f && j1 <= this.f : false;
     }
 
     public void movePlayer(EntityPlayer entityplayer) {
@@ -127,7 +135,7 @@ public class PlayerManager {
             int j1 = j - l;
 
             // CraftBukkit start
-            if (i1 > 10 || i1 < -10 || j1 > 10 || j1 < -10) {
+            if (i1 > this.f || i1 < -this.f || j1 > this.f || j1 < -this.f) {
                 this.removePlayer(entityplayer);
                 this.addPlayer(entityplayer);
                 return;
@@ -135,8 +143,8 @@ public class PlayerManager {
             // CraftBukkit end
 
             if (i1 != 0 || j1 != 0) {
-                for (int k1 = i - 10; k1 <= i + 10; ++k1) {
-                    for (int l1 = j - 10; l1 <= j + 10; ++l1) {
+                for (int k1 = i - this.f; k1 <= i + this.f; ++k1) {
+                    for (int l1 = j - this.f; l1 <= j + this.f; ++l1) {
                         if (!this.a(k1, l1, k, l)) {
                             this.a(k1, l1, true).a(entityplayer);
                         }
@@ -157,19 +165,15 @@ public class PlayerManager {
         }
     }
 
-    public int b() {
-        return 144;
+    public int c() {
+        return this.f * 16 - 16;
     }
 
-    static MinecraftServer a(PlayerManager playermanager) {
-        return playermanager.server;
-    }
-
-    static PlayerList b(PlayerManager playermanager) {
+    static PlayerList a(PlayerManager playermanager) {
         return playermanager.b;
     }
 
-    static List c(PlayerManager playermanager) {
+    static List b(PlayerManager playermanager) {
         return playermanager.c;
     }
 }

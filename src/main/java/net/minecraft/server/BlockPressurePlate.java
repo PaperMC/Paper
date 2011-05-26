@@ -20,8 +20,8 @@ public class BlockPressurePlate extends Block {
 
     private EnumMobType a;
 
-    protected BlockPressurePlate(int i, int j, EnumMobType enummobtype) {
-        super(i, j, Material.STONE);
+    protected BlockPressurePlate(int i, int j, EnumMobType enummobtype, Material material) {
+        super(i, j, material);
         this.a = enummobtype;
         this.a(true);
         float f = 0.0625F;
@@ -29,7 +29,7 @@ public class BlockPressurePlate extends Block {
         this.a(f, 0.0F, f, 1.0F - f, 0.03125F, 1.0F - f);
     }
 
-    public int b() {
+    public int c() {
         return 20;
     }
 
@@ -38,6 +38,10 @@ public class BlockPressurePlate extends Block {
     }
 
     public boolean a() {
+        return false;
+    }
+
+    public boolean b() {
         return false;
     }
 
@@ -55,7 +59,7 @@ public class BlockPressurePlate extends Block {
         }
 
         if (flag) {
-            this.a_(world, i, j, k, world.getData(i, j, k));
+            this.b_(world, i, j, k, world.getData(i, j, k));
             world.setTypeId(i, j, k, 0);
         }
     }
@@ -147,7 +151,7 @@ public class BlockPressurePlate extends Block {
         }
 
         if (flag1) {
-            world.c(i, j, k, this.id, this.b());
+            world.c(i, j, k, this.id, this.c());
         }
     }
 
@@ -173,7 +177,7 @@ public class BlockPressurePlate extends Block {
         }
     }
 
-    public boolean b(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+    public boolean a(IBlockAccess iblockaccess, int i, int j, int k, int l) {
         return iblockaccess.getData(i, j, k) > 0;
     }
 

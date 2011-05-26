@@ -35,6 +35,16 @@ public class EntityCreeper extends EntityMonster {
         this.datawatcher.b(17, Byte.valueOf((byte) (nbttagcompound.m("powered") ? 1 : 0)));
     }
 
+    protected void b(Entity entity, float f) {
+        if (this.fuseTicks > 0) {
+            this.e(-1);
+            --this.fuseTicks;
+            if (this.fuseTicks < 0) {
+                this.fuseTicks = 0;
+            }
+        }
+    }
+
     public void p_() {
         this.b = this.fuseTicks;
         if (this.world.isStatic) {
@@ -55,6 +65,13 @@ public class EntityCreeper extends EntityMonster {
         }
 
         super.p_();
+        if (this.target == null && this.fuseTicks > 0) {
+            this.e(-1);
+            --this.fuseTicks;
+            if (this.fuseTicks < 0) {
+                this.fuseTicks = 0;
+            }
+        }
     }
 
     protected String h() {
@@ -92,7 +109,8 @@ public class EntityCreeper extends EntityMonster {
                 // CraftBukkit start
                 CraftServer server = ((WorldServer) this.world).getServer();
 
-                ExplosionPrimeEvent event = new ExplosionPrimeEvent(CraftEntity.getEntity(server, this), 3.0F, false);
+                float radius = this.t() ? 6.0F : 3.0F;
+                ExplosionPrimeEvent event = new ExplosionPrimeEvent(CraftEntity.getEntity(server, this), radius, false);
                 server.getPluginManager().callEvent(event);
 
                 if (!event.isCancelled()) {
@@ -126,6 +144,7 @@ public class EntityCreeper extends EntityMonster {
 
     public void a(EntityWeatherStorm entityweatherstorm) {
         super.a(entityweatherstorm);
+
         // CraftBukkit start
         CraftServer server = ((WorldServer) this.world).getServer();
         org.bukkit.entity.Entity entity = this.getBukkitEntity();
@@ -133,9 +152,11 @@ public class EntityCreeper extends EntityMonster {
         CreeperPowerEvent event = new CreeperPowerEvent(entity, entityweatherstorm.getBukkitEntity(), CreeperPowerEvent.PowerCause.LIGHTNING);
         server.getPluginManager().callEvent(event);
 
-        if (!event.isCancelled()) {
-            this.datawatcher.b(17, Byte.valueOf((byte) 1));
+        if (event.isCancelled()) {
+            return;
         }
         // CraftBukkit end
+
+        this.datawatcher.b(17, Byte.valueOf((byte) 1));
     }
 }

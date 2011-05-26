@@ -214,7 +214,7 @@ public class EntityPainting extends Entity {
             // CraftBukkit end
 
             this.die();
-            this.ab();
+            this.ac();
             this.world.addEntity(new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.PAINTING)));
         }
 

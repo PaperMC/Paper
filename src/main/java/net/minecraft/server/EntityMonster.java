@@ -24,7 +24,7 @@ public class EntityMonster extends EntityCreature implements IMonster {
         float f = this.c(1.0F);
 
         if (f > 0.5F) {
-            this.au += 2;
+            this.ax += 2;
         }
 
         super.u();
@@ -32,7 +32,7 @@ public class EntityMonster extends EntityCreature implements IMonster {
 
     public void p_() {
         super.p_();
-        if (this.world.spawnMonsters == 0) {
+        if (!this.world.isStatic && this.world.spawnMonsters == 0) {
             this.die();
         }
     }
@@ -79,9 +79,9 @@ public class EntityMonster extends EntityCreature implements IMonster {
     protected void a(Entity entity, float f) {
         if (this.attackTicks <= 0 && f < 2.0F && entity.boundingBox.e > this.boundingBox.b && entity.boundingBox.b < this.boundingBox.e) {
             this.attackTicks = 20;
-            // CraftBukkit start - this is still duplicated here and EntityHuman because it's possible for an EntityMonster
+            // CraftBukkit start - this is still duplicated here and EntityHuman because it's possible for lastDamage EntityMonster
             // to damage another EntityMonster, and we want to catch those events.
-            // This does not fire events for slime attacks, as they're not an EntityMonster.
+            // This does not fire events for slime attacks, av they're not lastDamage EntityMonster.
             if (entity instanceof EntityLiving && !(entity instanceof EntityHuman)) {
                 CraftServer server = ((WorldServer) this.world).getServer();
                 org.bukkit.entity.Entity damager = this.getBukkitEntity();
@@ -103,7 +103,7 @@ public class EntityMonster extends EntityCreature implements IMonster {
     }
 
     protected float a(int i, int j, int k) {
-        return 0.5F - this.world.l(i, j, k);
+        return 0.5F - this.world.m(i, j, k);
     }
 
     public void b(NBTTagCompound nbttagcompound) {

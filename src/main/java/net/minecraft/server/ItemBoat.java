@@ -48,7 +48,11 @@ public class ItemBoat extends Item {
                     }
                     // CraftBukkit end
 
-                    world.addEntity(new EntityBoat(world, (double) ((float) i + 0.5F), (double) ((float) j + 1.5F), (double) ((float) k + 0.5F)));
+                    if (world.getTypeId(i, j, k) == Block.SNOW.id) {
+                        --j;
+                    }
+
+                    world.addEntity(new EntityBoat(world, (double) ((float) i + 0.5F), (double) ((float) j + 1.0F), (double) ((float) k + 0.5F)));
                 }
 
                 --itemstack.count;

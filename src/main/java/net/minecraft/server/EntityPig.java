@@ -67,23 +67,25 @@ public class EntityPig extends EntityAnimal {
     }
 
     public void a(EntityWeatherStorm entityweatherstorm) {
-        EntityPigZombie entitypigzombie = new EntityPigZombie(this.world);
+        if (!this.world.isStatic) {
+            EntityPigZombie entitypigzombie = new EntityPigZombie(this.world);
 
-        // CraftBukkit start
-        CraftServer server = ((WorldServer) this.world).getServer();
-        org.bukkit.entity.Entity entity = this.getBukkitEntity();
+            // CraftBukkit start
+            CraftServer server = ((WorldServer) this.world).getServer();
+            org.bukkit.entity.Entity entity = this.getBukkitEntity();
 
-        PigZapEvent event = new PigZapEvent(entity, entityweatherstorm.getBukkitEntity(), entitypigzombie.getBukkitEntity());
-        server.getPluginManager().callEvent(event);
+            PigZapEvent event = new PigZapEvent(entity, entityweatherstorm.getBukkitEntity(), entitypigzombie.getBukkitEntity());
+            server.getPluginManager().callEvent(event);
 
-        if (event.isCancelled()) {
-            return;
+            if (event.isCancelled()) {
+                return;
+            }
+            // CraftBukkit end
+
+            entitypigzombie.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, this.pitch);
+            this.world.addEntity(entitypigzombie);
+            this.die();
         }
-        // CraftBukkit end
-
-        entitypigzombie.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, this.pitch);
-        this.world.addEntity(entitypigzombie);
-        this.die();
     }
 
     protected void a(float f) {
