@@ -1,6 +1,8 @@
 package org.bukkit;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
@@ -483,21 +485,6 @@ public interface World {
     public Environment getEnvironment();
 
     /**
-     * Represents various map environment types that a world may be
-     */
-    public enum Environment {
-
-        /**
-         * Represents the "normal"/"surface world" map
-         */
-        NORMAL,
-        /**
-         * Represents a nether based map
-         */
-        NETHER
-    }
-
-    /**
      * Gets the Seed for this world.
      *
      * @return This worlds Seed
@@ -520,4 +507,48 @@ public interface World {
      * Saves world to disk
      */
     public void save();
+
+    /**
+     * Represents various map environment types that a world may be
+     */
+    public enum Environment {
+        /**
+         * Represents the "normal"/"surface world" map
+         */
+        NORMAL(0),
+        /**
+         * Represents a nether based map ("hell")
+         */
+        NETHER(-1),
+        /**
+         * Represents a sky-lands based map ("heaven")
+         */
+        SKYLANDS(1);
+
+        private final int id;
+        private static final Map<Integer, Environment> lookup = new HashMap<Integer, Environment>();
+
+        private Environment(int id) {
+            this.id = id;
+        }
+
+        /**
+         * Gets the dimension ID of this environment
+         *
+         * @return dimension ID
+         */
+        public int getId() {
+            return id;
+        }
+
+        public static Environment getEnvironment(int id) {
+            return lookup.get(id);
+        }
+
+        static {
+            for (Environment env : values()) {
+                lookup.put(env.getId(), env);
+            }
+        }
+    }
 }
