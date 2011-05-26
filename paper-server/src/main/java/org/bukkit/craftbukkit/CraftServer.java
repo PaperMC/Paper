@@ -27,6 +27,7 @@ import net.minecraft.server.ChunkCoordinates;
 import net.minecraft.server.ConvertProgressUpdater;
 import net.minecraft.server.Convertable;
 import net.minecraft.server.EntityPlayer;
+import net.minecraft.server.EntityTracker;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PropertyManager;
 import net.minecraft.server.ServerConfigurationManager;
@@ -36,6 +37,7 @@ import net.minecraft.server.WorldManager;
 import net.minecraft.server.WorldServer;
 import net.minecraft.server.ServerCommand;
 import net.minecraft.server.ICommandListener;
+import net.minecraft.server.SecondaryWorldServer;
 import org.bukkit.*;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
@@ -57,7 +59,7 @@ import org.bukkit.util.config.Configuration;
 public final class CraftServer implements Server {
     private final String serverName = "Craftbukkit";
     private final String serverVersion;
-    private final String protocolVersion = "1.5_02";
+    private final String protocolVersion = "1.6.2";
     private final PluginManager pluginManager = new SimplePluginManager(this);
     private final ServicesManager servicesManager = new SimpleServicesManager();
     private final BukkitScheduler scheduler =  new CraftScheduler(this);
@@ -364,12 +366,13 @@ public final class CraftServer implements Server {
             converter.convert(name, new ConvertProgressUpdater(console));
         }
 
-        WorldServer internal = new WorldServer(console, new ServerNBTManager(new File("."), name, true), name, environment == World.Environment.NETHER ? -1 : 0, seed);
+        WorldServer internal = new WorldServer(console, new ServerNBTManager(new File("."), name, true), name, environment.getId(), seed);
+        internal.z = console.worlds.get(0).z;
 
+        internal.tracker = new EntityTracker(console, environment.getId());
         internal.addIWorldAccess((IWorldAccess)new WorldManager(console, internal));
         internal.spawnMonsters = 1;
         internal.setSpawnFlags(true, true);
-        console.serverConfigurationManager.setPlayerFileData(internal);
         console.worlds.add(internal);
 
         short short1 = 196;

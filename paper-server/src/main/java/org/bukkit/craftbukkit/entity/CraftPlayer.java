@@ -13,6 +13,8 @@ import net.minecraft.server.Packet6SpawnPosition;
 import net.minecraft.server.ServerConfigurationManager;
 import net.minecraft.server.WorldServer;
 import net.minecraft.server.ChunkCoordIntPair;
+import net.minecraft.server.Packet9Respawn;
+import net.minecraft.server.World;
 import org.bukkit.Achievement;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -168,58 +170,26 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         WorldServer newWorld = ((CraftWorld)location.getWorld()).getHandle();
         ServerConfigurationManager manager = server.getHandle();
         EntityPlayer entity = getHandle();
-        boolean teleportSuccess;
 
         if (oldWorld != newWorld) {
+            entity.dimension = newWorld.dimension;
+            entity.netServerHandler.sendPacket(new Packet9Respawn((byte) entity.dimension));
+            oldWorld.removeEntity(entity);
+            entity.dead = false;
 
-            EntityPlayer newEntity = new EntityPlayer(manager.server, newWorld, entity.name, new ItemInWorldManager(newWorld));
-
-            newEntity.id = entity.id;
-            newEntity.netServerHandler = entity.netServerHandler;
-            newEntity.health = entity.health;
-            newEntity.fireTicks = entity.fireTicks;
-            newEntity.inventory = entity.inventory;
-            newEntity.inventory.d = newEntity;
-            newEntity.activeContainer = entity.activeContainer;
-            newEntity.defaultContainer = entity.defaultContainer;
-            newEntity.locX = location.getX();
-            newEntity.locY = location.getY();
-            newEntity.locZ = location.getZ();
-            newEntity.displayName = entity.displayName;
-            newEntity.compassTarget = entity.compassTarget;
-            newEntity.fauxSleeping = entity.fauxSleeping;
-            newWorld.chunkProviderServer.getChunkAt((int) location.getBlockX() >> 4, (int) location.getBlockZ() >> 4);
-
-            teleportSuccess = newEntity.netServerHandler.teleport(location);
-
-            if (teleportSuccess) {
-                manager.server.tracker.trackPlayer(entity);
-                manager.server.tracker.untrackEntity(entity);
-                int cx = (int) location.getBlockX() >> 4;
-                int cz = (int) location.getBlockZ() >> 4;
-                for (int x = -10 ; x <= 10 ; x++) {
-                    for (int z = -10 ; z <= 10 ; z++) {
-                        ChunkCoordIntPair chunkPosition = new ChunkCoordIntPair(cx + x, cz + z);
-                        if (entity.g.remove(chunkPosition)) {
-                            newEntity.g.add(chunkPosition);
-                        }
-                    }
-                }
-                oldWorld.manager.removePlayer(entity);
-                manager.players.remove(entity);
-                oldWorld.removeEntity(entity);
-
-                newWorld.manager.addPlayer(newEntity);
-                newWorld.addEntity(newEntity);
-                manager.players.add(newEntity);
-
-                entity.netServerHandler.player = newEntity;
-                this.entity = newEntity;
-
-                setCompassTarget(getCompassTarget());
+            if (entity.Q()) {
+                newWorld.addEntity(entity);
+                entity.setPositionRotation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+                newWorld.entityJoinedWorld(entity, false);
             }
 
-            return teleportSuccess;
+            manager.a(entity);
+            entity.netServerHandler.a(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+            entity.a((World)newWorld);
+            manager.a(entity, newWorld);
+            entity.a(entity.defaultContainer);
+
+            return true;
         } else {
             return entity.netServerHandler.teleport(location);
         }
