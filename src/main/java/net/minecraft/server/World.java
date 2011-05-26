@@ -283,11 +283,7 @@ public class World implements IBlockAccess {
         if (this.setRawData(i, j, k, l)) {
             int i1 = this.getTypeId(i, j, k);
 
-            if (Block.t[i1 & 255]) {
-                this.update(i, j, k, i1);
-            } else {
-                this.applyPhysics(i, j, k, i1);
-            }
+            this.update(i, j, k, i1);
         }
     }
 
