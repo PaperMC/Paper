@@ -51,7 +51,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
 
     // CraftBukkit start
     public int spawnProtection;
-    public List<WorldServer> worlds = new ArrayList<WorldServer>(); // TODO - REPLACE ABOVE
+    public List<WorldServer> worlds = new ArrayList<WorldServer>();
     public CraftServer server;
     public OptionSet options;
     public ColouredConsoleSender console;
@@ -461,7 +461,15 @@ public class MinecraftServer implements Runnable, ICommandListener {
     }
 
     public WorldServer a(int i) {
-        return i == -1 ? this.worlds.get(1) : this.worlds.get(0); // Craftbukkit
+        // Craftbukkit start
+        for (WorldServer world : worlds) {
+            if (world.dimension == i) {
+                return world;
+            }
+        }
+        
+        return worlds.get(0);
+        // Craftbukkit end
     }
 
     public EntityTracker b(int i) {

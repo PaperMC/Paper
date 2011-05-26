@@ -173,11 +173,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         if (oldWorld != newWorld) {
             entity.dimension = newWorld.dimension;
-            entity.netServerHandler.sendPacket(new Packet9Respawn((byte) entity.dimension));
+            entity.netServerHandler.sendPacket(new Packet9Respawn((byte) location.getWorld().getEnvironment().getId()));
             oldWorld.removeEntity(entity);
             entity.dead = false;
 
+            entity.setPositionRotation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
             if (entity.Q()) {
+                oldWorld.entityJoinedWorld(entity, false);
                 newWorld.addEntity(entity);
                 entity.setPositionRotation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
                 newWorld.entityJoinedWorld(entity, false);

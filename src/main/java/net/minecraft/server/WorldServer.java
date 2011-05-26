@@ -27,12 +27,14 @@ public class WorldServer extends World implements BlockChangeDelegate {
         this.cserver = minecraftserver.server;
         this.world = new CraftWorld(this);
         this.pvpMode = minecraftserver.pvpMode;
+        this.manager = new PlayerManager(minecraftserver, dimension, minecraftserver.propertyManager.getInt("view-distance", 10));
     }
 
     public final int dimension;
     private final CraftWorld world;
     private final CraftServer cserver;
     public EntityTracker tracker;
+    public PlayerManager manager;
 
     public CraftWorld getWorld() {
         return world;

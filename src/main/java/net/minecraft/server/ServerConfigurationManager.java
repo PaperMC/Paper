@@ -29,7 +29,7 @@ public class ServerConfigurationManager {
     public static Logger a = Logger.getLogger("Minecraft");
     public List players = new ArrayList();
     public MinecraftServer server; // CraftBukkit - private -> public
-    private PlayerManager[] d = new PlayerManager[2];
+    // private PlayerManager[] d = new PlayerManager[2]; // Craftbukkit - removed
     public int maxPlayers; // CraftBukkit - private -> public
     private Set banByName = new HashSet();
     private Set banByIP = new HashSet();
@@ -58,8 +58,7 @@ public class ServerConfigurationManager {
         this.m = minecraftserver.a("white-list.txt");
         int i = minecraftserver.propertyManager.getInt("view-distance", 10);
 
-        this.d[0] = new PlayerManager(minecraftserver, 0, i);
-        this.d[1] = new PlayerManager(minecraftserver, -1, i);
+        // Craftbukkit - removed playermanagers
         this.maxPlayers = minecraftserver.propertyManager.getInt("max-players", 20);
         this.o = minecraftserver.propertyManager.getBoolean("white-list", false);
         this.g();
@@ -78,8 +77,7 @@ public class ServerConfigurationManager {
     }
 
     public void a(EntityPlayer entityplayer) {
-        this.d[0].removePlayer(entityplayer);
-        this.d[1].removePlayer(entityplayer);
+        // Craftbukkit - removed playermanagers
         this.a(entityplayer.dimension).addPlayer(entityplayer);
         WorldServer worldserver = this.server.a(entityplayer.dimension);
 
@@ -87,11 +85,17 @@ public class ServerConfigurationManager {
     }
 
     public int a() {
-        return this.d[0].c();
+        // Craftbukkit start
+        if (this.server.worlds.size() == 0) {
+            return this.server.propertyManager.getInt("view-distance", 10) * 16 - 16;
+        } else {
+            return this.server.worlds.get(0).manager.c();
+        }
+        // Craftbukkit end
     }
 
     private PlayerManager a(int i) {
-        return i == -1 ? this.d[1] : this.d[0];
+        return server.a(i).manager; // Craftbukkit
     }
 
     public void b(EntityPlayer entityplayer) {
@@ -241,7 +245,7 @@ public class ServerConfigurationManager {
             entityplayer1.setPosition(entityplayer1.locX, entityplayer1.locY + 1.0D, entityplayer1.locZ);
         }
 
-        entityplayer1.netServerHandler.sendPacket(new Packet9Respawn((byte) entityplayer1.dimension));
+        entityplayer1.netServerHandler.sendPacket(new Packet9Respawn((byte) ((WorldServer)entityplayer1.world).getWorld().getEnvironment().getId()));
         entityplayer1.netServerHandler.a(entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch);
         this.a(entityplayer1, worldserver);
         this.a(entityplayer1.dimension).addPlayer(entityplayer1);
@@ -266,7 +270,8 @@ public class ServerConfigurationManager {
         entityplayer.dimension = b0;
         WorldServer worldserver1 = this.server.a(entityplayer.dimension);
 
-        entityplayer.netServerHandler.sendPacket(new Packet9Respawn((byte) entityplayer.dimension));
+        // Craftbukkit
+        entityplayer.netServerHandler.sendPacket(new Packet9Respawn((byte) ((WorldServer)entityplayer.world).getWorld().getEnvironment().getId()));
         worldserver.removeEntity(entityplayer);
         entityplayer.dead = false;
         double d0 = entityplayer.locX;
@@ -306,9 +311,11 @@ public class ServerConfigurationManager {
     }
 
     public void b() {
-        for (int i = 0; i < this.d.length; ++i) {
-            this.d[i].flush();
+        // Craftbukkit start
+        for (int i = 0; i < this.server.worlds.size(); ++i) {
+            this.server.worlds.get(i).manager.flush();
         }
+        // Craftbukkit end
     }
 
     public void flagDirty(int i, int j, int k, int l) {

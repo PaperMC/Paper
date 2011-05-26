@@ -287,7 +287,7 @@ public final class CraftServer implements Server {
         }
 
         // See if the server can process this command
-        return console.consoleCommandHandler.handle(new ServerCommand(commandLine, new ServerCommandListener(sender)));
+        return console.consoleCommandHandler.handle(new ServerCommand(commandLine, (ICommandListener)new ServerCommandListener(sender)));
     }
 
     public void reload() {
@@ -366,10 +366,11 @@ public final class CraftServer implements Server {
             converter.convert(name, new ConvertProgressUpdater(console));
         }
 
-        WorldServer internal = new WorldServer(console, new ServerNBTManager(new File("."), name, true), name, environment.getId(), seed);
+        int dimension = environment.getId() + 200 + console.worlds.size();
+        WorldServer internal = new WorldServer(console, new ServerNBTManager(new File("."), name, true), name, dimension, seed);
         internal.z = console.worlds.get(0).z;
 
-        internal.tracker = new EntityTracker(console, environment.getId());
+        internal.tracker = new EntityTracker(console, dimension);
         internal.addIWorldAccess((IWorldAccess)new WorldManager(console, internal));
         internal.spawnMonsters = 1;
         internal.setSpawnFlags(true, true);
