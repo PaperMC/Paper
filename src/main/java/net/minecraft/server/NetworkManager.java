@@ -105,7 +105,8 @@ public class NetworkManager {
                 flag = true;
             }
 
-            if (this.z-- <= 0 && !this.o.isEmpty() && (this.f == 0 || System.currentTimeMillis() - ((Packet) this.o.get(0)).timestamp >= (long) this.f)) {
+            // CraftBukkit - add 'flag'
+            if ((!flag || this.z-- <= 0) && !this.o.isEmpty() && (this.f == 0 || System.currentTimeMillis() - ((Packet) this.o.get(0)).timestamp >= (long) this.f)) {
                 object = this.g;
                 synchronized (this.g) {
                     packet = (Packet) this.o.remove(0);
