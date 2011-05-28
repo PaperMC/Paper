@@ -172,25 +172,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         EntityPlayer entity = getHandle();
 
         if (oldWorld != newWorld) {
-            entity.dimension = newWorld.dimension;
-            entity.netServerHandler.sendPacket(new Packet9Respawn((byte) location.getWorld().getEnvironment().getId()));
-            oldWorld.removeEntity(entity);
-            entity.dead = false;
-
-            entity.setPositionRotation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
-            if (entity.Q()) {
-                oldWorld.entityJoinedWorld(entity, false);
-                newWorld.addEntity(entity);
-                entity.setPositionRotation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
-                newWorld.entityJoinedWorld(entity, false);
-            }
-
-            manager.a(entity);
-            entity.netServerHandler.a(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
-            entity.a((World)newWorld);
-            manager.a(entity, newWorld);
-            entity.a(entity.defaultContainer);
-
+            this.sendMessage("Multiworld teleporting disabled in this build. Nether works");
+//            this.entity = manager.a(entity, newWorld.dimension, false);
             return true;
         } else {
             return entity.netServerHandler.teleport(location);
@@ -214,7 +197,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void updateInventory() {
-        getHandle().syncInventory();
+        getHandle().a(getHandle().activeContainer);
     }
 
     public void setSleepingIgnored(boolean isSleeping) {

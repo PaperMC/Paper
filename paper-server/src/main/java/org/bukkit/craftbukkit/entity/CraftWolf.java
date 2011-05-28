@@ -35,7 +35,7 @@ public class CraftWolf extends CraftAnimals implements Wolf {
     }
 
     public boolean isTamed() {
-        return getHandle().m_();
+        return getHandle().A();
     }
 
     public void setTamed(boolean tame) {
