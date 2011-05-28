@@ -283,7 +283,11 @@ public class World implements IBlockAccess {
         if (this.setRawData(i, j, k, l)) {
             int i1 = this.getTypeId(i, j, k);
 
-            this.update(i, j, k, i1);
+            if (Block.t[i1 & 255]) {
+                this.update(i, j, k, i1);
+            } else {
+                this.applyPhysics(i, j, k, i1);
+            }
         }
     }
 
@@ -838,10 +842,10 @@ public class World implements IBlockAccess {
             this.everyoneSleeping();
         }
 
-        int i = entity.bF;
-        int j = entity.bH;
+        int i = entity.bG;
+        int j = entity.bI;
 
-        if (entity.bE && this.isChunkLoaded(i, j)) {
+        if (entity.bF && this.isChunkLoaded(i, j)) {
             this.getChunkAt(i, j).b(entity);
         }
 
@@ -985,7 +989,7 @@ public class World implements IBlockAccess {
 
         for (i = 0; i < this.e.size(); ++i) {
             entity = (Entity) this.e.get(i);
-            entity.p_();
+            entity.o_();
             if (entity.dead) {
                 this.e.remove(i--);
             }
@@ -998,9 +1002,9 @@ public class World implements IBlockAccess {
 
         for (i = 0; i < this.D.size(); ++i) {
             entity = (Entity) this.D.get(i);
-            j = entity.bF;
-            k = entity.bH;
-            if (entity.bE && this.isChunkLoaded(j, k)) {
+            j = entity.bG;
+            k = entity.bI;
+            if (entity.bF && this.isChunkLoaded(j, k)) {
                 this.getChunkAt(j, k).b(entity);
             }
         }
@@ -1027,9 +1031,9 @@ public class World implements IBlockAccess {
             }
 
             if (entity.dead) {
-                j = entity.bF;
-                k = entity.bH;
-                if (entity.bE && this.isChunkLoaded(j, k)) {
+                j = entity.bG;
+                k = entity.bI;
+                if (entity.bF && this.isChunkLoaded(j, k)) {
                     this.getChunkAt(j, k).b(entity);
                 }
 
@@ -1055,29 +1059,29 @@ public class World implements IBlockAccess {
         byte b0 = 32;
 
         if (!flag || this.a(i - b0, 0, j - b0, i + b0, 128, j + b0)) {
-            entity.bn = entity.locX;
-            entity.bo = entity.locY;
-            entity.bp = entity.locZ;
+            entity.bo = entity.locX;
+            entity.bp = entity.locY;
+            entity.bq = entity.locZ;
             entity.lastYaw = entity.yaw;
             entity.lastPitch = entity.pitch;
-            if (flag && entity.bE) {
+            if (flag && entity.bF) {
                 if (entity.vehicle != null) {
-                    entity.B();
+                    entity.D();
                 } else {
-                    entity.p_();
+                    entity.o_();
                 }
             }
 
             if (Double.isNaN(entity.locX) || Double.isInfinite(entity.locX)) {
-                entity.locX = entity.bn;
+                entity.locX = entity.bo;
             }
 
             if (Double.isNaN(entity.locY) || Double.isInfinite(entity.locY)) {
-                entity.locY = entity.bo;
+                entity.locY = entity.bp;
             }
 
             if (Double.isNaN(entity.locZ) || Double.isInfinite(entity.locZ)) {
-                entity.locZ = entity.bp;
+                entity.locZ = entity.bq;
             }
 
             if (Double.isNaN((double) entity.pitch) || Double.isInfinite((double) entity.pitch)) {
@@ -1092,20 +1096,20 @@ public class World implements IBlockAccess {
             int l = MathHelper.floor(entity.locY / 16.0D);
             int i1 = MathHelper.floor(entity.locZ / 16.0D);
 
-            if (!entity.bE || entity.bF != k || entity.bG != l || entity.bH != i1) {
-                if (entity.bE && this.isChunkLoaded(entity.bF, entity.bH)) {
-                    this.getChunkAt(entity.bF, entity.bH).a(entity, entity.bG);
+            if (!entity.bF || entity.bG != k || entity.bH != l || entity.bI != i1) {
+                if (entity.bF && this.isChunkLoaded(entity.bG, entity.bI)) {
+                    this.getChunkAt(entity.bG, entity.bI).a(entity, entity.bH);
                 }
 
                 if (this.isChunkLoaded(k, i1)) {
-                    entity.bE = true;
+                    entity.bF = true;
                     this.getChunkAt(k, i1).a(entity);
                 } else {
-                    entity.bE = false;
+                    entity.bF = false;
                 }
             }
 
-            if (flag && entity.bE && entity.passenger != null) {
+            if (flag && entity.bF && entity.passenger != null) {
                 if (!entity.passenger.dead && entity.passenger.vehicle == entity) {
                     this.playerJoinedWorld(entity.passenger);
                 } else {
@@ -1122,7 +1126,7 @@ public class World implements IBlockAccess {
         for (int i = 0; i < list.size(); ++i) {
             Entity entity = (Entity) list.get(i);
 
-            if (!entity.dead && entity.aH) {
+            if (!entity.dead && entity.aI) {
                 return false;
             }
         }
@@ -1465,15 +1469,20 @@ public class World implements IBlockAccess {
     public void a(EnumSkyBlock enumskyblock, int i, int j, int k, int l, int i1, int j1, boolean flag) {
         if (!this.worldProvider.e || enumskyblock != EnumSkyBlock.SKY) {
             ++A;
-            if (A == 50) {
-                --A;
-            } else {
+
+            try {
+                if (A == 50) {
+                    return;
+                }
+
                 int k1 = (l + i) / 2;
                 int l1 = (j1 + k) / 2;
 
                 if (!this.isLoaded(k1, 64, l1)) {
-                    --A;
-                } else if (!this.b(k1, l1).g()) {
+                    return;
+                }
+
+                if (!this.b(k1, l1).g()) {
                     int i2 = this.C.size();
                     int j2;
 
@@ -1487,7 +1496,6 @@ public class World implements IBlockAccess {
                             MetadataChunkBlock metadatachunkblock = (MetadataChunkBlock) this.C.get(this.C.size() - k2 - 1);
 
                             if (metadatachunkblock.a == enumskyblock && metadatachunkblock.a(i, j, k, l, i1, j1)) {
-                                --A;
                                 return;
                             }
                         }
@@ -1500,8 +1508,10 @@ public class World implements IBlockAccess {
                         this.C.clear();
                     }
 
-                    --A;
+                    return;
                 }
+            } finally {
+                --A;
             }
         }
     }

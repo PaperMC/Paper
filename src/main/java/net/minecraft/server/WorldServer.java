@@ -18,11 +18,11 @@ public class WorldServer extends World implements BlockChangeDelegate {
     public final MinecraftServer server; // CraftBukkit - private -> public final
     private EntityList G = new EntityList();
 
-    public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, String s, int i, long j) {
-        super(idatamanager, s, j, WorldProvider.a(i));
+    // CraftBukkit start - change signature
+    public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, String s, int i, long j, org.bukkit.World.Environment env) {
+        super(idatamanager, s, j, WorldProvider.a(env.getId()));
         this.server = minecraftserver;
 
-        // CraftBukkit start
         this.dimension = i;
         this.cserver = minecraftserver.server;
         this.world = new CraftWorld(this);

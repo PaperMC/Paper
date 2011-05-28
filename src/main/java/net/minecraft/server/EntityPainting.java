@@ -119,7 +119,7 @@ public class EntityPainting extends Entity {
         return i == 32 ? 0.5F : (i == 64 ? 0.5F : 0.0F);
     }
 
-    public void p_() {
+    public void o_() {
         if (this.f++ == 100 && !this.world.isStatic) {
             this.f = 0;
             if (!this.h()) {
@@ -197,7 +197,7 @@ public class EntityPainting extends Entity {
         }
     }
 
-    public boolean o_() {
+    public boolean n_() {
         return true;
     }
 
@@ -214,7 +214,7 @@ public class EntityPainting extends Entity {
             // CraftBukkit end
 
             this.die();
-            this.ac();
+            this.ae();
             this.world.addEntity(new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.PAINTING)));
         }
 

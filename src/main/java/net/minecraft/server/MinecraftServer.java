@@ -33,7 +33,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
     public static HashMap b = new HashMap();
     public NetworkListenThread networkListenThread;
     public PropertyManager propertyManager;
-    // public WorldServer[] worldServer; // Craftbukkit - removed!
+    // public WorldServer[] worldServer; // CraftBukkit - removed!
     public ServerConfigurationManager serverConfigurationManager;
     public ConsoleCommandHandler consoleCommandHandler; // CraftBukkit - made public
     private boolean isRunning = true;
@@ -43,7 +43,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
     public int j;
     private List r = new ArrayList();
     private List s = Collections.synchronizedList(new ArrayList());
-    // public EntityTracker[] tracker = new EntityTracker[2]; // Craftbukkit - removed!
+    // public EntityTracker[] tracker = new EntityTracker[2]; // CraftBukkit - removed!
     public boolean onlineMode;
     public boolean spawnAnimals;
     public boolean pvpMode;
@@ -86,7 +86,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
         System.setErr(new PrintStream(new LoggerOutputStream(log, Level.SEVERE), true));
         // CraftBukkit end
 
-        log.info("Starting minecraft server version Beta 1.6.4");
+        log.info("Starting minecraft server version Beta 1.6.5");
         if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
             log.warning("**** NOT ENOUGH RAM!");
             log.warning("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
@@ -128,7 +128,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
         }
 
         this.serverConfigurationManager = new ServerConfigurationManager(this);
-        // Craftbukkit - removed trackers
+        // CraftBukkit - removed trackers
         long j = System.nanoTime();
         String s1 = this.propertyManager.getString("level-name", "world");
         String s2 = this.propertyManager.getString("level-seed", "");
@@ -160,16 +160,16 @@ public class MinecraftServer implements Runnable, ICommandListener {
             convertable.convert(s, new ConvertProgressUpdater(this));
         }
 
-        // Craftbukkit start
+        // CraftBukkit start
         for (int j = 0; j < (this.propertyManager.getBoolean("allow-nether", true) ? 2 : 1); ++j) {
             WorldServer world;
             int dimension = j == 0 ? 0 : -1;
 
             if (j == 0) {
-                world = new WorldServer(this, new ServerNBTManager(new File("."), s, true), s, dimension, i);
+                world = new WorldServer(this, new ServerNBTManager(new File("."), s, true), s, dimension, i, org.bukkit.World.Environment.getEnvironment(dimension)); // CraftBukkit
             } else {
                 String name = s + "_" + Environment.getEnvironment(dimension).toString().toLowerCase();
-                world = new SecondaryWorldServer(this, new ServerNBTManager(new File("."), name, true), name, dimension, i, worlds.get(0));
+                world = new SecondaryWorldServer(this, new ServerNBTManager(new File("."), name, true), name, dimension, i, worlds.get(0), org.bukkit.World.Environment.getEnvironment(dimension)); // CraftBukkit
             }
 
             world.tracker = new EntityTracker(this, dimension);
@@ -179,38 +179,41 @@ public class MinecraftServer implements Runnable, ICommandListener {
             worlds.add(world);
             this.serverConfigurationManager.setPlayerFileData(worlds.toArray(new WorldServer[0]));
         }
+        // CraftBukkit end
 
         short short1 = 196;
         long k = System.currentTimeMillis();
 
-        for (int l = 0; l < this.worlds.size(); ++l) { // Craftbukkit
+        for (int l = 0; l < this.worlds.size(); ++l) { // CraftBukkit
             log.info("Preparing start region for level " + l);
-            WorldServer worldserver = this.worlds.get(l); // Craftbukkit
-            ChunkCoordinates chunkcoordinates = worldserver.getSpawn();
+            // if (l == 0 || this.propertyManager.getBoolean("allow-nether", true)) { // CraftBukkit
+                WorldServer worldserver = this.worlds.get(l); // CraftBukkit
+                ChunkCoordinates chunkcoordinates = worldserver.getSpawn();
 
-            for (int i1 = -short1; i1 <= short1 && this.isRunning; i1 += 16) {
-                for (int j1 = -short1; j1 <= short1 && this.isRunning; j1 += 16) {
-                    long k1 = System.currentTimeMillis();
+                for (int i1 = -short1; i1 <= short1 && this.isRunning; i1 += 16) {
+                    for (int j1 = -short1; j1 <= short1 && this.isRunning; j1 += 16) {
+                        long k1 = System.currentTimeMillis();
 
-                    if (k1 < k) {
-                        k = k1;
-                    }
+                        if (k1 < k) {
+                            k = k1;
+                        }
 
-                    if (k1 > k + 1000L) {
-                        int l1 = (short1 * 2 + 1) * (short1 * 2 + 1);
-                        int i2 = (i1 + short1) * (short1 * 2 + 1) + j1 + 1;
+                        if (k1 > k + 1000L) {
+                            int l1 = (short1 * 2 + 1) * (short1 * 2 + 1);
+                            int i2 = (i1 + short1) * (short1 * 2 + 1) + j1 + 1;
 
-                        this.a("Preparing spawn area", i2 * 100 / l1);
-                        k = k1;
-                    }
+                            this.a("Preparing spawn area", i2 * 100 / l1);
+                            k = k1;
+                        }
 
-                    worldserver.chunkProviderServer.getChunkAt(chunkcoordinates.x + i1 >> 4, chunkcoordinates.z + j1 >> 4);
+                        worldserver.chunkProviderServer.getChunkAt(chunkcoordinates.x + i1 >> 4, chunkcoordinates.z + j1 >> 4);
 
-                    while (worldserver.doLighting() && this.isRunning) {
-                        ;
+                        while (worldserver.doLighting() && this.isRunning) {
+                            ;
+                        }
                     }
                 }
-            }
+            // } // CraftBukkit
         }
 
         this.e();
@@ -232,7 +235,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
     void saveChunks() { // CraftBukkit - private -> default
         log.info("Saving chunks");
 
-        // Craftbukkit start
+        // CraftBukkit start
         for (int i = 0; i < this.worlds.size(); ++i) {
             WorldServer worldserver = this.worlds.get(i);
 
@@ -298,7 +301,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
 
                     j += l;
                     i = k;
-                    if (this.worlds.get(0).everyoneDeeplySleeping()) { // Craftbukkit
+                    if (this.worlds.get(0).everyoneDeeplySleeping()) { // CraftBukkit
                         this.h();
                         j = 0L;
                     } else {
@@ -370,37 +373,39 @@ public class MinecraftServer implements Runnable, ICommandListener {
         Vec3D.a();
         ++this.ticks;
 
-        for (j = 0; j < this.worlds.size(); ++j) { // Craftbukkit
-            WorldServer worldserver = this.worlds.get(j); // Craftbukkit
+        for (j = 0; j < this.worlds.size(); ++j) { // CraftBukkit
+            // if (j == 0 || this.propertyManager.getBoolean("allow-nether", true)) { // CraftBukkit
+                WorldServer worldserver = this.worlds.get(j); // CraftBukkit
 
-            if (this.ticks % 20 == 0) {
-                // Craftbukkit start
-                for (int i = 0; i < this.serverConfigurationManager.players.size(); ++i) {
-                    EntityPlayer entityplayer = (EntityPlayer) this.serverConfigurationManager.players.get(i);
-                    entityplayer.netServerHandler.sendPacket(new Packet4UpdateTime(entityplayer.world.getTime()));
+                if (this.ticks % 20 == 0) {
+                    // CraftBukkit start - only send timeupdates to the people in that world
+                    for (int i = 0; i < this.serverConfigurationManager.players.size(); ++i) {
+                        EntityPlayer entityplayer = (EntityPlayer) this.serverConfigurationManager.players.get(i);
+                        entityplayer.netServerHandler.sendPacket(new Packet4UpdateTime(entityplayer.world.getTime()));
+                    }
                 }
+
+                ((CraftScheduler) server.getScheduler()).mainThreadHeartbeat(this.ticks);
+                // CraftBukkit end
+
+                worldserver.doTick();
+
+                while (worldserver.doLighting()) {
+                    ;
+                }
+
+                worldserver.cleanUp();
             }
-
-            ((CraftScheduler) server.getScheduler()).mainThreadHeartbeat(this.ticks);
-             // Craftbukkit end
-
-            worldserver.doTick();
-
-            while (worldserver.doLighting()) {
-                ;
-            }
-
-            worldserver.cleanUp();
-        }
+        // } // CraftBukkit
 
         this.networkListenThread.a();
         this.serverConfigurationManager.b();
 
-        // Craftbukkit start
+        // CraftBukkit start
         for (j = 0; j < this.worlds.size(); ++j) {
             this.worlds.get(j).tracker.a();
         }
-        // Craftbukkit end
+        // CraftBukkit end
 
         for (j = 0; j < this.r.size(); ++j) {
             ((IUpdatePlayerListBox) this.r.get(j)).a();
@@ -461,19 +466,19 @@ public class MinecraftServer implements Runnable, ICommandListener {
     }
 
     public WorldServer a(int i) {
-        // Craftbukkit start
+        // CraftBukkit start
         for (WorldServer world : worlds) {
             if (world.dimension == i) {
                 return world;
             }
         }
-        
+
         return worlds.get(0);
-        // Craftbukkit end
+        // CraftBukkit end
     }
 
     public EntityTracker b(int i) {
-        return a(i).tracker; // Craftbukkit
+        return a(i).tracker; // CraftBukkit
     }
 
     public static boolean isRunning(MinecraftServer minecraftserver) {

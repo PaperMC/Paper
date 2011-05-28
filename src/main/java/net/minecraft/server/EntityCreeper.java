@@ -36,16 +36,18 @@ public class EntityCreeper extends EntityMonster {
     }
 
     protected void b(Entity entity, float f) {
-        if (this.fuseTicks > 0) {
-            this.e(-1);
-            --this.fuseTicks;
-            if (this.fuseTicks < 0) {
-                this.fuseTicks = 0;
+        if (!this.world.isStatic) {
+            if (this.fuseTicks > 0) {
+                this.e(-1);
+                --this.fuseTicks;
+                if (this.fuseTicks < 0) {
+                    this.fuseTicks = 0;
+                }
             }
         }
     }
 
-    public void p_() {
+    public void o_() {
         this.b = this.fuseTicks;
         if (this.world.isStatic) {
             int i = this.x();
@@ -64,7 +66,7 @@ public class EntityCreeper extends EntityMonster {
             }
         }
 
-        super.p_();
+        super.o_();
         if (this.target == null && this.fuseTicks > 0) {
             this.e(-1);
             --this.fuseTicks;
@@ -90,39 +92,43 @@ public class EntityCreeper extends EntityMonster {
     }
 
     protected void a(Entity entity, float f) {
-        int i = this.x();
+        if (!this.world.isStatic) {
+            int i = this.x();
 
-        if ((i > 0 || f >= 3.0F) && (i <= 0 || f >= 7.0F)) {
-            this.e(-1);
-            --this.fuseTicks;
-            if (this.fuseTicks < 0) {
-                this.fuseTicks = 0;
-            }
-        } else {
-            if (this.fuseTicks == 0) {
-                this.world.makeSound(this, "random.fuse", 1.0F, 0.5F);
-            }
-
-            this.e(1);
-            ++this.fuseTicks;
-            if (this.fuseTicks >= 30) {
-                // CraftBukkit start
-                CraftServer server = ((WorldServer) this.world).getServer();
-
-                float radius = this.t() ? 6.0F : 3.0F;
-                ExplosionPrimeEvent event = new ExplosionPrimeEvent(CraftEntity.getEntity(server, this), radius, false);
-                server.getPluginManager().callEvent(event);
-
-                if (!event.isCancelled()) {
-                    this.world.createExplosion(this, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire());
-                    this.die();
-                } else {
+            if ((i > 0 || f >= 3.0F) && (i <= 0 || f >= 7.0F)) {
+                this.e(-1);
+                --this.fuseTicks;
+                if (this.fuseTicks < 0) {
                     this.fuseTicks = 0;
                 }
-                // CraftBukkit end
-            }
+            } else {
+                if (this.fuseTicks == 0) {
+                    this.world.makeSound(this, "random.fuse", 1.0F, 0.5F);
+                }
 
-            this.e = true;
+                this.e(1);
+                ++this.fuseTicks;
+                if (this.fuseTicks >= 30) {
+                    // CraftBukkit start
+                    CraftServer server = ((WorldServer) this.world).getServer();
+
+                    float radius = this.t() ? 6.0F : 3.0F;
+                    ExplosionPrimeEvent event = new ExplosionPrimeEvent(CraftEntity.getEntity(server, this), radius, false);
+                    server.getPluginManager().callEvent(event);
+
+                    if (!event.isCancelled()) {
+                        this.world.createExplosion(this, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire());
+                        this.die();
+                    } else {
+                        this.fuseTicks = 0;
+                    }
+                    // CraftBukkit end
+
+                    this.die();
+                }
+
+                this.e = true;
+            }
         }
     }
 

@@ -377,15 +377,15 @@ public class Chunk {
             k = this.entitySlices.length - 1;
         }
 
-        entity.bE = true;
-        entity.bF = this.x;
-        entity.bG = k;
-        entity.bH = this.z;
+        entity.bF = true;
+        entity.bG = this.x;
+        entity.bH = k;
+        entity.bI = this.z;
         this.entitySlices[k].add(entity);
     }
 
     public void b(Entity entity) {
-        this.a(entity, entity.bG);
+        this.a(entity, entity.bH);
     }
 
     public void a(Entity entity, int i) {

@@ -19,7 +19,7 @@ public class CraftCreeper extends CraftMonster implements Creeper {
     }
 
     public boolean isPowered() {
-        return getHandle().X().a(17) == 1;
+        return getHandle().Z().a(17) == 1;
     }
 
     public void setPowered(boolean powered) {
@@ -32,14 +32,14 @@ public class CraftCreeper extends CraftMonster implements Creeper {
             server.getPluginManager().callEvent(event);
 
             if (!event.isCancelled()) {
-                getHandle().X().b(17, (byte)1);
+                getHandle().Z().b(17, (byte)1);
             }
         } else {
             CreeperPowerEvent event = new CreeperPowerEvent(entity, CreeperPowerEvent.PowerCause.SET_OFF);
             server.getPluginManager().callEvent(event);
 
             if (!event.isCancelled()) {
-                getHandle().X().b(17, (byte)0);
+                getHandle().Z().b(17, (byte)0);
             }
         }
 

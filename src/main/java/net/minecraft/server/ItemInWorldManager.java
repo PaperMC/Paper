@@ -166,13 +166,13 @@ public class ItemInWorldManager {
 
         this.world.a(this.player, 2001, i, j, k, l + this.world.getData(i, j, k) * 256);
         boolean flag = this.b(i, j, k);
-        ItemStack itemstack = this.player.D();
+        ItemStack itemstack = this.player.F();
 
         if (itemstack != null) {
             itemstack.a(l, i, j, k, this.player);
             if (itemstack.count == 0) {
                 itemstack.a(this.player);
-                this.player.E();
+                this.player.G();
             }
         }
 

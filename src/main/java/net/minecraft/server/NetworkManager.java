@@ -1,6 +1,5 @@
 package net.minecraft.server;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -34,11 +33,10 @@ public class NetworkManager {
     private Object[] v;
     private int w = 0;
     private int x = 0;
-    private transient boolean y = false;
     public static int[] d = new int[256];
     public static int[] e = new int[256];
     public int f = 0;
-    private int z = 50;
+    private int y = 50;
 
     public NetworkManager(Socket socket, String s, NetHandler nethandler) {
         this.socket = socket;
@@ -51,7 +49,7 @@ public class NetworkManager {
 
             // CraftBukkit start - cant compile these outside the try
             this.input = new DataInputStream(socket.getInputStream());
-            this.output = new DataOutputStream(socket.getOutputStream());
+            this.output = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream(), 5120));
             // CraftBukkit end
         } catch (IOException socketexception) {
             System.err.println(socketexception.getMessage());
@@ -101,12 +99,11 @@ public class NetworkManager {
                 Packet.a(packet, this.output);
                 aint = e;
                 i = packet.b();
-                aint[i] += packet.a();
+                aint[i] += packet.a() + 1;
                 flag = true;
             }
 
-            // CraftBukkit - add 'flag'
-            if ((!flag || this.z-- <= 0) && !this.o.isEmpty() && (this.f == 0 || System.currentTimeMillis() - ((Packet) this.o.get(0)).timestamp >= (long) this.f)) {
+            if (this.y-- <= 0 && !this.o.isEmpty() && (this.f == 0 || System.currentTimeMillis() - ((Packet) this.o.get(0)).timestamp >= (long) this.f)) {
                 object = this.g;
                 synchronized (this.g) {
                     packet = (Packet) this.o.remove(0);
@@ -116,21 +113,24 @@ public class NetworkManager {
                 Packet.a(packet, this.output);
                 aint = e;
                 i = packet.b();
-                aint[i] += packet.a();
-                this.z = 50;
+                aint[i] += packet.a() + 1;
+                this.y = 0;
                 flag = true;
             }
+
+            return flag;
         } catch (Exception exception) {
             if (!this.t) {
                 this.a(exception);
             }
-        }
 
-        return flag;
+            return false;
+        }
     }
 
     public void a() {
-        this.y = true;
+        this.s.interrupt();
+        this.r.interrupt();
     }
 
     private boolean g() {
@@ -143,19 +143,21 @@ public class NetworkManager {
                 int[] aint = d;
                 int i = packet.b();
 
-                aint[i] += packet.a();
+                aint[i] += packet.a() + 1;
                 this.m.add(packet);
                 flag = true;
             } else {
                 this.a("disconnect.endOfStream", new Object[0]);
             }
+
+            return flag;
         } catch (Exception exception) {
             if (!this.t) {
                 this.a(exception);
             }
-        }
 
-        return flag;
+            return false;
+        }
     }
 
     private void a(Exception exception) {
@@ -215,6 +217,7 @@ public class NetworkManager {
             packet.a(this.p);
         }
 
+        this.a();
         if (this.t && this.m.isEmpty()) {
             this.p.a(this.u, this.v);
         }
@@ -251,16 +254,16 @@ public class NetworkManager {
         return networkmanager.f();
     }
 
-    static boolean e(NetworkManager networkmanager) {
-        return networkmanager.y;
-    }
-
-    static boolean a(NetworkManager networkmanager, boolean flag) {
-        return networkmanager.y = flag;
-    }
-
-    static DataOutputStream f(NetworkManager networkmanager) {
+    static DataOutputStream e(NetworkManager networkmanager) {
         return networkmanager.output;
+    }
+
+    static boolean f(NetworkManager networkmanager) {
+        return networkmanager.t;
+    }
+
+    static void a(NetworkManager networkmanager, Exception exception) {
+        networkmanager.a(exception);
     }
 
     static Thread g(NetworkManager networkmanager) {

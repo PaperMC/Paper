@@ -76,11 +76,11 @@ public class EntitySnowball extends Entity {
         this.h = 0;
     }
 
-    public void p_() {
-        this.bn = this.locX;
-        this.bo = this.locY;
-        this.bp = this.locZ;
-        super.p_();
+    public void o_() {
+        this.bo = this.locX;
+        this.bp = this.locY;
+        this.bq = this.locZ;
+        super.o_();
         if (this.a > 0) {
             --this.a;
         }
@@ -125,7 +125,7 @@ public class EntitySnowball extends Entity {
             for (int j = 0; j < list.size(); ++j) {
                 Entity entity1 = (Entity) list.get(j);
 
-                if (entity1.o_() && (entity1 != this.shooter || this.i >= 5)) {
+                if (entity1.n_() && (entity1 != this.shooter || this.i >= 5)) {
                     float f = 0.3F;
                     AxisAlignedBB axisalignedbb = entity1.boundingBox.b((double) f, (double) f, (double) f);
                     MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
@@ -213,7 +213,7 @@ public class EntitySnowball extends Entity {
         float f2 = 0.99F;
         float f3 = 0.03F;
 
-        if (this.aa()) {
+        if (this.ac()) {
             for (int l = 0; l < 4; ++l) {
                 float f4 = 0.25F;
 

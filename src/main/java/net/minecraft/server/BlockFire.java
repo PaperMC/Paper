@@ -196,7 +196,7 @@ public class BlockFire extends Block {
         }
     }
 
-    public boolean n_() {
+    public boolean m_() {
         return false;
     }
 

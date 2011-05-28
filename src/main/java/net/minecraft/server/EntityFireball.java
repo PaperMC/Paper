@@ -51,8 +51,8 @@ public class EntityFireball extends Entity {
         this.e = d2 / d3 * 0.1D;
     }
 
-    public void p_() {
-        super.p_();
+    public void o_() {
+        super.o_();
         this.fireTicks = 10;
         if (this.a > 0) {
             --this.a;
@@ -97,7 +97,7 @@ public class EntityFireball extends Entity {
         for (int j = 0; j < list.size(); ++j) {
             Entity entity1 = (Entity) list.get(j);
 
-            if (entity1.o_() && (entity1 != this.shooter || this.l >= 25)) {
+            if (entity1.n_() && (entity1 != this.shooter || this.l >= 25)) {
                 float f = 0.3F;
                 AxisAlignedBB axisalignedbb = entity1.boundingBox.b((double) f, (double) f, (double) f);
                 MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
@@ -191,7 +191,7 @@ public class EntityFireball extends Entity {
         this.yaw = this.lastYaw + (this.yaw - this.lastYaw) * 0.2F;
         float f2 = 0.95F;
 
-        if (this.aa()) {
+        if (this.ac()) {
             for (int k = 0; k < 4; ++k) {
                 float f3 = 0.25F;
 
@@ -229,14 +229,14 @@ public class EntityFireball extends Entity {
         this.j = nbttagcompound.c("inGround") == 1;
     }
 
-    public boolean o_() {
+    public boolean n_() {
         return true;
     }
 
     public boolean damageEntity(Entity entity, int i) {
-        this.ac();
+        this.ae();
         if (entity != null) {
-            Vec3D vec3d = entity.W();
+            Vec3D vec3d = entity.Y();
 
             if (vec3d != null) {
                 this.motX = vec3d.a;

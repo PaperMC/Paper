@@ -47,7 +47,7 @@ public class EntityCreature extends EntityLiving {
             if (this.target != null) {
                 this.pathEntity = this.world.findPath(this, this.target, f);
             }
-        } else if (!this.target.Q()) {
+        } else if (!this.target.S()) {
             // CraftBukkit start
             EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), null, TargetReason.TARGET_DIED);
             CraftServer server = ((WorldServer) this.world).getServer();
@@ -101,8 +101,8 @@ public class EntityCreature extends EntityLiving {
         }
 
         int l1 = MathHelper.floor(this.boundingBox.b + 0.5D);
-        boolean flag1 = this.aa();
-        boolean flag2 = this.ab();
+        boolean flag1 = this.ac();
+        boolean flag2 = this.ad();
 
         this.pitch = 0.0F;
         if (this.pathEntity != null && this.random.nextInt(100) != 0) {
@@ -119,7 +119,7 @@ public class EntityCreature extends EntityLiving {
                 }
             }
 
-            this.aB = false;
+            this.aC = false;
             if (vec3d != null) {
                 double d1 = vec3d.a - this.locX;
                 double d2 = vec3d.c - this.locZ;
@@ -128,7 +128,7 @@ public class EntityCreature extends EntityLiving {
                 float f4 = (float) (TrigMath.atan2(d2, d1) * 180.0D / 3.1415927410125732D) - 90.0F;
                 float f5 = f4 - this.yaw;
 
-                for (this.az = this.aD; f5 < -180.0F; f5 += 360.0F) {
+                for (this.aA = this.aE; f5 < -180.0F; f5 += 360.0F) {
                     ;
                 }
 
@@ -152,12 +152,12 @@ public class EntityCreature extends EntityLiving {
 
                     this.yaw = (float) (Math.atan2(d5, d4) * 180.0D / 3.1415927410125732D) - 90.0F;
                     f5 = (f6 - this.yaw + 90.0F) * 3.1415927F / 180.0F;
-                    this.ay = -MathHelper.sin(f5) * this.az * 1.0F;
-                    this.az = MathHelper.cos(f5) * this.az * 1.0F;
+                    this.az = -MathHelper.sin(f5) * this.aA * 1.0F;
+                    this.aA = MathHelper.cos(f5) * this.aA * 1.0F;
                 }
 
                 if (d3 > 0.0D) {
-                    this.aB = true;
+                    this.aC = true;
                 }
             }
 
@@ -165,12 +165,12 @@ public class EntityCreature extends EntityLiving {
                 this.a(this.target, 30.0F, 30.0F);
             }
 
-            if (this.positionChanged && !this.C()) {
-                this.aB = true;
+            if (this.positionChanged && !this.B()) {
+                this.aC = true;
             }
 
             if (this.random.nextFloat() < 0.8F && (flag1 || flag2)) {
-                this.aB = true;
+                this.aC = true;
             }
         } else {
             super.c_();
@@ -198,7 +198,7 @@ public class EntityCreature extends EntityLiving {
         return super.d() && this.a(i, j, k) >= 0.0F;
     }
 
-    public boolean C() {
+    public boolean B() {
         return this.pathEntity != null;
     }
 
@@ -206,7 +206,7 @@ public class EntityCreature extends EntityLiving {
         this.pathEntity = pathentity;
     }
 
-    public Entity D() {
+    public Entity E() {
         return this.target;
     }
 

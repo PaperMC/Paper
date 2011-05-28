@@ -69,11 +69,6 @@ public abstract class Packet {
         int i;
 
         try {
-            // CraftBukkit start - sleep while nothing to do
-            while(datainputstream.available() <= 0) {
-                Thread.sleep(10);
-            }
-            // CraftBukkit end
             i = datainputstream.read();
             if (i == -1) {
                 return null;
@@ -100,10 +95,6 @@ public abstract class Packet {
             return null;
         } catch (SocketException exception) {
             System.out.println("Connection reset");
-            return null;
-        }
-        catch (InterruptedException exception) {
-            System.out.println("Thread exception");
             return null;
         }
         // CraftBukkit end

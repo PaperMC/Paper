@@ -24,14 +24,14 @@ public class EntityMonster extends EntityCreature implements IMonster {
         float f = this.c(1.0F);
 
         if (f > 0.5F) {
-            this.ax += 2;
+            this.ay += 2;
         }
 
         super.u();
     }
 
-    public void p_() {
-        super.p_();
+    public void o_() {
+        super.o_();
         if (!this.world.isStatic && this.world.spawnMonsters == 0) {
             this.die();
         }

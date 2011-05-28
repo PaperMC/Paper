@@ -76,8 +76,8 @@ public class EntityWeatherStorm extends EntityWeather {
         }
     }
 
-    public void p_() {
-        super.p_();
+    public void o_() {
+        super.o_();
         if (this.b == 2) {
             this.world.makeSound(this.locX, this.locY, this.locZ, "ambient.weather.thunder", 10000.0F, 0.8F + this.random.nextFloat() * 0.2F);
             this.world.makeSound(this.locX, this.locY, this.locZ, "random.explode", 2.0F, 0.5F + this.random.nextFloat() * 0.2F);

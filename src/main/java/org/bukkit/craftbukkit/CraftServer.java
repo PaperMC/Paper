@@ -59,7 +59,7 @@ import org.bukkit.util.config.Configuration;
 public final class CraftServer implements Server {
     private final String serverName = "Craftbukkit";
     private final String serverVersion;
-    private final String protocolVersion = "1.6.4";
+    private final String protocolVersion = "1.6.5";
     private final PluginManager pluginManager = new SimplePluginManager(this);
     private final ServicesManager servicesManager = new SimpleServicesManager();
     private final BukkitScheduler scheduler =  new CraftScheduler(this);
@@ -366,8 +366,8 @@ public final class CraftServer implements Server {
             converter.convert(name, new ConvertProgressUpdater(console));
         }
 
-        int dimension = environment.getId() + 200 + console.worlds.size();
-        WorldServer internal = new WorldServer(console, new ServerNBTManager(new File("."), name, true), name, dimension, seed);
+        int dimension = 200 + console.worlds.size();
+        WorldServer internal = new WorldServer(console, new ServerNBTManager(new File("."), name, true), name, dimension, seed, environment);
         internal.z = console.worlds.get(0).z;
 
         internal.tracker = new EntityTracker(console, dimension);

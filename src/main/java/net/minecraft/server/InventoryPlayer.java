@@ -126,7 +126,7 @@ public class InventoryPlayer implements IInventory {
         if (itemstack.f()) {
             i = this.k();
             if (i >= 0) {
-                this.items[i] = itemstack;
+                this.items[i] = ItemStack.b(itemstack);
                 this.items[i].b = 5;
                 itemstack.count = 0;
                 return true;

@@ -32,12 +32,12 @@ public class EntityFish extends Entity {
     public EntityFish(World world) {
         super(world);
         this.b(0.25F, 0.25F);
-        this.bI = true;
+        this.bJ = true;
     }
 
     public EntityFish(World world, EntityHuman entityhuman) {
         super(world);
-        this.bI = true;
+        this.bJ = true;
         this.owner = entityhuman;
         this.owner.hookedFish = this;
         this.b(0.25F, 0.25F);
@@ -79,8 +79,8 @@ public class EntityFish extends Entity {
         this.i = 0;
     }
 
-    public void p_() {
-        super.p_();
+    public void o_() {
+        super.o_();
         if (this.l > 0) {
             double d0 = this.locX + (this.m - this.locX) / (double) this.l;
             double d1 = this.locY + (this.n - this.locY) / (double) this.l;
@@ -103,9 +103,9 @@ public class EntityFish extends Entity {
             this.c(this.yaw, this.pitch);
         } else {
             if (!this.world.isStatic) {
-                ItemStack itemstack = this.owner.D();
+                ItemStack itemstack = this.owner.F();
 
-                if (this.owner.dead || !this.owner.Q() || itemstack == null || itemstack.getItem() != Item.FISHING_ROD || this.g(this.owner) > 1024.0D) {
+                if (this.owner.dead || !this.owner.S() || itemstack == null || itemstack.getItem() != Item.FISHING_ROD || this.g(this.owner) > 1024.0D) {
                     this.die();
                     this.owner.hookedFish = null;
                     return;
@@ -168,7 +168,7 @@ public class EntityFish extends Entity {
             for (int j = 0; j < list.size(); ++j) {
                 Entity entity1 = (Entity) list.get(j);
 
-                if (entity1.o_() && (entity1 != this.owner || this.j >= 5)) {
+                if (entity1.n_() && (entity1 != this.owner || this.j >= 5)) {
                     float f = 0.3F;
                     AxisAlignedBB axisalignedbb = entity1.boundingBox.b((double) f, (double) f, (double) f);
                     MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);

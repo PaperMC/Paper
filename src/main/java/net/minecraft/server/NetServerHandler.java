@@ -89,8 +89,13 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         }
         // Send the possibly modified leave message
         s = event.getReason();
+        // CraftBukkit end
+
+        this.player.A();
         this.sendPacket(new Packet255KickDisconnect(s));
         this.networkManager.d();
+
+        //CraftBukkit start
         leaveMessage = event.getLeaveMessage();
         if (leaveMessage != null) {
             this.minecraftServer.serverConfigurationManager.sendAll(new Packet3Chat(leaveMessage));
@@ -214,7 +219,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 }
 
                 this.player.onGround = packet10flying.g;
-                this.player.a(true);
+                this.player = this.player.a(true); // CraftBukkit
                 this.player.move(d5, 0.0D, d4);
                 this.player.setLocation(d1, d2, d3, f, f1);
                 this.player.motX = d5;
@@ -272,7 +277,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             }
 
             this.player.a(true);
-            this.player.bq = 0.0F;
+            this.player.br = 0.0F;
             this.player.setLocation(this.x, this.y, this.z, f2, f3);
             if (!this.m) {
                 return;
@@ -402,7 +407,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         WorldServer worldserver = this.minecraftServer.a(this.player.dimension);
 
         if (packet14blockdig.e == 4) {
-            this.player.C();
+            this.player.E();
         } else {
             boolean flag = worldserver.weirdIsOpCache = worldserver.worldProvider.dimension != 0 || this.minecraftServer.serverConfigurationManager.isOp(this.player.name);
             boolean flag1 = false;
