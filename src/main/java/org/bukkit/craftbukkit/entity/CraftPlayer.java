@@ -172,8 +172,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         EntityPlayer entity = getHandle();
 
         if (oldWorld != newWorld) {
-            this.sendMessage("Multiworld teleporting disabled in this build. Nether works");
-//            this.entity = manager.a(entity, newWorld.dimension, false);
+            this.entity = manager.a(entity, newWorld.dimension, false);
             return true;
         } else {
             return entity.netServerHandler.teleport(location);
