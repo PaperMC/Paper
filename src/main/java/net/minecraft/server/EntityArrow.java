@@ -89,7 +89,9 @@ public class EntityArrow extends Entity {
 
         if (i > 0) {
             Block.byId[i].a(this.world, this.d, this.e, this.f);
-            if (Block.byId[i].d(this.world, this.d, this.e, this.f) != null && Block.byId[i].d(this.world, this.d, this.e, this.f).a(Vec3D.create(this.locX, this.locY, this.locZ))) {
+            AxisAlignedBB axisalignedbb = Block.byId[i].d(this.world, this.d, this.e, this.f);
+
+            if (axisalignedbb != null && axisalignedbb.a(Vec3D.create(this.locX, this.locY, this.locZ))) {
                 this.i = true;
             }
         }
@@ -138,8 +140,8 @@ public class EntityArrow extends Entity {
 
                 if (entity1.n_() && (entity1 != this.shooter || this.k >= 5)) {
                     f1 = 0.3F;
-                    AxisAlignedBB axisalignedbb = entity1.boundingBox.b((double) f1, (double) f1, (double) f1);
-                    MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
+                    AxisAlignedBB axisalignedbb1 = entity1.boundingBox.b((double) f1, (double) f1, (double) f1);
+                    MovingObjectPosition movingobjectposition1 = axisalignedbb1.a(vec3d, vec3d1);
 
                     if (movingobjectposition1 != null) {
                         double d1 = vec3d.a(movingobjectposition1.f);

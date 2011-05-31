@@ -179,6 +179,14 @@ public class EntityTrackerEntry {
                             entityplayer.netServerHandler.sendPacket(new Packet5EntityEquipment(this.tracker.id, i, aitemstack[i]));
                         }
                     }
+
+                    if (this.tracker instanceof EntityHuman) {
+                        EntityHuman entityhuman = (EntityHuman) this.tracker;
+
+                        if (entityhuman.isSleeping()) {
+                            entityplayer.netServerHandler.sendPacket(new Packet17(this.tracker, 0, MathHelper.floor(this.tracker.locX), MathHelper.floor(this.tracker.locY), MathHelper.floor(this.tracker.locZ)));
+                        }
+                    }
                 }
             } else if (this.trackedPlayers.contains(entityplayer)) {
                 this.trackedPlayers.remove(entityplayer);

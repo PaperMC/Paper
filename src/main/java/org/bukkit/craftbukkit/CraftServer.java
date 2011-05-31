@@ -59,7 +59,7 @@ import org.bukkit.util.config.Configuration;
 public final class CraftServer implements Server {
     private final String serverName = "Craftbukkit";
     private final String serverVersion;
-    private final String protocolVersion = "1.6.5";
+    private final String protocolVersion = "1.6.6";
     private final PluginManager pluginManager = new SimplePluginManager(this);
     private final ServicesManager servicesManager = new SimpleServicesManager();
     private final BukkitScheduler scheduler =  new CraftScheduler(this);

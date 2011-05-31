@@ -129,6 +129,10 @@ public class EntityBoat extends Entity {
                 }
                 // CraftBukkit end
 
+                if (this.passenger != null) {
+                    this.passenger.mount(this);
+                }
+
                 int j;
 
                 for (j = 0; j < 3; ++j) {
@@ -230,7 +234,11 @@ public class EntityBoat extends Entity {
                 d3 = d0 * 2.0D - 1.0D;
                 this.motY += 0.03999999910593033D * d3;
             } else {
-                this.motY += 0.0010000000474974513D;
+                if (this.motY < 0.0D) {
+                    this.motY /= 2.0D;
+                }
+
+                this.motY += 0.007000000216066837D;
             }
 
             if (this.passenger != null) {

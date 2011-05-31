@@ -1482,33 +1482,33 @@ public class World implements IBlockAccess {
                     return;
                 }
 
-                if (!this.b(k1, l1).g()) {
-                    int i2 = this.C.size();
-                    int j2;
-
-                    if (flag) {
-                        j2 = 5;
-                        if (j2 > i2) {
-                            j2 = i2;
-                        }
-
-                        for (int k2 = 0; k2 < j2; ++k2) {
-                            MetadataChunkBlock metadatachunkblock = (MetadataChunkBlock) this.C.get(this.C.size() - k2 - 1);
-
-                            if (metadatachunkblock.a == enumskyblock && metadatachunkblock.a(i, j, k, l, i1, j1)) {
-                                return;
-                            }
-                        }
-                    }
-
-                    this.C.add(new MetadataChunkBlock(enumskyblock, i, j, k, l, i1, j1));
-                    j2 = 1000000;
-                    if (this.C.size() > 1000000) {
-                        System.out.println("More than " + j2 + " updates, aborting lighting updates");
-                        this.C.clear();
-                    }
-
+                if (this.b(k1, l1).g()) {
                     return;
+                }
+
+                int i2 = this.C.size();
+                int j2;
+
+                if (flag) {
+                    j2 = 5;
+                    if (j2 > i2) {
+                        j2 = i2;
+                    }
+
+                    for (int k2 = 0; k2 < j2; ++k2) {
+                        MetadataChunkBlock metadatachunkblock = (MetadataChunkBlock) this.C.get(this.C.size() - k2 - 1);
+
+                        if (metadatachunkblock.a == enumskyblock && metadatachunkblock.a(i, j, k, l, i1, j1)) {
+                            return;
+                        }
+                    }
+                }
+
+                this.C.add(new MetadataChunkBlock(enumskyblock, i, j, k, l, i1, j1));
+                j2 = 1000000;
+                if (this.C.size() > 1000000) {
+                    System.out.println("More than " + j2 + " updates, aborting lighting updates");
+                    this.C.clear();
                 }
             } finally {
                 --A;

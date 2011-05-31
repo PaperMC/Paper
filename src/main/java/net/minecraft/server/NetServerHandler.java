@@ -240,6 +240,13 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 return;
             }
 
+            if (this.player.isSleeping()) {
+                this.player.a(true);
+                this.player.setLocation(this.x, this.y, this.z, this.player.yaw, this.player.pitch);
+                worldserver.playerJoinedWorld(this.player);
+                return;
+            }
+
             d0 = this.player.locY;
             this.x = this.player.locX;
             this.y = this.player.locY;

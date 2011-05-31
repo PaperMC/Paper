@@ -298,9 +298,11 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
         if (enumbederror == EnumBedError.OK) {
             EntityTracker entitytracker = this.b.b(this.dimension);
+            Packet17 packet17 = new Packet17(this, 0, i, j, k);
 
-            // CraftBukkit - this is not the original method called
-            entitytracker.b(this, new Packet17(this, 0, i, j, k));
+            entitytracker.a(this, packet17);
+            this.netServerHandler.a(this.locX, this.locY, this.locZ, this.yaw, this.pitch);
+            this.netServerHandler.sendPacket(packet17);
         }
 
         return enumbederror;

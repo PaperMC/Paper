@@ -31,8 +31,8 @@ public class CraftingManager {
         this.a(new ItemStack(Block.SNOW_BLOCK, 1), new Object[] { "##", "##", Character.valueOf('#'), Item.SNOW_BALL});
         this.a(new ItemStack(Block.CLAY, 1), new Object[] { "##", "##", Character.valueOf('#'), Item.CLAY_BALL});
         this.a(new ItemStack(Block.BRICK, 1), new Object[] { "##", "##", Character.valueOf('#'), Item.CLAY_BRICK});
-        this.a(new ItemStack(Block.GLOWSTONE, 1), new Object[] { "###", "###", "###", Character.valueOf('#'), Item.GLOWSTONE_DUST});
-        this.a(new ItemStack(Block.WOOL, 1), new Object[] { "###", "###", "###", Character.valueOf('#'), Item.STRING});
+        this.a(new ItemStack(Block.GLOWSTONE, 1), new Object[] { "##", "##", Character.valueOf('#'), Item.GLOWSTONE_DUST});
+        this.a(new ItemStack(Block.WOOL, 1), new Object[] { "##", "##", Character.valueOf('#'), Item.STRING});
         this.a(new ItemStack(Block.TNT, 1), new Object[] { "X#X", "#X#", "X#X", Character.valueOf('X'), Item.SULPHUR, Character.valueOf('#'), Block.SAND});
         this.a(new ItemStack(Block.STEP, 3, 3), new Object[] { "###", Character.valueOf('#'), Block.COBBLESTONE});
         this.a(new ItemStack(Block.STEP, 3, 0), new Object[] { "###", Character.valueOf('#'), Block.STONE});

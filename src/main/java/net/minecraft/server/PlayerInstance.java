@@ -47,10 +47,7 @@ class PlayerInstance {
     }
 
     public void b(EntityPlayer entityplayer) {
-        if (!this.b.contains(entityplayer)) {
-            // CraftBukkit - reduce console spam under certain conditions
-            // (new IllegalStateException("Failed to remove player. " + entityplayer + " isn\'t in chunk " + this.bF + ", " + this.bH)).printStackTrace();
-        } else {
+        if (this.b.contains(entityplayer)) {
             this.b.remove(entityplayer);
             if (this.b.size() == 0) {
                 long i = (long) this.chunkX + 2147483647L | (long) this.chunkZ + 2147483647L << 32;
