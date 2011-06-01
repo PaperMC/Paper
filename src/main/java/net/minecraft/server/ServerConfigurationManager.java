@@ -235,6 +235,18 @@ public class ServerConfigurationManager {
                     entityplayer1.netServerHandler.sendPacket(new Packet70Bed(0));
                 }
             }
+            Player respawnPlayer = cserver.getPlayer(entityplayer);
+            Location respawnLocation = new Location(cserver.getPlayer(entityplayer1).getWorld(), entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch);
+
+            PlayerRespawnEvent respawnEvent = new PlayerRespawnEvent(respawnPlayer, respawnLocation);
+            cserver.getPluginManager().callEvent(respawnEvent);
+
+            worldserver = ((CraftWorld)respawnEvent.getRespawnLocation().getWorld()).getHandle();
+            entityplayer1.locX = respawnEvent.getRespawnLocation().getX();
+            entityplayer1.locY = respawnEvent.getRespawnLocation().getY();
+            entityplayer1.locZ = respawnEvent.getRespawnLocation().getZ();
+            entityplayer1.yaw = respawnEvent.getRespawnLocation().getYaw();
+            entityplayer1.pitch = respawnEvent.getRespawnLocation().getPitch();
         }
         else {
             entityplayer1.setPositionRotation(entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
@@ -242,20 +254,6 @@ public class ServerConfigurationManager {
             entityplayer1.activeContainer = entityplayer.activeContainer;
             entityplayer1.defaultContainer = entityplayer.defaultContainer;
         }
-
-        Player respawnPlayer = cserver.getPlayer(entityplayer);
-        Location respawnLocation = new Location(respawnPlayer.getWorld(), entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch);
-
-        PlayerRespawnEvent respawnEvent = new PlayerRespawnEvent(respawnPlayer, respawnLocation);
-        cserver.getPluginManager().callEvent(respawnEvent);
-
-        worldserver = ((CraftWorld)respawnEvent.getRespawnLocation().getWorld()).getHandle();
-        entityplayer1.locX = respawnEvent.getRespawnLocation().getX();
-        entityplayer1.locY = respawnEvent.getRespawnLocation().getY();
-        entityplayer1.locZ = respawnEvent.getRespawnLocation().getZ();
-        entityplayer1.yaw = respawnEvent.getRespawnLocation().getYaw();
-        entityplayer1.pitch = respawnEvent.getRespawnLocation().getPitch();
-        // CraftBukkit end
 
         worldserver.chunkProviderServer.getChunkAt((int) entityplayer1.locX >> 4, (int) entityplayer1.locZ >> 4);
 
@@ -266,6 +264,7 @@ public class ServerConfigurationManager {
         byte actualDimension = (byte) (worldserver.getWorld().getEnvironment().getId());
         entityplayer1.netServerHandler.sendPacket(new Packet9Respawn((byte) (actualDimension >= 0 ? -1 : 0))); // CraftBukkit
         entityplayer1.netServerHandler.sendPacket(new Packet9Respawn(actualDimension)); // CraftBukkit
+        // CraftBukkit end
         entityplayer1.netServerHandler.a(entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch);
         this.a(entityplayer1, worldserver);
         this.a(entityplayer1.dimension).addPlayer(entityplayer1);
