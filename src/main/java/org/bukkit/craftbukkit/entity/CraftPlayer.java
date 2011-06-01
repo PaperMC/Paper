@@ -173,10 +173,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         if (oldWorld != newWorld) {
             this.entity = manager.a(entity, newWorld.dimension, false);
-            return true;
-        } else {
-            return entity.netServerHandler.teleport(location);
         }
+        return entity.netServerHandler.teleport(location);
     }
 
     public void setSneaking(boolean sneak) {
