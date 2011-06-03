@@ -47,7 +47,7 @@ public class World implements IBlockAccess {
     public int spawnMonsters;
     public Random random = new Random();
     public boolean s = false;
-    public final WorldProvider worldProvider;
+    public WorldProvider worldProvider; // Craftbukkit - remove final
     protected List u = new ArrayList();
     public IChunkProvider chunkProvider; // CraftBukkit - protected -> public
     protected final IDataManager w;
