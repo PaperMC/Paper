@@ -95,7 +95,7 @@ public class WorldMap extends WorldMapBase {
                     byte b2 = 0;
                     byte b3 = (byte) ((int) ((double) (f * 2.0F) + 0.5D));
                     byte b4 = (byte) ((int) ((double) (f1 * 2.0F) + 0.5D));
-                    byte b5 = (byte) ((int) ((double) (entityhuman.yaw * 16.0F / 360.0F) + 0.5D));
+                    byte b5 = (byte) ((int) ((double) (worldmaphumantracker1.a.yaw * 16.0F / 360.0F) + 0.5D));
 
                     if (this.d < 0) {
                         int j = this.g / 10;
