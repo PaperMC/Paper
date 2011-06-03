@@ -26,7 +26,7 @@ import org.bukkit.World;
 
 public class CraftWorld implements World {
     private final WorldServer world;
-    private final Environment environment;
+    private Environment environment;
     private final CraftServer server;
     private final ChunkProviderServer provider;
     private HashMap<Integer,CraftChunk> unloadedChunks = new HashMap<Integer, CraftChunk>();
@@ -37,12 +37,8 @@ public class CraftWorld implements World {
         this.world = world;
         this.server = world.getServer();
         this.provider = world.chunkProviderServer;
-
-        if (world.worldProvider instanceof WorldProviderHell) {
-            environment = Environment.NETHER;
-        } else {
-            environment = Environment.NORMAL;
-        }
+        
+        environment = Environment.getEnvironment(world.worldProvider.dimension);
 
         server.addWorld(this);
     }
@@ -442,6 +438,13 @@ public class CraftWorld implements World {
 
     public Environment getEnvironment() {
         return environment;
+    }
+    
+    public void setEnvironment(Environment env) {
+        if (environment != env) {
+            environment = env;
+            world.worldProvider = WorldProvider.a(environment.getId());
+        }
     }
 
     public Block getBlockAt(Location location) {
