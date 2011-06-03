@@ -416,7 +416,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         if (packet14blockdig.e == 4) {
             this.player.E();
         } else {
-            boolean flag = worldserver.weirdIsOpCache = worldserver.worldProvider.dimension != 0 || this.minecraftServer.serverConfigurationManager.isOp(this.player.name);
+            boolean flag = worldserver.weirdIsOpCache = worldserver.dimension != 0 || this.minecraftServer.serverConfigurationManager.isOp(this.player.name);
             boolean flag1 = false;
 
             if (packet14blockdig.e == 0) {
@@ -512,7 +512,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         // CraftBukkit end
 
         ItemStack itemstack = this.player.inventory.getItemInHand();
-        boolean flag = worldserver.weirdIsOpCache = worldserver.worldProvider.dimension != 0 || this.minecraftServer.serverConfigurationManager.isOp(this.player.name);
+        boolean flag = worldserver.weirdIsOpCache = worldserver.dimension != 0 || this.minecraftServer.serverConfigurationManager.isOp(this.player.name);
 
         if (packet15place.face == 255) {
             if (itemstack == null) {
