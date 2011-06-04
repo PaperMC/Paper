@@ -57,6 +57,13 @@ public class WorldListener implements Listener {
         throw new AuthorNagException("onWorldLoad has been replaced with a new signature, (WorldLoadEvent)");
     }
 
+    /**
+     * Called when a World is unloaded
+     *
+     * @param event Relevant event details
+     */
+    public void onWorldUnload(WorldUnloadEvent event) { }
+
     // TODO: Remove after RB
     @Deprecated public void onWorldLoad(WorldEvent event) {}
     @Deprecated public void onWorldSave(WorldEvent event) {}

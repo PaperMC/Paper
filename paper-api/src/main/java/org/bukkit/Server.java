@@ -190,6 +190,24 @@ public interface Server {
      */
     public World createWorld(String name, World.Environment environment, long seed, ChunkGenerator generator);
 
+     /**
+     * Unloads a world with the given name.
+     *
+     * @param name Name of the world to unload
+     * @param save Whether to save the chunks before unloading.
+     * @return Whether the action was Successful
+     */
+    public boolean unloadWorld(String name, boolean save);
+
+    /**
+     * Unloads the given world.
+     *
+     * @param world The world to unload
+     * @param save Whether to save the chunks before unloading.
+     * @return Whether the action was Successful
+     */
+    public boolean unloadWorld(World world, boolean save);
+
     /**
      * Gets the world with the given name
      *

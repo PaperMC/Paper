@@ -555,6 +555,13 @@ public final class JavaPluginLoader implements PluginLoader {
                 }
             };
 
+        case WORLD_UNLOAD:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((WorldListener) listener).onWorldUnload((WorldUnloadEvent) event);
+                }
+            };
+
         // Painting Events
         case PAINTING_PLACE:
             return new EventExecutor() {

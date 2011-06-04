@@ -479,6 +479,10 @@ public abstract class Event implements Serializable {
          * Called when a World is loaded
          */
         WORLD_LOAD (Category.WORLD),
+        /**
+         * Called when a World is unloaded
+         */
+        WORLD_UNLOAD (Category.WORLD),
 
         /**
          * ENTITY EVENTS
