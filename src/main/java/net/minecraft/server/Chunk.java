@@ -364,7 +364,7 @@ public class Chunk {
             System.out.println("Wrong location! " + entity);
             // CraftBukkit
             System.out.println("" + entity.locX + "," + entity.locZ + "(" + i + "," + j + ") vs " + this.x + "," + this.z);
-            Thread.dumpStack();
+            // Thread.dumpStack(); // CraftBukkit
         }
 
         int k = MathHelper.floor(entity.locY / 16.0D);
