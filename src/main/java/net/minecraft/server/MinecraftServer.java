@@ -265,13 +265,11 @@ public class MinecraftServer implements Runnable, ICommandListener {
             this.serverConfigurationManager.savePlayers();
         }
 
-        // CraftBukkit start
-        for (int i = 0; i < this.worlds.size(); ++i) {
-            WorldServer worldserver = this.worlds.get(i);
+        // CraftBukkit start - multiworld is handled in saveChunks() already.
+        WorldServer worldserver = this.worlds.get(0);
 
-            if (worldserver != null) {
-                this.saveChunks();
-            }
+        if (worldserver != null) {
+            this.saveChunks();
         }
         // CraftBukkit end
     }
