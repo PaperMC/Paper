@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 // CraftBukkit start
+import org.bukkit.Location;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -124,10 +125,25 @@ public class World implements IBlockAccess {
 
         int j;
 
-        // Craftbukkit
+        // Craftbukkit start
+        if (generator != null) {
+            Random rand = new Random(getSeed());
+            Location spawn = generator.getFixedSpawnLocation(((WorldServer)this).getWorld(), rand);
+            if (spawn != null) {
+                if (spawn.getWorld() != ((WorldServer)this).getWorld()) {
+                    throw new IllegalStateException("Cannot set spawn point for " + worldData.name + " to be in another world (" + spawn.getWorld().getName() + ")");
+                } else {
+                    worldData.setSpawn(spawn.getBlockX(), spawn.getBlockY(), spawn.getBlockZ());
+                    isLoading = false;
+                    return;
+                }
+            }
+        }
+
         for (j = 0; !canSpawn(i, j); j += this.random.nextInt(64) - this.random.nextInt(64)) {
             i += this.random.nextInt(64) - this.random.nextInt(64);
         }
+        // Craftbukkit end
 
         this.worldData.setSpawn(i, b0, j);
         this.isLoading = false;
