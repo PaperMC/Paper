@@ -10,7 +10,7 @@ import net.minecraft.server.WorldServer;
 import org.bukkit.generator.BlockPopulator;
 import org.bukkit.generator.ChunkGenerator;
 
-public class CustomChunkGenerator implements InternalChunkGenerator {
+public class CustomChunkGenerator extends InternalChunkGenerator {
     private final ChunkGenerator generator;
     private final WorldServer world;
     private final long seed;
