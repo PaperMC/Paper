@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 // CraftBukkit start
@@ -16,6 +17,7 @@ import org.bukkit.craftbukkit.util.LongHashset;
 import org.bukkit.craftbukkit.util.LongHashtable;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
+import org.bukkit.generator.BlockPopulator;
 // CraftBukkit end
 
 public class ChunkProviderServer implements IChunkProvider {
@@ -172,6 +174,20 @@ public class ChunkProviderServer implements IChunkProvider {
             chunk.done = true;
             if (this.chunkProvider != null) {
                 this.chunkProvider.getChunkAt(ichunkprovider, i, j);
+
+                // Craftbukkit start
+                BlockSand.a = true;
+                Random random = new Random();
+                random.setSeed(world.getSeed());
+                long xRand = random.nextLong() / 2L * 2L + 1L;
+                long zRand = random.nextLong() / 2L * 2L + 1L;
+                random.setSeed((long) i * xRand + (long) j * zRand ^ world.getSeed());
+                for (BlockPopulator populator : world.getWorld().getPopulators()) {
+                    populator.populate(world.getWorld(), random, chunk.bukkitChunk);
+                }
+                BlockSand.a = false;
+                // Craftbukkit end
+
                 chunk.f();
             }
         }

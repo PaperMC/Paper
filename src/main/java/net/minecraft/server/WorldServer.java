@@ -5,8 +5,14 @@ import java.util.List;
 
 // CraftBukkit start
 import org.bukkit.BlockChangeDelegate;
+import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.generator.CustomChunkGenerator;
+import org.bukkit.craftbukkit.generator.InternalChunkGenerator;
+import org.bukkit.craftbukkit.generator.NetherChunkGenerator;
+import org.bukkit.craftbukkit.generator.NormalChunkGenerator;
+import org.bukkit.craftbukkit.generator.SkyLandsChunkGenerator;
 import org.bukkit.event.weather.LightningStrikeEvent;
 
 public class WorldServer extends World implements BlockChangeDelegate {
@@ -19,13 +25,13 @@ public class WorldServer extends World implements BlockChangeDelegate {
     private EntityList G = new EntityList();
 
     // CraftBukkit start - change signature
-    public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, String s, int i, long j, org.bukkit.World.Environment env) {
-        super(idatamanager, s, j, WorldProvider.a(env.getId()));
+    public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, String s, int i, long j, org.bukkit.World.Environment env, ChunkGenerator gen) {
+        super(idatamanager, s, j, WorldProvider.a(env.getId()), gen);
         this.server = minecraftserver;
 
         this.dimension = i;
         this.cserver = minecraftserver.server;
-        this.world = new CraftWorld(this);
+        this.world = new CraftWorld(this, gen);
         this.pvpMode = minecraftserver.pvpMode;
         this.manager = new PlayerManager(minecraftserver, dimension, minecraftserver.propertyManager.getInt("view-distance", 10));
     }
@@ -64,7 +70,22 @@ public class WorldServer extends World implements BlockChangeDelegate {
     protected IChunkProvider b() {
         IChunkLoader ichunkloader = this.w.a(this.worldProvider);
 
-        this.chunkProviderServer = new ChunkProviderServer(this, ichunkloader, this.worldProvider.b());
+        // Craftbukkit start
+        InternalChunkGenerator gen;
+
+        if (this.generator != null) {
+            gen = new CustomChunkGenerator(this, this.getSeed(), this.generator);
+        } else if (this.worldProvider instanceof WorldProviderHell) {
+            gen = new NetherChunkGenerator(this, this.getSeed());
+        } else if (this.worldProvider instanceof WorldProviderSky) {
+            gen = new SkyLandsChunkGenerator(this, this.getSeed());
+        } else {
+            gen = new NormalChunkGenerator(this, this.getSeed());
+        }
+
+        this.chunkProviderServer = new ChunkProviderServer(this, ichunkloader, gen);
+        // Craftbukkit end
+
         return this.chunkProviderServer;
     }
 

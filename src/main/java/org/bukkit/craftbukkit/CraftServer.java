@@ -1,10 +1,12 @@
 package org.bukkit.craftbukkit;
 
+import org.bukkit.generator.ChunkGenerator;
 import com.avaje.ebean.config.DataSourceConfig;
 import com.avaje.ebean.config.ServerConfig;
 import com.avaje.ebean.config.dbplatform.SQLitePlatform;
 import com.avaje.ebeaninternal.server.lib.sql.TransactionIsolation;
 import net.minecraft.server.IWorldAccess;
+import org.bukkit.World.Environment;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.world.WorldLoadEvent;
@@ -54,6 +56,7 @@ import org.bukkit.craftbukkit.command.ServerCommandListener;
 import org.bukkit.scheduler.BukkitWorker;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
+import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.util.config.Configuration;
 
 public final class CraftServer implements Server {
@@ -349,6 +352,14 @@ public final class CraftServer implements Server {
     }
 
     public World createWorld(String name, World.Environment environment, long seed) {
+        return createWorld(name, environment, seed, null);
+    }
+
+    public World createWorld(String name, Environment environment, ChunkGenerator generator) {
+        return createWorld(name, environment, (new Random()).nextLong(), generator);
+    }
+
+    public World createWorld(String name, Environment environment, long seed, ChunkGenerator generator) {
         File folder = new File(name);
         World world = getWorld(name);
 
@@ -367,7 +378,7 @@ public final class CraftServer implements Server {
         }
 
         int dimension = 200 + console.worlds.size();
-        WorldServer internal = new WorldServer(console, new ServerNBTManager(new File("."), name, true), name, dimension, seed, environment);
+        WorldServer internal = new WorldServer(console, new ServerNBTManager(new File("."), name, true), name, dimension, seed, environment, generator);
         internal.z = console.worlds.get(0).z;
 
         internal.tracker = new EntityTracker(console, dimension);
@@ -375,6 +386,12 @@ public final class CraftServer implements Server {
         internal.spawnMonsters = 1;
         internal.setSpawnFlags(true, true);
         console.worlds.add(internal);
+
+        if (generator != null) {
+            internal.getWorld().getPopulators().addAll(generator.getDefaultPopulators(internal.getWorld()));
+        }
+
+        pluginManager.callEvent(new WorldInitEvent(internal.getWorld()));
 
         short short1 = 196;
         long i = System.currentTimeMillis();

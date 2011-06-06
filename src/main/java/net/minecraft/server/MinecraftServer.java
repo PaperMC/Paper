@@ -166,10 +166,10 @@ public class MinecraftServer implements Runnable, ICommandListener {
             int dimension = j == 0 ? 0 : -1;
 
             if (j == 0) {
-                world = new WorldServer(this, new ServerNBTManager(new File("."), s, true), s, dimension, i, org.bukkit.World.Environment.getEnvironment(dimension)); // CraftBukkit
+                world = new WorldServer(this, new ServerNBTManager(new File("."), s, true), s, dimension, i, org.bukkit.World.Environment.getEnvironment(dimension), null); // CraftBukkit
             } else {
                 String name = s + "_" + Environment.getEnvironment(dimension).toString().toLowerCase();
-                world = new SecondaryWorldServer(this, new ServerNBTManager(new File("."), name, true), name, dimension, i, worlds.get(0), org.bukkit.World.Environment.getEnvironment(dimension)); // CraftBukkit
+                world = new SecondaryWorldServer(this, new ServerNBTManager(new File("."), name, true), name, dimension, i, worlds.get(0), org.bukkit.World.Environment.getEnvironment(dimension), null); // CraftBukkit
             }
 
             world.tracker = new EntityTracker(this, dimension);

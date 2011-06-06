@@ -20,9 +20,11 @@ import org.bukkit.Chunk;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 import org.bukkit.BlockChangeDelegate;
+import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.Location;
 import org.bukkit.TreeType;
 import org.bukkit.World;
+import org.bukkit.generator.BlockPopulator;
 
 public class CraftWorld implements World {
     private final WorldServer world;
@@ -30,13 +32,16 @@ public class CraftWorld implements World {
     private final CraftServer server;
     private final ChunkProviderServer provider;
     private HashMap<Integer,CraftChunk> unloadedChunks = new HashMap<Integer, CraftChunk>();
+    private final ChunkGenerator generator;
+    private final List<BlockPopulator> populators = new ArrayList<BlockPopulator>();
 
     private static final Random rand = new Random();
 
-    public CraftWorld(WorldServer world) {
+    public CraftWorld(WorldServer world, ChunkGenerator gen) {
         this.world = world;
         this.server = world.getServer();
         this.provider = world.chunkProviderServer;
+        this.generator = gen;
         
         environment = Environment.getEnvironment(world.worldProvider.dimension);
 
@@ -461,6 +466,14 @@ public class CraftWorld implements World {
 
     public Chunk getChunkAt(Location location) {
         return getChunkAt(location.getBlockX() >> 4, location.getBlockZ() >> 4);
+    }
+
+    public ChunkGenerator getGenerator() {
+        return generator;
+    }
+
+    public List<BlockPopulator> getPopulators() {
+        return populators;
     }
 
     private final class ChunkCoordinate {

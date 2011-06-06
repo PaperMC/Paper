@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 // CraftBukkit start
+import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
@@ -65,12 +66,17 @@ public class World implements IBlockAccess {
     private int O;
     private List P;
     public boolean isStatic;
+    public ChunkGenerator generator; // Craftbukkit
 
     public WorldChunkManager getWorldChunkManager() {
         return this.worldProvider.b;
     }
 
-    public World(IDataManager idatamanager, String s, long i, WorldProvider worldprovider) {
+    // Craftbukkit start - changed signature
+    public World(IDataManager idatamanager, String s, long i, WorldProvider worldprovider, ChunkGenerator gen) {
+        this.generator = gen;
+    // Craftbukkit end
+
         this.O = this.random.nextInt(12000);
         this.P = new ArrayList();
         this.isStatic = false;
@@ -118,13 +124,24 @@ public class World implements IBlockAccess {
 
         int j;
 
-        for (j = 0; !this.worldProvider.a(i, j); j += this.random.nextInt(64) - this.random.nextInt(64)) {
+        // Craftbukkit
+        for (j = 0; !canSpawn(i, j); j += this.random.nextInt(64) - this.random.nextInt(64)) {
             i += this.random.nextInt(64) - this.random.nextInt(64);
         }
 
         this.worldData.setSpawn(i, b0, j);
         this.isLoading = false;
     }
+
+    // Craftbukkit start
+    private boolean canSpawn(int x, int z) {
+        if (generator != null) {
+            return this.generator.canSpawn(((WorldServer)this).getWorld(), x, z);
+        } else {
+            return this.worldProvider.a(x, z);
+        }
+    }
+    // Craftbukkit end
 
     public int a(int i, int j) {
         int k;
