@@ -1,8 +1,12 @@
 package org.bukkit.generator;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 
 /**
  * A chunk generator is responsible for the initial shaping of an entire chunk.
@@ -42,7 +46,22 @@ public abstract class ChunkGenerator {
      * @param z Z-coordinate of the block to test
      * @return true if the location is valid, otherwise false
      */
-    public abstract boolean canSpawn(World world, int x, int z);
+    public boolean canSpawn(World world, int x, int z) {
+        Block highest = world.getBlockAt(x, world.getHighestBlockYAt(x, z), z);
+
+        switch (world.getEnvironment()) {
+            case NETHER:
+                return true;
+            case SKYLANDS:
+                return highest.getType() != Material.AIR
+                        && highest.getType() != Material.WATER
+                        && highest.getType() != Material.LAVA;
+            case NORMAL:
+            default:
+                return highest.getType() == Material.SAND
+                        || highest.getType() == Material.GRAVEL;
+        }
+    }
 
     /**
      * Gets a list of default {@link BlockPopulator}s to apply to a given world
@@ -50,5 +69,21 @@ public abstract class ChunkGenerator {
      * @param world World to apply to
      * @return List containing any amount of BlockPopulators
      */
-    public abstract List<BlockPopulator> getDefaultPopulators(World world);
+    public List<BlockPopulator> getDefaultPopulators(World world) {
+        return new ArrayList<BlockPopulator>();
+    }
+
+    /**
+     * Gets a fixed spawn location to use for a given world.
+     *
+     * A null value is returned if a world should not use a fixed spawn point,
+     * and will instead attempt to find one randomly.
+     *
+     * @param world The world to locate a spawn point for
+     * @param random Random generator to use in the calculation
+     * @return Location containing a new spawn point, otherwise null
+     */
+    public Location getFixedSpawnLocation(World world, Random random) {
+        return null;
+    }
 }
