@@ -1,10 +1,12 @@
 package org.bukkit;
 
+import org.bukkit.generator.ChunkGenerator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
+import org.bukkit.generator.BlockPopulator;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
@@ -504,9 +506,23 @@ public interface World {
     public void setPVP(boolean pvp);
 
     /**
+     * Gets the chunk generator for this world
+     *
+     * @return ChunkGenerator associated with this world
+     */
+    public ChunkGenerator getGenerator();
+
+    /**
      * Saves world to disk
      */
     public void save();
+
+    /**
+     * Gets a list of all applied {@link BlockPopulator}s for this World
+     *
+     * @return List containing any or none BlockPopulators
+     */
+    public List<BlockPopulator> getPopulators();
 
     /**
      * Represents various map environment types that a world may be

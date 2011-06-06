@@ -541,6 +541,13 @@ public final class JavaPluginLoader implements PluginLoader {
                 }
             };
 
+        case WORLD_INIT:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((WorldListener) listener).onWorldInit((WorldInitEvent) event);
+                }
+            };
+
         case WORLD_LOAD:
             return new EventExecutor() {
                 public void execute(Listener listener, Event event) {

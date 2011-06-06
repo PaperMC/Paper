@@ -40,6 +40,14 @@ public class WorldListener implements Listener {
     }
 
     /**
+     * Called when a World is initializing
+     *
+     * @param event Relevant event details
+     */
+    public void onWorldInit(WorldInitEvent event) {
+    }
+
+    /**
      * Called when a World is loaded
      *
      * @param event Relevant event details
