@@ -10,6 +10,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+// CraftBukkit
+import java.net.SocketException;
+
 public class NetworkManager {
 
     public static final Object a = new Object();
@@ -43,11 +46,16 @@ public class NetworkManager {
         this.i = socket.getRemoteSocketAddress();
         this.p = nethandler;
 
+        // CraftBukkit start - IPv6 stack in Java on BSD/OSX doesn't support setTrafficClass
         try {
-            socket.setSoTimeout(30000);
             socket.setTrafficClass(24);
+        } catch (SocketException e) {
+        }
+        // CraftBukkit end
 
+        try {
             // CraftBukkit start - cant compile these outside the try
+            socket.setSoTimeout(30000);
             this.input = new DataInputStream(socket.getInputStream());
             this.output = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream(), 5120));
             // CraftBukkit end
