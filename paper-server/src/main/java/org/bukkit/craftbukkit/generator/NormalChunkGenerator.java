@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import net.minecraft.server.Chunk;
-import net.minecraft.server.ChunkProviderGenerate;
 import net.minecraft.server.IChunkProvider;
 import net.minecraft.server.IProgressUpdate;
 import net.minecraft.server.World;
@@ -12,10 +11,10 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.generator.BlockPopulator;
 
 public class NormalChunkGenerator extends InternalChunkGenerator {
-    private final ChunkProviderGenerate provider;
+    private final IChunkProvider provider;
 
     public NormalChunkGenerator(World world, long seed) {
-        provider = new ChunkProviderGenerate(world, seed);
+        provider = world.worldProvider.b();
     }
 
     public byte[] generate(org.bukkit.World world, Random random, int x, int z) {
