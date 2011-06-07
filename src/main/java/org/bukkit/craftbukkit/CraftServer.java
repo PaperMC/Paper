@@ -10,6 +10,8 @@ import org.bukkit.World.Environment;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.world.WorldLoadEvent;
+import org.bukkit.event.world.WorldSaveEvent;
+import org.bukkit.event.world.WorldUnloadEvent;
 import org.bukkit.inventory.FurnaceRecipe;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.ShapedRecipe;
@@ -30,6 +32,7 @@ import net.minecraft.server.ConvertProgressUpdater;
 import net.minecraft.server.Convertable;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityTracker;
+import net.minecraft.server.IProgressUpdate;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PropertyManager;
 import net.minecraft.server.ServerConfigurationManager;
@@ -421,6 +424,48 @@ public final class CraftServer implements Server {
         }
         pluginManager.callEvent(new WorldLoadEvent(internal.getWorld()));
         return internal.getWorld();
+    }
+
+    public boolean unloadWorld(String name, boolean save) {
+        return unloadWorld(getWorld(name), save);
+    }
+
+    public boolean unloadWorld(World world, boolean save) {
+        if (world == null) {
+            return false;
+        }
+
+        WorldServer handle = ((CraftWorld) world).getHandle();
+
+        if (!(console.worlds.contains(handle))) {
+            return false;
+        }
+
+        if (!(handle.dimension > 1)) {
+            return false;
+        }
+
+        if (handle.players.size() > 0) {
+            return false;
+        }
+
+        WorldUnloadEvent e = new WorldUnloadEvent(handle.getWorld());
+
+        if (e.isCancelled()) {
+            return false;
+        }
+
+        if (save) {
+            handle.save(true, (IProgressUpdate) null);
+            handle.saveLevel();
+            WorldSaveEvent event = new WorldSaveEvent(handle.getWorld());
+            getPluginManager().callEvent(event);
+        }
+
+        worlds.remove(world.getName().toLowerCase());
+        console.worlds.remove(console.worlds.indexOf(handle));
+
+        return true;
     }
 
     public MinecraftServer getServer() {
