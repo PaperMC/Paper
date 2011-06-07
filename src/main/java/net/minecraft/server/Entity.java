@@ -916,17 +916,6 @@ public abstract class Entity {
         this.motX = ((NBTTagDouble) nbttaglist1.a(0)).a;
         this.motY = ((NBTTagDouble) nbttaglist1.a(1)).a;
         this.motZ = ((NBTTagDouble) nbttaglist1.a(2)).a;
-        if (Math.abs(this.motX) > 10.0D) {
-            this.motX = 0.0D;
-        }
-
-        if (Math.abs(this.motY) > 10.0D) {
-            this.motY = 0.0D;
-        }
-
-        if (Math.abs(this.motZ) > 10.0D) {
-            this.motZ = 0.0D;
-        }
 
         this.lastX = this.bo = this.locX = ((NBTTagDouble) nbttaglist.a(0)).a;
         this.lastY = this.bp = this.locY = ((NBTTagDouble) nbttaglist.a(1)).a;
