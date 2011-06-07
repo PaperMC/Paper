@@ -293,6 +293,13 @@ public final class JavaPluginLoader implements PluginLoader {
                 }
             };
 
+        case PLAYER_PORTAL:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((PlayerListener) listener).onPlayerPortal((PlayerPortalEvent) event);
+                }
+            };
+
         case PLAYER_INTERACT:
             return new EventExecutor() {
                 public void execute(Listener listener, Event event) {
@@ -562,6 +569,13 @@ public final class JavaPluginLoader implements PluginLoader {
                 }
             };
 
+        case PORTAL_CREATE:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((WorldListener) listener).onPortalCreate((PortalCreateEvent) event);
+                }
+            };
+
         // Painting Events
         case PAINTING_PLACE:
             return new EventExecutor() {
@@ -624,6 +638,13 @@ public final class JavaPluginLoader implements PluginLoader {
             return new EventExecutor() {
                 public void execute(Listener listener, Event event) {
                     ((EntityListener) listener).onEntityInteract((EntityInteractEvent) event);
+                }
+            };
+
+        case ENTITY_PORTAL_ENTER:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((EntityListener) listener).onEntityPortalEnter((EntityPortalEnterEvent) event);
                 }
             };
 

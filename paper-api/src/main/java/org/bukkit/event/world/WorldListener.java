@@ -30,6 +30,13 @@ public class WorldListener implements Listener {
     public void onSpawnChange(SpawnChangeEvent event) {}
 
     /**
+     * Called when the world generates a portal end point
+     *
+     * @param event Relevant event details
+     */
+    public void onPortalCreate(PortalCreateEvent event) {}
+
+    /**
      * Called when a world is saved
      *
      * @param event Relevant event details

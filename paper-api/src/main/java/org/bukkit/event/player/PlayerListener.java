@@ -183,6 +183,13 @@ public class PlayerListener implements Listener {
      */
     public void onPlayerBedLeave(PlayerBedLeaveEvent event) {}
 
+    /**
+     * Called when a player is teleporting in a portal (after the animation)
+     *
+     * @param event Relevant event details
+     */
+    public void onPlayerPortal(PlayerPortalEvent event) {}
+
     // TODO: Remove after RB
     @Deprecated public void onPlayerQuit(PlayerEvent event) {}
     @Deprecated public void onPlayerCommandPreprocess(PlayerChatEvent event) {}

@@ -26,6 +26,8 @@ public class EntityListener implements Listener {
 
     public void onEntityInteract(EntityInteractEvent event) {}
 
+    public void onEntityPortalEnter(EntityPortalEnterEvent event) {}
+
     public void onPaintingPlace(PaintingPlaceEvent event) {}
 
     public void onPaintingBreak(PaintingBreakEvent event) {}
