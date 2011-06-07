@@ -42,7 +42,7 @@ public enum Material {
     POWERED_RAIL(27, PoweredRail.class),
     DETECTOR_RAIL(28, DetectorRail.class),
     WEB(30),
-    LONG_GRASS(31),
+    LONG_GRASS(31, LongGrass.class),
     DEAD_BUSH(32),
     WOOL(35, Wool.class),
     YELLOW_FLOWER(37),
