@@ -18,10 +18,12 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.command.ColouredConsoleSender;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.Bukkit;
 // CraftBukkit end
 
 public class ServerConfigurationManager {
@@ -268,6 +270,21 @@ public class ServerConfigurationManager {
         }
 
         // CraftBukkit start
+        CraftWorld oldCraftWorld =  worldserver.getWorld();
+        CraftWorld newCraftWorld =  this.server.a(b0).getWorld();
+        Location startLocation = new Location(oldCraftWorld, entityplayer.locX, entityplayer.locY, entityplayer.locZ);
+        Location endLocation;
+        if (b0 == -1) {
+            endLocation = new Location(newCraftWorld, entityplayer.locX / 8.0D, entityplayer.locY, entityplayer.locZ / 8.0D,entityplayer.yaw,entityplayer.pitch);
+        } else {
+            endLocation = new Location(newCraftWorld, entityplayer.locX * 8.0D, entityplayer.locY, entityplayer.locZ * 8.0D,entityplayer.yaw,entityplayer.pitch);
+        }
+        PlayerPortalEvent event = new PlayerPortalEvent((Player)entityplayer.getBukkitEntity(),startLocation,endLocation);
+        Bukkit.getServer().getPluginManager().callEvent(event);
+        if (event.isCancelled()) {
+            return entityplayer;
+        }
+
         // entityplayer.dimension = b0;
         WorldServer worldserver1 = this.server.a(b0);
 
@@ -297,9 +314,12 @@ public class ServerConfigurationManager {
             // worldserver1.addEntity(entityplayer); // CraftBukkit
             entityplayer.setPositionRotation(d0, entityplayer.locY, d1, entityplayer.yaw, entityplayer.pitch);
             worldserver1.entityJoinedWorld(entityplayer, false);
-            worldserver1.chunkProviderServer.a = true;
-            (new PortalTravelAgent()).a(worldserver1, entityplayer);
-            worldserver1.chunkProviderServer.a = false;
+            // CraftBukkit start - added conditional
+            if (event.useTravelAgent()) {
+                worldserver1.chunkProviderServer.a = true;
+                (new PortalTravelAgent()).a(worldserver1, entityplayer);
+                worldserver1.chunkProviderServer.a = false;
+            } // CraftBukkit end
         }
         /* CraftBukkit start
         this.a(entityplayer);
