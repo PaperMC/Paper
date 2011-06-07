@@ -145,7 +145,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         if (this.bL > 0) {
             return false;
         } else {
-            if (!this.b.pvpMode) {
+            // CraftBukkit - this.b.pvpMode -> this.world.pvpMode
+            if (!this.world.pvpMode) {
                 if (entity instanceof EntityHuman) {
                     return false;
                 }
