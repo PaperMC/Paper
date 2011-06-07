@@ -253,7 +253,7 @@ public class ServerConfigurationManager {
             entityplayer1.inventory = entityplayer.inventory;
             entityplayer1.activeContainer = entityplayer.activeContainer;
             entityplayer1.defaultContainer = entityplayer.defaultContainer;
-        entityplayer1.health = entityplayer.health;
+            entityplayer1.health = entityplayer.health;
         }
 
         worldserver.chunkProviderServer.getChunkAt((int) entityplayer1.locX >> 4, (int) entityplayer1.locZ >> 4);
