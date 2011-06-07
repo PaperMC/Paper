@@ -534,7 +534,12 @@ public abstract class EntityHuman extends EntityLiving {
             }
             // CraftBukkit end
 
-            entity.damageEntity(this, i);
+            // CraftBukkit start - Return when the damage fails so that the item will not lose durability
+            if (!entity.damageEntity(this, i)) {
+                return;
+            }
+            // CraftBukkit end
+
             ItemStack itemstack = this.F();
 
             if (itemstack != null && entity instanceof EntityLiving) {
