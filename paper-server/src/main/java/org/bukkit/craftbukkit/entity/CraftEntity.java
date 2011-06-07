@@ -11,6 +11,7 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+import java.util.UUID;
 
 public abstract class CraftEntity implements org.bukkit.entity.Entity {
     protected final CraftServer server;
@@ -263,5 +264,9 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     public EntityDamageEvent getLastDamageCause() {
         return lastDamageEvent;
+    }
+
+    public UUID getUniqueId() {
+        return getHandle().uniqueId;
     }
 }
