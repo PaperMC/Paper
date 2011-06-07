@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Random;
 
 // CraftBukkit start
+import java.util.UUID;
+
 import org.bukkit.Bukkit;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.entity.CraftVehicle;
@@ -83,6 +85,7 @@ public abstract class Entity {
     public int bH;
     public int bI;
     public boolean bJ;
+    public UUID uniqueId = UUID.randomUUID(); // CraftBukkit
 
     public Entity(World world) {
         this.id = entityCount++;
@@ -900,6 +903,8 @@ public abstract class Entity {
         nbttagcompound.a("Air", (short) this.airTicks);
         nbttagcompound.a("OnGround", this.onGround);
         nbttagcompound.setString("World", world.worldData.name); // CraftBukkit
+        nbttagcompound.a("UUIDLeast", this.uniqueId.getLeastSignificantBits()); // CraftBukkit
+        nbttagcompound.a("UUIDMost", this.uniqueId.getMostSignificantBits()); // CraftBukkit
         this.b(nbttagcompound);
     }
 
@@ -933,6 +938,16 @@ public abstract class Entity {
         this.airTicks = nbttagcompound.d("Air");
         this.onGround = nbttagcompound.m("OnGround");
         this.setPosition(this.locX, this.locY, this.locZ);
+
+        // CraftBukkit start
+        long least = nbttagcompound.f("UUIDLeast");
+        long most = nbttagcompound.f("UUIDMost");
+
+        if (least != 0L && most != 0L) {
+            this.uniqueId = new UUID(most, least);
+        }
+        // CraftBukkit end
+
         this.c(this.yaw, this.pitch);
         this.a(nbttagcompound);
 
