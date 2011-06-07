@@ -40,6 +40,12 @@ public interface Chunk {
      */
     Block getBlock(int x, int y, int z);
 
+    /**
+     * Capture thread-safe read-only snapshot of chunk data
+     * @return ChunkSnapshot
+     */
+    ChunkSnapshot getChunkSnapshot();
+
     Entity[] getEntities();
 
     BlockState[] getTileEntities();
