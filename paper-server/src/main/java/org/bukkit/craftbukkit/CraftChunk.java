@@ -1,4 +1,3 @@
-
 package org.bukkit.craftbukkit;
 
 import java.lang.ref.WeakReference;
@@ -13,6 +12,7 @@ import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.entity.Entity;
 import org.bukkit.craftbukkit.util.ConcurrentSoftMap;
+import org.bukkit.ChunkSnapshot;
 
 public class CraftChunk implements Chunk {
     private WeakReference<net.minecraft.server.Chunk> weakChunk;
@@ -83,7 +83,9 @@ public class CraftChunk implements Chunk {
         Entity[] entities = new Entity[count];
         for (int i = 0; i < 8; i++) {
             for (Object obj: chunk.entitySlices[i].toArray()) {
-                if (!(obj instanceof net.minecraft.server.Entity)) continue;
+                if (!(obj instanceof net.minecraft.server.Entity)) {
+                    continue;
+                }
                 entities[index++] = ((net.minecraft.server.Entity) obj).getBukkitEntity();
             }
         }
@@ -95,11 +97,27 @@ public class CraftChunk implements Chunk {
         net.minecraft.server.Chunk chunk = getHandle();
         BlockState[] entities = new BlockState[chunk.tileEntities.size()];
         for (Object obj : chunk.tileEntities.keySet().toArray()) {
-            if (!(obj instanceof ChunkPosition)) continue;
+            if (!(obj instanceof ChunkPosition)) {
+                continue;
+            }
             ChunkPosition position = (ChunkPosition) obj;
             entities[index++] = worldServer.getWorld().getBlockAt(position.x + (chunk.x << 4), position.y, position.z + (chunk.z << 4)).getState();
         }
         return entities;
     }
-}
 
+    /**
+     * Capture thread-safe read-only snapshot of chunk data
+     * @return ChunkSnapshot
+     */
+    public ChunkSnapshot getChunkSnapshot() {
+        net.minecraft.server.Chunk chunk = getHandle();
+        byte[] buf = new byte[32768 + 16384 + 16384 + 16384]; // Get big enough buffer for whole chunk
+        chunk.a(buf, 0, 0, 0, 16, 128, 16, 0); // Get whole chunk
+        byte[] hmap = new byte[256]; // Get copy of height map
+        System.arraycopy(chunk.h, 0, hmap, 0, 256);
+        World w = getWorld();
+        return new CraftChunkSnapshot(getX(), getZ(), w.getName(), w.getFullTime(), buf, hmap);
+    }
+
+}
