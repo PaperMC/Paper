@@ -307,46 +307,36 @@ public class CraftWorld implements World {
         return (Arrow) arrow.getBukkitEntity();
     }
 
+    /**
+     * @deprecated use {@link #spawn(Location, Class)} instead
+     */
+    @Deprecated
     public Minecart spawnMinecart(Location loc) {
-        EntityMinecart minecart = new EntityMinecart(
-            world,
-            loc.getX(),
-            loc.getY(),
-            loc.getZ(),
-            CraftMinecart.Type.Minecart.getId()
-        );
-        world.addEntity(minecart);
-        return (Minecart) minecart.getBukkitEntity();
+        return spawn(loc, Minecart.class);
     }
 
+    /**
+     * @deprecated use {@link #spawn(Location, Class)} instead
+     */
+    @Deprecated
     public StorageMinecart spawnStorageMinecart(Location loc) {
-        EntityMinecart minecart = new EntityMinecart(
-            world,
-            loc.getX(),
-            loc.getY(),
-            loc.getZ(),
-            CraftMinecart.Type.StorageMinecart.getId()
-        );
-        world.addEntity(minecart);
-        return (StorageMinecart) minecart.getBukkitEntity();
+        return spawn(loc, StorageMinecart.class);
     }
 
+    /**
+     * @deprecated use {@link #spawn(Location, Class)} instead
+     */
+    @Deprecated
     public PoweredMinecart spawnPoweredMinecart(Location loc) {
-        EntityMinecart minecart = new EntityMinecart(
-            world,
-            loc.getX(),
-            loc.getY(),
-            loc.getZ(),
-            CraftMinecart.Type.PoweredMinecart.getId()
-        );
-        world.addEntity(minecart);
-        return (PoweredMinecart) minecart.getBukkitEntity();
+        return spawn(loc, PoweredMinecart.class);
     }
 
+    /**
+     * @deprecated use {@link #spawn(Location, Class)} instead
+     */
+    @Deprecated
     public Boat spawnBoat(Location loc) {
-        EntityBoat boat = new EntityBoat(world, loc.getX(), loc.getY(), loc.getZ());
-        world.addEntity(boat);
-        return (Boat) boat.getBukkitEntity();
+        return spawn(loc, Boat.class);
     }
 
     public LivingEntity spawnCreature(Location loc, CreatureType creatureType) {
@@ -674,5 +664,100 @@ public class CraftWorld implements World {
                 ((CraftPlayer) player).getHandle().netServerHandler.sendPacket(packet);
             }
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends Entity> T spawn(Location location, Class<T> clazz) throws IllegalArgumentException {
+        if (location == null || clazz == null) {
+            throw new IllegalArgumentException("Location or entity class cannot be null");
+        }
+
+        net.minecraft.server.Entity entity = null;
+
+        double x = location.getX();
+        double y = location.getY();
+        double z = location.getZ();
+        float pitch = location.getPitch();
+        float yaw = location.getYaw();
+
+        // order is important for some of these
+        if (clazz.isAssignableFrom(Boat.class)) {
+            entity = new EntityBoat(world, x, y, z);
+        } else if (clazz.isAssignableFrom(Egg.class)) {
+            entity = new EntityEgg(world, x, y, z);
+        } else if (clazz.isAssignableFrom(FallingSand.class)) {
+            entity = new EntityFallingSand(world, x, y, z, 0);
+        } else if (clazz.isAssignableFrom(Fireball.class)) {
+            // need a shooter
+        } else if (clazz.isAssignableFrom(Snowball.class)) {
+            entity = new EntitySnowball(world, x, y, z);
+        } else if (Minecart.class.isAssignableFrom(clazz)) {
+
+            if (clazz.isAssignableFrom(PoweredMinecart.class)) {
+                entity = new EntityMinecart(world, x, y, z, CraftMinecart.Type.PoweredMinecart.getId());
+            } else if (clazz.isAssignableFrom(StorageMinecart.class)) {
+                entity = new EntityMinecart(world, x, y, z, CraftMinecart.Type.StorageMinecart.getId());
+            } else {
+                entity = new EntityMinecart(world, x, y, z, CraftMinecart.Type.Minecart.getId());
+            }
+
+        } else if (clazz.isAssignableFrom(Arrow.class)) {
+            entity = new EntityArrow(world);
+            entity.setPositionRotation(x, y, z, 0, 0);
+        } else if (LivingEntity.class.isAssignableFrom(clazz)) {
+
+            if (clazz.isAssignableFrom(Chicken.class)) {
+                entity = new EntityChicken(world);
+            } else if (clazz.isAssignableFrom(Cow.class)) {
+                entity = new EntityCow(world);
+            } else if (clazz.isAssignableFrom(Creeper.class)) {
+                entity = new EntityCreeper(world);
+            } else if (clazz.isAssignableFrom(Fish.class)) {
+                entity = new EntityFish(world);
+            } else if (clazz.isAssignableFrom(Ghast.class)) {
+                entity = new EntityGhast(world);
+            } else if (clazz.isAssignableFrom(Pig.class)) {
+                entity = new EntityGhast(world);
+            } else if (clazz.isAssignableFrom(Player.class)) {
+                // need a net server handler for this one
+            } else if (clazz.isAssignableFrom(Sheep.class)) {
+                entity = new EntitySheep(world);
+            } else if (clazz.isAssignableFrom(Skeleton.class)) {
+                entity = new EntitySkeleton(world);
+            } else if (clazz.isAssignableFrom(Slime.class)) {
+                entity = new EntitySlime(world);
+            } else if (clazz.isAssignableFrom(Spider.class)) {
+                entity = new EntitySpider(world);
+            } else if (clazz.isAssignableFrom(Squid.class)) {
+                entity = new EntitySquid(world);
+            } else if (clazz.isAssignableFrom(Wolf.class)) {
+                entity = new EntityWolf(world);
+            } else if (clazz.isAssignableFrom(PigZombie.class)) {
+                entity = new EntityPigZombie(world);
+            } else if (clazz.isAssignableFrom(Zombie.class)) {
+                entity = new EntityZombie(world);
+            }
+
+            if (entity != null) {
+                entity.setLocation(x, y, z, pitch, yaw);
+            }
+
+        } else if (clazz.isAssignableFrom(Painting.class)) {
+            // negative
+        } else if (clazz.isAssignableFrom(TNTPrimed.class)) {
+            entity = new EntityTNTPrimed(world, x, y, z);
+        } else if (clazz.isAssignableFrom(Weather.class)) {
+            // not sure what this can do
+            entity = new EntityWeatherStorm(world, x, y, z);
+        } else if (clazz.isAssignableFrom(LightningStrike.class)) {
+            // what is this, I don't even
+        }
+
+        if (entity != null) {
+            world.addEntity(entity);
+            return (T) entity.getBukkitEntity();
+        }
+
+        throw new IllegalArgumentException("Cannot spawn an entity for " + clazz.getName());
     }
 }
