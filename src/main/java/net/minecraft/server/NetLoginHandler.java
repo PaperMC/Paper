@@ -83,9 +83,9 @@ public class NetLoginHandler extends NetHandler {
 
         if (entityplayer != null) {
             this.server.serverConfigurationManager.b(entityplayer);
-            entityplayer.a((World) this.server.a(entityplayer.dimension));
+            // entityplayer.a((World) this.server.a(entityplayer.dimension)); // CraftBukkit - set by Entity
             a.info(this.b() + " logged in with entity id " + entityplayer.id + " at (" + entityplayer.locX + ", " + entityplayer.locY + ", " + entityplayer.locZ + ")");
-            WorldServer worldserver = this.server.a(entityplayer.dimension);
+            WorldServer worldserver = (WorldServer) entityplayer.world; // CraftBukkit
             ChunkCoordinates chunkcoordinates = worldserver.getSpawn();
             NetServerHandler netserverhandler = new NetServerHandler(this.server, this.networkManager, entityplayer);
 

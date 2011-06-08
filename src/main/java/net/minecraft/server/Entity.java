@@ -14,6 +14,7 @@ import org.bukkit.entity.Vehicle;
 import org.bukkit.event.vehicle.VehicleBlockCollisionEvent;
 import org.bukkit.event.vehicle.VehicleExitEvent;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageByBlockEvent;
@@ -750,7 +751,13 @@ public abstract class Entity {
     }
 
     public void a(World world) {
-        this.world = world;
+        // CraftBukkit start
+        if(world == null) {
+            this.die();
+            this.world = ((CraftWorld)Bukkit.getServer().getWorlds().get(0)).getHandle();
+        }
+        else this.world = world;
+        // CraftBukkit end
     }
 
     public void setLocation(double d0, double d1, double d2, float f, float f1) {
@@ -909,6 +916,8 @@ public abstract class Entity {
     }
 
     public void e(NBTTagCompound nbttagcompound) {
+        // CraftBukkit - reset world
+        a(((CraftWorld)Bukkit.getServer().getWorld(nbttagcompound.getString("World"))).getHandle());
         NBTTagList nbttaglist = nbttagcompound.l("Pos");
         NBTTagList nbttaglist1 = nbttagcompound.l("Motion");
         NBTTagList nbttaglist2 = nbttagcompound.l("Rotation");

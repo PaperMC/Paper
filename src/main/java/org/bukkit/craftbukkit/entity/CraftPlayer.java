@@ -170,12 +170,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         WorldServer newWorld = ((CraftWorld)location.getWorld()).getHandle();
         ServerConfigurationManager manager = server.getHandle();
         EntityPlayer entity = getHandle();
-        boolean successfulTeleport = entity.netServerHandler.teleport(location);
 
-        if (oldWorld != newWorld && successfulTeleport) {
-            this.entity = manager.a(entity, newWorld.dimension, false);
+        if (oldWorld != newWorld) {
+            manager.a(entity, newWorld.dimension, location);
+            return true; //best guess
+        } else {
+            return entity.netServerHandler.teleport(location);
         }
-        return successfulTeleport;
     }
 
     public void setSneaking(boolean sneak) {

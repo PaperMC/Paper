@@ -7,6 +7,7 @@ import java.util.Set;
 
 // CraftBukkit start
 import java.util.ArrayList;
+import org.bukkit.Bukkit;
 
 import org.bukkit.Location;
 import org.bukkit.Server;
@@ -62,6 +63,26 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
     public void a(World world) {
         super.a(world);
+        // CraftBukkit - world fallback code, either respawn location or global spawn
+        if(world == null) {
+            dead = false;
+            ChunkCoordinates position = null;
+            if (!spawnWorld.isEmpty()) {
+                CraftWorld cw  = (CraftWorld)Bukkit.getServer().getWorld(spawnWorld);
+                if (cw != null) {
+                    world = cw.getHandle();
+                    position = M();
+                }
+            }
+            if (world == null) {
+                world = ((CraftWorld)Bukkit.getServer().getWorlds().get(0)).getHandle();
+                position = world.getSpawn();
+            }
+            this.world = world;
+            setPosition(position.x, position.y, position.z);
+        }
+        this.dimension = ((WorldServer)this.world).dimension;
+        // CraftBukkit end
         this.itemInWorldManager = new ItemInWorldManager((WorldServer) world);
         this.itemInWorldManager.player = this;
     }

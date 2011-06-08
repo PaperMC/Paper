@@ -38,6 +38,7 @@ public abstract class EntityHuman extends EntityLiving {
     // CraftBukkit start
     public boolean sleeping;
     public boolean fauxSleeping;
+    public String spawnWorld;
     // CraftBukkit end
     public ChunkCoordinates A;
     public int sleepTicks; // CraftBukkit - private -> public
@@ -340,6 +341,8 @@ public abstract class EntityHuman extends EntityLiving {
             this.a(true, true, false);
         }
 
+        this.spawnWorld = nbttagcompound.getString("SpawnWorld"); // CraftBukkit
+
         if (nbttagcompound.hasKey("SpawnX") && nbttagcompound.hasKey("SpawnY") && nbttagcompound.hasKey("SpawnZ")) {
             this.b = new ChunkCoordinates(nbttagcompound.e("SpawnX"), nbttagcompound.e("SpawnY"), nbttagcompound.e("SpawnZ"));
         }
@@ -355,6 +358,7 @@ public abstract class EntityHuman extends EntityLiving {
             nbttagcompound.a("SpawnX", this.b.x);
             nbttagcompound.a("SpawnY", this.b.y);
             nbttagcompound.a("SpawnZ", this.b.z);
+            nbttagcompound.setString("SpawnWorld", this.spawnWorld); // CraftBukkit
         }
     }
 

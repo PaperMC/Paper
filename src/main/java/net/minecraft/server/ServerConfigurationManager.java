@@ -194,87 +194,65 @@ public class ServerConfigurationManager {
             }
         }
 
-        return new EntityPlayer(this.server, this.server.a(0), s, new ItemInWorldManager(this.server.a(0)));
+        return entity;
         // CraftBukkit end
     }
 
     // CraftBukkit start
     public EntityPlayer a(EntityPlayer entityplayer, int i) {
-        return a(entityplayer, i, true);
+        return a(entityplayer, i, null);
     }
 
-    public EntityPlayer a(EntityPlayer entityplayer, int i, boolean spawn) {
+    public EntityPlayer a(EntityPlayer entityplayer, int i, Location location) {
         this.server.b(entityplayer.dimension).trackPlayer(entityplayer);
-        this.server.b(entityplayer.dimension).untrackEntity(entityplayer);
         this.a(entityplayer.dimension).removePlayer(entityplayer);
         this.players.remove(entityplayer);
         this.server.a(entityplayer.dimension).removeEntity(entityplayer);
-        ChunkCoordinates chunkcoordinates = entityplayer.M();
-
-        entityplayer.dimension = i;
-        EntityPlayer entityplayer1 = new EntityPlayer(this.server, this.server.a(entityplayer.dimension), entityplayer.name, new ItemInWorldManager(this.server.a(entityplayer.dimension)));
-
-        entityplayer1.id = entityplayer.id;
-        entityplayer1.netServerHandler = entityplayer.netServerHandler;
-        entityplayer1.netServerHandler.player = entityplayer1;
-        WorldServer worldserver = this.server.a(entityplayer.dimension);
-
-        entityplayer1.dimension = i;
-        entityplayer1.displayName = entityplayer.displayName;
-        entityplayer1.compassTarget = entityplayer.compassTarget;
-        entityplayer1.fauxSleeping = entityplayer.fauxSleeping;
-
-        if (spawn) {
-            if(chunkcoordinates != null) {
-                ChunkCoordinates chunkcoordinates1 = EntityHuman.getBed(this.server.a(entityplayer.dimension), chunkcoordinates);
-
+        if (location == null) {
+            ChunkCoordinates chunkcoordinates = entityplayer.M();
+            CraftWorld cw = (CraftWorld) this.server.server.getWorld(entityplayer.spawnWorld);
+            if(cw != null && chunkcoordinates != null) {
+                ChunkCoordinates chunkcoordinates1 = EntityHuman.getBed(cw.getHandle(), chunkcoordinates);
                 if (chunkcoordinates1 != null) {
-                    entityplayer1.setPositionRotation((double) ((float) chunkcoordinates1.x + 0.5F), (double) ((float) chunkcoordinates1.y + 0.1F), (double) ((float) chunkcoordinates1.z + 0.5F), 0.0F, 0.0F);
-                    entityplayer1.a(chunkcoordinates);
+                    location = new Location(cw, chunkcoordinates.x, chunkcoordinates.y, chunkcoordinates.z);
                 } else {
-                    entityplayer1.netServerHandler.sendPacket(new Packet70Bed(0));
+                    entityplayer.netServerHandler.sendPacket(new Packet70Bed(0));
                 }
             }
+            if (location == null) {
+                cw = (CraftWorld) this.server.server.getWorlds().get(0);
+                chunkcoordinates = cw.getHandle().getSpawn();
+                location = new Location(cw, chunkcoordinates.x, chunkcoordinates.y, chunkcoordinates.z);
+            }
             Player respawnPlayer = cserver.getPlayer(entityplayer);
-            Location respawnLocation = new Location(cserver.getPlayer(entityplayer1).getWorld(), entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch);
-
-            PlayerRespawnEvent respawnEvent = new PlayerRespawnEvent(respawnPlayer, respawnLocation);
+            PlayerRespawnEvent respawnEvent = new PlayerRespawnEvent(respawnPlayer, location);
             cserver.getPluginManager().callEvent(respawnEvent);
-
-            worldserver = ((CraftWorld)respawnEvent.getRespawnLocation().getWorld()).getHandle();
-            entityplayer1.locX = respawnEvent.getRespawnLocation().getX();
-            entityplayer1.locY = respawnEvent.getRespawnLocation().getY();
-            entityplayer1.locZ = respawnEvent.getRespawnLocation().getZ();
-            entityplayer1.yaw = respawnEvent.getRespawnLocation().getYaw();
-            entityplayer1.pitch = respawnEvent.getRespawnLocation().getPitch();
+            location = respawnEvent.getRespawnLocation();
+            entityplayer.health = 20;
+        } else {
+            location.setWorld(this.server.a(i).getWorld());
         }
-        else {
-            entityplayer1.setPositionRotation(entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
-            entityplayer1.inventory = entityplayer.inventory;
-            entityplayer1.activeContainer = entityplayer.activeContainer;
-            entityplayer1.defaultContainer = entityplayer.defaultContainer;
-            entityplayer1.health = entityplayer.health;
-        }
+        WorldServer worldserver = ((CraftWorld)location.getWorld()).getHandle();
+        worldserver.chunkProviderServer.getChunkAt((int) entityplayer.locX >> 4, (int) entityplayer.locZ >> 4);
 
-        worldserver.chunkProviderServer.getChunkAt((int) entityplayer1.locX >> 4, (int) entityplayer1.locZ >> 4);
-
-        while (worldserver.getEntities(entityplayer1, entityplayer1.boundingBox).size() != 0) {
-            entityplayer1.setPosition(entityplayer1.locX, entityplayer1.locY + 1.0D, entityplayer1.locZ);
+        while (worldserver.getEntities(entityplayer, entityplayer.boundingBox).size() != 0) {
+            entityplayer.setPosition(entityplayer.locX, entityplayer.locY + 1.0D, entityplayer.locZ);
         }
 
         byte actualDimension = (byte) (worldserver.getWorld().getEnvironment().getId());
-        entityplayer1.netServerHandler.sendPacket(new Packet9Respawn((byte) (actualDimension >= 0 ? -1 : 0))); // CraftBukkit
-        entityplayer1.netServerHandler.sendPacket(new Packet9Respawn(actualDimension)); // CraftBukkit
+        entityplayer.netServerHandler.sendPacket(new Packet9Respawn((byte) (actualDimension >= 0 ? -1 : 0)));
+        entityplayer.netServerHandler.sendPacket(new Packet9Respawn(actualDimension));
+        entityplayer.a(worldserver);
+        entityplayer.dead = false;
+        entityplayer.netServerHandler.teleport(location);
+        this.a(entityplayer, worldserver);
+        this.a(entityplayer.dimension).addPlayer(entityplayer);
+        worldserver.addEntity(entityplayer);
+        this.players.add(entityplayer);
+        this.g(entityplayer);
+        entityplayer.w();
+        return entityplayer;
         // CraftBukkit end
-        entityplayer1.netServerHandler.a(entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch);
-        this.a(entityplayer1, worldserver);
-        this.a(entityplayer1.dimension).addPlayer(entityplayer1);
-        worldserver.addEntity(entityplayer1);
-        this.players.add(entityplayer1);
-        if (spawn) entityplayer1.syncInventory(); // CraftBukkit
-        entityplayer1.a(entityplayer1.activeContainer);
-        entityplayer1.w();
-        return entityplayer1;
     }
 
     // CraftBukkit - changed signature
@@ -295,8 +273,6 @@ public class ServerConfigurationManager {
 
         // entityplayer.netServerHandler.sendPacket(new Packet9Respawn((byte) ((WorldServer)entityplayer.world).getWorld().getEnvironment().getId()));
         // Craftbukkit end
-        worldserver.removeEntity(entityplayer);
-        entityplayer.dead = false;
         double d0 = entityplayer.locX;
         double d1 = entityplayer.locZ;
         double d2 = 8.0D;
@@ -332,7 +308,8 @@ public class ServerConfigurationManager {
         this.a(entityplayer, worldserver1);
         this.g(entityplayer);
         */ // CraftBukkit end
-        return a(entityplayer, b0, false);
+        // CraftBukkit - defer for actual teleportation
+        return a(entityplayer, b0, new Location(null, entityplayer.locX, entityplayer.locY, entityplayer.locZ));
     }
 
     public void b() {
