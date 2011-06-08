@@ -275,7 +275,9 @@ public interface World {
      *
      * @param location Location to spawn the minecart
      * @return Minecart created as a result of this method
+     * @deprecated use {@link #spawn(Location, Class)} instead
      */
+    @Deprecated
     public Minecart spawnMinecart(Location location);
 
     /**
@@ -283,7 +285,9 @@ public interface World {
      *
      * @param loc Location to spawn the minecart
      * @return StorageMinecart created as a result of this method
+     * @deprecated use {@link #spawn(Location, Class)} instead
      */
+    @Deprecated
     public StorageMinecart spawnStorageMinecart(Location loc);
 
     /**
@@ -291,7 +295,9 @@ public interface World {
      *
      * @param loc Location to spawn the minecart
      * @return PoweredMinecart created as a result of this method
+     * @deprecated use {@link #spawn(Location, Class)} instead
      */
+    @Deprecated
     public PoweredMinecart spawnPoweredMinecart(Location loc);
 
     /**
@@ -299,7 +305,9 @@ public interface World {
      *
      * @param loc Location to spawn the boat
      * @return Boat created as a result of this method
+     * @deprecated use {@link #spawn(Location, Class)} instead
      */
+    @Deprecated
     public Boat spawnBoat(Location loc);
 
     /**
@@ -570,6 +578,16 @@ public interface World {
      * @return List containing any or none BlockPopulators
      */
     public List<BlockPopulator> getPopulators();
+
+    /**
+     * Spawn an entity of a specific class at the given {@link Location}
+     *
+     * @param location the {@link Location} to spawn the entity at
+     * @param clazz the class of the {@link Entity} to spawn
+     * @return an instance of the spawned {@link Entity}
+     * @throws an {@link IllegalArgumentException} if either parameter is null or the {@link Entity} requested cannot be spawned
+     */
+    public <T extends Entity> T spawn(Location location, Class<T> clazz) throws IllegalArgumentException;
 
     /**
      * Plays an effect to all players within a default radius around a given location.
