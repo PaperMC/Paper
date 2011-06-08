@@ -213,11 +213,13 @@ public class ItemInWorldManager {
                     boolean bottom = (world.getData(i, j, k) & 8) == 0;
                     ((EntityPlayer) entityhuman).netServerHandler.sendPacket(new Packet53BlockChange(i, j + (bottom ? 1 : -1), k, world));
                 }
+                result = (event.useItemInHand() != Event.Result.ALLOW);
             } else {
                 result = Block.byId[i1].interact(world, i, j, k, entityhuman);
-                if (itemstack != null && !result) {
-                    result = itemstack.placeItem(entityhuman, world, i, j, k, l);
-                }
+            }
+
+            if (itemstack != null && !result) {
+                result = itemstack.placeItem(entityhuman, world, i, j, k, l);
             }
 
             // If we have 'true' and no explicit deny *or* an explicit allow -- run the item part of the hook
