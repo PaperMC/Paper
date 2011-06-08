@@ -85,4 +85,19 @@ public class MaterialData {
     public String toString() {
         return getItemType() + "(" + getData() + ")";
     }
+
+    @Override
+    public int hashCode() {
+        return ((getItemTypeId() << 8) ^ getData());
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj != null && obj instanceof MaterialData) {
+            MaterialData md = (MaterialData)obj;
+            return (md.getItemTypeId() == getItemTypeId() && md.getData() == getData());
+        } else {
+            return false;
+        }
+    }
 }
