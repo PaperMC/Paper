@@ -3,6 +3,11 @@ package net.minecraft.server;
 import java.util.ArrayList;
 import java.util.List;
 
+// CraftBukkit start
+import java.util.Collections;
+import java.util.Comparator;
+// CraftBukkit end
+
 public class PlayerManager {
 
     public List a = new ArrayList();
@@ -134,14 +139,6 @@ public class PlayerManager {
             int i1 = i - k;
             int j1 = j - l;
 
-            // CraftBukkit start
-            if (i1 > this.f || i1 < -this.f || j1 > this.f || j1 < -this.f) {
-                this.removePlayer(entityplayer);
-                this.addPlayer(entityplayer);
-                return;
-            }
-            // CraftBukkit end
-
             if (i1 != 0 || j1 != 0) {
                 for (int k1 = i - this.f; k1 <= i + this.f; ++k1) {
                     for (int l1 = j - this.f; l1 <= j + this.f; ++l1) {
@@ -161,6 +158,19 @@ public class PlayerManager {
 
                 entityplayer.d = entityplayer.locX;
                 entityplayer.e = entityplayer.locZ;
+
+                // CraftBukkit start - send nearest chunks first
+                if (i1 > 1 || i1 < -1 || j1 > 1 || j1 < -1) {
+                    final int x = i;
+                    final int z = j;
+                    List<ChunkCoordIntPair> chunksToSend = entityplayer.f;
+                    Collections.sort(chunksToSend, new Comparator<ChunkCoordIntPair>() {
+                        public int compare(ChunkCoordIntPair a, ChunkCoordIntPair b) {
+                            return Math.max(Math.abs(a.x-x), Math.abs(a.z-z)) - Math.max(Math.abs(b.x-x), Math.abs(b.z-z));
+                        }
+                    });
+                }
+                // CraftBukkit end
             }
         }
     }

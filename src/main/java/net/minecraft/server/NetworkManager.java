@@ -93,38 +93,32 @@ public class NetworkManager {
 
         try {
             Object object;
-            Packet packet;
+            Packet packet = null; // CraftBukkit
             int i;
             int[] aint;
 
-            if (!this.n.isEmpty() && (this.f == 0 || System.currentTimeMillis() - ((Packet) this.n.get(0)).timestamp >= (long) this.f)) {
-                object = this.g;
-                synchronized (this.g) {
+            // CraftBukkit start - thread safety and prioitizing packets in this.n (high prioirty queue) over those in this.o (low priority queue).
+            object = this.g;
+            synchronized (this.g) {
+                long time = System.currentTimeMillis();
+                if (!this.n.isEmpty() && (this.f == 0 || time - ((Packet) this.n.get(0)).timestamp >= (long) this.f)) {
                     packet = (Packet) this.n.remove(0);
                     this.x -= packet.a() + 1;
-                }
-
-                Packet.a(packet, this.output);
-                aint = e;
-                i = packet.b();
-                aint[i] += packet.a() + 1;
-                flag = true;
-            }
-
-            if (this.y-- <= 0 && !this.o.isEmpty() && (this.f == 0 || System.currentTimeMillis() - ((Packet) this.o.get(0)).timestamp >= (long) this.f)) {
-                object = this.g;
-                synchronized (this.g) {
+                } else if (this.y-- <= 0 && !this.o.isEmpty() && (this.f == 0 || time - ((Packet) this.o.get(0)).timestamp >= (long) this.f)) {
                     packet = (Packet) this.o.remove(0);
                     this.x -= packet.a() + 1;
+                    this.y = 0;
                 }
+            }
 
+            if (packet != null) {
                 Packet.a(packet, this.output);
                 aint = e;
                 i = packet.b();
                 aint[i] += packet.a() + 1;
-                this.y = 0;
                 flag = true;
             }
+            // CraftBukkit end
 
             return flag;
         } catch (Exception exception) {
