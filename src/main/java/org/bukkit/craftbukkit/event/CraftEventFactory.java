@@ -31,6 +31,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.CreatureType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event.Type;
@@ -38,6 +39,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.event.entity.EntityTameEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.event.player.PlayerEvent;
@@ -225,6 +227,19 @@ public class CraftEventFactory {
         }
 
         CreatureSpawnEvent event = new CreatureSpawnEvent(entity, type, entity.getLocation());
+        craftServer.getPluginManager().callEvent(event);
+        return event;
+    }
+
+    /**
+     * EntityTameEvent
+     */
+    public static EntityTameEvent callEntityTameEvent(EntityLiving entity, EntityHuman tamer) {
+        org.bukkit.entity.Entity bukkitEntity = entity.getBukkitEntity();
+        org.bukkit.entity.AnimalTamer bukkitTamer = (AnimalTamer) tamer.getBukkitEntity();
+        CraftServer craftServer = (CraftServer) bukkitEntity.getServer();
+
+        EntityTameEvent event = new EntityTameEvent(bukkitEntity, bukkitTamer);
         craftServer.getPluginManager().callEvent(event);
         return event;
     }
