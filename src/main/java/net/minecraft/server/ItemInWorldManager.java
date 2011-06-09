@@ -51,7 +51,6 @@ public class ItemInWorldManager {
     }
 
     public void dig(int i, int j, int k, int l) {
-        this.world.a((EntityHuman) null, i, j, k, l);
         this.d = (int) (System.currentTimeMillis() / 50); // CraftBukkit
         int i1 = this.world.getTypeId(i, j, k);
 
@@ -73,6 +72,8 @@ public class ItemInWorldManager {
             }
         } else {
             Block.byId[i1].b(this.world, i, j, k, this.player);
+            // Allow fire punching to be blocked
+            this.world.a((EntityHuman) null, i, j, k, l);
         }
 
         // Handle hitting a block
