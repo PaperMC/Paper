@@ -184,11 +184,17 @@ public class WorldServer extends World implements BlockChangeDelegate {
 
         super.i();
         if (flag != this.v()) {
-            if (flag) {
-                this.server.serverConfigurationManager.sendAll(new Packet70Bed(2));
-            } else {
-                this.server.serverConfigurationManager.sendAll(new Packet70Bed(1));
+            // CraftBukkit start - only sending weather packets to those affected
+            for (int i = 0; i < this.players.size(); ++i) {
+                if (((EntityPlayer) this.players.get(i)).world == (World) this) {
+                    if (flag) {
+                        ((EntityPlayer) this.players.get(i)).netServerHandler.sendPacket(new Packet70Bed(2));
+                    } else {
+                        ((EntityPlayer) this.players.get(i)).netServerHandler.sendPacket(new Packet70Bed(1));
+                    }
+                }
             }
+            // CraftBukkit end
         }
     }
 }
