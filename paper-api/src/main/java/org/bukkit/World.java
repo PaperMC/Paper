@@ -480,6 +480,14 @@ public interface World {
     public void setThunderDuration(int duration);
 
     /**
+    * Creates explosion at given coordinates with given power
+    *
+    * @param power The power of explosion, where 4F is TNT
+    * @return false if explosion was canceled, otherwise true
+    */
+    public boolean createExplosion(double x, double y, double z, float power);
+
+    /**
      * Gets the {@link Environment} type of this world
      *
      * @return This worlds Environment type
