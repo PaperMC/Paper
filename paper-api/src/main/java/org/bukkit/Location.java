@@ -298,4 +298,19 @@ public class Location implements Cloneable {
     public static int locToBlock(double loc) {
         return (int) Math.floor(loc);
     }
+    
+    /**
+     * Retrieve the distance between two locations in a world.
+     * 
+     * @param loc the Location to calculate the distance to
+     * @return the distance between this location and the parameter
+     * @throws IllegalArgumentException if the location parameter is null or represents a location in a different world
+     */
+    public double distanceTo(Location loc) throws IllegalArgumentException {
+        if (loc == null || loc.getWorld() != getWorld()) {
+            throw new IllegalArgumentException("Cannot measure distance between worlds or to null");
+        }
+        
+        return toVector().distance(loc.toVector());
+    }
 }

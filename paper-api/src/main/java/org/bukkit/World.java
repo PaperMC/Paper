@@ -523,7 +523,32 @@ public interface World {
      * @return List containing any or none BlockPopulators
      */
     public List<BlockPopulator> getPopulators();
-
+    
+    /**
+     * Plays a sound to just one player.
+     * @param player the player to play the sound for
+     * @param sound the {@link Sound}
+     * @param data a data bit needed for the RECORD_PLAY, SMOKE, and STEP_SOUND sounds
+     */
+    public void playSound(Player player, Sound sound, int data);
+    
+    /**
+     * Plays a sound to all players within a default radius around a given location.
+     * @param location the {@link Location} around which players must be to hear the sound
+     * @param sound the {@link Sound}
+     * @param data a data bit needed for the RECORD_PLAY, SMOKE, and STEP_SOUND sounds
+     */
+    public void playSound(Location location, Sound sound, int data);
+    
+    /**
+     * Plays a sound to all players within a given radius around a location.
+     * @param location the {@link Location} around which players must be to hear the sound
+     * @param sound the {@link Sound}
+     * @param data a data bit needed for the RECORD_PLAY, SMOKE, and STEP_SOUND sounds
+     * @param radius the radius around the location
+     */
+    public void playSound(Location location, Sound sound, int data, int radius);
+    
     /**
      * Represents various map environment types that a world may be
      */
