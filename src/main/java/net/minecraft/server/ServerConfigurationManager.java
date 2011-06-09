@@ -216,7 +216,7 @@ public class ServerConfigurationManager {
             if(cw != null && chunkcoordinates != null) {
                 ChunkCoordinates chunkcoordinates1 = EntityHuman.getBed(cw.getHandle(), chunkcoordinates);
                 if (chunkcoordinates1 != null) {
-                    location = new Location(cw, chunkcoordinates.x, chunkcoordinates.y, chunkcoordinates.z);
+                    location = new Location(cw, chunkcoordinates1.x + 0.5, chunkcoordinates1.y + 0.1, chunkcoordinates1.z + 0.5);
                 } else {
                     entityplayer.netServerHandler.sendPacket(new Packet70Bed(0));
                 }
@@ -239,10 +239,10 @@ public class ServerConfigurationManager {
         WorldServer worldserver = ((CraftWorld)location.getWorld()).getHandle();
         worldserver.chunkProviderServer.getChunkAt((int) entityplayer.locX >> 4, (int) entityplayer.locZ >> 4);
 
-        while (worldserver.getEntities(entityplayer, entityplayer.boundingBox).size() != 0) {
-            entityplayer.setPosition(entityplayer.locX, entityplayer.locY + 1.0D, entityplayer.locZ);
+        while (worldserver.getTypeId(location.getBlockX(), location.getBlockY(), location.getBlockZ()) != 0 ||
+                worldserver.getTypeId(location.getBlockX(), location.getBlockY() + 1, location.getBlockZ()) != 0) {
+            location.setY(location.getY() + 1);
         }
-
         byte actualDimension = (byte) (worldserver.getWorld().getEnvironment().getId());
         entityplayer.netServerHandler.sendPacket(new Packet9Respawn((byte) (actualDimension >= 0 ? -1 : 0)));
         entityplayer.netServerHandler.sendPacket(new Packet9Respawn(actualDimension));

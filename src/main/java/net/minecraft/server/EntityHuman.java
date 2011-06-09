@@ -38,7 +38,7 @@ public abstract class EntityHuman extends EntityLiving {
     // CraftBukkit start
     public boolean sleeping;
     public boolean fauxSleeping;
-    public String spawnWorld;
+    public String spawnWorld = "";
     // CraftBukkit end
     public ChunkCoordinates A;
     public int sleepTicks; // CraftBukkit - private -> public
@@ -760,6 +760,7 @@ public abstract class EntityHuman extends EntityLiving {
     public void a(ChunkCoordinates chunkcoordinates) {
         if (chunkcoordinates != null) {
             this.b = new ChunkCoordinates(chunkcoordinates);
+            this.spawnWorld = world.worldData.name;
         } else {
             this.b = null;
         }
