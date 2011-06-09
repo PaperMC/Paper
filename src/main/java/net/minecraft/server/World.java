@@ -821,6 +821,10 @@ public class World implements IBlockAccess {
                 return false;
             }
         }
+
+        if (entity instanceof EntityLiving && entity instanceof EntityWaterAnimal && !this.allowAnimals) {
+            return false;
+        }
         // CraftBukkit end
 
         if (!flag && !this.isChunkLoaded(i, j)) {
@@ -1933,13 +1937,6 @@ public class World implements IBlockAccess {
         Entity entity = null;
         for (int i = 0; i < list.size(); ++i) {
             entity = (Entity) list.get(i);
-
-            if (entity instanceof EntityLiving && !(entity instanceof EntityPlayer)) {
-                CreatureSpawnEvent event = CraftEventFactory.callCreatureSpawnEvent((EntityLiving) entity);
-                if (event.isCancelled()) {
-                    continue;
-                }
-            }
 
             this.entityList.add(entity);
             // CraftBukkit end
