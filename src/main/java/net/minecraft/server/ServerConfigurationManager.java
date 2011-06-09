@@ -231,6 +231,8 @@ public class ServerConfigurationManager {
             cserver.getPluginManager().callEvent(respawnEvent);
             location = respawnEvent.getRespawnLocation();
             entityplayer.health = 20;
+            entityplayer.fireTicks = 0;
+            entityplayer.fallDistance = 0;
         } else {
             location.setWorld(this.server.a(i).getWorld());
         }
