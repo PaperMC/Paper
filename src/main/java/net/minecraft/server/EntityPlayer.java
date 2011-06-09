@@ -193,8 +193,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         super.b(i);
     }
 
-    // CraftBukkit return EntityPlayer
-    public EntityPlayer a(boolean flag) {
+    public void a(boolean flag) {
         super.o_();
 
         for (int i = 0; i < this.inventory.getSize(); ++i) {
@@ -233,7 +232,6 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             }
         }
 
-        EntityPlayer player = this; // CraftBukkit
         if (this.E) {
             if (this.b.propertyManager.getBoolean("allow-nether", true)) {
                 if (this.vehicle != null) {
@@ -243,11 +241,11 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
                     if (this.F >= 1.0F) {
                         this.F = 1.0F;
                         this.D = 10;
-                        player = this.b.serverConfigurationManager.f(this); // CraftBukkit
+                        this.b.serverConfigurationManager.f(this);
                     }
                 }
 
-                player.E = false; // CraftBukkit
+                this.E = false;
             }
         } else {
             if (this.F > 0.0F) {
@@ -259,17 +257,14 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             }
         }
 
-        // CraftBukkit start
-        if (player.D > 0) {
-            --player.D;
+        if (this.D > 0) {
+            --this.D;
         }
 
-        if (player.health != player.bK) {
-            player.netServerHandler.sendPacket(new Packet8UpdateHealth(this.health));
-            player.bK = player.health;
+        if (this.health != this.bK) {
+            this.netServerHandler.sendPacket(new Packet8UpdateHealth(this.health));
+            this.bK = this.health;
         }
-        return player;
-        // CraftBukkit end
     }
 
     private void a(TileEntity tileentity) {

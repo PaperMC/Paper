@@ -219,7 +219,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 }
 
                 this.player.onGround = packet10flying.g;
-                this.player = this.player.a(true); // CraftBukkit
+                this.player.a(true);
                 this.player.move(d5, 0.0D, d4);
                 this.player.setLocation(d1, d2, d3, f, f1);
                 this.player.motX = d5;
