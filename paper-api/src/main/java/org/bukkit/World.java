@@ -263,7 +263,7 @@ public interface World {
     /**
      * Creates a tree at the given {@link Location}
      *
-     * @param location Location to spawn the tree
+     * @param loc Location to spawn the tree
      * @param type Type of the tree to create
      * @param delegate A class to call for each block changed as a result of this method
      * @return true if the tree was created successfully, otherwise false
@@ -281,7 +281,7 @@ public interface World {
     /**
      * Creates a storage minecart at the given {@link Location}
      *
-     * @param location Location to spawn the minecart
+     * @param loc Location to spawn the minecart
      * @return StorageMinecart created as a result of this method
      */
     public StorageMinecart spawnStorageMinecart(Location loc);
@@ -289,7 +289,7 @@ public interface World {
     /**
      * Creates a powered minecart at the given {@link Location}
      *
-     * @param location Location to spawn the minecart
+     * @param loc Location to spawn the minecart
      * @return PoweredMinecart created as a result of this method
      */
     public PoweredMinecart spawnPoweredMinecart(Location loc);
@@ -297,7 +297,7 @@ public interface World {
     /**
      * Creates a boat at the given {@link Location}
      *
-     * @param location Location to spawn the boat
+     * @param loc Location to spawn the boat
      * @return Boat created as a result of this method
      */
     public Boat spawnBoat(Location loc);
@@ -374,7 +374,10 @@ public interface World {
 
     /**
      * Sets the spawn location of the world
-     *
+     * 
+     * @param x 
+     * @param y 
+     * @param z 
      * @return True if it was successfully set.
      */
     public boolean setSpawnLocation(int x, int y, int z);
@@ -480,11 +483,14 @@ public interface World {
     public void setThunderDuration(int duration);
 
     /**
-    * Creates explosion at given coordinates with given power
-    *
-    * @param power The power of explosion, where 4F is TNT
-    * @return false if explosion was canceled, otherwise true
-    */
+     * Creates explosion at given coordinates with given power
+     * 
+     * @param x 
+     * @param y 
+     * @param z 
+     * @param power The power of explosion, where 4F is TNT
+     * @return false if explosion was canceled, otherwise true
+     */
     public boolean createExplosion(double x, double y, double z, float power);
 
     /**

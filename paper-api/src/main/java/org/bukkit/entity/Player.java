@@ -26,8 +26,8 @@ public interface Player extends HumanEntity, CommandSender {
      *
      * Note that this name will not be displayed in game, only in chat and places
      * defined by plugins
-     *
-     * @return String containing a color formatted name to display for this player
+     * 
+     * @return the friendly name
      */
     public String getDisplayName();
 
@@ -36,8 +36,8 @@ public interface Player extends HumanEntity, CommandSender {
      *
      * Note that this name will not be displayed in game, only in chat and places
      * defined by plugins
-     *
-     * @return String containing a color formatted name to display for this player
+     * 
+     * @param name 
      */
     public void setDisplayName(String name);
 
@@ -70,8 +70,8 @@ public interface Player extends HumanEntity, CommandSender {
 
     /**
      * Kicks player with custom kick message.
-     *
-     * @return
+     * 
+     * @param message kick message
      */
     public void kickPlayer(String message);
 
@@ -139,7 +139,6 @@ public interface Player extends HumanEntity, CommandSender {
      * @param loc
      * @param instrument
      * @param note
-     * @return
      */
     public void playNote(Location loc, byte instrument, byte note);
     
@@ -194,10 +193,9 @@ public interface Player extends HumanEntity, CommandSender {
     /**
      * Forces an update of the player's entire inventory.
      *
-     * @return
-     *
      * @deprecated This method should not be relied upon as it is a temporary work-around for a larger, more complicated issue.
      */
+    @Deprecated
     public void updateInventory();
 
     /**
