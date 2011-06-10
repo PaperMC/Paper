@@ -916,8 +916,6 @@ public abstract class Entity {
     }
 
     public void e(NBTTagCompound nbttagcompound) {
-        // CraftBukkit - reset world
-        a(((CraftWorld)Bukkit.getServer().getWorld(nbttagcompound.getString("World"))).getHandle());
         NBTTagList nbttaglist = nbttagcompound.l("Pos");
         NBTTagList nbttaglist1 = nbttagcompound.l("Motion");
         NBTTagList nbttaglist2 = nbttagcompound.l("Rotation");
@@ -964,6 +962,11 @@ public abstract class Entity {
             }
         }
         // CraftBukkit end
+
+        // CraftBukkit Start - reset world
+        org.bukkit.World world = Bukkit.getServer().getWorld(nbttagcompound.getString("World"));
+        a(world == null ? null : ((CraftWorld) world).getHandle());
+        // CraftBukkit End
     }
 
     protected final String af() {
