@@ -648,16 +648,16 @@ public class CraftWorld implements World {
         world.pvpMode = pvp;
     }   
     
-    public void playEffect(Player player, Effect sound, int data) {
-        playEffect(player.getLocation(), sound, data, 0);
+    public void playEffect(Player player, Effect effect, int data) {
+        playEffect(player.getLocation(), effect, data, 0);
     }
 
-    public void playEffect(Location location, Effect sound, int data) {
-        playEffect(location, sound, data, 64);
+    public void playEffect(Location location, Effect effect, int data) {
+        playEffect(location, effect, data, 64);
     }
 
-    public void playEffect(Location location, Effect sound, int data, int radius) {
-        int packetData = sound.getId();
+    public void playEffect(Location location, Effect effect, int data, int radius) {
+        int packetData = effect.getId();
         Packet61 packet = new Packet61(packetData, location.getBlockX(), location.getBlockY(), location.getBlockZ(), data);
         int distance;
         for (Player player : getPlayers()) {
