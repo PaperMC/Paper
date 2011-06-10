@@ -69,6 +69,8 @@ public class ItemInWorldManager {
                 boolean bottom = (this.world.getData(i, j, k) & 8) == 0;
                 ((EntityPlayer) this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
                 ((EntityPlayer) this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j + (bottom ? 1 : -1), k, this.world));
+            } else if (i1 == Block.TRAP_DOOR.id) {
+                ((EntityPlayer) this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
             }
         } else {
             Block.byId[i1].b(this.world, i, j, k, this.player);
