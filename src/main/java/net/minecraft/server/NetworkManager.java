@@ -93,32 +93,39 @@ public class NetworkManager {
 
         try {
             Object object;
-            Packet packet = null; // CraftBukkit
+            Packet packet;
             int i;
             int[] aint;
 
-            // CraftBukkit start - thread safety and prioitizing packets in this.n (high prioirty queue) over those in this.o (low priority queue).
-            object = this.g;
-            synchronized (this.g) {
-                long time = System.currentTimeMillis();
-                if (!this.n.isEmpty() && (this.f == 0 || time - ((Packet) this.n.get(0)).timestamp >= (long) this.f)) {
+            if (!this.n.isEmpty() && (this.f == 0 || System.currentTimeMillis() - ((Packet) this.n.get(0)).timestamp >= (long) this.f)) {
+                object = this.g;
+                synchronized (this.g) {
                     packet = (Packet) this.n.remove(0);
                     this.x -= packet.a() + 1;
-                } else if (this.y-- <= 0 && !this.o.isEmpty() && (this.f == 0 || time - ((Packet) this.o.get(0)).timestamp >= (long) this.f)) {
-                    packet = (Packet) this.o.remove(0);
-                    this.x -= packet.a() + 1;
-                    this.y = 0;
                 }
-            }
 
-            if (packet != null) {
                 Packet.a(packet, this.output);
                 aint = e;
                 i = packet.b();
                 aint[i] += packet.a() + 1;
                 flag = true;
             }
-            // CraftBukkit end
+
+            // CraftBukkit - don't allow low priority packet to be sent unless it was placed in the queue before the first packet on the high priority queue
+            if ((flag || this.y-- <= 0) && !this.o.isEmpty() && (this.n.isEmpty() || ((Packet) this.n.get(0)).timestamp > ((Packet) this.o.get(0)).timestamp)) {
+                object = this.g;
+                synchronized (this.g) {
+                    packet = (Packet) this.o.remove(0);
+                    this.x -= packet.a() + 1;
+                }
+
+                Packet.a(packet, this.output);
+                aint = e;
+                i = packet.b();
+                aint[i] += packet.a() + 1;
+                this.y = 0;
+                flag = true;
+            }
 
             return flag;
         } catch (Exception exception) {
