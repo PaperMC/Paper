@@ -2,6 +2,7 @@ package org.bukkit.entity;
 
 import java.net.InetSocketAddress;
 import org.bukkit.Achievement;
+import org.bukkit.Effect;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Statistic;
@@ -141,6 +142,15 @@ public interface Player extends HumanEntity, CommandSender {
      * @return
      */
     public void playNote(Location loc, byte instrument, byte note);
+    
+    /**
+     * Plays an effect to just this player.
+     * 
+     * @param loc the player to play the effect for
+     * @param effect the {@link Effect}
+     * @param data a data bit needed for the RECORD_PLAY, SMOKE, and STEP_SOUND sounds
+     */
+    public void playEffect(Location loc, Effect effect, int data);
 
     /**
      * Send a block change. This fakes a block change packet for a user at

@@ -533,15 +533,6 @@ public interface World {
     public List<BlockPopulator> getPopulators();
     
     /**
-     * Plays an effect to just one player.
-     * 
-     * @param player the player to play the effect for
-     * @param effect the {@link Effect}
-     * @param data a data bit needed for the RECORD_PLAY, SMOKE, and STEP_SOUND sounds
-     */
-    public void playEffect(Player player, Effect effect, int data);
-    
-    /**
      * Plays an effect to all players within a default radius around a given location.
      * 
      * @param location the {@link Location} around which players must be to hear the sound
