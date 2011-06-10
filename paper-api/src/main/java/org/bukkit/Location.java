@@ -212,6 +212,167 @@ public class Location implements Cloneable {
 
         return vector;
     }
+    
+    /**
+     * Adds the location by another.
+     *
+     * @see Vector
+     * @param vec
+     * @return the same location
+     * @throws IllegalArgumentException for differing worlds
+     */
+    public Location add(Location vec) {
+        if (vec == null || vec.getWorld() != getWorld()) {
+            throw new IllegalArgumentException("Cannot add Locations of differing worlds");
+        }
+        
+        x += vec.x;
+        y += vec.y;
+        z += vec.z;
+        return this;
+    }
+    
+    /**
+     * Adds the location by another. Not world-aware.
+     *
+     * @see Vector
+     * @param x
+     * @param y
+     * @param z
+     * @return the same location
+     */
+    public Location add(double x, double y, double z) {
+        this.x += x;
+        this.y += y;
+        this.z += z;
+        return this;
+    }
+
+    /**
+     * Subtracts the location by another.
+     *
+     * @see Vector
+     * @param vec
+     * @return the same location
+     * @throws IllegalArgumentException for differing worlds
+     */
+    public Location subtract(Location vec) {
+        if (vec == null || vec.getWorld() != getWorld()) {
+            throw new IllegalArgumentException("Cannot add Locations of differing worlds");
+        }
+        
+        x -= vec.x;
+        y -= vec.y;
+        z -= vec.z;
+        return this;
+    }
+
+    /**
+     * Subtracts the location by another. Not world-aware and
+     * orientation independent.
+     *
+     * @see Vector
+     * @param x
+     * @param y
+     * @param z
+     * @return the same location
+     */
+    public Location subtract(double x, double y, double z) {
+        this.x -= x;
+        this.y -= y;
+        this.z -= z;
+        return this;
+    }
+
+    /**
+     * Gets the magnitude of the location, defined as sqrt(x^2+y^2+z^2). The value
+     * of this method is not cached and uses a costly square-root function, so
+     * do not repeatedly call this method to get the location's magnitude. NaN
+     * will be returned if the inner result of the sqrt() function overflows,
+     * which will be caused if the length is too long. Not world-aware and
+     * orientation independent.
+     *
+     * @see Vector
+     * @return the magnitude
+     */
+    public double length() {
+        return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
+    }
+
+    /**
+     * Gets the magnitude of the location squared. Not world-aware and
+     * orientation independent.
+     *
+     * @see Vector
+     * @return the magnitude
+     */
+    public double lengthSquared() {
+        return Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2);
+    }
+
+    /**
+     * Get the distance between this location and another.  The value
+     * of this method is not cached and uses a costly square-root function, so
+     * do not repeatedly call this method to get the location's magnitude. NaN
+     * will be returned if the inner result of the sqrt() function overflows,
+     * which will be caused if the distance is too long.
+     *
+     * @see Vector
+     * @param o 
+     * @return the distance
+     * @throws IllegalArgumentException for differing worlds
+     */
+    public double distance(Location o) {
+        if (o == null || o.getWorld() != getWorld()) {
+            throw new IllegalArgumentException("Cannot measure distance between worlds or to null");
+        }
+        
+        return Math.sqrt(Math.pow(x - o.x, 2) + Math.pow(y - o.y, 2) + Math.pow(z - o.z, 2));
+    }
+
+    /**
+     * Get the squared distance between this location and another.
+     *
+     * @see Vector
+     * @param o 
+     * @return the distance
+     * @throws IllegalArgumentException for differing worlds
+     */
+    public double distanceSquared(Location o) {
+        if (o == null || o.getWorld() != getWorld()) {
+            throw new IllegalArgumentException("Cannot measure distance between worlds or to null");
+        }
+        
+        return Math.pow(x - o.x, 2) + Math.pow(y - o.y, 2) + Math.pow(z - o.z, 2);
+    }
+
+    /**
+     * Performs scalar multiplication, multiplying all components with a scalar.
+     * Not world-aware.
+     *
+     * @param m
+     * @see Vector
+     * @return the same location
+     */
+    public Location multiply(double m) {
+        x *= m;
+        y *= m;
+        z *= m;
+        return this;
+    }
+
+    /**
+     * Zero this location's components. Not world-aware.
+     *
+     * @see Vector
+     * @return the same location
+     */
+    public Location zero() {
+        x = 0;
+        y = 0;
+        z = 0;
+        return this;
+    }
 
     @Override
     public boolean equals(Object obj) {
@@ -297,20 +458,5 @@ public class Location implements Cloneable {
      */
     public static int locToBlock(double loc) {
         return (int) Math.floor(loc);
-    }
-    
-    /**
-     * Retrieve the distance between two locations in a world.
-     * 
-     * @param loc the Location to calculate the distance to
-     * @return the distance between this location and the parameter
-     * @throws IllegalArgumentException if the location parameter is null or represents a location in a different world
-     */
-    public double distanceTo(Location loc) throws IllegalArgumentException {
-        if (loc == null || loc.getWorld() != getWorld()) {
-            throw new IllegalArgumentException("Cannot measure distance between worlds or to null");
-        }
-        
-        return toVector().distance(loc.toVector());
     }
 }
