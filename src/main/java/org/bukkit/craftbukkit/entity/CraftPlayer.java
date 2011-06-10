@@ -2,10 +2,8 @@ package org.bukkit.craftbukkit.entity;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.zip.Deflater;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.EntityPlayer;
-import net.minecraft.server.ItemInWorldManager;
 import net.minecraft.server.Packet200Statistic;
 import net.minecraft.server.Packet3Chat;
 import net.minecraft.server.Packet51MapChunk;
@@ -15,9 +13,6 @@ import net.minecraft.server.Packet61;
 import net.minecraft.server.Packet6SpawnPosition;
 import net.minecraft.server.ServerConfigurationManager;
 import net.minecraft.server.WorldServer;
-import net.minecraft.server.ChunkCoordIntPair;
-import net.minecraft.server.Packet9Respawn;
-import net.minecraft.server.World;
 import org.bukkit.Achievement;
 import org.bukkit.Effect;
 import org.bukkit.Location;
@@ -65,10 +60,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         return (EntityPlayer) entity;
     }
 
+    @Override
     public double getEyeHeight() {
         return getEyeHeight(false);
     }
 
+    @Override
     public double getEyeHeight(boolean ignoreSneaking) {
         if (ignoreSneaking) {
             return 1.62D;
