@@ -446,6 +446,10 @@ public class CraftWorld implements World {
         return world.a(null, x, y, z, power).wasCanceled ? false : true;
     }
 
+    public boolean createExplosion(Location loc, float power) {
+        return world.a(null, loc.getX(), loc.getY(), loc.getZ(), power).wasCanceled ? false : true;
+    }
+
     public Environment getEnvironment() {
         return environment;
     }
