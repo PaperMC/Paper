@@ -533,29 +533,32 @@ public interface World {
     public List<BlockPopulator> getPopulators();
     
     /**
-     * Plays a sound to just one player.
-     * @param player the player to play the sound for
-     * @param sound the {@link Sound}
+     * Plays an effect to just one player.
+     * 
+     * @param player the player to play the effect for
+     * @param effect the {@link Effect}
      * @param data a data bit needed for the RECORD_PLAY, SMOKE, and STEP_SOUND sounds
      */
-    public void playSound(Player player, Sound sound, int data);
+    public void playEffect(Player player, Effect effect, int data);
     
     /**
-     * Plays a sound to all players within a default radius around a given location.
+     * Plays an effect to all players within a default radius around a given location.
+     * 
      * @param location the {@link Location} around which players must be to hear the sound
-     * @param sound the {@link Sound}
+     * @param effect the {@link Effect}
      * @param data a data bit needed for the RECORD_PLAY, SMOKE, and STEP_SOUND sounds
      */
-    public void playSound(Location location, Sound sound, int data);
+    public void playEffect(Location location, Effect effect, int data);
     
     /**
-     * Plays a sound to all players within a given radius around a location.
-     * @param location the {@link Location} around which players must be to hear the sound
-     * @param sound the {@link Sound}
-     * @param data a data bit needed for the RECORD_PLAY, SMOKE, and STEP_SOUND sounds
+     * Plays an effect to all players within a given radius around a location.
+     * 
+     * @param location the {@link Location} around which players must be to hear the effect
+     * @param effect the {@link Effect}
+     * @param data a data bit needed for the RECORD_PLAY, SMOKE, and STEP effects
      * @param radius the radius around the location
      */
-    public void playSound(Location location, Sound sound, int data, int radius);
+    public void playEffect(Location location, Effect effect, int data, int radius);
     
     /**
      * Represents various map environment types that a world may be
