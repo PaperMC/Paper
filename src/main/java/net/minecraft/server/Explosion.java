@@ -239,7 +239,8 @@ public class Explosion {
                 this.world.a("smoke", d0, d1, d2, d3, d4, d5);
             }
 
-            if (i1 > 0) {
+            // CraftBukkit - stop explosions from putting out fire
+            if (i1 > 0 && i1 != Block.FIRE.id) {
                 // CraftBukkit
                 Block.byId[i1].dropNaturally(this.world, j, k, l, this.world.getData(j, k, l), event.getYield());
                 this.world.setTypeId(j, k, l, 0);

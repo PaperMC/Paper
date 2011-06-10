@@ -151,7 +151,7 @@ public class EntityFireball extends Entity {
 
             CraftServer server = ((WorldServer) this.world).getServer();
 
-            ExplosionPrimeEvent event = new ExplosionPrimeEvent(CraftEntity.getEntity(server, this), 1.0F, false);
+            ExplosionPrimeEvent event = new ExplosionPrimeEvent(CraftEntity.getEntity(server, this), 1.0F, true);
             server.getPluginManager().callEvent(event);
             if (!event.isCancelled()) {
                 // give 'this' instead of (Entity) null so we know what causes the damage
