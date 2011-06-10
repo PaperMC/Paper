@@ -11,7 +11,7 @@ import java.util.Random;
 import net.minecraft.server.*;
 
 import org.bukkit.entity.Arrow;
-import org.bukkit.Sound;
+import org.bukkit.Effect;
 import org.bukkit.event.weather.WeatherChangeEvent;
 import org.bukkit.event.weather.ThunderChangeEvent;
 import org.bukkit.event.world.SpawnChangeEvent;
@@ -648,16 +648,16 @@ public class CraftWorld implements World {
         world.pvpMode = pvp;
     }   
     
-    public void playSound(Player player, Sound sound, int data) {
-        playSound(player.getLocation(), sound, data, 0);
+    public void playEffect(Player player, Effect sound, int data) {
+        playEffect(player.getLocation(), sound, data, 0);
     }
 
-    public void playSound(Location location, Sound sound, int data) {
-        playSound(location, sound, data, 64);
+    public void playEffect(Location location, Effect sound, int data) {
+        playEffect(location, sound, data, 64);
     }
 
-    public void playSound(Location location, Sound sound, int data, int radius) {
-        int packetData = sound.getSoundIdentifier();
+    public void playEffect(Location location, Effect sound, int data, int radius) {
+        int packetData = sound.getId();
         Packet61 packet = new Packet61(packetData, location.getBlockX(), location.getBlockY(), location.getBlockZ(), data);
         int distance;
         for (Player player : getPlayers()) {
