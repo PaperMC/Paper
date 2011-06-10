@@ -11,6 +11,7 @@ import net.minecraft.server.Packet3Chat;
 import net.minecraft.server.Packet51MapChunk;
 import net.minecraft.server.Packet53BlockChange;
 import net.minecraft.server.Packet54PlayNoteBlock;
+import net.minecraft.server.Packet61;
 import net.minecraft.server.Packet6SpawnPosition;
 import net.minecraft.server.ServerConfigurationManager;
 import net.minecraft.server.WorldServer;
@@ -18,6 +19,7 @@ import net.minecraft.server.ChunkCoordIntPair;
 import net.minecraft.server.Packet9Respawn;
 import net.minecraft.server.World;
 import org.bukkit.Achievement;
+import org.bukkit.Effect;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Statistic;
@@ -151,6 +153,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void playNote(Location loc, byte instrument, byte note) {
         getHandle().netServerHandler.sendPacket(
                 new Packet54PlayNoteBlock(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), instrument, note));
+    }
+
+    public void playEffect(Location loc, Effect effect, int data) {
+        int packetData = effect.getId();
+        Packet61 packet = new Packet61(packetData, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), data);
+        getHandle().netServerHandler.sendPacket(packet);
     }
 
     public void sendBlockChange(Location loc, Material material, byte data) {
