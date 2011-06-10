@@ -665,7 +665,7 @@ public class CraftWorld implements World {
         Packet61 packet = new Packet61(packetData, location.getBlockX(), location.getBlockY(), location.getBlockZ(), data);
         int distance;
         for (Player player : getPlayers()) {
-            distance = (int) player.getLocation().distanceTo(location);
+            distance = (int) player.getLocation().distance(location);
             if (distance <= radius) {
                 ((CraftPlayer) player).getHandle().netServerHandler.sendPacket(packet);
             }
