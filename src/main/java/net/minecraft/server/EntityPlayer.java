@@ -64,22 +64,22 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public void a(World world) {
         super.a(world);
         // CraftBukkit - world fallback code, either respawn location or global spawn
-        if(world == null) {
+        if (world == null) {
             dead = false;
             ChunkCoordinates position = null;
             if (!spawnWorld.isEmpty()) {
                 CraftWorld cw  = (CraftWorld)Bukkit.getServer().getWorld(spawnWorld);
-                if (cw != null) {
+                if (cw != null && M() != null) {
                     world = cw.getHandle();
-                    position = M();
+                    position = EntityHuman.getBed(cw.getHandle(), M());
                 }
             }
-            if (world == null) {
+            if (world == null || position == null) {
                 world = ((CraftWorld)Bukkit.getServer().getWorlds().get(0)).getHandle();
                 position = world.getSpawn();
             }
             this.world = world;
-            setPosition(position.x, position.y, position.z);
+            setPosition(position.x + 0.5, position.y, position.z  + 0.5);
         }
         this.dimension = ((WorldServer)this.world).dimension;
         // CraftBukkit end
