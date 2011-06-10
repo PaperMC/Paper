@@ -123,8 +123,6 @@ public class EntityCreeper extends EntityMonster {
                         this.fuseTicks = 0;
                     }
                     // CraftBukkit end
-
-                    this.die();
                 }
 
                 this.e = true;
