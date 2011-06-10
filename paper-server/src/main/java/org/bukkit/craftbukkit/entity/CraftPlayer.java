@@ -60,12 +60,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         return (EntityPlayer) entity;
     }
 
-    @Override
     public double getEyeHeight() {
         return getEyeHeight(false);
     }
 
-    @Override
     public double getEyeHeight(boolean ignoreSneaking) {
         if (ignoreSneaking) {
             return 1.62D;
