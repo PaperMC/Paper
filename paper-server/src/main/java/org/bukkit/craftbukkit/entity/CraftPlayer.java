@@ -147,8 +147,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void playNote(Location loc, byte instrument, byte note) {
-        getHandle().netServerHandler.sendPacket(
-                new Packet54PlayNoteBlock(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), instrument, note));
+        getHandle().netServerHandler.sendPacket(new Packet54PlayNoteBlock(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), instrument, note));
     }
 
     public void playEffect(Location loc, Effect effect, int data) {
@@ -162,9 +161,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void sendBlockChange(Location loc, int material, byte data) {
-        Packet53BlockChange packet = new Packet53BlockChange(
-                loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(),
-                ((CraftWorld) loc.getWorld()).getHandle());
+        Packet53BlockChange packet = new Packet53BlockChange(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), ((CraftWorld) loc.getWorld()).getHandle());
+
         packet.d = material;
         packet.e = data;
         getHandle().netServerHandler.sendPacket(packet);
@@ -219,8 +217,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         WorldServer toWorld = ((CraftWorld) to.getWorld()).getHandle();
         // Grab the EntityPlayer
         EntityPlayer entity = getHandle();
+
         // Check if the fromWorld and toWorld are the same.
-        if (fromWorld == toWorld){
+        if (fromWorld == toWorld) {
             entity.netServerHandler.teleport(to);
         } else {
             server.getHandle().a(entity, toWorld.dimension, to);

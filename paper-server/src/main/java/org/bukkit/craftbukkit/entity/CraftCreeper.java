@@ -32,14 +32,14 @@ public class CraftCreeper extends CraftMonster implements Creeper {
             server.getPluginManager().callEvent(event);
 
             if (!event.isCancelled()) {
-                getHandle().Z().b(17, (byte)1);
+                getHandle().Z().b(17, (byte) 1);
             }
         } else {
             CreeperPowerEvent event = new CreeperPowerEvent(entity, CreeperPowerEvent.PowerCause.SET_OFF);
             server.getPluginManager().callEvent(event);
 
             if (!event.isCancelled()) {
-                getHandle().Z().b(17, (byte)0);
+                getHandle().Z().b(17, (byte) 0);
             }
         }
 

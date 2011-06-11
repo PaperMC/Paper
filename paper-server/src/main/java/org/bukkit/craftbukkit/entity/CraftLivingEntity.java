@@ -40,7 +40,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         }
 
         if (entity instanceof EntityPlayer && health == 0) {
-            ((EntityPlayer)entity).a((Entity)null);
+            ((EntityPlayer) entity).a((Entity) null);
         }
 
         getHandle().health = health;
@@ -52,7 +52,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public void setHandle(final EntityLiving entity) {
-        super.setHandle((Entity)entity);
+        super.setHandle((Entity) entity);
         this.entity = entity;
     }
 
@@ -62,15 +62,17 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public Egg throwEgg() {
-        net.minecraft.server.World world = ((CraftWorld)getWorld()).getHandle();
+        net.minecraft.server.World world = ((CraftWorld) getWorld()).getHandle();
         EntityEgg egg = new EntityEgg(world, getHandle());
+
         world.addEntity(egg);
         return (Egg) egg.getBukkitEntity();
     }
 
     public Snowball throwSnowball() {
-        net.minecraft.server.World world = ((CraftWorld)getWorld()).getHandle();
+        net.minecraft.server.World world = ((CraftWorld) getWorld()).getHandle();
         EntitySnowball snowball = new EntitySnowball(world, getHandle());
+
         world.addEntity(snowball);
         return (Snowball) snowball.getBukkitEntity();
     }
@@ -101,7 +103,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
                     break;
                 }
             } else {
-                if (!transparent.contains((byte)id)) {
+                if (!transparent.contains((byte) id)) {
                     break;
                 }
             }
@@ -123,8 +125,9 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public Arrow shootArrow() {
-        net.minecraft.server.World world = ((CraftWorld)getWorld()).getHandle();
+        net.minecraft.server.World world = ((CraftWorld) getWorld()).getHandle();
         EntityArrow arrow = new EntityArrow(world, getHandle());
+
         world.addEntity(arrow);
         return (Arrow) arrow.getBukkitEntity();
     }

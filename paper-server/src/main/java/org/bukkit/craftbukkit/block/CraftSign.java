@@ -12,8 +12,8 @@ public class CraftSign extends CraftBlockState implements Sign {
     public CraftSign(final Block block) {
         super(block);
 
-        world = (CraftWorld)block.getWorld();
-        sign = (TileEntitySign)world.getTileEntityAt(getX(), getY(), getZ());
+        world = (CraftWorld) block.getWorld();
+        sign = (TileEntitySign) world.getTileEntityAt(getX(), getY(), getZ());
     }
 
     public String[] getLines() {

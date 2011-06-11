@@ -13,8 +13,8 @@ public class CraftCreatureSpawner extends CraftBlockState implements CreatureSpa
     public CraftCreatureSpawner(final Block block) {
         super(block);
 
-        world = (CraftWorld)block.getWorld();
-        spawner = (TileEntityMobSpawner)world.getTileEntityAt(getX(), getY(), getZ());
+        world = (CraftWorld) block.getWorld();
+        spawner = (TileEntityMobSpawner) world.getTileEntityAt(getX(), getY(), getZ());
     }
 
     public CreatureType getCreatureType() {

@@ -26,10 +26,10 @@ public class ServerCommandListener implements ICommandListener {
 
     public String getName() {
         try {
-            Method getName = commandSender.getClass().getMethod( "getName" );
+            Method getName = commandSender.getClass().getMethod("getName");
+
             return (String) getName.invoke(commandSender);
-        } catch (Exception e) {
-        }
+        } catch (Exception e) {}
 
         return this.prefix;
     }

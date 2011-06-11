@@ -68,7 +68,7 @@ public final class CraftServer implements Server {
     private final String protocolVersion = "1.6.6";
     private final PluginManager pluginManager = new SimplePluginManager(this);
     private final ServicesManager servicesManager = new SimpleServicesManager();
-    private final BukkitScheduler scheduler =  new CraftScheduler(this);
+    private final BukkitScheduler scheduler = new CraftScheduler(this);
     private final CommandMap commandMap = new SimpleCommandMap(this);
     protected final MinecraftServer console;
     protected final ServerConfigurationManager server;
@@ -84,7 +84,7 @@ public final class CraftServer implements Server {
 
         Logger.getLogger("Minecraft").log(Level.INFO, "This server is running " + getName() + " version " + getVersion());
 
-        configuration = new Configuration((File)console.options.valueOf("bukkit-settings"));
+        configuration = new Configuration((File) console.options.valueOf("bukkit-settings"));
         configuration.load();
         loadConfigDefaults();
         configuration.save();
@@ -102,7 +102,7 @@ public final class CraftServer implements Server {
     public void loadPlugins() {
         pluginManager.registerInterface(JavaPluginLoader.class);
 
-        File pluginFolder = (File)console.options.valueOf("plugins");
+        File pluginFolder = (File) console.options.valueOf("plugins");
 
         if (pluginFolder.exists()) {
             try {
@@ -293,7 +293,7 @@ public final class CraftServer implements Server {
         }
 
         // See if the server can process this command
-        return console.consoleCommandHandler.handle(new ServerCommand(commandLine, (ICommandListener)new ServerCommandListener(sender)));
+        return console.consoleCommandHandler.handle(new ServerCommand(commandLine, (ICommandListener) new ServerCommandListener(sender)));
     }
 
     public void reload() {
@@ -320,16 +320,15 @@ public final class CraftServer implements Server {
         int pollCount = 0;
 
         // Wait for at most 2.5 seconds for plugins to close their threads
-        while(pollCount < 50 && getScheduler().getActiveWorkers().size() > 0) {
+        while (pollCount < 50 && getScheduler().getActiveWorkers().size() > 0) {
             try {
                 Thread.sleep(50);
-            } catch (InterruptedException e) {
-            }
+            } catch (InterruptedException e) {}
             pollCount++;
         }
 
         List<BukkitWorker> overdueWorkers = getScheduler().getActiveWorkers();
-        for(BukkitWorker worker : overdueWorkers) {
+        for (BukkitWorker worker : overdueWorkers) {
             Plugin plugin = worker.getOwner();
             String author = "<NoAuthorGiven>";
             if (plugin.getDescription().getAuthors().size() > 0) {
@@ -385,7 +384,7 @@ public final class CraftServer implements Server {
         internal.z = console.worlds.get(0).z;
 
         internal.tracker = new EntityTracker(console, dimension);
-        internal.addIWorldAccess((IWorldAccess)new WorldManager(console, internal));
+        internal.addIWorldAccess((IWorldAccess) new WorldManager(console, internal));
         internal.spawnMonsters = 1;
         internal.setSpawnFlags(true, true);
         console.worlds.add(internal);
@@ -492,7 +491,7 @@ public final class CraftServer implements Server {
         Command command = commandMap.getCommand(name);
 
         if (command instanceof PluginCommand) {
-            return (PluginCommand)command;
+            return (PluginCommand) command;
         } else {
             return null;
         }
@@ -520,7 +519,7 @@ public final class CraftServer implements Server {
 
     public boolean addRecipe(Recipe recipe) {
         CraftRecipe toAdd;
-        if(recipe instanceof CraftRecipe) {
+        if (recipe instanceof CraftRecipe) {
             toAdd = (CraftRecipe) recipe;
         } else {
             if (recipe instanceof ShapedRecipe) {

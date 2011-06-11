@@ -116,7 +116,7 @@ public class CraftEventFactory {
         if (type == Type.PLAYER_BUCKET_EMPTY) {
             event = new PlayerBucketEmptyEvent(player, blockClicked, blockFace, bucket, itemInHand);
             ((PlayerBucketEmptyEvent) event).setCancelled(!canBuild(craftWorld, player, clickedX, clickedZ));
-        } else if(type == Type.PLAYER_BUCKET_FILL) {
+        } else if (type == Type.PLAYER_BUCKET_FILL) {
             event = new PlayerBucketFillEvent(player, blockClicked, blockFace, bucket, itemInHand);
             ((PlayerBucketFillEvent) event).setCancelled(!canBuild(craftWorld, player, clickedX, clickedZ));
         }

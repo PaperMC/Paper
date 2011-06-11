@@ -23,13 +23,13 @@ public class CraftBlockState implements BlockState {
     protected byte light;
 
     public CraftBlockState(final Block block) {
-        this.world = (CraftWorld)block.getWorld();
+        this.world = (CraftWorld) block.getWorld();
         this.x = block.getX();
         this.y = block.getY();
         this.z = block.getZ();
         this.type = block.getTypeId();
         this.light = block.getLightLevel();
-        this.chunk = (CraftChunk)block.getChunk();
+        this.chunk = (CraftChunk) block.getChunk();
 
         createData(block.getData());
     }
@@ -129,7 +129,7 @@ public class CraftBlockState implements BlockState {
     public boolean setTypeId(final int type) {
         this.type = type;
 
-        createData((byte)0);
+        createData((byte) 0);
         return true;
     }
 

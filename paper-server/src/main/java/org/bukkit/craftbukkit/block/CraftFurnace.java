@@ -19,8 +19,8 @@ public class CraftFurnace extends CraftBlockState implements Furnace {
     public CraftFurnace(final Block block) {
         super(block);
 
-        world = (CraftWorld)block.getWorld();
-        furnace = (TileEntityFurnace)world.getTileEntityAt(getX(), getY(), getZ());
+        world = (CraftWorld) block.getWorld();
+        furnace = (TileEntityFurnace) world.getTileEntityAt(getX(), getY(), getZ());
     }
 
     public Inventory getInventory() {
@@ -39,7 +39,7 @@ public class CraftFurnace extends CraftBlockState implements Furnace {
     }
 
     public short getBurnTime() {
-        return (short)furnace.burnTime;
+        return (short) furnace.burnTime;
     }
 
     public void setBurnTime(short burnTime) {
@@ -47,7 +47,7 @@ public class CraftFurnace extends CraftBlockState implements Furnace {
     }
 
     public short getCookTime() {
-        return (short)furnace.cookTime;
+        return (short) furnace.cookTime;
     }
 
     public void setCookTime(short cookTime) {

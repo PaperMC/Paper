@@ -14,7 +14,7 @@ public class LongHashtable<V> extends LongHash {
         if (value instanceof Chunk) {
             Chunk c = (Chunk) value;
             if (msw != c.x || lsw != c.z) {
-                MinecraftServer.log.info("Chunk (" + c.x + ", " + c.z +") stored at  (" + msw + ", " + lsw + ")");
+                MinecraftServer.log.info("Chunk (" + c.x + ", " + c.z + ") stored at  (" + msw + ", " + lsw + ")");
                 Throwable x = new Throwable();
                 x.fillInStackTrace();
                 x.printStackTrace();
@@ -27,7 +27,7 @@ public class LongHashtable<V> extends LongHash {
         if (value instanceof Chunk) {
             Chunk c = (Chunk) value;
             if (msw != c.x || lsw != c.z) {
-                MinecraftServer.log.info("Chunk (" + c.x + ", " + c.z +") stored at  (" + msw + ", " + lsw + ")");
+                MinecraftServer.log.info("Chunk (" + c.x + ", " + c.z + ") stored at  (" + msw + ", " + lsw + ")");
                 Throwable x = new Throwable();
                 x.fillInStackTrace();
                 x.printStackTrace();

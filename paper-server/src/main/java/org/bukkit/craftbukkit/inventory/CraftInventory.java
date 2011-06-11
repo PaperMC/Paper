@@ -270,7 +270,7 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
     }
 
     public HashMap<Integer, ItemStack> removeItem(ItemStack... items) {
-        HashMap<Integer,ItemStack> leftover = new HashMap<Integer,ItemStack>();
+        HashMap<Integer, ItemStack> leftover = new HashMap<Integer, ItemStack>();
 
         // TODO: optimization
 
