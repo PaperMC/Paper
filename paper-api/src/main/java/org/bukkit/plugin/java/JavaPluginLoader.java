@@ -655,6 +655,13 @@ public final class JavaPluginLoader implements PluginLoader {
                 }
             };
 
+        case ITEM_SPAWN:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((EntityListener) listener).onItemSpawn((ItemSpawnEvent) event);
+                }
+            };
+
         case PIG_ZAP:
             return new EventExecutor() {
                 public void execute(Listener listener, Event event) {

@@ -12,6 +12,8 @@ public class EntityListener implements Listener {
 
     public void onCreatureSpawn(CreatureSpawnEvent event) {}
 
+    public void onItemSpawn(ItemSpawnEvent event) {}
+
     public void onEntityCombust(EntityCombustEvent event) {}
 
     public void onEntityDamage(EntityDamageEvent event) {}

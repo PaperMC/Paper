@@ -463,7 +463,7 @@ public abstract class Event implements Serializable {
         /**
          * Called when an ItemEntity spawns in the world
          *
-         * @todo: add javadoc see comment
+         * @see org.bukkit.event.entity.ItemSpawnEvent
          */
         ITEM_SPAWN (Category.WORLD),
         /**
