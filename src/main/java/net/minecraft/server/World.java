@@ -18,6 +18,7 @@ import org.bukkit.event.block.BlockCanBuildEvent;
 import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.block.SnowFormEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.event.entity.ItemSpawnEvent;
 import org.bukkit.event.weather.WeatherChangeEvent;
 import org.bukkit.event.weather.ThunderChangeEvent;
 // CraftBukkit end
@@ -817,6 +818,11 @@ public class World implements IBlockAccess {
         // CraftBukkit start
         if (entity instanceof EntityLiving && !(entity instanceof EntityPlayer)) {
             CreatureSpawnEvent event = CraftEventFactory.callCreatureSpawnEvent((EntityLiving) entity);
+                if (event.isCancelled()) {
+                    return false;
+                }
+        } else if (entity instanceof EntityItem) {
+            ItemSpawnEvent event = CraftEventFactory.callItemSpawnEvent((EntityItem) entity);
             if (event.isCancelled()) {
                 return false;
             }

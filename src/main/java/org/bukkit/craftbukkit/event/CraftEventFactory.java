@@ -7,6 +7,7 @@ import net.minecraft.server.EntityCreeper;
 import net.minecraft.server.EntityGhast;
 import net.minecraft.server.EntityGiantZombie;
 import net.minecraft.server.EntityHuman;
+import net.minecraft.server.EntityItem;
 import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntityMonster;
 import net.minecraft.server.EntityPig;
@@ -40,6 +41,7 @@ import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityTameEvent;
+import org.bukkit.event.entity.ItemSpawnEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.event.player.PlayerEvent;
@@ -240,6 +242,19 @@ public class CraftEventFactory {
         CraftServer craftServer = (CraftServer) bukkitEntity.getServer();
 
         EntityTameEvent event = new EntityTameEvent(bukkitEntity, bukkitTamer);
+        craftServer.getPluginManager().callEvent(event);
+        return event;
+    }
+
+    /**
+     * ItemSpawnEvent
+     */
+    public static ItemSpawnEvent callItemSpawnEvent(EntityItem entityitem) {
+        org.bukkit.entity.Entity entity = entityitem.getBukkitEntity();
+        CraftServer craftServer = (CraftServer) entity.getServer();
+
+        ItemSpawnEvent event = new ItemSpawnEvent(entity, entity.getLocation());
+
         craftServer.getPluginManager().callEvent(event);
         return event;
     }
