@@ -583,7 +583,7 @@ public class EntityMinecart extends Entity implements IInventory {
             }
 
             if (this.passenger != null && this.passenger.dead) {
-                this.passenger.vehicle = null;
+                this.passenger.vehicle = null; // CraftBukkit
                 this.passenger = null;
             }
 

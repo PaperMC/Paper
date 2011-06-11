@@ -114,10 +114,8 @@ public class BlockDispenser extends BlockContainer {
         if (itemstack == null) {
             world.e(1001, i, j, k, 0);
         } else {
-            double d3;
-
             // CraftBukkit start
-            d3 = random.nextDouble() * 0.1D + 0.2D;
+            double d3 = random.nextDouble() * 0.1D + 0.2D;
             double motX = (double) b0 * d3;
             double motY = 0.20000000298023224D;
             double motZ = (double) b1 * d3;
@@ -167,9 +165,9 @@ public class BlockDispenser extends BlockContainer {
                 world.e(1002, i, j, k, 0);
             } else {
                 EntityItem entityitem = new EntityItem(world, d0, d1 - 0.3D, d2, itemstack);
-
                 // CraftBukkit start
-                d3 = random.nextDouble() * 0.1D + 0.2D;
+                // double d3 = random.nextDouble() * 0.1D + 0.2D; // Moved up
+
                 entityitem.motX = motX;
                 entityitem.motY = motY;
                 entityitem.motZ = motZ;

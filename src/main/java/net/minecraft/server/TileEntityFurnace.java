@@ -165,7 +165,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
             ItemStack itemstack = FurnaceRecipes.a().a(this.items[0].getItem().id);
 
             // CraftBukkit - consider resultant count instead of current count
-            return itemstack == null ? false : (this.items[2] == null ? true : (!this.items[2].a(itemstack) ? false : (this.items[2].count+itemstack.count <= this.getMaxStackSize() && this.items[2].count < this.items[2].b() ? true : this.items[2].count+itemstack.count <= itemstack.b())));
+            return itemstack == null ? false : (this.items[2] == null ? true : (!this.items[2].a(itemstack) ? false : (this.items[2].count + itemstack.count <= this.getMaxStackSize() && this.items[2].count < this.items[2].b() ? true : this.items[2].count + itemstack.count <= itemstack.b())));
         }
     }
 

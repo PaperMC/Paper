@@ -149,16 +149,17 @@ public class EntityFireball extends Entity {
                     }
                 }
 
-            CraftServer server = ((WorldServer) this.world).getServer();
+                CraftServer server = ((WorldServer) this.world).getServer();
 
-            ExplosionPrimeEvent event = new ExplosionPrimeEvent(CraftEntity.getEntity(server, this), 1.0F, true);
-            server.getPluginManager().callEvent(event);
-            if (!event.isCancelled()) {
-                // give 'this' instead of (Entity) null so we know what causes the damage
-                this.world.createExplosion(this, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire());
-                this.die();
-            }
-            // CraftBukkit end
+                ExplosionPrimeEvent event = new ExplosionPrimeEvent(CraftEntity.getEntity(server, this), 1.0F, true);
+
+                server.getPluginManager().callEvent(event);
+                if (!event.isCancelled()) {
+                    // give 'this' instead of (Entity) null so we know what causes the damage
+                    this.world.createExplosion(this, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire());
+                    this.die();
+                }
+                // CraftBukkit end
             }
 
             // this.die() // # CraftBukkit

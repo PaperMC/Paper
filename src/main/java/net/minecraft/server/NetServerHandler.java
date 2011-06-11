@@ -95,7 +95,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         this.sendPacket(new Packet255KickDisconnect(s));
         this.networkManager.d();
 
-        //CraftBukkit start
+        // CraftBukkit start
         leaveMessage = event.getLeaveMessage();
         if (leaveMessage != null) {
             this.minecraftServer.serverConfigurationManager.sendAll(new Packet3Chat(leaveMessage));
@@ -130,12 +130,13 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
         // Prevent 40 event-calls for less than b single pixel of movement >.>
         double delta = Math.pow(this.lastPosX - this.x, 2) + Math.pow(this.lastPosY - this.y, 2) + Math.pow(this.lastPosZ - this.z, 2);
-        float deltaAngle = Math.abs(this.lastYaw - this.player.yaw) +  Math.abs(this.lastPitch - this.player.pitch);
+        float deltaAngle = Math.abs(this.lastYaw - this.player.yaw) + Math.abs(this.lastPitch - this.player.pitch);
 
-        if (delta > 1f/256 || deltaAngle > 10f) {
+        if (delta > 1f / 256 || deltaAngle > 10f) {
             // Skip the first time we do this
             if (lastPosX != Double.MAX_VALUE) {
                 PlayerMoveEvent event = new PlayerMoveEvent(player, from, to);
+
                 server.getPluginManager().callEvent(event);
 
                 from = event.getFrom();
@@ -191,7 +192,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         }
 
         if (this.m && !this.player.dead) {
-        // CraftBukkit end
+            // CraftBukkit end
             double d1;
             double d2;
             double d3;
@@ -297,9 +298,10 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
             // CraftBukkit start - make the movement speed check behave properly under tick degradation.
             int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
+
             // Added this.m condition to solve this check being triggered by teleports
             if (d8 > 100.0D * (elapsedTicks <= 0 ? 1 : elapsedTicks) && this.m) {
-                a.warning(this.player.name + " moved too quickly! Elapsed ticks: " +  (elapsedTicks == 0 ? 1 : elapsedTicks) + ", Distance change: " + d8);
+                a.warning(this.player.name + " moved too quickly! Elapsed ticks: " + (elapsedTicks == 0 ? 1 : elapsedTicks) + ", Distance change: " + d8);
                 this.disconnect("You moved too quickly :( (Hacking?)");
                 return;
             }
@@ -410,7 +412,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         if (packet14blockdig.e == 4) {
             this.player.E();
         } else {
-            boolean flag = worldserver.weirdIsOpCache = worldserver.dimension != 0 || this.minecraftServer.serverConfigurationManager.isOp(this.player.name);
+            boolean flag = worldserver.weirdIsOpCache = worldserver.dimension != 0 || this.minecraftServer.serverConfigurationManager.isOp(this.player.name); // CraftBukkit
             boolean flag1 = false;
 
             if (packet14blockdig.e == 0) {
@@ -506,7 +508,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         // CraftBukkit end
 
         ItemStack itemstack = this.player.inventory.getItemInHand();
-        boolean flag = worldserver.weirdIsOpCache = worldserver.dimension != 0 || this.minecraftServer.serverConfigurationManager.isOp(this.player.name);
+        boolean flag = worldserver.weirdIsOpCache = worldserver.dimension != 0 || this.minecraftServer.serverConfigurationManager.isOp(this.player.name); // CraftBukkit
 
         if (packet15place.face == 255) {
             if (itemstack == null) {
@@ -750,7 +752,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 s1 = s.substring(1);
                 a.info(this.player.name + " tried command: " + s1);
             }
-        */ // CraftBukkit end
+        // CraftBukkit end */
         }
     }
 

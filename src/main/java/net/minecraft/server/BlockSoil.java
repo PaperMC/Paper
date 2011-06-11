@@ -61,7 +61,7 @@ public class BlockSoil extends Block {
                 cancellable = CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, Action.PHYSICAL, i, j, k, -1, null);
             } else {
                 cancellable = new EntityInteractEvent(entity.getBukkitEntity(), ((WorldServer) world).getWorld().getBlockAt(i, j, k));
-                ((CraftServer)Bukkit.getServer()).getPluginManager().callEvent((EntityInteractEvent) cancellable);
+                ((CraftServer) Bukkit.getServer()).getPluginManager().callEvent((EntityInteractEvent) cancellable);
             }
 
             if (cancellable.isCancelled()) {

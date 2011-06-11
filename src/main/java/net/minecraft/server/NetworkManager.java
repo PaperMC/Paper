@@ -5,13 +5,11 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.io.IOException; // CraftBukkit - instead of SocketException
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-// CraftBukkit
-import java.net.SocketException;
+import java.io.IOException; // CraftBukkit
 
 public class NetworkManager {
 
@@ -49,8 +47,7 @@ public class NetworkManager {
         // CraftBukkit start - IPv6 stack in Java on BSD/OSX doesn't support setTrafficClass
         try {
             socket.setTrafficClass(24);
-        } catch (SocketException e) {
-        }
+        } catch (SocketException e) {}
         // CraftBukkit end
 
         try {

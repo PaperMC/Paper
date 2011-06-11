@@ -226,7 +226,7 @@ public class PortalTravelAgent {
 
         // CraftBukkit start - portal create event
         java.util.ArrayList<org.bukkit.block.Block> blocks = new java.util.ArrayList<org.bukkit.block.Block>();
-        //Find out what blocks the portal is going to modify, duplicated from below
+        // Find out what blocks the portal is going to modify, duplicated from below
         CraftWorld craftWorld = ((WorldServer) world).getWorld();
 
         if (d0 < 0.0D) {
@@ -269,9 +269,11 @@ public class PortalTravelAgent {
             }
         }
 
-        PortalCreateEvent event = new PortalCreateEvent(blocks,(org.bukkit.World)craftWorld);
+        PortalCreateEvent event = new PortalCreateEvent(blocks, (org.bukkit.World) craftWorld);
         Bukkit.getServer().getPluginManager().callEvent(event);
-        if(event.isCancelled()) return true;
+        if (event.isCancelled()) {
+            return true;
+        }
         // CraftBukkit end
 
         if (d0 < 0.0D) {

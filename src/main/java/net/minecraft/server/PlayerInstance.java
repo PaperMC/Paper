@@ -61,7 +61,7 @@ class PlayerInstance {
             }
 
             entityplayer.f.remove(this.e);
-            // CraftBukkit - contains -> remove -- TODO  VERIFY!!!!
+            // CraftBukkit - contains -> remove -- TODO VERIFY!!!!
             if (entityplayer.g.remove(this.e)) {
                 entityplayer.netServerHandler.sendPacket(new Packet50PreChunk(this.chunkX, this.chunkZ, false));
             }

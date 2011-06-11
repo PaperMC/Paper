@@ -6,10 +6,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 
 // CraftBukkit start
+import java.util.Random;
 import org.bukkit.Server;
 import org.bukkit.craftbukkit.CraftChunk;
 import org.bukkit.craftbukkit.CraftServer;
@@ -117,7 +117,7 @@ public class ChunkProviderServer implements IChunkProvider {
         chunk = chunk == null ? (!this.world.isLoading && !this.a ? this.emptyChunk : this.getChunkAt(i, j)) : chunk;
         if (chunk == this.emptyChunk) return chunk;
         if (i != chunk.x || j != chunk.z) {
-            MinecraftServer.log.info("Chunk (" + chunk.x + ", " + chunk.z +") stored at  (" + i + ", " + j + ")");
+            MinecraftServer.log.info("Chunk (" + chunk.x + ", " + chunk.z + ") stored at  (" + i + ", " + j + ")");
             MinecraftServer.log.info(chunk.getClass().getName());
             Throwable ex = new Throwable();
             ex.fillInStackTrace();
@@ -175,7 +175,7 @@ public class ChunkProviderServer implements IChunkProvider {
             if (this.chunkProvider != null) {
                 this.chunkProvider.getChunkAt(ichunkprovider, i, j);
 
-                // Craftbukkit start
+                // CraftBukkit start
                 BlockSand.a = true;
                 Random random = new Random();
                 random.setSeed(world.getSeed());
@@ -186,7 +186,7 @@ public class ChunkProviderServer implements IChunkProvider {
                     populator.populate(world.getWorld(), random, chunk.bukkitChunk);
                 }
                 BlockSand.a = false;
-                // Craftbukkit end
+                // CraftBukkit end
 
                 chunk.f();
             }

@@ -57,7 +57,7 @@ public class ItemBlock extends Item {
 
             // CraftBukkit start - This executes the placement of the block
             BlockState replacedBlockState = CraftBlockState.getBlockState(world, i, j, k);
-            
+
             // There are like 30 combinations you can mix and match steps and double steps
             // of different materials, so there are a lot of different cases of what
             // would happen if you place x step onto another y step, so let's just keep
@@ -67,7 +67,7 @@ public class ItemBlock extends Item {
                     && (itemstack.id == Block.DOUBLE_STEP.id || itemstack.id == Block.STEP.id)) {
                 blockStateBelow = CraftBlockState.getBlockState(world, i, j - 1, k);
             }
-            
+
             /**
             * @see net.minecraft.server.World#setTypeIdAndData(int i, int j, int k, int l, int i1)
             *

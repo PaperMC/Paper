@@ -602,6 +602,7 @@ public abstract class EntityHuman extends EntityLiving {
             Player player = (Player) this.getBukkitEntity();
             CraftServer server = ((WorldServer) world).getServer();
             org.bukkit.block.Block bed = ((WorldServer) world).getWorld().getBlockAt(i, j, k);
+
             PlayerBedEnterEvent event = new PlayerBedEnterEvent(player, bed);
             server.getPluginManager().callEvent(event);
 
@@ -760,7 +761,7 @@ public abstract class EntityHuman extends EntityLiving {
     public void a(ChunkCoordinates chunkcoordinates) {
         if (chunkcoordinates != null) {
             this.b = new ChunkCoordinates(chunkcoordinates);
-            this.spawnWorld = world.worldData.name;
+            this.spawnWorld = world.worldData.name; // CraftBukkit
         } else {
             this.b = null;
         }

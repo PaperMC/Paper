@@ -177,8 +177,8 @@ public class BlockDoor extends Block {
                 int power = block.getBlockPower();
                 int powerTop = blockTop.getBlockPower();
                 if (powerTop > power) power = powerTop;
+                BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, (world.getData(i, j, k) & 4) > 0 ? 15 : 0, power);
 
-                BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, (world.getData(i, j, k) & 4) > 0 ? 15: 0, power);
                 server.getPluginManager().callEvent(eventRedstone);
 
                 flag1 = eventRedstone.getNewCurrent() > 0;

@@ -315,6 +315,7 @@ public class EntityWolf extends EntityAnimal {
                             return false;
                         }
                         // CraftBukkit end
+
                         this.d(true);
                         this.a((PathEntity) null);
                         this.setSitting(true);

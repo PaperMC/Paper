@@ -4,12 +4,12 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Logger;
 
-// Craftbukkit start
+// CraftBukkit start
 import java.util.List;
 import org.bukkit.craftbukkit.command.ServerCommandListener;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.command.CommandSender;
-// Craftbukkit end
+// CraftBukkit end
 
 public class ConsoleCommandHandler {
 
@@ -44,7 +44,7 @@ public class ConsoleCommandHandler {
                         serverconfigurationmanager.savePlayers();
                     }
 
-                    // Craftbukkit start
+                    // CraftBukkit start
                     for (i = 0; i < this.server.worlds.size(); ++i) {
                         worldserver = this.server.worlds.get(i);
                         boolean save = worldserver.E;
@@ -58,15 +58,15 @@ public class ConsoleCommandHandler {
                 } else if (s.toLowerCase().startsWith("save-off")) {
                     this.print(s1, "Disabling level saving..");
 
-                    for (i = 0; i < this.server.worlds.size(); ++i) { // Craftbukkit start
-                        worldserver = this.server.worlds.get(i); // Craftbukkit start
+                    for (i = 0; i < this.server.worlds.size(); ++i) { // CraftBukkit
+                        worldserver = this.server.worlds.get(i); // CraftBukkit
                         worldserver.E = true;
                     }
                 } else if (s.toLowerCase().startsWith("save-on")) {
                     this.print(s1, "Enabling level saving..");
 
-                    for (i = 0; i < this.server.worlds.size(); ++i) { // Craftbukkit start
-                        worldserver = this.server.worlds.get(i); // Craftbukkit start
+                    for (i = 0; i < this.server.worlds.size(); ++i) { // CraftBukkit
+                        worldserver = this.server.worlds.get(i); // CraftBukkit
                         worldserver.E = false;
                     }
                 } else {
@@ -205,15 +205,15 @@ public class ConsoleCommandHandler {
                                             WorldServer worldserver1;
 
                                             if ("add".equalsIgnoreCase(s3)) {
-                                                for (k = 0; k < this.server.worlds.size(); ++k) { // Craftbukkit start
-                                                    worldserver1 = this.server.worlds.get(k); // Craftbukkit start
+                                                for (k = 0; k < this.server.worlds.size(); ++k) { // CraftBukkit
+                                                    worldserver1 = this.server.worlds.get(k); // CraftBukkit
                                                     worldserver1.setTime(worldserver1.getTime() + (long) j);
                                                 }
 
                                                 this.print(s1, "Added " + j + " to time");
                                             } else if ("set".equalsIgnoreCase(s3)) {
-                                                for (k = 0; k < this.server.worlds.size(); ++k) { // Craftbukkit start
-                                                    worldserver1 = this.server.worlds.get(k); // Craftbukkit start
+                                                for (k = 0; k < this.server.worlds.size(); ++k) { // CraftBukkit
+                                                    worldserver1 = this.server.worlds.get(k); // CraftBukkit
                                                     worldserver1.setTime((long) j);
                                                 }
 

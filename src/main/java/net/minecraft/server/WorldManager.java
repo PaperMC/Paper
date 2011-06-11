@@ -3,7 +3,7 @@ package net.minecraft.server;
 public class WorldManager implements IWorldAccess {
 
     private MinecraftServer server;
-    public WorldServer world; // CraftBukkit private -> public
+    public WorldServer world; // CraftBukkit - private -> public
 
     public WorldManager(MinecraftServer minecraftserver, WorldServer worldserver) {
         this.server = minecraftserver;

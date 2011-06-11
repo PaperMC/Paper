@@ -169,7 +169,7 @@ public abstract class Entity {
             f1 = 0;
         }
 
-        if ((f1 == Float.POSITIVE_INFINITY) || (f1 == Float.NEGATIVE_INFINITY))  {
+        if ((f1 == Float.POSITIVE_INFINITY) || (f1 == Float.NEGATIVE_INFINITY)) {
             if (this instanceof EntityPlayer) {
                 System.err.println(((CraftPlayer) this.getBukkitEntity()).getName() + " was caught trying to crash the server with an invalid pitch");
                 ((CraftPlayer) this.getBukkitEntity()).kickPlayer("Nope");
@@ -752,11 +752,12 @@ public abstract class Entity {
 
     public void a(World world) {
         // CraftBukkit start
-        if(world == null) {
+        if (world == null) {
             this.die();
-            this.world = ((CraftWorld)Bukkit.getServer().getWorlds().get(0)).getHandle();
+            this.world = ((CraftWorld) Bukkit.getServer().getWorlds().get(0)).getHandle();
+        } else {
+            this.world = world;
         }
-        else this.world = world;
         // CraftBukkit end
     }
 
@@ -909,9 +910,11 @@ public abstract class Entity {
         nbttagcompound.a("Fire", (short) this.fireTicks);
         nbttagcompound.a("Air", (short) this.airTicks);
         nbttagcompound.a("OnGround", this.onGround);
-        nbttagcompound.setString("World", world.worldData.name); // CraftBukkit
-        nbttagcompound.a("UUIDLeast", this.uniqueId.getLeastSignificantBits()); // CraftBukkit
-        nbttagcompound.a("UUIDMost", this.uniqueId.getMostSignificantBits()); // CraftBukkit
+        // CraftBukkit start
+        nbttagcompound.setString("World", world.worldData.name);
+        nbttagcompound.a("UUIDLeast", this.uniqueId.getLeastSignificantBits());
+        nbttagcompound.a("UUIDMost", this.uniqueId.getMostSignificantBits());
+        // CraftBukkit end
         this.b(nbttagcompound);
     }
 
@@ -923,6 +926,19 @@ public abstract class Entity {
         this.motX = ((NBTTagDouble) nbttaglist1.a(0)).a;
         this.motY = ((NBTTagDouble) nbttaglist1.a(1)).a;
         this.motZ = ((NBTTagDouble) nbttaglist1.a(2)).a;
+        /* CraftBukkit start - moved section down
+        if (Math.abs(this.motX) > 10.0D) {
+            this.motX = 0.0D;
+        }
+
+        if (Math.abs(this.motY) > 10.0D) {
+            this.motY = 0.0D;
+        }
+
+        if (Math.abs(this.motZ) > 10.0D) {
+            this.motZ = 0.0D;
+        }
+        // CraftBukkit end */
 
         this.lastX = this.bo = this.locX = ((NBTTagDouble) nbttaglist.a(0)).a;
         this.lastY = this.bp = this.locY = ((NBTTagDouble) nbttaglist.a(1)).a;

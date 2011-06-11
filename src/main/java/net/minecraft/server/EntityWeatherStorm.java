@@ -25,7 +25,7 @@ public class EntityWeatherStorm extends EntityWeather {
     }
 
     public EntityWeatherStorm(World world, double d0, double d1, double d2, boolean isEffect) {
-    // CraftBukkit end
+        // CraftBukkit end
 
         super(world);
 

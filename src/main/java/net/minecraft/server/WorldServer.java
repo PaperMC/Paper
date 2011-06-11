@@ -16,7 +16,7 @@ import org.bukkit.craftbukkit.generator.SkyLandsChunkGenerator;
 import org.bukkit.event.weather.LightningStrikeEvent;
 
 public class WorldServer extends World implements BlockChangeDelegate {
-// CraftBukkit end
+    // CraftBukkit end
 
     public ChunkProviderServer chunkProviderServer;
     public boolean weirdIsOpCache = false;
@@ -70,7 +70,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
     protected IChunkProvider b() {
         IChunkLoader ichunkloader = this.w.a(this.worldProvider);
 
-        // Craftbukkit start
+        // CraftBukkit start
         InternalChunkGenerator gen;
 
         if (this.generator != null) {
@@ -84,7 +84,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
         }
 
         this.chunkProviderServer = new ChunkProviderServer(this, ichunkloader, gen);
-        // Craftbukkit end
+        // CraftBukkit end
 
         return this.chunkProviderServer;
     }
@@ -162,9 +162,11 @@ public class WorldServer extends World implements BlockChangeDelegate {
             return explosion;
         }
 
-        // explosion.a = flag;
-        // explosion.a();
-        // explosion.a(false);
+        /* CraftBukkit
+        explosion.a = flag;
+        explosion.a();
+        explosion.a(false);
+        // CraftBukkit */
         this.server.serverConfigurationManager.a(d0, d1, d2, 64.0D, this.dimension, new Packet60Explosion(d0, d1, d2, f, explosion.g));
         // CraftBukkit end
         return explosion;

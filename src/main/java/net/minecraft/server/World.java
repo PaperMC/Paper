@@ -50,7 +50,7 @@ public class World implements IBlockAccess {
     public int spawnMonsters;
     public Random random = new Random();
     public boolean s = false;
-    public WorldProvider worldProvider; // Craftbukkit - remove final
+    public WorldProvider worldProvider; // CraftBukkit - remove final
     protected List u = new ArrayList();
     public IChunkProvider chunkProvider; // CraftBukkit - protected -> public
     protected final IDataManager w;
@@ -62,22 +62,36 @@ public class World implements IBlockAccess {
     private int K = 0;
     public boolean allowMonsters = true; // CraftBukkit - private -> public
     public boolean allowAnimals = true; // CraftBukkit - private -> public
-    public boolean pvpMode; // CraftBukkit
     static int A = 0;
     private Set N = new HashSet();
     private int O;
     private List P;
     public boolean isStatic;
-    public ChunkGenerator generator; // Craftbukkit
 
     public WorldChunkManager getWorldChunkManager() {
         return this.worldProvider.b;
     }
 
-    // Craftbukkit start - changed signature
+    // CraftBukkit start
+    public boolean pvpMode;
+    public ChunkGenerator generator;
+    Chunk lastChunkAccessed;
+    int lastXAccessed = Integer.MIN_VALUE;
+    int lastZAccessed = Integer.MIN_VALUE;
+    final Object chunkLock = new Object();
+
+    private boolean canSpawn(int x, int z) {
+        if (generator != null) {
+            return this.generator.canSpawn(((WorldServer) this).getWorld(), x, z);
+        } else {
+            return this.worldProvider.a(x, z);
+        }
+    }
+
+    // CraftBukkit - changed signature
     public World(IDataManager idatamanager, String s, long i, WorldProvider worldprovider, ChunkGenerator gen) {
         this.generator = gen;
-    // Craftbukkit end
+        // CraftBukkit end
 
         this.O = this.random.nextInt(12000);
         this.P = new ArrayList();
@@ -126,12 +140,13 @@ public class World implements IBlockAccess {
 
         int j;
 
-        // Craftbukkit start
+        // CraftBukkit start
         if (generator != null) {
             Random rand = new Random(getSeed());
-            Location spawn = generator.getFixedSpawnLocation(((WorldServer)this).getWorld(), rand);
+            Location spawn = generator.getFixedSpawnLocation(((WorldServer) this).getWorld(), rand);
+
             if (spawn != null) {
-                if (spawn.getWorld() != ((WorldServer)this).getWorld()) {
+                if (spawn.getWorld() != ((WorldServer) this).getWorld()) {
                     throw new IllegalStateException("Cannot set spawn point for " + worldData.name + " to be in another world (" + spawn.getWorld().getName() + ")");
                 } else {
                     worldData.setSpawn(spawn.getBlockX(), spawn.getBlockY(), spawn.getBlockZ());
@@ -144,21 +159,11 @@ public class World implements IBlockAccess {
         for (j = 0; !canSpawn(i, j); j += this.random.nextInt(64) - this.random.nextInt(64)) {
             i += this.random.nextInt(64) - this.random.nextInt(64);
         }
-        // Craftbukkit end
+        // CraftBukkit end
 
         this.worldData.setSpawn(i, b0, j);
         this.isLoading = false;
     }
-
-    // Craftbukkit start
-    private boolean canSpawn(int x, int z) {
-        if (generator != null) {
-            return this.generator.canSpawn(((WorldServer)this).getWorld(), x, z);
-        } else {
-            return this.worldProvider.a(x, z);
-        }
-    }
-    // Craftbukkit end
 
     public int a(int i, int j) {
         int k;
@@ -239,10 +244,6 @@ public class World implements IBlockAccess {
     }
 
     // CraftBukkit start
-    Chunk lastChunkAccessed;
-    int lastXAccessed = Integer.MIN_VALUE;
-    int lastZAccessed = Integer.MIN_VALUE;
-    final Object chunkLock = new Object();
     public Chunk getChunkAt(int i, int j) {
         Chunk result = null;
         synchronized (chunkLock) {
@@ -818,9 +819,10 @@ public class World implements IBlockAccess {
         // CraftBukkit start
         if (entity instanceof EntityLiving && !(entity instanceof EntityPlayer)) {
             CreatureSpawnEvent event = CraftEventFactory.callCreatureSpawnEvent((EntityLiving) entity);
-                if (event.isCancelled()) {
-                    return false;
-                }
+
+            if (event.isCancelled()) {
+                return false;
+            }
         } else if (entity instanceof EntityItem) {
             ItemSpawnEvent event = CraftEventFactory.callItemSpawnEvent((EntityItem) entity);
             if (event.isCancelled()) {
@@ -1814,9 +1816,9 @@ public class World implements IBlockAccess {
                     i2 = chunk.getTypeId(l, k1, j1);
                     if (this.v() && i2 == 0 && Block.SNOW.canPlace(this, l + i, k1, j1 + j) && l1 != 0 && l1 != Block.ICE.id && Block.byId[l1].material.isSolid()) {
                         // CraftBukkit start
-                        SnowFormEvent snow = new SnowFormEvent(((WorldServer)this).getWorld().getBlockAt(l + i, k1, j1 + j));
-                        ((WorldServer)this).getServer().getPluginManager().callEvent(snow);
+                        SnowFormEvent snow = new SnowFormEvent(((WorldServer) this).getWorld().getBlockAt(l + i, k1, j1 + j));
 
+                        ((WorldServer) this).getServer().getPluginManager().callEvent(snow);
                         if (!snow.isCancelled()) {
                             this.setTypeId(l + i, k1, j1 + j, snow.getMaterial().getId());
                             this.setData(l + i, k1, j1 + j, snow.getData());
@@ -1946,7 +1948,6 @@ public class World implements IBlockAccess {
 
             this.entityList.add(entity);
             // CraftBukkit end
-
             this.c((Entity) list.get(i));
         }
     }
@@ -1965,19 +1966,16 @@ public class World implements IBlockAccess {
             axisalignedbb = null;
         }
 
-        // CraftBukkit - store the default action
-        boolean defaultReturn;
+        boolean defaultReturn; // CraftBukkit - store the default action
 
         if (axisalignedbb != null && !this.containsEntity(axisalignedbb)) {
-            // CraftBukkit
-            defaultReturn = false;
+            defaultReturn = false; // CraftBukkit
         } else {
             if (block == Block.WATER || block == Block.STATIONARY_WATER || block == Block.LAVA || block == Block.STATIONARY_LAVA || block == Block.FIRE || block == Block.SNOW) {
                 block = null;
             }
 
-            // CraftBukkit
-            defaultReturn = i > 0 && block == null && block1.canPlace(this, j, k, l, i1);
+            defaultReturn = i > 0 && block == null && block1.canPlace(this, j, k, l, i1); // CraftBukkit
         }
 
         // CraftBukkit start

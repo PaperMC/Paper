@@ -166,7 +166,7 @@ public class PlayerManager {
                     List<ChunkCoordIntPair> chunksToSend = entityplayer.f;
                     Collections.sort(chunksToSend, new Comparator<ChunkCoordIntPair>() {
                         public int compare(ChunkCoordIntPair a, ChunkCoordIntPair b) {
-                            return Math.max(Math.abs(a.x-x), Math.abs(a.z-z)) - Math.max(Math.abs(b.x-x), Math.abs(b.z-z));
+                            return Math.max(Math.abs(a.x - x), Math.abs(a.z - z)) - Math.max(Math.abs(b.x - x), Math.abs(b.z - z));
                         }
                     });
                 }

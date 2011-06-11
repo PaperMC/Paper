@@ -189,7 +189,7 @@ public class EntityArrow extends Entity {
                         stick = movingobjectposition.entity.damageEntity(this.shooter, 4);
                     }
                     if (stick) {
-                    // CraftBukkit end
+                        // CraftBukkit end
                         this.world.makeSound(this, "random.drr", 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
                         this.die();
                     } else {

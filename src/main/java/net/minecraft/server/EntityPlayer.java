@@ -68,20 +68,20 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             dead = false;
             ChunkCoordinates position = null;
             if (!spawnWorld.isEmpty()) {
-                CraftWorld cw  = (CraftWorld)Bukkit.getServer().getWorld(spawnWorld);
+                CraftWorld cw = (CraftWorld) Bukkit.getServer().getWorld(spawnWorld);
                 if (cw != null && M() != null) {
                     world = cw.getHandle();
                     position = EntityHuman.getBed(cw.getHandle(), M());
                 }
             }
             if (world == null || position == null) {
-                world = ((CraftWorld)Bukkit.getServer().getWorlds().get(0)).getHandle();
+                world = ((CraftWorld) Bukkit.getServer().getWorlds().get(0)).getHandle();
                 position = world.getSpawn();
             }
             this.world = world;
-            setPosition(position.x + 0.5, position.y, position.z  + 0.5);
+            setPosition(position.x + 0.5, position.y, position.z + 0.5);
         }
-        this.dimension = ((WorldServer)this.world).dimension;
+        this.dimension = ((WorldServer) this.world).dimension;
         // CraftBukkit end
         this.itemInWorldManager = new ItemInWorldManager((WorldServer) world);
         this.itemInWorldManager.player = this;

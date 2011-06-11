@@ -51,6 +51,7 @@ public class ItemInWorldManager {
     }
 
     public void dig(int i, int j, int k, int l) {
+        // this.world.a((EntityHuman) null, i, j, k, l); // CraftBukkit - moved down
         this.d = (int) (System.currentTimeMillis() / 50); // CraftBukkit
         int i1 = this.world.getTypeId(i, j, k);
 
@@ -60,7 +61,7 @@ public class ItemInWorldManager {
             return;
         }
 
-        PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK , i, j, k, l, this.player.inventory.getItemInHand());
+        PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, i, j, k, l, this.player.inventory.getItemInHand());
 
         if (event.useInteractedBlock() == Event.Result.DENY) {
             // If we denied a door from opening, we need to send a correcting update to the client, as it already opened the door.
@@ -155,7 +156,7 @@ public class ItemInWorldManager {
             org.bukkit.block.Block block = ((WorldServer) this.world).getWorld().getBlockAt(i, j, k);
             org.bukkit.entity.Player player = (org.bukkit.entity.Player) this.player.getBukkitEntity();
 
-            BlockBreakEvent event = new BlockBreakEvent(block,player);
+            BlockBreakEvent event = new BlockBreakEvent(block, player);
             server.getPluginManager().callEvent(event);
 
             if (event.isCancelled()) {

@@ -32,7 +32,7 @@ public class ServerConfigurationManager {
     public static Logger a = Logger.getLogger("Minecraft");
     public List players = new ArrayList();
     public MinecraftServer server; // CraftBukkit - private -> public
-    // private PlayerManager[] d = new PlayerManager[2]; // Craftbukkit - removed
+    // private PlayerManager[] d = new PlayerManager[2]; // CraftBukkit - removed
     public int maxPlayers; // CraftBukkit - private -> public
     private Set banByName = new HashSet();
     private Set banByIP = new HashSet();
@@ -61,7 +61,7 @@ public class ServerConfigurationManager {
         this.m = minecraftserver.a("white-list.txt");
         int i = minecraftserver.propertyManager.getInt("view-distance", 10);
 
-        // Craftbukkit - removed playermanagers
+        // CraftBukkit - removed playermanagers
         this.maxPlayers = minecraftserver.propertyManager.getInt("max-players", 20);
         this.o = minecraftserver.propertyManager.getBoolean("white-list", false);
         this.g();
@@ -80,9 +80,9 @@ public class ServerConfigurationManager {
     }
 
     public void a(EntityPlayer entityplayer) {
-        // Craftbukkit - removed playermanagers
-        for(WorldServer world : this.server.worlds) {
-            if(world.manager.a.contains(entityplayer)) {
+        // CraftBukkit - removed playermanagers
+        for (WorldServer world : this.server.worlds) {
+            if (world.manager.a.contains(entityplayer)) {
                 world.manager.removePlayer(entityplayer);
                 break;
             }
@@ -94,17 +94,17 @@ public class ServerConfigurationManager {
     }
 
     public int a() {
-        // Craftbukkit start
+        // CraftBukkit start
         if (this.server.worlds.size() == 0) {
             return this.server.propertyManager.getInt("view-distance", 10) * 16 - 16;
         } else {
             return this.server.worlds.get(0).manager.c();
         }
-        // Craftbukkit end
+        // CraftBukkit end
     }
 
     private PlayerManager a(int i) {
-        return server.a(i).manager; // Craftbukkit
+        return server.a(i).manager; // CraftBukkit
     }
 
     public void b(EntityPlayer entityplayer) {
@@ -218,7 +218,7 @@ public class ServerConfigurationManager {
 
         if (location == null) {
             CraftWorld cw = (CraftWorld) this.server.server.getWorld(entityplayer.spawnWorld);
-            if(cw != null && chunkcoordinates != null) {
+            if (cw != null && chunkcoordinates != null) {
                 ChunkCoordinates chunkcoordinates1 = EntityHuman.getBed(cw.getHandle(), chunkcoordinates);
                 if (chunkcoordinates1 != null) {
                     location = new Location(cw, chunkcoordinates1.x + 0.5, chunkcoordinates1.y, chunkcoordinates1.z + 0.5);
@@ -226,14 +226,17 @@ public class ServerConfigurationManager {
                     entityplayer1.netServerHandler.sendPacket(new Packet70Bed(0));
                 }
             }
+
             if (location == null) {
                 cw = (CraftWorld) this.server.server.getWorlds().get(0);
                 chunkcoordinates = cw.getHandle().getSpawn();
                 location = new Location(cw, chunkcoordinates.x, chunkcoordinates.y, chunkcoordinates.z);
             }
+
             Player respawnPlayer = cserver.getPlayer(entityplayer);
             PlayerRespawnEvent respawnEvent = new PlayerRespawnEvent(respawnPlayer, location);
             cserver.getPluginManager().callEvent(respawnEvent);
+
             location = respawnEvent.getRespawnLocation();
             entityplayer.health = 20;
             entityplayer.fireTicks = 0;
@@ -241,7 +244,7 @@ public class ServerConfigurationManager {
         } else {
             location.setWorld(this.server.a(i).getWorld());
         }
-        WorldServer worldserver = ((CraftWorld)location.getWorld()).getHandle();
+        WorldServer worldserver = ((CraftWorld) location.getWorld()).getHandle();
         entityplayer1.setLocation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         // CraftBukkit end
 
@@ -269,10 +272,9 @@ public class ServerConfigurationManager {
     }
 
     public void f(EntityPlayer entityplayer) {
-         // CraftBukkit start
         WorldServer worldserver = this.server.a(entityplayer.dimension);
-        boolean flag = false; // Unused
-        int b0; // byte -> int
+        boolean flag = false;
+        int b0; // CraftBukkit - byte -> int
 
         if (entityplayer.dimension == -1) {
             b0 = 0;
@@ -280,17 +282,19 @@ public class ServerConfigurationManager {
             b0 = -1;
         }
 
-        // entityplayer.dimension = b0;
-        // WorldServer worldserver1 = this.server.a(entityplayer.dimension);
+        /* CraftBukkit start
+        entityplayer.dimension = b0;
+        WorldServer worldserver1 = this.server.a(entityplayer.dimension);
 
-        // entityplayer.netServerHandler.sendPacket(new Packet9Respawn((byte) entityplayer.dimension));
-        // worldserver.removeEntity(entityplayer);
-        // entityplayer.dead = false;
+        entityplayer.netServerHandler.sendPacket(new Packet9Respawn((byte) entityplayer.dimension));
+        worldserver.removeEntity(entityplayer);
+        entityplayer.dead = false;
+        // CraftBukkit end */
         double d0 = entityplayer.locX;
         double d1 = entityplayer.locZ;
         double d2 = 8.0D;
 
-        if (b0 == -1) { // entityplayer.dimension -> b0
+        if (b0 == -1) { // CraftBukkit - entityplayer.dimension -> b0
             d0 /= d2;
             d1 /= d2;
             entityplayer.setPositionRotation(d0, entityplayer.locY, d1, entityplayer.yaw, entityplayer.pitch);
@@ -306,12 +310,13 @@ public class ServerConfigurationManager {
             }
         }
 
-        CraftWorld fromCraftWorld =  worldserver.getWorld();
-        CraftWorld toCraftWorld =  this.server.a(b0).getWorld();
+        // CraftBukkit start
+        CraftWorld fromCraftWorld = worldserver.getWorld();
+        CraftWorld toCraftWorld = this.server.a(b0).getWorld();
         Location startLocation = new Location(fromCraftWorld, entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
         Location endLocation = new Location(toCraftWorld, d0, entityplayer.locY, d1, entityplayer.yaw, entityplayer.pitch);
 
-        PlayerPortalEvent event = new PlayerPortalEvent((Player)entityplayer.getBukkitEntity(),startLocation,endLocation);
+        PlayerPortalEvent event = new PlayerPortalEvent((Player) entityplayer.getBukkitEntity(), startLocation, endLocation);
         Bukkit.getServer().getPluginManager().callEvent(event);
         if (event.isCancelled()) {
             return;
@@ -336,21 +341,23 @@ public class ServerConfigurationManager {
             }
         }
 
-        // this.a(entityplayer);
-        // entityplayer.netServerHandler.a(entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
-        // entityplayer.a((World) worldserver1);
-        // this.a(entityplayer, worldserver1);
-        // this.g(entityplayer);
+        /* CraftBukkit -- not needed
+        this.a(entityplayer);
+        entityplayer.netServerHandler.a(entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
+        entityplayer.a((World) worldserver1);
+        this.a(entityplayer, worldserver1);
+        this.g(entityplayer);
+        // CraftBukkit */
         this.a(entityplayer, b0, endLocation);
         // CraftBukkit end
     }
 
     public void b() {
-        // Craftbukkit start
+        // CraftBukkit start
         for (int i = 0; i < this.server.worlds.size(); ++i) {
             this.server.worlds.get(i).manager.flush();
         }
-        // Craftbukkit end
+        // CraftBukkit end
     }
 
     public void flagDirty(int i, int j, int k, int l) {

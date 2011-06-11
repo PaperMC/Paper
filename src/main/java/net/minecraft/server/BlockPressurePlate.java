@@ -108,14 +108,15 @@ public class BlockPressurePlate extends Block {
                 for (Object object: list) {
                     if (object != null) {
                         Cancellable cancellable;
+
                         if (object instanceof EntityHuman) {
                             cancellable = CraftEventFactory.callPlayerInteractEvent((EntityHuman) object, Action.PHYSICAL, i, j, k, -1, null);
+                        } else if (object instanceof Entity) {
+                            cancellable = new EntityInteractEvent(((Entity) object).getBukkitEntity(), ((WorldServer) world).getWorld().getBlockAt(i, j, k));
+                            ((CraftServer) Bukkit.getServer()).getPluginManager().callEvent((EntityInteractEvent) cancellable);
+                        } else {
+                            continue;
                         }
-                        else if (object instanceof Entity) {
-                            cancellable = new EntityInteractEvent(((Entity) object).getBukkitEntity(), ((WorldServer)world).getWorld().getBlockAt(i, j, k));
-                            ((CraftServer)Bukkit.getServer()).getPluginManager().callEvent((EntityInteractEvent) cancellable);
-                        }
-                        else continue;
                         if (cancellable.isCancelled()) {
                             return;
                         }

@@ -28,7 +28,7 @@ public class Packet51MapChunk extends Packet {
     }
 
     public Packet51MapChunk(int i, int j, int k, int l, int i1, int j1, byte[] data) {
-    // CraftBukkit - end
+        // CraftBukkit - end
         this.k = true;
         this.a = i;
         this.b = j;
@@ -37,7 +37,7 @@ public class Packet51MapChunk extends Packet {
         this.e = i1;
         this.f = j1;
         byte[] abyte = data; // CraftBukkit - uses data from above constructor
-        Deflater deflater = new Deflater(1);
+        Deflater deflater = new Deflater(-1);
 
         try {
             deflater.setInput(abyte);

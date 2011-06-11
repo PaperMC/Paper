@@ -2,10 +2,12 @@ package net.minecraft.server;
 
 import java.util.Random;
 
+// CraftBukkit start
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.event.entity.EntityPortalEnterEvent;
+// CraftBukkit end
 
 public class BlockPortal extends BlockBreakable {
 
@@ -141,9 +143,10 @@ public class BlockPortal extends BlockBreakable {
         if (entity.vehicle == null && entity.passenger == null) {
             // CraftBukkit start - Entity in portal
             CraftWorld craftWorld = ((WorldServer) world).getWorld();
-            EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(craftWorld,i, j, k));
+            EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(craftWorld, i, j, k));
             Bukkit.getServer().getPluginManager().callEvent(event);
             // CraftBukkit end
+
             entity.O();
         }
     }
