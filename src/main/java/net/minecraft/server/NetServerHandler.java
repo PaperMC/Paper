@@ -358,30 +358,27 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
     public void a(double d0, double d1, double d2, float f, float f1) {
         // CraftBukkit start - Delegate to teleport(Location)
-        teleport(new Location(getPlayer().getWorld(), d0, d1, d2, f, f1));
-    }
-
-    public boolean teleport(Location dest) {
-        // Note: the world in location is used only for the event
-        // Inter-world teleportation is handled in CraftPlayer.teleport()
-
         Player player = getPlayer();
         Location from = player.getLocation();
-        Location to = dest.clone();
+        Location to = new Location(getPlayer().getWorld(), d0, d1, d2, f, f1);
         PlayerTeleportEvent event = new PlayerTeleportEvent(player, from, to);
         server.getPluginManager().callEvent(event);
 
         from = event.getFrom();
         to = event.isCancelled() ? from : event.getTo();
 
+        teleport(to);
+    }
+
+    public void teleport(Location dest) {
         double d0, d1, d2;
         float f, f1;
 
-        d0 = to.getX();
-        d1 = to.getY();
-        d2 = to.getZ();
-        f = to.getYaw();
-        f1 = to.getPitch();
+        d0 = dest.getX();
+        d1 = dest.getY();
+        d2 = dest.getZ();
+        f = dest.getYaw();
+        f1 = dest.getPitch();
 
         // TODO: make sure this is the best way to address this.
         if (Float.isNaN(f)) {
@@ -399,9 +396,6 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         this.z = d2;
         this.player.setLocation(d0, d1, d2, f, f1);
         this.player.netServerHandler.sendPacket(new Packet13PlayerLookMove(d0, d1 + 1.6200000047683716D, d1, d2, f, f1, false));
-
-        // CraftBukkit - Returns TRUE if the teleport was successful
-        return !event.isCancelled();
     }
 
     public void a(Packet14BlockDig packet14blockdig) {

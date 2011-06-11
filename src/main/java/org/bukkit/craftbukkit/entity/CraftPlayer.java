@@ -21,6 +21,7 @@ import org.bukkit.Statistic;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerTeleportEvent;
 
 public class CraftPlayer extends CraftHumanEntity implements Player {
 
@@ -198,17 +199,33 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public boolean teleport(Location location) {
-        WorldServer oldWorld = ((CraftWorld)getWorld()).getHandle();
-        WorldServer newWorld = ((CraftWorld)location.getWorld()).getHandle();
-        ServerConfigurationManager manager = server.getHandle();
-        EntityPlayer entity = getHandle();
-
-        if (oldWorld != newWorld) {
-            manager.a(entity, newWorld.dimension, location);
-            return true; //best guess
-        } else {
-            return entity.netServerHandler.teleport(location);
+        // From = Players current Location
+        Location from = this.getLocation();
+        // To = Players new Location if Teleport is Successful
+        Location to = location;
+        // Create & Call the Teleport Event.
+        PlayerTeleportEvent event = new PlayerTeleportEvent((Player) this, from, to);
+        server.getPluginManager().callEvent(event);
+        // Return False to inform the Plugin that the Teleport was unsuccessful/cancelled.
+        if (event.isCancelled() == true) {
+            return false;
         }
+        // Update the From Location
+        from = event.getFrom();
+        // Grab the new To Location dependent on whether the event was cancelled.
+        to = event.getTo();
+        // Grab the To and From World Handles.
+        WorldServer fromWorld = ((CraftWorld) from.getWorld()).getHandle();
+        WorldServer toWorld = ((CraftWorld) to.getWorld()).getHandle();
+        // Grab the EntityPlayer
+        EntityPlayer entity = getHandle();
+        // Check if the fromWorld and toWorld are the same.
+        if (fromWorld == toWorld){
+            entity.netServerHandler.teleport(to);
+        } else {
+            server.getHandle().a(entity, toWorld.dimension, to);
+        }
+        return true;
     }
 
     public void setSneaking(boolean sneak) {

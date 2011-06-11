@@ -17,6 +17,7 @@ import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.command.ColouredConsoleSender;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -256,8 +257,8 @@ public class ServerConfigurationManager {
         entityplayer1.netServerHandler.sendPacket(new Packet9Respawn(actualDimension));
         entityplayer1.a(worldserver);
         entityplayer1.dead = false;
+        entityplayer1.netServerHandler.teleport(new Location(worldserver.getWorld(), entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch));
         // CraftBukkit end
-        entityplayer1.netServerHandler.a(entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch);
         this.a(entityplayer1, worldserver);
         this.a(entityplayer1.dimension).addPlayer(entityplayer1);
         worldserver.addEntity(entityplayer1);
@@ -268,9 +269,10 @@ public class ServerConfigurationManager {
     }
 
     public void f(EntityPlayer entityplayer) {
+         // CraftBukkit start
         WorldServer worldserver = this.server.a(entityplayer.dimension);
-        boolean flag = false;
-        byte b0;
+        boolean flag = false; // Unused
+        int b0; // byte -> int
 
         if (entityplayer.dimension == -1) {
             b0 = 0;
@@ -278,32 +280,17 @@ public class ServerConfigurationManager {
             b0 = -1;
         }
 
-        // CraftBukkit start
-        CraftWorld oldCraftWorld =  worldserver.getWorld();
-        CraftWorld newCraftWorld =  this.server.a(b0).getWorld();
-        Location startLocation = new Location(oldCraftWorld, entityplayer.locX, entityplayer.locY, entityplayer.locZ);
-        Location endLocation;
-        if (b0 == -1) {
-            endLocation = new Location(newCraftWorld, entityplayer.locX / 8.0D, entityplayer.locY, entityplayer.locZ / 8.0D,entityplayer.yaw,entityplayer.pitch);
-        } else {
-            endLocation = new Location(newCraftWorld, entityplayer.locX * 8.0D, entityplayer.locY, entityplayer.locZ * 8.0D,entityplayer.yaw,entityplayer.pitch);
-        }
-        PlayerPortalEvent event = new PlayerPortalEvent((Player)entityplayer.getBukkitEntity(),startLocation,endLocation);
-        Bukkit.getServer().getPluginManager().callEvent(event);
-        if (event.isCancelled()) {
-            return;
-        }
-
         // entityplayer.dimension = b0;
-        WorldServer worldserver1 = this.server.a(b0);
+        // WorldServer worldserver1 = this.server.a(entityplayer.dimension);
 
-        // entityplayer.netServerHandler.sendPacket(new Packet9Respawn((byte) ((WorldServer)entityplayer.world).getWorld().getEnvironment().getId()));
-        // Craftbukkit end
+        // entityplayer.netServerHandler.sendPacket(new Packet9Respawn((byte) entityplayer.dimension));
+        // worldserver.removeEntity(entityplayer);
+        // entityplayer.dead = false;
         double d0 = entityplayer.locX;
         double d1 = entityplayer.locZ;
         double d2 = 8.0D;
 
-        if (b0 == -1) { // CraftBukkit
+        if (b0 == -1) { // entityplayer.dimension -> b0
             d0 /= d2;
             d1 /= d2;
             entityplayer.setPositionRotation(d0, entityplayer.locY, d1, entityplayer.yaw, entityplayer.pitch);
@@ -319,26 +306,43 @@ public class ServerConfigurationManager {
             }
         }
 
+        CraftWorld fromCraftWorld =  worldserver.getWorld();
+        CraftWorld toCraftWorld =  this.server.a(b0).getWorld();
+        Location startLocation = new Location(fromCraftWorld, entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
+        Location endLocation = new Location(toCraftWorld, d0, entityplayer.locY, d1, entityplayer.yaw, entityplayer.pitch);
+
+        PlayerPortalEvent event = new PlayerPortalEvent((Player)entityplayer.getBukkitEntity(),startLocation,endLocation);
+        Bukkit.getServer().getPluginManager().callEvent(event);
+        if (event.isCancelled()) {
+            return;
+        }
+        endLocation = event.getTo();
+
+        b0 = ((CraftWorld) endLocation.getWorld()).getHandle().dimension;
+
+        WorldServer worldserver1 = this.server.a(b0);
+
         if (entityplayer.S()) {
-            // worldserver1.addEntity(entityplayer); // CraftBukkit
-            entityplayer.setPositionRotation(d0, entityplayer.locY, d1, entityplayer.yaw, entityplayer.pitch);
+            // worldserver1.addEntity(entityplayer);
+            entityplayer.setPositionRotation(endLocation.getX(), endLocation.getY(), endLocation.getZ(), endLocation.getYaw(), endLocation.getPitch());
             worldserver1.entityJoinedWorld(entityplayer, false);
-            // CraftBukkit start - added conditional
             if (event.useTravelAgent()) {
                 worldserver1.chunkProviderServer.a = true;
                 (new PortalTravelAgent()).a(worldserver1, entityplayer);
                 worldserver1.chunkProviderServer.a = false;
-            } // CraftBukkit end
+                endLocation.setX(entityplayer.locX);
+                endLocation.setY(entityplayer.locY);
+                endLocation.setZ(entityplayer.locZ);
+            }
         }
-        /* CraftBukkit start
-        this.a(entityplayer);
-        entityplayer.netServerHandler.a(entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
-        entityplayer.a((World) worldserver1);
-        this.a(entityplayer, worldserver1);
-        this.g(entityplayer);
-        */ // CraftBukkit end
-        // CraftBukkit - defer for actual teleportation
-        a(entityplayer, b0, new Location(null, entityplayer.locX, entityplayer.locY, entityplayer.locZ));
+
+        // this.a(entityplayer);
+        // entityplayer.netServerHandler.a(entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
+        // entityplayer.a((World) worldserver1);
+        // this.a(entityplayer, worldserver1);
+        // this.g(entityplayer);
+        this.a(entityplayer, b0, endLocation);
+        // CraftBukkit end
     }
 
     public void b() {
