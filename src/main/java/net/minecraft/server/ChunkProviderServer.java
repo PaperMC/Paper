@@ -13,6 +13,7 @@ import java.util.Random;
 import org.bukkit.Server;
 import org.bukkit.craftbukkit.CraftChunk;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.util.LongHashset;
 import org.bukkit.craftbukkit.util.LongHashtable;
 import org.bukkit.event.world.ChunkLoadEvent;
@@ -182,8 +183,11 @@ public class ChunkProviderServer implements IChunkProvider {
                 long xRand = random.nextLong() / 2L * 2L + 1L;
                 long zRand = random.nextLong() / 2L * 2L + 1L;
                 random.setSeed((long) i * xRand + (long) j * zRand ^ world.getSeed());
-                for (BlockPopulator populator : world.getWorld().getPopulators()) {
-                    populator.populate(world.getWorld(), random, chunk.bukkitChunk);
+                CraftWorld world = (CraftWorld)this.world.getWorld();
+                if (world != null) {
+                    for (BlockPopulator populator : world.getPopulators()) {
+                        populator.populate(world, random, chunk.bukkitChunk);
+                    }
                 }
                 BlockSand.a = false;
                 // CraftBukkit end
