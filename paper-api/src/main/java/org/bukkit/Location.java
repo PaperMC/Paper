@@ -212,7 +212,7 @@ public class Location implements Cloneable {
 
         return vector;
     }
-    
+
     /**
      * Adds the location by another.
      *
@@ -225,13 +225,13 @@ public class Location implements Cloneable {
         if (vec == null || vec.getWorld() != getWorld()) {
             throw new IllegalArgumentException("Cannot add Locations of differing worlds");
         }
-        
+
         x += vec.x;
         y += vec.y;
         z += vec.z;
         return this;
     }
-    
+
     /**
      * Adds the location by another. Not world-aware.
      *
@@ -260,7 +260,7 @@ public class Location implements Cloneable {
         if (vec == null || vec.getWorld() != getWorld()) {
             throw new IllegalArgumentException("Cannot add Locations of differing worlds");
         }
-        
+
         x -= vec.x;
         y -= vec.y;
         z -= vec.z;
@@ -318,7 +318,7 @@ public class Location implements Cloneable {
      * which will be caused if the distance is too long.
      *
      * @see Vector
-     * @param o 
+     * @param o
      * @return the distance
      * @throws IllegalArgumentException for differing worlds
      */
@@ -326,7 +326,7 @@ public class Location implements Cloneable {
         if (o == null || o.getWorld() != getWorld()) {
             throw new IllegalArgumentException("Cannot measure distance between worlds or to null");
         }
-        
+
         return Math.sqrt(Math.pow(x - o.x, 2) + Math.pow(y - o.y, 2) + Math.pow(z - o.z, 2));
     }
 
@@ -334,7 +334,7 @@ public class Location implements Cloneable {
      * Get the squared distance between this location and another.
      *
      * @see Vector
-     * @param o 
+     * @param o
      * @return the distance
      * @throws IllegalArgumentException for differing worlds
      */
@@ -342,7 +342,7 @@ public class Location implements Cloneable {
         if (o == null || o.getWorld() != getWorld()) {
             throw new IllegalArgumentException("Cannot measure distance between worlds or to null");
         }
-        
+
         return Math.pow(x - o.x, 2) + Math.pow(y - o.y, 2) + Math.pow(z - o.z, 2);
     }
 

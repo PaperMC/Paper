@@ -26,7 +26,7 @@ public interface Player extends HumanEntity, CommandSender {
      *
      * Note that this name will not be displayed in game, only in chat and places
      * defined by plugins
-     * 
+     *
      * @return the friendly name
      */
     public String getDisplayName();
@@ -36,8 +36,8 @@ public interface Player extends HumanEntity, CommandSender {
      *
      * Note that this name will not be displayed in game, only in chat and places
      * defined by plugins
-     * 
-     * @param name 
+     *
+     * @param name
      */
     public void setDisplayName(String name);
 
@@ -70,7 +70,7 @@ public interface Player extends HumanEntity, CommandSender {
 
     /**
      * Kicks player with custom kick message.
-     * 
+     *
      * @param message kick message
      */
     public void kickPlayer(String message);
@@ -141,10 +141,10 @@ public interface Player extends HumanEntity, CommandSender {
      * @param note
      */
     public void playNote(Location loc, byte instrument, byte note);
-    
+
     /**
      * Plays an effect to just this player.
-     * 
+     *
      * @param loc the player to play the effect for
      * @param effect the {@link Effect}
      * @param data a data bit needed for the RECORD_PLAY, SMOKE, and STEP_SOUND sounds

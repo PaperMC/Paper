@@ -374,10 +374,10 @@ public interface World {
 
     /**
      * Sets the spawn location of the world
-     * 
-     * @param x 
-     * @param y 
-     * @param z 
+     *
+     * @param x
+     * @param y
+     * @param z
      * @return True if it was successfully set.
      */
     public boolean setSpawnLocation(int x, int y, int z);
@@ -484,10 +484,10 @@ public interface World {
 
     /**
      * Creates explosion at given coordinates with given power
-     * 
-     * @param x 
-     * @param y 
-     * @param z 
+     *
+     * @param x
+     * @param y
+     * @param z
      * @param power The power of explosion, where 4F is TNT
      * @return false if explosion was canceled, otherwise true
      */
@@ -495,7 +495,7 @@ public interface World {
 
     /**
      * Creates explosion at given coordinates with given power
-     * 
+     *
      * @param loc
      * @param power The power of explosion, where 4F is TNT
      * @return false if explosion was canceled, otherwise true
@@ -546,26 +546,26 @@ public interface World {
      * @return List containing any or none BlockPopulators
      */
     public List<BlockPopulator> getPopulators();
-    
+
     /**
      * Plays an effect to all players within a default radius around a given location.
-     * 
+     *
      * @param location the {@link Location} around which players must be to hear the sound
      * @param effect the {@link Effect}
      * @param data a data bit needed for the RECORD_PLAY, SMOKE, and STEP_SOUND sounds
      */
     public void playEffect(Location location, Effect effect, int data);
-    
+
     /**
      * Plays an effect to all players within a given radius around a location.
-     * 
+     *
      * @param location the {@link Location} around which players must be to hear the effect
      * @param effect the {@link Effect}
      * @param data a data bit needed for the RECORD_PLAY, SMOKE, and STEP effects
      * @param radius the radius around the location
      */
     public void playEffect(Location location, Effect effect, int data, int radius);
-    
+
     /**
      * Represents various map environment types that a world may be
      */

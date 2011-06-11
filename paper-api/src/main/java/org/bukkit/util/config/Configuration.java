@@ -96,37 +96,37 @@ public class Configuration extends ConfigurationNode {
     /**
      * Set the header for the file as a series of lines that are terminated
      * by a new line sequence.
-     * 
+     *
      * @param headerLines header lines to prepend
      */
-    public void setHeader(String ... headerLines)  {
+    public void setHeader(String... headerLines) {
         StringBuilder header = new StringBuilder();
-        
+
         for (String line : headerLines) {
             if (header.length() > 0) {
                 header.append("\r\n");
             }
             header.append(line);
         }
-        
+
         setHeader(header.toString());
     }
-    
+
     /**
      * Set the header for the file. A header can be provided to prepend the
-     * YAML data output on configuration save. The header is 
+     * YAML data output on configuration save. The header is
      * printed raw and so must be manually commented if used. A new line will
      * be appended after the header, however, if a header is provided.
-     * 
+     *
      * @param header header to prepend
      */
     public void setHeader(String header) {
         this.header = header;
     }
-    
+
     /**
      * Return the set header.
-     * 
+     *
      * @return
      */
     public String getHeader() {
@@ -134,8 +134,8 @@ public class Configuration extends ConfigurationNode {
     }
 
     /**
-     * Saves the configuration to disk. All errors are clobbered. 
-     * 
+     * Saves the configuration to disk. All errors are clobbered.
+     *
      * @param header header to prepend
      * @return true if it was successful
      */

@@ -137,7 +137,7 @@ public final class SimpleCommandMap implements CommandMap {
     }
 
     public synchronized void clearCommands() {
-        for (Map.Entry<String,Command> entry : knownCommands.entrySet()) {
+        for (Map.Entry<String, Command> entry : knownCommands.entrySet()) {
             entry.getValue().unregister(this);
         }
         knownCommands.clear();
