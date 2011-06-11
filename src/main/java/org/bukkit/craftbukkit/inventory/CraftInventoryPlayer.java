@@ -73,16 +73,17 @@ public class CraftInventoryPlayer extends CraftInventory implements PlayerInvent
     }
 
     public void setArmorContents(ItemStack[] items) {
-       int cnt = getSize();
-       if (items == null) {
-           items = new ItemStack[4];
-       }
-       for (ItemStack item : items) {
-           if (item == null || item.getTypeId() == 0) {
-               clear(cnt++);
-           } else {
-               setItem(cnt++, item);
-           }
-       }
+        int cnt = getSize();
+
+        if (items == null) {
+            items = new ItemStack[4];
+        }
+        for (ItemStack item : items) {
+            if (item == null || item.getTypeId() == 0) {
+                clear(cnt++);
+            } else {
+                setItem(cnt++, item);
+            }
+        }
     }
 }

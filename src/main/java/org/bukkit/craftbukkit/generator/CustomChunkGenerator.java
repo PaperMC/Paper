@@ -17,7 +17,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
     private final Random random;
 
     public CustomChunkGenerator(World world, long seed, ChunkGenerator generator) {
-        this.world = (WorldServer)world;
+        this.world = (WorldServer) world;
         this.seed = seed;
         this.generator = generator;
 
@@ -29,7 +29,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
     }
 
     public Chunk getOrCreateChunk(int x, int z) {
-        random.setSeed((long)x * 341873128712L + (long)z * 132897987541L);
+        random.setSeed((long) x * 341873128712L + (long) z * 132897987541L);
         byte[] types = generator.generate(world.getWorld(), random, x, z);
 
         Chunk chunk = new Chunk(world, types, x, z);

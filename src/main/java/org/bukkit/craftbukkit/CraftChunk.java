@@ -35,7 +35,7 @@ public class CraftChunk implements Chunk {
     public net.minecraft.server.Chunk getHandle() {
         net.minecraft.server.Chunk c = weakChunk.get();
         if (c == null) {
-            c = worldServer.getChunkAt(x,z);
+            c = worldServer.getChunkAt(x, z);
             weakChunk = new WeakReference<net.minecraft.server.Chunk>(c);
         }
         return c;
@@ -64,7 +64,7 @@ public class CraftChunk implements Chunk {
         if (block == null) {
             Block newBlock = new CraftBlock(this, (getX() << 4) | (x & 0xF), y & 0x7F, (getZ() << 4) | (z & 0xF));
             Block oldBlock = this.cache.put(pos, newBlock);
-            if(oldBlock == null) {
+            if (oldBlock == null) {
                 block = newBlock;
             } else {
                 block = oldBlock;

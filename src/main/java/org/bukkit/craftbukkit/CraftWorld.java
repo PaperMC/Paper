@@ -32,7 +32,7 @@ public class CraftWorld implements World {
     private Environment environment;
     private final CraftServer server;
     private final ChunkProviderServer provider;
-    private HashMap<Integer,CraftChunk> unloadedChunks = new HashMap<Integer, CraftChunk>();
+    private HashMap<Integer, CraftChunk> unloadedChunks = new HashMap<Integer, CraftChunk>();
     private final ChunkGenerator generator;
     private final List<BlockPopulator> populators = new ArrayList<BlockPopulator>();
 
@@ -91,7 +91,7 @@ public class CraftWorld implements World {
     }
 
     public Chunk getChunkAt(int x, int z) {
-        return this.provider.getChunkAt(x,z).bukkitChunk;
+        return this.provider.getChunkAt(x, z).bukkitChunk;
     }
 
     public Chunk getChunkAt(Block block) {
@@ -107,7 +107,7 @@ public class CraftWorld implements World {
         org.bukkit.Chunk[] craftChunks = new CraftChunk[chunks.length];
 
         for (int i = 0; i < chunks.length; i++) {
-            net.minecraft.server.Chunk chunk = (net.minecraft.server.Chunk)chunks[i];
+            net.minecraft.server.Chunk chunk = (net.minecraft.server.Chunk) chunks[i];
             craftChunks[i] = chunk.bukkitChunk;
         }
 
@@ -186,18 +186,18 @@ public class CraftWorld implements World {
             return false;
         }
 
-        int px = x<<4;
-        int pz = z<<4;
+        int px = x << 4;
+        int pz = z << 4;
 
         // If there are more than 10 updates to a chunk at once, it carries out the update as a cuboid
         // This flags 16 blocks in a line along the bottom for update and then flags a block at the opposite corner at the top
         // The cuboid that contains these 17 blocks covers the entire chunk
         // The server will compress the chunk and send it to all clients
 
-        for(int xx = px; xx < (px + 16); xx++) {
+        for (int xx = px; xx < (px + 16); xx++) {
             world.notify(xx, 0, pz);
         }
-        world.notify(px, 127, pz+15);
+        world.notify(px, 127, pz + 15);
 
         return true;
     }
@@ -526,7 +526,7 @@ public class CraftWorld implements World {
 
         for (Object o: world.entityList) {
             if (o instanceof net.minecraft.server.Entity) {
-                net.minecraft.server.Entity mcEnt = (net.minecraft.server.Entity)o;
+                net.minecraft.server.Entity mcEnt = (net.minecraft.server.Entity) o;
                 Entity bukkitEntity = mcEnt.getBukkitEntity();
 
                 // Assuming that bukkitEntity isn't null
@@ -544,12 +544,12 @@ public class CraftWorld implements World {
 
         for (Object o: world.entityList) {
             if (o instanceof net.minecraft.server.Entity) {
-                net.minecraft.server.Entity mcEnt = (net.minecraft.server.Entity)o;
+                net.minecraft.server.Entity mcEnt = (net.minecraft.server.Entity) o;
                 Entity bukkitEntity = mcEnt.getBukkitEntity();
 
                 // Assuming that bukkitEntity isn't null
                 if (bukkitEntity != null && bukkitEntity instanceof LivingEntity) {
-                    list.add((LivingEntity)bukkitEntity);
+                    list.add((LivingEntity) bukkitEntity);
                 }
             }
         }
@@ -562,11 +562,11 @@ public class CraftWorld implements World {
 
         for (Object o : world.entityList) {
             if (o instanceof net.minecraft.server.Entity) {
-                net.minecraft.server.Entity mcEnt = (net.minecraft.server.Entity)o;
+                net.minecraft.server.Entity mcEnt = (net.minecraft.server.Entity) o;
                 Entity bukkitEntity = mcEnt.getBukkitEntity();
 
                 if ((bukkitEntity != null) && (bukkitEntity instanceof Player)) {
-                    list.add((Player)bukkitEntity);
+                    list.add((Player) bukkitEntity);
                 }
             }
         }

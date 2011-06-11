@@ -27,9 +27,9 @@ import java.lang.ref.SoftReference;
  * @author raphfrk
  */
 
-public class ConcurrentSoftMap<K,V> {
+public class ConcurrentSoftMap<K, V> {
 
-    private final ConcurrentHashMap<K,SoftMapReference<K,V>> map = new ConcurrentHashMap<K,SoftMapReference<K,V>>();
+    private final ConcurrentHashMap<K, SoftMapReference<K, V>> map = new ConcurrentHashMap<K, SoftMapReference<K, V>>();
     private final ReferenceQueue<SoftMapReference> queue = new ReferenceQueue<SoftMapReference>();
     private final LinkedList<V> strongReferenceQueue = new LinkedList<V>();
     private final int strongReferenceSize;
@@ -51,17 +51,18 @@ public class ConcurrentSoftMap<K,V> {
 
     private void emptyQueue() {
         SoftMapReference ref;
-        while ((ref=(SoftMapReference) queue.poll()) != null) {
+
+        while ((ref = (SoftMapReference) queue.poll()) != null) {
             map.remove(ref.key);
         }
     }
 
     public void clear() {
-         synchronized(strongReferenceQueue) {
-             strongReferenceQueue.clear();
-         }
-         map.clear();
-         emptyQueue();
+        synchronized (strongReferenceQueue) {
+            strongReferenceQueue.clear();
+        }
+        map.clear();
+        emptyQueue();
     }
 
     // Shouldn't support this, since the garbage collection is async
@@ -88,8 +89,8 @@ public class ConcurrentSoftMap<K,V> {
     // Doesn't support these either
 
     public boolean equals(Object o) {
-         emptyQueue();
-         throw new UnsupportedOperationException("SoftMap doesn't support equals checks");
+        emptyQueue();
+        throw new UnsupportedOperationException("SoftMap doesn't support equals checks");
     }
 
     // This operation returns null if the entry is not in the map
@@ -100,13 +101,15 @@ public class ConcurrentSoftMap<K,V> {
     }
 
     private V fastGet(K key) {
-        SoftMapReference<K,V> ref = map.get(key);
-        if (ref==null) {
+        SoftMapReference<K, V> ref = map.get(key);
+
+        if (ref == null) {
             return null;
         }
         V value = ref.get();
-        if (value!=null) {
-            synchronized(strongReferenceQueue) {
+
+        if (value != null) {
+            synchronized (strongReferenceQueue) {
                 strongReferenceQueue.addFirst(value);
                 if (strongReferenceQueue.size() > strongReferenceSize) {
                     strongReferenceQueue.removeLast();
@@ -119,8 +122,8 @@ public class ConcurrentSoftMap<K,V> {
     // Doesn't support this either
 
     public int hashCode() {
-         emptyQueue();
-         throw new UnsupportedOperationException("SoftMap doesn't support hashCode");
+        emptyQueue();
+        throw new UnsupportedOperationException("SoftMap doesn't support hashCode");
     }
 
     // This is another risky method, since again, garbage collection is async
@@ -147,8 +150,8 @@ public class ConcurrentSoftMap<K,V> {
     }
 
     private void fastPut(K key, V value) {
-        map.put(key, new SoftMapReference<K,V>(key, value, queue));
-        synchronized(strongReferenceQueue) {
+        map.put(key, new SoftMapReference<K, V>(key, value, queue));
+        synchronized (strongReferenceQueue) {
             strongReferenceQueue.addFirst(value);
             if (strongReferenceQueue.size() > strongReferenceSize) {
                 strongReferenceQueue.removeLast();
@@ -161,21 +164,23 @@ public class ConcurrentSoftMap<K,V> {
         return fastPutIfAbsent(key, value);
     }
 
-     private V fastPutIfAbsent(K key, V value) {
+    private V fastPutIfAbsent(K key, V value) {
         V ret = null;
 
         if (map.containsKey(key)) {
-             SoftMapReference<K,V> current = map.get(key);
-             if (current != null) {
-                 ret = current.get();
-             }
+            SoftMapReference<K, V> current = map.get(key);
+
+            if (current != null) {
+                ret = current.get();
+            }
         }
 
         if (ret == null) {
-            SoftMapReference<K,V> newValue = new SoftMapReference<K,V>(key, value, queue);
+            SoftMapReference<K, V> newValue = new SoftMapReference<K, V>(key, value, queue);
             boolean success = false;
+
             while (!success) {
-                SoftMapReference<K,V> oldValue = map.putIfAbsent(key, newValue);
+                SoftMapReference<K, V> oldValue = map.putIfAbsent(key, newValue);
 
                 if (oldValue == null) { // put was successful (key didn't exist)
                     ret = null;
@@ -192,7 +197,7 @@ public class ConcurrentSoftMap<K,V> {
         }
 
         if (ret == null) {
-            synchronized(strongReferenceQueue) {
+            synchronized (strongReferenceQueue) {
                 strongReferenceQueue.addFirst(value);
                 if (strongReferenceQueue.size() > strongReferenceSize) {
                     strongReferenceQueue.removeLast();
@@ -218,7 +223,8 @@ public class ConcurrentSoftMap<K,V> {
 
     public V remove(K key) {
         emptyQueue();
-        SoftMapReference<K,V> ref = map.remove(key);
+        SoftMapReference<K, V> ref = map.remove(key);
+
         if (ref != null) {
             return ref.get();
         }
@@ -239,8 +245,7 @@ public class ConcurrentSoftMap<K,V> {
         throw new UnsupportedOperationException("SoftMap does not support this operation, since it creates potentially stong references");
     }
 
-
-    private static class SoftMapReference<K,V> extends SoftReference<V> {
+    private static class SoftMapReference<K, V> extends SoftReference<V> {
         K key;
 
         SoftMapReference(K key, V value, ReferenceQueue queue) {

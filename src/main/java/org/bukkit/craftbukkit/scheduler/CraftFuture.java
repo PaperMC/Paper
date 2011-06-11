@@ -24,7 +24,7 @@ public class CraftFuture<T> implements Runnable, Future<T> {
     }
 
     public void run() {
-        synchronized(this) {
+        synchronized (this) {
             if (cancelled) {
                 return;
             }
@@ -35,7 +35,7 @@ public class CraftFuture<T> implements Runnable, Future<T> {
         } catch (Exception e) {
             this.e = e;
         }
-        synchronized(this) {
+        synchronized (this) {
             running = false;
             done = true;
             this.notify();
@@ -50,7 +50,7 @@ public class CraftFuture<T> implements Runnable, Future<T> {
     }
 
     public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        synchronized(this) {
+        synchronized (this) {
             if (isDone()) {
                 return getResult();
             }
@@ -63,31 +63,31 @@ public class CraftFuture<T> implements Runnable, Future<T> {
         if (cancelled) {
             throw new CancellationException();
         }
-        if (e!=null) {
+        if (e != null) {
             throw new ExecutionException(e);
         }
         return returnStore.getObject();
     }
 
     public boolean isDone() {
-        synchronized(this) {
+        synchronized (this) {
             return done;
         }
     }
 
     public boolean isCancelled() {
-        synchronized(this) {
+        synchronized (this) {
             return cancelled;
         }
     }
 
     public boolean cancel(boolean mayInterruptIfRunning) {
-        synchronized(this) {
+        synchronized (this) {
             if (cancelled) {
                 return false;
             }
             cancelled = true;
-            if (taskId!=-1) {
+            if (taskId != -1) {
                 craftScheduler.cancelTask(taskId);
             }
             if (!running && !done) {
@@ -99,7 +99,7 @@ public class CraftFuture<T> implements Runnable, Future<T> {
     }
 
     public void setTaskId(int taskId) {
-        synchronized(this) {
+        synchronized (this) {
             this.taskId = taskId;
         }
     }

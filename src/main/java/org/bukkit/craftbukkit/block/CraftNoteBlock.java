@@ -18,8 +18,8 @@ public class CraftNoteBlock extends CraftBlockState implements NoteBlock {
     public CraftNoteBlock(final Block block) {
         super(block);
 
-        world = (CraftWorld)block.getWorld();
-        note = (TileEntityNote)world.getTileEntityAt(getX(), getY(), getZ());
+        world = (CraftWorld) block.getWorld();
+        note = (TileEntityNote) world.getTileEntityAt(getX(), getY(), getZ());
     }
 
     public byte getNote() {

@@ -79,9 +79,9 @@ public class CraftTask implements Comparable<Object>, BukkitTask {
         } else {
             CraftTask o = (CraftTask) other;
             long timeDiff = executionTick - o.getExecutionTick();
-            if (timeDiff>0) {
+            if (timeDiff > 0) {
                 return 1;
-            } else if (timeDiff<0) {
+            } else if (timeDiff < 0) {
                 return -1;
             } else {
                 CraftTask otherCraftTask = (CraftTask) other;

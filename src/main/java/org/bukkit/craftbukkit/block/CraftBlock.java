@@ -39,7 +39,7 @@ public class CraftBlock implements Block {
      * @return Location of the block
      */
     public Location getLocation() {
-      return new Location(getWorld(), x, y, z);
+        return new Location(getWorld(), x, y, z);
     }
 
     public BlockVector getVector() {

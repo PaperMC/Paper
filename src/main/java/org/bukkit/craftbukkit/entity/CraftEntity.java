@@ -118,11 +118,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public World getWorld() {
-        return ((WorldServer)entity.world).getWorld();
+        return ((WorldServer) entity.world).getWorld();
     }
 
     public boolean teleport(Location location) {
-        entity.world = ((CraftWorld)location.getWorld()).getHandle();
+        entity.world = ((CraftWorld) location.getWorld()).getHandle();
         entity.setLocation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         // entity.setLocation() throws no event, and so cannot be cancelled
         return true;
@@ -140,10 +140,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         teleport(destination);
     }
 
-    public List<org.bukkit.entity.Entity> getNearbyEntities(double x, double y, double z){
-        List<Entity> notchEntityList = entity.world.b(entity, entity.boundingBox.b(x,y,z));
+    public List<org.bukkit.entity.Entity> getNearbyEntities(double x, double y, double z) {
+        List<Entity> notchEntityList = entity.world.b(entity, entity.boundingBox.b(x, y, z));
         List<org.bukkit.entity.Entity> bukkitEntityList = new java.util.ArrayList<org.bukkit.entity.Entity>(notchEntityList.size());
-        for (Entity e: notchEntityList){
+
+        for (Entity e: notchEntityList) {
             bukkitEntityList.add(e.getBukkitEntity());
         }
         return bukkitEntityList;
@@ -229,7 +230,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public boolean setPassenger(org.bukkit.entity.Entity passenger) {
-        if (passenger instanceof CraftEntity){
+        if (passenger instanceof CraftEntity) {
             ((CraftEntity) passenger).getHandle().setPassengerOf(getHandle());
             return true;
         } else {

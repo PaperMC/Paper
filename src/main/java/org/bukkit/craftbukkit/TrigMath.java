@@ -22,8 +22,9 @@ public class TrigMath {
 
     private static double mxatan(double arg) {
         double argsq = arg * arg, value;
+
         value = ((((p4 * argsq + p3) * argsq + p2) * argsq + p1) * argsq + p0);
-        value = value / (((((argsq+q4)*argsq+q3)*argsq+q2)*argsq+q1)*argsq+q0);
+        value = value / (((((argsq + q4) * argsq + q3) * argsq + q2) * argsq + q1) * argsq + q0);
         return value * arg;
     }
 

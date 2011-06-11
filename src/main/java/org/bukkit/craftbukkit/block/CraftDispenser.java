@@ -22,8 +22,8 @@ public class CraftDispenser extends CraftBlockState implements Dispenser {
     public CraftDispenser(final Block block) {
         super(block);
 
-        world = (CraftWorld)block.getWorld();
-        dispenser = (TileEntityDispenser)world.getTileEntityAt(getX(), getY(), getZ());
+        world = (CraftWorld) block.getWorld();
+        dispenser = (TileEntityDispenser) world.getTileEntityAt(getX(), getY(), getZ());
     }
 
     public Inventory getInventory() {
@@ -35,7 +35,8 @@ public class CraftDispenser extends CraftBlockState implements Dispenser {
 
         synchronized (block) {
             if (block.getType() == Material.DISPENSER) {
-                BlockDispenser dispense = (BlockDispenser)net.minecraft.server.Block.DISPENSER;
+                BlockDispenser dispense = (BlockDispenser) net.minecraft.server.Block.DISPENSER;
+
                 dispense.dispense(world.getHandle(), getX(), getY(), getZ(), new Random());
                 return true;
             } else {
