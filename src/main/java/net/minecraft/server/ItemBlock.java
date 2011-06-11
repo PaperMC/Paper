@@ -57,11 +57,17 @@ public class ItemBlock extends Item {
 
             // CraftBukkit start - This executes the placement of the block
             BlockState replacedBlockState = CraftBlockState.getBlockState(world, i, j, k);
-
-            // Special case the silly stepstone :'(
-            if (l == 1 && world.getTypeId(i, j - 1, k) == Block.STEP.id && itemstack.id == Block.STEP.id) {
-                replacedBlockState = CraftBlockState.getBlockState(world, i, j - 1, k);
+            
+            // There are like 30 combinations you can mix and match steps and double steps
+            // of different materials, so there are a lot of different cases of what
+            // would happen if you place x step onto another y step, so let's just keep
+            // track of the entire state
+            BlockState blockStateBelow = null;
+            if ((world.getTypeId(i, j - 1, k) == Block.STEP.id || world.getTypeId(i, j - 1, k) == Block.DOUBLE_STEP.id)
+                    && (itemstack.id == Block.DOUBLE_STEP.id || itemstack.id == Block.STEP.id)) {
+                blockStateBelow = CraftBlockState.getBlockState(world, i, j - 1, k);
             }
+            
             /**
             * @see net.minecraft.server.World#setTypeIdAndData(int i, int j, int k, int l, int i1)
             *
@@ -76,9 +82,9 @@ public class ItemBlock extends Item {
                 BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, replacedBlockState, clickedX, clickedY, clickedZ, block);
 
                 if (event.isCancelled() || !event.canBuild()) {
-                    if ((this.id == Block.STEP.id) && (world.getTypeId(i, j - 1, k) == Block.DOUBLE_STEP.id) && (world.getTypeId(i, j, k) == 0)) {
-                        // Half steps automatically set the block below to a double
-                        world.setTypeId(i, j - 1, k, 44);
+                    if (blockStateBelow != null) { // Used for steps
+                        world.setTypeIdAndData(i, j, k, replacedBlockState.getTypeId(), replacedBlockState.getRawData());
+                        world.setTypeIdAndData(i, j - 1, k, blockStateBelow.getTypeId(), blockStateBelow.getRawData());
 
                     } else {
 
