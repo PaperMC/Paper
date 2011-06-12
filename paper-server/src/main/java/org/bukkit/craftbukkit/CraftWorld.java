@@ -41,7 +41,7 @@ public class CraftWorld implements World {
     public CraftWorld(WorldServer world, ChunkGenerator gen, Environment env) {
         this.world = world;
         this.generator = gen;
-        
+
         environment = env;
     }
 
@@ -439,17 +439,25 @@ public class CraftWorld implements World {
     }
 
     public boolean createExplosion(double x, double y, double z, float power) {
-        return world.a(null, x, y, z, power).wasCanceled ? false : true;
+        return createExplosion(x, y, z, power, false);
+    }
+
+    public boolean createExplosion(double x, double y, double z, float power, boolean setFire) {
+        return world.createExplosion(null, x, y, z, power, setFire).wasCanceled ? false : true;
     }
 
     public boolean createExplosion(Location loc, float power) {
-        return world.a(null, loc.getX(), loc.getY(), loc.getZ(), power).wasCanceled ? false : true;
+        return createExplosion(loc, power, false);
+    }
+
+    public boolean createExplosion(Location loc, float power, boolean setFire) {
+        return createExplosion(loc.getX(), loc.getY(), loc.getZ(), power, setFire);
     }
 
     public Environment getEnvironment() {
         return environment;
     }
-    
+
     public void setEnvironment(Environment env) {
         if (environment != env) {
             environment = env;
@@ -646,8 +654,8 @@ public class CraftWorld implements World {
 
     public void setPVP(boolean pvp) {
         world.pvpMode = pvp;
-    }   
-    
+    }
+
     public void playEffect(Player player, Effect effect, int data) {
         playEffect(player.getLocation(), effect, data, 0);
     }
@@ -666,5 +674,5 @@ public class CraftWorld implements World {
                 ((CraftPlayer) player).getHandle().netServerHandler.sendPacket(packet);
             }
         }
-    }    
+    }
 }
