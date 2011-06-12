@@ -87,11 +87,12 @@ public final class SimpleCommandMap implements CommandMap {
             return false;
         }
 
+        String lowerPrefix = fallbackPrefix.trim().toLowerCase();
         boolean registerdPassedLabel = true;
 
         // If the command exists but is an alias we overwrite it, otherwise we rename it based on the fallbackPrefix
         while (knownCommands.containsKey(lowerLabel) && !aliases.contains(lowerLabel)) {
-            lowerLabel = fallbackPrefix + ":" + lowerLabel;
+            lowerLabel = lowerPrefix + ":" + lowerLabel;
             registerdPassedLabel = false;
         }
 
