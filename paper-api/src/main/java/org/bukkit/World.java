@@ -494,6 +494,19 @@ public interface World {
     public boolean createExplosion(double x, double y, double z, float power);
 
     /**
+     * Creates explosion at given coordinates with given power and optionally setting
+     * blocks on fire.
+     *
+     * @param x
+     * @param y
+     * @param z
+     * @param power The power of explosion, where 4F is TNT
+     * @param setFire Whether or not to set blocks on fire
+     * @return false if explosion was canceled, otherwise true
+     */
+    public boolean createExplosion(double x, double y, double z, float power, boolean setFire);
+
+    /**
      * Creates explosion at given coordinates with given power
      *
      * @param loc
@@ -501,6 +514,17 @@ public interface World {
      * @return false if explosion was canceled, otherwise true
      */
     public boolean createExplosion(Location loc, float power);
+
+    /**
+     * Creates explosion at given coordinates with given power and optionally setting
+     * blocks on fire.
+     *
+     * @param loc
+     * @param power The power of explosion, where 4F is TNT
+     * @param setFire Whether or not to set blocks on fire
+     * @return false if explosion was canceled, otherwise true
+     */
+    public boolean createExplosion(Location loc, float power, boolean setFire);
 
     /**
      * Gets the {@link Environment} type of this world
