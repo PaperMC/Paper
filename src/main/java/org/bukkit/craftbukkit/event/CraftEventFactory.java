@@ -238,7 +238,7 @@ public class CraftEventFactory {
      */
     public static EntityTameEvent callEntityTameEvent(EntityLiving entity, EntityHuman tamer) {
         org.bukkit.entity.Entity bukkitEntity = entity.getBukkitEntity();
-        org.bukkit.entity.AnimalTamer bukkitTamer = (AnimalTamer) tamer.getBukkitEntity();
+        org.bukkit.entity.AnimalTamer bukkitTamer = (tamer != null ? (AnimalTamer) tamer.getBukkitEntity() : null);
         CraftServer craftServer = (CraftServer) bukkitEntity.getServer();
 
         EntityTameEvent event = new EntityTameEvent(bukkitEntity, bukkitTamer);

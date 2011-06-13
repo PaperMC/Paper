@@ -307,25 +307,23 @@ public class EntityWolf extends EntityAnimal {
                 }
 
                 if (!this.world.isStatic) {
+                    // CraftBukkit start
                     if (this.random.nextInt(3) == 0) {
-                        // CraftBukkit start
                         EntityTameEvent event = CraftEventFactory.callEntityTameEvent(this, entityhuman);
 
-                        if (event.isCancelled()) {
-                            return false;
-                        }
+                        if (!event.isCancelled()) {
                         // CraftBukkit end
-
-                        this.d(true);
-                        this.a((PathEntity) null);
-                        this.setSitting(true);
-                        this.health = 20;
-                        this.a(entityhuman.name);
-                        this.a(true);
-                        this.world.a(this, (byte) 7);
-                    } else {
-                        this.a(false);
-                        this.world.a(this, (byte) 6);
+                            this.d(true);
+                            this.a((PathEntity) null);
+                            this.setSitting(true);
+                            this.health = 20;
+                            this.a(entityhuman.name);
+                            this.a(true);
+                            this.world.a(this, (byte) 7);
+                        } else {
+                            this.a(false);
+                            this.world.a(this, (byte) 6);
+                        }
                     }
                 }
 
@@ -421,12 +419,18 @@ public class EntityWolf extends EntityAnimal {
     }
 
     public void d(boolean flag) {
-        byte b0 = this.datawatcher.a(16);
+        // CraftBukkit start
+       EntityTameEvent event = CraftEventFactory.callEntityTameEvent(this, null);
 
-        if (flag) {
-            this.datawatcher.b(16, Byte.valueOf((byte) (b0 | 4)));
-        } else {
-            this.datawatcher.b(16, Byte.valueOf((byte) (b0 & -5)));
+        if (!event.isCancelled()) {
+        // CraftBukkit end
+            byte b0 = this.datawatcher.a(16);
+
+            if (flag) {
+                this.datawatcher.b(16, Byte.valueOf((byte) (b0 | 4)));
+            } else {
+                this.datawatcher.b(16, Byte.valueOf((byte) (b0 & -5)));
+            }
         }
     }
 }
