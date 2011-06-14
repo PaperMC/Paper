@@ -5,6 +5,7 @@ import java.util.List;
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.entity.Explosive;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
@@ -25,6 +26,9 @@ public class EntityFireball extends Entity {
     public double c;
     public double d;
     public double e;
+
+    public float yield = 1; // CraftBukkit
+    public boolean isIncendiary = true; // CraftBukkit
 
     public EntityFireball(World world) {
         super(world);
@@ -151,7 +155,7 @@ public class EntityFireball extends Entity {
 
                 CraftServer server = ((WorldServer) this.world).getServer();
 
-                ExplosionPrimeEvent event = new ExplosionPrimeEvent(CraftEntity.getEntity(server, this), 1.0F, true);
+                ExplosionPrimeEvent event = new ExplosionPrimeEvent((Explosive) CraftEntity.getEntity(server, this));
 
                 server.getPluginManager().callEvent(event);
                 if (!event.isCancelled()) {
