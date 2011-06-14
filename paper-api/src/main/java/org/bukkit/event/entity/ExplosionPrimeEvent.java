@@ -1,6 +1,7 @@
 package org.bukkit.event.entity;
 
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Explosive;
 import org.bukkit.event.Cancellable;
 
 public class ExplosionPrimeEvent extends EntityEvent implements Cancellable {
@@ -13,6 +14,10 @@ public class ExplosionPrimeEvent extends EntityEvent implements Cancellable {
         this.cancel = false;
         this.radius = radius;
         this.fire = fire;
+    }
+
+    public ExplosionPrimeEvent(Explosive explosive) {
+        this(explosive, explosive.getYield(), explosive.isIncendiary());
     }
 
     public boolean isCancelled() {
