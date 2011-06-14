@@ -7,8 +7,6 @@ import org.bukkit.entity.Fireball;
 
 /**
  * A Fireball.
- *
- * @author Cogito
  */
 public class CraftFireball extends CraftEntity implements Fireball {
     public CraftFireball(CraftServer server, EntityFireball entity) {
@@ -18,5 +16,21 @@ public class CraftFireball extends CraftEntity implements Fireball {
     @Override
     public String toString() {
         return "CraftFireball";
+    }
+
+    public float getYield() {
+        return ((EntityFireball) getHandle()).yield;
+    }
+
+    public boolean isIncendiary() {
+        return ((EntityFireball) getHandle()).isIncendiary;
+    }
+
+    public void setIsIncendiary(boolean isIncendiary) {
+        ((EntityFireball) getHandle()).isIncendiary = isIncendiary;
+    }
+
+    public void setYield(float yield) {
+        ((EntityFireball) getHandle()).yield = yield;
     }
 }
