@@ -49,6 +49,8 @@ public class ItemRedstone extends Item {
         if (Block.REDSTONE_WIRE.canPlace(world, i, j, k)) {
             BlockState blockState = CraftBlockState.getBlockState(world, i, j, k); // CraftBukkit
 
+            world.setRawTypeId(i, j, k, Block.REDSTONE_WIRE.id); // CraftBukkit - We update after the event
+
             // CraftBukkit start - redstone
             BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ, Block.REDSTONE_WIRE);
 
@@ -57,7 +59,7 @@ public class ItemRedstone extends Item {
                 return false;
             }
 
-            world.setTypeId(i, j, k, Block.REDSTONE_WIRE.id); // CraftBukkit - Must take place after BlockPlaceEvent
+            world.update( i, j, k, Block.REDSTONE_WIRE.id); // Must take place after BlockPlaceEvent, we need to update all other blocks.
             // CraftBukkit end
 
             --itemstack.count; // CraftBukkit - ORDER MATTERS
