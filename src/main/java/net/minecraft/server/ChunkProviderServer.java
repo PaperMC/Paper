@@ -10,6 +10,7 @@ import java.util.Set;
 
 // CraftBukkit start
 import java.util.Random;
+import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.craftbukkit.CraftChunk;
 import org.bukkit.craftbukkit.CraftServer;
@@ -17,6 +18,7 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.util.LongHashset;
 import org.bukkit.craftbukkit.util.LongHashtable;
 import org.bukkit.event.world.ChunkLoadEvent;
+import org.bukkit.event.world.ChunkPopulateEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.generator.BlockPopulator;
 // CraftBukkit end
@@ -60,6 +62,7 @@ public class ChunkProviderServer implements IChunkProvider {
         // CraftBukkit start
         this.unloadQueue.remove(i, j);
         Chunk chunk = (Chunk) this.chunks.get(i, j);
+        boolean newChunk = false;
         // CraftBukkit end
 
         if (chunk == null) {
@@ -70,6 +73,7 @@ public class ChunkProviderServer implements IChunkProvider {
                 } else {
                     chunk = this.chunkProvider.getOrCreateChunk(i, j);
                 }
+                newChunk = true; // Craftbukkit
             }
 
             this.chunks.put(i, j, chunk); // CraftBukkit
@@ -87,7 +91,7 @@ public class ChunkProviderServer implements IChunkProvider {
                  * the World constructor. We can't reliably alter that, so we have
                  * no way of creating a CraftWorld/CraftServer at that point.
                  */
-                server.getPluginManager().callEvent(new ChunkLoadEvent(chunk.bukkitChunk));
+                server.getPluginManager().callEvent(new ChunkLoadEvent(chunk.bukkitChunk, newChunk));
             }
             // CraftBukkit end
 
@@ -190,6 +194,7 @@ public class ChunkProviderServer implements IChunkProvider {
                     }
                 }
                 BlockSand.a = false;
+                Bukkit.getServer().getPluginManager().callEvent(new ChunkPopulateEvent(chunk.bukkitChunk));
                 // CraftBukkit end
 
                 chunk.f();
