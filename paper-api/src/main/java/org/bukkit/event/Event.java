@@ -455,11 +455,13 @@ public abstract class Event implements Serializable {
          */
         CHUNK_UNLOAD (Category.WORLD),
         /**
-         * Called when a chunk needs to be generated
+         * Called when a newly created chunk has been populated.
          *
-         * @todo: add javadoc see comment
+         * If your intent is to populate the chunk using this event, please see {@link BlockPopulator}
+         *
+         * @see org.bukkit.event.world.ChunkPopulateEvent
          */
-        CHUNK_GENERATION (Category.WORLD),
+        CHUNK_POPULATED (Category.WORLD),
         /**
          * Called when an ItemEntity spawns in the world
          *

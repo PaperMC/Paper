@@ -16,6 +16,15 @@ public class WorldListener implements Listener {
     public void onChunkLoad(ChunkLoadEvent event) {}
 
     /**
+     * Called when a newly created chunk has been populated.
+     *
+     * If your intent is to populate the chunk using this event, please see {@link BlockPopulator}
+     *
+     * @param event Relevant event details
+     */
+    public void onChunkPopulate(ChunkPopulateEvent event) {}
+
+    /**
      * Called when a chunk is unloaded
      *
      * @param event Relevant event details
