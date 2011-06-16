@@ -341,7 +341,13 @@ public abstract class EntityHuman extends EntityLiving {
             this.a(true, true, false);
         }
 
-        this.spawnWorld = nbttagcompound.getString("SpawnWorld"); // CraftBukkit
+        // CraftBukkit - Start
+        this.spawnWorld = nbttagcompound.getString("SpawnWorld");
+        if (this.spawnWorld == "") {
+            CraftServer server = ((WorldServer) world).getServer();
+            this.spawnWorld = server.getWorlds().get(0).getName();
+        }
+        // CraftBukkit - End
 
         if (nbttagcompound.hasKey("SpawnX") && nbttagcompound.hasKey("SpawnY") && nbttagcompound.hasKey("SpawnZ")) {
             this.b = new ChunkCoordinates(nbttagcompound.e("SpawnX"), nbttagcompound.e("SpawnY"), nbttagcompound.e("SpawnZ"));
