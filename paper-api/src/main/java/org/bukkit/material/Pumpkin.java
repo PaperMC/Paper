@@ -5,8 +5,6 @@ import org.bukkit.block.BlockFace;
 
 /**
  * Represents a pumpkin.
- *
- * @author sunkid
  */
 public class Pumpkin extends MaterialData implements Directional {
 

@@ -38,6 +38,14 @@ public class Lever extends SimpleAttachableMaterialData implements Redstone {
     }
 
     /**
+     * Set this lever to be powered or not.
+     * @param isPowered whether the lever should be powered or not
+     */
+    public void setPowered(boolean isPowered) {
+        setData((byte) (isPowered ? (getData() | 0x8) : (getData() & ~0x8)));
+    }
+
+    /**
      * Gets the face that this block is attached on
      *
      * @return BlockFace attached to

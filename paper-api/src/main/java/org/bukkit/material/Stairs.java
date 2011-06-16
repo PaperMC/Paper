@@ -5,8 +5,6 @@ import org.bukkit.block.BlockFace;
 
 /**
  * Represents stairs.
- *
- * @author sunkid
  */
 public class Stairs extends MaterialData implements Directional {
 

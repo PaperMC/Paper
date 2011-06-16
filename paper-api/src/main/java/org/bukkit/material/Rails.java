@@ -102,4 +102,49 @@ public class Rails extends MaterialData {
     protected byte getConvertedData() {
         return getData();
     }
+
+    /**
+     * Set the direction of these tracks<br>
+     *         Note that tracks are bidirectional and that the direction
+     *         returned is the ascending direction if the track is set on a
+     *         slope. If it is set as a curve, the corner of the track should
+     *         be supplied.
+     * @param face the direction the track should be facing
+     * @param isOnSlope whether or not the track should be on a slope
+     */
+    public void setDirection(BlockFace face, boolean isOnSlope) {
+        switch (face) {
+        case SOUTH:
+            setData((byte) (isOnSlope ? 0x2 : 0x1));
+            break;
+
+        case NORTH:
+            setData((byte) (isOnSlope ? 0x3 : 0x1));
+            break;
+
+        case EAST:
+            setData((byte) (isOnSlope ? 0x4 : 0x0));
+            break;
+
+        case WEST:
+            setData((byte) (isOnSlope ? 0x5 : 0x0));
+            break;
+
+        case NORTH_EAST:
+            setData((byte) 0x6);
+            break;
+
+        case SOUTH_EAST:
+            setData((byte) 0x7);
+            break;
+
+        case SOUTH_WEST:
+            setData((byte) 0x8);
+            break;
+
+        case NORTH_WEST:
+            setData((byte) 0x9);
+            break;
+        }
+    }
 }

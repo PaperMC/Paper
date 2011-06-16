@@ -5,8 +5,6 @@ import org.bukkit.block.BlockFace;
 
 /**
  * Represents a bed.
- *
- * @author sunkid
  */
 public class Bed extends MaterialData implements Directional {
 
@@ -49,6 +47,14 @@ public class Bed extends MaterialData implements Directional {
      */
     public boolean isHeadOfBed() {
         return (getData() & 0x8) == 0x8;
+    }
+
+    /**
+     * Configure this to be either the head or the foot of the bed
+     * @param isHeadOfBed
+     */
+    public void setHeadOfBed(boolean isHeadOfBed) {
+        setData((byte) (isHeadOfBed ? (getData() | 0x8) : (getData() & ~0x8)));
     }
 
     /**

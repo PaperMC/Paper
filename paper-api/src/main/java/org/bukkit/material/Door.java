@@ -5,9 +5,8 @@ import org.bukkit.block.BlockFace;
 
 /**
  * Represents a door.
- * @author sunkid
  */
-public class Door extends MaterialData {
+public class Door extends MaterialData implements Directional {
     public Door() {
         super(Material.WOODEN_DOOR);
     }
@@ -37,10 +36,26 @@ public class Door extends MaterialData {
     }
 
     /**
+     * Configure this door to be either open or closed;
+     * @param isOpen
+     */
+    public void setOpen(boolean isOpen) {
+        setData((byte) (isOpen ? (getData() | 0x4) : (getData() & ~0x4)));
+    }
+
+    /**
      * @return whether this is the top half of the door
      */
     public boolean isTopHalf() {
         return ((getData() & 0x8) == 0x8);
+    }
+
+    /**
+     * Configure this part of the door to be either the top or the bottom half;
+     * @param isTopHalf
+     */
+    public void setTopHalf(boolean isTopHalf) {
+        setData((byte) (isTopHalf ? (getData() | 0x8) : (getData() & ~0x8)));
     }
 
     /**
@@ -63,5 +78,49 @@ public class Door extends MaterialData {
     @Override
     public String toString() {
         return (isTopHalf() ? "TOP" : "BOTTOM") + " half of " + (isOpen() ? "an OPEN " : "a CLOSED ") + super.toString() + " with hinges " + getHingeCorner();
+    }
+
+    /**
+     * Set the direction that this door should is facing.
+     * @param face the direction
+     */
+    public void setFacingDirection(BlockFace face) {
+        byte data = (byte) (getData() & 0x12);
+        switch (face) {
+        case EAST:
+            data |= 0x1;
+            break;
+
+        case SOUTH:
+            data |= 0x2;
+            break;
+
+        case WEST:
+            data |= 0x3;
+            break;
+        }
+        setData(data);
+    }
+
+    /**
+     * Get the direction that this door is facing.
+     * @return the direction
+     */
+    public BlockFace getFacing() {
+        byte data = (byte) (getData() & 0x3);
+        switch (data) {
+        case 0:
+            return BlockFace.NORTH;
+
+        case 1:
+            return BlockFace.EAST;
+
+        case 2:
+            return BlockFace.SOUTH;
+
+        case 3:
+            return BlockFace.WEST;
+        }
+        return null; // shouldn't happen
     }
 }

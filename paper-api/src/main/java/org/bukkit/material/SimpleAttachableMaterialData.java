@@ -5,8 +5,6 @@ import org.bukkit.block.BlockFace;
 
 /**
  * Simple utility class for attachable MaterialData subclasses
- * @author sunkid
- *
  */
 public abstract class SimpleAttachableMaterialData extends MaterialData implements Attachable {
 

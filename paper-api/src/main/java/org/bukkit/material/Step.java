@@ -6,7 +6,6 @@ import org.bukkit.Material;
 
 /**
  * Represents the different types of steps.
- * @author sunkid
  */
 public class Step extends MaterialData {
     private static HashSet<Material> stepTypes = new HashSet<Material>();

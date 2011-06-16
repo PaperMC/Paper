@@ -5,7 +5,6 @@ import org.bukkit.Material;
 
 /**
  * Represents the different types of crops.
- * @author sunkid
  */
 public class Crops extends MaterialData {
     public Crops() {

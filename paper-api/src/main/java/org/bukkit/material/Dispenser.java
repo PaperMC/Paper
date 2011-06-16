@@ -5,8 +5,6 @@ import org.bukkit.block.BlockFace;
 
 /**
  * Represents a dispenser.
- *
- * @author sunkid
  */
 public class Dispenser extends FurnaceAndDispenser {
 

@@ -5,7 +5,6 @@ import org.bukkit.block.BlockFace;
 
 /**
  * Represents a furnace or a dispenser.
- * @author sunkid
  */
 public class FurnaceAndDispenser extends MaterialData implements Directional {
     public FurnaceAndDispenser(final int type) {

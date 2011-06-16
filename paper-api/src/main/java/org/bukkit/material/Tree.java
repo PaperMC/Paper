@@ -5,7 +5,6 @@ import org.bukkit.TreeSpecies;
 
 /**
  * Represents the different types of Trees.
- * @author sunkid
  */
 public class Tree extends MaterialData {
     public Tree() {

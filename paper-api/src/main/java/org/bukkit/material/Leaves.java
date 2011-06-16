@@ -5,7 +5,6 @@ import org.bukkit.TreeSpecies;
 
 /**
  * Represents the different types of leaves.
- * @author sunkid
  */
 public class Leaves extends MaterialData {
     public Leaves() {
