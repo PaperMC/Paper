@@ -168,7 +168,36 @@ public class MinecraftServer implements Runnable, ICommandListener {
             if (j == 0) {
                 world = new WorldServer(this, new ServerNBTManager(new File("."), s, true), s, dimension, i, org.bukkit.World.Environment.getEnvironment(dimension), null); // CraftBukkit
             } else {
-                String name = s + "_" + Environment.getEnvironment(dimension).toString().toLowerCase();
+                String worldType = Environment.getEnvironment(dimension).toString().toLowerCase();
+                String name = s + "_" + worldType;
+                String dim = "DIM-1";
+
+                File newWorld = new File(new File(name), dim);
+                File oldWorld = new File(new File(s), dim);
+                
+                if ((!newWorld.isDirectory()) && (oldWorld.isDirectory())) {
+                    log.info("---- Migration of old " + worldType + " folder required ----");
+                    log.info("Unfortunately due to the way that Minecraft implemented multiworld support in 1.6, Bukkit requires that you move your " + worldType + " folder to a new location in order to operate correctly.");
+                    log.info("We will move this folder for you, but it will mean that you need to move it back should you wish to stop using Bukkit in the future.");
+                    log.info("Attempting to move " + oldWorld + " to " + newWorld + "...");
+
+                    if (newWorld.exists()) {
+                        log.severe("A file or folder already exists at " + newWorld + "!");
+                        log.info("---- Migration of old " + worldType + " folder failed ----");
+                    } else if (newWorld.getParentFile().mkdirs()) {
+                        if (oldWorld.renameTo(newWorld)) {
+                            log.info("Success! To restore the nether in the future, simply move " + newWorld + " to " + oldWorld);
+                            log.info("---- Migration of old " + worldType + " folder complete ----");
+                        } else {
+                            log.severe("Could not move folder " + oldWorld + " to " + newWorld + "!");
+                            log.info("---- Migration of old " + worldType + " folder failed ----");
+                        }
+                    } else {
+                        log.severe("Could not create path for " + newWorld + "!");
+                        log.info("---- Migration of old " + worldType + " folder failed ----");
+                    }
+                }
+
                 world = new SecondaryWorldServer(this, new ServerNBTManager(new File("."), name, true), name, dimension, i, worlds.get(0), org.bukkit.World.Environment.getEnvironment(dimension), null); // CraftBukkit
             }
 
