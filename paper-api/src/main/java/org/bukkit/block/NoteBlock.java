@@ -1,11 +1,10 @@
 package org.bukkit.block;
 
-import org.bukkit.entity.Player;
+import org.bukkit.Instrument;
+import org.bukkit.Note;
 
 /**
  * Represents a note.
- *
- * @author sk89q
  */
 public interface NoteBlock extends BlockState {
 
@@ -13,15 +12,40 @@ public interface NoteBlock extends BlockState {
      * Gets the note.
      *
      * @return
+     * @deprecated use {@link #getRawNote()} instead
      */
+    @Deprecated
     public byte getNote();
+
+    /**
+     * Gets the note.
+     *
+     * @return
+     */
+    public byte getRawNote();
+
+    /**
+     * Set the note.
+     *
+     * @param note
+     * @deprecated use {@link #setRawNote(byte)} instead
+     */
+    @Deprecated
+    public void setNote(byte note);
 
     /**
      * Set the note.
      *
      * @param note
      */
-    public void setNote(byte note);
+    public void setNote(Note note);
+
+    /**
+     * Set the note.
+     *
+     * @param note
+     */
+    public void setRawNote(byte note);
 
     /**
      * Attempts to play the note at block<br />
@@ -38,4 +62,11 @@ public interface NoteBlock extends BlockState {
      * @return true if successful, otherwise false
      */
     public boolean play(byte instrument, byte note);
+
+    /**
+     * Plays an arbitrary note with an arbitrary instrument
+     *
+     * @return true if successful, otherwise false
+     */
+    public boolean play(Instrument instrument, Note note);
 }
