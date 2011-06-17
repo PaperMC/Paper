@@ -177,7 +177,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
 
                 File newWorld = new File(new File(name), dim);
                 File oldWorld = new File(new File(s), dim);
-                
+
                 if ((!newWorld.isDirectory()) && (oldWorld.isDirectory())) {
                     log.info("---- Migration of old " + worldType + " folder required ----");
                     log.info("Unfortunately due to the way that Minecraft implemented multiworld support in 1.6, Bukkit requires that you move your " + worldType + " folder to a new location in order to operate correctly.");
@@ -411,7 +411,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
                     // CraftBukkit start - only send timeupdates to the people in that world
                     for (int i = 0; i < this.serverConfigurationManager.players.size(); ++i) {
                         EntityPlayer entityplayer = (EntityPlayer) this.serverConfigurationManager.players.get(i);
-                        entityplayer.netServerHandler.sendPacket(new Packet4UpdateTime(entityplayer.world.getTime()));
+                        entityplayer.netServerHandler.sendPacket(new Packet4UpdateTime(entityplayer.getPlayerTime())); // Add support for per player time
                     }
                 }
 

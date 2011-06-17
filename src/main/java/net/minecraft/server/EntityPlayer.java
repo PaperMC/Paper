@@ -483,6 +483,19 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     }
 
     // CraftBukkit start
+    public long timeOffset = 0;
+    public boolean relativeTime = true;
+
+    public long getPlayerTime() {
+        if (relativeTime) {
+            // Adds timeOffset to the current server time.
+            return world.getTime() + timeOffset;
+        } else {
+            // Adds timeOffset to the beginning of this day.
+            return world.getTime() - (world.getTime() % 24000) + timeOffset;
+        }
+    }
+
     @Override
     public String toString() {
         return super.toString() + "(" + name + " at " + locX + "," + locY + "," + locZ + ")";

@@ -97,7 +97,7 @@ public class NetLoginHandler extends NetHandler {
             this.server.serverConfigurationManager.c(entityplayer);
             netserverhandler.a(entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
             this.server.networkListenThread.a(netserverhandler);
-            netserverhandler.sendPacket(new Packet4UpdateTime(worldserver.getTime()));
+            netserverhandler.sendPacket(new Packet4UpdateTime(entityplayer.getPlayerTime())); // CraftBukkit - add support for player specific time
             entityplayer.syncInventory();
         }
 
