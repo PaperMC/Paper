@@ -139,8 +139,18 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
                 server.getPluginManager().callEvent(event);
 
-                from = event.getFrom();
-                to = event.isCancelled() ? from : event.getTo();
+                // If the event is cancelled we move the player back to their old location.
+                if (event.isCancelled()) {
+                    to = from;
+                }
+
+                /* If a Plugin has changed the To destination then we teleport the Player
+                   there to avoid any 'Moved wrongly' or 'Moved too quickly' errors.
+                   We only do this if the Event was not cancelled. */
+                if (!to.equals(event.getTo()) && !event.isCancelled()) {
+                    ((CraftPlayer) this.player.getBukkitEntity()).teleport(event.getTo());
+                    return;
+                }
 
                 this.player.locX = to.getX();
                 this.player.locY = to.getY();
