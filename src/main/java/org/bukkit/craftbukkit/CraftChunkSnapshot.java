@@ -1,6 +1,9 @@
 package org.bukkit.craftbukkit;
 
 import org.bukkit.ChunkSnapshot;
+import org.bukkit.block.Biome;
+
+import net.minecraft.server.BiomeBase;
 /**
  * Represents a static, thread-safe snapshot of chunk of blocks
  * Purpose is to allow clean, efficient copy of a chunk data to be made, and then handed off for processing in another thread (e.g. map rendering)
@@ -10,7 +13,10 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
     private final String worldname;
     private final byte[] buf; // Flat buffer in uncompressed chunk file format
     private final byte[] hmap; // Height map
-    private final long capture_fulltime;
+    private final long captureFulltime;
+    private final BiomeBase[] biome;
+    private final double[] biomeTemp;
+    private final double[] biomeRain;
 
     private static final int BLOCKDATA_OFF = 32768;
     private static final int BLOCKLIGHT_OFF = BLOCKDATA_OFF + 16384;
@@ -19,13 +25,16 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
     /**
      * Constructor
      */
-    CraftChunkSnapshot(int x, int z, String wname, long wtime, byte[] buf, byte[] hmap) {
+    CraftChunkSnapshot(int x, int z, String wname, long wtime, byte[] buf, byte[] hmap, BiomeBase[] biome, double[] biomeTemp, double[] biomeRain) {
         this.x = x;
         this.z = z;
         this.worldname = wname;
-        this.capture_fulltime = wtime;
+        this.captureFulltime = wtime;
         this.buf = buf;
         this.hmap = hmap;
+        this.biome = biome;
+        this.biomeTemp = biomeTemp;
+        this.biomeRain = biomeRain;
     }
 
     /**
@@ -121,10 +130,70 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
     }
 
     /**
+     * Get biome at given coordinates
+     *
+     * @param x X-coordinate
+     * @param z Z-coordinate
+     * @return Biome at given coordinate
+     */
+    public Biome getBiome(int x, int z) {
+        BiomeBase base = biome[x << 4 | z];
+
+        if (base == BiomeBase.RAINFOREST) {
+            return Biome.RAINFOREST;
+        } else if (base == BiomeBase.SWAMPLAND) {
+            return Biome.SWAMPLAND;
+        } else if (base == BiomeBase.SEASONAL_FOREST) {
+            return Biome.SEASONAL_FOREST;
+        } else if (base == BiomeBase.FOREST) {
+            return Biome.FOREST;
+        } else if (base == BiomeBase.SAVANNA) {
+            return Biome.SAVANNA;
+        } else if (base == BiomeBase.SHRUBLAND) {
+            return Biome.SHRUBLAND;
+        } else if (base == BiomeBase.TAIGA) {
+            return Biome.TAIGA;
+        } else if (base == BiomeBase.DESERT) {
+            return Biome.DESERT;
+        } else if (base == BiomeBase.PLAINS) {
+            return Biome.PLAINS;
+        } else if (base == BiomeBase.ICE_DESERT) {
+            return Biome.ICE_DESERT;
+        } else if (base == BiomeBase.TUNDRA) {
+            return Biome.TUNDRA;
+        } else if (base == BiomeBase.HELL) {
+            return Biome.HELL;
+        }
+        return null;
+    }
+
+    /**
+     * Get raw biome temperature (0.0-1.0) at given coordinate
+     *
+     * @param x X-coordinate
+     * @param z Z-coordinate
+     * @return temperature at given coordinate
+     */
+    public double getRawBiomeTemperature(int x, int z) {
+        return biomeTemp[x << 4 | z];
+    }
+
+    /**
+     * Get raw biome rainfall (0.0-1.0) at given coordinate
+     *
+     * @param x X-coordinate
+     * @param z Z-coordinate
+     * @return rainfall at given coordinate
+     */
+    public double getRawBiomeRainfall(int x, int z) {
+        return biomeRain[x << 4 | z];
+    }
+
+    /**
      * Get world full time when chunk snapshot was captured
      * @return time in ticks
      */
     public long getCaptureFullTime() {
-        return capture_fulltime;
+        return captureFulltime;
     }
 }

@@ -23,6 +23,7 @@ import org.bukkit.util.Vector;
 import org.bukkit.BlockChangeDelegate;
 import org.bukkit.Bukkit;
 import org.bukkit.generator.ChunkGenerator;
+import org.bukkit.ChunkSnapshot;
 import org.bukkit.Location;
 import org.bukkit.TreeType;
 import org.bukkit.World;
@@ -759,5 +760,9 @@ public class CraftWorld implements World {
         }
 
         throw new IllegalArgumentException("Cannot spawn an entity for " + clazz.getName());
+    }
+
+    public ChunkSnapshot getEmptyChunkSnapshot(int x, int z, boolean includeBiome, boolean includeBiomeTempRain) {
+        return CraftChunk.getEmptyChunkSnapshot(x, z, this, includeBiome, includeBiomeTempRain);
     }
 }

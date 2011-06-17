@@ -13,6 +13,8 @@ import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.entity.Entity;
 import org.bukkit.craftbukkit.util.ConcurrentSoftMap;
 import org.bukkit.ChunkSnapshot;
+import net.minecraft.server.BiomeBase;
+import net.minecraft.server.WorldChunkManager;
 
 public class CraftChunk implements Chunk {
     private WeakReference<net.minecraft.server.Chunk> weakChunk;
@@ -111,13 +113,100 @@ public class CraftChunk implements Chunk {
      * @return ChunkSnapshot
      */
     public ChunkSnapshot getChunkSnapshot() {
+        return getChunkSnapshot(true, false, false);
+    }
+
+    /**
+     * Capture thread-safe read-only snapshot of chunk data
+     * @param includeMaxblocky - if true, snapshot includes per-coordinate maximum Y values
+     * @param includeBiome - if true, snapshot includes per-coordinate biome type
+     * @param includeBiomeTempRain - if true, snapshot includes per-coordinate raw biome temperature and rainfall
+     * @return ChunkSnapshot
+     */
+    public ChunkSnapshot getChunkSnapshot(boolean includeMaxblocky, boolean includeBiome, boolean includeBiomeTempRain) {
         net.minecraft.server.Chunk chunk = getHandle();
         byte[] buf = new byte[32768 + 16384 + 16384 + 16384]; // Get big enough buffer for whole chunk
         chunk.a(buf, 0, 0, 0, 16, 128, 16, 0); // Get whole chunk
-        byte[] hmap = new byte[256]; // Get copy of height map
-        System.arraycopy(chunk.h, 0, hmap, 0, 256);
+        byte[] hmap = null;
+
+        if (includeMaxblocky) {
+            hmap = new byte[256]; // Get copy of height map
+            System.arraycopy(chunk.h, 0, hmap, 0, 256);
+        }
+
+        BiomeBase[] biome = null;
+        double[] biomeTemp = null;
+        double[] biomeRain = null;
+
+        if (includeBiome || includeBiomeTempRain) {
+            WorldChunkManager wcm = chunk.world.getWorldChunkManager();
+            BiomeBase[] bb = wcm.a(getX()<<4, getZ()<<4, 16, 16);
+
+            if (includeBiome) {
+                biome = new BiomeBase[256];
+                System.arraycopy(bb, 0, biome, 0, biome.length);
+            }
+
+            if (includeBiomeTempRain) {
+                biomeTemp = new double[256];
+                biomeRain = new double[256];
+                System.arraycopy(wcm.a, 0, biomeTemp, 0, biomeTemp.length);
+                System.arraycopy(wcm.b, 0, biomeRain, 0, biomeRain.length);
+            }
+        }
         World w = getWorld();
-        return new CraftChunkSnapshot(getX(), getZ(), w.getName(), w.getFullTime(), buf, hmap);
+        return new CraftChunkSnapshot(getX(), getZ(), w.getName(), w.getFullTime(), buf, hmap, biome, biomeTemp, biomeRain);
+    }
+    /**
+     * Empty chunk snapshot - nothing but air blocks, but can include valid biome data
+     */
+    private static class EmptyChunkSnapshot extends CraftChunkSnapshot {
+        EmptyChunkSnapshot(int x, int z, String w, long wtime, BiomeBase[] biome, double[] biomeTemp, double[] biomeRain) {
+            super(x, z, w, wtime, null, null, biome, biomeTemp, biomeRain);
+        }
+
+        public final int getBlockTypeId(int x, int y, int z) {
+            return 0;
+        }
+
+        public final int getBlockData(int x, int y, int z) {
+            return 0;
+        }
+
+        public final int getBlockSkyLight(int x, int y, int z) {
+            return 15;
+        }
+
+        public final int getBlockEmittedLight(int x, int y, int z) {
+            return 0;
+        }
+
+        public final int getHighestBlockYAt(int x, int z) {
+            return 0;
+        }
     }
 
+    public static ChunkSnapshot getEmptyChunkSnapshot(int x, int z, CraftWorld w, boolean includeBiome, boolean includeBiomeTempRain) {
+        BiomeBase[] biome = null;
+        double[] biomeTemp = null;
+        double[] biomeRain = null;
+
+        if (includeBiome || includeBiomeTempRain) {
+            WorldChunkManager wcm = w.getHandle().getWorldChunkManager();
+            BiomeBase[] bb = wcm.a(x<<4, z<<4, 16, 16);
+
+            if (includeBiome) {
+                biome = new BiomeBase[256];
+                System.arraycopy(bb, 0, biome, 0, biome.length);
+            }
+
+            if (includeBiomeTempRain) {
+                biomeTemp = new double[256];
+                biomeRain = new double[256];
+                System.arraycopy(wcm.a, 0, biomeTemp, 0, biomeTemp.length);
+                System.arraycopy(wcm.b, 0, biomeRain, 0, biomeRain.length);
+            }
+        }
+        return new EmptyChunkSnapshot(x, z, w.getName(), w.getFullTime(), biome, biomeTemp, biomeRain);
+    }
 }
