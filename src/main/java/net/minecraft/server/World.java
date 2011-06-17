@@ -19,10 +19,13 @@ import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.block.BlockCanBuildEvent;
 import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.block.SnowFormEvent;
+import org.bukkit.event.block.BlockFormEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.ItemSpawnEvent;
 import org.bukkit.event.weather.WeatherChangeEvent;
 import org.bukkit.event.weather.ThunderChangeEvent;
+import org.bukkit.block.BlockState;
+import org.bukkit.craftbukkit.block.CraftBlockState;
 // CraftBukkit end
 
 public class World implements IBlockAccess {
@@ -1830,7 +1833,7 @@ public class World implements IBlockAccess {
                     i2 = chunk.getTypeId(l, k1, j1);
                     if (this.v() && i2 == 0 && Block.SNOW.canPlace(this, l + i, k1, j1 + j) && l1 != 0 && l1 != Block.ICE.id && Block.byId[l1].material.isSolid()) {
                         // CraftBukkit start
-                        SnowFormEvent snow = new SnowFormEvent(((WorldServer) this).getWorld().getBlockAt(l + i, k1, j1 + j));
+                        SnowFormEvent snow = new SnowFormEvent(this.getWorld().getBlockAt(l + i, k1, j1 + j));
 
                         getServer().getPluginManager().callEvent(snow);
                         if (!snow.isCancelled()) {
@@ -1840,9 +1843,18 @@ public class World implements IBlockAccess {
                         // CraftBukkit end
                     }
 
-                    if (l1 == Block.STATIONARY_WATER.id && chunk.getData(l, k1 - 1, j1) == 0) {
-                        this.setTypeId(l + i, k1 - 1, j1 + j, Block.ICE.id);
+                    // CraftBukkit start
+                        if (l1 == Block.STATIONARY_WATER.id && chunk.getData(l, k1 - 1, j1) == 0) {
+                            BlockState blockState = this.getWorld().getBlockAt(l + i, k1 - 1, j1 + j).getState();
+                            blockState.setTypeId(Block.ICE.id);
+
+                            BlockFormEvent iceBlockForm = new BlockFormEvent(this.getWorld().getBlockAt(l + i, k1 - 1, j1 + j), blockState);
+                            this.getServer().getPluginManager().callEvent(iceBlockForm);
+                            if (!iceBlockForm.isCancelled()) {
+                                blockState.update(true);
+                            }
                     }
+                    // CraftBukkit end
                 }
             }
 
