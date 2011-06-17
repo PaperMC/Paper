@@ -297,4 +297,25 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         getHandle().netServerHandler.sendPacket(new Packet200Statistic(id, amount));
     }
+
+    public void setPlayerTime(long time, boolean relative) {
+        getHandle().timeOffset = time;
+        getHandle().relativeTime = relative;
+    }
+
+    public long getPlayerTimeOffset() {
+        return getHandle().timeOffset;
+    }
+
+    public long getPlayerTime() {
+        return getHandle().getPlayerTime();
+    }
+
+    public boolean isPlayerTimeRelative() {
+        return getHandle().relativeTime;
+    }
+
+    public void resetPlayerTime() {
+        setPlayerTime(0, true);
+    }
 }

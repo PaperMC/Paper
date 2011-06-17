@@ -424,7 +424,7 @@ public class CraftWorld implements World {
         // Forces the client to update to the new time immediately
         for (Player p: getPlayers()) {
             CraftPlayer cp = (CraftPlayer) p;
-            cp.getHandle().netServerHandler.sendPacket(new Packet4UpdateTime(time));
+            cp.getHandle().netServerHandler.sendPacket(new Packet4UpdateTime(cp.getHandle().getPlayerTime()));
         }
     }
 
