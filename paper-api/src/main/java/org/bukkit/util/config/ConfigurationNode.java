@@ -221,6 +221,15 @@ public class ConfigurationNode {
     }
 
     /**
+     * Returns a list of all keys at the root path
+     *
+     * @return List of keys
+     */
+    public List<String> getKeys() {
+        return new ArrayList<String>(root.keySet());
+    }
+
+    /**
      * Gets a list of objects at a location. If the list is not defined,
      * null will be returned. The node must be an actual list.
      *

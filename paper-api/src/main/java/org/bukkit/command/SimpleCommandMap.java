@@ -150,6 +150,22 @@ public final class SimpleCommandMap implements CommandMap {
         return knownCommands.get(name.toLowerCase());
     }
 
+    public void registerServerAliases() {
+        Map<String, String> values = server.getCommandAliases();
+        
+        for (String alias : values.keySet()) {
+            String target = values.get(alias);
+            Command command = getCommand(target);
+
+            if (command != null) {
+                // We register these as commands so they have absolute priority.
+                knownCommands.put(alias.toLowerCase(), command);
+            } else {
+                server.getLogger().warning("Could not register custom alias '" + alias + "' to command '" + target + "' because the command does not exist.");
+            }
+        }
+    }
+
     private static class VersionCommand extends Command {
         private final Server server;
 
