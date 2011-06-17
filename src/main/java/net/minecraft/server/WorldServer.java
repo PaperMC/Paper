@@ -99,7 +99,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
         }
 
         // CraftBukkit - Configurable spawn protection
-        return i1 > this.server.spawnProtection || this.server.serverConfigurationManager.isOp(entityhuman.name);
+        return i1 > getServer().getSpawnRadius() || this.server.serverConfigurationManager.isOp(entityhuman.name);
     }
 
     protected void c(Entity entity) {

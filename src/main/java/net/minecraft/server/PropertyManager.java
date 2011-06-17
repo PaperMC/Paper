@@ -12,7 +12,7 @@ import joptsimple.OptionSet; // CraftBukkit
 public class PropertyManager {
 
     public static Logger a = Logger.getLogger("Minecraft");
-    private Properties properties = new Properties();
+    public Properties properties = new Properties(); // Craftbukkit - priv to pub
     private File c;
 
     public PropertyManager(File file1) {

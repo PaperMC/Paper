@@ -23,6 +23,7 @@ import net.minecraft.server.Item;
 import net.minecraft.server.ItemStack;
 import net.minecraft.server.World;
 import net.minecraft.server.WorldServer;
+import org.bukkit.Bukkit;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -50,7 +51,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 public class CraftEventFactory {
     private static boolean canBuild(CraftWorld world, Player player, int x, int z) {
         WorldServer worldServer = world.getHandle();
-        int spawnSize = worldServer.server.spawnProtection;
+        int spawnSize = Bukkit.getServer().getSpawnRadius();
 
         if (spawnSize <= 0) return true;
         if (player.isOp()) return true;

@@ -95,7 +95,9 @@ public final class CraftServer implements Server {
         configuration.getString("database.password", "walrus");
         configuration.getString("database.driver", "org.sqlite.JDBC");
         configuration.getString("database.isolation", "SERIALIZABLE");
+        
         configuration.getString("settings.update-folder", "update");
+        configuration.getInt("settings.spawn-radius", 16);
         
         if (configuration.getNode("aliases") == null) {
             configuration.setProperty("aliases.icanhasbukkit", "version");
@@ -552,5 +554,14 @@ public final class CraftServer implements Server {
         }
 
         return result;
+    }
+
+    public int getSpawnRadius() {
+        return configuration.getInt("settings.spawn-radius", 16);
+    }
+
+    public void setSpawnRadius(int value) {
+        configuration.setProperty("settings.spawn-radius", value);
+        configuration.save();
     }
 }

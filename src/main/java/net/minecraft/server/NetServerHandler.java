@@ -448,7 +448,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
             if (packet14blockdig.e == 0) {
                 // CraftBukkit
-                if (i1 < this.minecraftServer.spawnProtection && !flag) {
+                if (i1 < server.getSpawnRadius() && !flag) {
                     this.player.netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, worldserver));
                 } else {
                     // CraftBukkit - add face argument

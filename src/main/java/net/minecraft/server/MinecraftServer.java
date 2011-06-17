@@ -50,7 +50,6 @@ public class MinecraftServer implements Runnable, ICommandListener {
     public boolean o;
 
     // CraftBukkit start
-    public int spawnProtection;
     public List<WorldServer> worlds = new ArrayList<WorldServer>();
     public CraftServer server;
     public OptionSet options;
@@ -100,7 +99,6 @@ public class MinecraftServer implements Runnable, ICommandListener {
         this.spawnAnimals = this.propertyManager.getBoolean("spawn-animals", true);
         this.pvpMode = this.propertyManager.getBoolean("pvp", true);
         this.o = this.propertyManager.getBoolean("allow-flight", false);
-        this.spawnProtection = this.propertyManager.getInt("spawn-protection", 16); // CraftBukkit - Configurable spawn protection start
         InetAddress inetaddress = null;
 
         if (s.length() > 0) {
@@ -149,8 +147,13 @@ public class MinecraftServer implements Runnable, ICommandListener {
         long elapsed = System.nanoTime() - j;
         String time = String.format("%.3fs", elapsed / 10000000000.0D);
         log.info("Done (" + time + ")! For help, type \"help\" or \"?\"");
-        // CraftBukkit end
 
+        if (this.propertyManager.properties.containsKey("spawn-protection")) {
+            log.info("'spawn-protection' in server.properties has been moved to 'settings.spawn-radius' in bukkit.yml. I will move your config for you.");
+            server.setSpawnRadius(this.propertyManager.getInt("spawn-protection", 16));
+            this.propertyManager.properties.remove("spawn-protection");
+            this.propertyManager.b();
+        }
         return true;
     }
 
