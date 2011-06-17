@@ -490,6 +490,28 @@ public final class JavaPluginLoader implements PluginLoader {
                 }
             };
 
+        case BLOCK_FORM:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((BlockListener) listener).onBlockForm((BlockFormEvent) event);
+                }
+            };
+
+        case BLOCK_SPREAD:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((BlockListener) listener).onBlockSpread((BlockSpreadEvent) event);
+                }
+            };
+
+
+        case BLOCK_FADE:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((BlockListener) listener).onBlockFade((BlockFadeEvent) event);
+                }
+            };
+
         case BLOCK_DISPENSE:
             return new EventExecutor() {
                 public void execute(Listener listener, Event event) {
@@ -526,7 +548,7 @@ public final class JavaPluginLoader implements PluginLoader {
                     ((WorldListener) listener).onChunkLoad((ChunkLoadEvent) event);
                 }
             };
-        
+
         case CHUNK_POPULATED:
             return new EventExecutor() {
                 public void execute(Listener listener, Event event) {

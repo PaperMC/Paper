@@ -376,6 +376,24 @@ public abstract class Event implements Serializable {
          * @see org.bukkit.event.block.SnowFormEvent
          */
         SNOW_FORM (Category.BLOCK),
+        /**
+         * Called when a block is formed based on world conditions
+         *
+         * @see org.bukkit.event.block.BlockFormEvent
+         */
+        BLOCK_FORM (Category.BLOCK),
+        /**
+         * Called when a block spreads based on world conditions
+         *
+         * @see org.bukkit.event.block.BlockSpreadEvent
+         */
+        BLOCK_SPREAD (Category.BLOCK),
+        /**
+         * Called when a block fades, melts or disappears based on world conditions
+         *
+         * @see org.bukkit.event.block.BlockFadeEvent
+         */
+        BLOCK_FADE (Category.BLOCK),
 
         /**
          * INVENTORY EVENTS

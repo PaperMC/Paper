@@ -103,8 +103,31 @@ public class BlockListener implements Listener {
      * Called when a world is attempting to place a block during a snowfall
      *
      * @param event Relevant event details
+     * @deprecated be prepared to use onBlockForm instead as it will be replacing this event after the RB
      */
+    @Deprecated
     public void onSnowForm(SnowFormEvent event) {}
+
+    /**
+     * Called when a block is formed based on world conditions
+     *
+     * @param event Relevant event details
+     */
+    public void onBlockForm(BlockFormEvent event) {}
+
+    /**
+     * Called when a block spreads based on world conditions
+     *
+     * @param event Relevant event details
+     */
+    public void onBlockSpread(BlockSpreadEvent event) {}
+
+    /**
+     * Called when a block fades, melts or disappears based on world conditions
+     *
+     * @param event Relevant event details
+     */
+    public void onBlockFade(BlockFadeEvent event) {}
 
     /**
      * Called when a block is dispensing an item
