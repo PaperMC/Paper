@@ -980,18 +980,18 @@ public abstract class Entity {
         // CraftBukkit end
 
         // CraftBukkit Start - reset world
-        org.bukkit.World world = null;
+        CraftWorld world = null;
         if (this instanceof EntityPlayer) {
             EntityPlayer entityPlayer = (EntityPlayer) this;
             String worldName = nbttagcompound.getString("World");
             if (worldName == "") {
-                world = (org.bukkit.World) ((CraftServer) Bukkit.getServer()).getServer().a(entityPlayer.dimension);
+                world = ((CraftServer) Bukkit.getServer()).getServer().a(entityPlayer.dimension).getWorld();
             } else {
-                world = Bukkit.getServer().getWorld(worldName);
+                world = (CraftWorld) Bukkit.getServer().getWorld(worldName);
             }
         }
 
-        a(world == null ? null : ((CraftWorld) world).getHandle());
+        a(world == null ? null : world.getHandle());
         // CraftBukkit End
     }
 
