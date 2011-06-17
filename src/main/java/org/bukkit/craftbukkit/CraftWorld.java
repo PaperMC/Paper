@@ -21,6 +21,7 @@ import org.bukkit.Chunk;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 import org.bukkit.BlockChangeDelegate;
+import org.bukkit.Bukkit;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.Location;
 import org.bukkit.TreeType;
@@ -30,23 +31,18 @@ import org.bukkit.generator.BlockPopulator;
 public class CraftWorld implements World {
     private final WorldServer world;
     private Environment environment;
-    private final CraftServer server;
-    private final ChunkProviderServer provider;
+    private final CraftServer server = (CraftServer)Bukkit.getServer();
     private HashMap<Integer, CraftChunk> unloadedChunks = new HashMap<Integer, CraftChunk>();
     private final ChunkGenerator generator;
     private final List<BlockPopulator> populators = new ArrayList<BlockPopulator>();
 
     private static final Random rand = new Random();
 
-    public CraftWorld(WorldServer world, ChunkGenerator gen) {
+    public CraftWorld(WorldServer world, ChunkGenerator gen, Environment env) {
         this.world = world;
-        this.server = world.getServer();
-        this.provider = world.chunkProviderServer;
         this.generator = gen;
         
-        environment = Environment.getEnvironment(world.worldProvider.dimension);
-
-        server.addWorld(this);
+        environment = env;
     }
 
     public void preserveChunk(CraftChunk chunk) {
@@ -91,7 +87,7 @@ public class CraftWorld implements World {
     }
 
     public Chunk getChunkAt(int x, int z) {
-        return this.provider.getChunkAt(x, z).bukkitChunk;
+        return this.world.chunkProviderServer.getChunkAt(x, z).bukkitChunk;
     }
 
     public Chunk getChunkAt(Block block) {
@@ -99,11 +95,11 @@ public class CraftWorld implements World {
     }
 
     public boolean isChunkLoaded(int x, int z) {
-        return provider.isChunkLoaded(x, z);
+        return world.chunkProviderServer.isChunkLoaded(x, z);
     }
 
     public Chunk[] getLoadedChunks() {
-        Object[] chunks = provider.chunks.values().toArray();
+        Object[] chunks = world.chunkProviderServer.chunks.values().toArray();
         org.bukkit.Chunk[] craftChunks = new CraftChunk[chunks.length];
 
         for (int i = 0; i < chunks.length; i++) {
@@ -135,7 +131,7 @@ public class CraftWorld implements World {
             return false;
         }
 
-        provider.queueUnload(x, z);
+        world.chunkProviderServer.queueUnload(x, z);
 
         return true;
     }
@@ -145,18 +141,18 @@ public class CraftWorld implements World {
             return false;
         }
 
-        net.minecraft.server.Chunk chunk = provider.getOrCreateChunk(x, z);
+        net.minecraft.server.Chunk chunk = world.chunkProviderServer.getOrCreateChunk(x, z);
 
         if (save) {
             chunk.removeEntities();
-            provider.saveChunk(chunk);
-            provider.saveChunkNOP(chunk);
+            world.chunkProviderServer.saveChunk(chunk);
+            world.chunkProviderServer.saveChunkNOP(chunk);
         }
 
         preserveChunk((CraftChunk) chunk.bukkitChunk);
-        provider.unloadQueue.remove(x, z);
-        provider.chunks.remove(x, z);
-        provider.chunkList.remove(chunk);
+        world.chunkProviderServer.unloadQueue.remove(x, z);
+        world.chunkProviderServer.chunks.remove(x, z);
+        world.chunkProviderServer.chunkList.remove(chunk);
 
         return true;
     }
@@ -164,14 +160,14 @@ public class CraftWorld implements World {
     public boolean regenerateChunk(int x, int z) {
         unloadChunk(x, z, false, false);
 
-        provider.unloadQueue.remove(x, z);
+        world.chunkProviderServer.unloadQueue.remove(x, z);
 
         net.minecraft.server.Chunk chunk = null;
 
-        if (provider.chunkProvider == null) {
-            chunk = provider.emptyChunk;
+        if (world.chunkProviderServer.chunkProvider == null) {
+            chunk = world.chunkProviderServer.emptyChunk;
         } else {
-            chunk = provider.chunkProvider.getOrCreateChunk(x, z);
+            chunk = world.chunkProviderServer.chunkProvider.getOrCreateChunk(x, z);
         }
 
         chunkLoadPostProcess(chunk, x, z);
@@ -208,7 +204,7 @@ public class CraftWorld implements World {
 
         for (Player player : players) {
             Location loc = player.getLocation();
-            if (loc.getWorld() != provider.world.getWorld()) {
+            if (loc.getWorld() != world.chunkProviderServer.world.getWorld()) {
                 continue;
             }
 
@@ -225,14 +221,14 @@ public class CraftWorld implements World {
     public boolean loadChunk(int x, int z, boolean generate) {
         if (generate) {
             // Use the default variant of loadChunk when generate == true.
-            return provider.getChunkAt(x, z) != null;
+            return world.chunkProviderServer.getChunkAt(x, z) != null;
         }
 
-        provider.unloadQueue.remove(x, z);
-        net.minecraft.server.Chunk chunk = (net.minecraft.server.Chunk) provider.chunks.get(x, z);
+        world.chunkProviderServer.unloadQueue.remove(x, z);
+        net.minecraft.server.Chunk chunk = (net.minecraft.server.Chunk) world.chunkProviderServer.chunks.get(x, z);
 
         if (chunk == null) {
-            chunk = provider.loadChunk(x, z);
+            chunk = world.chunkProviderServer.loadChunk(x, z);
 
             chunkLoadPostProcess(chunk, x, z);
         }
@@ -241,26 +237,26 @@ public class CraftWorld implements World {
 
     private void chunkLoadPostProcess(net.minecraft.server.Chunk chunk, int x, int z) {
         if (chunk != null) {
-            provider.chunks.put(x, z, chunk);
-            provider.chunkList.add(chunk);
+            world.chunkProviderServer.chunks.put(x, z, chunk);
+            world.chunkProviderServer.chunkList.add(chunk);
 
             chunk.loadNOP();
             chunk.addEntities();
 
-            if (!chunk.done && provider.isChunkLoaded(x + 1, z + 1) && provider.isChunkLoaded(x, z + 1) && provider.isChunkLoaded(x + 1, z)) {
-                provider.getChunkAt(provider, x, z);
+            if (!chunk.done && world.chunkProviderServer.isChunkLoaded(x + 1, z + 1) && world.chunkProviderServer.isChunkLoaded(x, z + 1) && world.chunkProviderServer.isChunkLoaded(x + 1, z)) {
+                world.chunkProviderServer.getChunkAt(world.chunkProviderServer, x, z);
             }
 
-            if (provider.isChunkLoaded(x - 1, z) && !provider.getOrCreateChunk(x - 1, z).done && provider.isChunkLoaded(x - 1, z + 1) && provider.isChunkLoaded(x, z + 1) && provider.isChunkLoaded(x - 1, z)) {
-                provider.getChunkAt(provider, x - 1, z);
+            if (world.chunkProviderServer.isChunkLoaded(x - 1, z) && !world.chunkProviderServer.getOrCreateChunk(x - 1, z).done && world.chunkProviderServer.isChunkLoaded(x - 1, z + 1) && world.chunkProviderServer.isChunkLoaded(x, z + 1) && world.chunkProviderServer.isChunkLoaded(x - 1, z)) {
+                world.chunkProviderServer.getChunkAt(world.chunkProviderServer, x - 1, z);
             }
 
-            if (provider.isChunkLoaded(x, z - 1) && !provider.getOrCreateChunk(x, z - 1).done && provider.isChunkLoaded(x + 1, z - 1) && provider.isChunkLoaded(x, z - 1) && provider.isChunkLoaded(x + 1, z)) {
-                provider.getChunkAt(provider, x, z - 1);
+            if (world.chunkProviderServer.isChunkLoaded(x, z - 1) && !world.chunkProviderServer.getOrCreateChunk(x, z - 1).done && world.chunkProviderServer.isChunkLoaded(x + 1, z - 1) && world.chunkProviderServer.isChunkLoaded(x, z - 1) && world.chunkProviderServer.isChunkLoaded(x + 1, z)) {
+                world.chunkProviderServer.getChunkAt(world.chunkProviderServer, x, z - 1);
             }
 
-            if (provider.isChunkLoaded(x - 1, z - 1) && !provider.getOrCreateChunk(x - 1, z - 1).done && provider.isChunkLoaded(x - 1, z - 1) && provider.isChunkLoaded(x, z - 1) && provider.isChunkLoaded(x - 1, z)) {
-                provider.getChunkAt(provider, x - 1, z - 1);
+            if (world.chunkProviderServer.isChunkLoaded(x - 1, z - 1) && !world.chunkProviderServer.getOrCreateChunk(x - 1, z - 1).done && world.chunkProviderServer.isChunkLoaded(x - 1, z - 1) && world.chunkProviderServer.isChunkLoaded(x, z - 1) && world.chunkProviderServer.isChunkLoaded(x - 1, z)) {
+                world.chunkProviderServer.getChunkAt(world.chunkProviderServer, x - 1, z - 1);
             }
         }
     }

@@ -5,9 +5,8 @@ import java.util.List;
 
 // CraftBukkit start
 import org.bukkit.BlockChangeDelegate;
+import org.bukkit.World.Environment;
 import org.bukkit.generator.ChunkGenerator;
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.generator.CustomChunkGenerator;
 import org.bukkit.craftbukkit.generator.InternalChunkGenerator;
 import org.bukkit.craftbukkit.generator.NetherChunkGenerator;
@@ -25,30 +24,18 @@ public class WorldServer extends World implements BlockChangeDelegate {
     private EntityList G = new EntityList();
 
     // CraftBukkit start - change signature
-    public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, String s, int i, long j, org.bukkit.World.Environment env, ChunkGenerator gen) {
-        super(idatamanager, s, j, WorldProvider.a(env.getId()), gen);
+    public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, String s, int i, long j, Environment env, ChunkGenerator gen) {
+        super(idatamanager, s, j, WorldProvider.a(env.getId()), gen, env);
         this.server = minecraftserver;
 
         this.dimension = i;
-        this.cserver = minecraftserver.server;
-        this.world = new CraftWorld(this, gen);
         this.pvpMode = minecraftserver.pvpMode;
         this.manager = new PlayerManager(minecraftserver, dimension, minecraftserver.propertyManager.getInt("view-distance", 10));
     }
 
     public final int dimension;
-    private final CraftWorld world;
-    private final CraftServer cserver;
     public EntityTracker tracker;
     public PlayerManager manager;
-
-    public CraftWorld getWorld() {
-        return world;
-    }
-
-    public CraftServer getServer() {
-        return cserver;
-    }
     // CraftBukkit end
 
     public void entityJoinedWorld(Entity entity, boolean flag) {
@@ -131,8 +118,8 @@ public class WorldServer extends World implements BlockChangeDelegate {
 
     public boolean a(Entity entity) {
         // CraftBukkit start
-        LightningStrikeEvent lightning = new LightningStrikeEvent((org.bukkit.World) world, (org.bukkit.entity.LightningStrike) entity.getBukkitEntity());
-        this.cserver.getPluginManager().callEvent(lightning);
+        LightningStrikeEvent lightning = new LightningStrikeEvent(getWorld(), (org.bukkit.entity.LightningStrike) entity.getBukkitEntity());
+        getServer().getPluginManager().callEvent(lightning);
 
         if (lightning.isCancelled()) {
             return false;

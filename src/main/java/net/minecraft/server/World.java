@@ -9,7 +9,9 @@ import java.util.Set;
 import java.util.TreeSet;
 
 // CraftBukkit start
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.World.Environment;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -73,6 +75,7 @@ public class World implements IBlockAccess {
     }
 
     // CraftBukkit start
+    private final CraftWorld world;
     public boolean pvpMode;
     public ChunkGenerator generator;
     Chunk lastChunkAccessed;
@@ -88,9 +91,18 @@ public class World implements IBlockAccess {
         }
     }
 
+    public CraftWorld getWorld() {
+        return world;
+    }
+
+    public CraftServer getServer() {
+        return (CraftServer)Bukkit.getServer();
+    }
+
     // CraftBukkit - changed signature
-    public World(IDataManager idatamanager, String s, long i, WorldProvider worldprovider, ChunkGenerator gen) {
+    public World(IDataManager idatamanager, String s, long i, WorldProvider worldprovider, ChunkGenerator gen, Environment env) {
         this.generator = gen;
+        this.world = new CraftWorld((WorldServer)this, gen, env);
         // CraftBukkit end
 
         this.O = this.random.nextInt(12000);
@@ -125,6 +137,8 @@ public class World implements IBlockAccess {
 
         this.g();
         this.x();
+
+        getServer().addWorld(world);// Craftbukkit
     }
 
     protected IChunkProvider b() {
@@ -421,7 +435,7 @@ public class World implements IBlockAccess {
                 CraftWorld world = ((WorldServer) this).getWorld();
                 if (world != null) {
                     BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(i, j, k), l);
-                    ((WorldServer) this).getServer().getPluginManager().callEvent(event);
+                    getServer().getPluginManager().callEvent(event);
 
                     if (event.isCancelled()) {
                         return;
@@ -1593,7 +1607,7 @@ public class World implements IBlockAccess {
         }
 
         // CraftBukkit start - Only call spawner if we have players online and the world allows for mobs or animals
-        if ((this.allowMonsters || this.allowAnimals) && (this instanceof WorldServer && ((WorldServer) this).getServer().getHandle().players.size() > 0)) {
+        if ((this.allowMonsters || this.allowAnimals) && (this instanceof WorldServer && getServer().getHandle().players.size() > 0)) {
             SpawnerCreature.spawnEntities(this, this.allowMonsters, this.allowAnimals);
         }
         // CraftBukkit end
@@ -1647,7 +1661,7 @@ public class World implements IBlockAccess {
                 this.worldData.b(i);
                 if (i <= 0) {
                     // CraftBukkit start
-                    CraftServer server = ((WorldServer) this).getServer();
+                    CraftServer server = getServer();
 
                     ThunderChangeEvent thunder = new ThunderChangeEvent(((WorldServer) this).getWorld(), !this.worldData.j());
                     server.getPluginManager().callEvent(thunder);
@@ -1671,7 +1685,7 @@ public class World implements IBlockAccess {
                 this.worldData.c(j);
                 if (j <= 0) {
                     // CraftBukkit start
-                    CraftServer server = ((WorldServer) this).getServer();
+                    CraftServer server = getServer();
 
                     WeatherChangeEvent weather = new WeatherChangeEvent(((WorldServer) this).getWorld(), !this.worldData.l());
                     server.getPluginManager().callEvent(weather);
@@ -1716,7 +1730,7 @@ public class World implements IBlockAccess {
 
     private void y() {
         // CraftBukkit start
-        CraftServer server = ((WorldServer) this).getServer();
+        CraftServer server = getServer();
 
         WeatherChangeEvent weather = new WeatherChangeEvent(((WorldServer) this).getWorld(), false);
         server.getPluginManager().callEvent(weather);
@@ -1818,7 +1832,7 @@ public class World implements IBlockAccess {
                         // CraftBukkit start
                         SnowFormEvent snow = new SnowFormEvent(((WorldServer) this).getWorld().getBlockAt(l + i, k1, j1 + j));
 
-                        ((WorldServer) this).getServer().getPluginManager().callEvent(snow);
+                        getServer().getPluginManager().callEvent(snow);
                         if (!snow.isCancelled()) {
                             this.setTypeId(l + i, k1, j1 + j, snow.getMaterial().getId());
                             this.setData(l + i, k1, j1 + j, snow.getData());
@@ -1980,7 +1994,7 @@ public class World implements IBlockAccess {
 
         // CraftBukkit start
         BlockCanBuildEvent event = new BlockCanBuildEvent(((WorldServer) this).getWorld().getBlockAt(j, k, l), i, defaultReturn);
-        ((WorldServer) this).getServer().getPluginManager().callEvent(event);
+        getServer().getPluginManager().callEvent(event);
 
         return event.isBuildable();
         // CraftBukkit end

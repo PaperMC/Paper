@@ -475,7 +475,7 @@ public final class CraftServer implements Server {
         return worlds.get(name.toLowerCase());
     }
 
-    protected void addWorld(World world) {
+    public void addWorld(World world) {
         worlds.put(world.getName().toLowerCase(), world);
     }
 
