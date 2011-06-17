@@ -609,6 +609,16 @@ public interface World {
     public void playEffect(Location location, Effect effect, int data, int radius);
 
     /**
+     * Get empty chunk snapshot (equivalent to all air blocks), optionally including valid biome
+     * data.  Used for representing an ungenerated chunk, or for fetching only biome data without loading a chunk.
+     * @param x - chunk x coordinate
+     * @param z - chunk z coordinate
+     * @param includeBiome - if true, snapshot includes per-coordinate biome type
+     * @param includeBiomeTempRain - if true, snapshot includes per-coordinate raw biome temperature and rainfall
+     */
+    public ChunkSnapshot getEmptyChunkSnapshot(int x, int z, boolean includeBiome, boolean includeBiomeTempRain);
+
+    /**
      * Represents various map environment types that a world may be
      */
     public enum Environment {

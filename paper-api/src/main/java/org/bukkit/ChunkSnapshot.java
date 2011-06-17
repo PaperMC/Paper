@@ -1,5 +1,6 @@
 package org.bukkit;
 
+import org.bukkit.block.Biome;
 /**
  * Represents a static, thread-safe snapshot of chunk of blocks
  * Purpose is to allow clean, efficient copy of a chunk data to be made, and then handed off for processing in another thread (e.g. map rendering)
@@ -75,6 +76,33 @@ public interface ChunkSnapshot {
      * @return Y-coordinate of the highest non-air block
      */
     int getHighestBlockYAt(int x, int z);
+
+    /**
+     * Get biome at given coordinates
+     *
+     * @param x X-coordinate
+     * @param z Z-coordinate
+     * @return Biome at given coordinate
+     */
+    Biome getBiome(int x, int z);
+
+    /**
+     * Get raw biome temperature (0.0-1.0) at given coordinate
+     *
+     * @param x X-coordinate
+     * @param z Z-coordinate
+     * @return temperature at given coordinate
+     */
+    double getRawBiomeTemperature(int x, int z);
+
+    /**
+     * Get raw biome rainfall (0.0-1.0) at given coordinate
+     *
+     * @param x X-coordinate
+     * @param z Z-coordinate
+     * @return rainfall at given coordinate
+     */
+    double getRawBiomeRainfall(int x, int z);
 
     /**
      * Get world full time when chunk snapshot was captured
