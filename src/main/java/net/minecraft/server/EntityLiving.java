@@ -13,6 +13,7 @@ import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityRegainHealthEvent;
 // CraftBukkit end
 
 public abstract class EntityLiving extends Entity {
@@ -328,8 +329,17 @@ public abstract class EntityLiving extends Entity {
     }
 
     public void b(int i) {
+        // CraftBukkit start - Added event
         if (this.health > 0) {
-            this.health += i;
+            CraftServer server = this.world.getServer();
+            org.bukkit.entity.Entity entity = this.getBukkitEntity();
+            EntityRegainHealthEvent event = new EntityRegainHealthEvent(entity, i);
+            server.getPluginManager().callEvent(event);
+
+            if (!event.isCancelled()) {
+                this.health += event.getAmount();
+            }
+            // CraftBukkit end
             if (this.health > 20) {
                 this.health = 20;
             }
