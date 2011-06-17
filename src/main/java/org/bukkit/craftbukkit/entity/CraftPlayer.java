@@ -15,8 +15,10 @@ import net.minecraft.server.ServerConfigurationManager;
 import net.minecraft.server.WorldServer;
 import org.bukkit.Achievement;
 import org.bukkit.Effect;
+import org.bukkit.Instrument;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Note;
 import org.bukkit.Statistic;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -148,6 +150,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public void playNote(Location loc, byte instrument, byte note) {
         getHandle().netServerHandler.sendPacket(new Packet54PlayNoteBlock(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), instrument, note));
+    }
+
+    public void playNote(Location loc, Instrument instrument, Note note) {
+        getHandle().netServerHandler.sendPacket(new Packet54PlayNoteBlock(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), instrument.getType(), note.getId()));
     }
 
     public void playEffect(Location loc, Effect effect, int data) {

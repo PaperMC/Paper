@@ -1,15 +1,16 @@
 package org.bukkit.craftbukkit.block;
 
 import net.minecraft.server.TileEntityNote;
+
+import org.bukkit.Instrument;
 import org.bukkit.Material;
+import org.bukkit.Note;
 import org.bukkit.block.Block;
 import org.bukkit.block.NoteBlock;
 import org.bukkit.craftbukkit.CraftWorld;
 
 /**
  * Represents a note block.
- *
- * @author sk89q
  */
 public class CraftNoteBlock extends CraftBlockState implements NoteBlock {
     private final CraftWorld world;
@@ -22,11 +23,25 @@ public class CraftNoteBlock extends CraftBlockState implements NoteBlock {
         note = (TileEntityNote) world.getTileEntityAt(getX(), getY(), getZ());
     }
 
+    @Deprecated
     public byte getNote() {
         return note.note;
     }
 
+    public byte getRawNote() {
+        return note.note;
+    }
+
+    public void setNote(Note n) {
+        note.note = n.getId();
+    }
+
+    @Deprecated
     public void setNote(byte n) {
+        note.note = n;
+    }
+
+    public void setRawNote(byte n) {
         note.note = n;
     }
 
@@ -49,6 +64,19 @@ public class CraftNoteBlock extends CraftBlockState implements NoteBlock {
         synchronized (block) {
             if (block.getType() == Material.NOTE_BLOCK) {
                 world.getHandle().d(getX(), getY(), getZ(), instrument, note);
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+
+    public boolean play(Instrument instrument, Note note) {
+        Block block = getBlock();
+
+        synchronized (block) {
+            if (block.getType() == Material.NOTE_BLOCK) {
+                world.getHandle().d(getX(), getY(), getZ(), instrument.getType(), note.getId());
                 return true;
             } else {
                 return false;
