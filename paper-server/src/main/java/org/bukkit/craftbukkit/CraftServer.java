@@ -19,13 +19,13 @@ import org.bukkit.inventory.ShapelessRecipe;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.lang.InterruptedException;
 import jline.ConsoleReader;
 import net.minecraft.server.ChunkCoordinates;
 import net.minecraft.server.ConvertProgressUpdater;
@@ -42,7 +42,6 @@ import net.minecraft.server.WorldManager;
 import net.minecraft.server.WorldServer;
 import net.minecraft.server.ServerCommand;
 import net.minecraft.server.ICommandListener;
-import net.minecraft.server.SecondaryWorldServer;
 import org.bukkit.*;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
@@ -57,10 +56,10 @@ import org.bukkit.craftbukkit.inventory.CraftShapedRecipe;
 import org.bukkit.craftbukkit.inventory.CraftShapelessRecipe;
 import org.bukkit.craftbukkit.command.ServerCommandListener;
 import org.bukkit.scheduler.BukkitWorker;
-import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.util.config.Configuration;
+import org.bukkit.util.config.ConfigurationNode;
 
 public final class CraftServer implements Server {
     private final String serverName = "Craftbukkit";
@@ -69,7 +68,7 @@ public final class CraftServer implements Server {
     private final PluginManager pluginManager = new SimplePluginManager(this);
     private final ServicesManager servicesManager = new SimpleServicesManager();
     private final BukkitScheduler scheduler = new CraftScheduler(this);
-    private final CommandMap commandMap = new SimpleCommandMap(this);
+    private final SimpleCommandMap commandMap = new SimpleCommandMap(this);
     protected final MinecraftServer console;
     protected final ServerConfigurationManager server;
     private final Map<String, World> worlds = new LinkedHashMap<String, World>();
@@ -97,6 +96,10 @@ public final class CraftServer implements Server {
         configuration.getString("database.driver", "org.sqlite.JDBC");
         configuration.getString("database.isolation", "SERIALIZABLE");
         configuration.getString("settings.update-folder", "update");
+        
+        if (configuration.getNode("aliases") == null) {
+            configuration.setProperty("aliases.icanhasbukkit", "version");
+        }
     }
 
     public void loadPlugins() {
@@ -123,6 +126,8 @@ public final class CraftServer implements Server {
         } else {
             pluginFolder.mkdir();
         }
+
+        commandMap.registerServerAliases();
     }
 
     public void disablePlugins() {
@@ -534,5 +539,18 @@ public final class CraftServer implements Server {
         }
         toAdd.addToCraftingManager();
         return true;
+    }
+
+    public Map<String, String> getCommandAliases() {
+        ConfigurationNode node = configuration.getNode("aliases");
+        Map<String, String> result = new HashMap<String, String>();
+
+        if (node != null) {
+            for (String key : node.getKeys()) {
+                result.put(key, node.getString(key));
+            }
+        }
+
+        return result;
     }
 }
