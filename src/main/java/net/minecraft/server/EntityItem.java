@@ -21,6 +21,11 @@ public class EntityItem extends Entity {
         this.height = this.width / 2.0F;
         this.setPosition(d0, d1, d2);
         this.itemStack = itemstack;
+        // CraftBukkit start - infinite item fix
+        if (this.itemStack.count <= -1) {
+            this.itemStack.count = 1;
+        }
+        // CraftBukkit end
         this.yaw = (float) (Math.random() * 360.0D);
         this.motX = (double) ((float) (Math.random() * 0.20000000298023224D - 0.10000000149011612D));
         this.motY = 0.20000000298023224D;
