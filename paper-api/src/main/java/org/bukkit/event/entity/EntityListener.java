@@ -39,4 +39,6 @@ public class EntityListener implements Listener {
     public void onCreeperPower(CreeperPowerEvent event) {}
 
     public void onEntityTame(EntityTameEvent event) {}
+
+    public void onEntityRegainHealth(EntityRegainHealthEvent event) {}
 }

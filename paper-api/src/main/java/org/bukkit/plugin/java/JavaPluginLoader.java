@@ -690,6 +690,13 @@ public final class JavaPluginLoader implements PluginLoader {
                 }
             };
 
+        case ENTITY_REGAIN_HEALTH:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((EntityListener) listener).onEntityRegainHealth((EntityRegainHealthEvent) event);
+                }
+            };
+
         // Vehicle Events
         case VEHICLE_CREATE:
             return new EventExecutor() {

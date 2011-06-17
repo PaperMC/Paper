@@ -602,6 +602,13 @@ public abstract class Event implements Serializable {
         ENTITY_TAME (Category.LIVING_ENTITY),
 
         /**
+         * Called when a LivingEntity is regains health
+         *
+         * @see org.bukkit.event.entity.EntityRegainHealthEvent
+         */
+        ENTITY_REGAIN_HEALTH (Category.LIVING_ENTITY),
+
+        /**
          * WEATHER EVENTS
          */
 
