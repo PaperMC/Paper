@@ -271,4 +271,18 @@ public interface Server {
      * @return Map of aliases to command names
      */
     public Map<String, String> getCommandAliases();
+
+    /**
+     * Gets the radius, in blocks, around each worlds spawn point to protect
+     *
+     * @return Spawn radius, or 0 if none
+     */
+    public int getSpawnRadius();
+
+    /**
+     * Sets the radius, in blocks, around each worlds spawn point to protect
+     *
+     * @param value New spawn radius, or 0 if none
+     */
+    public void setSpawnRadius(int value);
 }
