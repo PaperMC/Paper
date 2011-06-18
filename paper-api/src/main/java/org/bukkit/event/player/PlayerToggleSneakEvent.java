@@ -8,10 +8,21 @@ import org.bukkit.event.Cancellable;
  * @author azi
  */
 public class PlayerToggleSneakEvent extends PlayerEvent implements Cancellable {
+    private boolean isSneaking;
     private boolean cancel = false;
 
-    public PlayerToggleSneakEvent(final Player player) {
+    public PlayerToggleSneakEvent(final Player player, boolean isSneaking) {
         super(Type.PLAYER_TOGGLE_SNEAK, player);
+        this.isSneaking = isSneaking;
+    }
+
+    /**
+     * Returns whether the player is now sneaking.
+     * 
+     * @return sneaking state
+     */
+    public boolean isSneaking() {
+        return isSneaking;
     }
 
     /**
