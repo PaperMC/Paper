@@ -815,7 +815,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
         if (packet19entityaction.animation == 1 || packet19entityaction.animation == 2) {
             Player player = getPlayer();
-            PlayerToggleSneakEvent event = new PlayerToggleSneakEvent(player);
+            PlayerToggleSneakEvent event = new PlayerToggleSneakEvent(player, packet19entityaction.animation == 1);
             server.getPluginManager().callEvent(event);
             if (event.isCancelled()) {
                 return;
