@@ -1051,6 +1051,11 @@ public class World implements IBlockAccess {
 
         for (i = 0; i < this.e.size(); ++i) {
             entity = (Entity) this.e.get(i);
+            // CraftBukkit start - fixed an NPE
+            if (entity == null) {
+                continue;
+            }
+            // CraftBukkit end
             entity.o_();
             if (entity.dead) {
                 this.e.remove(i--);
@@ -1971,7 +1976,11 @@ public class World implements IBlockAccess {
         Entity entity = null;
         for (int i = 0; i < list.size(); ++i) {
             entity = (Entity) list.get(i);
-
+            // CraftBukkit start - fixed an NPE
+            if (entity == null) {
+                continue;
+            }
+            // CraftBukkit end
             this.entityList.add(entity);
             // CraftBukkit end
             this.c((Entity) list.get(i));
@@ -2078,6 +2087,11 @@ public class World implements IBlockAccess {
 
         for (int i = 0; i < this.players.size(); ++i) {
             EntityHuman entityhuman1 = (EntityHuman) this.players.get(i);
+            // CraftBukkit start - fixed an NPE
+            if (entityhuman1 == null) {
+                continue;
+            }
+            // CraftBukkit end
             double d5 = entityhuman1.d(d0, d1, d2);
 
             if ((d3 < 0.0D || d5 < d3 * d3) && (d4 == -1.0D || d5 < d4)) {
