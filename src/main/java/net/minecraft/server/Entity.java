@@ -10,6 +10,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.entity.CraftVehicle;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.event.vehicle.VehicleBlockCollisionEvent;
 import org.bukkit.event.vehicle.VehicleExitEvent;
@@ -21,6 +22,7 @@ import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+import org.bukkit.event.entity.ProjectileHitEvent;
 // CraftBukkit end
 
 public abstract class Entity {
@@ -142,6 +144,13 @@ public abstract class Entity {
     }
 
     public void die() {
+        // CraftBukkit start
+        if (this.getBukkitEntity() instanceof Projectile && !(this instanceof EntityFish)) {
+            ProjectileHitEvent event = new ProjectileHitEvent((Projectile) this.getBukkitEntity());
+            CraftServer server = ((WorldServer) this.world).getServer();
+            server.getPluginManager().callEvent(event);
+        }
+        // CraftBukkit end
         this.dead = true;
     }
 

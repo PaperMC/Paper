@@ -4,6 +4,8 @@ import java.util.List;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
@@ -165,25 +167,25 @@ public class EntityArrow extends Entity {
                     // CraftBukkit start
                     boolean stick;
                     if (entity instanceof EntityLiving) {
-                        CraftServer server = ((WorldServer) this.world).getServer();
+                        CraftServer server = this.world.getServer();
 
                         // TODO decide if we should create DamageCause.ARROW, DamageCause.PROJECTILE
                         // or leave as DamageCause.ENTITY_ATTACK
-                        org.bukkit.entity.Entity shooter = (this.shooter == null) ? null : this.shooter.getBukkitEntity();
                         org.bukkit.entity.Entity damagee = movingobjectposition.entity.getBukkitEntity();
-                        org.bukkit.entity.Entity projectile = this.getBukkitEntity();
+                        Projectile projectile = (Projectile) this.getBukkitEntity();
                         // TODO deal with arrows being fired from a non-entity
                         DamageCause damageCause = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
                         int damage = 4;
 
-                        EntityDamageByProjectileEvent event = new EntityDamageByProjectileEvent(shooter, damagee, projectile, damageCause, damage);
+                        EntityDamageByProjectileEvent event = new EntityDamageByProjectileEvent(damagee, projectile, damageCause, damage);
                         server.getPluginManager().callEvent(event);
-                        if (!event.isCancelled()) {
+                        this.shooter = (projectile.getShooter() == null) ? null : ((CraftLivingEntity) projectile.getShooter()).getHandle();
+
+                        if (event.isCancelled()) {
+                            stick = !event.getBounce();
+                        } else {
                             // this function returns if the arrow should stick in or not, i.e. !bounce
                             stick = movingobjectposition.entity.damageEntity(this.shooter, event.getDamage());
-                        } else {
-                            // event was cancelled, get if the arrow should bounce or not
-                            stick = !event.getBounce();
                         }
                     } else {
                         stick = movingobjectposition.entity.damageEntity(this.shooter, 4);

@@ -4,6 +4,7 @@ import java.util.List;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
@@ -193,23 +194,21 @@ public class EntityFish extends Entity {
                     // TODO add EntityDamagedByProjectileEvent : fishing hook?
                     boolean stick;
                     if (movingobjectposition.entity instanceof EntityLiving) {
-                        CraftServer server = ((WorldServer) this.world).getServer();
-                        org.bukkit.entity.Entity shooter = (this.owner == null) ? null : this.owner.getBukkitEntity();
+                        CraftServer server =  this.world.getServer();
                         org.bukkit.entity.Entity damagee = movingobjectposition.entity.getBukkitEntity();
-                        org.bukkit.entity.Entity projectile = this.getBukkitEntity();
+                        Projectile projectile = (Projectile) this.getBukkitEntity();
                         DamageCause damageCause = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
                         int damage = 0;
 
                         // TODO @see EntityArrow#162
-                        EntityDamageByProjectileEvent event = new EntityDamageByProjectileEvent(shooter, damagee, projectile, damageCause, damage);
+                        EntityDamageByProjectileEvent event = new EntityDamageByProjectileEvent(damagee, projectile, damageCause, damage);
                         server.getPluginManager().callEvent(event);
 
-                        if (!event.isCancelled()) {
-                            // this function returns if the fish should stick or not, i.e. !bounce
-                            stick = movingobjectposition.entity.damageEntity(this.owner, event.getDamage());
-                        } else {
-                            // event was cancelled, get if the fish should bounce or not
+                        if (event.isCancelled()) {
                             stick = !event.getBounce();
+                        } else {
+                            // this function returns if the fish should stick in or not, i.e. !bounce
+                            stick = movingobjectposition.entity.damageEntity(this.owner, event.getDamage());
                         }
                     } else {
                         stick = movingobjectposition.entity.damageEntity(this.owner, 0);
