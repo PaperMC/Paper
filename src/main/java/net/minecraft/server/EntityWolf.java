@@ -4,7 +4,14 @@ import java.util.Iterator;
 import java.util.List;
 
 // CraftBukkit start
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityTargetEvent;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
 import org.bukkit.event.entity.EntityTameEvent;
 // CraftBukkit end
 
@@ -233,8 +240,25 @@ public class EntityWolf extends EntityAnimal {
         } else {
             if (!this.A() && !this.isAngry()) {
                 if (entity instanceof EntityHuman) {
-                    this.setAngry(true);
-                    this.target = (Entity) entity;
+                    // CraftBukkit start
+                    CraftServer server = this.world.getServer();
+                    org.bukkit.entity.Entity bukkitTarget = null;
+                    if (entity != null) {
+                        bukkitTarget = entity.getBukkitEntity();
+                    }
+
+                    EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), bukkitTarget, TargetReason.TARGET_ATTACKED_ENTITY);
+                    server.getPluginManager().callEvent(event);
+
+                    if (!event.isCancelled()) {
+                        if (event.getTarget() == null) {
+                            this.target = null;
+                        } else {
+                            this.setAngry(true);
+                            this.target = ((CraftEntity) event.getTarget()).getHandle();
+                        }
+                    }
+                    // CraftBukkit end
                 }
 
                 if (entity instanceof EntityArrow && ((EntityArrow) entity).shooter != null) {
@@ -250,10 +274,27 @@ public class EntityWolf extends EntityAnimal {
                         EntityWolf entitywolf = (EntityWolf) entity1;
 
                         if (!entitywolf.A() && entitywolf.target == null) {
-                            entitywolf.target = (Entity) entity;
-                            if (entity instanceof EntityHuman) {
-                                entitywolf.setAngry(true);
+                            // CraftBukkit start
+                            CraftServer server = this.world.getServer();
+                            org.bukkit.entity.Entity bukkitTarget = null;
+                            if (entity != null) {
+                                bukkitTarget = entity.getBukkitEntity();
                             }
+
+                            EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), bukkitTarget, TargetReason.TARGET_ATTACKED_ENTITY);
+                            server.getPluginManager().callEvent(event);
+
+                            if (!event.isCancelled()) {
+                                if (event.getTarget() == null) {
+                                    this.target = null;
+                                } else {
+                                    entitywolf.target = (Entity) entity;
+                                    if (entity instanceof EntityHuman) {
+                                        entitywolf.setAngry(true);
+                                    }
+                                }
+                            }
+                            // CraftBukkit end
                         }
                     }
                 }
@@ -291,8 +332,19 @@ public class EntityWolf extends EntityAnimal {
             if (this.A()) {
                 b0 = 4;
             }
+            // CraftBukkit start
+            CraftServer server = this.world.getServer();
+            org.bukkit.entity.Entity damager = this.getBukkitEntity();
+            org.bukkit.entity.Entity damagee = (entity == null) ? null : entity.getBukkitEntity();
+            DamageCause damageCause = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
 
-            entity.damageEntity(this, b0);
+            EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(damager, damagee, damageCause, b0);
+            server.getPluginManager().callEvent(event);
+
+            if (!event.isCancelled()) {
+                entity.damageEntity(this, b0);
+            }
+            // CraftBukkit end
         }
     }
 
