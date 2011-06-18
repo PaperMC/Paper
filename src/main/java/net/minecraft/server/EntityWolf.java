@@ -419,18 +419,12 @@ public class EntityWolf extends EntityAnimal {
     }
 
     public void d(boolean flag) {
-        // CraftBukkit start
-       EntityTameEvent event = CraftEventFactory.callEntityTameEvent(this, null);
+        byte b0 = this.datawatcher.a(16);
 
-        if (!event.isCancelled()) {
-        // CraftBukkit end
-            byte b0 = this.datawatcher.a(16);
-
-            if (flag) {
-                this.datawatcher.b(16, Byte.valueOf((byte) (b0 | 4)));
-            } else {
-                this.datawatcher.b(16, Byte.valueOf((byte) (b0 & -5)));
-            }
+        if (flag) {
+            this.datawatcher.b(16, Byte.valueOf((byte) (b0 | 4)));
+        } else {
+            this.datawatcher.b(16, Byte.valueOf((byte) (b0 & -5)));
         }
     }
 }
