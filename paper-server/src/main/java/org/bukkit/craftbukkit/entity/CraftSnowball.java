@@ -1,13 +1,14 @@
 package org.bukkit.craftbukkit.entity;
 
+import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntitySnowball;
+
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Snowball;
 
 /**
  * A snowball.
- *
- * @author sk89q
  */
 public class CraftSnowball extends CraftEntity implements Snowball {
     public CraftSnowball(CraftServer server, EntitySnowball entity) {
@@ -17,5 +18,19 @@ public class CraftSnowball extends CraftEntity implements Snowball {
     @Override
     public String toString() {
         return "CraftSnowball";
+    }
+
+    public LivingEntity getShooter() {
+        if (((EntitySnowball) getHandle()).shooter != null) {
+            return (LivingEntity) ((EntitySnowball) getHandle()).shooter.getBukkitEntity();
+        }
+
+        return null;
+    }
+
+    public void setShooter(LivingEntity shooter) {
+        if (shooter instanceof CraftLivingEntity) {
+            ((EntitySnowball) getHandle()).shooter = (EntityLiving) ((CraftLivingEntity) shooter).entity;
+        }
     }
 }
