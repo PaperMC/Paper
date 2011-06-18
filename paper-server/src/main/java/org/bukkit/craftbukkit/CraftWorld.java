@@ -694,9 +694,9 @@ public class CraftWorld implements World {
             entity = new EntitySnowball(world, x, y, z);
         } else if (Minecart.class.isAssignableFrom(clazz)) {
 
-            if (clazz.isAssignableFrom(PoweredMinecart.class)) {
+            if (PoweredMinecart.class.isAssignableFrom(clazz)) {
                 entity = new EntityMinecart(world, x, y, z, CraftMinecart.Type.PoweredMinecart.getId());
-            } else if (clazz.isAssignableFrom(StorageMinecart.class)) {
+            } else if (StorageMinecart.class.isAssignableFrom(clazz)) {
                 entity = new EntityMinecart(world, x, y, z, CraftMinecart.Type.StorageMinecart.getId());
             } else {
                 entity = new EntityMinecart(world, x, y, z, CraftMinecart.Type.Minecart.getId());
