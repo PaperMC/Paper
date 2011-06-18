@@ -95,10 +95,10 @@ public final class CraftServer implements Server {
         configuration.getString("database.password", "walrus");
         configuration.getString("database.driver", "org.sqlite.JDBC");
         configuration.getString("database.isolation", "SERIALIZABLE");
-        
+
         configuration.getString("settings.update-folder", "update");
         configuration.getInt("settings.spawn-radius", 16);
-        
+
         if (configuration.getNode("aliases") == null) {
             configuration.setProperty("aliases.icanhasbukkit", "version");
         }
@@ -401,6 +401,7 @@ public final class CraftServer implements Server {
         }
 
         pluginManager.callEvent(new WorldInitEvent(internal.getWorld()));
+        System.out.print("Preparing start region for level " + (console.worlds.size() -1) + " (Seed: " + internal.getSeed() + ")");
 
         short short1 = 196;
         long i = System.currentTimeMillis();

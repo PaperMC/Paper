@@ -216,10 +216,12 @@ public class MinecraftServer implements Runnable, ICommandListener {
         short short1 = 196;
         long k = System.currentTimeMillis();
 
-        for (int l = 0; l < this.worlds.size(); ++l) { // CraftBukkit
-            log.info("Preparing start region for level " + l);
-            // if (l == 0 || this.propertyManager.getBoolean("allow-nether", true)) { // CraftBukkit
-                WorldServer worldserver = this.worlds.get(l); // CraftBukkit
+        // CraftBukkit start
+        for (int l = 0; l < this.worlds.size(); ++l) {
+            // if (l == 0 || this.propertyManager.getBoolean("allow-nether", true)) {
+                WorldServer worldserver = this.worlds.get(l);
+                log.info("Preparing start region for level " + l + " (Seed: " + worldserver.getSeed() + ")");
+                // CraftBukkit end
                 ChunkCoordinates chunkcoordinates = worldserver.getSpawn();
 
                 for (int i1 = -short1; i1 <= short1 && this.isRunning; i1 += 16) {
