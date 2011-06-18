@@ -3,13 +3,18 @@ package org.bukkit.event.entity;
 import java.util.Random;
 
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Projectile;
 
 public class EntityDamageByProjectileEvent extends EntityDamageByEntityEvent {
 
-    private Entity projectile;
+    private Projectile projectile;
     private boolean bounce;
 
-    public EntityDamageByProjectileEvent(Entity damager, Entity damagee, Entity projectile, DamageCause cause, int damage) {
+    public EntityDamageByProjectileEvent(Entity damagee, Projectile projectile, DamageCause cause, int damage) {
+        this(projectile.getShooter(), damagee, projectile, cause, damage);
+    }
+
+    public EntityDamageByProjectileEvent(Entity damager, Entity damagee, Projectile projectile, DamageCause cause, int damage) {
         super(damager, damagee, cause, damage);
         this.projectile = projectile;
         Random random = new Random();
@@ -19,9 +24,10 @@ public class EntityDamageByProjectileEvent extends EntityDamageByEntityEvent {
 
     /**
      * The projectile used to cause the event
+     *
      * @return the projectile
      */
-    public Entity getProjectile() {
+    public Projectile getProjectile() {
         return projectile;
     }
 

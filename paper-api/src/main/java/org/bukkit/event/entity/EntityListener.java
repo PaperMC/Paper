@@ -41,4 +41,6 @@ public class EntityListener implements Listener {
     public void onEntityTame(EntityTameEvent event) {}
 
     public void onEntityRegainHealth(EntityRegainHealthEvent event) {}
+
+    public void onProjectileHit(ProjectileHitEvent event) {}
 }

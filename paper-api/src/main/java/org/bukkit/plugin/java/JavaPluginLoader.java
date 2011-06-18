@@ -719,6 +719,13 @@ public final class JavaPluginLoader implements PluginLoader {
                 }
             };
 
+        case PROJECTILE_HIT:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((EntityListener) listener).onProjectileHit((ProjectileHitEvent) event);
+                }
+            };
+
         // Vehicle Events
         case VEHICLE_CREATE:
             return new EventExecutor() {

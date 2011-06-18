@@ -2,7 +2,5 @@ package org.bukkit.entity;
 
 /**
  * Represents a Fish.
- *
- * @author Cogito
  */
-public interface Fish extends Entity {}
+public interface Fish extends Projectile {}
