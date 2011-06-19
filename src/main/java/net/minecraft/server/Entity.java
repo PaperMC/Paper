@@ -989,6 +989,8 @@ public abstract class Entity {
             } else {
                 world = (CraftWorld) Bukkit.getServer().getWorld(worldName);
             }
+        } else {
+            world = (CraftWorld) Bukkit.getServer().getWorld(nbttagcompound.getString("World"));
         }
 
         a(world == null ? null : world.getHandle());
