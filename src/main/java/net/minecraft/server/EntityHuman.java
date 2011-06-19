@@ -10,7 +10,9 @@ import org.bukkit.craftbukkit.TrigMath;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
 import org.bukkit.event.player.PlayerBedEnterEvent;
 import org.bukkit.event.player.PlayerBedLeaveEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
@@ -463,8 +465,25 @@ public abstract class EntityHuman extends EntityLiving {
                     EntityWolf entitywolf1 = (EntityWolf) entity;
 
                     if (entitywolf1.A() && entitywolf1.E() == null && this.name.equals(entitywolf1.x()) && (!flag || !entitywolf1.isSitting())) {
-                        entitywolf1.setSitting(false);
-                        entitywolf1.c(entityliving);
+                        // CraftBukkit start
+                        CraftServer server = this.world.getServer();
+                        org.bukkit.entity.Entity bukkitTarget = null;
+                        if (entity != null) {
+                            bukkitTarget = entityliving.getBukkitEntity();
+                        }
+                        EntityTargetEvent event;
+                        if (flag) {
+                            event = new EntityTargetEvent(entitywolf1.getBukkitEntity(), bukkitTarget, TargetReason.OWNER_ATTACKED_TARGET);
+                        } else {
+                            event = new EntityTargetEvent(entitywolf1.getBukkitEntity(), bukkitTarget, TargetReason.TARGET_ATTACKED_OWNER);
+                        }
+                        server.getPluginManager().callEvent(event);
+
+                        if (!event.isCancelled()) {
+                            entitywolf1.setSitting(false);
+                            entitywolf1.c(entityliving);
+                        }
+                        // CraftBukkit end
                     }
                 }
             }

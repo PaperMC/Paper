@@ -109,7 +109,22 @@ public class EntityWolf extends EntityAnimal {
             List list = this.world.a(EntitySheep.class, AxisAlignedBB.b(this.locX, this.locY, this.locZ, this.locX + 1.0D, this.locY + 1.0D, this.locZ + 1.0D).b(16.0D, 4.0D, 16.0D));
 
             if (!list.isEmpty()) {
-                this.c((Entity) list.get(this.world.random.nextInt(list.size())));
+                // CraftBukkit start
+                Entity entity = (Entity) list.get(this.world.random.nextInt(list.size()));
+
+                CraftServer server = this.world.getServer();
+                org.bukkit.entity.Entity bukkitTarget = null;
+                if (entity != null) {
+                    bukkitTarget = entity.getBukkitEntity();
+                }
+
+                EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), bukkitTarget, TargetReason.RANDOM_TARGET);
+                server.getPluginManager().callEvent(event);
+
+                if (!event.isCancelled() || event.getTarget() != null ) {
+                    this.c(entity);
+                }
+                // CraftBukkit end
             }
         }
 
