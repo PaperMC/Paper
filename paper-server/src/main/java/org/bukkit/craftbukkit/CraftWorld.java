@@ -765,4 +765,16 @@ public class CraftWorld implements World {
     public ChunkSnapshot getEmptyChunkSnapshot(int x, int z, boolean includeBiome, boolean includeBiomeTempRain) {
         return CraftChunk.getEmptyChunkSnapshot(x, z, this, includeBiome, includeBiomeTempRain);
     }
+
+    public void setSpawnFlags(boolean allowMonsters, boolean allowAnimals) {
+        world.setSpawnFlags(allowMonsters, allowAnimals);
+    }
+
+    public boolean getAllowAnimals() {
+        return world.allowAnimals;
+    }
+
+    public boolean getAllowMonsters() {
+        return world.allowMonsters;
+    }
 }
