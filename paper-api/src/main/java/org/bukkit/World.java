@@ -619,6 +619,28 @@ public interface World {
     public ChunkSnapshot getEmptyChunkSnapshot(int x, int z, boolean includeBiome, boolean includeBiomeTempRain);
 
     /**
+     * Sets the spawn flags for this.
+     * 
+     * @param allowMonsters - if true, monsters are allowed to spawn in this world.
+     * @param allowAnimals - if true, animals are allowed to spawn in this world.
+     */
+    public void setSpawnFlags(boolean allowMonsters, boolean allowAnimals);
+
+    /**
+     * Gets whether animals can spawn in this world.
+     *
+     * @return whether animals can spawn in this world.
+     */
+    public boolean getAllowAnimals();
+
+    /**
+     * Gets whether monsters can spawn in this world.
+     *
+     * @return whether monsters can spawn in this world.
+     */
+    public boolean getAllowMonsters();
+
+    /**
      * Represents various map environment types that a world may be
      */
     public enum Environment {
