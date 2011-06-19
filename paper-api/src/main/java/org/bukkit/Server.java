@@ -285,4 +285,11 @@ public interface Server {
      * @param value New spawn radius, or 0 if none
      */
     public void setSpawnRadius(int value);
+
+    /**
+     * Gets whether the Server is in online mode or not.
+     *
+     * @return Whether the server is in online mode.
+     */
+    public boolean getOnlineMode();
 }
