@@ -682,15 +682,15 @@ public class CraftWorld implements World {
         float yaw = location.getYaw();
 
         // order is important for some of these
-        if (clazz.isAssignableFrom(Boat.class)) {
+        if (Boat.class.isAssignableFrom(clazz)) {
             entity = new EntityBoat(world, x, y, z);
-        } else if (clazz.isAssignableFrom(Egg.class)) {
+        } else if (Egg.class.isAssignableFrom(clazz)) {
             entity = new EntityEgg(world, x, y, z);
-        } else if (clazz.isAssignableFrom(FallingSand.class)) {
+        } else if (FallingSand.class.isAssignableFrom(clazz)) {
             entity = new EntityFallingSand(world, x, y, z, 0);
-        } else if (clazz.isAssignableFrom(Fireball.class)) {
+        } else if (Fireball.class.isAssignableFrom(clazz)) {
             // need a shooter
-        } else if (clazz.isAssignableFrom(Snowball.class)) {
+        } else if (Snowball.class.isAssignableFrom(clazz)) {
             entity = new EntitySnowball(world, x, y, z);
         } else if (Minecart.class.isAssignableFrom(clazz)) {
 
@@ -702,40 +702,40 @@ public class CraftWorld implements World {
                 entity = new EntityMinecart(world, x, y, z, CraftMinecart.Type.Minecart.getId());
             }
 
-        } else if (clazz.isAssignableFrom(Arrow.class)) {
+        } else if (Arrow.class.isAssignableFrom(clazz)) {
             entity = new EntityArrow(world);
             entity.setPositionRotation(x, y, z, 0, 0);
         } else if (LivingEntity.class.isAssignableFrom(clazz)) {
 
-            if (clazz.isAssignableFrom(Chicken.class)) {
+            if (Chicken.class.isAssignableFrom(clazz)) {
                 entity = new EntityChicken(world);
-            } else if (clazz.isAssignableFrom(Cow.class)) {
+            } else if (Cow.class.isAssignableFrom(clazz)) {
                 entity = new EntityCow(world);
-            } else if (clazz.isAssignableFrom(Creeper.class)) {
+            } else if (Creeper.class.isAssignableFrom(clazz)) {
                 entity = new EntityCreeper(world);
-            } else if (clazz.isAssignableFrom(Fish.class)) {
+            } else if (Fish.class.isAssignableFrom(clazz)) {
                 entity = new EntityFish(world);
-            } else if (clazz.isAssignableFrom(Ghast.class)) {
+            } else if (Ghast.class.isAssignableFrom(clazz)) {
                 entity = new EntityGhast(world);
-            } else if (clazz.isAssignableFrom(Pig.class)) {
+            } else if (Pig.class.isAssignableFrom(clazz)) {
                 entity = new EntityGhast(world);
-            } else if (clazz.isAssignableFrom(Player.class)) {
+            } else if (Player.class.isAssignableFrom(clazz)) {
                 // need a net server handler for this one
-            } else if (clazz.isAssignableFrom(Sheep.class)) {
+            } else if (Sheep.class.isAssignableFrom(clazz)) {
                 entity = new EntitySheep(world);
-            } else if (clazz.isAssignableFrom(Skeleton.class)) {
+            } else if (Skeleton.class.isAssignableFrom(clazz)) {
                 entity = new EntitySkeleton(world);
-            } else if (clazz.isAssignableFrom(Slime.class)) {
+            } else if (Slime.class.isAssignableFrom(clazz)) {
                 entity = new EntitySlime(world);
-            } else if (clazz.isAssignableFrom(Spider.class)) {
+            } else if (Spider.class.isAssignableFrom(clazz)) {
                 entity = new EntitySpider(world);
-            } else if (clazz.isAssignableFrom(Squid.class)) {
+            } else if (Squid.class.isAssignableFrom(clazz)) {
                 entity = new EntitySquid(world);
-            } else if (clazz.isAssignableFrom(Wolf.class)) {
+            } else if (Wolf.class.isAssignableFrom(clazz)) {
                 entity = new EntityWolf(world);
-            } else if (clazz.isAssignableFrom(PigZombie.class)) {
+            } else if (PigZombie.class.isAssignableFrom(clazz)) {
                 entity = new EntityPigZombie(world);
-            } else if (clazz.isAssignableFrom(Zombie.class)) {
+            } else if (Zombie.class.isAssignableFrom(clazz)) {
                 entity = new EntityZombie(world);
             }
 
@@ -743,14 +743,14 @@ public class CraftWorld implements World {
                 entity.setLocation(x, y, z, pitch, yaw);
             }
 
-        } else if (clazz.isAssignableFrom(Painting.class)) {
+        } else if (Painting.class.isAssignableFrom(clazz)) {
             // negative
-        } else if (clazz.isAssignableFrom(TNTPrimed.class)) {
+        } else if (TNTPrimed.class.isAssignableFrom(clazz)) {
             entity = new EntityTNTPrimed(world, x, y, z);
-        } else if (clazz.isAssignableFrom(Weather.class)) {
+        } else if (Weather.class.isAssignableFrom(clazz)) {
             // not sure what this can do
             entity = new EntityWeatherStorm(world, x, y, z);
-        } else if (clazz.isAssignableFrom(LightningStrike.class)) {
+        } else if (LightningStrike.class.isAssignableFrom(clazz)) {
             // what is this, I don't even
         }
 
