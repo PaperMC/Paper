@@ -92,6 +92,18 @@ public class EntityTargetEvent extends EntityEvent implements Cancellable {
          */
         FORGOT_TARGET,
         /**
+         * When the target attacks the owner of the entity, so the entity targets it.
+         */
+        TARGET_ATTACKED_OWNER,
+        /**
+         * When the owner of the entity attacks the target attacks, so the entity targets it.
+         */
+        OWNER_ATTACKED_TARGET,
+        /**
+         * When the entity has no target, so the entity randomly chooses one.
+         */
+        RANDOM_TARGET,
+        /**
          * For custom calls to the event
          */
         CUSTOM
