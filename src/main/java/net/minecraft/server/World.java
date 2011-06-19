@@ -2088,7 +2088,7 @@ public class World implements IBlockAccess {
         for (int i = 0; i < this.players.size(); ++i) {
             EntityHuman entityhuman1 = (EntityHuman) this.players.get(i);
             // CraftBukkit start - fixed an NPE
-            if (entityhuman1 == null) {
+            if (entityhuman1 == null || entityhuman1.dead) {
                 continue;
             }
             // CraftBukkit end
