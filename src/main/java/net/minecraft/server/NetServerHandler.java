@@ -858,6 +858,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
         WorldServer worldserver = this.minecraftServer.a(this.player.dimension);
         Entity entity = worldserver.getEntity(packet7useentity.target);
+        ItemStack itemInHand = this.player.inventory.getItemInHand();
 
         if (entity != null && this.player.e(entity) && this.player.g(entity) < 36.0D) {
             if (packet7useentity.c == 0) {
@@ -870,14 +871,14 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 // CraftBukkit end
                 this.player.c(entity);
                 // CraftBukkit start - update the client if the item is an infinite one
-                if (this.player.inventory.getItemInHand().count <= -1) {
+                if (itemInHand != null && itemInHand.count <= -1) {
                     this.player.a(this.player.activeContainer);
                 }
                 // CraftBukkit end
             } else if (packet7useentity.c == 1) {
                 this.player.d(entity);
                 // CraftBukkit start - update the client if the item is an infinite one
-                if (this.player.inventory.getItemInHand().count <= -1) {
+                if (itemInHand != null && itemInHand.count <= -1) {
                     this.player.a(this.player.activeContainer);
                 }
                 // CraftBukkit end
