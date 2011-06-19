@@ -565,4 +565,8 @@ public final class CraftServer implements Server {
         configuration.setProperty("settings.spawn-radius", value);
         configuration.save();
     }
+
+    public boolean getOnlineMode() {
+        return this.console.onlineMode;
+    }
 }
