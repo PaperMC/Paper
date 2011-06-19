@@ -869,8 +869,18 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 }
                 // CraftBukkit end
                 this.player.c(entity);
+                // CraftBukkit start - update the client if the item is an infinite one
+                if (this.player.inventory.getItemInHand().count <= -1) {
+                    this.player.a(this.player.activeContainer);
+                }
+                // CraftBukkit end
             } else if (packet7useentity.c == 1) {
                 this.player.d(entity);
+                // CraftBukkit start - update the client if the item is an infinite one
+                if (this.player.inventory.getItemInHand().count <= -1) {
+                    this.player.a(this.player.activeContainer);
+                }
+                // CraftBukkit end
             }
         }
     }
