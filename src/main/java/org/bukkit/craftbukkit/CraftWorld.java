@@ -718,7 +718,7 @@ public class CraftWorld implements World {
             } else if (Ghast.class.isAssignableFrom(clazz)) {
                 entity = new EntityGhast(world);
             } else if (Pig.class.isAssignableFrom(clazz)) {
-                entity = new EntityGhast(world);
+                entity = new EntityPig(world);
             } else if (Player.class.isAssignableFrom(clazz)) {
                 // need a net server handler for this one
             } else if (Sheep.class.isAssignableFrom(clazz)) {
