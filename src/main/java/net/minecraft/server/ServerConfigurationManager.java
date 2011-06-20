@@ -272,83 +272,27 @@ public class ServerConfigurationManager {
     }
 
     public void f(EntityPlayer entityplayer) {
-        WorldServer worldserver = this.server.a(entityplayer.dimension);
-        boolean flag = false;
-        int b0; // CraftBukkit - byte -> int
+        // CraftBukkit start -- Replaced the standard handling of portals with a more customised method.
+        int dimension = entityplayer.dimension;
+        WorldServer fromWorld = this.server.a(dimension);
+        WorldServer toWorld = this.server.a(dimension == -1 ? 0 : -1);
+        double blockRatio = dimension == -1 ? 8 : 0.125;
 
-        if (entityplayer.dimension == -1) {
-            b0 = 0;
-        } else {
-            b0 = -1;
-        }
+        Location fromLocation = new Location(fromWorld.getWorld(), entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
+        Location toLocation = new Location(toWorld.getWorld(), (entityplayer.locX * blockRatio), entityplayer.locY, (entityplayer.locZ * blockRatio), entityplayer.yaw, entityplayer.pitch);
 
-        /* CraftBukkit start
-        entityplayer.dimension = b0;
-        WorldServer worldserver1 = this.server.a(entityplayer.dimension);
-
-        entityplayer.netServerHandler.sendPacket(new Packet9Respawn((byte) entityplayer.dimension));
-        worldserver.removeEntity(entityplayer);
-        entityplayer.dead = false;
-        // CraftBukkit end */
-        double d0 = entityplayer.locX;
-        double d1 = entityplayer.locZ;
-        double d2 = 8.0D;
-
-        if (b0 == -1) { // CraftBukkit - entityplayer.dimension -> b0
-            d0 /= d2;
-            d1 /= d2;
-            entityplayer.setPositionRotation(d0, entityplayer.locY, d1, entityplayer.yaw, entityplayer.pitch);
-            if (entityplayer.S()) {
-                worldserver.entityJoinedWorld(entityplayer, false);
-            }
-        } else {
-            d0 *= d2;
-            d1 *= d2;
-            entityplayer.setPositionRotation(d0, entityplayer.locY, d1, entityplayer.yaw, entityplayer.pitch);
-            if (entityplayer.S()) {
-                worldserver.entityJoinedWorld(entityplayer, false);
-            }
-        }
-
-        // CraftBukkit start
-        CraftWorld fromCraftWorld = worldserver.getWorld();
-        CraftWorld toCraftWorld = this.server.a(b0).getWorld();
-        Location startLocation = new Location(fromCraftWorld, entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
-        Location endLocation = new Location(toCraftWorld, d0, entityplayer.locY, d1, entityplayer.yaw, entityplayer.pitch);
-
-        PlayerPortalEvent event = new PlayerPortalEvent((Player) entityplayer.getBukkitEntity(), startLocation, endLocation);
+        org.bukkit.craftbukkit.PortalTravelAgent pta = new org.bukkit.craftbukkit.PortalTravelAgent();
+        PlayerPortalEvent event = new PlayerPortalEvent((Player) entityplayer.getBukkitEntity(), fromLocation, toLocation, pta);
         Bukkit.getServer().getPluginManager().callEvent(event);
         if (event.isCancelled()) {
             return;
         }
-        endLocation = event.getTo();
-
-        b0 = ((CraftWorld) endLocation.getWorld()).getHandle().dimension;
-
-        WorldServer worldserver1 = this.server.a(b0);
-
-        if (entityplayer.S()) {
-            // worldserver1.addEntity(entityplayer);
-            entityplayer.setPositionRotation(endLocation.getX(), endLocation.getY(), endLocation.getZ(), endLocation.getYaw(), endLocation.getPitch());
-            worldserver1.entityJoinedWorld(entityplayer, false);
-            if (event.useTravelAgent()) {
-                worldserver1.chunkProviderServer.a = true;
-                (new PortalTravelAgent()).a(worldserver1, entityplayer);
-                worldserver1.chunkProviderServer.a = false;
-                endLocation.setX(entityplayer.locX);
-                endLocation.setY(entityplayer.locY);
-                endLocation.setZ(entityplayer.locZ);
-            }
+        Location finalLocation = event.getTo();
+        if(event.useTravelAgent()){
+            finalLocation = pta.findOrCreate(finalLocation);
         }
-
-        /* CraftBukkit -- not needed
-        this.a(entityplayer);
-        entityplayer.netServerHandler.a(entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
-        entityplayer.a((World) worldserver1);
-        this.a(entityplayer, worldserver1);
-        this.g(entityplayer);
-        // CraftBukkit */
-        this.a(entityplayer, b0, endLocation);
+        toWorld = ((CraftWorld) finalLocation.getWorld()).getHandle();
+        this.a(entityplayer, toWorld.dimension, finalLocation);
         // CraftBukkit end
     }
 
