@@ -1,5 +1,13 @@
 package net.minecraft.server;
 
+// CraftBukkit start
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.event.inventory.FurnaceBurnEvent;
+import org.bukkit.event.inventory.FurnaceSmeltEvent;
+// CraftBukkit end
+
 public class TileEntityFurnace extends TileEntity implements IInventory {
 
     private ItemStack[] items = new ItemStack[3];
@@ -119,7 +127,18 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
 
         if (!this.world.isStatic) {
             // CraftBukkit start -- handle multiple elapsed ticks
-            if (this.burnTime <= 0 && this.h()) { // CraftBukkit == to <=
+            if (this.burnTime <= 0 && this.h() && this.items[1] != null) { // CraftBukkit == to <=
+                CraftServer cserver = this.world.getServer();
+                CraftWorld cworld = this.world.getWorld();
+                CraftItemStack fuel = new CraftItemStack(this.items[1]);
+
+                FurnaceBurnEvent furnaceBurnEvent = new FurnaceBurnEvent(cworld.getBlockAt(this.e, this.f, this.g), fuel, this.a(this.items[1]));
+                cserver.getPluginManager().callEvent(furnaceBurnEvent);
+
+                if (furnaceBurnEvent.isCancelled()) {
+                    return;
+                }
+
                 this.b = this.a(this.items[1]);
                 this.burnTime += this.b;
                 // CraftBukkit end
@@ -173,8 +192,25 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         if (this.h()) {
             ItemStack itemstack = FurnaceRecipes.a().a(this.items[0].getItem().id);
 
+            // CraftBukkit start
+            CraftServer cserver = this.world.getServer();
+            CraftWorld cworld = this.world.getWorld();
+            CraftItemStack source = new CraftItemStack(this.items[0]);
+            CraftItemStack result = new CraftItemStack(itemstack.j());
+
+            FurnaceSmeltEvent furnaceSmeltEvent = new FurnaceSmeltEvent(cworld.getBlockAt(this.e, this.f, this.g), source, result);
+            cserver.getPluginManager().callEvent(furnaceSmeltEvent);
+
+            if (furnaceSmeltEvent.isCancelled()) {
+                return;
+            }
+
+            org.bukkit.inventory.ItemStack oldResult = furnaceSmeltEvent.getResult();
+            ItemStack newResult = new ItemStack(oldResult.getTypeId(), oldResult.getAmount(), oldResult.getDurability());
+            itemstack = newResult;
+            // CraftBukkit end
             if (this.items[2] == null) {
-                this.items[2] = itemstack.j();
+                this.items[2] = itemstack;
             } else if (this.items[2].id == itemstack.id) {
                 // CraftBukkit start - compare damage too
                 if (this.items[2].damage == itemstack.damage) {
