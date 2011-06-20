@@ -689,7 +689,10 @@ public class CraftWorld implements World {
         } else if (FallingSand.class.isAssignableFrom(clazz)) {
             entity = new EntityFallingSand(world, x, y, z, 0);
         } else if (Fireball.class.isAssignableFrom(clazz)) {
-            // need a shooter
+            entity = new EntityFireball(world);
+            ((EntityFireball) entity).setPositionRotation(x, y, z, yaw, pitch);
+            Vector direction = location.getDirection().multiply(10);
+            ((EntityFireball) entity).setDirection(direction.getX(), direction.getY(), direction.getZ());
         } else if (Snowball.class.isAssignableFrom(clazz)) {
             entity = new EntitySnowball(world, x, y, z);
         } else if (Minecart.class.isAssignableFrom(clazz)) {
@@ -713,8 +716,6 @@ public class CraftWorld implements World {
                 entity = new EntityCow(world);
             } else if (Creeper.class.isAssignableFrom(clazz)) {
                 entity = new EntityCreeper(world);
-            } else if (Fish.class.isAssignableFrom(clazz)) {
-                entity = new EntityFish(world);
             } else if (Ghast.class.isAssignableFrom(clazz)) {
                 entity = new EntityGhast(world);
             } else if (Pig.class.isAssignableFrom(clazz)) {
@@ -752,6 +753,10 @@ public class CraftWorld implements World {
             entity = new EntityWeatherStorm(world, x, y, z);
         } else if (LightningStrike.class.isAssignableFrom(clazz)) {
             // what is this, I don't even
+        } else if (Fish.class.isAssignableFrom(clazz)) {
+            // this is not a fish, it's a bobber, and it's probably useless
+            entity = new EntityFish(world);
+            entity.setLocation(x, y, z, pitch, yaw);
         }
 
         if (entity != null) {
