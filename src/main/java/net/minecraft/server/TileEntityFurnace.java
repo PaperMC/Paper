@@ -121,6 +121,19 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         this.lastTick = currentTick;
         // CraftBukkit end
 
+        if (this.f() && this.h()) {
+            // CraftBukkit start -- handle multiple elapsed ticks
+            this.cookTime += elapsedTicks;
+            if (this.cookTime >= 200) {
+                this.cookTime %= 200;
+                // CraftBukkit end
+                this.g();
+                flag1 = true;
+            }
+        } else {
+            this.cookTime = 0;
+        }
+
         if (this.burnTime > 0) {
             this.burnTime -= elapsedTicks; // CraftBukkit
         }
@@ -151,19 +164,6 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
                         }
                     }
                 }
-            }
-
-            if (this.f() && this.h()) {
-                // CraftBukkit start -- handle multiple elapsed ticks
-                this.cookTime += elapsedTicks;
-                if (this.cookTime >= 200) {
-                    this.cookTime %= 200;
-                    // CraftBukkit end
-                    this.g();
-                    flag1 = true;
-                }
-            } else {
-                this.cookTime = 0;
             }
 
             if (flag != this.burnTime > 0) {
