@@ -846,10 +846,6 @@ public class World implements IBlockAccess {
                 return false;
             }
         }
-
-        if (entity instanceof EntityLiving && entity instanceof EntityWaterAnimal && !this.allowAnimals) {
-            return false;
-        }
         // CraftBukkit end
 
         if (!flag && !this.isChunkLoaded(i, j)) {
