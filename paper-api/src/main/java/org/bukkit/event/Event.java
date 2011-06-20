@@ -433,6 +433,20 @@ public abstract class Event implements Serializable {
         INVENTORY_TRANSACTION (Category.INVENTORY),
 
         /**
+         * Called when an ItemStack is successfully smelted in a furnace.
+         *
+         * @see org.bukkit.event.inventory.FurnaceSmeltEvent
+         */
+        FURNACE_SMELT (Category.INVENTORY),
+
+        /**
+         * Called when an ItemStack is successfully burned as fuel in a furnace.
+         *
+         * @see org.bukkit.event.inventory.FurnaceBurnEvent
+         */
+        FURNACE_BURN (Category.INVENTORY),
+
+        /**
          * SERVER EVENTS
          */
 

@@ -26,6 +26,7 @@ import org.bukkit.event.server.*;
 import org.bukkit.event.vehicle.*;
 import org.bukkit.event.world.*;
 import org.bukkit.event.weather.*;
+import org.bukkit.event.inventory.*;
 import org.bukkit.plugin.*;
 import org.yaml.snakeyaml.error.YAMLException;
 
@@ -809,6 +810,20 @@ public final class JavaPluginLoader implements PluginLoader {
             return new EventExecutor() {
                 public void execute(Listener listener, Event event) {
                     ((WeatherListener) listener).onLightningStrike((LightningStrikeEvent) event);
+                }
+            };
+
+        // Inventory Events
+        case FURNACE_SMELT:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((InventoryListener) listener).onFurnaceSmelt((FurnaceSmeltEvent) event);
+                }
+            };
+        case FURNACE_BURN:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((InventoryListener) listener).onFurnaceBurn((FurnaceBurnEvent) event);
                 }
             };
 
