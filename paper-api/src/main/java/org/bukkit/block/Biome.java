@@ -15,5 +15,6 @@ public enum Biome {
     PLAINS,
     ICE_DESERT,
     TUNDRA,
-    HELL
+    HELL,
+    SKY
 }
