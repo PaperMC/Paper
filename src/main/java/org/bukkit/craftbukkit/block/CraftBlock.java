@@ -356,6 +356,8 @@ public class CraftBlock implements Block {
             return Biome.TUNDRA;
         } else if (base == BiomeBase.HELL) {
             return Biome.HELL;
+        } else if (base == BiomeBase.SKY) {
+            return Biome.SKY;
         }
 
         return null;
