@@ -217,10 +217,12 @@ public class ServerConfigurationManager {
         EntityPlayer entityplayer1 = entityplayer;
 
         if (location == null) {
+            boolean isBedSpawn = false;
             CraftWorld cw = (CraftWorld) this.server.server.getWorld(entityplayer.spawnWorld);
             if (cw != null && chunkcoordinates != null) {
                 ChunkCoordinates chunkcoordinates1 = EntityHuman.getBed(cw.getHandle(), chunkcoordinates);
                 if (chunkcoordinates1 != null) {
+                    isBedSpawn = true;
                     location = new Location(cw, chunkcoordinates1.x + 0.5, chunkcoordinates1.y, chunkcoordinates1.z + 0.5);
                 } else {
                     entityplayer1.netServerHandler.sendPacket(new Packet70Bed(0));
@@ -234,7 +236,7 @@ public class ServerConfigurationManager {
             }
 
             Player respawnPlayer = cserver.getPlayer(entityplayer);
-            PlayerRespawnEvent respawnEvent = new PlayerRespawnEvent(respawnPlayer, location);
+            PlayerRespawnEvent respawnEvent = new PlayerRespawnEvent(respawnPlayer, location, isBedSpawn);
             cserver.getPluginManager().callEvent(respawnEvent);
 
             location = respawnEvent.getRespawnLocation();
