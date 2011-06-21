@@ -10,6 +10,7 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.player.PlayerEggThrowEvent;
 // CraftBukkit end
@@ -259,7 +260,7 @@ public class EntityEgg extends Entity {
                     boolean isAnimal = entity instanceof EntityAnimal || entity instanceof EntityWaterAnimal;
                     if ((isAnimal && this.world.allowAnimals) || (!isAnimal && this.world.allowMonsters)) {
                         entity.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, 0.0F);
-                        this.world.addEntity(entity);
+                        this.world.addEntity(entity, SpawnReason.EGG);
                     }
                     // CraftBukkit end
                 }

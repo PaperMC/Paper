@@ -21,6 +21,7 @@ import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.block.SnowFormEvent;
 import org.bukkit.event.block.BlockFormEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.entity.ItemSpawnEvent;
 import org.bukkit.event.weather.WeatherChangeEvent;
 import org.bukkit.event.weather.ThunderChangeEvent;
@@ -824,7 +825,14 @@ public class World implements IBlockAccess {
         return true;
     }
 
+    // CraftBukkit start - used for entities other than creatures
     public boolean addEntity(Entity entity) {
+        return addEntity(entity, SpawnReason.CUSTOM); // Set reason as Custom by default
+    }
+
+
+    public boolean addEntity(Entity entity, SpawnReason spawnReason) { // Changed signature, added SpawnReason
+    // CraftBukkit end
         int i = MathHelper.floor(entity.locX / 16.0D);
         int j = MathHelper.floor(entity.locZ / 16.0D);
         boolean flag = false;
@@ -835,7 +843,7 @@ public class World implements IBlockAccess {
 
         // CraftBukkit start
         if (entity instanceof EntityLiving && !(entity instanceof EntityPlayer)) {
-            CreatureSpawnEvent event = CraftEventFactory.callCreatureSpawnEvent((EntityLiving) entity);
+            CreatureSpawnEvent event = CraftEventFactory.callCreatureSpawnEvent((EntityLiving) entity, spawnReason);
 
             if (event.isCancelled()) {
                 return false;

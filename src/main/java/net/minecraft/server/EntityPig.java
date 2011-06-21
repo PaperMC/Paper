@@ -2,8 +2,7 @@ package net.minecraft.server;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.event.entity.EntityCombustEvent;
+import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.entity.PigZapEvent;
 // CraftBukkit end
 
@@ -83,7 +82,8 @@ public class EntityPig extends EntityAnimal {
             // CraftBukkit end
 
             entitypigzombie.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, this.pitch);
-            this.world.addEntity(entitypigzombie);
+             // CraftBukkit - added a reason for spawning this creature
+            this.world.addEntity(entitypigzombie, SpawnReason.LIGHTNING);
             this.die();
         }
     }
