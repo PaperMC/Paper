@@ -5,10 +5,12 @@ import org.bukkit.entity.Player;
 
 public class PlayerRespawnEvent extends PlayerEvent {
     private Location respawnLocation;
+    private boolean isBedSpawn;
 
-    public PlayerRespawnEvent(Player respawnPlayer, Location respawnLocation) {
+    public PlayerRespawnEvent(Player respawnPlayer, Location respawnLocation, boolean isBedSpawn) {
         super(Type.PLAYER_RESPAWN, respawnPlayer);
         this.respawnLocation = respawnLocation;
+        this.isBedSpawn = isBedSpawn;
     }
 
     /**
@@ -27,5 +29,14 @@ public class PlayerRespawnEvent extends PlayerEvent {
      */
     public void setRespawnLocation(Location respawnLocation) {
         this.respawnLocation = respawnLocation;
+    }
+
+    /**
+     * Gets whether the respawn location is the players bed.
+     *
+     * @return true if the respawn location is the players bed.
+     */
+    public boolean isBedSpawn() {
+        return this.isBedSpawn;
     }
 }
