@@ -41,6 +41,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.entity.EntityTameEvent;
 import org.bukkit.event.entity.ItemSpawnEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
@@ -190,7 +191,7 @@ public class CraftEventFactory {
     /**
      * CreatureSpawnEvent
      */
-    public static CreatureSpawnEvent callCreatureSpawnEvent(EntityLiving entityliving) {
+    public static CreatureSpawnEvent callCreatureSpawnEvent(EntityLiving entityliving, SpawnReason spawnReason) {
         org.bukkit.entity.Entity entity = entityliving.getBukkitEntity();
         CraftServer craftServer = (CraftServer) entity.getServer();
 
@@ -229,7 +230,7 @@ public class CraftEventFactory {
             type = CreatureType.MONSTER;
         }
 
-        CreatureSpawnEvent event = new CreatureSpawnEvent(entity, type, entity.getLocation());
+        CreatureSpawnEvent event = new CreatureSpawnEvent(entity, type, entity.getLocation(), spawnReason);
         craftServer.getPluginManager().callEvent(event);
         return event;
     }

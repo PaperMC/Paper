@@ -12,6 +12,7 @@ import net.minecraft.server.*;
 
 import org.bukkit.entity.Arrow;
 import org.bukkit.Effect;
+import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.weather.WeatherChangeEvent;
 import org.bukkit.event.weather.ThunderChangeEvent;
 import org.bukkit.event.world.SpawnChangeEvent;
@@ -346,7 +347,7 @@ public class CraftWorld implements World {
             EntityLiving entityCreature = (EntityLiving) EntityTypes.a(creatureType.getName(), world);
             entityCreature.setPosition(loc.getX(), loc.getY(), loc.getZ());
             creature = (LivingEntity) CraftEntity.getEntity(server, entityCreature);
-            world.addEntity(entityCreature);
+            world.addEntity(entityCreature, SpawnReason.CUSTOM);
         } catch (Exception e) {
             // if we fail, for any reason, return null.
             creature = null;
