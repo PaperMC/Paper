@@ -13,11 +13,13 @@ public class CreatureSpawnEvent extends EntityEvent implements Cancellable {
     private Location location;
     private boolean canceled;
     private CreatureType creatureType;
+    private SpawnReason spawnReason;
 
-    public CreatureSpawnEvent(Entity spawnee, CreatureType mobtype, Location loc) {
+    public CreatureSpawnEvent(Entity spawnee, CreatureType mobtype, Location loc, SpawnReason spawnReason) {
         super(Type.CREATURE_SPAWN, spawnee);
         this.creatureType = mobtype;
         this.location = loc;
+        this.spawnReason = spawnReason;
     }
 
     /**
@@ -55,5 +57,45 @@ public class CreatureSpawnEvent extends EntityEvent implements Cancellable {
      */
     public CreatureType getCreatureType() {
         return creatureType;
+    }
+
+    /**
+     * Gets the reason for why the creature is being spawned.
+     *
+     * @return A SpawnReason value detailing the reason for the creature being spawned
+     */
+    public SpawnReason getSpawnReason() {
+        return spawnReason;
+    }
+
+    /**
+     * An enum to specify the type of spawning
+     */
+    public enum SpawnReason {
+
+        /**
+         * When something spawns from natural means
+         */
+        NATURAL,
+        /**
+         * When a creature spawns from a spawner
+         */
+        SPAWNER,
+        /**
+         * When a creature spawns from an egg
+         */
+        EGG,
+        /**
+         * When a creature spawns because of a lightning strike
+         */
+        LIGHTNING,
+        /**
+         * When a creature is spawned by a player that is sleeping
+         */
+        BED,
+        /**
+         * When a creature is manually spawned
+         */
+        CUSTOM
     }
 }
