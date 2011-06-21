@@ -232,7 +232,7 @@ public class ServerConfigurationManager {
             if (location == null) {
                 cw = (CraftWorld) this.server.server.getWorlds().get(0);
                 chunkcoordinates = cw.getHandle().getSpawn();
-                location = new Location(cw, chunkcoordinates.x, chunkcoordinates.y, chunkcoordinates.z);
+                location = new Location(cw, chunkcoordinates.x + 0.5, chunkcoordinates.y, chunkcoordinates.z + 0.5);
             }
 
             Player respawnPlayer = cserver.getPlayer(entityplayer);
