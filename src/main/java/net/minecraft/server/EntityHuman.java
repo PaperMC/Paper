@@ -176,7 +176,8 @@ public abstract class EntityHuman extends EntityLiving {
     }
 
     public void u() {
-        if (this.world.spawnMonsters == 0 && this.health < 20 && this.ticksLived % 20 * 12 == 0) {
+        // CraftBukkit - spawnMonsters -> allowMonsters
+        if (!this.world.allowMonsters && this.health < 20 && this.ticksLived % 20 * 12 == 0) {
             this.b(1);
         }
 
