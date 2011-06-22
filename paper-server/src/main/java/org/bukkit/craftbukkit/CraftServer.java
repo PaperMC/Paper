@@ -551,13 +551,21 @@ public final class CraftServer implements Server {
         return true;
     }
 
-    public Map<String, String> getCommandAliases() {
+    public Map<String, String[]> getCommandAliases() {
         ConfigurationNode node = configuration.getNode("aliases");
-        Map<String, String> result = new HashMap<String, String>();
+        Map<String, String[]> result = new HashMap<String, String[]>();
 
         if (node != null) {
             for (String key : node.getKeys()) {
-                result.put(key, node.getString(key));
+                List<String> commands = new ArrayList<String>();
+
+                if (node.getProperty(key) instanceof List) {
+                    commands = node.getStringList(key, null);
+                } else {
+                    commands.add(node.getString(key));
+                }
+
+                result.put(key, commands.toArray(new String[0]));
             }
         }
 
