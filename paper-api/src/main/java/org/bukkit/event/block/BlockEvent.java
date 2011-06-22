@@ -16,6 +16,7 @@ public class BlockEvent extends Event {
 
     /**
      * Returns the block involved in this event
+     *
      * @return Block which block is involved in this event
      */
     public final Block getBlock() {

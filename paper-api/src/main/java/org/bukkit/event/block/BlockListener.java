@@ -5,8 +5,6 @@ import org.bukkit.plugin.AuthorNagException;
 
 /**
  * Handles all events thrown in relation to Blocks
- *
- * @author durron597
  */
 public class BlockListener implements Listener {
 
@@ -31,15 +29,8 @@ public class BlockListener implements Listener {
      * Called when a block flows (water/lava)
      *
      * @param event Relevant event details
-     * @throws BukkitAuthorNagException
      */
-    public void onBlockFromTo(BlockFromToEvent event) {
-        onBlockFlow(event);
-        throw new AuthorNagException("onBlockFlow has been deprecated, use onBlockFromTo");
-    }
-
-    // Prevent compilation of old signatures TODO: Remove after 1.4
-    @Deprecated public void onBlockFlow(BlockFromToEvent event) {}
+    public void onBlockFromTo(BlockFromToEvent event) {}
 
     /**
      * Called when a block gets ignited

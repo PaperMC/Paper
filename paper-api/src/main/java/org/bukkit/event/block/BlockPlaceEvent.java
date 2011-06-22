@@ -7,7 +7,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * Not implemented yet
+ * Called when a block is placed by a player
  */
 public class BlockPlaceEvent extends BlockEvent implements Cancellable {
     protected boolean cancel;
@@ -109,6 +109,8 @@ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
     /**
      * Sets the canBuild state of this event. Set to true if you want the
      * player to be able to build.
+     *
+     * @param canBuild true if you want the player to be able to build
      */
     public void setBuild(boolean canBuild) {
         this.canBuild = canBuild;

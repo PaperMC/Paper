@@ -48,7 +48,7 @@ public class BlockFormEvent extends BlockEvent implements Cancellable {
      * Sets the cancellation state of this event. A cancelled event will not
      * be executed in the server, but will still pass to other plugins
      *
-     * @param cancel true if you wish to cancel snow from forming during a ice formation
+     * @param cancel true if you wish to cancel the block from forming or spreading
      */
     public void setCancelled(boolean cancel) {
         this.cancelled = cancel;

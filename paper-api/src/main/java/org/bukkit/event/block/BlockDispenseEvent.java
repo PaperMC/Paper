@@ -7,8 +7,6 @@ import org.bukkit.util.Vector;
 
 /**
  * Event called on dispense of an item from a block.
- *
- * @author sk89q
  */
 public class BlockDispenseEvent extends BlockEvent implements Cancellable {
 
@@ -26,7 +24,7 @@ public class BlockDispenseEvent extends BlockEvent implements Cancellable {
      * Get the item that is being dispensed. Modifying the returned item
      * will have no effect.
      *
-     * @return
+     * @return an ItemStack for the item being dispensed
      */
     public ItemStack getItem() {
         return item.clone();
@@ -45,7 +43,7 @@ public class BlockDispenseEvent extends BlockEvent implements Cancellable {
      * Gets the velocity. Modifying the returned Vector will not
      * change the velocity.
      *
-     * @return
+     * @return a Vector for the dispensed item's velocity
      */
     public Vector getVelocity() {
         return velocity.clone();

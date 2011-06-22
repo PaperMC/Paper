@@ -6,8 +6,6 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 
 /**
- * @author SpeaKeasY
- *
  * Represents a block ignite event.
  */
 public class BlockIgniteEvent extends BlockEvent implements Cancellable {
@@ -78,7 +76,7 @@ public class BlockIgniteEvent extends BlockEvent implements Cancellable {
          */
         LAVA,
         /**
-         * Block ignition caused by player using flint-and-steel.
+         * Block ignition caused by a player using flint-and-steel.
          */
         FLINT_AND_STEEL,
         /**
@@ -86,7 +84,7 @@ public class BlockIgniteEvent extends BlockEvent implements Cancellable {
          */
         SPREAD,
         /**
-         * That thing form the sky.
+         * Block ignition caused by lightning.
          */
         LIGHTNING,
     }

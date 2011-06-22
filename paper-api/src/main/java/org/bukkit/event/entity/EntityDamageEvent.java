@@ -53,6 +53,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
 
     /**
      * Gets the amount of damage caused by the Block
+     *
      * @return The amount of damage caused by the Block
      */
     public int getDamage() {
@@ -61,7 +62,8 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
 
     /**
      * Sets the amount of damage caused by the Block
-     * @return The amount of damage caused by the Block
+     *
+     * @param damage The amount of damage caused by the Block
      */
     public void setDamage(int damage) {
         this.damage = damage;
@@ -69,6 +71,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
 
     /**
      * Gets the cause of the damage.
+     *
      * @return A DamageCause value detailing the cause of the damage.
      */
     public DamageCause getCause() {
@@ -93,15 +96,15 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          */
         ENTITY_ATTACK,
         /**
-         * Damage caused when an entity falls a distance greater than 3 blocks
-         *
-         * Damage: fall height - 3.0
-         */
-        SUFFOCATION,
-        /**
          * Damage caused by being put in a block
          *
          * Damage: 1
+         */
+        SUFFOCATION,
+        /**
+         * Damage caused when an entity falls a distance greater than 3 blocks
+         *
+         * Damage: fall height - 3.0
          */
         FALL,
         /**
