@@ -2,13 +2,12 @@ package org.bukkit.event.block;
 
 import org.bukkit.block.Block;
 import org.bukkit.Material;
+import org.bukkit.event.Cancellable;
 
 /**
  * Thrown when a block physics check is called
- *
- * @author Dinnerbone
  */
-public class BlockPhysicsEvent extends BlockEvent {
+public class BlockPhysicsEvent extends BlockEvent implements Cancellable {
     private final int changed;
     private boolean cancel = false;
 

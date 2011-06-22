@@ -4,9 +4,10 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Cancellable;
 import org.bukkit.inventory.ItemStack;
 
-public class PlayerBucketFillEvent extends PlayerEvent {
+public class PlayerBucketFillEvent extends PlayerEvent implements Cancellable {
     ItemStack itemStack;
     boolean cancelled = false;
     Block blockClicked;
