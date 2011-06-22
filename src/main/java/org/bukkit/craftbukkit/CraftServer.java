@@ -58,6 +58,7 @@ import org.bukkit.craftbukkit.command.ServerCommandListener;
 import org.bukkit.scheduler.BukkitWorker;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 import org.bukkit.event.world.WorldInitEvent;
+import org.bukkit.plugin.PluginLoadOrder;
 import org.bukkit.util.config.Configuration;
 import org.bukkit.util.config.ConfigurationNode;
 
@@ -87,6 +88,8 @@ public final class CraftServer implements Server {
         configuration.load();
         loadConfigDefaults();
         configuration.save();
+        loadPlugins();
+        enablePlugins(PluginLoadOrder.STARTUP);
     }
 
     private void loadConfigDefaults() {
@@ -110,26 +113,28 @@ public final class CraftServer implements Server {
         File pluginFolder = (File) console.options.valueOf("plugins");
 
         if (pluginFolder.exists()) {
-            try {
-                Plugin[] plugins = pluginManager.loadPlugins(pluginFolder);
-                for (Plugin plugin : plugins) {
-                    try {
-                        plugin.onLoad();
-                    } catch (Throwable ex) {
-                        Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, ex.getMessage() + " initializing " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
-                    }
+            Plugin[] plugins = pluginManager.loadPlugins(pluginFolder);
+            for (Plugin plugin : plugins) {
+                try {
+                    plugin.onLoad();
+                } catch (Throwable ex) {
+                    Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, ex.getMessage() + " initializing " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
                 }
-                for (Plugin plugin : plugins) {
-                    loadPlugin(plugin);
-                }
-            } catch (Throwable ex) {
-                Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, ex.getMessage() + " (Is it up to date?)", ex);
             }
         } else {
             pluginFolder.mkdir();
         }
 
         commandMap.registerServerAliases();
+    }
+
+    public void enablePlugins(PluginLoadOrder type) {
+        Plugin[] plugins = pluginManager.getPlugins();
+        for (Plugin plugin : plugins) {
+            if ((!plugin.isEnabled()) && (plugin.getDescription().getLoad() == type)) {
+                loadPlugin(plugin);
+            }
+        }
     }
 
     public void disablePlugins() {
@@ -349,6 +354,8 @@ public final class CraftServer implements Server {
             ));
         }
         loadPlugins();
+        enablePlugins(PluginLoadOrder.STARTUP);
+        enablePlugins(PluginLoadOrder.POSTWORLD);
     }
 
     @Override

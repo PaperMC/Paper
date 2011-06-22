@@ -25,6 +25,7 @@ import org.bukkit.craftbukkit.command.ColouredConsoleSender;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 import org.bukkit.craftbukkit.util.ServerShutdownThread;
 import org.bukkit.event.world.WorldSaveEvent;
+import org.bukkit.plugin.PluginLoadOrder;
 // CraftBukkit
 
 public class MinecraftServer implements Runnable, ICommandListener {
@@ -263,7 +264,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
         this.i = null;
         this.j = 0;
 
-        server.loadPlugins(); // CraftBukkit
+        server.enablePlugins(PluginLoadOrder.POSTWORLD);
     }
 
     void saveChunks() { // CraftBukkit - private -> default
