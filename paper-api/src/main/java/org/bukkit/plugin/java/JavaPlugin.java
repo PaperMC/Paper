@@ -13,6 +13,7 @@ import org.bukkit.Server;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoader;
@@ -231,6 +232,11 @@ public abstract class JavaPlugin implements Plugin {
     }
 
     public void onLoad() {} // Empty!
+
+    public ChunkGenerator getDefaultWorldGenerator(String worldName, String id) {
+        getServer().getLogger().severe("Plugin " + getDescription().getFullName() + " does not contain any generators that may be used in the default world!");
+        return null;
+    }
 
     public final boolean isNaggable() {
         return naggable;

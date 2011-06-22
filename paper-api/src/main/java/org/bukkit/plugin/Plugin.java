@@ -4,6 +4,7 @@ import com.avaje.ebean.EbeanServer;
 import java.io.File;
 import org.bukkit.Server;
 import org.bukkit.command.CommandExecutor;
+import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.util.config.Configuration;
 
 /**
@@ -88,4 +89,13 @@ public interface Plugin extends CommandExecutor {
      * @return Ebean server instance
      */
     public EbeanServer getDatabase();
+
+    /**
+     * Gets a {@link ChunkGenerator} for use in a default world, as specified in the server configuration
+     *
+     * @param worldName Name of the world that this will be applied to
+     * @param id Unique ID, if any, that was specified to indicate which generator was requested
+     * @return ChunkGenerator for use in the default world generation
+     */
+    public ChunkGenerator getDefaultWorldGenerator(String worldName, String id);
 }
