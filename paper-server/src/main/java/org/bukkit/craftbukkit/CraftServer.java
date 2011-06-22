@@ -576,4 +576,33 @@ public final class CraftServer implements Server {
     public boolean getOnlineMode() {
         return this.console.onlineMode;
     }
+
+    public ChunkGenerator getGenerator(String world) {
+        ConfigurationNode node = configuration.getNode("worlds");
+        ChunkGenerator result = null;
+
+        if (node != null) {
+            node = node.getNode(world);
+
+            if (node != null) {
+                String name = node.getString("generator");
+
+                if ((name != null) && (!name.isEmpty())) {
+                    String[] split = name.split(":", 2);
+                    String id = (split.length > 1) ? split[1] : null;
+                    Plugin plugin = pluginManager.getPlugin(split[0]);
+
+                    if (plugin == null) {
+                        getLogger().severe("Could not set generator for default world '" + world + "': Plugin '" + split[0] + "' does not exist");
+                    } else if (!plugin.isEnabled()) {
+                        getLogger().severe("Could not set generator for default world '" + world + "': Plugin '" + split[0] + "' is not enabled yet (is it load:STARTUP?)");
+                    } else {
+                        result = plugin.getDefaultWorldGenerator(world, id);
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
 }
