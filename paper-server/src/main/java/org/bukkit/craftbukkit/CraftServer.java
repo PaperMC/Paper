@@ -103,7 +103,9 @@ public final class CraftServer implements Server {
         configuration.getInt("settings.spawn-radius", 16);
 
         if (configuration.getNode("aliases") == null) {
-            configuration.setProperty("aliases.icanhasbukkit", "version");
+            List<String> icanhasbukkit = new ArrayList<String>();
+            icanhasbukkit.add("version");
+            configuration.setProperty("aliases.icanhasbukkit", icanhasbukkit);
         }
     }
 
