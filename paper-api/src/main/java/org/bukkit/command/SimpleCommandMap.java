@@ -151,17 +151,35 @@ public final class SimpleCommandMap implements CommandMap {
     }
 
     public void registerServerAliases() {
-        Map<String, String> values = server.getCommandAliases();
+        Map<String, String[]> values = server.getCommandAliases();
         
         for (String alias : values.keySet()) {
-            String target = values.get(alias);
-            Command command = getCommand(target);
+            String[] targetNames = values.get(alias);
+            List<Command> targets = new ArrayList<Command>();
+            String bad = "";
 
-            if (command != null) {
-                // We register these as commands so they have absolute priority.
-                knownCommands.put(alias.toLowerCase(), command);
+            for (String name : targetNames) {
+                Command command = getCommand(name);
+
+                if (command == null) {
+                    if (bad.length() > 0) {
+                        bad += ", ";
+                    }
+                } else {
+                    targets.add(command);
+                }
+            }
+
+            // We register these as commands so they have absolute priority.
+            
+            if (targets.size() > 0) {
+                knownCommands.put(alias.toLowerCase(), new MultipleCommandAlias(alias.toLowerCase(), targets.toArray(new Command[0])));
             } else {
-                server.getLogger().warning("Could not register custom alias '" + alias + "' to command '" + target + "' because the command does not exist.");
+                knownCommands.remove(alias.toLowerCase());
+            }
+
+            if (bad.length() > 0) {
+                server.getLogger().warning("The following command(s) could not be aliased under '" + alias + "' because they do not exist: " + bad);
             }
         }
     }

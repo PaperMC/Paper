@@ -270,7 +270,7 @@ public interface Server {
      *
      * @return Map of aliases to command names
      */
-    public Map<String, String> getCommandAliases();
+    public Map<String, String[]> getCommandAliases();
 
     /**
      * Gets the radius, in blocks, around each worlds spawn point to protect
