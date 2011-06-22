@@ -24,7 +24,9 @@ import org.bukkit.craftbukkit.LoggerOutputStream;
 import org.bukkit.craftbukkit.command.ColouredConsoleSender;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 import org.bukkit.craftbukkit.util.ServerShutdownThread;
+import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.event.world.WorldSaveEvent;
+import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.PluginLoadOrder;
 // CraftBukkit
 
@@ -168,12 +170,14 @@ public class MinecraftServer implements Runnable, ICommandListener {
         for (int j = 0; j < (this.propertyManager.getBoolean("allow-nether", true) ? 2 : 1); ++j) {
             WorldServer world;
             int dimension = j == 0 ? 0 : -1;
+            String worldType = Environment.getEnvironment(dimension).toString().toLowerCase();
+            String name = (dimension == 0) ? s : s + "_" + worldType;
+
+            ChunkGenerator gen = server.getGenerator(name);
 
             if (j == 0) {
-                world = new WorldServer(this, new ServerNBTManager(new File("."), s, true), s, dimension, i, org.bukkit.World.Environment.getEnvironment(dimension), null); // CraftBukkit
+                world = new WorldServer(this, new ServerNBTManager(new File("."), s, true), s, dimension, i, org.bukkit.World.Environment.getEnvironment(dimension), gen); // CraftBukkit
             } else {
-                String worldType = Environment.getEnvironment(dimension).toString().toLowerCase();
-                String name = s + "_" + worldType;
                 String dim = "DIM-1";
 
                 File newWorld = new File(new File(name), dim);
@@ -202,8 +206,14 @@ public class MinecraftServer implements Runnable, ICommandListener {
                     }
                 }
 
-                world = new SecondaryWorldServer(this, new ServerNBTManager(new File("."), name, true), name, dimension, i, worlds.get(0), org.bukkit.World.Environment.getEnvironment(dimension), null); // CraftBukkit
+                world = new SecondaryWorldServer(this, new ServerNBTManager(new File("."), name, true), name, dimension, i, worlds.get(0), org.bukkit.World.Environment.getEnvironment(dimension), gen); // CraftBukkit
             }
+
+            if (gen != null) {
+                world.getWorld().getPopulators().addAll(gen.getDefaultPopulators(world.getWorld()));
+            }
+
+            server.getPluginManager().callEvent(new WorldInitEvent(world.getWorld()));
 
             world.tracker = new EntityTracker(this, dimension);
             world.addIWorldAccess(new WorldManager(this, world));
