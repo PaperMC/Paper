@@ -141,7 +141,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
                 // If the event is cancelled we move the player back to their old location.
                 if (event.isCancelled()) {
-                    to = from;
+                    this.player.netServerHandler.sendPacket(new Packet13PlayerLookMove(from.getX(), from.getY() + 1.6200000047683716D, from.getY(), from.getZ(), from.getYaw(), from.getPitch(), false));
+                    return;
                 }
 
                 /* If a Plugin has changed the To destination then we teleport the Player
