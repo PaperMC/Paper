@@ -25,6 +25,7 @@ import org.bukkit.craftbukkit.command.ColouredConsoleSender;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 import org.bukkit.craftbukkit.util.ServerShutdownThread;
 import org.bukkit.event.world.WorldInitEvent;
+import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.world.WorldSaveEvent;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.PluginLoadOrder;
@@ -260,6 +261,12 @@ public class MinecraftServer implements Runnable, ICommandListener {
                 }
             // } // CraftBukkit
         }
+
+        // Craftbukkit start
+        for (World world : worlds) {
+            server.getPluginManager().callEvent(new WorldLoadEvent(world.getWorld()));
+        }
+        // Craftbukkit end
 
         this.e();
     }
