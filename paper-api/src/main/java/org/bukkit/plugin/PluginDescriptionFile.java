@@ -24,6 +24,7 @@ public final class PluginDescriptionFile {
     private ArrayList<String> authors = new ArrayList<String>();
     private String website = null;
     private boolean database = false;
+    private PluginLoadOrder order = PluginLoadOrder.POSTWORLD;
 
     @SuppressWarnings("unchecked")
     public PluginDescriptionFile(final InputStream stream) throws InvalidDescriptionException {
@@ -106,6 +107,10 @@ public final class PluginDescriptionFile {
 
     public Object getSoftDepend() {
         return softDepend;
+    }
+
+    public PluginLoadOrder getLoad() {
+        return order;
     }
 
     /**
@@ -213,6 +218,16 @@ public final class PluginDescriptionFile {
             }
         }
 
+        if (map.containsKey("load")) {
+            try {
+                order = PluginLoadOrder.valueOf(((String)map.get("load")).toUpperCase().replaceAll("\\W", ""));
+            } catch (ClassCastException ex) {
+                throw new InvalidDescriptionException(ex, "load is of wrong type");
+            } catch (IllegalArgumentException ex) {
+                throw new InvalidDescriptionException(ex, "load is not a valid choice");
+            }
+        }
+
         if (map.containsKey("author")) {
             try {
                 String extra = (String) map.get("author");
@@ -241,6 +256,7 @@ public final class PluginDescriptionFile {
         map.put("main", main);
         map.put("version", version);
         map.put("database", database);
+        map.put("order", order.toString());
 
         if (commands != null) {
             map.put("command", commands);
