@@ -598,7 +598,7 @@ public final class CraftServer implements Server {
             if (node != null) {
                 String name = node.getString("generator");
 
-                if ((name != null) && (!name.isEmpty())) {
+                if ((name != null) && (!name.equals(""))) {
                     String[] split = name.split(":", 2);
                     String id = (split.length > 1) ? split[1] : null;
                     Plugin plugin = pluginManager.getPlugin(split[0]);
