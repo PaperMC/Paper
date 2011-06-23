@@ -63,7 +63,7 @@ public class Note {
          *
          * @return if this tone could be sharped.
          */
-        public boolean getSharpable() {
+        public boolean isSharpable() {
             return sharpable;
         }
 
@@ -77,10 +77,9 @@ public class Note {
          *             if neither the tone nor the semitone have the id.
          */
         public boolean isSharped(byte id) {
-            byte toneId = getId();
-            if (id == toneId) {
+            if (id == getId(false)) {
                 return false;
-            } else if (id == toneId + 1) {
+            } else if (id == getId(true)) {
                 return true;
             } else {
                 // The id isn't matching to the tone!
@@ -100,15 +99,15 @@ public class Note {
         }
 
         static {
-            byte lowest = F.getId();
-            byte highest = F.getId();
+            byte lowest = F.id;
+            byte highest = F.id;
             for (Tone tone : Tone.values()) {
-                byte id = tone.getId();
+                byte id = tone.id;
                 tones.put(id, tone);
                 if (id < lowest) {
                     lowest = id;
                 }
-                if (tone.getSharpable()) {
+                if (tone.isSharpable()) {
                     id++;
                     tones.put(id, tone);
                 }
@@ -118,6 +117,7 @@ public class Note {
             }
 
             TONES_COUNT = (byte) (highest - lowest + 1);
+            tones.put((byte) (TONES_COUNT - 1), F);
         }
     }
 
@@ -149,11 +149,11 @@ public class Note {
      *            Set it the tone is sharped (e.g. for F#).
      */
     public Note(byte octave, Tone note, boolean sharped) {
-        if (sharped && !note.getSharpable()) {
+        if (sharped && !note.isSharpable()) {
             throw new IllegalArgumentException("This tone could not be sharped.");
         }
-        if (octave < 0 || octave > 2 || !(octave == 2 && note == Tone.F && sharped)) {
-            throw new IllegalArgumentException("The octave has to be F#0 - F#2");
+        if (octave < 0 || octave > 2 || (octave == 2 && !(note == Tone.F && sharped))) {
+            throw new IllegalArgumentException("Tone and octave have to be between F#0 and F#2");
         }
         this.note = (byte) (octave * Tone.TONES_COUNT + note.getId(sharped));
     }
@@ -194,7 +194,7 @@ public class Note {
      *
      * @return if this note is sharped.
      */
-    public boolean getSharped() {
+    public boolean isSharped() {
         byte note = getToneByte();
         return Tone.getToneById(note).isSharped(note);
     }
