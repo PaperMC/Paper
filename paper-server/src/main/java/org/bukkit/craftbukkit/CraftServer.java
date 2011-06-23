@@ -85,14 +85,13 @@ public final class CraftServer implements Server {
         Logger.getLogger("Minecraft").log(Level.INFO, "This server is running " + getName() + " version " + getVersion());
 
         configuration = new Configuration((File) console.options.valueOf("bukkit-settings"));
-        configuration.load();
-        loadConfigDefaults();
-        configuration.save();
+        loadConfig();
         loadPlugins();
         enablePlugins(PluginLoadOrder.STARTUP);
     }
 
-    private void loadConfigDefaults() {
+    private void loadConfig() {
+        configuration.load();
         configuration.getString("database.url", "jdbc:sqlite:{DIR}{NAME}.db");
         configuration.getString("database.username", "bukkit");
         configuration.getString("database.password", "walrus");
@@ -107,6 +106,7 @@ public final class CraftServer implements Server {
             icanhasbukkit.add("version");
             configuration.setProperty("aliases.icanhasbukkit", icanhasbukkit);
         }
+        configuration.save();
     }
 
     public void loadPlugins() {
@@ -311,6 +311,7 @@ public final class CraftServer implements Server {
     }
 
     public void reload() {
+        loadConfig();
         PropertyManager config = new PropertyManager(console.options);
 
         console.propertyManager = config;
