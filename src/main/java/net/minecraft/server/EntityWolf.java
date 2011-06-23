@@ -374,23 +374,18 @@ public class EntityWolf extends EntityAnimal {
                 }
 
                 if (!this.world.isStatic) {
-                    // CraftBukkit start
-                    if (this.random.nextInt(3) == 0) {
-                        EntityTameEvent event = CraftEventFactory.callEntityTameEvent(this, entityhuman);
-
-                        if (!event.isCancelled()) {
-                        // CraftBukkit end
-                            this.d(true);
-                            this.a((PathEntity) null);
-                            this.setSitting(true);
-                            this.health = 20;
-                            this.a(entityhuman.name);
-                            this.a(true);
-                            this.world.a(this, (byte) 7);
-                        } else {
-                            this.a(false);
-                            this.world.a(this, (byte) 6);
-                        }
+                    // CraftBukkit - added event call and isCancelled check.
+                    if (this.random.nextInt(3) == 0 && !CraftEventFactory.callEntityTameEvent(this, entityhuman).isCancelled()) {
+                        this.d(true);
+                        this.a((PathEntity) null);
+                        this.setSitting(true);
+                        this.health = 20;
+                        this.a(entityhuman.name);
+                        this.a(true);
+                        this.world.a(this, (byte) 7);
+                    } else {
+                        this.a(false);
+                        this.world.a(this, (byte) 6);
                     }
                 }
 
