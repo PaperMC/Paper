@@ -126,16 +126,19 @@ public final class CraftServer implements Server {
         } else {
             pluginFolder.mkdir();
         }
-
-        commandMap.registerServerAliases();
     }
 
     public void enablePlugins(PluginLoadOrder type) {
         Plugin[] plugins = pluginManager.getPlugins();
+
         for (Plugin plugin : plugins) {
             if ((!plugin.isEnabled()) && (plugin.getDescription().getLoad() == type)) {
                 loadPlugin(plugin);
             }
+        }
+
+        if (type == PluginLoadOrder.POSTWORLD) {
+            commandMap.registerServerAliases();
         }
     }
 
