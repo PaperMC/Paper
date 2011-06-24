@@ -3,6 +3,9 @@ package org.bukkit.event.player;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 
+/**
+ * Called when a player gets kicked from the server
+ */
 public class PlayerKickEvent extends PlayerEvent implements Cancellable {
     private String leaveMessage;
     private String kickReason;

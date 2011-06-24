@@ -32,9 +32,9 @@ public class PlayerRespawnEvent extends PlayerEvent {
     }
 
     /**
-     * Gets whether the respawn location is the players bed.
+     * Gets whether the respawn location is the player's bed.
      *
-     * @return true if the respawn location is the players bed.
+     * @return true if the respawn location is the player's bed.
      */
     public boolean isBedSpawn() {
         return this.isBedSpawn;

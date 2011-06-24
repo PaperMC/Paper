@@ -6,8 +6,6 @@ import org.bukkit.event.Cancellable;
 
 /**
  * Raised when a vehicle receives damage.
- *
- * @author sk89q
  */
 public class VehicleDamageEvent extends VehicleEvent implements Cancellable {
     private Entity attacker;
@@ -20,16 +18,26 @@ public class VehicleDamageEvent extends VehicleEvent implements Cancellable {
         this.damage = damage;
     }
 
+    /**
+     * Gets the Entity that is attacking the vehicle
+     *
+     * @return the Entity that is attacking the vehicle
+     */
     public Entity getAttacker() {
         return attacker;
     }
 
+    /**
+     * Gets the damage done to the vehicle
+     *
+     * @return the damage done to the vehicle
+     */
     public int getDamage() {
         return damage;
     }
 
     /**
-     * Change the damage.
+     * Sets the damage done to the vehicle
      *
      * @param damage
      */
@@ -37,10 +45,22 @@ public class VehicleDamageEvent extends VehicleEvent implements Cancellable {
         this.damage = damage;
     }
 
+        /**
+     * Gets the cancellation state of this event. A cancelled event will not
+     * be executed in the server, but will still pass to other plugins
+     *
+     * @return true if this event is cancelled
+     */
     public boolean isCancelled() {
         return cancelled;
     }
 
+    /**
+     * Sets the cancellation state of this event. A cancelled event will not
+     * be executed in the server, but will still pass to other plugins
+     *
+     * @param cancel true if you wish to cancel this event
+     */
     public void setCancelled(boolean cancel) {
         this.cancelled = cancel;
     }

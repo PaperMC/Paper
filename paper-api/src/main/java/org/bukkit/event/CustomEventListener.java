@@ -9,7 +9,7 @@ public class CustomEventListener implements Listener {
     public CustomEventListener() {}
 
     /**
-     * Called when a player joins a server
+     * Called when a custom event is fired
      *
      * @param event Relevant event details
      */

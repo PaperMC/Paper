@@ -2,6 +2,9 @@ package org.bukkit.event.player;
 
 import org.bukkit.entity.Player;
 
+/**
+ * Called when a player joins a server
+ */
 public class PlayerJoinEvent extends PlayerEvent {
     private String joinMessage;
 

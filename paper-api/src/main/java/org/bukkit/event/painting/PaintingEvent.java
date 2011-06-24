@@ -5,8 +5,6 @@ import org.bukkit.event.Event;
 
 /**
  * Represents a painting-related event.
- *
- * @author Tanel Suurhans
  */
 public class PaintingEvent extends Event {
 
@@ -18,7 +16,7 @@ public class PaintingEvent extends Event {
     }
 
     /**
-     * Get the painting.
+     * Gets the painting involved in this event.
      *
      * @return the painting
      */

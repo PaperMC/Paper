@@ -5,8 +5,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 
 /**
- *
- * @author durron597
+ * Called when an entity interacts with an object
  *
  */
 public class EntityInteractEvent extends EntityEvent implements Cancellable {

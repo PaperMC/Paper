@@ -4,8 +4,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 
 /**
- * This event is fired when a mob (or any creature) targets another entity
- * @author tkelly
+ * Called when a creature targets another entity
  */
 public class EntityTargetEvent extends EntityEvent implements Cancellable {
     private boolean cancel;
@@ -19,14 +18,21 @@ public class EntityTargetEvent extends EntityEvent implements Cancellable {
         this.reason = reason;
     }
 
+    /**
+     * Gets the cancellation state of this event. A cancelled event will not
+     * be executed in the server, but will still pass to other plugins
+     *
+     * @return true if this event is cancelled
+     */
     public boolean isCancelled() {
         return cancel;
     }
 
     /**
-     * Cancel the change in target. The entity will remain with their original
-     * target, whether that is nothing or another entity.
-     * @param cancel
+     * Sets the cancellation state of this event. A cancelled event will not
+     * be executed in the server, but will still pass to other plugins
+     *
+     * @param cancel true if you wish to cancel this event
      */
     public void setCancelled(boolean cancel) {
         this.cancel = cancel;

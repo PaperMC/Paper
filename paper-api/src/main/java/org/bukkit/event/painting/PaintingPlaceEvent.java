@@ -10,8 +10,6 @@ import org.bukkit.event.Event;
 
 /**
  * Triggered when a painting is created in the world
- *
- * @author Tanel Suurhans
  */
 public class PaintingPlaceEvent extends PaintingEvent implements Cancellable {
 
@@ -38,7 +36,7 @@ public class PaintingPlaceEvent extends PaintingEvent implements Cancellable {
     }
 
     /**
-     * Returns the block painting placed on
+     * Returns the block that the painting was placed on
      *
      * @return Block returns the block painting placed on
      */
@@ -55,10 +53,22 @@ public class PaintingPlaceEvent extends PaintingEvent implements Cancellable {
         return blockFace;
     }
 
+    /**
+     * Gets the cancellation state of this event. A cancelled event will not
+     * be executed in the server, but will still pass to other plugins
+     *
+     * @return true if this event is cancelled
+     */
     public boolean isCancelled() {
         return cancelled;
     }
 
+    /**
+     * Sets the cancellation state of this event. A cancelled event will not
+     * be executed in the server, but will still pass to other plugins
+     *
+     * @param cancel true if you wish to cancel this event
+     */
     public void setCancelled(boolean cancel) {
         this.cancelled = cancel;
     }

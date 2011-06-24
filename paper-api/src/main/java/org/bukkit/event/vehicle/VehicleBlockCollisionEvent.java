@@ -5,8 +5,6 @@ import org.bukkit.entity.Vehicle;
 
 /**
  * Raised when a vehicle collides with a block.
- *
- * @author sk89q
  */
 public class VehicleBlockCollisionEvent extends VehicleCollisionEvent {
     private Block block;
@@ -16,6 +14,11 @@ public class VehicleBlockCollisionEvent extends VehicleCollisionEvent {
         this.block = block;
     }
 
+    /**
+     * Gets the block the vehicle collided with
+     *
+     * @return the block the vehicle collided with
+     */
     public Block getBlock() {
         return block;
     }

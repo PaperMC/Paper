@@ -66,7 +66,7 @@ public class PlayerListener implements Listener {
     public void onPlayerRespawn(PlayerRespawnEvent event) {}
 
     /**
-     * Called when a player interacts
+     * Called when a player interacts with an object or air.
      *
      * @param event Relevant event details
      */

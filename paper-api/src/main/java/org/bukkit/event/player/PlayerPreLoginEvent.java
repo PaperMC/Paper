@@ -76,9 +76,9 @@ public class PlayerPreLoginEvent extends Event {
     }
 
     /**
-     * Gets the player name.
+     * Gets the player's name.
      *
-     * @return
+     * @return the player's name
      */
     public String getName() {
         return name;

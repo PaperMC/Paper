@@ -6,7 +6,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * Called when a block is damaged by a player
+ * Called when a block is damaged (hit by a player)
  */
 public class BlockDamageEvent extends BlockEvent implements Cancellable {
     private Player player;

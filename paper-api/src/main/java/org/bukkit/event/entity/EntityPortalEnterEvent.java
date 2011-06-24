@@ -5,7 +5,6 @@ import org.bukkit.entity.Entity;
 import org.bukkit.Location;
 import org.bukkit.event.Cancellable;
 
-
 /**
  * Stores data for entities standing inside a portal block
  */
@@ -18,8 +17,9 @@ public class EntityPortalEnterEvent extends EntityEvent {
         this.location = location;
     }
 
-    /*
+    /**
      * Gets the portal block the entity is touching
+     *
      * @return The portal block the entity is touching
      */
     public Location getLocation() {

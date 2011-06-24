@@ -19,9 +19,9 @@ public class BlockBreakEvent extends BlockEvent implements Cancellable {
     }
 
     /**
-     * Returns the player doing the damage
+     * Gets the Player that is breaking the block
      *
-     * @return the Player doing the damage
+     * @return the Player that is breaking the block
      */
     public Player getPlayer() {
         return player;

@@ -9,9 +9,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.block.Action;
 
 /**
- *
- * @author durron597
- *
+ * Called when a player interacts with an object or air.
  */
 public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
     protected ItemStack item;
@@ -93,7 +91,7 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
     /**
      * Check if this event involved a block
      *
-     * return boolean true if it did
+     * @return boolean true if it did
      */
     public boolean hasBlock() {
         return this.blockClicked != null;
@@ -102,7 +100,7 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
     /**
      * Check if this event involved an item
      *
-     * return boolean true if it did
+     * @return boolean true if it did
      */
     public boolean hasItem() {
         return this.item != null;

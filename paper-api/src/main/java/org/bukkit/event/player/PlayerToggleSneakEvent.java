@@ -4,8 +4,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 
 /**
- *
- * @author azi
+ * Called when a player toggles their sneaking state
  */
 public class PlayerToggleSneakEvent extends PlayerEvent implements Cancellable {
     private boolean isSneaking;
@@ -17,8 +16,8 @@ public class PlayerToggleSneakEvent extends PlayerEvent implements Cancellable {
     }
 
     /**
-     * Returns whether the player is now sneaking.
-     * 
+     * Returns whether the player is now sneaking or not.
+     *
      * @return sneaking state
      */
     public boolean isSneaking() {

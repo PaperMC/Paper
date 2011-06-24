@@ -7,8 +7,6 @@ import org.bukkit.event.Cancellable;
 /**
  * This event is fired when the player is almost about to enter the bed.
  * It can be cancelled.
- *
- * @author sk89q
  */
 public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
 
@@ -21,7 +19,8 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
     }
 
     /**
-     * Gets the cancellation state of this event.
+     * Gets the cancellation state of this event. A cancelled event will not
+     * be executed in the server, but will still pass to other plugins
      *
      * @return true if this event is cancelled
      */
@@ -30,7 +29,8 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
     }
 
     /**
-     * Prevents the player from entering the bed.
+     * Sets the cancellation state of this event. A cancelled event will not
+     * be executed in the server, but will still pass to other plugins
      *
      * @param cancel true if you wish to cancel this event
      */
@@ -39,9 +39,9 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
     }
 
     /**
-     * Returns the bed block.
+     * Returns the bed block involved in this event.
      *
-     * @return
+     * @return the bed block involved in this event
      */
     public Block getBed() {
         return bed;

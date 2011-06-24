@@ -3,7 +3,7 @@ package org.bukkit.event.server;
 import org.bukkit.plugin.Plugin;
 
 /**
- * Used for plugin loaded and unloaded events
+ * Used for plugin enable and disable events
  */
 public class PluginEvent extends ServerEvent {
     private final Plugin plugin;

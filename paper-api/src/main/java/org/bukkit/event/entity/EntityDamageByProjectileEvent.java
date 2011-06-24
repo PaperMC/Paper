@@ -5,6 +5,9 @@ import java.util.Random;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Projectile;
 
+/**
+ * Called when an entity is damaged by a projectile
+ */
 public class EntityDamageByProjectileEvent extends EntityDamageByEntityEvent {
 
     private Projectile projectile;

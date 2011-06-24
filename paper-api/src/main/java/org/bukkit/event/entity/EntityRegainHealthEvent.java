@@ -12,14 +12,12 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
     private boolean cancelled;
     private int amount;
 
-    public EntityRegainHealthEvent(Entity entity, int amount)
-    {
+    public EntityRegainHealthEvent(Entity entity, int amount) {
         super(Event.Type.ENTITY_REGAIN_HEALTH, entity);
         this.amount = amount;
     }
 
-    protected EntityRegainHealthEvent(Event.Type type, Entity entity, int amount)
-    {
+    protected EntityRegainHealthEvent(Event.Type type, Entity entity, int amount) {
         super(type, entity);
         this.amount = amount;
     }
@@ -28,13 +26,14 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
      * Gets the amount of regained health
      * @return The amount of health regained
      */
-    public int getAmount()
-    {
+    public int getAmount() {
         return amount;
     }
 
     /**
      * Sets the amount of regained health
+     *
+     * @param amount the amount of health the entity will regain
      */
     public void setAmount(int amount) {
         this.amount = amount;

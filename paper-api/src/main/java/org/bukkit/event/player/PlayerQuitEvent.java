@@ -2,6 +2,9 @@ package org.bukkit.event.player;
 
 import org.bukkit.entity.Player;
 
+/**
+ * Called when a player leaves a server
+ */
 public class PlayerQuitEvent extends PlayerEvent {
 
     private String quitMessage;

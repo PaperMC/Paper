@@ -19,7 +19,7 @@ public class PlayerDropItemEvent extends PlayerEvent implements Cancellable {
     /**
      * Gets the ItemDrop created by the player
      *
-     * @return ItemDrop
+     * @return ItemDrop created by the player
      */
     public Item getItemDrop() {
         return drop;

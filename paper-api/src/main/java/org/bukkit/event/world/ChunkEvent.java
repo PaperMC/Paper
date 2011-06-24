@@ -2,6 +2,9 @@ package org.bukkit.event.world;
 
 import org.bukkit.Chunk;
 
+/**
+ * Represents a Chunk related event
+ */
 public class ChunkEvent extends WorldEvent {
     protected Chunk chunk;
 

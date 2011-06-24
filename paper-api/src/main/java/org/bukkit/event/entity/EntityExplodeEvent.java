@@ -7,8 +7,7 @@ import org.bukkit.Location;
 import org.bukkit.event.Cancellable;
 
 /**
- *
- * @author SpeaKeasY
+ * Called when an entity explodes
  */
 public class EntityExplodeEvent extends EntityEvent implements Cancellable {
     private boolean cancel;
@@ -23,10 +22,22 @@ public class EntityExplodeEvent extends EntityEvent implements Cancellable {
         this.blocks = blocks;
     }
 
+    /**
+     * Gets the cancellation state of this event. A cancelled event will not
+     * be executed in the server, but will still pass to other plugins
+     *
+     * @return true if this event is cancelled
+     */
     public boolean isCancelled() {
         return cancel;
     }
 
+    /**
+     * Sets the cancellation state of this event. A cancelled event will not
+     * be executed in the server, but will still pass to other plugins
+     *
+     * @param cancel true if you wish to cancel this event
+     */
     public void setCancelled(boolean cancel) {
         this.cancel = cancel;
     }
@@ -50,6 +61,7 @@ public class EntityExplodeEvent extends EntityEvent implements Cancellable {
 
     /**
      * Returns the percentage of blocks to drop from this explosion
+     *
      * @return
      */
     public float getYield() {

@@ -5,10 +5,7 @@ import org.bukkit.entity.Painting;
 
 /**
  * Triggered when a painting is removed by an entity
- *
- * @author Tanel Suurhans
  */
-
 public class PaintingBreakByEntityEvent extends PaintingBreakEvent {
     private Entity remover;
 
@@ -17,6 +14,11 @@ public class PaintingBreakByEntityEvent extends PaintingBreakEvent {
         this.remover = remover;
     }
 
+    /**
+     * Gets the entity that removed the painting
+     *
+     * @return the entity that removed the painting.
+     */
     public Entity getRemover() {
         return remover;
     }

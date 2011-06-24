@@ -5,9 +5,7 @@ import org.bukkit.entity.Egg;
 import org.bukkit.entity.Player;
 
 /**
- *
- * @author tkelly
- *
+ * Called when a player throws an egg and it might hatch
  */
 public class PlayerEggThrowEvent extends PlayerEvent {
     private Egg egg;
@@ -24,16 +22,16 @@ public class PlayerEggThrowEvent extends PlayerEvent {
     }
 
     /**
-     * Get the egg.
+     * Gets the egg involved in this event.
      *
-     * @return the egg
+     * @return the egg involved in this event
      */
     public Egg getEgg() {
         return egg;
     }
 
     /**
-     * Grabs whether the egg is hatching or not. Will be what the server
+     * Gets whether the egg is hatching or not. Will be what the server
      * would've done without interaction.
      *
      * @return boolean Whether the egg is going to hatch or not
@@ -43,7 +41,7 @@ public class PlayerEggThrowEvent extends PlayerEvent {
     }
 
     /**
-     * Sets whether the egg will hatch.
+     * Sets whether the egg will hatch or not.
      *
      * @param hatching true if you want the egg to hatch
      *                 false if you want it not to

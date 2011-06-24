@@ -4,7 +4,7 @@ import org.bukkit.World;
 import org.bukkit.event.Cancellable;
 
 /**
- * Stores data for thudner state changing in a world
+ * Stores data for thunder state changing in a world
  */
 public class ThunderChangeEvent extends WeatherEvent implements Cancellable {
 

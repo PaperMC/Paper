@@ -5,8 +5,6 @@ import org.bukkit.entity.Player;
 
 /**
  * This event is fired when the player is leaving a bed.
- *
- * @author sk89q
  */
 public class PlayerBedLeaveEvent extends PlayerEvent {
 
@@ -18,9 +16,9 @@ public class PlayerBedLeaveEvent extends PlayerEvent {
     }
 
     /**
-     * Returns the bed block.
+     * Returns the bed block involved in this event.
      *
-     * @return
+     * @return the bed block involved in this event
      */
     public Block getBed() {
         return bed;
