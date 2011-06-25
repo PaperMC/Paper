@@ -4,6 +4,7 @@ import org.bukkit.block.Block;
 import org.bukkit.World;
 import org.bukkit.event.Cancellable;
 import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * Called when the world attempts to create a matching end to a portal
@@ -12,9 +13,9 @@ public class PortalCreateEvent extends WorldEvent implements Cancellable {
     private boolean cancel = false;
     private ArrayList<Block> blocks = new ArrayList<Block>();
 
-    public PortalCreateEvent(final ArrayList<Block> blocks, final World world) {
+    public PortalCreateEvent(final Collection<Block> blocks, final World world) {
         super(Type.PORTAL_CREATE, world);
-        this.blocks = blocks;
+        this.blocks.addAll(blocks);
     }
 
     /**
