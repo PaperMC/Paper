@@ -9,6 +9,7 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+import org.bukkit.event.player.PlayerPickupItemEvent;
 // CraftBukkit end
 
 public class EntityArrow extends Entity {
@@ -290,6 +291,20 @@ public class EntityArrow extends Entity {
 
     public void b(EntityHuman entityhuman) {
         if (!this.world.isStatic) {
+            // CraftBukkit start
+            ItemStack itemstack = new ItemStack(Item.ARROW, 1);
+            if (this.i && this.a && this.b <= 0 && entityhuman.inventory.canPickup(itemstack) > 0) {
+                net.minecraft.server.EntityItem item = new net.minecraft.server.EntityItem(this.world, this.locX, this.locY, this.locZ, itemstack);
+
+                PlayerPickupItemEvent event = new PlayerPickupItemEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), new org.bukkit.craftbukkit.entity.CraftItem(this.world.getServer(), item));
+                this.world.getServer().getPluginManager().callEvent(event);
+
+                if (event.isCancelled()) {
+                    return;
+                }
+            }
+            // CraftBukkt end
+
             if (this.i && this.a && this.b <= 0 && entityhuman.inventory.canHold(new ItemStack(Item.ARROW, 1))) {
                 this.world.makeSound(this, "random.pop", 0.2F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
                 entityhuman.receive(this, 1);
