@@ -66,10 +66,10 @@ public final class CraftServer implements Server {
     private final String serverName = "Craftbukkit";
     private final String serverVersion;
     private final String protocolVersion = "1.6.6";
-    private final PluginManager pluginManager = new SimplePluginManager(this);
     private final ServicesManager servicesManager = new SimpleServicesManager();
     private final BukkitScheduler scheduler = new CraftScheduler(this);
     private final SimpleCommandMap commandMap = new SimpleCommandMap(this);
+    private final PluginManager pluginManager = new SimplePluginManager(this, commandMap);
     protected final MinecraftServer console;
     protected final ServerConfigurationManager server;
     private final Map<String, World> worlds = new LinkedHashMap<String, World>();
@@ -147,12 +147,6 @@ public final class CraftServer implements Server {
     }
 
     private void loadPlugin(Plugin plugin) {
-        List<Command> pluginCommands = PluginCommandYamlParser.parse(plugin);
-
-        if (!pluginCommands.isEmpty()) {
-            commandMap.registerAll(plugin.getDescription().getName(), pluginCommands);
-        }
-
         try {
             pluginManager.enablePlugin(plugin);
         } catch (Throwable ex) {
