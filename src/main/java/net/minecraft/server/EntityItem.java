@@ -127,16 +127,20 @@ public class EntityItem extends Entity {
             int i = this.itemStack.count;
 
             // CraftBukkit start
-            if (this.pickupDelay <= 0 && entityhuman.inventory.canHold(this.itemStack)) { // <-- == to <=
-                Player player = (Player) entityhuman.getBukkitEntity();
-                PlayerPickupItemEvent event = new PlayerPickupItemEvent(player, (org.bukkit.entity.Item) this.getBukkitEntity());
-                world.getServer().getPluginManager().callEvent(event);
+            if (this.pickupDelay <= 0 && entityhuman.inventory.canPickup(this.itemStack) > 0) {
+                PlayerPickupItemEvent event = new PlayerPickupItemEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity());
+                this.world.getServer().getPluginManager().callEvent(event);
 
                 if (event.isCancelled()) {
                     return;
                 }
-                // CraftBukkit end
 
+                // Possibly < 0; fix here so we do not have to modify code below
+                this.pickupDelay = 0;
+            }
+            // CraftBukkit end
+
+            if (this.pickupDelay == 0 && entityhuman.inventory.canHold(this.itemStack)) {
                 if (this.itemStack.id == Block.LOG.id) {
                     entityhuman.a((Statistic) AchievementList.g);
                 }

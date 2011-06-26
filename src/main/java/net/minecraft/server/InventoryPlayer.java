@@ -51,6 +51,22 @@ public class InventoryPlayer implements IInventory {
         return -1;
     }
 
+    // CraftBukkit start - watch method above! :D
+    public int canPickup(ItemStack itemstack) {
+        int remains = itemstack.count;
+        for (int i = 0; i < this.items.length; ++i) {
+            if (this.items[i] == null) return itemstack.count;
+
+            // Taken from d(ItemStack)I
+            if (this.items[i] != null && this.items[i].id == itemstack.id && this.items[i].c() && this.items[i].count < this.items[i].b() && this.items[i].count < this.getMaxStackSize() && (!this.items[i].e() || this.items[i].getData() == itemstack.getData())) {
+                remains -= (this.items[i].b() < this.getMaxStackSize() ? this.items[i].b() : this.getMaxStackSize()) - this.items[i].count;
+            }
+            if (remains <= 0) return itemstack.count;
+        }
+        return itemstack.count - remains;
+    }
+    // CraftBukkit end
+
     private int k() {
         for (int i = 0; i < this.items.length; ++i) {
             if (this.items[i] == null) {
