@@ -45,7 +45,7 @@ public class Slot {
     }
 
     public ItemStack a(int i) {
-        return this.inventory.a(this.index, i);
+        return this.inventory.splitStack(this.index, i);
     }
 
     public boolean a(IInventory iinventory, int i) {

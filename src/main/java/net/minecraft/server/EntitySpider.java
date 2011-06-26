@@ -1,10 +1,8 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.event.entity.EntityTargetEvent;
-import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
 // CraftBukkit end
 
 public class EntitySpider extends EntityMonster {
@@ -30,7 +28,7 @@ public class EntitySpider extends EntityMonster {
         if (f < 0.5F) {
             double d0 = 16.0D;
 
-            return this.world.a(this, d0);
+            return this.world.findNearbyPlayer(this, d0);
         } else {
             return null;
         }
@@ -53,9 +51,8 @@ public class EntitySpider extends EntityMonster {
 
         if (f1 > 0.5F && this.random.nextInt(100) == 0) {
             // CraftBukkit start
-            CraftServer server = ((WorldServer) this.world).getServer();
-            EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), null, TargetReason.FORGOT_TARGET);
-            server.getPluginManager().callEvent(event);
+            EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), null, EntityTargetEvent.TargetReason.FORGOT_TARGET);
+            this.world.getServer().getPluginManager().callEvent(event);
 
             if (!event.isCancelled()) {
                 if (event.getTarget() == null) {

@@ -1,7 +1,6 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -42,7 +41,7 @@ public class ItemBed extends Item {
             }
 
             if (world.isEmpty(i, j, k) && world.isEmpty(i + b0, j, k + b1) && world.d(i, j - 1, k) && world.d(i + b0, j - 1, k + b1)) {
-                BlockState blockState = CraftBlockState.getBlockState(world, i, j, k); // CraftBukkit
+                CraftBlockState blockState = CraftBlockState.getBlockState(world, i, j, k); // CraftBukkit
 
                 world.setTypeIdAndData(i, j, k, blockbed.id, i1);
 

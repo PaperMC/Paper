@@ -4,9 +4,6 @@ import java.util.Random;
 
 // CraftBukkit start
 import org.bukkit.block.BlockFace;
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.event.block.BlockFromToEvent;
 // CraftBukkit end
 
@@ -30,9 +27,9 @@ public class BlockFlowing extends BlockFluids {
 
     public void a(World world, int i, int j, int k, Random random) {
         // CraftBukkit start
-        CraftWorld cworld = ((WorldServer) world).getWorld();
-        CraftServer server = ((WorldServer) world).getServer();
-        CraftBlock source = cworld == null ? null : (CraftBlock) cworld.getBlockAt(i, j, k);
+        org.bukkit.World bworld = world.getWorld();
+        org.bukkit.Server server = world.getServer();
+        org.bukkit.block.Block source = bworld == null ? null : bworld.getBlockAt(i, j, k);
         // CraftBukkit end
 
         int l = this.g(world, i, j, k);

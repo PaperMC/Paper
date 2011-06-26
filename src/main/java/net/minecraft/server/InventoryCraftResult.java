@@ -6,7 +6,7 @@ public class InventoryCraftResult implements IInventory {
 
     // CraftBukkit start
     public ItemStack[] getContents() {
-        return items;
+        return this.items;
     }
     // CraftBukkit end
 
@@ -24,7 +24,7 @@ public class InventoryCraftResult implements IInventory {
         return "Result";
     }
 
-    public ItemStack a(int i, int j) {
+    public ItemStack splitStack(int i, int j) {
         if (this.items[i] != null) {
             ItemStack itemstack = this.items[i];
 

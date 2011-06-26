@@ -10,11 +10,7 @@ import java.util.Set;
 
 // CraftBukkit start
 import java.util.Random;
-import org.bukkit.Bukkit;
-import org.bukkit.Server;
 import org.bukkit.craftbukkit.CraftChunk;
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.util.LongHashset;
 import org.bukkit.craftbukkit.util.LongHashtable;
 import org.bukkit.event.world.ChunkLoadEvent;
@@ -30,7 +26,7 @@ public class ChunkProviderServer implements IChunkProvider {
     public Chunk emptyChunk;
     public IChunkProvider chunkProvider; // CraftBukkit
     private IChunkLoader e;
-    public boolean a = false;
+    public boolean forceChunkLoad = false;
     public LongHashtable<Chunk> chunks = new LongHashtable<Chunk>();
     public List chunkList = new ArrayList();
     public WorldServer world;
@@ -73,7 +69,7 @@ public class ChunkProviderServer implements IChunkProvider {
                 } else {
                     chunk = this.chunkProvider.getOrCreateChunk(i, j);
                 }
-                newChunk = true; // Craftbukkit
+                newChunk = true; // CraftBukkit
             }
 
             this.chunks.put(i, j, chunk); // CraftBukkit
@@ -84,7 +80,7 @@ public class ChunkProviderServer implements IChunkProvider {
             }
 
             // CraftBukkit start
-            CraftServer server = this.world.getServer();
+            org.bukkit.Server server = this.world.getServer();
             if (server != null) {
                 /*
                  * If it's a new world, the first few chunks are generated inside
@@ -119,7 +115,7 @@ public class ChunkProviderServer implements IChunkProvider {
         // CraftBukkit start
         Chunk chunk = (Chunk) this.chunks.get(i, j);
 
-        chunk = chunk == null ? (!this.world.isLoading && !this.a ? this.emptyChunk : this.getChunkAt(i, j)) : chunk;
+        chunk = chunk == null ? (!this.world.isLoading && !this.forceChunkLoad ? this.emptyChunk : this.getChunkAt(i, j)) : chunk;
         if (chunk == this.emptyChunk) return chunk;
         if (i != chunk.x || j != chunk.z) {
             MinecraftServer.log.info("Chunk (" + chunk.x + ", " + chunk.z + ") stored at  (" + i + ", " + j + ")");
@@ -181,20 +177,21 @@ public class ChunkProviderServer implements IChunkProvider {
                 this.chunkProvider.getChunkAt(ichunkprovider, i, j);
 
                 // CraftBukkit start
-                BlockSand.a = true;
+                BlockSand.instaFall = true;
                 Random random = new Random();
                 random.setSeed(world.getSeed());
                 long xRand = random.nextLong() / 2L * 2L + 1L;
                 long zRand = random.nextLong() / 2L * 2L + 1L;
                 random.setSeed((long) i * xRand + (long) j * zRand ^ world.getSeed());
-                CraftWorld world = (CraftWorld)this.world.getWorld();
+
+                org.bukkit.World world = this.world.getWorld();
                 if (world != null) {
                     for (BlockPopulator populator : world.getPopulators()) {
                         populator.populate(world, random, chunk.bukkitChunk);
                     }
                 }
-                BlockSand.a = false;
-                Bukkit.getServer().getPluginManager().callEvent(new ChunkPopulateEvent(chunk.bukkitChunk));
+                BlockSand.instaFall = false;
+                this.world.getServer().getPluginManager().callEvent(new ChunkPopulateEvent(chunk.bukkitChunk));
                 // CraftBukkit end
 
                 chunk.f();
@@ -234,9 +231,9 @@ public class ChunkProviderServer implements IChunkProvider {
     }
 
     public boolean unloadChunks() {
-        if (!this.world.E) {
+        if (!this.world.canSave) {
             // CraftBukkit start
-            Server server = this.world.getServer();
+            org.bukkit.Server server = this.world.getServer();
             for (int i = 0; i < 50 && !this.unloadQueue.isEmpty(); i++) {
                 long chunkcoordinates = this.unloadQueue.popFirst();
                 Chunk chunk = this.chunks.get(chunkcoordinates);
@@ -265,7 +262,7 @@ public class ChunkProviderServer implements IChunkProvider {
         return this.chunkProvider.unloadChunks();
     }
 
-    public boolean b() {
-        return !this.world.E;
+    public boolean canSave() {
+        return !this.world.canSave;
     }
 }

@@ -3,11 +3,9 @@ package net.minecraft.server;
 import java.util.List;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 // CraftBukkit end
 
 public class EntityFish extends Entity {
@@ -194,15 +192,12 @@ public class EntityFish extends Entity {
                     // TODO add EntityDamagedByProjectileEvent : fishing hook?
                     boolean stick;
                     if (movingobjectposition.entity instanceof EntityLiving) {
-                        CraftServer server =  this.world.getServer();
                         org.bukkit.entity.Entity damagee = movingobjectposition.entity.getBukkitEntity();
                         Projectile projectile = (Projectile) this.getBukkitEntity();
-                        DamageCause damageCause = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
-                        int damage = 0;
 
                         // TODO @see EntityArrow#162
-                        EntityDamageByProjectileEvent event = new EntityDamageByProjectileEvent(damagee, projectile, damageCause, damage);
-                        server.getPluginManager().callEvent(event);
+                        EntityDamageByProjectileEvent event = new EntityDamageByProjectileEvent(damagee, projectile, EntityDamageEvent.DamageCause.ENTITY_ATTACK, 0);
+                        this.world.getServer().getPluginManager().callEvent(event);
 
                         if (event.isCancelled()) {
                             stick = !event.getBounce();

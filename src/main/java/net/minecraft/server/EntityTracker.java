@@ -20,7 +20,7 @@ public class EntityTracker {
     }
 
     // CraftBukkit - synchronized
-    public synchronized void a(Entity entity) {
+    public synchronized void track(Entity entity) {
         if (entity instanceof EntityPlayer) {
             this.a(entity, 512, 2);
             EntityPlayer entityplayer = (EntityPlayer) entity;
@@ -80,7 +80,7 @@ public class EntityTracker {
 
             this.a.add(entitytrackerentry);
             this.b.a(entity.id, entitytrackerentry);
-            entitytrackerentry.scanPlayers(this.c.a(this.e).players);
+            entitytrackerentry.scanPlayers(this.c.getWorldServer(this.e).players);
         }
     }
 
@@ -106,14 +106,14 @@ public class EntityTracker {
     }
 
     // CraftBukkit - synchronized
-    public synchronized void a() {
+    public synchronized void updatePlayers() {
         ArrayList arraylist = new ArrayList();
         Iterator iterator = this.a.iterator();
 
         while (iterator.hasNext()) {
             EntityTrackerEntry entitytrackerentry = (EntityTrackerEntry) iterator.next();
 
-            entitytrackerentry.track(this.c.a(this.e).players);
+            entitytrackerentry.track(this.c.getWorldServer(this.e).players);
             if (entitytrackerentry.m && entitytrackerentry.tracker instanceof EntityPlayer) {
                 arraylist.add((EntityPlayer) entitytrackerentry.tracker);
             }
@@ -143,7 +143,7 @@ public class EntityTracker {
     }
 
     // CraftBukkit - synchronized
-    public synchronized void b(Entity entity, Packet packet) {
+    public synchronized void sendPacketToEntity(Entity entity, Packet packet) {
         EntityTrackerEntry entitytrackerentry = (EntityTrackerEntry) this.b.a(entity.id);
 
         if (entitytrackerentry != null) {
@@ -152,7 +152,7 @@ public class EntityTracker {
     }
 
     // CraftBukkit - synchronized
-    public synchronized void trackPlayer(EntityPlayer entityplayer) {
+    public synchronized void untrackPlayer(EntityPlayer entityplayer) {
         Iterator iterator = this.a.iterator();
 
         while (iterator.hasNext()) {

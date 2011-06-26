@@ -3,16 +3,7 @@ package net.minecraft.server;
 import java.util.List;
 import java.util.Random;
 
-// CraftBukkit start
-import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.event.Cancellable;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.block.BlockRedstoneEvent;
-// CraftBukkit end
+import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
 
 public class BlockMinecartDetector extends BlockMinecartTrack {
 
@@ -69,12 +60,10 @@ public class BlockMinecartDetector extends BlockMinecartTrack {
 
         // CraftBukkit start
         if (flag != flag1) {
-            CraftServer server = world.getServer();
-            CraftWorld craftWorld = world.getWorld();
-            CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
+            org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
 
             BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, flag ? 1 : 0, flag1 ? 1 : 0);
-            server.getPluginManager().callEvent(eventRedstone);
+            world.getServer().getPluginManager().callEvent(eventRedstone);
 
             flag1 = eventRedstone.getNewCurrent() > 0;
         }

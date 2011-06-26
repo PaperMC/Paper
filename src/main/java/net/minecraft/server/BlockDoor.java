@@ -2,11 +2,7 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.event.block.BlockRedstoneEvent;
-// CraftBukkit end
+import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
 
 public class BlockDoor extends Block {
 
@@ -170,16 +166,16 @@ public class BlockDoor extends Block {
                 boolean flag1 = world.isBlockIndirectlyPowered(i, j, k) || world.isBlockIndirectlyPowered(i, j + 1, k);
 
                 // CraftBukkit start
-                CraftWorld craftWorld = ((WorldServer) world).getWorld();
-                CraftServer server = ((WorldServer) world).getServer();
-                org.bukkit.block.Block block = craftWorld.getBlockAt(i, j, k);
-                org.bukkit.block.Block blockTop = craftWorld.getBlockAt(i, j + 1, k);
+                org.bukkit.World bworld = world.getWorld();
+                org.bukkit.block.Block block = bworld.getBlockAt(i, j, k);
+                org.bukkit.block.Block blockTop = bworld.getBlockAt(i, j + 1, k);
+
                 int power = block.getBlockPower();
                 int powerTop = blockTop.getBlockPower();
                 if (powerTop > power) power = powerTop;
-                BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, (world.getData(i, j, k) & 4) > 0 ? 15 : 0, power);
 
-                server.getPluginManager().callEvent(eventRedstone);
+                BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, (world.getData(i, j, k) & 4) > 0 ? 15 : 0, power);
+                world.getServer().getPluginManager().callEvent(eventRedstone);
 
                 flag1 = eventRedstone.getNewCurrent() > 0;
                 // CraftBukkit end

@@ -1,8 +1,6 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.inventory.FurnaceBurnEvent;
 import org.bukkit.event.inventory.FurnaceSmeltEvent;
@@ -12,13 +10,13 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
 
     private ItemStack[] items = new ItemStack[3];
     public int burnTime = 0;
-    public int b = 0;
+    public int ticksForCurrentFuel = 0;
     public int cookTime = 0;
 
     // CraftBukkit start
     private int lastTick = (int) (System.currentTimeMillis() / 50);
     public ItemStack[] getContents() {
-        return items;
+        return this.items;
     }
     // CraftBukkit end
 
@@ -32,7 +30,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         return this.items[i];
     }
 
-    public ItemStack a(int i, int j) {
+    public ItemStack splitStack(int i, int j) {
         if (this.items[i] != null) {
             ItemStack itemstack;
 
@@ -81,7 +79,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
 
         this.burnTime = nbttagcompound.d("BurnTime");
         this.cookTime = nbttagcompound.d("CookTime");
-        this.b = this.a(this.items[1]);
+        this.ticksForCurrentFuel = this.fuelTime(this.items[1]);
     }
 
     public void b(NBTTagCompound nbttagcompound) {
@@ -107,7 +105,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         return 64;
     }
 
-    public boolean f() {
+    public boolean isBurning() {
         return this.burnTime > 0;
     }
 
@@ -119,41 +117,38 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         int currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit
         int elapsedTicks = currentTick - this.lastTick;
         this.lastTick = currentTick;
-        // CraftBukkit end
 
-        if (this.f() && this.h()) {
-            // CraftBukkit start -- handle multiple elapsed ticks
+        // CraftBukkit - moved from below
+        if (this.isBurning() && this.canBurn()) {
             this.cookTime += elapsedTicks;
             if (this.cookTime >= 200) {
                 this.cookTime %= 200;
-                // CraftBukkit end
-                this.g();
+                this.burn();
                 flag1 = true;
             }
         } else {
             this.cookTime = 0;
         }
+        // CraftBukkit end
 
         if (this.burnTime > 0) {
             this.burnTime -= elapsedTicks; // CraftBukkit
         }
 
         if (!this.world.isStatic) {
-            // CraftBukkit start -- handle multiple elapsed ticks
-            if (this.burnTime <= 0 && this.h() && this.items[1] != null) { // CraftBukkit == to <=
-                CraftServer cserver = this.world.getServer();
-                CraftWorld cworld = this.world.getWorld();
+            // CraftBukkit start - handle multiple elapsed ticks
+            if (this.burnTime <= 0 && this.canBurn() && this.items[1] != null) { // CraftBukkit - == to <=
                 CraftItemStack fuel = new CraftItemStack(this.items[1]);
 
-                FurnaceBurnEvent furnaceBurnEvent = new FurnaceBurnEvent(cworld.getBlockAt(this.e, this.f, this.g), fuel, this.a(this.items[1]));
-                cserver.getPluginManager().callEvent(furnaceBurnEvent);
+                FurnaceBurnEvent furnaceBurnEvent = new FurnaceBurnEvent(this.world.getWorld().getBlockAt(this.x, this.y, this.z), fuel, this.fuelTime(this.items[1]));
+                this.world.getServer().getPluginManager().callEvent(furnaceBurnEvent);
 
                 if (furnaceBurnEvent.isCancelled()) {
                     return;
                 }
 
-                this.b = this.a(this.items[1]);
-                this.burnTime += this.b;
+                this.ticksForCurrentFuel = this.fuelTime(this.items[1]);
+                this.burnTime += this.ticksForCurrentFuel;
                 // CraftBukkit end
                 if (this.burnTime > 0) {
                     flag1 = true;
@@ -166,9 +161,22 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
                 }
             }
 
+            /* CraftBukkit start - moved up
+            if (this.f() && this.process()) {
+                ++this.cookTime;
+                if (this.cookTime == 200) {
+                    this.cookTime = 0;
+                    this.burn();
+                    flag1 = true;
+                }
+            } else {
+                this.cookTime = 0;
+            }
+            // CraftBukkit end */
+
             if (flag != this.burnTime > 0) {
                 flag1 = true;
-                BlockFurnace.a(this.burnTime > 0, this.world, this.e, this.f, this.g);
+                BlockFurnace.a(this.burnTime > 0, this.world, this.x, this.y, this.z);
             }
         }
 
@@ -177,29 +185,27 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         }
     }
 
-    private boolean h() {
+    private boolean canBurn() {
         if (this.items[0] == null) {
             return false;
         } else {
-            ItemStack itemstack = FurnaceRecipes.a().a(this.items[0].getItem().id);
+            ItemStack itemstack = FurnaceRecipes.getInstance().a(this.items[0].getItem().id);
 
             // CraftBukkit - consider resultant count instead of current count
-            return itemstack == null ? false : (this.items[2] == null ? true : (!this.items[2].a(itemstack) ? false : (this.items[2].count + itemstack.count <= this.getMaxStackSize() && this.items[2].count < this.items[2].b() ? true : this.items[2].count + itemstack.count <= itemstack.b())));
+            return itemstack == null ? false : (this.items[2] == null ? true : (!this.items[2].doMaterialsMatch(itemstack) ? false : (this.items[2].count + itemstack.count <= this.getMaxStackSize() && this.items[2].count < this.items[2].getMaxStackSize() ? true : this.items[2].count + itemstack.count <= itemstack.getMaxStackSize())));
         }
     }
 
-    public void g() {
-        if (this.h()) {
-            ItemStack itemstack = FurnaceRecipes.a().a(this.items[0].getItem().id);
+    public void burn() {
+        if (this.canBurn()) {
+            ItemStack itemstack = FurnaceRecipes.getInstance().a(this.items[0].getItem().id);
 
             // CraftBukkit start
-            CraftServer cserver = this.world.getServer();
-            CraftWorld cworld = this.world.getWorld();
             CraftItemStack source = new CraftItemStack(this.items[0]);
-            CraftItemStack result = new CraftItemStack(itemstack.j());
+            CraftItemStack result = new CraftItemStack(itemstack.cloneItemStack());
 
-            FurnaceSmeltEvent furnaceSmeltEvent = new FurnaceSmeltEvent(cworld.getBlockAt(this.e, this.f, this.g), source, result);
-            cserver.getPluginManager().callEvent(furnaceSmeltEvent);
+            FurnaceSmeltEvent furnaceSmeltEvent = new FurnaceSmeltEvent(this.world.getWorld().getBlockAt(this.x, this.y, this.z), source, result);
+            this.world.getServer().getPluginManager().callEvent(furnaceSmeltEvent);
 
             if (furnaceSmeltEvent.isCancelled()) {
                 return;
@@ -208,11 +214,11 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
             org.bukkit.inventory.ItemStack oldResult = furnaceSmeltEvent.getResult();
             ItemStack newResult = new ItemStack(oldResult.getTypeId(), oldResult.getAmount(), oldResult.getDurability());
             itemstack = newResult;
-            // CraftBukkit end
+
             if (this.items[2] == null) {
-                this.items[2] = itemstack;
+                this.items[2] = itemstack.cloneItemStack();
             } else if (this.items[2].id == itemstack.id) {
-                // CraftBukkit start - compare damage too
+                // CraftBukkit - compare damage too
                 if (this.items[2].damage == itemstack.damage) {
                     this.items[2].count += itemstack.count;
                 }
@@ -226,7 +232,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         }
     }
 
-    private int a(ItemStack itemstack) {
+    private int fuelTime(ItemStack itemstack) {
         if (itemstack == null) {
             return 0;
         } else {
@@ -237,6 +243,6 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
     }
 
     public boolean a_(EntityHuman entityhuman) {
-        return this.world.getTileEntity(this.e, this.f, this.g) != this ? false : entityhuman.d((double) this.e + 0.5D, (double) this.f + 0.5D, (double) this.g + 0.5D) <= 64.0D;
+        return this.world.getTileEntity(this.x, this.y, this.z) != this ? false : entityhuman.d((double) this.x + 0.5D, (double) this.y + 0.5D, (double) this.z + 0.5D) <= 64.0D;
     }
 }

@@ -1,7 +1,6 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -23,12 +22,13 @@ public class ItemSeeds extends Item {
             int i1 = world.getTypeId(i, j, k);
 
             if (i1 == Block.SOIL.id && world.isEmpty(i, j + 1, k)) {
-                BlockState blockState = CraftBlockState.getBlockState(world, i, j + 1, k); // CraftBukkit
+                CraftBlockState blockState = CraftBlockState.getBlockState(world, i, j + 1, k); // CraftBukkit
 
                 world.setTypeId(i, j + 1, k, this.id);
 
                 // CraftBukkit start - seeds
                 BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, i, j, k, this.id);
+
                 if (event.isCancelled() || !event.canBuild()) {
                     event.getBlockPlaced().setTypeId(0);
                     return false;

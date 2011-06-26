@@ -21,13 +21,13 @@ public class WorldData {
     private int o;
 
     public WorldData(NBTTagCompound nbttagcompound) {
-        this.a = nbttagcompound.f("RandomSeed");
+        this.a = nbttagcompound.getLong("RandomSeed");
         this.b = nbttagcompound.e("SpawnX");
         this.c = nbttagcompound.e("SpawnY");
         this.d = nbttagcompound.e("SpawnZ");
-        this.e = nbttagcompound.f("Time");
-        this.f = nbttagcompound.f("LastPlayed");
-        this.g = nbttagcompound.f("SizeOnDisk");
+        this.e = nbttagcompound.getLong("Time");
+        this.f = nbttagcompound.getLong("LastPlayed");
+        this.g = nbttagcompound.getLong("SizeOnDisk");
         this.name = nbttagcompound.getString("LevelName");
         this.k = nbttagcompound.e("version");
         this.m = nbttagcompound.e("rainTime");
@@ -89,13 +89,13 @@ public class WorldData {
     }
 
     private void a(NBTTagCompound nbttagcompound, NBTTagCompound nbttagcompound1) {
-        nbttagcompound.a("RandomSeed", this.a);
+        nbttagcompound.setLong("RandomSeed", this.a);
         nbttagcompound.a("SpawnX", this.b);
         nbttagcompound.a("SpawnY", this.c);
         nbttagcompound.a("SpawnZ", this.d);
-        nbttagcompound.a("Time", this.e);
-        nbttagcompound.a("SizeOnDisk", this.g);
-        nbttagcompound.a("LastPlayed", System.currentTimeMillis());
+        nbttagcompound.setLong("Time", this.e);
+        nbttagcompound.setLong("SizeOnDisk", this.g);
+        nbttagcompound.setLong("LastPlayed", System.currentTimeMillis());
         nbttagcompound.setString("LevelName", this.name);
         nbttagcompound.a("version", this.k);
         nbttagcompound.a("rainTime", this.m);
@@ -107,7 +107,7 @@ public class WorldData {
         }
     }
 
-    public long b() {
+    public long getSeed() {
         return this.a;
     }
 
@@ -161,35 +161,35 @@ public class WorldData {
         this.k = i;
     }
 
-    public boolean j() {
+    public boolean isThundering() {
         return this.n;
     }
 
-    public void a(boolean flag) {
+    public void setThundering(boolean flag) {
         this.n = flag;
     }
 
-    public int k() {
+    public int getThunderDuration() {
         return this.o;
     }
 
-    public void b(int i) {
+    public void setThunderDuration(int i) {
         this.o = i;
     }
 
-    public boolean l() {
+    public boolean hasStorm() {
         return this.l;
     }
 
-    public void b(boolean flag) {
+    public void setStorm(boolean flag) {
         this.l = flag;
     }
 
-    public int m() {
+    public int getWeatherDuration() {
         return this.m;
     }
 
-    public void c(int i) {
+    public void setWeatherDuration(int i) {
         this.m = i;
     }
 }

@@ -1,7 +1,6 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -47,7 +46,7 @@ public class ItemRedstone extends Item {
         }
 
         if (Block.REDSTONE_WIRE.canPlace(world, i, j, k)) {
-            BlockState blockState = CraftBlockState.getBlockState(world, i, j, k); // CraftBukkit
+            CraftBlockState blockState = CraftBlockState.getBlockState(world, i, j, k); // CraftBukkit
 
             world.setRawTypeId(i, j, k, Block.REDSTONE_WIRE.id); // CraftBukkit - We update after the event
 

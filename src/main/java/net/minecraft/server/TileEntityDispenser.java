@@ -9,7 +9,7 @@ public class TileEntityDispenser extends TileEntity implements IInventory {
 
     // CraftBukkit start
     public ItemStack[] getContents() {
-        return items;
+        return this.items;
     }
     // CraftBukkit end
 
@@ -23,7 +23,7 @@ public class TileEntityDispenser extends TileEntity implements IInventory {
         return this.items[i];
     }
 
-    public ItemStack a(int i, int j) {
+    public ItemStack splitStack(int i, int j) {
         if (this.items[i] != null) {
             ItemStack itemstack;
 
@@ -63,11 +63,11 @@ public class TileEntityDispenser extends TileEntity implements IInventory {
     }
 
     public ItemStack b() {
-        int i = findDispenseSlot();
+        int i = this.findDispenseSlot();
         // CraftBukkit end
 
         if (i >= 0) {
-            return this.a(i, 1);
+            return this.splitStack(i, 1);
         } else {
             return null;
         }
@@ -124,6 +124,6 @@ public class TileEntityDispenser extends TileEntity implements IInventory {
     }
 
     public boolean a_(EntityHuman entityhuman) {
-        return this.world.getTileEntity(this.e, this.f, this.g) != this ? false : entityhuman.d((double) this.e + 0.5D, (double) this.f + 0.5D, (double) this.g + 0.5D) <= 64.0D;
+        return this.world.getTileEntity(this.x, this.y, this.z) != this ? false : entityhuman.d((double) this.x + 0.5D, (double) this.y + 0.5D, (double) this.z + 0.5D) <= 64.0D;
     }
 }

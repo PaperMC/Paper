@@ -40,7 +40,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         }
 
         if (entity instanceof EntityPlayer && health == 0) {
-            ((EntityPlayer) entity).a((Entity) null);
+            ((EntityPlayer) entity).die((Entity) null);
         }
 
         getHandle().health = health;

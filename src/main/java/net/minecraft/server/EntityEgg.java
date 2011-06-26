@@ -4,14 +4,10 @@ import java.util.List;
 
 // CraftBukkit start
 import org.bukkit.entity.CreatureType;
-import org.bukkit.entity.Egg;
-import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
-import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
-import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.player.PlayerEggThrowEvent;
 // CraftBukkit end
 
@@ -23,7 +19,7 @@ public class EntityEgg extends Entity {
     private int e = 0;
     private boolean f = false;
     public int a = 0;
-    public EntityLiving thrower; // CraftBukkit private -> public
+    public EntityLiving thrower; // CraftBukkit - private -> public
     private int h;
     private int i = 0;
 
@@ -157,15 +153,12 @@ public class EntityEgg extends Entity {
             if (movingobjectposition.entity != null) {
                 boolean stick;
                 if (movingobjectposition.entity instanceof EntityLiving) {
-                    CraftServer server = this.world.getServer();
                     org.bukkit.entity.Entity damagee = movingobjectposition.entity.getBukkitEntity();
                     Projectile projectile = (Projectile) this.getBukkitEntity();
-                    DamageCause damageCause = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
-                    int damage = 0;
 
                     // TODO @see EntityArrow#162
-                    EntityDamageByProjectileEvent event = new EntityDamageByProjectileEvent(damagee, projectile, damageCause, damage);
-                    server.getPluginManager().callEvent(event);
+                    EntityDamageByProjectileEvent event = new EntityDamageByProjectileEvent(damagee, projectile, EntityDamageEvent.DamageCause.ENTITY_ATTACK, 0);
+                    this.world.getServer().getPluginManager().callEvent(event);
 
                     if (event.isCancelled()) {
                         stick = !event.getBounce();
@@ -191,11 +184,10 @@ public class EntityEgg extends Entity {
             CreatureType hatchingType = CreatureType.CHICKEN;
 
             if (this.thrower instanceof EntityPlayer) {
-                CraftServer server = this.world.getServer();
-                Player player = (this.thrower == null) ? null : (Player) this.thrower.getBukkitEntity();
+                org.bukkit.entity.Player player = (this.thrower == null) ? null : (org.bukkit.entity.Player) this.thrower.getBukkitEntity();
 
-                PlayerEggThrowEvent event = new PlayerEggThrowEvent(player, (Egg) this.getBukkitEntity(), hatching, (byte) numHatching, hatchingType);
-                server.getPluginManager().callEvent(event);
+                PlayerEggThrowEvent event = new PlayerEggThrowEvent(player, (org.bukkit.entity.Egg) this.getBukkitEntity(), hatching, (byte) numHatching, hatchingType);
+                this.world.getServer().getPluginManager().callEvent(event);
 
                 hatching = event.isHatching();
                 numHatching = event.getNumHatches();
@@ -337,7 +329,7 @@ public class EntityEgg extends Entity {
     }
 
     public void b(EntityHuman entityhuman) {
-        if (this.f && this.thrower == entityhuman && this.a <= 0 && entityhuman.inventory.canHold(new ItemStack(Item.ARROW, 1))) {
+        if (this.f && this.thrower == entityhuman && this.a <= 0 && entityhuman.inventory.pickup(new ItemStack(Item.ARROW, 1))) {
             this.world.makeSound(this, "random.pop", 0.2F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
             entityhuman.receive(this, 1);
             this.die();

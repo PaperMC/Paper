@@ -7,13 +7,10 @@ import java.util.Random;
 import java.util.Set;
 
 // CraftBukkit start
-import org.bukkit.Server;
-import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.Location;
 // CraftBukkit end
@@ -28,7 +25,7 @@ public class Explosion {
     public double posZ;
     public Entity source;
     public float size;
-    public Set g = new HashSet();
+    public Set blocks = new HashSet();
 
     public boolean wasCanceled = false; // CraftBukkit
 
@@ -81,7 +78,7 @@ public class Explosion {
                             }
 
                             if (f1 > 0.0F) {
-                                this.g.add(new ChunkPosition(l, i1, j1));
+                                this.blocks.add(new ChunkPosition(l, i1, j1));
                             }
 
                             d0 += d3 * (double) f2;
@@ -120,9 +117,8 @@ public class Explosion {
                 double d10 = (1.0D - d7) * d9;
 
                 // CraftBukkit start - explosion damage hook
-                CraftServer server = ((WorldServer) this.world).getServer();
+                org.bukkit.Server server = this.world.getServer();
                 org.bukkit.entity.Entity damagee = (entity == null) ? null : entity.getBukkitEntity();
-                DamageCause damageType;
                 int damageDone = (int) ((d10 * d10 + d10) / 2.0D * 8.0D * (double) this.size + 1.0D);
 
                 if (damagee == null) {
@@ -130,9 +126,7 @@ public class Explosion {
                 } else if (this.source == null) { // Block explosion
                     // TODO: get the x/y/z of the tnt block?
                     // does this even get called ever? @see EntityTNTPrimed - not BlockTNT or whatever
-                    damageType = EntityDamageEvent.DamageCause.BLOCK_EXPLOSION;
-
-                    EntityDamageByBlockEvent event = new EntityDamageByBlockEvent(null, damagee, damageType, damageDone);
+                    EntityDamageByBlockEvent event = new EntityDamageByBlockEvent(null, damagee, EntityDamageEvent.DamageCause.BLOCK_EXPLOSION, damageDone);
                     server.getPluginManager().callEvent(event);
 
                     if (!event.isCancelled()) {
@@ -142,10 +136,7 @@ public class Explosion {
                         entity.motZ += d2 * d10;
                     }
                 } else {
-                    org.bukkit.entity.Entity damager = this.source.getBukkitEntity();
-                    damageType = EntityDamageEvent.DamageCause.ENTITY_EXPLOSION;
-
-                    EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(damager, damagee, damageType, damageDone);
+                    EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(this.source.getBukkitEntity(), damagee, EntityDamageEvent.DamageCause.ENTITY_EXPLOSION, damageDone);
                     server.getPluginManager().callEvent(event);
 
                     if (!event.isCancelled()) {
@@ -163,7 +154,7 @@ public class Explosion {
         this.size = f;
         ArrayList arraylist = new ArrayList();
 
-        arraylist.addAll(this.g);
+        arraylist.addAll(this.blocks);
         if (this.a) {
             for (int l2 = arraylist.size() - 1; l2 >= 0; --l2) {
                 ChunkPosition chunkposition = (ChunkPosition) arraylist.get(l2);
@@ -184,28 +175,27 @@ public class Explosion {
         this.world.makeSound(this.posX, this.posY, this.posZ, "random.explode", 4.0F, (1.0F + (this.world.random.nextFloat() - this.world.random.nextFloat()) * 0.2F) * 0.7F);
         ArrayList arraylist = new ArrayList();
 
-        arraylist.addAll(this.g);
+        arraylist.addAll(this.blocks);
 
         // CraftBukkit start
-        Server server = ((WorldServer) this.world).getServer();
-        CraftWorld world = ((WorldServer) this.world).getWorld();
-        org.bukkit.entity.Entity explode = (this.source == null) ? null : this.source.getBukkitEntity();
-        Location location = new Location(world, this.posX, this.posY, this.posZ);
+        org.bukkit.World bworld = this.world.getWorld();
+        org.bukkit.entity.Entity explode = this.source == null ? null : this.source.getBukkitEntity();
+        Location location = new Location(bworld, this.posX, this.posY, this.posZ);
 
         List<org.bukkit.block.Block> blockList = new ArrayList<org.bukkit.block.Block>();
         for (int j = arraylist.size() - 1; j >= 0; j--) {
             ChunkPosition cpos = (ChunkPosition) arraylist.get(j);
-            org.bukkit.block.Block block = world.getBlockAt(cpos.x, cpos.y, cpos.z);
+            org.bukkit.block.Block block = bworld.getBlockAt(cpos.x, cpos.y, cpos.z);
             if (block.getType() != org.bukkit.Material.AIR) {
                 blockList.add(block);
             }
         }
 
         EntityExplodeEvent event = new EntityExplodeEvent(explode, location, blockList);
-        server.getPluginManager().callEvent(event);
+        this.world.getServer().getPluginManager().callEvent(event);
 
         if (event.isCancelled()) {
-            wasCanceled = true;
+            this.wasCanceled = true;
             return;
         }
         // CraftBukkit end

@@ -22,7 +22,7 @@ public class PortalTravelAgent implements TravelAgent {
 
     public Location findOrCreate(Location location) {
         WorldServer worldServer = ((CraftWorld) location.getWorld()).getHandle();
-        worldServer.chunkProviderServer.a = true;
+        worldServer.chunkProviderServer.forceChunkLoad = true;
         // Attempt to find a Portal.
         Location resultLocation = this.findPortal(location);
         // If a Portal cannot be found we will attempt to create one.
@@ -36,7 +36,7 @@ public class PortalTravelAgent implements TravelAgent {
                 resultLocation = location;
             }
         }
-        worldServer.chunkProviderServer.a = false;
+        worldServer.chunkProviderServer.forceChunkLoad = false;
         // Return our resulting portal location.
         return resultLocation;
     }
@@ -53,10 +53,10 @@ public class PortalTravelAgent implements TravelAgent {
 
         double d1;
 
-        for (int j1 = l - searchRadius; j1 <= l + searchRadius; ++j1) {
+        for (int j1 = l - this.searchRadius; j1 <= l + this.searchRadius; ++j1) {
             double d2 = (double) j1 + 0.5D - location.getX();
 
-            for (int k1 = i1 - searchRadius; k1 <= i1 + searchRadius; ++k1) {
+            for (int k1 = i1 - this.searchRadius; k1 <= i1 + this.searchRadius; ++k1) {
                 double d3 = (double) k1 + 0.5D - location.getZ();
 
                 for (int l1 = 127; l1 >= 0; --l1) {
@@ -135,10 +135,10 @@ public class PortalTravelAgent implements TravelAgent {
         double d3;
         double d4;
 
-        for (i2 = i - creationRadius; i2 <= i + creationRadius; ++i2) {
+        for (i2 = i - this.creationRadius; i2 <= i + this.creationRadius; ++i2) {
             d1 = (double) i2 + 0.5D - location.getX();
 
-            for (j2 = k - creationRadius; j2 <= k + creationRadius; ++j2) {
+            for (j2 = k - this.creationRadius; j2 <= k + this.creationRadius; ++j2) {
                 d2 = (double) j2 + 0.5D - location.getZ();
 
                 label271:
@@ -186,10 +186,10 @@ public class PortalTravelAgent implements TravelAgent {
         }
 
         if (d0 < 0.0D) {
-            for (i2 = i - creationRadius; i2 <= i + creationRadius; ++i2) {
+            for (i2 = i - this.creationRadius; i2 <= i + this.creationRadius; ++i2) {
                 d1 = (double) i2 + 0.5D - location.getX();
 
-                for (j2 = k - creationRadius; j2 <= k + creationRadius; ++j2) {
+                for (j2 = k - this.creationRadius; j2 <= k + this.creationRadius; ++j2) {
                     d2 = (double) j2 + 0.5D - location.getZ();
 
                     label219:
@@ -321,7 +321,7 @@ public class PortalTravelAgent implements TravelAgent {
         }
 
         for (l2 = 0; l2 < 4; ++l2) {
-            world.o = true;
+            world.suppressPhysics = true;
 
             for (k2 = 0; k2 < 4; ++k2) {
                 for (j3 = -1; j3 < 4; ++j3) {
@@ -333,7 +333,7 @@ public class PortalTravelAgent implements TravelAgent {
                 }
             }
 
-            world.o = false;
+            world.suppressPhysics = false;
 
             for (k2 = 0; k2 < 4; ++k2) {
                 for (j3 = -1; j3 < 4; ++j3) {

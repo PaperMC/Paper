@@ -2,12 +2,7 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-// CraftBukkit start
-import org.bukkit.block.BlockState;
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.event.block.BlockFadeEvent;
-// CraftBukkit end
+import org.bukkit.event.block.BlockFadeEvent; // CraftBukkit
 
 public class BlockSnow extends Block {
 
@@ -83,13 +78,12 @@ public class BlockSnow extends Block {
     public void a(World world, int i, int j, int k, Random random) {
         if (world.a(EnumSkyBlock.BLOCK, i, j, k) > 11) {
             // CraftBukkit start
-            CraftServer server = world.getServer();
-            CraftWorld cworld = world.getWorld();
-            BlockState blockState = cworld.getBlockAt(i, j, k).getState();
+            org.bukkit.block.BlockState blockState = world.getWorld().getBlockAt(i, j, k).getState();
             blockState.setTypeId(this.id);
 
-            BlockFadeEvent event = new BlockFadeEvent(cworld.getBlockAt(i, j, k), blockState);
-            server.getPluginManager().callEvent(event);
+            BlockFadeEvent event = new BlockFadeEvent(blockState.getBlock(), blockState);
+            world.getServer().getPluginManager().callEvent(event);
+
             if (event.isCancelled()) {
                 return;
             }

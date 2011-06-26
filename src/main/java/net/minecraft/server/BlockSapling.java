@@ -71,15 +71,15 @@ public class BlockSapling extends BlockFlower {
         BlockChangeWithNotify(World world) { this.world = world; }
 
         public boolean setRawTypeId(int x, int y, int z, int type) {
-            return world.setTypeId(x, y, z, type);
+            return this.world.setTypeId(x, y, z, type);
         }
 
         public boolean setRawTypeIdAndData(int x, int y, int z, int type, int data) {
-            return world.setTypeIdAndData(x, y, z, type, data);
+            return this.world.setTypeIdAndData(x, y, z, type, data);
         }
 
         public int getTypeId(int x, int y, int z) {
-            return world.getTypeId(x, y, z);
+            return this.world.getTypeId(x, y, z);
         }
     }
     // CraftBukkit end

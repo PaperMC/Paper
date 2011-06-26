@@ -1,10 +1,8 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 // CraftBukkit end
 
 import java.util.Random;
@@ -85,14 +83,11 @@ public class BlockCactus extends Block {
     public void a(World world, int i, int j, int k, Entity entity) {
         // CraftBukkit start - ENTITY_DAMAGEBY_BLOCK event
         if (entity instanceof EntityLiving) {
-            CraftServer server = ((WorldServer) world).getServer();
-            org.bukkit.block.Block damager = ((WorldServer) world).getWorld().getBlockAt(i, j, k);
+            org.bukkit.block.Block damager = world.getWorld().getBlockAt(i, j, k);
             org.bukkit.entity.Entity damagee = (entity == null) ? null : entity.getBukkitEntity();
-            DamageCause damageType = EntityDamageEvent.DamageCause.CONTACT;
-            int damageDone = 1;
 
-            EntityDamageByBlockEvent event = new EntityDamageByBlockEvent(damager, damagee, damageType, damageDone);
-            server.getPluginManager().callEvent(event);
+            EntityDamageByBlockEvent event = new EntityDamageByBlockEvent(damager, damagee, EntityDamageEvent.DamageCause.CONTACT, 1);
+            world.getServer().getPluginManager().callEvent(event);
 
             if (!event.isCancelled()) {
                 entity.damageEntity((Entity) null, event.getDamage());
@@ -100,6 +95,7 @@ public class BlockCactus extends Block {
             return;
         }
         // CraftBukkit end
+
         entity.damageEntity((Entity) null, 1);
     }
 }

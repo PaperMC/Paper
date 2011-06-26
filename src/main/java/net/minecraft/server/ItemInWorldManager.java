@@ -3,7 +3,6 @@ package net.minecraft.server;
 // CraftBukkit start
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDamageEvent;
-import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.Event;
 import org.bukkit.event.block.Action;
@@ -15,7 +14,7 @@ public class ItemInWorldManager {
     private WorldServer world;
     public EntityHuman player;
     private float c = 0.0F;
-    private int d;
+    private int lastDigTick;
     private int e;
     private int f;
     private int g;
@@ -51,8 +50,8 @@ public class ItemInWorldManager {
     }
 
     public void dig(int i, int j, int k, int l) {
-        // this.world.a((EntityHuman) null, i, j, k, l); // CraftBukkit - moved down
-        this.d = (int) (System.currentTimeMillis() / 50); // CraftBukkit
+        // this.world.douseFire((EntityHuman) null, i, j, k, l); // CraftBukkit - moved down
+        this.lastDigTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit
         int i1 = this.world.getTypeId(i, j, k);
 
         // CraftBukkit start
@@ -76,7 +75,7 @@ public class ItemInWorldManager {
         } else {
             Block.byId[i1].b(this.world, i, j, k, this.player);
             // Allow fire punching to be blocked
-            this.world.a((EntityHuman) null, i, j, k, l);
+            this.world.douseFire((EntityHuman) null, i, j, k, l);
         }
 
         // Handle hitting a block
@@ -111,7 +110,7 @@ public class ItemInWorldManager {
     public void a(int i, int j, int k) {
         if (i == this.e && j == this.f && k == this.g) {
             this.currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit
-            int l = this.currentTick - this.d;
+            int l = this.currentTick - this.lastDigTick;
             int i1 = this.world.getTypeId(i, j, k);
 
             if (i1 != 0) {
@@ -125,7 +124,7 @@ public class ItemInWorldManager {
                     this.j = i;
                     this.k = j;
                     this.l = k;
-                    this.m = this.d;
+                    this.m = this.lastDigTick;
                 }
             }
         // CraftBukkit start - force blockreset to client
@@ -152,12 +151,10 @@ public class ItemInWorldManager {
     public boolean c(int i, int j, int k) {
         // CraftBukkit start
         if (this.player instanceof EntityPlayer) {
-            CraftServer server = ((WorldServer) this.world).getServer();
-            org.bukkit.block.Block block = ((WorldServer) this.world).getWorld().getBlockAt(i, j, k);
-            org.bukkit.entity.Player player = (org.bukkit.entity.Player) this.player.getBukkitEntity();
+            org.bukkit.block.Block block = this.world.getWorld().getBlockAt(i, j, k);
 
-            BlockBreakEvent event = new BlockBreakEvent(block, player);
-            server.getPluginManager().callEvent(event);
+            BlockBreakEvent event = new BlockBreakEvent(block, (org.bukkit.entity.Player) this.player.getBukkitEntity());
+            this.world.getServer().getPluginManager().callEvent(event);
 
             if (event.isCancelled()) {
                 return false;

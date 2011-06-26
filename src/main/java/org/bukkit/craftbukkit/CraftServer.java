@@ -319,7 +319,7 @@ public final class CraftServer implements Server {
         console.onlineMode = config.getBoolean("online-mode", console.onlineMode);
         console.spawnAnimals = config.getBoolean("spawn-animals", console.spawnAnimals);
         console.pvpMode = config.getBoolean("pvp", console.pvpMode);
-        console.o = config.getBoolean("allow-flight", console.o);
+        console.allowFlight = config.getBoolean("allow-flight", console.allowFlight);
 
         for (WorldServer world : console.worlds) {
             world.spawnMonsters = monsters ? 1 : 0;
@@ -395,7 +395,7 @@ public final class CraftServer implements Server {
 
         int dimension = 200 + console.worlds.size();
         WorldServer internal = new WorldServer(console, new ServerNBTManager(new File("."), name, true), name, dimension, seed, environment, generator);
-        internal.z = console.worlds.get(0).z;
+        internal.worldMaps = console.worlds.get(0).worldMaps;
 
         internal.tracker = new EntityTracker(console, dimension);
         internal.addIWorldAccess((IWorldAccess) new WorldManager(console, internal));

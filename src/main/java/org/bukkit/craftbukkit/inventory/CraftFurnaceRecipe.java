@@ -29,6 +29,6 @@ public class CraftFurnaceRecipe extends FurnaceRecipe implements CraftRecipe {
         int id = result.getTypeId();
         int amount = result.getAmount();
         int dmg = result.getDurability();
-        FurnaceRecipes.a().a(input.getItemTypeId(), new net.minecraft.server.ItemStack(id, amount, dmg));
+        FurnaceRecipes.getInstance().registerRecipe(input.getItemTypeId(), new net.minecraft.server.ItemStack(id, amount, dmg));
     }
 }

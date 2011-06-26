@@ -2,13 +2,7 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-// CraftBukkit start
-import org.bukkit.Server;
-import org.bukkit.entity.Player;
-import org.bukkit.event.block.BlockIgniteEvent;
-import org.bukkit.event.block.BlockIgniteEvent.IgniteCause;
-import org.bukkit.craftbukkit.CraftWorld;
-// CraftBukkit end
+import org.bukkit.event.block.BlockIgniteEvent; // CraftBukkit
 
 public class BlockStationary extends BlockFluids {
 
@@ -30,11 +24,11 @@ public class BlockStationary extends BlockFluids {
     private void i(World world, int i, int j, int k) {
         int l = world.getData(i, j, k);
 
-        world.o = true;
+        world.suppressPhysics = true;
         world.setRawTypeIdAndData(i, j, k, this.id - 1, l);
         world.b(i, j, k, i, j, k);
         world.c(i, j, k, this.id - 1, this.c());
-        world.o = false;
+        world.suppressPhysics = false;
     }
 
     public void a(World world, int i, int j, int k, Random random) {
@@ -42,11 +36,8 @@ public class BlockStationary extends BlockFluids {
             int l = random.nextInt(3);
 
             // CraftBukkit start - prevent lava putting something on fire.
-            Server server = ((WorldServer) world).getServer();
-            CraftWorld cworld = ((WorldServer) world).getWorld();
-
-            IgniteCause igniteCause = BlockIgniteEvent.IgniteCause.LAVA;
-            Player thePlayer = null;
+            org.bukkit.World bworld = world.getWorld();
+            BlockIgniteEvent.IgniteCause igniteCause = BlockIgniteEvent.IgniteCause.LAVA;
             // CraftBukkit end
 
             for (int i1 = 0; i1 < l; ++i1) {
@@ -58,11 +49,12 @@ public class BlockStationary extends BlockFluids {
                 if (j1 == 0) {
                     if (this.j(world, i - 1, j, k) || this.j(world, i + 1, j, k) || this.j(world, i, j, k - 1) || this.j(world, i, j, k + 1) || this.j(world, i, j - 1, k) || this.j(world, i, j + 1, k)) {
                         // CraftBukkit start - prevent lava putting something on fire.
-                        org.bukkit.block.Block theBlock = cworld.getBlockAt(i, j, k);
+                        org.bukkit.block.Block block = bworld.getBlockAt(i, j, k);
 
-                        if (theBlock.getTypeId() != Block.FIRE.id) {
-                            BlockIgniteEvent event = new BlockIgniteEvent(theBlock, igniteCause, thePlayer);
-                            server.getPluginManager().callEvent(event);
+                        if (block.getTypeId() != Block.FIRE.id) {
+                            BlockIgniteEvent event = new BlockIgniteEvent(block, igniteCause, null);
+                            world.getServer().getPluginManager().callEvent(event);
+
                             if (event.isCancelled()) {
                                 continue;
                             }

@@ -1,12 +1,9 @@
 package net.minecraft.server;
 
-// CraftBukkit
-import java.util.ArrayList;
-
 public class ContainerPlayer extends Container {
 
-    public InventoryCrafting a;
-    public IInventory b;
+    public InventoryCrafting craftInventory;
+    public IInventory resultInventory;
     public boolean c;
 
     public ContainerPlayer(InventoryPlayer inventoryplayer) {
@@ -14,18 +11,18 @@ public class ContainerPlayer extends Container {
     }
 
     public ContainerPlayer(InventoryPlayer inventoryplayer, boolean flag) {
-        this.a = new InventoryCrafting(this, 2, 2);
-        this.b = new InventoryCraftResult();
+        this.craftInventory = new InventoryCrafting(this, 2, 2);
+        this.resultInventory = new InventoryCraftResult();
         this.c = false;
         this.c = flag;
-        this.a((Slot) (new SlotResult(inventoryplayer.d, this.a, this.b, 0, 144, 36)));
+        this.a((Slot) (new SlotResult(inventoryplayer.d, this.craftInventory, this.resultInventory, 0, 144, 36)));
 
         int i;
         int j;
 
         for (i = 0; i < 2; ++i) {
             for (j = 0; j < 2; ++j) {
-                this.a(new Slot(this.a, j + i * 2, 88 + j * 18, 26 + i * 18));
+                this.a(new Slot(this.craftInventory, j + i * 2, 88 + j * 18, 26 + i * 18));
             }
         }
 
@@ -43,19 +40,19 @@ public class ContainerPlayer extends Container {
             this.a(new Slot(inventoryplayer, i, 8 + i * 18, 142));
         }
 
-        this.a((IInventory) this.a);
+        this.a((IInventory) this.craftInventory);
     }
 
     public void a(IInventory iinventory) {
         // CraftBukkit start
-        ItemStack craftResult = CraftingManager.a().a(this.a);
-        this.b.setItem(0, craftResult);
-        if (super.g.size() < 1) {
+        ItemStack craftResult = CraftingManager.getInstance().craft(this.craftInventory);
+        this.resultInventory.setItem(0, craftResult);
+        if (super.listeners.size() < 1) {
             return;
         }
 
-        EntityPlayer player = (EntityPlayer) super.g.get(0); // TODO: Is this _always_ correct? Seems like it.
-        player.netServerHandler.sendPacket((Packet) (new Packet103SetSlot(player.activeContainer.f, 0, craftResult)));
+        EntityPlayer player = (EntityPlayer) super.listeners.get(0); // TODO: Is this _always_ correct? Seems like it.
+        player.netServerHandler.sendPacket(new Packet103SetSlot(player.activeContainer.windowId, 0, craftResult));
         // CraftBukkit end
     }
 
@@ -63,11 +60,11 @@ public class ContainerPlayer extends Container {
         super.a(entityhuman);
 
         for (int i = 0; i < 4; ++i) {
-            ItemStack itemstack = this.a.getItem(i);
+            ItemStack itemstack = this.craftInventory.getItem(i);
 
             if (itemstack != null) {
                 entityhuman.b(itemstack);
-                this.a.setItem(i, (ItemStack) null);
+                this.craftInventory.setItem(i, (ItemStack) null);
             }
         }
     }
@@ -83,7 +80,7 @@ public class ContainerPlayer extends Container {
         if (slot != null && slot.b()) {
             ItemStack itemstack1 = slot.getItem();
 
-            itemstack = itemstack1.j();
+            itemstack = itemstack1.cloneItemStack();
             if (i == 0) {
                 this.a(itemstack1, 9, 45, true);
             } else if (i >= 9 && i < 36) {

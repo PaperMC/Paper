@@ -2,11 +2,7 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.event.block.LeavesDecayEvent;
-// CraftBukkit end
+import org.bukkit.event.block.LeavesDecayEvent; // CraftBukkit
 
 public class BlockLeaves extends BlockLeavesBase {
 
@@ -124,10 +120,8 @@ public class BlockLeaves extends BlockLeavesBase {
 
     private void g(World world, int i, int j, int k) {
         // CraftBukkit start
-        CraftServer server = ((WorldServer) world).getServer();
-        CraftWorld cworld = ((WorldServer) world).getWorld();
-        LeavesDecayEvent event = new LeavesDecayEvent(cworld.getBlockAt(i, j, k));
-        server.getPluginManager().callEvent(event);
+        LeavesDecayEvent event = new LeavesDecayEvent(world.getWorld().getBlockAt(i, j, k));
+        world.getServer().getPluginManager().callEvent(event);
 
         if (event.isCancelled()) return;
         // CraftBukkit end

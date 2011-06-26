@@ -24,7 +24,7 @@ public class NetLoginHandler extends NetHandler {
 
     // CraftBukkit start
     public Socket getSocket() {
-        return networkManager.socket;
+        return this.networkManager.socket;
     }
     // CraftBukkit end
 
@@ -44,7 +44,7 @@ public class NetLoginHandler extends NetHandler {
     public void disconnect(String s) {
         try {
             a.info("Disconnecting " + this.b() + ": " + s);
-            this.networkManager.a((Packet) (new Packet255KickDisconnect(s)));
+            this.networkManager.queue(new Packet255KickDisconnect(s));
             this.networkManager.d();
             this.c = true;
         } catch (Exception exception) {
@@ -55,9 +55,9 @@ public class NetLoginHandler extends NetHandler {
     public void a(Packet2Handshake packet2handshake) {
         if (this.server.onlineMode) {
             this.i = Long.toHexString(d.nextLong());
-            this.networkManager.a((Packet) (new Packet2Handshake(this.i)));
+            this.networkManager.queue(new Packet2Handshake(this.i));
         } else {
-            this.networkManager.a((Packet) (new Packet2Handshake("-")));
+            this.networkManager.queue(new Packet2Handshake("-"));
         }
     }
 

@@ -2,12 +2,7 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.event.block.BlockRedstoneEvent;
-// CraftBukkit end
+import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
 
 public class BlockButton extends Block {
 
@@ -139,14 +134,13 @@ public class BlockButton extends Block {
             return true;
         } else {
             // CraftBukkit start
-            CraftWorld craftWorld = ((WorldServer) world).getWorld();
-            CraftServer server = ((WorldServer) world).getServer();
-            CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
-
+            org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
             int old = (j1 != 8) ? 1 : 0;
             int current = (j1 == 8) ? 1 : 0;
+
             BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, old, current);
-            server.getPluginManager().callEvent(eventRedstone);
+            world.getServer().getPluginManager().callEvent(eventRedstone);
+
             if ((eventRedstone.getNewCurrent() > 0) != (j1 == 8)) {
                 return true;
             }
@@ -222,12 +216,10 @@ public class BlockButton extends Block {
 
             if ((l & 8) != 0) {
                 // CraftBukkit start
-                CraftWorld craftWorld = ((WorldServer) world).getWorld();
-                CraftServer server = ((WorldServer) world).getServer();
-                CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
+                org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
 
                 BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, 1, 0);
-                server.getPluginManager().callEvent(eventRedstone);
+                world.getServer().getPluginManager().callEvent(eventRedstone);
 
                 if (eventRedstone.getNewCurrent() > 0) return;
                 // CraftBukkit end

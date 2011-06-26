@@ -3,10 +3,8 @@ package net.minecraft.server;
 import java.util.List;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.event.entity.EntityTargetEvent;
-import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
 // CraftBukkit end
 
 public class EntityPigZombie extends EntityZombie {
@@ -20,7 +18,7 @@ public class EntityPigZombie extends EntityZombie {
         this.texture = "/mob/pigzombie.png";
         this.aE = 0.5F;
         this.damage = 5;
-        this.bD = true;
+        this.fireProof = true;
     }
 
     public void o_() {
@@ -76,14 +74,10 @@ public class EntityPigZombie extends EntityZombie {
 
     private void d(Entity entity) {
         // CraftBukkit start
-        CraftServer server = ((WorldServer) this.world).getServer();
-        org.bukkit.entity.Entity bukkitTarget = null;
-        if (entity != null) {
-            bukkitTarget = entity.getBukkitEntity();
-        }
+        org.bukkit.entity.Entity bukkitTarget = entity == null ? null : entity.getBukkitEntity();
 
-        EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), bukkitTarget, TargetReason.PIG_ZOMBIE_TARGET);
-        server.getPluginManager().callEvent(event);
+        EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), bukkitTarget, EntityTargetEvent.TargetReason.PIG_ZOMBIE_TARGET);
+        this.world.getServer().getPluginManager().callEvent(event);
 
         if (event.isCancelled()) {
             return;

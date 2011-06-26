@@ -35,11 +35,11 @@ public class CraftWolf extends CraftAnimals implements Wolf {
     }
 
     public boolean isTamed() {
-        return getHandle().A();
+        return getHandle().isTamed();
     }
 
     public void setTamed(boolean tame) {
-        getHandle().d(tame);
+        getHandle().setTamed(tame);
     }
 
     public AnimalTamer getOwner() {
@@ -75,11 +75,11 @@ public class CraftWolf extends CraftAnimals implements Wolf {
      * @return the owner's name, if they are a player; otherwise, the empty string or null.
      */
     String getOwnerName() {
-        return getHandle().x();
+        return getHandle().getOwnerName();
     }
 
     void setOwnerName(String ownerName) {
-        getHandle().a(ownerName);
+        getHandle().setOwnerName(ownerName);
     }
 
     /**
@@ -88,7 +88,7 @@ public class CraftWolf extends CraftAnimals implements Wolf {
      * @param pathentity currently the MC defined PathEntity class. Should be replaced with an API interface at some point.
      */
     private void setPath(PathEntity pathentity) {
-        getHandle().a(pathentity);
+        getHandle().setPathEntity(pathentity);
     }
 
     /*

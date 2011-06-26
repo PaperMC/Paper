@@ -1,10 +1,8 @@
 package net.minecraft.server;
 
-//CraftBukkit start
-import org.bukkit.craftbukkit.CraftServer;
+// CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.event.entity.EntityTargetEvent;
-import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
 // CraftBukkit end
 
 public class EntityGhast extends EntityFlying implements IMonster {
@@ -13,7 +11,7 @@ public class EntityGhast extends EntityFlying implements IMonster {
     public double b;
     public double c;
     public double d;
-    private Entity g = null;
+    private Entity target = null;
     private int h = 0;
     public int e = 0;
     public int f = 0;
@@ -22,7 +20,7 @@ public class EntityGhast extends EntityFlying implements IMonster {
         super(world);
         this.texture = "/mob/ghast.png";
         this.b(4.0F, 4.0F);
-        this.bD = true;
+        this.fireProof = true;
     }
 
     protected void b() {
@@ -68,53 +66,51 @@ public class EntityGhast extends EntityFlying implements IMonster {
             }
         }
 
-        if (this.g != null && this.g.dead) {
+        if (this.target != null && this.target.dead) {
             // CraftBukkit start
-            EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), null, TargetReason.TARGET_DIED);
-            CraftServer server = this.world.getServer();
-            server.getPluginManager().callEvent(event);
+            EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), null, EntityTargetEvent.TargetReason.TARGET_DIED);
+            this.world.getServer().getPluginManager().callEvent(event);
 
             if (!event.isCancelled()) {
                 if (event.getTarget() == null) {
-                    this.g = null;
+                    this.target = null;
                 } else {
-                    this.g = ((CraftEntity) event.getTarget()).getHandle();
+                    this.target = ((CraftEntity) event.getTarget()).getHandle();
                 }
             }
             // CraftBukkit end
         }
 
-        if (this.g == null || this.h-- <= 0) {
+        if (this.target == null || this.h-- <= 0) {
             // CraftBukkit start
-            Entity target = this.world.a(this, 100.0D);
+            Entity target = this.world.findNearbyPlayer(this, 100.0D);
             if (target != null) {
-                EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), target.getBukkitEntity(), TargetReason.CLOSEST_PLAYER);
-                CraftServer server = this.world.getServer();
-                server.getPluginManager().callEvent(event);
+                EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), target.getBukkitEntity(), EntityTargetEvent.TargetReason.CLOSEST_PLAYER);
+                this.world.getServer().getPluginManager().callEvent(event);
 
                 if (!event.isCancelled()) {
                     if (event.getTarget() == null) {
-                        this.g = null;
+                        this.target = null;
                     } else {
-                        this.g = ((CraftEntity) event.getTarget()).getHandle();
+                        this.target = ((CraftEntity) event.getTarget()).getHandle();
                     }
                 }
             }
             // CraftBukkit end
-            if (this.g != null) {
+            if (this.target != null) {
                 this.h = 20;
             }
         }
 
         double d4 = 64.0D;
 
-        if (this.g != null && this.g.g(this) < d4 * d4) {
-            double d5 = this.g.locX - this.locX;
-            double d6 = this.g.boundingBox.b + (double) (this.g.width / 2.0F) - (this.locY + (double) (this.width / 2.0F));
-            double d7 = this.g.locZ - this.locZ;
+        if (this.target != null && this.target.g(this) < d4 * d4) {
+            double d5 = this.target.locX - this.locX;
+            double d6 = this.target.boundingBox.b + (double) (this.target.width / 2.0F) - (this.locY + (double) (this.width / 2.0F));
+            double d7 = this.target.locZ - this.locZ;
 
             this.K = this.yaw = -((float) Math.atan2(d5, d7)) * 180.0F / 3.1415927F;
-            if (this.e(this.g)) {
+            if (this.e(this.target)) {
                 if (this.f == 10) {
                     this.world.makeSound(this, "mob.ghast.charge", this.k(), (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
                 }
@@ -147,7 +143,7 @@ public class EntityGhast extends EntityFlying implements IMonster {
             byte b1 = (byte) (this.f > 10 ? 1 : 0);
 
             if (b0 != b1) {
-                this.datawatcher.b(16, Byte.valueOf(b1));
+                this.datawatcher.watch(16, Byte.valueOf(b1));
             }
         }
     }

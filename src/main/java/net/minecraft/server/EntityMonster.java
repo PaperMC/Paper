@@ -1,14 +1,10 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftEntity;
-
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityTargetEvent;
-import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
 // CraftBukkit end
 
 public class EntityMonster extends EntityCreature implements IMonster {
@@ -38,7 +34,7 @@ public class EntityMonster extends EntityCreature implements IMonster {
     }
 
     protected Entity findTarget() {
-        EntityHuman entityhuman = this.world.a(this, 16.0D);
+        EntityHuman entityhuman = this.world.findNearbyPlayer(this, 16.0D);
 
         return entityhuman != null && this.e(entityhuman) ? entityhuman : null;
     }
@@ -48,14 +44,10 @@ public class EntityMonster extends EntityCreature implements IMonster {
             if (this.passenger != entity && this.vehicle != entity) {
                 if (entity != this) {
                     // CraftBukkit start
-                    CraftServer server = ((WorldServer) this.world).getServer();
-                    org.bukkit.entity.Entity bukkitTarget = null;
-                    if (entity != null) {
-                        bukkitTarget = entity.getBukkitEntity();
-                    }
+                    org.bukkit.entity.Entity bukkitTarget = entity == null ? null : entity.getBukkitEntity();
 
-                    EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), bukkitTarget, TargetReason.TARGET_ATTACKED_ENTITY);
-                    server.getPluginManager().callEvent(event);
+                    EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), bukkitTarget, EntityTargetEvent.TargetReason.TARGET_ATTACKED_ENTITY);
+                    this.world.getServer().getPluginManager().callEvent(event);
 
                     if (!event.isCancelled()) {
                         if (event.getTarget() == null) {
@@ -83,13 +75,10 @@ public class EntityMonster extends EntityCreature implements IMonster {
             // to damage another EntityMonster, and we want to catch those events.
             // This does not fire events for slime attacks, av they're not lastDamage EntityMonster.
             if (entity instanceof EntityLiving && !(entity instanceof EntityHuman)) {
-                CraftServer server = ((WorldServer) this.world).getServer();
-                org.bukkit.entity.Entity damager = this.getBukkitEntity();
                 org.bukkit.entity.Entity damagee = (entity == null) ? null : entity.getBukkitEntity();
-                DamageCause damageType = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
 
-                EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(damager, damagee, damageType, this.damage);
-                server.getPluginManager().callEvent(event);
+                EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(this.getBukkitEntity(), damagee, EntityDamageEvent.DamageCause.ENTITY_ATTACK, this.damage);
+                this.world.getServer().getPluginManager().callEvent(event);
 
                 if (!event.isCancelled()) {
                     entity.damageEntity(this, event.getDamage());

@@ -1,14 +1,6 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import java.util.ArrayList;
-import java.util.List;
-import org.bukkit.Server;
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.event.entity.EntityDeathEvent;
-// CraftBukkit end
+import org.bukkit.event.entity.EntityDeathEvent; // CraftBukkit
 
 public class EntitySquid extends EntityWaterAnimal {
 
@@ -64,22 +56,21 @@ public class EntitySquid extends EntityWaterAnimal {
 
     protected void r() {
         // CraftBukkit start - whole method
-        List<org.bukkit.inventory.ItemStack> loot = new ArrayList<org.bukkit.inventory.ItemStack>();
+        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
 
         int count = this.random.nextInt(3) + 1;
         if (count > 0) {
             loot.add(new org.bukkit.inventory.ItemStack(org.bukkit.Material.INK_SACK, count));
         }
 
-        CraftWorld cworld = ((WorldServer) world).getWorld();
-        Server server = ((WorldServer) world).getServer();
-        CraftEntity entity = (CraftEntity) getBukkitEntity();
+        org.bukkit.World bworld = this.world.getWorld();
+        org.bukkit.entity.Entity entity = this.getBukkitEntity();
 
         EntityDeathEvent event = new EntityDeathEvent(entity, loot);
-        server.getPluginManager().callEvent(event);
+        this.world.getServer().getPluginManager().callEvent(event);
 
         for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
-            cworld.dropItemNaturally(entity.getLocation(), stack);
+            bworld.dropItemNaturally(entity.getLocation(), stack);
         }
         // CraftBukkit end
     }

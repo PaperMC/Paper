@@ -1,15 +1,8 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import org.bukkit.Bukkit;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
-import org.bukkit.entity.Painting;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Event;
 import org.bukkit.event.painting.PaintingPlaceEvent;
-
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
 // CraftBukkit end
 
@@ -44,15 +37,13 @@ public class ItemPainting extends Item {
             if (entitypainting.h()) {
                 if (!world.isStatic) {
                     // CraftBukkit start
-                    CraftWorld craftWorld = ((WorldServer) world).getWorld();
-                    Painting painting = (Painting) entitypainting.getBukkitEntity();
                     Player who = (entityhuman == null) ? null : (Player) entityhuman.getBukkitEntity();
 
-                    Block blockClicked = craftWorld.getBlockAt(i, j, k);
-                    BlockFace blockFace = CraftBlock.notchToBlockFace(l);
+                    org.bukkit.block.Block blockClicked = world.getWorld().getBlockAt(i, j, k);
+                    org.bukkit.block.BlockFace blockFace = CraftBlock.notchToBlockFace(l);
 
-                    PaintingPlaceEvent event = new PaintingPlaceEvent(painting, who, blockClicked, blockFace);
-                    Bukkit.getServer().getPluginManager().callEvent(event);
+                    PaintingPlaceEvent event = new PaintingPlaceEvent((org.bukkit.entity.Painting) entitypainting.getBukkitEntity(), who, blockClicked, blockFace);
+                    world.getServer().getPluginManager().callEvent(event);
 
                     if (event.isCancelled()) {
                         return false;

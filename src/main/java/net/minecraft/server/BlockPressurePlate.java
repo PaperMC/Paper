@@ -4,16 +4,9 @@ import java.util.List;
 import java.util.Random;
 
 // CraftBukkit start
-import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.event.Cancellable;
-import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.event.entity.EntityInteractEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
 // CraftBukkit end
 
 public class BlockPressurePlate extends Block {
@@ -103,17 +96,20 @@ public class BlockPressurePlate extends Block {
         }
 
         // CraftBukkit start - Interact Pressure Plate
+        org.bukkit.World bworld = world.getWorld();
+        org.bukkit.plugin.PluginManager manager = world.getServer().getPluginManager();
+
         if (flag != flag1) {
             if (flag1) {
                 for (Object object: list) {
                     if (object != null) {
-                        Cancellable cancellable;
+                        org.bukkit.event.Cancellable cancellable;
 
                         if (object instanceof EntityHuman) {
-                            cancellable = CraftEventFactory.callPlayerInteractEvent((EntityHuman) object, Action.PHYSICAL, i, j, k, -1, null);
+                            cancellable = CraftEventFactory.callPlayerInteractEvent((EntityHuman) object, org.bukkit.event.block.Action.PHYSICAL, i, j, k, -1, null);
                         } else if (object instanceof Entity) {
-                            cancellable = new EntityInteractEvent(((Entity) object).getBukkitEntity(), ((WorldServer) world).getWorld().getBlockAt(i, j, k));
-                            ((CraftServer) Bukkit.getServer()).getPluginManager().callEvent((EntityInteractEvent) cancellable);
+                            cancellable = new EntityInteractEvent(((Entity) object).getBukkitEntity(), bworld.getBlockAt(i, j, k));
+                            manager.callEvent((EntityInteractEvent) cancellable);
                         } else {
                             continue;
                         }
@@ -124,12 +120,8 @@ public class BlockPressurePlate extends Block {
                 }
             }
 
-            CraftServer server = ((WorldServer) world).getServer();
-            CraftWorld craftWorld = ((WorldServer) world).getWorld();
-            CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
-
-            BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, flag ? 1 : 0, flag1 ? 1 : 0);
-            server.getPluginManager().callEvent(eventRedstone);
+            BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(bworld.getBlockAt(i, j, k), flag ? 1 : 0, flag1 ? 1 : 0);
+            manager.callEvent(eventRedstone);
 
             flag1 = eventRedstone.getNewCurrent() > 0;
         }

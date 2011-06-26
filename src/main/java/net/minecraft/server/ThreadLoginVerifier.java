@@ -42,7 +42,7 @@ class ThreadLoginVerifier extends Thread {
                 }
 
                 PlayerPreLoginEvent event = new PlayerPreLoginEvent(this.loginPacket.name, this.netLoginHandler.getSocket().getInetAddress());
-                server.getPluginManager().callEvent(event);
+                this.server.getPluginManager().callEvent(event);
 
                 if (event.getResult() != PlayerPreLoginEvent.Result.ALLOWED) {
                     this.netLoginHandler.disconnect(event.getKickMessage());

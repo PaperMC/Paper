@@ -3,13 +3,7 @@ package net.minecraft.server;
 import java.util.Random;
 
 // CraftBukkit start
-import org.bukkit.block.BlockState;
-import org.bukkit.block.Dispenser;
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.block.BlockDispenseEvent;
 import org.bukkit.util.Vector;
 // CraftBukkit end
@@ -123,19 +117,18 @@ public class BlockDispenser extends BlockContainer {
             motY += random.nextGaussian() * 0.007499999832361937D * 6.0D;
             motZ += random.nextGaussian() * 0.007499999832361937D * 6.0D;
 
-            CraftWorld craftWorld = ((WorldServer) world).getWorld();
-            CraftServer server = ((WorldServer) world).getServer();
-            CraftBlock block = (CraftBlock) craftWorld.getBlockAt(i, j, k);
-            org.bukkit.inventory.ItemStack bukkitItem = (new CraftItemStack(itemstack)).clone();
+            org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
+            org.bukkit.inventory.ItemStack bukkitItem = new CraftItemStack(itemstack).clone();
+
             BlockDispenseEvent event = new BlockDispenseEvent(block, bukkitItem, new Vector(motX, motY, motZ));
-            server.getPluginManager().callEvent(event);
+            world.getServer().getPluginManager().callEvent(event);
 
             if (event.isCancelled()) {
                 return;
             }
 
             // Actually remove the item
-            tileentitydispenser.a(dispenseSlot, 1);
+            tileentitydispenser.splitStack(dispenseSlot, 1);
 
             motX = event.getVelocity().getX();
             motY = event.getVelocity().getY();
@@ -148,7 +141,7 @@ public class BlockDispenser extends BlockContainer {
                 EntityArrow entityarrow = new EntityArrow(world, d0, d1, d2);
 
                 entityarrow.a((double) b0, 0.10000000149011612D, (double) b1, 1.1F, 6.0F);
-                entityarrow.a = true;
+                entityarrow.fromPlayer = true;
                 world.addEntity(entityarrow);
                 world.e(1002, i, j, k, 0);
             } else if (itemstack.id == Item.EGG.id) {
@@ -167,7 +160,6 @@ public class BlockDispenser extends BlockContainer {
                 EntityItem entityitem = new EntityItem(world, d0, d1 - 0.3D, d2, itemstack);
                 // CraftBukkit start
                 // double d3 = random.nextDouble() * 0.1D + 0.2D; // Moved up
-
                 entityitem.motX = motX;
                 entityitem.motY = motY;
                 entityitem.motZ = motZ;

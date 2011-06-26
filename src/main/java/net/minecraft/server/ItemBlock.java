@@ -1,7 +1,6 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -56,13 +55,13 @@ public class ItemBlock extends Item {
             Block block = Block.byId[this.id];
 
             // CraftBukkit start - This executes the placement of the block
-            BlockState replacedBlockState = CraftBlockState.getBlockState(world, i, j, k);
+            CraftBlockState replacedBlockState = CraftBlockState.getBlockState(world, i, j, k);
 
             // There are like 30 combinations you can mix and match steps and double steps
             // of different materials, so there are a lot of different cases of what
             // would happen if you place x step onto another y step, so let's just keep
             // track of the entire state
-            BlockState blockStateBelow = null;
+            CraftBlockState blockStateBelow = null;
             if ((world.getTypeId(i, j - 1, k) == Block.STEP.id || world.getTypeId(i, j - 1, k) == Block.DOUBLE_STEP.id)
                     && (itemstack.id == Block.DOUBLE_STEP.id || itemstack.id == Block.STEP.id)) {
                 blockStateBelow = CraftBlockState.getBlockState(world, i, j - 1, k);

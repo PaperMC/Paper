@@ -3,14 +3,9 @@ package net.minecraft.server;
 import java.util.ArrayList;
 import java.util.List;
 
-// CraftBukkit start
-import java.util.Collections;
-import java.util.Comparator;
-// CraftBukkit end
-
 public class PlayerManager {
 
-    public List a = new ArrayList();
+    public List managedPlayers = new ArrayList();
     private PlayerList b = new PlayerList();
     private List c = new ArrayList();
     private MinecraftServer server;
@@ -31,7 +26,7 @@ public class PlayerManager {
     }
 
     public WorldServer a() {
-        return this.server.a(this.e);
+        return this.server.getWorldServer(this.e);
     }
 
     public void flush() {
@@ -99,7 +94,7 @@ public class PlayerManager {
             this.a(i + i1, j + j1, true).a(entityplayer);
         }
 
-        this.a.add(entityplayer);
+        this.managedPlayers.add(entityplayer);
     }
 
     public void removePlayer(EntityPlayer entityplayer) {
@@ -116,7 +111,7 @@ public class PlayerManager {
             }
         }
 
-        this.a.remove(entityplayer);
+        this.managedPlayers.remove(entityplayer);
     }
 
     private boolean a(int i, int j, int k, int l) {
@@ -163,8 +158,9 @@ public class PlayerManager {
                 if (i1 > 1 || i1 < -1 || j1 > 1 || j1 < -1) {
                     final int x = i;
                     final int z = j;
-                    List<ChunkCoordIntPair> chunksToSend = entityplayer.f;
-                    Collections.sort(chunksToSend, new Comparator<ChunkCoordIntPair>() {
+                    List<ChunkCoordIntPair> chunksToSend = entityplayer.chunkCoordIntPairQueue;
+
+                    java.util.Collections.sort(chunksToSend, new java.util.Comparator<ChunkCoordIntPair>() {
                         public int compare(ChunkCoordIntPair a, ChunkCoordIntPair b) {
                             return Math.max(Math.abs(a.x - x), Math.abs(a.z - z)) - Math.max(Math.abs(b.x - x), Math.abs(b.z - z));
                         }
@@ -175,7 +171,7 @@ public class PlayerManager {
         }
     }
 
-    public int c() {
+    public int getFurthestViewableBlock() {
         return this.f * 16 - 16;
     }
 

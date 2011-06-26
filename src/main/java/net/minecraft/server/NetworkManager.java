@@ -9,7 +9,6 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.io.IOException; // CraftBukkit
 
 public class NetworkManager {
 
@@ -23,8 +22,8 @@ public class NetworkManager {
     private DataOutputStream output;
     private boolean l = true;
     private List m = Collections.synchronizedList(new ArrayList());
-    private List n = Collections.synchronizedList(new ArrayList());
-    private List o = Collections.synchronizedList(new ArrayList());
+    private List highPriorityQueue = Collections.synchronizedList(new ArrayList());
+    private List lowPriorityQueue = Collections.synchronizedList(new ArrayList());
     private NetHandler p;
     private boolean q = false;
     private Thread r;
@@ -37,7 +36,7 @@ public class NetworkManager {
     public static int[] d = new int[256];
     public static int[] e = new int[256];
     public int f = 0;
-    private int y = 50;
+    private int lowPriorityQueueDelay = 50;
 
     public NetworkManager(Socket socket, String s, NetHandler nethandler) {
         this.socket = socket;
@@ -55,11 +54,15 @@ public class NetworkManager {
             socket.setSoTimeout(30000);
             this.input = new DataInputStream(socket.getInputStream());
             this.output = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream(), 5120));
+        } catch (java.io.IOException socketexception) {
             // CraftBukkit end
-        } catch (IOException socketexception) {
             System.err.println(socketexception.getMessage());
         }
 
+        /* CraftBukkit start - moved up
+        this.input = new DataInputStream(socket.getInputStream());
+        this.output = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream(), 5120));
+        // CraftBukkit end */
         this.s = new NetworkReaderThread(this, s + " read thread");
         this.r = new NetworkWriterThread(this, s + " write thread");
         this.s.start();
@@ -70,16 +73,16 @@ public class NetworkManager {
         this.p = nethandler;
     }
 
-    public void a(Packet packet) {
+    public void queue(Packet packet) {
         if (!this.q) {
             Object object = this.g;
 
             synchronized (this.g) {
                 this.x += packet.a() + 1;
                 if (packet.k) {
-                    this.o.add(packet);
+                    this.lowPriorityQueue.add(packet);
                 } else {
-                    this.n.add(packet);
+                    this.highPriorityQueue.add(packet);
                 }
             }
         }
@@ -94,10 +97,10 @@ public class NetworkManager {
             int i;
             int[] aint;
 
-            if (!this.n.isEmpty() && (this.f == 0 || System.currentTimeMillis() - ((Packet) this.n.get(0)).timestamp >= (long) this.f)) {
+            if (!this.highPriorityQueue.isEmpty() && (this.f == 0 || System.currentTimeMillis() - ((Packet) this.highPriorityQueue.get(0)).timestamp >= (long) this.f)) {
                 object = this.g;
                 synchronized (this.g) {
-                    packet = (Packet) this.n.remove(0);
+                    packet = (Packet) this.highPriorityQueue.remove(0);
                     this.x -= packet.a() + 1;
                 }
 
@@ -109,10 +112,10 @@ public class NetworkManager {
             }
 
             // CraftBukkit - don't allow low priority packet to be sent unless it was placed in the queue before the first packet on the high priority queue
-            if ((flag || this.y-- <= 0) && !this.o.isEmpty() && (this.n.isEmpty() || ((Packet) this.n.get(0)).timestamp > ((Packet) this.o.get(0)).timestamp)) {
+            if ((flag || this.lowPriorityQueueDelay-- <= 0) && !this.lowPriorityQueue.isEmpty() && (this.highPriorityQueue.isEmpty() || ((Packet) this.highPriorityQueue.get(0)).timestamp > ((Packet) this.lowPriorityQueue.get(0)).timestamp)) {
                 object = this.g;
                 synchronized (this.g) {
-                    packet = (Packet) this.o.remove(0);
+                    packet = (Packet) this.lowPriorityQueue.remove(0);
                     this.x -= packet.a() + 1;
                 }
 
@@ -120,7 +123,7 @@ public class NetworkManager {
                 aint = e;
                 i = packet.b();
                 aint[i] += packet.a() + 1;
-                this.y = 0;
+                this.lowPriorityQueueDelay = 0;
                 flag = true;
             }
 
@@ -241,7 +244,7 @@ public class NetworkManager {
     }
 
     public int e() {
-        return this.o.size();
+        return this.lowPriorityQueue.size();
     }
 
     static boolean a(NetworkManager networkmanager) {

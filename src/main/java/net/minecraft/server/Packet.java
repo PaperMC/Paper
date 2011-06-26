@@ -9,11 +9,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-// CraftBukkit start
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-// CraftBukkit end
-
 public abstract class Packet {
 
     private static Map a = new HashMap();
@@ -90,10 +85,10 @@ public abstract class Packet {
         }
 
         // CraftBukkit start
-        catch (SocketTimeoutException exception) {
+        catch (java.net.SocketTimeoutException exception) {
             System.out.println("Read timed out");
             return null;
-        } catch (SocketException exception) {
+        } catch (java.net.SocketException exception) {
             System.out.println("Connection reset");
             return null;
         }

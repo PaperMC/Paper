@@ -6,7 +6,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 // CraftBukkit start
-import java.text.SimpleDateFormat;
 import java.util.logging.Handler;
 import org.bukkit.craftbukkit.util.ShortConsoleLogFormatter;
 import org.bukkit.craftbukkit.util.TerminalConsoleHandler;

@@ -8,7 +8,7 @@ class PlayerInstance {
     private List b;
     private int chunkX;
     private int chunkZ;
-    private ChunkCoordIntPair e;
+    private ChunkCoordIntPair location;
     private short[] dirtyBlocks;
     private int dirtyCount;
     private int h;
@@ -27,7 +27,7 @@ class PlayerInstance {
         this.dirtyCount = 0;
         this.chunkX = i;
         this.chunkZ = j;
-        this.e = new ChunkCoordIntPair(i, j);
+        this.location = new ChunkCoordIntPair(i, j);
         playermanager.a().chunkProviderServer.getChunkAt(i, j);
     }
 
@@ -36,13 +36,13 @@ class PlayerInstance {
             throw new IllegalStateException("Failed to add player. " + entityplayer + " already is in chunk " + this.chunkX + ", " + this.chunkZ);
         } else {
             // CraftBukkit start
-            if (entityplayer.g.add(this.e)) {
-                entityplayer.netServerHandler.sendPacket(new Packet50PreChunk(this.e.x, this.e.z, true));
+            if (entityplayer.playerChunkCoordIntPairs.add(this.location)) {
+                entityplayer.netServerHandler.sendPacket(new Packet50PreChunk(this.location.x, this.location.z, true));
             }
             // CraftBukkit end
 
             this.b.add(entityplayer);
-            entityplayer.f.add(this.e);
+            entityplayer.chunkCoordIntPairQueue.add(this.location);
         }
     }
 
@@ -60,9 +60,9 @@ class PlayerInstance {
                 this.playerManager.a().chunkProviderServer.queueUnload(this.chunkX, this.chunkZ);
             }
 
-            entityplayer.f.remove(this.e);
+            entityplayer.chunkCoordIntPairQueue.remove(this.location);
             // CraftBukkit - contains -> remove -- TODO VERIFY!!!!
-            if (entityplayer.g.remove(this.e)) {
+            if (entityplayer.playerChunkCoordIntPairs.remove(this.location)) {
                 entityplayer.netServerHandler.sendPacket(new Packet50PreChunk(this.chunkX, this.chunkZ, false));
             }
         }
@@ -117,7 +117,7 @@ class PlayerInstance {
         for (int i = 0; i < this.b.size(); ++i) {
             EntityPlayer entityplayer = (EntityPlayer) this.b.get(i);
 
-            if (entityplayer.g.contains(this.e)) {
+            if (entityplayer.playerChunkCoordIntPairs.contains(this.location)) {
                 entityplayer.netServerHandler.sendPacket(packet);
             }
         }

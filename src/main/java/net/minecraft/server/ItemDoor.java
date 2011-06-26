@@ -1,7 +1,6 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -72,13 +71,13 @@ public class ItemDoor extends Item {
                     i1 += 4;
                 }
 
-                BlockState blockState = CraftBlockState.getBlockState(world, i, j, k); // CraftBukkit
+                CraftBlockState blockState = CraftBlockState.getBlockState(world, i, j, k); // CraftBukkit
 
-                world.o = true;
+                world.suppressPhysics = true;
                 world.setTypeIdAndData(i, j, k, block.id, i1);
 
                 // CraftBukkit start - bed
-                world.o = false;
+                world.suppressPhysics = false;
                 world.applyPhysics(i, j, k, block.id);
                 BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ, block);
 
@@ -87,11 +86,11 @@ public class ItemDoor extends Item {
                     return false;
                 }
 
-                world.o = true;
+                world.suppressPhysics = true;
                 // CraftBukkit end
                 world.setTypeIdAndData(i, j + 1, k, block.id, i1 + 8);
-                world.o = false;
-                // world.applyPhysics(i, j, k, block.id); // CraftBukkit -- moved up
+                world.suppressPhysics = false;
+                // world.applyPhysics(i, j, k, block.id); // CraftBukkit - moved up
                 world.applyPhysics(i, j + 1, k, block.id);
                 --itemstack.count;
                 return true;

@@ -5,10 +5,8 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 // CraftBukkit start
-import java.util.List;
 import org.bukkit.craftbukkit.command.ServerCommandListener;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
-import org.bukkit.command.CommandSender;
 // CraftBukkit end
 
 public class ConsoleCommandHandler {
@@ -25,7 +23,7 @@ public class ConsoleCommandHandler {
         String s = servercommand.command;
         ICommandListener icommandlistener = servercommand.b;
         String s1 = icommandlistener.getName();
-        listener = icommandlistener; // CraftBukkit
+        this.listener = icommandlistener; // CraftBukkit
         ServerConfigurationManager serverconfigurationmanager = this.server.serverConfigurationManager;
 
         if (!s.toLowerCase().startsWith("help") && !s.toLowerCase().startsWith("?")) {
@@ -47,10 +45,10 @@ public class ConsoleCommandHandler {
                     // CraftBukkit start
                     for (i = 0; i < this.server.worlds.size(); ++i) {
                         worldserver = this.server.worlds.get(i);
-                        boolean save = worldserver.E;
-                        worldserver.E = false;
+                        boolean save = worldserver.canSave;
+                        worldserver.canSave = false;
                         worldserver.save(true, (IProgressUpdate) null);
-                        worldserver.E = save;
+                        worldserver.canSave = save;
                     }
                     // CraftBukkit end
 
@@ -60,14 +58,14 @@ public class ConsoleCommandHandler {
 
                     for (i = 0; i < this.server.worlds.size(); ++i) { // CraftBukkit
                         worldserver = this.server.worlds.get(i); // CraftBukkit
-                        worldserver.E = true;
+                        worldserver.canSave = true;
                     }
                 } else if (s.toLowerCase().startsWith("save-on")) {
                     this.print(s1, "Enabling level saving..");
 
                     for (i = 0; i < this.server.worlds.size(); ++i) { // CraftBukkit
                         worldserver = this.server.worlds.get(i); // CraftBukkit
-                        worldserver.E = false;
+                        worldserver.canSave = false;
                     }
                 } else {
                     String s2;
@@ -261,7 +259,7 @@ public class ConsoleCommandHandler {
 
     private void a(String s, String s1, ICommandListener icommandlistener) {
         String[] astring = s1.split(" ");
-        listener = icommandlistener; // CraftBukkit
+        this.listener = icommandlistener; // CraftBukkit
 
         if (astring.length >= 2) {
             String s2 = astring[1].toLowerCase();
@@ -330,9 +328,9 @@ public class ConsoleCommandHandler {
         String s2 = s + ": " + s1;
 
         // CraftBukkit start
-        listener.sendMessage(s1);
-        informOps("\u00A77(" + s2 + ")");
-        if (listener instanceof MinecraftServer) {
+        this.listener.sendMessage(s1);
+        this.informOps("\u00A77(" + s2 + ")");
+        if (this.listener instanceof MinecraftServer) {
             return; // Already logged so don't call a.info()
         }
         // CraftBukkit end
@@ -343,16 +341,16 @@ public class ConsoleCommandHandler {
     private void informOps(String msg) {
         Packet3Chat packet3chat = new Packet3Chat(msg);
         EntityPlayer sender = null;
-        if (listener instanceof ServerCommandListener) {
-            CommandSender commandSender = ((ServerCommandListener) listener).getSender();
+        if (this.listener instanceof ServerCommandListener) {
+            org.bukkit.command.CommandSender commandSender = ((ServerCommandListener) this.listener).getSender();
             if (commandSender instanceof CraftPlayer) {
                 sender = ((CraftPlayer) commandSender).getHandle();
             }
         }
-        List<EntityPlayer> players = server.serverConfigurationManager.players;
+        java.util.List<EntityPlayer> players = this.server.serverConfigurationManager.players;
         for (int i = 0; i < players.size(); ++i) {
             EntityPlayer entityPlayer = (EntityPlayer) players.get(i);
-            if (sender != entityPlayer && server.serverConfigurationManager.isOp(entityPlayer.name)) {
+            if (sender != entityPlayer && this.server.serverConfigurationManager.isOp(entityPlayer.name)) {
                 entityPlayer.netServerHandler.sendPacket(packet3chat);
             }
         }

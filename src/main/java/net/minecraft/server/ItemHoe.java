@@ -1,7 +1,6 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -28,7 +27,7 @@ public class ItemHoe extends Item {
             if (world.isStatic) {
                 return true;
             } else {
-                BlockState blockState = CraftBlockState.getBlockState(world, i, j, k); // CraftBukkit
+                CraftBlockState blockState = CraftBlockState.getBlockState(world, i, j, k); // CraftBukkit
 
                 world.setTypeId(i, j, k, block.id);
 

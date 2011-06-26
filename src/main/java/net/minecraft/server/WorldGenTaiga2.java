@@ -14,7 +14,7 @@ public class WorldGenTaiga2 extends WorldGenerator {
         // BlockChangeDelegate and then we can implicitly cast World to
         // WorldServer (a safe cast, AFAIK) and no code will be broken. This
         // then allows plugins to catch manually-invoked generation events
-        return generate((BlockChangeDelegate) world, random, i, j, k);
+        return this.generate((BlockChangeDelegate) world, random, i, j, k);
     }
 
     public boolean generate(BlockChangeDelegate world, Random random, int i, int j, int k) {

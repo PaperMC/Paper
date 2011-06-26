@@ -3,11 +3,7 @@ package net.minecraft.server;
 import java.util.Random;
 
 // CraftBukkit start
-import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.event.Cancellable;
-import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityInteractEvent;
 // CraftBukkit end
 
@@ -56,12 +52,12 @@ public class BlockSoil extends Block {
     public void b(World world, int i, int j, int k, Entity entity) {
         if (world.random.nextInt(4) == 0) {
             // CraftBukkit start - Interact Soil
-            Cancellable cancellable;
+            org.bukkit.event.Cancellable cancellable;
             if (entity instanceof EntityHuman) {
-                cancellable = CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, Action.PHYSICAL, i, j, k, -1, null);
+                cancellable = CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, org.bukkit.event.block.Action.PHYSICAL, i, j, k, -1, null);
             } else {
-                cancellable = new EntityInteractEvent(entity.getBukkitEntity(), ((WorldServer) world).getWorld().getBlockAt(i, j, k));
-                ((CraftServer) Bukkit.getServer()).getPluginManager().callEvent((EntityInteractEvent) cancellable);
+                cancellable = new EntityInteractEvent(entity.getBukkitEntity(), world.getWorld().getBlockAt(i, j, k));
+                world.getServer().getPluginManager().callEvent((EntityInteractEvent) cancellable);
             }
 
             if (cancellable.isCancelled()) {

@@ -13,11 +13,11 @@ public class WorldManager implements IWorldAccess {
     public void a(String s, double d0, double d1, double d2, double d3, double d4, double d5) {}
 
     public void a(Entity entity) {
-        this.server.b(this.world.dimension).a(entity); // CraftBukkit
+        this.server.getTracker(this.world.dimension).track(entity); // CraftBukkit
     }
 
     public void b(Entity entity) {
-        this.server.b(this.world.dimension).untrackEntity(entity); // CraftBukkit
+        this.server.getTracker(this.world.dimension).untrackEntity(entity); // CraftBukkit
     }
 
     public void a(String s, double d0, double d1, double d2, float f, float f1) {}
@@ -37,6 +37,6 @@ public class WorldManager implements IWorldAccess {
     }
 
     public void a(EntityHuman entityhuman, int i, int j, int k, int l, int i1) {
-        this.server.serverConfigurationManager.a(entityhuman, (double) j, (double) k, (double) l, 64.0D, this.world.dimension, new Packet61(i, j, k, l, i1)); // CraftBukkit
+        this.server.serverConfigurationManager.sendPacketNearby(entityhuman, (double) j, (double) k, (double) l, 64.0D, this.world.dimension, new Packet61(i, j, k, l, i1)); // CraftBukkit
     }
 }

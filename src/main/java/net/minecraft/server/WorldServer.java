@@ -5,7 +5,6 @@ import java.util.List;
 
 // CraftBukkit start
 import org.bukkit.BlockChangeDelegate;
-import org.bukkit.World.Environment;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.craftbukkit.generator.CustomChunkGenerator;
 import org.bukkit.craftbukkit.generator.InternalChunkGenerator;
@@ -19,18 +18,18 @@ public class WorldServer extends World implements BlockChangeDelegate {
 
     public ChunkProviderServer chunkProviderServer;
     public boolean weirdIsOpCache = false;
-    public boolean E;
+    public boolean canSave;
     public final MinecraftServer server; // CraftBukkit - private -> public final
     private EntityList G = new EntityList();
 
     // CraftBukkit start - change signature
-    public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, String s, int i, long j, Environment env, ChunkGenerator gen) {
-        super(idatamanager, s, j, WorldProvider.a(env.getId()), gen, env);
+    public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, String s, int i, long j, org.bukkit.World.Environment env, ChunkGenerator gen) {
+        super(idatamanager, s, j, WorldProvider.byDimension(env.getId()), gen, env);
         this.server = minecraftserver;
 
         this.dimension = i;
         this.pvpMode = minecraftserver.pvpMode;
-        this.manager = new PlayerManager(minecraftserver, dimension, minecraftserver.propertyManager.getInt("view-distance", 10));
+        this.manager = new PlayerManager(minecraftserver, this.dimension, minecraftserver.propertyManager.getInt("view-distance", 10));
     }
 
     public final int dimension;
@@ -82,7 +81,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
         for (int k1 = 0; k1 < this.c.size(); ++k1) {
             TileEntity tileentity = (TileEntity) this.c.get(k1);
 
-            if (tileentity.e >= i && tileentity.f >= j && tileentity.g >= k && tileentity.e < l && tileentity.f < i1 && tileentity.g < j1) {
+            if (tileentity.x >= i && tileentity.y >= j && tileentity.z >= k && tileentity.x < l && tileentity.y < i1 && tileentity.z < j1) {
                 arraylist.add(tileentity);
             }
         }
@@ -99,7 +98,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
         }
 
         // CraftBukkit - Configurable spawn protection
-        return i1 > getServer().getSpawnRadius() || this.server.serverConfigurationManager.isOp(entityhuman.name);
+        return i1 > this.getServer().getSpawnRadius() || this.server.serverConfigurationManager.isOp(entityhuman.name);
     }
 
     protected void c(Entity entity) {
@@ -116,17 +115,17 @@ public class WorldServer extends World implements BlockChangeDelegate {
         return (Entity) this.G.a(i);
     }
 
-    public boolean a(Entity entity) {
+    public boolean strikeLightning(Entity entity) {
         // CraftBukkit start
-        LightningStrikeEvent lightning = new LightningStrikeEvent(getWorld(), (org.bukkit.entity.LightningStrike) entity.getBukkitEntity());
-        getServer().getPluginManager().callEvent(lightning);
+        LightningStrikeEvent lightning = new LightningStrikeEvent(this.getWorld(), (org.bukkit.entity.LightningStrike) entity.getBukkitEntity());
+        this.getServer().getPluginManager().callEvent(lightning);
 
         if (lightning.isCancelled()) {
             return false;
         }
 
-        if (super.a(entity)) {
-            this.server.serverConfigurationManager.a(entity.locX, entity.locY, entity.locZ, 512.0D, this.dimension, new Packet71Weather(entity));
+        if (super.strikeLightning(entity)) {
+            this.server.serverConfigurationManager.sendPacketNearby(entity.locX, entity.locY, entity.locZ, 512.0D, this.dimension, new Packet71Weather(entity));
             // CraftBukkit end
             return true;
         } else {
@@ -138,7 +137,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
         Packet38EntityStatus packet38entitystatus = new Packet38EntityStatus(entity.id, b0);
 
         // CraftBukkit
-        this.server.b(this.dimension).b(entity, packet38entitystatus);
+        this.server.getTracker(this.dimension).sendPacketToEntity(entity, packet38entitystatus);
     }
 
     public Explosion createExplosion(Entity entity, double d0, double d1, double d2, float f, boolean flag) {
@@ -149,20 +148,20 @@ public class WorldServer extends World implements BlockChangeDelegate {
             return explosion;
         }
 
-        /* CraftBukkit
+        /* Remove
         explosion.a = flag;
         explosion.a();
         explosion.a(false);
-        // CraftBukkit */
-        this.server.serverConfigurationManager.a(d0, d1, d2, 64.0D, this.dimension, new Packet60Explosion(d0, d1, d2, f, explosion.g));
+        */
+        this.server.serverConfigurationManager.sendPacketNearby(d0, d1, d2, 64.0D, this.dimension, new Packet60Explosion(d0, d1, d2, f, explosion.blocks));
         // CraftBukkit end
         return explosion;
     }
 
-    public void d(int i, int j, int k, int l, int i1) {
-        super.d(i, j, k, l, i1);
+    public void playNote(int i, int j, int k, int l, int i1) {
+        super.playNote(i, j, k, l, i1);
         // CraftBukkit
-        this.server.serverConfigurationManager.a((double) i, (double) j, (double) k, 64.0D, this.dimension, new Packet54PlayNoteBlock(i, j, k, l, i1));
+        this.server.serverConfigurationManager.sendPacketNearby((double) i, (double) j, (double) k, 64.0D, this.dimension, new Packet54PlayNoteBlock(i, j, k, l, i1));
     }
 
     public void saveLevel() {
@@ -176,12 +175,8 @@ public class WorldServer extends World implements BlockChangeDelegate {
         if (flag != this.v()) {
             // CraftBukkit start - only sending weather packets to those affected
             for (int i = 0; i < this.players.size(); ++i) {
-                if (((EntityPlayer) this.players.get(i)).world == (World) this) {
-                    if (flag) {
-                        ((EntityPlayer) this.players.get(i)).netServerHandler.sendPacket(new Packet70Bed(2));
-                    } else {
-                        ((EntityPlayer) this.players.get(i)).netServerHandler.sendPacket(new Packet70Bed(1));
-                    }
+                if (((EntityPlayer) this.players.get(i)).world == this) {
+                    ((EntityPlayer) this.players.get(i)).netServerHandler.sendPacket(new Packet70Bed(flag ? 2 : 1));
                 }
             }
             // CraftBukkit end

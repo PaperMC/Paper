@@ -6,12 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-// CraftBukkit start
-import java.util.Iterator;
-import org.bukkit.Location;
-import org.bukkit.craftbukkit.CraftWorld;
-// CraftBukkit end
-
 public class Chunk {
 
     public static boolean a;
@@ -21,7 +15,7 @@ public class Chunk {
     public NibbleArray e;
     public NibbleArray f;
     public NibbleArray g;
-    public byte[] h;
+    public byte[] heightMap;
     public int i;
     public final int x;
     public final int z;
@@ -43,17 +37,17 @@ public class Chunk {
         this.world = world;
         this.x = i;
         this.z = j;
-        this.h = new byte[256];
+        this.heightMap = new byte[256];
 
         for (int k = 0; k < this.entitySlices.length; ++k) {
             this.entitySlices[k] = new ArrayList();
         }
 
         // CraftBukkit start
-        CraftWorld cw = ((WorldServer) world).getWorld();
-        bukkitChunk = (cw == null) ? null : cw.popPreservedChunk(i, j);
-        if (bukkitChunk == null) {
-            bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
+        org.bukkit.craftbukkit.CraftWorld cworld = this.world.getWorld();
+        this.bukkitChunk = (cworld == null) ? null : cworld.popPreservedChunk(i, j);
+        if (this.bukkitChunk == null) {
+            this.bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
         }
     }
 
@@ -73,12 +67,12 @@ public class Chunk {
     }
 
     public int b(int i, int j) {
-        return this.h[j << 4 | i] & 255;
+        return this.heightMap[j << 4 | i] & 255;
     }
 
     public void a() {}
 
-    public void b() {
+    public void initLighting() {
         int i = 127;
 
         int j;
@@ -94,7 +88,7 @@ public class Chunk {
                     ;
                 }
 
-                this.h[k << 4 | j] = (byte) l;
+                this.heightMap[k << 4 | j] = (byte) l;
                 if (l < i) {
                     i = l;
                 }
@@ -152,7 +146,7 @@ public class Chunk {
     }
 
     private void g(int i, int j, int k) {
-        int l = this.h[k << 4 | i] & 255;
+        int l = this.heightMap[k << 4 | i] & 255;
         int i1 = l;
 
         if (j > l) {
@@ -165,7 +159,7 @@ public class Chunk {
 
         if (i1 != l) {
             this.world.g(i, k, i1, l);
-            this.h[k << 4 | i] = (byte) i1;
+            this.heightMap[k << 4 | i] = (byte) i1;
             int k1;
             int l1;
             int i2;
@@ -177,8 +171,8 @@ public class Chunk {
 
                 for (l1 = 0; l1 < 16; ++l1) {
                     for (i2 = 0; i2 < 16; ++i2) {
-                        if ((this.h[i2 << 4 | l1] & 255) < k1) {
-                            k1 = this.h[i2 << 4 | l1] & 255;
+                        if ((this.heightMap[i2 << 4 | l1] & 255) < k1) {
+                            k1 = this.heightMap[i2 << 4 | l1] & 255;
                         }
                     }
                 }
@@ -236,7 +230,7 @@ public class Chunk {
 
     public boolean a(int i, int j, int k, int l, int i1) {
         byte b0 = (byte) l;
-        int j1 = this.h[k << 4 | i] & 255;
+        int j1 = this.heightMap[k << 4 | i] & 255;
         int k1 = this.b[i << 11 | k << 7 | j] & 255;
 
         if (k1 == l && this.e.a(i, j, k) == i1) {
@@ -277,7 +271,7 @@ public class Chunk {
 
     public boolean a(int i, int j, int k, int l) {
         byte b0 = (byte) l;
-        int i1 = this.h[k << 4 | i] & 255;
+        int i1 = this.heightMap[k << 4 | i] & 255;
         int j1 = this.b[i << 11 | k << 7 | j] & 255;
 
         if (j1 == l) {
@@ -401,7 +395,7 @@ public class Chunk {
     }
 
     public boolean c(int i, int j, int k) {
-        return j >= (this.h[k << 4 | i] & 255);
+        return j >= (this.heightMap[k << 4 | i] & 255);
     }
 
     public TileEntity d(int i, int j, int k) {
@@ -425,9 +419,9 @@ public class Chunk {
     }
 
     public void a(TileEntity tileentity) {
-        int i = tileentity.e - this.x * 16;
-        int j = tileentity.f;
-        int k = tileentity.g - this.z * 16;
+        int i = tileentity.x - this.x * 16;
+        int j = tileentity.y;
+        int k = tileentity.z - this.z * 16;
 
         this.a(i, j, k, tileentity);
     }
@@ -436,9 +430,9 @@ public class Chunk {
         ChunkPosition chunkposition = new ChunkPosition(i, j, k);
 
         tileentity.world = this.world;
-        tileentity.e = this.x * 16 + i;
-        tileentity.f = j;
-        tileentity.g = this.z * 16 + k;
+        tileentity.x = this.x * 16 + i;
+        tileentity.y = j;
+        tileentity.z = this.z * 16 + k;
         if (this.getTypeId(i, j, k) != 0 && Block.byId[this.getTypeId(i, j, k)] instanceof BlockContainer) {
             if (this.c) {
                 if (this.tileEntities.get(chunkposition) != null) {
@@ -477,11 +471,11 @@ public class Chunk {
 
         for (int i = 0; i < this.entitySlices.length; ++i) {
             // CraftBukkit start
-            Iterator<Object> iter = this.entitySlices[i].iterator();
+            java.util.Iterator<Object> iter = this.entitySlices[i].iterator();
             while (iter.hasNext()) {
                 Entity entity = (Entity) iter.next();
-                int cx = Location.locToBlock(entity.locX) >> 4;
-                int cz = Location.locToBlock(entity.locZ) >> 4;
+                int cx = org.bukkit.Location.locToBlock(entity.locX) >> 4;
+                int cz = org.bukkit.Location.locToBlock(entity.locZ) >> 4;
 
                 // Do not pass along players, as doing so can get them stuck outside of time.
                 // (which for example disables inventory icon updates and prevents block breaking)
@@ -565,7 +559,7 @@ public class Chunk {
         }
     }
 
-    public int a(byte[] abyte, int i, int j, int k, int l, int i1, int j1, int k1) {
+    public int getData(byte[] abyte, int i, int j, int k, int l, int i1, int j1, int k1) {
         int l1 = l - i;
         int i2 = i1 - j;
         int j2 = j1 - k;
@@ -630,7 +624,7 @@ public class Chunk {
         return new Random(this.world.getSeed() + (long) (this.x * this.x * 4987142) + (long) (this.x * 5947611) + (long) (this.z * this.z) * 4392871L + (long) (this.z * 389711) ^ i);
     }
 
-    public boolean g() {
+    public boolean isEmpty() {
         return false;
     }
 

@@ -1,9 +1,6 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import org.bukkit.entity.Player;
-import org.bukkit.event.player.PlayerPickupItemEvent;
-// CraftBukkit end
+import org.bukkit.event.player.PlayerPickupItemEvent; // CraftBukkit
 
 public class EntityItem extends Entity {
 
@@ -94,7 +91,7 @@ public class EntityItem extends Entity {
         return this.world.a(this.boundingBox, Material.WATER, this);
     }
 
-    protected void a(int i) {
+    protected void burn(int i) {
         this.damageEntity((Entity) null, i);
     }
 
@@ -127,7 +124,7 @@ public class EntityItem extends Entity {
             int i = this.itemStack.count;
 
             // CraftBukkit start
-            if (this.pickupDelay <= 0 && entityhuman.inventory.canPickup(this.itemStack) > 0) {
+            if (this.pickupDelay <= 0 && entityhuman.inventory.canHold(this.itemStack) > 0) {
                 PlayerPickupItemEvent event = new PlayerPickupItemEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity());
                 this.world.getServer().getPluginManager().callEvent(event);
 
@@ -140,7 +137,7 @@ public class EntityItem extends Entity {
             }
             // CraftBukkit end
 
-            if (this.pickupDelay == 0 && entityhuman.inventory.canHold(this.itemStack)) {
+            if (this.pickupDelay == 0 && entityhuman.inventory.pickup(this.itemStack)) {
                 if (this.itemStack.id == Block.LOG.id) {
                     entityhuman.a((Statistic) AchievementList.g);
                 }

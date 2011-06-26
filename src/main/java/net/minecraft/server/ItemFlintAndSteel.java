@@ -1,15 +1,11 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import org.bukkit.block.BlockState;
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockIgniteEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.block.BlockIgniteEvent.IgniteCause;
 // CraftBukkit end
 
 public class ItemFlintAndSteel extends Item {
@@ -51,23 +47,18 @@ public class ItemFlintAndSteel extends Item {
 
         if (i1 == 0) {
             // CraftBukkit start - store the clicked block
-            CraftWorld craftWorld = ((WorldServer) world).getWorld();
-            CraftServer craftServer = ((WorldServer) world).getServer();
-            org.bukkit.block.Block blockClicked = craftWorld.getBlockAt(i, j, k);
-
+            org.bukkit.block.Block blockClicked = world.getWorld().getBlockAt(i, j, k);
             Player thePlayer = (Player) entityhuman.getBukkitEntity();
 
-            IgniteCause igniteCause = BlockIgniteEvent.IgniteCause.FLINT_AND_STEEL;
-            BlockIgniteEvent eventIgnite = new BlockIgniteEvent(blockClicked, igniteCause, thePlayer);
-            craftServer.getPluginManager().callEvent(eventIgnite);
-            boolean preventFire = eventIgnite.isCancelled();
+            BlockIgniteEvent eventIgnite = new BlockIgniteEvent(blockClicked, BlockIgniteEvent.IgniteCause.FLINT_AND_STEEL, thePlayer);
+            world.getServer().getPluginManager().callEvent(eventIgnite);
 
-            if (preventFire) {
+            if (eventIgnite.isCancelled()) {
                 itemstack.damage(1, entityhuman);
                 return false;
             }
 
-            BlockState blockState = CraftBlockState.getBlockState(world, i, j, k);
+            CraftBlockState blockState = CraftBlockState.getBlockState(world, i, j, k);
             // CraftBukkit end
 
             world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "fire.ignite", 1.0F, b.nextFloat() * 0.4F + 0.8F);

@@ -4,7 +4,7 @@ public class TileEntitySign extends TileEntity {
 
     public String[] lines = new String[] { "", "", "", ""};
     public int b = -1;
-    private boolean c = true;
+    private boolean isEditable = true;
 
     public TileEntitySign() {}
 
@@ -17,7 +17,7 @@ public class TileEntitySign extends TileEntity {
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        this.c = false;
+        this.isEditable = false;
         super.a(nbttagcompound);
 
         for (int i = 0; i < 4; ++i) {
@@ -41,16 +41,16 @@ public class TileEntitySign extends TileEntity {
             // CraftBukkit end
         }
 
-        return new Packet130UpdateSign(this.e, this.f, this.g, astring);
+        return new Packet130UpdateSign(this.x, this.y, this.z, astring);
     }
 
     public boolean a() {
-        return this.c;
+        return this.isEditable;
     }
 
     // CraftBukkit start
     public void setEditable(boolean editable) {
-        this.c = editable;
+        this.isEditable = editable;
     }
     // CraftBukkit end
 }

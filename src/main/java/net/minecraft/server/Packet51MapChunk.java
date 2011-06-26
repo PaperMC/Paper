@@ -22,13 +22,13 @@ public class Packet51MapChunk extends Packet {
         this.k = true;
     }
 
-    // CraftBukkit - start
+    // CraftBukkit start
     public Packet51MapChunk(int i, int j, int k, int l, int i1, int j1, World world) {
-        this(i, j, k, l, i1, j1, world.c(i, j, k, l, i1, j1));
+        this(i, j, k, l, i1, j1, world.getMultiChunkData(i, j, k, l, i1, j1));
     }
 
     public Packet51MapChunk(int i, int j, int k, int l, int i1, int j1, byte[] data) {
-        // CraftBukkit - end
+        // CraftBukkit end
         this.k = true;
         this.a = i;
         this.b = j;

@@ -4,8 +4,6 @@ import java.util.List;
 
 // CraftBukkit start
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.event.vehicle.VehicleCreateEvent;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
@@ -33,12 +31,10 @@ public class EntityBoat extends Entity {
 
     @Override
     public void collide(Entity entity) {
-        CraftServer server = ((WorldServer) this.world).getServer();
-        Vehicle vehicle = (Vehicle) this.getBukkitEntity();
         org.bukkit.entity.Entity hitEntity = (entity == null) ? null : entity.getBukkitEntity();
 
-        VehicleEntityCollisionEvent event = new VehicleEntityCollisionEvent(vehicle, hitEntity);
-        server.getPluginManager().callEvent(event);
+        VehicleEntityCollisionEvent event = new VehicleEntityCollisionEvent((Vehicle) this.getBukkitEntity(), hitEntity);
+        this.world.getServer().getPluginManager().callEvent(event);
 
         if (event.isCancelled()) {
             return;
@@ -86,12 +82,7 @@ public class EntityBoat extends Entity {
         this.lastY = d1;
         this.lastZ = d2;
 
-        // CraftBukkit start
-        CraftServer server = ((WorldServer) world).getServer();
-        Vehicle vehicle = (Vehicle) this.getBukkitEntity();
-        VehicleCreateEvent event = new VehicleCreateEvent(vehicle);
-        server.getPluginManager().callEvent(event);
-        // CraftBukkit end
+        this.world.getServer().getPluginManager().callEvent(new VehicleCreateEvent((Vehicle) this.getBukkitEntity())); // CraftBukkit
     }
 
     public double m() {
@@ -103,14 +94,14 @@ public class EntityBoat extends Entity {
             // CraftBukkit start
             Vehicle vehicle = (Vehicle) this.getBukkitEntity();
             org.bukkit.entity.Entity attacker = (entity == null) ? null : entity.getBukkitEntity();
-            int damage = i;
 
-            VehicleDamageEvent event = new VehicleDamageEvent(vehicle, attacker, damage);
-            ((WorldServer) this.world).getServer().getPluginManager().callEvent(event);
+            VehicleDamageEvent event = new VehicleDamageEvent(vehicle, attacker, i);
+            this.world.getServer().getPluginManager().callEvent(event);
 
             if (event.isCancelled()) {
                 return true;
             }
+            // i = event.getDamage(); // TODO Why don't we do this?
             // CraftBukkit end
 
             this.c = -this.c;
@@ -121,7 +112,7 @@ public class EntityBoat extends Entity {
 
                 // CraftBukkit start
                 VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, attacker);
-                ((WorldServer) this.world).getServer().getPluginManager().callEvent(destroyEvent);
+                this.world.getServer().getPluginManager().callEvent(destroyEvent);
 
                 if (destroyEvent.isCancelled()) {
                     this.damage = 40; // Maximize damage so this doesn't get triggered again right away
@@ -345,10 +336,11 @@ public class EntityBoat extends Entity {
             this.c(this.yaw, this.pitch);
 
             // CraftBukkit start
-            CraftServer server = ((WorldServer) this.world).getServer();
-            CraftWorld world = ((WorldServer) this.world).getWorld();
-            Location from = new Location(world, prevX, prevY, prevZ, prevYaw, prevPitch);
-            Location to = new Location(world, this.locX, this.locY, this.locZ, this.yaw, this.pitch);
+            org.bukkit.Server server = this.world.getServer();
+            org.bukkit.World bworld = this.world.getWorld();
+
+            Location from = new Location(bworld, prevX, prevY, prevZ, prevYaw, prevPitch);
+            Location to = new Location(bworld, this.locX, this.locY, this.locZ, this.yaw, this.pitch);
             Vehicle vehicle = (Vehicle) this.getBukkitEntity();
 
             server.getPluginManager().callEvent(new VehicleUpdateEvent(vehicle));
@@ -408,12 +400,8 @@ public class EntityBoat extends Entity {
         } else {
             if (!this.world.isStatic) {
                 // CraftBukkit start
-                CraftServer server = ((WorldServer) this.world).getServer();
-                Vehicle vehicle = (Vehicle) this.getBukkitEntity();
-                org.bukkit.entity.Entity player = entityhuman.getBukkitEntity();
-
-                VehicleEnterEvent event = new VehicleEnterEvent(vehicle, player);
-                server.getPluginManager().callEvent(event);
+                VehicleEnterEvent event = new VehicleEnterEvent((Vehicle) this.getBukkitEntity(), entityhuman.getBukkitEntity());
+                this.world.getServer().getPluginManager().callEvent(event);
 
                 if (event.isCancelled()) {
                     return true;

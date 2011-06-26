@@ -83,19 +83,19 @@ public final class ItemStack {
         this.damage = nbttagcompound.d("Damage");
     }
 
-    public int b() {
+    public int getMaxStackSize() {
         return this.getItem().getMaxStackSize();
     }
 
-    public boolean c() {
-        return this.b() > 1 && (!this.d() || !this.f());
+    public boolean isStackable() {
+        return this.getMaxStackSize() > 1 && (!this.d() || !this.f());
     }
 
     public boolean d() {
         return Item.byId[this.id].e() > 0;
     }
 
-    public boolean e() {
+    public boolean usesData() {
         return Item.byId[this.id].d();
     }
 
@@ -167,7 +167,7 @@ public final class ItemStack {
         Item.byId[this.id].a(this, entityliving);
     }
 
-    public ItemStack j() {
+    public ItemStack cloneItemStack() {
         return new ItemStack(this.id, this.count, this.damage);
     }
 
@@ -179,12 +179,12 @@ public final class ItemStack {
         return this.count != itemstack.count ? false : (this.id != itemstack.id ? false : this.damage == itemstack.damage);
     }
 
-    public boolean a(ItemStack itemstack) {
+    public boolean doMaterialsMatch(ItemStack itemstack) {
         return this.id == itemstack.id && this.damage == itemstack.damage;
     }
 
     public static ItemStack b(ItemStack itemstack) {
-        return itemstack == null ? null : itemstack.j();
+        return itemstack == null ? null : itemstack.cloneItemStack();
     }
 
     public String toString() {

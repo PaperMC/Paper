@@ -16,28 +16,33 @@ public class CraftTNTPrimed extends CraftEntity implements TNTPrimed {
         return "CraftTNTPrimed";
     }
 
+    @Override
+    public EntityTNTPrimed getHandle() {
+        return (EntityTNTPrimed) super.getHandle();
+    }
+
     public float getYield() {
-        return ((EntityTNTPrimed) getHandle()).yield;
+        return getHandle().yield;
     }
 
     public boolean isIncendiary() {
-        return ((EntityTNTPrimed) getHandle()).isIncendiary;
+        return getHandle().isIncendiary;
     }
 
     public void setIsIncendiary(boolean isIncendiary) {
-        ((EntityTNTPrimed) getHandle()).isIncendiary = isIncendiary;
+        getHandle().isIncendiary = isIncendiary;
     }
 
     public void setYield(float yield) {
-        ((EntityTNTPrimed) getHandle()).yield = yield;
+        getHandle().yield = yield;
     }
 
     public int getFuseTicks() {
-        return ((EntityTNTPrimed) getHandle()).a;
+        return getHandle().fuseTicks;
     }
 
     public void setFuseTicks(int fuseTicks) {
-        ((EntityTNTPrimed) getHandle()).a = fuseTicks;
+        getHandle().fuseTicks = fuseTicks;
     }
 
 }

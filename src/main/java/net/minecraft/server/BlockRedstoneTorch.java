@@ -4,11 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.event.block.BlockRedstoneEvent;
-import org.bukkit.plugin.PluginManager;
-// CraftBukkit end
+import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
 
 public class BlockRedstoneTorch extends BlockTorch {
 
@@ -100,9 +96,10 @@ public class BlockRedstoneTorch extends BlockTorch {
         }
 
         // CraftBukkit start
-        CraftBlock block = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
-        PluginManager man = ((WorldServer) world).getServer().getPluginManager();
+        org.bukkit.plugin.PluginManager manager = world.getServer().getPluginManager();
+        org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
         int oldCurrent = this.isOn ? 15 : 0;
+
         BlockRedstoneEvent event = new BlockRedstoneEvent(block, oldCurrent, oldCurrent);
         // CraftBukkit end
 
@@ -111,7 +108,7 @@ public class BlockRedstoneTorch extends BlockTorch {
                 // CraftBukkit start
                 if (oldCurrent != 0) {
                     event.setNewCurrent(0);
-                    man.callEvent(event);
+                    manager.callEvent(event);
                     if (event.getNewCurrent() != 0) {
                         return;
                     }
@@ -135,7 +132,7 @@ public class BlockRedstoneTorch extends BlockTorch {
             // CraftBukkit start
             if (oldCurrent != 15) {
                 event.setNewCurrent(15);
-                man.callEvent(event);
+                manager.callEvent(event);
                 if (event.getNewCurrent() != 15) {
                     return;
                 }

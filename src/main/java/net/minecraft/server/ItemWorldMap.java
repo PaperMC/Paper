@@ -19,7 +19,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
             worldmap.b = world.q().c();
             worldmap.c = world.q().e();
             worldmap.e = 3;
-            worldmap.d = (byte) ((WorldServer) world).dimension; // CraftBukkit
+            worldmap.map = (byte) world.worldProvider.dimension;
             worldmap.a();
             world.a(s, (WorldMapBase) worldmap);
         }
@@ -28,7 +28,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
     }
 
     public void a(World world, Entity entity, WorldMap worldmap) {
-        if (((WorldServer) world).dimension == worldmap.d) { // CraftBukkit
+        if (((WorldServer) world).dimension == worldmap.map) { // CraftBukkit
             short short1 = 128;
             short short2 = 128;
             int i = 1 << worldmap.e;
@@ -61,7 +61,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
                             byte b1 = 0;
                             byte b2 = 0;
                             int[] aint = new int[256];
-                            Chunk chunk = world.b(i3, j3);
+                            Chunk chunk = world.getChunkAtWorldCoords(i3, j3);
                             int k3 = i3 & 15;
                             int l3 = j3 & 15;
                             int i4 = 0;
@@ -222,7 +222,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
         worldmap.b = MathHelper.floor(entityhuman.locX);
         worldmap.c = MathHelper.floor(entityhuman.locZ);
         worldmap.e = 3;
-        worldmap.d = (byte) ((WorldServer) world).dimension; // CraftBukkit
+        worldmap.map = (byte) ((WorldServer) world).dimension; // CraftBukkit
         worldmap.a();
     }
 

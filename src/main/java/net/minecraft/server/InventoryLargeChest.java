@@ -8,9 +8,9 @@ public class InventoryLargeChest implements IInventory {
 
     // CraftBukkit start
     public ItemStack[] getContents() {
-        ItemStack[] result = new ItemStack[getSize()];
+        ItemStack[] result = new ItemStack[this.getSize()];
         for (int i = 0; i < result.length; i++) {
-            result[i] = getItem(i);
+            result[i] = this.getItem(i);
         }
         return result;
     }
@@ -34,8 +34,8 @@ public class InventoryLargeChest implements IInventory {
         return i >= this.b.getSize() ? this.c.getItem(i - this.b.getSize()) : this.b.getItem(i);
     }
 
-    public ItemStack a(int i, int j) {
-        return i >= this.b.getSize() ? this.c.a(i - this.b.getSize(), j) : this.b.a(i, j);
+    public ItemStack splitStack(int i, int j) {
+        return i >= this.b.getSize() ? this.c.splitStack(i - this.b.getSize(), j) : this.b.splitStack(i, j);
     }
 
     public void setItem(int i, ItemStack itemstack) {

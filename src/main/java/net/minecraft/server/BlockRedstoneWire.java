@@ -5,10 +5,7 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.event.block.BlockRedstoneEvent;
-// CraftBukkit end
+import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
 
 public class BlockRedstoneWire extends Block {
 
@@ -109,18 +106,18 @@ public class BlockRedstoneWire extends Block {
 
         // CraftBukkit start
         if (k1 != l1) {
-            CraftBlock block = (CraftBlock) ((WorldServer) world).getWorld().getBlockAt(i, j, k);
-            BlockRedstoneEvent event = new BlockRedstoneEvent(block, k1, l1);
-            ((WorldServer) world).getServer().getPluginManager().callEvent(event);
+            BlockRedstoneEvent event = new BlockRedstoneEvent(world.getWorld().getBlockAt(i, j, k), k1, l1);
+            world.getServer().getPluginManager().callEvent(event);
+
             l1 = event.getNewCurrent();
         }
         // CraftBukkit end
 
         if (k1 != l1) {
-            world.o = true;
+            world.suppressPhysics = true;
             world.setData(i, j, k, l1);
             world.b(i, j, k, i, j, k);
-            world.o = false;
+            world.suppressPhysics = false;
 
             for (i2 = 0; i2 < 4; ++i2) {
                 j2 = i;

@@ -1,7 +1,6 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -54,7 +53,7 @@ public class ItemReed extends Item {
                 Block block = Block.byId[this.id];
 
                 // CraftBukkit start - This executes the placement of the block
-                BlockState replacedBlockState = CraftBlockState.getBlockState(world, i, j, k); // CraftBukkit
+                CraftBlockState replacedBlockState = CraftBlockState.getBlockState(world, i, j, k); // CraftBukkit
                 /**
                  * @see net.minecraft.server.World#setTypeId(int i, int j, int k, int l)
                  *

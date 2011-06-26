@@ -6,7 +6,7 @@ public interface IInventory {
 
     ItemStack getItem(int i);
 
-    ItemStack a(int i, int j);
+    ItemStack splitStack(int i, int j);
 
     void setItem(int i, ItemStack itemstack);
 

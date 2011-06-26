@@ -9,13 +9,13 @@ import org.bukkit.event.entity.ExplosionPrimeEvent;
 
 public class EntityTNTPrimed extends Entity {
 
-    public int a;
+    public int fuseTicks;
     public float yield = 4; // CraftBukkit
     public boolean isIncendiary = false; // CraftBukkit
 
     public EntityTNTPrimed(World world) {
         super(world);
-        this.a = 0;
+        this.fuseTicks = 0;
         this.aI = true;
         this.b(0.98F, 0.98F);
         this.height = this.width / 2.0F;
@@ -29,7 +29,7 @@ public class EntityTNTPrimed extends Entity {
         this.motX = (double) (-MathHelper.sin(f * 3.1415927F / 180.0F) * 0.02F);
         this.motY = 0.20000000298023224D;
         this.motZ = (double) (-MathHelper.cos(f * 3.1415927F / 180.0F) * 0.02F);
-        this.a = 80;
+        this.fuseTicks = 80;
         this.lastX = d0;
         this.lastY = d1;
         this.lastZ = d2;
@@ -60,7 +60,7 @@ public class EntityTNTPrimed extends Entity {
             this.motY *= -0.5D;
         }
 
-        if (this.a-- <= 0) {
+        if (this.fuseTicks-- <= 0) {
             if (!this.world.isStatic) {
                 // CraftBukkit start - Need to reverse the order of the explosion and the entity death so we have a location for the event.
                 this.explode();
@@ -78,7 +78,7 @@ public class EntityTNTPrimed extends Entity {
         // CraftBukkit start
         // float f = 4.0F;
 
-        CraftServer server = ((WorldServer) this.world).getServer();
+        CraftServer server = this.world.getServer();
 
         ExplosionPrimeEvent event = new ExplosionPrimeEvent((Explosive) CraftEntity.getEntity(server, this));
         server.getPluginManager().callEvent(event);
@@ -91,10 +91,10 @@ public class EntityTNTPrimed extends Entity {
     }
 
     protected void b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("Fuse", (byte) this.a);
+        nbttagcompound.a("Fuse", (byte) this.fuseTicks);
     }
 
     protected void a(NBTTagCompound nbttagcompound) {
-        this.a = nbttagcompound.c("Fuse");
+        this.fuseTicks = nbttagcompound.c("Fuse");
     }
 }

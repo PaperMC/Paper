@@ -4,10 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 // CraftBukkit start
-import org.bukkit.Bukkit;
 import org.bukkit.event.painting.PaintingBreakByEntityEvent;
 import org.bukkit.event.painting.PaintingBreakByWorldEvent;
-import org.bukkit.entity.Painting;
 // CraftBukkit end
 
 public class EntityPainting extends Entity {
@@ -124,9 +122,8 @@ public class EntityPainting extends Entity {
             this.f = 0;
             if (!this.h()) {
                 // CraftBukkit start
-                Painting painting = (Painting) getBukkitEntity();
-                PaintingBreakByWorldEvent event = new PaintingBreakByWorldEvent(painting);
-                Bukkit.getServer().getPluginManager().callEvent(event);
+                PaintingBreakByWorldEvent event = new PaintingBreakByWorldEvent((org.bukkit.entity.Painting) this.getBukkitEntity());
+                this.world.getServer().getPluginManager().callEvent(event);
 
                 if (event.isCancelled()) {
                     return;
@@ -204,9 +201,8 @@ public class EntityPainting extends Entity {
     public boolean damageEntity(Entity entity, int i) {
         if (!this.dead && !this.world.isStatic) {
             // CraftBukkit start
-            Painting painting = (Painting) getBukkitEntity();
-            PaintingBreakByEntityEvent event = new PaintingBreakByEntityEvent(painting, entity == null ? null : entity.getBukkitEntity());
-            Bukkit.getServer().getPluginManager().callEvent(event);
+            PaintingBreakByEntityEvent event = new PaintingBreakByEntityEvent((org.bukkit.entity.Painting) this.getBukkitEntity(), entity == null ? null : entity.getBukkitEntity());
+            this.world.getServer().getPluginManager().callEvent(event);
 
             if (event.isCancelled()) {
                 return true;

@@ -2,13 +2,7 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-// CraftBukkit start
-import org.bukkit.Location;
-import org.bukkit.Server;
-import org.bukkit.block.BlockState;
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.event.block.BlockSpreadEvent;
-// CraftBukkit end
+import org.bukkit.event.block.BlockSpreadEvent; // CraftBukkit
 
 public class BlockMushroom extends BlockFlower {
 
@@ -32,14 +26,12 @@ public class BlockMushroom extends BlockFlower {
                 k1 = k + (random.nextInt(3) - 1);
                 if (world.isEmpty(l, i1, j1) && this.f(world, l, i1, j1)) {
                     // CraftBukkit start
-                    Server server = world.getServer();
-                    CraftWorld craftworld = world.getWorld();
-                    BlockState blockState = craftworld.getBlockAt(l, i1, j1).getState();
+                    org.bukkit.World bworld = world.getWorld();
+                    org.bukkit.block.BlockState blockState = bworld.getBlockAt(l, i1, j1).getState();
                     blockState.setTypeId(this.id);
 
-                    BlockSpreadEvent event = new BlockSpreadEvent(craftworld.getBlockAt(l, i1, j1), craftworld.getBlockAt(i, j, k), blockState);
-
-                    server.getPluginManager().callEvent(event);
+                    BlockSpreadEvent event = new BlockSpreadEvent(blockState.getBlock(), bworld.getBlockAt(i, j, k), blockState);
+                    world.getServer().getPluginManager().callEvent(event);
 
                     if (!event.isCancelled()) {
                         blockState.update(true);

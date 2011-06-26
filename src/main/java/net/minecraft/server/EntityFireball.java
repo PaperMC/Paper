@@ -3,14 +3,12 @@ package net.minecraft.server;
 import java.util.List;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.entity.Explosive;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.entity.Explosive;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.ExplosionPrimeEvent;
 // CraftBukkit end
 
@@ -48,7 +46,7 @@ public class EntityFireball extends Entity {
         this.height = 0.0F;
         this.motX = this.motY = this.motZ = 0.0D;
         // CraftBukkit start (added setDirection method)
-        setDirection(d0, d1, d2);
+        this.setDirection(d0, d1, d2);
     }
 
     public void setDirection(double d0, double d1, double d2) {
@@ -134,15 +132,12 @@ public class EntityFireball extends Entity {
                 if (movingobjectposition.entity != null) {
                     boolean stick;
                     if (movingobjectposition.entity instanceof EntityLiving) {
-                        CraftServer server = this.world.getServer();
                         org.bukkit.entity.Entity damagee = movingobjectposition.entity.getBukkitEntity();
                         Projectile projectile = (Projectile) this.getBukkitEntity();
-                        DamageCause damageCause = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
-                        int damage = 0;
 
                         // TODO @see EntityArrow#162
-                        EntityDamageByProjectileEvent event = new EntityDamageByProjectileEvent(damagee, projectile, damageCause, damage);
-                        server.getPluginManager().callEvent(event);
+                        EntityDamageByProjectileEvent event = new EntityDamageByProjectileEvent(damagee, projectile, EntityDamageEvent.DamageCause.ENTITY_ATTACK, 0);
+                        this.world.getServer().getPluginManager().callEvent(event);
 
                         this.shooter = (projectile.getShooter() == null) ? null : ((CraftLivingEntity) projectile.getShooter()).getHandle();
 
@@ -160,11 +155,9 @@ public class EntityFireball extends Entity {
                     }
                 }
 
-                CraftServer server = this.world.getServer();
+                ExplosionPrimeEvent event = new ExplosionPrimeEvent((Explosive) CraftEntity.getEntity(this.world.getServer(), this));
+                this.world.getServer().getPluginManager().callEvent(event);
 
-                ExplosionPrimeEvent event = new ExplosionPrimeEvent((Explosive) CraftEntity.getEntity(server, this));
-
-                server.getPluginManager().callEvent(event);
                 if (!event.isCancelled()) {
                     // give 'this' instead of (Entity) null so we know what causes the damage
                     this.world.createExplosion(this, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire());

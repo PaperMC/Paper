@@ -7,6 +7,6 @@ public class SecondaryWorldServer extends WorldServer {
     public SecondaryWorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, String s, int i, long j, WorldServer worldserver, org.bukkit.World.Environment env, ChunkGenerator gen) {
         super(minecraftserver, idatamanager, s, i, j, env, gen);
         // CraftBukkit end
-        this.z = worldserver.z;
+        this.worldMaps = worldserver.worldMaps;
     }
 }

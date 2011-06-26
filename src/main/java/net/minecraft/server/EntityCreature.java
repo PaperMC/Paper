@@ -1,11 +1,9 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.TrigMath;
 import org.bukkit.event.entity.EntityTargetEvent;
-import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
 // CraftBukkit end
 
 public class EntityCreature extends EntityLiving {
@@ -30,9 +28,8 @@ public class EntityCreature extends EntityLiving {
             // CraftBukkit start
             Entity target = this.findTarget();
             if (target != null) {
-                EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), target.getBukkitEntity(), TargetReason.CLOSEST_PLAYER);
-                CraftServer server = ((WorldServer) this.world).getServer();
-                server.getPluginManager().callEvent(event);
+                EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), target.getBukkitEntity(), EntityTargetEvent.TargetReason.CLOSEST_PLAYER);
+                this.world.getServer().getPluginManager().callEvent(event);
 
                 if (!event.isCancelled()) {
                     if (event.getTarget() == null) {
@@ -49,9 +46,8 @@ public class EntityCreature extends EntityLiving {
             }
         } else if (!this.target.S()) {
             // CraftBukkit start
-            EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), null, TargetReason.TARGET_DIED);
-            CraftServer server = ((WorldServer) this.world).getServer();
-            server.getPluginManager().callEvent(event);
+            EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), null, EntityTargetEvent.TargetReason.TARGET_DIED);
+            this.world.getServer().getPluginManager().callEvent(event);
 
             if (!event.isCancelled()) {
                 if (event.getTarget() == null) {
@@ -202,7 +198,7 @@ public class EntityCreature extends EntityLiving {
         return this.pathEntity != null;
     }
 
-    public void a(PathEntity pathentity) {
+    public void setPathEntity(PathEntity pathentity) {
         this.pathEntity = pathentity;
     }
 
@@ -210,7 +206,7 @@ public class EntityCreature extends EntityLiving {
         return this.target;
     }
 
-    public void c(Entity entity) {
+    public void setTarget(Entity entity) {
         this.target = entity;
     }
 }

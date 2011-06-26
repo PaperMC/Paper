@@ -1,7 +1,6 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.entity.PigZapEvent;
 // CraftBukkit end
@@ -20,12 +19,12 @@ public class EntityPig extends EntityAnimal {
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
-        nbttagcompound.a("Saddle", this.x());
+        nbttagcompound.a("Saddle", this.hasSaddle());
     }
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        this.a(nbttagcompound.m("Saddle"));
+        this.setSaddle(nbttagcompound.m("Saddle"));
     }
 
     protected String g() {
@@ -41,7 +40,7 @@ public class EntityPig extends EntityAnimal {
     }
 
     public boolean a(EntityHuman entityhuman) {
-        if (this.x() && !this.world.isStatic && (this.passenger == null || this.passenger == entityhuman)) {
+        if (this.hasSaddle() && !this.world.isStatic && (this.passenger == null || this.passenger == entityhuman)) {
             entityhuman.mount(this);
             return true;
         } else {
@@ -53,15 +52,15 @@ public class EntityPig extends EntityAnimal {
         return this.fireTicks > 0 ? Item.GRILLED_PORK.id : Item.PORK.id;
     }
 
-    public boolean x() {
+    public boolean hasSaddle() {
         return (this.datawatcher.a(16) & 1) != 0;
     }
 
-    public void a(boolean flag) {
+    public void setSaddle(boolean flag) {
         if (flag) {
-            this.datawatcher.b(16, Byte.valueOf((byte) 1));
+            this.datawatcher.watch(16, Byte.valueOf((byte) 1));
         } else {
-            this.datawatcher.b(16, Byte.valueOf((byte) 0));
+            this.datawatcher.watch(16, Byte.valueOf((byte) 0));
         }
     }
 
@@ -70,11 +69,8 @@ public class EntityPig extends EntityAnimal {
             EntityPigZombie entitypigzombie = new EntityPigZombie(this.world);
 
             // CraftBukkit start
-            CraftServer server = ((WorldServer) this.world).getServer();
-            org.bukkit.entity.Entity entity = this.getBukkitEntity();
-
-            PigZapEvent event = new PigZapEvent(entity, entityweatherstorm.getBukkitEntity(), entitypigzombie.getBukkitEntity());
-            server.getPluginManager().callEvent(event);
+            PigZapEvent event = new PigZapEvent(this.getBukkitEntity(), entityweatherstorm.getBukkitEntity(), entitypigzombie.getBukkitEntity());
+            this.world.getServer().getPluginManager().callEvent(event);
 
             if (event.isCancelled()) {
                 return;

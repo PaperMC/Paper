@@ -2,12 +2,7 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.block.Block;
-import org.bukkit.event.block.BlockRedstoneEvent;
-// CraftBukkit end
+import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
 
 public class BlockSign extends BlockContainer {
 
@@ -114,13 +109,11 @@ public class BlockSign extends BlockContainer {
 
         // CraftBukkit start
         if (net.minecraft.server.Block.byId[l] != null && net.minecraft.server.Block.byId[l].isPowerSource()) {
-            CraftWorld craftWorld = ((WorldServer) world).getWorld();
-            CraftServer server = ((WorldServer) world).getServer();
-            Block block = craftWorld.getBlockAt(i, j, k);
+            org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
             int power = block.getBlockPower();
 
             BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, power, power);
-            server.getPluginManager().callEvent(eventRedstone);
+            world.getServer().getPluginManager().callEvent(eventRedstone);
         }
         // CraftBukkit end
     }

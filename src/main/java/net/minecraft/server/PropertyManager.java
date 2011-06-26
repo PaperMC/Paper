@@ -7,12 +7,10 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import joptsimple.OptionSet; // CraftBukkit
-
 public class PropertyManager {
 
     public static Logger a = Logger.getLogger("Minecraft");
-    public Properties properties = new Properties(); // Craftbukkit - priv to pub
+    public Properties properties = new Properties(); // CraftBukkit - priv to pub
     private File c;
 
     public PropertyManager(File file1) {
@@ -31,17 +29,17 @@ public class PropertyManager {
     }
 
     // CraftBukkit start
-    private OptionSet options = null;
+    private joptsimple.OptionSet options = null;
 
-    public PropertyManager(final OptionSet options) {
+    public PropertyManager(final joptsimple.OptionSet options) {
         this((File) options.valueOf("config"));
 
         this.options = options;
     }
 
     private <T> T getOverride(String name, T value) {
-        if ((options != null) && (options.has(name))) {
-            return (T) options.valueOf(name);
+        if ((this.options != null) && (this.options.has(name))) {
+            return (T) this.options.valueOf(name);
         }
 
         return value;
@@ -50,10 +48,10 @@ public class PropertyManager {
 
     public void a() {
         a.log(Level.INFO, "Generating new properties file");
-        this.b();
+        this.savePropertiesFile();
     }
 
-    public void b() {
+    public void savePropertiesFile() {
         try {
             this.properties.store(new FileOutputStream(this.c), "Minecraft server properties");
         } catch (Exception exception) {
@@ -64,19 +62,19 @@ public class PropertyManager {
 
     public String getString(String s, String s1) {
         if (!this.properties.containsKey(s)) {
-            s1 = getOverride(s, s1); // CraftBukkit
+            s1 = this.getOverride(s, s1); // CraftBukkit
             this.properties.setProperty(s, s1);
-            this.b();
+            this.savePropertiesFile();
         }
 
-        return getOverride(s, this.properties.getProperty(s, s1)); // CraftBukkit
+        return this.getOverride(s, this.properties.getProperty(s, s1)); // CraftBukkit
     }
 
     public int getInt(String s, int i) {
         try {
-            return getOverride(s, Integer.parseInt(this.getString(s, "" + i))); // CraftBukkit
+            return this.getOverride(s, Integer.parseInt(this.getString(s, "" + i))); // CraftBukkit
         } catch (Exception exception) {
-            i = getOverride(s, i); // CraftBukkit
+            i = this.getOverride(s, i); // CraftBukkit
             this.properties.setProperty(s, "" + i);
             return i;
         }
@@ -84,17 +82,17 @@ public class PropertyManager {
 
     public boolean getBoolean(String s, boolean flag) {
         try {
-            return getOverride(s, Boolean.parseBoolean(this.getString(s, "" + flag))); // CraftBukkit
+            return this.getOverride(s, Boolean.parseBoolean(this.getString(s, "" + flag))); // CraftBukkit
         } catch (Exception exception) {
-            flag = getOverride(s, flag); // CraftBukkit
+            flag = this.getOverride(s, flag); // CraftBukkit
             this.properties.setProperty(s, "" + flag);
             return flag;
         }
     }
 
     public void b(String s, boolean flag) {
-        flag = getOverride(s, flag); // CraftBukkit
+        flag = this.getOverride(s, flag); // CraftBukkit
         this.properties.setProperty(s, "" + flag);
-        this.b();
+        this.savePropertiesFile();
     }
 }

@@ -34,7 +34,7 @@ import org.bukkit.plugin.PluginLoadOrder;
 public class MinecraftServer implements Runnable, ICommandListener {
 
     public static Logger log = Logger.getLogger("Minecraft");
-    public static HashMap b = new HashMap();
+    public static HashMap trackerList = new HashMap();
     public NetworkListenThread networkListenThread;
     public PropertyManager propertyManager;
     // public WorldServer[] worldServer; // CraftBukkit - removed!
@@ -51,7 +51,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
     public boolean onlineMode;
     public boolean spawnAnimals;
     public boolean pvpMode;
-    public boolean o;
+    public boolean allowFlight;
 
     // CraftBukkit start
     public List<WorldServer> worlds = new ArrayList<WorldServer>();
@@ -96,13 +96,13 @@ public class MinecraftServer implements Runnable, ICommandListener {
         }
 
         log.info("Loading properties");
-        this.propertyManager = new PropertyManager(options); // CraftBukkit - CLI argument support
+        this.propertyManager = new PropertyManager(this.options); // CraftBukkit - CLI argument support
         String s = this.propertyManager.getString("server-ip", "");
 
         this.onlineMode = this.propertyManager.getBoolean("online-mode", true);
         this.spawnAnimals = this.propertyManager.getBoolean("spawn-animals", true);
         this.pvpMode = this.propertyManager.getBoolean("pvp", true);
-        this.o = this.propertyManager.getBoolean("allow-flight", false);
+        this.allowFlight = this.propertyManager.getBoolean("allow-flight", false);
         InetAddress inetaddress = null;
 
         if (s.length() > 0) {
@@ -154,9 +154,9 @@ public class MinecraftServer implements Runnable, ICommandListener {
 
         if (this.propertyManager.properties.containsKey("spawn-protection")) {
             log.info("'spawn-protection' in server.properties has been moved to 'settings.spawn-radius' in bukkit.yml. I will move your config for you.");
-            server.setSpawnRadius(this.propertyManager.getInt("spawn-protection", 16));
+            this.server.setSpawnRadius(this.propertyManager.getInt("spawn-protection", 16));
             this.propertyManager.properties.remove("spawn-protection");
-            this.propertyManager.b();
+            this.propertyManager.savePropertiesFile();
         }
         return true;
     }
@@ -174,7 +174,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
             String worldType = Environment.getEnvironment(dimension).toString().toLowerCase();
             String name = (dimension == 0) ? s : s + "_" + worldType;
 
-            ChunkGenerator gen = server.getGenerator(name);
+            ChunkGenerator gen = this.server.getGenerator(name);
 
             if (j == 0) {
                 world = new WorldServer(this, new ServerNBTManager(new File("."), s, true), s, dimension, i, org.bukkit.World.Environment.getEnvironment(dimension), gen); // CraftBukkit
@@ -207,21 +207,21 @@ public class MinecraftServer implements Runnable, ICommandListener {
                     }
                 }
 
-                world = new SecondaryWorldServer(this, new ServerNBTManager(new File("."), name, true), name, dimension, i, worlds.get(0), org.bukkit.World.Environment.getEnvironment(dimension), gen); // CraftBukkit
+                world = new SecondaryWorldServer(this, new ServerNBTManager(new File("."), name, true), name, dimension, i, this.worlds.get(0), org.bukkit.World.Environment.getEnvironment(dimension), gen); // CraftBukkit
             }
 
             if (gen != null) {
                 world.getWorld().getPopulators().addAll(gen.getDefaultPopulators(world.getWorld()));
             }
 
-            server.getPluginManager().callEvent(new WorldInitEvent(world.getWorld()));
+            this.server.getPluginManager().callEvent(new WorldInitEvent(world.getWorld()));
 
             world.tracker = new EntityTracker(this, dimension);
             world.addIWorldAccess(new WorldManager(this, world));
             world.spawnMonsters = this.propertyManager.getBoolean("spawn-monsters", true) ? 1 : 0;
             world.setSpawnFlags(this.propertyManager.getBoolean("spawn-monsters", true), this.spawnAnimals);
-            worlds.add(world);
-            this.serverConfigurationManager.setPlayerFileData(worlds.toArray(new WorldServer[0]));
+            this.worlds.add(world);
+            this.serverConfigurationManager.setPlayerFileData(this.worlds.toArray(new WorldServer[0]));
         }
         // CraftBukkit end
 
@@ -262,11 +262,11 @@ public class MinecraftServer implements Runnable, ICommandListener {
             // } // CraftBukkit
         }
 
-        // Craftbukkit start
-        for (World world : worlds) {
-            server.getPluginManager().callEvent(new WorldLoadEvent(world.getWorld()));
+        // CraftBukkit start
+        for (World world : this.worlds) {
+            this.server.getPluginManager().callEvent(new WorldLoadEvent(world.getWorld()));
         }
-        // Craftbukkit end
+        // CraftBukkit end
 
         this.e();
     }
@@ -281,7 +281,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
         this.i = null;
         this.j = 0;
 
-        server.enablePlugins(PluginLoadOrder.POSTWORLD);
+        this.server.enablePlugins(PluginLoadOrder.POSTWORLD); // CraftBukkit
     }
 
     void saveChunks() { // CraftBukkit - private -> default
@@ -295,11 +295,11 @@ public class MinecraftServer implements Runnable, ICommandListener {
             worldserver.saveLevel();
 
             WorldSaveEvent event = new WorldSaveEvent(worldserver.getWorld());
-            server.getPluginManager().callEvent(event);
+            this.server.getPluginManager().callEvent(event);
         }
 
         WorldServer world = this.worlds.get(0);
-        if (!world.E) {
+        if (!world.canSave) {
             this.serverConfigurationManager.savePlayers();
         }
         // CraftBukkit end
@@ -308,8 +308,8 @@ public class MinecraftServer implements Runnable, ICommandListener {
     public void stop() { // CraftBukkit - private -> public
         log.info("Stopping server");
         // CraftBukkit start
-        if (server != null) {
-            server.disablePlugins();
+        if (this.server != null) {
+            this.server.disablePlugins();
         }
         // CraftBukkit end
 
@@ -400,14 +400,14 @@ public class MinecraftServer implements Runnable, ICommandListener {
 
     private void h() {
         ArrayList arraylist = new ArrayList();
-        Iterator iterator = b.keySet().iterator();
+        Iterator iterator = trackerList.keySet().iterator();
 
         while (iterator.hasNext()) {
             String s = (String) iterator.next();
-            int i = ((Integer) b.get(s)).intValue();
+            int i = ((Integer) trackerList.get(s)).intValue();
 
             if (i > 0) {
-                b.put(s, Integer.valueOf(i - 1));
+                trackerList.put(s, Integer.valueOf(i - 1));
             } else {
                 arraylist.add(s);
             }
@@ -416,7 +416,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
         int j;
 
         for (j = 0; j < arraylist.size(); ++j) {
-            b.remove(arraylist.get(j));
+            trackerList.remove(arraylist.get(j));
         }
 
         AxisAlignedBB.a();
@@ -435,7 +435,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
                     }
                 }
 
-                ((CraftScheduler) server.getScheduler()).mainThreadHeartbeat(this.ticks);
+                ((CraftScheduler) this.server.getScheduler()).mainThreadHeartbeat(this.ticks);
                 // CraftBukkit end
 
                 worldserver.doTick();
@@ -453,7 +453,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
 
         // CraftBukkit start
         for (j = 0; j < this.worlds.size(); ++j) {
-            this.worlds.get(j).tracker.a();
+            this.worlds.get(j).tracker.updatePlayers();
         }
         // CraftBukkit end
 
@@ -477,7 +477,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
             ServerCommand servercommand = (ServerCommand) this.s.remove(0);
 
             // this.consoleCommandHandler.handle(servercommand); // CraftBukkit - Removed its now called in server.displatchCommand
-            server.dispatchCommand(console, servercommand); // CraftBukkit
+            this.server.dispatchCommand(this.console, servercommand); // CraftBukkit
         }
     }
 
@@ -515,20 +515,20 @@ public class MinecraftServer implements Runnable, ICommandListener {
         return "CONSOLE";
     }
 
-    public WorldServer a(int i) {
+    public WorldServer getWorldServer(int i) {
         // CraftBukkit start
-        for (WorldServer world : worlds) {
+        for (WorldServer world : this.worlds) {
             if (world.dimension == i) {
                 return world;
             }
         }
 
-        return worlds.get(0);
+        return this.worlds.get(0);
         // CraftBukkit end
     }
 
-    public EntityTracker b(int i) {
-        return a(i).tracker; // CraftBukkit
+    public EntityTracker getTracker(int i) {
+        return this.getWorldServer(i).tracker; // CraftBukkit
     }
 
     public static boolean isRunning(MinecraftServer minecraftserver) {

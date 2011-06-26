@@ -3,11 +3,8 @@ package net.minecraft.server;
 import java.util.Random;
 
 // CraftBukkit start
-import org.bukkit.Server;
-import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockIgniteEvent;
 import org.bukkit.event.block.BlockIgniteEvent.IgniteCause;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.block.BlockBurnEvent;
 // CraftBukkit end
 
@@ -90,11 +87,10 @@ public class BlockFire extends Block {
                 this.a(world, i, j, k + 1, 300, random, l);
 
                 // CraftBukkit start - Call to stop spread of fire.
-                Server server = ((WorldServer) world).getServer();
-                CraftWorld cworld = ((WorldServer) world).getWorld();
+                org.bukkit.Server server = world.getServer();
+                org.bukkit.World bworld = world.getWorld();
 
                 IgniteCause igniteCause = BlockIgniteEvent.IgniteCause.SPREAD;
-                Player thePlayer = null;
                 // CraftBukkit
 
                 for (int i1 = i - 1; i1 <= i + 1; ++i1) {
@@ -119,11 +115,12 @@ public class BlockFire extends Block {
                                             k2 = 15;
                                         }
                                         // CraftBukkit start - Call to stop spread of fire.
-                                        org.bukkit.block.Block theBlock = cworld.getBlockAt(i1, k1, j1);
+                                        org.bukkit.block.Block block = bworld.getBlockAt(i1, k1, j1);
 
-                                        if (theBlock.getTypeId() != Block.FIRE.id) {
-                                            BlockIgniteEvent event = new BlockIgniteEvent(theBlock, igniteCause, thePlayer);
+                                        if (block.getTypeId() != Block.FIRE.id) {
+                                            BlockIgniteEvent event = new BlockIgniteEvent(block, igniteCause, null);
                                             server.getPluginManager().callEvent(event);
+
                                             if (event.isCancelled()) {
                                                 continue;
                                             }
@@ -147,11 +144,11 @@ public class BlockFire extends Block {
         if (random.nextInt(l) < j1) {
             boolean flag = world.getTypeId(i, j, k) == Block.TNT.id;
             // CraftBukkit start
-            Server server = ((WorldServer) world).getServer();
-            CraftWorld cworld = ((WorldServer) world).getWorld();
-            org.bukkit.block.Block theBlock = cworld.getBlockAt(i, j, k);
+            org.bukkit.block.Block theBlock = world.getWorld().getBlockAt(i, j, k);
+
             BlockBurnEvent event = new BlockBurnEvent(theBlock);
-            server.getPluginManager().callEvent(event);
+            world.getServer().getPluginManager().callEvent(event);
+
             if (event.isCancelled()) {
                 return;
             }

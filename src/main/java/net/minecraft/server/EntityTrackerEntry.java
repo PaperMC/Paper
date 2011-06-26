@@ -249,14 +249,8 @@ public class EntityTrackerEntry {
             } else if (this.tracker instanceof EntityFireball) {
                 EntityFireball entityfireball = (EntityFireball) this.tracker;
                 // CraftBukkit start - added check for null shooter
-                // Packet23VehicleSpawn packet23vehiclespawn = new Packet23VehicleSpawn(this.tracker, 63, ((EntityFireball) this.tracker).shooter.id);
-
-                Packet23VehicleSpawn packet23vehiclespawn;
-                if (((EntityFireball) this.tracker).shooter != null) {
-                    packet23vehiclespawn = new Packet23VehicleSpawn(this.tracker, 63, ((EntityFireball) this.tracker).shooter.id);
-                } else {
-                    packet23vehiclespawn = new Packet23VehicleSpawn(this.tracker, 63, 1);
-                }
+                int shooter = ((EntityFireball) this.tracker).shooter != null ? ((EntityFireball) this.tracker).shooter.id : 1;
+                Packet23VehicleSpawn packet23vehiclespawn = new Packet23VehicleSpawn(this.tracker, 63, shooter);
                 // CraftBukkit end
 
                 packet23vehiclespawn.e = (int) (entityfireball.c * 8000.0D);
