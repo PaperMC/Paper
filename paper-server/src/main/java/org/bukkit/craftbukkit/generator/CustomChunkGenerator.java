@@ -34,7 +34,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
 
         Chunk chunk = new Chunk(world, types, x, z);
 
-        chunk.b();
+        chunk.initLighting();
 
         return chunk;
     }
@@ -51,7 +51,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
         return false;
     }
 
-    public boolean b() {
+    public boolean canSave() {
         return true;
     }
 

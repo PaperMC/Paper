@@ -357,13 +357,13 @@ public class CraftWorld implements World {
 
     public LightningStrike strikeLightning(Location loc) {
         EntityWeatherStorm lightning = new EntityWeatherStorm(world, loc.getX(), loc.getY(), loc.getZ());
-        world.a(lightning);
+        world.strikeLightning(lightning);
         return new CraftLightningStrike(server, lightning);
     }
 
     public LightningStrike strikeLightningEffect(Location loc) {
         EntityWeatherStorm lightning = new EntityWeatherStorm(world, loc.getX(), loc.getY(), loc.getZ(), true);
-        world.a(lightning);
+        world.strikeLightning(lightning);
         return new CraftLightningStrike(server, lightning);
     }
 
@@ -396,7 +396,7 @@ public class CraftWorld implements World {
     }
 
     public long getId() {
-        return world.worldData.b();
+        return world.worldData.getSeed();
     }
 
     @Override
@@ -453,7 +453,7 @@ public class CraftWorld implements World {
     public void setEnvironment(Environment env) {
         if (environment != env) {
             environment = env;
-            world.worldProvider = WorldProvider.a(environment.getId());
+            world.worldProvider = WorldProvider.byDimension(environment.getId());
         }
     }
 
@@ -579,7 +579,7 @@ public class CraftWorld implements World {
     }
 
     public boolean hasStorm() {
-        return world.worldData.l();
+        return world.worldData.hasStorm();
     }
 
     public void setStorm(boolean hasStorm) {
@@ -588,7 +588,7 @@ public class CraftWorld implements World {
         WeatherChangeEvent weather = new WeatherChangeEvent((org.bukkit.World) this, hasStorm);
         server.getPluginManager().callEvent(weather);
         if (!weather.isCancelled()) {
-            world.worldData.b(hasStorm);
+            world.worldData.setStorm(hasStorm);
 
             // These numbers are from Minecraft
             if (hasStorm) {
@@ -600,15 +600,15 @@ public class CraftWorld implements World {
     }
 
     public int getWeatherDuration() {
-        return world.worldData.m();
+        return world.worldData.getWeatherDuration();
     }
 
     public void setWeatherDuration(int duration) {
-        world.worldData.c(duration);
+        world.worldData.setWeatherDuration(duration);
     }
 
     public boolean isThundering() {
-        return world.worldData.j();
+        return world.worldData.isThundering();
     }
 
     public void setThundering(boolean thundering) {
@@ -617,7 +617,7 @@ public class CraftWorld implements World {
         ThunderChangeEvent thunder = new ThunderChangeEvent((org.bukkit.World) this, thundering);
         server.getPluginManager().callEvent(thunder);
         if (!thunder.isCancelled()) {
-            world.worldData.a(thundering);
+            world.worldData.setThundering(thundering);
 
             // These numbers are from Minecraft
             if (thundering) {
@@ -629,15 +629,15 @@ public class CraftWorld implements World {
     }
 
     public int getThunderDuration() {
-        return world.worldData.k();
+        return world.worldData.getThunderDuration();
     }
 
     public void setThunderDuration(int duration) {
-        world.worldData.b(duration);
+        world.worldData.setThunderDuration(duration);
     }
 
     public long getSeed() {
-        return world.worldData.b();
+        return world.worldData.getSeed();
     }
 
     public boolean getPVP() {

@@ -26,7 +26,7 @@ public class TextWrapper {
     private static final char COLOR_CHAR = '\u00A7';
     private static final int CHAT_WINDOW_WIDTH = 320;
     private static final int CHAT_STRING_LENGTH = 119;
-    private static final String allowedChars = net.minecraft.server.FontAllowedCharacters.a;
+    private static final String allowedChars = net.minecraft.server.FontAllowedCharacters.allowedCharacters;
 
     public static String[] wrapText(final String text) {
         final StringBuilder out = new StringBuilder();

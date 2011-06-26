@@ -169,8 +169,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void sendBlockChange(Location loc, int material, byte data) {
         Packet53BlockChange packet = new Packet53BlockChange(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), ((CraftWorld) loc.getWorld()).getHandle());
 
-        packet.d = material;
-        packet.e = data;
+        packet.material = material;
+        packet.data = data;
         getHandle().netServerHandler.sendPacket(packet);
     }
 
@@ -228,7 +228,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (fromWorld == toWorld) {
             entity.netServerHandler.teleport(to);
         } else {
-            server.getHandle().a(entity, toWorld.dimension, to);
+            server.getHandle().moveToWorld(entity, toWorld.dimension, to);
         }
         return true;
     }
@@ -250,7 +250,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void updateInventory() {
-        getHandle().a(getHandle().activeContainer);
+        getHandle().updateInventory(getHandle().activeContainer);
     }
 
     public void setSleepingIgnored(boolean isSleeping) {

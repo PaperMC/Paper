@@ -14,7 +14,7 @@ public class NormalChunkGenerator extends InternalChunkGenerator {
     private final IChunkProvider provider;
 
     public NormalChunkGenerator(World world, long seed) {
-        provider = world.worldProvider.b();
+        provider = world.worldProvider.getChunkProvider();
     }
 
     public byte[] generate(org.bukkit.World world, Random random, int x, int z) {
@@ -22,7 +22,7 @@ public class NormalChunkGenerator extends InternalChunkGenerator {
     }
 
     public boolean canSpawn(org.bukkit.World world, int x, int z) {
-        return ((CraftWorld) world).getHandle().worldProvider.a(x, z);
+        return ((CraftWorld) world).getHandle().worldProvider.canSpawn(x, z);
     }
 
     public List<BlockPopulator> getDefaultPopulators(org.bukkit.World world) {
@@ -53,7 +53,7 @@ public class NormalChunkGenerator extends InternalChunkGenerator {
         return provider.unloadChunks();
     }
 
-    public boolean b() {
-        return provider.b();
+    public boolean canSave() {
+        return provider.canSave();
     }
 }
