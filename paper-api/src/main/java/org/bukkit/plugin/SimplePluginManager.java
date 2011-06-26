@@ -18,6 +18,9 @@ import java.util.logging.Level;
 import java.util.regex.Matcher;
 import org.bukkit.Server;
 import java.util.regex.Pattern;
+import org.bukkit.command.Command;
+import org.bukkit.command.PluginCommandYamlParser;
+import org.bukkit.command.SimpleCommandMap;
 
 import org.bukkit.event.Event;
 import org.bukkit.event.Event.Priority;
@@ -35,6 +38,7 @@ public final class SimplePluginManager implements PluginManager {
     private final Map<String, Plugin> lookupNames = new HashMap<String, Plugin>();
     private final Map<Event.Type, SortedSet<RegisteredListener>> listeners = new EnumMap<Event.Type, SortedSet<RegisteredListener>>(Event.Type.class);
     private static File updateDirectory = null;
+    private final SimpleCommandMap commandMap;
     private final Comparator<RegisteredListener> comparer = new Comparator<RegisteredListener>() {
         public int compare(RegisteredListener i, RegisteredListener j) {
             int result = i.getPriority().compareTo(j.getPriority());
@@ -47,8 +51,9 @@ public final class SimplePluginManager implements PluginManager {
         }
     };
 
-    public SimplePluginManager(Server instance) {
+    public SimplePluginManager(Server instance, SimpleCommandMap commandMap) {
         server = instance;
+        this.commandMap = commandMap;
     }
 
     /**
@@ -249,6 +254,12 @@ public final class SimplePluginManager implements PluginManager {
 
     public void enablePlugin(final Plugin plugin) {
         if (!plugin.isEnabled()) {
+            List<Command> pluginCommands = PluginCommandYamlParser.parse(plugin);
+
+            if (!pluginCommands.isEmpty()) {
+                commandMap.registerAll(plugin.getDescription().getName(), pluginCommands);
+            }
+            
             try {
                 plugin.getPluginLoader().enablePlugin(plugin);
             } catch (Throwable ex) {
