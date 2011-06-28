@@ -163,8 +163,6 @@ public class BlockDoor extends Block {
                     this.g(world, i, j, k, i1);
                 }
             } else if (l > 0 && Block.byId[l].isPowerSource()) {
-                boolean flag1 = world.isBlockIndirectlyPowered(i, j, k) || world.isBlockIndirectlyPowered(i, j + 1, k);
-
                 // CraftBukkit start
                 org.bukkit.World bworld = world.getWorld();
                 org.bukkit.block.Block block = bworld.getBlockAt(i, j, k);
@@ -173,14 +171,15 @@ public class BlockDoor extends Block {
                 int power = block.getBlockPower();
                 int powerTop = blockTop.getBlockPower();
                 if (powerTop > power) power = powerTop;
+                int oldPower = (world.getData(i, j, k) & 4) > 0 ? 15 : 0;
 
-                BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, (world.getData(i, j, k) & 4) > 0 ? 15 : 0, power);
-                world.getServer().getPluginManager().callEvent(eventRedstone);
+                if (oldPower == 0 ^ power == 0) {
+                    BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, oldPower, power);
+                    world.getServer().getPluginManager().callEvent(eventRedstone);
 
-                flag1 = eventRedstone.getNewCurrent() > 0;
+                    this.setDoor(world, i, j, k, eventRedstone.getNewCurrent() > 0);
+                }
                 // CraftBukkit end
-
-                this.setDoor(world, i, j, k, flag1);
             }
         }
     }
