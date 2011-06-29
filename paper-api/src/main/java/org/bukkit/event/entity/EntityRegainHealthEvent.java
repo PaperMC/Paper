@@ -11,15 +11,12 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
 
     private boolean cancelled;
     private int amount;
+    private RegainReason regainReason;
 
-    public EntityRegainHealthEvent(Entity entity, int amount) {
+    public EntityRegainHealthEvent(Entity entity, int amount, RegainReason regainReason) {
         super(Event.Type.ENTITY_REGAIN_HEALTH, entity);
         this.amount = amount;
-    }
-
-    protected EntityRegainHealthEvent(Event.Type type, Entity entity, int amount) {
-        super(type, entity);
-        this.amount = amount;
+        this.regainReason = regainReason;
     }
 
     /**
@@ -63,5 +60,33 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
      */
     public void setCancelled(boolean cancel) {
         cancelled = cancel;
+    }
+
+    /**
+     * Gets the reason for why the entity is regaining health
+     *
+     * @return A RegainReason detailing the reason for the entity regaining health
+     */
+    public RegainReason getRegainReason() {
+        return regainReason;
+    }
+
+    /**
+     * An enum to specify the type of health regaining
+     */
+    public enum RegainReason {
+
+        /**
+         * When a player regains health from regenerating due to Peaceful mode (spawn-monsters=false)
+         */
+        REGEN,
+        /**
+         * When a player regains health from eating consumables
+         */
+        EATING,
+        /**
+         * Any other reason not covered by the reasons above
+         */
+        CUSTOM
     }
 }
