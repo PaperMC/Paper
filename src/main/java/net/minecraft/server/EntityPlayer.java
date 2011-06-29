@@ -10,6 +10,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason;
 // CraftBukkit end
 
 public class EntityPlayer extends EntityHuman implements ICrafting {
@@ -184,7 +185,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     }
 
     public void b(int i) {
-        super.b(i);
+        super.b(i, RegainReason.EATING);
     }
 
     public void a(boolean flag) {

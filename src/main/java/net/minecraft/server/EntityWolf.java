@@ -8,6 +8,7 @@ import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason;
 import org.bukkit.event.entity.EntityTargetEvent;
 // CraftBukkit end
 
@@ -385,7 +386,7 @@ public class EntityWolf extends EntityAnimal {
                         entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, (ItemStack) null);
                     }
 
-                    this.b(((ItemFood) Item.PORK).k());
+                    this.b(((ItemFood) Item.PORK).k(), RegainReason.EATING);
                     return true;
                 }
             }

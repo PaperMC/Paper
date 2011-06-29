@@ -9,6 +9,7 @@ import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityRegainHealthEvent;
+import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason;
 // CraftBukkit end
 
 public abstract class EntityLiving extends Entity {
@@ -313,10 +314,14 @@ public abstract class EntityLiving extends Entity {
         super.b(f, f1);
     }
 
+    // CraftBukkit start - delegate so we can handle providing a reason for health being regained
     public void b(int i) {
-        // CraftBukkit start - Added event
+        b(i, RegainReason.CUSTOM);
+    }
+
+    public void b(int i, RegainReason regainReason) {
         if (this.health > 0) {
-            EntityRegainHealthEvent event = new EntityRegainHealthEvent(this.getBukkitEntity(), i);
+            EntityRegainHealthEvent event = new EntityRegainHealthEvent(this.getBukkitEntity(), i, regainReason);
             this.world.getServer().getPluginManager().callEvent(event);
 
             if (!event.isCancelled()) {

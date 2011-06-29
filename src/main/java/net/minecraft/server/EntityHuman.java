@@ -13,6 +13,7 @@ import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.player.PlayerBedEnterEvent;
 import org.bukkit.event.player.PlayerBedLeaveEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason;
 // CraftBukkit end
 
 public abstract class EntityHuman extends EntityLiving {
@@ -175,7 +176,7 @@ public abstract class EntityHuman extends EntityLiving {
     public void v() {
         // CraftBukkit - spawnMonsters -> allowMonsters
         if (!this.world.allowMonsters && this.health < 20 && this.ticksLived % 20 * 12 == 0) {
-            this.b(1);
+            this.b(1, RegainReason.REGEN);
         }
 
         this.inventory.f();
