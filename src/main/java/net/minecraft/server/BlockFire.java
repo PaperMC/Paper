@@ -18,7 +18,7 @@ public class BlockFire extends Block {
         this.a(true);
     }
 
-    public void f() {
+    public void h() {
         this.a(Block.WOOD.id, 5, 20);
         this.a(Block.FENCE.id, 5, 20);
         this.a(Block.WOOD_STAIRS.id, 5, 20);
@@ -35,7 +35,7 @@ public class BlockFire extends Block {
         this.b[i] = k;
     }
 
-    public AxisAlignedBB d(World world, int i, int j, int k) {
+    public AxisAlignedBB e(World world, int i, int j, int k) {
         return null;
     }
 
@@ -73,7 +73,7 @@ public class BlockFire extends Block {
 
             world.c(i, j, k, this.id, this.c());
             if (!flag && !this.g(world, i, j, k)) {
-                if (!world.d(i, j - 1, k) || l > 3) {
+                if (!world.e(i, j - 1, k) || l > 3) {
                     world.setTypeId(i, j, k, 0);
                 }
             } else if (!flag && !this.b(world, i, j - 1, k) && l == 15 && random.nextInt(4) == 0) {
@@ -167,7 +167,7 @@ public class BlockFire extends Block {
             }
 
             if (flag) {
-                Block.TNT.postBreak(world, i, j, k, 0);
+                Block.TNT.postBreak(world, i, j, k, 1);
             }
         }
     }
@@ -182,18 +182,18 @@ public class BlockFire extends Block {
         if (!world.isEmpty(i, j, k)) {
             return 0;
         } else {
-            int l = this.g(world, i + 1, j, k, b0);
+            int l = this.f(world, i + 1, j, k, b0);
 
-            l = this.g(world, i - 1, j, k, l);
-            l = this.g(world, i, j - 1, k, l);
-            l = this.g(world, i, j + 1, k, l);
-            l = this.g(world, i, j, k - 1, l);
-            l = this.g(world, i, j, k + 1, l);
+            l = this.f(world, i - 1, j, k, l);
+            l = this.f(world, i, j - 1, k, l);
+            l = this.f(world, i, j + 1, k, l);
+            l = this.f(world, i, j, k - 1, l);
+            l = this.f(world, i, j, k + 1, l);
             return l;
         }
     }
 
-    public boolean m_() {
+    public boolean k_() {
         return false;
     }
 
@@ -201,25 +201,25 @@ public class BlockFire extends Block {
         return this.a[iblockaccess.getTypeId(i, j, k)] > 0;
     }
 
-    public int g(World world, int i, int j, int k, int l) {
+    public int f(World world, int i, int j, int k, int l) {
         int i1 = this.a[world.getTypeId(i, j, k)];
 
         return i1 > l ? i1 : l;
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
-        return world.d(i, j - 1, k) || this.g(world, i, j, k);
+        return world.e(i, j - 1, k) || this.g(world, i, j, k);
     }
 
     public void doPhysics(World world, int i, int j, int k, int l) {
-        if (!world.d(i, j - 1, k) && !this.g(world, i, j, k)) {
+        if (!world.e(i, j - 1, k) && !this.g(world, i, j, k)) {
             world.setTypeId(i, j, k, 0);
         }
     }
 
-    public void e(World world, int i, int j, int k) {
+    public void c(World world, int i, int j, int k) {
         if (world.getTypeId(i, j - 1, k) != Block.OBSIDIAN.id || !Block.PORTAL.a_(world, i, j, k)) {
-            if (!world.d(i, j - 1, k) && !this.g(world, i, j, k)) {
+            if (!world.e(i, j - 1, k) && !this.g(world, i, j, k)) {
                 world.setTypeId(i, j, k, 0);
             } else {
                 world.c(i, j, k, this.id, this.c());

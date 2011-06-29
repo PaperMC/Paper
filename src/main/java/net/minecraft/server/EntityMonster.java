@@ -16,18 +16,18 @@ public class EntityMonster extends EntityCreature implements IMonster {
         this.health = 20;
     }
 
-    public void u() {
+    public void v() {
         float f = this.c(1.0F);
 
         if (f > 0.5F) {
             this.ay += 2;
         }
 
-        super.u();
+        super.v();
     }
 
-    public void o_() {
-        super.o_();
+    public void m_() {
+        super.m_();
         if (!this.world.isStatic && this.world.spawnMonsters == 0) {
             this.die();
         }
@@ -92,7 +92,7 @@ public class EntityMonster extends EntityCreature implements IMonster {
     }
 
     protected float a(int i, int j, int k) {
-        return 0.5F - this.world.m(i, j, k);
+        return 0.5F - this.world.n(i, j, k);
     }
 
     public void b(NBTTagCompound nbttagcompound) {

@@ -11,7 +11,7 @@ public class EntityZombie extends EntityMonster {
         this.damage = 5;
     }
 
-    public void u() {
+    public void v() {
         if (this.world.d()) {
             float f = this.c(1.0F);
 
@@ -27,7 +27,7 @@ public class EntityZombie extends EntityMonster {
             }
         }
 
-        super.u();
+        super.v();
     }
 
     protected String g() {

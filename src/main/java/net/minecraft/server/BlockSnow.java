@@ -12,7 +12,7 @@ public class BlockSnow extends Block {
         this.a(true);
     }
 
-    public AxisAlignedBB d(World world, int i, int j, int k) {
+    public AxisAlignedBB e(World world, int i, int j, int k) {
         int l = world.getData(i, j, k) & 7;
 
         return l >= 3 ? AxisAlignedBB.b((double) i + this.minX, (double) j + this.minY, (double) k + this.minZ, (double) i + this.maxX, (double) ((float) j + 0.5F), (double) k + this.maxZ) : null;
@@ -45,7 +45,7 @@ public class BlockSnow extends Block {
 
     private boolean g(World world, int i, int j, int k) {
         if (!this.canPlace(world, i, j, k)) {
-            this.b_(world, i, j, k, world.getData(i, j, k));
+            this.g(world, i, j, k, world.getData(i, j, k));
             world.setTypeId(i, j, k, 0);
             return false;
         } else {
@@ -89,7 +89,7 @@ public class BlockSnow extends Block {
             }
             // CraftBukkit end
 
-            this.b_(world, i, j, k, world.getData(i, j, k));
+            this.g(world, i, j, k, world.getData(i, j, k));
             world.setTypeId(i, j, k, 0);
         }
     }

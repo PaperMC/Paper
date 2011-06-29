@@ -11,7 +11,7 @@ public class BlockButton extends Block {
         this.a(true);
     }
 
-    public AxisAlignedBB d(World world, int i, int j, int k) {
+    public AxisAlignedBB e(World world, int i, int j, int k) {
         return null;
     }
 
@@ -28,11 +28,11 @@ public class BlockButton extends Block {
     }
 
     public boolean canPlace(World world, int i, int j, int k, int l) {
-        return l == 2 && world.d(i, j, k + 1) ? true : (l == 3 && world.d(i, j, k - 1) ? true : (l == 4 && world.d(i + 1, j, k) ? true : l == 5 && world.d(i - 1, j, k)));
+        return l == 2 && world.e(i, j, k + 1) ? true : (l == 3 && world.e(i, j, k - 1) ? true : (l == 4 && world.e(i + 1, j, k) ? true : l == 5 && world.e(i - 1, j, k)));
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
-        return world.d(i - 1, j, k) ? true : (world.d(i + 1, j, k) ? true : (world.d(i, j, k - 1) ? true : world.d(i, j, k + 1)));
+        return world.e(i - 1, j, k) ? true : (world.e(i + 1, j, k) ? true : (world.e(i, j, k - 1) ? true : world.e(i, j, k + 1)));
     }
 
     public void postPlace(World world, int i, int j, int k, int l) {
@@ -40,13 +40,13 @@ public class BlockButton extends Block {
         int j1 = i1 & 8;
 
         i1 &= 7;
-        if (l == 2 && world.d(i, j, k + 1)) {
+        if (l == 2 && world.e(i, j, k + 1)) {
             i1 = 4;
-        } else if (l == 3 && world.d(i, j, k - 1)) {
+        } else if (l == 3 && world.e(i, j, k - 1)) {
             i1 = 3;
-        } else if (l == 4 && world.d(i + 1, j, k)) {
+        } else if (l == 4 && world.e(i + 1, j, k)) {
             i1 = 2;
-        } else if (l == 5 && world.d(i - 1, j, k)) {
+        } else if (l == 5 && world.e(i - 1, j, k)) {
             i1 = 1;
         } else {
             i1 = this.g(world, i, j, k);
@@ -56,7 +56,7 @@ public class BlockButton extends Block {
     }
 
     private int g(World world, int i, int j, int k) {
-        return world.d(i - 1, j, k) ? 1 : (world.d(i + 1, j, k) ? 2 : (world.d(i, j, k - 1) ? 3 : (world.d(i, j, k + 1) ? 4 : 1)));
+        return world.e(i - 1, j, k) ? 1 : (world.e(i + 1, j, k) ? 2 : (world.e(i, j, k - 1) ? 3 : (world.e(i, j, k + 1) ? 4 : 1)));
     }
 
     public void doPhysics(World world, int i, int j, int k, int l) {
@@ -64,24 +64,24 @@ public class BlockButton extends Block {
             int i1 = world.getData(i, j, k) & 7;
             boolean flag = false;
 
-            if (!world.d(i - 1, j, k) && i1 == 1) {
+            if (!world.e(i - 1, j, k) && i1 == 1) {
                 flag = true;
             }
 
-            if (!world.d(i + 1, j, k) && i1 == 2) {
+            if (!world.e(i + 1, j, k) && i1 == 2) {
                 flag = true;
             }
 
-            if (!world.d(i, j, k - 1) && i1 == 3) {
+            if (!world.e(i, j, k - 1) && i1 == 3) {
                 flag = true;
             }
 
-            if (!world.d(i, j, k + 1) && i1 == 4) {
+            if (!world.e(i, j, k + 1) && i1 == 4) {
                 flag = true;
             }
 
             if (flag) {
-                this.b_(world, i, j, k, world.getData(i, j, k));
+                this.g(world, i, j, k, world.getData(i, j, k));
                 world.setTypeId(i, j, k, 0);
             }
         }
@@ -89,7 +89,7 @@ public class BlockButton extends Block {
 
     private boolean h(World world, int i, int j, int k) {
         if (!this.canPlace(world, i, j, k)) {
-            this.b_(world, i, j, k, world.getData(i, j, k));
+            this.g(world, i, j, k, world.getData(i, j, k));
             world.setTypeId(i, j, k, 0);
             return false;
         } else {
@@ -194,7 +194,7 @@ public class BlockButton extends Block {
         return (iblockaccess.getData(i, j, k) & 8) > 0;
     }
 
-    public boolean c(World world, int i, int j, int k, int l) {
+    public boolean d(World world, int i, int j, int k, int l) {
         int i1 = world.getData(i, j, k);
 
         if ((i1 & 8) == 0) {

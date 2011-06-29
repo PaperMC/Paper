@@ -21,7 +21,7 @@ public class BlockRedstoneWire extends Block {
         return this.textureId;
     }
 
-    public AxisAlignedBB d(World world, int i, int j, int k) {
+    public AxisAlignedBB e(World world, int i, int j, int k) {
         return null;
     }
 
@@ -34,7 +34,7 @@ public class BlockRedstoneWire extends Block {
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
-        return world.d(i, j - 1, k);
+        return world.e(i, j - 1, k);
     }
 
     private void g(World world, int i, int j, int k) {
@@ -88,11 +88,11 @@ public class BlockRedstoneWire extends Block {
                     l1 = this.getPower(world, j2, j, k2, l1);
                 }
 
-                if (world.d(j2, j, k2) && !world.d(i, j + 1, k)) {
+                if (world.e(j2, j, k2) && !world.e(i, j + 1, k)) {
                     if (j2 != l || j + 1 != i1 || k2 != j1) {
                         l1 = this.getPower(world, j2, j + 1, k2, l1);
                     }
-                } else if (!world.d(j2, j, k2) && (j2 != l || j - 1 != i1 || k2 != j1)) {
+                } else if (!world.e(j2, j, k2) && (j2 != l || j - 1 != i1 || k2 != j1)) {
                     l1 = this.getPower(world, j2, j - 1, k2, l1);
                 }
             }
@@ -140,7 +140,7 @@ public class BlockRedstoneWire extends Block {
                     ++k2;
                 }
 
-                if (world.d(j2, j, k2)) {
+                if (world.e(j2, j, k2)) {
                     l2 += 2;
                 }
 
@@ -191,8 +191,8 @@ public class BlockRedstoneWire extends Block {
         }
     }
 
-    public void e(World world, int i, int j, int k) {
-        super.e(world, i, j, k);
+    public void c(World world, int i, int j, int k) {
+        super.c(world, i, j, k);
         if (!world.isStatic) {
             this.g(world, i, j, k);
             world.applyPhysics(i, j + 1, k, this.id);
@@ -201,25 +201,25 @@ public class BlockRedstoneWire extends Block {
             this.h(world, i + 1, j, k);
             this.h(world, i, j, k - 1);
             this.h(world, i, j, k + 1);
-            if (world.d(i - 1, j, k)) {
+            if (world.e(i - 1, j, k)) {
                 this.h(world, i - 1, j + 1, k);
             } else {
                 this.h(world, i - 1, j - 1, k);
             }
 
-            if (world.d(i + 1, j, k)) {
+            if (world.e(i + 1, j, k)) {
                 this.h(world, i + 1, j + 1, k);
             } else {
                 this.h(world, i + 1, j - 1, k);
             }
 
-            if (world.d(i, j, k - 1)) {
+            if (world.e(i, j, k - 1)) {
                 this.h(world, i, j + 1, k - 1);
             } else {
                 this.h(world, i, j - 1, k - 1);
             }
 
-            if (world.d(i, j, k + 1)) {
+            if (world.e(i, j, k + 1)) {
                 this.h(world, i, j + 1, k + 1);
             } else {
                 this.h(world, i, j - 1, k + 1);
@@ -237,25 +237,25 @@ public class BlockRedstoneWire extends Block {
             this.h(world, i + 1, j, k);
             this.h(world, i, j, k - 1);
             this.h(world, i, j, k + 1);
-            if (world.d(i - 1, j, k)) {
+            if (world.e(i - 1, j, k)) {
                 this.h(world, i - 1, j + 1, k);
             } else {
                 this.h(world, i - 1, j - 1, k);
             }
 
-            if (world.d(i + 1, j, k)) {
+            if (world.e(i + 1, j, k)) {
                 this.h(world, i + 1, j + 1, k);
             } else {
                 this.h(world, i + 1, j - 1, k);
             }
 
-            if (world.d(i, j, k - 1)) {
+            if (world.e(i, j, k - 1)) {
                 this.h(world, i, j + 1, k - 1);
             } else {
                 this.h(world, i, j - 1, k - 1);
             }
 
-            if (world.d(i, j, k + 1)) {
+            if (world.e(i, j, k + 1)) {
                 this.h(world, i, j + 1, k + 1);
             } else {
                 this.h(world, i, j - 1, k + 1);
@@ -280,7 +280,7 @@ public class BlockRedstoneWire extends Block {
             boolean flag = this.canPlace(world, i, j, k);
 
             if (!flag) {
-                this.b_(world, i, j, k, i1);
+                this.g(world, i, j, k, i1);
                 world.setTypeId(i, j, k, 0);
             } else {
                 this.g(world, i, j, k);
@@ -294,7 +294,7 @@ public class BlockRedstoneWire extends Block {
         return Item.REDSTONE.id;
     }
 
-    public boolean c(World world, int i, int j, int k, int l) {
+    public boolean d(World world, int i, int j, int k, int l) {
         return !this.a ? false : this.a(world, i, j, k, l);
     }
 
@@ -306,25 +306,25 @@ public class BlockRedstoneWire extends Block {
         } else if (l == 1) {
             return true;
         } else {
-            boolean flag = b(iblockaccess, i - 1, j, k) || !iblockaccess.d(i - 1, j, k) && b(iblockaccess, i - 1, j - 1, k);
-            boolean flag1 = b(iblockaccess, i + 1, j, k) || !iblockaccess.d(i + 1, j, k) && b(iblockaccess, i + 1, j - 1, k);
-            boolean flag2 = b(iblockaccess, i, j, k - 1) || !iblockaccess.d(i, j, k - 1) && b(iblockaccess, i, j - 1, k - 1);
-            boolean flag3 = b(iblockaccess, i, j, k + 1) || !iblockaccess.d(i, j, k + 1) && b(iblockaccess, i, j - 1, k + 1);
+            boolean flag = c(iblockaccess, i - 1, j, k, 1) || !iblockaccess.e(i - 1, j, k) && c(iblockaccess, i - 1, j - 1, k, -1);
+            boolean flag1 = c(iblockaccess, i + 1, j, k, 3) || !iblockaccess.e(i + 1, j, k) && c(iblockaccess, i + 1, j - 1, k, -1);
+            boolean flag2 = c(iblockaccess, i, j, k - 1, 2) || !iblockaccess.e(i, j, k - 1) && c(iblockaccess, i, j - 1, k - 1, -1);
+            boolean flag3 = c(iblockaccess, i, j, k + 1, 0) || !iblockaccess.e(i, j, k + 1) && c(iblockaccess, i, j - 1, k + 1, -1);
 
-            if (!iblockaccess.d(i, j + 1, k)) {
-                if (iblockaccess.d(i - 1, j, k) && b(iblockaccess, i - 1, j + 1, k)) {
+            if (!iblockaccess.e(i, j + 1, k)) {
+                if (iblockaccess.e(i - 1, j, k) && c(iblockaccess, i - 1, j + 1, k, -1)) {
                     flag = true;
                 }
 
-                if (iblockaccess.d(i + 1, j, k) && b(iblockaccess, i + 1, j + 1, k)) {
+                if (iblockaccess.e(i + 1, j, k) && c(iblockaccess, i + 1, j + 1, k, -1)) {
                     flag1 = true;
                 }
 
-                if (iblockaccess.d(i, j, k - 1) && b(iblockaccess, i, j + 1, k - 1)) {
+                if (iblockaccess.e(i, j, k - 1) && c(iblockaccess, i, j + 1, k - 1, -1)) {
                     flag2 = true;
                 }
 
-                if (iblockaccess.d(i, j, k + 1) && b(iblockaccess, i, j + 1, k + 1)) {
+                if (iblockaccess.e(i, j, k + 1) && c(iblockaccess, i, j + 1, k + 1, -1)) {
                     flag3 = true;
                 }
             }
@@ -337,9 +337,21 @@ public class BlockRedstoneWire extends Block {
         return this.a;
     }
 
-    public static boolean b(IBlockAccess iblockaccess, int i, int j, int k) {
-        int l = iblockaccess.getTypeId(i, j, k);
+    public static boolean c(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+        int i1 = iblockaccess.getTypeId(i, j, k);
 
-        return l == Block.REDSTONE_WIRE.id ? true : (l == 0 ? false : Block.byId[l].isPowerSource());
+        if (i1 == Block.REDSTONE_WIRE.id) {
+            return true;
+        } else if (i1 == 0) {
+            return false;
+        } else if (Block.byId[i1].isPowerSource()) {
+            return true;
+        } else if (i1 != Block.DIODE_OFF.id && i1 != Block.DIODE_ON.id) {
+            return false;
+        } else {
+            int j1 = iblockaccess.getData(i, j, k);
+
+            return l == BedBlockTextures.b[j1 & 3];
+        }
     }
 }

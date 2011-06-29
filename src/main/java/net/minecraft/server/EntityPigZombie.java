@@ -21,13 +21,13 @@ public class EntityPigZombie extends EntityZombie {
         this.fireProof = true;
     }
 
-    public void o_() {
+    public void m_() {
         this.aE = this.target != null ? 0.95F : 0.5F;
         if (this.soundDelay > 0 && --this.soundDelay == 0) {
             this.world.makeSound(this, "mob.zombiepig.zpigangry", this.k() * 2.0F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 1.8F);
         }
 
-        super.o_();
+        super.m_();
     }
 
     public boolean d() {
@@ -48,8 +48,8 @@ public class EntityPigZombie extends EntityZombie {
         return this.angerLevel == 0 ? null : super.findTarget();
     }
 
-    public void u() {
-        super.u();
+    public void v() {
+        super.v();
     }
 
     public boolean damageEntity(Entity entity, int i) {

@@ -26,7 +26,7 @@ public class BlockPressurePlate extends Block {
         return 20;
     }
 
-    public AxisAlignedBB d(World world, int i, int j, int k) {
+    public AxisAlignedBB e(World world, int i, int j, int k) {
         return null;
     }
 
@@ -39,20 +39,20 @@ public class BlockPressurePlate extends Block {
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
-        return world.d(i, j - 1, k);
+        return world.e(i, j - 1, k);
     }
 
-    public void e(World world, int i, int j, int k) {}
+    public void c(World world, int i, int j, int k) {}
 
     public void doPhysics(World world, int i, int j, int k, int l) {
         boolean flag = false;
 
-        if (!world.d(i, j - 1, k)) {
+        if (!world.e(i, j - 1, k)) {
             flag = true;
         }
 
         if (flag) {
-            this.b_(world, i, j, k, world.getData(i, j, k));
+            this.g(world, i, j, k, world.getData(i, j, k));
             world.setTypeId(i, j, k, 0);
         }
     }
@@ -174,7 +174,7 @@ public class BlockPressurePlate extends Block {
         return iblockaccess.getData(i, j, k) > 0;
     }
 
-    public boolean c(World world, int i, int j, int k, int l) {
+    public boolean d(World world, int i, int j, int k, int l) {
         return world.getData(i, j, k) == 0 ? false : l == 1;
     }
 

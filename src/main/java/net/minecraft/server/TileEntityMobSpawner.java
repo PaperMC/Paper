@@ -35,13 +35,16 @@ public class TileEntityMobSpawner extends TileEntity {
                 this.b -= 360.0D;
             }
 
-            if (this.spawnDelay == -1) {
-                this.c();
-            }
+            if (!this.world.isStatic) {
+                if (this.spawnDelay == -1) {
+                    this.c();
+                }
 
-            if (this.spawnDelay > 0) {
-                --this.spawnDelay;
-            } else {
+                if (this.spawnDelay > 0) {
+                    --this.spawnDelay;
+                    return;
+                }
+
                 byte b0 = 4;
 
                 for (int i = 0; i < b0; ++i) {
@@ -83,14 +86,14 @@ public class TileEntityMobSpawner extends TileEntity {
                                 this.world.a("flame", d0, d1, d2, 0.0D, 0.0D, 0.0D);
                             }
 
-                            entityliving.R();
+                            entityliving.S();
                             this.c();
                         }
                     }
                 }
-
-                super.g_();
             }
+
+            super.g_();
         }
     }
 

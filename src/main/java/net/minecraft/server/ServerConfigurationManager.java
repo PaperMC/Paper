@@ -268,7 +268,7 @@ public class ServerConfigurationManager {
         worldserver.addEntity(entityplayer1);
         this.players.add(entityplayer1);
         this.updateClient(entityplayer1); // CraftBukkit
-        entityplayer1.w();
+        entityplayer1.x();
         return entityplayer1;
     }
 
@@ -613,6 +613,6 @@ public class ServerConfigurationManager {
 
     public void updateClient(EntityPlayer entityplayer) {
         entityplayer.updateInventory(entityplayer.defaultContainer);
-        entityplayer.B();
+        entityplayer.C();
     }
 }

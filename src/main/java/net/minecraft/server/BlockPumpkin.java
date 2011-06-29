@@ -33,14 +33,14 @@ public class BlockPumpkin extends Block {
         return i == 1 ? this.textureId : (i == 0 ? this.textureId : (i == 3 ? this.textureId + 1 + 16 : this.textureId + 16));
     }
 
-    public void e(World world, int i, int j, int k) {
-        super.e(world, i, j, k);
+    public void c(World world, int i, int j, int k) {
+        super.c(world, i, j, k);
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
         int l = world.getTypeId(i, j, k);
 
-        return (l == 0 || Block.byId[l].material.isReplacable()) && world.d(i, j - 1, k);
+        return (l == 0 || Block.byId[l].material.isReplacable()) && world.e(i, j - 1, k);
     }
 
     public void postPlace(World world, int i, int j, int k, EntityLiving entityliving) {

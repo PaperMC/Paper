@@ -93,7 +93,7 @@ public final class SpawnerCreature {
                             int j2 = chunkposition.y;
                             int k2 = chunkposition.z;
 
-                            if (!world.d(i2, j2, k2) && world.getMaterial(i2, j2, k2) == enumcreaturetype.c()) {
+                            if (!world.e(i2, j2, k2) && world.getMaterial(i2, j2, k2) == enumcreaturetype.c()) {
                                 int l2 = 0;
 
                                 for (int i3 = 0; i3 < 3; ++i3) {
@@ -155,7 +155,7 @@ public final class SpawnerCreature {
     }
 
     private static boolean a(EnumCreatureType enumcreaturetype, World world, int i, int j, int k) {
-        return enumcreaturetype.c() == Material.WATER ? world.getMaterial(i, j, k).isLiquid() && !world.d(i, j + 1, k) : world.d(i, j - 1, k) && !world.d(i, j, k) && !world.getMaterial(i, j, k).isLiquid() && !world.d(i, j + 1, k);
+        return enumcreaturetype.c() == Material.WATER ? world.getMaterial(i, j, k).isLiquid() && !world.e(i, j + 1, k) : world.e(i, j - 1, k) && !world.e(i, j, k) && !world.getMaterial(i, j, k).isLiquid() && !world.e(i, j + 1, k);
     }
 
     private static void a(EntityLiving entityliving, World world, float f, float f1, float f2) {
@@ -198,7 +198,7 @@ public final class SpawnerCreature {
 
                     int j1;
 
-                    for (j1 = l; j1 > 2 && !world.d(j, j1 - 1, k); --j1) {
+                    for (j1 = l; j1 > 2 && !world.e(j, j1 - 1, k); --j1) {
                         ;
                     }
 
@@ -228,7 +228,7 @@ public final class SpawnerCreature {
                                 PathPoint pathpoint = pathentity.c();
 
                                 if (Math.abs((double) pathpoint.a - entityhuman.locX) < 1.5D && Math.abs((double) pathpoint.c - entityhuman.locZ) < 1.5D && Math.abs((double) pathpoint.b - entityhuman.locY) < 1.5D) {
-                                    ChunkCoordinates chunkcoordinates = BlockBed.g(world, MathHelper.floor(entityhuman.locX), MathHelper.floor(entityhuman.locY), MathHelper.floor(entityhuman.locZ), 1);
+                                    ChunkCoordinates chunkcoordinates = BlockBed.f(world, MathHelper.floor(entityhuman.locX), MathHelper.floor(entityhuman.locY), MathHelper.floor(entityhuman.locZ), 1);
 
                                     if (chunkcoordinates == null) {
                                         chunkcoordinates = new ChunkCoordinates(j, j1 + 1, k);
@@ -239,7 +239,7 @@ public final class SpawnerCreature {
                                     world.addEntity(entityliving, SpawnReason.BED);
                                     a(entityliving, world, (float) chunkcoordinates.x + 0.5F, (float) chunkcoordinates.y, (float) chunkcoordinates.z + 0.5F);
                                     entityhuman.a(true, false, false);
-                                    entityliving.P();
+                                    entityliving.Q();
                                     flag = true;
                                     flag1 = true;
                                 }

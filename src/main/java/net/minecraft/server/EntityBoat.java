@@ -107,7 +107,7 @@ public class EntityBoat extends Entity {
             this.c = -this.c;
             this.b = 10;
             this.damage += i * 10;
-            this.ae();
+            this.af();
             if (this.damage > 40) {
 
                 // CraftBukkit start
@@ -143,11 +143,11 @@ public class EntityBoat extends Entity {
         }
     }
 
-    public boolean n_() {
+    public boolean l_() {
         return !this.dead;
     }
 
-    public void o_() {
+    public void m_() {
         // CraftBukkit start
         double prevX = this.locX;
         double prevY = this.locY;
@@ -156,7 +156,7 @@ public class EntityBoat extends Entity {
         float prevPitch = this.pitch;
         // CraftBukkit end
 
-        super.o_();
+        super.m_();
         if (this.b > 0) {
             --this.b;
         }
@@ -386,7 +386,7 @@ public class EntityBoat extends Entity {
             double d0 = Math.cos((double) this.yaw * 3.141592653589793D / 180.0D) * 0.4D;
             double d1 = Math.sin((double) this.yaw * 3.141592653589793D / 180.0D) * 0.4D;
 
-            this.passenger.setPosition(this.locX + d0, this.locY + this.m() + this.passenger.H(), this.locZ + d1);
+            this.passenger.setPosition(this.locX + d0, this.locY + this.m() + this.passenger.I(), this.locZ + d1);
         }
     }
 

@@ -114,6 +114,6 @@ public class ItemBlock extends Item {
     }
 
     public String a() {
-        return Block.byId[this.id].h();
+        return Block.byId[this.id].l();
     }
 }

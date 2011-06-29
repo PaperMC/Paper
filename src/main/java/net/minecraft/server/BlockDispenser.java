@@ -25,8 +25,8 @@ public class BlockDispenser extends BlockContainer {
         return Block.DISPENSER.id;
     }
 
-    public void e(World world, int i, int j, int k) {
-        super.e(world, i, j, k);
+    public void c(World world, int i, int j, int k) {
+        super.c(world, i, j, k);
         this.g(world, i, j, k);
     }
 

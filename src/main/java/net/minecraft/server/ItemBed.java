@@ -40,7 +40,7 @@ public class ItemBed extends Item {
                 b0 = 1;
             }
 
-            if (world.isEmpty(i, j, k) && world.isEmpty(i + b0, j, k + b1) && world.d(i, j - 1, k) && world.d(i + b0, j - 1, k + b1)) {
+            if (world.isEmpty(i, j, k) && world.isEmpty(i + b0, j, k + b1) && world.e(i, j - 1, k) && world.e(i + b0, j - 1, k + b1)) {
                 CraftBlockState blockState = CraftBlockState.getBlockState(world, i, j, k); // CraftBukkit
 
                 world.setTypeIdAndData(i, j, k, blockbed.id, i1);

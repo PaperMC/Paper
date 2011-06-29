@@ -44,7 +44,7 @@ public class EntityCreature extends EntityLiving {
             if (this.target != null) {
                 this.pathEntity = this.world.findPath(this, this.target, f);
             }
-        } else if (!this.target.S()) {
+        } else if (!this.target.T()) {
             // CraftBukkit start
             EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), null, EntityTargetEvent.TargetReason.TARGET_DIED);
             this.world.getServer().getPluginManager().callEvent(event);
@@ -70,35 +70,12 @@ public class EntityCreature extends EntityLiving {
         if (!this.e && this.target != null && (this.pathEntity == null || this.random.nextInt(20) == 0)) {
             this.pathEntity = this.world.findPath(this, this.target, f);
         } else if (!this.e && (this.pathEntity == null && this.random.nextInt(80) == 0 || this.random.nextInt(80) == 0)) {
-            boolean flag = false;
-            int i = -1;
-            int j = -1;
-            int k = -1;
-            float f2 = -99999.0F;
-
-            for (int l = 0; l < 10; ++l) {
-                int i1 = MathHelper.floor(this.locX + (double) this.random.nextInt(13) - 6.0D);
-                int j1 = MathHelper.floor(this.locY + (double) this.random.nextInt(7) - 3.0D);
-                int k1 = MathHelper.floor(this.locZ + (double) this.random.nextInt(13) - 6.0D);
-                float f3 = this.a(i1, j1, k1);
-
-                if (f3 > f2) {
-                    f2 = f3;
-                    i = i1;
-                    j = j1;
-                    k = k1;
-                    flag = true;
-                }
-            }
-
-            if (flag) {
-                this.pathEntity = this.world.a(this, i, j, k, 10.0F);
-            }
+            this.B();
         }
 
-        int l1 = MathHelper.floor(this.boundingBox.b + 0.5D);
-        boolean flag1 = this.ac();
-        boolean flag2 = this.ad();
+        int i = MathHelper.floor(this.boundingBox.b + 0.5D);
+        boolean flag = this.ad();
+        boolean flag1 = this.ae();
 
         this.pitch = 0.0F;
         if (this.pathEntity != null && this.random.nextInt(100) != 0) {
@@ -119,37 +96,37 @@ public class EntityCreature extends EntityLiving {
             if (vec3d != null) {
                 double d1 = vec3d.a - this.locX;
                 double d2 = vec3d.c - this.locZ;
-                double d3 = vec3d.b - (double) l1;
+                double d3 = vec3d.b - (double) i;
                 // CraftBukkit - Math -> TrigMath
-                float f4 = (float) (TrigMath.atan2(d2, d1) * 180.0D / 3.1415927410125732D) - 90.0F;
-                float f5 = f4 - this.yaw;
+                float f2 = (float) (TrigMath.atan2(d2, d1) * 180.0D / 3.1415927410125732D) - 90.0F;
+                float f3 = f2 - this.yaw;
 
-                for (this.aA = this.aE; f5 < -180.0F; f5 += 360.0F) {
+                for (this.aA = this.aE; f3 < -180.0F; f3 += 360.0F) {
                     ;
                 }
 
-                while (f5 >= 180.0F) {
-                    f5 -= 360.0F;
+                while (f3 >= 180.0F) {
+                    f3 -= 360.0F;
                 }
 
-                if (f5 > 30.0F) {
-                    f5 = 30.0F;
+                if (f3 > 30.0F) {
+                    f3 = 30.0F;
                 }
 
-                if (f5 < -30.0F) {
-                    f5 = -30.0F;
+                if (f3 < -30.0F) {
+                    f3 = -30.0F;
                 }
 
-                this.yaw += f5;
+                this.yaw += f3;
                 if (this.e && this.target != null) {
                     double d4 = this.target.locX - this.locX;
                     double d5 = this.target.locZ - this.locZ;
-                    float f6 = this.yaw;
+                    float f4 = this.yaw;
 
                     this.yaw = (float) (Math.atan2(d5, d4) * 180.0D / 3.1415927410125732D) - 90.0F;
-                    f5 = (f6 - this.yaw + 90.0F) * 3.1415927F / 180.0F;
-                    this.az = -MathHelper.sin(f5) * this.aA * 1.0F;
-                    this.aA = MathHelper.cos(f5) * this.aA * 1.0F;
+                    f3 = (f4 - this.yaw + 90.0F) * 3.1415927F / 180.0F;
+                    this.az = -MathHelper.sin(f3) * this.aA * 1.0F;
+                    this.aA = MathHelper.cos(f3) * this.aA * 1.0F;
                 }
 
                 if (d3 > 0.0D) {
@@ -161,16 +138,43 @@ public class EntityCreature extends EntityLiving {
                 this.a(this.target, 30.0F, 30.0F);
             }
 
-            if (this.positionChanged && !this.B()) {
+            if (this.positionChanged && !this.C()) {
                 this.aC = true;
             }
 
-            if (this.random.nextFloat() < 0.8F && (flag1 || flag2)) {
+            if (this.random.nextFloat() < 0.8F && (flag || flag1)) {
                 this.aC = true;
             }
         } else {
             super.c_();
             this.pathEntity = null;
+        }
+    }
+
+    protected void B() {
+        boolean flag = false;
+        int i = -1;
+        int j = -1;
+        int k = -1;
+        float f = -99999.0F;
+
+        for (int l = 0; l < 10; ++l) {
+            int i1 = MathHelper.floor(this.locX + (double) this.random.nextInt(13) - 6.0D);
+            int j1 = MathHelper.floor(this.locY + (double) this.random.nextInt(7) - 3.0D);
+            int k1 = MathHelper.floor(this.locZ + (double) this.random.nextInt(13) - 6.0D);
+            float f1 = this.a(i1, j1, k1);
+
+            if (f1 > f) {
+                f = f1;
+                i = i1;
+                j = j1;
+                k = k1;
+                flag = true;
+            }
+        }
+
+        if (flag) {
+            this.pathEntity = this.world.a(this, i, j, k, 10.0F);
         }
     }
 
@@ -194,7 +198,7 @@ public class EntityCreature extends EntityLiving {
         return super.d() && this.a(i, j, k) >= 0.0F;
     }
 
-    public boolean B() {
+    public boolean C() {
         return this.pathEntity != null;
     }
 
@@ -202,7 +206,7 @@ public class EntityCreature extends EntityLiving {
         this.pathEntity = pathentity;
     }
 
-    public Entity E() {
+    public Entity F() {
         return this.target;
     }
 

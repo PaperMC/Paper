@@ -53,12 +53,13 @@ public class ContainerWorkbench extends Container {
 
     public void a(EntityHuman entityhuman) {
         super.a(entityhuman);
+        if (!this.c.isStatic) {
+            for (int i = 0; i < 9; ++i) {
+                ItemStack itemstack = this.craftInventory.getItem(i);
 
-        for (int i = 0; i < 9; ++i) {
-            ItemStack itemstack = this.craftInventory.getItem(i);
-
-            if (itemstack != null) {
-                entityhuman.b(itemstack);
+                if (itemstack != null) {
+                    entityhuman.b(itemstack);
+                }
             }
         }
     }

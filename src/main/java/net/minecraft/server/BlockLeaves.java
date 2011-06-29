@@ -126,7 +126,7 @@ public class BlockLeaves extends BlockLeavesBase {
         if (event.isCancelled()) return;
         // CraftBukkit end
 
-        this.b_(world, i, j, k, world.getData(i, j, k));
+        this.g(world, i, j, k, world.getData(i, j, k));
         world.setTypeId(i, j, k, 0);
     }
 
@@ -138,7 +138,16 @@ public class BlockLeaves extends BlockLeavesBase {
         return Block.SAPLING.id;
     }
 
-    protected int b(int i) {
+    public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
+        if (!world.isStatic && entityhuman.G() != null && entityhuman.G().id == Item.SHEARS.id) {
+            entityhuman.a(StatisticList.C[this.id], 1);
+            this.a(world, i, j, k, new ItemStack(Block.LEAVES.id, 1, l & 3));
+        } else {
+            super.a(world, entityhuman, i, j, k, l);
+        }
+    }
+
+    protected int a_(int i) {
         return i & 3;
     }
 

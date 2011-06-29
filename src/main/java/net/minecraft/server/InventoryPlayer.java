@@ -77,7 +77,6 @@ public class InventoryPlayer implements IInventory {
         return -1;
     }
 
-
     private int e(ItemStack itemstack) {
         int i = itemstack.id;
         int j = itemstack.count;
@@ -285,7 +284,7 @@ public class InventoryPlayer implements IInventory {
     }
 
     public boolean b(Block block) {
-        if (block.material != Material.STONE && block.material != Material.ORE && block.material != Material.SNOW_BLOCK && block.material != Material.SNOW_LAYER) {
+        if (block.material.i()) {
             return true;
         } else {
             ItemStack itemstack = this.getItem(this.itemInHandIndex);
@@ -307,7 +306,7 @@ public class InventoryPlayer implements IInventory {
 
                 j += k1;
                 k += i1;
-                int l1 = ((ItemArmor) this.armor[l].getItem()).bk;
+                int l1 = ((ItemArmor) this.armor[l].getItem()).bl;
 
                 i += l1;
             }

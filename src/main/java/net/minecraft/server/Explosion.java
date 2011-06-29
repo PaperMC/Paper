@@ -234,7 +234,7 @@ public class Explosion {
                 // CraftBukkit
                 Block.byId[i1].dropNaturally(this.world, j, k, l, this.world.getData(j, k, l), event.getYield());
                 this.world.setTypeId(j, k, l, 0);
-                Block.byId[i1].c(this.world, j, k, l);
+                Block.byId[i1].d(this.world, j, k, l);
             }
         }
     }

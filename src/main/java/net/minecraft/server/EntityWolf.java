@@ -63,7 +63,7 @@ public class EntityWolf extends EntityAnimal {
         }
     }
 
-    protected boolean l_() {
+    protected boolean h_() {
         return !this.isTamed();
     }
 
@@ -89,7 +89,7 @@ public class EntityWolf extends EntityAnimal {
 
     protected void c_() {
         super.c_();
-        if (!this.e && !this.B() && this.isTamed() && this.vehicle == null) {
+        if (!this.e && !this.C() && this.isTamed() && this.vehicle == null) {
             EntityHuman entityhuman = this.world.a(this.getOwnerName());
 
             if (entityhuman != null) {
@@ -98,10 +98,10 @@ public class EntityWolf extends EntityAnimal {
                 if (f > 5.0F) {
                     this.c(entityhuman, f);
                 }
-            } else if (!this.ac()) {
+            } else if (!this.ad()) {
                 this.setSitting(true);
             }
-        } else if (this.target == null && !this.B() && !this.isTamed() && this.world.random.nextInt(100) == 0) {
+        } else if (this.target == null && !this.C() && !this.isTamed() && this.world.random.nextInt(100) == 0) {
             List list = this.world.a(EntitySheep.class, AxisAlignedBB.b(this.locX, this.locY, this.locZ, this.locX + 1.0D, this.locY + 1.0D, this.locZ + 1.0D).b(16.0D, 4.0D, 16.0D));
 
             if (!list.isEmpty()) {
@@ -119,7 +119,7 @@ public class EntityWolf extends EntityAnimal {
             }
         }
 
-        if (this.ac()) {
+        if (this.ad()) {
             this.setSitting(false);
         }
 
@@ -128,11 +128,11 @@ public class EntityWolf extends EntityAnimal {
         }
     }
 
-    public void u() {
-        super.u();
+    public void v() {
+        super.v();
         this.a = false;
-        if (this.U() && !this.B() && !this.isAngry()) {
-            Entity entity = this.V();
+        if (this.V() && !this.C() && !this.isAngry()) {
+            Entity entity = this.W();
 
             if (entity instanceof EntityHuman) {
                 EntityHuman entityhuman = (EntityHuman) entity;
@@ -148,7 +148,7 @@ public class EntityWolf extends EntityAnimal {
             }
         }
 
-        if (!this.Y && this.f && !this.g && !this.B() && this.onGround) {
+        if (!this.Y && this.f && !this.g && !this.C() && this.onGround) {
             this.g = true;
             this.h = 0.0F;
             this.i = 0.0F;
@@ -156,8 +156,8 @@ public class EntityWolf extends EntityAnimal {
         }
     }
 
-    public void o_() {
-        super.o_();
+    public void m_() {
+        super.m_();
         this.c = this.b;
         if (this.a) {
             this.b += (1.0F - this.b) * 0.4F;
@@ -169,7 +169,7 @@ public class EntityWolf extends EntityAnimal {
             this.aF = 10;
         }
 
-        if (this.ab()) {
+        if (this.ac()) {
             this.f = true;
             this.g = false;
             this.h = 0.0F;
@@ -202,12 +202,12 @@ public class EntityWolf extends EntityAnimal {
         }
     }
 
-    public float s() {
+    public float t() {
         return this.width * 0.8F;
     }
 
-    protected int v() {
-        return this.isSitting() ? 20 : super.v();
+    protected int u() {
+        return this.isSitting() ? 20 : super.u();
     }
 
     private void c(Entity entity, float f) {
@@ -220,7 +220,7 @@ public class EntityWolf extends EntityAnimal {
 
             for (int l = 0; l <= 4; ++l) {
                 for (int i1 = 0; i1 <= 4; ++i1) {
-                    if ((l < 1 || i1 < 1 || l > 3 || i1 > 3) && this.world.d(i + l, k - 1, j + i1) && !this.world.d(i + l, k, j + i1) && !this.world.d(i + l, k + 1, j + i1)) {
+                    if ((l < 1 || i1 < 1 || l > 3 || i1 > 3) && this.world.e(i + l, k - 1, j + i1) && !this.world.e(i + l, k, j + i1) && !this.world.e(i + l, k + 1, j + i1)) {
                         this.setPositionRotation((double) ((float) (i + l) + 0.5F), (double) k, (double) ((float) (j + i1) + 0.5F), this.yaw, this.pitch);
                         return;
                     }

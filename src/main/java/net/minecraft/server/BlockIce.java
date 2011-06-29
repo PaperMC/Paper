@@ -38,7 +38,7 @@ public class BlockIce extends BlockBreakable {
             }
             // CraftBukkit end
 
-            this.b_(world, i, j, k, world.getData(i, j, k));
+            this.g(world, i, j, k, world.getData(i, j, k));
             world.setTypeId(i, j, k, Block.STATIONARY_WATER.id);
         }
     }

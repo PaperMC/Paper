@@ -95,7 +95,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
                                                 j5 = chunk.getTypeId(l4 + k3, k4 - 1, j4 + l3);
                                                 if (j5 == 0) {
                                                     flag1 = false;
-                                                } else if (k4 > 0 && j5 > 0 && Block.byId[j5].material.A == MaterialMapColor.b) {
+                                                } else if (k4 > 0 && j5 > 0 && Block.byId[j5].material.C == MaterialMapColor.b) {
                                                     flag1 = false;
                                                 }
 
@@ -152,7 +152,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
 
                             i5 = 0;
                             if (j4 > 0) {
-                                MaterialMapColor materialmapcolor = Block.byId[j4].material.A;
+                                MaterialMapColor materialmapcolor = Block.byId[j4].material.C;
 
                                 if (materialmapcolor == MaterialMapColor.n) {
                                     d2 = (double) i4 * 0.1D + (double) (k1 + j2 & 1) * 0.2D;

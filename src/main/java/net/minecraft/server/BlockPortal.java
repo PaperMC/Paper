@@ -13,7 +13,7 @@ public class BlockPortal extends BlockBreakable {
         super(i, j, Material.PORTAL, false);
     }
 
-    public AxisAlignedBB d(World world, int i, int j, int k) {
+    public AxisAlignedBB e(World world, int i, int j, int k) {
         return null;
     }
 
@@ -166,7 +166,7 @@ public class BlockPortal extends BlockBreakable {
             world.getServer().getPluginManager().callEvent(event);
             // CraftBukkit end
 
-            entity.O();
+            entity.P();
         }
     }
 }

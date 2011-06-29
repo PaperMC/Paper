@@ -152,7 +152,7 @@ public class BlockFlowing extends BlockFluids {
                 if (this.material == Material.LAVA) {
                     this.h(world, i, j, k);
                 } else {
-                    Block.byId[i1].b_(world, i, j, k, world.getData(i, j, k));
+                    Block.byId[i1].g(world, i, j, k, world.getData(i, j, k));
                 }
             }
 
@@ -292,8 +292,8 @@ public class BlockFlowing extends BlockFluids {
         return material == this.material ? false : (material == Material.LAVA ? false : !this.k(world, i, j, k));
     }
 
-    public void e(World world, int i, int j, int k) {
-        super.e(world, i, j, k);
+    public void c(World world, int i, int j, int k) {
+        super.c(world, i, j, k);
         if (world.getTypeId(i, j, k) == this.id) {
             world.c(i, j, k, this.id, this.c());
         }

@@ -114,7 +114,7 @@ public class EntityMinecart extends Entity implements IInventory {
 
             this.c = -this.c;
             this.b = 10;
-            this.ae();
+            this.af();
             this.damage += i * 10;
             if (this.damage > 40) {
                 if (this.passenger != null) {
@@ -175,7 +175,7 @@ public class EntityMinecart extends Entity implements IInventory {
         }
     }
 
-    public boolean n_() {
+    public boolean l_() {
         return !this.dead;
     }
 
@@ -210,7 +210,7 @@ public class EntityMinecart extends Entity implements IInventory {
         super.die();
     }
 
-    public void o_() {
+    public void m_() {
         // CraftBukkit start
         double prevX = this.locX;
         double prevY = this.locY;
@@ -476,15 +476,15 @@ public class EntityMinecart extends Entity implements IInventory {
                         this.motX += this.motX / d20 * d21;
                         this.motZ += this.motZ / d20 * d21;
                     } else if (i1 == 1) {
-                        if (this.world.d(i - 1, j, k)) {
+                        if (this.world.e(i - 1, j, k)) {
                             this.motX = 0.02D;
-                        } else if (this.world.d(i + 1, j, k)) {
+                        } else if (this.world.e(i + 1, j, k)) {
                             this.motX = -0.02D;
                         }
                     } else if (i1 == 0) {
-                        if (this.world.d(i, j, k - 1)) {
+                        if (this.world.e(i, j, k - 1)) {
                             this.motZ = 0.02D;
-                        } else if (this.world.d(i, j, k + 1)) {
+                        } else if (this.world.e(i, j, k + 1)) {
                             this.motZ = -0.02D;
                         }
                     }

@@ -46,9 +46,9 @@ public class BlockRedstoneTorch extends BlockTorch {
         return 2;
     }
 
-    public void e(World world, int i, int j, int k) {
+    public void c(World world, int i, int j, int k) {
         if (world.getData(i, j, k) == 0) {
-            super.e(world, i, j, k);
+            super.c(world, i, j, k);
         }
 
         if (this.isOn) {
@@ -148,7 +148,7 @@ public class BlockRedstoneTorch extends BlockTorch {
         world.c(i, j, k, this.id, this.c());
     }
 
-    public boolean c(World world, int i, int j, int k, int l) {
+    public boolean d(World world, int i, int j, int k, int l) {
         return l == 0 ? this.a(world, i, j, k, l) : false;
     }
 

@@ -41,7 +41,7 @@ public class EntityArrow extends Entity {
         this.shooter = entityliving;
         this.fromPlayer = entityliving instanceof EntityHuman;
         this.b(0.5F, 0.5F);
-        this.setPositionRotation(entityliving.locX, entityliving.locY + (double) entityliving.s(), entityliving.locZ, entityliving.yaw, entityliving.pitch);
+        this.setPositionRotation(entityliving.locX, entityliving.locY + (double) entityliving.t(), entityliving.locZ, entityliving.yaw, entityliving.pitch);
         this.locX -= (double) (MathHelper.cos(this.yaw / 180.0F * 3.1415927F) * 0.16F);
         this.locY -= 0.10000000149011612D;
         this.locZ -= (double) (MathHelper.sin(this.yaw / 180.0F * 3.1415927F) * 0.16F);
@@ -77,8 +77,8 @@ public class EntityArrow extends Entity {
         this.j = 0;
     }
 
-    public void o_() {
-        super.o_();
+    public void m_() {
+        super.m_();
         if (this.lastPitch == 0.0F && this.lastYaw == 0.0F) {
             float f = MathHelper.a(this.motX * this.motX + this.motZ * this.motZ);
 
@@ -90,7 +90,7 @@ public class EntityArrow extends Entity {
 
         if (i > 0) {
             Block.byId[i].a(this.world, this.d, this.e, this.f);
-            AxisAlignedBB axisalignedbb = Block.byId[i].d(this.world, this.d, this.e, this.f);
+            AxisAlignedBB axisalignedbb = Block.byId[i].e(this.world, this.d, this.e, this.f);
 
             if (axisalignedbb != null && axisalignedbb.a(Vec3D.create(this.locX, this.locY, this.locZ))) {
                 this.inGround = true;
@@ -139,7 +139,7 @@ public class EntityArrow extends Entity {
             for (int k = 0; k < list.size(); ++k) {
                 Entity entity1 = (Entity) list.get(k);
 
-                if (entity1.n_() && (entity1 != this.shooter || this.k >= 5)) {
+                if (entity1.l_() && (entity1 != this.shooter || this.k >= 5)) {
                     f1 = 0.3F;
                     AxisAlignedBB axisalignedbb1 = entity1.boundingBox.b((double) f1, (double) f1, (double) f1);
                     MovingObjectPosition movingobjectposition1 = axisalignedbb1.a(vec3d, vec3d1);
@@ -245,7 +245,7 @@ public class EntityArrow extends Entity {
             float f3 = 0.99F;
 
             f1 = 0.03F;
-            if (this.ac()) {
+            if (this.ad()) {
                 for (int l = 0; l < 4; ++l) {
                     float f4 = 0.25F;
 

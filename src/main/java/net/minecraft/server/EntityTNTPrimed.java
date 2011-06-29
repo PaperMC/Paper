@@ -41,11 +41,11 @@ public class EntityTNTPrimed extends Entity {
         return false;
     }
 
-    public boolean n_() {
+    public boolean l_() {
         return !this.dead;
     }
 
-    public void o_() {
+    public void m_() {
         this.lastX = this.locX;
         this.lastY = this.locY;
         this.lastZ = this.locZ;
