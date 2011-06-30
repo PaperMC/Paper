@@ -41,10 +41,14 @@ public enum Material {
     BED_BLOCK(26, Bed.class),
     POWERED_RAIL(27, PoweredRail.class),
     DETECTOR_RAIL(28, DetectorRail.class),
+    PISTON_STICKY_BASE(29, PistonBaseMaterial.class),
     WEB(30),
     LONG_GRASS(31, LongGrass.class),
     DEAD_BUSH(32),
+    PISTON_BASE(33, PistonBaseMaterial.class),
+    PISTON_EXTENSION(34, PistonExtensionMaterial.class),
     WOOL(35, Wool.class),
+    PISTON_MOVING_PIECE(36),
     YELLOW_FLOWER(37),
     RED_ROSE(38),
     BROWN_MUSHROOM(39),
@@ -209,6 +213,7 @@ public enum Material {
     DIODE(356),
     COOKIE(357),
     MAP(358),
+    SHEARS(359),
     GOLD_RECORD(2256, 1),
     GREEN_RECORD(2257, 1);
 
