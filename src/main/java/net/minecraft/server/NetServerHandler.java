@@ -136,8 +136,21 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
         // CraftBukkit start
         Player player = this.getPlayer();
-        Location from = new Location(player.getWorld(), this.lastPosX, this.lastPosY, this.lastPosZ, this.lastYaw, this.lastPitch);
-        Location to = player.getLocation();
+        Location from = player.getLocation().clone(); // Get the Players current location.
+        Location to = player.getLocation().clone(); // Start off the To location as the Players current location.
+
+        // If the packet contains movement information then we update the To location with the correct XYZ.
+        if (packet10flying.h && !(packet10flying.h && packet10flying.y == -999.0D && packet10flying.stance == -999.0D)) {
+            to.setX(packet10flying.x);
+            to.setY(packet10flying.y);
+            to.setZ(packet10flying.z);
+        }
+
+        // If the packet contains look information then we update the To location with the correct Yaw & Pitch.
+        if (packet10flying.hasLook) {
+            to.setYaw(packet10flying.yaw);
+            to.setPitch(packet10flying.pitch);
+        }
 
         // Prevent 40 event-calls for less than a single pixel of movement >.>
         double delta = Math.pow(this.lastPosX - this.x, 2) + Math.pow(this.lastPosY - this.y, 2) + Math.pow(this.lastPosZ - this.z, 2);
@@ -163,11 +176,11 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                     return;
                 }
 
-                this.player.locX = to.getX();
-                this.player.locY = to.getY();
-                this.player.locZ = to.getZ();
-                this.player.yaw = to.getYaw();
-                this.player.pitch = to.getPitch();
+                /* Check to see if the Players Location has some how changed during the call of the event.
+                   This can happen due to a plugin teleporting the player instead of using .setTo() */
+                if(!from.equals(this.getPlayer().getLocation())){
+                    return;
+                }
             }
 
             this.lastPosX = this.player.locX;
@@ -177,37 +190,9 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             this.lastPitch = this.player.pitch;
         }
 
-        if (Math.abs(packet10flying.x) > 32000000 || Math.abs(packet10flying.z) > 32000000) {
+        if (Double.isNaN(packet10flying.x) || Double.isNaN(packet10flying.y) || Double.isNaN(packet10flying.z) || Double.isNaN(packet10flying.stance)) {
             player.teleport(player.getWorld().getSpawnLocation());
             System.err.println(player.getName() + " was caught trying to crash the server with an invalid position.");
-            player.kickPlayer("Nope!");
-            return;
-        }
-
-        if (Double.isNaN(packet10flying.x) || packet10flying.x == Double.POSITIVE_INFINITY || packet10flying.x == Double.NEGATIVE_INFINITY) {
-            player.teleport(player.getWorld().getSpawnLocation());
-            System.err.println(player.getName() + " was caught trying to set an invalid position.");
-            player.kickPlayer("Nope!");
-            return;
-        }
-
-        if (Double.isNaN(packet10flying.y) || packet10flying.y == Double.POSITIVE_INFINITY || packet10flying.y == Double.NEGATIVE_INFINITY) {
-            player.teleport(player.getWorld().getSpawnLocation());
-            System.err.println(player.getName() + " was caught trying to set an invalid position.");
-            player.kickPlayer("Nope!");
-            return;
-        }
-
-        if (Double.isNaN(packet10flying.z) || packet10flying.z == Double.POSITIVE_INFINITY || packet10flying.z == Double.NEGATIVE_INFINITY) {
-            player.teleport(player.getWorld().getSpawnLocation());
-            System.err.println(player.getName() + " was caught trying to set an invalid position.");
-            player.kickPlayer("Nope!");
-            return;
-        }
-
-        if (Double.isNaN(packet10flying.stance) || packet10flying.stance == Double.POSITIVE_INFINITY || packet10flying.stance == Double.NEGATIVE_INFINITY) {
-            player.teleport(player.getWorld().getSpawnLocation());
-            System.err.println(player.getName() + " was caught trying to set an invalid position.");
             player.kickPlayer("Nope!");
             return;
         }
