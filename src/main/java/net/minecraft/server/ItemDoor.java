@@ -78,7 +78,7 @@ public class ItemDoor extends Item {
 
                 // CraftBukkit start - bed
                 world.suppressPhysics = false;
-                world.applyPhysics(i, j, k, block.id);
+                world.applyPhysics(i, j, k, Block.REDSTONE_WIRE.id);
                 BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ, block);
 
                 if (event.isCancelled() || !event.canBuild()) {
@@ -91,7 +91,7 @@ public class ItemDoor extends Item {
                 world.setTypeIdAndData(i, j + 1, k, block.id, i1 + 8);
                 world.suppressPhysics = false;
                 // world.applyPhysics(i, j, k, block.id); // CraftBukkit - moved up
-                world.applyPhysics(i, j + 1, k, block.id);
+                world.applyPhysics(i, j + 1, k, Block.REDSTONE_WIRE.id);
                 --itemstack.count;
                 return true;
             }

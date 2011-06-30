@@ -154,6 +154,7 @@ public class BlockTrapdoor extends Block {
         }
 
         world.setData(i, j, k, b0);
+        doPhysics(world, i, j, k, Block.REDSTONE_WIRE.id); // CraftBukkit
     }
 
     public boolean canPlace(World world, int i, int j, int k, int l) {
