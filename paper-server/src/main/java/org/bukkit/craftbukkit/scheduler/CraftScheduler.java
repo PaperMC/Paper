@@ -253,15 +253,40 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
     }
 
     public void cancelTask(int taskId) {
-        synchronized (schedulerQueue) {
-            Iterator<CraftTask> itr = schedulerQueue.keySet().iterator();
-            while (itr.hasNext()) {
-                CraftTask current = itr.next();
-                if (current.getIdNumber() == taskId) {
-                    itr.remove();
+        syncedTasksLock.lock();
+        try {
+            synchronized (schedulerQueue) {
+                mainThreadLock.lock();
+                try {
+                    Iterator<CraftTask> itr = schedulerQueue.keySet().iterator();
+                    while (itr.hasNext()) {
+                        CraftTask current = itr.next();
+                        if (current.getIdNumber() == taskId) {
+                            itr.remove();
+                        }
+                    }
+                    itr = mainThreadQueue.iterator();
+                    while (itr.hasNext()) {
+                        CraftTask current = itr.next();
+                        if (current.getIdNumber() == taskId) {
+                            itr.remove();
+                        }
+                    }
+                    itr = syncedTasks.iterator();
+                    while (itr.hasNext()) {
+                        CraftTask current = itr.next();
+                        if (current.getIdNumber() == taskId) {
+                            itr.remove();
+                        }
+                    }
+                } finally {
+                    mainThreadLock.unlock();
                 }
             }
+        } finally {
+            syncedTasksLock.unlock();
         }
+
         craftThreadManager.interruptTask(taskId);
     }
 
