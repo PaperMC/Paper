@@ -147,10 +147,10 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
                     return;
                 }
 
-                this.ticksForCurrentFuel = this.fuelTime(this.items[1]);
+                this.ticksForCurrentFuel = furnaceBurnEvent.getBurnTime();
                 this.burnTime += this.ticksForCurrentFuel;
-                // CraftBukkit end
-                if (this.burnTime > 0) {
+                if (this.burnTime > 0 && furnaceBurnEvent.isBurning()) {
+                    // CraftBukkit end
                     flag1 = true;
                     if (this.items[1] != null) {
                         --this.items[1].count;
