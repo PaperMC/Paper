@@ -285,7 +285,7 @@ public class EntityMinecart extends Entity implements IInventory {
                     flag2 = !flag1;
                 }
 
-                if (((BlockMinecartTrack) Block.byId[l]).e()) {
+                if (((BlockMinecartTrack) Block.byId[l]).f()) {
                     i1 &= 7;
                 }
 
@@ -608,7 +608,7 @@ public class EntityMinecart extends Entity implements IInventory {
             int i1 = this.world.getData(i, j, k);
 
             d1 = (double) j;
-            if (((BlockMinecartTrack) Block.byId[l]).e()) {
+            if (((BlockMinecartTrack) Block.byId[l]).f()) {
                 i1 &= 7;
             }
 

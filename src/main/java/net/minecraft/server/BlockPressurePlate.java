@@ -181,4 +181,8 @@ public class BlockPressurePlate extends Block {
     public boolean isPowerSource() {
         return true;
     }
+
+    public int e() {
+        return 1;
+    }
 }
