@@ -12,6 +12,7 @@ public class FurnaceBurnEvent extends Event implements Cancellable {
     private ItemStack fuel;
     private int burnTime;
     private boolean cancelled;
+    private boolean burning;
 
     public FurnaceBurnEvent(Block furnace, ItemStack fuel, int burnTime) {
         super(Type.FURNACE_BURN);
@@ -20,6 +21,7 @@ public class FurnaceBurnEvent extends Event implements Cancellable {
         this.fuel = fuel;
         this.burnTime = burnTime;
         this.cancelled = false;
+        this.burning = true;
     }
 
     /**
@@ -41,12 +43,39 @@ public class FurnaceBurnEvent extends Event implements Cancellable {
     }
 
     /**
-     * Gets the default burn time for this fuel
+     * Gets the burn time for this fuel
      *
-     * @return the default burn time for this fuel
+     * @return the burn time for this fuel
      */
     public int getBurnTime() {
         return burnTime;
+    }
+
+    /**
+     * Sets the burn time for this fuel
+     *
+     * @param burnTime the burn time for this fuel
+     */
+    public void setBurnTime(int burnTime) {
+        this.burnTime = burnTime;
+    }
+
+    /**
+     * Gets whether the furnace's fuel is burning or not.
+     *
+     * @return whether the furnace's fuel is burning or not.
+     */
+    public boolean isBurning() {
+        return this.burning;
+    }
+
+    /**
+     * Sets whether the furnace's fuel is burning or not.
+     *
+     * @param burning true if the furnace's fuel is burning
+     */
+    public void setBurning(boolean burning) {
+        this.burning = burning;
     }
 
     /**
