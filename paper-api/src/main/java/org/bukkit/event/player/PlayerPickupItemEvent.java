@@ -10,10 +10,12 @@ import org.bukkit.event.Cancellable;
 public class PlayerPickupItemEvent extends PlayerEvent implements Cancellable {
     private final Item item;
     private boolean cancel = false;
+    private int remaining;
 
-    public PlayerPickupItemEvent(final Player player, final Item item) {
+    public PlayerPickupItemEvent(final Player player, final Item item, int remaining) {
         super(Type.PLAYER_PICKUP_ITEM, player);
         this.item = item;
+        this.remaining = remaining;
     }
 
     /**
@@ -23,6 +25,15 @@ public class PlayerPickupItemEvent extends PlayerEvent implements Cancellable {
      */
     public Item getItem() {
         return item;
+    }
+
+    /**
+     * Gets the amount remaining on the ground, if any
+     *
+     * @return amount remaining on the ground
+     */
+    public int getRemaining() {
+        return remaining;
     }
 
     /**
