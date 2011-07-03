@@ -9,7 +9,7 @@ import org.bukkit.event.entity.EntityTargetEvent;
 
 public class EntityPigZombie extends EntityZombie {
 
-    private int angerLevel = 0;
+    public int angerLevel = 0; // CraftBukkit - private -> public
     private int soundDelay = 0;
     private static final ItemStack f = new ItemStack(Item.GOLD_SWORD, 1);
 
