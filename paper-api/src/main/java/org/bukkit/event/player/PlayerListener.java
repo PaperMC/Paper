@@ -176,4 +176,11 @@ public class PlayerListener implements Listener {
      * @param event Relevant event details
      */
     public void onPlayerPortal(PlayerPortalEvent event) {}
+
+    /**
+     * Called when a player is fishing
+     *
+     * @param event Relevant event details
+     */
+    public void onPlayerFish(PlayerFishEvent event) {}
 }

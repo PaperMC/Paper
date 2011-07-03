@@ -406,6 +406,13 @@ public final class JavaPluginLoader implements PluginLoader {
                 }
             };
 
+        case PLAYER_FISH:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((PlayerListener) listener).onPlayerFish((PlayerFishEvent) event);
+                }
+            };
+
         // Block Events
         case BLOCK_PHYSICS:
             return new EventExecutor() {

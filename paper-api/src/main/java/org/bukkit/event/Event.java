@@ -287,6 +287,12 @@ public abstract class Event implements Serializable {
          * @see org.bukkit.event.player.PlayerBedLeaveEvent
          */
         PLAYER_BED_LEAVE(Category.PLAYER),
+        /**
+         * Called when a player is fishing
+         *
+         * @see org.bukkit.event.player.PlayerFishEvent
+         */
+        PLAYER_FISH(Category.PLAYER),
 
         /**
          * BLOCK EVENTS
