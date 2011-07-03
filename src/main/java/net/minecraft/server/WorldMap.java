@@ -5,6 +5,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+// CraftBukkit start
+import org.bukkit.Bukkit;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
+// CraftBukkit end
+
 public class WorldMap extends WorldMapBase {
 
     public int b;
@@ -17,12 +23,35 @@ public class WorldMap extends WorldMapBase {
     private Map j = new HashMap();
     public List i = new ArrayList();
 
+    // CraftBukkit start
+    private CraftServer server;
+    private long worldUID = 0L;
+    // CraftBukkit end
+
     public WorldMap(String s) {
         super(s);
+        server = (CraftServer) Bukkit.getServer(); // CraftBukkit
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        this.map = nbttagcompound.c("dimension");
+        // CraftBukkit start
+        byte dimension = nbttagcompound.c("dimension");
+
+        if (dimension >= 10) {
+            this.worldUID = nbttagcompound.getLong("WorldUID");
+            CraftWorld world = (CraftWorld) server.getWorld(this.worldUID);
+            // Check if the stored world details are correct.
+            if (world == null) {
+                /* All Maps which do not have their valid world loaded are set to a dimension which hopefully won't be reached.
+                   This is to prevent them being corrupted with the wrong map data. */
+                dimension = 127;
+            } else {
+                dimension = (byte) world.getHandle().dimension;
+            }
+        }
+
+        this.map = dimension;
+        // CraftBukkit end
         this.b = nbttagcompound.e("xCenter");
         this.c = nbttagcompound.e("zCenter");
         this.e = nbttagcompound.c("scale");
@@ -63,6 +92,20 @@ public class WorldMap extends WorldMapBase {
     }
 
     public void b(NBTTagCompound nbttagcompound) {
+        // CraftBukkit start
+        if (this.map >= 10) {
+            if (this.worldUID == 0L) {
+                for (org.bukkit.World world : server.getWorlds()) {
+                    CraftWorld cWorld = (CraftWorld) world;
+                    if (cWorld.getHandle().dimension == this.map) {
+                        this.worldUID = cWorld.getUID();
+                        break;
+                    }
+                }
+            }
+            nbttagcompound.setLong("WorldUID", this.worldUID);
+        }
+        // CraftBukkit end
         nbttagcompound.a("dimension", this.map);
         nbttagcompound.a("xCenter", this.b);
         nbttagcompound.a("zCenter", this.c);
