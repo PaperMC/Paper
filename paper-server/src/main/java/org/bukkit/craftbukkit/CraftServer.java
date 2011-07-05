@@ -490,6 +490,16 @@ public final class CraftServer implements Server {
         return worlds.get(name.toLowerCase());
     }
 
+    public World getWorld(long uid) {
+        for (String worldName : worlds.keySet()) {
+            org.bukkit.World world = worlds.get(worldName);
+            if (world.getUID() == uid) {
+                return world;
+            }
+        }
+        return null;
+    }
+
     public void addWorld(World world) {
         worlds.put(world.getName().toLowerCase(), world);
     }
