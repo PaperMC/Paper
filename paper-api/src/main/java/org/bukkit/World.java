@@ -364,13 +364,22 @@ public interface World {
     public String getName();
 
     /**
+     * Gets the Unique ID of this world
+     *
+     * @return Unique ID of this world.
+     */
+    public long getUID();
+
+    /**
      * Gets a semi-unique identifier for this world.
      *
      * While it is highly unlikely that this may be shared with another World,
      * it is not guaranteed to be unique
      *
+     * @deprecated Replaced with {@link #getUID()}
      * @return Id of this world
      */
+    @Deprecated
     public long getId();
 
     /**
@@ -620,7 +629,7 @@ public interface World {
 
     /**
      * Sets the spawn flags for this.
-     * 
+     *
      * @param allowMonsters - if true, monsters are allowed to spawn in this world.
      * @param allowAnimals - if true, animals are allowed to spawn in this world.
      */

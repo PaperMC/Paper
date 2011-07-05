@@ -218,6 +218,14 @@ public interface Server {
     public World getWorld(String name);
 
     /**
+     * Gets the world from the given Unique ID
+     *
+     * @param uid Unique ID of the world to retrieve.
+     * @return World with the given Unique ID, or null if none exists.
+     */
+    public World getWorld(long uid);
+
+    /**
      * Reloads the server, refreshing settings and plugin information
      */
     public void reload();
