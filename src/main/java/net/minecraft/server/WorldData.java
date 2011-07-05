@@ -19,6 +19,7 @@ public class WorldData {
     private int m;
     private boolean n;
     private int o;
+    private long worldUID; // CraftBukkit
 
     public WorldData(NBTTagCompound nbttagcompound) {
         this.a = nbttagcompound.getLong("RandomSeed");
@@ -38,11 +39,20 @@ public class WorldData {
             this.h = nbttagcompound.k("Player");
             this.i = this.h.e("Dimension");
         }
+        // CraftBukkit start
+        if (nbttagcompound.hasKey("WorldUID")) {
+            this.worldUID = nbttagcompound.getLong("WorldUID");
+        } else {
+            this.worldUID = (System.nanoTime() << 20) + this.a;
+            nbttagcompound.setLong("WorldUID", this.worldUID);
+        }
+        // CraftBukkit end
     }
 
     public WorldData(long i, String s) {
         this.a = i;
         this.name = s;
+        this.worldUID = (System.nanoTime() << 20) + this.a; // CraftBukkit
     }
 
     public WorldData(WorldData worlddata) {
@@ -105,6 +115,7 @@ public class WorldData {
         if (nbttagcompound1 != null) {
             nbttagcompound.a("Player", nbttagcompound1);
         }
+        nbttagcompound.setLong("WorldUID", this.worldUID); // CraftBukkit
     }
 
     public long getSeed() {
@@ -192,4 +203,10 @@ public class WorldData {
     public void setWeatherDuration(int i) {
         this.m = i;
     }
+
+    // CraftBukkit start
+    public long getWorldUID() {
+        return this.worldUID;
+    }
+    // CraftBukkit end
 }
