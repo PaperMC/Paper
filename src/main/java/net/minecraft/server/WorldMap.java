@@ -37,15 +37,17 @@ public class WorldMap extends WorldMapBase {
         // CraftBukkit start
         byte dimension = nbttagcompound.c("dimension");
 
-        this.worldUID = nbttagcompound.getLong("WorldUID");
-        CraftWorld world = (CraftWorld) server.getWorld(this.worldUID);
-        // Check if the stored world details are correct.
-        if (world == null) {
-            /* All Maps which do not have their valid world loaded are set to a dimension which hopefully won't be reached.
-               This is to prevent them being corrupted with the wrong map data. */
-            dimension = 127;
-        } else {
-            dimension = (byte) world.getHandle().dimension;
+        if (dimension >= 10) {
+            this.worldUID = nbttagcompound.getLong("WorldUID");
+            CraftWorld world = (CraftWorld) server.getWorld(this.worldUID);
+            // Check if the stored world details are correct.
+            if (world == null) {
+                /* All Maps which do not have their valid world loaded are set to a dimension which hopefully won't be reached.
+                   This is to prevent them being corrupted with the wrong map data. */
+                dimension = 127;
+            } else {
+                dimension = (byte) world.getHandle().dimension;
+            }
         }
 
         this.map = dimension;

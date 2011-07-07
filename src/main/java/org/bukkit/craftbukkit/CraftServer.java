@@ -393,7 +393,7 @@ public final class CraftServer implements Server {
             converter.convert(name, new ConvertProgressUpdater(console));
         }
 
-        int dimension = Environment.values().length + 1 + console.worlds.size();
+        int dimension = 10 + console.worlds.size();
         WorldServer internal = new WorldServer(console, new ServerNBTManager(new File("."), name, true), name, dimension, seed, environment, generator);
         internal.worldMaps = console.worlds.get(0).worldMaps;
 
