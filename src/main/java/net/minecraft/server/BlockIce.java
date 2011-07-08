@@ -12,7 +12,8 @@ public class BlockIce extends BlockBreakable {
         this.a(true);
     }
 
-    public void remove(World world, int i, int j, int k) {
+    public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
+        super.a(world, entityhuman, i, j, k, l);
         Material material = world.getMaterial(i, j - 1, k);
 
         if (material.isSolid() || material.isLiquid()) {
@@ -41,5 +42,9 @@ public class BlockIce extends BlockBreakable {
             this.g(world, i, j, k, world.getData(i, j, k));
             world.setTypeId(i, j, k, Block.STATIONARY_WATER.id);
         }
+    }
+
+    public int e() {
+        return 0;
     }
 }

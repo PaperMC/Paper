@@ -205,14 +205,14 @@ public class ConsoleCommandHandler {
                                             if ("add".equalsIgnoreCase(s3)) {
                                                 for (k = 0; k < this.server.worlds.size(); ++k) { // CraftBukkit
                                                     worldserver1 = this.server.worlds.get(k); // CraftBukkit
-                                                    worldserver1.setTime(worldserver1.getTime() + (long) j);
+                                                    worldserver1.setTimeAndFixTicklists(worldserver1.getTime() + (long) j);
                                                 }
 
                                                 this.print(s1, "Added " + j + " to time");
                                             } else if ("set".equalsIgnoreCase(s3)) {
                                                 for (k = 0; k < this.server.worlds.size(); ++k) { // CraftBukkit
                                                     worldserver1 = this.server.worlds.get(k); // CraftBukkit
-                                                    worldserver1.setTime((long) j);
+                                                    worldserver1.setTimeAndFixTicklists((long) j);
                                                 }
 
                                                 this.print(s1, "Set time to " + j);

@@ -50,7 +50,7 @@ public class EntityTrackerEntry {
 
     public void track(List list) {
         this.m = false;
-        if (!this.r || this.tracker.d(this.o, this.p, this.q) > 16.0D) {
+        if (!this.r || this.tracker.e(this.o, this.p, this.q) > 16.0D) {
             this.o = this.tracker.locX;
             this.p = this.tracker.locY;
             this.q = this.tracker.locZ;

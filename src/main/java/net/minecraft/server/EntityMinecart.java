@@ -769,13 +769,13 @@ public class EntityMinecart extends Entity implements IInventory {
                         if (((EntityMinecart) entity).type == 2 && this.type != 2) {
                             this.motX *= 0.20000000298023224D;
                             this.motZ *= 0.20000000298023224D;
-                            this.f(entity.motX - d0, 0.0D, entity.motZ - d1);
+                            this.b(entity.motX - d0, 0.0D, entity.motZ - d1);
                             entity.motX *= 0.699999988079071D;
                             entity.motZ *= 0.699999988079071D;
                         } else if (((EntityMinecart) entity).type != 2 && this.type == 2) {
                             entity.motX *= 0.20000000298023224D;
                             entity.motZ *= 0.20000000298023224D;
-                            entity.f(this.motX + d0, 0.0D, this.motZ + d1);
+                            entity.b(this.motX + d0, 0.0D, this.motZ + d1);
                             this.motX *= 0.699999988079071D;
                             this.motZ *= 0.699999988079071D;
                         } else {
@@ -783,14 +783,14 @@ public class EntityMinecart extends Entity implements IInventory {
                             d8 /= 2.0D;
                             this.motX *= 0.20000000298023224D;
                             this.motZ *= 0.20000000298023224D;
-                            this.f(d7 - d0, 0.0D, d8 - d1);
+                            this.b(d7 - d0, 0.0D, d8 - d1);
                             entity.motX *= 0.20000000298023224D;
                             entity.motZ *= 0.20000000298023224D;
-                            entity.f(d7 + d0, 0.0D, d8 + d1);
+                            entity.b(d7 + d0, 0.0D, d8 + d1);
                         }
                     } else {
-                        this.f(-d0, 0.0D, -d1);
-                        entity.f(d0 / 4.0D, 0.0D, d1 / 4.0D);
+                        this.b(-d0, 0.0D, -d1);
+                        entity.b(d0 / 4.0D, 0.0D, d1 / 4.0D);
                     }
                 }
             }

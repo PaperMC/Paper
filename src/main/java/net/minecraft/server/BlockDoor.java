@@ -204,4 +204,8 @@ public class BlockDoor extends Block {
     public static boolean e(int i) {
         return (i & 4) != 0;
     }
+
+    public int e() {
+        return 1;
+    }
 }

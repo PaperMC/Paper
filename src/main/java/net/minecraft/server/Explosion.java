@@ -102,7 +102,7 @@ public class Explosion {
 
         for (int k2 = 0; k2 < list.size(); ++k2) {
             Entity entity = (Entity) list.get(k2);
-            double d7 = entity.e(this.posX, this.posY, this.posZ) / (double) this.size;
+            double d7 = entity.f(this.posX, this.posY, this.posZ) / (double) this.size;
 
             if (d7 <= 1.0D) {
                 d0 = entity.locX - this.posX;

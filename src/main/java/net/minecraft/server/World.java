@@ -1577,10 +1577,10 @@ public class World implements IBlockAccess {
         } else {
             ++this.M;
 
+            boolean flag;
+
             try {
                 int i = 500;
-
-                boolean flag;
 
                 while (this.C.size() > 0) {
                     --i;
@@ -1593,10 +1593,11 @@ public class World implements IBlockAccess {
                 }
 
                 flag = false;
-                return flag;
             } finally {
                 --this.M;
             }
+
+            return flag;
         }
     }
 
@@ -1609,38 +1610,44 @@ public class World implements IBlockAccess {
             ++A;
 
             try {
-                if (A != 50) {
-                    int k1 = (l + i) / 2;
-                    int l1 = (j1 + k) / 2;
+                if (A == 50) {
+                    return;
+                }
 
-                    if (this.isLoaded(k1, 64, l1)) {
-                        if (!this.getChunkAtWorldCoords(k1, l1).isEmpty()) {
-                            int i2 = this.C.size();
-                            int j2;
+                int k1 = (l + i) / 2;
+                int l1 = (j1 + k) / 2;
 
-                            if (flag) {
-                                j2 = 5;
-                                if (j2 > i2) {
-                                    j2 = i2;
-                                }
+                if (this.isLoaded(k1, 64, l1)) {
+                    if (this.getChunkAtWorldCoords(k1, l1).isEmpty()) {
+                        return;
+                    }
 
-                                for (int k2 = 0; k2 < j2; ++k2) {
-                                    MetadataChunkBlock metadatachunkblock = (MetadataChunkBlock) this.C.get(this.C.size() - k2 - 1);
+                    int i2 = this.C.size();
+                    int j2;
 
-                                    if (metadatachunkblock.a == enumskyblock && metadatachunkblock.a(i, j, k, l, i1, j1)) {
-                                        return;
-                                    }
-                                }
-                            }
+                    if (flag) {
+                        j2 = 5;
+                        if (j2 > i2) {
+                            j2 = i2;
+                        }
 
-                            this.C.add(new MetadataChunkBlock(enumskyblock, i, j, k, l, i1, j1));
-                            j2 = 1000000;
-                            if (this.C.size() > 1000000) {
-                                System.out.println("More than " + j2 + " updates, aborting lighting updates");
-                                this.C.clear();
+                        for (int k2 = 0; k2 < j2; ++k2) {
+                            MetadataChunkBlock metadatachunkblock = (MetadataChunkBlock) this.C.get(this.C.size() - k2 - 1);
+
+                            if (metadatachunkblock.a == enumskyblock && metadatachunkblock.a(i, j, k, l, i1, j1)) {
+                                return;
                             }
                         }
                     }
+
+                    this.C.add(new MetadataChunkBlock(enumskyblock, i, j, k, l, i1, j1));
+                    j2 = 1000000;
+                    if (this.C.size() > 1000000) {
+                        System.out.println("More than " + j2 + " updates, aborting lighting updates");
+                        this.C.clear();
+                    }
+
+                    return;
                 }
             } finally {
                 --A;
@@ -1866,7 +1873,7 @@ public class World implements IBlockAccess {
                 if (l1 == 0 && this.k(l, k1, j1) <= this.random.nextInt(8) && this.a(EnumSkyBlock.SKY, l, k1, j1) <= 0) {
                     EntityHuman entityhuman1 = this.a((double) l + 0.5D, (double) k1 + 0.5D, (double) j1 + 0.5D, 8.0D);
 
-                    if (entityhuman1 != null && entityhuman1.d((double) l + 0.5D, (double) k1 + 0.5D, (double) j1 + 0.5D) > 4.0D) {
+                    if (entityhuman1 != null && entityhuman1.e((double) l + 0.5D, (double) k1 + 0.5D, (double) j1 + 0.5D) > 4.0D) {
                         this.makeSound((double) l + 0.5D, (double) k1 + 0.5D, (double) j1 + 0.5D, "ambient.cave.cave", 0.7F, 0.8F + this.random.nextFloat() * 0.2F);
                         this.Q = this.random.nextInt(12000) + 6000;
                     }
@@ -2152,7 +2159,7 @@ public class World implements IBlockAccess {
                 continue;
             }
             // CraftBukkit end
-            double d5 = entityhuman1.d(d0, d1, d2);
+            double d5 = entityhuman1.e(d0, d1, d2);
 
             if ((d3 < 0.0D || d5 < d3 * d3) && (d4 == -1.0D || d5 < d4)) {
                 d4 = d5;
@@ -2228,6 +2235,18 @@ public class World implements IBlockAccess {
 
     public void setTime(long i) {
         this.worldData.a(i);
+    }
+
+    public void setTimeAndFixTicklists(long i) {
+        long j = i - this.worldData.f();
+
+        NextTickListEntry nextticklistentry;
+
+        for (Iterator iterator = this.F.iterator(); iterator.hasNext(); nextticklistentry.e += j) {
+            nextticklistentry = (NextTickListEntry) iterator.next();
+        }
+
+        this.setTime(i);
     }
 
     public long getSeed() {

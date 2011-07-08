@@ -970,7 +970,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                     for (int l = 0; l < 4; ++l) {
                         tileentitysign1.lines[l] = event.getLine(l);
                     }
-                    tileentitysign1.setEditable(false);
+                    tileentitysign1.a(false);
                 }
                 // CraftBukkit end
 

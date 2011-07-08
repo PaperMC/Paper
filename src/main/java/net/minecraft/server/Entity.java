@@ -334,7 +334,7 @@ public abstract class Entity {
         this.die();
     }
 
-    public boolean b(double d0, double d1, double d2) {
+    public boolean d(double d0, double d1, double d2) {
         AxisAlignedBB axisalignedbb = this.boundingBox.c(d0, d1, d2);
         List list = this.world.getEntities(this, axisalignedbb);
 
@@ -798,7 +798,7 @@ public abstract class Entity {
         return MathHelper.c(f * f + f1 * f1 + f2 * f2);
     }
 
-    public double d(double d0, double d1, double d2) {
+    public double e(double d0, double d1, double d2) {
         double d3 = this.locX - d0;
         double d4 = this.locY - d1;
         double d5 = this.locZ - d2;
@@ -806,7 +806,7 @@ public abstract class Entity {
         return d3 * d3 + d4 * d4 + d5 * d5;
     }
 
-    public double e(double d0, double d1, double d2) {
+    public double f(double d0, double d1, double d2) {
         double d3 = this.locX - d0;
         double d4 = this.locY - d1;
         double d5 = this.locZ - d2;
@@ -846,13 +846,13 @@ public abstract class Entity {
                 d1 *= 0.05000000074505806D;
                 d0 *= (double) (1.0F - this.bu);
                 d1 *= (double) (1.0F - this.bu);
-                this.f(-d0, 0.0D, -d1);
-                entity.f(d0, 0.0D, d1);
+                this.b(-d0, 0.0D, -d1);
+                entity.b(d0, 0.0D, d1);
             }
         }
     }
 
-    public void f(double d0, double d1, double d2) {
+    public void b(double d0, double d1, double d2) {
         this.motX += d0;
         this.motY += d1;
         this.motZ += d2;

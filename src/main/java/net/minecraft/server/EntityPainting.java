@@ -248,4 +248,18 @@ public class EntityPainting extends Entity {
 
         this.b(this.a);
     }
+
+    public void a(double d0, double d1, double d2) {
+        if (!this.world.isStatic && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) {
+            this.die();
+            this.world.addEntity(new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.PAINTING)));
+        }
+    }
+
+    public void b(double d0, double d1, double d2) {
+        if (!this.world.isStatic && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) {
+            this.die();
+            this.world.addEntity(new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.PAINTING)));
+        }
+    }
 }

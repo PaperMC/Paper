@@ -48,9 +48,7 @@ public class TileEntitySign extends TileEntity {
         return this.isEditable;
     }
 
-    // CraftBukkit start
-    public void setEditable(boolean editable) {
-        this.isEditable = editable;
+    public void a(boolean flag) {
+        this.isEditable = flag;
     }
-    // CraftBukkit end
 }
