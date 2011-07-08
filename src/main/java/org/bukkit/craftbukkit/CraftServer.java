@@ -387,6 +387,10 @@ public final class CraftServer implements Server {
             throw new IllegalArgumentException("File exists with the name '" + name + "' and isn't a folder");
         }
 
+        if (generator == null) {
+            generator = getGenerator(name);
+        }
+
         Convertable converter = new WorldLoaderServer(folder);
         if (converter.isConvertable(name)) {
             getLogger().info("Converting world '" + name + "'");
