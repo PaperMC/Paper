@@ -62,6 +62,30 @@ public class Main {
                         .ofType(SimpleDateFormat.class)
                         .describedAs("Log date format");
 
+                acceptsAll(asList("log-pattern"), "Specfies the log filename pattern")
+                        .withRequiredArg()
+                        .ofType(String.class)
+                        .defaultsTo("server.log")
+                        .describedAs("Log filename");
+
+                acceptsAll(asList("log-limit"), "Limits the maximum size of the log file (0 = unlimited)")
+                        .withRequiredArg()
+                        .ofType(Integer.class)
+                        .defaultsTo(0)
+                        .describedAs("Max log size");
+
+                acceptsAll(asList("log-count"), "Specified how many log files to cycle through")
+                        .withRequiredArg()
+                        .ofType(Integer.class)
+                        .defaultsTo(1)
+                        .describedAs("Log count");
+
+                acceptsAll(asList("log-append"), "Whether to append to the log file")
+                        .withRequiredArg()
+                        .ofType(Boolean.class)
+                        .defaultsTo(true)
+                        .describedAs("Log append");
+
                 acceptsAll(asList("b", "bukkit-settings"), "File for bukkit settings")
                         .withRequiredArg()
                         .ofType(File.class)
@@ -89,7 +113,7 @@ public class Main {
         } else {
             try {
                 useJline = !"jline.UnsupportedTerminal".equals(System.getProperty("jline.terminal"));
-                
+
                 if (options.has("nojline")) {
                     System.setProperty("jline.terminal", "jline.UnsupportedTerminal");
                     System.setProperty("user.language", "en");
