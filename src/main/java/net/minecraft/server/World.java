@@ -1532,12 +1532,14 @@ public class World implements IBlockAccess {
                 tileentity.z = k;
                 this.G.add(tileentity);
             } else {
-                this.c.add(tileentity);
+                // CraftBukkit - order matters, moved down
+                // this.c.add(tileentity);
                 Chunk chunk = this.getChunkAt(i >> 4, k >> 4);
 
                 if (chunk != null) {
                     chunk.a(i & 15, j, k & 15, tileentity);
                 }
+                this.c.add(tileentity);
             }
         }
     }
