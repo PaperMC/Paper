@@ -14,6 +14,14 @@ public enum BlockFace {
     NORTH_WEST(NORTH, WEST),
     SOUTH_EAST(SOUTH, EAST),
     SOUTH_WEST(SOUTH, WEST),
+    WEST_NORTH_WEST(WEST, NORTH_WEST),
+    NORTH_NORTH_WEST(NORTH, NORTH_WEST),
+    NORTH_NORTH_EAST(NORTH, NORTH_EAST),
+    EAST_NORTH_EAST(EAST, NORTH_EAST),
+    EAST_SOUTH_EAST(EAST, SOUTH_EAST),
+    SOUTH_SOUTH_EAST(SOUTH, SOUTH_EAST),
+    SOUTH_SOUTH_WEST(SOUTH, SOUTH_WEST),
+    WEST_SOUTH_WEST(WEST, SOUTH_WEST),
     SELF(0, 0, 0);
 
     private final int modX;
@@ -87,6 +95,30 @@ public enum BlockFace {
 
         case SOUTH_WEST:
             return BlockFace.NORTH_EAST;
+
+        case WEST_NORTH_WEST:
+            return BlockFace.EAST_SOUTH_EAST;
+
+        case NORTH_NORTH_WEST:
+            return BlockFace.SOUTH_SOUTH_EAST;
+
+        case NORTH_NORTH_EAST:
+            return BlockFace.SOUTH_SOUTH_WEST;
+
+        case EAST_NORTH_EAST:
+            return BlockFace.WEST_SOUTH_WEST;
+
+        case EAST_SOUTH_EAST:
+            return BlockFace.WEST_NORTH_WEST;
+
+        case SOUTH_SOUTH_EAST:
+            return BlockFace.NORTH_NORTH_WEST;
+
+        case SOUTH_SOUTH_WEST:
+            return BlockFace.NORTH_NORTH_EAST;
+
+        case WEST_SOUTH_WEST:
+            return BlockFace.EAST_NORTH_EAST;
 
         case SELF:
             return BlockFace.SELF;
