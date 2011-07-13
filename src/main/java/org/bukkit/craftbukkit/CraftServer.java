@@ -567,7 +567,7 @@ public final class CraftServer implements Server {
 
     public Map<String, String[]> getCommandAliases() {
         ConfigurationNode node = configuration.getNode("aliases");
-        Map<String, String[]> result = new HashMap<String, String[]>();
+        Map<String, String[]> result = new LinkedHashMap<String, String[]>();
 
         if (node != null) {
             for (String key : node.getKeys()) {
