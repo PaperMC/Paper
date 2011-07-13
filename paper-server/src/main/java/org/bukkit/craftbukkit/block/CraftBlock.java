@@ -330,37 +330,15 @@ public class CraftBlock implements Block {
     }
 
     public Biome getBiome() {
-        BiomeBase base = chunk.getHandle().world.getWorldChunkManager().getBiome(x, z);
+        return getWorld().getBiome(x, z);
+    }
 
-        if (base == BiomeBase.RAINFOREST) {
-            return Biome.RAINFOREST;
-        } else if (base == BiomeBase.SWAMPLAND) {
-            return Biome.SWAMPLAND;
-        } else if (base == BiomeBase.SEASONAL_FOREST) {
-            return Biome.SEASONAL_FOREST;
-        } else if (base == BiomeBase.FOREST) {
-            return Biome.FOREST;
-        } else if (base == BiomeBase.SAVANNA) {
-            return Biome.SAVANNA;
-        } else if (base == BiomeBase.SHRUBLAND) {
-            return Biome.SHRUBLAND;
-        } else if (base == BiomeBase.TAIGA) {
-            return Biome.TAIGA;
-        } else if (base == BiomeBase.DESERT) {
-            return Biome.DESERT;
-        } else if (base == BiomeBase.PLAINS) {
-            return Biome.PLAINS;
-        } else if (base == BiomeBase.ICE_DESERT) {
-            return Biome.ICE_DESERT;
-        } else if (base == BiomeBase.TUNDRA) {
-            return Biome.TUNDRA;
-        } else if (base == BiomeBase.HELL) {
-            return Biome.HELL;
-        } else if (base == BiomeBase.SKY) {
-            return Biome.SKY;
-        }
+    public double getTemperature() {
+        return getWorld().getTemperature(x, z);
+    }
 
-        return null;
+    public double getHumidity() {
+        return getWorld().getHumidity(x, z);
     }
 
     public boolean isBlockPowered() {
@@ -399,5 +377,13 @@ public class CraftBlock implements Block {
 
     public int getBlockPower() {
         return getBlockPower(BlockFace.SELF);
+    }
+
+    public boolean isEmpty() {
+        return getType() == Material.AIR;
+    }
+
+    public boolean isLiquid() {
+        return (getType() == Material.WATER) || (getType() == Material.STATIONARY_WATER) || (getType() == Material.LAVA) || (getType() == Material.STATIONARY_LAVA);
     }
 }
