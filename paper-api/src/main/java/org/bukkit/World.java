@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
 import org.bukkit.generator.BlockPopulator;
@@ -73,6 +74,25 @@ public interface World {
      * @return Y-coordinate of the highest non-air block
      */
     public int getHighestBlockYAt(Location location);
+
+    /**
+     * Gets the highest non-empty block at the given coordinates
+     *
+     * @param x X-coordinate of the block
+     * @param z Z-coordinate of the block
+     * 
+     * @return Highest non-empty block
+     */
+    public Block getHighestBlockAt(int x, int z);
+
+    /**
+     * Gets the highest non-empty block at the given coordinates
+     *
+     * @param location Coordinates to get the highest block
+     * 
+     * @return Highest non-empty block
+     */
+    public Block getHighestBlockAt(Location location);
 
     /**
      * Gets the {@link Chunk} at the given coordinates
@@ -650,6 +670,42 @@ public interface World {
      * @return whether monsters can spawn in this world.
      */
     public boolean getAllowMonsters();
+
+    /**
+     * Gets the biome for the given block coordinates.
+     *
+     * It is safe to run this method when the block does not exist, it will not create the block.
+     *
+     * @param x X coordinate of the block
+     * @param z Z coordinate of the block
+     *
+     * @return Biome of the requested block
+     */
+    public Biome getBiome(int x, int z);
+
+    /**
+     * Gets the temperature for the given block coordinates.
+     *
+     * It is safe to run this method when the block does not exist, it will not create the block.
+     *
+     * @param x X coordinate of the block
+     * @param z Z coordinate of the block
+     *
+     * @return Temperature of the requested block
+     */
+    public double getTemperature(int x, int z);
+
+    /**
+     * Gets the humidity for the given block coordinates.
+     *
+     * It is safe to run this method when the block does not exist, it will not create the block.
+     *
+     * @param x X coordinate of the block
+     * @param z Z coordinate of the block
+     *
+     * @return Humidity of the requested block
+     */
+    public double getHumidity(int x, int z);
 
     /**
      * Represents various map environment types that a world may be

@@ -236,4 +236,36 @@ public interface Block {
      * @return
      */
     int getBlockPower();
+
+    /**
+     * Checks if this block is empty.
+     *
+     * A block is considered empty when {@link #getType()} returns {@link Material#AIR}.
+     *
+     * @return true if this block is empty
+     */
+    boolean isEmpty();
+
+    /**
+     * Checks if this block is liquid.
+     *
+     * A block is considered liquid when {@link #getType()} returns {@link Material#WATER}, {@link Material#STATIONARY_WATER}, {@link Material#LAVA} or {@link Material#STATIONARY_LAVA}.
+     *
+     * @return true if this block is liquid
+     */
+    boolean isLiquid();
+
+    /**
+     * Gets the temperature of the biome of this block
+     *
+     * @return Temperature of this block
+     */
+    double getTemperature();
+
+    /**
+     * Gets the humidity of the biome of this block
+     *
+     * @return Humidity of this block
+     */
+    double getHumidity();
 }
