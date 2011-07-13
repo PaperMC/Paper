@@ -401,9 +401,7 @@ public final class CraftServer implements Server {
         int dimension = 10 + console.worlds.size();
         WorldServer internal = new WorldServer(console, new ServerNBTManager(new File("."), name, true), name, dimension, seed, environment, generator);
 
-        if (getWorld(internal.getUUID()) != null) {
-            worlds.remove(name);
-            System.out.println("World " + name + " is a duplicate of another world and has been prevented from loading. Please delete the uid.dat file from " + name + "'s world directory if you want to be able to load the duplicate world.");
+        if (!(worlds.containsKey(name.toLowerCase()))) {
             return null;
         }
 
@@ -512,6 +510,11 @@ public final class CraftServer implements Server {
     }
 
     public void addWorld(World world) {
+        // Check if a World already exists with the UID.
+        if (getWorld(world.getUID()) != null) {
+            System.out.println("World " + world.getName() + " is a duplicate of another world and has been prevented from loading. Please delete the uid.dat file from " + world.getName() + "'s world directory if you want to be able to load the duplicate world.");
+            return;
+        }
         worlds.put(world.getName().toLowerCase(), world);
     }
 
