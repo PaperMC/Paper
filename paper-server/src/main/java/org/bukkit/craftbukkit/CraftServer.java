@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jline.ConsoleReader;
@@ -494,9 +495,9 @@ public final class CraftServer implements Server {
         return worlds.get(name.toLowerCase());
     }
 
-    public World getWorld(long uid) {
+    public World getWorld(UUID uid) {
         for (World world : worlds.values()) {
-            if (world.getUID() == uid) {
+            if (world.getUID().equals(uid)) {
                 return world;
             }
         }
