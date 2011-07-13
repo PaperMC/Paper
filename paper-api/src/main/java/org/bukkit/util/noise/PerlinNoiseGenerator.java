@@ -68,7 +68,7 @@ public class PerlinNoiseGenerator extends NoiseGenerator {
         offsetZ = rand.nextDouble() * 256;
 
         for (int i = 0; i < 256; i++) {
-            perm[i] = i;
+            perm[i] = rand.nextInt(256);
         }
 
         for (int i = 0; i < 256; i++) {
