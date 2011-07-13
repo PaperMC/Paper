@@ -9,8 +9,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
-import java.util.UUID;
 import java.util.logging.Logger;
+
+import java.util.UUID; // CraftBukkit
 
 public class PlayerNBTManager implements PlayerFileData, IDataManager {
 
@@ -19,6 +20,7 @@ public class PlayerNBTManager implements PlayerFileData, IDataManager {
     private final File c;
     private final File d;
     private final long e = System.currentTimeMillis();
+    private UUID uuid = null; // CraftBukkit
 
     public PlayerNBTManager(File file1, String s, boolean flag) {
         this.b = new File(file1, s);
@@ -223,20 +225,22 @@ public class PlayerNBTManager implements PlayerFileData, IDataManager {
 
     // CraftBukkit start
     public UUID getUUID() {
+        if (uuid != null) return uuid;
         try {
             File file1 = new File(this.b, "uid.dat");
-            UUID id;
-            if(!file1.exists()) {
+            if (!file1.exists()) {
                 DataOutputStream dos = new DataOutputStream(new FileOutputStream(file1));
-                id = UUID.randomUUID();
-                dos.writeLong(id.getMostSignificantBits());
-                dos.writeLong(id.getLeastSignificantBits());
+                uuid = UUID.randomUUID();
+                dos.writeLong(uuid.getMostSignificantBits());
+                dos.writeLong(uuid.getLeastSignificantBits());
+                dos.close();
             }
             else {
                 DataInputStream dis = new DataInputStream(new FileInputStream(file1));
-                id = new UUID(dis.readLong(), dis.readLong());
+                uuid = new UUID(dis.readLong(), dis.readLong());
+                dis.close();
             }
-            return id;
+            return uuid;
         }
         catch (IOException ex) {
             return null;

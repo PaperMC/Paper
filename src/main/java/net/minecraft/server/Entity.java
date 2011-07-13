@@ -980,24 +980,26 @@ public abstract class Entity {
         // CraftBukkit end
 
         // CraftBukkit start - reset world
-        org.bukkit.Server server = Bukkit.getServer();
-        org.bukkit.World bworld = null;
+        if (this instanceof EntityPlayer) {
+            org.bukkit.Server server = Bukkit.getServer();
+            org.bukkit.World bworld = null;
 
-        // TODO: Remove World related checks, replaced with WorldUID.
-        String worldName = nbttagcompound.getString("World");
+            // TODO: Remove World related checks, replaced with WorldUID.
+            String worldName = nbttagcompound.getString("World");
 
-        if (nbttagcompound.hasKey("WorldUUIDMost") && nbttagcompound.hasKey("WorldUUIDLeast")) {
-            UUID uid = new UUID(nbttagcompound.getLong("WorldUUIDMost"), nbttagcompound.getLong("WorldUUIDLeast"));
-            bworld = server.getWorld(uid);
-        } else {
-            bworld = server.getWorld(worldName);
+            if (nbttagcompound.hasKey("WorldUUIDMost") && nbttagcompound.hasKey("WorldUUIDLeast")) {
+                UUID uid = new UUID(nbttagcompound.getLong("WorldUUIDMost"), nbttagcompound.getLong("WorldUUIDLeast"));
+                bworld = server.getWorld(uid);
+            } else {
+                bworld = server.getWorld(worldName);
+            }
+            if (bworld == null) {
+                EntityPlayer entityPlayer = (EntityPlayer) this;
+                bworld = ((org.bukkit.craftbukkit.CraftServer) server).getServer().getWorldServer(entityPlayer.dimension).getWorld();
+            }
+
+            this.spawnIn(bworld == null ? null : ((org.bukkit.craftbukkit.CraftWorld) bworld).getHandle());
         }
-        if(bworld == null && this instanceof EntityPlayer) {
-            EntityPlayer entityPlayer = (EntityPlayer) this;
-            bworld = ((org.bukkit.craftbukkit.CraftServer) server).getServer().getWorldServer(entityPlayer.dimension).getWorld();
-        }
-
-        this.spawnIn(bworld == null ? null : ((org.bukkit.craftbukkit.CraftWorld) bworld).getHandle());
         // CraftBukkit end
     }
 

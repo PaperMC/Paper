@@ -8,9 +8,10 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.UUID;
 
 // CraftBukkit start
+import java.util.UUID;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.generator.ChunkGenerator;
@@ -2415,4 +2416,5 @@ public class World implements IBlockAccess {
     public UUID getUUID() {
         return this.w.getUUID();
     }
+    // CraftBukkit end
 }
