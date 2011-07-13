@@ -400,6 +400,13 @@ public final class CraftServer implements Server {
 
         int dimension = 10 + console.worlds.size();
         WorldServer internal = new WorldServer(console, new ServerNBTManager(new File("."), name, true), name, dimension, seed, environment, generator);
+
+        if (getWorld(internal.getUUID()) != null) {
+            worlds.remove(name);
+            System.out.println("World " + name + " is a duplicate of another world and has been prevented from loading. Please delete the uid.dat file from " + name + "'s world directory if you want to be able to load the duplicate world.");
+            return null;
+        }
+
         internal.worldMaps = console.worlds.get(0).worldMaps;
 
         internal.tracker = new EntityTracker(console, dimension);
