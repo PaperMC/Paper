@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
+
 import net.minecraft.server.*;
 
 import org.bukkit.entity.Arrow;
@@ -400,8 +402,8 @@ public class CraftWorld implements World {
         return world.worldData.getSeed();
     }
 
-    public long getUID() {
-        return world.worldData.getWorldUID();
+    public UUID getUID() {
+        return world.getUUID();
     }
 
     @Override

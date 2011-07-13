@@ -910,7 +910,8 @@ public abstract class Entity {
         nbttagcompound.a("Air", (short) this.airTicks);
         nbttagcompound.a("OnGround", this.onGround);
         // CraftBukkit start
-        nbttagcompound.setLong("WorldUID", this.world.worldData.getWorldUID());
+        nbttagcompound.setLong("WorldUUIDLeast", this.world.getUUID().getLeastSignificantBits());
+        nbttagcompound.setLong("WorldUUIDMost", this.world.getUUID().getMostSignificantBits());
         nbttagcompound.setLong("UUIDLeast", this.uniqueId.getLeastSignificantBits());
         nbttagcompound.setLong("UUIDMost", this.uniqueId.getMostSignificantBits());
         // CraftBukkit end
@@ -983,23 +984,17 @@ public abstract class Entity {
         org.bukkit.World bworld = null;
 
         // TODO: Remove World related checks, replaced with WorldUID.
-        if (this instanceof EntityPlayer) {
-            EntityPlayer entityPlayer = (EntityPlayer) this;
-            String worldName = nbttagcompound.getString("World");
+        String worldName = nbttagcompound.getString("World");
 
-            if (nbttagcompound.hasKey("WorldUID")) {
-                bworld = server.getWorld(nbttagcompound.getLong("WorldUID"));
-            } else if ("".equals(worldName)) {
-                bworld = ((org.bukkit.craftbukkit.CraftServer) server).getServer().getWorldServer(entityPlayer.dimension).getWorld();
-            } else {
-                bworld = server.getWorld(worldName);
-            }
+        if (nbttagcompound.hasKey("WorldUUIDMost") && nbttagcompound.hasKey("WorldUUIDLeast")) {
+            UUID uid = new UUID(nbttagcompound.getLong("WorldUUIDMost"), nbttagcompound.getLong("WorldUUIDLeast"));
+            bworld = server.getWorld(uid);
         } else {
-            if (nbttagcompound.hasKey("WorldUID")) {
-                bworld = server.getWorld(nbttagcompound.getLong("WorldUID"));
-            } else {
-                bworld = server.getWorld(nbttagcompound.getString("World"));
-            }
+            bworld = server.getWorld(worldName);
+        }
+        if(bworld == null && this instanceof EntityPlayer) {
+            EntityPlayer entityPlayer = (EntityPlayer) this;
+            bworld = ((org.bukkit.craftbukkit.CraftServer) server).getServer().getWorldServer(entityPlayer.dimension).getWorld();
         }
 
         this.spawnIn(bworld == null ? null : ((org.bukkit.craftbukkit.CraftWorld) bworld).getHandle());

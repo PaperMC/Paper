@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 // CraftBukkit start
 import org.bukkit.Bukkit;
@@ -25,7 +26,7 @@ public class WorldMap extends WorldMapBase {
 
     // CraftBukkit start
     private CraftServer server;
-    private long worldUID = 0L;
+    private UUID uniqueId = null;
     // CraftBukkit end
 
     public WorldMap(String s) {
@@ -38,8 +39,13 @@ public class WorldMap extends WorldMapBase {
         byte dimension = nbttagcompound.c("dimension");
 
         if (dimension >= 10) {
-            this.worldUID = nbttagcompound.getLong("WorldUID");
-            CraftWorld world = (CraftWorld) server.getWorld(this.worldUID);
+            long least = nbttagcompound.getLong("UUIDLeast");
+            long most = nbttagcompound.getLong("UUIDMost");
+
+            if (least != 0L && most != 0L) {
+                this.uniqueId = new UUID(most, least);
+            }
+            CraftWorld world = (CraftWorld) server.getWorld(this.uniqueId);
             // Check if the stored world details are correct.
             if (world == null) {
                 /* All Maps which do not have their valid world loaded are set to a dimension which hopefully won't be reached.
@@ -94,16 +100,17 @@ public class WorldMap extends WorldMapBase {
     public void b(NBTTagCompound nbttagcompound) {
         // CraftBukkit start
         if (this.map >= 10) {
-            if (this.worldUID == 0L) {
+            if (this.uniqueId == null) {
                 for (org.bukkit.World world : server.getWorlds()) {
                     CraftWorld cWorld = (CraftWorld) world;
                     if (cWorld.getHandle().dimension == this.map) {
-                        this.worldUID = cWorld.getUID();
+                        this.uniqueId = cWorld.getUID();
                         break;
                     }
                 }
             }
-            nbttagcompound.setLong("WorldUID", this.worldUID);
+            nbttagcompound.setLong("UUIDLeast", this.uniqueId.getLeastSignificantBits());
+            nbttagcompound.setLong("UUIDMost", this.uniqueId.getMostSignificantBits());
         }
         // CraftBukkit end
         nbttagcompound.a("dimension", this.map);
