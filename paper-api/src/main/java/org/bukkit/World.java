@@ -4,6 +4,8 @@ import org.bukkit.generator.ChunkGenerator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
 import org.bukkit.generator.BlockPopulator;
@@ -368,7 +370,7 @@ public interface World {
      *
      * @return Unique ID of this world.
      */
-    public long getUID();
+    public UUID getUID();
 
     /**
      * Gets a semi-unique identifier for this world.

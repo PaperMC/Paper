@@ -7,6 +7,7 @@ import org.bukkit.inventory.Recipe;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.logging.Logger;
 import org.bukkit.command.PluginCommand;
 
@@ -223,7 +224,7 @@ public interface Server {
      * @param uid Unique ID of the world to retrieve.
      * @return World with the given Unique ID, or null if none exists.
      */
-    public World getWorld(long uid);
+    public World getWorld(UUID uid);
 
     /**
      * Reloads the server, refreshing settings and plugin information
