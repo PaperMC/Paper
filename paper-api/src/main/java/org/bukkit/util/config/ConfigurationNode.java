@@ -24,27 +24,8 @@ public class ConfigurationNode {
      *
      * @return A map of key value pairs with the path as the key and the object as the value
      */
-    @SuppressWarnings("unchecked")
     public Map<String, Object> getAll() {
-        Map<String, Object> map = new TreeMap<String, Object>();
-
-        Set<String> keys = root.keySet();
-        for( String k : keys ) {
-            Object tmp = root.get(k);
-            if( tmp instanceof Map<?,?> ) {
-                Map<String, Object> rec = recursiveBuilder((Map <String,Object>) tmp);
-
-                Set<String> subkeys = rec.keySet();
-                for( String sk : subkeys ) {
-                    map.put(k + "." + sk, rec.get(sk));
-                }
-            }
-            else {
-                map.put(k, tmp);
-            }
-        }
-
-        return map;
+        return recursiveBuilder(root);
     }
 
     /**
