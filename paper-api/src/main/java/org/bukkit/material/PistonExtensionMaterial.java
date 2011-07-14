@@ -7,7 +7,7 @@ import org.bukkit.block.BlockFace;
 /**
  * Material data for the piston extension block
  */
-public class PistonExtensionMaterial extends MaterialData implements Directional, Attachable {
+public class PistonExtensionMaterial extends MaterialData implements Attachable {
     public PistonExtensionMaterial(final int type) {
         super(type);
     }
@@ -25,26 +25,25 @@ public class PistonExtensionMaterial extends MaterialData implements Directional
     }
 
     public void setFacingDirection(BlockFace face) {
-        byte data = (byte)(getData() ^ 7);
+        byte data = (byte)(getData() & 0x8);
 
         switch (face) {
             case UP:
                 data |= 1;
                 break;
-            case NORTH:
+            case EAST:
                 data |= 2;
                 break;
-            case EAST:
+            case WEST:
                 data |= 3;
                 break;
-            case SOUTH:
+            case NORTH:
                 data |= 4;
                 break;
-            case WEST:
+            case SOUTH:
                 data |= 5;
                 break;
         }
-
         setData(data);
     }
 
@@ -57,13 +56,13 @@ public class PistonExtensionMaterial extends MaterialData implements Directional
             case 1:
                 return BlockFace.UP;
             case 2:
-                return BlockFace.NORTH;
-            case 3:
-                return BlockFace.SOUTH;
-            case 4:
-                return BlockFace.WEST;
-            case 5:
                 return BlockFace.EAST;
+            case 3:
+                return BlockFace.WEST;
+            case 4:
+                return BlockFace.NORTH;
+            case 5:
+                return BlockFace.SOUTH;
             default:
                 return BlockFace.SELF;
         }
