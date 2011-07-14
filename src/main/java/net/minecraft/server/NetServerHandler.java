@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 
 // CraftBukkit start
 import org.bukkit.ChatColor;
+import org.bukkit.craftbukkit.command.ColouredConsoleSender;
 import org.bukkit.Location;
 import org.bukkit.command.CommandException;
 import org.bukkit.craftbukkit.block.CraftBlock;
@@ -685,7 +686,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 }
 
                 s = String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage());
-                a.info(s);
+                ColouredConsoleSender c = new ColouredConsoleSender(this.minecraftServer.server);
+                c.sendMessage(s);
                 for (Player recipient : event.getRecipients()) {
                     recipient.sendMessage(s);
                 }
