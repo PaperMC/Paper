@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit;
 
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.block.Biome;
+import org.bukkit.craftbukkit.block.CraftBlock;
 
 import net.minecraft.server.BiomeBase;
 /**
@@ -137,34 +138,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
      * @return Biome at given coordinate
      */
     public Biome getBiome(int x, int z) {
-        BiomeBase base = biome[x << 4 | z];
-
-        if (base == BiomeBase.RAINFOREST) {
-            return Biome.RAINFOREST;
-        } else if (base == BiomeBase.SWAMPLAND) {
-            return Biome.SWAMPLAND;
-        } else if (base == BiomeBase.SEASONAL_FOREST) {
-            return Biome.SEASONAL_FOREST;
-        } else if (base == BiomeBase.FOREST) {
-            return Biome.FOREST;
-        } else if (base == BiomeBase.SAVANNA) {
-            return Biome.SAVANNA;
-        } else if (base == BiomeBase.SHRUBLAND) {
-            return Biome.SHRUBLAND;
-        } else if (base == BiomeBase.TAIGA) {
-            return Biome.TAIGA;
-        } else if (base == BiomeBase.DESERT) {
-            return Biome.DESERT;
-        } else if (base == BiomeBase.PLAINS) {
-            return Biome.PLAINS;
-        } else if (base == BiomeBase.ICE_DESERT) {
-            return Biome.ICE_DESERT;
-        } else if (base == BiomeBase.TUNDRA) {
-            return Biome.TUNDRA;
-        } else if (base == BiomeBase.HELL) {
-            return Biome.HELL;
-        }
-        return null;
+        return CraftBlock.biomeBaseToBiome(biome[x << 4 | z]);
     }
 
     /**

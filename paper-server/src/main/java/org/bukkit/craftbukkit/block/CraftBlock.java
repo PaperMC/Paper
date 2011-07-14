@@ -330,7 +330,39 @@ public class CraftBlock implements Block {
     }
 
     public Biome getBiome() {
-        return getWorld().getBiome(x, z);
+        return biomeBaseToBiome(chunk.getHandle().world.getWorldChunkManager().getBiome(x, z));
+    }
+
+    public static final Biome biomeBaseToBiome(BiomeBase base) {
+        if (base == BiomeBase.RAINFOREST) {
+            return Biome.RAINFOREST;
+        } else if (base == BiomeBase.SWAMPLAND) {
+            return Biome.SWAMPLAND;
+        } else if (base == BiomeBase.SEASONAL_FOREST) {
+            return Biome.SEASONAL_FOREST;
+        } else if (base == BiomeBase.FOREST) {
+            return Biome.FOREST;
+        } else if (base == BiomeBase.SAVANNA) {
+            return Biome.SAVANNA;
+        } else if (base == BiomeBase.SHRUBLAND) {
+            return Biome.SHRUBLAND;
+        } else if (base == BiomeBase.TAIGA) {
+            return Biome.TAIGA;
+        } else if (base == BiomeBase.DESERT) {
+            return Biome.DESERT;
+        } else if (base == BiomeBase.PLAINS) {
+            return Biome.PLAINS;
+        } else if (base == BiomeBase.ICE_DESERT) {
+            return Biome.ICE_DESERT;
+        } else if (base == BiomeBase.TUNDRA) {
+            return Biome.TUNDRA;
+        } else if (base == BiomeBase.HELL) {
+            return Biome.HELL;
+        } else if (base == BiomeBase.SKY) {
+            return Biome.SKY;
+        }
+
+        return null;
     }
 
     public double getTemperature() {
