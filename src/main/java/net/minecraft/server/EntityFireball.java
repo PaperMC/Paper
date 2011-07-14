@@ -10,6 +10,7 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.ExplosionPrimeEvent;
+import org.bukkit.event.entity.ProjectileHitEvent;
 // CraftBukkit end
 
 public class EntityFireball extends Entity {
@@ -127,6 +128,10 @@ public class EntityFireball extends Entity {
         }
 
         if (movingobjectposition != null) {
+            // CraftBukkit start
+            ProjectileHitEvent phe = new ProjectileHitEvent((Projectile) this.getBukkitEntity());
+            this.world.getServer().getPluginManager().callEvent(phe);
+            // CraftBukkit end
             if (!this.world.isStatic) {
                 // CraftBukkit start
                 if (movingobjectposition.entity != null) {

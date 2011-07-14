@@ -141,12 +141,6 @@ public abstract class Entity {
     }
 
     public void die() {
-        // CraftBukkit start
-        if (this.getBukkitEntity() instanceof Projectile && !(this instanceof EntityFish)) {
-            ProjectileHitEvent event = new ProjectileHitEvent((Projectile) this.getBukkitEntity());
-            this.world.getServer().getPluginManager().callEvent(event);
-        }
-        // CraftBukkit end
         this.dead = true;
     }
 

@@ -8,6 +8,7 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerEggThrowEvent;
 // CraftBukkit end
 
@@ -150,6 +151,9 @@ public class EntityEgg extends Entity {
 
         if (movingobjectposition != null) {
             // CraftBukkit start
+            ProjectileHitEvent phe = new ProjectileHitEvent((Projectile) this.getBukkitEntity());
+            this.world.getServer().getPluginManager().callEvent(phe);
+
             if (movingobjectposition.entity != null) {
                 boolean stick;
                 if (movingobjectposition.entity instanceof EntityLiving) {

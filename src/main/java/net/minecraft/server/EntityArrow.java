@@ -7,6 +7,7 @@ import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 // CraftBukkit end
 
@@ -162,6 +163,10 @@ public class EntityArrow extends Entity {
             float f2;
 
             if (movingobjectposition != null) {
+                // CraftBukkit start
+                ProjectileHitEvent phe = new ProjectileHitEvent((Projectile) this.getBukkitEntity());
+                this.world.getServer().getPluginManager().callEvent(phe);
+                // CraftBukkit end
                 if (movingobjectposition.entity != null) {
                     // CraftBukkit start
                     boolean stick;
