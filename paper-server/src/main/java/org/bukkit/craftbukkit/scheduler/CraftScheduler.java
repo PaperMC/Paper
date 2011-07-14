@@ -49,7 +49,6 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
             long firstTick = -1;
             long currentTick = -1;
             CraftTask first = null;
-            TreeMap<CraftTask, Boolean> nextQueue = new TreeMap<CraftTask, Boolean>();
             do {
                 synchronized (schedulerQueue) {
                     first = null;
@@ -65,7 +64,7 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
                                 processTask(first);
                                 if (first.getPeriod() >= 0) {
                                     first.updateExecution();
-                                    nextQueue.put(first, first.isSync());
+                                    schedulerQueue.put(first, first.isSync());
                                 }
                             } else {
                                 stop = true;
@@ -78,10 +77,6 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
                     }
                 }
             } while (!stop);
-
-            synchronized (schedulerQueue) {
-                schedulerQueue.putAll(nextQueue);
-            }
 
             long sleepTime = 0;
             if (first == null) {
