@@ -6,6 +6,8 @@ import java.util.Random;
 import org.bukkit.event.block.BlockIgniteEvent;
 import org.bukkit.event.block.BlockIgniteEvent.IgniteCause;
 import org.bukkit.event.block.BlockBurnEvent;
+import org.bukkit.event.block.BlockSpreadEvent;
+import org.bukkit.material.MaterialData;
 // CraftBukkit end
 
 public class BlockFire extends Block {
@@ -91,7 +93,8 @@ public class BlockFire extends Block {
                 org.bukkit.World bworld = world.getWorld();
 
                 IgniteCause igniteCause = BlockIgniteEvent.IgniteCause.SPREAD;
-                // CraftBukkit
+                org.bukkit.block.Block fromBlock = bworld.getBlockAt(i, j, k);
+                // CraftBukkit end
 
                 for (int i1 = i - 1; i1 <= i + 1; ++i1) {
                     for (int j1 = k - 1; j1 <= k + 1; ++j1) {
@@ -125,7 +128,16 @@ public class BlockFire extends Block {
                                                 continue;
                                             }
 
-                                            world.setTypeIdAndData(i1, k1, j1, this.id, k2);
+                                            org.bukkit.block.BlockState blockState = bworld.getBlockAt(i1, k1, j1).getState();
+                                            blockState.setTypeId(this.id);
+                                            blockState.setData(new MaterialData(this.id, (byte) k2));
+
+                                            BlockSpreadEvent spreadEvent = new BlockSpreadEvent(blockState.getBlock(), fromBlock, blockState);
+                                            server.getPluginManager().callEvent(spreadEvent);
+
+                                            if (!spreadEvent.isCancelled()) {
+                                                blockState.update(true);
+                                            }
                                         }
                                         // CraftBukkit end
                                     }
