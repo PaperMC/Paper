@@ -1,11 +1,12 @@
 package org.bukkit.craftbukkit;
 
+import com.google.common.collect.MapMaker;
 import org.bukkit.craftbukkit.entity.*;
 import org.bukkit.entity.*;
 import org.bukkit.entity.Entity;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -37,7 +38,7 @@ public class CraftWorld implements World {
     private final WorldServer world;
     private Environment environment;
     private final CraftServer server = (CraftServer)Bukkit.getServer();
-    private HashMap<Integer, CraftChunk> unloadedChunks = new HashMap<Integer, CraftChunk>();
+    private ConcurrentMap<Integer, CraftChunk> unloadedChunks = new MapMaker().weakKeys().weakValues().makeMap();
     private final ChunkGenerator generator;
     private final List<BlockPopulator> populators = new ArrayList<BlockPopulator>();
 
