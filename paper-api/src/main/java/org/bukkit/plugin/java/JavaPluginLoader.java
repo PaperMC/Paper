@@ -527,6 +527,20 @@ public final class JavaPluginLoader implements PluginLoader {
                 }
             };
 
+        case BLOCK_PISTON_RETRACT:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((BlockListener) listener).onBlockPistonRetract((BlockPistonRetractEvent) event);
+                }
+            };
+
+        case BLOCK_PISTON_EXTEND:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((BlockListener) listener).onBlockPistonExtend((BlockPistonExtendEvent) event);
+                }
+            };
+
         // Server Events
         case PLUGIN_ENABLE:
             return new EventExecutor() {

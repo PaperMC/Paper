@@ -67,6 +67,15 @@ public interface Block {
     Block getRelative(BlockFace face);
 
     /**
+     * Gets the block at the given offsets
+     *
+     * @param face face
+     * @param distance distance
+     * @return Block at the given offset and distance
+     */
+    Block getRelative(BlockFace face, int distance);
+
+    /**
      * Gets the type of this block
      *
      * @return block type
@@ -268,4 +277,11 @@ public interface Block {
      * @return Humidity of this block
      */
     double getHumidity();
+
+    /**
+     * Returns the reaction of the block when moved by a piston
+     *
+     * @return reaction
+     */
+    PistonMoveReaction getPistonMoveReaction();
 }
