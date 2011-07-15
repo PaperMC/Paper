@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit;
 
+import com.google.common.collect.MapMaker;
 import java.lang.ref.WeakReference;
+import java.util.concurrent.ConcurrentMap;
 import net.minecraft.server.ChunkPosition;
 
 import net.minecraft.server.WorldServer;
@@ -11,14 +13,13 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.entity.Entity;
-import org.bukkit.craftbukkit.util.ConcurrentSoftMap;
 import org.bukkit.ChunkSnapshot;
 import net.minecraft.server.BiomeBase;
 import net.minecraft.server.WorldChunkManager;
 
 public class CraftChunk implements Chunk {
     private WeakReference<net.minecraft.server.Chunk> weakChunk;
-    private final ConcurrentSoftMap<Integer, Block> cache = new ConcurrentSoftMap<Integer, Block>();
+    private final ConcurrentMap<Integer, Block> cache = new MapMaker().softKeys().softValues().makeMap();
     private WorldServer worldServer;
     private int x;
     private int z;
