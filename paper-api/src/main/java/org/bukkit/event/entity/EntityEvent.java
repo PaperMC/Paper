@@ -16,6 +16,7 @@ public class EntityEvent extends Event {
 
     /**
      * Returns the Entity involved in this event
+     *
      * @return Entity who is involved in this event
      */
     public final Entity getEntity() {

@@ -4,7 +4,9 @@ import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 
 /**
- * Stores data for creepers being (un)powered
+ * Called when a Creeper is struck by lightning.
+ *<p />
+ * If a Creeper Power event is cancelled, the Creeper will not be powered.
  */
 public class CreeperPowerEvent extends EntityEvent implements Cancellable {
 
@@ -28,18 +30,22 @@ public class CreeperPowerEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * Gets the cancellation state of this event. A canceled event will not
-     * be executed in the server, but will still pass to other plugins
+     * Gets the cancellation state of this event. A cancelled event will not
+     * be executed in the server, but will still pass to other plugins.
+     *<p />
+     * If a Creeper Power event is cancelled, the Creeper will not be powered.
      *
-     * @return true if this event is canceled
+     * @return true if this event is cancelled
      */
     public boolean isCancelled() {
         return canceled;
     }
 
     /**
-     * Sets the cancellation state of this event. A canceled event will not
-     * be executed in the server, but will still pass to other plugins
+     * Sets the cancellation state of this event. A cancelled event will not
+     * be executed in the server, but will still pass to other plugins.
+     *<p />
+     * If a Creeper Power event is cancelled, the Creeper will not be powered.
      *
      * @param cancel true if you wish to cancel this event
      */
@@ -48,9 +54,9 @@ public class CreeperPowerEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * Gets the bolt which is striking the creeper.
+     * Gets the lightning bolt which is striking the Creeper.
      *
-     * @return lightning entity
+     * @return The Entity for the lightning bolt which is striking the Creeper
      */
     public Entity getLightning() {
         return bolt;
@@ -58,6 +64,7 @@ public class CreeperPowerEvent extends EntityEvent implements Cancellable {
 
     /**
      * Gets the cause of the creeper being (un)powered.
+     *
      * @return A PowerCause value detailing the cause of change in power.
      */
     public PowerCause getCause() {

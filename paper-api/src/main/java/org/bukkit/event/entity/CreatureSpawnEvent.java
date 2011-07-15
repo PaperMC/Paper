@@ -6,7 +6,9 @@ import org.bukkit.Location;
 import org.bukkit.event.Cancellable;
 
 /**
- * Stores data for damage events
+ * Called when a creature is spawned into a world.
+ *<p />
+ * If a Creature Spawn event is cancelled, the creature will not spawn.
  */
 public class CreatureSpawnEvent extends EntityEvent implements Cancellable {
 
@@ -23,18 +25,22 @@ public class CreatureSpawnEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * Gets the cancellation state of this event. A canceled event will not
-     * be executed in the server, but will still pass to other plugins
+     * Gets the cancellation state of this event. A cancelled event will not
+     * be executed in the server, but will still pass to other plugins.
+     *<p />
+     * If a Creature Spawn event is cancelled, the creature will not spawn.
      *
-     * @return true if this event is canceled
+     * @return true if this event is cancelled
      */
     public boolean isCancelled() {
         return canceled;
     }
 
     /**
-     * Sets the cancellation state of this event. A canceled event will not
-     * be executed in the server, but will still pass to other plugins
+     * Sets the cancellation state of this event. A cancelled event will not
+     * be executed in the server, but will still pass to other plugins.
+     *<p />
+     * If a Creature Spawn event is cancelled, the creature will not spawn.
      *
      * @param cancel true if you wish to cancel this event
      */
@@ -44,6 +50,7 @@ public class CreatureSpawnEvent extends EntityEvent implements Cancellable {
 
     /**
      * Gets the location at which the creature is spawning.
+     *
      * @return The location at which the creature is spawning
      */
     public Location getLocation() {

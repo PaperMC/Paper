@@ -4,7 +4,9 @@ import org.bukkit.block.Block;
 import org.bukkit.event.Cancellable;
 
 /**
- * Called on leaves decaying
+ * Called when leaves are decaying naturally.
+ *<p />
+ * If a Leaves Decay event is cancelled, the leaves will not decay.
  */
 public class LeavesDecayEvent extends BlockEvent implements Cancellable {
     private boolean cancel = false;
@@ -16,6 +18,8 @@ public class LeavesDecayEvent extends BlockEvent implements Cancellable {
     /**
      * Gets the cancellation state of this event. A cancelled event will not
      * be executed in the server, but will still pass to other plugins
+     *<p />
+     * If a Leaves Decay event is cancelled, the leaves will not decay.
      *
      * @return true if this event is cancelled
      */
@@ -26,6 +30,8 @@ public class LeavesDecayEvent extends BlockEvent implements Cancellable {
     /**
      * Sets the cancellation state of this event. A cancelled event will not
      * be executed in the server, but will still pass to other plugins
+     *<p />
+     * If a Leaves Decay event is cancelled, the leaves will not decay.
      *
      * @param cancel true if you wish to cancel this event
      */

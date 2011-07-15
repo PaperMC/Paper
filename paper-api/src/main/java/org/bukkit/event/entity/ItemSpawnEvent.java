@@ -39,6 +39,7 @@ public class ItemSpawnEvent extends EntityEvent implements Cancellable {
 
     /**
      * Gets the location at which the item is spawning.
+     *
      * @return The location at which the item is spawning
      */
     public Location getLocation() {

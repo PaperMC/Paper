@@ -7,7 +7,9 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * Called when a block is placed by a player
+ * Called when a block is placed by a player.
+ *<p />
+ * If a Block Place event is cancelled, the block will not be placed.
  */
 public class BlockPlaceEvent extends BlockEvent implements Cancellable {
     protected boolean cancel;
@@ -30,6 +32,8 @@ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
     /**
      * Gets the cancellation state of this event. A cancelled event will not
      * be executed in the server, but will still pass to other plugins
+     *<p />
+     * If a Block Place event is cancelled, the block will not be placed.
      *
      * @return true if this event is cancelled
      */
@@ -40,6 +44,8 @@ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
     /**
      * Sets the cancellation state of this event. A cancelled event will not
      * be executed in the server, but will still pass to other plugins
+     *<p />
+     * If a Block Place event is cancelled, the block will not be placed.
      *
      * @param cancel true if you wish to cancel this event
      */
@@ -48,9 +54,9 @@ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
     }
 
     /**
-     * Gets the player who placed this block
+     * Gets the player who placed the block involved in this event.
      *
-     * @return Player who placed the block
+     * @return The Player who placed the block involved in this event
      */
     public Player getPlayer() {
         return player;
@@ -58,25 +64,25 @@ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
 
     /**
      * Clarity method for getting the placed block. Not really needed
-     * except for reasons of clarity
+     * except for reasons of clarity.
      *
-     * @return Block the block that was placed
+     * @return The Block that was placed
      */
     public Block getBlockPlaced() {
         return getBlock();
     }
 
     /**
-     * Returns the state of the block which was replaced. Material type air mostly.
+     * Gets the BlockState for the block which was replaced. Material type air mostly.
      *
-     * @return BlockState of block which was replaced.
+     * @return The BlockState for the block which was replaced.
      */
     public BlockState getBlockReplacedState() {
         return this.replacedBlockState;
     }
 
     /**
-     * Get the block that this block was placed against
+     * Gets the block that this block was placed against
      *
      * @return Block the block that the new block was placed against
      */
@@ -85,9 +91,9 @@ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
     }
 
     /**
-     * Returns the item in your hand when you placed the block
+     * Gets the item in the player's hand when they placed the block.
      *
-     * @return ItemStack the item in your hand when placing the block
+     * @return The ItemStack for the item in the player's hand when they placed the block
      */
     public ItemStack getItemInHand() {
         return itemInHand;

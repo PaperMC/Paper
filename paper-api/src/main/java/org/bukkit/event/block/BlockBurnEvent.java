@@ -4,7 +4,9 @@ import org.bukkit.block.Block;
 import org.bukkit.event.Cancellable;
 
 /**
- * Called when a block is destroyed because of being burnt by fire
+ * Called when a block is destroyed as a result of being burnt by fire.
+ *<p />
+ * If a Block Burn event is cancelled, the block will not be destroyed as a result of being burnt by fire.
  */
 public class BlockBurnEvent extends BlockEvent implements Cancellable {
     private boolean cancelled;
@@ -16,9 +18,9 @@ public class BlockBurnEvent extends BlockEvent implements Cancellable {
 
     /**
      * Gets the cancellation state of this event. A cancelled event will not
-     * be executed in the server, but will still pass to other plugins
-     *
-     * If a block burn event is cancelled, the block will not be destroyed from being burnt by fire
+     * be executed in the server, but will still pass to other plugins.
+     *<p />
+     * If a Block Burn event is cancelled, the block will not be destroyed as a result of being burnt by fire.
      *
      * @return true if this event is cancelled
      */
@@ -28,9 +30,9 @@ public class BlockBurnEvent extends BlockEvent implements Cancellable {
 
     /**
      * Sets the cancellation state of this event. A cancelled event will not
-     * be executed in the server, but will still pass to other plugins
-     *
-     * If a block burn event is cancelled, the block will not be destroyed from being burnt by fire
+     * be executed in the server, but will still pass to other plugins.
+     *<p />
+     * If a Block Burn event is cancelled, the block will not be destroyed as a result of being burnt by fire.
      *
      * @param cancel true if you wish to cancel this event
      */

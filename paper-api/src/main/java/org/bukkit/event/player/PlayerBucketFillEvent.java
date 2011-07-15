@@ -7,6 +7,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.inventory.ItemStack;
 
+/**
+ * Called when a player fills a bucket
+ */
 public class PlayerBucketFillEvent extends PlayerEvent implements Cancellable {
     ItemStack itemStack;
     boolean cancelled = false;

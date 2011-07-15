@@ -4,7 +4,9 @@ import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 
 /**
- * Called when an entity combusts due to the sun
+ * Called when an entity combusts due to the sun.
+ *<p />
+ * If an Entity Combust event is cancelled, the entity will not combust.
  */
 public class EntityCombustEvent extends EntityEvent implements Cancellable {
     private boolean cancel;
@@ -16,7 +18,9 @@ public class EntityCombustEvent extends EntityEvent implements Cancellable {
 
     /**
      * Gets the cancellation state of this event. A cancelled event will not
-     * be executed in the server, but will still pass to other plugins
+     * be executed in the server, but will still pass to other plugins.
+     *<p />
+     * If an Entity Combust event is cancelled, the entity will not combust.
      *
      * @return true if this event is cancelled
      */
@@ -26,7 +30,9 @@ public class EntityCombustEvent extends EntityEvent implements Cancellable {
 
     /**
      * Sets the cancellation state of this event. A cancelled event will not
-     * be executed in the server, but will still pass to other plugins
+     * be executed in the server, but will still pass to other plugins.
+     *<p />
+     * If an Entity Combust event is cancelled, the entity will not combust.
      *
      * @param cancel true if you wish to cancel this event
      */

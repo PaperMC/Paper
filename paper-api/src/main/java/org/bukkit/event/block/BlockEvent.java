@@ -4,7 +4,7 @@ import org.bukkit.block.Block;
 import org.bukkit.event.Event;
 
 /**
- * Represents a block related event
+ * Represents a block related event.
  */
 public class BlockEvent extends Event {
     protected Block block;
@@ -15,9 +15,9 @@ public class BlockEvent extends Event {
     }
 
     /**
-     * Returns the block involved in this event
+     * Gets the block involved in this event.
      *
-     * @return Block which block is involved in this event
+     * @return The Block which block is involved in this event
      */
     public final Block getBlock() {
         return block;

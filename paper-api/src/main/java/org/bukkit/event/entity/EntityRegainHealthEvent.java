@@ -21,6 +21,7 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
 
     /**
      * Gets the amount of regained health
+     *
      * @return The amount of health regained
      */
     public int getAmount() {
@@ -41,7 +42,6 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
      * be executed in the server, but will still pass to other plugins
      *
      * If a health-regain event is cancelled, the entity won't get health.
-     * This will not fire an event.
      *
      * @return true if this event is cancelled
      */
@@ -54,7 +54,6 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
      * be executed in the server, but will still pass to other plugins
      *
      * If a health-regain event is cancelled, the entity won't get health.
-     * This will not fire an event.
      *
      * @param cancel true if you wish to cancel this event
      */
@@ -72,7 +71,7 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
     }
 
     /**
-     * An enum to specify the type of health regaining
+     * An enum to specify the type of health regaining that is occurring
      */
     public enum RegainReason {
 

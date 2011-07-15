@@ -6,7 +6,9 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * Called when a block is damaged (hit by a player)
+ * Called when a block is damaged by a player.
+ * <p />
+ * If a Block Damage event is cancelled, the block will not be damaged.
  */
 public class BlockDamageEvent extends BlockEvent implements Cancellable {
     private Player player;
@@ -23,36 +25,36 @@ public class BlockDamageEvent extends BlockEvent implements Cancellable {
     }
 
     /**
-     * Returns the player doing the damage
+     * Gets the player damaging the block involved in this event.
      *
-     * @return the player damaging the block
+     * @return The player damaging the block involved in this event
      */
     public Player getPlayer() {
         return player;
     }
 
     /**
-     * Returns if the block is set to instantly break
+     * Gets if the block is set to instantly break when damaged by the player.
      *
-     * @return true If the block should instantly break
+     * @return true if the block should instantly break when damaged by the player
      */
     public boolean getInstaBreak() {
         return instaBreak;
     }
 
     /**
-     * Set if the block should instantly break
+     * Sets if the block should instantly break when damaged by the player.
      *
-     * @param bool If true, the block will instantly break
+     * @param bool true if you want the block to instantly break when damaged by the player
      */
     public void setInstaBreak(boolean bool) {
         this.instaBreak = bool;
     }
 
     /**
-     * Returns the ItemStack in hand
+     * Gets the ItemStack for the item currently in the player's hand.
      *
-     * @return the ItemStack for the item currently in hand
+     * @return The ItemStack for the item currently in the player's hand
      */
     public ItemStack getItemInHand() {
         return itemstack;
@@ -60,9 +62,9 @@ public class BlockDamageEvent extends BlockEvent implements Cancellable {
 
     /**
      * Gets the cancellation state of this event. A cancelled event will not
-     * be executed in the server, but will still pass to other plugins
-     *
-     * If a block damage event is cancelled, the block will not be damaged
+     * be executed in the server, but will still pass to other plugins.
+     *<p />
+     * If a Block Damage event is cancelled, the block will not be damaged.
      *
      * @return true if this event is cancelled
      */
@@ -72,9 +74,9 @@ public class BlockDamageEvent extends BlockEvent implements Cancellable {
 
     /**
      * Sets the cancellation state of this event. A cancelled event will not
-     * be executed in the server, but will still pass to other plugins
-     *
-     * If a block damage event is cancelled, the block will not be damaged
+     * be executed in the server, but will still pass to other plugins.
+     *<p />
+     * If a Block Damage event is cancelled, the block will not be damaged.
      *
      * @param cancel true if you wish to cancel this event
      */

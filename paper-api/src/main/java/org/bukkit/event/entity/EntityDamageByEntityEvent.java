@@ -4,7 +4,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 
 /**
- * Stores details for damage events where the damager is a block
+ * Called when an entity is damaged by an entity
  */
 public class EntityDamageByEntityEvent extends EntityDamageEvent implements Cancellable {
 
@@ -17,6 +17,7 @@ public class EntityDamageByEntityEvent extends EntityDamageEvent implements Canc
 
     /**
      * Returns the entity that damaged the defender.
+     *
      * @return Entity that damaged the defender.
      */
     public Entity getDamager() {

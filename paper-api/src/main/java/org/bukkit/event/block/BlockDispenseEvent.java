@@ -6,7 +6,9 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 /**
- * Event called on dispense of an item from a block.
+ * Called when an item is dispensed from a block.
+ *<p />
+ * If a Block Dispense event is cancelled, the block will not dispense the item.
  */
 public class BlockDispenseEvent extends BlockEvent implements Cancellable {
 
@@ -21,38 +23,39 @@ public class BlockDispenseEvent extends BlockEvent implements Cancellable {
     }
 
     /**
-     * Get the item that is being dispensed. Modifying the returned item
-     * will have no effect.
+     * Gets the item that is being dispensed. Modifying the returned item
+     * will have no effect, you must use {@link #setItem(org.bukkit.inventory.ItemStack)} instead.
      *
-     * @return an ItemStack for the item being dispensed
+     * @return An ItemStack for the item being dispensed
      */
     public ItemStack getItem() {
         return item.clone();
     }
 
     /**
-     * Set the item being dispensed.
+     * Sets the item being dispensed.
      *
-     * @param item
+     * @param item the item being dispensed
      */
     public void setItem(ItemStack item) {
         this.item = item;
     }
 
     /**
-     * Gets the velocity. Modifying the returned Vector will not
-     * change the velocity.
+     * Gets the velocity.
+     *<p />
+     * Note: Modifying the returned Vector will not change the velocity, you must use {@link #setVelocity(org.bukkit.util.Vector)} instead.
      *
-     * @return a Vector for the dispensed item's velocity
+     * @return A Vector for the dispensed item's velocity
      */
     public Vector getVelocity() {
         return velocity.clone();
     }
 
     /**
-     * Set the velocity.
+     * Sets the velocity of the item being dispensed.
      *
-     * @param vel
+     * @param vel the velocity of the item being dispensed
      */
     public void setVelocity(Vector vel) {
         velocity = vel;
@@ -60,7 +63,9 @@ public class BlockDispenseEvent extends BlockEvent implements Cancellable {
 
     /**
      * Gets the cancellation state of this event. A cancelled event will not
-     * be executed in the server, but will still pass to other plugins
+     * be executed in the server, but will still pass to other plugins.
+     *<p />
+     * If a Block Dispense event is cancelled, the block will not dispense the item.
      *
      * @return true if this event is cancelled
      */
@@ -70,7 +75,9 @@ public class BlockDispenseEvent extends BlockEvent implements Cancellable {
 
     /**
      * Sets the cancellation state of this event. A cancelled event will not
-     * be executed in the server, but will still pass to other plugins
+     * be executed in the server, but will still pass to other plugins.
+     *<p />
+     * If a Block Dispense event is cancelled, the block will not dispense the item.
      *
      * @param cancel true if you wish to cancel this event
      */
