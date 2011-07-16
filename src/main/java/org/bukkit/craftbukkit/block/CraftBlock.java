@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
+import org.bukkit.block.PistonMoveReaction;
 
 import net.minecraft.server.BiomeBase;
 import net.minecraft.server.BlockRedstoneWire;
@@ -222,7 +223,11 @@ public class CraftBlock implements Block {
      * @return Block at the given offsets
      */
     public Block getRelative(BlockFace face) {
-        return getRelative(face.getModX(), face.getModY(), face.getModZ());
+        return getRelative(face, 1);
+    }
+
+    public Block getRelative(BlockFace face, int distance) {
+        return getRelative(face.getModX() * distance, face.getModY() * distance, face.getModZ() * distance);
     }
 
     /**
@@ -417,5 +422,10 @@ public class CraftBlock implements Block {
 
     public boolean isLiquid() {
         return (getType() == Material.WATER) || (getType() == Material.STATIONARY_WATER) || (getType() == Material.LAVA) || (getType() == Material.STATIONARY_LAVA);
+    }
+
+    public PistonMoveReaction getPistonMoveReaction() {
+        return PistonMoveReaction.getById(net.minecraft.server.Block.byId[this.getTypeId()].material.j());
+
     }
 }
