@@ -19,7 +19,7 @@ import net.minecraft.server.WorldChunkManager;
 
 public class CraftChunk implements Chunk {
     private WeakReference<net.minecraft.server.Chunk> weakChunk;
-    private final ConcurrentMap<Integer, Block> cache = new MapMaker().softKeys().softValues().makeMap();
+    private final ConcurrentMap<Integer, Block> cache = new MapMaker().softValues().makeMap();
     private WorldServer worldServer;
     private int x;
     private int z;
