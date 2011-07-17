@@ -293,46 +293,6 @@ public interface World {
     public boolean generateTree(Location loc, TreeType type, BlockChangeDelegate delegate);
 
     /**
-     * Creates a regular passenger minecart at the given {@link Location}
-     *
-     * @param location Location to spawn the minecart
-     * @return Minecart created as a result of this method
-     * @deprecated use {@link #spawn(Location, Class)} instead
-     */
-    @Deprecated
-    public Minecart spawnMinecart(Location location);
-
-    /**
-     * Creates a storage minecart at the given {@link Location}
-     *
-     * @param loc Location to spawn the minecart
-     * @return StorageMinecart created as a result of this method
-     * @deprecated use {@link #spawn(Location, Class)} instead
-     */
-    @Deprecated
-    public StorageMinecart spawnStorageMinecart(Location loc);
-
-    /**
-     * Creates a powered minecart at the given {@link Location}
-     *
-     * @param loc Location to spawn the minecart
-     * @return PoweredMinecart created as a result of this method
-     * @deprecated use {@link #spawn(Location, Class)} instead
-     */
-    @Deprecated
-    public PoweredMinecart spawnPoweredMinecart(Location loc);
-
-    /**
-     * Creates a boat at the given {@link Location}
-     *
-     * @param loc Location to spawn the boat
-     * @return Boat created as a result of this method
-     * @deprecated use {@link #spawn(Location, Class)} instead
-     */
-    @Deprecated
-    public Boat spawnBoat(Location loc);
-
-    /**
      * Creates a creature at the given {@link Location}
      *
      * @param loc The location to spawn the creature
