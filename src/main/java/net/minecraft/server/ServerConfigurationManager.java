@@ -431,11 +431,25 @@ public class ServerConfigurationManager {
     public void e(String s) {
         this.h.add(s.toLowerCase());
         this.l();
+
+        // Craftbukkit start
+        Player player = server.server.getPlayer(s);
+        if (player != null) {
+            player.recalculatePermissions();
+        }
+        // Craftbukkit end
     }
 
     public void f(String s) {
         this.h.remove(s.toLowerCase());
         this.l();
+
+        // Craftbukkit start
+        Player player = server.server.getPlayer(s);
+        if (player != null) {
+            player.recalculatePermissions();
+        }
+        // Craftbukkit end
     }
 
     private void k() {
