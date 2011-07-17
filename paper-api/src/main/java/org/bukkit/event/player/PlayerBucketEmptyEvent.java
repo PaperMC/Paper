@@ -4,52 +4,14 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Cancellable;
 import org.bukkit.inventory.ItemStack;
 
 /**
  * Called when a player empties a bucket
  */
-public class PlayerBucketEmptyEvent extends PlayerEvent implements Cancellable {
-    ItemStack itemStack;
-    boolean cancelled = false;
-    Block blockClicked;
-    BlockFace blockFace;
-    Material bucket;
-
+public class PlayerBucketEmptyEvent extends PlayerBucketEvent {
     public PlayerBucketEmptyEvent(Player who, Block blockClicked, BlockFace blockFace, Material bucket, ItemStack itemInHand) {
-        super(Type.PLAYER_BUCKET_EMPTY, who);
-        this.blockClicked = blockClicked;
-        this.blockFace = blockFace;
-        this.itemStack = itemInHand;
-        this.bucket = bucket;
-    }
+        super(Type.PLAYER_BUCKET_EMPTY,  who, blockClicked, blockFace, bucket, itemInHand);
 
-    public Material getBucket() {
-        return bucket;
-    }
-
-    public ItemStack getItemStack() {
-        return itemStack;
-    }
-
-    public Block getBlockClicked() {
-        return blockClicked;
-    }
-
-    public BlockFace getBlockFace() {
-        return blockFace;
-    }
-
-    public void setItemStack(ItemStack itemStack) {
-        this.itemStack = itemStack;
-    }
-
-    public boolean isCancelled() {
-        return cancelled;
-    }
-
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
     }
 }
