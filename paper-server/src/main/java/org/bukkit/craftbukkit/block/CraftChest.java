@@ -7,11 +7,6 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.inventory.Inventory;
 
-/**
- * Represents a chest.
- *
- * @author sk89q
- */
 public class CraftChest extends CraftBlockState implements Chest {
     private final CraftWorld world;
     private final TileEntityChest chest;

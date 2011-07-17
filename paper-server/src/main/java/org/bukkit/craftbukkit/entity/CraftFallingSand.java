@@ -16,5 +16,4 @@ public class CraftFallingSand extends CraftEntity implements FallingSand {
     public String toString() {
         return "CraftFallingSand";
     }
-
 }

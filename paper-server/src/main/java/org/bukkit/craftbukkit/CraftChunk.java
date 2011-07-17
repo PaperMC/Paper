@@ -109,21 +109,10 @@ public class CraftChunk implements Chunk {
         return entities;
     }
 
-    /**
-     * Capture thread-safe read-only snapshot of chunk data
-     * @return ChunkSnapshot
-     */
     public ChunkSnapshot getChunkSnapshot() {
         return getChunkSnapshot(true, false, false);
     }
 
-    /**
-     * Capture thread-safe read-only snapshot of chunk data
-     * @param includeMaxblocky - if true, snapshot includes per-coordinate maximum Y values
-     * @param includeBiome - if true, snapshot includes per-coordinate biome type
-     * @param includeBiomeTempRain - if true, snapshot includes per-coordinate raw biome temperature and rainfall
-     * @return ChunkSnapshot
-     */
     public ChunkSnapshot getChunkSnapshot(boolean includeMaxblocky, boolean includeBiome, boolean includeBiomeTempRain) {
         net.minecraft.server.Chunk chunk = getHandle();
         byte[] buf = new byte[32768 + 16384 + 16384 + 16384]; // Get big enough buffer for whole chunk
@@ -158,6 +147,7 @@ public class CraftChunk implements Chunk {
         World world = getWorld();
         return new CraftChunkSnapshot(getX(), getZ(), world.getName(), world.getFullTime(), buf, hmap, biome, biomeTemp, biomeRain);
     }
+
     /**
      * Empty chunk snapshot - nothing but air blocks, but can include valid biome data
      */

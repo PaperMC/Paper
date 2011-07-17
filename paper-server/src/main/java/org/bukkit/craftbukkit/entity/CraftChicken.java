@@ -4,7 +4,6 @@ import net.minecraft.server.EntityChicken;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Chicken;
 
-
 public class CraftChicken extends CraftAnimals implements Chicken {
 
     public CraftChicken(CraftServer server, EntityChicken entity) {
@@ -15,5 +14,4 @@ public class CraftChicken extends CraftAnimals implements Chicken {
     public String toString() {
         return "CraftChicken";
     }
-
 }

@@ -14,5 +14,4 @@ public class CraftCow extends CraftAnimals implements Cow {
     public String toString() {
         return "CraftCow";
     }
-
 }

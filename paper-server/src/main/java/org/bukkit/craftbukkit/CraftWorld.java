@@ -241,6 +241,7 @@ public class CraftWorld implements World {
         return chunk != null;
     }
 
+    @SuppressWarnings("unchecked")
     private void chunkLoadPostProcess(net.minecraft.server.Chunk chunk, int x, int z) {
         if (chunk != null) {
             world.chunkProviderServer.chunks.put(x, z, chunk);
@@ -311,38 +312,6 @@ public class CraftWorld implements World {
         world.addEntity(arrow);
         arrow.a(velocity.getX(), velocity.getY(), velocity.getZ(), speed, spread);
         return (Arrow) arrow.getBukkitEntity();
-    }
-
-    /**
-     * @deprecated use {@link #spawn(Location, Class)} instead
-     */
-    @Deprecated
-    public Minecart spawnMinecart(Location loc) {
-        return spawn(loc, Minecart.class);
-    }
-
-    /**
-     * @deprecated use {@link #spawn(Location, Class)} instead
-     */
-    @Deprecated
-    public StorageMinecart spawnStorageMinecart(Location loc) {
-        return spawn(loc, StorageMinecart.class);
-    }
-
-    /**
-     * @deprecated use {@link #spawn(Location, Class)} instead
-     */
-    @Deprecated
-    public PoweredMinecart spawnPoweredMinecart(Location loc) {
-        return spawn(loc, PoweredMinecart.class);
-    }
-
-    /**
-     * @deprecated use {@link #spawn(Location, Class)} instead
-     */
-    @Deprecated
-    public Boat spawnBoat(Location loc) {
-        return spawn(loc, Boat.class);
     }
 
     public LivingEntity spawnCreature(Location loc, CreatureType creatureType) {
@@ -538,42 +507,6 @@ public class CraftWorld implements World {
 
     public double getHumidity(int x, int z) {
         return getHandle().getWorldChunkManager().getHumidity(x, z);
-    }
-
-    private final class ChunkCoordinate {
-        public final int x;
-        public final int z;
-
-        public ChunkCoordinate(final int x, final int z) {
-            this.x = x;
-            this.z = z;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            final ChunkCoordinate other = (ChunkCoordinate) obj;
-            if (this.x != other.x) {
-                return false;
-            }
-            if (this.z != other.z) {
-                return false;
-            }
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            int hash = 5;
-            hash = 53 * hash + this.x;
-            hash = 53 * hash + this.z;
-            return hash;
-        }
     }
 
     public List<Entity> getEntities() {

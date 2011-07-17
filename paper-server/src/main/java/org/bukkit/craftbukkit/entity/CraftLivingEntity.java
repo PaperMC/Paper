@@ -1,4 +1,3 @@
-
 package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.Entity;
@@ -89,7 +88,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         if (maxDistance > 120) {
             maxDistance = 120;
         }
-        ArrayList<Block> blocks = new ArrayList();
+        ArrayList<Block> blocks = new ArrayList<Block>();
         Iterator<Block> itr = new BlockIterator(this, maxDistance);
         while (itr.hasNext()) {
             Block block = itr.next();

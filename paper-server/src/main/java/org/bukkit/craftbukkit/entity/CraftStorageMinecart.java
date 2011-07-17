@@ -7,11 +7,6 @@ import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.StorageMinecart;
 
-/**
- * A storage minecart.
- *
- * @author sk89q
- */
 public class CraftStorageMinecart extends CraftMinecart implements StorageMinecart {
     private CraftInventory inventory;
 

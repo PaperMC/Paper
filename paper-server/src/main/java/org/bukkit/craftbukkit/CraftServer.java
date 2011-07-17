@@ -19,7 +19,6 @@ import org.bukkit.inventory.ShapelessRecipe;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -163,6 +162,7 @@ public final class CraftServer implements Server {
         return serverVersion + " (MC: " + protocolVersion + ")";
     }
 
+    @SuppressWarnings("unchecked")
     public Player[] getOnlinePlayers() {
         List<EntityPlayer> online = server.players;
         Player[] players = new Player[online.size()];

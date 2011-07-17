@@ -10,7 +10,6 @@ import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.CraftChunk;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.material.MaterialData;
-import net.minecraft.server.WorldServer;
 
 public class CraftBlockState implements BlockState {
     private final CraftWorld world;
