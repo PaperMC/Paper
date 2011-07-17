@@ -33,26 +33,10 @@ public class BlockBreakEvent extends BlockEvent implements Cancellable {
         return player;
     }
 
-    /**
-     * Gets the cancellation state of this event. A cancelled event will not
-     * be executed in the server, but will still pass to other plugins.
-     *<p />
-     * If a Block Break event is cancelled, the block will not break.
-     *
-     * @return true if this event is cancelled
-     */
     public boolean isCancelled() {
         return cancel;
     }
 
-    /**
-     * Sets the cancellation state of this event. A cancelled event will not
-     * be executed in the server, but will still pass to other plugins.
-     *<p />
-     * If a Block Break event is cancelled, the block will not break.
-     *
-     * @param cancel true if you wish to cancel this event
-     */
     public void setCancelled(boolean cancel) {
         this.cancel = cancel;
     }

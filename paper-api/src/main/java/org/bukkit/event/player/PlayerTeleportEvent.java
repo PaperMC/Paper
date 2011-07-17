@@ -11,6 +11,7 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
     public PlayerTeleportEvent(Player player, Location from, Location to) {
         super(Type.PLAYER_TELEPORT, player, from, to);
     }
+
     public PlayerTeleportEvent(final Event.Type type, Player player, Location from, Location to) {
         super(type, player, from, to);
     }

@@ -80,7 +80,7 @@ public interface World {
      *
      * @param x X-coordinate of the block
      * @param z Z-coordinate of the block
-     * 
+     *
      * @return Highest non-empty block
      */
     public Block getHighestBlockAt(int x, int z);
@@ -89,7 +89,7 @@ public interface World {
      * Gets the highest non-empty block at the given coordinates
      *
      * @param location Coordinates to get the highest block
-     * 
+     *
      * @return Highest non-empty block
      */
     public Block getHighestBlockAt(Location location);

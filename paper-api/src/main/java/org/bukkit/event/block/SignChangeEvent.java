@@ -60,26 +60,10 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
         lines[index] = line;
     }
 
-    /**
-     * Gets the cancellation state of this event. A cancelled event will not
-     * be executed in the server, but will still pass to other plugins
-     * <p />
-     * If a Sign Change event is cancelled, the sign will not be changed.
-     *
-     * @return true if this event is cancelled
-     */
     public boolean isCancelled() {
         return cancel;
     }
 
-    /**
-     * Sets the cancellation state of this event. A cancelled event will not
-     * be executed in the server, but will still pass to other plugins
-     * <p />
-     * If a Sign Change event is cancelled, the sign will not be changed.
-     *
-     * @param cancel true if you wish to cancel this event
-     */
     public void setCancelled(boolean cancel) {
         this.cancel = cancel;
     }

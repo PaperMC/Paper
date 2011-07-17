@@ -19,16 +19,6 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
     }
 
     /**
-     * Gets the cancellation state of this event. Set to true if you
-     * want to prevent the player from getting kicked.
-     *
-     * @return boolean cancellation state
-     */
-    public boolean isCancelled() {
-        return cancel;
-    }
-
-    /**
      * Gets the reason why the player is getting kicked
      *
      * @return string kick reason
@@ -46,14 +36,10 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
         return leaveMessage;
     }
 
-    /**
-     * Sets the cancellation state of this event. A cancelled event will not
-     * be executed in the server, but will still pass to other plugins
-     *
-     * Cancelling this event will prevent the kick of the targetted player
-     *
-     * @param cancel true if you wish to cancel this event
-     */
+    public boolean isCancelled() {
+        return cancel;
+    }
+
     public void setCancelled(boolean cancel) {
         this.cancel = cancel;
     }

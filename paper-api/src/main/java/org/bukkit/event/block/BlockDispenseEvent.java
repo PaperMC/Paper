@@ -61,26 +61,10 @@ public class BlockDispenseEvent extends BlockEvent implements Cancellable {
         velocity = vel;
     }
 
-    /**
-     * Gets the cancellation state of this event. A cancelled event will not
-     * be executed in the server, but will still pass to other plugins.
-     *<p />
-     * If a Block Dispense event is cancelled, the block will not dispense the item.
-     *
-     * @return true if this event is cancelled
-     */
     public boolean isCancelled() {
         return cancelled;
     }
 
-    /**
-     * Sets the cancellation state of this event. A cancelled event will not
-     * be executed in the server, but will still pass to other plugins.
-     *<p />
-     * If a Block Dispense event is cancelled, the block will not dispense the item.
-     *
-     * @param cancel true if you wish to cancel this event
-     */
     public void setCancelled(boolean cancel) {
         cancelled = cancel;
     }

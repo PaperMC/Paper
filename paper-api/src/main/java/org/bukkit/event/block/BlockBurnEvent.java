@@ -16,26 +16,10 @@ public class BlockBurnEvent extends BlockEvent implements Cancellable {
         this.cancelled = false;
     }
 
-    /**
-     * Gets the cancellation state of this event. A cancelled event will not
-     * be executed in the server, but will still pass to other plugins.
-     *<p />
-     * If a Block Burn event is cancelled, the block will not be destroyed as a result of being burnt by fire.
-     *
-     * @return true if this event is cancelled
-     */
     public boolean isCancelled() {
         return cancelled;
     }
 
-    /**
-     * Sets the cancellation state of this event. A cancelled event will not
-     * be executed in the server, but will still pass to other plugins.
-     *<p />
-     * If a Block Burn event is cancelled, the block will not be destroyed as a result of being burnt by fire.
-     *
-     * @param cancel true if you wish to cancel this event
-     */
     public void setCancelled(boolean cancel) {
         this.cancelled = cancel;
     }

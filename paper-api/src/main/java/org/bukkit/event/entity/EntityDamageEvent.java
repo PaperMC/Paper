@@ -25,28 +25,10 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
         damagee.setLastDamageCause(this);
     }
 
-    /**
-     * Gets the cancellation state of this event. A cancelled event will not
-     * be executed in the server, but will still pass to other plugins
-     *
-     * If a damage event is cancelled, the damage will not be deducted from the player's health.
-     * This will not fire an event.
-     *
-     * @return true if this event is cancelled
-     */
     public boolean isCancelled() {
         return cancelled;
     }
 
-    /**
-     * Sets the cancellation state of this event. A cancelled event will not
-     * be executed in the server, but will still pass to other plugins
-     *
-     * If a damage event is cancelled, the damage will not be deducted from the player's health.
-     * This will not fire an event.
-     *
-     * @param cancel true if you wish to cancel this event
-     */
     public void setCancelled(boolean cancel) {
         cancelled = cancel;
     }

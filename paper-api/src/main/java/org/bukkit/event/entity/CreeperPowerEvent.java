@@ -29,26 +29,10 @@ public class CreeperPowerEvent extends EntityEvent implements Cancellable {
         this.bolt = null;
     }
 
-    /**
-     * Gets the cancellation state of this event. A cancelled event will not
-     * be executed in the server, but will still pass to other plugins.
-     *<p />
-     * If a Creeper Power event is cancelled, the Creeper will not be powered.
-     *
-     * @return true if this event is cancelled
-     */
     public boolean isCancelled() {
         return canceled;
     }
 
-    /**
-     * Sets the cancellation state of this event. A cancelled event will not
-     * be executed in the server, but will still pass to other plugins.
-     *<p />
-     * If a Creeper Power event is cancelled, the Creeper will not be powered.
-     *
-     * @param cancel true if you wish to cancel this event
-     */
     public void setCancelled(boolean cancel) {
         canceled = cancel;
     }
