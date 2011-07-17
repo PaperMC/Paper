@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit;
 
+import java.io.FileNotFoundException;
 import org.bukkit.generator.ChunkGenerator;
 import com.avaje.ebean.config.DataSourceConfig;
 import com.avaje.ebean.config.ServerConfig;
@@ -18,12 +19,14 @@ import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.ShapelessRecipe;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jline.ConsoleReader;
@@ -58,9 +61,13 @@ import org.bukkit.craftbukkit.command.ServerCommandListener;
 import org.bukkit.scheduler.BukkitWorker;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 import org.bukkit.event.world.WorldInitEvent;
+import org.bukkit.permissions.Permission;
 import org.bukkit.plugin.PluginLoadOrder;
 import org.bukkit.util.config.Configuration;
 import org.bukkit.util.config.ConfigurationNode;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
+import org.yaml.snakeyaml.error.MarkedYAMLException;
 
 public final class CraftServer implements Server {
     private final String serverName = "Craftbukkit";
@@ -74,6 +81,7 @@ public final class CraftServer implements Server {
     protected final ServerConfigurationManager server;
     private final Map<String, World> worlds = new LinkedHashMap<String, World>();
     private final Configuration configuration;
+    private final Yaml yaml = new Yaml(new SafeConstructor());
 
     public CraftServer(MinecraftServer console, ServerConfigurationManager server) {
         this.console = console;
@@ -100,6 +108,8 @@ public final class CraftServer implements Server {
 
         configuration.getString("settings.update-folder", "update");
         configuration.getInt("settings.spawn-radius", 16);
+
+        configuration.getString("settings.permissions-file", "permissions.yml");
 
         if (configuration.getNode("aliases") == null) {
             List<String> icanhasbukkit = new ArrayList<String>();
@@ -139,6 +149,7 @@ public final class CraftServer implements Server {
 
         if (type == PluginLoadOrder.POSTWORLD) {
             commandMap.registerServerAliases();
+            loadCustomPermissions();
         }
     }
 
@@ -149,6 +160,16 @@ public final class CraftServer implements Server {
     private void loadPlugin(Plugin plugin) {
         try {
             pluginManager.enablePlugin(plugin);
+
+            List<Permission> perms = plugin.getDescription().getPermissions();
+
+            for (Permission perm : perms) {
+                try {
+                    pluginManager.addPermission(perm);
+                } catch (IllegalArgumentException ex) {
+                    getLogger().log(Level.WARNING, "Plugin " + plugin.getDescription().getFullName() + " tried to register permission '" + perm.getName() + "' but it's already registered", ex);
+                }
+            }
         } catch (Throwable ex) {
             Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, ex.getMessage() + " loading " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
         }
@@ -357,6 +378,48 @@ public final class CraftServer implements Server {
         loadPlugins();
         enablePlugins(PluginLoadOrder.STARTUP);
         enablePlugins(PluginLoadOrder.POSTWORLD);
+    }
+
+    private void loadCustomPermissions() {
+        File file = new File(configuration.getString("settings.permissions-file"));
+        FileInputStream stream;
+
+        try {
+            stream = new FileInputStream(file);
+        } catch (FileNotFoundException ex) {
+            try {
+                file.createNewFile();
+            } finally {
+                return;
+            }
+        }
+
+        Map<String, Map<String, Object>> perms;
+
+        try {
+            perms = (Map<String, Map<String, Object>>)yaml.load(stream);
+        } catch (MarkedYAMLException ex) {
+            getLogger().log(Level.WARNING, "Server permissions file " + file + " is not valid YAML: " + ex.toString());
+            return;
+        } catch (Throwable ex) {
+            getLogger().log(Level.WARNING, "Server permissions file " + file + " is not valid YAML.", ex);
+            return;
+        }
+
+        if (perms == null) {
+            getLogger().log(Level.INFO, "Server permissions file " + file + " is empty, ignoring it");
+            return;
+        }
+
+        Set<String> keys = perms.keySet();
+
+        for (String name : keys) {
+            try {
+                pluginManager.addPermission(Permission.loadPermission(name, perms.get(name)));
+            } catch (Throwable ex) {
+                Bukkit.getServer().getLogger().log(Level.SEVERE, "Permission node '" + name + "' in server config is invalid", ex);
+            }
+        }
     }
 
     @Override

@@ -25,13 +25,18 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerTeleportEvent;
 
 public class CraftPlayer extends CraftHumanEntity implements Player {
-
     public CraftPlayer(CraftServer server, EntityPlayer entity) {
         super(server, entity);
     }
 
+    @Override
     public boolean isOp() {
         return server.getHandle().isOp(getName());
+    }
+
+    @Override
+    public void setOp(boolean value) {
+        server.getHandle().e(getName());
     }
 
     public boolean isPlayer() {
