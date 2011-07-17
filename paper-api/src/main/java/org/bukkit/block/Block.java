@@ -21,32 +21,14 @@ public interface Block {
     byte getData();
 
     /**
-     * Gets the block at the given face<br />
-     * <br />
-     * This method is equal to getFace(face, 1)
-     *
-     * @param face Face of this block to return
-     * @return Block at the given face
-     * @see Block.getFace(BlockFace face, int distance);
+     * @deprecated use {@link #getRelative(BlockFace face)}
      */
-    Block getFace(BlockFace face);
+    @Deprecated Block getFace(BlockFace face);
 
     /**
-     * Gets the block at the given distance of the given face<br />
-     * <br />
-     * For example, the following method places water at 100,102,100; two blocks
-     * above 100,100,100.
-     * <pre>
-     * Block block = world.getBlockAt(100,100,100);
-     * Block shower = block.getFace(BlockFace.Up, 2);
-     * shower.setType(Material.WATER);
-     * </pre>
-     *
-     * @param face Face of this block to return
-     * @param distance Distance to get the block at
-     * @return Block at the given face
+     * @deprecated use {@link #getRelative(BlockFace face, int distance)}
      */
-    Block getFace(BlockFace face, int distance);
+    @Deprecated Block getFace(BlockFace face, int distance);
 
     /**
      * Gets the block at the given offsets
@@ -59,19 +41,30 @@ public interface Block {
     Block getRelative(int modX, int modY, int modZ);
 
     /**
-     * Gets the block at the given offsets
+     * Gets the block at the given face<br />
+     * <br />
+     * This method is equal to getRelative(face, 1)
      *
-     * @param face face
-     * @return Block at the given offsets
+     * @param face Face of this block to return
+     * @return Block at the given face
+     * @see Block.getRelative(BlockFace face, int distance);
      */
     Block getRelative(BlockFace face);
 
     /**
-     * Gets the block at the given offsets
+     * Gets the block at the given distance of the given face<br />
+     * <br />
+     * For example, the following method places water at 100,102,100; two blocks
+     * above 100,100,100.
+     * <pre>
+     * Block block = world.getBlockAt(100,100,100);
+     * Block shower = block.getFace(BlockFace.UP, 2);
+     * shower.setType(Material.WATER);
+     * </pre>
      *
-     * @param face face
-     * @param distance distance
-     * @return Block at the given offset and distance
+     * @param face Face of this block to return
+     * @param distance Distance to get the block at
+     * @return Block at the given face
      */
     Block getRelative(BlockFace face, int distance);
 

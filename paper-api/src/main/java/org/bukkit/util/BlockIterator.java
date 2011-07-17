@@ -135,16 +135,16 @@ public class BlockIterator implements Iterator<Block> {
 
         Block lastBlock;
 
-        lastBlock = startBlock.getFace(reverseFace(mainFace));
+        lastBlock = startBlock.getRelative(reverseFace(mainFace));
 
         if (secondError < 0) {
             secondError += gridSize;
-            lastBlock = lastBlock.getFace(reverseFace(secondFace));
+            lastBlock = lastBlock.getRelative(reverseFace(secondFace));
         }
 
         if (thirdError < 0) {
             thirdError += gridSize;
-            lastBlock = lastBlock.getFace(reverseFace(thirdFace));
+            lastBlock = lastBlock.getRelative(reverseFace(thirdFace));
         }
 
         // This means that when the variables are positive, it means that the coord=1 boundary has been crossed
@@ -350,32 +350,32 @@ public class BlockIterator implements Iterator<Block> {
         thirdError += thirdStep;
 
         if (secondError > 0 && thirdError > 0) {
-            blockQueue[2] = blockQueue[0].getFace(mainFace);
+            blockQueue[2] = blockQueue[0].getRelative(mainFace);
             if (((long) secondStep) * ((long) thirdError) < ((long) thirdStep) * ((long) secondError)) {
-                blockQueue[1] = blockQueue[2].getFace(secondFace);
-                blockQueue[0] = blockQueue[1].getFace(thirdFace);
+                blockQueue[1] = blockQueue[2].getRelative(secondFace);
+                blockQueue[0] = blockQueue[1].getRelative(thirdFace);
             } else {
-                blockQueue[1] = blockQueue[2].getFace(thirdFace);
-                blockQueue[0] = blockQueue[1].getFace(secondFace);
+                blockQueue[1] = blockQueue[2].getRelative(thirdFace);
+                blockQueue[0] = blockQueue[1].getRelative(secondFace);
             }
             thirdError -= gridSize;
             secondError -= gridSize;
             currentBlock = 2;
             return;
         } else if (secondError > 0) {
-            blockQueue[1] = blockQueue[0].getFace(mainFace);
-            blockQueue[0] = blockQueue[1].getFace(secondFace);
+            blockQueue[1] = blockQueue[0].getRelative(mainFace);
+            blockQueue[0] = blockQueue[1].getRelative(secondFace);
             secondError -= gridSize;
             currentBlock = 1;
             return;
         } else if (thirdError > 0) {
-            blockQueue[1] = blockQueue[0].getFace(mainFace);
-            blockQueue[0] = blockQueue[1].getFace(thirdFace);
+            blockQueue[1] = blockQueue[0].getRelative(mainFace);
+            blockQueue[0] = blockQueue[1].getRelative(thirdFace);
             thirdError -= gridSize;
             currentBlock = 1;
             return;
         } else {
-            blockQueue[0] = blockQueue[0].getFace(mainFace);
+            blockQueue[0] = blockQueue[0].getRelative(mainFace);
             currentBlock = 0;
             return;
         }
