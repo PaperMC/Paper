@@ -535,13 +535,13 @@ public abstract class Entity {
                 org.bukkit.block.Block block = this.world.getWorld().getBlockAt(MathHelper.floor(this.locX), MathHelper.floor(this.locY - 0.20000000298023224D - (double) this.height), MathHelper.floor(this.locZ));
 
                 if (d5 > d0) {
-                    block = block.getFace(BlockFace.SOUTH);
+                    block = block.getRelative(BlockFace.SOUTH);
                 } else if (d5 < d0) {
-                    block = block.getFace(BlockFace.NORTH);
+                    block = block.getRelative(BlockFace.NORTH);
                 } else if (d7 > d2) {
-                    block = block.getFace(BlockFace.WEST);
+                    block = block.getRelative(BlockFace.WEST);
                 } else if (d7 < d2) {
-                    block = block.getFace(BlockFace.EAST);
+                    block = block.getRelative(BlockFace.EAST);
                 }
 
                 VehicleBlockCollisionEvent event = new VehicleBlockCollisionEvent(vehicle, block);

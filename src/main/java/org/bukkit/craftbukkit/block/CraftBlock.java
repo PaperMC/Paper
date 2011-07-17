@@ -182,7 +182,7 @@ public class CraftBlock implements Block {
      * @return Block at the given face
      */
     public Block getFace(final BlockFace face) {
-        return getFace(face, 1);
+        return getRelative(face, 1);
     }
 
     /**
@@ -201,7 +201,7 @@ public class CraftBlock implements Block {
      * @return Block at the given face
      */
     public Block getFace(final BlockFace face, final int distance) {
-        return getRelative(face.getModX() * distance, face.getModY() * distance, face.getModZ() * distance);
+        return getRelative(face, distance);
     }
 
     /**
