@@ -1,9 +1,5 @@
 package org.bukkit.craftbukkit;
 
-import java.util.regex.Pattern;
-
-import javax.sound.sampled.LineListener;
-
 public class TextWrapper {
     private static final int[] characterWidths = new int[] {
         1, 9, 9, 8, 8, 8, 8, 7, 9, 8, 9, 9, 8, 9, 9, 9,
@@ -32,7 +28,7 @@ public class TextWrapper {
         final StringBuilder out = new StringBuilder();
         char colorChar = 'f';
         int lineWidth = 0;
-        int lineLenght = 0;
+        int lineLength = 0;
 
         // Go over the message char by char.
         for (int i = 0; i < text.length(); i++) {
@@ -41,17 +37,17 @@ public class TextWrapper {
             // Get the color
             if (ch == COLOR_CHAR && i < text.length() - 1) {
                 // We might need a linebreak ... so ugly ;(
-                if (lineLenght + 2 > CHAT_STRING_LENGTH) {
+                if (lineLength + 2 > CHAT_STRING_LENGTH) {
                     out.append('\n');
-                    lineLenght = 0;
-                    if (colorChar != 'f') {
+                    lineLength = 0;
+                    if (colorChar != 'f' && colorChar != 'F') {
                         out.append(COLOR_CHAR).append(colorChar);
-                        lineLenght += 2;
+                        lineLength += 2;
                     }
                 }
                 colorChar = text.charAt(++i);
                 out.append(COLOR_CHAR).append(colorChar);
-                lineLenght += 2;
+                lineLength += 2;
                 continue;
             }
 
@@ -66,24 +62,24 @@ public class TextWrapper {
             }
 
             // Find the width
-            final int width = characterWidths[ index ];
+            final int width = characterWidths[index];
 
             // See if we need a linebreak
-            if (lineLenght + 1 > CHAT_STRING_LENGTH || lineWidth + width >= CHAT_WINDOW_WIDTH) {
+            if (lineLength + 1 > CHAT_STRING_LENGTH || lineWidth + width >= CHAT_WINDOW_WIDTH) {
                 out.append('\n');
-                lineLenght = 0;
+                lineLength = 0;
 
                 // Re-apply the last color if it isn't the default
-                if (colorChar != 'f') {
+                if (colorChar != 'f' && colorChar != 'F') {
                     out.append(COLOR_CHAR).append(colorChar);
-                    lineLenght += 2;
+                    lineLength += 2;
                 }
                 lineWidth = width;
             } else {
                 lineWidth += width;
             }
             out.append(ch);
-            lineLenght++;
+            lineLength++;
         }
 
         // Return it split
