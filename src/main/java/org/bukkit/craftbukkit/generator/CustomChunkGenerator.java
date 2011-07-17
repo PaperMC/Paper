@@ -13,12 +13,10 @@ import org.bukkit.generator.ChunkGenerator;
 public class CustomChunkGenerator extends InternalChunkGenerator {
     private final ChunkGenerator generator;
     private final WorldServer world;
-    private final long seed;
     private final Random random;
 
     public CustomChunkGenerator(World world, long seed, ChunkGenerator generator) {
         this.world = (WorldServer) world;
-        this.seed = seed;
         this.generator = generator;
 
         this.random = new Random(seed);

@@ -9,9 +9,6 @@ import org.bukkit.block.Block;
 import org.bukkit.block.NoteBlock;
 import org.bukkit.craftbukkit.CraftWorld;
 
-/**
- * Represents a note block.
- */
 public class CraftNoteBlock extends CraftBlockState implements NoteBlock {
     private final CraftWorld world;
     private final TileEntityNote note;

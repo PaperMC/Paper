@@ -7,11 +7,6 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.inventory.Inventory;
 
-/**
- * Represents a furnace.
- *
- * @author sk89q
- */
 public class CraftFurnace extends CraftBlockState implements Furnace {
     private final CraftWorld world;
     private final TileEntityFurnace furnace;

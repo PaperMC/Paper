@@ -10,11 +10,6 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.inventory.Inventory;
 
-/**
- * Represents a dispenser.
- *
- * @author sk89q
- */
 public class CraftDispenser extends CraftBlockState implements Dispenser {
     private final CraftWorld world;
     private final TileEntityDispenser dispenser;

@@ -5,11 +5,6 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Minecart;
 import org.bukkit.util.Vector;
 
-/**
- * A minecart.
- *
- * @author sk89q
- */
 public class CraftMinecart extends CraftVehicle implements Minecart {
     /**
      * Stores the minecart type id, which is used by Minecraft to differentiate

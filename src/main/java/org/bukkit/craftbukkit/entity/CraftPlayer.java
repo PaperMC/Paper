@@ -11,7 +11,6 @@ import net.minecraft.server.Packet53BlockChange;
 import net.minecraft.server.Packet54PlayNoteBlock;
 import net.minecraft.server.Packet61;
 import net.minecraft.server.Packet6SpawnPosition;
-import net.minecraft.server.ServerConfigurationManager;
 import net.minecraft.server.WorldServer;
 import org.bukkit.Achievement;
 import org.bukkit.Effect;

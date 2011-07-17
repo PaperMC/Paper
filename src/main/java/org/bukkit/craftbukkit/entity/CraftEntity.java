@@ -141,6 +141,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public List<org.bukkit.entity.Entity> getNearbyEntities(double x, double y, double z) {
+        @SuppressWarnings("unchecked")
         List<Entity> notchEntityList = entity.world.b(entity, entity.boundingBox.b(x, y, z));
         List<org.bukkit.entity.Entity> bukkitEntityList = new java.util.ArrayList<org.bukkit.entity.Entity>(notchEntityList.size());
 

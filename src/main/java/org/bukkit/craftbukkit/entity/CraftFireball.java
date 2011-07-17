@@ -8,9 +8,6 @@ import org.bukkit.entity.Fireball;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.Vector;
 
-/**
- * A Fireball.
- */
 public class CraftFireball extends CraftEntity implements Fireball {
     public CraftFireball(CraftServer server, EntityFireball entity) {
         super(server, entity);
