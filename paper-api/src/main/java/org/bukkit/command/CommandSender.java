@@ -1,8 +1,9 @@
 package org.bukkit.command;
 
 import org.bukkit.Server;
+import org.bukkit.permissions.Permissible;
 
-public interface CommandSender {
+public interface CommandSender extends Permissible {
 
     /**
      * Sends this sender a message
@@ -10,13 +11,6 @@ public interface CommandSender {
      * @param message Message to be displayed
      */
     public void sendMessage(String message);
-
-    /**
-     * Checks if this sender is currently op
-     *
-     * @return true if they are
-     */
-    public boolean isOp();
 
     /**
      * Returns the server instance that this command is running on

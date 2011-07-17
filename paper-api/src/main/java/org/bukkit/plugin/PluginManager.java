@@ -1,10 +1,12 @@
 package org.bukkit.plugin;
 
 import java.io.File;
+import java.util.Set;
 
 import org.bukkit.event.Event;
 import org.bukkit.event.Event.Priority;
 import org.bukkit.event.Listener;
+import org.bukkit.permissions.Permission;
 
 /**
  * Handles all plugin management from the Server
@@ -130,4 +132,30 @@ public interface PluginManager {
      * @param plugin Plugin to disable
      */
     public void disablePlugin(Plugin plugin);
+
+    /**
+     * Gets a {@link Permission} from its fully qualified name
+     *
+     * @param name Name of the permission
+     * @return Permission, or null if none
+     */
+    public Permission getPermission(String name);
+
+    /**
+     * Adds a {@link Permission} to this plugin manager.
+     *
+     * If a permission is already defined with the given name of the new permission,
+     * an exception will be thrown.
+     *
+     * @param perm Permission to add
+     * @throws IllegalArgumentException Thrown when a permission with the same name already exists
+     */
+    public void addPermission(Permission perm);
+
+    /**
+     * Gets the default permissions for the given op status
+     *
+     * @param op Which set of default permissions to get
+     */
+    public Set<Permission> getDefaultPermissions(boolean op);
 }

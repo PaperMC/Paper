@@ -263,4 +263,9 @@ public abstract class JavaPlugin implements Plugin {
 
         gen.runScript(true, gen.generateDropDdl());
     }
+
+    @Override
+    public String toString() {
+        return getDescription().getFullName();
+    }
 }

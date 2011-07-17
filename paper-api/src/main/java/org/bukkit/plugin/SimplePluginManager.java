@@ -12,8 +12,10 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import org.bukkit.Server;
@@ -25,6 +27,7 @@ import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.event.Event;
 import org.bukkit.event.Event.Priority;
 import org.bukkit.event.Listener;
+import org.bukkit.permissions.Permission;
 
 import org.bukkit.util.FileUtil;
 
@@ -39,6 +42,8 @@ public final class SimplePluginManager implements PluginManager {
     private final Map<Event.Type, SortedSet<RegisteredListener>> listeners = new EnumMap<Event.Type, SortedSet<RegisteredListener>>(Event.Type.class);
     private static File updateDirectory = null;
     private final SimpleCommandMap commandMap;
+    private final Map<String, Permission> permissions = new HashMap<String, Permission>();
+    private final Map<Boolean, Set<Permission>> defaultPerms = new LinkedHashMap<Boolean, Set<Permission>>();
     private final Comparator<RegisteredListener> comparer = new Comparator<RegisteredListener>() {
         public int compare(RegisteredListener i, RegisteredListener j) {
             int result = i.getPriority().compareTo(j.getPriority());
@@ -54,6 +59,9 @@ public final class SimplePluginManager implements PluginManager {
     public SimplePluginManager(Server instance, SimpleCommandMap commandMap) {
         server = instance;
         this.commandMap = commandMap;
+
+        defaultPerms.put(true, new HashSet<Permission>());
+        defaultPerms.put(false, new HashSet<Permission>());
     }
 
     /**
@@ -303,6 +311,9 @@ public final class SimplePluginManager implements PluginManager {
             lookupNames.clear();
             listeners.clear();
             fileAssociations.clear();
+            permissions.clear();
+            defaultPerms.get(true).clear();
+            defaultPerms.get(false).clear();
         }
     }
 
@@ -393,5 +404,38 @@ public final class SimplePluginManager implements PluginManager {
         eventListeners = new TreeSet<RegisteredListener>(comparer);
         listeners.put(type, eventListeners);
         return eventListeners;
+    }
+
+    public Permission getPermission(String name) {
+        return permissions.get(name.toLowerCase());
+    }
+
+    public void addPermission(Permission perm) {
+        String name = perm.getName().toLowerCase();
+
+        if (permissions.containsKey(name)) {
+            throw new IllegalArgumentException("The permission " + name + " is already defined!");
+        }
+
+        permissions.put(name, perm);
+
+        if (!perm.getChildren().isEmpty()) {
+            switch (perm.getDefault()) {
+                case TRUE:
+                    defaultPerms.get(true).add(perm);
+                    defaultPerms.get(false).add(perm);
+                    break;
+                case OP:
+                    defaultPerms.get(true).add(perm);
+                    break;
+                case NOT_OP:
+                    defaultPerms.get(false).add(perm);
+                    break;
+            }
+        }
+    }
+
+    public Set<Permission> getDefaultPermissions(boolean op) {
+        return defaultPerms.get(op);
     }
 }
