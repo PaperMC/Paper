@@ -17,7 +17,7 @@ public abstract class NoiseGenerator {
      * @return Floored value
      */
     public static int floor(double x) {
-        return (int)Math.floor(x);
+        return x >= 0 ? (int) x : (int) x - 1;
     }
 
     protected static double fade(double x) {
