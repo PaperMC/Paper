@@ -3,6 +3,8 @@ package org.bukkit.permissions;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * Represents a unique permission that may be attached to a {@link Permissible}
@@ -127,7 +129,7 @@ public class Permission {
 
         if (data.containsKey("children")) {
             try {
-                children = (Map<String, Boolean>)data.get("children");
+                children = extractChildren(data);
             } catch (ClassCastException ex) {
                 throw new IllegalArgumentException("'children' key is of wrong type", ex);
             }
@@ -142,5 +144,18 @@ public class Permission {
         }
 
         return new Permission(name, desc, def, children);
+    }
+
+    private static Map<String, Boolean> extractChildren(Map<String, Object> data) {
+        Map<String, Boolean> input = (Map<String, Boolean>)data.get("children");
+        Set<Entry<String, Boolean>> entries = input.entrySet();
+
+        for (Map.Entry<String, Boolean> entry : entries) {
+            if (!(entry.getValue() instanceof Boolean)) {
+                throw new IllegalArgumentException("Child '" + entry.getKey() + "' contains invalid value");
+            }
+        }
+
+        return input;
     }
 }
