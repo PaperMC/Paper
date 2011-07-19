@@ -775,4 +775,8 @@ public class CraftWorld implements World {
     public boolean getAllowMonsters() {
         return world.allowMonsters;
     }
+
+    public int getMaxHeight() {
+        return 128;
+    }
 }
