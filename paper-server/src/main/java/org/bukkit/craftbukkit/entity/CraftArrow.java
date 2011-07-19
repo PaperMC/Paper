@@ -7,7 +7,8 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.LivingEntity;
 
-public class CraftArrow extends CraftEntity implements Arrow {
+public class CraftArrow extends AbstractProjectile implements Arrow {
+
     public CraftArrow(CraftServer server, EntityArrow entity) {
         super(server, entity);
     }

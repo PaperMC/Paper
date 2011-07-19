@@ -7,7 +7,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Snowball;
 
-public class CraftSnowball extends CraftEntity implements Snowball {
+public class CraftSnowball extends AbstractProjectile implements Snowball {
     public CraftSnowball(CraftServer server, EntitySnowball entity) {
         super(server, entity);
     }
