@@ -78,6 +78,12 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          */
         ENTITY_ATTACK,
         /**
+         * Damage caused when attacked by a projectile.
+         *
+         * Damage: variable
+         */
+        PROJECTILE,
+        /**
          * Damage caused by being put in a block
          *
          * Damage: 1

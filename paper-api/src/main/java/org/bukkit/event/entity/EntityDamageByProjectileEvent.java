@@ -1,28 +1,25 @@
 package org.bukkit.event.entity;
 
-import java.util.Random;
-
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Projectile;
 
 /**
  * Called when an entity is damaged by a projectile
+ *
+ * @deprecated use {@link EntityDamageByEntityEvent} instead, where {@link EntityDamageByEntityEvent#getDamager()} will return the {@link Projectile}
  */
+@Deprecated
 public class EntityDamageByProjectileEvent extends EntityDamageByEntityEvent {
 
     private Projectile projectile;
-    private boolean bounce;
 
     public EntityDamageByProjectileEvent(Entity damagee, Projectile projectile, DamageCause cause, int damage) {
         this(projectile.getShooter(), damagee, projectile, cause, damage);
     }
 
     public EntityDamageByProjectileEvent(Entity damager, Entity damagee, Projectile projectile, DamageCause cause, int damage) {
-        super(damager, damagee, cause, damage);
+        super(damager, projectile, DamageCause.PROJECTILE, damage);
         this.projectile = projectile;
-        Random random = new Random();
-
-        this.bounce = random.nextBoolean();
     }
 
     /**
@@ -35,10 +32,10 @@ public class EntityDamageByProjectileEvent extends EntityDamageByEntityEvent {
     }
 
     public void setBounce(boolean bounce) {
-        this.bounce = bounce;
+        projectile.setBounce(bounce);
     }
 
     public boolean getBounce() {
-        return bounce;
+        return projectile.doesBounce();
     }
 }
