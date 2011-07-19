@@ -5,7 +5,7 @@ import java.util.List;
 // CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.entity.Projectile;
-import org.bukkit.event.entity.EntityDamageByProjectileEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
@@ -179,15 +179,15 @@ public class EntityArrow extends Entity {
                         Projectile projectile = (Projectile) this.getBukkitEntity();
                         // TODO deal with arrows being fired from a non-entity
 
-                        EntityDamageByProjectileEvent event = new EntityDamageByProjectileEvent(damagee, projectile, EntityDamageEvent.DamageCause.ENTITY_ATTACK, 4);
+                        EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(projectile, damagee, EntityDamageEvent.DamageCause.PROJECTILE, 4);
                         server.getPluginManager().callEvent(event);
                         this.shooter = (projectile.getShooter() == null) ? null : ((CraftLivingEntity) projectile.getShooter()).getHandle();
 
                         if (event.isCancelled()) {
-                            stick = !event.getBounce();
+                            stick = !projectile.doesBounce();
                         } else {
                             // this function returns if the arrow should stick in or not, i.e. !bounce
-                            stick = movingobjectposition.entity.damageEntity(this.shooter, event.getDamage());
+                            stick = movingobjectposition.entity.damageEntity(this, event.getDamage());
                         }
                     } else {
                         stick = movingobjectposition.entity.damageEntity(this.shooter, 4);

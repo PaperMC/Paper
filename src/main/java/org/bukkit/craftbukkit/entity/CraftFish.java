@@ -7,7 +7,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Fish;
 import org.bukkit.entity.LivingEntity;
 
-public class CraftFish extends CraftEntity implements Fish {
+public class CraftFish extends AbstractProjectile implements Fish {
     public CraftFish(CraftServer server, EntityFish entity) {
         super(server, entity);
     }

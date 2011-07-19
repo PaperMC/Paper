@@ -7,6 +7,7 @@ import java.util.List;
 import org.bukkit.craftbukkit.entity.CraftItem;
 import org.bukkit.craftbukkit.TrigMath;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityTargetEvent;
@@ -416,17 +417,21 @@ public abstract class EntityHuman extends EntityLiving {
                 if (object instanceof EntityLiving) {
                     // CraftBukkit start - this is here instead of EntityMonster because EntityLiving(s) that aren't monsters
                     // also damage the player in this way. For example, EntitySlime.
-                    org.bukkit.entity.Entity damager = ((Entity) object).getBukkitEntity();
-                    org.bukkit.entity.Entity damagee = this.getBukkitEntity();
 
-                    EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(damager, damagee, EntityDamageEvent.DamageCause.ENTITY_ATTACK, i);
-                    this.world.getServer().getPluginManager().callEvent(event);
+                    // We handle projectiles in their individual classes!
+                    if (!(entity.getBukkitEntity() instanceof Projectile)) {
+                        org.bukkit.entity.Entity damager = ((Entity) object).getBukkitEntity();
+                        org.bukkit.entity.Entity damagee = this.getBukkitEntity();
 
-                    if (event.isCancelled() || event.getDamage() == 0) {
-                        return false;
+                        EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(damager, damagee, EntityDamageEvent.DamageCause.ENTITY_ATTACK, i);
+                        this.world.getServer().getPluginManager().callEvent(event);
+
+                        if (event.isCancelled() || event.getDamage() == 0) {
+                            return false;
+                        }
+
+                        i = event.getDamage();
                     }
-
-                    i = event.getDamage();
                     // CraftBukkit end
 
                     this.a((EntityLiving) object, false);

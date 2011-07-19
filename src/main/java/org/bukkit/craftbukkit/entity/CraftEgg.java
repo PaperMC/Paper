@@ -7,7 +7,8 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Egg;
 import org.bukkit.entity.LivingEntity;
 
-public class CraftEgg extends CraftEntity implements Egg {
+public class CraftEgg extends AbstractProjectile implements Egg {
+
     public CraftEgg(CraftServer server, EntityEgg entity) {
         super(server, entity);
     }

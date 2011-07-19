@@ -4,7 +4,7 @@ import java.util.List;
 
 // CraftBukkit start
 import org.bukkit.entity.Projectile;
-import org.bukkit.event.entity.EntityDamageByProjectileEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerFishEvent;
 // CraftBukkit end
@@ -197,14 +197,14 @@ public class EntityFish extends Entity {
                         Projectile projectile = (Projectile) this.getBukkitEntity();
 
                         // TODO @see EntityArrow#162
-                        EntityDamageByProjectileEvent event = new EntityDamageByProjectileEvent(damagee, projectile, EntityDamageEvent.DamageCause.ENTITY_ATTACK, 0);
+                        EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(projectile, damagee, EntityDamageEvent.DamageCause.PROJECTILE, 0);
                         this.world.getServer().getPluginManager().callEvent(event);
 
                         if (event.isCancelled()) {
-                            stick = !event.getBounce();
+                            stick = !projectile.doesBounce();
                         } else {
                             // this function returns if the fish should stick in or not, i.e. !bounce
-                            stick = movingobjectposition.entity.damageEntity(this.owner, event.getDamage());
+                            stick = movingobjectposition.entity.damageEntity(this, event.getDamage());
                         }
                     } else {
                         stick = movingobjectposition.entity.damageEntity(this.owner, 0);
