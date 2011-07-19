@@ -668,6 +668,15 @@ public interface World {
     public double getHumidity(int x, int z);
 
     /**
+     * Gets the maximum height of this world.
+     *
+     * If the max height is 100, there are only blocks from y=0 to y=99.
+     *
+     * @return Maximum height of the world
+     */
+    public int getMaxHeight();
+
+    /**
      * Represents various map environment types that a world may be
      */
     public enum Environment {
