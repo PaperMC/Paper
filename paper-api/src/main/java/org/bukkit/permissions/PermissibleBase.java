@@ -154,12 +154,14 @@ public class PermissibleBase implements Permissible {
 
     private synchronized void calculatePermissions() {
         if (dirtyPermissions) {
-            permissions.clear();
+            clearPermissions();
             Set<Permission> defaults = Bukkit.getServer().getPluginManager().getDefaultPermissions(isOp());
+            Bukkit.getServer().getPluginManager().subscribeToDefaultPerms(isOp(), this);
 
             for (Permission perm : defaults) {
                 String name = perm.getName().toLowerCase();
                 permissions.put(name, new PermissionAttachmentInfo(this, name, null, true));
+                Bukkit.getServer().getPluginManager().subscribeToPermission(name, this);
                 calculateChildPermissions(perm.getChildren(), false, null);
             }
 
@@ -171,6 +173,18 @@ public class PermissibleBase implements Permissible {
         }
     }
 
+    private synchronized void clearPermissions() {
+        Set<String> perms = permissions.keySet();
+
+        for (String name : perms) {
+            Bukkit.getServer().getPluginManager().unsubscribeFromPermission(name, this);
+        }
+
+        Bukkit.getServer().getPluginManager().unsubscribeFromDefaultPerms(isOp(), this);
+
+        permissions.clear();
+    }
+
     private void calculateChildPermissions(Map<String, Boolean> children, boolean invert, PermissionAttachment attachment) {
         Set<String> keys = children.keySet();
 
@@ -180,6 +194,7 @@ public class PermissibleBase implements Permissible {
             String lname = name.toLowerCase();
 
             permissions.put(lname, new PermissionAttachmentInfo(this, lname, attachment, value));
+            Bukkit.getServer().getPluginManager().subscribeToPermission(name, this);
 
             if (perm != null) {
                 calculateChildPermissions(perm.getChildren(), !value, attachment);

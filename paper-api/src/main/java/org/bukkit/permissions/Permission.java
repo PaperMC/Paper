@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import org.bukkit.Bukkit;
 
 /**
  * Represents a unique permission that may be attached to a {@link Permissible}
@@ -51,6 +52,8 @@ public class Permission {
         if (children != null) {
             this.children.putAll(children);
         }
+
+        recalculatePermissibles();
     }
 
     /**
@@ -65,12 +68,12 @@ public class Permission {
     /**
      * Gets the children of this permission.
      *
-     * This is a copy and changes will not be saved.
+     * If you change this map in any form, you must call {@link #recalculatePermissibles()} to recalculate all {@link Permissible}s
      *
      * @return Permission children
      */
     public Map<String, Boolean> getChildren() {
-        return new LinkedHashMap<String, Boolean>(children);
+        return children;
     }
 
     /**
@@ -83,12 +86,70 @@ public class Permission {
     }
 
     /**
+     * Sets the default value of this permission.
+     *
+     * This will not be saved to disk, and is a temporary operation until the server reloads permissions.
+     * Changing this default will cause all {@link Permissible}s that contain this permission to recalculate their permissions
+     *
+     * @param value The new default to set
+     */
+    public void setDefault(PermissionDefault value) {
+        if (defaultValue == null) {
+            throw new IllegalArgumentException("Default value cannot be null");
+        }
+
+        defaultValue = value;
+        recalculatePermissibles();
+    }
+
+    /**
      * Gets a brief description of this permission, if set
      *
      * @return Brief description of this permission
      */
     public String getDescription() {
         return description;
+    }
+
+    /**
+     * Sets the description of this permission.
+     *
+     * This will not be saved to disk, and is a temporary operation until the server reloads permissions.
+     *
+     * @param value The new description to set
+     */
+    public void setDescription(String value) {
+        if (value == null) {
+            description = "";
+        } else {
+            description = value;
+        }
+    }
+
+    /**
+     * Gets a set containing every {@link Permissible} that has this permission.
+     *
+     * This set cannot be modified.
+     *
+     * @return Set containing permissibles with this permission
+     */
+    public Set<Permissible> getPermissibles() {
+        return Bukkit.getServer().getPluginManager().getPermissionSubscriptions(name);
+    }
+
+    /**
+     * Recalculates all {@link Permissible}s that contain this permission.
+     *
+     * This should be called after modifying the children, and is automatically called after modifying the default value
+     */
+    public void recalculatePermissibles() {
+        Set<Permissible> perms = getPermissibles();
+
+        Bukkit.getServer().getPluginManager().recalculatePermissionDefaults(this);
+
+        for (Permissible p : perms) {
+            p.recalculatePermissions();
+        }
     }
 
     /**

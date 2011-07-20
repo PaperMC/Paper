@@ -6,6 +6,7 @@ import java.util.Set;
 import org.bukkit.event.Event;
 import org.bukkit.event.Event.Priority;
 import org.bukkit.event.Listener;
+import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.Permission;
 
 /**
@@ -153,9 +154,92 @@ public interface PluginManager {
     public void addPermission(Permission perm);
 
     /**
+     * Removes a {@link Permission} registration from this plugin manager.
+     *
+     * If the specified permission does not exist in this plugin manager, nothing will happen.
+     *
+     * Removing a permission registration will <b>not</b> remove the permission from any {@link Permissible}s that have it.
+     *
+     * @param perm Permission to remove
+     */
+    public void removePermission(Permission perm);
+
+    /**
+     * Removes a {@link Permission} registration from this plugin manager.
+     *
+     * If the specified permission does not exist in this plugin manager, nothing will happen.
+     *
+     * Removing a permission registration will <b>not</b> remove the permission from any {@link Permissible}s that have it.
+     *
+     * @param name Permission to remove
+     */
+    public void removePermission(String name);
+
+    /**
      * Gets the default permissions for the given op status
      *
      * @param op Which set of default permissions to get
      */
     public Set<Permission> getDefaultPermissions(boolean op);
+
+    /**
+     * Recalculates the defaults for the given {@link Permission}.
+     *
+     * This will have no effect if the specified permission is not registered here.
+     *
+     * @param perm Permission to recalculate
+     */
+    public void recalculatePermissionDefaults(Permission perm);
+
+    /**
+     * Subscribes the given Permissible for information about the requested Permission, by name.
+     *
+     * If the specified Permission changes in any form, the Permissible will be asked to recalculate.
+     *
+     * @param permission Permission to subscribe to
+     * @param permissible Permissible subscribing
+     */
+    public void subscribeToPermission(String permission, Permissible permissible);
+
+    /**
+     * Unsubscribes the given Permissible for information about the requested Permission, by name.
+     *
+     * @param permission Permission to unsubscribe from
+     * @param permissible Permissible subscribing
+     */
+    public void unsubscribeFromPermission(String permission, Permissible permissible);
+
+    /**
+     * Gets a set containing all subscribed {@link Permissible}s to the given permission, by name
+     *
+     * @param permission Permission to query for
+     * @return Set containing all subscribed permissions
+     */
+    public Set<Permissible> getPermissionSubscriptions(String permission);
+
+    /**
+     * Subscribes to the given Default permissions by operator status
+     *
+     * If the specified defaults change in any form, the Permissible will be asked to recalculate.
+     *
+     * @param op Default list to subscribe to
+     * @param permissible Permissible subscribing
+     */
+    public void subscribeToDefaultPerms(boolean op, Permissible permissible);
+
+    /**
+     * Unsubscribes from the given Default permissions by operator status
+     *
+     * @param op Default list to unsubscribe from
+     * @param permissible Permissible subscribing
+     */
+    public void unsubscribeFromDefaultPerms(boolean op, Permissible permissible);
+
+    /**
+     * Gets a set containing all subscribed {@link Permissible}s to the given default list, by op status
+     *
+     * @param op Default list to query for
+     * @return Set containing all subscribed permissions
+     */
+    public Set<Permissible> getDefaultPermSubscriptions(boolean op);
 }

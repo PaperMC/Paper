@@ -1,5 +1,7 @@
 package org.bukkit.plugin;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.MapMaker;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -27,7 +29,9 @@ import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.event.Event;
 import org.bukkit.event.Event.Priority;
 import org.bukkit.event.Listener;
+import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.Permission;
+import org.bukkit.permissions.PermissionDefault;
 
 import org.bukkit.util.FileUtil;
 
@@ -44,6 +48,8 @@ public final class SimplePluginManager implements PluginManager {
     private final SimpleCommandMap commandMap;
     private final Map<String, Permission> permissions = new HashMap<String, Permission>();
     private final Map<Boolean, Set<Permission>> defaultPerms = new LinkedHashMap<Boolean, Set<Permission>>();
+    private final Map<String, Map<Permissible, Boolean>> permSubs = new HashMap<String, Map<Permissible, Boolean>>();
+    private final Map<Boolean, Map<Permissible, Boolean>> defSubs = new HashMap<Boolean, Map<Permissible, Boolean>>();
     private final Comparator<RegisteredListener> comparer = new Comparator<RegisteredListener>() {
         public int compare(RegisteredListener i, RegisteredListener j) {
             int result = i.getPriority().compareTo(j.getPriority());
@@ -418,24 +424,117 @@ public final class SimplePluginManager implements PluginManager {
         }
 
         permissions.put(name, perm);
+        calculatePermissionDefault(perm);
+    }
 
+    public Set<Permission> getDefaultPermissions(boolean op) {
+        return ImmutableSet.copyOf(defaultPerms.get(op));
+    }
+
+    public void removePermission(Permission perm) {
+        removePermission(perm.getName().toLowerCase());
+    }
+
+    public void removePermission(String name) {
+        permissions.remove(name);
+    }
+
+    public void recalculatePermissionDefaults(Permission perm) {
+        if (permissions.containsValue(perm)) {
+            defaultPerms.get(true).remove(perm);
+            defaultPerms.get(false).remove(perm);
+
+            calculatePermissionDefault(perm);
+        }
+    }
+
+    private void calculatePermissionDefault(Permission perm) {
         if (!perm.getChildren().isEmpty()) {
-            switch (perm.getDefault()) {
-                case TRUE:
-                    defaultPerms.get(true).add(perm);
-                    defaultPerms.get(false).add(perm);
-                    break;
-                case OP:
-                    defaultPerms.get(true).add(perm);
-                    break;
-                case NOT_OP:
-                    defaultPerms.get(false).add(perm);
-                    break;
+            if ((perm.getDefault() == PermissionDefault.OP) || (perm.getDefault() == PermissionDefault.TRUE)) {
+                defaultPerms.get(true).add(perm);
+                dirtyPermissibles(true);
+            }
+            if ((perm.getDefault() == PermissionDefault.NOT_OP) || (perm.getDefault() == PermissionDefault.TRUE)) {
+                defaultPerms.get(false).add(perm);
+                dirtyPermissibles(false);
             }
         }
     }
 
-    public Set<Permission> getDefaultPermissions(boolean op) {
-        return defaultPerms.get(op);
+    private void dirtyPermissibles(boolean op) {
+        Set<Permissible> permissibles = getDefaultPermSubscriptions(op);
+
+        for (Permissible p : permissibles) {
+            p.recalculatePermissions();
+        }
+    }
+
+    public void subscribeToPermission(String permission, Permissible permissible) {
+        String name = permission.toLowerCase();
+        Map<Permissible, Boolean> map = permSubs.get(name);
+
+        if (map == null) {
+            map = new MapMaker().weakKeys().makeMap();
+            permSubs.put(name, map);
+        }
+
+        map.put(permissible, true);
+    }
+
+    public void unsubscribeFromPermission(String permission, Permissible permissible) {
+        String name = permission.toLowerCase();
+        Map<Permissible, Boolean> map = permSubs.get(name);
+
+        if (map != null) {
+            map.remove(permissible);
+
+            if (map.isEmpty()) {
+                permSubs.remove(name);
+            }
+        }
+    }
+
+    public Set<Permissible> getPermissionSubscriptions(String permission) {
+        String name = permission.toLowerCase();
+        Map<Permissible, Boolean> map = permSubs.get(name);
+
+        if (map == null) {
+            return ImmutableSet.of();
+        } else {
+            return ImmutableSet.copyOf(map.keySet());
+        }
+    }
+
+    public void subscribeToDefaultPerms(boolean op, Permissible permissible) {
+        Map<Permissible, Boolean> map = defSubs.get(op);
+
+        if (map == null) {
+            map = new MapMaker().weakKeys().makeMap();
+            defSubs.put(op, map);
+        }
+
+        map.put(permissible, true);
+    }
+
+    public void unsubscribeFromDefaultPerms(boolean op, Permissible permissible) {
+        Map<Permissible, Boolean> map = defSubs.get(op);
+
+        if (map != null) {
+            map.remove(permissible);
+
+            if (map.isEmpty()) {
+                defSubs.remove(op);
+            }
+        }
+    }
+
+    public Set<Permissible> getDefaultPermSubscriptions(boolean op) {
+        Map<Permissible, Boolean> map = defSubs.get(op);
+
+        if (map == null) {
+            return ImmutableSet.of();
+        } else {
+            return ImmutableSet.copyOf(map.keySet());
+        }
     }
 }
