@@ -101,6 +101,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
 
                                                 if (!flag1) {
                                                     --k4;
+                                                    if (k4 <= 0) break; // CraftBukkit
                                                     j5 = chunk.getTypeId(l4 + k3, k4 - 1, j4 + l3);
                                                 }
                                             } while (!flag1);
