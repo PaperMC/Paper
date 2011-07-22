@@ -62,6 +62,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
                             byte b2 = 0;
                             int[] aint = new int[256];
                             Chunk chunk = world.getChunkAtWorldCoords(i3, j3);
+                            if (chunk.isEmpty()) continue; // CraftBukkit
                             int k3 = i3 & 15;
                             int l3 = j3 & 15;
                             int i4 = 0;
