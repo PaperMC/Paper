@@ -112,6 +112,7 @@ public class BlockFurnace extends BlockContainer {
         if (!c) {
             TileEntityFurnace tileentityfurnace = (TileEntityFurnace) world.getTileEntity(i, j, k);
 
+            if (tileentityfurnace == null) return; // CraftBukkit
             for (int l = 0; l < tileentityfurnace.getSize(); ++l) {
                 ItemStack itemstack = tileentityfurnace.getItem(l);
 
