@@ -57,6 +57,16 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
         this(type.getId(), amount, damage, data);
     }
 
+    public ItemStack(final ItemStack stack) {
+        this.type = stack.type;
+        this.amount = stack.amount;
+        this.durability = stack.durability;
+        if (stack.data != null) {
+            this.data = stack.data.clone();
+        }
+        enchantments.putAll(stack.enchantments);
+    }
+
     /**
      * Gets the type of this item
      *

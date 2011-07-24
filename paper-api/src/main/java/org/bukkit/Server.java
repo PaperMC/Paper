@@ -1,6 +1,7 @@
 package org.bukkit;
 
 import java.io.File;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -12,6 +13,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.map.MapView;
 import org.bukkit.plugin.PluginManager;
@@ -382,9 +384,35 @@ public interface Server extends PluginMessageRecipient {
      * Adds a recipe to the crafting manager.
      *
      * @param recipe The recipe to add.
-     * @return True to indicate that the recipe was added.
+     * @return True if the recipe was added, false if it wasn't for some reason.
      */
     public boolean addRecipe(Recipe recipe);
+
+    /**
+     * Get a list of all recipes for a given item. The stack size is ignored in comparisons.
+     * If the durability is -1, it will match any data value.
+     *
+     * @param result The item whose recipes you want
+     * @return The list of recipes
+     */
+    public List<Recipe> getRecipesFor(ItemStack result);
+
+    /**
+     * Get an iterator through the list of crafting recipes.
+     *
+     * @return The iterator.
+     */
+    public Iterator<Recipe> recipeIterator();
+
+    /**
+     * Clears the list of crafting recipes.
+     */
+    public void clearRecipes();
+
+    /**
+     * Resets the list of crafting recipes to the default.
+     */
+    public void resetRecipes();
 
     /**
      * Gets a list of command aliases defined in the server properties.
