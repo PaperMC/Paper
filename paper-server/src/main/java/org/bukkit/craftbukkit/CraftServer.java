@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,13 +19,14 @@ import java.util.logging.Logger;
 import net.minecraft.server.ChunkCoordinates;
 import net.minecraft.server.ConvertProgressUpdater;
 import net.minecraft.server.Convertable;
+import net.minecraft.server.CraftingManager;
 import net.minecraft.server.Enchantment;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityTracker;
+import net.minecraft.server.FurnaceRecipes;
 import net.minecraft.server.IProgressUpdate;
 import net.minecraft.server.IWorldAccess;
 import net.minecraft.server.Item;
-import net.minecraft.server.ItemStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.MobEffectList;
 import net.minecraft.server.PropertyManager;
@@ -60,6 +62,7 @@ import org.bukkit.craftbukkit.inventory.CraftFurnaceRecipe;
 import org.bukkit.craftbukkit.inventory.CraftRecipe;
 import org.bukkit.craftbukkit.inventory.CraftShapedRecipe;
 import org.bukkit.craftbukkit.inventory.CraftShapelessRecipe;
+import org.bukkit.craftbukkit.inventory.RecipeIterator;
 import org.bukkit.craftbukkit.map.CraftMapView;
 import org.bukkit.craftbukkit.potion.CraftPotionBrewer;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
@@ -74,6 +77,7 @@ import org.bukkit.event.world.WorldSaveEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.inventory.FurnaceRecipe;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.ShapelessRecipe;
@@ -463,6 +467,7 @@ public final class CraftServer implements Server {
 
         pluginManager.clearPlugins();
         commandMap.clearCommands();
+        resetRecipes();
 
         int pollCount = 0;
 
@@ -780,7 +785,38 @@ public final class CraftServer implements Server {
             }
         }
         toAdd.addToCraftingManager();
+        CraftingManager.getInstance().sort();
         return true;
+    }
+
+    public List<Recipe> getRecipesFor(ItemStack result) {
+        List<Recipe> results = new ArrayList<Recipe>();
+        Iterator<Recipe> iter = recipeIterator();
+        while (iter.hasNext()) {
+            Recipe recipe = iter.next();
+            ItemStack stack = recipe.getResult();
+            if (stack.getType() != result.getType()) {
+                continue;
+            }
+            if (result.getDurability() == -1 || result.getDurability() == stack.getDurability()) {
+                results.add(recipe);
+            }
+        }
+        return results;
+    }
+
+    public Iterator<Recipe> recipeIterator() {
+        return new RecipeIterator();
+    }
+    
+    public void clearRecipes() {
+        CraftingManager.getInstance().b.clear();
+        FurnaceRecipes.getInstance().b().clear();
+    }
+    
+    public void resetRecipes() {
+        CraftingManager.getInstance().b = new CraftingManager().b;
+        FurnaceRecipes.getInstance().b = new FurnaceRecipes().b;
     }
 
     @SuppressWarnings("unchecked")
@@ -866,7 +902,7 @@ public final class CraftServer implements Server {
     }
 
     public CraftMapView createMap(World world) {
-        ItemStack stack = new ItemStack(Item.MAP, 1, -1);
+        net.minecraft.server.ItemStack stack = new net.minecraft.server.ItemStack(Item.MAP, 1, -1);
         WorldMap worldmap = Item.MAP.getSavedMap(stack, ((CraftWorld) world).getHandle());
         return worldmap.mapView;
     }
