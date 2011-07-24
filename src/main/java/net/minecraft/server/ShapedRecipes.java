@@ -1,5 +1,11 @@
 package net.minecraft.server;
 
+// CraftBukkit start
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.inventory.CraftShapedRecipe;
+import org.bukkit.inventory.ShapedRecipe;
+// CraftBukkit end
+
 public class ShapedRecipes implements CraftingRecipe {
 
     private int b;
@@ -15,6 +21,62 @@ public class ShapedRecipes implements CraftingRecipe {
         this.d = aitemstack;
         this.e = itemstack;
     }
+
+    // CraftBukkit start
+    public ShapedRecipe toBukkitRecipe() {
+        CraftItemStack result = new CraftItemStack(this.e);
+        CraftShapedRecipe recipe = new CraftShapedRecipe(result, this);
+        switch (this.b) {
+        case 1:
+            switch (this.c) {
+            case 1:
+                recipe.shape("a");
+                break;
+            case 2:
+                recipe.shape("ab");
+                break;
+            case 3:
+                recipe.shape("abc");
+                break;
+            }
+            break;
+        case 2:
+            switch (this.c) {
+            case 1:
+                recipe.shape("a","b");
+                break;
+            case 2:
+                recipe.shape("ab","cd");
+                break;
+            case 3:
+                recipe.shape("abc","def");
+                break;
+            }
+            break;
+        case 3:
+            switch (this.c) {
+            case 1:
+                recipe.shape("a","b","c");
+                break;
+            case 2:
+                recipe.shape("ab","cd","ef");
+                break;
+            case 3:
+                recipe.shape("abc","def","ghi");
+                break;
+            }
+            break;
+        }
+        char c = 'a';
+        for (ItemStack stack : this.d) {
+            if (stack != null) {
+                recipe.setIngredient(c, org.bukkit.Material.getMaterial(stack.id), stack.getData());
+            }
+            c++;
+        }
+        return recipe;
+    }
+    // CraftBukkit end
 
     public ItemStack b() {
         return this.e;
