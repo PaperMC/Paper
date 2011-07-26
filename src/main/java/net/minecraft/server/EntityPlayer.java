@@ -7,6 +7,7 @@ import java.util.Set;
 
 // CraftBukkit start
 import org.bukkit.Bukkit;
+import org.bukkit.craftbukkit.ChunkCompressionThread;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.entity.EntityDeathEvent;
@@ -209,7 +210,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             if (chunkcoordintpair != null) {
                 boolean flag1 = false;
 
-                if (this.netServerHandler.b() < 4) {
+                if (this.netServerHandler.b() + ChunkCompressionThread.getPlayerQueueSize(this) < 4) { // CraftBukkit - Add check against Chunk Packets in the ChunkCompressionThread.
                     flag1 = true;
                 }
 

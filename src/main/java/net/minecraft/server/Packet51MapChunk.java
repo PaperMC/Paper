@@ -16,7 +16,8 @@ public class Packet51MapChunk extends Packet {
     public int e;
     public int f;
     public byte[] g;
-    private int h;
+    public int h; // CraftBukkit - private -> public
+    public byte[] rawData; // CraftBukkit
 
     public Packet51MapChunk() {
         this.k = true;
@@ -36,6 +37,7 @@ public class Packet51MapChunk extends Packet {
         this.d = l;
         this.e = i1;
         this.f = j1;
+        /* CraftBukkit - Moved compression into its own method.
         byte[] abyte = data; // CraftBukkit - uses data from above constructor
         Deflater deflater = new Deflater(-1);
 
@@ -46,7 +48,8 @@ public class Packet51MapChunk extends Packet {
             this.h = deflater.deflate(this.g);
         } finally {
             deflater.end();
-        }
+        }*/
+        this.rawData = data; // CraftBukkit
     }
 
     public void a(DataInputStream datainputstream) throws IOException { // CraftBukkit - throws IOEXception

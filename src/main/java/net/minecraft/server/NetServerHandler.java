@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 
 // CraftBukkit start
 import org.bukkit.ChatColor;
+import org.bukkit.craftbukkit.ChunkCompressionThread;
 import org.bukkit.craftbukkit.command.ColouredConsoleSender;
 import org.bukkit.Location;
 import org.bukkit.command.CommandException;
@@ -628,6 +629,10 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             for (final String line: TextWrapper.wrapText(message)) {
                 this.networkManager.queue(new Packet3Chat(line));
             }
+            packet = null;
+        } else if (packet.k == true) {
+            // Reroute all low-priority packets through to compression thread.
+            ChunkCompressionThread.sendPacket(this.player, packet);
             packet = null;
         }
         if (packet != null) this.networkManager.queue(packet);
