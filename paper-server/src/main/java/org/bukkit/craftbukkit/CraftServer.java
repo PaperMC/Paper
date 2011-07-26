@@ -485,29 +485,31 @@ public final class CraftServer implements Server {
         pluginManager.callEvent(new WorldInitEvent(internal.getWorld()));
         System.out.print("Preparing start region for level " + (console.worlds.size() -1) + " (Seed: " + internal.getSeed() + ")");
 
-        short short1 = 196;
-        long i = System.currentTimeMillis();
-        for (int j = -short1; j <= short1; j += 16) {
-            for (int k = -short1; k <= short1; k += 16) {
-                long l = System.currentTimeMillis();
+        if (internal.getWorld().getKeepSpawnInMemory()) {
+            short short1 = 196;
+            long i = System.currentTimeMillis();
+            for (int j = -short1; j <= short1; j += 16) {
+                for (int k = -short1; k <= short1; k += 16) {
+                    long l = System.currentTimeMillis();
 
-                if (l < i) {
-                    i = l;
-                }
+                    if (l < i) {
+                        i = l;
+                    }
 
-                if (l > i + 1000L) {
-                    int i1 = (short1 * 2 + 1) * (short1 * 2 + 1);
-                    int j1 = (j + short1) * (short1 * 2 + 1) + k + 1;
+                    if (l > i + 1000L) {
+                        int i1 = (short1 * 2 + 1) * (short1 * 2 + 1);
+                        int j1 = (j + short1) * (short1 * 2 + 1) + k + 1;
 
-                    System.out.println("Preparing spawn area for " + name + ", " + (j1 * 100 / i1) + "%");
-                    i = l;
-                }
+                        System.out.println("Preparing spawn area for " + name + ", " + (j1 * 100 / i1) + "%");
+                        i = l;
+                    }
 
-                ChunkCoordinates chunkcoordinates = internal.getSpawn();
-                internal.chunkProviderServer.getChunkAt(chunkcoordinates.x + j >> 4, chunkcoordinates.z + k >> 4);
+                    ChunkCoordinates chunkcoordinates = internal.getSpawn();
+                    internal.chunkProviderServer.getChunkAt(chunkcoordinates.x + j >> 4, chunkcoordinates.z + k >> 4);
 
-                while (internal.doLighting()) {
-                    ;
+                    while (internal.doLighting()) {
+                        ;
+                    }
                 }
             }
         }
