@@ -69,6 +69,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     private double lastPosZ = Double.MAX_VALUE;
     private float lastPitch = Float.MAX_VALUE;
     private float lastYaw = Float.MAX_VALUE;
+    private boolean justTeleported = false;
 
     // For the packet15 hack :(
     Long lastPacket;
@@ -138,7 +139,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
         // CraftBukkit start
         Player player = this.getPlayer();
-        Location from = player.getLocation().clone(); // Get the Players current location.
+        Location from = new Location(player.getWorld(), lastPosX, lastPosY, lastPosZ, lastYaw, lastPitch); // Get the Players previous Event location.
         Location to = player.getLocation().clone(); // Start off the To location as the Players current location.
 
         // If the packet contains movement information then we update the To location with the correct XYZ.
@@ -155,12 +156,18 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         }
 
         // Prevent 40 event-calls for less than a single pixel of movement >.>
-        double delta = Math.pow(this.lastPosX - this.x, 2) + Math.pow(this.lastPosY - this.y, 2) + Math.pow(this.lastPosZ - this.z, 2);
-        float deltaAngle = Math.abs(this.lastYaw - this.player.yaw) + Math.abs(this.lastPitch - this.player.pitch);
+        double delta = Math.pow(this.lastPosX - to.getX(), 2) + Math.pow(this.lastPosY - to.getY(), 2) + Math.pow(this.lastPosZ - to.getZ(), 2);
+        float deltaAngle = Math.abs(this.lastYaw - to.getYaw()) + Math.abs(this.lastPitch - to.getPitch());
 
-        if (delta > 1f / 256 || deltaAngle > 10f) {
+        if ((delta > 1f / 256 || deltaAngle > 10f) && (this.checkMovement && !this.player.dead)) {
+            this.lastPosX = to.getX();
+            this.lastPosY = to.getY();
+            this.lastPosZ = to.getZ();
+            this.lastYaw = to.getYaw();
+            this.lastPitch = to.getPitch();
+
             // Skip the first time we do this
-            if (this.lastPosX != Double.MAX_VALUE) {
+            if (from.getX() != Double.MAX_VALUE) {
                 PlayerMoveEvent event = new PlayerMoveEvent(player, from, to);
                 this.server.getPluginManager().callEvent(event);
 
@@ -174,22 +181,17 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                    there to avoid any 'Moved wrongly' or 'Moved too quickly' errors.
                    We only do this if the Event was not cancelled. */
                 if (!to.equals(event.getTo()) && !event.isCancelled()) {
-                    ((CraftPlayer) this.player.getBukkitEntity()).teleport(event.getTo());
+                    this.player.getBukkitEntity().teleport(event.getTo());
                     return;
                 }
 
                 /* Check to see if the Players Location has some how changed during the call of the event.
                    This can happen due to a plugin teleporting the player instead of using .setTo() */
-                if(!from.equals(this.getPlayer().getLocation())){
+                if (!from.equals(this.getPlayer().getLocation()) && this.justTeleported) {
+                    this.justTeleported = false;
                     return;
                 }
             }
-
-            this.lastPosX = this.player.locX;
-            this.lastPosY = this.player.locY;
-            this.lastPosZ = this.player.locZ;
-            this.lastYaw = this.player.yaw;
-            this.lastPitch = this.player.pitch;
         }
 
         if (Double.isNaN(packet10flying.x) || Double.isNaN(packet10flying.y) || Double.isNaN(packet10flying.z) || Double.isNaN(packet10flying.stance)) {
@@ -398,6 +400,13 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         if (Float.isNaN(f1)) {
             f1 = 0;
         }
+
+        this.lastPosX = d0;
+        this.lastPosY = d1;
+        this.lastPosZ = d2;
+        this.lastYaw = f;
+        this.lastPitch = f1;
+        this.justTeleported = true;
         // CraftBukkit end
 
         this.checkMovement = false;
