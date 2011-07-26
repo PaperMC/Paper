@@ -783,4 +783,26 @@ public class CraftWorld implements World {
     public int getMaxHeight() {
         return 128;
     }
+
+    public boolean getKeepSpawnInMemory() {
+        return world.keepSpawnInMemory;
+    }
+
+    public void setKeepSpawnInMemory(boolean keepLoaded) {
+        world.keepSpawnInMemory = keepLoaded;
+        // Grab the worlds spawn chunk
+        ChunkCoordinates chunkcoordinates = this.world.getSpawn();
+        int chunkCoordX = chunkcoordinates.x >> 4;
+        int chunkCoordZ = chunkcoordinates.z >> 4;
+        //  Cycle through the 25x25 Chunks around it to load/unload the chunks.
+        for (int x = -12; x <= 12; x++) {
+            for (int z = -12; z <= 12; z++) {
+                if (keepLoaded) {
+                    loadChunk(chunkCoordX + x, chunkCoordZ + z);
+                } else {
+                    unloadChunk(chunkCoordX + x, chunkCoordZ + z);
+                }
+            }
+        }
+    }
 }

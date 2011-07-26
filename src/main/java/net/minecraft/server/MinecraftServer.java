@@ -232,8 +232,9 @@ public class MinecraftServer implements Runnable, ICommandListener {
         // CraftBukkit start
         for (int l = 0; l < this.worlds.size(); ++l) {
             // if (l == 0 || this.propertyManager.getBoolean("allow-nether", true)) {
-                WorldServer worldserver = this.worlds.get(l);
-                log.info("Preparing start region for level " + l + " (Seed: " + worldserver.getSeed() + ")");
+            WorldServer worldserver = this.worlds.get(l);
+            log.info("Preparing start region for level " + l + " (Seed: " + worldserver.getSeed() + ")");
+            if (worldserver.getWorld().getKeepSpawnInMemory()) {
                 // CraftBukkit end
                 ChunkCoordinates chunkcoordinates = worldserver.getSpawn();
 
@@ -260,7 +261,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
                         }
                     }
                 }
-            // } // CraftBukkit
+            } // CraftBukkit
         }
 
         // CraftBukkit start

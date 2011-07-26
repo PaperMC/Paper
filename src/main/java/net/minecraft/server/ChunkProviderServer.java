@@ -49,7 +49,7 @@ public class ChunkProviderServer implements IChunkProvider {
         int l = j * 16 + 8 - chunkcoordinates.z;
         short short1 = 128;
 
-        if (k < -short1 || k > short1 || l < -short1 || l > short1) {
+        if (k < -short1 || k > short1 || l < -short1 || l > short1 || !(this.world.keepSpawnInMemory)) { // CraftBukkit - added 'this.world.keepSpawnInMemory'
             this.unloadQueue.add(i, j); // CraftBukkit
         }
     }
