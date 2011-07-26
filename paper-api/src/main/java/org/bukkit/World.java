@@ -687,6 +687,20 @@ public interface World {
     public int getMaxHeight();
 
     /**
+     * Gets whether the world's spawn area should be kept loaded into memory or not.
+     *
+     * @return true if the world's spawn area will be kept loaded into memory.
+     */
+    public boolean getKeepSpawnInMemory();
+
+    /**
+    * Sets whether the world's spawn area should be kept loaded into memory or not.
+    *
+    * @param keepLoaded if true then the world's spawn area will be kept loaded into memory.
+    */
+    public void setKeepSpawnInMemory(boolean keepLoaded);
+
+    /**
      * Represents various map environment types that a world may be
      */
     public enum Environment {
