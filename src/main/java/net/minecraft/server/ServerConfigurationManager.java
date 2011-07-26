@@ -276,16 +276,24 @@ public class ServerConfigurationManager {
         // CraftBukkit start -- Replaced the standard handling of portals with a more customised method.
         int dimension = entityplayer.dimension;
         WorldServer fromWorld = this.server.getWorldServer(dimension);
-        WorldServer toWorld = this.server.getWorldServer(dimension == -1 ? 0 : -1);
+        WorldServer toWorld = null;
+        if (dimension < 10) {
+            int toDimension = dimension == -1 ? 0 : -1;
+            for (WorldServer world : this.server.worlds) {
+                if (world.dimension == toDimension) {
+                    toWorld = world;
+                }
+            }
+        }
         double blockRatio = dimension == -1 ? 8 : 0.125;
 
         Location fromLocation = new Location(fromWorld.getWorld(), entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
-        Location toLocation = new Location(toWorld.getWorld(), (entityplayer.locX * blockRatio), entityplayer.locY, (entityplayer.locZ * blockRatio), entityplayer.yaw, entityplayer.pitch);
+        Location toLocation = toWorld == null ? null : new Location(toWorld.getWorld(), (entityplayer.locX * blockRatio), entityplayer.locY, (entityplayer.locZ * blockRatio), entityplayer.yaw, entityplayer.pitch);
 
         org.bukkit.craftbukkit.PortalTravelAgent pta = new org.bukkit.craftbukkit.PortalTravelAgent();
         PlayerPortalEvent event = new PlayerPortalEvent((Player) entityplayer.getBukkitEntity(), fromLocation, toLocation, pta);
         Bukkit.getServer().getPluginManager().callEvent(event);
-        if (event.isCancelled()) {
+        if (event.isCancelled() || event.getTo() == null) {
             return;
         }
 
