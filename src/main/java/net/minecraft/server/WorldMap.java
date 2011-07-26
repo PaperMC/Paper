@@ -45,15 +45,16 @@ public class WorldMap extends WorldMapBase {
 
             if (least != 0L && most != 0L) {
                 this.uniqueId = new UUID(most, least);
-            }
-            CraftWorld world = (CraftWorld) server.getWorld(this.uniqueId);
-            // Check if the stored world details are correct.
-            if (world == null) {
-                /* All Maps which do not have their valid world loaded are set to a dimension which hopefully won't be reached.
-                   This is to prevent them being corrupted with the wrong map data. */
-                dimension = 127;
-            } else {
-                dimension = (byte) world.getHandle().dimension;
+
+                CraftWorld world = (CraftWorld) server.getWorld(this.uniqueId);
+                // Check if the stored world details are correct.
+                if (world == null) {
+                    /* All Maps which do not have their valid world loaded are set to a dimension which hopefully won't be reached.
+                       This is to prevent them being corrupted with the wrong map data. */
+                    dimension = 127;
+                } else {
+                    dimension = (byte) world.getHandle().dimension;
+                }
             }
         }
 
@@ -110,8 +111,12 @@ public class WorldMap extends WorldMapBase {
                     }
                 }
             }
-            nbttagcompound.setLong("UUIDLeast", this.uniqueId.getLeastSignificantBits());
-            nbttagcompound.setLong("UUIDMost", this.uniqueId.getMostSignificantBits());
+            /* Perform a second check to see if a matching world was found, this is a necessary
+               change incase Maps are forcefully unlinked from a World and lack a UID.*/
+            if (this.uniqueId != null) {
+                nbttagcompound.setLong("UUIDLeast", this.uniqueId.getLeastSignificantBits());
+                nbttagcompound.setLong("UUIDMost", this.uniqueId.getMostSignificantBits());
+            }
         }
         // CraftBukkit end
         nbttagcompound.a("dimension", this.map);
