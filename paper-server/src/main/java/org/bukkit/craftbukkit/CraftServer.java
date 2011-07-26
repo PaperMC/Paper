@@ -96,6 +96,8 @@ public final class CraftServer implements Server {
         loadConfig();
         loadPlugins();
         enablePlugins(PluginLoadOrder.STARTUP);
+
+        ChunkCompressionThread.startThread();
     }
 
     private void loadConfig() {
