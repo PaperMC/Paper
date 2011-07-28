@@ -120,6 +120,10 @@ public class CraftWorld implements World {
         loadChunk(x, z, true);
     }
 
+    public boolean unloadChunk(Chunk chunk) {
+        return unloadChunk(chunk.getX(), chunk.getZ());
+    }
+
     public boolean unloadChunk(int x, int z) {
         return unloadChunk(x, z, true);
     }
