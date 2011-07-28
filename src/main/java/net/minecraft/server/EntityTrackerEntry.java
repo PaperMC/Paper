@@ -127,7 +127,28 @@ public class EntityTrackerEntry {
         }
 
         if (this.tracker.velocityChanged) {
-            this.b((Packet) (new Packet28EntityVelocity(this.tracker)));
+            // CraftBukkit start - create PlayerVelocity event
+            boolean cancelled = false;
+
+            if(this.tracker instanceof EntityPlayer) {
+                org.bukkit.entity.Player player = (org.bukkit.entity.Player) this.tracker.getBukkitEntity();
+                org.bukkit.util.Vector velocity = player.getVelocity();
+
+                org.bukkit.event.player.PlayerVelocityEvent event = new org.bukkit.event.player.PlayerVelocityEvent(player, velocity);
+                this.tracker.world.getServer().getPluginManager().callEvent(event);
+
+                if(event.isCancelled()) {
+                    cancelled = true;
+                }
+                else if(!velocity.equals(event.getVelocity())) {
+                    player.setVelocity(velocity);
+                }
+            }
+
+            if(!cancelled) {
+                this.b((Packet) (new Packet28EntityVelocity(this.tracker)));
+            }
+            // CraftBukkit end
             this.tracker.velocityChanged = false;
         }
     }
