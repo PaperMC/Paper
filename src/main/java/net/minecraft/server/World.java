@@ -20,7 +20,6 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.block.BlockCanBuildEvent;
 import org.bukkit.event.block.BlockPhysicsEvent;
-import org.bukkit.event.block.SnowFormEvent;
 import org.bukkit.event.block.BlockFormEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
@@ -1915,12 +1914,13 @@ public class World implements IBlockAccess {
                     i2 = chunk.getTypeId(l, k1, j1);
                     if (this.v() && i2 == 0 && Block.SNOW.canPlace(this, l + i, k1, j1 + j) && l1 != 0 && l1 != Block.ICE.id && Block.byId[l1].material.isSolid()) {
                         // CraftBukkit start
-                        SnowFormEvent snow = new SnowFormEvent(this.getWorld().getBlockAt(l + i, k1, j1 + j));
+                        BlockState blockState = this.getWorld().getBlockAt(l + i, k1, j1 + j).getState();
+                        blockState.setTypeId(Block.SNOW.id);
 
+                        BlockFormEvent snow = new BlockFormEvent(blockState.getBlock(), blockState);
                         this.getServer().getPluginManager().callEvent(snow);
                         if (!snow.isCancelled()) {
-                            this.setTypeId(l + i, k1, j1 + j, snow.getMaterial().getId());
-                            this.setData(l + i, k1, j1 + j, snow.getData());
+                            blockState.update(true);
                         }
                         // CraftBukkit end
                     }

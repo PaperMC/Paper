@@ -20,9 +20,8 @@ public class CraftNoteBlock extends CraftBlockState implements NoteBlock {
         note = (TileEntityNote) world.getTileEntityAt(getX(), getY(), getZ());
     }
 
-    @Deprecated
-    public byte getNote() {
-        return note.note;
+    public Note getNote() {
+        return new Note(note.note);
     }
 
     public byte getRawNote() {
@@ -31,11 +30,6 @@ public class CraftNoteBlock extends CraftBlockState implements NoteBlock {
 
     public void setNote(Note n) {
         note.note = n.getId();
-    }
-
-    @Deprecated
-    public void setNote(byte n) {
-        note.note = n;
     }
 
     public void setRawNote(byte n) {
