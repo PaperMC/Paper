@@ -176,6 +176,16 @@ public interface World {
      *
      * This method is analogous to {@link #unloadChunk(int, int, boolean, boolean)} where safe and saveis true
      *
+     * @param chunk the chunk to unload
+     * @return true if the chunk has unloaded successfully, otherwise false
+     */
+    public boolean unloadChunk(Chunk chunk);
+
+    /**
+     * Safely unloads and saves the {@link Chunk} at the specified coordinates
+     *
+     * This method is analogous to {@link #unloadChunk(int, int, boolean, boolean)} where safe and saveis true
+     *
      * @param x X-coordinate of the chunk
      * @param z Z-coordinate of the chunk
      * @return true if the chunk has unloaded successfully, otherwise false

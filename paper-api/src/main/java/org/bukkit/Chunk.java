@@ -58,4 +58,50 @@ public interface Chunk {
     Entity[] getEntities();
 
     BlockState[] getTileEntities();
+
+    /**
+     * Checks if the chunk is loaded.
+     *
+     * @return
+     */
+    boolean isLoaded();
+
+    /**
+     * Loads the chunk.
+     *
+     * @param generate Whether or not to generate a chunk if it doesn't already exist
+     * @return true if the chunk has loaded successfully, otherwise false
+     */
+    boolean load(boolean generate);
+
+    /**
+     * Loads the chunk.
+     *
+     * @return true if the chunk has loaded successfully, otherwise false
+     */
+    boolean load();
+
+    /**
+     * Unloads and optionally saves the Chunk
+     *
+     * @param save Controls whether the chunk is saved
+     * @param safe Controls whether to unload the chunk when players are nearby
+     * @return true if the chunk has unloaded successfully, otherwise false
+     */
+    boolean unload(boolean save, boolean safe);
+
+    /**
+     * Unloads and optionally saves the Chunk
+     *
+     * @param save Controls whether the chunk is saved
+     * @return true if the chunk has unloaded successfully, otherwise false
+     */
+    boolean unload(boolean save);
+
+    /**
+     * Unloads and optionally saves the Chunk
+     *
+     * @return true if the chunk has unloaded successfully, otherwise false
+     */
+    boolean unload();
 }
