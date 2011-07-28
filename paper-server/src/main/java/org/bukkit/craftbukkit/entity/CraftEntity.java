@@ -132,14 +132,6 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         return teleport(destination.getLocation());
     }
 
-    public void teleportTo(Location location) {
-        teleport(location);
-    }
-
-    public void teleportTo(org.bukkit.entity.Entity destination) {
-        teleport(destination);
-    }
-
     public List<org.bukkit.entity.Entity> getNearbyEntities(double x, double y, double z) {
         @SuppressWarnings("unchecked")
         List<Entity> notchEntityList = entity.world.b(entity, entity.boundingBox.b(x, y, z));
