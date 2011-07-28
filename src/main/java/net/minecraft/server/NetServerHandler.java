@@ -725,7 +725,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             a.info(s);
             this.minecraftServer.serverConfigurationManager.sendAll(new Packet3Chat(s));
         } else if (s.toLowerCase().startsWith("/kill")) {
-            this.player.damageEntity((Entity) null, 1000);
+            this.player.damageEntity(this.player, 1000); // CraftBukkit - replace null entity with player entity; TODO: decide if we want damage with a null source to fire an event.
         } else if (s.toLowerCase().startsWith("/tell ")) {
             String[] astring = s.split(" ");
 
