@@ -198,6 +198,13 @@ public abstract class Event implements Serializable {
          */
         PLAYER_MOVE (Category.PLAYER),
         /**
+         * Called before a player gets a velocity vector sent, which will instruct him to 
+         * get "pushed" into a specific direction, e.g. after an explosion
+         *
+         * @see org.bukkit.event.player.PlayerVelocityEvent
+         */
+        PLAYER_VELOCITY (Category.PLAYER),
+        /**
          * Called when a player undergoes an animation (Arm Swing is the only animation currently supported)
          *
          * @see org.bukkit.event.player.PlayerAnimationEvent

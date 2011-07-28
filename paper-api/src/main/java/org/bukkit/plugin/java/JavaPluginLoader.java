@@ -287,6 +287,13 @@ public final class JavaPluginLoader implements PluginLoader {
                 }
             };
 
+        case PLAYER_VELOCITY:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((PlayerListener) listener).onPlayerVelocity((PlayerVelocityEvent) event);
+                }
+            };
+
         case PLAYER_TELEPORT:
             return new EventExecutor() {
                 public void execute(Listener listener, Event event) {

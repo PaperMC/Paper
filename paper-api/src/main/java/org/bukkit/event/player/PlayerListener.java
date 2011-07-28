@@ -52,6 +52,14 @@ public class PlayerListener implements Listener {
     public void onPlayerMove(PlayerMoveEvent event) {}
 
     /**
+     * Called before a player gets a velocity vector sent, which will "push"
+     * the player in a certain direction
+     *
+     * @param event Relevant event details
+     */
+    public void onPlayerVelocity(PlayerVelocityEvent event) {}
+
+    /**
      * Called when a player attempts to teleport to a new location in a world
      *
      * @param event Relevant event details
