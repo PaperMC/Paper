@@ -24,12 +24,13 @@ import org.bukkit.craftbukkit.LoggerOutputStream;
 import org.bukkit.craftbukkit.command.ColouredConsoleSender;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 import org.bukkit.craftbukkit.util.ServerShutdownThread;
+import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.world.WorldSaveEvent;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.PluginLoadOrder;
-// CraftBukkit
+// CraftBukkit end
 
 public class MinecraftServer implements Runnable, ICommandListener {
 
@@ -476,7 +477,13 @@ public class MinecraftServer implements Runnable, ICommandListener {
         while (this.s.size() > 0) {
             ServerCommand servercommand = (ServerCommand) this.s.remove(0);
 
-            // this.consoleCommandHandler.handle(servercommand); // CraftBukkit - Removed its now called in server.displatchCommand
+            // CraftBukkit start - ServerCommand for preprocessing
+            ServerCommandEvent event = new ServerCommandEvent(this.console, servercommand.command);
+            this.server.getPluginManager().callEvent(event);
+            servercommand = new ServerCommand(event.getCommand(), servercommand.b);
+            // CraftBukkit end
+
+            // this.consoleCommandHandler.handle(servercommand); // CraftBukkit - Removed its now called in server.dispatchCommand
             this.server.dispatchCommand(this.console, servercommand); // CraftBukkit
         }
     }
