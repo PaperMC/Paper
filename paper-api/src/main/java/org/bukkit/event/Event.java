@@ -381,12 +381,6 @@ public abstract class Event implements Serializable {
          */
         BLOCK_BREAK (Category.BLOCK),
         /**
-         * Called when world attempts to place a snow block during a snowfall
-         *
-         * @see org.bukkit.event.block.SnowFormEvent
-         */
-        SNOW_FORM (Category.BLOCK),
-        /**
          * Called when a block is formed based on world conditions
          *
          * @see org.bukkit.event.block.BlockFormEvent

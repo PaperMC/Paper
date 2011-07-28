@@ -12,26 +12,8 @@ public interface NoteBlock extends BlockState {
      * Gets the note.
      *
      * @return
-     * @deprecated use {@link #getRawNote()} instead
-     */
-    @Deprecated
-    public byte getNote();
-
-    /**
-     * Gets the note.
-     *
-     * @return
      */
     public byte getRawNote();
-
-    /**
-     * Set the note.
-     *
-     * @param note
-     * @deprecated use {@link #setRawNote(byte)} instead
-     */
-    @Deprecated
-    public void setNote(byte note);
 
     /**
      * Set the note.

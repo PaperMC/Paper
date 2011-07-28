@@ -119,15 +119,6 @@ public class BlockListener implements Listener {
     public void onBlockBreak(BlockBreakEvent event) {}
 
     /**
-     * Called when a world is attempting to place a block during a snowfall.
-     *
-     * @param event Relevant event details
-     * @deprecated Be prepared to use onBlockForm instead as it will be replacing this event after the RB
-     */
-    @Deprecated
-    public void onSnowForm(SnowFormEvent event) {}
-
-    /**
      * Called when a block is formed or spreads based on world conditions.
      * Use {@link BlockSpreadEvent} to catch blocks that actually spread and don't just "randomly" form.
      *<p />
