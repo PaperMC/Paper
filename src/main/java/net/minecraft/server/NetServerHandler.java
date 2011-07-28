@@ -785,6 +785,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             // Arm swing animation
             PlayerAnimationEvent event = new PlayerAnimationEvent(this.getPlayer());
             this.server.getPluginManager().callEvent(event);
+
+            if (event.isCancelled()) return;
             // CraftBukkit end
 
             this.player.w();
