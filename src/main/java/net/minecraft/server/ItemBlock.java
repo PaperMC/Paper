@@ -62,9 +62,13 @@ public class ItemBlock extends Item {
             // would happen if you place x step onto another y step, so let's just keep
             // track of the entire state
             CraftBlockState blockStateBelow = null;
+            // Toggles whether the normal or the block below is used for the place event 
+            boolean eventUseBlockBelow = false;
             if ((world.getTypeId(i, j - 1, k) == Block.STEP.id || world.getTypeId(i, j - 1, k) == Block.DOUBLE_STEP.id)
                     && (itemstack.id == Block.DOUBLE_STEP.id || itemstack.id == Block.STEP.id)) {
                 blockStateBelow = CraftBlockState.getBlockState(world, i, j - 1, k);
+                // Step is placed on step, forms a doublestep replacing the original step, so we need the lower block
+                eventUseBlockBelow = itemstack.id == Block.STEP.id && blockStateBelow.getTypeId() == Block.STEP.id;
             }
 
             /**
@@ -78,7 +82,7 @@ public class ItemBlock extends Item {
             * replace this with.
             */
             if (world.setRawTypeIdAndData(i, j, k, this.id, this.filterData(itemstack.getData()))) { // <-- world.setTypeIdAndData does this to place the block
-                BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, replacedBlockState, clickedX, clickedY, clickedZ, block);
+                BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, eventUseBlockBelow ? blockStateBelow : replacedBlockState, clickedX, clickedY, clickedZ, block);
 
                 if (event.isCancelled() || !event.canBuild()) {
                     if (blockStateBelow != null) { // Used for steps
