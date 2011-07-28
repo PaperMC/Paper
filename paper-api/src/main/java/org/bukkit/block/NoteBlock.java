@@ -13,6 +13,13 @@ public interface NoteBlock extends BlockState {
      *
      * @return
      */
+    public Note getNote();
+
+    /**
+     * Gets the note.
+     *
+     * @return
+     */
     public byte getRawNote();
 
     /**
