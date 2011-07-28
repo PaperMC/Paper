@@ -93,6 +93,8 @@ public class Main {
                         .describedAs("Yml file");
 
                 acceptsAll(asList("nojline"), "Disables jline and emulates the vanilla console");
+
+                acceptsAll(asList("v", "version"), "Show the CraftBukkit Version");
             }
         };
 
@@ -110,6 +112,8 @@ public class Main {
             } catch (IOException ex) {
                 Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
             }
+        } else if (options.has("v")) {
+            System.out.println(CraftServer.class.getPackage().getImplementationVersion());
         } else {
             try {
                 useJline = !"jline.UnsupportedTerminal".equals(System.getProperty("jline.terminal"));
