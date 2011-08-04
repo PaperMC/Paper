@@ -478,7 +478,7 @@ public class Chunk {
         while (iterator.hasNext()) {
             TileEntity tileentity = (TileEntity) iterator.next();
 
-            tileentity.h();
+            world.markForRemoval(tileentity); // Craftbukkit
         }
 
         for (int i = 0; i < this.entitySlices.length; ++i) {

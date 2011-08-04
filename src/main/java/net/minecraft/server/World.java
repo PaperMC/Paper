@@ -89,6 +89,7 @@ public class World implements IBlockAccess {
     int lastXAccessed = Integer.MIN_VALUE;
     int lastZAccessed = Integer.MIN_VALUE;
     final Object chunkLock = new Object();
+    private List<TileEntity> tileEntitiesToUnload;
 
     private boolean canSpawn(int x, int z) {
         if (this.generator != null) {
@@ -106,10 +107,15 @@ public class World implements IBlockAccess {
         return (CraftServer) Bukkit.getServer();
     }
 
+    public void markForRemoval(TileEntity tileentity) {
+        tileEntitiesToUnload.add(tileentity);
+    }
+
     // CraftBukkit - changed signature
     public World(IDataManager idatamanager, String s, long i, WorldProvider worldprovider, ChunkGenerator gen, org.bukkit.World.Environment env) {
         this.generator = gen;
         this.world = new CraftWorld((WorldServer) this, gen, env);
+        tileEntitiesToUnload = new ArrayList<TileEntity>();
         // CraftBukkit end
 
         this.Q = this.random.nextInt(12000);
@@ -1137,6 +1143,14 @@ public class World implements IBlockAccess {
         }
 
         this.L = false;
+
+        // Craftbukkit start
+        if (!tileEntitiesToUnload.isEmpty()) {
+            this.c.removeAll(tileEntitiesToUnload);
+            this.tileEntitiesToUnload.clear();
+        }
+        // Craftbukkit end
+
         if (!this.G.isEmpty()) {
             Iterator iterator1 = this.G.iterator();
 
