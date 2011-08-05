@@ -229,7 +229,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         }
 
         if (this.E) {
-            if (this.b.propertyManager.getBoolean("allow-nether", true)) {
+            //if (this.b.propertyManager.getBoolean("allow-nether", true)) { // CraftBukkit
                 if (this.activeContainer != this.defaultContainer) {
                     this.y();
                 }
@@ -246,7 +246,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
                 }
 
                 this.E = false;
-            }
+            //} // CraftBukkit
         } else {
             if (this.F > 0.0F) {
                 this.F -= 0.05F;
