@@ -261,6 +261,10 @@ public final class CraftServer implements Server {
         return this.getConfigInt("server-port", 25565);
     }
 
+    public int getViewDistance() {
+        return this.getConfigInt("view-distance", 10);
+    }
+
     public String getIp() {
         return this.getConfigString("server-ip", "");
     }
@@ -273,6 +277,14 @@ public final class CraftServer implements Server {
         return this.getConfigString("server-id", "unnamed");
     }
 
+    public boolean getAllowNether() {
+        return this.getConfigBoolean("allow-nether", true);
+    }
+
+    public boolean hasWhitelist() {
+        return this.getConfigBoolean("white-list", false);
+    }
+
     // NOTE: Temporary calls through to server.properies until its replaced
     private String getConfigString(String variable, String defaultValue) {
         return this.console.propertyManager.getString(variable, defaultValue);
@@ -280,6 +292,10 @@ public final class CraftServer implements Server {
 
     private int getConfigInt(String variable, int defaultValue) {
         return this.console.propertyManager.getInt(variable, defaultValue);
+    }
+
+    private boolean getConfigBoolean(String variable, boolean defaultValue) {
+        return this.console.propertyManager.getBoolean(variable, defaultValue);
     }
 
     // End Temporary calls
@@ -674,6 +690,10 @@ public final class CraftServer implements Server {
 
     public boolean getOnlineMode() {
         return this.console.onlineMode;
+    }
+
+    public boolean getAllowFlight() {
+        return this.console.allowFlight;
     }
 
     public ChunkGenerator getGenerator(String world) {
