@@ -29,7 +29,7 @@ public class BlockIce extends BlockBreakable {
         if (world.a(EnumSkyBlock.BLOCK, i, j, k) > 11 - Block.q[this.id]) {
             // CraftBukkit start
             org.bukkit.block.BlockState blockState = world.getWorld().getBlockAt(i, j, k).getState();
-            blockState.setTypeId(this.id);
+            blockState.setTypeId(Block.STATIONARY_WATER.id);
 
             BlockFadeEvent event = new BlockFadeEvent(blockState.getBlock(), blockState);
             world.getServer().getPluginManager().callEvent(event);
