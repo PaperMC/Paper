@@ -52,9 +52,16 @@ public interface Server {
     /**
      * Get the game port that the server runs on
      *
-     * @return The port number of this servers
+     * @return The port number of this server
      */
     public int getPort();
+
+    /**
+     * Get the view distance from this server.
+     *
+     * @return The view distance from this server.
+     */
+    public int getViewDistance();
 
     /**
      * Get the IP that this server is bound to or empty string if not specified
@@ -77,6 +84,20 @@ public interface Server {
      * @return The ID of this server
      */
     public String getServerId();
+
+    /**
+     * Gets whether this server allows the Nether or not.
+     *
+     * @return Whether this server allows the Nether or not.
+     */
+    public boolean getAllowNether();
+
+    /**
+     * Gets whether this server has a whitelist or not.
+     *
+     * @return Whether this server has a whitelist or not.
+     */
+    public boolean hasWhitelist();
 
     /**
      * Broadcast a message to all players.
@@ -301,4 +322,11 @@ public interface Server {
      * @return Whether the server is in online mode.
      */
     public boolean getOnlineMode();
+
+    /**
+     * Gets whether this server allows flying or not.
+     *
+     * @return Whether this server allows flying or not.
+     */
+    public boolean getAllowFlight();
 }
