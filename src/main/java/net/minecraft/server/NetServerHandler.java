@@ -61,6 +61,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     }
     private final CraftServer server;
     private int lastTick = MinecraftServer.currentTick;
+    private int lastDropTick = MinecraftServer.currentTick;
+    private int dropCount = 0;
     private static final int PLACE_DISTANCE_SQUARED = 6 * 6;
 
     // Get position of last block hit for BlockDamageLevel.STOPPED
@@ -423,6 +425,20 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         WorldServer worldserver = this.minecraftServer.getWorldServer(this.player.dimension);
 
         if (packet14blockdig.e == 4) {
+            // CraftBukkit start
+            // If the ticks aren't the same then the count starts from 0 and we update the lastDropTick.
+            if (this.lastDropTick != MinecraftServer.currentTick) {
+                this.dropCount = 0;
+                this.lastDropTick = MinecraftServer.currentTick;
+            } else {
+                // Else we increment the drop count and check the amount.
+                this.dropCount++;
+                if (this.dropCount >= 20) {
+                    a.warning(this.player.name + " dropped their items too quickly!");
+                    this.disconnect("You dropped your items too quickly (Hacking?)");
+                }
+            }
+            // CraftBukkit end
             this.player.F();
         } else {
             boolean flag = worldserver.weirdIsOpCache = worldserver.dimension != 0 || this.minecraftServer.serverConfigurationManager.isOp(this.player.name); // CraftBukkit
