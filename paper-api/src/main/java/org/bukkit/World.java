@@ -694,11 +694,43 @@ public interface World {
     public boolean getKeepSpawnInMemory();
 
     /**
-    * Sets whether the world's spawn area should be kept loaded into memory or not.
-    *
-    * @param keepLoaded if true then the world's spawn area will be kept loaded into memory.
-    */
+     * Sets whether the world's spawn area should be kept loaded into memory or not.
+     *
+     * @param keepLoaded if true then the world's spawn area will be kept loaded into memory.
+     */
     public void setKeepSpawnInMemory(boolean keepLoaded);
+
+    /**
+     * Get the view distance of this world.
+     *
+     * The view distance is a measure of how far a player can see.
+     * It affects the number of chunks loaded and updated around every player.
+     *
+     * @return Current view distance of the world
+     */
+    public int getViewDistance();
+
+    /**
+     * Set the view distance for this world.
+     *
+     * The view distance is a measure of how far a player can see.
+     * It affects the number of chunks loaded and updated around every player.
+     * The view distance must be in the range [3,15]
+     *
+     * @param viewDistance an integer between 3 and 15 inclusive
+     * @throws IllegalArgumentException If view distance is less than 3 or greater than 15
+     */
+    public void setViewDistance(int viewDistance) throws IllegalArgumentException;
+
+    /**
+     * Set the view distance for this world back to server defaults.
+     */
+    public void resetViewDistance();
+
+    /**
+     * @return if the view distance has been set for this world
+     */
+    boolean isViewDistanceSet();
 
     /**
      * Represents various map environment types that a world may be
