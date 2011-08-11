@@ -21,6 +21,10 @@ public class WorldServer extends World implements BlockChangeDelegate {
     public boolean canSave;
     public final MinecraftServer server; // CraftBukkit - private -> public final
     private EntityList G = new EntityList();
+    // CraftBukkit start - extra variables
+    private int viewDistance; // keep track of changes to view distance
+    private boolean viewDistanceSet; // ...and if any changes have been made
+    // CraftBukkit end
 
     // CraftBukkit start - change signature
     public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, String s, int i, long j, org.bukkit.World.Environment env, ChunkGenerator gen) {
@@ -29,7 +33,9 @@ public class WorldServer extends World implements BlockChangeDelegate {
 
         this.dimension = i;
         this.pvpMode = minecraftserver.pvpMode;
-        this.manager = new PlayerManager(minecraftserver, this.dimension, minecraftserver.propertyManager.getInt("view-distance", 10));
+        // use view distance from configuration manager, instead of property manager
+        // TODO allow saving view distance per world
+        this.manager = new PlayerManager(minecraftserver, this.dimension, minecraftserver.serverConfigurationManager.getViewDistance());
     }
 
     public final int dimension;
@@ -182,4 +188,50 @@ public class WorldServer extends World implements BlockChangeDelegate {
             // CraftBukkit end
         }
     }
+
+    // CraftBukkit start - add getter and setter for view distance
+    public int getViewDistance() {
+        if (viewDistanceSet) {
+            return viewDistance;
+        } else {
+            return getServer().getViewDistance();
+        }
+    }
+
+    /**
+     * This method enforces notchian view distances. Do not set it below 3 or above 15.
+     * It is possible to set view distance per-player to any positive value.
+     * @param viewDistance the number of chunks players herein managed can see by default.
+     * @throws IllegalArgumentException If view distance is less than 3 or greater than 15
+     */
+    public void setViewDistance(int viewDistance) throws IllegalArgumentException{
+        if (viewDistance > 15) {
+            throw new IllegalArgumentException("Too big view radius!");
+        } else if (viewDistance < 3) {
+            throw new IllegalArgumentException("Too small view radius!");
+        } else {
+            this.viewDistance = viewDistance;
+            this.viewDistanceSet = true;
+            updateViewDistance();
+        }
+    }
+
+    public void resetViewDistance() {
+        viewDistanceSet = false;
+        updateViewDistance();
+    }
+
+    public boolean isViewDistanceSet() {
+        return viewDistanceSet;
+    }
+
+    public void updateViewDistance() {
+        // notify players that they may have to update their view distance
+        for (Object entityPlayerObject : this.manager.managedPlayers) {
+            if (entityPlayerObject instanceof EntityPlayer) {
+                ((EntityPlayer) entityPlayerObject).updateViewDistance();
+            }
+        }
+    }
+    // CraftBukkit end
 }
