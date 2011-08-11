@@ -800,7 +800,13 @@ public class CraftWorld implements World {
                 if (keepLoaded) {
                     loadChunk(chunkCoordX + x, chunkCoordZ + z);
                 } else {
-                    unloadChunk(chunkCoordX + x, chunkCoordZ + z);
+                    if (isChunkLoaded(chunkCoordX + x, chunkCoordZ + z)) {
+                        if (this.getHandle().getChunkAt(chunkCoordX + x, chunkCoordZ + z).isEmpty()) {
+                            unloadChunk(chunkCoordX + x, chunkCoordZ + z, false);
+                        } else {
+                            unloadChunk(chunkCoordX + x, chunkCoordZ + z);
+                        }
+                    }
                 }
             }
         }
