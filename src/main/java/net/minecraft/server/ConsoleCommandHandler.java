@@ -19,6 +19,31 @@ public class ConsoleCommandHandler {
         this.server = minecraftserver;
     }
 
+    // Craftbukkit start
+    private boolean hasPermission(ICommandListener listener, String perm) {
+        if (listener instanceof ServerCommandListener) {
+            ServerCommandListener serv = (ServerCommandListener)listener;
+            return serv.getSender().hasPermission(perm);
+        } else if (listener instanceof NetServerHandler) {
+            NetServerHandler net = (NetServerHandler)listener;
+            return net.getPlayer().hasPermission(perm);
+        } else if ((listener instanceof ServerGUI) || (listener instanceof MinecraftServer)) {
+            return server.console.hasPermission(perm);
+        }
+
+        return false;
+    }
+
+    private boolean checkPermission(ICommandListener listener, String command) {
+        if (hasPermission(listener, "craftbukkit.command." + command)) {
+            return true;
+        } else {
+            listener.sendMessage("I'm sorry, Dave, but I cannot let you do that.");
+            return false;
+        }
+    }
+    // Craftbukkit end
+
     public boolean handle(ServerCommand servercommand) { // CraftBukkit - returns boolean
         String s = servercommand.command;
         ICommandListener icommandlistener = servercommand.b;
@@ -28,8 +53,10 @@ public class ConsoleCommandHandler {
 
         if (!s.toLowerCase().startsWith("help") && !s.toLowerCase().startsWith("?")) {
             if (s.toLowerCase().startsWith("list")) {
+                if (!checkPermission(listener, "list")) return true; // Craftbukkit
                 icommandlistener.sendMessage("Connected players: " + serverconfigurationmanager.c());
             } else if (s.toLowerCase().startsWith("stop")) {
+                if (!checkPermission(listener, "stop")) return true; // Craftbukkit
                 this.print(s1, "Stopping the server..");
                 this.server.a();
             } else {
@@ -37,6 +64,7 @@ public class ConsoleCommandHandler {
                 WorldServer worldserver;
 
                 if (s.toLowerCase().startsWith("save-all")) {
+                    if (!checkPermission(listener, "save.perform")) return true; // Craftbukkit
                     this.print(s1, "Forcing save..");
                     if (serverconfigurationmanager != null) {
                         serverconfigurationmanager.savePlayers();
@@ -54,6 +82,7 @@ public class ConsoleCommandHandler {
 
                     this.print(s1, "Save complete.");
                 } else if (s.toLowerCase().startsWith("save-off")) {
+                    if (!checkPermission(listener, "save.disable")) return true; // Craftbukkit
                     this.print(s1, "Disabling level saving..");
 
                     for (i = 0; i < this.server.worlds.size(); ++i) { // CraftBukkit
@@ -61,6 +90,7 @@ public class ConsoleCommandHandler {
                         worldserver.canSave = true;
                     }
                 } else if (s.toLowerCase().startsWith("save-on")) {
+                    if (!checkPermission(listener, "save.enable")) return true; // Craftbukkit
                     this.print(s1, "Enabling level saving..");
 
                     for (i = 0; i < this.server.worlds.size(); ++i) { // CraftBukkit
@@ -71,20 +101,24 @@ public class ConsoleCommandHandler {
                     String s2;
 
                     if (s.toLowerCase().startsWith("op ")) {
+                        if (!checkPermission(listener, "op.give")) return true; // Craftbukkit
                         s2 = s.substring(s.indexOf(" ")).trim();
                         serverconfigurationmanager.e(s2);
                         this.print(s1, "Opping " + s2);
                         serverconfigurationmanager.a(s2, "\u00A7eYou are now op!");
                     } else if (s.toLowerCase().startsWith("deop ")) {
+                        if (!checkPermission(listener, "op.take")) return true; // Craftbukkit
                         s2 = s.substring(s.indexOf(" ")).trim();
                         serverconfigurationmanager.f(s2);
                         serverconfigurationmanager.a(s2, "\u00A7eYou are no longer op!");
                         this.print(s1, "De-opping " + s2);
                     } else if (s.toLowerCase().startsWith("ban-ip ")) {
+                        if (!checkPermission(listener, "ban.ip")) return true; // Craftbukkit
                         s2 = s.substring(s.indexOf(" ")).trim();
                         serverconfigurationmanager.c(s2);
                         this.print(s1, "Banning ip " + s2);
                     } else if (s.toLowerCase().startsWith("pardon-ip ")) {
+                        if (!checkPermission(listener, "unban.ip")) return true; // Craftbukkit
                         s2 = s.substring(s.indexOf(" ")).trim();
                         serverconfigurationmanager.d(s2);
                         this.print(s1, "Pardoning ip " + s2);
@@ -92,6 +126,7 @@ public class ConsoleCommandHandler {
                         EntityPlayer entityplayer;
 
                         if (s.toLowerCase().startsWith("ban ")) {
+                            if (!checkPermission(listener, "ban.player")) return true; // Craftbukkit
                             s2 = s.substring(s.indexOf(" ")).trim();
                             serverconfigurationmanager.a(s2);
                             this.print(s1, "Banning " + s2);
@@ -100,6 +135,7 @@ public class ConsoleCommandHandler {
                                 entityplayer.netServerHandler.disconnect("Banned by admin");
                             }
                         } else if (s.toLowerCase().startsWith("pardon ")) {
+                            if (!checkPermission(listener, "unban.player")) return true; // Craftbukkit
                             s2 = s.substring(s.indexOf(" ")).trim();
                             serverconfigurationmanager.b(s2);
                             this.print(s1, "Pardoning " + s2);
@@ -107,6 +143,7 @@ public class ConsoleCommandHandler {
                             int j;
 
                             if (s.toLowerCase().startsWith("kick ")) {
+                                if (!checkPermission(listener, "kick")) return true; // Craftbukkit
                                 // CraftBukkit start - Add kick message compatibility
                                 String[] parts = s.split(" ");
                                 s2 = parts.length >= 2 ? parts[1] : "";
@@ -132,6 +169,7 @@ public class ConsoleCommandHandler {
                                 String[] astring;
 
                                 if (s.toLowerCase().startsWith("tp ")) {
+                                    if (!checkPermission(listener, "teleport")) return true; // Craftbukkit
                                     astring = s.split(" ");
                                     if (astring.length == 3) {
                                         entityplayer = serverconfigurationmanager.i(astring[1]);
@@ -154,6 +192,7 @@ public class ConsoleCommandHandler {
                                     int k;
 
                                     if (s.toLowerCase().startsWith("give ")) {
+                                        if (!checkPermission(listener, "give")) return true; // Craftbukkit
                                         astring = s.split(" ");
                                         if (astring.length != 3 && astring.length != 4) {
                                             return true; // CraftBukkit
@@ -203,6 +242,7 @@ public class ConsoleCommandHandler {
                                             WorldServer worldserver1;
 
                                             if ("add".equalsIgnoreCase(s3)) {
+                                                if (!checkPermission(listener, "time.add")) return true; // Craftbukkit
                                                 for (k = 0; k < this.server.worlds.size(); ++k) { // CraftBukkit
                                                     worldserver1 = this.server.worlds.get(k); // CraftBukkit
                                                     worldserver1.setTimeAndFixTicklists(worldserver1.getTime() + (long) j);
@@ -210,6 +250,7 @@ public class ConsoleCommandHandler {
 
                                                 this.print(s1, "Added " + j + " to time");
                                             } else if ("set".equalsIgnoreCase(s3)) {
+                                                if (!checkPermission(listener, "time.set")) return true; // Craftbukkit
                                                 for (k = 0; k < this.server.worlds.size(); ++k) { // CraftBukkit
                                                     worldserver1 = this.server.worlds.get(k); // CraftBukkit
                                                     worldserver1.setTimeAndFixTicklists((long) j);
@@ -223,10 +264,12 @@ public class ConsoleCommandHandler {
                                             icommandlistener.sendMessage("Unable to convert time value, " + astring[2]);
                                         }
                                     } else if (s.toLowerCase().startsWith("say ")) {
+                                        if (!checkPermission(listener, "say")) return true; // Craftbukkit
                                         s = s.substring(s.indexOf(" ")).trim();
                                         a.info("[" + s1 + "] " + s);
                                         serverconfigurationmanager.sendAll(new Packet3Chat("\u00A7d[Server] " + s));
                                     } else if (s.toLowerCase().startsWith("tell ")) {
+                                        if (!checkPermission(listener, "tell")) return true; // Craftbukkit
                                         astring = s.split(" ");
                                         if (astring.length >= 3) {
                                             s = s.substring(s.indexOf(" ")).trim();
@@ -251,6 +294,7 @@ public class ConsoleCommandHandler {
                 }
             }
         } else {
+            if (!checkPermission(listener, "help")) return true; // Craftbukkit
             this.a(icommandlistener);
         }
 
@@ -265,12 +309,15 @@ public class ConsoleCommandHandler {
             String s2 = astring[1].toLowerCase();
 
             if ("on".equals(s2)) {
+                if (!checkPermission(listener, "whitelist.enable")) return; // Craftbukkit
                 this.print(s, "Turned on white-listing");
                 this.server.propertyManager.b("white-list", true);
             } else if ("off".equals(s2)) {
+                if (!checkPermission(listener, "whitelist.disable")) return; // Craftbukkit
                 this.print(s, "Turned off white-listing");
                 this.server.propertyManager.b("white-list", false);
             } else if ("list".equals(s2)) {
+                if (!checkPermission(listener, "whitelist.list")) return; // Craftbukkit
                 Set set = this.server.serverConfigurationManager.e();
                 String s3 = "";
 
@@ -285,14 +332,17 @@ public class ConsoleCommandHandler {
                 String s5;
 
                 if ("add".equals(s2) && astring.length == 3) {
+                    if (!checkPermission(listener, "whitelist.add")) return; // Craftbukkit
                     s5 = astring[2].toLowerCase();
                     this.server.serverConfigurationManager.k(s5);
                     this.print(s, "Added " + s5 + " to white-list");
                 } else if ("remove".equals(s2) && astring.length == 3) {
+                    if (!checkPermission(listener, "whitelist.remove")) return; // Craftbukkit
                     s5 = astring[2].toLowerCase();
                     this.server.serverConfigurationManager.l(s5);
                     this.print(s, "Removed " + s5 + " from white-list");
                 } else if ("reload".equals(s2)) {
+                    if (!checkPermission(listener, "whitelist.reload")) return; // Craftbukkit
                     this.server.serverConfigurationManager.f();
                     this.print(s, "Reloaded white-list from file");
                 }

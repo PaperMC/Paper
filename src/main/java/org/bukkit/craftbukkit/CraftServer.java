@@ -20,7 +20,9 @@ import org.bukkit.inventory.ShapelessRecipe;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +47,8 @@ import net.minecraft.server.WorldManager;
 import net.minecraft.server.WorldServer;
 import net.minecraft.server.ServerCommand;
 import net.minecraft.server.ICommandListener;
+import net.minecraft.server.Packet;
+import net.minecraft.server.Packet3Chat;
 import org.bukkit.*;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
@@ -60,8 +64,11 @@ import org.bukkit.craftbukkit.inventory.CraftShapelessRecipe;
 import org.bukkit.craftbukkit.command.ServerCommandListener;
 import org.bukkit.scheduler.BukkitWorker;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
+import org.bukkit.craftbukkit.util.DefaultPermissions;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.permissions.Permission;
+import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.PluginLoadOrder;
 import org.bukkit.util.config.Configuration;
 import org.bukkit.util.config.ConfigurationNode;
@@ -152,6 +159,7 @@ public final class CraftServer implements Server {
         if (type == PluginLoadOrder.POSTWORLD) {
             commandMap.registerServerAliases();
             loadCustomPermissions();
+            DefaultPermissions.registerCorePermissions(pluginManager);
         }
     }
 
@@ -338,9 +346,49 @@ public final class CraftServer implements Server {
         if (commandMap.dispatch(sender, commandLine)) {
             return true;
         }
+        
+        if (sender instanceof Player) {
+            Player player = (Player)sender;
+            if (commandLine.toLowerCase().startsWith("me ")) {
+                if (!player.hasPermission("craftbukkit.command.me")) {
+                    player.sendMessage(ChatColor.RED + "You do not have permission to perform this command.");
+                    return true;
+                }
 
-        if (!sender.isOp()) {
-            return false;
+                commandLine = "* " + player.getDisplayName() + " " + commandLine.substring(commandLine.indexOf(" ")).trim();
+                server.server.serverConfigurationManager.sendAll(new Packet3Chat(commandLine));
+                return true;
+            } else if (commandLine.toLowerCase().startsWith("kill")) {
+                if (!player.hasPermission("craftbukkit.command.kill")) {
+                    player.sendMessage(ChatColor.RED + "You do not have permission to perform this command.");
+                    return true;
+                }
+
+                EntityDamageEvent ede = new EntityDamageEvent(player, EntityDamageEvent.DamageCause.SUICIDE, 1000);
+                getPluginManager().callEvent(ede);
+                if (ede.isCancelled()) return true;
+
+                player.damage(ede.getDamage(), player);
+                return true;
+            } else if (commandLine.toLowerCase().startsWith("tell ")) {
+                if (!player.hasPermission("craftbukkit.command.tell")) {
+                    player.sendMessage(ChatColor.RED + "You do not have permission to perform this command.");
+                    return true;
+                }
+
+                String[] astring = commandLine.split(" ");
+
+                if (astring.length >= 3) {
+                    commandLine = commandLine.substring(commandLine.indexOf(" ")).trim();
+                    commandLine = commandLine.substring(commandLine.indexOf(" ")).trim();
+                    commandLine = "\u00A77" + player.getDisplayName() + " whispers " + commandLine;
+                    if (!server.server.serverConfigurationManager.a(astring[1], (Packet) (new Packet3Chat(commandLine)))) {
+                        player.sendMessage(ChatColor.RED + "There's no player by that name online.");
+                    }
+                }
+                
+                return true;
+            }
         }
 
         // See if the server can process this command
@@ -422,6 +470,10 @@ public final class CraftServer implements Server {
         } catch (Throwable ex) {
             getLogger().log(Level.WARNING, "Server permissions file " + file + " is not valid YAML.", ex);
             return;
+        } finally {
+            try {
+                stream.close();
+            } catch (IOException ex) {}
         }
 
         if (perms == null) {

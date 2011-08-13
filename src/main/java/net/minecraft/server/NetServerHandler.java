@@ -750,6 +750,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         }
         // CraftBukkit end
 
+        /* CraftBukkit start - No longer neaded av we have already handled it server.dispatchCommand above.
         if (s.toLowerCase().startsWith("/me ")) {
             s = "* " + this.player.name + " " + s.substring(s.indexOf(" ")).trim();
             a.info(s);
@@ -768,8 +769,6 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                     this.sendPacket(new Packet3Chat("\u00A7cThere\'s no player by that name online."));
                 }
             }
-
-        /* CraftBukkit start - No longer neaded av we have already handled it server.dispatchCommand above.
         } else {
             String s1;
 
@@ -781,8 +780,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 s1 = s.substring(1);
                 a.info(this.player.name + " tried command: " + s1);
             }
-        // CraftBukkit end */
         }
+        // CraftBukkit end */
     }
 
     public void a(Packet18ArmAnimation packet18armanimation) {
