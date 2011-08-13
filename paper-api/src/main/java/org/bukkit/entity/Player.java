@@ -9,6 +9,7 @@ import org.bukkit.Material;
 import org.bukkit.Note;
 import org.bukkit.Statistic;
 import org.bukkit.command.CommandSender;
+import org.bukkit.map.MapView;
 
 /**
  * Represents a player, connected or not
@@ -202,6 +203,14 @@ public interface Player extends HumanEntity, CommandSender {
      * @param data
      */
     public void sendBlockChange(Location loc, int material, byte data);
+    
+    /**
+     * Render a map and send it to the player in its entirety. This may be used
+     * when streaming the map in the normal manner is not desirbale.
+     * 
+     * @pram map The map to be sent
+     */
+    public void sendMap(MapView map);
 
     /**
      * Forces an update of the player's entire inventory.

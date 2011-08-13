@@ -562,6 +562,13 @@ public final class JavaPluginLoader implements PluginLoader {
                     ((ServerListener) listener).onServerCommand((ServerCommandEvent) event);
                 }
             };
+            
+        case MAP_INITIALIZE:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((ServerListener) listener).onMapInitialize((MapInitializeEvent) event);
+                }
+            };
 
         // World Events
         case CHUNK_LOAD:
