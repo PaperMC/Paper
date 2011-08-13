@@ -11,6 +11,7 @@ import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.map.CraftMapView;
 // CraftBukkit end
 
 public class WorldMap extends WorldMapBase {
@@ -26,13 +27,17 @@ public class WorldMap extends WorldMapBase {
     public List i = new ArrayList();
 
     // CraftBukkit start
+    public final CraftMapView mapView;
     private CraftServer server;
     private UUID uniqueId = null;
     // CraftBukkit end
 
     public WorldMap(String s) {
         super(s);
-        server = (CraftServer) Bukkit.getServer(); // CraftBukkit
+        // CraftBukkit start
+        mapView = new CraftMapView(this);
+        server = (CraftServer) Bukkit.getServer();
+        // CraftBukkit end
     }
 
     public void a(NBTTagCompound nbttagcompound) {

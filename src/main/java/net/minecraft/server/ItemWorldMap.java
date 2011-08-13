@@ -1,5 +1,10 @@
 package net.minecraft.server;
 
+// CraftBukkit start
+import org.bukkit.Bukkit;
+import org.bukkit.event.server.MapInitializeEvent;
+// CraftBukkit end
+
 public class ItemWorldMap extends ItemWorldMapBase {
 
     protected ItemWorldMap(int i) {
@@ -22,6 +27,11 @@ public class ItemWorldMap extends ItemWorldMapBase {
             worldmap.map = (byte) world.worldProvider.dimension;
             worldmap.a();
             world.a(s, (WorldMapBase) worldmap);
+            
+            // CraftBukkit start
+            MapInitializeEvent event = new MapInitializeEvent(worldmap.mapView);
+            Bukkit.getServer().getPluginManager().callEvent(event);
+            // CraftBukkit end
         }
 
         return worldmap;
