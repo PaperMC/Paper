@@ -144,6 +144,12 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          */
         LIGHTNING,
         /**
+         * Damage caused by committing suicide using the command "/kill"
+         *
+         * Damage: 1000
+         */
+        SUICIDE,
+        /**
          * Custom damage.
          *
          * Damage: variable
