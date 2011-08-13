@@ -49,7 +49,12 @@ import net.minecraft.server.ServerCommand;
 import net.minecraft.server.ICommandListener;
 import net.minecraft.server.Packet;
 import net.minecraft.server.Packet3Chat;
+import net.minecraft.server.Item;
+import net.minecraft.server.ItemStack;
+import net.minecraft.server.WorldMap;
+import net.minecraft.server.WorldMapCollection;
 import org.bukkit.*;
+import org.bukkit.map.MapView;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.ServicesManager;
@@ -62,6 +67,7 @@ import org.bukkit.craftbukkit.inventory.CraftRecipe;
 import org.bukkit.craftbukkit.inventory.CraftShapedRecipe;
 import org.bukkit.craftbukkit.inventory.CraftShapelessRecipe;
 import org.bukkit.craftbukkit.command.ServerCommandListener;
+import org.bukkit.craftbukkit.map.CraftMapView;
 import org.bukkit.scheduler.BukkitWorker;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 import org.bukkit.craftbukkit.util.DefaultPermissions;
@@ -346,7 +352,7 @@ public final class CraftServer implements Server {
         if (commandMap.dispatch(sender, commandLine)) {
             return true;
         }
-        
+
         if (sender instanceof Player) {
             Player player = (Player)sender;
             if (commandLine.toLowerCase().startsWith("me ")) {
@@ -386,7 +392,7 @@ public final class CraftServer implements Server {
                         player.sendMessage(ChatColor.RED + "There's no player by that name online.");
                     }
                 }
-                
+
                 return true;
             }
         }
@@ -776,4 +782,20 @@ public final class CraftServer implements Server {
 
         return result;
     }
+
+    public CraftMapView getMap(short id) {
+        WorldMapCollection collection = console.worlds.get(0).worldMaps;
+        WorldMap worldmap = (WorldMap) collection.a(WorldMap.class, "map_" + id);
+        if (worldmap == null) {
+            return null;
+        }
+        return worldmap.mapView;
+    }
+
+    public CraftMapView createMap(World world) {
+        ItemStack stack = new ItemStack(Item.MAP, 1, -1);
+        WorldMap worldmap = Item.MAP.a(stack, ((CraftWorld) world).getHandle());
+        return worldmap.mapView;
+    }
+
 }

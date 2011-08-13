@@ -4,6 +4,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.EntityPlayer;
+import net.minecraft.server.Packet131;
 import net.minecraft.server.Packet200Statistic;
 import net.minecraft.server.Packet3Chat;
 import net.minecraft.server.Packet51MapChunk;
@@ -21,8 +22,11 @@ import org.bukkit.Note;
 import org.bukkit.Statistic;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.map.CraftMapView;
+import org.bukkit.craftbukkit.map.RenderData;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.map.MapView;
 
 public class CraftPlayer extends CraftHumanEntity implements Player {
     public CraftPlayer(CraftServer server, EntityPlayer entity) {
@@ -203,6 +207,19 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         getHandle().netServerHandler.sendPacket(packet);
 
         return true;
+    }
+
+    public void sendMap(MapView map) {
+        RenderData data = ((CraftMapView) map).render(this);
+        for (int x = 0; x < 128; ++x) {
+            byte[] bytes = new byte[131];
+            bytes[1] = (byte) x;
+            for (int y = 0; y < 128; ++y) {
+                bytes[y + 3] = data.buffer[y * 128 + x];
+            }
+            Packet131 packet = new Packet131((short) Material.MAP.getId(), map.getId(), bytes);
+            getHandle().netServerHandler.sendPacket(packet);
+        }
     }
 
     @Override
