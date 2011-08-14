@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
+import java.io.File;
 import org.bukkit.command.PluginCommand;
 
 import org.bukkit.command.CommandSender;
@@ -148,9 +149,19 @@ public interface Server {
      * Gets the name of the update folder. The update folder is used to safely update
      * plugins at the right moment on a plugin load.
      *
+     * The update folder name is relative to the plugins folder.
+     *
      * @return The name of the update folder
      */
     public String getUpdateFolder();
+
+    /**
+     * Gets the update folder. The update folder is used to safely update
+     * plugins at the right moment on a plugin load.
+     *
+     * @return The name of the update folder
+     */
+    public File getUpdateFolderFile();
 
     /**
      * Gets a player object by the given username
