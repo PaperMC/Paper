@@ -811,24 +811,4 @@ public class CraftWorld implements World {
             }
         }
     }
-
-    public int getViewDistance() {
-        return world.getViewDistance();
-    }
-
-    public void setViewDistance(int viewDistance) throws IllegalArgumentException{
-        world.setViewDistance(viewDistance);
-    }
-
-    public void resetViewDistance(){
-        world.resetViewDistance();
-    }
-
-    public boolean isViewDistanceSet() {
-        return world.isViewDistanceSet();
-    }
-
-    public void updateViewDistance() {
-        world.updateViewDistance();
-    }
 }

@@ -1,5 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.Packet131;
@@ -26,11 +28,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.map.MapView;
 
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-
 public class CraftPlayer extends CraftHumanEntity implements Player {
-
     public CraftPlayer(CraftServer server, EntityPlayer entity) {
         super(server, entity);
     }
@@ -346,21 +344,5 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public void resetPlayerTime() {
         setPlayerTime(0, true);
-    }
-
-    public void setViewDistance(int viewDistance) {
-        getHandle().setViewDistance(viewDistance);
-    }
-
-    public int getViewDistance() {
-        return getHandle().getViewDistance();
-    }
-
-    public void resetViewDistance() {
-        getHandle().resetViewDistance();
-    }
-
-    public boolean isViewDistanceSet() {
-        return getHandle().isViewDistanceSet();
     }
 }
