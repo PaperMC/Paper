@@ -300,25 +300,4 @@ public interface Player extends HumanEntity, CommandSender {
      */
     public void resetPlayerTime();
 
-    /**
-     * Set the view distance for this player.
-     * View distance will remain constant, even between worlds, until it is changed or reset to default.
-     * @param viewDistance the number of chunks this player can see.
-     */
-    void setViewDistance(int viewDistance);
-
-    /**
-     * @return the number of chunks this player can see
-     */
-    int getViewDistance();
-
-    /**
-     * Set this players view distance back to the same as whichever world they are on.
-     */
-    void resetViewDistance();
-
-    /**
-     * @return if the view distance has been set for this player specifically.
-     */
-    boolean isViewDistanceSet();
 }

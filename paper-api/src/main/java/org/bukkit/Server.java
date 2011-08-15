@@ -58,6 +58,13 @@ public interface Server {
     public int getPort();
 
     /**
+     * Get the view distance from this server.
+     *
+     * @return The view distance from this server.
+     */
+    public int getViewDistance();
+
+    /**
      * Get the IP that this server is bound to or empty string if not specified
      *
      * @return The IP string that this server is bound to, otherwise empty string
@@ -240,18 +247,18 @@ public interface Server {
      * @return World with the given Unique ID, or null if none exists.
      */
     public World getWorld(UUID uid);
-
+    
     /**
      * Gets the map from the given item ID.
-     *
+     * 
      * @param id ID of the map to get.
      * @return The MapView if it exists, or null otherwise.
      */
     public MapView getMap(short id);
-
+    
     /**
      * Create a new map with an automatically assigned ID.
-     *
+     * 
      * @param world The world the map will belong to.
      * @return The MapView just created.
      */
@@ -339,26 +346,4 @@ public interface Server {
      * @return Whether this server allows flying or not.
      */
     public boolean getAllowFlight();
-
-    /**
-     * Get the default view distance of this server.
-     *
-     * The view distance is a measure of how far a player can see.
-     * It affects the number of chunks loaded and updated around every player.
-     *
-     * @return The default view distance of the server.
-     */
-    public int getViewDistance();
-
-    /**
-     * Set the default view distance for this server.
-     *
-     * The view distance is a measure of how far a player can see.
-     * It affects the number of chunks loaded and updated around every player.
-     * The view distance must be in the range [3,15].
-     *
-     * @param viewDistance an integer between 3 and 15 inclusive
-     * @throws IllegalArgumentException If view distance is less than 3 or greater than 15
-     */
-    public void setViewDistance(int viewDistance) throws IllegalArgumentException;
 }
