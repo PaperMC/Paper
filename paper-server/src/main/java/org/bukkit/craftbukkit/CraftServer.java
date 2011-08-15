@@ -374,7 +374,7 @@ public final class CraftServer implements Server {
                 getPluginManager().callEvent(ede);
                 if (ede.isCancelled()) return true;
 
-                player.damage(ede.getDamage(), player);
+                player.damage(ede.getDamage());
                 return true;
             } else if (commandLine.toLowerCase().startsWith("tell ")) {
                 if (!player.hasPermission("craftbukkit.command.tell")) {
