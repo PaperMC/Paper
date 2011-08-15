@@ -29,16 +29,6 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     private int bO = 0;
     public boolean h;
 
-    // CraftBukkit start - extra variables
-    private boolean viewDistanceSet;
-    private int viewDistance; // set view distance on a per player basis
-    private int actualViewDistance; // when view distance in the world changes, need to know how far I could previously see
-    public String displayName;
-    public org.bukkit.Location compassTarget;
-    public long timeOffset = 0;
-    public boolean relativeTime = true;
-    // CraftBukkit end
-
     public EntityPlayer(MinecraftServer minecraftserver, World world, String s, ItemInWorldManager iteminworldmanager) {
         super(world);
         iteminworldmanager.player = this;
@@ -61,11 +51,12 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         this.height = 0.0F;
 
         // CraftBukkit start
-        this.viewDistanceSet = false;
-        this.actualViewDistance = getViewDistance(); // set the 'current' view distance. This value will be updated any time the actual view distance changes
         this.displayName = this.name;
-        // CraftBukkit end
     }
+
+    public String displayName;
+    public org.bukkit.Location compassTarget;
+    // CraftBukkit end
 
     public void spawnIn(World world) {
         super.spawnIn(world);
@@ -492,6 +483,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     }
 
     // CraftBukkit start
+    public long timeOffset = 0;
+    public boolean relativeTime = true;
 
     public long getPlayerTime() {
         if (this.relativeTime) {
@@ -506,56 +499,6 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     @Override
     public String toString() {
         return super.toString() + "(" + this.name + " at " + this.locX + "," + this.locY + "," + this.locZ + ")";
-    }
-
-    public void setViewDistance(int viewDistance) {
-        if (viewDistance < 1) { // for now must set view distance to 1 or higher. 0 might be possible, but it breaks the game at the moment
-            viewDistance = 1;
-        }
-        this.viewDistance = viewDistance;
-        this.viewDistanceSet = true;
-        updateViewDistance();
-    }
-
-    public int getViewDistance() {
-        if (viewDistanceSet) {
-            return viewDistance;
-        } else {
-            return defaultViewDistance();
-        }
-    }
-
-    private int defaultViewDistance() {
-        org.bukkit.World world = getBukkitEntity().getWorld();
-        if (world != null) {
-            return world.getViewDistance();
-        } else {
-            return getBukkitEntity().getServer().getViewDistance();
-        }
-    }
-
-    public void resetViewDistance() {
-        this.viewDistanceSet = false;
-        updateViewDistance();
-    }
-
-    public boolean isViewDistanceSet() {
-        return viewDistanceSet;
-    }
-
-    /**
-     * Should be called every time the view distance might have changed.
-     * Ensures we are always aware of the current and previous view distances.
-     *
-     * synchronized so that we are always sure that we have accurately tracked the view distance changes
-     */
-    public synchronized void updateViewDistance() {
-        if (actualViewDistance == getViewDistance()) {
-            return;
-        }
-        // notify the player manager that our view distance may have changed
-        ((CraftWorld) getBukkitEntity().getWorld()).getHandle().manager.updatePlayerViewDistance(this, actualViewDistance, getViewDistance());
-        actualViewDistance = getViewDistance();
     }
     // CraftBukkit end
 }

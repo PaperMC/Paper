@@ -46,7 +46,6 @@ public class ServerConfigurationManager {
 
     // CraftBukkit start
     private CraftServer cserver;
-    private int viewDistance;
 
     public ServerConfigurationManager(MinecraftServer minecraftserver) {
         minecraftserver.server = new CraftServer(minecraftserver, this);
@@ -59,7 +58,7 @@ public class ServerConfigurationManager {
         this.k = minecraftserver.a("banned-ips.txt");
         this.l = minecraftserver.a("ops.txt");
         this.m = minecraftserver.a("white-list.txt");
-        this.viewDistance = minecraftserver.propertyManager.getInt("view-distance", 10); // CraftBukkit - add field viewDistance
+        int i = minecraftserver.propertyManager.getInt("view-distance", 10);
 
         // CraftBukkit - removed playermanagers
         this.maxPlayers = minecraftserver.propertyManager.getInt("max-players", 20);
@@ -96,7 +95,7 @@ public class ServerConfigurationManager {
     public int a() {
         // CraftBukkit start
         if (this.server.worlds.size() == 0) {
-            return this.viewDistance * 16 - 16; // Use field value
+            return this.server.propertyManager.getInt("view-distance", 10) * 16 - 16;
         }
         return this.server.worlds.get(0).manager.getFurthestViewableBlock();
         // CraftBukkit end
@@ -638,19 +637,4 @@ public class ServerConfigurationManager {
         entityplayer.updateInventory(entityplayer.defaultContainer);
         entityplayer.C();
     }
-
-    // CraftBukkit start - getters and setters for viewDistance
-    public void setViewDistance(int viewDistance) {
-        this.viewDistance = viewDistance;
-    }
-
-    public int getViewDistance() {
-        return viewDistance;
-    }
-
-    public void saveViewDistance() {
-        this.server.propertyManager.properties.setProperty("view-distance", Integer.toString(this.viewDistance));
-        this.server.propertyManager.savePropertiesFile();
-    }
-    // CraftBukkit end
 }

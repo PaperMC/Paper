@@ -275,6 +275,10 @@ public final class CraftServer implements Server {
         return this.getConfigInt("server-port", 25565);
     }
 
+    public int getViewDistance() {
+        return this.getConfigInt("view-distance", 10);
+    }
+
     public String getIp() {
         return this.getConfigString("server-ip", "");
     }
@@ -748,22 +752,6 @@ public final class CraftServer implements Server {
 
     public boolean getAllowFlight() {
         return this.console.allowFlight;
-    }
-
-    public int getViewDistance() {
-        return server.getViewDistance();
-    }
-
-    public void setViewDistance(int viewDistance) throws IllegalArgumentException{
-        server.setViewDistance(viewDistance);
-        updateViewDistance();
-        server.saveViewDistance();
-    }
-
-    public void updateViewDistance() {
-        for (World world : worlds.values()) {
-            ((CraftWorld) world).updateViewDistance();
-        }
     }
 
     public ChunkGenerator getGenerator(String world) {
