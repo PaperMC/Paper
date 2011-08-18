@@ -70,7 +70,7 @@ import org.bukkit.craftbukkit.command.ServerCommandListener;
 import org.bukkit.craftbukkit.map.CraftMapView;
 import org.bukkit.scheduler.BukkitWorker;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
-import org.bukkit.craftbukkit.util.DefaultPermissions;
+import org.bukkit.craftbukkit.util.permissions.DefaultPermissions;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.permissions.Permission;
@@ -165,7 +165,7 @@ public final class CraftServer implements Server {
         if (type == PluginLoadOrder.POSTWORLD) {
             commandMap.registerServerAliases();
             loadCustomPermissions();
-            DefaultPermissions.registerCorePermissions(pluginManager);
+            DefaultPermissions.registerCorePermissions();
         }
     }
 
