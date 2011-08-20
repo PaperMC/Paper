@@ -425,7 +425,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
         Vec3D.a();
         ++this.ticks;
 
-        ((CraftScheduler) this.server.getScheduler()).mainThreadHeartbeat(this.ticks);
+        ((CraftScheduler) this.server.getScheduler()).mainThreadHeartbeat(this.ticks); // CraftBukkit
 
         for (j = 0; j < this.worlds.size(); ++j) { // CraftBukkit
             // if (j == 0 || this.propertyManager.getBoolean("allow-nether", true)) { // CraftBukkit
@@ -437,9 +437,8 @@ public class MinecraftServer implements Runnable, ICommandListener {
                         EntityPlayer entityplayer = (EntityPlayer) this.serverConfigurationManager.players.get(i);
                         entityplayer.netServerHandler.sendPacket(new Packet4UpdateTime(entityplayer.getPlayerTime())); // Add support for per player time
                     }
+                    // CraftBukkit end
                 }
-
-                // CraftBukkit end
 
                 worldserver.doTick();
 
