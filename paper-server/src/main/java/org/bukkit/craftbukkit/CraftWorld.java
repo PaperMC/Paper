@@ -153,7 +153,7 @@ public class CraftWorld implements World {
 
         net.minecraft.server.Chunk chunk = world.chunkProviderServer.getOrCreateChunk(x, z);
 
-        if (save) {
+        if (save && !chunk.isEmpty()) {
             chunk.removeEntities();
             world.chunkProviderServer.saveChunk(chunk);
             world.chunkProviderServer.saveChunkNOP(chunk);
