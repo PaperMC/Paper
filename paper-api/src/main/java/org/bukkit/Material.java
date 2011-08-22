@@ -96,7 +96,7 @@ public enum Material {
     CACTUS(81, MaterialData.class),
     CLAY(82),
     SUGAR_CANE_BLOCK(83, MaterialData.class),
-    JUKEBOX(84, Jukebox.class),
+    JUKEBOX(84),
     FENCE(85),
     PUMPKIN(86, Pumpkin.class),
     NETHERRACK(87),
