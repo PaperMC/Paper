@@ -212,6 +212,8 @@ public class CraftBlock implements Block {
                 return new CraftCreatureSpawner(this);
             case NOTE_BLOCK:
                 return new CraftNoteBlock(this);
+            case JUKEBOX:
+                return new CraftJukebox(this);
             default:
                 return new CraftBlockState(this);
         }
