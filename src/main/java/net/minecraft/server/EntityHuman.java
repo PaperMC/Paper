@@ -294,10 +294,7 @@ public abstract class EntityHuman extends EntityLiving {
             this.world.getServer().getPluginManager().callEvent(event);
 
             if (event.isCancelled()) {
-                org.bukkit.inventory.ItemStack stack = drop.getItemStack();
-                stack.setAmount(1);
-                player.getInventory().addItem(stack);
-
+                player.getInventory().addItem(drop.getItemStack());
                 return;
             }
             // CraftBukkit end
