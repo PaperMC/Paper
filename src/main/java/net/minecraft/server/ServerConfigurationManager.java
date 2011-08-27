@@ -299,7 +299,7 @@ public class ServerConfigurationManager {
 
         Location finalLocation = event.getTo();
         if (event.useTravelAgent()) {
-            finalLocation = pta.findOrCreate(finalLocation);
+            finalLocation = event.getPortalTravelAgent().findOrCreate(finalLocation);
         }
         toWorld = ((CraftWorld) finalLocation.getWorld()).getHandle();
         this.moveToWorld(entityplayer, toWorld.dimension, finalLocation);
