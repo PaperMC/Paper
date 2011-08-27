@@ -98,7 +98,12 @@ public final class ChunkCompressionThread implements Runnable {
     private void addToPlayerQueueSize(EntityPlayer player, int amount) {
         synchronized (queueSizePerPlayer) {
             Integer count = queueSizePerPlayer.get(player);
-            queueSizePerPlayer.put(player, (count == null ? 0 : count) + amount);
+            amount += (count == null) ? 0 : count;
+            if (amount == 0) {
+                queueSizePerPlayer.remove(player);
+            } else {
+                queueSizePerPlayer.put(player, amount);
+            }
         }
     }
 
