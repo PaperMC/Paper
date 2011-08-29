@@ -37,17 +37,10 @@ import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.CreatureType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event.Type;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.block.BlockDamageEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.event.block.*;
+import org.bukkit.event.entity.*;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
-import org.bukkit.event.entity.EntityTameEvent;
-import org.bukkit.event.entity.ItemSpawnEvent;
-import org.bukkit.event.player.PlayerBucketEmptyEvent;
-import org.bukkit.event.player.PlayerBucketFillEvent;
-import org.bukkit.event.player.PlayerEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.*;
 
 public class CraftEventFactory {
     private static boolean canBuild(CraftWorld world, Player player, int x, int z) {
@@ -258,6 +251,18 @@ public class CraftEventFactory {
         ItemSpawnEvent event = new ItemSpawnEvent(entity, entity.getLocation());
 
         craftServer.getPluginManager().callEvent(event);
+        return event;
+    }
+
+    /**
+     * BlockFadeEvent
+     */
+    public static BlockFadeEvent callBlockFadeEvent(Block block, int type) {
+        BlockState state = block.getState();
+        state.setTypeId(type);
+
+        BlockFadeEvent event = new BlockFadeEvent(block, state);
+        Bukkit.getPluginManager().callEvent(event);
         return event;
     }
 }
