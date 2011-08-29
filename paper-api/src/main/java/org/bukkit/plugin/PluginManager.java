@@ -242,4 +242,13 @@ public interface PluginManager {
      * @return Set containing all subscribed permissions
      */
     public Set<Permissible> getDefaultPermSubscriptions(boolean op);
+
+    /**
+     * Gets a set of all registered permissions.
+     *
+     * This set is a copy and will not be modified live.
+     *
+     * @return Set containing all current registered permissions
+     */
+    public Set<Permission> getPermissions();
 }

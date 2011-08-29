@@ -537,4 +537,8 @@ public final class SimplePluginManager implements PluginManager {
             return ImmutableSet.copyOf(map.keySet());
         }
     }
+
+    public Set<Permission> getPermissions() {
+        return new HashSet<Permission>(permissions.values());
+    }
 }
