@@ -103,8 +103,6 @@ public final class CraftServer implements Server {
 
         Bukkit.setServer(this);
 
-        Logger.getLogger("Minecraft").log(Level.INFO, "This server is running " + getName() + " version " + getVersion());
-
         configuration = new Configuration((File) console.options.valueOf("bukkit-settings"));
         loadConfig();
         loadPlugins();
