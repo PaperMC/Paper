@@ -70,7 +70,7 @@ import org.bukkit.craftbukkit.command.ServerCommandListener;
 import org.bukkit.craftbukkit.map.CraftMapView;
 import org.bukkit.scheduler.BukkitWorker;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
-import org.bukkit.craftbukkit.util.permissions.DefaultPermissions;
+import org.bukkit.util.permissions.DefaultPermissions;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.permissions.Permission;
@@ -354,7 +354,7 @@ public final class CraftServer implements Server {
         if (sender instanceof Player) {
             Player player = (Player)sender;
             if (commandLine.toLowerCase().startsWith("me ")) {
-                if (!player.hasPermission("craftbukkit.command.me")) {
+                if (!player.hasPermission("bukkit.command.me")) {
                     player.sendMessage(ChatColor.RED + "You do not have permission to perform this command.");
                     return true;
                 }
@@ -363,7 +363,7 @@ public final class CraftServer implements Server {
                 server.server.serverConfigurationManager.sendAll(new Packet3Chat(commandLine));
                 return true;
             } else if (commandLine.toLowerCase().startsWith("kill")) {
-                if (!player.hasPermission("craftbukkit.command.kill")) {
+                if (!player.hasPermission("bukkit.command.kill")) {
                     player.sendMessage(ChatColor.RED + "You do not have permission to perform this command.");
                     return true;
                 }
@@ -375,7 +375,7 @@ public final class CraftServer implements Server {
                 player.damage(ede.getDamage());
                 return true;
             } else if (commandLine.toLowerCase().startsWith("tell ")) {
-                if (!player.hasPermission("craftbukkit.command.tell")) {
+                if (!player.hasPermission("bukkit.command.tell")) {
                     player.sendMessage(ChatColor.RED + "You do not have permission to perform this command.");
                     return true;
                 }

@@ -35,7 +35,7 @@ public class ConsoleCommandHandler {
     }
 
     private boolean checkPermission(ICommandListener listener, String command) {
-        if (hasPermission(listener, "craftbukkit.command." + command)) {
+        if (hasPermission(listener, "bukkit.command." + command)) {
             return true;
         } else {
             listener.sendMessage("I'm sorry, Dave, but I cannot let you do that.");
