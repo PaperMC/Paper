@@ -806,4 +806,14 @@ public final class CraftServer implements Server {
 
         return count;
     }
+
+    public OfflinePlayer getOfflinePlayer(String name) {
+        OfflinePlayer result = getPlayer(name);
+
+        if (result == null) {
+            result = new CraftOfflinePlayer(this, name);
+        }
+
+        return result;
+    }
 }

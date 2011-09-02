@@ -47,6 +47,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         } else {
             server.getHandle().f(getName());
         }
+
+        perm.recalculatePermissions();
+        perm.calculatePermissions();
     }
 
     public boolean isPlayer() {

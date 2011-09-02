@@ -16,7 +16,7 @@ import org.bukkit.plugin.Plugin;
 
 public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     private CraftInventoryPlayer inventory;
-    private final PermissibleBase perm = new PermissibleBase(this);
+    protected final PermissibleBase perm = new PermissibleBase(this);
     private boolean op;
 
     public CraftHumanEntity(final CraftServer server, final EntityHuman entity) {
@@ -110,7 +110,8 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     public void setOp(boolean value) {
         this.op = value;
-        recalculatePermissions();
+        perm.recalculatePermissions();
+        perm.calculatePermissions();
     }
 
     public Set<PermissionAttachmentInfo> getEffectivePermissions() {
