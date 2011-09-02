@@ -21,6 +21,19 @@ import org.bukkit.scheduler.BukkitScheduler;
  * Represents a server implementation
  */
 public interface Server {
+    /**
+     * Used for all administrative messages, such as an operator using a command.
+     *
+     * For use in {@link #broadcast(java.lang.String, java.lang.String)}
+     */
+    public static final String BROADCAST_CHANNEL_ADMINISTRATIVE = "bukkit.broadcast.admin";
+
+    /**
+     * Used for all announcement messages, such as informing users that a player has joined.
+     *
+     * For use in {@link #broadcast(java.lang.String, java.lang.String)}
+     */
+    public static final String BROADCAST_CHANNEL_USERS = "bukkit.broadcast.user";
 
     /**
      * Gets the name of this server implementation
@@ -102,6 +115,8 @@ public interface Server {
 
     /**
      * Broadcast a message to all players.
+     *
+     * This is the same as calling {@link #broadcast(java.lang.String, java.lang.String)} to {@link #BROADCAST_CHANNEL_USERS}
      *
      * @param message the message
      * @return the number of players
@@ -351,4 +366,13 @@ public interface Server {
      * Shutdowns the server, stopping everything.
      */
     public void shutdown();
+
+    /**
+     * Broadcasts the specified message to every user with the given permission
+     *
+     * @param message Message to broadcast
+     * @param permission Permission the users must have to receive the broadcast
+     * @return Amount of users who received the message
+     */
+    public int broadcast(String message, String permission);
 }

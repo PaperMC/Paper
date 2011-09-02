@@ -219,4 +219,8 @@ public final class Bukkit {
     public static void shutdown() {
         server.shutdown();
     }
+
+    public int broadcast(String message, String permission) {
+        return server.broadcast(message, permission);
+    }
 }

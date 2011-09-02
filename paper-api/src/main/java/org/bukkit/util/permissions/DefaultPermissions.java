@@ -1,6 +1,5 @@
 package org.bukkit.util.permissions;
 
-import java.util.HashMap;
 import java.util.Map;
 import org.bukkit.Bukkit;
 import org.bukkit.permissions.Permission;
@@ -77,6 +76,7 @@ public final class DefaultPermissions {
         Permission parent = registerPermission(ROOT, "Gives the user the ability to use all Craftbukkit utilities and commands");
 
         CommandPermissions.registerPermissions(parent);
+        BroadcastPermissions.registerPermissions(parent);
 
         parent.recalculatePermissibles();
     }
