@@ -567,11 +567,20 @@ public class CraftWorld implements World {
     }
 
     public void save() {
-        // Writes level.dat
-        world.saveLevel();
+        boolean oldSave = world.canSave;
 
-        // Saves all chunks/regions
-        world.chunkProvider.saveChunks(true, null);
+        world.canSave = false;
+        world.save(true, null);
+
+        world.canSave = oldSave;
+    }
+
+    public boolean isAutoSave() {
+        return !world.canSave;
+    }
+
+    public void setAutoSave(boolean value) {
+        world.canSave = !value;
     }
 
     public boolean hasStorm() {
