@@ -215,4 +215,8 @@ public final class Bukkit {
     public static boolean getAllowFlight() {
         return server.getAllowFlight();
     }
+
+    public static void shutdown() {
+        server.shutdown();
+    }
 }

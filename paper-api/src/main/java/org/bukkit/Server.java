@@ -346,4 +346,9 @@ public interface Server {
      * @return Whether this server allows flying or not.
      */
     public boolean getAllowFlight();
+
+    /**
+     * Shutdowns the server, stopping everything.
+     */
+    public void shutdown();
 }
