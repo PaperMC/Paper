@@ -701,6 +701,20 @@ public interface World {
     public void setKeepSpawnInMemory(boolean keepLoaded);
 
     /**
+     * Gets whether or not the world will automatically save
+     *
+     * @return true if the world will automatically save, otherwise false
+     */
+    public boolean isAutoSave();
+
+    /**
+     * Sets whether or not the world will automatically save
+     *
+     * @param value true if the world should automatically save, otherwise false
+     */
+    public void setAutoSave(boolean value);
+
+    /**
      * Represents various map environment types that a world may be
      */
     public enum Environment {
