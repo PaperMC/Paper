@@ -49,6 +49,7 @@ public final class Bukkit {
         }
 
         Bukkit.server = server;
+        server.getLogger().info("This server is running " + getName() + " version " + getVersion());
     }
 
     public static String getName() {
