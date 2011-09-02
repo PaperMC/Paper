@@ -40,7 +40,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void setOp(boolean value) {
-        server.getHandle().e(getName());
+        if (value == isOp()) return;
+
+        if (value) {
+            server.getHandle().e(getName());
+        } else {
+            server.getHandle().f(getName());
+        }
     }
 
     public boolean isPlayer() {
