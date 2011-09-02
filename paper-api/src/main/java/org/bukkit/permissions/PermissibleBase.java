@@ -159,7 +159,7 @@ public class PermissibleBase implements Permissible {
         dirtyPermissions = true;
     }
 
-    private synchronized void calculatePermissions() {
+    public synchronized void calculatePermissions() {
         if (dirtyPermissions) {
             clearPermissions();
             Set<Permission> defaults = Bukkit.getServer().getPluginManager().getDefaultPermissions(isOp());

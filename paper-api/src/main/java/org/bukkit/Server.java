@@ -375,4 +375,14 @@ public interface Server {
      * @return Amount of users who received the message
      */
     public int broadcast(String message, String permission);
+
+    /**
+     * Gets the player by the given name, regardless if they are offline or online.
+     *
+     * This will return an object even if the player does not exist. To this method, all players will exist.
+     *
+     * @param name Name of the player to retrieve
+     * @return OfflinePlayer object
+     */
+    public OfflinePlayer getOfflinePlayer(String name);
 }

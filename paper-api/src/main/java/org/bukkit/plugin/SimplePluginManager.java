@@ -449,15 +449,13 @@ public final class SimplePluginManager implements PluginManager {
     }
 
     private void calculatePermissionDefault(Permission perm) {
-        if (!perm.getChildren().isEmpty()) {
-            if ((perm.getDefault() == PermissionDefault.OP) || (perm.getDefault() == PermissionDefault.TRUE)) {
-                defaultPerms.get(true).add(perm);
-                dirtyPermissibles(true);
-            }
-            if ((perm.getDefault() == PermissionDefault.NOT_OP) || (perm.getDefault() == PermissionDefault.TRUE)) {
-                defaultPerms.get(false).add(perm);
-                dirtyPermissibles(false);
-            }
+        if ((perm.getDefault() == PermissionDefault.OP) || (perm.getDefault() == PermissionDefault.TRUE)) {
+            defaultPerms.get(true).add(perm);
+            dirtyPermissibles(true);
+        }
+        if ((perm.getDefault() == PermissionDefault.NOT_OP) || (perm.getDefault() == PermissionDefault.TRUE)) {
+            defaultPerms.get(false).add(perm);
+            dirtyPermissibles(false);
         }
     }
 

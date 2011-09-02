@@ -220,7 +220,11 @@ public final class Bukkit {
         server.shutdown();
     }
 
-    public int broadcast(String message, String permission) {
+    public static int broadcast(String message, String permission) {
         return server.broadcast(message, permission);
+    }
+
+    public static OfflinePlayer getOfflinePlayer(String name) {
+        return server.getOfflinePlayer(name);
     }
 }

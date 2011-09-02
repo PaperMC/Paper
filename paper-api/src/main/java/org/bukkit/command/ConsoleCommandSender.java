@@ -83,4 +83,8 @@ public class ConsoleCommandSender implements CommandSender {
     public Set<PermissionAttachmentInfo> getEffectivePermissions() {
         return perm.getEffectivePermissions();
     }
+
+    public String getName() {
+        return "CONSOLE";
+    }
 }
