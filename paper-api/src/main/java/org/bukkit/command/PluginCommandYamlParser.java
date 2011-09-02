@@ -26,6 +26,7 @@ public class PluginCommandYamlParser {
                 Object description = entry.getValue().get("description");
                 Object usage = entry.getValue().get("usage");
                 Object aliases = entry.getValue().get("aliases");
+                Object permission = entry.getValue().get("permission");
 
                 if (description != null) {
                     newCmd.setDescription(description.toString());
@@ -47,6 +48,10 @@ public class PluginCommandYamlParser {
                     }
 
                     newCmd.setAliases(aliasList);
+                }
+
+                if (permission != null) {
+                    newCmd.setPermission(permission.toString());
                 }
 
                 pluginCmds.add(newCmd);

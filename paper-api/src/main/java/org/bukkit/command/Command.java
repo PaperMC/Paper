@@ -2,6 +2,8 @@ package org.bukkit.command;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.bukkit.ChatColor;
+import org.bukkit.permissions.Permissible;
 
 /**
  * Represents a Command, which executes various tasks upon user input
@@ -15,6 +17,7 @@ public abstract class Command {
     private CommandMap commandMap = null;
     protected String description = "";
     protected String usageMessage;
+    private String permission;
 
     protected Command(String name) {
         this(name, "", "/" + name, new ArrayList<String>());
@@ -47,6 +50,41 @@ public abstract class Command {
      */
     public String getName() {
         return name;
+    }
+
+    /**
+     * Gets the permission required by users to be able to perform this command
+     *
+     * @return Permission name, or null if none
+     */
+    public String getPermission() {
+        return permission;
+    }
+
+    /**
+     * Sets the permission required by users to be able to perform this command
+     *
+     * @param permission Permission name or null
+     */
+    public void setPermission(String permission) {
+        this.permission = permission;
+    }
+
+    /**
+     * Tests the given {@link CommandSender} to see if they can perform this command.
+     *
+     * If they do not have permission, they will be informed that they cannot do this.
+     *
+     * @param target User to test
+     * @return true if they can use it, otherwise false
+     */
+    public boolean testPermission(CommandSender target) {
+        if ((permission == null) || (permission.isEmpty()) || (target.hasPermission(permission))) {
+            return true;
+        }
+
+        target.sendMessage(ChatColor.RED + "I'm sorry, Dave. I'm afraid I can't do that.");
+        return false;
     }
 
     /**

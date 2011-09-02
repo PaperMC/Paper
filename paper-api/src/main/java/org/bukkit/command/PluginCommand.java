@@ -31,6 +31,10 @@ public final class PluginCommand extends Command {
             return false;
         }
 
+        if (!testPermission(sender)) {
+            return true;
+        }
+
         try {
             success = executor.onCommand(sender, this, commandLabel, args);
         } catch (Throwable ex) {
