@@ -7,23 +7,15 @@ import org.bukkit.Instrument;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Note;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.Statistic;
-import org.bukkit.command.CommandSender;
 import org.bukkit.map.MapView;
 
 /**
  * Represents a player, connected or not
  *
  */
-public interface Player extends HumanEntity, CommandSender {
-
-    /**
-     * Checks if this player is currently online
-     *
-     * @return true if they are online
-     */
-    public boolean isOnline();
-
+public interface Player extends HumanEntity, OfflinePlayer {
     /**
      * Gets the "friendly" name to display of this player. This may include color.
      *

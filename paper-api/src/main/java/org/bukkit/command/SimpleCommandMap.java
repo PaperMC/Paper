@@ -1,27 +1,31 @@
 package org.bukkit.command;
 
-import org.bukkit.command.defaults.ReloadCommand;
-import org.bukkit.command.defaults.PluginsCommand;
 import org.bukkit.command.defaults.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Iterator;
-
-import org.bukkit.ChatColor;
 import org.bukkit.Server;
-
-import org.bukkit.plugin.Plugin;
 import static org.bukkit.util.Java15Compat.Arrays_copyOfRange;
 
 public final class SimpleCommandMap implements CommandMap {
     private final Map<String, Command> knownCommands = new HashMap<String, Command>();
     private final Set<String> aliases = new HashSet<String>();
     private final Server server;
+    private static final Set<Command> fallbackCommands = new HashSet<Command>();
+
+    static {
+        fallbackCommands.add(new ListCommand());
+        fallbackCommands.add(new StopCommand());
+        fallbackCommands.add(new SaveCommand());
+        fallbackCommands.add(new SaveOnCommand());
+        fallbackCommands.add(new SaveOffCommand());
+        fallbackCommands.add(new OpCommand());
+        fallbackCommands.add(new DeopCommand());
+    }
 
     public SimpleCommandMap(final Server server) {
         this.server = server;
@@ -110,6 +114,16 @@ public final class SimpleCommandMap implements CommandMap {
         return registerdPassedLabel;
     }
 
+    private Command getFallback(String label) {
+        for (Command cmd : fallbackCommands) {
+            if (label.startsWith(cmd.getName().toLowerCase())) {
+                return cmd;
+            }
+        }
+
+        return null;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -122,6 +136,9 @@ public final class SimpleCommandMap implements CommandMap {
 
         String sentCommandLabel = args[0].toLowerCase();
         Command target = getCommand(sentCommandLabel);
+        if (target == null) {
+            target = getFallback(sentCommandLabel);
+        }
         if (target == null) {
             return false;
         }
