@@ -22,7 +22,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +53,6 @@ import net.minecraft.server.ItemStack;
 import net.minecraft.server.WorldMap;
 import net.minecraft.server.WorldMapCollection;
 import org.bukkit.*;
-import org.bukkit.map.MapView;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.ServicesManager;
@@ -74,7 +72,6 @@ import org.bukkit.util.permissions.DefaultPermissions;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.permissions.Permission;
-import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.PluginLoadOrder;
 import org.bukkit.util.config.Configuration;
 import org.bukkit.util.config.ConfigurationNode;
@@ -796,4 +793,7 @@ public final class CraftServer implements Server {
         return worldmap.mapView;
     }
 
+    public void shutdown() {
+        console.a();
+    }
 }
