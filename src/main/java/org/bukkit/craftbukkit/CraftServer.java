@@ -53,6 +53,7 @@ import net.minecraft.server.ItemStack;
 import net.minecraft.server.WorldMap;
 import net.minecraft.server.WorldMapCollection;
 import org.bukkit.*;
+import org.bukkit.permissions.Permissible;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.ServicesManager;
@@ -226,13 +227,7 @@ public final class CraftServer implements Server {
     }
 
     public int broadcastMessage(String message) {
-        Player[] players = getOnlinePlayers();
-
-        for (Player player : players) {
-            player.sendMessage(message);
-        }
-
-        return players.length;
+        return broadcast(message, BROADCAST_CHANNEL_USERS);
     }
 
     public Player getPlayer(final EntityPlayer entity) {
@@ -795,5 +790,20 @@ public final class CraftServer implements Server {
 
     public void shutdown() {
         console.a();
+    }
+
+    public int broadcast(String message, String permission) {
+        int count = 0;
+        Set<Permissible> permissibles = getPluginManager().getPermissionSubscriptions(permission);
+
+        for (Permissible permissible : permissibles) {
+            if (permissible instanceof CommandSender) {
+                CommandSender user = (CommandSender)permissible;
+                user.sendMessage(message);
+                count++;
+            }
+        }
+
+        return count;
     }
 }
