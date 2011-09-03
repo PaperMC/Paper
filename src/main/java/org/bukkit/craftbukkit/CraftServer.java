@@ -46,9 +46,6 @@ import net.minecraft.server.WorldLoaderServer;
 import net.minecraft.server.WorldManager;
 import net.minecraft.server.WorldServer;
 import net.minecraft.server.ServerCommand;
-import net.minecraft.server.ICommandListener;
-import net.minecraft.server.Packet;
-import net.minecraft.server.Packet3Chat;
 import net.minecraft.server.Item;
 import net.minecraft.server.ItemStack;
 import net.minecraft.server.WorldMap;
@@ -66,12 +63,10 @@ import org.bukkit.craftbukkit.inventory.CraftFurnaceRecipe;
 import org.bukkit.craftbukkit.inventory.CraftRecipe;
 import org.bukkit.craftbukkit.inventory.CraftShapedRecipe;
 import org.bukkit.craftbukkit.inventory.CraftShapelessRecipe;
-import org.bukkit.craftbukkit.command.ServerCommandListener;
 import org.bukkit.craftbukkit.map.CraftMapView;
 import org.bukkit.scheduler.BukkitWorker;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 import org.bukkit.util.permissions.DefaultPermissions;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.permissions.Permission;
 import org.bukkit.plugin.PluginLoadOrder;
@@ -227,6 +222,18 @@ public final class CraftServer implements Server {
         return found;
     }
 
+    public Player getPlayerExact(String name) {
+        String lname = name.toLowerCase();
+
+        for (Player player : getOnlinePlayers()) {
+            if (player.getName().equalsIgnoreCase(lname)) {
+                return player;
+            }
+        }
+
+        return null;
+    }
+
     public int broadcastMessage(String message) {
         return broadcast(message, BROADCAST_CHANNEL_USERS);
     }
@@ -332,64 +339,17 @@ public final class CraftServer implements Server {
 
     // NOTE: Should only be called from MinecraftServer.b()
     public boolean dispatchCommand(CommandSender sender, ServerCommand serverCommand) {
-        if (commandMap.dispatch(sender, serverCommand.command)) {
-            return true;
-        }
-        return console.consoleCommandHandler.handle(serverCommand);
+        return dispatchCommand(sender, serverCommand.command);
     }
 
     public boolean dispatchCommand(CommandSender sender, String commandLine) {
-        // CraftBukkit native commands
         if (commandMap.dispatch(sender, commandLine)) {
             return true;
         }
 
-        if (sender instanceof Player) {
-            Player player = (Player)sender;
-            if (commandLine.toLowerCase().startsWith("me ")) {
-                if (!player.hasPermission("bukkit.command.me")) {
-                    player.sendMessage(ChatColor.RED + "You do not have permission to perform this command.");
-                    return true;
-                }
+        sender.sendMessage("Unknown command. Type \"help\" for help.");
 
-                commandLine = "* " + player.getDisplayName() + " " + commandLine.substring(commandLine.indexOf(" ")).trim();
-                server.server.serverConfigurationManager.sendAll(new Packet3Chat(commandLine));
-                return true;
-            } else if (commandLine.toLowerCase().startsWith("kill")) {
-                if (!player.hasPermission("bukkit.command.kill")) {
-                    player.sendMessage(ChatColor.RED + "You do not have permission to perform this command.");
-                    return true;
-                }
-
-                EntityDamageEvent ede = new EntityDamageEvent(player, EntityDamageEvent.DamageCause.SUICIDE, 1000);
-                getPluginManager().callEvent(ede);
-                if (ede.isCancelled()) return true;
-
-                player.damage(ede.getDamage());
-                return true;
-            } else if (commandLine.toLowerCase().startsWith("tell ")) {
-                if (!player.hasPermission("bukkit.command.tell")) {
-                    player.sendMessage(ChatColor.RED + "You do not have permission to perform this command.");
-                    return true;
-                }
-
-                String[] astring = commandLine.split(" ");
-
-                if (astring.length >= 3) {
-                    commandLine = commandLine.substring(commandLine.indexOf(" ")).trim();
-                    commandLine = commandLine.substring(commandLine.indexOf(" ")).trim();
-                    commandLine = "\u00A77" + player.getDisplayName() + " whispers " + commandLine;
-                    if (!server.server.serverConfigurationManager.a(astring[1], (Packet) (new Packet3Chat(commandLine)))) {
-                        player.sendMessage(ChatColor.RED + "There's no player by that name online.");
-                    }
-                }
-
-                return true;
-            }
-        }
-
-        // See if the server can process this command
-        return console.consoleCommandHandler.handle(new ServerCommand(commandLine, (ICommandListener) new ServerCommandListener(sender)));
+        return false;
     }
 
     public void reload() {
@@ -838,5 +798,25 @@ public final class CraftServer implements Server {
         }
 
         return result;
+    }
+
+    public void setWhitelist(boolean value) {
+        server.o = value;
+        console.propertyManager.b("white-list", value);
+        console.propertyManager.savePropertiesFile();
+    }
+
+    public Set<OfflinePlayer> getWhitelistedPlayers() {
+        Set<OfflinePlayer> result = new HashSet<OfflinePlayer>();
+
+        for (Object name : server.e()) {
+            result.add(getOfflinePlayer((String)name));
+        }
+
+        return result;
+    }
+
+    public void reloadWhitelist() {
+        server.f();
     }
 }

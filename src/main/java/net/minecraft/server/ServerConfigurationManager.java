@@ -42,7 +42,7 @@ public class ServerConfigurationManager {
     private File l;
     private File m;
     public PlayerFileData playerFileData; // CraftBukkit - private - >public
-    private boolean o;
+    public boolean o; // Craftbukkit - private -> public
 
     // CraftBukkit start
     private CraftServer cserver;
