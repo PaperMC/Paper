@@ -710,8 +710,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 }
 
                 s = String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage());
-                ColouredConsoleSender c = new ColouredConsoleSender(this.minecraftServer.server);
-                c.sendMessage(s);
+                minecraftServer.console.sendMessage(s);
                 for (Player recipient : event.getRecipients()) {
                     recipient.sendMessage(s);
                 }
