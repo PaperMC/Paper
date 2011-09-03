@@ -115,6 +115,25 @@ public interface Server {
     public boolean hasWhitelist();
 
     /**
+     * Sets the whitelist on or off
+     *
+     * @param value true if whitelist is on, otherwise false
+     */
+    public void setWhitelist(boolean value);
+
+    /**
+     * Gets a list of whitelisted players
+     *
+     * @return Set containing all whitelisted players
+     */
+    public Set<OfflinePlayer> getWhitelistedPlayers();
+
+    /**
+     * Reloads the whitelist from disk
+     */
+    public void reloadWhitelist();
+
+    /**
      * Broadcast a message to all players.
      *
      * This is the same as calling {@link #broadcast(java.lang.String, java.lang.String)} to {@link #BROADCAST_CHANNEL_USERS}
@@ -141,6 +160,14 @@ public interface Server {
      * @return Player if it was found, otherwise null
      */
     public Player getPlayer(String name);
+
+    /**
+     * Gets the player with the exact given name, case insensitive
+     *
+     * @param name Exact name of the player to retrieve
+     * @return Player object or null if not found
+     */
+    public Player getPlayerExact(String name);
 
     /**
      * Attempts to match any players with the given name, and returns a list

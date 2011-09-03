@@ -30,4 +30,18 @@ public interface OfflinePlayer extends ServerOperator {
      * @param banned true if banned
      */
     public void setBanned(boolean banned);
+
+    /**
+     * Checks if this player is whitelisted or not
+     *
+     * @return true if whitelisted
+     */
+    public boolean isWhitelisted();
+
+    /**
+     * Sets if this player is whitelisted or not
+     *
+     * @param value true if whitelisted
+     */
+    public void setWhitelisted(boolean value);
 }

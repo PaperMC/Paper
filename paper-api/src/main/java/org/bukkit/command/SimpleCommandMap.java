@@ -1,27 +1,45 @@
 package org.bukkit.command;
 
-import org.bukkit.command.defaults.ReloadCommand;
-import org.bukkit.command.defaults.PluginsCommand;
 import org.bukkit.command.defaults.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Iterator;
-
-import org.bukkit.ChatColor;
 import org.bukkit.Server;
-
-import org.bukkit.plugin.Plugin;
 import static org.bukkit.util.Java15Compat.Arrays_copyOfRange;
 
-public final class SimpleCommandMap implements CommandMap {
-    private final Map<String, Command> knownCommands = new HashMap<String, Command>();
-    private final Set<String> aliases = new HashSet<String>();
+public class SimpleCommandMap implements CommandMap {
+    protected final Map<String, Command> knownCommands = new HashMap<String, Command>();
+    protected final Set<String> aliases = new HashSet<String>();
     private final Server server;
+    protected static final Set<VanillaCommand> fallbackCommands = new HashSet<VanillaCommand>();
+
+    static {
+        fallbackCommands.add(new ListCommand());
+        fallbackCommands.add(new StopCommand());
+        fallbackCommands.add(new SaveCommand());
+        fallbackCommands.add(new SaveOnCommand());
+        fallbackCommands.add(new SaveOffCommand());
+        fallbackCommands.add(new OpCommand());
+        fallbackCommands.add(new DeopCommand());
+        fallbackCommands.add(new BanIpCommand());
+        fallbackCommands.add(new PardonIpCommand());
+        fallbackCommands.add(new BanCommand());
+        fallbackCommands.add(new PardonCommand());
+        fallbackCommands.add(new KickCommand());
+        fallbackCommands.add(new TeleportCommand());
+        fallbackCommands.add(new GiveCommand());
+        fallbackCommands.add(new TimeCommand());
+        fallbackCommands.add(new SayCommand());
+        fallbackCommands.add(new WhitelistCommand());
+        fallbackCommands.add(new TellCommand());
+        fallbackCommands.add(new MeCommand());
+        fallbackCommands.add(new KillCommand());
+        fallbackCommands.add(new HelpCommand());
+    }
 
     public SimpleCommandMap(final Server server) {
         this.server = server;
@@ -110,6 +128,16 @@ public final class SimpleCommandMap implements CommandMap {
         return registerdPassedLabel;
     }
 
+    protected Command getFallback(String label) {
+        for (VanillaCommand cmd : fallbackCommands) {
+            if (cmd.matches(label)) {
+                return cmd;
+            }
+        }
+
+        return null;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -122,6 +150,9 @@ public final class SimpleCommandMap implements CommandMap {
 
         String sentCommandLabel = args[0].toLowerCase();
         Command target = getCommand(sentCommandLabel);
+        if (target == null) {
+            target = getFallback(commandLine.toLowerCase());
+        }
         if (target == null) {
             return false;
         }

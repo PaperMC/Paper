@@ -229,6 +229,10 @@ public final class Bukkit {
         return server.getOfflinePlayer(name);
     }
 
+    public static Player getPlayerExact(String name) {
+        return server.getPlayerExact(name);
+    }
+
     public static Set<String> getIPBans() {
         return server.getIPBans();
     }
@@ -243,5 +247,17 @@ public final class Bukkit {
     
     public static Set<OfflinePlayer> getBannedPlayers() {
         return server.getBannedPlayers();
+    }
+
+    public static void setWhitelist(boolean value) {
+        server.setWhitelist(value);
+    }
+
+    public static Set<OfflinePlayer> getWhitelistedPlayers() {
+        return server.getWhitelistedPlayers();
+    }
+
+    public static void reloadWhitelist() {
+        server.reloadWhitelist();
     }
 }
