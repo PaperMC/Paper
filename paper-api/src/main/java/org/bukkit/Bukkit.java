@@ -241,7 +241,7 @@ public final class Bukkit {
         server.unbanIP(address);
     }
     
-    public Set<OfflinePlayer> getBannedPlayers() {
+    public static Set<OfflinePlayer> getBannedPlayers() {
         return server.getBannedPlayers();
     }
 }
