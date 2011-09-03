@@ -3,6 +3,7 @@ package org.bukkit.command.defaults;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
 
 public class SayCommand extends VanillaCommand {
     public SayCommand() {
@@ -20,8 +21,18 @@ public class SayCommand extends VanillaCommand {
             return false;
         }
 
-        Bukkit.getLogger().info("[" + sender.getName() + "] " + args[1]);
-        Bukkit.broadcastMessage("[Server] " + args[1]);
+        String message = "";
+
+        for (int i = 0; i < args.length; i++) {
+            if (i > 0) message += " ";
+            message += args[i];
+        }
+
+        if (!(sender instanceof ConsoleCommandSender)) {
+            Bukkit.getLogger().info("[" + sender.getName() + "] " + message);
+        }
+        
+        Bukkit.broadcastMessage("[Server] " + message);
 
         return true;
     }
