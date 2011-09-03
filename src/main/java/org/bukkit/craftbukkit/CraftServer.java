@@ -829,4 +829,14 @@ public final class CraftServer implements Server {
     public void unbanIP(String address) {
         server.d(address);
     }
+
+    public Set<OfflinePlayer> getBannedPlayers() {
+        Set<OfflinePlayer> result = new HashSet<OfflinePlayer>();
+
+        for (Object name : server.banByName) {
+            result.add(getOfflinePlayer((String)name));
+        }
+
+        return result;
+    }
 }

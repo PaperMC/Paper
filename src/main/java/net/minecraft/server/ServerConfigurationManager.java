@@ -33,7 +33,7 @@ public class ServerConfigurationManager {
     public MinecraftServer server; // CraftBukkit - private -> public
     // private PlayerManager[] d = new PlayerManager[2]; // CraftBukkit - removed
     public int maxPlayers; // CraftBukkit - private -> public
-    private Set banByName = new HashSet();
+    public Set banByName = new HashSet(); // CraftBukkit - private -> public
     public Set banByIP = new HashSet(); // CraftBukkit - private -> public
     private Set h = new HashSet();
     private Set i = new HashSet();

@@ -25,16 +25,28 @@ public class CraftOfflinePlayer implements OfflinePlayer {
     }
 
     public boolean isOp() {
-        return server.getHandle().isOp(getName());
+        return server.getHandle().isOp(getName().toLowerCase());
     }
 
     public void setOp(boolean value) {
         if (value == isOp()) return;
 
         if (value) {
-            server.getHandle().e(getName());
+            server.getHandle().e(getName().toLowerCase());
         } else {
-            server.getHandle().f(getName());
+            server.getHandle().f(getName().toLowerCase());
+        }
+    }
+
+    public boolean isBanned() {
+        return server.getHandle().banByName.contains(name.toLowerCase());
+    }
+
+    public void setBanned(boolean value) {
+        if (value) {
+            server.getHandle().a(name.toLowerCase());
+        } else {
+            server.getHandle().b(name.toLowerCase());
         }
     }
 }

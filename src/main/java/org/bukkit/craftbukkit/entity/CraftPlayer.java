@@ -354,4 +354,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void resetPlayerTime() {
         setPlayerTime(0, true);
     }
+
+    public boolean isBanned() {
+        return server.getHandle().banByName.contains(getName().toLowerCase());
+    }
+
+    public void setBanned(boolean value) {
+        if (value) {
+            server.getHandle().a(getName().toLowerCase());
+        } else {
+            server.getHandle().b(getName().toLowerCase());
+        }
+    }
 }
