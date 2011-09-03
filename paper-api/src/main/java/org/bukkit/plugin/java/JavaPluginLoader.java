@@ -33,13 +33,13 @@ import org.yaml.snakeyaml.error.YAMLException;
 /**
  * Represents a Java plugin loader, allowing plugins in the form of .jar
  */
-public final class JavaPluginLoader implements PluginLoader {
+public class JavaPluginLoader implements PluginLoader {
     private final Server server;
-    private final Pattern[] fileFilters = new Pattern[] {
+    protected final Pattern[] fileFilters = new Pattern[] {
         Pattern.compile("\\.jar$"),
     };
-    private final Map<String, Class<?>> classes = new HashMap<String, Class<?>>();
-    private final Map<String, PluginClassLoader> loaders = new HashMap<String, PluginClassLoader>();
+    protected final Map<String, Class<?>> classes = new HashMap<String, Class<?>>();
+    protected final Map<String, PluginClassLoader> loaders = new HashMap<String, PluginClassLoader>();
 
     public JavaPluginLoader(Server instance) {
         server = instance;
@@ -182,7 +182,7 @@ public final class JavaPluginLoader implements PluginLoader {
         return (Plugin) result;
     }
 
-    private File getDataFolder(File file) {
+    protected File getDataFolder(File file) {
         File dataFolder = null;
 
         String filename = file.getName();
