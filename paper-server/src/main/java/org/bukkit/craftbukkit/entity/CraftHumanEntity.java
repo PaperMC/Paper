@@ -111,7 +111,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     public void setOp(boolean value) {
         this.op = value;
         perm.recalculatePermissions();
-        perm.calculatePermissions();
     }
 
     public Set<PermissionAttachmentInfo> getEffectivePermissions() {

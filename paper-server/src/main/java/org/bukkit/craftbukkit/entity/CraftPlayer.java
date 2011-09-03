@@ -49,7 +49,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
 
         perm.recalculatePermissions();
-        perm.calculatePermissions();
     }
 
     public boolean isPlayer() {
