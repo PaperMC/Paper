@@ -407,4 +407,11 @@ public interface Server {
      * @param address IP address to unban
      */
     public void unbanIP(String address);
+
+    /**
+     * Gets a set containing all banned players
+     *
+     * @return Set containing banned players
+     */
+    public Set<OfflinePlayer> getBannedPlayers();
 }

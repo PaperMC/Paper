@@ -240,4 +240,8 @@ public final class Bukkit {
     public static void unbanIP(String address) {
         server.unbanIP(address);
     }
+    
+    public Set<OfflinePlayer> getBannedPlayers() {
+        return server.getBannedPlayers();
+    }
 }
