@@ -366,4 +366,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             server.getHandle().b(getName().toLowerCase());
         }
     }
+
+    public boolean isWhitelisted() {
+        return server.getHandle().e().contains(getName().toLowerCase());
+    }
+
+    public void setWhitelisted(boolean value) {
+        if (value) {
+            server.getHandle().k(getName().toLowerCase());
+        } else {
+            server.getHandle().l(getName().toLowerCase());
+        }
+    }
 }

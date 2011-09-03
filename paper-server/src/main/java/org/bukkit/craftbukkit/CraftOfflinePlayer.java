@@ -49,4 +49,16 @@ public class CraftOfflinePlayer implements OfflinePlayer {
             server.getHandle().b(name.toLowerCase());
         }
     }
+
+    public boolean isWhitelisted() {
+        return server.getHandle().e().contains(name.toLowerCase());
+    }
+
+    public void setWhitelisted(boolean value) {
+        if (value) {
+            server.getHandle().k(name.toLowerCase());
+        } else {
+            server.getHandle().l(name.toLowerCase());
+        }
+    }
 }
