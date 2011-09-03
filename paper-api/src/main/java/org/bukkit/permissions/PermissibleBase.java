@@ -18,7 +18,6 @@ public class PermissibleBase implements Permissible {
     private Permissible parent = this;
     private final List<PermissionAttachment> attachments = new LinkedList<PermissionAttachment>();
     private final Map<String, PermissionAttachmentInfo> permissions = new HashMap<String, PermissionAttachmentInfo>();
-    private boolean dirtyPermissions = true;
 
     public PermissibleBase(ServerOperator opable) {
         this.opable = opable;
@@ -27,7 +26,7 @@ public class PermissibleBase implements Permissible {
             this.parent = (Permissible)opable;
         }
 
-        calculatePermissions();
+        recalculatePermissions();
     }
     
     public boolean isOp() {
@@ -51,8 +50,6 @@ public class PermissibleBase implements Permissible {
             throw new IllegalArgumentException("Permission name cannot be null");
         }
 
-        calculatePermissions();
-
         return permissions.containsKey(name.toLowerCase());
     }
 
@@ -68,8 +65,6 @@ public class PermissibleBase implements Permissible {
         if (inName == null) {
             throw new IllegalArgumentException("Permission name cannot be null");
         }
-
-        calculatePermissions();
 
         String name = inName.toLowerCase();
 
@@ -90,8 +85,6 @@ public class PermissibleBase implements Permissible {
         if (perm == null) {
             throw new IllegalArgumentException("Permission cannot be null");
         }
-
-        calculatePermissions();
 
         String name = perm.getName().toLowerCase();
 
@@ -156,27 +149,19 @@ public class PermissibleBase implements Permissible {
     }
 
     public void recalculatePermissions() {
-        dirtyPermissions = true;
-    }
+        clearPermissions();
+        Set<Permission> defaults = Bukkit.getServer().getPluginManager().getDefaultPermissions(isOp());
+        Bukkit.getServer().getPluginManager().subscribeToDefaultPerms(isOp(), parent);
 
-    public synchronized void calculatePermissions() {
-        if (dirtyPermissions) {
-            clearPermissions();
-            Set<Permission> defaults = Bukkit.getServer().getPluginManager().getDefaultPermissions(isOp());
-            Bukkit.getServer().getPluginManager().subscribeToDefaultPerms(isOp(), parent);
+        for (Permission perm : defaults) {
+            String name = perm.getName().toLowerCase();
+            permissions.put(name, new PermissionAttachmentInfo(parent, name, null, true));
+            Bukkit.getServer().getPluginManager().subscribeToPermission(name, parent);
+            calculateChildPermissions(perm.getChildren(), false, null);
+        }
 
-            for (Permission perm : defaults) {
-                String name = perm.getName().toLowerCase();
-                permissions.put(name, new PermissionAttachmentInfo(parent, name, null, true));
-                Bukkit.getServer().getPluginManager().subscribeToPermission(name, parent);
-                calculateChildPermissions(perm.getChildren(), false, null);
-            }
-
-            for (PermissionAttachment attachment : attachments) {
-                calculateChildPermissions(attachment.getPermissions(), false, attachment);
-            }
-
-            dirtyPermissions = false;
+        for (PermissionAttachment attachment : attachments) {
+            calculateChildPermissions(attachment.getPermissions(), false, attachment);
         }
     }
 
@@ -187,7 +172,8 @@ public class PermissibleBase implements Permissible {
             Bukkit.getServer().getPluginManager().unsubscribeFromPermission(name, parent);
         }
 
-        Bukkit.getServer().getPluginManager().unsubscribeFromDefaultPerms(isOp(), parent);
+        Bukkit.getServer().getPluginManager().unsubscribeFromDefaultPerms(false, parent);
+        Bukkit.getServer().getPluginManager().unsubscribeFromDefaultPerms(true, parent);
 
         permissions.clear();
     }
@@ -246,7 +232,6 @@ public class PermissibleBase implements Permissible {
     }
 
     public Set<PermissionAttachmentInfo> getEffectivePermissions() {
-        calculatePermissions();
         return new HashSet<PermissionAttachmentInfo>(permissions.values());
     }
 
