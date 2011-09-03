@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -815,5 +816,17 @@ public final class CraftServer implements Server {
         }
 
         return result;
+    }
+
+    public Set<String> getIPBans() {
+        return new HashSet(server.banByIP);
+    }
+
+    public void banIP(String address) {
+        server.c(address);
+    }
+
+    public void unbanIP(String address) {
+        server.d(address);
     }
 }
