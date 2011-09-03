@@ -34,7 +34,7 @@ public class ServerConfigurationManager {
     // private PlayerManager[] d = new PlayerManager[2]; // CraftBukkit - removed
     public int maxPlayers; // CraftBukkit - private -> public
     private Set banByName = new HashSet();
-    private Set banByIP = new HashSet();
+    public Set banByIP = new HashSet(); // CraftBukkit - private -> public
     private Set h = new HashSet();
     private Set i = new HashSet();
     private File j;
