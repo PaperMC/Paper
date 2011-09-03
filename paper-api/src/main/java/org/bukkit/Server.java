@@ -7,6 +7,7 @@ import org.bukkit.inventory.Recipe;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
 import org.bukkit.command.PluginCommand;
@@ -385,4 +386,25 @@ public interface Server {
      * @return OfflinePlayer object
      */
     public OfflinePlayer getOfflinePlayer(String name);
+
+    /**
+     * Gets a set containing all current IPs that are banned
+     *
+     * @return Set containing banned IP addresses
+     */
+    public Set<String> getIPBans();
+
+    /**
+     * Bans the specified address from the server
+     *
+     * @param address IP address to ban
+     */
+    public void banIP(String address);
+
+    /**
+     * Unbans the specified address from the server
+     *
+     * @param address IP address to unban
+     */
+    public void unbanIP(String address);
 }

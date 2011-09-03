@@ -3,6 +3,7 @@ package org.bukkit;
 import com.avaje.ebean.config.ServerConfig;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
 import org.bukkit.World.Environment;
@@ -226,5 +227,17 @@ public final class Bukkit {
 
     public static OfflinePlayer getOfflinePlayer(String name) {
         return server.getOfflinePlayer(name);
+    }
+
+    public static Set<String> getIPBans() {
+        return server.getIPBans();
+    }
+
+    public static void banIP(String address) {
+        server.banIP(address);
+    }
+
+    public static void unbanIP(String address) {
+        server.unbanIP(address);
     }
 }
