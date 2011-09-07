@@ -109,7 +109,7 @@ public class CraftChunk implements Chunk {
         return entities;
     }
 
-        public boolean isLoaded() {
+    public boolean isLoaded() {
         return getWorld().isChunkLoaded(this);
     }
 
