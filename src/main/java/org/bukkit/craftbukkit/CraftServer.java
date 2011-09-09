@@ -769,7 +769,7 @@ public final class CraftServer implements Server {
     }
 
     public OfflinePlayer getOfflinePlayer(String name) {
-        OfflinePlayer result = getPlayer(name);
+        OfflinePlayer result = getPlayerExact(name);
 
         if (result == null) {
             result = new CraftOfflinePlayer(this, name);
@@ -818,5 +818,13 @@ public final class CraftServer implements Server {
 
     public void reloadWhitelist() {
         server.f();
+    }
+
+    public GameMode getDefaultGameMode() {
+        return GameMode.SURVIVAL;
+    }
+
+    public void setDefaultGameMode(GameMode mode) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }
