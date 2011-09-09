@@ -1,5 +1,6 @@
 package org.bukkit.entity;
 
+import org.bukkit.GameMode;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.permissions.Permissible;
@@ -60,4 +61,18 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, Permissible {
      * @return slumber ticks
      */
     public int getSleepTicks();
+
+    /**
+     * Gets this humans current {@link GameMode}
+     *
+     * @return Current game mode
+     */
+    public GameMode getGameMode();
+
+    /**
+     * Sets this humans current {@link GameMode}
+     *
+     * @param mode New game mode
+     */
+    public void setGameMode(GameMode mode);
 }

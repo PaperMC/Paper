@@ -441,4 +441,18 @@ public interface Server {
      * @return Set containing banned players
      */
     public Set<OfflinePlayer> getBannedPlayers();
+
+    /**
+     * Gets the default {@link GameMode} for new players
+     *
+     * @return Default game mode
+     */
+    public GameMode getDefaultGameMode();
+
+    /**
+     * Sets the default {@link GameMode} for new players
+     *
+     * @param mode New game mode
+     */
+    public void setDefaultGameMode(GameMode mode);
 }
