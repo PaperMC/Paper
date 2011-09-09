@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.entity;
 
 import java.util.Set;
 import net.minecraft.server.EntityHuman;
+import org.bukkit.GameMode;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -115,5 +116,13 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     public Set<PermissionAttachmentInfo> getEffectivePermissions() {
         return perm.getEffectivePermissions();
+    }
+
+    public GameMode getGameMode() {
+        return GameMode.SURVIVAL;
+    }
+
+    public void setGameMode(GameMode mode) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }
