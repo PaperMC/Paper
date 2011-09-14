@@ -32,6 +32,7 @@ public class HelpCommand extends VanillaCommand {
         sender.sendMessage("list                      lists all currently connected players");
         sender.sendMessage("say <message>             broadcasts a message to all players");
         sender.sendMessage("time <add|set> <amount>   adds to or sets the world time (0-24000)");
+        sender.sendMessage("gamemode <player> <mode>  sets player\'s game mode (0 or 1)");
 
         return true;
     }
