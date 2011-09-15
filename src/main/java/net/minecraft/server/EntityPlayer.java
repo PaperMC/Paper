@@ -174,7 +174,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             bworld.dropItemNaturally(bukkitEntity.getLocation(), stack);
         }
 
-        this.y();
+        this.x();
         // CraftBukkit end
     }
 
