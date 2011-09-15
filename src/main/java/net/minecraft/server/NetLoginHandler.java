@@ -15,7 +15,7 @@ public class NetLoginHandler extends NetHandler {
     private int f = 0;
     private String g = null;
     private Packet1Login h = null;
-    private String i = "";
+    private String i = Long.toHexString(d.nextLong());
 
     public NetLoginHandler(MinecraftServer minecraftserver, Socket socket, String s) {
         this.server = minecraftserver;
@@ -55,7 +55,7 @@ public class NetLoginHandler extends NetHandler {
 
     public void a(Packet2Handshake packet2handshake) {
         if (this.server.onlineMode) {
-            this.i = Long.toHexString(d.nextLong());
+            // this.i = Long.toHexString(d.nextLong()); // CraftBukkit
             this.networkManager.queue(new Packet2Handshake(this.i));
         } else {
             this.networkManager.queue(new Packet2Handshake("-"));

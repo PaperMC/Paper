@@ -96,7 +96,6 @@ public class World implements IBlockAccess {
     int lastXAccessed = Integer.MIN_VALUE;
     int lastZAccessed = Integer.MIN_VALUE;
     final Object chunkLock = new Object();
-    private List<TileEntity> tileEntitiesToUnload;
 
     private boolean canSpawn(int x, int z) {
         if (this.generator != null) {
@@ -114,15 +113,10 @@ public class World implements IBlockAccess {
         return (CraftServer) Bukkit.getServer();
     }
 
-    public void markForRemoval(TileEntity tileentity) {
-        tileEntitiesToUnload.add(tileentity);
-    }
-
     // CraftBukkit - changed signature
     public World(IDataManager idatamanager, String s, WorldSettings worldsettings, WorldProvider worldprovider, ChunkGenerator gen, org.bukkit.World.Environment env) {
         this.generator = gen;
         this.world = new CraftWorld((WorldServer) this, gen, env);
-        tileEntitiesToUnload = new ArrayList<TileEntity>();
         // CraftBukkit end
 
         this.X = this.random.nextInt(12000);
@@ -1616,7 +1610,7 @@ public class World implements IBlockAccess {
 
         // CraftBukkit start - Only call spawner if we have players online and the world allows for mobs or animals
         if ((this.allowMonsters || this.allowAnimals) && (this instanceof WorldServer && this.getServer().getHandle().players.size() > 0)) {
-            SpawnerCreature.spawnEntities(this, this.allowMonsters, this.allowAnimals);
+            SpawnerCreature.spawnEntities(this, this.allowMonsters, this.allowAnimals && this.worldData.f() % 400L == 0L);
         }
         // CraftBukkit end
 
@@ -2243,7 +2237,7 @@ public class World implements IBlockAccess {
         if (axisalignedbb != null && !this.containsEntity(axisalignedbb)) {
             defaultReturn = false; // CraftBukkit
         } else {
-            if (block == Block.WATER || block == Block.STATIONARY_WATER || block == Block.LAVA || block == Block.STATIONARY_LAVA || block == Block.FIRE || block == Block.SNOW) {
+            if (block == Block.WATER || block == Block.STATIONARY_WATER || block == Block.LAVA || block == Block.STATIONARY_LAVA || block == Block.FIRE || block == Block.SNOW || block == Block.VINE) {
                 block = null;
             }
 
