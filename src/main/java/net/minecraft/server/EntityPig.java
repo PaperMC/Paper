@@ -27,19 +27,19 @@ public class EntityPig extends EntityAnimal {
         this.setSaddle(nbttagcompound.m("Saddle"));
     }
 
-    protected String g() {
-        return "mob.pig";
-    }
-
     protected String h() {
         return "mob.pig";
     }
 
     protected String i() {
+        return "mob.pig";
+    }
+
+    protected String j() {
         return "mob.pigdeath";
     }
 
-    public boolean a(EntityHuman entityhuman) {
+    public boolean b(EntityHuman entityhuman) {
         if (this.hasSaddle() && !this.world.isStatic && (this.passenger == null || this.passenger == entityhuman)) {
             entityhuman.mount(this);
             return true;
@@ -48,7 +48,7 @@ public class EntityPig extends EntityAnimal {
         }
     }
 
-    protected int j() {
+    protected int k() {
         return this.fireTicks > 0 ? Item.GRILLED_PORK.id : Item.PORK.id;
     }
 

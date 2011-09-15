@@ -60,7 +60,7 @@ public class EntityTrackerEntry {
         }
 
         ++this.t;
-        if (++this.l % this.c == 0) {
+        if (++this.l % this.c == 0 || this.tracker.ca) {
             int i = MathHelper.floor(this.tracker.locX * 32.0D);
             int j = MathHelper.floor(this.tracker.locY * 32.0D);
             int k = MathHelper.floor(this.tracker.locZ * 32.0D);
@@ -108,7 +108,7 @@ public class EntityTrackerEntry {
                 this.a((Packet) object);
             }
 
-            DataWatcher datawatcher = this.tracker.aa();
+            DataWatcher datawatcher = this.tracker.al();
 
             if (datawatcher.a()) {
                 this.b((Packet) (new Packet40EntityMetadata(this.tracker.id, datawatcher)));
@@ -126,6 +126,7 @@ public class EntityTrackerEntry {
             }
         }
 
+        this.tracker.ca = false;
         if (this.tracker.velocityChanged) {
             // CraftBukkit start - create PlayerVelocity event
             boolean cancelled = false;
@@ -208,6 +209,17 @@ public class EntityTrackerEntry {
                             entityplayer.netServerHandler.sendPacket(new Packet17(this.tracker, 0, MathHelper.floor(this.tracker.locX), MathHelper.floor(this.tracker.locY), MathHelper.floor(this.tracker.locZ)));
                         }
                     }
+
+                    if (this.tracker instanceof EntityLiving) {
+                        EntityLiving entityliving = (EntityLiving) this.tracker;
+                        Iterator iterator = entityliving.ak().iterator();
+
+                        while (iterator.hasNext()) {
+                            MobEffect mobeffect = (MobEffect) iterator.next();
+
+                            entityplayer.netServerHandler.sendPacket(new Packet41MobEffect(this.tracker.id, mobeffect));
+                        }
+                    }
                 }
             } else if (this.trackedPlayers.contains(entityplayer)) {
                 this.trackedPlayers.remove(entityplayer);
@@ -262,9 +274,9 @@ public class EntityTrackerEntry {
             } else if (this.tracker instanceof EntityFish) {
                 return new Packet23VehicleSpawn(this.tracker, 90);
             } else if (this.tracker instanceof EntityArrow) {
-                EntityLiving entityliving = ((EntityArrow) this.tracker).shooter;
+                Entity entity = ((EntityArrow) this.tracker).shooter;
 
-                return new Packet23VehicleSpawn(this.tracker, 60, entityliving != null ? entityliving.id : this.tracker.id);
+                return new Packet23VehicleSpawn(this.tracker, 60, entity != null ? entity.id : this.tracker.id);
             } else if (this.tracker instanceof EntitySnowball) {
                 return new Packet23VehicleSpawn(this.tracker, 61);
             } else if (this.tracker instanceof EntityFireball) {
@@ -297,6 +309,8 @@ public class EntityTrackerEntry {
 
                 if (this.tracker instanceof EntityPainting) {
                     return new Packet25EntityPainting((EntityPainting) this.tracker);
+                } else if (this.tracker instanceof EntityExperienceOrb) {
+                    return new Packet26AddExpOrb((EntityExperienceOrb) this.tracker);
                 } else {
                     throw new IllegalArgumentException("Don\'t know how to add " + this.tracker.getClass() + "!");
                 }

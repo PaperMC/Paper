@@ -6,22 +6,27 @@ import org.bukkit.craftbukkit.TrigMath;
 import org.bukkit.event.entity.EntityTargetEvent;
 // CraftBukkit end
 
-public class EntityCreature extends EntityLiving {
+public abstract class EntityCreature extends EntityLiving {
 
     public PathEntity pathEntity; // CraftBukkit - public
     public Entity target; // CraftBukkit - public
     protected boolean e = false;
+    protected int f = 0;
 
     public EntityCreature(World world) {
         super(world);
     }
 
-    protected boolean w() {
+    protected boolean v() {
         return false;
     }
 
     protected void c_() {
-        this.e = this.w();
+        if (this.f > 0) {
+            --this.f;
+        }
+
+        this.e = this.v();
         float f = 16.0F;
 
         if (this.target == null) {
@@ -44,7 +49,7 @@ public class EntityCreature extends EntityLiving {
             if (this.target != null) {
                 this.pathEntity = this.world.findPath(this, this.target, f);
             }
-        } else if (!this.target.T()) {
+        } else if (!this.target.ac()) {
             // CraftBukkit start
             EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), null, EntityTargetEvent.TargetReason.TARGET_DIED);
             this.world.getServer().getPluginManager().callEvent(event);
@@ -58,9 +63,9 @@ public class EntityCreature extends EntityLiving {
             }
             // CraftBukkit end
         } else {
-            float f1 = this.target.f(this);
+            float f1 = this.target.g(this);
 
-            if (this.e(this.target)) {
+            if (this.f(this.target)) {
                 this.a(this.target, f1);
             } else {
                 this.b(this.target, f1);
@@ -69,13 +74,13 @@ public class EntityCreature extends EntityLiving {
 
         if (!this.e && this.target != null && (this.pathEntity == null || this.random.nextInt(20) == 0)) {
             this.pathEntity = this.world.findPath(this, this.target, f);
-        } else if (!this.e && (this.pathEntity == null && this.random.nextInt(80) == 0 || this.random.nextInt(80) == 0)) {
-            this.B();
+        } else if (!this.e && (this.pathEntity == null && this.random.nextInt(80) == 0 || this.f > 0 || this.random.nextInt(80) == 0)) {
+            this.A();
         }
 
         int i = MathHelper.floor(this.boundingBox.b + 0.5D);
-        boolean flag = this.ad();
-        boolean flag1 = this.ae();
+        boolean flag = this.ao();
+        boolean flag1 = this.ap();
 
         this.pitch = 0.0F;
         if (this.pathEntity != null && this.random.nextInt(100) != 0) {
@@ -92,7 +97,7 @@ public class EntityCreature extends EntityLiving {
                 }
             }
 
-            this.aC = false;
+            this.aS = false;
             if (vec3d != null) {
                 double d1 = vec3d.a - this.locX;
                 double d2 = vec3d.c - this.locZ;
@@ -101,7 +106,7 @@ public class EntityCreature extends EntityLiving {
                 float f2 = (float) (TrigMath.atan2(d2, d1) * 180.0D / 3.1415927410125732D) - 90.0F;
                 float f3 = f2 - this.yaw;
 
-                for (this.aA = this.aE; f3 < -180.0F; f3 += 360.0F) {
+                for (this.aQ = this.aU; f3 < -180.0F; f3 += 360.0F) {
                     ;
                 }
 
@@ -125,12 +130,12 @@ public class EntityCreature extends EntityLiving {
 
                     this.yaw = (float) (Math.atan2(d5, d4) * 180.0D / 3.1415927410125732D) - 90.0F;
                     f3 = (f4 - this.yaw + 90.0F) * 3.1415927F / 180.0F;
-                    this.az = -MathHelper.sin(f3) * this.aA * 1.0F;
-                    this.aA = MathHelper.cos(f3) * this.aA * 1.0F;
+                    this.aP = -MathHelper.sin(f3) * this.aQ * 1.0F;
+                    this.aQ = MathHelper.cos(f3) * this.aQ * 1.0F;
                 }
 
                 if (d3 > 0.0D) {
-                    this.aC = true;
+                    this.aS = true;
                 }
             }
 
@@ -138,12 +143,12 @@ public class EntityCreature extends EntityLiving {
                 this.a(this.target, 30.0F, 30.0F);
             }
 
-            if (this.positionChanged && !this.C()) {
-                this.aC = true;
+            if (this.positionChanged && !this.B()) {
+                this.aS = true;
             }
 
             if (this.random.nextFloat() < 0.8F && (flag || flag1)) {
-                this.aC = true;
+                this.aS = true;
             }
         } else {
             super.c_();
@@ -151,7 +156,7 @@ public class EntityCreature extends EntityLiving {
         }
     }
 
-    protected void B() {
+    protected void A() {
         boolean flag = false;
         int i = -1;
         int j = -1;
@@ -198,7 +203,7 @@ public class EntityCreature extends EntityLiving {
         return super.d() && this.a(i, j, k) >= 0.0F;
     }
 
-    public boolean C() {
+    public boolean B() {
         return this.pathEntity != null;
     }
 
@@ -206,11 +211,21 @@ public class EntityCreature extends EntityLiving {
         this.pathEntity = pathentity;
     }
 
-    public Entity F() {
+    public Entity C() {
         return this.target;
     }
 
     public void setTarget(Entity entity) {
         this.target = entity;
+    }
+
+    protected float D() {
+        float f = super.D();
+
+        if (this.f > 0) {
+            f *= 2.0F;
+        }
+
+        return f;
     }
 }

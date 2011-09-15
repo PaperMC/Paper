@@ -39,7 +39,7 @@ public class EntityPainting extends Entity {
 
             this.e = enumart;
             this.b(l);
-            if (this.h()) {
+            if (this.i()) {
                 arraylist.add(enumart);
             }
         }
@@ -117,10 +117,10 @@ public class EntityPainting extends Entity {
         return i == 32 ? 0.5F : (i == 64 ? 0.5F : 0.0F);
     }
 
-    public void m_() {
+    public void s_() {
         if (this.f++ == 100 && !this.world.isStatic) {
             this.f = 0;
-            if (!this.h()) {
+            if (!this.i()) {
                 // CraftBukkit start
                 PaintingBreakByWorldEvent event = new PaintingBreakByWorldEvent((org.bukkit.entity.Painting) this.getBukkitEntity());
                 this.world.getServer().getPluginManager().callEvent(event);
@@ -136,7 +136,7 @@ public class EntityPainting extends Entity {
         }
     }
 
-    public boolean h() {
+    public boolean i() {
         if (this.world.getEntities(this, this.boundingBox).size() > 0) {
             return false;
         } else {
@@ -194,14 +194,14 @@ public class EntityPainting extends Entity {
         }
     }
 
-    public boolean l_() {
+    public boolean r_() {
         return true;
     }
 
-    public boolean damageEntity(Entity entity, int i) {
+    public boolean damageEntity(DamageSource damagesource, int i) {
         if (!this.dead && !this.world.isStatic) {
             // CraftBukkit start
-            PaintingBreakByEntityEvent event = new PaintingBreakByEntityEvent((org.bukkit.entity.Painting) this.getBukkitEntity(), entity == null ? null : entity.getBukkitEntity());
+            PaintingBreakByEntityEvent event = new PaintingBreakByEntityEvent((org.bukkit.entity.Painting) this.getBukkitEntity(), damagesource.a() == null ? null : damagesource.a().getBukkitEntity());
             this.world.getServer().getPluginManager().callEvent(event);
 
             if (event.isCancelled()) {
@@ -210,7 +210,7 @@ public class EntityPainting extends Entity {
             // CraftBukkit end
 
             this.die();
-            this.af();
+            this.aq();
             this.world.addEntity(new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.PAINTING)));
         }
 
@@ -249,7 +249,7 @@ public class EntityPainting extends Entity {
         this.b(this.a);
     }
 
-    public void a(double d0, double d1, double d2) {
+    public void a_(double d0, double d1, double d2) {
         if (!this.world.isStatic && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) {
             this.die();
             this.world.addEntity(new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.PAINTING)));

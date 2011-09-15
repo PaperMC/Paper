@@ -37,7 +37,9 @@ public class PortalTravelAgent {
             for (int k1 = i1 - short1; k1 <= i1 + short1; ++k1) {
                 double d3 = (double) k1 + 0.5D - entity.locZ;
 
-                for (int l1 = 127; l1 >= 0; --l1) {
+                world.getClass();
+
+                for (int l1 = 128 - 1; l1 >= 0; --l1) {
                     if (world.getTypeId(j1, l1, k1) == Block.PORTAL.id) {
                         while (world.getTypeId(j1, l1 - 1, k1) == Block.PORTAL.id) {
                             --l1;
@@ -119,9 +121,10 @@ public class PortalTravelAgent {
 
             for (j2 = k - b0; j2 <= k + b0; ++j2) {
                 d2 = (double) j2 + 0.5D - entity.locZ;
+                world.getClass();
 
-                label271:
-                for (l2 = 127; l2 >= 0; --l2) {
+                label274:
+                for (l2 = 128 - 1; l2 >= 0; --l2) {
                     if (world.isEmpty(i2, l2, j2)) {
                         while (l2 > 0 && world.isEmpty(i2, l2 - 1, j2)) {
                             --l2;
@@ -143,7 +146,7 @@ public class PortalTravelAgent {
                                         int l4 = j2 + (k3 - 1) * i3 - l3 * j3;
 
                                         if (j4 < 0 && !world.getMaterial(i4, k4, l4).isBuildable() || j4 >= 0 && !world.isEmpty(i4, k4, l4)) {
-                                            continue label271;
+                                            continue label274;
                                         }
                                     }
                                 }
@@ -170,11 +173,12 @@ public class PortalTravelAgent {
 
                 for (j2 = k - b0; j2 <= k + b0; ++j2) {
                     d2 = (double) j2 + 0.5D - entity.locZ;
+                    world.getClass();
 
-                    label219:
-                    for (l2 = 127; l2 >= 0; --l2) {
+                    label222:
+                    for (l2 = 128 - 1; l2 >= 0; --l2) {
                         if (world.isEmpty(i2, l2, j2)) {
-                            while (world.isEmpty(i2, l2 - 1, j2)) {
+                            while (l2 > 0 && world.isEmpty(i2, l2 - 1, j2)) {
                                 --l2;
                             }
 
@@ -188,7 +192,7 @@ public class PortalTravelAgent {
                                         i4 = l2 + k3;
                                         k4 = j2 + (l3 - 1) * i3;
                                         if (k3 < 0 && !world.getMaterial(j4, i4, k4).isBuildable() || k3 >= 0 && !world.isEmpty(j4, i4, k4)) {
-                                            continue label219;
+                                            continue label222;
                                         }
                                     }
                                 }
@@ -275,8 +279,10 @@ public class PortalTravelAgent {
                 i1 = 70;
             }
 
-            if (i1 > 118) {
-                i1 = 118;
+            world.getClass();
+            if (i1 > 128 - 10) {
+                world.getClass();
+                i1 = 128 - 10;
             }
 
             j5 = i1;

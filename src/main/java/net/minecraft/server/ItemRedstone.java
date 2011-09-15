@@ -45,25 +45,29 @@ public class ItemRedstone extends Item {
             }
         }
 
-        if (Block.REDSTONE_WIRE.canPlace(world, i, j, k)) {
-            CraftBlockState blockState = CraftBlockState.getBlockState(world, i, j, k); // CraftBukkit
+        if (!entityhuman.c(i, j, k)) {
+            return false;
+        } else {
+            if (Block.REDSTONE_WIRE.canPlace(world, i, j, k)) {
+                CraftBlockState blockState = CraftBlockState.getBlockState(world, i, j, k); // CraftBukkit
 
-            world.setRawTypeId(i, j, k, Block.REDSTONE_WIRE.id); // CraftBukkit - We update after the event
+                world.setRawTypeId(i, j, k, Block.REDSTONE_WIRE.id); // CraftBukkit - We update after the event
 
-            // CraftBukkit start - redstone
-            BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ, Block.REDSTONE_WIRE);
+                // CraftBukkit start - redstone
+                BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ, Block.REDSTONE_WIRE);
 
-            if (event.isCancelled() || !event.canBuild()) {
-                event.getBlockPlaced().setTypeIdAndData(blockState.getTypeId(), blockState.getRawData(), false);
-                return false;
+                if (event.isCancelled() || !event.canBuild()) {
+                    event.getBlockPlaced().setTypeIdAndData(blockState.getTypeId(), blockState.getRawData(), false);
+                    return false;
+                }
+
+                world.update( i, j, k, Block.REDSTONE_WIRE.id); // Must take place after BlockPlaceEvent, we need to update all other blocks.
+                // CraftBukkit end
+
+                --itemstack.count; // CraftBukkit - ORDER MATTERS
             }
 
-            world.update( i, j, k, Block.REDSTONE_WIRE.id); // Must take place after BlockPlaceEvent, we need to update all other blocks.
-            // CraftBukkit end
-
-            --itemstack.count; // CraftBukkit - ORDER MATTERS
+            return true;
         }
-
-        return true;
     }
 }

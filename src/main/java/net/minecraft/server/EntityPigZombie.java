@@ -11,23 +11,23 @@ public class EntityPigZombie extends EntityZombie {
 
     public int angerLevel = 0; // CraftBukkit - private -> public
     private int soundDelay = 0;
-    private static final ItemStack f = new ItemStack(Item.GOLD_SWORD, 1);
+    private static final ItemStack g = new ItemStack(Item.GOLD_SWORD, 1);
 
     public EntityPigZombie(World world) {
         super(world);
         this.texture = "/mob/pigzombie.png";
-        this.aE = 0.5F;
+        this.aU = 0.5F;
         this.damage = 5;
         this.fireProof = true;
     }
 
-    public void m_() {
-        this.aE = this.target != null ? 0.95F : 0.5F;
+    public void s_() {
+        this.aU = this.target != null ? 0.95F : 0.5F;
         if (this.soundDelay > 0 && --this.soundDelay == 0) {
-            this.world.makeSound(this, "mob.zombiepig.zpigangry", this.k() * 2.0F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 1.8F);
+            this.world.makeSound(this, "mob.zombiepig.zpigangry", this.l() * 2.0F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 1.8F);
         }
 
-        super.m_();
+        super.s_();
     }
 
     public boolean d() {
@@ -48,11 +48,13 @@ public class EntityPigZombie extends EntityZombie {
         return this.angerLevel == 0 ? null : super.findTarget();
     }
 
-    public void v() {
-        super.v();
+    public void s() {
+        super.s();
     }
 
-    public boolean damageEntity(Entity entity, int i) {
+    public boolean damageEntity(DamageSource damagesource, int i) {
+        Entity entity = damagesource.a();
+
         if (entity instanceof EntityHuman) {
             List list = this.world.b((Entity) this, this.boundingBox.b(32.0D, 32.0D, 32.0D));
 
@@ -62,17 +64,17 @@ public class EntityPigZombie extends EntityZombie {
                 if (entity1 instanceof EntityPigZombie) {
                     EntityPigZombie entitypigzombie = (EntityPigZombie) entity1;
 
-                    entitypigzombie.d(entity);
+                    entitypigzombie.e(entity);
                 }
             }
 
-            this.d(entity);
+            this.e(entity);
         }
 
-        return super.damageEntity(entity, i);
+        return super.damageEntity(damagesource, i);
     }
 
-    private void d(Entity entity) {
+    private void e(Entity entity) {
         // CraftBukkit start
         org.bukkit.entity.Entity bukkitTarget = entity == null ? null : entity.getBukkitEntity();
 
@@ -95,19 +97,19 @@ public class EntityPigZombie extends EntityZombie {
         this.soundDelay = this.random.nextInt(40);
     }
 
-    protected String g() {
+    protected String h() {
         return "mob.zombiepig.zpig";
     }
 
-    protected String h() {
+    protected String i() {
         return "mob.zombiepig.zpighurt";
     }
 
-    protected String i() {
+    protected String j() {
         return "mob.zombiepig.zpigdeath";
     }
 
-    protected int j() {
+    protected int k() {
         return Item.GRILLED_PORK.id;
     }
 }

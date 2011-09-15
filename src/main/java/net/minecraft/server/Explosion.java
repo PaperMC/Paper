@@ -130,7 +130,7 @@ public class Explosion {
                     server.getPluginManager().callEvent(event);
 
                     if (!event.isCancelled()) {
-                        entity.damageEntity(this.source, event.getDamage());
+                        entity.damageEntity(DamageSource.k, event.getDamage());
                         entity.motX += d0 * d10;
                         entity.motY += d1 * d10;
                         entity.motZ += d2 * d10;
@@ -140,7 +140,7 @@ public class Explosion {
                     server.getPluginManager().callEvent(event);
 
                     if (!event.isCancelled()) {
-                        entity.damageEntity(this.source, event.getDamage());
+                        entity.damageEntity(DamageSource.k, event.getDamage());
 
                         entity.motX += d0 * d10;
                         entity.motY += d1 * d10;
@@ -173,6 +173,7 @@ public class Explosion {
 
     public void a(boolean flag) {
         this.world.makeSound(this.posX, this.posY, this.posZ, "random.explode", 4.0F, (1.0F + (this.world.random.nextFloat() - this.world.random.nextFloat()) * 0.2F) * 0.7F);
+        this.world.a("hugeexplosion", this.posX, this.posY, this.posZ, 0.0D, 0.0D, 0.0D);
         ArrayList arraylist = new ArrayList();
 
         arraylist.addAll(this.blocks);
@@ -234,7 +235,7 @@ public class Explosion {
                 // CraftBukkit
                 Block.byId[i1].dropNaturally(this.world, j, k, l, this.world.getData(j, k, l), event.getYield());
                 this.world.setTypeId(j, k, l, 0);
-                Block.byId[i1].d(this.world, j, k, l);
+                Block.byId[i1].a_(this.world, j, k, l);
             }
         }
     }

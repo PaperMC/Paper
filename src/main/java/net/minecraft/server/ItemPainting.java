@@ -32,30 +32,34 @@ public class ItemPainting extends Item {
                 b0 = 3;
             }
 
-            EntityPainting entitypainting = new EntityPainting(world, i, j, k, b0);
+            if (!entityhuman.c(i, j, k)) {
+                return false;
+            } else {
+                EntityPainting entitypainting = new EntityPainting(world, i, j, k, b0);
 
-            if (entitypainting.h()) {
-                if (!world.isStatic) {
-                    // CraftBukkit start
-                    Player who = (entityhuman == null) ? null : (Player) entityhuman.getBukkitEntity();
+                if (entitypainting.i()) {
+                    if (!world.isStatic) {
+                        // CraftBukkit start
+                        Player who = (entityhuman == null) ? null : (Player) entityhuman.getBukkitEntity();
 
-                    org.bukkit.block.Block blockClicked = world.getWorld().getBlockAt(i, j, k);
-                    org.bukkit.block.BlockFace blockFace = CraftBlock.notchToBlockFace(l);
+                        org.bukkit.block.Block blockClicked = world.getWorld().getBlockAt(i, j, k);
+                        org.bukkit.block.BlockFace blockFace = CraftBlock.notchToBlockFace(l);
 
-                    PaintingPlaceEvent event = new PaintingPlaceEvent((org.bukkit.entity.Painting) entitypainting.getBukkitEntity(), who, blockClicked, blockFace);
-                    world.getServer().getPluginManager().callEvent(event);
+                        PaintingPlaceEvent event = new PaintingPlaceEvent((org.bukkit.entity.Painting) entitypainting.getBukkitEntity(), who, blockClicked, blockFace);
+                        world.getServer().getPluginManager().callEvent(event);
 
-                    if (event.isCancelled()) {
-                        return false;
+                        if (event.isCancelled()) {
+                            return false;
+                        }
+                        // CraftBukkit end
+                        world.addEntity(entitypainting);
                     }
-                    // CraftBukkit end
-                    world.addEntity(entitypainting);
+
+                    --itemstack.count;
                 }
 
-                --itemstack.count;
+                return true;
             }
-
-            return true;
         }
     }
 }

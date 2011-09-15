@@ -48,7 +48,7 @@ public class BlockPiston extends Block {
         }
     }
 
-    public void c(World world, int i, int j, int k) {
+    public void a(World world, int i, int j, int k) {
         if (!world.isStatic && world.getTileEntity(i, j, k) == null) {
             this.g(world, i, j, k);
         }
@@ -110,7 +110,7 @@ public class BlockPiston extends Block {
             TileEntity tileentity = world.getTileEntity(i + PistonBlockTextures.b[i1], j + PistonBlockTextures.c[i1], k + PistonBlockTextures.d[i1]);
 
             if (tileentity != null && tileentity instanceof TileEntityPiston) {
-                ((TileEntityPiston) tileentity).k();
+                ((TileEntityPiston) tileentity).e();
             }
 
             world.setRawTypeIdAndData(i, j, k, Block.PISTON_MOVING.id, i1);
@@ -130,9 +130,9 @@ public class BlockPiston extends Block {
                         TileEntityPiston tileentitypiston = (TileEntityPiston) tileentity1;
 
                         if (tileentitypiston.d() == i1 && tileentitypiston.c()) {
-                            tileentitypiston.k();
+                            tileentitypiston.e();
                             i2 = tileentitypiston.a();
-                            j2 = tileentitypiston.e();
+                            j2 = tileentitypiston.j();
                             flag = true;
                         }
                     }
@@ -290,6 +290,48 @@ public class BlockPiston extends Block {
                         continue;
                     }
                 }
+            }
+
+            return l1; // CraftBukkit
+        }
+    }
+
+    private static int H(World world, int i, int j, int k, int l) {
+        int i1 = i + PistonBlockTextures.b[l];
+        int j1 = j + PistonBlockTextures.c[l];
+        int k1 = k + PistonBlockTextures.d[l];
+        int l1 = 0;
+
+        while (true) {
+            if (l1 < 13) {
+                if (j1 > 0) {
+                    world.getClass();
+                    if (j1 < 128 - 1) {
+                        int i2 = world.getTypeId(i1, j1, k1);
+
+                        if (i2 != 0) {
+                            if (!a(i2, world, i1, j1, k1, true)) {
+                                return -1; // CraftBukkit
+                            }
+
+                            if (Block.byId[i2].e() != 1) {
+                                if (l1 == 12) {
+                                    return -1; // CraftBukkit
+                                }
+
+                                i1 += PistonBlockTextures.b[l];
+                                j1 += PistonBlockTextures.c[l];
+                                k1 += PistonBlockTextures.d[l];
+                                ++l1;
+                                continue;
+                            }
+                        }
+
+                        return l1; // CraftBukkit
+                    }
+                }
+                
+                return -1; // CraftBukkit
             }
 
             return l1; // CraftBukkit

@@ -17,10 +17,11 @@ public class ItemReed extends Item {
 
     public boolean a(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
         int clickedX = i, clickedY = j, clickedZ = k; // CraftBukkit
+        int i1 = world.getTypeId(i, j, k);
 
-        if (world.getTypeId(i, j, k) == Block.SNOW.id) {
+        if (i1 == Block.SNOW.id) {
             l = 0;
-        } else {
+        } else if (i1 != Block.VINE.id) {
             if (l == 0) {
                 --j;
             }
@@ -46,7 +47,9 @@ public class ItemReed extends Item {
             }
         }
 
-        if (itemstack.count == 0) {
+        if (!entityhuman.c(i, j, k)) {
+            return false;
+        } else if (itemstack.count == 0) {
             return false;
         } else {
             if (world.a(this.id, i, j, k, false, l)) {

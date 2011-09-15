@@ -90,12 +90,12 @@ public class BlockCactus extends Block {
             world.getServer().getPluginManager().callEvent(event);
 
             if (!event.isCancelled()) {
-                entity.damageEntity((Entity) null, event.getDamage());
+                entity.damageEntity(DamageSource.g, event.getDamage());
             }
             return;
         }
         // CraftBukkit end
 
-        entity.damageEntity((Entity) null, 1);
+        entity.damageEntity(DamageSource.g, 1);
     }
 }

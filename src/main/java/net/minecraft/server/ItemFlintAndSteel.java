@@ -43,38 +43,42 @@ public class ItemFlintAndSteel extends Item {
             ++i;
         }
 
-        int i1 = world.getTypeId(i, j, k);
+        if (!entityhuman.c(i, j, k)) {
+            return false;
+        } else {
+            int i1 = world.getTypeId(i, j, k);
 
-        if (i1 == 0) {
-            // CraftBukkit start - store the clicked block
-            org.bukkit.block.Block blockClicked = world.getWorld().getBlockAt(i, j, k);
-            Player thePlayer = (Player) entityhuman.getBukkitEntity();
+            if (i1 == 0) {
+                // CraftBukkit start - store the clicked block
+                org.bukkit.block.Block blockClicked = world.getWorld().getBlockAt(i, j, k);
+                Player thePlayer = (Player) entityhuman.getBukkitEntity();
 
-            BlockIgniteEvent eventIgnite = new BlockIgniteEvent(blockClicked, BlockIgniteEvent.IgniteCause.FLINT_AND_STEEL, thePlayer);
-            world.getServer().getPluginManager().callEvent(eventIgnite);
+                BlockIgniteEvent eventIgnite = new BlockIgniteEvent(blockClicked, BlockIgniteEvent.IgniteCause.FLINT_AND_STEEL, thePlayer);
+                world.getServer().getPluginManager().callEvent(eventIgnite);
 
-            if (eventIgnite.isCancelled()) {
-                itemstack.damage(1, entityhuman);
-                return false;
+                if (eventIgnite.isCancelled()) {
+                    itemstack.damage(1, entityhuman);
+                    return false;
+                }
+
+                CraftBlockState blockState = CraftBlockState.getBlockState(world, i, j, k);
+                // CraftBukkit end
+
+                world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "fire.ignite", 1.0F, b.nextFloat() * 0.4F + 0.8F);
+                world.setTypeId(i, j, k, Block.FIRE.id);
+
+                // CraftBukkit start
+                BlockPlaceEvent placeEvent = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ, Block.FIRE.id);
+
+                if (placeEvent.isCancelled() || !placeEvent.canBuild()) {
+                    placeEvent.getBlockPlaced().setTypeIdAndData(0, (byte) 0, false);
+                    return false;
+                }
+                // CraftBukkit end
             }
 
-            CraftBlockState blockState = CraftBlockState.getBlockState(world, i, j, k);
-            // CraftBukkit end
-
-            world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "fire.ignite", 1.0F, b.nextFloat() * 0.4F + 0.8F);
-            world.setTypeId(i, j, k, Block.FIRE.id);
-
-            // CraftBukkit start
-            BlockPlaceEvent placeEvent = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ, Block.FIRE.id);
-
-            if (placeEvent.isCancelled() || !placeEvent.canBuild()) {
-                placeEvent.getBlockPlaced().setTypeIdAndData(0, (byte) 0, false);
-                return false;
-            }
-            // CraftBukkit end
+            itemstack.damage(1, entityhuman);
+            return true;
         }
-
-        itemstack.damage(1, entityhuman);
-        return true;
     }
 }

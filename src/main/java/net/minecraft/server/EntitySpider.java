@@ -11,19 +11,19 @@ public class EntitySpider extends EntityMonster {
         super(world);
         this.texture = "/mob/spider.png";
         this.b(1.4F, 0.9F);
-        this.aE = 0.8F;
+        this.aU = 0.8F;
     }
 
-    public double m() {
+    public double n() {
         return (double) this.width * 0.75D - 0.5D;
     }
 
-    protected boolean n() {
+    protected boolean e_() {
         return false;
     }
 
     protected Entity findTarget() {
-        float f = this.c(1.0F);
+        float f = this.a_(1.0F);
 
         if (f < 0.5F) {
             double d0 = 16.0D;
@@ -34,20 +34,20 @@ public class EntitySpider extends EntityMonster {
         }
     }
 
-    protected String g() {
-        return "mob.spider";
-    }
-
     protected String h() {
         return "mob.spider";
     }
 
     protected String i() {
+        return "mob.spider";
+    }
+
+    protected String j() {
         return "mob.spiderdeath";
     }
 
     protected void a(Entity entity, float f) {
-        float f1 = this.c(1.0F);
+        float f1 = this.a_(1.0F);
 
         if (f1 > 0.5F && this.random.nextInt(100) == 0) {
             // CraftBukkit start
@@ -88,11 +88,13 @@ public class EntitySpider extends EntityMonster {
         super.a(nbttagcompound);
     }
 
-    protected int j() {
+    protected int k() {
         return Item.STRING.id;
     }
 
     public boolean p() {
         return this.positionChanged;
     }
+
+    public void q() {}
 }

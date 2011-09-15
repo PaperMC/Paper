@@ -1,8 +1,7 @@
 package net.minecraft.server;
 
 import java.util.Random;
-
-import org.bukkit.event.block.BlockSpreadEvent; // CraftBukkit
+import org.bukkit.event.block.BlockSpreadEvent;
 
 public class BlockMushroom extends BlockFlower {
 
@@ -16,29 +15,54 @@ public class BlockMushroom extends BlockFlower {
 
     public void a(World world, int i, int j, int k, Random random) {
         if (random.nextInt(100) == 0) {
-            int l = i + random.nextInt(3) - 1;
-            int i1 = j + random.nextInt(2) - random.nextInt(2);
-            int j1 = k + random.nextInt(3) - 1;
+            byte b0 = 4;
+            int l = 5;
 
-            if (world.isEmpty(l, i1, j1) && this.f(world, l, i1, j1)) {
-                int k1 = i + (random.nextInt(3) - 1);
+            int i1;
+            int j1;
+            int k1;
 
-                k1 = k + (random.nextInt(3) - 1);
-                if (world.isEmpty(l, i1, j1) && this.f(world, l, i1, j1)) {
-                    // CraftBukkit start
-                    org.bukkit.World bworld = world.getWorld();
-                    org.bukkit.block.BlockState blockState = bworld.getBlockAt(l, i1, j1).getState();
-                    blockState.setTypeId(this.id);
-
-                    BlockSpreadEvent event = new BlockSpreadEvent(blockState.getBlock(), bworld.getBlockAt(i, j, k), blockState);
-                    world.getServer().getPluginManager().callEvent(event);
-
-                    if (!event.isCancelled()) {
-                        blockState.update(true);
+            for (i1 = i - b0; i1 <= i + b0; ++i1) {
+                for (j1 = k - b0; j1 <= k + b0; ++j1) {
+                    for (k1 = j - 1; k1 <= j + 1; ++k1) {
+                        if (world.getTypeId(i1, k1, j1) == this.id) {
+                            --l;
+                            if (l <= 0) {
+                                return;
+                            }
+                        }
                     }
-                    // CraftBukkit end
                 }
             }
+
+            i1 = i + random.nextInt(3) - 1;
+            j1 = j + random.nextInt(2) - random.nextInt(2);
+            k1 = k + random.nextInt(3) - 1;
+
+            for (int l1 = 0; l1 < 4; ++l1) {
+                if (world.isEmpty(i1, j1, k1) && this.f(world, i1, j1, k1)) {
+                    i = i1;
+                    j = j1;
+                    k = k1;
+                }
+
+                i1 = i + random.nextInt(3) - 1;
+                j1 = j + random.nextInt(2) - random.nextInt(2);
+                k1 = k + random.nextInt(3) - 1;
+            }
+
+            // CraftBukkit start
+            org.bukkit.World bworld = world.getWorld();
+            org.bukkit.block.BlockState blockState = bworld.getBlockAt(i1, j1, k1).getState();
+            blockState.setTypeId(this.id);
+
+            BlockSpreadEvent event = new BlockSpreadEvent(blockState.getBlock(), bworld.getBlockAt(i, j, k), blockState);
+            world.getServer().getPluginManager().callEvent(event);
+
+            if (!event.isCancelled()) {
+                blockState.update(true);
+            }
+            // CraftBukkit end
         }
     }
 
@@ -47,6 +71,39 @@ public class BlockMushroom extends BlockFlower {
     }
 
     public boolean f(World world, int i, int j, int k) {
-        return j >= 0 && j < 128 ? world.k(i, j, k) < 13 && this.c(world.getTypeId(i, j - 1, k)) : false;
+        if (j >= 0) {
+            world.getClass();
+            if (j < 128) {
+                return world.k(i, j, k) < 13 && this.c(world.getTypeId(i, j - 1, k));
+            }
+        }
+
+        return false;
+    }
+
+    public boolean b(World world, int i, int j, int k, Random random) {
+        int l = world.getTypeId(i, j - 1, k);
+
+        if (l != Block.DIRT.id && l != Block.GRASS.id) {
+            return false;
+        } else {
+            int i1 = world.getData(i, j, k);
+
+            world.setRawTypeId(i, j, k, 0);
+            WorldGenHugeMushroom worldgenhugemushroom = null;
+
+            if (this.id == Block.BROWN_MUSHROOM.id) {
+                worldgenhugemushroom = new WorldGenHugeMushroom(0);
+            } else if (this.id == Block.RED_MUSHROOM.id) {
+                worldgenhugemushroom = new WorldGenHugeMushroom(1);
+            }
+
+            if (worldgenhugemushroom != null && worldgenhugemushroom.a(world, random, i, j, k)) {
+                return true;
+            } else {
+                world.setRawTypeIdAndData(i, j, k, this.id, i1);
+                return false;
+            }
+        }
     }
 }

@@ -21,7 +21,7 @@ public class TileEntityMobSpawner extends TileEntity {
         return this.world.a((double) this.x + 0.5D, (double) this.y + 0.5D, (double) this.z + 0.5D, 16.0D) != null;
     }
 
-    public void g_() {
+    public void h_() {
         this.c = this.b;
         if (this.a()) {
             double d0 = (double) ((float) this.x + this.world.random.nextFloat());
@@ -86,14 +86,14 @@ public class TileEntityMobSpawner extends TileEntity {
                                 this.world.a("flame", d0, d1, d2, 0.0D, 0.0D, 0.0D);
                             }
 
-                            entityliving.S();
+                            entityliving.ab();
                             this.c();
                         }
                     }
                 }
             }
 
-            super.g_();
+            super.h_();
         }
     }
 

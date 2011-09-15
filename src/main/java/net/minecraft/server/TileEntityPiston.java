@@ -9,11 +9,11 @@ public class TileEntityPiston extends TileEntity {
     private int a;
     private int b;
     private int c;
-    private boolean i;
-    private boolean j;
-    private float k;
-    private float l;
-    private static List m = new ArrayList();
+    private boolean d;
+    private boolean e;
+    private float f;
+    private float g;
+    private static List h = new ArrayList();
 
     public TileEntityPiston() {}
 
@@ -21,20 +21,20 @@ public class TileEntityPiston extends TileEntity {
         this.a = i;
         this.b = j;
         this.c = k;
-        this.i = flag;
-        this.j = flag1;
+        this.d = flag;
+        this.e = flag1;
     }
 
     public int a() {
         return this.a;
     }
 
-    public int e() {
+    public int j() {
         return this.b;
     }
 
     public boolean c() {
-        return this.i;
+        return this.d;
     }
 
     public int d() {
@@ -46,11 +46,11 @@ public class TileEntityPiston extends TileEntity {
             f = 1.0F;
         }
 
-        return this.l + (this.k - this.l) * f;
+        return this.g + (this.f - this.g) * f;
     }
 
     private void a(float f, float f1) {
-        if (!this.i) {
+        if (!this.d) {
             --f;
         } else {
             f = 1.0F - f;
@@ -62,8 +62,8 @@ public class TileEntityPiston extends TileEntity {
             List list = this.world.b((Entity) null, axisalignedbb);
 
             if (!list.isEmpty()) {
-                m.addAll(list);
-                Iterator iterator = m.iterator();
+                h.addAll(list);
+                Iterator iterator = h.iterator();
 
                 while (iterator.hasNext()) {
                     Entity entity = (Entity) iterator.next();
@@ -71,41 +71,41 @@ public class TileEntityPiston extends TileEntity {
                     entity.move((double) (f1 * (float) PistonBlockTextures.b[this.c]), (double) (f1 * (float) PistonBlockTextures.c[this.c]), (double) (f1 * (float) PistonBlockTextures.d[this.c]));
                 }
 
-                m.clear();
+                h.clear();
             }
         }
     }
 
-    public void k() {
-        if (this.l < 1.0F) {
-            this.l = this.k = 1.0F;
-            this.world.o(this.x, this.y, this.z);
-            this.h();
+    public void e() {
+        if (this.g < 1.0F) {
+            this.g = this.f = 1.0F;
+            this.world.n(this.x, this.y, this.z);
+            this.i();
             if (this.world.getTypeId(this.x, this.y, this.z) == Block.PISTON_MOVING.id) {
                 this.world.setTypeIdAndData(this.x, this.y, this.z, this.a, this.b);
             }
         }
     }
 
-    public void g_() {
-        // CraftBukkit
-        if (this.world == null) return;
-        this.l = this.k;
-        if (this.l >= 1.0F) {
+    public void h_() {
+        if (this.world == null) return; // CraftBukkit
+
+        this.g = this.f;
+        if (this.g >= 1.0F) {
             this.a(1.0F, 0.25F);
-            this.world.o(this.x, this.y, this.z);
-            this.h();
+            this.world.n(this.x, this.y, this.z);
+            this.i();
             if (this.world.getTypeId(this.x, this.y, this.z) == Block.PISTON_MOVING.id) {
                 this.world.setTypeIdAndData(this.x, this.y, this.z, this.a, this.b);
             }
         } else {
-            this.k += 0.5F;
-            if (this.k >= 1.0F) {
-                this.k = 1.0F;
+            this.f += 0.5F;
+            if (this.f >= 1.0F) {
+                this.f = 1.0F;
             }
 
-            if (this.i) {
-                this.a(this.k, this.k - this.l + 0.0625F);
+            if (this.d) {
+                this.a(this.f, this.f - this.g + 0.0625F);
             }
         }
     }
@@ -115,8 +115,8 @@ public class TileEntityPiston extends TileEntity {
         this.a = nbttagcompound.e("blockId");
         this.b = nbttagcompound.e("blockData");
         this.c = nbttagcompound.e("facing");
-        this.l = this.k = nbttagcompound.g("progress");
-        this.i = nbttagcompound.m("extending");
+        this.g = this.f = nbttagcompound.g("progress");
+        this.d = nbttagcompound.m("extending");
     }
 
     public void b(NBTTagCompound nbttagcompound) {
@@ -124,7 +124,7 @@ public class TileEntityPiston extends TileEntity {
         nbttagcompound.a("blockId", this.a);
         nbttagcompound.a("blockData", this.b);
         nbttagcompound.a("facing", this.c);
-        nbttagcompound.a("progress", this.l);
-        nbttagcompound.a("extending", this.i);
+        nbttagcompound.a("progress", this.g);
+        nbttagcompound.a("extending", this.d);
     }
 }

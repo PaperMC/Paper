@@ -20,11 +20,11 @@ public class WorldServer extends World implements BlockChangeDelegate {
     public boolean weirdIsOpCache = false;
     public boolean canSave;
     public final MinecraftServer server; // CraftBukkit - private -> public final
-    private EntityList G = new EntityList();
+    private EntityList Q = new EntityList();
 
     // CraftBukkit start - change signature
-    public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, String s, int i, long j, org.bukkit.World.Environment env, ChunkGenerator gen) {
-        super(idatamanager, s, j, WorldProvider.byDimension(env.getId()), gen, env);
+    public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, String s, int i, WorldSettings worldsettings, org.bukkit.World.Environment env, ChunkGenerator gen) {
+        super(idatamanager, s, worldsettings, WorldProvider.byDimension(env.getId()), gen, env);
         this.server = minecraftserver;
 
         this.dimension = i;
@@ -54,7 +54,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
     }
 
     protected IChunkProvider b() {
-        IChunkLoader ichunkloader = this.w.a(this.worldProvider);
+        IChunkLoader ichunkloader = this.B.a(this.worldProvider);
 
         // CraftBukkit start
         InternalChunkGenerator gen;
@@ -78,8 +78,8 @@ public class WorldServer extends World implements BlockChangeDelegate {
     public List getTileEntities(int i, int j, int k, int l, int i1, int j1) {
         ArrayList arraylist = new ArrayList();
 
-        for (int k1 = 0; k1 < this.c.size(); ++k1) {
-            TileEntity tileentity = (TileEntity) this.c.get(k1);
+        for (int k1 = 0; k1 < this.h.size(); ++k1) {
+            TileEntity tileentity = (TileEntity) this.h.get(k1);
 
             if (tileentity.x >= i && tileentity.y >= j && tileentity.z >= k && tileentity.x < l && tileentity.y < i1 && tileentity.z < j1) {
                 arraylist.add(tileentity);
@@ -90,8 +90,8 @@ public class WorldServer extends World implements BlockChangeDelegate {
     }
 
     public boolean a(EntityHuman entityhuman, int i, int j, int k) {
-        int l = (int) MathHelper.abs((float) (i - this.worldData.c()));
-        int i1 = (int) MathHelper.abs((float) (k - this.worldData.e()));
+        int l = MathHelper.a(i - this.worldData.c());
+        int i1 = MathHelper.a(k - this.worldData.e());
 
         if (l > i1) {
             i1 = l;
@@ -103,16 +103,16 @@ public class WorldServer extends World implements BlockChangeDelegate {
 
     protected void c(Entity entity) {
         super.c(entity);
-        this.G.a(entity.id, entity);
+        this.Q.a(entity.id, entity);
     }
 
     protected void d(Entity entity) {
         super.d(entity);
-        this.G.d(entity.id);
+        this.Q.d(entity.id);
     }
 
     public Entity getEntity(int i) {
-        return (Entity) this.G.a(i);
+        return (Entity) this.Q.a(i);
     }
 
     public boolean strikeLightning(Entity entity) {
@@ -165,18 +165,18 @@ public class WorldServer extends World implements BlockChangeDelegate {
     }
 
     public void saveLevel() {
-        this.w.e();
+        this.B.e();
     }
 
-    protected void i() {
-        boolean flag = this.v();
+    protected void h() {
+        boolean flag = this.u();
 
-        super.i();
-        if (flag != this.v()) {
+        super.h();
+        if (flag != this.u()) {
             // CraftBukkit start - only sending weather packets to those affected
             for (int i = 0; i < this.players.size(); ++i) {
                 if (((EntityPlayer) this.players.get(i)).world == this) {
-                    ((EntityPlayer) this.players.get(i)).netServerHandler.sendPacket(new Packet70Bed(flag ? 2 : 1));
+                    ((EntityPlayer) this.players.get(i)).netServerHandler.sendPacket(new Packet70Bed(flag ? 2 : 1, 0));
                 }
             }
             // CraftBukkit end

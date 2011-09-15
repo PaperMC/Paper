@@ -32,12 +32,12 @@ public class EntityFish extends Entity {
     public EntityFish(World world) {
         super(world);
         this.b(0.25F, 0.25F);
-        this.bK = true;
+        this.bZ = true;
     }
 
     public EntityFish(World world, EntityHuman entityhuman) {
         super(world);
-        this.bK = true;
+        this.bZ = true;
         this.owner = entityhuman;
         this.owner.hookedFish = this;
         this.b(0.25F, 0.25F);
@@ -79,8 +79,8 @@ public class EntityFish extends Entity {
         this.i = 0;
     }
 
-    public void m_() {
-        super.m_();
+    public void s_() {
+        super.s_();
         if (this.l > 0) {
             double d0 = this.locX + (this.m - this.locX) / (double) this.l;
             double d1 = this.locY + (this.n - this.locY) / (double) this.l;
@@ -103,9 +103,9 @@ public class EntityFish extends Entity {
             this.c(this.yaw, this.pitch);
         } else {
             if (!this.world.isStatic) {
-                ItemStack itemstack = this.owner.G();
+                ItemStack itemstack = this.owner.K();
 
-                if (this.owner.dead || !this.owner.T() || itemstack == null || itemstack.getItem() != Item.FISHING_ROD || this.g(this.owner) > 1024.0D) {
+                if (this.owner.dead || !this.owner.ac() || itemstack == null || itemstack.getItem() != Item.FISHING_ROD || this.h(this.owner) > 1024.0D) {
                     this.die();
                     this.owner.hookedFish = null;
                     return;
@@ -168,13 +168,13 @@ public class EntityFish extends Entity {
             for (int j = 0; j < list.size(); ++j) {
                 Entity entity1 = (Entity) list.get(j);
 
-                if (entity1.l_() && (entity1 != this.owner || this.j >= 5)) {
+                if (entity1.r_() && (entity1 != this.owner || this.j >= 5)) {
                     float f = 0.3F;
                     AxisAlignedBB axisalignedbb = entity1.boundingBox.b((double) f, (double) f, (double) f);
                     MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
 
                     if (movingobjectposition1 != null) {
-                        d5 = vec3d.a(movingobjectposition1.f);
+                        d5 = vec3d.b(movingobjectposition1.f);
                         if (d5 < d4 || d4 == 0.0D) {
                             entity = entity1;
                             d4 = d5;
@@ -204,10 +204,10 @@ public class EntityFish extends Entity {
                             stick = !projectile.doesBounce();
                         } else {
                             // this function returns if the fish should stick in or not, i.e. !bounce
-                            stick = movingobjectposition.entity.damageEntity(this, event.getDamage());
+                            stick = movingobjectposition.entity.damageEntity(DamageSource.a((Entity) this, this), event.getDamage());
                         }
                     } else {
-                        stick = movingobjectposition.entity.damageEntity(this.owner, 0);
+                        stick = movingobjectposition.entity.damageEntity(DamageSource.a((Entity) this, this.owner), 0);
                     }
                     if (!stick) {
                         // CraftBukkit end
@@ -333,7 +333,7 @@ public class EntityFish extends Entity {
         this.h = nbttagcompound.c("inGround") == 1;
     }
 
-    public int h() {
+    public int i() {
         byte b0 = 0;
 
         if (this.c != null) {

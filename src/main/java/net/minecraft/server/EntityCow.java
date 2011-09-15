@@ -23,27 +23,47 @@ public class EntityCow extends EntityAnimal {
         super.a(nbttagcompound);
     }
 
-    protected String g() {
-        return "mob.cow";
-    }
-
     protected String h() {
-        return "mob.cowhurt";
+        return "mob.cow";
     }
 
     protected String i() {
         return "mob.cowhurt";
     }
 
-    protected float k() {
+    protected String j() {
+        return "mob.cowhurt";
+    }
+
+    protected float l() {
         return 0.4F;
     }
 
-    protected int j() {
+    protected int k() {
         return Item.LEATHER.id;
     }
 
-    public boolean a(EntityHuman entityhuman) {
+    protected void a(boolean flag) {
+        int i = this.random.nextInt(3);
+
+        int j;
+
+        for (j = 0; j < i; ++j) {
+            this.b(Item.LEATHER.id, 1);
+        }
+
+        i = this.random.nextInt(3) + 1;
+
+        for (j = 0; j < i; ++j) {
+            if (this.fireTicks > 0) {
+                this.b(Item.COOKED_BEEF.id, 1);
+            } else {
+                this.b(Item.RAW_BEEF.id, 1);
+            }
+        }
+    }
+
+    public boolean b(EntityHuman entityhuman) {
         ItemStack itemstack = entityhuman.inventory.getItemInHand();
 
         if (itemstack != null && itemstack.id == Item.BUCKET.id) {

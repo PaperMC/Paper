@@ -88,7 +88,7 @@ public class NetworkManager {
         }
     }
 
-    private boolean f() {
+    private boolean g() {
         boolean flag = false;
 
         try {
@@ -142,7 +142,7 @@ public class NetworkManager {
         this.r.interrupt();
     }
 
-    private boolean g() {
+    private boolean h() {
         boolean flag = false;
 
         try {
@@ -218,7 +218,7 @@ public class NetworkManager {
             this.w = 0;
         }
 
-        int i = 100;
+        int i = 1000;
 
         while (!this.m.isEmpty() && i-- >= 0) {
             Packet packet = (Packet) this.m.remove(0);
@@ -247,6 +247,10 @@ public class NetworkManager {
         return this.lowPriorityQueue.size();
     }
 
+    public Socket f() {
+        return this.socket;
+    }
+
     static boolean a(NetworkManager networkmanager) {
         return networkmanager.l;
     }
@@ -256,11 +260,11 @@ public class NetworkManager {
     }
 
     static boolean c(NetworkManager networkmanager) {
-        return networkmanager.g();
+        return networkmanager.h();
     }
 
     static boolean d(NetworkManager networkmanager) {
-        return networkmanager.f();
+        return networkmanager.g();
     }
 
     static DataOutputStream e(NetworkManager networkmanager) {

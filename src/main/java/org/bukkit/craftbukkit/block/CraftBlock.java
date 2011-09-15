@@ -222,32 +222,26 @@ public class CraftBlock implements Block {
     }
 
     public static final Biome biomeBaseToBiome(BiomeBase base) {
-        if (base == BiomeBase.RAINFOREST) {
-            return Biome.RAINFOREST;
-        } else if (base == BiomeBase.SWAMPLAND) {
+        if (base == BiomeBase.SWAMPLAND) {
             return Biome.SWAMPLAND;
-        } else if (base == BiomeBase.SEASONAL_FOREST) {
-            return Biome.SEASONAL_FOREST;
         } else if (base == BiomeBase.FOREST) {
             return Biome.FOREST;
-        } else if (base == BiomeBase.SAVANNA) {
-            return Biome.SAVANNA;
-        } else if (base == BiomeBase.SHRUBLAND) {
-            return Biome.SHRUBLAND;
         } else if (base == BiomeBase.TAIGA) {
             return Biome.TAIGA;
         } else if (base == BiomeBase.DESERT) {
             return Biome.DESERT;
         } else if (base == BiomeBase.PLAINS) {
             return Biome.PLAINS;
-        } else if (base == BiomeBase.ICE_DESERT) {
-            return Biome.ICE_DESERT;
-        } else if (base == BiomeBase.TUNDRA) {
-            return Biome.TUNDRA;
         } else if (base == BiomeBase.HELL) {
             return Biome.HELL;
         } else if (base == BiomeBase.SKY) {
             return Biome.SKY;
+        } else if (base == BiomeBase.RIVER) {
+            return Biome.RIVER;
+        } else if (base == BiomeBase.EXTREME_HILLS) {
+            return Biome.EXTREME_HILLS;
+        } else if (base == BiomeBase.OCEAN) {
+            return Biome.OCEAN;
         }
 
         return null;
@@ -308,7 +302,7 @@ public class CraftBlock implements Block {
     }
 
     public PistonMoveReaction getPistonMoveReaction() {
-        return PistonMoveReaction.getById(net.minecraft.server.Block.byId[this.getTypeId()].material.j());
+        return PistonMoveReaction.getById(net.minecraft.server.Block.byId[this.getTypeId()].material.l());
 
     }
 }

@@ -292,8 +292,8 @@ public class BlockFlowing extends BlockFluids {
         return material == this.material ? false : (material == Material.LAVA ? false : !this.k(world, i, j, k));
     }
 
-    public void c(World world, int i, int j, int k) {
-        super.c(world, i, j, k);
+    public void a(World world, int i, int j, int k) {
+        super.a(world, i, j, k);
         if (world.getTypeId(i, j, k) == this.id) {
             world.c(i, j, k, this.id, this.c());
         }

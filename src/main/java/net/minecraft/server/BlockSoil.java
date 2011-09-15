@@ -74,7 +74,9 @@ public class BlockSoil extends Block {
 
         for (int l = i - b0; l <= i + b0; ++l) {
             for (int i1 = k - b0; i1 <= k + b0; ++i1) {
-                if (world.getTypeId(l, j + 1, i1) == Block.CROPS.id) {
+                int j1 = world.getTypeId(l, j + 1, i1);
+
+                if (j1 == Block.CROPS.id || j1 == Block.MELON_STEM.id || j1 == Block.PUMPKIN_STEM.id) {
                     return true;
                 }
             }

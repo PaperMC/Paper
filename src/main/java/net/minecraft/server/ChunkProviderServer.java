@@ -2,10 +2,8 @@ package net.minecraft.server;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 // CraftBukkit start
@@ -91,21 +89,7 @@ public class ChunkProviderServer implements IChunkProvider {
             }
             // CraftBukkit end
 
-            if (!chunk.done && this.isChunkLoaded(i + 1, j + 1) && this.isChunkLoaded(i, j + 1) && this.isChunkLoaded(i + 1, j)) {
-                this.getChunkAt(this, i, j);
-            }
-
-            if (this.isChunkLoaded(i - 1, j) && !this.getOrCreateChunk(i - 1, j).done && this.isChunkLoaded(i - 1, j + 1) && this.isChunkLoaded(i, j + 1) && this.isChunkLoaded(i - 1, j)) {
-                this.getChunkAt(this, i - 1, j);
-            }
-
-            if (this.isChunkLoaded(i, j - 1) && !this.getOrCreateChunk(i, j - 1).done && this.isChunkLoaded(i + 1, j - 1) && this.isChunkLoaded(i, j - 1) && this.isChunkLoaded(i + 1, j)) {
-                this.getChunkAt(this, i, j - 1);
-            }
-
-            if (this.isChunkLoaded(i - 1, j - 1) && !this.getOrCreateChunk(i - 1, j - 1).done && this.isChunkLoaded(i - 1, j - 1) && this.isChunkLoaded(i, j - 1) && this.isChunkLoaded(i - 1, j)) {
-                this.getChunkAt(this, i - 1, j - 1);
-            }
+            chunk.a(this, this, i, j);
         }
 
         return chunk;
@@ -136,7 +120,7 @@ public class ChunkProviderServer implements IChunkProvider {
                 Chunk chunk = this.e.a(this.world, i, j);
 
                 if (chunk != null) {
-                    chunk.r = this.world.getTime();
+                    chunk.t = this.world.getTime();
                 }
 
                 return chunk;
@@ -160,7 +144,7 @@ public class ChunkProviderServer implements IChunkProvider {
     public void saveChunk(Chunk chunk) { // CraftBukkit - private -> public
         if (this.e != null) {
             try {
-                chunk.r = this.world.getTime();
+                chunk.t = this.world.getTime();
                 this.e.a(this.world, chunk);
             } catch (Exception ioexception) { // CraftBukkit - IOException -> Exception
                 ioexception.printStackTrace();
@@ -205,13 +189,13 @@ public class ChunkProviderServer implements IChunkProvider {
         for (int j = 0; j < this.chunkList.size(); ++j) {
             Chunk chunk = (Chunk) this.chunkList.get(j);
 
-            if (flag && !chunk.p) {
+            if (flag && !chunk.r) {
                 this.saveChunkNOP(chunk);
             }
 
             if (chunk.a(flag)) {
                 this.saveChunk(chunk);
-                chunk.o = false;
+                chunk.q = false;
                 ++i;
                 if (i == 24 && !flag) {
                     return false;

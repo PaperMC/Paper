@@ -3,16 +3,16 @@ package net.minecraft.server;
 public class Slot {
 
     public final int index; // CraftBukkit - private -> public
-    public final IInventory inventory; // CraftBukkit - private -> public
-    public int a;
+    public final IInventory inventory;
     public int b;
     public int c;
+    public int d;
 
     public Slot(IInventory iinventory, int i, int j, int k) {
         this.inventory = iinventory;
         this.index = i;
-        this.b = j;
-        this.c = k;
+        this.c = j;
+        this.d = k;
     }
 
     public void a(ItemStack itemstack) {

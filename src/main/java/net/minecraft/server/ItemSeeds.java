@@ -18,7 +18,7 @@ public class ItemSeeds extends Item {
     public boolean a(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
         if (l != 1) {
             return false;
-        } else {
+        } else if (entityhuman.c(i, j, k) && entityhuman.c(i, j + 1, k)) {
             int i1 = world.getTypeId(i, j, k);
 
             if (i1 == Block.SOIL.id && world.isEmpty(i, j + 1, k)) {
@@ -40,6 +40,8 @@ public class ItemSeeds extends Item {
             } else {
                 return false;
             }
+        } else {
+            return false;
         }
     }
 }

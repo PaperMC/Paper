@@ -38,9 +38,15 @@ public final class ItemStack {
         this.damage = k;
     }
 
-    public ItemStack(NBTTagCompound nbttagcompound) {
+    public static ItemStack a(NBTTagCompound nbttagcompound) {
+        ItemStack itemstack = new ItemStack();
+
+        itemstack.c(nbttagcompound);
+        return itemstack.getItem() != null ? itemstack : null;
+    }
+
+    private ItemStack() {
         this.count = 0;
-        this.b(nbttagcompound);
     }
 
     public ItemStack a(int i) {
@@ -70,14 +76,18 @@ public final class ItemStack {
         return this.getItem().a(this, world, entityhuman);
     }
 
-    public NBTTagCompound a(NBTTagCompound nbttagcompound) {
+    public ItemStack b(World world, EntityHuman entityhuman) {
+        return this.getItem().b(this, world, entityhuman);
+    }
+
+    public NBTTagCompound b(NBTTagCompound nbttagcompound) {
         nbttagcompound.a("id", (short) this.id);
         nbttagcompound.a("Count", (byte) this.count);
         nbttagcompound.a("Damage", (short) this.damage);
         return nbttagcompound;
     }
 
-    public void b(NBTTagCompound nbttagcompound) {
+    public void c(NBTTagCompound nbttagcompound) {
         this.id = nbttagcompound.d("id");
         this.count = nbttagcompound.c("Count");
         this.damage = nbttagcompound.d("Damage");
@@ -183,12 +193,16 @@ public final class ItemStack {
         return this.id == itemstack.id && this.damage == itemstack.damage;
     }
 
+    public String k() {
+        return Item.byId[this.id].a(this);
+    }
+
     public static ItemStack b(ItemStack itemstack) {
         return itemstack == null ? null : itemstack.cloneItemStack();
     }
 
     public String toString() {
-        return this.count + "x" + Item.byId[this.id].a() + "@" + this.damage;
+        return this.count + "x" + Item.byId[this.id].b() + "@" + this.damage;
     }
 
     public void a(World world, Entity entity, int i, boolean flag) {
@@ -199,12 +213,24 @@ public final class ItemStack {
         Item.byId[this.id].a(this, world, entity, i, flag);
     }
 
-    public void b(World world, EntityHuman entityhuman) {
+    public void c(World world, EntityHuman entityhuman) {
         entityhuman.a(StatisticList.D[this.id], this.count);
-        Item.byId[this.id].c(this, world, entityhuman);
+        Item.byId[this.id].d(this, world, entityhuman);
     }
 
     public boolean c(ItemStack itemstack) {
         return this.id == itemstack.id && this.count == itemstack.count && this.damage == itemstack.damage;
+    }
+
+    public int l() {
+        return this.getItem().c(this);
+    }
+
+    public EnumAnimation m() {
+        return this.getItem().b(this);
+    }
+
+    public void a(World world, EntityHuman entityhuman, int i) {
+        this.getItem().a(this, world, entityhuman, i);
     }
 }

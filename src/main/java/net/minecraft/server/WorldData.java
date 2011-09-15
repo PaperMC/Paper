@@ -19,9 +19,18 @@ public class WorldData {
     private int m;
     private boolean n;
     private int o;
+    private int p;
+    private boolean q;
 
     public WorldData(NBTTagCompound nbttagcompound) {
         this.a = nbttagcompound.getLong("RandomSeed");
+        this.p = nbttagcompound.e("GameType");
+        if (nbttagcompound.hasKey("MapFeatures")) {
+            this.q = nbttagcompound.m("MapFeatures");
+        } else {
+            this.q = true;
+        }
+
         this.b = nbttagcompound.e("SpawnX");
         this.c = nbttagcompound.e("SpawnY");
         this.d = nbttagcompound.e("SpawnZ");
@@ -40,13 +49,17 @@ public class WorldData {
         }
     }
 
-    public WorldData(long i, String s) {
-        this.a = i;
+    public WorldData(WorldSettings worldsettings, String s) {
+        this.a = worldsettings.a();
+        this.p = worldsettings.b();
+        this.q = worldsettings.c();
         this.name = s;
     }
 
     public WorldData(WorldData worlddata) {
         this.a = worlddata.a;
+        this.p = worlddata.p;
+        this.q = worlddata.q;
         this.b = worlddata.b;
         this.c = worlddata.c;
         this.d = worlddata.d;
@@ -90,6 +103,8 @@ public class WorldData {
 
     private void a(NBTTagCompound nbttagcompound, NBTTagCompound nbttagcompound1) {
         nbttagcompound.setLong("RandomSeed", this.a);
+        nbttagcompound.a("GameType", this.p);
+        nbttagcompound.a("MapFeatures", this.q);
         nbttagcompound.a("SpawnX", this.b);
         nbttagcompound.a("SpawnY", this.c);
         nbttagcompound.a("SpawnZ", this.d);
@@ -191,5 +206,17 @@ public class WorldData {
 
     public void setWeatherDuration(int i) {
         this.m = i;
+    }
+
+    public int n() {
+        return this.p;
+    }
+
+    public boolean o() {
+        return this.q;
+    }
+
+    public void d(int i) {
+        this.p = i;
     }
 }

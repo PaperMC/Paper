@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.Iterator;
+import net.minecraft.server.DamageSource;
+import org.bukkit.entity.HumanEntity;
 
 public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public CraftLivingEntity(final CraftServer server, final EntityLiving entity) {
@@ -39,7 +41,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         }
 
         if (entity instanceof EntityPlayer && health == 0) {
-            ((EntityPlayer) entity).die((Entity) null);
+            ((EntityPlayer) entity).die(DamageSource.j);
         }
 
         getHandle().health = health;
@@ -125,7 +127,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     public Arrow shootArrow() {
         net.minecraft.server.World world = ((CraftWorld) getWorld()).getHandle();
-        EntityArrow arrow = new EntityArrow(world, getHandle());
+        EntityArrow arrow = new EntityArrow(world, getHandle(), 1);
 
         world.addEntity(arrow);
         return (Arrow) arrow.getBukkitEntity();
@@ -174,11 +176,19 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public void damage(int amount) {
-        entity.damageEntity((Entity) null, amount);
+        entity.damageEntity(DamageSource.j, amount);
     }
 
     public void damage(int amount, org.bukkit.entity.Entity source) {
-        entity.damageEntity(((CraftEntity) source).getHandle(), amount);
+        DamageSource reason = DamageSource.a.j;
+
+        if (source instanceof HumanEntity) {
+            reason = DamageSource.b(((CraftHumanEntity)source).getHandle());
+        } else if (source instanceof LivingEntity) {
+            reason = DamageSource.a(((CraftLivingEntity)source).getHandle());
+        }
+
+        entity.damageEntity(reason, amount);
     }
 
     public Location getEyeLocation() {

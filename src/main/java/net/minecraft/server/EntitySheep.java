@@ -17,11 +17,7 @@ public class EntitySheep extends EntityAnimal {
         this.datawatcher.a(16, new Byte((byte) 0));
     }
 
-    public boolean damageEntity(Entity entity, int i) {
-        return super.damageEntity(entity, i);
-    }
-
-    protected void q() {
+    protected void a(boolean flag) {
         // CraftBukkit start - whole method
         java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
 
@@ -41,11 +37,11 @@ public class EntitySheep extends EntityAnimal {
         // CraftBukkit end
     }
 
-    protected int j() {
+    protected int k() {
         return Block.WOOL.id;
     }
 
-    public boolean a(EntityHuman entityhuman) {
+    public boolean b(EntityHuman entityhuman) {
         ItemStack itemstack = entityhuman.inventory.getItemInHand();
 
         if (itemstack != null && itemstack.id == Item.SHEARS.id && !this.isSheared()) {
@@ -80,15 +76,15 @@ public class EntitySheep extends EntityAnimal {
         this.setColor(nbttagcompound.c("Color"));
     }
 
-    protected String g() {
-        return "mob.sheep";
-    }
-
     protected String h() {
         return "mob.sheep";
     }
 
     protected String i() {
+        return "mob.sheep";
+    }
+
+    protected String j() {
         return "mob.sheep";
     }
 

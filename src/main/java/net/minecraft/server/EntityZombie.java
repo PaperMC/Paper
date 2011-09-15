@@ -7,13 +7,13 @@ public class EntityZombie extends EntityMonster {
     public EntityZombie(World world) {
         super(world);
         this.texture = "/mob/zombie.png";
-        this.aE = 0.5F;
+        this.aU = 0.5F;
         this.damage = 5;
     }
 
-    public void v() {
-        if (this.world.d()) {
-            float f = this.c(1.0F);
+    public void s() {
+        if (this.world.d() && !this.world.isStatic) {
+            float f = this.a_(1.0F);
 
             if (f > 0.5F && this.world.isChunkLoaded(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ)) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
                 // CraftBukkit start
@@ -27,22 +27,22 @@ public class EntityZombie extends EntityMonster {
             }
         }
 
-        super.v();
-    }
-
-    protected String g() {
-        return "mob.zombie";
+        super.s();
     }
 
     protected String h() {
-        return "mob.zombiehurt";
+        return "mob.zombie";
     }
 
     protected String i() {
+        return "mob.zombiehurt";
+    }
+
+    protected String j() {
         return "mob.zombiedeath";
     }
 
-    protected int j() {
-        return Item.FEATHER.id;
+    protected int k() {
+        return Item.ROTTEN_FLESH.id;
     }
 }

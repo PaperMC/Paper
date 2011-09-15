@@ -4,7 +4,7 @@ public class TileEntitySign extends TileEntity {
 
     public String[] lines = new String[] { "", "", "", ""};
     public int b = -1;
-    private boolean isEditable = true;
+    public boolean isEditable = true; // CraftBukkit - priv to public
 
     public TileEntitySign() {}
 
@@ -28,7 +28,7 @@ public class TileEntitySign extends TileEntity {
         }
     }
 
-    public Packet f() {
+    public Packet l() {
         String[] astring = new String[4];
 
         for (int i = 0; i < 4; ++i) {
@@ -46,9 +46,5 @@ public class TileEntitySign extends TileEntity {
 
     public boolean a() {
         return this.isEditable;
-    }
-
-    public void a(boolean flag) {
-        this.isEditable = flag;
     }
 }

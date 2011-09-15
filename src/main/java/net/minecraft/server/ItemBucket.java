@@ -49,6 +49,10 @@ public class ItemBucket extends Item {
                 }
 
                 if (this.a == 0) {
+                    if (!entityhuman.c(i, j, k)) {
+                        return itemstack;
+                    }
+
                     if (world.getMaterial(i, j, k) == Material.WATER && world.getData(i, j, k) == 0) {
                         // CraftBukkit start
                         PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, i, j, k, -1, itemstack, Item.WATER_BUCKET);
@@ -121,6 +125,10 @@ public class ItemBucket extends Item {
                         ++i;
                     }
 
+                    if (!entityhuman.c(i, j, k)) {
+                        return itemstack;
+                    }
+
                     if (world.isEmpty(i, j, k) || !world.getMaterial(i, j, k).isBuildable()) {
                         // CraftBukkit start
                         PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(entityhuman, clickedX, clickedY, clickedZ, movingobjectposition.face, itemstack);
@@ -138,6 +146,10 @@ public class ItemBucket extends Item {
                             }
                         } else {
                             world.setTypeIdAndData(i, j, k, this.a, 0);
+                        }
+
+                        if (entityhuman.K.d) {
+                            return itemstack;
                         }
 
                         // CraftBukkit start

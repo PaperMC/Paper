@@ -73,7 +73,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
             byte b0 = nbttagcompound1.c("Slot");
 
             if (b0 >= 0 && b0 < this.items.length) {
-                this.items[b0] = new ItemStack(nbttagcompound1);
+                this.items[b0] = ItemStack.a(nbttagcompound1);
             }
         }
 
@@ -93,7 +93,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
                 NBTTagCompound nbttagcompound1 = new NBTTagCompound();
 
                 nbttagcompound1.a("Slot", (byte) i);
-                this.items[i].a(nbttagcompound1);
+                this.items[i].b(nbttagcompound1);
                 nbttaglist.a((NBTBase) nbttagcompound1);
             }
         }
@@ -109,7 +109,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         return this.burnTime > 0;
     }
 
-    public void g_() {
+    public void h_() {
         boolean flag = this.burnTime > 0;
         boolean flag1 = false;
 
@@ -242,7 +242,11 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         }
     }
 
-    public boolean a_(EntityHuman entityhuman) {
+    public boolean a(EntityHuman entityhuman) {
         return this.world.getTileEntity(this.x, this.y, this.z) != this ? false : entityhuman.e((double) this.x + 0.5D, (double) this.y + 0.5D, (double) this.z + 0.5D) <= 64.0D;
     }
+
+    public void e() {}
+
+    public void t_() {}
 }

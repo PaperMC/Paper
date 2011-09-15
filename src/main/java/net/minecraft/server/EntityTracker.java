@@ -52,13 +52,15 @@ public class EntityTracker {
         } else if (entity instanceof EntitySquid) {
             this.a(entity, 160, 3, true);
         } else if (entity instanceof IAnimal) {
-            this.a(entity, 160, 3);
+            this.a(entity, 160, 3, true);
         } else if (entity instanceof EntityTNTPrimed) {
             this.a(entity, 160, 10, true);
         } else if (entity instanceof EntityFallingSand) {
             this.a(entity, 160, 20, true);
         } else if (entity instanceof EntityPainting) {
             this.a(entity, 160, Integer.MAX_VALUE, false);
+        } else if (entity instanceof EntityExperienceOrb) {
+            this.a(entity, 160, 20, true);
         }
     }
 

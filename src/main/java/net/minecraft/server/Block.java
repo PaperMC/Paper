@@ -39,7 +39,7 @@ public class Block {
     public static final Block IRON_ORE = (new BlockOre(15, 33)).c(3.0F).b(5.0F).a(h).a("oreIron");
     public static final Block COAL_ORE = (new BlockOre(16, 34)).c(3.0F).b(5.0F).a(h).a("oreCoal");
     public static final Block LOG = (new BlockLog(17)).c(2.0F).a(e).a("log").g();
-    public static final BlockLeaves LEAVES = (BlockLeaves) (new BlockLeaves(18, 52)).c(0.2F).f(1).a(g).a("leaves").n().g();
+    public static final BlockLeaves LEAVES = (BlockLeaves) (new BlockLeaves(18, 52)).c(0.2F).f(1).a(g).a("leaves").g();
     public static final Block SPONGE = (new BlockSponge(19)).c(0.6F).a(g).a("sponge");
     public static final Block GLASS = (new BlockGlass(20, 49, Material.SHATTERABLE, false)).c(0.3F).a(j).a("glass");
     public static final Block LAPIS_ORE = (new BlockOre(21, 160)).c(3.0F).b(5.0F).a(h).a("oreLapis");
@@ -72,7 +72,7 @@ public class Block {
     public static final Block MOSSY_COBBLESTONE = (new Block(48, 36, Material.STONE)).c(2.0F).b(10.0F).a(h).a("stoneMoss");
     public static final Block OBSIDIAN = (new BlockObsidian(49, 37)).c(10.0F).b(2000.0F).a(h).a("obsidian");
     public static final Block TORCH = (new BlockTorch(50, 80)).c(0.0F).a(0.9375F).a(e).a("torch").g();
-    public static final BlockFire FIRE = (BlockFire) (new BlockFire(51, 31)).c(0.0F).a(1.0F).a(e).a("fire").n().g();
+    public static final BlockFire FIRE = (BlockFire) (new BlockFire(51, 31)).c(0.0F).a(1.0F).a(e).a("fire").n();
     public static final Block MOB_SPAWNER = (new BlockMobSpawner(52, 65)).c(5.0F).a(i).a("mobSpawner").n();
     public static final Block WOOD_STAIRS = (new BlockStairs(53, WOOD)).a("stairsWood").g();
     public static final Block CHEST = (new BlockChest(54)).c(2.5F).a(e).a("chest").g();
@@ -81,7 +81,7 @@ public class Block {
     public static final Block DIAMOND_BLOCK = (new BlockOreBlock(57, 24)).c(5.0F).b(10.0F).a(i).a("blockDiamond");
     public static final Block WORKBENCH = (new BlockWorkbench(58)).c(2.5F).a(e).a("workbench");
     public static final Block CROPS = (new BlockCrops(59, 88)).c(0.0F).a(g).a("crops").n().g();
-    public static final Block SOIL = (new BlockSoil(60)).c(0.6F).a(f).a("farmland");
+    public static final Block SOIL = (new BlockSoil(60)).c(0.6F).a(f).a("farmland").g();
     public static final Block FURNACE = (new BlockFurnace(61, false)).c(3.5F).a(h).a("furnace").g();
     public static final Block BURNING_FURNACE = (new BlockFurnace(62, true)).c(3.5F).a(h).a(0.875F).a("furnace").g();
     public static final Block SIGN_POST = (new BlockSign(63, TileEntitySign.class, true)).c(1.0F).a(e).a("sign").n().g();
@@ -106,7 +106,7 @@ public class Block {
     public static final Block CLAY = (new BlockClay(82, 72)).c(0.6F).a(f).a("clay");
     public static final Block SUGAR_CANE_BLOCK = (new BlockReed(83, 73)).c(0.0F).a(g).a("reeds").n();
     public static final Block JUKEBOX = (new BlockJukeBox(84, 74)).c(2.0F).b(10.0F).a(h).a("jukebox").g();
-    public static final Block FENCE = (new BlockFence(85, 4)).c(2.0F).b(5.0F).a(e).a("fence").g();
+    public static final Block FENCE = (new BlockFence(85, 4)).c(2.0F).b(5.0F).a(e).a("fence");
     public static final Block PUMPKIN = (new BlockPumpkin(86, 102, false)).c(1.0F).a(e).a("pumpkin").g();
     public static final Block NETHERRACK = (new BlockBloodStone(87, 103)).c(0.4F).a(h).a("hellrock");
     public static final Block SOUL_SAND = (new BlockSlowSand(88, 104)).c(0.5F).a(l).a("hellsand");
@@ -118,12 +118,25 @@ public class Block {
     public static final Block DIODE_ON = (new BlockDiode(94, true)).c(0.0F).a(0.625F).a(e).a("diode").n().g();
     public static final Block LOCKED_CHEST = (new BlockLockedChest(95)).c(0.0F).a(1.0F).a(e).a("lockedchest").a(true).g();
     public static final Block TRAP_DOOR = (new BlockTrapdoor(96, Material.WOOD)).c(3.0F).a(e).a("trapdoor").n().g();
+    public static final Block MONSTER_EGGS = (new BlockMonsterEggs(97)).c(0.75F);
+    public static final Block SMOOTH_BRICK = (new BlockSmoothBrick(98)).c(1.5F).b(10.0F).a(h).a("stonebricksmooth");
+    public static final Block BIG_MUSHROOM_1 = (new BlockHugeMushroom(99, Material.WOOD, 142, 0)).c(0.2F).a(e).a("mushroom").g();
+    public static final Block BIG_MUSHROOM_2 = (new BlockHugeMushroom(100, Material.WOOD, 142, 1)).c(0.2F).a(e).a("mushroom").g();
+    public static final Block IRON_FENCE = (new BlockThin(101, 85, 85, Material.ORE)).c(5.0F).b(10.0F).a(i).a("fenceIron");
+    public static final Block THIN_GLASS = (new BlockThin(102, 49, 148, Material.SHATTERABLE)).c(0.3F).a(j).a("thinGlass");
+    public static final Block MELON = (new BlockMelon(103)).c(1.0F).a(e).a("melon");
+    public static final Block PUMPKIN_STEM = (new BlockStem(104, PUMPKIN)).c(0.0F).a(e).a("pumpkinStem").g();
+    public static final Block MELON_STEM = (new BlockStem(105, MELON)).c(0.0F).a(e).a("pumpkinStem").g();
+    public static final Block VINE = (new BlockVine(106)).c(0.2F).a(g).a("vine").g();
+    public static final Block FENCE_GATE = (new BlockFenceGate(107, 4)).c(2.0F).b(5.0F).a(e).a("fenceGate").g();
+    public static final Block BRICK_STAIRS = (new BlockStairs(108, BRICK)).a("stairsBrick").g();
+    public static final Block STONE_STAIRS = (new BlockStairs(109, SMOOTH_BRICK)).a("stairsStoneBrickSmooth").g();
     public int textureId;
     public final int id;
     protected float strength;
     protected float durability;
-    protected boolean bq;
-    protected boolean br;
+    protected boolean bD;
+    protected boolean bE;
     public double minX;
     public double minY;
     public double minZ;
@@ -131,16 +144,16 @@ public class Block {
     public double maxY;
     public double maxZ;
     public StepSound stepSound;
-    public float bz;
+    public float bM;
     public final Material material;
     public float frictionFactor;
     private String name;
 
     protected Block(int i, Material material) {
-        this.bq = true;
-        this.br = true;
+        this.bD = true;
+        this.bE = true;
         this.stepSound = d;
-        this.bz = 1.0F;
+        this.bM = 1.0F;
         this.frictionFactor = 0.6F;
         if (byId[i] != null) {
             throw new IllegalArgumentException("Slot " + i + " is already occupied by " + byId[i] + " when adding " + this);
@@ -253,10 +266,10 @@ public class Block {
     }
 
     public boolean a(int i, boolean flag) {
-        return this.k_();
+        return this.q_();
     }
 
-    public boolean k_() {
+    public boolean q_() {
         return true;
     }
 
@@ -270,7 +283,7 @@ public class Block {
         return 10;
     }
 
-    public void c(World world, int i, int j, int k) {}
+    public void a(World world, int i, int j, int k) {}
 
     public void remove(World world, int i, int j, int k) {}
 
@@ -329,7 +342,7 @@ public class Block {
     }
 
     public MovingObjectPosition a(World world, int i, int j, int k, Vec3D vec3d, Vec3D vec3d1) {
-        this.a(world, i, j, k);
+        this.a((IBlockAccess) world, i, j, k);
         vec3d = vec3d.add((double) (-i), (double) (-j), (double) (-k));
         vec3d1 = vec3d1.add((double) (-i), (double) (-j), (double) (-k));
         Vec3D vec3d2 = vec3d.a(vec3d1, this.minX);
@@ -365,27 +378,27 @@ public class Block {
 
         Vec3D vec3d8 = null;
 
-        if (vec3d2 != null && (vec3d8 == null || vec3d.a(vec3d2) < vec3d.a(vec3d8))) {
+        if (vec3d2 != null && (vec3d8 == null || vec3d.b(vec3d2) < vec3d.b(vec3d8))) {
             vec3d8 = vec3d2;
         }
 
-        if (vec3d3 != null && (vec3d8 == null || vec3d.a(vec3d3) < vec3d.a(vec3d8))) {
+        if (vec3d3 != null && (vec3d8 == null || vec3d.b(vec3d3) < vec3d.b(vec3d8))) {
             vec3d8 = vec3d3;
         }
 
-        if (vec3d4 != null && (vec3d8 == null || vec3d.a(vec3d4) < vec3d.a(vec3d8))) {
+        if (vec3d4 != null && (vec3d8 == null || vec3d.b(vec3d4) < vec3d.b(vec3d8))) {
             vec3d8 = vec3d4;
         }
 
-        if (vec3d5 != null && (vec3d8 == null || vec3d.a(vec3d5) < vec3d.a(vec3d8))) {
+        if (vec3d5 != null && (vec3d8 == null || vec3d.b(vec3d5) < vec3d.b(vec3d8))) {
             vec3d8 = vec3d5;
         }
 
-        if (vec3d6 != null && (vec3d8 == null || vec3d.a(vec3d6) < vec3d.a(vec3d8))) {
+        if (vec3d6 != null && (vec3d8 == null || vec3d.b(vec3d6) < vec3d.b(vec3d8))) {
             vec3d8 = vec3d6;
         }
 
-        if (vec3d7 != null && (vec3d8 == null || vec3d.a(vec3d7) < vec3d.a(vec3d8))) {
+        if (vec3d7 != null && (vec3d8 == null || vec3d.b(vec3d7) < vec3d.b(vec3d8))) {
             vec3d8 = vec3d7;
         }
 
@@ -434,7 +447,7 @@ public class Block {
         return vec3d == null ? false : vec3d.a >= this.minX && vec3d.a <= this.maxX && vec3d.b >= this.minY && vec3d.b <= this.maxY;
     }
 
-    public void d(World world, int i, int j, int k) {}
+    public void a_(World world, int i, int j, int k) {}
 
     public boolean canPlace(World world, int i, int j, int k, int l) {
         return this.canPlace(world, i, j, k);
@@ -476,6 +489,7 @@ public class Block {
 
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
         entityhuman.a(StatisticList.C[this.id], 1);
+        entityhuman.b(0.025F);
         this.g(world, i, j, k, l);
     }
 
@@ -501,24 +515,27 @@ public class Block {
     public void a(World world, int i, int j, int k, int l, int i1) {}
 
     public boolean m() {
-        return this.br;
+        return this.bE;
     }
 
     protected Block n() {
-        this.br = false;
+        this.bE = false;
         return this;
     }
 
     public int e() {
-        return this.material.j();
+        return this.material.l();
     }
 
     static {
         Item.byId[WOOL.id] = (new ItemCloth(WOOL.id - 256)).a("cloth");
-        Item.byId[LOG.id] = (new ItemLog(LOG.id - 256)).a("log");
+        Item.byId[LOG.id] = (new ItemLog(LOG.id - 256, LOG)).a("log");
+        Item.byId[SMOOTH_BRICK.id] = (new ItemLog(SMOOTH_BRICK.id - 256, SMOOTH_BRICK)).a("stonebricksmooth");
         Item.byId[STEP.id] = (new ItemStep(STEP.id - 256)).a("stoneSlab");
         Item.byId[SAPLING.id] = (new ItemSapling(SAPLING.id - 256)).a("sapling");
         Item.byId[LEAVES.id] = (new ItemLeaves(LEAVES.id - 256)).a("leaves");
+        Item.byId[VINE.id] = new ItemColoredBlock(VINE.id - 256, false);
+        Item.byId[LONG_GRASS.id] = new ItemColoredBlock(LONG_GRASS.id - 256, true);
         Item.byId[PISTON.id] = new ItemPiston(PISTON.id - 256);
         Item.byId[PISTON_STICKY.id] = new ItemPiston(PISTON_STICKY.id - 256);
 

@@ -40,7 +40,7 @@ public class BlockPortal extends BlockBreakable {
         return false;
     }
 
-    public boolean a_(World world, int i, int j, int k) {
+    public boolean b_(World world, int i, int j, int k) {
         byte b0 = 0;
         byte b1 = 0;
 
@@ -166,7 +166,7 @@ public class BlockPortal extends BlockBreakable {
             world.getServer().getPluginManager().callEvent(event);
             // CraftBukkit end
 
-            entity.P();
+            entity.T();
         }
     }
 }

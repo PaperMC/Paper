@@ -13,17 +13,18 @@ import org.bukkit.event.player.PlayerPickupItemEvent;
 
 public class EntityArrow extends Entity {
 
-    private int d = -1;
     private int e = -1;
     private int f = -1;
-    private int g = 0;
+    private int g = -1;
     private int h = 0;
+    private int i = 0;
     private boolean inGround = false;
     public boolean fromPlayer = false;
     public int shake = 0;
-    public EntityLiving shooter;
-    private int j;
-    private int k = 0;
+    public Entity shooter;
+    private int k;
+    private int l = 0;
+    public boolean d = false;
 
     public EntityArrow(World world) {
         super(world);
@@ -37,7 +38,7 @@ public class EntityArrow extends Entity {
         this.height = 0.0F;
     }
 
-    public EntityArrow(World world, EntityLiving entityliving) {
+    public EntityArrow(World world, EntityLiving entityliving, float f) {
         super(world);
         this.shooter = entityliving;
         this.fromPlayer = entityliving instanceof EntityHuman;
@@ -51,7 +52,7 @@ public class EntityArrow extends Entity {
         this.motX = (double) (-MathHelper.sin(this.yaw / 180.0F * 3.1415927F) * MathHelper.cos(this.pitch / 180.0F * 3.1415927F));
         this.motZ = (double) (MathHelper.cos(this.yaw / 180.0F * 3.1415927F) * MathHelper.cos(this.pitch / 180.0F * 3.1415927F));
         this.motY = (double) (-MathHelper.sin(this.pitch / 180.0F * 3.1415927F));
-        this.a(this.motX, this.motY, this.motZ, 1.5F, 1.0F);
+        this.a(this.motX, this.motY, this.motZ, f * 1.5F, 1.0F);
     }
 
     protected void b() {}
@@ -75,11 +76,11 @@ public class EntityArrow extends Entity {
 
         this.lastYaw = this.yaw = (float) (Math.atan2(d0, d2) * 180.0D / 3.1415927410125732D);
         this.lastPitch = this.pitch = (float) (Math.atan2(d1, (double) f3) * 180.0D / 3.1415927410125732D);
-        this.j = 0;
+        this.k = 0;
     }
 
-    public void m_() {
-        super.m_();
+    public void s_() {
+        super.s_();
         if (this.lastPitch == 0.0F && this.lastYaw == 0.0F) {
             float f = MathHelper.a(this.motX * this.motX + this.motZ * this.motZ);
 
@@ -87,11 +88,11 @@ public class EntityArrow extends Entity {
             this.lastPitch = this.pitch = (float) (Math.atan2(this.motY, (double) f) * 180.0D / 3.1415927410125732D);
         }
 
-        int i = this.world.getTypeId(this.d, this.e, this.f);
+        int i = this.world.getTypeId(this.e, this.f, this.g);
 
         if (i > 0) {
-            Block.byId[i].a(this.world, this.d, this.e, this.f);
-            AxisAlignedBB axisalignedbb = Block.byId[i].e(this.world, this.d, this.e, this.f);
+            Block.byId[i].a((IBlockAccess) this.world, this.e, this.f, this.g);
+            AxisAlignedBB axisalignedbb = Block.byId[i].e(this.world, this.e, this.f, this.g);
 
             if (axisalignedbb != null && axisalignedbb.a(Vec3D.create(this.locX, this.locY, this.locZ))) {
                 this.inGround = true;
@@ -103,12 +104,12 @@ public class EntityArrow extends Entity {
         }
 
         if (this.inGround) {
-            i = this.world.getTypeId(this.d, this.e, this.f);
-            int j = this.world.getData(this.d, this.e, this.f);
+            i = this.world.getTypeId(this.e, this.f, this.g);
+            int j = this.world.getData(this.e, this.f, this.g);
 
-            if (i == this.g && j == this.h) {
-                ++this.j;
-                if (this.j == 1200) {
+            if (i == this.h && j == this.i) {
+                ++this.k;
+                if (this.k == 1200) {
                     this.die();
                 }
             } else {
@@ -116,11 +117,11 @@ public class EntityArrow extends Entity {
                 this.motX *= (double) (this.random.nextFloat() * 0.2F);
                 this.motY *= (double) (this.random.nextFloat() * 0.2F);
                 this.motZ *= (double) (this.random.nextFloat() * 0.2F);
-                this.j = 0;
                 this.k = 0;
+                this.l = 0;
             }
         } else {
-            ++this.k;
+            ++this.l;
             Vec3D vec3d = Vec3D.create(this.locX, this.locY, this.locZ);
             Vec3D vec3d1 = Vec3D.create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
             MovingObjectPosition movingobjectposition = this.world.rayTrace(vec3d, vec3d1, false, true);
@@ -135,18 +136,19 @@ public class EntityArrow extends Entity {
             List list = this.world.b((Entity) this, this.boundingBox.a(this.motX, this.motY, this.motZ).b(1.0D, 1.0D, 1.0D));
             double d0 = 0.0D;
 
+            int k;
             float f1;
 
-            for (int k = 0; k < list.size(); ++k) {
+            for (k = 0; k < list.size(); ++k) {
                 Entity entity1 = (Entity) list.get(k);
 
-                if (entity1.l_() && (entity1 != this.shooter || this.k >= 5)) {
+                if (entity1.r_() && (entity1 != this.shooter || this.l >= 5)) {
                     f1 = 0.3F;
                     AxisAlignedBB axisalignedbb1 = entity1.boundingBox.b((double) f1, (double) f1, (double) f1);
                     MovingObjectPosition movingobjectposition1 = axisalignedbb1.a(vec3d, vec3d1);
 
                     if (movingobjectposition1 != null) {
-                        double d1 = vec3d.a(movingobjectposition1.f);
+                        double d1 = vec3d.b(movingobjectposition1.f);
 
                         if (d1 < d0 || d0 == 0.0D) {
                             entity = entity1;
@@ -168,6 +170,13 @@ public class EntityArrow extends Entity {
                 this.world.getServer().getPluginManager().callEvent(phe);
                 // CraftBukkit end
                 if (movingobjectposition.entity != null) {
+                    f2 = MathHelper.a(this.motX * this.motX + this.motY * this.motY + this.motZ * this.motZ);
+                    int l = (int) Math.ceil((double) f2 * 2.0D);
+
+                    if (this.d) {
+                        l = l * 3 / 2 + 1;
+                    }
+
                     // CraftBukkit start
                     boolean stick;
                     if (entity instanceof EntityLiving) {
@@ -187,10 +196,10 @@ public class EntityArrow extends Entity {
                             stick = !projectile.doesBounce();
                         } else {
                             // this function returns if the arrow should stick in or not, i.e. !bounce
-                            stick = movingobjectposition.entity.damageEntity(this, event.getDamage());
+                            stick = movingobjectposition.entity.damageEntity(DamageSource.a(this, this), event.getDamage());
                         }
                     } else {
-                        stick = movingobjectposition.entity.damageEntity(this.shooter, 4);
+                        stick = movingobjectposition.entity.damageEntity(DamageSource.a(this, this.shooter), 4);
                     }
                     if (stick) {
                         // CraftBukkit end
@@ -202,14 +211,14 @@ public class EntityArrow extends Entity {
                         this.motZ *= -0.10000000149011612D;
                         this.yaw += 180.0F;
                         this.lastYaw += 180.0F;
-                        this.k = 0;
+                        this.l = 0;
                     }
                 } else {
-                    this.d = movingobjectposition.b;
-                    this.e = movingobjectposition.c;
-                    this.f = movingobjectposition.d;
-                    this.g = this.world.getTypeId(this.d, this.e, this.f);
-                    this.h = this.world.getData(this.d, this.e, this.f);
+                    this.e = movingobjectposition.b;
+                    this.f = movingobjectposition.c;
+                    this.g = movingobjectposition.d;
+                    this.h = this.world.getTypeId(this.e, this.f, this.g);
+                    this.i = this.world.getData(this.e, this.f, this.g);
                     this.motX = (double) ((float) (movingobjectposition.f.a - this.locX));
                     this.motY = (double) ((float) (movingobjectposition.f.b - this.locY));
                     this.motZ = (double) ((float) (movingobjectposition.f.c - this.locZ));
@@ -220,6 +229,13 @@ public class EntityArrow extends Entity {
                     this.world.makeSound(this, "random.drr", 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
                     this.inGround = true;
                     this.shake = 7;
+                    this.d = false;
+                }
+            }
+
+            if (this.d) {
+                for (k = 0; k < 4; ++k) {
+                    this.world.a("crit", this.locX + this.motX * (double) k / 4.0D, this.locY + this.motY * (double) k / 4.0D, this.locZ + this.motZ * (double) k / 4.0D, -this.motX, -this.motY + 0.2D, -this.motZ);
                 }
             }
 
@@ -249,9 +265,9 @@ public class EntityArrow extends Entity {
             this.yaw = this.lastYaw + (this.yaw - this.lastYaw) * 0.2F;
             float f3 = 0.99F;
 
-            f1 = 0.03F;
-            if (this.ad()) {
-                for (int l = 0; l < 4; ++l) {
+            f1 = 0.05F;
+            if (this.ao()) {
+                for (int i1 = 0; i1 < 4; ++i1) {
                     float f4 = 0.25F;
 
                     this.world.a("bubble", this.locX - this.motX * (double) f4, this.locY - this.motY * (double) f4, this.locZ - this.motZ * (double) f4, this.motX, this.motY, this.motZ);
@@ -269,28 +285,28 @@ public class EntityArrow extends Entity {
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("xTile", (short) this.d);
-        nbttagcompound.a("yTile", (short) this.e);
-        nbttagcompound.a("zTile", (short) this.f);
-        nbttagcompound.a("inTile", (byte) this.g);
-        nbttagcompound.a("inData", (byte) this.h);
+        nbttagcompound.a("xTile", (short) this.e);
+        nbttagcompound.a("yTile", (short) this.f);
+        nbttagcompound.a("zTile", (short) this.g);
+        nbttagcompound.a("inTile", (byte) this.h);
+        nbttagcompound.a("inData", (byte) this.i);
         nbttagcompound.a("shake", (byte) this.shake);
         nbttagcompound.a("inGround", (byte) (this.inGround ? 1 : 0));
         nbttagcompound.a("player", this.fromPlayer);
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        this.d = nbttagcompound.d("xTile");
-        this.e = nbttagcompound.d("yTile");
-        this.f = nbttagcompound.d("zTile");
-        this.g = nbttagcompound.c("inTile") & 255;
-        this.h = nbttagcompound.c("inData") & 255;
+        this.e = nbttagcompound.d("xTile");
+        this.f = nbttagcompound.d("yTile");
+        this.g = nbttagcompound.d("zTile");
+        this.h = nbttagcompound.c("inTile") & 255;
+        this.i = nbttagcompound.c("inData") & 255;
         this.shake = nbttagcompound.c("shake") & 255;
         this.inGround = nbttagcompound.c("inGround") == 1;
         this.fromPlayer = nbttagcompound.m("player");
     }
 
-    public void b(EntityHuman entityhuman) {
+    public void a_(EntityHuman entityhuman) {
         if (!this.world.isStatic) {
             // CraftBukkit start
             ItemStack itemstack = new ItemStack(Item.ARROW, 1);

@@ -29,7 +29,7 @@ public class EntityItem extends Entity {
         this.motZ = (double) ((float) (Math.random() * 0.20000000298023224D - 0.10000000149011612D));
     }
 
-    protected boolean n() {
+    protected boolean e_() {
         return false;
     }
 
@@ -41,8 +41,8 @@ public class EntityItem extends Entity {
 
     protected void b() {}
 
-    public void m_() {
-        super.m_();
+    public void s_() {
+        super.s_();
         // CraftBukkit start
         int currentTick = (int) (System.currentTimeMillis() / 50);
         this.pickupDelay -= (currentTick - this.lastTick);
@@ -92,11 +92,11 @@ public class EntityItem extends Entity {
     }
 
     protected void burn(int i) {
-        this.damageEntity((Entity) null, i);
+        this.damageEntity(DamageSource.a, i);
     }
 
-    public boolean damageEntity(Entity entity, int i) {
-        this.af();
+    public boolean damageEntity(DamageSource damagesource, int i) {
+        this.aq();
         this.f -= i;
         if (this.f <= 0) {
             this.die();
@@ -108,7 +108,7 @@ public class EntityItem extends Entity {
     public void b(NBTTagCompound nbttagcompound) {
         nbttagcompound.a("Health", (short) ((byte) this.f));
         nbttagcompound.a("Age", (short) this.b);
-        nbttagcompound.a("Item", this.itemStack.a(new NBTTagCompound()));
+        nbttagcompound.a("Item", this.itemStack.b(new NBTTagCompound()));
     }
 
     public void a(NBTTagCompound nbttagcompound) {
@@ -116,10 +116,13 @@ public class EntityItem extends Entity {
         this.b = nbttagcompound.d("Age");
         NBTTagCompound nbttagcompound1 = nbttagcompound.k("Item");
 
-        this.itemStack = new ItemStack(nbttagcompound1);
+        this.itemStack = ItemStack.a(nbttagcompound1);
+        if (this.itemStack == null) {
+            this.die();
+        }
     }
 
-    public void b(EntityHuman entityhuman) {
+    public void a_(EntityHuman entityhuman) {
         if (!this.world.isStatic) {
             int i = this.itemStack.count;
 
@@ -157,5 +160,9 @@ public class EntityItem extends Entity {
                 }
             }
         }
+    }
+
+    public String Y() {
+        return StatisticCollector.a("item." + this.itemStack.k());
     }
 }

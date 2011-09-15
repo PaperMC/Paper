@@ -40,23 +40,27 @@ public class ItemBed extends Item {
                 b0 = 1;
             }
 
-            if (world.isEmpty(i, j, k) && world.isEmpty(i + b0, j, k + b1) && world.e(i, j - 1, k) && world.e(i + b0, j - 1, k + b1)) {
-                CraftBlockState blockState = CraftBlockState.getBlockState(world, i, j, k); // CraftBukkit
+            if (entityhuman.c(i, j, k) && entityhuman.c(i + b0, j, k + b1)) {
+                if (world.isEmpty(i, j, k) && world.isEmpty(i + b0, j, k + b1) && world.e(i, j - 1, k) && world.e(i + b0, j - 1, k + b1)) {
+                    CraftBlockState blockState = CraftBlockState.getBlockState(world, i, j, k); // CraftBukkit
 
-                world.setTypeIdAndData(i, j, k, blockbed.id, i1);
+                    world.setTypeIdAndData(i, j, k, blockbed.id, i1);
 
-                // CraftBukkit start - bed
-                BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ, blockbed);
+                    // CraftBukkit start - bed
+                    BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ, blockbed);
 
-                if (event.isCancelled() || !event.canBuild()) {
-                    event.getBlockPlaced().setTypeIdAndData(blockState.getTypeId(), blockState.getRawData(), false);
+                    if (event.isCancelled() || !event.canBuild()) {
+                        event.getBlockPlaced().setTypeIdAndData(blockState.getTypeId(), blockState.getRawData(), false);
+                        return false;
+                    }
+                    // CraftBukkit end
+
+                    world.setTypeIdAndData(i + b0, j, k + b1, blockbed.id, i1 + 8);
+                    --itemstack.count;
+                    return true;
+                } else {
                     return false;
                 }
-                // CraftBukkit end
-
-                world.setTypeIdAndData(i + b0, j, k + b1, blockbed.id, i1 + 8);
-                --itemstack.count;
-                return true;
             } else {
                 return false;
             }

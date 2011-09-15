@@ -191,8 +191,8 @@ public class BlockRedstoneWire extends Block {
         }
     }
 
-    public void c(World world, int i, int j, int k) {
-        super.c(world, i, j, k);
+    public void a(World world, int i, int j, int k) {
+        super.a(world, i, j, k);
         if (!world.isStatic) {
             this.g(world, i, j, k);
             world.applyPhysics(i, j + 1, k, this.id);
@@ -351,7 +351,7 @@ public class BlockRedstoneWire extends Block {
         } else {
             int j1 = iblockaccess.getData(i, j, k);
 
-            return l == BedBlockTextures.b[j1 & 3];
+            return l == Direction.e[j1 & 3];
         }
     }
 }

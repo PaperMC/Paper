@@ -39,15 +39,15 @@ public class BlockPressurePlate extends Block {
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
-        return world.e(i, j - 1, k);
+        return world.e(i, j - 1, k) || world.getTypeId(i, j - 1, k) == Block.FENCE.id;
     }
 
-    public void c(World world, int i, int j, int k) {}
+    public void a(World world, int i, int j, int k) {}
 
     public void doPhysics(World world, int i, int j, int k, int l) {
         boolean flag = false;
 
-        if (!world.e(i, j - 1, k)) {
+        if (!world.e(i, j - 1, k) && world.getTypeId(i, j - 1, k) != Block.FENCE.id) {
             flag = true;
         }
 

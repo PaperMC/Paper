@@ -77,11 +77,11 @@ public class EntitySnowball extends Entity {
         this.h = 0;
     }
 
-    public void m_() {
-        this.bo = this.locX;
-        this.bp = this.locY;
-        this.bq = this.locZ;
-        super.m_();
+    public void s_() {
+        this.bE = this.locX;
+        this.bF = this.locY;
+        this.bG = this.locZ;
+        super.s_();
         if (this.a > 0) {
             --this.a;
         }
@@ -126,13 +126,13 @@ public class EntitySnowball extends Entity {
             for (int j = 0; j < list.size(); ++j) {
                 Entity entity1 = (Entity) list.get(j);
 
-                if (entity1.l_() && (entity1 != this.shooter || this.i >= 5)) {
+                if (entity1.r_() && (entity1 != this.shooter || this.i >= 5)) {
                     float f = 0.3F;
                     AxisAlignedBB axisalignedbb = entity1.boundingBox.b((double) f, (double) f, (double) f);
                     MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
 
                     if (movingobjectposition1 != null) {
-                        double d1 = vec3d.a(movingobjectposition1.f);
+                        double d1 = vec3d.b(movingobjectposition1.f);
 
                         if (d1 < d0 || d0 == 0.0D) {
                             entity = entity1;
@@ -167,10 +167,10 @@ public class EntitySnowball extends Entity {
                         stick = !projectile.doesBounce();
                     } else {
                         // this function returns if the snowball should stick in or not, i.e. !bounce
-                        stick = movingobjectposition.entity.damageEntity(this, event.getDamage());
+                        stick = movingobjectposition.entity.damageEntity(DamageSource.a(this, this), event.getDamage());
                     }
                 } else {
-                    stick = movingobjectposition.entity.damageEntity(this.shooter, 0);
+                    stick = movingobjectposition.entity.damageEntity(DamageSource.a(this, this.shooter), 0);
                 }
                 if (stick) {
                     ;
@@ -213,7 +213,7 @@ public class EntitySnowball extends Entity {
         float f2 = 0.99F;
         float f3 = 0.03F;
 
-        if (this.ad()) {
+        if (this.ao()) {
             for (int l = 0; l < 4; ++l) {
                 float f4 = 0.25F;
 
@@ -248,7 +248,7 @@ public class EntitySnowball extends Entity {
         this.f = nbttagcompound.c("inGround") == 1;
     }
 
-    public void b(EntityHuman entityhuman) {
+    public void a_(EntityHuman entityhuman) {
         if (this.f && this.shooter == entityhuman && this.a <= 0 && entityhuman.inventory.pickup(new ItemStack(Item.ARROW, 1))) {
             this.world.makeSound(this, "random.pop", 0.2F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
             entityhuman.receive(this, 1);

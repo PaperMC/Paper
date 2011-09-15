@@ -16,7 +16,7 @@ public class EntityTNTPrimed extends Entity {
     public EntityTNTPrimed(World world) {
         super(world);
         this.fuseTicks = 0;
-        this.aI = true;
+        this.aY = true;
         this.b(0.98F, 0.98F);
         this.height = this.width / 2.0F;
     }
@@ -37,15 +37,15 @@ public class EntityTNTPrimed extends Entity {
 
     protected void b() {}
 
-    protected boolean n() {
+    protected boolean e_() {
         return false;
     }
 
-    public boolean l_() {
+    public boolean r_() {
         return !this.dead;
     }
 
-    public void m_() {
+    public void s_() {
         this.lastX = this.locX;
         this.lastY = this.locY;
         this.lastZ = this.locZ;

@@ -41,13 +41,17 @@ public class ItemSign extends Item {
                 ++i;
             }
 
-            if (!Block.SIGN_POST.canPlace(world, i, j, k)) {
+            if (!entityhuman.c(i, j, k)) {
+                return false;
+            } else if (!Block.SIGN_POST.canPlace(world, i, j, k)) {
                 return false;
             } else {
                 CraftBlockState blockState = CraftBlockState.getBlockState(world, i, j, k); // CraftBukkit
 
                 if (l == 1) {
-                    world.setTypeIdAndData(i, j, k, Block.SIGN_POST.id, MathHelper.floor((double) ((entityhuman.yaw + 180.0F) * 16.0F / 360.0F) + 0.5D) & 15);
+                    int i1 = MathHelper.floor((double) ((entityhuman.yaw + 180.0F) * 16.0F / 360.0F) + 0.5D) & 15;
+
+                    world.setTypeIdAndData(i, j, k, Block.SIGN_POST.id, i1);
                 } else {
                     world.setTypeIdAndData(i, j, k, Block.WALL_SIGN.id, l);
                 }

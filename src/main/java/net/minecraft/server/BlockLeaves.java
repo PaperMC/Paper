@@ -40,7 +40,7 @@ public class BlockLeaves extends BlockLeavesBase {
         if (!world.isStatic) {
             int l = world.getData(i, j, k);
 
-            if ((l & 8) != 0) {
+            if ((l & 8) != 0 && (l & 4) == 0) {
                 byte b0 = 4;
                 int i1 = b0 + 1;
                 byte b1 = 32;
@@ -139,7 +139,7 @@ public class BlockLeaves extends BlockLeavesBase {
     }
 
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
-        if (!world.isStatic && entityhuman.G() != null && entityhuman.G().id == Item.SHEARS.id) {
+        if (!world.isStatic && entityhuman.K() != null && entityhuman.K().id == Item.SHEARS.id) {
             entityhuman.a(StatisticList.C[this.id], 1);
             this.a(world, i, j, k, new ItemStack(Block.LEAVES.id, 1, l & 3));
         } else {

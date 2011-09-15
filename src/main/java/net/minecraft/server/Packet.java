@@ -11,24 +11,24 @@ import java.util.Set;
 
 public abstract class Packet {
 
-    private static Map a = new HashMap();
+    private static EntityList a = new EntityList();
     private static Map b = new HashMap();
     private static Set c = new HashSet();
     private static Set d = new HashSet();
     public final long timestamp = System.currentTimeMillis();
     public boolean k = false;
-    private static HashMap e;
+    private static EntityList e;
     private static int f;
 
     public Packet() {}
 
     static void a(int i, boolean flag, boolean flag1, Class oclass) {
-        if (a.containsKey(Integer.valueOf(i))) {
+        if (a.b(i)) {
             throw new IllegalArgumentException("Duplicate packet id:" + i);
         } else if (b.containsKey(oclass)) {
             throw new IllegalArgumentException("Duplicate packet class:" + oclass);
         } else {
-            a.put(Integer.valueOf(i), oclass);
+            a.a(i, oclass);
             b.put(oclass, Integer.valueOf(i));
             if (flag) {
                 c.add(Integer.valueOf(i));
@@ -42,7 +42,7 @@ public abstract class Packet {
 
     public static Packet a(int i) {
         try {
-            Class oclass = (Class) a.get(Integer.valueOf(i));
+            Class oclass = (Class) a.a(i);
 
             return oclass == null ? null : (Packet) oclass.newInstance();
         } catch (Exception exception) {
@@ -94,11 +94,11 @@ public abstract class Packet {
         }
         // CraftBukkit end
 
-        PacketCounter packetcounter = (PacketCounter) e.get(Integer.valueOf(i));
+        PacketCounter packetcounter = (PacketCounter) e.a(i);
 
         if (packetcounter == null) {
             packetcounter = new PacketCounter((EmptyClass1) null);
-            e.put(Integer.valueOf(i), packetcounter);
+            e.a(i, packetcounter);
         }
 
         packetcounter.a(packet.a());
@@ -180,6 +180,7 @@ public abstract class Packet {
         a(23, true, false, Packet23VehicleSpawn.class);
         a(24, true, false, Packet24MobSpawn.class);
         a(25, true, false, Packet25EntityPainting.class);
+        a(26, true, false, Packet26AddExpOrb.class);
         a(27, false, false, Packet27.class); // CraftBukkit - true -> false; disabled unused packet. TODO -- check if needed
         a(28, true, false, Packet28EntityVelocity.class);
         a(29, true, false, Packet29DestroyEntity.class);
@@ -191,6 +192,9 @@ public abstract class Packet {
         a(38, true, false, Packet38EntityStatus.class);
         a(39, true, false, Packet39AttachEntity.class);
         a(40, true, false, Packet40EntityMetadata.class);
+        a(41, true, false, Packet41MobEffect.class);
+        a(42, true, false, Packet42RemoveMobEffect.class);
+        a(43, true, false, Packet43SetExperience.class);
         a(50, true, false, Packet50PreChunk.class);
         a(51, true, false, Packet51MapChunk.class);
         a(52, true, false, Packet52MultiBlockChange.class);
@@ -207,11 +211,14 @@ public abstract class Packet {
         a(104, true, false, Packet104WindowItems.class);
         a(105, true, false, Packet105CraftProgressBar.class);
         a(106, true, true, Packet106Transaction.class);
+        a(107, true, true, Packet107SetCreativeSlot.class);
         a(130, true, true, Packet130UpdateSign.class);
         a(131, true, false, Packet131.class);
         a(200, true, false, Packet200Statistic.class);
+        a(201, true, false, Packet201PlayerInfo.class);
+        a(254, false, true, Packet254GetInfo.class);
         a(255, true, true, Packet255KickDisconnect.class);
-        e = new HashMap();
+        e = new EntityList();
         f = 0;
     }
 }
