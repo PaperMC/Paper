@@ -153,7 +153,7 @@ public class CraftWorld implements World {
 
         net.minecraft.server.Chunk chunk = world.chunkProviderServer.getOrCreateChunk(x, z);
 
-        if (save && !chunk.isEmpty()) {
+        if (save && !(chunk instanceof EmptyChunk)) {
             chunk.removeEntities();
             world.chunkProviderServer.saveChunk(chunk);
             world.chunkProviderServer.saveChunkNOP(chunk);
@@ -474,43 +474,37 @@ public class CraftWorld implements World {
     public Biome getBiome(int x, int z) {
         BiomeBase base = getHandle().getWorldChunkManager().getBiome(x, z);
 
-        if (base == BiomeBase.RAINFOREST) {
-            return Biome.RAINFOREST;
-        } else if (base == BiomeBase.SWAMPLAND) {
+        if (base == BiomeBase.SWAMPLAND) {
             return Biome.SWAMPLAND;
-        } else if (base == BiomeBase.SEASONAL_FOREST) {
-            return Biome.SEASONAL_FOREST;
         } else if (base == BiomeBase.FOREST) {
             return Biome.FOREST;
-        } else if (base == BiomeBase.SAVANNA) {
-            return Biome.SAVANNA;
-        } else if (base == BiomeBase.SHRUBLAND) {
-            return Biome.SHRUBLAND;
         } else if (base == BiomeBase.TAIGA) {
             return Biome.TAIGA;
         } else if (base == BiomeBase.DESERT) {
             return Biome.DESERT;
         } else if (base == BiomeBase.PLAINS) {
             return Biome.PLAINS;
-        } else if (base == BiomeBase.ICE_DESERT) {
-            return Biome.ICE_DESERT;
-        } else if (base == BiomeBase.TUNDRA) {
-            return Biome.TUNDRA;
         } else if (base == BiomeBase.HELL) {
             return Biome.HELL;
         } else if (base == BiomeBase.SKY) {
             return Biome.SKY;
+        } else if (base == BiomeBase.OCEAN) {
+            return Biome.OCEAN;
+        } else if (base == BiomeBase.EXTREME_HILLS) {
+            return Biome.EXTREME_HILLS;
+        } else if (base == BiomeBase.RIVER) {
+            return Biome.RIVER;
         }
 
         return null;
     }
 
     public double getTemperature(int x, int z) {
-        return getHandle().getWorldChunkManager().a((double[])null, x, z, 1, 1)[0];
+        throw new UnsupportedOperationException("Not compatible with 1.8");
     }
 
     public double getHumidity(int x, int z) {
-        return getHandle().getWorldChunkManager().getHumidity(x, z);
+        throw new UnsupportedOperationException("Not compatible with 1.8");
     }
 
     public List<Entity> getEntities() {
@@ -810,7 +804,7 @@ public class CraftWorld implements World {
                     loadChunk(chunkCoordX + x, chunkCoordZ + z);
                 } else {
                     if (isChunkLoaded(chunkCoordX + x, chunkCoordZ + z)) {
-                        if (this.getHandle().getChunkAt(chunkCoordX + x, chunkCoordZ + z).isEmpty()) {
+                        if (this.getHandle().getChunkAt(chunkCoordX + x, chunkCoordZ + z) instanceof EmptyChunk) {
                             unloadChunk(chunkCoordX + x, chunkCoordZ + z, false);
                         } else {
                             unloadChunk(chunkCoordX + x, chunkCoordZ + z);

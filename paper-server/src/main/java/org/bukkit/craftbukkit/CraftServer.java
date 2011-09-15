@@ -50,6 +50,7 @@ import net.minecraft.server.Item;
 import net.minecraft.server.ItemStack;
 import net.minecraft.server.WorldMap;
 import net.minecraft.server.WorldMapCollection;
+import net.minecraft.server.WorldSettings;
 import org.bukkit.*;
 import org.bukkit.permissions.Permissible;
 import org.bukkit.plugin.Plugin;
@@ -79,7 +80,7 @@ import org.yaml.snakeyaml.error.MarkedYAMLException;
 public final class CraftServer implements Server {
     private final String serverName = "Craftbukkit";
     private final String serverVersion;
-    private final String protocolVersion = "1.7.3";
+    private final String protocolVersion = "1.8";
     private final ServicesManager servicesManager = new SimpleServicesManager();
     private final BukkitScheduler scheduler = new CraftScheduler(this);
     private final SimpleCommandMap commandMap = new SimpleCommandMap(this);
@@ -489,7 +490,7 @@ public final class CraftServer implements Server {
         }
 
         int dimension = 10 + console.worlds.size();
-        WorldServer internal = new WorldServer(console, new ServerNBTManager(new File("."), name, true), name, dimension, seed, environment, generator);
+        WorldServer internal = new WorldServer(console, new ServerNBTManager(new File("."), name, true), name, dimension, new WorldSettings(seed, getDefaultGameMode().getValue(), true), environment, generator);
 
         if (!(worlds.containsKey(name.toLowerCase()))) {
             return null;
@@ -532,7 +533,7 @@ public final class CraftServer implements Server {
                     ChunkCoordinates chunkcoordinates = internal.getSpawn();
                     internal.chunkProviderServer.getChunkAt(chunkcoordinates.x + j >> 4, chunkcoordinates.z + k >> 4);
 
-                    while (internal.doLighting()) {
+                    while (internal.v()) {
                         ;
                     }
                 }
