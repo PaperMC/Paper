@@ -334,4 +334,53 @@ public interface Player extends HumanEntity, CommandSender, OfflinePlayer {
      * @param exp New experience level
      */
     public void setTotalExperience(int exp);
+
+    /**
+     * Gets the players current exhaustion level.
+     * <p>
+     * Exhaustion controls how fast the food level drops. While you have a certain
+     * amount of exhaustion, your saturation will drop to zero, and then your food
+     * will drop to zero.
+     *
+     * @return Exhaustion level
+     */
+    public float getExhaustion();
+
+    /**
+     * Sets the players current exhaustion level
+     *
+     * @param value Exhaustion level
+     */
+    public void setExhaustion(float value);
+
+    /**
+     * Gets the players current saturation level.
+     * <p>
+     * Saturation is a buffer for food level. Your food level will not drop if you
+     * are saturated > 0.
+     *
+     * @return Saturation level
+     */
+    public float getSaturation();
+
+    /**
+     * Sets the players current saturation level
+     *
+     * @param value Exhaustion level
+     */
+    public void setSaturation(float value);
+
+    /**
+     * Gets the players current food level
+     *
+     * @return Food level
+     */
+    public int getFoodLevel();
+
+    /**
+     * Sets the players current food level
+     *
+     * @param value New food level
+     */
+    public void setFoodLevel(int value);
 }
