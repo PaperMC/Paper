@@ -19,9 +19,11 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     private CraftInventoryPlayer inventory;
     protected final PermissibleBase perm = new PermissibleBase(this);
     private boolean op;
+    private GameMode mode;
 
     public CraftHumanEntity(final CraftServer server, final EntityHuman entity) {
         super(server, entity);
+        mode = server.getDefaultGameMode();
         this.inventory = new CraftInventoryPlayer(entity.inventory);
     }
 
@@ -119,10 +121,14 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     public GameMode getGameMode() {
-        return GameMode.SURVIVAL;
+        return mode;
     }
 
     public void setGameMode(GameMode mode) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        if (mode == null) {
+            throw new IllegalArgumentException("Mode cannot be null");
+        }
+
+        this.mode = mode;
     }
 }
