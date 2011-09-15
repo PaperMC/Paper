@@ -293,4 +293,45 @@ public interface Player extends HumanEntity, CommandSender, OfflinePlayer {
      */
     public void resetPlayerTime();
 
+    /**
+     * Gets the players current experience points towards the next level
+     * 
+     * @return Current experience points
+     */
+    public int getExperience();
+
+    /**
+     * Sets the players current experience points
+     *
+     * @param exp New experience points
+     */
+    public void setExperience(int exp);
+
+    /**
+     * Gets the players current experience level
+     *
+     * @return Current experience level
+     */
+    public int getLevel();
+
+    /**
+     * Sets the players current experience level
+     *
+     * @param exp New experience level
+     */
+    public void setLevel(int level);
+
+    /**
+     * Gets the players total experience points
+     *
+     * @return Current total experience points
+     */
+    public int getTotalExperience();
+
+    /**
+     * Sets the players current experience level
+     *
+     * @param exp New experience level
+     */
+    public void setTotalExperience(int exp);
 }
