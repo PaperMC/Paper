@@ -138,7 +138,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
      * @return Biome at given coordinate
      */
     public Biome getBiome(int x, int z) {
-        return CraftBlock.biomeBaseToBiome(biome[x << 4 | z]);
+        return CraftBlock.biomeBaseToBiome(biome[z << 4 | x]);
     }
 
     /**
@@ -149,7 +149,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
      * @return temperature at given coordinate
      */
     public double getRawBiomeTemperature(int x, int z) {
-        return biomeTemp[x << 4 | z];
+        return biomeTemp[z << 4 | x];
     }
 
     /**
@@ -160,7 +160,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
      * @return rainfall at given coordinate
      */
     public double getRawBiomeRainfall(int x, int z) {
-        return biomeRain[x << 4 | z];
+        return biomeRain[z << 4 | x];
     }
 
     /**
