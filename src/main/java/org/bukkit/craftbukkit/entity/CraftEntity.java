@@ -50,9 +50,14 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
                         else { return new CraftZombie(server, (EntityZombie) entity); }
                     }
                     else if (entity instanceof EntityCreeper) { return new CraftCreeper(server, (EntityCreeper) entity); }
+                    else if (entity instanceof EntityEnderman) { return new CraftEnderman(server, (EntityEnderman) entity); }
+                    else if (entity instanceof EntitySilverfish) { return new CraftSilverfish(server, (EntitySilverfish) entity); }
                     else if (entity instanceof EntityGiantZombie) { return new CraftGiant(server, (EntityGiantZombie) entity); }
                     else if (entity instanceof EntitySkeleton) { return new CraftSkeleton(server, (EntitySkeleton) entity); }
-                    else if (entity instanceof EntitySpider) { return new CraftSpider(server, (EntitySpider) entity); }
+                    else if (entity instanceof EntitySpider) {
+                        if (entity instanceof EntityCaveSpider) { return new CraftCaveSpider(server, (EntityCaveSpider) entity); }
+                        else { return new CraftSpider(server, (EntitySpider) entity); }
+                    }
 
                     else  { return new CraftMonster(server, (EntityMonster) entity); }
                 }
@@ -72,6 +77,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             }
             else  { return new CraftLivingEntity(server, (EntityLiving) entity); }
         }
+        else if (entity instanceof EntityExperienceOrb) { return new CraftExperienceOrb(server, (EntityExperienceOrb) entity); }
         else if (entity instanceof EntityArrow) { return new CraftArrow(server, (EntityArrow) entity); }
         else if (entity instanceof EntityBoat) { return new CraftBoat(server, (EntityBoat) entity); }
         else if (entity instanceof EntityEgg) { return new CraftEgg(server, (EntityEgg) entity); }
