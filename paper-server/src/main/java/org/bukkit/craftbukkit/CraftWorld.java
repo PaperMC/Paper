@@ -729,7 +729,13 @@ public class CraftWorld implements World {
             } else if (Slime.class.isAssignableFrom(clazz)) {
                 entity = new EntitySlime(world);
             } else if (Spider.class.isAssignableFrom(clazz)) {
-                entity = new EntitySpider(world);
+
+                if (CaveSpider.class.isAssignableFrom(clazz)) {
+                    entity = new EntityCaveSpider(world);
+                } else {
+                    entity = new EntitySpider(world);
+                }
+
             } else if (Squid.class.isAssignableFrom(clazz)) {
                 entity = new EntitySquid(world);
             } else if (Wolf.class.isAssignableFrom(clazz)) {
@@ -738,6 +744,10 @@ public class CraftWorld implements World {
                 entity = new EntityPigZombie(world);
             } else if (Zombie.class.isAssignableFrom(clazz)) {
                 entity = new EntityZombie(world);
+            } else if (Silverfish.class.isAssignableFrom(clazz)) {
+                entity = new EntitySilverfish(world);
+            } else if (Enderman.class.isAssignableFrom(clazz)) {
+                entity = new EntityEnderman(world);
             }
 
             if (entity != null) {
@@ -748,6 +758,8 @@ public class CraftWorld implements World {
             // negative
         } else if (TNTPrimed.class.isAssignableFrom(clazz)) {
             entity = new EntityTNTPrimed(world, x, y, z);
+        } else if (ExperienceOrb.class.isAssignableFrom(clazz)) {
+            entity = new EntityExperienceOrb(world, x, y, z, 0);
         } else if (Weather.class.isAssignableFrom(clazz)) {
             // not sure what this can do
             entity = new EntityWeatherStorm(world, x, y, z);
