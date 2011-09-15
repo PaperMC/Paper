@@ -16,5 +16,8 @@ public enum Biome {
     ICE_DESERT,
     TUNDRA,
     HELL,
-    SKY
+    SKY,
+    OCEAN,
+    RIVER,
+    EXTREME_HILLS,
 }
