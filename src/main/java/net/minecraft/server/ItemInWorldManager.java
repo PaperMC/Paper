@@ -82,19 +82,22 @@ public class ItemInWorldManager {
 
     public void dig(int i, int j, int k, int l) {
         // this.world.douseFire((EntityHuman) null, i, j, k, l); // CraftBukkit - moved down
+        // CraftBukkit start
+        PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, i, j, k, l, this.player.inventory.getItemInHand());
+
         if (this.b()) {
+            if (event.isCancelled()) {
+                return;
+            }
             this.c(i, j, k);
         } else {
             this.lastDigTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit
             int i1 = this.world.getTypeId(i, j, k);
 
-            // CraftBukkit start
             // Swings at air do *NOT* exist.
             if (i1 <= 0) {
                 return;
             }
-
-            PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, i, j, k, l, this.player.inventory.getItemInHand());
 
             if (event.useInteractedBlock() == Event.Result.DENY) {
                 // If we denied a door from opening, we need to send a correcting update to the client, as it already opened the door.
