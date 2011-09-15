@@ -40,7 +40,7 @@ public class GameModeCommand extends VanillaCommand {
 
                     player.setGameMode(mode);
                 } else {
-                    sender.sendMessage(player.getName() + " already has game mode" + mode.getValue());
+                    sender.sendMessage(player.getName() + " already has game mode " + mode.getValue());
                 }
             } else {
                 sender.sendMessage("There is no game mode with id " + args[1]);

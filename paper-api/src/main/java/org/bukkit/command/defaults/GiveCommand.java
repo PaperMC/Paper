@@ -30,7 +30,7 @@ public class GiveCommand extends VanillaCommand {
             Material material = Material.matchMaterial(args[1]);
 
             if (material != null) {
-                Command.broadcastCommandMessage(sender, "Giving " + player.getName() + " some " + material.getId() + "(" + material + ")");
+                Command.broadcastCommandMessage(sender, "Giving " + player.getName() + " some " + material.getId() + " (" + material + ")");
 
                 int amount = 1;
 
