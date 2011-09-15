@@ -677,7 +677,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         if (packet != null) this.networkManager.queue(packet);
         // CraftBukkit end
 
-        this.g = this.f;
+        this.i = this.f;
     }
 
     public void a(Packet16BlockItemSwitch packet16blockitemswitch) {
