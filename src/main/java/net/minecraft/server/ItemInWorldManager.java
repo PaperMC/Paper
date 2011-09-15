@@ -266,7 +266,16 @@ public class ItemInWorldManager {
             }
 
             if (itemstack != null && !result) {
+                int j1 = itemstack.getData();
+                int k1 = itemstack.count;
+
                 result = itemstack.placeItem(entityhuman, world, i, j, k, l);
+
+                // The item count should not decrement in Creative mode.
+                if (this.b()) {
+                    itemstack.b(j1);
+                    itemstack.count = k1;
+                }
             }
 
             // If we have 'true' and no explicit deny *or* an explicit allow -- run the item part of the hook
