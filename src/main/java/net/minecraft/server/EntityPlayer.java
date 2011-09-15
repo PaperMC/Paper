@@ -95,9 +95,11 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             this.setPosition(position.x + 0.5, position.y, position.z + 0.5);
         }
         this.dimension = ((WorldServer) this.world).dimension;
-        // CraftBukkit end
+        int oldMode = itemInWorldManager.a();
         this.itemInWorldManager = new ItemInWorldManager((WorldServer) world);
         this.itemInWorldManager.player = this;
+        this.itemInWorldManager.a(oldMode);
+        // CraftBukkit end
     }
 
     public void syncInventory() {
