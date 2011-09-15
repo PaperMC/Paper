@@ -431,8 +431,6 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         WorldServer worldserver = this.minecraftServer.getWorldServer(this.player.dimension);
 
         if (packet14blockdig.e == 4) {
-            this.player.J();
-        } else if (packet14blockdig.e == 5) {
             // CraftBukkit start
             // If the ticks aren't the same then the count starts from 0 and we update the lastDropTick.
             if (this.lastDropTick != MinecraftServer.currentTick) {
@@ -444,9 +442,12 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 if (this.dropCount >= 20) {
                     a.warning(this.player.name + " dropped their items too quickly!");
                     this.disconnect("You dropped your items too quickly (Hacking?)");
+                    return;
                 }
             }
             // CraftBukkit end
+            this.player.J();
+        } else if (packet14blockdig.e == 5) {
             this.player.E();
         } else {
             boolean flag = worldserver.weirdIsOpCache = worldserver.dimension != 0 || this.minecraftServer.serverConfigurationManager.isOp(this.player.name); // CraftBukkit
