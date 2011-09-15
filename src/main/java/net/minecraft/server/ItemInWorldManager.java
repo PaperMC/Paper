@@ -33,14 +33,14 @@ public class ItemInWorldManager {
     public void a(int i) {
         this.c = i;
         if (i == 0) {
-            this.player.K.c = false;
-            this.player.K.b = false;
-            this.player.K.d = false;
-            this.player.K.a = false;
+            this.player.abilities.canFly = false;
+            this.player.abilities.isFlying = false;
+            this.player.abilities.canInstantlyBuild = false;
+            this.player.abilities.isInvulnerable = false;
         } else {
-            this.player.K.c = true;
-            this.player.K.d = true;
-            this.player.K.a = true;
+            this.player.abilities.canFly = true;
+            this.player.abilities.canInstantlyBuild = true;
+            this.player.abilities.isInvulnerable = true;
         }
     }
 
@@ -229,7 +229,7 @@ public class ItemInWorldManager {
         int j = itemstack.getData();
         ItemStack itemstack1 = itemstack.a(world, entityhuman);
 
-        if (itemstack1 == itemstack && (itemstack1 == null || itemstack1.count == i)) {
+        if (itemstack1 == itemstack && (itemstack1 == null || itemstack1.count == i) && (itemstack1 == null || itemstack1.l() <= 0)) {
             return false;
         } else {
             entityhuman.inventory.items[entityhuman.inventory.itemInHandIndex] = itemstack1;

@@ -150,10 +150,10 @@ public class EntityFireball extends Entity {
                             stick = !projectile.doesBounce();
                         } else {
                             // this function returns if the fireball should stick in or not, i.e. !bounce
-                            stick = movingobjectposition.entity.damageEntity(DamageSource.a(this, this), event.getDamage());
+                            stick = movingobjectposition.entity.damageEntity(DamageSource.fireball(this, this.shooter), event.getDamage());
                         }
                     } else {
-                        stick = movingobjectposition.entity.damageEntity(DamageSource.a(this, this.shooter), 0);
+                        stick = movingobjectposition.entity.damageEntity(DamageSource.fireball(this, this.shooter), 0);
                     }
                     if (stick) {
                         ;
@@ -244,8 +244,8 @@ public class EntityFireball extends Entity {
 
     public boolean damageEntity(DamageSource damagesource, int i) {
         this.aq();
-        if (damagesource.a() != null) {
-            Vec3D vec3d = damagesource.a().ai();
+        if (damagesource.getEntity() != null) {
+            Vec3D vec3d = damagesource.getEntity().ai();
 
             if (vec3d != null) {
                 this.motX = vec3d.a;

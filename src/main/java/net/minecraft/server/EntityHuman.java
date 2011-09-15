@@ -22,7 +22,7 @@ public abstract class EntityHuman extends EntityLiving {
     public InventoryPlayer inventory = new InventoryPlayer(this);
     public Container defaultContainer;
     public Container activeContainer;
-    protected FoodMetaData m = new FoodMetaData();
+    protected FoodMetaData foodData = new FoodMetaData();
     protected int n = 0;
     public byte o = 0;
     public int p = 0;
@@ -53,7 +53,7 @@ public abstract class EntityHuman extends EntityLiving {
     public int H = 20;
     protected boolean I = false;
     public float J;
-    public PlayerAbilities K = new PlayerAbilities();
+    public PlayerAbilities abilities = new PlayerAbilities();
     public int exp;
     public int expLevel;
     public int expTotal;
@@ -156,13 +156,13 @@ public abstract class EntityHuman extends EntityLiving {
             this.activeContainer = this.defaultContainer;
         }
 
-        if (this.K.b) {
+        if (this.abilities.isFlying) {
             for (int i = 0; i < 8; ++i) {
                 ;
             }
         }
 
-        if (this.fireTicks > 0 && this.K.a) {
+        if (this.fireTicks > 0 && this.abilities.isInvulnerable) {
             this.fireTicks = 0;
         }
 
@@ -207,7 +207,7 @@ public abstract class EntityHuman extends EntityLiving {
         }
 
         if (!this.world.isStatic) {
-            this.m.a(this);
+            this.foodData.a(this);
         }
     }
 
@@ -484,7 +484,7 @@ public abstract class EntityHuman extends EntityLiving {
             this.b = new ChunkCoordinates(nbttagcompound.e("SpawnX"), nbttagcompound.e("SpawnY"), nbttagcompound.e("SpawnZ"));
         }
 
-        this.m.a(nbttagcompound);
+        this.foodData.a(nbttagcompound);
     }
 
     public void b(NBTTagCompound nbttagcompound) {
@@ -502,7 +502,7 @@ public abstract class EntityHuman extends EntityLiving {
             nbttagcompound.a("SpawnZ", this.b.z);
         }
 
-        this.m.b(nbttagcompound);
+        this.foodData.b(nbttagcompound);
     }
 
     public void a(IInventory iinventory) {}
@@ -520,7 +520,7 @@ public abstract class EntityHuman extends EntityLiving {
     }
 
     public boolean damageEntity(DamageSource damagesource, int i) {
-        if (this.K.a && !damagesource.d()) {
+        if (this.abilities.isInvulnerable && !damagesource.ignoresInvulnerability()) {
             return false;
         } else {
             this.aO = 0;
@@ -531,7 +531,7 @@ public abstract class EntityHuman extends EntityLiving {
                     this.a(true, true, false);
                 }
 
-                Entity entity = damagesource.a();
+                Entity entity = damagesource.getEntity();
 
                 if (entity instanceof EntityMonster || entity instanceof EntityArrow) {
                     if (this.world.spawnMonsters == 0) {
@@ -634,11 +634,11 @@ public abstract class EntityHuman extends EntityLiving {
     }
 
     protected void b(DamageSource damagesource, int i) {
-        if (!damagesource.b() && this.G()) {
+        if (!damagesource.ignoresArmor() && this.G()) {
             i = 1 + i >> 1;
         }
 
-        if (!damagesource.b()) {
+        if (!damagesource.ignoresArmor()) {
             int j = 25 - this.inventory.i();
             int k = i * j + this.f;
 
@@ -717,7 +717,7 @@ public abstract class EntityHuman extends EntityLiving {
             }
             // CraftBukkit end
 
-            boolean flag1 = entity.damageEntity(DamageSource.b(this), i);
+            boolean flag1 = entity.damageEntity(DamageSource.playerAttack(this), i);
 
             // CraftBukkit start - Return when the damage fails so that the item will not lose durability
             if (!flag1) {
@@ -985,7 +985,7 @@ public abstract class EntityHuman extends EntityLiving {
         double d1 = this.locY;
         double d2 = this.locZ;
 
-        if (this.K.b) {
+        if (this.abilities.isFlying) {
             double d3 = this.motY;
             float f2 = this.ak;
 
@@ -1061,7 +1061,7 @@ public abstract class EntityHuman extends EntityLiving {
     }
 
     protected void a(float f) {
-        if (!this.K.c) {
+        if (!this.abilities.canFly) {
             if (f >= 2.0F) {
                 this.a(StatisticList.n, (int) Math.round((double) f * 100.0D));
             }
@@ -1103,19 +1103,19 @@ public abstract class EntityHuman extends EntityLiving {
     }
 
     public void b(float f) {
-        if (!this.K.a) {
+        if (!this.abilities.isInvulnerable) {
             if (!this.world.isStatic) {
-                this.m.a(f);
+                this.foodData.a(f);
             }
         }
     }
 
-    public FoodMetaData V() {
-        return this.m;
+    public FoodMetaData getFoodData() {
+        return this.foodData;
     }
 
     public boolean c(boolean flag) {
-        return (flag || this.m.b()) && !this.K.a;
+        return (flag || this.foodData.b()) && !this.abilities.isInvulnerable;
     }
 
     public boolean W() {

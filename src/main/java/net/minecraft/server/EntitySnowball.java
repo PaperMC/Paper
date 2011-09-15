@@ -167,10 +167,10 @@ public class EntitySnowball extends Entity {
                         stick = !projectile.doesBounce();
                     } else {
                         // this function returns if the snowball should stick in or not, i.e. !bounce
-                        stick = movingobjectposition.entity.damageEntity(DamageSource.a(this, this), event.getDamage());
+                        stick = movingobjectposition.entity.damageEntity(DamageSource.projectile(this, this.shooter), event.getDamage());
                     }
                 } else {
-                    stick = movingobjectposition.entity.damageEntity(DamageSource.a(this, this.shooter), 0);
+                    stick = movingobjectposition.entity.damageEntity(DamageSource.projectile(this, this.shooter), 0);
                 }
                 if (stick) {
                     ;

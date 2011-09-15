@@ -42,7 +42,7 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
 
     public boolean damageEntity(DamageSource damagesource, int i) {
         if (super.damageEntity(damagesource, i)) {
-            Entity entity = damagesource.a();
+            Entity entity = damagesource.getEntity();
 
             if (this.passenger != entity && this.vehicle != entity) {
                 if (entity != this) {
@@ -82,14 +82,14 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
             this.world.getServer().getPluginManager().callEvent(event);
 
             if (!event.isCancelled()) {
-                return entity.damageEntity(DamageSource.a(this), event.getDamage());
+                return entity.damageEntity(DamageSource.mobAttack(this), event.getDamage());
             }
 
             return false;
         }
         // CraftBukkit end
 
-        return entity.damageEntity(DamageSource.a((EntityLiving) this), this.damage);
+        return entity.damageEntity(DamageSource.mobAttack((EntityLiving) this), this.damage);
     }
 
     protected void a(Entity entity, float f) {

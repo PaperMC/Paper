@@ -268,10 +268,10 @@ public abstract class Entity {
                         this.world.getServer().getPluginManager().callEvent(event);
 
                         if (!event.isCancelled()) {
-                            this.damageEntity(DamageSource.b, event.getDamage());
+                            this.damageEntity(DamageSource.BURN, event.getDamage());
                         }
                     } else {
-                        this.damageEntity(DamageSource.b, 1);
+                        this.damageEntity(DamageSource.BURN, 1);
                     }
                     // CraftBukkit end
                 }
@@ -310,7 +310,7 @@ public abstract class Entity {
                 server.getPluginManager().callEvent(event);
 
                 if (!event.isCancelled()) {
-                    this.damageEntity(DamageSource.c, event.getDamage());
+                    this.damageEntity(DamageSource.LAVA, event.getDamage());
                 }
 
                 if (this.fireTicks <= 0) {
@@ -329,7 +329,7 @@ public abstract class Entity {
             }
             // CraftBukkit end
 
-            this.damageEntity(DamageSource.c, 4);
+            this.damageEntity(DamageSource.LAVA, 4);
             this.fireTicks = 600;
         }
     }
@@ -668,7 +668,7 @@ public abstract class Entity {
                 i = event.getDamage();
             }
             // CraftBukkit end
-            this.damageEntity(DamageSource.a, i);
+            this.damageEntity(DamageSource.FIRE, i);
         }
     }
 

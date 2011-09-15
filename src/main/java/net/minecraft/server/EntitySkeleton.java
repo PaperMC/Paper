@@ -32,8 +32,8 @@ public class EntitySkeleton extends EntityMonster {
 
     public void die(DamageSource damagesource) {
         super.die(damagesource);
-        if (damagesource.e() instanceof EntityArrow && damagesource.a() instanceof EntityHuman) {
-            EntityHuman entityhuman = (EntityHuman) damagesource.a();
+        if (damagesource.e() instanceof EntityArrow && damagesource.getEntity() instanceof EntityHuman) {
+            EntityHuman entityhuman = (EntityHuman) damagesource.getEntity();
             double d0 = entityhuman.locX - this.locX;
             double d1 = entityhuman.locZ - this.locZ;
 

@@ -53,7 +53,7 @@ public class EntityPigZombie extends EntityZombie {
     }
 
     public boolean damageEntity(DamageSource damagesource, int i) {
-        Entity entity = damagesource.a();
+        Entity entity = damagesource.getEntity();
 
         if (entity instanceof EntityHuman) {
             List list = this.world.b((Entity) this, this.boundingBox.b(32.0D, 32.0D, 32.0D));

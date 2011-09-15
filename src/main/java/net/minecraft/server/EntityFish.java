@@ -204,10 +204,10 @@ public class EntityFish extends Entity {
                             stick = !projectile.doesBounce();
                         } else {
                             // this function returns if the fish should stick in or not, i.e. !bounce
-                            stick = movingobjectposition.entity.damageEntity(DamageSource.a((Entity) this, this), event.getDamage());
+                            stick = movingobjectposition.entity.damageEntity(DamageSource.projectile((Entity) this, this.owner), event.getDamage());
                         }
                     } else {
-                        stick = movingobjectposition.entity.damageEntity(DamageSource.a((Entity) this, this.owner), 0);
+                        stick = movingobjectposition.entity.damageEntity(DamageSource.projectile((Entity) this, this.owner), 0);
                     }
                     if (!stick) {
                         // CraftBukkit end

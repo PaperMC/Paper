@@ -201,7 +201,7 @@ public class EntityPainting extends Entity {
     public boolean damageEntity(DamageSource damagesource, int i) {
         if (!this.dead && !this.world.isStatic) {
             // CraftBukkit start
-            PaintingBreakByEntityEvent event = new PaintingBreakByEntityEvent((org.bukkit.entity.Painting) this.getBukkitEntity(), damagesource.a() == null ? null : damagesource.a().getBukkitEntity());
+            PaintingBreakByEntityEvent event = new PaintingBreakByEntityEvent((org.bukkit.entity.Painting) this.getBukkitEntity(), damagesource.getEntity() == null ? null : damagesource.getEntity().getBukkitEntity());
             this.world.getServer().getPluginManager().callEvent(event);
 
             if (event.isCancelled()) {

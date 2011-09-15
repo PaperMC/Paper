@@ -100,7 +100,7 @@ public class EntityExperienceOrb extends Entity {
     }
 
     protected void burn(int i) {
-        this.damageEntity(DamageSource.a, i);
+        this.damageEntity(DamageSource.FIRE, i);
     }
 
     public boolean damageEntity(DamageSource damagesource, int i) {

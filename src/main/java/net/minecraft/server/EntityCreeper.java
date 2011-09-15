@@ -85,7 +85,7 @@ public class EntityCreeper extends EntityMonster {
 
     public void die(DamageSource damagesource) {
         super.die(damagesource);
-        if (damagesource.a() instanceof EntitySkeleton) {
+        if (damagesource.getEntity() instanceof EntitySkeleton) {
             this.b(Item.GOLD_RECORD.id + this.random.nextInt(2), 1);
         }
     }

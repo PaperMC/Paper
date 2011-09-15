@@ -168,10 +168,10 @@ public class EntityEgg extends Entity {
                         stick = !projectile.doesBounce();
                     } else {
                         // this function returns if the egg should stick in or not, i.e. !bounce
-                        stick = movingobjectposition.entity.damageEntity(DamageSource.a(this, this), event.getDamage());
+                        stick = movingobjectposition.entity.damageEntity(DamageSource.projectile(this, this.thrower), event.getDamage());
                     }
                 } else {
-                    stick = movingobjectposition.entity.damageEntity(DamageSource.a(this, this.thrower), 0);
+                    stick = movingobjectposition.entity.damageEntity(DamageSource.projectile(this, this.thrower), 0);
                 }
 
                 if (stick) {

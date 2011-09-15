@@ -130,7 +130,7 @@ public class Explosion {
                     server.getPluginManager().callEvent(event);
 
                     if (!event.isCancelled()) {
-                        entity.damageEntity(DamageSource.k, event.getDamage());
+                        entity.damageEntity(DamageSource.EXPLOSION, event.getDamage());
                         entity.motX += d0 * d10;
                         entity.motY += d1 * d10;
                         entity.motZ += d2 * d10;
@@ -140,7 +140,7 @@ public class Explosion {
                     server.getPluginManager().callEvent(event);
 
                     if (!event.isCancelled()) {
-                        entity.damageEntity(DamageSource.k, event.getDamage());
+                        entity.damageEntity(DamageSource.EXPLOSION, event.getDamage());
 
                         entity.motX += d0 * d10;
                         entity.motY += d1 * d10;

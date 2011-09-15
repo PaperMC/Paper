@@ -52,7 +52,7 @@ class PlayerInstance {
             if (this.b.size() == 0) {
                 long i = (long) this.chunkX + 2147483647L | (long) this.chunkZ + 2147483647L << 32;
 
-                PlayerManager.a(this.playerManager).d(i);
+                PlayerManager.a(this.playerManager).remove(i);
                 if (this.dirtyCount > 0) {
                     PlayerManager.b(this.playerManager).remove(this);
                 }

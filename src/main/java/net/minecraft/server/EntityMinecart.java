@@ -100,7 +100,7 @@ public class EntityMinecart extends Entity implements IInventory {
         if (!this.world.isStatic && !this.dead) {
             // CraftBukkit start
             Vehicle vehicle = (Vehicle) this.getBukkitEntity();
-            org.bukkit.entity.Entity passenger = (damagesource.a() == null) ? null : damagesource.a().getBukkitEntity();
+            org.bukkit.entity.Entity passenger = (damagesource.getEntity() == null) ? null : damagesource.getEntity().getBukkitEntity();
 
             VehicleDamageEvent event = new VehicleDamageEvent(vehicle, passenger, i);
             this.world.getServer().getPluginManager().callEvent(event);

@@ -3,18 +3,18 @@ package net.minecraft.server;
 public class FoodMetaData {
 
     // CraftBukkit start - all made public
-    public int a = 20;
-    public float b = 5.0F;
-    public float c;
-    public int d = 0;
+    public int foodLevel = 20;
+    public float saturationLevel = 5.0F;
+    public float exhaustionLevel;
+    public int foodTickTimer = 0;
     // CraftBukkit end
     private int e = 20;
 
     public FoodMetaData() {}
 
     public void a(int i, float f) {
-        this.a = Math.min(i + this.a, 20);
-        this.b = Math.min(this.b + (float) i * f * 2.0F, (float) this.a);
+        this.foodLevel = Math.min(i + this.foodLevel, 20);
+        this.saturationLevel = Math.min(this.saturationLevel + (float) i * f * 2.0F, (float) this.foodLevel);
     }
 
     public void a(ItemFood itemfood) {
@@ -24,65 +24,65 @@ public class FoodMetaData {
     public void a(EntityHuman entityhuman) {
         int i = entityhuman.world.spawnMonsters;
 
-        this.e = this.a;
-        if (this.c > 4.0F) {
-            this.c -= 4.0F;
-            if (this.b > 0.0F) {
-                this.b = Math.max(this.b - 1.0F, 0.0F);
+        this.e = this.foodLevel;
+        if (this.exhaustionLevel > 4.0F) {
+            this.exhaustionLevel -= 4.0F;
+            if (this.saturationLevel > 0.0F) {
+                this.saturationLevel = Math.max(this.saturationLevel - 1.0F, 0.0F);
             } else if (i > 0) {
-                this.a = Math.max(this.a - 1, 0);
+                this.foodLevel = Math.max(this.foodLevel - 1, 0);
             }
         }
 
-        if (this.a >= 18 && entityhuman.W()) {
-            ++this.d;
-            if (this.d >= 80) {
+        if (this.foodLevel >= 18 && entityhuman.W()) {
+            ++this.foodTickTimer;
+            if (this.foodTickTimer >= 80) {
                 entityhuman.c(1);
-                this.d = 0;
+                this.foodTickTimer = 0;
             }
-        } else if (this.a <= 0) {
-            ++this.d;
-            if (this.d >= 80) {
+        } else if (this.foodLevel <= 0) {
+            ++this.foodTickTimer;
+            if (this.foodTickTimer >= 80) {
                 if (entityhuman.health > 10 || i >= 3 || entityhuman.health > 1 && i >= 2) {
-                    entityhuman.damageEntity(DamageSource.f, 1);
+                    entityhuman.damageEntity(DamageSource.STARVE, 1);
                 }
 
-                this.d = 0;
+                this.foodTickTimer = 0;
             }
         } else {
-            this.d = 0;
+            this.foodTickTimer = 0;
         }
     }
 
     public void a(NBTTagCompound nbttagcompound) {
         if (nbttagcompound.hasKey("foodLevel")) {
-            this.a = nbttagcompound.e("foodLevel");
-            this.d = nbttagcompound.e("foodTickTimer");
-            this.b = nbttagcompound.g("foodSaturationLevel");
-            this.c = nbttagcompound.g("foodExhaustionLevel");
+            this.foodLevel = nbttagcompound.e("foodLevel");
+            this.foodTickTimer = nbttagcompound.e("foodTickTimer");
+            this.saturationLevel = nbttagcompound.g("foodSaturationLevel");
+            this.exhaustionLevel = nbttagcompound.g("foodExhaustionLevel");
         }
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("foodLevel", this.a);
-        nbttagcompound.a("foodTickTimer", this.d);
-        nbttagcompound.a("foodSaturationLevel", this.b);
-        nbttagcompound.a("foodExhaustionLevel", this.c);
+        nbttagcompound.a("foodLevel", this.foodLevel);
+        nbttagcompound.a("foodTickTimer", this.foodTickTimer);
+        nbttagcompound.a("foodSaturationLevel", this.saturationLevel);
+        nbttagcompound.a("foodExhaustionLevel", this.exhaustionLevel);
     }
 
     public int a() {
-        return this.a;
+        return this.foodLevel;
     }
 
     public boolean b() {
-        return this.a < 20;
+        return this.foodLevel < 20;
     }
 
     public void a(float f) {
-        this.c = Math.min(this.c + f, 40.0F);
+        this.exhaustionLevel = Math.min(this.exhaustionLevel + f, 40.0F);
     }
 
     public float c() {
-        return this.b;
+        return this.saturationLevel;
     }
 }

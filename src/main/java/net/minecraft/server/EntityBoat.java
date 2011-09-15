@@ -93,7 +93,7 @@ public class EntityBoat extends Entity {
         if (!this.world.isStatic && !this.dead) {
             // CraftBukkit start
             Vehicle vehicle = (Vehicle) this.getBukkitEntity();
-            org.bukkit.entity.Entity attacker = (damagesource.a() == null) ? null : damagesource.a().getBukkitEntity();
+            org.bukkit.entity.Entity attacker = (damagesource.getEntity() == null) ? null : damagesource.getEntity().getBukkitEntity();
 
             VehicleDamageEvent event = new VehicleDamageEvent(vehicle, attacker, i);
             this.world.getServer().getPluginManager().callEvent(event);

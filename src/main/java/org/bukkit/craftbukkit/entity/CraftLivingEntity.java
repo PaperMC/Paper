@@ -41,7 +41,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         }
 
         if (entity instanceof EntityPlayer && health == 0) {
-            ((EntityPlayer) entity).die(DamageSource.j);
+            ((EntityPlayer) entity).die(DamageSource.GENERIC);
         }
 
         getHandle().health = health;
@@ -176,16 +176,16 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public void damage(int amount) {
-        entity.damageEntity(DamageSource.j, amount);
+        entity.damageEntity(DamageSource.GENERIC, amount);
     }
 
     public void damage(int amount, org.bukkit.entity.Entity source) {
-        DamageSource reason = DamageSource.a.j;
+        DamageSource reason = DamageSource.GENERIC;
 
         if (source instanceof HumanEntity) {
-            reason = DamageSource.b(((CraftHumanEntity)source).getHandle());
+            reason = DamageSource.playerAttack(((CraftHumanEntity)source).getHandle());
         } else if (source instanceof LivingEntity) {
-            reason = DamageSource.a(((CraftLivingEntity)source).getHandle());
+            reason = DamageSource.mobAttack(((CraftLivingEntity)source).getHandle());
         }
 
         entity.damageEntity(reason, amount);

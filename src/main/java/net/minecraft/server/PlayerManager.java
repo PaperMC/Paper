@@ -39,11 +39,11 @@ public class PlayerManager {
 
     private PlayerInstance a(int i, int j, boolean flag) {
         long k = (long) i + 2147483647L | (long) j + 2147483647L << 32;
-        PlayerInstance playerinstance = (PlayerInstance) this.b.a(k);
+        PlayerInstance playerinstance = (PlayerInstance) this.b.getEntry(k);
 
         if (playerinstance == null && flag) {
             playerinstance = new PlayerInstance(this, i, j);
-            this.b.a(k, playerinstance);
+            this.b.put(k, playerinstance);
         }
 
         return playerinstance;

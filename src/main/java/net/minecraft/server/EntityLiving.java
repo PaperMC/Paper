@@ -133,7 +133,7 @@ public abstract class EntityLiving extends Entity {
             this.world.getServer().getPluginManager().callEvent(event);
 
             if (!event.isCancelled()) {
-                this.damageEntity(DamageSource.d, event.getDamage());
+                this.damageEntity(DamageSource.STUCK, event.getDamage());
             }
             // CraftBukkit end
         }
@@ -162,7 +162,7 @@ public abstract class EntityLiving extends Entity {
                 this.world.getServer().getPluginManager().callEvent(event);
 
                 if (!event.isCancelled() && event.getDamage() != 0) {
-                    this.damageEntity(DamageSource.e, event.getDamage());
+                    this.damageEntity(DamageSource.DROWN, event.getDamage());
                 }
                 // CraftBukkit end
             }
@@ -412,7 +412,7 @@ public abstract class EntityLiving extends Entity {
                 }
 
                 this.ar = 0.0F;
-                Entity entity = damagesource.a();
+                Entity entity = damagesource.getEntity();
 
                 if (entity != null) {
                     if (entity instanceof EntityHuman) {
@@ -499,7 +499,7 @@ public abstract class EntityLiving extends Entity {
     }
 
     public void die(DamageSource damagesource) {
-        Entity entity = damagesource.a();
+        Entity entity = damagesource.getEntity();
 
         if (this.ag >= 0 && entity != null) {
             entity.b(this, this.ag);
@@ -553,7 +553,7 @@ public abstract class EntityLiving extends Entity {
             this.world.getServer().getPluginManager().callEvent(event);
 
             if (!event.isCancelled() && event.getDamage() != 0) {
-                this.damageEntity(DamageSource.h, event.getDamage());
+                this.damageEntity(DamageSource.FALL, event.getDamage());
             }
             // CraftBukkit end
 
@@ -973,7 +973,7 @@ public abstract class EntityLiving extends Entity {
             return;
         }
 
-        this.damageEntity(DamageSource.i, event.getDamage());
+        this.damageEntity(DamageSource.OUT_OF_WORLD, event.getDamage());
         // CraftBukkit end
     }
 
