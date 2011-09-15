@@ -110,7 +110,7 @@ public enum Material {
     LOCKED_CHEST(95),
     TRAP_DOOR(96, TrapDoor.class),
     MONSTER_EGGS(97),
-    SMOOTH_BRICK(98),
+    SMOOTH_BRICK(98, SmoothBrick.class),
     HUGE_MUSHROOM_1(99),
     HUGE_MUSHROOM_2(100),
     IRON_FENCE(101),
