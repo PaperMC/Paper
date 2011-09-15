@@ -426,26 +426,26 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public float getExhaustion() {
-        return getHandle().V().c;
+        return getHandle().getFoodData().exhaustionLevel;
     }
 
     public void setExhaustion(float value) {
-        getHandle().V().c = value;
+        getHandle().getFoodData().exhaustionLevel = value;
     }
 
     public float getSaturation() {
-        return getHandle().V().b;
+        return getHandle().getFoodData().saturationLevel;
     }
 
     public void setSaturation(float value) {
-        getHandle().V().b = value;
+        getHandle().getFoodData().saturationLevel = value;
     }
 
     public int getFoodLevel() {
-        return getHandle().V().a;
+        return getHandle().getFoodData().foodLevel;
     }
 
     public void setFoodLevel(int value) {
-        getHandle().V().a = value;
+        getHandle().getFoodData().foodLevel = value;
     }
 }
