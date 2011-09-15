@@ -50,7 +50,11 @@ public class ItemDoor extends Item {
         }
     }
 
-    // Craftbukkit - void -> boolean + entityhuman argument
+    public static void a(World world, int i, int j, int k, int l, Block block) {
+        // CraftBukkit Start
+        a(world, i, j, k, l, block, null);
+    }
+
     public static boolean a(World world, int i, int j, int k, int l, Block block, EntityHuman entityhuman) {
         int clickedX = i, clickedY = j, clickedZ = k; // CraftBukkit
         byte b0 = 0;
@@ -93,23 +97,27 @@ public class ItemDoor extends Item {
 
         world.suppressPhysics = true;
         world.setTypeIdAndData(i, j, k, block.id, l);
-        // CraftBukkit start - bed
         world.suppressPhysics = false;
-        world.applyPhysics(i, j, k, Block.REDSTONE_WIRE.id);
-        BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ, block);
 
-        if (event.isCancelled() || !event.canBuild()) {
-            event.getBlockPlaced().setTypeIdAndData(blockState.getTypeId(), blockState.getRawData(), false);
-            return false;
+        world.applyPhysics(i, j, k, Block.REDSTONE_WIRE.id);
+
+        if (entityhuman != null) {
+            BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ, block);
+
+            if (event.isCancelled() || !event.canBuild()) {
+                event.getBlockPlaced().setTypeIdAndData(blockState.getTypeId(), blockState.getRawData(), false);
+                return false;
+            }
         }
 
         world.suppressPhysics = true;
-        // CraftBukkit end
         world.setTypeIdAndData(i, j + 1, k, block.id, l + 8);
         world.suppressPhysics = false;
+
         // world.applyPhysics(i, j, k, block.id); // CraftBukkit - moved up
         world.applyPhysics(i, j + 1, k, block.id);
 
-        return true; // CraftBukkit
+        return true;
+        // CraftBukkit end
     }
 }
