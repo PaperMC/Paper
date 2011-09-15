@@ -396,4 +396,32 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public GameMode getGameMode() {
         return GameMode.getByValue(getHandle().itemInWorldManager.a());
     }
+
+    public int getExperience() {
+        return getHandle().exp;
+    }
+
+    public void setExperience(int exp) {
+        getHandle().d(exp);
+    }
+
+    public int getLevel() {
+        return getHandle().expLevel;
+    }
+
+    public void setLevel(int level) {
+        getHandle().expLevel = level;
+    }
+
+    public int getTotalExperience() {
+        return getHandle().expTotal;
+    }
+
+    public void setTotalExperience(int exp) {
+        getHandle().expTotal = exp;
+
+        if (getTotalExperience() > getExperience()) {
+            getHandle().exp = getTotalExperience();
+        }
+    }
 }
