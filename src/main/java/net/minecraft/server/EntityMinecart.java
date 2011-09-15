@@ -210,7 +210,7 @@ public class EntityMinecart extends Entity implements IInventory {
         super.die();
     }
 
-    public void m_() {
+    public void s_() {
         // CraftBukkit start
         double prevX = this.locX;
         double prevY = this.locY;
