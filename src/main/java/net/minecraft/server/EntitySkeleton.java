@@ -26,11 +26,11 @@ public class EntitySkeleton extends EntityMonster {
         return "mob.skeletonhurt";
     }
 
-    public boolean a(DamageSource damagesource, int i) {
+    public boolean damageEntity(DamageSource damagesource, int i) {
         return super.damageEntity(damagesource, i);
     }
 
-    public void a(DamageSource damagesource) {
+    public void die(DamageSource damagesource) {
         super.die(damagesource);
         if (damagesource.e() instanceof EntityArrow && damagesource.a() instanceof EntityHuman) {
             EntityHuman entityhuman = (EntityHuman) damagesource.a();

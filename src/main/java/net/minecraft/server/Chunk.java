@@ -89,7 +89,7 @@ public class Chunk {
     public void a() {}
 
     public void initLighting() {
-        this.world.getClass();
+
         int i = 128 - 1;
 
         int j;
@@ -97,13 +97,10 @@ public class Chunk {
 
         for (j = 0; j < 16; ++j) {
             for (k = 0; k < 16; ++k) {
-                this.world.getClass();
+
                 int l = 128 - 1;
 
-                this.world.getClass();
                 int i1 = j << 11;
-
-                this.world.getClass();
 
                 int j1;
 
@@ -119,7 +116,6 @@ public class Chunk {
                 if (!this.world.worldProvider.e) {
                     int k1 = 15;
 
-                    this.world.getClass();
                     int l1 = 128 - 1;
 
                     do {
@@ -155,7 +151,6 @@ public class Chunk {
         World j0000 = this.world;
         int j0001 = this.x * 16 + 8;
 
-        this.world.getClass();
         if (j0000.areChunksLoaded(j0001, 128 / 2, this.z * 16 + 8, 16)) {
             for (int j = 0; j < 16; ++j) {
                 for (int k = 0; k < 16; ++k) {
@@ -208,7 +203,6 @@ public class Chunk {
         if (l > k) {
             World world = this.world;
 
-            this.world.getClass();
             if (world.areChunksLoaded(i, 128 / 2, j, 16)) {
                 for (int i1 = k; i1 < l; ++i1) {
                     this.world.b(EnumSkyBlock.SKY, i, i1, j);
@@ -226,11 +220,9 @@ public class Chunk {
         if (j > l) {
             i1 = j;
         }
-
+        //
         this.world.getClass();
         int j1 = i << 11;
-
-        this.world.getClass();
 
         for (int k1 = j1 | k << 7; i1 > 0 && Block.q[this.b[k1 + i1 - 1] & 255] == 0; --i1) {
             ;
@@ -246,7 +238,7 @@ public class Chunk {
             if (i1 < this.k) {
                 this.k = i1;
             } else {
-                this.world.getClass();
+
                 l1 = 128 - 1;
 
                 for (i2 = 0; i2 < 16; ++i2) {
@@ -307,10 +299,8 @@ public class Chunk {
     public int getTypeId(int i, int j, int k) {
         byte[] abyte = this.b;
 
-        this.world.getClass();
         int l = i << 11;
 
-        this.world.getClass();
         return abyte[l | k << 7 | j] & 255;
     }
 
@@ -325,10 +315,8 @@ public class Chunk {
         int k1 = this.heightMap[k << 4 | i] & 255;
         byte[] j2000 = this.b;
 
-        this.world.getClass();
         int j2001 = i << 11;
 
-        this.world.getClass();
         int i2 = j2000[j2001 | k << 7 | j] & 255;
 
         if (i2 == l && this.g.a(i, j, k) == i1) {
@@ -338,9 +326,9 @@ public class Chunk {
             int k2 = this.z * 16 + k;
 
             j2000 = this.b;
-            this.world.getClass();
+
             j2001 = i << 11;
-            this.world.getClass();
+
             j2000[j2001 | k << 7 | j] = (byte) (b0 & 255);
             if (i2 != 0 && !this.world.isStatic) {
                 Block.byId[i2].remove(this.world, j2, j, k2);
@@ -403,10 +391,8 @@ public class Chunk {
         int j1 = this.heightMap[i1] & 255;
         byte[] j2000 = this.b;
 
-        this.world.getClass();
         int j2001 = i << 11;
 
-        this.world.getClass();
         int l1 = j2000[j2001 | k << 7 | j] & 255;
 
         if (l1 == l) {
@@ -416,9 +402,9 @@ public class Chunk {
             int j2 = this.z * 16 + k;
 
             j2000 = this.b;
-            this.world.getClass();
+
             j2001 = i << 11;
-            this.world.getClass();
+
             j2000[j2001 | k << 7 | j] = (byte) (b0 & 255);
             if (l1 != 0) {
                 Block.byId[l1].remove(this.world, i2, j, j2);
@@ -766,9 +752,9 @@ public class Chunk {
 
             for (k2 = i; k2 < l; ++k2) {
                 for (i3 = k; i3 < j1; ++i3) {
-                    this.world.getClass();
+
                     l2 = k2 << 11;
-                    this.world.getClass();
+
                     j3 = l2 | i3 << 7 | j;
                     k3 = i1 - j;
                     System.arraycopy(this.b, j3, abyte, k1, k3);
@@ -778,9 +764,9 @@ public class Chunk {
 
             for (k2 = i; k2 < l; ++k2) {
                 for (i3 = k; i3 < j1; ++i3) {
-                    this.world.getClass();
+
                     l2 = k2 << 11;
-                    this.world.getClass();
+
                     j3 = (l2 | i3 << 7 | j) >> 1;
                     k3 = (i1 - j) / 2;
                     System.arraycopy(this.g.a, j3, abyte, k1, k3);
@@ -790,9 +776,9 @@ public class Chunk {
 
             for (k2 = i; k2 < l; ++k2) {
                 for (i3 = k; i3 < j1; ++i3) {
-                    this.world.getClass();
+
                     l2 = k2 << 11;
-                    this.world.getClass();
+
                     j3 = (l2 | i3 << 7 | j) >> 1;
                     k3 = (i1 - j) / 2;
                     System.arraycopy(this.i.a, j3, abyte, k1, k3);
@@ -802,9 +788,9 @@ public class Chunk {
 
             for (k2 = i; k2 < l; ++k2) {
                 for (i3 = k; i3 < j1; ++i3) {
-                    this.world.getClass();
+
                     l2 = k2 << 11;
-                    this.world.getClass();
+
                     j3 = (l2 | i3 << 7 | j) >> 1;
                     k3 = (i1 - j) / 2;
                     System.arraycopy(this.h.a, j3, abyte, k1, k3);
@@ -847,7 +833,7 @@ public class Chunk {
         int l = this.c[k];
 
         if (l == -999) {
-            this.world.getClass();
+
             int i1 = 128 - 1;
 
             l = -1;

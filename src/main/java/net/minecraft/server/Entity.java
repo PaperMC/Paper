@@ -739,7 +739,6 @@ public abstract class Entity {
         int j = MathHelper.floor(this.locZ);
         World world = this.world;
 
-        this.world.getClass();
         if (world.isLoaded(i, 128 / 2, j)) {
             double d0 = (this.boundingBox.e - this.boundingBox.b) * 0.66D;
             int k = MathHelper.floor(this.locY - (double) this.height + d0);

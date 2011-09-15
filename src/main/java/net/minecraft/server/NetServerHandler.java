@@ -7,7 +7,6 @@ import java.util.logging.Logger;
 // CraftBukkit start
 import org.bukkit.ChatColor;
 import org.bukkit.craftbukkit.ChunkCompressionThread;
-import org.bukkit.craftbukkit.command.ColouredConsoleSender;
 import org.bukkit.Location;
 import org.bukkit.command.CommandException;
 import org.bukkit.craftbukkit.block.CraftBlock;
@@ -1052,7 +1051,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
     public void a(Packet0KeepAlive packet0keepalive) {
         if (packet0keepalive.a == this.i) {
-            int i = (int) (System.nanoTime() / 1000000L - this.x);
+            int i = (int) (System.nanoTime() / 1000000L - this.j);
 
             this.player.i = (this.player.i * 3 + i) / 4;
         }
