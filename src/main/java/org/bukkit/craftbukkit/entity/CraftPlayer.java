@@ -12,9 +12,11 @@ import net.minecraft.server.Packet53BlockChange;
 import net.minecraft.server.Packet54PlayNoteBlock;
 import net.minecraft.server.Packet61;
 import net.minecraft.server.Packet6SpawnPosition;
+import net.minecraft.server.Packet70Bed;
 import net.minecraft.server.WorldServer;
 import org.bukkit.Achievement;
 import org.bukkit.Effect;
+import org.bukkit.GameMode;
 import org.bukkit.Instrument;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -376,5 +378,22 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         } else {
             server.getHandle().l(getName().toLowerCase());
         }
+    }
+
+    @Override
+    public void setGameMode(GameMode mode) {
+        if (mode == null) {
+            throw new IllegalArgumentException("Mode cannot be null");
+        }
+
+        if (mode != getGameMode()) {
+            getHandle().itemInWorldManager.a(mode.getValue());
+            getHandle().netServerHandler.sendPacket(new Packet70Bed(3, mode.getValue()));
+        }
+    }
+
+    @Override
+    public GameMode getGameMode() {
+        return GameMode.getByValue(getHandle().itemInWorldManager.a());
     }
 }

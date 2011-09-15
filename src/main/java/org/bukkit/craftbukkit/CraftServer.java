@@ -822,10 +822,16 @@ public final class CraftServer implements Server {
     }
 
     public GameMode getDefaultGameMode() {
-        return GameMode.SURVIVAL;
+        return GameMode.getByValue(console.worlds.get(0).worldData.p);
     }
 
     public void setDefaultGameMode(GameMode mode) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        if (mode == null) {
+            throw new IllegalArgumentException("Mode cannot be null");
+        }
+
+        for (World world : getWorlds()) {
+            ((CraftWorld)world).getHandle().worldData.p = mode.getValue();
+        }
     }
 }

@@ -19,7 +19,7 @@ public class WorldData {
     private int m;
     private boolean n;
     private int o;
-    private int p;
+    public int p; // CraftBukkit - private -> public
     private boolean q;
 
     public WorldData(NBTTagCompound nbttagcompound) {
