@@ -29,6 +29,6 @@ public class PardonIpCommand extends VanillaCommand {
 
     @Override
     public boolean matches(String input) {
-        return input.startsWith("pardon-ip ");
+        return input.startsWith("pardon-ip ") || input.equalsIgnoreCase("pardon-ip");
     }
 }

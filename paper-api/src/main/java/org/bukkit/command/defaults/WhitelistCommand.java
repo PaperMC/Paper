@@ -85,6 +85,6 @@ public class WhitelistCommand extends VanillaCommand {
 
     @Override
     public boolean matches(String input) {
-        return input.startsWith("whitelist ");
+        return input.startsWith("whitelist ") || input.equalsIgnoreCase("whitelist");
     }
 }

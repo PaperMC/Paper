@@ -34,6 +34,6 @@ public class MeCommand extends VanillaCommand {
 
     @Override
     public boolean matches(String input) {
-        return input.startsWith("me ");
+        return input.startsWith("me ") || input.equalsIgnoreCase("me");
     }
 }

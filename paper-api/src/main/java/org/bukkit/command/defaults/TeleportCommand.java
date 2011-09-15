@@ -39,6 +39,6 @@ public class TeleportCommand extends VanillaCommand {
 
     @Override
     public boolean matches(String input) {
-        return input.startsWith("tp ");
+        return input.startsWith("tp ") || input.equalsIgnoreCase("tp");
     }
 }
