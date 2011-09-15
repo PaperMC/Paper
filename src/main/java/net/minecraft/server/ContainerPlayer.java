@@ -82,13 +82,19 @@ public class ContainerPlayer extends Container {
 
             itemstack = itemstack1.cloneItemStack();
             if (i == 0) {
-                this.a(itemstack1, 9, 45, true);
+                if (!this.a(itemstack1, 9, 45, true)) {
+                    return null;
+                }
             } else if (i >= 9 && i < 36) {
-                this.a(itemstack1, 36, 45, false);
+                if (!this.a(itemstack1, 36, 45, false)) {
+                    return null;
+                }
             } else if (i >= 36 && i < 45) {
-                this.a(itemstack1, 9, 36, false);
-            } else {
-                this.a(itemstack1, 9, 45, false);
+                if (!this.a(itemstack1, 9, 36, false)) {
+                    return null;
+                }
+            } else if (!this.a(itemstack1, 9, 45, false)) {
+                return null;
             }
 
             if (itemstack1.count == 0) {

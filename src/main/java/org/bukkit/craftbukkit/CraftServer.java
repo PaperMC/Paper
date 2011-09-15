@@ -80,7 +80,7 @@ import org.yaml.snakeyaml.error.MarkedYAMLException;
 public final class CraftServer implements Server {
     private final String serverName = "Craftbukkit";
     private final String serverVersion;
-    private final String protocolVersion = "1.8";
+    private final String protocolVersion = "1.8.1";
     private final ServicesManager servicesManager = new SimpleServicesManager();
     private final BukkitScheduler scheduler = new CraftScheduler(this);
     private final SimpleCommandMap commandMap = new SimpleCommandMap(this);

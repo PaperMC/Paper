@@ -77,13 +77,19 @@ public class ContainerWorkbench extends Container {
 
             itemstack = itemstack1.cloneItemStack();
             if (i == 0) {
-                this.a(itemstack1, 10, 46, true);
+                if (!this.a(itemstack1, 10, 46, true)) {
+                    return null;
+                }
             } else if (i >= 10 && i < 37) {
-                this.a(itemstack1, 37, 46, false);
+                if (!this.a(itemstack1, 37, 46, false)) {
+                    return null;
+                }
             } else if (i >= 37 && i < 46) {
-                this.a(itemstack1, 10, 37, false);
-            } else {
-                this.a(itemstack1, 10, 46, false);
+                if (!this.a(itemstack1, 10, 37, false)) {
+                    return null;
+                }
+            } else if (!this.a(itemstack1, 10, 46, false)) {
+                return null;
             }
 
             if (itemstack1.count == 0) {
