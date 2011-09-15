@@ -103,7 +103,7 @@ public final class CommandPermissions {
         DefaultPermissions.registerPermission(PREFIX + "plugins", "Allows the user to view the list of plugins running on this server", PermissionDefault.TRUE, commands);
         DefaultPermissions.registerPermission(PREFIX + "reload", "Allows the user to reload the server settings", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(PREFIX + "version", "Allows the user to view the version of the server", PermissionDefault.TRUE, commands);
-        DefaultPermissions.registerPermission(PREFIX + "gamemode", "Allows the user to change the gamemode of another player", PermissionDefault.TRUE, commands);
+        DefaultPermissions.registerPermission(PREFIX + "gamemode", "Allows the user to change the gamemode of another player", PermissionDefault.OP, commands);
 
         commands.recalculatePermissibles();
 
