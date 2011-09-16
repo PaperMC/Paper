@@ -188,7 +188,7 @@ public class EntityArrow extends Entity {
                         Projectile projectile = (Projectile) this.getBukkitEntity();
                         // TODO deal with arrows being fired from a non-entity
 
-                        EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(projectile, damagee, EntityDamageEvent.DamageCause.PROJECTILE, 4);
+                        EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(projectile, damagee, EntityDamageEvent.DamageCause.PROJECTILE, l);
                         server.getPluginManager().callEvent(event);
                         this.shooter = (projectile.getShooter() == null) ? null : ((CraftLivingEntity) projectile.getShooter()).getHandle();
 
@@ -199,7 +199,7 @@ public class EntityArrow extends Entity {
                             stick = movingobjectposition.entity.damageEntity(DamageSource.arrow(this, this.shooter), event.getDamage());
                         }
                     } else {
-                        stick = movingobjectposition.entity.damageEntity(DamageSource.arrow(this, this.shooter), 4);
+                        stick = movingobjectposition.entity.damageEntity(DamageSource.arrow(this, this.shooter), l);
                     }
                     if (stick) {
                         // CraftBukkit end
