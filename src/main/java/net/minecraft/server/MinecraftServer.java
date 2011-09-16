@@ -238,34 +238,34 @@ public class MinecraftServer implements Runnable, ICommandListener {
         // CraftBukkit end
 
         short short1 = 196;
-        long k = System.currentTimeMillis();
+        long l = System.currentTimeMillis();
 
         // CraftBukkit start
-        for (int l = 0; l < this.worlds.size(); ++l) {
-            // if (l == 0 || this.propertyManager.getBoolean("allow-nether", true)) {
-            WorldServer worldserver = this.worlds.get(l);
-            log.info("Preparing start region for level " + l + " (Seed: " + worldserver.getSeed() + ")");
+        for (int i1 = 0; i1 < this.worlds.size(); ++i1) {
+            // if (i1 == 0 || this.propertyManager.getBoolean("allow-nether", true)) {
+            WorldServer worldserver = this.worlds.get(i1);
+            log.info("Preparing start region for level " + i1 + " (Seed: " + worldserver.getSeed() + ")");
             if (worldserver.getWorld().getKeepSpawnInMemory()) {
                 // CraftBukkit end
                 ChunkCoordinates chunkcoordinates = worldserver.getSpawn();
 
-                for (int i1 = -short1; i1 <= short1 && this.isRunning; i1 += 16) {
-                    for (int j1 = -short1; j1 <= short1 && this.isRunning; j1 += 16) {
-                        long k1 = System.currentTimeMillis();
+                for (int j1 = -short1; j1 <= short1 && this.isRunning; j1 += 16) {
+                    for (int k1 = -short1; k1 <= short1 && this.isRunning; k1 += 16) {
+                        long l1 = System.currentTimeMillis();
 
-                        if (k1 < k) {
-                            k = k1;
+                        if (l1 < l) {
+                            l = l1;
                         }
 
-                        if (k1 > k + 1000L) {
-                            int l1 = (short1 * 2 + 1) * (short1 * 2 + 1);
-                            int i2 = (i1 + short1) * (short1 * 2 + 1) + j1 + 1;
+                        if (l1 > l + 1000L) {
+                            int i2 = (short1 * 2 + 1) * (short1 * 2 + 1);
+                            int j2 = (j1 + short1) * (short1 * 2 + 1) + k1 + 1;
 
-                            this.a("Preparing spawn area", i2 * 100 / l1);
-                            k = k1;
+                            this.a("Preparing spawn area", j2 * 100 / i2);
+                            l = l1;
                         }
 
-                        worldserver.chunkProviderServer.getChunkAt(chunkcoordinates.x + i1 >> 4, chunkcoordinates.z + j1 >> 4);
+                        worldserver.chunkProviderServer.getChunkAt(chunkcoordinates.x + j1 >> 4, chunkcoordinates.z + k1 >> 4);
 
                         while (worldserver.v() && this.isRunning) {
                             ;

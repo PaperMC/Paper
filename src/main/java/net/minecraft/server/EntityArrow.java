@@ -203,6 +203,10 @@ public class EntityArrow extends Entity {
                     }
                     if (stick) {
                         // CraftBukkit end
+                        if (movingobjectposition.entity instanceof EntityLiving) {
+                            ++((EntityLiving) movingobjectposition.entity).aD;
+                        }
+
                         this.world.makeSound(this, "random.drr", 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
                         this.die();
                     } else {

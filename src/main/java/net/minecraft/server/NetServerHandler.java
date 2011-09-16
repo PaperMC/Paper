@@ -768,7 +768,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             a.info(s);
             this.minecraftServer.serverConfigurationManager.sendAll(new Packet3Chat(s));
         } else if (s.toLowerCase().startsWith("/kill")) {
-            this.player.damageEntity(DamageSource.j, 1000);
+            this.player.damageEntity(DamageSource.GENERIC, 1000);
         } else if (s.toLowerCase().startsWith("/tell ")) {
             String[] astring = s.split(" ");
 

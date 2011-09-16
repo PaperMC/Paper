@@ -51,18 +51,20 @@ public class BlockMushroom extends BlockFlower {
                 k1 = k + random.nextInt(3) - 1;
             }
 
-            // CraftBukkit start
-            org.bukkit.World bworld = world.getWorld();
-            org.bukkit.block.BlockState blockState = bworld.getBlockAt(i1, j1, k1).getState();
-            blockState.setTypeId(this.id);
+            if (world.isEmpty(i1, j1, k1) && this.f(world, i1, j1, k1)) {
+                // CraftBukkit start
+                org.bukkit.World bworld = world.getWorld();
+                org.bukkit.block.BlockState blockState = bworld.getBlockAt(i1, j1, k1).getState();
+                blockState.setTypeId(this.id);
 
-            BlockSpreadEvent event = new BlockSpreadEvent(blockState.getBlock(), bworld.getBlockAt(i, j, k), blockState);
-            world.getServer().getPluginManager().callEvent(event);
+                BlockSpreadEvent event = new BlockSpreadEvent(blockState.getBlock(), bworld.getBlockAt(i, j, k), blockState);
+                world.getServer().getPluginManager().callEvent(event);
 
-            if (!event.isCancelled()) {
-                blockState.update(true);
+                if (!event.isCancelled()) {
+                    blockState.update(true);
+                }
+                // CraftBukkit end
             }
-            // CraftBukkit end
         }
     }
 
