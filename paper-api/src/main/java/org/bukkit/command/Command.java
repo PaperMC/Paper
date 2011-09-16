@@ -86,7 +86,7 @@ public abstract class Command {
             return true;
         }
 
-        target.sendMessage(ChatColor.RED + "I'm sorry, Dave. I'm afraid I can't do that.");
+        target.sendMessage(ChatColor.RED + "Bukkit sad. Bukkit want you to access command, but Bukkit cannot let you. Bukkit will leak tears :'(");
         return false;
     }
 
