@@ -251,6 +251,7 @@ public class ServerConfigurationManager {
             entityplayer.health = 20;
             entityplayer.fireTicks = 0;
             entityplayer.fallDistance = 0;
+            entityplayer.foodData = new FoodMetaData();
         } else {
             location.setWorld(this.server.getWorldServer(i).getWorld());
         }

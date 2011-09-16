@@ -99,7 +99,6 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         this.itemInWorldManager = new ItemInWorldManager((WorldServer) world);
         this.itemInWorldManager.player = this;
         this.itemInWorldManager.a(oldMode);
-        this.foodData = new FoodMetaData();
         // CraftBukkit end
     }
 
