@@ -371,6 +371,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
             this.player.onGround = packet10flying.g;
             this.minecraftServer.serverConfigurationManager.d(this.player);
+            if (this.player.itemInWorldManager.b()) return; // CraftBukkit - fixed fall distance accumulating while being in Creative mode.
             this.player.b(this.player.locY - d0, packet10flying.g);
         }
     }
