@@ -31,8 +31,8 @@ public class SayCommand extends VanillaCommand {
         if (!(sender instanceof ConsoleCommandSender)) {
             Bukkit.getLogger().info("[" + sender.getName() + "] " + message);
         }
-        
-        Bukkit.broadcastMessage("[Server] " + message);
+
+        Bukkit.broadcastMessage(ChatColor.LIGHT_PURPLE + "[Server] " + message);
 
         return true;
     }
