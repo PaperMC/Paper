@@ -51,7 +51,7 @@ public class BlockDoor extends Block {
     }
 
     public AxisAlignedBB e(World world, int i, int j, int k) {
-        this.a(world, i, j, k);
+        this.a((IBlockAccess)world, i, j, k); // CraftBukkit - Make sure this points to the below method!
         return super.e(world, i, j, k);
     }
 
