@@ -99,7 +99,7 @@ public class ItemDoor extends Item {
         world.setTypeIdAndData(i, j, k, block.id, l);
         world.suppressPhysics = false;
 
-        world.applyPhysics(i, j, k, Block.REDSTONE_WIRE.id);
+        world.applyPhysics(i, j, k, block.id);
 
         if (entityhuman != null) {
             BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ, block);
