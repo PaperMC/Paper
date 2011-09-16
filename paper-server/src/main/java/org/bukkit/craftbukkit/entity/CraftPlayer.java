@@ -27,6 +27,7 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.map.CraftMapView;
 import org.bukkit.craftbukkit.map.RenderData;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerGameModeChangeEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.map.MapView;
 
@@ -387,6 +388,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
 
         if (mode != getGameMode()) {
+            PlayerGameModeChangeEvent event = new PlayerGameModeChangeEvent(this, mode);
+            server.getPluginManager().callEvent(event);
+            if (event.isCancelled()) {
+                return;
+            }
+
             getHandle().itemInWorldManager.a(mode.getValue());
             getHandle().netServerHandler.sendPacket(new Packet70Bed(3, mode.getValue()));
         }
