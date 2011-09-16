@@ -320,6 +320,11 @@ public class ServerConfigurationManager {
 
         if (this.p-- <= 0) {
             for (i = 0; i < this.players.size(); ++i) {
+                // CraftBukkit start -- Client cannot render anymore than 126 Players so there's no point sending anymore packets.
+                if (i > 126) {
+                    break;
+                }
+                // CraftBukkit end
                 EntityPlayer entityplayer = (EntityPlayer) this.players.get(i);
 
                 this.sendAll(new Packet201PlayerInfo(entityplayer.name, true, entityplayer.i));

@@ -101,7 +101,13 @@ public class NetLoginHandler extends NetHandler {
             byte b1 = (byte) worldserver.spawnMonsters;
 
             worldserver.getClass();
-            Packet1Login packet1login1 = new Packet1Login("", i, j, k, b0, b1, (byte) -128, (byte) this.server.serverConfigurationManager.h());
+            // CraftBukkit start -- Don't send a higher than 126 MaxPlayer size, otherwise the PlayerInfo window won't render correctly.
+            int maxPlayers = this.server.serverConfigurationManager.h();
+            if (maxPlayers > 126) {
+                maxPlayers = 126;
+            }
+            Packet1Login packet1login1 = new Packet1Login("", i, j, k, b0, b1, (byte) -128, (byte) maxPlayers);
+            // CraftBukkit end
 
             netserverhandler.sendPacket(packet1login1);
             netserverhandler.sendPacket(new Packet6SpawnPosition(chunkcoordinates.x, chunkcoordinates.y, chunkcoordinates.z));
