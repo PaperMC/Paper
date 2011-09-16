@@ -19,7 +19,10 @@ public enum CreatureType {
     SPIDER("Spider"),
     SQUID("Squid"),
     ZOMBIE("Zombie"),
-    WOLF("Wolf");
+    WOLF("Wolf"),
+    CAVE_SPIDER("CaveSpider"),
+    ENDERMAN("Enderman"),
+    SILVERFISH("Silverfish");
 
     private String name;
 
