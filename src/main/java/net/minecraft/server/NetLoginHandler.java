@@ -131,6 +131,7 @@ public class NetLoginHandler extends NetHandler {
     }
 
     public void a(Packet254GetInfo packet254getinfo) {
+        if (this.networkManager.f() == null) return; // CraftBukkit - fix NPE when a client queries a server that is unable to handle it.
         try {
             String s = this.server.p + "\u00A7" + this.server.serverConfigurationManager.g() + "\u00A7" + this.server.serverConfigurationManager.h();
 
