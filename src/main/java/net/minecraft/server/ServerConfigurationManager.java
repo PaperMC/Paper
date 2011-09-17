@@ -47,11 +47,13 @@ public class ServerConfigurationManager {
 
     // CraftBukkit start
     private CraftServer cserver;
+    private final int MAX_PACKETS_PER_TICK;
 
     public ServerConfigurationManager(MinecraftServer minecraftserver) {
         minecraftserver.server = new CraftServer(minecraftserver, this);
         minecraftserver.console = new ColouredConsoleSender(minecraftserver.server);
         this.cserver = minecraftserver.server;
+        this.MAX_PACKETS_PER_TICK = minecraftserver.server.getPingPacketLimit();
         // CraftBukkit end
 
         this.server = minecraftserver;
@@ -315,25 +317,29 @@ public class ServerConfigurationManager {
         // CraftBukkit end
     }
 
+    // CraftBukkit start - Limit/throttle latency packets
     public void b() {
-        int i;
+        int playerCount = this.players.size();
+        if ((MAX_PACKETS_PER_TICK > 0) && (playerCount > 0)) {
+            int fromIndex, toIndex;
 
-        if (this.p-- <= 0) {
-            for (i = 0; i < this.players.size(); ++i) {
-                // CraftBukkit start -- Client cannot render anymore than 126 Players so there's no point sending anymore packets.
-                if (i > 126) {
-                    break;
-                }
-                // CraftBukkit end
-                EntityPlayer entityplayer = (EntityPlayer) this.players.get(i);
+            int playerListSize = playerCount > 126 ? 126 : playerCount;
+            int totalPacketCount = playerCount * playerListSize;
+            int packetsToSend = totalPacketCount < MAX_PACKETS_PER_TICK ? totalPacketCount : MAX_PACKETS_PER_TICK;
 
-                this.sendAll(new Packet201PlayerInfo(entityplayer.name, true, entityplayer.i));
+            int lastIndex = (this.server.ticks * packetsToSend) % totalPacketCount;
+
+            for (int i = lastIndex; i < lastIndex + packetsToSend; i++) {
+                i %= totalPacketCount;
+                toIndex = i % playerCount;
+                fromIndex = i / playerCount;
+
+                ((EntityPlayer) this.players.get(toIndex)).netServerHandler.sendPacket(new Packet201PlayerInfo(((EntityPlayer) this.players.get(fromIndex)).name, true, ((EntityPlayer) this.players.get(fromIndex)).i));
             }
         }
 
-        // CraftBukkit start
-        for (i = 0; i < this.server.worlds.size(); ++i) {
-            this.server.worlds.get(i).manager.flush();
+        for (int j = 0; j < this.server.worlds.size(); ++j) {
+            this.server.worlds.get(j).manager.flush();
         }
         // CraftBukkit end
     }
