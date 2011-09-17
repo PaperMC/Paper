@@ -330,9 +330,8 @@ public class ServerConfigurationManager {
             int lastIndex = (this.server.ticks * packetsToSend) % totalPacketCount;
 
             for (int i = lastIndex; i < lastIndex + packetsToSend; i++) {
-                i %= totalPacketCount;
                 toIndex = i % playerCount;
-                fromIndex = i / playerCount;
+                fromIndex = (i % totalPacketCount) / playerCount;
 
                 ((EntityPlayer) this.players.get(toIndex)).netServerHandler.sendPacket(new Packet201PlayerInfo(((EntityPlayer) this.players.get(fromIndex)).name, true, ((EntityPlayer) this.players.get(fromIndex)).i));
             }
