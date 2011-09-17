@@ -1,9 +1,11 @@
 package org.bukkit.craftbukkit.event;
 
 import net.minecraft.server.ChunkCoordinates;
+import net.minecraft.server.EntityCaveSpider;
 import net.minecraft.server.EntityChicken;
 import net.minecraft.server.EntityCow;
 import net.minecraft.server.EntityCreeper;
+import net.minecraft.server.EntityEnderman;
 import net.minecraft.server.EntityGhast;
 import net.minecraft.server.EntityGiantZombie;
 import net.minecraft.server.EntityHuman;
@@ -13,6 +15,7 @@ import net.minecraft.server.EntityMonster;
 import net.minecraft.server.EntityPig;
 import net.minecraft.server.EntityPigZombie;
 import net.minecraft.server.EntitySheep;
+import net.minecraft.server.EntitySilverfish;
 import net.minecraft.server.EntitySkeleton;
 import net.minecraft.server.EntitySlime;
 import net.minecraft.server.EntitySpider;
@@ -213,12 +216,17 @@ public class CraftEventFactory {
         } else if (entityliving instanceof EntitySlime) {
             type = CreatureType.SLIME;
         } else if (entityliving instanceof EntitySpider) {
-            type = CreatureType.SPIDER;
+            if (entityliving instanceof EntityCaveSpider) type = CreatureType.CAVE_SPIDER;
+            else type = CreatureType.SPIDER;
         } else if (entityliving instanceof EntitySquid) {
             type = CreatureType.SQUID;
         } else if (entityliving instanceof EntityZombie) {
             type = CreatureType.ZOMBIE;
-        // Supertype of many, last!
+        } else if (entityliving instanceof EntityEnderman) {
+            type = CreatureType.ENDERMAN;
+        } else if (entityliving instanceof EntitySilverfish) {
+            type = CreatureType.SILVERFISH;
+            // Supertype of many, last!
         } else if (entityliving instanceof EntityMonster) {
             type = CreatureType.MONSTER;
         }
