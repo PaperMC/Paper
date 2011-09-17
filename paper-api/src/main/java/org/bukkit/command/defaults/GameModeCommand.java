@@ -39,6 +39,10 @@ public class GameModeCommand extends VanillaCommand {
                     Command.broadcastCommandMessage(sender, "Setting " + player.getName() + " to game mode " + mode.getValue());
 
                     player.setGameMode(mode);
+
+                    if (mode != player.getGameMode()) {
+                        Command.broadcastCommandMessage(sender, "The game mode change for " + player.getName() + " was cancelled!");
+                    }
                 } else {
                     sender.sendMessage(player.getName() + " already has game mode " + mode.getValue());
                 }

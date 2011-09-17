@@ -191,4 +191,11 @@ public class PlayerListener implements Listener {
      * @param event Relevant event details
      */
     public void onPlayerFish(PlayerFishEvent event) {}
+    
+    /**
+     * Called when a player's game mode is changed
+     * 
+     * @param event Relevant event details
+     */
+    public void onPlayerGameModeChange(PlayerGameModeChangeEvent event) {}
 }

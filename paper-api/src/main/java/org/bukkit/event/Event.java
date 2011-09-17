@@ -302,6 +302,13 @@ public abstract class Event implements Serializable {
         PLAYER_FISH(Category.PLAYER),
 
         /**
+         * Called when the game mode of a player is changed
+         * 
+         * @see org.bukkit.event.player.PlayerGameModeChangeEvent
+         */
+        PLAYER_GAME_MODE_CHANGE(Category.PLAYER),
+
+        /**
          * BLOCK EVENTS
          */
 

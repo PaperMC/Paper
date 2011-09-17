@@ -419,6 +419,13 @@ public class JavaPluginLoader implements PluginLoader {
                     ((PlayerListener) listener).onPlayerFish((PlayerFishEvent) event);
                 }
             };
+            
+        case PLAYER_GAME_MODE_CHANGE:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((PlayerListener) listener).onPlayerGameModeChange((PlayerGameModeChangeEvent) event);
+                }
+            };
 
         // Block Events
         case BLOCK_PHYSICS:
