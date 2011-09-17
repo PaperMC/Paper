@@ -119,6 +119,8 @@ public final class CraftServer implements Server {
 
         configuration.getString("settings.permissions-file", "permissions.yml");
 
+        configuration.getInt("settings.ping-packet-limit", 100);
+
         if (configuration.getNode("aliases") == null) {
             List<String> icanhasbukkit = new ArrayList<String>();
             icanhasbukkit.add("version");
@@ -315,6 +317,10 @@ public final class CraftServer implements Server {
 
     public String getUpdateFolder() {
         return this.configuration.getString("settings.update-folder", "update");
+    }
+
+    public int getPingPacketLimit() {
+        return this.configuration.getInt("settings.ping-packet-limit", 100);
     }
 
     public PluginManager getPluginManager() {
