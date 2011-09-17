@@ -1,7 +1,6 @@
 package org.bukkit.plugin;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.MapMaker;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -18,6 +17,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.WeakHashMap;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import org.bukkit.Server;
@@ -472,7 +472,7 @@ public final class SimplePluginManager implements PluginManager {
         Map<Permissible, Boolean> map = permSubs.get(name);
 
         if (map == null) {
-            map = new MapMaker().weakKeys().makeMap();
+            map = new WeakHashMap<Permissible, Boolean>();
             permSubs.put(name, map);
         }
 
@@ -507,7 +507,7 @@ public final class SimplePluginManager implements PluginManager {
         Map<Permissible, Boolean> map = defSubs.get(op);
 
         if (map == null) {
-            map = new MapMaker().weakKeys().makeMap();
+            map = new WeakHashMap<Permissible, Boolean>();
             defSubs.put(op, map);
         }
 
