@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import org.bukkit.Bukkit;
 
 public class Chunk {
 
@@ -511,10 +512,11 @@ public class Chunk {
         int j = MathHelper.floor(entity.locZ / 16.0D);
 
         if (i != this.x || j != this.z) {
-            System.out.println("Wrong location! " + entity);
-            // Thread.dumpStack(); // CraftBukkit
-            // CraftBukkit
-            System.out.println("" + entity.locX + "," + entity.locZ + "(" + i + "," + j + ") vs " + this.x + "," + this.z);
+            // CraftBukkit start
+            Bukkit.getLogger().warning("Wrong location for " + entity + " in world '" + world.getWorld().getName() + "'!");
+            // Thread.dumpStack();
+            Bukkit.getLogger().warning("Entity is at " + entity.locX + "," + entity.locZ + " (chunk " + i + "," + j + ") but was stored in chunk " + this.x + "," + this.z);
+            // CraftBukkit end
         }
 
         int k = MathHelper.floor(entity.locY / 16.0D);
