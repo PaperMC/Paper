@@ -13,4 +13,9 @@ public class CraftCaveSpider extends CraftSpider implements CaveSpider {
     public EntityCaveSpider getHandle() {
         return (EntityCaveSpider) super.getHandle();
     }
+
+    @Override
+    public String toString() {
+        return "CraftCaveSpider";
+    }
 }
