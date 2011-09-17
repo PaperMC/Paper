@@ -13,4 +13,9 @@ public class CraftEnderman extends CraftMonster implements Enderman {
     public EntityEnderman getHandle() {
         return (EntityEnderman) super.getHandle();
     }
+
+    @Override
+    public String toString() {
+        return "CraftEnderman";
+    }
 }
