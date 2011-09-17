@@ -119,19 +119,19 @@ public class TileEntityChest extends TileEntity implements IInventory {
             this.d = null;
             this.e = null;
             if (this.world.getTypeId(this.x - 1, this.y, this.z) == Block.CHEST.id) {
-                this.d = (TileEntityChest) this.world.getTileEntity(this.x - 1, this.y, this.z);
+                this.d = getTileEntity(this.x - 1, this.y, this.z); // CraftBukkit
             }
 
             if (this.world.getTypeId(this.x + 1, this.y, this.z) == Block.CHEST.id) {
-                this.c = (TileEntityChest) this.world.getTileEntity(this.x + 1, this.y, this.z);
+                this.c = getTileEntity(this.x + 1, this.y, this.z); // CraftBukkit
             }
 
             if (this.world.getTypeId(this.x, this.y, this.z - 1) == Block.CHEST.id) {
-                this.b = (TileEntityChest) this.world.getTileEntity(this.x, this.y, this.z - 1);
+                this.b = getTileEntity(this.x, this.y, this.z - 1); // CraftBukkit
             }
 
             if (this.world.getTypeId(this.x, this.y, this.z + 1) == Block.CHEST.id) {
-                this.e = (TileEntityChest) this.world.getTileEntity(this.x, this.y, this.z + 1);
+                this.e = getTileEntity(this.x, this.y, this.z + 1); // CraftBukkit
             }
 
             if (this.b != null) {
@@ -151,6 +151,19 @@ public class TileEntityChest extends TileEntity implements IInventory {
             }
         }
     }
+
+    // CraftBukkit start
+    private TileEntityChest getTileEntity(int x, int y, int z) {
+        TileEntity entity = this.world.getTileEntity(x, y, z);
+
+        if (entity instanceof TileEntityChest) {
+            return (TileEntityChest)entity;
+        } else {
+            world.getServer().getLogger().severe("Block at " + x + "," + y + "," + z + " is a chest but has a " + entity.getClass().getName());
+            return null;
+        }
+    }
+    // CraftBukkit end
 
     public void h_() {
         super.h_();
