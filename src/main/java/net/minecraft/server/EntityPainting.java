@@ -128,10 +128,12 @@ public class EntityPainting extends Entity {
                 if (event.isCancelled()) {
                     return;
                 }
-                // CraftBukkit end
 
-                this.die();
-                this.world.addEntity(new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.PAINTING)));
+                if(!dead) {
+                    this.die();
+                    this.world.addEntity(new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.PAINTING)));
+                }
+                // CraftBukkit end
             }
         }
     }
@@ -207,11 +209,13 @@ public class EntityPainting extends Entity {
             if (event.isCancelled()) {
                 return true;
             }
-            // CraftBukkit end
 
-            this.die();
-            this.aq();
-            this.world.addEntity(new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.PAINTING)));
+            if(!dead) {
+                this.die();
+                this.aq();
+                this.world.addEntity(new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.PAINTING)));
+            }
+            // CraftBukkit end
         }
 
         return true;
@@ -251,15 +255,25 @@ public class EntityPainting extends Entity {
 
     public void move(double d0, double d1, double d2) {
         if (!this.world.isStatic && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) {
-            this.die();
-            this.world.addEntity(new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.PAINTING)));
+
+            // CraftBukkit start
+            if(!dead) {
+                this.die();
+                this.world.addEntity(new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.PAINTING)));
+            }
+            // CraftBukkit end
         }
     }
 
     public void b(double d0, double d1, double d2) {
         if (!this.world.isStatic && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) {
-            this.die();
-            this.world.addEntity(new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.PAINTING)));
+
+            // CraftBukkit start
+            if(!dead) {
+                this.die();
+                this.world.addEntity(new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.PAINTING)));
+            }
+            // CraftBukkit end
         }
     }
 }
