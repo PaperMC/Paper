@@ -283,7 +283,6 @@ public final class SpawnerCreature {
                             entityliving.setPositionRotation((double) f, (double) f1, (double) f2, random.nextFloat() * 360.0F, 0.0F);
                             // CraftBukkit - added a reason for spawning this creature
                             world.addEntity(entityliving, SpawnReason.NATURAL);
-                            world.addEntity(entityliving);
                             a(entityliving, world, f, f1, f2);
                             flag = true;
                         }
