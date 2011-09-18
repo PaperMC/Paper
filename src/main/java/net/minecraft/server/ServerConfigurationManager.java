@@ -327,6 +327,7 @@ public class ServerConfigurationManager {
             }
             this.p = 200; // <-- this resetting of flushtime is missing! though whole code is commented out now :)
         }
+        */
 
         for (i = 0; i < this.server.worlds.size(); ++i) {
             this.server.worlds.get(i).manager.flush();
