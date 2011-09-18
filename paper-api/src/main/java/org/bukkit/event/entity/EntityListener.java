@@ -134,4 +134,18 @@ public class EntityListener implements Listener {
      * @param event Relevant event details
      */
     public void onProjectileHit(ProjectileHitEvent event) {}
+
+    /**
+     * Called when an Enderman picks a block up
+     *
+     * @param event Relevant event details
+     */
+    public void onEndermanPickup(EndermanPickupEvent event) {}
+
+    /**
+     * Called when an Enderman places a block
+     *
+     * @param event Relevant event details
+     */
+    public void onEndermanPlace(EndermanPlaceEvent event) {}
 }

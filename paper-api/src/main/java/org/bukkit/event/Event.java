@@ -679,13 +679,24 @@ public abstract class Event implements Serializable {
          * @see org.bukkit.event.entity.ProjectileHitEvent
          */
         PROJECTILE_HIT (Category.ENTITY),
-
         /**
          * Called when a LivingEntity is regains health
          *
          * @see org.bukkit.event.entity.EntityRegainHealthEvent
          */
         ENTITY_REGAIN_HEALTH (Category.LIVING_ENTITY),
+        /**
+         * Called when an Enderman picks a block up
+         *
+         * @see org.bukkit.event.entity.EndermanPickupEvent
+         */
+        ENDERMAN_PICKUP (Category.LIVING_ENTITY),
+        /**
+         * Called when an Enderman places a block
+         *
+         * @see org.bukkit.event.entity.EndermanPlaceEvent
+         */
+        ENDERMAN_PLACE (Category.LIVING_ENTITY),
 
         /**
          * WEATHER EVENTS

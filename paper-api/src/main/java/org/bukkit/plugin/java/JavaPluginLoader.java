@@ -762,6 +762,20 @@ public class JavaPluginLoader implements PluginLoader {
                 }
             };
 
+        case ENDERMAN_PICKUP:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((EntityListener) listener).onEndermanPickup((EndermanPickupEvent) event);
+                }
+            };
+
+        case ENDERMAN_PLACE:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((EntityListener) listener).onEndermanPlace((EndermanPlaceEvent) event);
+                }
+            };
+
         // Vehicle Events
         case VEHICLE_CREATE:
             return new EventExecutor() {
