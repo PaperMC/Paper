@@ -47,13 +47,11 @@ public class ServerConfigurationManager {
 
     // CraftBukkit start
     private CraftServer cserver;
-    private final int MAX_PACKETS_PER_TICK;
 
     public ServerConfigurationManager(MinecraftServer minecraftserver) {
         minecraftserver.server = new CraftServer(minecraftserver, this);
         minecraftserver.console = new ColouredConsoleSender(minecraftserver.server);
         this.cserver = minecraftserver.server;
-        this.MAX_PACKETS_PER_TICK = minecraftserver.server.getPingPacketLimit();
         // CraftBukkit end
 
         this.server = minecraftserver;
@@ -317,30 +315,23 @@ public class ServerConfigurationManager {
         // CraftBukkit end
     }
 
-    // CraftBukkit start - Limit/throttle latency packets
     public void b() {
-        int playerCount = this.players.size();
-        if ((MAX_PACKETS_PER_TICK > 0) && (playerCount > 0)) {
-            int fromIndex, toIndex;
+        int i;
 
-            int playerListSize = playerCount > 126 ? 126 : playerCount;
-            int totalPacketCount = playerCount * playerListSize;
-            int packetsToSend = totalPacketCount < MAX_PACKETS_PER_TICK ? totalPacketCount : MAX_PACKETS_PER_TICK;
+        /* CraftBukkit start -- remove updating of lag to players -- it spams way to much on big servers.
+        if (this.p-- <= 0) {
+            for (i = 0; i < this.players.size(); ++i) {
+                EntityPlayer entityplayer = (EntityPlayer) this.players.get(i);
 
-            int lastIndex = (this.server.ticks * packetsToSend) % totalPacketCount;
-
-            for (int i = lastIndex; i < lastIndex + packetsToSend; i++) {
-                toIndex = i % playerCount;
-                fromIndex = (i % totalPacketCount) / playerCount;
-
-                ((EntityPlayer) this.players.get(toIndex)).netServerHandler.sendPacket(new Packet201PlayerInfo(((EntityPlayer) this.players.get(fromIndex)).name, true, ((EntityPlayer) this.players.get(fromIndex)).i));
+                this.sendAll(new Packet201PlayerInfo(entityplayer.name, true, entityplayer.i));
             }
+            this.p = 200; // <-- this resetting of flushtime is missing! though whole code is commented out now :)
         }
 
-        for (int j = 0; j < this.server.worlds.size(); ++j) {
-            this.server.worlds.get(j).manager.flush();
+        for (i = 0; i < this.server.worlds.size(); ++i) {
+            this.server.worlds.get(i).manager.flush();
+            // CraftBukkit end
         }
-        // CraftBukkit end
     }
 
     public void flagDirty(int i, int j, int k, int l) {
