@@ -69,6 +69,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public InetSocketAddress getAddress() {
+        if (getHandle().netServerHandler == null) return null;
+
         SocketAddress addr = getHandle().netServerHandler.networkManager.getSocketAddress();
         if (addr instanceof InetSocketAddress) {
             return (InetSocketAddress) addr;
@@ -104,6 +106,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void sendRawMessage(String message) {
+        if (getHandle().netServerHandler == null) return;
+
         getHandle().netServerHandler.sendPacket(new Packet3Chat(message));
     }
 
@@ -147,10 +151,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void kickPlayer(String message) {
+        if (getHandle().netServerHandler == null) return;
+
         getHandle().netServerHandler.disconnect(message == null ? "" : message);
     }
 
     public void setCompassTarget(Location loc) {
+        if (getHandle().netServerHandler == null) return;
+
         // Do not directly assign here, from the packethandler we'll assign it.
         getHandle().netServerHandler.sendPacket(new Packet6SpawnPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
     }
@@ -160,6 +168,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void chat(String msg) {
+        if (getHandle().netServerHandler == null) return;
+
         getHandle().netServerHandler.chat(msg);
     }
 
@@ -168,14 +178,20 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void playNote(Location loc, byte instrument, byte note) {
+        if (getHandle().netServerHandler == null) return;
+
         getHandle().netServerHandler.sendPacket(new Packet54PlayNoteBlock(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), instrument, note));
     }
 
     public void playNote(Location loc, Instrument instrument, Note note) {
+        if (getHandle().netServerHandler == null) return;
+
         getHandle().netServerHandler.sendPacket(new Packet54PlayNoteBlock(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), instrument.getType(), note.getId()));
     }
 
     public void playEffect(Location loc, Effect effect, int data) {
+        if (getHandle().netServerHandler == null) return;
+
         int packetData = effect.getId();
         Packet61 packet = new Packet61(packetData, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), data);
         getHandle().netServerHandler.sendPacket(packet);
@@ -186,6 +202,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void sendBlockChange(Location loc, int material, byte data) {
+        if (getHandle().netServerHandler == null) return;
+
         Packet53BlockChange packet = new Packet53BlockChange(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), ((CraftWorld) loc.getWorld()).getHandle());
 
         packet.material = material;
@@ -194,6 +212,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public boolean sendChunkChange(Location loc, int sx, int sy, int sz, byte[] data) {
+        if (getHandle().netServerHandler == null) return false;
+
         int x = loc.getBlockX();
         int y = loc.getBlockY();
         int z = loc.getBlockZ();
@@ -221,6 +241,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void sendMap(MapView map) {
+        if (getHandle().netServerHandler == null) return;
+
         RenderData data = ((CraftMapView) map).render(this);
         for (int x = 0; x < 128; ++x) {
             byte[] bytes = new byte[131];
@@ -235,6 +257,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public boolean teleport(Location location) {
+        if (getHandle().netServerHandler == null) return false;
+
         // From = Players current Location
         Location from = this.getLocation();
         // To = Players new Location if Teleport is Successful
@@ -328,6 +352,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     private void sendStatistic(int id, int amount) {
+        if (getHandle().netServerHandler == null) return;
+
         while (amount > Byte.MAX_VALUE) {
             sendStatistic(id, Byte.MAX_VALUE);
             amount -= Byte.MAX_VALUE;
@@ -383,6 +409,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void setGameMode(GameMode mode) {
+        if (getHandle().netServerHandler == null) return;
+        
         if (mode == null) {
             throw new IllegalArgumentException("Mode cannot be null");
         }
