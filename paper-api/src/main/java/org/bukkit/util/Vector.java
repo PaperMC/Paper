@@ -1,18 +1,21 @@
 package org.bukkit.util;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Random;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.configuration.serialization.SerializableAs;
 
 /**
  * Represents a mutable vector. Because the components of Vectors are mutable,
  * storing Vectors long term may be dangerous if passing code modifies the
  * Vector later. If you want to keep around a Vector, it may be wise to call
  * <code>clone()</code> in order to get a copy.
- *
- * @author sk89q
  */
-public class Vector implements Cloneable {
+@SerializableAs("Vector")
+public class Vector implements Cloneable, ConfigurationSerializable {
     private static final long serialVersionUID = -2657651106777219169L;
 
     private static Random random = new Random();
@@ -634,5 +637,33 @@ public class Vector implements Cloneable {
      */
     public static Vector getRandom() {
         return new Vector(random.nextDouble(), random.nextDouble(), random.nextDouble());
+    }
+
+    public Map<String, Object> serialize() {
+        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        
+        result.put("x", getX());
+        result.put("y", getY());
+        result.put("z", getZ());
+        
+        return result;
+    }
+    
+    public static Vector deserialize(Map<String, Object> args) {
+        double x = 0;
+        double y = 0;
+        double z = 0;
+        
+        if (args.containsKey("x")) {
+            x = (Double)args.get("x");
+        }
+        if (args.containsKey("y")) {
+            y = (Double)args.get("y");
+        }
+        if (args.containsKey("z")) {
+            z = (Double)args.get("z");
+        }
+        
+        return new Vector(x, y, z);
     }
 }

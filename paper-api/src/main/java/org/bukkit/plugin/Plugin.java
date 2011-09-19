@@ -2,8 +2,10 @@ package org.bukkit.plugin;
 
 import com.avaje.ebean.EbeanServer;
 import java.io.File;
+import java.io.InputStream;
 import org.bukkit.Server;
 import org.bukkit.command.CommandExecutor;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.util.config.Configuration;
 
@@ -33,6 +35,29 @@ public interface Plugin extends CommandExecutor {
      * @return The configuration
      */
     public Configuration getConfiguration();
+    
+    /**
+     * Gets a {@link FileConfiguration} for this plugin, read through "config.yml"
+     * <p>
+     * If there is a default config.yml embedded in this plugin, it will be provided
+     * as a default for this Configuration.
+     * 
+     * @return Plugin configuration
+     */
+    public FileConfiguration getConfig();
+    
+    /**
+     * Gets an embedded resource in this plugin
+     * 
+     * @param filename Filename of the resource
+     * @return File if found, otherwise null
+     */
+    public InputStream getResource(String filename);
+    
+    /**
+     * Saves the {@link FileConfiguration} retrievable by {@link #getConfig()}.
+     */
+    public void saveConfig();
 
     /**
      * Gets the associated PluginLoader responsible for this plugin

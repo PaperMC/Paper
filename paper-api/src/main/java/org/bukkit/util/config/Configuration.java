@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.HashMap;
 import java.util.Map;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -52,12 +53,18 @@ import org.yaml.snakeyaml.representer.Representer;
  * <p>This class is currently incomplete. It is not yet possible to get a node.
  * </p>
  *
+ * @deprecated See {@link YamlConfiguration}
  */
+@Deprecated
 public class Configuration extends ConfigurationNode {
     private Yaml yaml;
     private File file;
     private String header = null;
 
+    /**
+     * @deprecated See {@link YamlConfiguration}
+     */
+    @Deprecated
     public Configuration(File file) {
         super(new HashMap<String, Object>());
 

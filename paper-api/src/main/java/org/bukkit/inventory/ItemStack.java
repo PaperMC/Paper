@@ -1,12 +1,16 @@
 package org.bukkit.inventory;
 
+import java.io.Serializable;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.bukkit.Material;
+import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.material.MaterialData;
 
 /**
  * Represents a stack of items
  */
-public class ItemStack {
+public class ItemStack implements Serializable, ConfigurationSerializable {
     private int type;
     private int amount = 0;
     private MaterialData data = null;
@@ -207,5 +211,37 @@ public class ItemStack {
         hash = hash * 19 + 7 * getTypeId(); // Overriding hashCode since equals is overridden, it's just
         hash = hash * 7 + 23 * getAmount(); // too bad these are mutable values... Q_Q
         return hash;
+    }
+
+    public Map<String, Object> serialize() {
+        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        
+        result.put("type", getType());
+        
+        if (durability != 0) {
+            result.put("damage", durability);
+        }
+        
+        if (amount != 1) {
+            result.put("amount", amount);
+        }
+        
+        return result;
+    }
+    
+    public static ItemStack deserialize(Map<String, Object> args) {
+        Material type = Material.getMaterial((String)args.get("type"));
+        short damage = 0;
+        int amount = 1;
+        
+        if (args.containsKey("damage")) {
+            damage = (Short)args.get("damage");
+        }
+        
+        if (args.containsKey("amount")) {
+            amount = (Integer)args.get("amount");
+        }
+        
+        return new ItemStack(type, amount, damage);
     }
 }

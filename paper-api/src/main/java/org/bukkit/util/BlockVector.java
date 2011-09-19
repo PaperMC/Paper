@@ -1,13 +1,15 @@
 package org.bukkit.util;
 
+import java.util.Map;
+import org.bukkit.configuration.serialization.SerializableAs;
+
 /**
  * A vector with a hash function that floors the X, Y, Z components, a la
  * BlockVector in WorldEdit. BlockVectors can be used in hash sets and
  * hash maps. Be aware that BlockVectors are mutable, but it is important
  * that BlockVectors are never changed once put into a hash set or hash map.
- *
- * @author sk89q
  */
+@SerializableAs("BlockVector")
 public class BlockVector extends Vector {
 
     /**
@@ -108,5 +110,23 @@ public class BlockVector extends Vector {
         v.y = y;
         v.z = z;
         return v;
+    }
+    
+    public static BlockVector deserialize(Map<String, Object> args) {
+        double x = 0;
+        double y = 0;
+        double z = 0;
+        
+        if (args.containsKey("x")) {
+            x = (Double)args.get("x");
+        }
+        if (args.containsKey("y")) {
+            y = (Double)args.get("y");
+        }
+        if (args.containsKey("z")) {
+            z = (Double)args.get("z");
+        }
+        
+        return new BlockVector(x, y, z);
     }
 }
