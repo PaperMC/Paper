@@ -247,7 +247,7 @@ public class BlockChest extends BlockContainer {
     }
 
     public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman) {
-        b(world, i, j, k);
+        b(world, i, j, k); // Craftbukkit
         Object object = (TileEntityChest) world.getTileEntity(i, j, k);
 
         if (object == null) {
