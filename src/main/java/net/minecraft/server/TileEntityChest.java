@@ -159,7 +159,11 @@ public class TileEntityChest extends TileEntity implements IInventory {
         if (entity instanceof TileEntityChest) {
             return (TileEntityChest)entity;
         } else {
-            world.getServer().getLogger().severe("Block at " + x + "," + y + "," + z + " is a chest but has a " + entity.getClass().getName());
+            String name = "null";
+            if (entity != null) {
+                name = entity.toString();
+            }
+            world.getServer().getLogger().severe("Block at " + x + "," + y + "," + z + " is a chest but has a " + name);
             return null;
         }
     }
