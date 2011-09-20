@@ -249,12 +249,8 @@ public class EntityEgg extends Entity {
                             break;
                     }
 
-                    // The world we're spawning in accepts this creature
-                    boolean isAnimal = entity instanceof EntityAnimal || entity instanceof EntityWaterAnimal;
-                    if ((isAnimal && this.world.allowAnimals) || (!isAnimal && this.world.allowMonsters)) {
-                        entity.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, 0.0F);
-                        this.world.addEntity(entity, SpawnReason.EGG);
-                    }
+                    entity.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, 0.0F);
+                    this.world.addEntity(entity, SpawnReason.EGG);
                     // CraftBukkit end
                 }
             }

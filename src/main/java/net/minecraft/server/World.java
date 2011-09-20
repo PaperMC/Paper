@@ -839,6 +839,13 @@ public class World implements IBlockAccess {
 
         // CraftBukkit start
         if (entity instanceof EntityLiving && !(entity instanceof EntityPlayer)) {
+            boolean isAnimal = entity instanceof EntityAnimal || entity instanceof EntityWaterAnimal;
+            boolean isMonster = entity instanceof EntityMonster || entity instanceof EntityGhast || entity instanceof EntitySlime;
+
+            if (spawnReason == SpawnReason.NATURAL || spawnReason == SpawnReason.SPAWNER || spawnReason == SpawnReason.BED || spawnReason == SpawnReason.EGG) {
+                if (isAnimal && !allowAnimals || isMonster && !allowMonsters) return false;
+            }
+
             CreatureSpawnEvent event = CraftEventFactory.callCreatureSpawnEvent((EntityLiving) entity, spawnReason);
 
             if (event.isCancelled()) {
