@@ -43,9 +43,12 @@ public class CraftWolf extends CraftAnimals implements Wolf {
 
     public AnimalTamer getOwner() {
         // If the wolf has a previously set owner use that, otherwise try and find the player who owns it
-        if (owner == null) {
-            // TODO try and recover owner from persistence store before defaulting to playername
+        if (owner == null && !("").equals(getOwnerName())) {
             owner = getServer().getPlayer(getOwnerName());
+
+            if (owner == null) {
+                owner = getServer().getOfflinePlayer(getOwnerName());
+            }
         }
         return owner;
     }
