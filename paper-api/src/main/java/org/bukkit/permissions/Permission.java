@@ -15,7 +15,7 @@ import org.bukkit.plugin.PluginManager;
  * Represents a unique permission that may be attached to a {@link Permissible}
  */
 public class Permission {
-    public static final PermissionDefault DEFAULT_PERMISSION = PermissionDefault.FALSE;
+    public static final PermissionDefault DEFAULT_PERMISSION = PermissionDefault.OP;
 
     private final String name;
     private final Map<String, Boolean> children = new LinkedHashMap<String, Boolean>();
@@ -316,8 +316,6 @@ public class Permission {
                 children.put(entry.getKey(), (Boolean)entry.getValue());
             } else if ((entry.getValue() instanceof Map)) {
                 try {
-                    System.out.println("Going to make new child " + (String)entry.getKey() + " perm for " + name);
-
                     try
                     {
                         Permission perm = loadPermission((String)entry.getKey(), (Map<String, Object>)entry.getValue(), def, output);
