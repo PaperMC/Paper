@@ -31,7 +31,7 @@ public class EntityEnderman extends EntityMonster {
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
         nbttagcompound.a("carried", (short) this.getCarriedId());
-        nbttagcompound.a("carriedData", (short) this.getCarriedData());
+        nbttagcompound.a("carryingData", (short) this.getCarriedData()); // Craftbukkit - fixed from carriedData
     }
 
     public void a(NBTTagCompound nbttagcompound) {
