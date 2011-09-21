@@ -114,37 +114,42 @@ public class TileEntityChest extends TileEntity implements IInventory {
 
     public void h() {
         if (!this.a) {
-            // CraftBukkit start
-            if (this.world == null) return; // CraftBukkit
-            TileEntityChest otherChest = null;
-            BlockChest chest = (BlockChest) Block.byId[Block.CHEST.id];
-            chest.b(this.world, this.x, this.y, this.z);
             this.a = true;
             this.b = null;
             this.c = null;
             this.d = null;
             this.e = null;
             if (this.world.getTypeId(this.x - 1, this.y, this.z) == Block.CHEST.id) {
-                otherChest = this.d = getTileEntity(this.x - 1, this.y, this.z); // CraftBukkit
+                this.d = (TileEntityChest) this.world.getTileEntity(this.x - 1, this.y, this.z);
             }
 
             if (this.world.getTypeId(this.x + 1, this.y, this.z) == Block.CHEST.id) {
-                otherChest = this.c = getTileEntity(this.x + 1, this.y, this.z); // CraftBukkit
+                this.c = (TileEntityChest) this.world.getTileEntity(this.x + 1, this.y, this.z);
             }
 
             if (this.world.getTypeId(this.x, this.y, this.z - 1) == Block.CHEST.id) {
-                otherChest = this.b = getTileEntity(this.x, this.y, this.z - 1); // CraftBukkit
+                this.b = (TileEntityChest) this.world.getTileEntity(this.x, this.y, this.z - 1);
             }
 
             if (this.world.getTypeId(this.x, this.y, this.z + 1) == Block.CHEST.id) {
-                otherChest = this.e = getTileEntity(this.x, this.y, this.z + 1); // CraftBukkit
+                this.e = (TileEntityChest) this.world.getTileEntity(this.x, this.y, this.z + 1);
             }
 
-            if (otherChest != null) {
-                otherChest.g();
-                chest.b(otherChest.world, otherChest.x, otherChest.y, otherChest.z);
+            if (this.b != null) {
+                this.b.g();
             }
-            // CraftBukkit end
+
+            if (this.e != null) {
+                this.e.g();
+            }
+
+            if (this.c != null) {
+                this.c.g();
+            }
+
+            if (this.d != null) {
+                this.d.g();
+            }
         }
     }
 
