@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import org.bukkit.event.entity.EntityDamageEvent; // CraftBukkit
+
 public class FoodMetaData {
 
     // CraftBukkit start - all made public
@@ -44,7 +46,14 @@ public class FoodMetaData {
             ++this.foodTickTimer;
             if (this.foodTickTimer >= 80) {
                 if (entityhuman.health > 10 || i >= 3 || entityhuman.health > 1 && i >= 2) {
-                    entityhuman.damageEntity(DamageSource.STARVE, 1);
+                    // CraftBukkit start
+                    EntityDamageEvent event = new EntityDamageEvent(entityhuman.getBukkitEntity(), EntityDamageEvent.DamageCause.STARVATION, 1);
+                    entityhuman.world.getServer().getPluginManager().callEvent(event);
+
+                    if (!event.isCancelled()) {
+                        entityhuman.damageEntity(DamageSource.STARVE, event.getDamage());
+                    }
+                    // CraftBukkit end
                 }
 
                 this.foodTickTimer = 0;
