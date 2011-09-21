@@ -1,9 +1,13 @@
 package net.minecraft.server;
 
 // CraftBukkit start
+import java.util.List;
+
 import org.bukkit.Location;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
 // CraftBukkit end
 
@@ -44,23 +48,29 @@ public class EntityCow extends EntityAnimal {
     }
 
     protected void a(boolean flag) {
-        int i = this.random.nextInt(3);
+        // CraftBukkit start - whole method
+        List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
+        int count = this.random.nextInt(3);
 
-        int j;
-
-        for (j = 0; j < i; ++j) {
-            this.b(Item.LEATHER.id, 1);
+        if (count > 0) {
+            loot.add(new org.bukkit.inventory.ItemStack(Item.LEATHER.id, count));
         }
 
-        i = this.random.nextInt(3) + 1;
+        count = this.random.nextInt(3) + 1;
 
-        for (j = 0; j < i; ++j) {
-            if (this.fireTicks > 0) {
-                this.b(Item.COOKED_BEEF.id, 1);
-            } else {
-                this.b(Item.RAW_BEEF.id, 1);
-            }
+        if (count > 0) {
+            loot.add(new org.bukkit.inventory.ItemStack(this.fireTicks > 0 ? Item.COOKED_BEEF.id : Item.RAW_BEEF.id, count));
         }
+
+        CraftEntity entity = (CraftEntity) this.getBukkitEntity();
+        EntityDeathEvent event = new EntityDeathEvent(entity, loot);
+        org.bukkit.World bworld = this.world.getWorld();
+        this.world.getServer().getPluginManager().callEvent(event);
+
+        for (org.bukkit.inventory.ItemStack stack: event.getDrops()) {
+            bworld.dropItemNaturally(entity.getLocation(), stack);
+        }
+        // CraftBukkit end
     }
 
     public boolean b(EntityHuman entityhuman) {

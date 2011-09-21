@@ -1,10 +1,14 @@
 package net.minecraft.server;
 
-// Craftbukkit start
+// CraftBukkit start
+import java.util.List;
+
 import org.bukkit.Location;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.event.entity.EndermanPickupEvent;
 import org.bukkit.event.entity.EndermanPlaceEvent;
-// Craftbukkit end
+import org.bukkit.event.entity.EntityDeathEvent;
+// CraftBukkit end
 
 public class EntityEnderman extends EntityMonster {
 
@@ -264,13 +268,23 @@ public class EntityEnderman extends EntityMonster {
     protected void a(boolean flag) {
         int i = this.k();
 
-        if (i > 0) {
-            int j = this.random.nextInt(2);
+        // CraftBukkit start - whole method
+        List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
+        int count = this.random.nextInt(2);
 
-            for (int k = 0; k < j; ++k) {
-                this.b(i, 1);
-            }
+        if ((i > 0) && (count > 0)) {
+            loot.add(new org.bukkit.inventory.ItemStack(i, count));
         }
+
+        CraftEntity entity = (CraftEntity) this.getBukkitEntity();
+        EntityDeathEvent event = new EntityDeathEvent(entity, loot);
+        org.bukkit.World bworld = this.world.getWorld();
+        this.world.getServer().getPluginManager().callEvent(event);
+
+        for (org.bukkit.inventory.ItemStack stack: event.getDrops()) {
+            bworld.dropItemNaturally(entity.getLocation(), stack);
+        }
+        // CraftBukkit end
     }
 
     public void setCarriedId(int i) {
