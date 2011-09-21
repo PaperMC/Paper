@@ -196,11 +196,11 @@ public interface Player extends HumanEntity, CommandSender, OfflinePlayer {
      * @param data
      */
     public void sendBlockChange(Location loc, int material, byte data);
-    
+
     /**
      * Render a map and send it to the player in its entirety. This may be used
      * when streaming the map in the normal manner is not desirbale.
-     * 
+     *
      * @pram map The map to be sent
      */
     public void sendMap(MapView map);
@@ -295,7 +295,7 @@ public interface Player extends HumanEntity, CommandSender, OfflinePlayer {
 
     /**
      * Gets the players current experience points towards the next level
-     * 
+     *
      * @return Current experience points
      */
     public int getExperience();
@@ -383,4 +383,11 @@ public interface Player extends HumanEntity, CommandSender, OfflinePlayer {
      * @param value New food level
      */
     public void setFoodLevel(int value);
+
+    /**
+     * Gets the Location where the player will spawn at their bed, null if they have not slept in one or their current bed spawn is invalid.
+     *
+     * @return Bed Spawn Location if bed exists, otherwise null.
+     */
+    public Location getBedSpawnLocation();
 }
