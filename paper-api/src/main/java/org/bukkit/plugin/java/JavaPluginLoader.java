@@ -783,6 +783,13 @@ public class JavaPluginLoader implements PluginLoader {
                 }
             };
 
+        case FOOD_LEVEL_CHANGE:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((EntityListener) listener).onFoodLevelChange((FoodLevelChangeEvent) event);
+                }
+        };
+
         // Vehicle Events
         case VEHICLE_CREATE:
             return new EventExecutor() {

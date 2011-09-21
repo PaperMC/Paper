@@ -703,6 +703,12 @@ public abstract class Event implements Serializable {
          * @see org.bukkit.event.entity.EndermanPlaceEvent
          */
         ENDERMAN_PLACE (Category.LIVING_ENTITY),
+        /**
+         * Called when a human entity's food level changes
+         *
+         * @see org.bukkit.event.entity.FoodLevelChangeEvent
+         */
+        FOOD_LEVEL_CHANGE (Category.LIVING_ENTITY),
 
         /**
          * WEATHER EVENTS

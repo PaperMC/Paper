@@ -148,4 +148,11 @@ public class EntityListener implements Listener {
      * @param event Relevant event details
      */
     public void onEndermanPlace(EndermanPlaceEvent event) {}
+
+    /**
+     * Called when a human entity's food level changes
+     *
+     * @param event Relevant event details
+     */
+    public void onFoodLevelChange(FoodLevelChangeEvent event) {}
 }
