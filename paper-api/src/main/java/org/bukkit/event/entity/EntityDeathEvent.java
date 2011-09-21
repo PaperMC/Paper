@@ -41,7 +41,7 @@ public class EntityDeathEvent extends EntityEvent {
      *
      * @param exp Amount of EXP to drop.
      */
-    public void setDropedExp(int exp) {
+    public void setDroppedExp(int exp) {
         this.dropExp = exp;
     }
 
