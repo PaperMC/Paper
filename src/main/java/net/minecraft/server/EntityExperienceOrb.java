@@ -143,6 +143,19 @@ public class EntityExperienceOrb extends Entity {
 
     public static int b(int i) {
         // CraftBukkit start
+        if (i > 162670129) return i - 100000;
+        if (i > 81335063) return 81335063;
+        if (i > 40667527) return 40667527;
+        if (i > 20333759) return 20333759;
+        if (i > 10166857) return 10166857;
+        if (i > 5083423) return 5083423;
+        if (i > 2541701) return 2541701;
+        if (i > 1270849) return 1270849;
+        if (i > 635413) return 635413;
+        if (i > 317701) return 317701;
+        if (i > 158849) return 158849;
+        if (i > 79423) return 79423;
+        if (i > 39709) return 39709;
         if (i > 19853) return 19853;
         if (i > 9923) return 9923;
         if (i > 4957) return 4957;
