@@ -4,10 +4,9 @@ package net.minecraft.server;
 import java.util.List;
 
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.entity.EndermanPickupEvent;
 import org.bukkit.event.entity.EndermanPlaceEvent;
-import org.bukkit.event.entity.EntityDeathEvent;
 // CraftBukkit end
 
 public class EntityEnderman extends EntityMonster {
@@ -276,14 +275,7 @@ public class EntityEnderman extends EntityMonster {
             loot.add(new org.bukkit.inventory.ItemStack(i, count));
         }
 
-        CraftEntity entity = (CraftEntity) this.getBukkitEntity();
-        EntityDeathEvent event = new EntityDeathEvent(entity, loot);
-        org.bukkit.World bworld = this.world.getWorld();
-        this.world.getServer().getPluginManager().callEvent(event);
-
-        for (org.bukkit.inventory.ItemStack stack: event.getDrops()) {
-            bworld.dropItemNaturally(entity.getLocation(), stack);
-        }
+        CraftEventFactory.callEntityDeathEvent(this, loot);
         // CraftBukkit end
     }
 

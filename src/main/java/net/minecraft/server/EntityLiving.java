@@ -6,11 +6,10 @@ import java.util.Iterator;
 import java.util.List;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.TrigMath;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityRegainHealthEvent;
 import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason;
 // CraftBukkit end
@@ -78,6 +77,7 @@ public abstract class EntityLiving extends Entity {
     protected float aU = 0.7F;
     private Entity d;
     protected int aV = 0;
+    public int expToDrop = 0; // CraftBukkit added
 
     public EntityLiving(World world) {
         super(world);
@@ -188,8 +188,9 @@ public abstract class EntityLiving extends Entity {
         if (this.health <= 0) {
             ++this.deathTicks;
             if (this.deathTicks > 20) {
-                if (this.c > 0 || this.X()) {
-                    i = this.a(this.b);
+                // CraftBukkit start - update getExpReward() below if this changes!
+                if (expToDrop > 0) {
+                    i = expToDrop;
 
                     while (i > 0) {
                         int j = EntityExperienceOrb.b(i);
@@ -198,6 +199,7 @@ public abstract class EntityLiving extends Entity {
                         this.world.addEntity(new EntityExperienceOrb(this.world, this.locX, this.locY, this.locZ, j));
                     }
                 }
+                // CraftBukkit end
 
                 this.ag();
                 this.die();
@@ -228,6 +230,18 @@ public abstract class EntityLiving extends Entity {
     protected int a(EntityHuman entityhuman) {
         return this.ax;
     }
+
+    // CraftBukkit start
+    public int getExpReward() {
+        int exp = a(this.b);
+        
+        if (this.c > 0 || this.X()) {
+            return exp;
+        } else {
+            return 0;
+        }
+    }
+    // CraftBukkit end
 
     protected boolean X() {
         return false;
@@ -528,14 +542,7 @@ public abstract class EntityLiving extends Entity {
             loot.add(new org.bukkit.inventory.ItemStack(i, count));
         }
 
-        CraftEntity entity = (CraftEntity) this.getBukkitEntity();
-        EntityDeathEvent event = new EntityDeathEvent(entity, loot);
-        org.bukkit.World bworld = this.world.getWorld();
-        this.world.getServer().getPluginManager().callEvent(event);
-
-        for (org.bukkit.inventory.ItemStack stack: event.getDrops()) {
-            bworld.dropItemNaturally(entity.getLocation(), stack);
-        }
+        CraftEventFactory.callEntityDeathEvent(this, loot);
         // CraftBukkit end
     }
 

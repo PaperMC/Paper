@@ -9,8 +9,8 @@ import java.util.Set;
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.ChunkCompressionThread;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason;
 // CraftBukkit end
 
@@ -60,6 +60,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
     public String displayName;
     public org.bukkit.Location compassTarget;
+    public int newExp = 0;
     // CraftBukkit end
 
     public void a(NBTTagCompound nbttagcompound) {
@@ -154,11 +155,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             }
         }
 
-        org.bukkit.entity.Entity bukkitEntity = this.getBukkitEntity();
-        CraftWorld bworld = this.world.getWorld();
-
-        EntityDeathEvent event = new EntityDeathEvent(bukkitEntity, loot);
-        this.world.getServer().getPluginManager().callEvent(event);
+        CraftEventFactory.callPlayerDeathEvent(this, loot);
 
         // CraftBukkit - we clean the player's inventory after the EntityDeathEvent is called so plugins can get the exact state of the inventory.
         for (int i = 0; i < this.inventory.items.length; ++i) {
@@ -167,10 +164,6 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
         for (int i = 0; i < this.inventory.armor.length; ++i) {
             this.inventory.armor[i] = null;
-        }
-
-        for (org.bukkit.inventory.ItemStack stack: event.getDrops()) {
-            bworld.dropItemNaturally(bukkitEntity.getLocation(), stack);
         }
 
         this.x();

@@ -62,14 +62,7 @@ public class EntityCow extends EntityAnimal {
             loot.add(new org.bukkit.inventory.ItemStack(this.fireTicks > 0 ? Item.COOKED_BEEF.id : Item.RAW_BEEF.id, count));
         }
 
-        CraftEntity entity = (CraftEntity) this.getBukkitEntity();
-        EntityDeathEvent event = new EntityDeathEvent(entity, loot);
-        org.bukkit.World bworld = this.world.getWorld();
-        this.world.getServer().getPluginManager().callEvent(event);
-
-        for (org.bukkit.inventory.ItemStack stack: event.getDrops()) {
-            bworld.dropItemNaturally(entity.getLocation(), stack);
-        }
+        CraftEventFactory.callEntityDeathEvent(this, loot);
         // CraftBukkit end
     }
 

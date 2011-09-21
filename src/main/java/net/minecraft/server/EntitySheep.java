@@ -1,6 +1,7 @@
 package net.minecraft.server;
 
 import java.util.Random;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
 
 public class EntitySheep extends EntityAnimal {
 
@@ -25,15 +26,7 @@ public class EntitySheep extends EntityAnimal {
             loot.add(new org.bukkit.inventory.ItemStack(org.bukkit.Material.WOOL, 1, (short) 0, (byte) this.getColor()));
         }
 
-        org.bukkit.World bworld = this.world.getWorld();
-        org.bukkit.entity.Entity entity = this.getBukkitEntity();
-
-        org.bukkit.event.entity.EntityDeathEvent event = new org.bukkit.event.entity.EntityDeathEvent(entity, loot);
-        this.world.getServer().getPluginManager().callEvent(event);
-
-        for (org.bukkit.inventory.ItemStack stack: event.getDrops()) {
-            bworld.dropItemNaturally(entity.getLocation(), stack);
-        }
+        CraftEventFactory.callEntityDeathEvent(this, loot);
         // CraftBukkit end
     }
 

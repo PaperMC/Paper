@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.event;
 
+import java.util.List;
 import net.minecraft.server.ChunkCoordinates;
 import net.minecraft.server.EntityCaveSpider;
 import net.minecraft.server.EntityChicken;
@@ -14,6 +15,7 @@ import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntityMonster;
 import net.minecraft.server.EntityPig;
 import net.minecraft.server.EntityPigZombie;
+import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntitySheep;
 import net.minecraft.server.EntitySilverfish;
 import net.minecraft.server.EntitySkeleton;
@@ -35,6 +37,8 @@ import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.CreatureType;
@@ -271,6 +275,37 @@ public class CraftEventFactory {
 
         BlockFadeEvent event = new BlockFadeEvent(block, state);
         Bukkit.getPluginManager().callEvent(event);
+        return event;
+    }
+
+    public static EntityDeathEvent callEntityDeathEvent(EntityLiving victim, List<org.bukkit.inventory.ItemStack> drops) {
+        CraftLivingEntity entity = (CraftLivingEntity)victim.getBukkitEntity();
+        EntityDeathEvent event = new EntityDeathEvent(entity, drops, victim.getExpReward());
+        org.bukkit.World world = entity.getWorld();
+        Bukkit.getServer().getPluginManager().callEvent(event);
+
+        victim.expToDrop = event.getDroppedExp();
+
+        for (org.bukkit.inventory.ItemStack stack: event.getDrops()) {
+            world.dropItemNaturally(entity.getLocation(), stack);
+        }
+
+        return event;
+    }
+
+    public static PlayerDeathEvent callPlayerDeathEvent(EntityPlayer victim, List<org.bukkit.inventory.ItemStack> drops) {
+        CraftPlayer entity = (CraftPlayer)victim.getBukkitEntity();
+        PlayerDeathEvent event = new PlayerDeathEvent(entity, drops, victim.getExpReward(), 0);
+        org.bukkit.World world = entity.getWorld();
+        Bukkit.getServer().getPluginManager().callEvent(event);
+
+        victim.expToDrop = event.getDroppedExp();
+        victim.newExp = event.getNewExp();
+
+        for (org.bukkit.inventory.ItemStack stack: event.getDrops()) {
+            world.dropItemNaturally(entity.getLocation(), stack);
+        }
+
         return event;
     }
 }

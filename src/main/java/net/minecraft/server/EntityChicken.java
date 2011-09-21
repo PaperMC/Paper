@@ -2,10 +2,7 @@ package net.minecraft.server;
 
 // CraftBukkit start
 import java.util.List;
-
-import org.bukkit.Location;
-import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
 // CraftBukkit end
 
 public class EntityChicken extends EntityAnimal {
@@ -92,14 +89,7 @@ public class EntityChicken extends EntityAnimal {
             loot.add(new org.bukkit.inventory.ItemStack(this.fireTicks > 0 ? Item.COOKED_CHICKEN.id : Item.RAW_CHICKEN.id, 1));
         }
 
-        CraftEntity entity = (CraftEntity) this.getBukkitEntity();
-        EntityDeathEvent event = new EntityDeathEvent(entity, loot);
-        org.bukkit.World bworld = this.world.getWorld();
-        this.world.getServer().getPluginManager().callEvent(event);
-
-        for (org.bukkit.inventory.ItemStack stack: event.getDrops()) {
-            bworld.dropItemNaturally(entity.getLocation(), stack);
-        }
+        CraftEventFactory.callEntityDeathEvent(this, loot);
         // CraftBukkit end
     }
 }
