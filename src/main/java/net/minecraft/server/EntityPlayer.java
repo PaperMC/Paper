@@ -12,6 +12,7 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason;
+import org.bukkit.event.entity.PlayerDeathEvent;
 // CraftBukkit end
 
 public class EntityPlayer extends EntityHuman implements ICrafting {
@@ -139,7 +140,6 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     }
 
     public void die(DamageSource damagesource) {
-        this.b.serverConfigurationManager.sendAll(new Packet3Chat(damagesource.a(this)));
         // CraftBukkit start
         java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
 
@@ -155,7 +155,10 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             }
         }
 
-        CraftEventFactory.callPlayerDeathEvent(this, loot);
+        PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, damagesource.a(this));
+        if (!"".equals(event.getDeathMessage())) {
+            this.b.serverConfigurationManager.sendAll(new Packet3Chat(event.getDeathMessage()));
+        }
 
         // CraftBukkit - we clean the player's inventory after the EntityDeathEvent is called so plugins can get the exact state of the inventory.
         for (int i = 0; i < this.inventory.items.length; ++i) {
