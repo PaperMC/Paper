@@ -60,7 +60,7 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
     public enum RegainReason {
 
         /**
-         * When a player regains health from regenerating due to Peaceful mode (spawn-monsters=false)
+         * When a player regains health from regenerating due to Peaceful mode (difficulty=0)
          */
         REGEN,
         /**
