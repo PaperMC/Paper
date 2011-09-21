@@ -298,6 +298,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         return getHandle().isSneaking();
     }
 
+    public boolean isSprinting() {
+        return getHandle().at();
+    }
+
+    public void setSprinting(boolean sprinting) {
+        getHandle().g(sprinting);
+    }
+
     public void loadData() {
         server.getHandle().playerFileData.b(getHandle());
     }
@@ -411,7 +419,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public void setGameMode(GameMode mode) {
         if (getHandle().netServerHandler == null) return;
-        
+
         if (mode == null) {
             throw new IllegalArgumentException("Mode cannot be null");
         }
