@@ -385,6 +385,13 @@ public class JavaPluginLoader implements PluginLoader {
                 }
             };
 
+        case PLAYER_TOGGLE_SPRINT:
+                return new EventExecutor() {
+                    public void execute(Listener listener, Event event) {
+                        ((PlayerListener) listener).onPlayerToggleSprint((PlayerToggleSprintEvent) event);
+                    }
+                };
+
         case PLAYER_BUCKET_EMPTY:
             return new EventExecutor() {
                 public void execute(Listener listener, Event event) {
@@ -419,7 +426,7 @@ public class JavaPluginLoader implements PluginLoader {
                     ((PlayerListener) listener).onPlayerFish((PlayerFishEvent) event);
                 }
             };
-            
+
         case PLAYER_GAME_MODE_CHANGE:
             return new EventExecutor() {
                 public void execute(Listener listener, Event event) {
@@ -569,7 +576,7 @@ public class JavaPluginLoader implements PluginLoader {
                     ((ServerListener) listener).onServerCommand((ServerCommandEvent) event);
                 }
             };
-            
+
         case MAP_INITIALIZE:
             return new EventExecutor() {
                 public void execute(Listener listener, Event event) {

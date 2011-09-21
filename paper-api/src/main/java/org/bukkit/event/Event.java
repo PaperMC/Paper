@@ -198,7 +198,7 @@ public abstract class Event implements Serializable {
          */
         PLAYER_MOVE (Category.PLAYER),
         /**
-         * Called before a player gets a velocity vector sent, which will instruct him to 
+         * Called before a player gets a velocity vector sent, which will instruct him to
          * get "pushed" into a specific direction, e.g. after an explosion
          *
          * @see org.bukkit.event.player.PlayerVelocityEvent
@@ -216,6 +216,12 @@ public abstract class Event implements Serializable {
          * @see org.bukkit.event.player.PlayerToggleSneakEvent
          */
         PLAYER_TOGGLE_SNEAK (Category.PLAYER),
+        /**
+         * Called when a player toggles sprint mode
+         *
+         * @see org.bukkit.event.player.PlayerToggleSprintEvent
+         */
+        PLAYER_TOGGLE_SPRINT (Category.PLAYER),
         /**
          * Called when a player interacts with an object or air
          *
@@ -303,7 +309,7 @@ public abstract class Event implements Serializable {
 
         /**
          * Called when the game mode of a player is changed
-         * 
+         *
          * @see org.bukkit.event.player.PlayerGameModeChangeEvent
          */
         PLAYER_GAME_MODE_CHANGE(Category.PLAYER),
@@ -496,7 +502,7 @@ public abstract class Event implements Serializable {
         SERVER_COMMAND (Category.SERVER),
         /**
          * Called when a map is initialized (created or loaded into memory)
-         * 
+         *
          * @see org.bukkit.event.server.MapInitializeEvent
          */
         MAP_INITIALIZE (Category.SERVER),

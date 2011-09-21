@@ -99,6 +99,20 @@ public interface Player extends HumanEntity, CommandSender, OfflinePlayer {
     public void setSneaking(boolean sneak);
 
     /**
+     * Gets whether the player is sprinting or not.
+     *
+     * @return true if player is sprinting.
+     */
+    public boolean isSprinting();
+
+    /**
+     * Sets whether the player is sprinting or not.
+     *
+     * @param sprinting true if the player should be sprinting
+     */
+    public void setSprinting(boolean sprinting);
+
+    /**
      * Saves the players current location, health, inventory, motion, and other information into the username.dat file, in the world/player folder
      */
     public void saveData();
@@ -298,6 +312,7 @@ public interface Player extends HumanEntity, CommandSender, OfflinePlayer {
      *
      * @return Current experience points
      */
+
     public int getExperience();
 
     /**

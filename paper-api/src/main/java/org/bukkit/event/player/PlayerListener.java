@@ -151,6 +151,13 @@ public class PlayerListener implements Listener {
     public void onPlayerToggleSneak(PlayerToggleSneakEvent event) {}
 
     /**
+     * Called when a player toggles sprint mode
+     *
+     * @param event Relevant event details
+     */
+    public void onPlayerToggleSprint(PlayerToggleSprintEvent event) {}
+
+    /**
      * Called when a player fills a bucket
      *
      * @param event Relevant event details
@@ -191,10 +198,10 @@ public class PlayerListener implements Listener {
      * @param event Relevant event details
      */
     public void onPlayerFish(PlayerFishEvent event) {}
-    
+
     /**
      * Called when a player's game mode is changed
-     * 
+     *
      * @param event Relevant event details
      */
     public void onPlayerGameModeChange(PlayerGameModeChangeEvent event) {}
