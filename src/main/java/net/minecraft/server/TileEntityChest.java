@@ -103,6 +103,7 @@ public class TileEntityChest extends TileEntity implements IInventory {
     }
 
     public boolean a(EntityHuman entityhuman) {
+        if (this.world == null) return true; // CraftBukkit
         return this.world.getTileEntity(this.x, this.y, this.z) != this ? false : entityhuman.e((double) this.x + 0.5D, (double) this.y + 0.5D, (double) this.z + 0.5D) <= 64.0D;
     }
 
@@ -114,6 +115,7 @@ public class TileEntityChest extends TileEntity implements IInventory {
     public void h() {
         if (!this.a) {
             // CraftBukkit start
+            if (this.world == null) return; // CraftBukkit
             TileEntityChest otherChest = null;
             BlockChest chest = (BlockChest) Block.byId[Block.CHEST.id];
             chest.b(this.world, this.x, this.y, this.z);
@@ -148,6 +150,7 @@ public class TileEntityChest extends TileEntity implements IInventory {
 
     // CraftBukkit start
     private TileEntityChest getTileEntity(int x, int y, int z) {
+        if (this.world == null) return null; // CraftBukkit
         TileEntity entity = this.world.getTileEntity(x, y, z);
 
         if (entity instanceof TileEntityChest) {
@@ -165,6 +168,7 @@ public class TileEntityChest extends TileEntity implements IInventory {
 
     public void h_() {
         super.h_();
+        if (this.world == null) return; // CraftBukkit
         this.h();
         if (++this.q % (20 * 4) == 0) { // CraftBukkit
             this.world.playNote(this.x, this.y, this.z, 1, this.h);
@@ -227,11 +231,13 @@ public class TileEntityChest extends TileEntity implements IInventory {
 
     public void e() {
         ++this.h;
+        if (this.world == null) return; // CraftBukkit
         this.world.playNote(this.x, this.y, this.z, 1, this.h);
     }
 
     public void t_() {
         --this.h;
+        if (this.world == null) return; // CraftBukkit
         this.world.playNote(this.x, this.y, this.z, 1, this.h);
     }
 
