@@ -156,7 +156,10 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         }
 
         PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, damagesource.a(this));
-        if (!"".equals(event.getDeathMessage())) {
+
+        String deathMessage = event.getDeathMessage();
+
+        if (deathMessage != null && deathMessage.length() > 0) {
             this.b.serverConfigurationManager.sendAll(new Packet3Chat(event.getDeathMessage()));
         }
 
