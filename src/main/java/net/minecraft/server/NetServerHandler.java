@@ -28,6 +28,7 @@ import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
+import org.bukkit.event.player.PlayerToggleSprintEvent;
 // CraftBukkit end
 
 public class NetServerHandler extends NetHandler implements ICommandListener {
@@ -840,6 +841,15 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
         if (packet19entityaction.animation == 1 || packet19entityaction.animation == 2) {
             PlayerToggleSneakEvent event = new PlayerToggleSneakEvent(this.getPlayer(), packet19entityaction.animation == 1);
+            this.server.getPluginManager().callEvent(event);
+
+            if (event.isCancelled()) {
+                return;
+            }
+        }
+
+        if (packet19entityaction.animation == 4 || packet19entityaction.animation == 5) {
+            PlayerToggleSprintEvent event = new PlayerToggleSprintEvent(this.getPlayer(), packet19entityaction.animation == 4);
             this.server.getPluginManager().callEvent(event);
 
             if (event.isCancelled()) {
