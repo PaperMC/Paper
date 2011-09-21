@@ -113,42 +113,36 @@ public class TileEntityChest extends TileEntity implements IInventory {
 
     public void h() {
         if (!this.a) {
+            // CraftBukkit start
+            TileEntityChest otherChest = null;
+            BlockChest chest = (BlockChest) Block.byId[Block.CHEST.id];
+            chest.b(this.world, this.x, this.y, this.z);
             this.a = true;
             this.b = null;
             this.c = null;
             this.d = null;
             this.e = null;
             if (this.world.getTypeId(this.x - 1, this.y, this.z) == Block.CHEST.id) {
-                this.d = getTileEntity(this.x - 1, this.y, this.z); // CraftBukkit
+                otherChest = this.d = getTileEntity(this.x - 1, this.y, this.z); // CraftBukkit
             }
 
             if (this.world.getTypeId(this.x + 1, this.y, this.z) == Block.CHEST.id) {
-                this.c = getTileEntity(this.x + 1, this.y, this.z); // CraftBukkit
+                otherChest = this.c = getTileEntity(this.x + 1, this.y, this.z); // CraftBukkit
             }
 
             if (this.world.getTypeId(this.x, this.y, this.z - 1) == Block.CHEST.id) {
-                this.b = getTileEntity(this.x, this.y, this.z - 1); // CraftBukkit
+                otherChest = this.b = getTileEntity(this.x, this.y, this.z - 1); // CraftBukkit
             }
 
             if (this.world.getTypeId(this.x, this.y, this.z + 1) == Block.CHEST.id) {
-                this.e = getTileEntity(this.x, this.y, this.z + 1); // CraftBukkit
+                otherChest = this.e = getTileEntity(this.x, this.y, this.z + 1); // CraftBukkit
             }
 
-            if (this.b != null) {
-                this.b.g();
+            if (otherChest != null) {
+                otherChest.g();
+                chest.b(otherChest.world, otherChest.x, otherChest.y, otherChest.z);
             }
-
-            if (this.e != null) {
-                this.e.g();
-            }
-
-            if (this.c != null) {
-                this.c.g();
-            }
-
-            if (this.d != null) {
-                this.d.g();
-            }
+            // CraftBukkit end
         }
     }
 
@@ -172,7 +166,7 @@ public class TileEntityChest extends TileEntity implements IInventory {
     public void h_() {
         super.h_();
         this.h();
-        if (++this.q % 20 * 4 == 0) {
+        if (++this.q % (20 * 4) == 0) { // CraftBukkit
             this.world.playNote(this.x, this.y, this.z, 1, this.h);
         }
 
