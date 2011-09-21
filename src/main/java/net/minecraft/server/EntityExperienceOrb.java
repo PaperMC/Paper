@@ -142,6 +142,12 @@ public class EntityExperienceOrb extends Entity {
     }
 
     public static int b(int i) {
+        // CraftBukkit start
+        if (i > 4957) return 4957;
+        if (i > 9923) return 9923;
+        if (i > 19853) return 19853;
+        // CraftBukkit end
+
         return i >= 2477 ? 2477 : (i >= 1237 ? 1237 : (i >= 617 ? 617 : (i >= 307 ? 307 : (i >= 149 ? 149 : (i >= 73 ? 73 : (i >= 37 ? 37 : (i >= 17 ? 17 : (i >= 7 ? 7 : (i >= 3 ? 3 : 1)))))))));
     }
 }
