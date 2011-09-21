@@ -22,6 +22,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Note;
 import org.bukkit.Statistic;
+import org.bukkit.World;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.map.CraftMapView;
@@ -482,5 +483,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public void setFoodLevel(int value) {
         getHandle().getFoodData().foodLevel = value;
+    }
+
+    public Location getBedSpawnLocation() {
+        World world = getServer().getWorld(getHandle().spawnWorld);
+        if (world != null) {
+            return new Location(world, getHandle().getBed().x, getHandle().getBed().y, getHandle().getBed().z);
+        } else {
+            return null;
+        }
     }
 }
