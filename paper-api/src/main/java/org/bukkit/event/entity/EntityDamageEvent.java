@@ -150,6 +150,12 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          */
         SUICIDE,
         /**
+         * Damage caused by starving due to having an empty hunger bar
+         *
+         * Damage: 1
+         */
+        STARVATION,
+        /**
          * Custom damage.
          *
          * Damage: variable
