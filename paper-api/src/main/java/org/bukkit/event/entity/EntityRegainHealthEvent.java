@@ -64,6 +64,10 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
          */
         REGEN,
         /**
+         * When a player regains health from regenerating due to their hunger being satisfied
+         */
+        SATIATED,
+        /**
          * When a player regains health from eating consumables
          */
         EATING,
