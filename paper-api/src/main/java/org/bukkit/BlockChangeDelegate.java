@@ -40,4 +40,11 @@ public interface BlockChangeDelegate {
      * @return
      */
     public int getTypeId(int x, int y, int z);
+
+    /**
+     * Gets the height of the world.
+     *
+     * @return Height of the world
+     */
+    public int getHeight();
 }
