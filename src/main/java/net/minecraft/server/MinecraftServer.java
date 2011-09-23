@@ -436,20 +436,27 @@ public class MinecraftServer implements Runnable, ICommandListener {
         Vec3D.a();
         ++this.ticks;
 
-        ((CraftScheduler) this.server.getScheduler()).mainThreadHeartbeat(this.ticks); // CraftBukkit
+        // CraftBukkit start - only send timeupdates to the people in that world
 
-        for (j = 0; j < this.worlds.size(); ++j) { // CraftBukkit
-            // if (j == 0 || this.propertyManager.getBoolean("allow-nether", true)) { // CraftBukkit
-                WorldServer worldserver = this.worlds.get(j); // CraftBukkit
+        ((CraftScheduler) this.server.getScheduler()).mainThreadHeartbeat(this.ticks);
 
+        // Send timeupdates to everyone, it will get the right time from the world the player is in.
+        if (this.ticks % 20 == 0) {
+            for (int i = 0; i < this.serverConfigurationManager.players.size(); ++i) {
+                EntityPlayer entityplayer = (EntityPlayer) this.serverConfigurationManager.players.get(i);
+                entityplayer.netServerHandler.sendPacket(new Packet4UpdateTime(entityplayer.getPlayerTime())); // Add support for per player time
+            }
+        }
+
+        for (j = 0; j < this.worlds.size(); ++j) {
+            // if (j == 0 || this.propertyManager.getBoolean("allow-nether", true)) {
+                WorldServer worldserver = this.worlds.get(j);
+
+                /* Drop global timeupdates
                 if (this.ticks % 20 == 0) {
-                    // CraftBukkit start - only send timeupdates to the people in that world
-                    for (int i = 0; i < this.serverConfigurationManager.players.size(); ++i) {
-                        EntityPlayer entityplayer = (EntityPlayer) this.serverConfigurationManager.players.get(i);
-                        entityplayer.netServerHandler.sendPacket(new Packet4UpdateTime(entityplayer.getPlayerTime())); // Add support for per player time
-                    }
-                    // CraftBukkit end
+                    this.serverConfigurationManager.a(new Packet4UpdateTime(worldserver.getTime()), worldserver.worldProvider.dimension);
                 }
+                // CraftBukkit end */
 
                 worldserver.doTick();
 
