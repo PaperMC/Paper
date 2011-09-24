@@ -50,7 +50,7 @@ public class ServerConfigurationManager {
 
     public ServerConfigurationManager(MinecraftServer minecraftserver) {
         minecraftserver.server = new CraftServer(minecraftserver, this);
-        minecraftserver.console = new ColouredConsoleSender(minecraftserver.server);
+        minecraftserver.console = ColouredConsoleSender.getInstance();
         this.cserver = minecraftserver.server;
         // CraftBukkit end
 

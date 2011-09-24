@@ -32,6 +32,10 @@ public class WorldServer extends World implements BlockChangeDelegate {
         this.manager = new PlayerManager(minecraftserver, this.dimension, minecraftserver.propertyManager.getInt("view-distance", 10));
     }
 
+    public int getHeight() {
+        return height;
+    }
+
     public final int dimension;
     public EntityTracker tracker;
     public PlayerManager manager;

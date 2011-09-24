@@ -19,9 +19,9 @@ import java.net.UnknownHostException;
 import jline.ConsoleReader;
 import joptsimple.OptionSet;
 import org.bukkit.World.Environment;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.LoggerOutputStream;
-import org.bukkit.craftbukkit.command.ColouredConsoleSender;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 import org.bukkit.craftbukkit.util.ServerShutdownThread;
 import org.bukkit.event.server.ServerCommandEvent;
@@ -59,7 +59,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
     public List<WorldServer> worlds = new ArrayList<WorldServer>();
     public CraftServer server;
     public OptionSet options;
-    public ColouredConsoleSender console;
+    public ConsoleCommandSender console;
     public ConsoleReader reader;
     public static int currentTick;
     // CraftBukkit end

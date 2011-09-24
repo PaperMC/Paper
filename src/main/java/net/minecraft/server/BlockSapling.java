@@ -81,6 +81,10 @@ public class BlockSapling extends BlockFlower {
         public int getTypeId(int x, int y, int z) {
             return this.world.getTypeId(x, y, z);
         }
+
+        public int getHeight() {
+            return world.height;
+        }
     }
     // CraftBukkit end
 }

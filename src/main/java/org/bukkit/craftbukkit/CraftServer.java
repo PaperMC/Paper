@@ -839,4 +839,8 @@ public final class CraftServer implements Server {
             ((CraftWorld)world).getHandle().worldData.setGameType(mode.getValue());
         }
     }
+
+    public ConsoleCommandSender getConsoleSender() {
+        return console.console;
+    }
 }
