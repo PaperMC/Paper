@@ -13,6 +13,7 @@ import java.util.logging.Logger;
 import org.bukkit.command.PluginCommand;
 
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.map.MapView;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.ServicesManager;
@@ -455,4 +456,12 @@ public interface Server {
      * @param mode New game mode
      */
     public void setDefaultGameMode(GameMode mode);
+
+    /**
+     * Gets the {@link ConsoleCommandSender} that may be used as an input source
+     * for this server.
+     *
+     * @return The Console CommandSender
+     */
+    public ConsoleCommandSender getConsoleSender();
 }

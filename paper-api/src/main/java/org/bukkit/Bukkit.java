@@ -8,6 +8,7 @@ import java.util.UUID;
 import java.util.logging.Logger;
 import org.bukkit.World.Environment;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.generator.ChunkGenerator;
@@ -259,5 +260,9 @@ public final class Bukkit {
 
     public static void reloadWhitelist() {
         server.reloadWhitelist();
+    }
+
+    public static ConsoleCommandSender getConsoleSender() {
+        return server.getConsoleSender();
     }
 }

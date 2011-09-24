@@ -16,7 +16,7 @@ public class ConsoleCommandSender implements CommandSender {
     private final Server server;
     private final PermissibleBase perm = new PermissibleBase(this);
 
-    public ConsoleCommandSender(Server server) {
+    protected ConsoleCommandSender(Server server) {
         this.server = server;
     }
 
