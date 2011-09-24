@@ -5,6 +5,7 @@ import java.util.Map;
 import jline.ANSIBuffer.ANSICodes;
 import jline.ConsoleReader;
 import jline.Terminal;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.craftbukkit.CraftServer;
@@ -15,7 +16,7 @@ public class ColouredConsoleSender extends ConsoleCommandSender {
     private final Map<ChatColor, String> replacements = new EnumMap<ChatColor, String>(ChatColor.class);
     private final ChatColor[] colors = ChatColor.values();
 
-    public ColouredConsoleSender(CraftServer server) {
+    protected ColouredConsoleSender(CraftServer server) {
         super(server);
         this.reader = server.getReader();
         this.terminal = reader.getTerminal();
@@ -53,6 +54,14 @@ public class ColouredConsoleSender extends ConsoleCommandSender {
             System.out.println(result + ANSICodes.attrib(0));
         } else {
             super.sendMessage(message);
+        }
+    }
+
+    public static ConsoleCommandSender getInstance() {
+        if (Bukkit.getConsoleSender() != null) {
+            return Bukkit.getConsoleSender();
+        } else {
+            return new ColouredConsoleSender((CraftServer)Bukkit.getServer());
         }
     }
 }
