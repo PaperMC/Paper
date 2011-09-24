@@ -229,9 +229,9 @@ public class MinecraftServer implements Runnable, ICommandListener {
 
             world.tracker = new EntityTracker(this, dimension);
             world.addIWorldAccess(new WorldManager(this, world));
-            world.spawnMonsters = this.propertyManager.getInt("difficulty", 1);
+            world.difficulty = this.propertyManager.getInt("difficulty", 1);
             world.setSpawnFlags(this.propertyManager.getBoolean("spawn-monsters", true), this.spawnAnimals);
-            world.p().d(j);
+            world.p().setGameType(j);
             this.worlds.add(world);
             this.serverConfigurationManager.setPlayerFileData(this.worlds.toArray(new WorldServer[0]));
         }
@@ -312,7 +312,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
         }
 
         WorldServer world = this.worlds.get(0);
-        if (!world.canSave) {
+        if (!world.savingDisabled) {
             this.serverConfigurationManager.savePlayers();
         }
         // CraftBukkit end
@@ -339,7 +339,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
         // CraftBukkit end
     }
 
-    public void a() {
+    public void safeShutdown() {
         this.isRunning = false;
     }
 
@@ -464,7 +464,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
                     ;
                 }
 
-                worldserver.cleanUp();
+                worldserver.tickEntities();
             }
         // } // CraftBukkit
 

@@ -82,21 +82,21 @@ public class EntitySheep extends EntityAnimal {
     }
 
     public int getColor() {
-        return this.datawatcher.a(16) & 15;
+        return this.datawatcher.getByte(16) & 15;
     }
 
     public void setColor(int i) {
-        byte b0 = this.datawatcher.a(16);
+        byte b0 = this.datawatcher.getByte(16);
 
         this.datawatcher.watch(16, Byte.valueOf((byte) (b0 & 240 | i & 15)));
     }
 
     public boolean isSheared() {
-        return (this.datawatcher.a(16) & 16) != 0;
+        return (this.datawatcher.getByte(16) & 16) != 0;
     }
 
     public void setSheared(boolean flag) {
-        byte b0 = this.datawatcher.a(16);
+        byte b0 = this.datawatcher.getByte(16);
 
         if (flag) {
             this.datawatcher.watch(16, Byte.valueOf((byte) (b0 | 16)));

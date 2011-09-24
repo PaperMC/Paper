@@ -219,7 +219,7 @@ public class ChunkProviderServer implements IChunkProvider {
     }
 
     public boolean unloadChunks() {
-        if (!this.world.canSave) {
+        if (!this.world.savingDisabled) {
             // CraftBukkit start
             org.bukkit.Server server = this.world.getServer();
             for (int i = 0; i < 50 && !this.unloadQueue.isEmpty(); i++) {
@@ -251,6 +251,6 @@ public class ChunkProviderServer implements IChunkProvider {
     }
 
     public boolean canSave() {
-        return !this.world.canSave;
+        return !this.world.savingDisabled;
     }
 }

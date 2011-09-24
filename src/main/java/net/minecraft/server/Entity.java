@@ -125,7 +125,7 @@ public abstract class Entity {
 
     protected abstract void b();
 
-    public DataWatcher al() {
+    public DataWatcher getDataWatcher() {
         return this.datawatcher;
     }
 
@@ -206,7 +206,7 @@ public abstract class Entity {
         this.lastYaw = this.yaw;
         int i;
 
-        if (this.at()) {
+        if (this.isSprinting()) {
             int j = MathHelper.floor(this.locX);
             int k = MathHelper.floor(this.locY - 0.20000000298023224D - (double) this.height);
 
@@ -1231,11 +1231,11 @@ public abstract class Entity {
         this.a(1, flag);
     }
 
-    public boolean at() {
+    public boolean isSprinting() {
         return this.e(3);
     }
 
-    public void g(boolean flag) {
+    public void setSprinting(boolean flag) {
         this.a(3, flag);
     }
 
@@ -1244,11 +1244,11 @@ public abstract class Entity {
     }
 
     protected boolean e(int i) {
-        return (this.datawatcher.a(0) & 1 << i) != 0;
+        return (this.datawatcher.getByte(0) & 1 << i) != 0;
     }
 
     protected void a(int i, boolean flag) {
-        byte b0 = this.datawatcher.a(0);
+        byte b0 = this.datawatcher.getByte(0);
 
         if (flag) {
             this.datawatcher.watch(0, Byte.valueOf((byte) (b0 | 1 << i)));

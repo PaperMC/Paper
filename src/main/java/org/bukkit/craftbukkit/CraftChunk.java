@@ -154,7 +154,7 @@ public class CraftChunk implements Chunk {
 
         if (includeBiome || includeBiomeTempRain) {
             WorldChunkManager wcm = chunk.world.getWorldChunkManager();
-            BiomeBase[] biomeBase = wcm.b((BiomeBase[])null, getX() << 4, getZ() << 4, 16, 16);
+            BiomeBase[] biomeBase = wcm.getBiomes((BiomeBase[])null, getX() << 4, getZ() << 4, 16, 16);
 
             if (includeBiome) {
                 biome = new BiomeBase[256];
@@ -164,10 +164,10 @@ public class CraftChunk implements Chunk {
             if (includeBiomeTempRain) {
                 biomeTemp = new double[256];
                 biomeRain = new double[256];
-                float[] dat = wcm.a((float[]) null, getX() << 4, getZ() << 4, 16, 16);
+                float[] dat = wcm.getTemperatures((float[]) null, getX() << 4, getZ() << 4, 16, 16);
                 for(int i = 0; i < 256; i++)
                     biomeTemp[i] = dat[i];
-                dat = wcm.b((float[]) null, getX() << 4, getZ() << 4, 16, 16);
+                dat = wcm.getWetness((float[]) null, getX() << 4, getZ() << 4, 16, 16);
                 for(int i = 0; i < 256; i++)
                     biomeRain[i] = dat[i];
             }
@@ -212,7 +212,7 @@ public class CraftChunk implements Chunk {
 
         if (includeBiome || includeBiomeTempRain) {
             WorldChunkManager wcm = world.getHandle().getWorldChunkManager();
-            BiomeBase[] biomeBase = wcm.b((BiomeBase[])null, x << 4, z << 4, 16, 16);
+            BiomeBase[] biomeBase = wcm.getBiomes((BiomeBase[])null, x << 4, z << 4, 16, 16);
 
             if (includeBiome) {
                 biome = new BiomeBase[256];
@@ -222,10 +222,10 @@ public class CraftChunk implements Chunk {
             if (includeBiomeTempRain) {
                 biomeTemp = new double[256];
                 biomeRain = new double[256];
-                float[] dat = wcm.a((float[]) null, x << 4, z << 4, 16, 16);
+                float[] dat = wcm.getTemperatures((float[]) null, x << 4, z << 4, 16, 16);
                 for(int i = 0; i < 256; i++)
                     biomeTemp[i] = dat[i];
-                dat = wcm.b((float[]) null, x << 4, z << 4, 16, 16);
+                dat = wcm.getWetness((float[]) null, x << 4, z << 4, 16, 16);
                 for(int i = 0; i < 256; i++)
                     biomeRain[i] = dat[i];
             }

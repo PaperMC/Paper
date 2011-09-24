@@ -39,7 +39,7 @@ public class ItemFood extends Item {
         // CraftBukkit end
 
         if (!world.isStatic && this.bx > 0 && world.random.nextFloat() < this.bA) {
-            entityhuman.d(new MobEffect(this.bx, this.by * 20, this.bz));
+            entityhuman.addEffect(new MobEffect(this.bx, this.by * 20, this.bz));
         }
 
         return itemstack;

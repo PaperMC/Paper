@@ -108,7 +108,7 @@ public class EntityTrackerEntry {
                 this.a((Packet) object);
             }
 
-            DataWatcher datawatcher = this.tracker.al();
+            DataWatcher datawatcher = this.tracker.getDataWatcher();
 
             if (datawatcher.a()) {
                 this.b((Packet) (new Packet40EntityMetadata(this.tracker.id, datawatcher)));
@@ -212,7 +212,7 @@ public class EntityTrackerEntry {
 
                     if (this.tracker instanceof EntityLiving) {
                         EntityLiving entityliving = (EntityLiving) this.tracker;
-                        Iterator iterator = entityliving.ak().iterator();
+                        Iterator iterator = entityliving.getEffects().iterator();
 
                         while (iterator.hasNext()) {
                             MobEffect mobeffect = (MobEffect) iterator.next();
@@ -271,7 +271,7 @@ public class EntityTrackerEntry {
                 return new Packet23VehicleSpawn(this.tracker, 1);
             } else if (this.tracker instanceof IAnimal) {
                 return new Packet24MobSpawn((EntityLiving) this.tracker);
-            } else if (this.tracker instanceof EntityFish) {
+            } else if (this.tracker instanceof EntityFishingHook) {
                 return new Packet23VehicleSpawn(this.tracker, 90);
             } else if (this.tracker instanceof EntityArrow) {
                 Entity entity = ((EntityArrow) this.tracker).shooter;
@@ -286,9 +286,9 @@ public class EntityTrackerEntry {
                 Packet23VehicleSpawn packet23vehiclespawn = new Packet23VehicleSpawn(this.tracker, 63, shooter);
                 // CraftBukkit end
 
-                packet23vehiclespawn.e = (int) (entityfireball.c * 8000.0D);
-                packet23vehiclespawn.f = (int) (entityfireball.d * 8000.0D);
-                packet23vehiclespawn.g = (int) (entityfireball.e * 8000.0D);
+                packet23vehiclespawn.e = (int) (entityfireball.dirX * 8000.0D);
+                packet23vehiclespawn.f = (int) (entityfireball.dirY * 8000.0D);
+                packet23vehiclespawn.g = (int) (entityfireball.dirZ * 8000.0D);
                 return packet23vehiclespawn;
             } else if (this.tracker instanceof EntityEgg) {
                 return new Packet23VehicleSpawn(this.tracker, 62);

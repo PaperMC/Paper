@@ -102,7 +102,7 @@ public final class ItemStack {
     }
 
     public boolean d() {
-        return Item.byId[this.id].e() > 0;
+        return Item.byId[this.id].getMaxDurability() > 0;
     }
 
     public boolean usesData() {
@@ -126,7 +126,7 @@ public final class ItemStack {
     }
 
     public int i() {
-        return Item.byId[this.id].e();
+        return Item.byId[this.id].getMaxDurability();
     }
 
     public void damage(int i, Entity entity) {

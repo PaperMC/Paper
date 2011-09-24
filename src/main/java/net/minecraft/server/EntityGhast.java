@@ -31,13 +31,13 @@ public class EntityGhast extends EntityFlying implements IMonster {
 
     public void s_() {
         super.s_();
-        byte b0 = this.datawatcher.a(16);
+        byte b0 = this.datawatcher.getByte(16);
 
         this.texture = b0 == 1 ? "/mob/ghast_fire.png" : "/mob/ghast.png";
     }
 
     protected void c_() {
-        if (!this.world.isStatic && this.world.spawnMonsters == 0) {
+        if (!this.world.isStatic && this.world.difficulty == 0) {
             this.die();
         }
 
@@ -140,7 +140,7 @@ public class EntityGhast extends EntityFlying implements IMonster {
         }
 
         if (!this.world.isStatic) {
-            byte b0 = this.datawatcher.a(16);
+            byte b0 = this.datawatcher.getByte(16);
             byte b1 = (byte) (this.f > 10 ? 1 : 0);
 
             if (b0 != b1) {
@@ -186,7 +186,7 @@ public class EntityGhast extends EntityFlying implements IMonster {
     }
 
     public boolean d() {
-        return this.random.nextInt(20) == 0 && super.d() && this.world.spawnMonsters > 0;
+        return this.random.nextInt(20) == 0 && super.d() && this.world.difficulty > 0;
     }
 
     public int m() {

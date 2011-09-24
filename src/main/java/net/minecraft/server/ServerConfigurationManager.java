@@ -35,14 +35,14 @@ public class ServerConfigurationManager {
     public int maxPlayers; // CraftBukkit - private -> public
     public Set banByName = new HashSet(); // CraftBukkit - private -> public
     public Set banByIP = new HashSet(); // CraftBukkit - private -> public
-    private Set h = new HashSet();
-    private Set i = new HashSet();
+    private Set operators = new HashSet();
+    private Set whitelist = new HashSet();
     private File j;
     private File k;
     private File l;
     private File m;
     public PlayerFileData playerFileData; // CraftBukkit - private - >public
-    public boolean o; // Craftbukkit - private -> public
+    public boolean hasWhitelist; // Craftbukkit - private -> public
     private int p = 0;
 
     // CraftBukkit start
@@ -63,7 +63,7 @@ public class ServerConfigurationManager {
 
         // CraftBukkit - removed playermanagers
         this.maxPlayers = minecraftserver.propertyManager.getInt("max-players", 20);
-        this.o = minecraftserver.propertyManager.getBoolean("white-list", false);
+        this.hasWhitelist = minecraftserver.propertyManager.getBoolean("white-list", false);
         this.i();
         this.k();
         this.m();
@@ -271,7 +271,7 @@ public class ServerConfigurationManager {
 
         // CraftBukkit start
         byte actualDimension = (byte) (worldserver.getWorld().getEnvironment().getId());
-        entityplayer1.netServerHandler.sendPacket(new Packet9Respawn(actualDimension, (byte) worldserver.spawnMonsters, worldserver.getSeed(), 128, entityplayer1.itemInWorldManager.a()));
+        entityplayer1.netServerHandler.sendPacket(new Packet9Respawn(actualDimension, (byte) worldserver.difficulty, worldserver.getSeed(), 128, entityplayer1.itemInWorldManager.a()));
         entityplayer1.spawnIn(worldserver);
         entityplayer1.dead = false;
         entityplayer1.netServerHandler.teleport(new Location(worldserver.getWorld(), entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch));
@@ -375,12 +375,12 @@ public class ServerConfigurationManager {
         return s;
     }
 
-    public void a(String s) {
+    public void addUserBan(String s) {
         this.banByName.add(s.toLowerCase());
         this.j();
     }
 
-    public void b(String s) {
+    public void removeUserBan(String s) {
         this.banByName.remove(s.toLowerCase());
         this.j();
     }
@@ -418,12 +418,12 @@ public class ServerConfigurationManager {
         }
     }
 
-    public void c(String s) {
+    public void addIpBan(String s) {
         this.banByIP.add(s.toLowerCase());
         this.l();
     }
 
-    public void d(String s) {
+    public void removeIpBan(String s) {
         this.banByIP.remove(s.toLowerCase());
         this.l();
     }
@@ -461,8 +461,8 @@ public class ServerConfigurationManager {
         }
     }
 
-    public void e(String s) {
-        this.h.add(s.toLowerCase());
+    public void addOp(String s) {
+        this.operators.add(s.toLowerCase());
         this.n();
 
         // Craftbukkit start
@@ -473,8 +473,8 @@ public class ServerConfigurationManager {
         // Craftbukkit end
     }
 
-    public void f(String s) {
-        this.h.remove(s.toLowerCase());
+    public void removeOp(String s) {
+        this.operators.remove(s.toLowerCase());
         this.n();
 
         // Craftbukkit start
@@ -487,12 +487,12 @@ public class ServerConfigurationManager {
 
     private void m() {
         try {
-            this.h.clear();
+            this.operators.clear();
             BufferedReader bufferedreader = new BufferedReader(new FileReader(this.l));
             String s = "";
 
             while ((s = bufferedreader.readLine()) != null) {
-                this.h.add(s.trim().toLowerCase());
+                this.operators.add(s.trim().toLowerCase());
             }
 
             bufferedreader.close();
@@ -505,7 +505,7 @@ public class ServerConfigurationManager {
     private void n() {
         try {
             PrintWriter printwriter = new PrintWriter(new FileWriter(this.l, false));
-            Iterator iterator = this.h.iterator();
+            Iterator iterator = this.operators.iterator();
 
             while (iterator.hasNext()) {
                 String s = (String) iterator.next();
@@ -522,12 +522,12 @@ public class ServerConfigurationManager {
 
     private void o() {
         try {
-            this.i.clear();
+            this.whitelist.clear();
             BufferedReader bufferedreader = new BufferedReader(new FileReader(this.m));
             String s = "";
 
             while ((s = bufferedreader.readLine()) != null) {
-                this.i.add(s.trim().toLowerCase());
+                this.whitelist.add(s.trim().toLowerCase());
             }
 
             bufferedreader.close();
@@ -539,7 +539,7 @@ public class ServerConfigurationManager {
     private void p() {
         try {
             PrintWriter printwriter = new PrintWriter(new FileWriter(this.m, false));
-            Iterator iterator = this.i.iterator();
+            Iterator iterator = this.whitelist.iterator();
 
             while (iterator.hasNext()) {
                 String s = (String) iterator.next();
@@ -555,11 +555,11 @@ public class ServerConfigurationManager {
 
     public boolean isWhitelisted(String s) {
         s = s.trim().toLowerCase();
-        return !this.o || this.h.contains(s) || this.i.contains(s);
+        return !this.hasWhitelist || this.operators.contains(s) || this.whitelist.contains(s);
     }
 
     public boolean isOp(String s) {
-        return this.h.contains(s.trim().toLowerCase());
+        return this.operators.contains(s.trim().toLowerCase());
     }
 
     public EntityPlayer i(String s) {
@@ -633,21 +633,21 @@ public class ServerConfigurationManager {
 
     public void a(int i, int j, int k, TileEntity tileentity) {}
 
-    public void k(String s) {
-        this.i.add(s);
+    public void addWhitelist(String s) {
+        this.whitelist.add(s);
         this.p();
     }
 
-    public void l(String s) {
-        this.i.remove(s);
+    public void removeWhitelist(String s) {
+        this.whitelist.remove(s);
         this.p();
     }
 
-    public Set e() {
-        return this.i;
+    public Set getWhitelisted() {
+        return this.whitelist;
     }
 
-    public void f() {
+    public void reloadWhitelist() {
         this.o();
     }
 

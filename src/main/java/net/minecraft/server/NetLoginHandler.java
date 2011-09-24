@@ -91,14 +91,14 @@ public class NetLoginHandler extends NetHandler {
             WorldServer worldserver = (WorldServer) entityplayer.world; // CraftBukkit
             ChunkCoordinates chunkcoordinates = worldserver.getSpawn();
 
-            entityplayer.itemInWorldManager.b(worldserver.p().n());
+            entityplayer.itemInWorldManager.b(worldserver.p().getGameType());
             NetServerHandler netserverhandler = new NetServerHandler(this.server, this.networkManager, entityplayer);
 
             int i = entityplayer.id;
             long j = worldserver.getSeed();
             int k = entityplayer.itemInWorldManager.a();
             byte b0 = (byte) worldserver.worldProvider.dimension;
-            byte b1 = (byte) worldserver.spawnMonsters;
+            byte b1 = (byte) worldserver.difficulty;
 
             worldserver.getClass();
             // CraftBukkit start -- Don't send a higher than 126 MaxPlayer size, otherwise the PlayerInfo window won't render correctly.
@@ -117,7 +117,7 @@ public class NetLoginHandler extends NetHandler {
             netserverhandler.a(entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
             this.server.networkListenThread.a(netserverhandler);
             netserverhandler.sendPacket(new Packet4UpdateTime(entityplayer.getPlayerTime())); // CraftBukkit - add support for player specific time
-            Iterator iterator = entityplayer.ak().iterator();
+            Iterator iterator = entityplayer.getEffects().iterator();
 
             while (iterator.hasNext()) {
                 MobEffect mobeffect = (MobEffect) iterator.next();

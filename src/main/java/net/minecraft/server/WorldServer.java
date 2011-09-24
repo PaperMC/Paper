@@ -18,7 +18,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
 
     public ChunkProviderServer chunkProviderServer;
     public boolean weirdIsOpCache = false;
-    public boolean canSave;
+    public boolean savingDisabled;
     public final MinecraftServer server; // CraftBukkit - private -> public final
     private EntityList Q = new EntityList();
 

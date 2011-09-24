@@ -284,7 +284,7 @@ public class EntityEnderman extends EntityMonster {
     }
 
     public int getCarriedId() {
-        return this.datawatcher.a(16);
+        return this.datawatcher.getByte(16);
     }
 
     public void setCarriedData(int i) {
@@ -292,7 +292,7 @@ public class EntityEnderman extends EntityMonster {
     }
 
     public int getCarriedData() {
-        return this.datawatcher.a(17);
+        return this.datawatcher.getByte(17);
     }
 
     static {

@@ -27,7 +27,7 @@ public class FoodMetaData {
     }
 
     public void a(EntityHuman entityhuman) {
-        int i = entityhuman.world.spawnMonsters;
+        int i = entityhuman.world.difficulty;
 
         this.e = this.foodLevel;
         if (this.exhaustionLevel > 4.0F) {

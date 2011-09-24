@@ -31,7 +31,7 @@ public class EntityPigZombie extends EntityZombie {
     }
 
     public boolean d() {
-        return this.world.spawnMonsters > 0 && this.world.containsEntity(this.boundingBox) && this.world.getEntities(this, this.boundingBox).size() == 0 && !this.world.c(this.boundingBox);
+        return this.world.difficulty > 0 && this.world.containsEntity(this.boundingBox) && this.world.getEntities(this, this.boundingBox).size() == 0 && !this.world.c(this.boundingBox);
     }
 
     public void b(NBTTagCompound nbttagcompound) {

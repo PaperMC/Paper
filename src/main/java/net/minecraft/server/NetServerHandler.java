@@ -863,9 +863,9 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         } else if (packet19entityaction.animation == 2) {
             this.player.setSneak(false);
         } else if (packet19entityaction.animation == 4) {
-            this.player.g(true);
+            this.player.setSprinting(true);
         } else if (packet19entityaction.animation == 5) {
-            this.player.g(false);
+            this.player.setSprinting(false);
         } else if (packet19entityaction.animation == 3) {
             this.player.a(false, true, true);
             this.checkMovement = false;

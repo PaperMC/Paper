@@ -24,9 +24,9 @@ public class EntityFireball extends Entity {
     public EntityLiving shooter;
     private int k;
     private int l = 0;
-    public double c;
-    public double d;
-    public double e;
+    public double dirX;
+    public double dirY;
+    public double dirZ;
 
     public float yield = 1; // CraftBukkit
     public boolean isIncendiary = true; // CraftBukkit
@@ -56,9 +56,9 @@ public class EntityFireball extends Entity {
         d2 += this.random.nextGaussian() * 0.4D;
         double d3 = (double) MathHelper.a(d0 * d0 + d1 * d1 + d2 * d2);
 
-        this.c = d0 / d3 * 0.1D;
-        this.d = d1 / d3 * 0.1D;
-        this.e = d2 / d3 * 0.1D;
+        this.dirX = d0 / d3 * 0.1D;
+        this.dirY = d1 / d3 * 0.1D;
+        this.dirZ = d2 / d3 * 0.1D;
     }
 
     public void s_() {
@@ -210,9 +210,9 @@ public class EntityFireball extends Entity {
             f2 = 0.8F;
         }
 
-        this.motX += this.c;
-        this.motY += this.d;
-        this.motZ += this.e;
+        this.motX += this.dirX;
+        this.motY += this.dirY;
+        this.motZ += this.dirZ;
         this.motX *= (double) f2;
         this.motY *= (double) f2;
         this.motZ *= (double) f2;
@@ -251,9 +251,9 @@ public class EntityFireball extends Entity {
                 this.motX = vec3d.a;
                 this.motY = vec3d.b;
                 this.motZ = vec3d.c;
-                this.c = this.motX * 0.1D;
-                this.d = this.motY * 0.1D;
-                this.e = this.motZ * 0.1D;
+                this.dirX = this.motX * 0.1D;
+                this.dirY = this.motY * 0.1D;
+                this.dirZ = this.motZ * 0.1D;
             }
 
             return true;

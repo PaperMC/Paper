@@ -53,7 +53,7 @@ public class EntityPig extends EntityAnimal {
     }
 
     public boolean hasSaddle() {
-        return (this.datawatcher.a(16) & 1) != 0;
+        return (this.datawatcher.getByte(16) & 1) != 0;
     }
 
     public void setSaddle(boolean flag) {

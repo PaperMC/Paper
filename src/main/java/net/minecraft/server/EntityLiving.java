@@ -59,7 +59,7 @@ public abstract class EntityLiving extends Entity {
     private int c = 0;
     public int aD = 0;
     public int aE = 0;
-    protected HashMap aF = new HashMap();
+    protected HashMap effects = new HashMap();
     protected int aG;
     protected double aH;
     protected double aI;
@@ -144,7 +144,7 @@ public abstract class EntityLiving extends Entity {
 
         int i;
 
-        if (this.ac() && this.a(Material.WATER) && !this.b_() && !this.aF.containsKey(Integer.valueOf(MobEffectList.o.H))) {
+        if (this.ac() && this.a(Material.WATER) && !this.b_() && !this.effects.containsKey(Integer.valueOf(MobEffectList.WATER_BREATHING.id))) {
             --this.airTicks;
             if (this.airTicks == -20) {
                 this.airTicks = 0;
@@ -691,17 +691,17 @@ public abstract class EntityLiving extends Entity {
         nbttagcompound.a("HurtTime", (short) this.hurtTicks);
         nbttagcompound.a("DeathTime", (short) this.deathTicks);
         nbttagcompound.a("AttackTime", (short) this.attackTicks);
-        if (!this.aF.isEmpty()) {
+        if (!this.effects.isEmpty()) {
             NBTTagList nbttaglist = new NBTTagList();
-            Iterator iterator = this.aF.values().iterator();
+            Iterator iterator = this.effects.values().iterator();
 
             while (iterator.hasNext()) {
                 MobEffect mobeffect = (MobEffect) iterator.next();
                 NBTTagCompound nbttagcompound1 = new NBTTagCompound();
 
-                nbttagcompound1.a("Id", (byte) mobeffect.a());
-                nbttagcompound1.a("Amplifier", (byte) mobeffect.c());
-                nbttagcompound1.a("Duration", mobeffect.b());
+                nbttagcompound1.a("Id", (byte) mobeffect.getEffectId());
+                nbttagcompound1.a("Amplifier", (byte) mobeffect.getAmplifier());
+                nbttagcompound1.a("Duration", mobeffect.getDuration());
                 nbttaglist.a((NBTBase) nbttagcompound1);
             }
 
@@ -727,7 +727,7 @@ public abstract class EntityLiving extends Entity {
                 byte b1 = nbttagcompound1.c("Amplifier");
                 int j = nbttagcompound1.e("Duration");
 
-                this.aF.put(Integer.valueOf(b0), new MobEffect(b0, j, b1));
+                this.effects.put(Integer.valueOf(b0), new MobEffect(b0, j, b1));
             }
         }
     }
@@ -832,7 +832,7 @@ public abstract class EntityLiving extends Entity {
 
     protected void S() {
         this.motY = 0.41999998688697815D;
-        if (this.at()) {
+        if (this.isSprinting()) {
             float f = this.yaw * 0.017453292F;
 
             this.motX -= (double) (MathHelper.sin(f) * 0.2F);
@@ -1021,37 +1021,37 @@ public abstract class EntityLiving extends Entity {
     }
 
     protected void aj() {
-        Iterator iterator = this.aF.keySet().iterator();
+        Iterator iterator = this.effects.keySet().iterator();
 
         while (iterator.hasNext()) {
             Integer integer = (Integer) iterator.next();
-            MobEffect mobeffect = (MobEffect) this.aF.get(integer);
+            MobEffect mobeffect = (MobEffect) this.effects.get(integer);
 
-            if (!mobeffect.a(this) && !this.world.isStatic) {
+            if (!mobeffect.tick(this) && !this.world.isStatic) {
                 iterator.remove();
                 this.c(mobeffect);
             }
         }
     }
 
-    public Collection ak() {
-        return this.aF.values();
+    public Collection getEffects() {
+        return this.effects.values();
     }
 
-    public boolean a(MobEffectList mobeffectlist) {
-        return this.aF.containsKey(Integer.valueOf(mobeffectlist.H));
+    public boolean hasEffect(MobEffectList mobeffectlist) {
+        return this.effects.containsKey(Integer.valueOf(mobeffectlist.id));
     }
 
-    public MobEffect b(MobEffectList mobeffectlist) {
-        return (MobEffect) this.aF.get(Integer.valueOf(mobeffectlist.H));
+    public MobEffect getEffect(MobEffectList mobeffectlist) {
+        return (MobEffect) this.effects.get(Integer.valueOf(mobeffectlist.id));
     }
 
-    public void d(MobEffect mobeffect) {
-        if (this.aF.containsKey(Integer.valueOf(mobeffect.a()))) {
-            ((MobEffect) this.aF.get(Integer.valueOf(mobeffect.a()))).a(mobeffect);
-            this.b((MobEffect) this.aF.get(Integer.valueOf(mobeffect.a())));
+    public void addEffect(MobEffect mobeffect) {
+        if (this.effects.containsKey(Integer.valueOf(mobeffect.getEffectId()))) {
+            ((MobEffect) this.effects.get(Integer.valueOf(mobeffect.getEffectId()))).a(mobeffect);
+            this.b((MobEffect) this.effects.get(Integer.valueOf(mobeffect.getEffectId())));
         } else {
-            this.aF.put(Integer.valueOf(mobeffect.a()), mobeffect);
+            this.effects.put(Integer.valueOf(mobeffect.getEffectId()), mobeffect);
             this.a(mobeffect);
         }
     }
@@ -1065,12 +1065,12 @@ public abstract class EntityLiving extends Entity {
     protected float D() {
         float f = 1.0F;
 
-        if (this.a(MobEffectList.c)) {
-            f *= 1.0F + 0.2F * (float) (this.b(MobEffectList.c).c() + 1);
+        if (this.hasEffect(MobEffectList.FASTER_MOVEMENT)) {
+            f *= 1.0F + 0.2F * (float) (this.getEffect(MobEffectList.FASTER_MOVEMENT).getAmplifier() + 1);
         }
 
-        if (this.a(MobEffectList.d)) {
-            f *= 1.0F - 0.15F * (float) (this.b(MobEffectList.d).c() + 1);
+        if (this.hasEffect(MobEffectList.SLOWER_MOVEMENT)) {
+            f *= 1.0F - 0.15F * (float) (this.getEffect(MobEffectList.SLOWER_MOVEMENT).getAmplifier() + 1);
         }
 
         return f;

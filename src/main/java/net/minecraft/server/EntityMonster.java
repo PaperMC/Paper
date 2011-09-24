@@ -29,7 +29,7 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
 
     public void s_() {
         super.s_();
-        if (!this.world.isStatic && this.world.spawnMonsters == 0) {
+        if (!this.world.isStatic && this.world.difficulty == 0) {
             this.die();
         }
     }

@@ -27,7 +27,7 @@ public class ItemFishingRod extends Item {
             // CraftBukkit end
             world.makeSound(entityhuman, "random.bow", 0.5F, 0.4F / (b.nextFloat() * 0.4F + 0.8F));
             if (!world.isStatic) {
-                world.addEntity(new EntityFish(world, entityhuman));
+                world.addEntity(new EntityFishingHook(world, entityhuman));
             }
 
             entityhuman.v();

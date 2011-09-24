@@ -47,9 +47,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (value == isOp()) return;
 
         if (value) {
-            server.getHandle().e(getName());
+            server.getHandle().addOp(getName());
         } else {
-            server.getHandle().f(getName());
+            server.getHandle().removeOp(getName());
         }
 
         perm.recalculatePermissions();
@@ -299,11 +299,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public boolean isSprinting() {
-        return getHandle().at();
+        return getHandle().isSprinting();
     }
 
     public void setSprinting(boolean sprinting) {
-        getHandle().g(sprinting);
+        getHandle().setSprinting(sprinting);
     }
 
     public void loadData() {
@@ -398,21 +398,21 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public void setBanned(boolean value) {
         if (value) {
-            server.getHandle().a(getName().toLowerCase());
+            server.getHandle().addUserBan(getName().toLowerCase());
         } else {
-            server.getHandle().b(getName().toLowerCase());
+            server.getHandle().removeUserBan(getName().toLowerCase());
         }
     }
 
     public boolean isWhitelisted() {
-        return server.getHandle().e().contains(getName().toLowerCase());
+        return server.getHandle().getWhitelisted().contains(getName().toLowerCase());
     }
 
     public void setWhitelisted(boolean value) {
         if (value) {
-            server.getHandle().k(getName().toLowerCase());
+            server.getHandle().addWhitelist(getName().toLowerCase());
         } else {
-            server.getHandle().l(getName().toLowerCase());
+            server.getHandle().removeWhitelist(getName().toLowerCase());
         }
     }
 

@@ -69,7 +69,7 @@ public class EntityWolf extends EntityAnimal {
     }
 
     protected String h() {
-        return this.isAngry() ? "mob.wolf.growl" : (this.random.nextInt(3) == 0 ? (this.isTamed() && this.datawatcher.b(18) < 10 ? "mob.wolf.whine" : "mob.wolf.panting") : "mob.wolf.bark");
+        return this.isAngry() ? "mob.wolf.growl" : (this.random.nextInt(3) == 0 ? (this.isTamed() && this.datawatcher.getInt(18) < 10 ? "mob.wolf.whine" : "mob.wolf.panting") : "mob.wolf.bark");
     }
 
     protected String i() {
@@ -382,7 +382,7 @@ public class EntityWolf extends EntityAnimal {
             if (itemstack != null && Item.byId[itemstack.id] instanceof ItemFood) {
                 ItemFood itemfood = (ItemFood) Item.byId[itemstack.id];
 
-                if (itemfood.m() && this.datawatcher.b(18) < 20) {
+                if (itemfood.m() && this.datawatcher.getInt(18) < 20) {
                     --itemstack.count;
                     this.c(itemfood.k(), RegainReason.EATING); // Craftbukkit
                     if (itemstack.count <= 0) {
@@ -428,7 +428,7 @@ public class EntityWolf extends EntityAnimal {
     }
 
     public String getOwnerName() {
-        return this.datawatcher.c(17);
+        return this.datawatcher.getString(17);
     }
 
     public void setOwnerName(String s) {
@@ -436,11 +436,11 @@ public class EntityWolf extends EntityAnimal {
     }
 
     public boolean isSitting() {
-        return (this.datawatcher.a(16) & 1) != 0;
+        return (this.datawatcher.getByte(16) & 1) != 0;
     }
 
     public void setSitting(boolean flag) {
-        byte b0 = this.datawatcher.a(16);
+        byte b0 = this.datawatcher.getByte(16);
 
         if (flag) {
             this.datawatcher.watch(16, Byte.valueOf((byte) (b0 | 1)));
@@ -450,11 +450,11 @@ public class EntityWolf extends EntityAnimal {
     }
 
     public boolean isAngry() {
-        return (this.datawatcher.a(16) & 2) != 0;
+        return (this.datawatcher.getByte(16) & 2) != 0;
     }
 
     public void setAngry(boolean flag) {
-        byte b0 = this.datawatcher.a(16);
+        byte b0 = this.datawatcher.getByte(16);
 
         if (flag) {
             this.datawatcher.watch(16, Byte.valueOf((byte) (b0 | 2)));
@@ -464,11 +464,11 @@ public class EntityWolf extends EntityAnimal {
     }
 
     public boolean isTamed() {
-        return (this.datawatcher.a(16) & 4) != 0;
+        return (this.datawatcher.getByte(16) & 4) != 0;
     }
 
     public void setTamed(boolean flag) {
-        byte b0 = this.datawatcher.a(16);
+        byte b0 = this.datawatcher.getByte(16);
 
         if (flag) {
             this.datawatcher.watch(16, Byte.valueOf((byte) (b0 | 4)));

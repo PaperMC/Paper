@@ -4,82 +4,82 @@ import java.util.List;
 
 public class WorldData {
 
-    private long a;
-    private int b;
-    private int c;
-    private int d;
-    private long e;
-    private long f;
-    private long g;
-    private NBTTagCompound h;
-    private int i;
+    private long seed;
+    private int spawnX;
+    private int spawnY;
+    private int spawnZ;
+    private long time;
+    private long lastPlayed;
+    private long sizeOnDisk;
+    private NBTTagCompound playerData;
+    private int dimension;
     public String name; // CraftBukkit - private -> public
-    private int k;
-    private boolean l;
-    private int m;
-    private boolean n;
-    private int o;
-    public int p; // CraftBukkit - private -> public
-    private boolean q;
+    private int version;
+    private boolean isRaining;
+    private int rainTicks;
+    private boolean isThundering;
+    private int thunderTicks;
+    private int gameType;
+    private boolean useMapFeatures;
 
     public WorldData(NBTTagCompound nbttagcompound) {
-        this.a = nbttagcompound.getLong("RandomSeed");
-        this.p = nbttagcompound.e("GameType");
+        this.seed = nbttagcompound.getLong("RandomSeed");
+        this.gameType = nbttagcompound.e("GameType");
         if (nbttagcompound.hasKey("MapFeatures")) {
-            this.q = nbttagcompound.m("MapFeatures");
+            this.useMapFeatures = nbttagcompound.m("MapFeatures");
         } else {
-            this.q = true;
+            this.useMapFeatures = true;
         }
 
-        this.b = nbttagcompound.e("SpawnX");
-        this.c = nbttagcompound.e("SpawnY");
-        this.d = nbttagcompound.e("SpawnZ");
-        this.e = nbttagcompound.getLong("Time");
-        this.f = nbttagcompound.getLong("LastPlayed");
-        this.g = nbttagcompound.getLong("SizeOnDisk");
+        this.spawnX = nbttagcompound.e("SpawnX");
+        this.spawnY = nbttagcompound.e("SpawnY");
+        this.spawnZ = nbttagcompound.e("SpawnZ");
+        this.time = nbttagcompound.getLong("Time");
+        this.lastPlayed = nbttagcompound.getLong("LastPlayed");
+        this.sizeOnDisk = nbttagcompound.getLong("SizeOnDisk");
         this.name = nbttagcompound.getString("LevelName");
-        this.k = nbttagcompound.e("version");
-        this.m = nbttagcompound.e("rainTime");
-        this.l = nbttagcompound.m("raining");
-        this.o = nbttagcompound.e("thunderTime");
-        this.n = nbttagcompound.m("thundering");
+        this.version = nbttagcompound.e("version");
+        this.rainTicks = nbttagcompound.e("rainTime");
+        this.isRaining = nbttagcompound.m("raining");
+        this.thunderTicks = nbttagcompound.e("thunderTime");
+        this.isThundering = nbttagcompound.m("thundering");
         if (nbttagcompound.hasKey("Player")) {
-            this.h = nbttagcompound.k("Player");
-            this.i = this.h.e("Dimension");
+            this.playerData = nbttagcompound.k("Player");
+            this.dimension = this.playerData.e("Dimension");
         }
     }
 
     public WorldData(WorldSettings worldsettings, String s) {
-        this.a = worldsettings.a();
-        this.p = worldsettings.b();
-        this.q = worldsettings.c();
+        this.seed = worldsettings.a();
+        this.gameType = worldsettings.b();
+        this.useMapFeatures = worldsettings.c();
         this.name = s;
     }
 
     public WorldData(WorldData worlddata) {
-        this.a = worlddata.a;
-        this.p = worlddata.p;
-        this.q = worlddata.q;
-        this.b = worlddata.b;
-        this.c = worlddata.c;
-        this.d = worlddata.d;
-        this.e = worlddata.e;
-        this.f = worlddata.f;
-        this.g = worlddata.g;
-        this.h = worlddata.h;
-        this.i = worlddata.i;
+        this.seed = worlddata.seed;
+        this.gameType = worlddata.gameType;
+        this.useMapFeatures = worlddata.useMapFeatures;
+        this.spawnX = worlddata.spawnX;
+        this.spawnY = worlddata.spawnY;
+        this.spawnZ = worlddata.spawnZ;
+        this.time = worlddata.time;
+        this.lastPlayed = worlddata.lastPlayed;
+        this.sizeOnDisk = worlddata.sizeOnDisk;
+        this.playerData = worlddata.playerData;
+        this.dimension = worlddata.dimension;
         this.name = worlddata.name;
-        this.k = worlddata.k;
-        this.m = worlddata.m;
-        this.l = worlddata.l;
-        this.o = worlddata.o;
-        this.n = worlddata.n;
+        this.version = worlddata.version;
+        this.rainTicks = worlddata.rainTicks;
+        this.isRaining = worlddata.isRaining;
+        this.thunderTicks = worlddata.thunderTicks;
+        this.isThundering = worlddata.isThundering;
     }
 
     public NBTTagCompound a() {
         NBTTagCompound nbttagcompound = new NBTTagCompound();
 
-        this.a(nbttagcompound, this.h);
+        this.a(nbttagcompound, this.playerData);
         return nbttagcompound;
     }
 
@@ -102,66 +102,66 @@ public class WorldData {
     }
 
     private void a(NBTTagCompound nbttagcompound, NBTTagCompound nbttagcompound1) {
-        nbttagcompound.setLong("RandomSeed", this.a);
-        nbttagcompound.a("GameType", this.p);
-        nbttagcompound.a("MapFeatures", this.q);
-        nbttagcompound.a("SpawnX", this.b);
-        nbttagcompound.a("SpawnY", this.c);
-        nbttagcompound.a("SpawnZ", this.d);
-        nbttagcompound.setLong("Time", this.e);
-        nbttagcompound.setLong("SizeOnDisk", this.g);
+        nbttagcompound.setLong("RandomSeed", this.seed);
+        nbttagcompound.a("GameType", this.gameType);
+        nbttagcompound.a("MapFeatures", this.useMapFeatures);
+        nbttagcompound.a("SpawnX", this.spawnX);
+        nbttagcompound.a("SpawnY", this.spawnY);
+        nbttagcompound.a("SpawnZ", this.spawnZ);
+        nbttagcompound.setLong("Time", this.time);
+        nbttagcompound.setLong("SizeOnDisk", this.sizeOnDisk);
         nbttagcompound.setLong("LastPlayed", System.currentTimeMillis());
         nbttagcompound.setString("LevelName", this.name);
-        nbttagcompound.a("version", this.k);
-        nbttagcompound.a("rainTime", this.m);
-        nbttagcompound.a("raining", this.l);
-        nbttagcompound.a("thunderTime", this.o);
-        nbttagcompound.a("thundering", this.n);
+        nbttagcompound.a("version", this.version);
+        nbttagcompound.a("rainTime", this.rainTicks);
+        nbttagcompound.a("raining", this.isRaining);
+        nbttagcompound.a("thunderTime", this.thunderTicks);
+        nbttagcompound.a("thundering", this.isThundering);
         if (nbttagcompound1 != null) {
             nbttagcompound.a("Player", nbttagcompound1);
         }
     }
 
     public long getSeed() {
-        return this.a;
+        return this.seed;
     }
 
     public int c() {
-        return this.b;
+        return this.spawnX;
     }
 
     public int d() {
-        return this.c;
+        return this.spawnY;
     }
 
     public int e() {
-        return this.d;
+        return this.spawnZ;
     }
 
     public long f() {
-        return this.e;
+        return this.time;
     }
 
     public long g() {
-        return this.g;
+        return this.sizeOnDisk;
     }
 
     public int h() {
-        return this.i;
+        return this.dimension;
     }
 
     public void a(long i) {
-        this.e = i;
+        this.time = i;
     }
 
     public void b(long i) {
-        this.g = i;
+        this.sizeOnDisk = i;
     }
 
     public void setSpawn(int i, int j, int k) {
-        this.b = i;
-        this.c = j;
-        this.d = k;
+        this.spawnX = i;
+        this.spawnY = j;
+        this.spawnZ = k;
     }
 
     public void a(String s) {
@@ -169,54 +169,54 @@ public class WorldData {
     }
 
     public int i() {
-        return this.k;
+        return this.version;
     }
 
     public void a(int i) {
-        this.k = i;
+        this.version = i;
     }
 
     public boolean isThundering() {
-        return this.n;
+        return this.isThundering;
     }
 
     public void setThundering(boolean flag) {
-        this.n = flag;
+        this.isThundering = flag;
     }
 
     public int getThunderDuration() {
-        return this.o;
+        return this.thunderTicks;
     }
 
     public void setThunderDuration(int i) {
-        this.o = i;
+        this.thunderTicks = i;
     }
 
     public boolean hasStorm() {
-        return this.l;
+        return this.isRaining;
     }
 
     public void setStorm(boolean flag) {
-        this.l = flag;
+        this.isRaining = flag;
     }
 
     public int getWeatherDuration() {
-        return this.m;
+        return this.rainTicks;
     }
 
     public void setWeatherDuration(int i) {
-        this.m = i;
+        this.rainTicks = i;
     }
 
-    public int n() {
-        return this.p;
+    public int getGameType() {
+        return this.gameType;
     }
 
     public boolean o() {
-        return this.q;
+        return this.useMapFeatures;
     }
 
-    public void d(int i) {
-        this.p = i;
+    public void setGameType(int i) {
+        this.gameType = i;
     }
 }

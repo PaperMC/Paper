@@ -366,7 +366,7 @@ public final class CraftServer implements Server {
         console.propertyManager = config;
 
         boolean animals = config.getBoolean("spawn-animals", console.spawnAnimals);
-        boolean monsters = config.getBoolean("spawn-monsters", console.worlds.get(0).spawnMonsters > 0);
+        boolean monsters = config.getBoolean("spawn-monsters", console.worlds.get(0).difficulty > 0);
 
         console.onlineMode = config.getBoolean("online-mode", console.onlineMode);
         console.spawnAnimals = config.getBoolean("spawn-animals", console.spawnAnimals);
@@ -374,7 +374,7 @@ public final class CraftServer implements Server {
         console.allowFlight = config.getBoolean("allow-flight", console.allowFlight);
 
         for (WorldServer world : console.worlds) {
-            world.spawnMonsters = monsters ? 1 : 0;
+            world.difficulty = monsters ? 1 : 0;
             world.setSpawnFlags(monsters, animals);
         }
 
@@ -506,7 +506,7 @@ public final class CraftServer implements Server {
 
         internal.tracker = new EntityTracker(console, dimension);
         internal.addIWorldAccess((IWorldAccess) new WorldManager(console, internal));
-        internal.spawnMonsters = 1;
+        internal.difficulty = 1;
         internal.setSpawnFlags(true, true);
         console.worlds.add(internal);
 
@@ -757,7 +757,7 @@ public final class CraftServer implements Server {
     }
 
     public void shutdown() {
-        console.a();
+        console.safeShutdown();
     }
 
     public int broadcast(String message, String permission) {
@@ -790,11 +790,11 @@ public final class CraftServer implements Server {
     }
 
     public void banIP(String address) {
-        server.c(address);
+        server.addIpBan(address);
     }
 
     public void unbanIP(String address) {
-        server.d(address);
+        server.removeIpBan(address);
     }
 
     public Set<OfflinePlayer> getBannedPlayers() {
@@ -808,15 +808,14 @@ public final class CraftServer implements Server {
     }
 
     public void setWhitelist(boolean value) {
-        server.o = value;
-        console.propertyManager.b("white-list", value);
-        console.propertyManager.savePropertiesFile();
+        server.hasWhitelist = value;
+        console.propertyManager.setBoolean("white-list", value);
     }
 
     public Set<OfflinePlayer> getWhitelistedPlayers() {
         Set<OfflinePlayer> result = new HashSet<OfflinePlayer>();
 
-        for (Object name : server.e()) {
+        for (Object name : server.getWhitelisted()) {
             result.add(getOfflinePlayer((String)name));
         }
 
@@ -824,11 +823,11 @@ public final class CraftServer implements Server {
     }
 
     public void reloadWhitelist() {
-        server.f();
+        server.reloadWhitelist();
     }
 
     public GameMode getDefaultGameMode() {
-        return GameMode.getByValue(console.worlds.get(0).worldData.p);
+        return GameMode.getByValue(console.worlds.get(0).worldData.getGameType());
     }
 
     public void setDefaultGameMode(GameMode mode) {
@@ -837,7 +836,7 @@ public final class CraftServer implements Server {
         }
 
         for (World world : getWorlds()) {
-            ((CraftWorld)world).getHandle().worldData.p = mode.getValue();
+            ((CraftWorld)world).getHandle().worldData.setGameType(mode.getValue());
         }
     }
 }
