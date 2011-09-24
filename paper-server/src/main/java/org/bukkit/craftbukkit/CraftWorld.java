@@ -561,20 +561,20 @@ public class CraftWorld implements World {
     }
 
     public void save() {
-        boolean oldSave = world.canSave;
+        boolean oldSave = world.savingDisabled;
 
-        world.canSave = false;
+        world.savingDisabled = false;
         world.save(true, null);
 
-        world.canSave = oldSave;
+        world.savingDisabled = oldSave;
     }
 
     public boolean isAutoSave() {
-        return !world.canSave;
+        return !world.savingDisabled;
     }
 
     public void setAutoSave(boolean value) {
-        world.canSave = !value;
+        world.savingDisabled = !value;
     }
 
     public boolean hasStorm() {
@@ -767,7 +767,7 @@ public class CraftWorld implements World {
             // what is this, I don't even
         } else if (Fish.class.isAssignableFrom(clazz)) {
             // this is not a fish, it's a bobber, and it's probably useless
-            entity = new EntityFish(world);
+            entity = new EntityFishingHook(world);
             entity.setLocation(x, y, z, pitch, yaw);
         }
 
