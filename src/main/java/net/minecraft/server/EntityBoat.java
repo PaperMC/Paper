@@ -28,6 +28,9 @@ public class EntityBoat extends Entity {
 
     // CraftBukkit start
     public double maxSpeed = 0.4D;
+    public double occupiedDeceleration = 0.2D;
+    public double unoccupiedDeceleration = -1;
+    public boolean landBoats = false;
 
     @Override
     public void collide(Entity entity) {
@@ -233,9 +236,22 @@ public class EntityBoat extends Entity {
             }
 
             if (this.passenger != null) {
-                this.motX += this.passenger.motX * 0.2D;
-                this.motZ += this.passenger.motZ * 0.2D;
+                this.motX += this.passenger.motX * occupiedDeceleration; // CraftBukkit
+                this.motZ += this.passenger.motZ * occupiedDeceleration; // CraftBukkit
             }
+            // CraftBukkit start - block not in vanilla
+            else if (unoccupiedDeceleration >= 0) {
+                this.motX *= unoccupiedDeceleration;
+                this.motZ *= unoccupiedDeceleration;
+                // Kill lingering speed
+                if (motX <= 0.00001) {
+                    motX = 0;
+                }
+                if (motZ <= 0.00001) {
+                    motZ = 0;
+                }
+            }
+            // CraftBukkit end
 
             // CraftBukkit
             d3 = this.maxSpeed;
@@ -255,7 +271,7 @@ public class EntityBoat extends Entity {
                 this.motZ = d3;
             }
 
-            if (this.onGround) {
+            if (this.onGround && !landBoats) { // CraftBukkit
                 this.motX *= 0.5D;
                 this.motY *= 0.5D;
                 this.motZ *= 0.5D;

@@ -22,6 +22,32 @@ public class CraftBoat extends CraftVehicle implements Boat {
         }
     }
 
+    public double getOccupiedDeceleration() {
+        return boat.occupiedDeceleration;
+    }
+
+    public void setOccupiedDeceleration(double speed) {
+        if (speed >= 0D) {
+            boat.occupiedDeceleration = speed;
+        }
+    }
+
+    public double getUnoccupiedDeceleration() {
+        return boat.unoccupiedDeceleration;
+    }
+
+    public void setUnoccupiedDeceleration(double speed) {
+        boat.unoccupiedDeceleration = speed;
+    }
+
+    public boolean getWorkOnLand() {
+        return boat.landBoats;
+    }
+
+    public void setWorkOnLand(boolean workOnLand) {
+        boat.landBoats = workOnLand;
+    }
+
     @Override
     public String toString() {
         return "CraftBoat";
