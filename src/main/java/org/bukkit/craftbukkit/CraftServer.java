@@ -319,6 +319,10 @@ public final class CraftServer implements Server {
         return this.configuration.getString("settings.update-folder", "update");
     }
 
+    public File getUpdateFolderFile() {
+        return new File((File) console.options.valueOf("plugins"), this.configuration.getString("settings.update-folder", "update"));
+    }
+
     public int getPingPacketLimit() {
         return this.configuration.getInt("settings.ping-packet-limit", 100);
     }
