@@ -22,9 +22,16 @@ public class CraftItem extends CraftEntity implements Item {
         item.itemStack = new net.minecraft.server.ItemStack(stack.getTypeId(), stack.getAmount(), stack.getDurability());
     }
 
+    public int getPickupDelay() {
+        return item.pickupDelay;
+    }
+
+    public void setPickupDelay(int delay) {
+        item.pickupDelay = delay;
+    }
+
     @Override
     public String toString() {
         return "CraftItem";
     }
-
 }
