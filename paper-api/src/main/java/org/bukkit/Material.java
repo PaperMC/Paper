@@ -306,7 +306,7 @@ public enum Material {
      * @return MaterialData associated with this Material
      */
     public Class<? extends MaterialData> getData() {
-        return data;
+        return (data == null) ? MaterialData.class : data;
     }
 
     /**
@@ -318,7 +318,7 @@ public enum Material {
      */
     public MaterialData getNewData(final byte raw) {
         if (data == null) {
-            return null;
+            return new MaterialData(id, raw);
         }
 
         try {
