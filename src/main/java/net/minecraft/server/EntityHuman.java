@@ -475,7 +475,7 @@ public abstract class EntityHuman extends EntityLiving {
 
         // CraftBukkit start
         this.spawnWorld = nbttagcompound.getString("SpawnWorld");
-        if (this.spawnWorld == "") {
+        if ("".equals(spawnWorld)) {
             this.spawnWorld = this.world.getServer().getWorlds().get(0).getName();
         }
         // CraftBukkit end
