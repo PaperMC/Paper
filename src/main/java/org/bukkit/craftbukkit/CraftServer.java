@@ -462,18 +462,28 @@ public final class CraftServer implements Server {
     }
 
     public World createWorld(String name, World.Environment environment) {
-        return createWorld(name, environment, (new Random()).nextLong());
+        return WorldCreator.name(name).environment(environment).createWorld();
     }
 
     public World createWorld(String name, World.Environment environment, long seed) {
-        return createWorld(name, environment, seed, null);
+        return WorldCreator.name(name).environment(environment).seed(seed).createWorld();
     }
 
     public World createWorld(String name, Environment environment, ChunkGenerator generator) {
-        return createWorld(name, environment, (new Random()).nextLong(), generator);
+        return WorldCreator.name(name).environment(environment).generator(generator).createWorld();
     }
 
     public World createWorld(String name, Environment environment, long seed, ChunkGenerator generator) {
+        return WorldCreator.name(name).environment(environment).seed(seed).generator(generator).createWorld();
+    }
+
+    public World createWorld(WorldCreator creator) {
+        if (creator == null) {
+            throw new IllegalArgumentException("Creator may not be null");
+        }
+
+        String name = creator.name();
+        ChunkGenerator generator = creator.generator();
         File folder = new File(name);
         World world = getWorld(name);
 
@@ -496,7 +506,7 @@ public final class CraftServer implements Server {
         }
 
         int dimension = 10 + console.worlds.size();
-        WorldServer internal = new WorldServer(console, new ServerNBTManager(new File("."), name, true), name, dimension, new WorldSettings(seed, getDefaultGameMode().getValue(), true), environment, generator);
+        WorldServer internal = new WorldServer(console, new ServerNBTManager(new File("."), name, true), name, dimension, new WorldSettings(creator.seed(), getDefaultGameMode().getValue(), true), creator.environment(), generator);
 
         if (!(worlds.containsKey(name.toLowerCase()))) {
             return null;
