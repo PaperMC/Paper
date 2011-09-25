@@ -65,9 +65,9 @@ public interface MapCanvas {
      * will move down one line and return to the original column, and the text
      * color can be changed using sequences such as "§12;", replacing 12 with
      * the palette index of the color (see {@link MapPalette}).
-     * @param map The MapInfo to render to.
      * @param x The column to start rendering on.
      * @param y The row to start rendering on.
+     * @param font The font to use.
      * @param text The formatted text to render.
      */
     public void drawText(int x, int y, MapFont font, String text);

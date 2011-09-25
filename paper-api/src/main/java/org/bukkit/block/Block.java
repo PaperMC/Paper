@@ -47,7 +47,7 @@ public interface Block {
      *
      * @param face Face of this block to return
      * @return Block at the given face
-     * @see Block.getRelative(BlockFace face, int distance);
+     * @see #getRelative(BlockFace, int)
      */
     Block getRelative(BlockFace face);
 
@@ -199,28 +199,30 @@ public interface Block {
     /**
      * Returns true if the block is being powered by Redstone.
      *
-     * @return
+     * @return True if the block is powered.
      */
     boolean isBlockPowered();
 
     /**
      * Returns true if the block is being indirectly powered by Redstone.
      *
-     * @return
+     * @return True if the block is indirectly powered.
      */
     boolean isBlockIndirectlyPowered();
 
     /**
      * Returns true if the block face is being powered by Redstone.
      *
-     * @return
+     * @param face The block face
+     * @return True if the block face is powered.
      */
     boolean isBlockFacePowered(BlockFace face);
 
     /**
      * Returns true if the block face is being indirectly powered by Redstone.
      *
-     * @return
+     * @param face The block face
+     * @return True if the block face is indirectly powered.
      */
     boolean isBlockFaceIndirectlyPowered(BlockFace face);
 
@@ -228,14 +230,14 @@ public interface Block {
      * Returns the redstone power being provided to this block face
      *
      * @param face the face of the block to query or BlockFace.SELF for the block itself
-     * @return
+     * @return The power level.
      */
     int getBlockPower(BlockFace face);
 
     /**
      * Returns the redstone power being provided to this block
      *
-     * @return
+     * @return The power level.
      */
     int getBlockPower();
 

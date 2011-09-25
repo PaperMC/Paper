@@ -52,7 +52,7 @@ public class RegisteredListener {
 
     /**
      * Calls the event executor
-     * @return Registered Priority
+     * @param event The event
      */
     public void callEvent(Event event) {
         executor.execute(listener, event);

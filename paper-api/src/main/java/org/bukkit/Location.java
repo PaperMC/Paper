@@ -217,7 +217,7 @@ public class Location implements Cloneable {
      * Adds the location by another.
      *
      * @see Vector
-     * @param vec
+     * @param vec The other location
      * @return the same location
      * @throws IllegalArgumentException for differing worlds
      */
@@ -236,9 +236,9 @@ public class Location implements Cloneable {
      * Adds the location by another. Not world-aware.
      *
      * @see Vector
-     * @param x
-     * @param y
-     * @param z
+     * @param x X coordinate
+     * @param y Y coordinate
+     * @param z Z coordinate
      * @return the same location
      */
     public Location add(double x, double y, double z) {
@@ -252,7 +252,7 @@ public class Location implements Cloneable {
      * Subtracts the location by another.
      *
      * @see Vector
-     * @param vec
+     * @param vec The other location
      * @return the same location
      * @throws IllegalArgumentException for differing worlds
      */
@@ -272,9 +272,9 @@ public class Location implements Cloneable {
      * orientation independent.
      *
      * @see Vector
-     * @param x
-     * @param y
-     * @param z
+     * @param x X coordinate
+     * @param y Y coordinate
+     * @param z Z coordinate
      * @return the same location
      */
     public Location subtract(double x, double y, double z) {
@@ -318,7 +318,7 @@ public class Location implements Cloneable {
      * which will be caused if the distance is too long.
      *
      * @see Vector
-     * @param o
+     * @param o The other location
      * @return the distance
      * @throws IllegalArgumentException for differing worlds
      */
@@ -334,7 +334,7 @@ public class Location implements Cloneable {
      * Get the squared distance between this location and another.
      *
      * @see Vector
-     * @param o
+     * @param o The other location
      * @return the distance
      * @throws IllegalArgumentException for differing worlds
      */
@@ -350,7 +350,7 @@ public class Location implements Cloneable {
      * Performs scalar multiplication, multiplying all components with a scalar.
      * Not world-aware.
      *
-     * @param m
+     * @param m The factor
      * @see Vector
      * @return the same location
      */

@@ -11,28 +11,28 @@ public interface NoteBlock extends BlockState {
     /**
      * Gets the note.
      *
-     * @return
+     * @return The note.
      */
     public Note getNote();
 
     /**
      * Gets the note.
      *
-     * @return
+     * @return The note ID.
      */
     public byte getRawNote();
 
     /**
      * Set the note.
      *
-     * @param note
+     * @param note The note.
      */
     public void setNote(Note note);
 
     /**
      * Set the note.
      *
-     * @param note
+     * @param note The note ID.
      */
     public void setRawNote(byte note);
 
@@ -47,15 +47,20 @@ public interface NoteBlock extends BlockState {
 
     /**
      * Plays an arbitrary note with an arbitrary instrument
-     *
+     * 
+     * @param instrument Instrument ID
+     * @param note Note ID
      * @return true if successful, otherwise false
      */
     public boolean play(byte instrument, byte note);
 
     /**
      * Plays an arbitrary note with an arbitrary instrument
-     *
+     * 
+     * @param instrument The instrument
+     * @param note The note
      * @return true if successful, otherwise false
+     * @see Instrument Note
      */
     public boolean play(Instrument instrument, Note note);
 }

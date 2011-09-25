@@ -90,8 +90,8 @@ public abstract class Event implements Serializable {
 
         /**
          * Represents Player-based events
-         *
-         * @see Category.LIVING_ENTITY
+         * 
+         * @see #LIVING_ENTITY
          */
         PLAYER,
         /**
@@ -134,8 +134,6 @@ public abstract class Event implements Serializable {
 
     /**
      * Provides a lookup for all core events
-     *
-     * @see org.bukkit.event.
      */
     public enum Type {
 
@@ -421,13 +419,13 @@ public abstract class Event implements Serializable {
         /**
          * Called when a piston extends
          *
-         * @see org.bukkit.event.block.PistonExtendEvent
+         * @see org.bukkit.event.block.BlockPistonExtendEvent
          */
         BLOCK_PISTON_EXTEND (Category.BLOCK),
         /**
          * Called when a piston retracts
          *
-         * @see org.bukkit.event.block.PistonRetractEvent
+         * @see org.bukkit.event.block.BlockPistonRetractEvent
          */
         BLOCK_PISTON_RETRACT (Category.BLOCK),
 
@@ -529,7 +527,7 @@ public abstract class Event implements Serializable {
         /**
          * Called when a newly created chunk has been populated.
          *
-         * If your intent is to populate the chunk using this event, please see {@link BlockPopulator}
+         * If your intent is to populate the chunk using this event, please see {@link org.bukkit.generator.BlockPopulator}
          *
          * @see org.bukkit.event.world.ChunkPopulateEvent
          */

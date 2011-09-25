@@ -103,6 +103,7 @@ public interface BlockState {
      * Sets the type-id of this block
      *
      * @param type Type-Id to change this block to
+     * @return Whether it worked?
      */
     boolean setTypeId(int type);
 
@@ -116,7 +117,7 @@ public interface BlockState {
      * eventuality.
      *
      * @return true if the update was successful, otherwise false
-     * @see BlockState.update(boolean force)
+     * @see #update(boolean)
      */
     boolean update();
 

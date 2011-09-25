@@ -11,10 +11,10 @@ public interface BukkitScheduler {
      * Schedules a once off task to occur after a delay
      * This task will be executed by the main server thread
      *
-     * @param Plugin Plugin that owns the task
-     * @param Runnable Task to be executed
-     * @param long Delay in server ticks before executing task
-     * @return int Task id number (-1 if scheduling failed)
+     * @param plugin Plugin that owns the task
+     * @param task Task to be executed
+     * @param delay Delay in server ticks before executing task
+     * @return Task id number (-1 if scheduling failed)
      */
     public int scheduleSyncDelayedTask(Plugin plugin, Runnable task, long delay);
 
@@ -22,9 +22,9 @@ public interface BukkitScheduler {
      * Schedules a once off task to occur as soon as possible
      * This task will be executed by the main server thread
      *
-     * @param Plugin Plugin that owns the task
-     * @param Runnable Task to be executed
-     * @return int Task id number (-1 if scheduling failed)
+     * @param plugin Plugin that owns the task
+     * @param task Task to be executed
+     * @return Task id number (-1 if scheduling failed)
      */
     public int scheduleSyncDelayedTask(Plugin plugin, Runnable task);
 
@@ -32,11 +32,11 @@ public interface BukkitScheduler {
      * Schedules a repeating task
      * This task will be executed by the main server thread
      *
-     * @param Plugin Plugin that owns the task
-     * @param Runnable Task to be executed
-     * @param long Delay in server ticks before executing first repeat
-     * @param long Period in server ticks of the task
-     * @return int Task id number (-1 if scheduling failed)
+     * @param plugin Plugin that owns the task
+     * @param task Task to be executed
+     * @param delay Delay in server ticks before executing first repeat
+     * @param period Period in server ticks of the task
+     * @return Task id number (-1 if scheduling failed)
      */
     public int scheduleSyncRepeatingTask(Plugin plugin, Runnable task, long delay, long period);
 
@@ -44,10 +44,10 @@ public interface BukkitScheduler {
      * Schedules a once off task to occur after a delay
      * This task will be executed by a thread managed by the scheduler
      *
-     * @param Plugin Plugin that owns the task
-     * @param Runnable Task to be executed
-     * @param long Delay in server ticks before executing task
-     * @return int Task id number (-1 if scheduling failed)
+     * @param plugin Plugin that owns the task
+     * @param task Task to be executed
+     * @param delay Delay in server ticks before executing task
+     * @return Task id number (-1 if scheduling failed)
      */
     public int scheduleAsyncDelayedTask(Plugin plugin, Runnable task, long delay);
 
@@ -55,9 +55,9 @@ public interface BukkitScheduler {
      * Schedules a once off task to occur as soon as possible
      * This task will be executed by a thread managed by the scheduler
      *
-     * @param Plugin Plugin that owns the task
-     * @param Runnable Task to be executed
-     * @return int Task id number (-1 if scheduling failed)
+     * @param plugin Plugin that owns the task
+     * @param task Task to be executed
+     * @return Task id number (-1 if scheduling failed)
      */
     public int scheduleAsyncDelayedTask(Plugin plugin, Runnable task);
 
@@ -65,11 +65,11 @@ public interface BukkitScheduler {
      * Schedules a repeating task
      * This task will be executed by a thread managed by the scheduler
      *
-     * @param Plugin Plugin that owns the task
-     * @param Runnable Task to be executed
-     * @param long Delay in server ticks before executing first repeat
-     * @param long Period in server ticks of the task
-     * @return int Task id number (-1 if scheduling failed)
+     * @param plugin Plugin that owns the task
+     * @param task Task to be executed
+     * @param delay Delay in server ticks before executing first repeat
+     * @param period Period in server ticks of the task
+     * @return Task id number (-1 if scheduling failed)
      */
     public int scheduleAsyncRepeatingTask(Plugin plugin, Runnable task, long delay, long period);
 
@@ -80,8 +80,9 @@ public interface BukkitScheduler {
      * Note:  The Future.get() methods must NOT be called from the main thread
      * Note2: There is at least an average of 10ms latency until the isDone() method returns true
      *
-     * @param Plugin Plugin that owns the task
-     * @param Callable Task to be executed
+     * @param <T> The callable's return type
+     * @param plugin Plugin that owns the task
+     * @param task Task to be executed
      * @return Future Future object related to the task
      */
     public <T> Future<T> callSyncMethod(Plugin plugin, Callable<T> task);
@@ -89,14 +90,14 @@ public interface BukkitScheduler {
     /**
      * Removes task from scheduler
      *
-     * @param int Id number of task to be removed
+     * @param taskId Id number of task to be removed
      */
     public void cancelTask(int taskId);
 
     /**
      * Removes all tasks associated with a particular plugin from the scheduler
      *
-     * @param Plugin Owner of tasks to be removed
+     * @param plugin Owner of tasks to be removed
      */
     public void cancelTasks(Plugin plugin);
 

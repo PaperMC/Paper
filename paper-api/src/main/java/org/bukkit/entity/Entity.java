@@ -92,7 +92,7 @@ public interface Entity {
     /**
      * Sets the entity's current fire ticks (ticks before the entity stops being on fire).
      *
-     * @param ticks
+     * @param ticks Current ticks remaining
      */
     public void setFireTicks(int ticks);
 
@@ -103,6 +103,7 @@ public interface Entity {
 
     /**
      * Returns true if this entity has been marked for removal.
+     * @return True if it is dead.
      */
     public boolean isDead();
 
@@ -124,34 +125,34 @@ public interface Entity {
     /**
      * Set the passenger of a vehicle.
      *
-     * @param passenger
+     * @param passenger The new passenger.
      * @return false if it could not be done for whatever reason
      */
     public abstract boolean setPassenger(Entity passenger);
 
     /**
-     * Returns true if the vehicle has no passengers.
+     * Check if a vehicle has passengers.
      *
-     * @return
+     * @return True if the vehicle has no passengers.
      */
     public abstract boolean isEmpty();
 
     /**
-     * Eject any passenger. True if there was a passenger.
+     * Eject any passenger.
      *
-     * @return
+     * @return True if there was a passenger.
      */
     public abstract boolean eject();
 
     /**
      * Returns the distance this entity has fallen
-     * @return
+     * @return The distance.
      */
     public float getFallDistance();
 
     /**
      * Sets the fall distance for this entity
-     * @param distance
+     * @param distance The new distance.
      */
     public void setFallDistance(float distance);
 

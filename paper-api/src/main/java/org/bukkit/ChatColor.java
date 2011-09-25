@@ -98,7 +98,7 @@ public enum ChatColor {
      * Gets the color represented by the specified color code
      *
      * @param code Code to check
-     * @return Associative {@link Color} with the given code, or null if it doesn't exist
+     * @return Associative {@link org.bukkit.ChatColor} with the given code, or null if it doesn't exist
      */
     public static ChatColor getByCode(final int code) {
         return colors.get(code);

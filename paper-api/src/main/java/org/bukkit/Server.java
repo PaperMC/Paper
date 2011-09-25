@@ -11,6 +11,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
 import java.io.File;
+
+import org.bukkit.command.CommandException;
 import org.bukkit.command.PluginCommand;
 
 import org.bukkit.command.CommandSender;
@@ -366,11 +368,12 @@ public interface Server {
     /**
      * Dispatches a command on the server, and executes it if found.
      *
-     * @param cmdLine command + arguments. Example: "test abc 123"
-     * @return targetFound returns false if no target is found.
+     * @param sender The apparent sender of the command
+     * @param commandLine command + arguments. Example: "test abc 123"
+     * @return returns false if no target is found.
      * @throws CommandException Thrown when the executor for the given command fails with an unhandled exception
      */
-    public boolean dispatchCommand(CommandSender sender, String commandLine);
+    public boolean dispatchCommand(CommandSender sender, String commandLine) throws CommandException;
 
     /**
      * Populates a given {@link ServerConfig} with values attributes to this server

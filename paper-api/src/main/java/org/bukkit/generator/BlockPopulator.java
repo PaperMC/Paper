@@ -20,7 +20,7 @@ public abstract class BlockPopulator {
      *
      * @param world The world to generate in
      * @param random The random generator to use
-     * @param chunk The chunk to generate for
+     * @param source The chunk to generate for
      */
     public abstract void populate(World world, Random random, Chunk source);
 }

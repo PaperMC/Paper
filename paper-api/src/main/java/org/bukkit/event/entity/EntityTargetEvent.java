@@ -4,7 +4,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 
 /**
- * Called when a creature targets another entity
+ * Called when a creature targets or untargets another entity
  */
 public class EntityTargetEvent extends EntityEvent implements Cancellable {
     private boolean cancel;
@@ -28,15 +28,17 @@ public class EntityTargetEvent extends EntityEvent implements Cancellable {
 
     /**
      * Returns the reason for the targeting
+     * @return The reason
      */
     public TargetReason getReason() {
         return reason;
     }
 
     /**
-     * Get the entity that this is target.
-     * This is possible to be null in the case that the event is called when
+     * Get the entity that this is targeting.
+     * This will be null in the case that the event is called when
      * the mob forgets its target.
+     * @return The entity
      */
     public Entity getTarget() {
         return target;

@@ -55,14 +55,22 @@ public interface Chunk {
      */
     ChunkSnapshot getChunkSnapshot(boolean includeMaxblocky, boolean includeBiome, boolean includeBiomeTempRain);
 
+    /**
+     * Get a list of all entities in the chunk.
+     * @return The entities.
+     */
     Entity[] getEntities();
 
+    /**
+     * Get a list of all tile entities in the chunk.
+     * @return The tile entities.
+     */
     BlockState[] getTileEntities();
 
     /**
      * Checks if the chunk is loaded.
      *
-     * @return
+     * @return True if it is loaded.
      */
     boolean isLoaded();
 

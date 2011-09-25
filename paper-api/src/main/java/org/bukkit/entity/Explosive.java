@@ -6,7 +6,7 @@ package org.bukkit.entity;
 public interface Explosive extends Entity {
     /**
      * Set the radius affected by this explosive's explosion
-     * @param yield
+     * @param yield The explosive yield
      */
     public void setYield(float yield);
 
@@ -18,7 +18,7 @@ public interface Explosive extends Entity {
 
     /**
      * Set whether or not this explosive's explosion causes fire
-     * @param isIncendiary
+     * @param isIncendiary Whether it should cause fire
      */
     public void setIsIncendiary(boolean isIncendiary);
 

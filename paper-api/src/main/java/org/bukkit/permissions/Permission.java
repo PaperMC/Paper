@@ -52,7 +52,7 @@ public class Permission {
     public Permission(String name, String description, PermissionDefault defaultValue, Map<String, Boolean> children) {
         this.name = name;
         this.description = (description == null) ? "" : description;
-        this.defaultValue = (defaultValue == null) ? defaultValue.FALSE : defaultValue;
+        this.defaultValue = (defaultValue == null) ? PermissionDefault.FALSE : defaultValue;
         
         if (children != null) {
             this.children.putAll(children);

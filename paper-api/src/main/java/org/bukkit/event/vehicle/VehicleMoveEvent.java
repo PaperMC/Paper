@@ -22,7 +22,7 @@ public class VehicleMoveEvent extends VehicleEvent {
     /**
      * Get the previous position.
      *
-     * @return
+     * @return Old position.
      */
     public Location getFrom() {
         return from;
@@ -31,7 +31,7 @@ public class VehicleMoveEvent extends VehicleEvent {
     /**
      * Get the next position.
      *
-     * @return
+     * @return New position.
      */
     public Location getTo() {
         return to;

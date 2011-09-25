@@ -12,7 +12,7 @@ public interface ContainerBlock {
     /**
      * Get the block's inventory.
      *
-     * @return
+     * @return The inventory.
      */
     public Inventory getInventory();
 }

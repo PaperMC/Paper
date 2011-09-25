@@ -39,7 +39,7 @@ public class VehicleDamageEvent extends VehicleEvent implements Cancellable {
     /**
      * Sets the damage done to the vehicle
      *
-     * @param damage
+     * @param damage The damage
      */
     public void setDamage(int damage) {
         this.damage = damage;

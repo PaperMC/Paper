@@ -26,6 +26,8 @@ public interface MapView {
         
         /**
          * Get the scale given the raw value.
+         * @param value The raw scale
+         * @return The enum scale, or null for an invalid input
          */
         public static Scale valueOf(byte value) {
             switch(value) {
@@ -40,6 +42,7 @@ public interface MapView {
         
         /**
          * Get the raw value of this scale level.
+         * @return The scale value
          */
         public byte getValue() {
             return value;

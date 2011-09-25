@@ -43,8 +43,9 @@ public interface CommandMap {
     /**
      * Looks for the requested command and executes it if found.
      *
+     * @param sender The command's sender
      * @param cmdLine command + arguments. Example: "/test abc 123"
-     * @return targetFound returns false if no target is found, true otherwise.
+     * @return returns false if no target is found, true otherwise.
      * @throws CommandException Thrown when the executor for the given command fails with an unhandled exception
      */
     public boolean dispatch(CommandSender sender, String cmdLine) throws CommandException;

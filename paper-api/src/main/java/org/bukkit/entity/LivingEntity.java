@@ -35,7 +35,7 @@ public interface LivingEntity extends Entity {
     /**
      * Gets the height of the entity's head above its Location
      *
-     * @param boolean If set to true, the effects of sneaking will be ignored
+     * @param ignoreSneaking If set to true, the effects of sneaking will be ignored
      * @return Height of the entity's eyes above its Location
      */
     public double getEyeHeight(boolean ignoreSneaking);
@@ -51,8 +51,8 @@ public interface LivingEntity extends Entity {
      * Gets all blocks along the player's line of sight
      * List iterates from player's position to target inclusive
      *
-     * @param HashSet<Byte> HashSet containing all transparent block IDs. If set to null only air is considered transparent.
-     * @param int This is the maximum distance to scan. This may be further limited by the server, but never to less than 100 blocks.
+     * @param transparent HashSet containing all transparent block IDs. If set to null only air is considered transparent.
+     * @param maxDistance This is the maximum distance to scan. This may be further limited by the server, but never to less than 100 blocks.
      * @return List containing all blocks along the player's line of sight
      */
     public List<Block> getLineOfSight(HashSet<Byte> transparent, int maxDistance);
@@ -60,8 +60,8 @@ public interface LivingEntity extends Entity {
     /**
      * Gets the block that the player has targeted
      *
-     * @param HashSet<Byte> HashSet containing all transparent block IDs. If set to null only air is considered transparent.
-     * @param int This is the maximum distance to scan. This may be further limited by the server, but never to less than 100 blocks.
+     * @param transparent HashSet containing all transparent block IDs. If set to null only air is considered transparent.
+     * @param maxDistance This is the maximum distance to scan. This may be further limited by the server, but never to less than 100 blocks.
      * @return Block that the player has targeted
      */
     public Block getTargetBlock(HashSet<Byte> transparent, int maxDistance);
@@ -70,33 +70,35 @@ public interface LivingEntity extends Entity {
      * Gets the last two blocks along the player's line of sight.
      * The target block will be the last block in the list.
      *
-     * @param HashSet<Byte> HashSet containing all transparent block IDs. If set to null only air is considered transparent.
-     * @param int This is the maximum distance to scan. This may be further limited by the server, but never to less than 100 blocks
+     * @param transparent HashSet containing all transparent block IDs. If set to null only air is considered transparent.
+     * @param maxDistance This is the maximum distance to scan. This may be further limited by the server, but never to less than 100 blocks
      * @return List containing the last 2 blocks along the player's line of sight
      */
     public List<Block> getLastTwoTargetBlocks(HashSet<Byte> transparent, int maxDistance);
 
     /**
      * Throws an egg from the entity.
+     * @return The egg thrown.
      */
     public Egg throwEgg();
 
     /**
      * Throws a snowball from the entity.
+     * @return The snowball thrown.
      */
     public Snowball throwSnowball();
 
     /**
      * Shoots an arrow from the entity.
      *
-     * @return
+     * @return The arrow shot.
      */
     public Arrow shootArrow();
 
     /**
      * Returns whether this entity is inside a vehicle.
      *
-     * @return
+     * @return True if the entity is in a vehicle.
      */
     public boolean isInsideVehicle();
 
@@ -105,7 +107,7 @@ public interface LivingEntity extends Entity {
      * (and is removed from it), true will be returned, otherwise false will
      * be returned.
      *
-     * @return
+     * @return True if the entity was in a vehicle.
      */
     public boolean leaveVehicle();
 
@@ -113,7 +115,7 @@ public interface LivingEntity extends Entity {
      * Get the vehicle that this player is inside. If there is no vehicle,
      * null will be returned.
      *
-     * @return
+     * @return The current vehicle.
      */
     public Vehicle getVehicle();
 

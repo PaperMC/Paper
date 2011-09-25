@@ -16,7 +16,7 @@ public interface Plugin extends CommandExecutor {
      * Returns the folder that the plugin data's files are located in. The
      * folder may not yet exist.
      *
-     * @return
+     * @return The folder
      */
     public File getDataFolder();
 
@@ -30,7 +30,7 @@ public interface Plugin extends CommandExecutor {
     /**
      * Returns the main configuration file. It should be loaded.
      *
-     * @return
+     * @return The configuration
      */
     public Configuration getConfiguration();
 

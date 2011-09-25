@@ -38,9 +38,9 @@ public class Vector implements Cloneable {
     /**
      * Construct the vector with provided integer components.
      *
-     * @param x
-     * @param y
-     * @param z
+     * @param x X component
+     * @param y Y component
+     * @param z Z component
      */
     public Vector(int x, int y, int z) {
         this.x = x;
@@ -51,9 +51,9 @@ public class Vector implements Cloneable {
     /**
      * Construct the vector with provided double components.
      *
-     * @param x
-     * @param y
-     * @param z
+     * @param x X component
+     * @param y Y component
+     * @param z Z component
      */
     public Vector(double x, double y, double z) {
         this.x = x;
@@ -64,9 +64,9 @@ public class Vector implements Cloneable {
     /**
      * Construct the vector with provided float components.
      *
-     * @param x
-     * @param y
-     * @param z
+     * @param x X component
+     * @param y Y component
+     * @param z Z component
      */
     public Vector(float x, float y, float z) {
         this.x = x;
@@ -75,9 +75,9 @@ public class Vector implements Cloneable {
     }
 
     /**
-     * Adds the vector by another.
+     * Adds a vector to this one
      *
-     * @param vec
+     * @param vec The other vector
      * @return the same vector
      */
     public Vector add(Vector vec) {
@@ -88,9 +88,9 @@ public class Vector implements Cloneable {
     }
 
     /**
-     * Subtracts the vector by another.
+     * Subtracts a vector from this one.
      *
-     * @param vec
+     * @param vec The other vector
      * @return the same vector
      */
     public Vector subtract(Vector vec) {
@@ -103,7 +103,7 @@ public class Vector implements Cloneable {
     /**
      * Multiplies the vector by another.
      *
-     * @param vec
+     * @param vec The other vector
      * @return the same vector
      */
     public Vector multiply(Vector vec) {
@@ -116,7 +116,7 @@ public class Vector implements Cloneable {
     /**
      * Divides the vector by another.
      *
-     * @param vec
+     * @param vec The other vector
      * @return the same vector
      */
     public Vector divide(Vector vec) {
@@ -129,7 +129,7 @@ public class Vector implements Cloneable {
     /**
      * Copies another vector
      *
-     * @param vec
+     * @param vec The other vector
      * @return the same vector
      */
     public Vector copy(Vector vec) {
@@ -168,6 +168,7 @@ public class Vector implements Cloneable {
      * will be returned if the inner result of the sqrt() function overflows,
      * which will be caused if the distance is too long.
      *
+     * @param o The other vector
      * @return the distance
      */
     public double distance(Vector o) {
@@ -177,6 +178,7 @@ public class Vector implements Cloneable {
     /**
      * Get the squared distance between this vector and another.
      *
+     * @param o The other vector
      * @return the distance
      */
     public double distanceSquared(Vector o) {
@@ -186,7 +188,7 @@ public class Vector implements Cloneable {
     /**
      * Gets the angle between this vector and another in radians.
      *
-     * @param other
+     * @param other The other vector
      * @return angle in radians
      */
     public float angle(Vector other) {
@@ -198,7 +200,7 @@ public class Vector implements Cloneable {
     /**
      * Sets this vector to the midpoint between this vector and another.
      *
-     * @param other
+     * @param other The other vector
      * @return this same vector (now a midpoint)
      */
     public Vector midpoint(Vector other) {
@@ -211,7 +213,7 @@ public class Vector implements Cloneable {
     /**
      * Gets a new midpoint vector between this vector and another.
      *
-     * @param other
+     * @param other The other vector
      * @return a new midpoint vector
      */
     public Vector getMidpoint(Vector other) {
@@ -224,7 +226,7 @@ public class Vector implements Cloneable {
     /**
      * Performs scalar multiplication, multiplying all components with a scalar.
      *
-     * @param m
+     * @param m The factor
      * @return the same vector
      */
     public Vector multiply(int m) {
@@ -237,7 +239,7 @@ public class Vector implements Cloneable {
     /**
      * Performs scalar multiplication, multiplying all components with a scalar.
      *
-     * @param m
+     * @param m The factor
      * @return the same vector
      */
     public Vector multiply(double m) {
@@ -250,7 +252,7 @@ public class Vector implements Cloneable {
     /**
      * Performs scalar multiplication, multiplying all components with a scalar.
      *
-     * @param m
+     * @param m The factor
      * @return the same vector
      */
     public Vector multiply(float m) {
@@ -264,7 +266,7 @@ public class Vector implements Cloneable {
      * Calculates the dot product of this vector with another. The dot product
      * is defined as x1*x2+y1*y2+z1*z2. The returned value is a scalar.
      *
-     * @param other
+     * @param other The other vector
      * @return dot product
      */
     public double dot(Vector other) {
@@ -279,7 +281,7 @@ public class Vector implements Cloneable {
      * y = z1 * x2 - z2 * x1<br/>
      * z = x1 * y2 - x2 * y1
      *
-     * @param o
+     * @param o The other vector
      * @return the same vector
      */
     public Vector crossProduct(Vector o) {
@@ -325,8 +327,8 @@ public class Vector implements Cloneable {
      * The minimum and maximum vectors given must be truly the minimum and
      * maximum X, Y and Z components.
      *
-     * @param min
-     * @param max
+     * @param min Minimum vector
+     * @param max Maximum vector
      * @return whether this vector is in the AABB
      */
     public boolean isInAABB(Vector min, Vector max) {
@@ -336,8 +338,8 @@ public class Vector implements Cloneable {
     /**
      * Returns whether this vector is within a sphere.
      *
-     * @param origin
-     * @param radius
+     * @param origin Sphere origin.
+     * @param radius Sphere radius
      * @return whether this vector is in the sphere
      */
     public boolean isInSphere(Vector origin, double radius) {
@@ -347,7 +349,7 @@ public class Vector implements Cloneable {
     /**
      * Gets the X component.
      *
-     * @return
+     * @return The X component.
      */
     public double getX() {
         return x;
@@ -366,7 +368,7 @@ public class Vector implements Cloneable {
     /**
      * Gets the Y component.
      *
-     * @return
+     * @return The Y component.
      */
     public double getY() {
         return y;
@@ -385,7 +387,7 @@ public class Vector implements Cloneable {
     /**
      * Gets the Z component.
      *
-     * @return
+     * @return The Z component.
      */
     public double getZ() {
         return z;
@@ -404,8 +406,8 @@ public class Vector implements Cloneable {
     /**
      * Set the X component.
      *
-     * @param x
-     * @return x
+     * @param x The new X component.
+     * @return This vector.
      */
     public Vector setX(int x) {
         this.x = x;
@@ -415,8 +417,8 @@ public class Vector implements Cloneable {
     /**
      * Set the X component.
      *
-     * @param x
-     * @return x
+     * @param x The new X component.
+     * @return This vector.
      */
     public Vector setX(double x) {
         this.x = x;
@@ -426,8 +428,8 @@ public class Vector implements Cloneable {
     /**
      * Set the X component.
      *
-     * @param x
-     * @return x
+     * @param x The new X component.
+     * @return This vector.
      */
     public Vector setX(float x) {
         this.x = x;
@@ -437,8 +439,8 @@ public class Vector implements Cloneable {
     /**
      * Set the Y component.
      *
-     * @param y
-     * @return y
+     * @param y The new Y component.
+     * @return This vector.
      */
     public Vector setY(int y) {
         this.y = y;
@@ -448,8 +450,8 @@ public class Vector implements Cloneable {
     /**
      * Set the Y component.
      *
-     * @param y
-     * @return y
+     * @param y The new Y component.
+     * @return This vector.
      */
     public Vector setY(double y) {
         this.y = y;
@@ -459,8 +461,8 @@ public class Vector implements Cloneable {
     /**
      * Set the Y component.
      *
-     * @param y
-     * @return y
+     * @param y The new Y component.
+     * @return This vector.
      */
     public Vector setY(float y) {
         this.y = y;
@@ -470,8 +472,8 @@ public class Vector implements Cloneable {
     /**
      * Set the Z component.
      *
-     * @param z
-     * @return z
+     * @param z The new Z component.
+     * @return This vector.
      */
     public Vector setZ(int z) {
         this.z = z;
@@ -481,8 +483,8 @@ public class Vector implements Cloneable {
     /**
      * Set the Z component.
      *
-     * @param z
-     * @return z
+     * @param z The new Z component.
+     * @return This vector.
      */
     public Vector setZ(double z) {
         this.z = z;
@@ -492,8 +494,8 @@ public class Vector implements Cloneable {
     /**
      * Set the Z component.
      *
-     * @param z
-     * @return z
+     * @param z The new Z component.
+     * @return This vector.
      */
     public Vector setZ(float z) {
         this.z = z;
@@ -565,7 +567,7 @@ public class Vector implements Cloneable {
     /**
      * Gets a Location version of this vector with yaw and pitch being 0.
      *
-     * @param world
+     * @param world The world to link the location to.
      * @return the location
      */
     public Location toLocation(World world) {
@@ -575,7 +577,9 @@ public class Vector implements Cloneable {
     /**
      * Gets a Location version of this vector.
      *
-     * @param world
+     * @param world The world to link the location to.
+     * @param yaw The desired yaw.
+     * @param pitch The desired pitch.
      * @return the location
      */
     public Location toLocation(World world, float yaw, float pitch) {
@@ -585,7 +589,7 @@ public class Vector implements Cloneable {
     /**
      * Get the block vector of this vector.
      *
-     * @return
+     * @return A block vector.
      */
     public BlockVector toBlockVector() {
         return new BlockVector(x, y, z);
@@ -594,7 +598,7 @@ public class Vector implements Cloneable {
     /**
      * Get the threshold used for equals().
      *
-     * @return
+     * @return The epsilon.
      */
     public static double getEpsilon() {
         return epsilon;
@@ -603,8 +607,8 @@ public class Vector implements Cloneable {
     /**
      * Gets the minimum components of two vectors.
      *
-     * @param v1
-     * @param v2
+     * @param v1 The first vector.
+     * @param v2 The second vector.
      * @return minimum
      */
     public static Vector getMinimum(Vector v1, Vector v2) {
@@ -614,8 +618,8 @@ public class Vector implements Cloneable {
     /**
      * Gets the maximum components of two vectors.
      *
-     * @param v1
-     * @param v2
+     * @param v1 The first vector.
+     * @param v2 The second vector.
      * @return maximum
      */
     public static Vector getMaximum(Vector v1, Vector v2) {
@@ -626,7 +630,7 @@ public class Vector implements Cloneable {
      * Gets a random vector with components having a random value between
      * 0 and 1.
      *
-     * @return
+     * @return A random vector.
      */
     public static Vector getRandom() {
         return new Vector(random.nextDouble(), random.nextDouble(), random.nextDouble());

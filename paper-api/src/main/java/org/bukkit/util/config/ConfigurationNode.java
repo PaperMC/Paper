@@ -107,8 +107,8 @@ public class ConfigurationNode {
      * Set the property at a location. This will override existing
      * configuration data to have it conform to key/value mappings.
      *
-     * @param path
-     * @param value
+     * @param path The property path
+     * @param value The new value
      */
     @SuppressWarnings("unchecked")
     public void setProperty(String path, Object value) {
@@ -450,7 +450,7 @@ public class ConfigurationNode {
      * path does not lead to a node, null will be returned. A node has
      * key/value mappings.
      *
-     * @param path
+     * @param path The property path
      * @return node or null
      */
     @SuppressWarnings("unchecked")
@@ -560,7 +560,7 @@ public class ConfigurationNode {
      * Remove the property at a location. This will override existing
      * configuration data to have it conform to key/value mappings.
      *
-     * @param path
+     * @param path The property path
      */
     @SuppressWarnings("unchecked")
     public void removeProperty(String path) {

@@ -1,6 +1,5 @@
 package org.bukkit.event.painting;
 
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Painting;
 import org.bukkit.event.Cancellable;
 

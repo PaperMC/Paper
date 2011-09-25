@@ -315,7 +315,7 @@ public interface World {
      * Strikes lightning at the given {@link Location}
      *
      * @param loc The location to strike lightning
-     * @return
+     * @return The lightning entity.
      */
     public LightningStrike strikeLightning(Location loc);
 
@@ -323,7 +323,7 @@ public interface World {
      * Strikes lightning at the given {@link Location} without doing damage
      *
      * @param loc The location to strike lightning
-     * @return
+     * @return The lightning entity.
      */
     public LightningStrike strikeLightningEffect(Location loc);
 
@@ -384,9 +384,9 @@ public interface World {
     /**
      * Sets the spawn location of the world
      *
-     * @param x
-     * @param y
-     * @param z
+     * @param x X coordinate
+     * @param y Y coordinate
+     * @param z Z coordinate
      * @return True if it was successfully set.
      */
     public boolean setSpawnLocation(int x, int y, int z);
@@ -494,9 +494,9 @@ public interface World {
     /**
      * Creates explosion at given coordinates with given power
      *
-     * @param x
-     * @param y
-     * @param z
+     * @param x X coordinate
+     * @param y Y coordinate
+     * @param z Z coordinate
      * @param power The power of explosion, where 4F is TNT
      * @return false if explosion was canceled, otherwise true
      */
@@ -506,9 +506,9 @@ public interface World {
      * Creates explosion at given coordinates with given power and optionally setting
      * blocks on fire.
      *
-     * @param x
-     * @param y
-     * @param z
+     * @param x X coordinate
+     * @param y Y coordinate
+     * @param z Z coordinate
      * @param power The power of explosion, where 4F is TNT
      * @param setFire Whether or not to set blocks on fire
      * @return false if explosion was canceled, otherwise true
@@ -518,7 +518,7 @@ public interface World {
     /**
      * Creates explosion at given coordinates with given power
      *
-     * @param loc
+     * @param loc Location to blow up
      * @param power The power of explosion, where 4F is TNT
      * @return false if explosion was canceled, otherwise true
      */
@@ -528,7 +528,7 @@ public interface World {
      * Creates explosion at given coordinates with given power and optionally setting
      * blocks on fire.
      *
-     * @param loc
+     * @param loc Location to blow up
      * @param power The power of explosion, where 4F is TNT
      * @param setFire Whether or not to set blocks on fire
      * @return false if explosion was canceled, otherwise true
@@ -551,7 +551,7 @@ public interface World {
 
     /**
      * Gets the current PVP setting for this world.
-     * @return
+     * @return True if PVP is enabled
      */
     public boolean getPVP();
 
@@ -585,8 +585,9 @@ public interface World {
      *
      * @param location the {@link Location} to spawn the entity at
      * @param clazz the class of the {@link Entity} to spawn
+     * @param <T> the class of the {@link Entity} to spawn
      * @return an instance of the spawned {@link Entity}
-     * @throws an {@link IllegalArgumentException} if either parameter is null or the {@link Entity} requested cannot be spawned
+     * @throws IllegalArgumentException if either parameter is null or the {@link Entity} requested cannot be spawned
      */
     public <T extends Entity> T spawn(Location location, Class<T> clazz) throws IllegalArgumentException;
 
@@ -616,6 +617,7 @@ public interface World {
      * @param z - chunk z coordinate
      * @param includeBiome - if true, snapshot includes per-coordinate biome type
      * @param includeBiomeTempRain - if true, snapshot includes per-coordinate raw biome temperature and rainfall
+     * @return The empty snapshot.
      */
     public ChunkSnapshot getEmptyChunkSnapshot(int x, int z, boolean includeBiome, boolean includeBiomeTempRain);
 

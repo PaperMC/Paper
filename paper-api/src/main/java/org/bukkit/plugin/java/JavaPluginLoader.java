@@ -177,9 +177,9 @@ public class JavaPluginLoader implements PluginLoader {
             throw new InvalidPluginException(ex);
         }
 
-        loaders.put(description.getName(), (PluginClassLoader) loader);
+        loaders.put(description.getName(), loader);
 
-        return (Plugin) result;
+        return result;
     }
 
     protected File getDataFolder(File file) {

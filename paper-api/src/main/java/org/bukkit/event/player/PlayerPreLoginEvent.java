@@ -87,7 +87,7 @@ public class PlayerPreLoginEvent extends Event {
     /**
      * Gets the player IP address.
      *
-     * @return
+     * @return The IP address
      */
     public InetAddress getAddress() {
         return ipAddress;

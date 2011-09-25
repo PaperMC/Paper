@@ -45,7 +45,7 @@ public interface Inventory {
      * It will return a HashMap of what it couldn't fit.
      *
      * @param items The ItemStacks to add
-     * @return
+     * @return The items that didn't fit.
      */
     public HashMap<Integer, ItemStack> addItem(ItemStack... items);
 
@@ -56,7 +56,7 @@ public interface Inventory {
      * give as arguments. It will return a HashMap of what it couldn't remove.
      *
      * @param items The ItemStacks to remove
-     * @return
+     * @return The items that couldn't be removed.
      */
     public HashMap<Integer, ItemStack> removeItem(ItemStack... items);
 
@@ -70,7 +70,7 @@ public interface Inventory {
     /**
      * Set the inventory's contents
      *
-     * @return All the ItemStacks from all slots
+     * @param items A complete replacement for the contents; the length must be equal to {@link #getSize()}.
      */
     public void setContents(ItemStack[] items);
 
@@ -112,6 +112,7 @@ public interface Inventory {
      * Check if the inventory contains any ItemStacks with the given material and at least the minimum amount specified
      *
      * @param material The material to check for
+     * @param amount The minimum amount
      * @return If any ItemStacks were found
      */
     public boolean contains(Material material, int amount);
@@ -121,6 +122,7 @@ public interface Inventory {
      * This will only match if both the type and the amount of the stack match
      *
      * @param item The ItemStack to match against
+     * @param amount The minimum amount
      * @return If any matching ItemStacks were found
      */
     public boolean contains(ItemStack item, int amount);
@@ -136,7 +138,7 @@ public interface Inventory {
     /**
      * Find all slots in the inventory containing any ItemStacks with the given material
      *
-     * @param materialId The material to look for
+     * @param material The material to look for
      * @return The Slots found.
      */
     public HashMap<Integer, ? extends ItemStack> all(Material material);
@@ -161,7 +163,7 @@ public interface Inventory {
     /**
      * Find the first slot in the inventory containing an ItemStack with the given material
      *
-     * @param materialId The material to look for
+     * @param material The material to look for
      * @return The Slot found.
      */
     public int first(Material material);

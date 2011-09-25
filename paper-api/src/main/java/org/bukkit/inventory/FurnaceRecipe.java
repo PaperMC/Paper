@@ -60,7 +60,7 @@ public class FurnaceRecipe implements Recipe {
      * @return The input material.
      */
     public MaterialData getInput() {
-        return (MaterialData) ingredient;
+        return ingredient;
     }
 
     /**

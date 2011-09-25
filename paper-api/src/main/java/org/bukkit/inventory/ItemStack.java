@@ -125,7 +125,7 @@ public class ItemStack {
     /**
      * Sets the MaterialData for this stack of items
      *
-     * @param amount New MaterialData for this item
+     * @param data New MaterialData for this item
      */
     public void setData(MaterialData data) {
         Material mat = getType();

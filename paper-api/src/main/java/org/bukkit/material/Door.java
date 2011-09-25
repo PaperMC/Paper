@@ -37,7 +37,7 @@ public class Door extends MaterialData implements Directional {
 
     /**
      * Configure this door to be either open or closed;
-     * @param isOpen
+     * @param isOpen True to open the door.
      */
     public void setOpen(boolean isOpen) {
         setData((byte) (isOpen ? (getData() | 0x4) : (getData() & ~0x4)));
@@ -52,7 +52,7 @@ public class Door extends MaterialData implements Directional {
 
     /**
      * Configure this part of the door to be either the top or the bottom half;
-     * @param isTopHalf
+     * @param isTopHalf True to make it the top half.
      */
     public void setTopHalf(boolean isTopHalf) {
         setData((byte) (isTopHalf ? (getData() | 0x8) : (getData() & ~0x8)));

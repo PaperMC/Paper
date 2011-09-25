@@ -6,7 +6,7 @@ package org.bukkit.entity;
 public interface TNTPrimed extends Explosive {
     /**
      * Set the number of ticks until the TNT blows up after being primed.
-     * @param fuseTicks
+     * @param fuseTicks The fuse ticks
      */
     public void setFuseTicks(int fuseTicks);
 

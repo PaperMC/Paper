@@ -19,7 +19,7 @@ public class VehicleExitEvent extends VehicleEvent implements Cancellable {
     /**
      * Get the living entity that exited the vehicle.
      *
-     * @return
+     * @return The entity.
      */
     public LivingEntity getExited() {
         return exited;

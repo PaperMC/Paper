@@ -1,7 +1,6 @@
 package org.bukkit.event.block;
 
 import org.bukkit.event.Listener;
-import org.bukkit.plugin.AuthorNagException;
 
 /**
  * Handles all events thrown in relation to Blocks

@@ -41,7 +41,8 @@ public final class PluginDescriptionFile {
 
     /**
      * Loads a PluginDescriptionFile from the specified reader
-     * @param reader
+     * @param reader The reader
+     * @throws InvalidDescriptionException If the PluginDescriptionFile is invalid
      */
     @SuppressWarnings("unchecked")
     public PluginDescriptionFile(final Reader reader) throws InvalidDescriptionException {
@@ -52,6 +53,7 @@ public final class PluginDescriptionFile {
      * Creates a new PluginDescriptionFile with the given detailed
      *
      * @param pluginName Name of this plugin
+     * @param pluginVersion Version of this plugin
      * @param mainClass Full location of the main class of this plugin
      */
     public PluginDescriptionFile(final String pluginName, final String pluginVersion, final String mainClass) {
@@ -124,7 +126,7 @@ public final class PluginDescriptionFile {
     /**
      * Gets the description of this plugin
      *
-     * return Description of this plugin
+     * @return Description of this plugin
      */
     public String getDescription() {
         return description;

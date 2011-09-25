@@ -31,7 +31,7 @@ public interface Sign extends BlockState {
      *
      * @param index Line number to set the text at, starting from 0
      * @param line New text to set at the specified index
-     * @throws IndexOutOfBoundsException
+     * @throws IndexOutOfBoundsException If the index is out of the range 0..3
      */
     public void setLine(int index, String line) throws IndexOutOfBoundsException;
 }

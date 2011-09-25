@@ -175,6 +175,7 @@ public final class SimplePluginManager implements PluginManager {
      * @return The Plugin loaded, or null if it was invalid
      * @throws InvalidPluginException Thrown when the specified file is not a valid plugin
      * @throws InvalidDescriptionException Thrown when the specified file contains an invalid description
+     * @throws UnknownDependencyException If a required dependency could not be found
      */
     public synchronized Plugin loadPlugin(File file) throws InvalidPluginException, InvalidDescriptionException, UnknownDependencyException {
         return loadPlugin(file, true);
@@ -190,6 +191,7 @@ public final class SimplePluginManager implements PluginManager {
      * @return The Plugin loaded, or null if it was invalid
      * @throws InvalidPluginException Thrown when the specified file is not a valid plugin
      * @throws InvalidDescriptionException Thrown when the specified file contains an invalid description
+     * @throws UnknownDependencyException If a required dependency could not be found
      */
     public synchronized Plugin loadPlugin(File file, boolean ignoreSoftDependencies) throws InvalidPluginException, InvalidDescriptionException, UnknownDependencyException {
         File updateFile = null;
@@ -324,9 +326,8 @@ public final class SimplePluginManager implements PluginManager {
     }
 
     /**
-     * Calls a player related event with the given details
+     * Calls an event with the given details
      *
-     * @param type Type of player related event to call
      * @param event Event details
      */
     public synchronized void callEvent(Event event) {

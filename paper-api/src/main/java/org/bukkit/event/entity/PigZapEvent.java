@@ -9,13 +9,11 @@ import org.bukkit.event.Cancellable;
 public class PigZapEvent extends EntityEvent implements Cancellable {
 
     private boolean canceled;
-    private Entity pig;
     private Entity pigzombie;
     private Entity bolt;
 
     public PigZapEvent(Entity pig, Entity bolt, Entity pigzombie) {
         super(Type.PIG_ZAP, pig);
-        this.pig = pig;
         this.bolt = bolt;
         this.pigzombie = pigzombie;
     }

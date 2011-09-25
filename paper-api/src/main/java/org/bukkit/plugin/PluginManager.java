@@ -66,6 +66,7 @@ public interface PluginManager {
      * @return The Plugin loaded, or null if it was invalid
      * @throws InvalidPluginException Thrown when the specified file is not a valid plugin
      * @throws InvalidDescriptionException Thrown when the specified file contains an invalid description
+     * @throws UnknownDependencyException If a required dependency could not be resolved
      */
     public Plugin loadPlugin(File file) throws InvalidPluginException, InvalidDescriptionException, UnknownDependencyException;
 
@@ -88,9 +89,8 @@ public interface PluginManager {
     public void clearPlugins();
 
     /**
-     * Calls a player related event with the given details
+     * Calls an event with the given details
      *
-     * @param type Type of player related event to call
      * @param event Event details
      */
     public void callEvent(Event event);
@@ -179,6 +179,7 @@ public interface PluginManager {
      * Gets the default permissions for the given op status
      *
      * @param op Which set of default permissions to get
+     * @return The default permissions
      */
     public Set<Permission> getDefaultPermissions(boolean op);
 

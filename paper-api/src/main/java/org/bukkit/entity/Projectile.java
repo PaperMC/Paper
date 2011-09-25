@@ -1,5 +1,7 @@
 package org.bukkit.entity;
 
+import org.bukkit.block.Dispenser;
+
 /**
  * Represents a shootable entity
  */

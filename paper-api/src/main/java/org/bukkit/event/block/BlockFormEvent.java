@@ -11,7 +11,7 @@ import org.bukkit.event.Cancellable;
  * Examples:
  *<ul>
  *     <li>Snow forming due to a snow storm.</li>
- *     <li>Ice forming in a snowy Biome like Tiga or Tundra.</li>
+ *     <li>Ice forming in a snowy Biome like Taiga or Tundra.</li>
  * </ul>
  *<p />
  * If a Block Form event is cancelled, the block will not be formed.

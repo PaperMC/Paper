@@ -127,7 +127,7 @@ public class Configuration extends ConfigurationNode {
     /**
      * Return the set header.
      *
-     * @return
+     * @return The header comment.
      */
     public String getHeader() {
         return header;
@@ -136,7 +136,6 @@ public class Configuration extends ConfigurationNode {
     /**
      * Saves the configuration to disk. All errors are clobbered.
      *
-     * @param header header to prepend
      * @return true if it was successful
      */
     public boolean save() {
@@ -184,7 +183,7 @@ public class Configuration extends ConfigurationNode {
     /**
      * This method returns an empty ConfigurationNode for using as a
      * default in methods that select a node from a node list.
-     * @return
+     * @return The empty node.
      */
     public static ConfigurationNode getEmptyNode() {
         return new ConfigurationNode(new HashMap<String, Object>());

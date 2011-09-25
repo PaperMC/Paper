@@ -11,20 +11,17 @@ import org.bukkit.event.Cancellable;
 public class CreeperPowerEvent extends EntityEvent implements Cancellable {
 
     private boolean canceled;
-    private Entity creeper;
     private PowerCause cause;
     private Entity bolt;
 
     public CreeperPowerEvent(Entity creeper, Entity bolt, PowerCause cause) {
         super(Type.CREEPER_POWER, creeper);
-        this.creeper = creeper;
         this.bolt = bolt;
         this.cause = cause;
     }
 
     public CreeperPowerEvent(Entity creeper, PowerCause cause) {
         super(Type.CREEPER_POWER, creeper);
-        this.creeper = creeper;
         this.cause = cause;
         this.bolt = null;
     }

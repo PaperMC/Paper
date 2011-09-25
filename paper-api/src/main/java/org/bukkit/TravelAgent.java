@@ -6,7 +6,7 @@ public interface TravelAgent {
      * Set the Block radius to search in for available portals.
      *
      * @param radius The radius in which to search for a portal from the location.
-     * @return
+     * @return This travel agent.
      */
     public TravelAgent setSearchRadius(int radius);
 
@@ -21,7 +21,7 @@ public interface TravelAgent {
      * Sets the maximum radius from the given location to create a portal.
      *
      * @param radius The radius in which to create a portal from the location.
-     * @return
+     * @return This travel agent.
      */
     public TravelAgent setCreationRadius(int radius);
 
@@ -57,13 +57,15 @@ public interface TravelAgent {
     /**
      * Attempt to find a portal near the given location.
      *
+     * @param location The desired location of the portal.
      * @return Returns the location of the nearest portal to the location.
      */
     public Location findPortal(Location location);
 
     /**
      * Attempt to create a portal near the given location.
-     *
+     * 
+     * @param location The desired location of the portal.
      * @return True if a nether portal was successfully created.
      */
     public boolean createPortal(Location location);

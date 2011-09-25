@@ -51,7 +51,7 @@ public class Bed extends MaterialData implements Directional {
 
     /**
      * Configure this to be either the head or the foot of the bed
-     * @param isHeadOfBed
+     * @param isHeadOfBed True to make it the head.
      */
     public void setHeadOfBed(boolean isHeadOfBed) {
         setData((byte) (isHeadOfBed ? (getData() | 0x8) : (getData() & ~0x8)));

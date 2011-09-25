@@ -10,28 +10,28 @@ public interface Furnace extends BlockState, ContainerBlock {
     /**
      * Get burn time.
      *
-     * @return
+     * @return Burn time
      */
     public short getBurnTime();
 
     /**
      * Set burn time.
      *
-     * @param burnTime
+     * @param burnTime Burn time
      */
     public void setBurnTime(short burnTime);
 
     /**
      * Get cook time.
      *
-     * @return
+     * @return Cook time
      */
     public short getCookTime();
 
     /**
      * Set cook time.
      *
-     * @param cookTime
+     * @param cookTime Cook time
      */
     public void setCookTime(short cookTime);
 }

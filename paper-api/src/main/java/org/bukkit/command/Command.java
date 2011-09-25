@@ -104,6 +104,7 @@ public abstract class Command {
      * If the command is currently registered the label change will only take effect after
      * its been reregistered e.g. after a /reload
      *
+     * @param name The command's name
      * @return returns true if the name change happened instantly or false if it was scheduled for reregistration
      */
     public boolean setLabel(String name) {

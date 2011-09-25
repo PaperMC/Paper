@@ -41,7 +41,7 @@ public abstract class JavaPlugin implements Plugin {
      * Returns the folder that the plugin data's files are located in. The
      * folder may not yet exist.
      *
-     * @return
+     * @return The folder.
      */
     public File getDataFolder() {
         return dataFolder;
@@ -98,7 +98,7 @@ public abstract class JavaPlugin implements Plugin {
      * does not exist and it cannot be loaded, no error will be emitted and
      * the configuration file will have no values.
      *
-     * @return
+     * @return The configuration.
      */
     public Configuration getConfiguration() {
         return config;

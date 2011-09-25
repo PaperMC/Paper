@@ -17,7 +17,7 @@ public class WorldListener implements Listener {
     /**
      * Called when a newly created chunk has been populated.
      *
-     * If your intent is to populate the chunk using this event, please see {@link BlockPopulator}
+     * If your intent is to populate the chunk using this event, please see {@link org.bukkit.generator.BlockPopulator}
      *
      * @param event Relevant event details
      */

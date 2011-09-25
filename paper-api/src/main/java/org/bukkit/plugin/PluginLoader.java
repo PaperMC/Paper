@@ -19,6 +19,8 @@ public interface PluginLoader {
      * @return Plugin that was contained in the specified file, or null if
      * unsuccessful
      * @throws InvalidPluginException Thrown when the specified file is not a plugin
+     * @throws InvalidDescriptionException If the plugin description file was invalid
+     * @throws UnknownDependencyException If a required dependency could not be found
      */
     public Plugin loadPlugin(File file) throws InvalidPluginException, InvalidDescriptionException, UnknownDependencyException;
 
@@ -30,11 +32,14 @@ public interface PluginLoader {
      * @return Plugin that was contained in the specified file, or null if
      * unsuccessful
      * @throws InvalidPluginException Thrown when the specified file is not a plugin
+     * @throws InvalidDescriptionException If the plugin description file was invalid
+     * @throws UnknownDependencyException If a required dependency could not be found
      */
     public Plugin loadPlugin(File file, boolean ignoreSoftDependencies) throws InvalidPluginException, InvalidDescriptionException, UnknownDependencyException;
 
     /**
      * Returns a list of all filename filters expected by this PluginLoader
+     * @return The filters
      */
     public Pattern[] getPluginFileFilters();
 
@@ -43,6 +48,7 @@ public interface PluginLoader {
      *
      * @param type Type of the event executor to create
      * @param listener the object that will handle the eventual call back
+     * @return The new executor
      */
     public EventExecutor createExecutor(Event.Type type, Listener listener);
 

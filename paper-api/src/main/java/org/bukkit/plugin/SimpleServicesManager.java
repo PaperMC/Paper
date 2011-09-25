@@ -52,7 +52,7 @@ public class SimpleServicesManager implements ServicesManager {
     /**
      * Unregister all the providers registered by a particular plugin.
      *
-     * @param plugin
+     * @param plugin The plugin
      */
     public void unregisterAll(Plugin plugin) {
         synchronized (providers) {
@@ -86,8 +86,8 @@ public class SimpleServicesManager implements ServicesManager {
     /**
      * Unregister a particular provider for a particular service.
      *
-     * @param service
-     * @param provider
+     * @param service The service interface
+     * @param provider The service provider implementation
      */
     public void unregister(Class<?> service, Object provider) {
         synchronized (providers) {
@@ -127,7 +127,7 @@ public class SimpleServicesManager implements ServicesManager {
     /**
      * Unregister a particular provider.
      *
-     * @param provider
+     * @param provider The service provider implementation
      */
     public void unregister(Object provider) {
         synchronized (providers) {
@@ -162,8 +162,8 @@ public class SimpleServicesManager implements ServicesManager {
      * Queries for a provider. This may return if no provider has been
      * registered for a service. The highest priority provider is returned.
      *
-     * @param <T>
-     * @param service
+     * @param <T> The service interface
+     * @param service The service interface
      * @return provider or null
      */
     @SuppressWarnings("unchecked")
@@ -184,8 +184,8 @@ public class SimpleServicesManager implements ServicesManager {
      * Queries for a provider registration. This may return if no provider
      * has been registered for a service.
      *
-     * @param <T>
-     * @param service
+     * @param <T> The service interface
+     * @param service The service interface
      * @return provider registration or null
      */
     @SuppressWarnings("unchecked")
@@ -205,7 +205,7 @@ public class SimpleServicesManager implements ServicesManager {
     /**
      * Get registrations of providers for a plugin.
      *
-     * @param plugin
+     * @param plugin The plugin
      * @return provider registration or null
      */
     public List<RegisteredServiceProvider<?>> getRegistrations(Plugin plugin) {
@@ -228,8 +228,8 @@ public class SimpleServicesManager implements ServicesManager {
      * Get registrations of providers for a service. The returned list is
      * unmodifiable.
      *
-     * @param <T>
-     * @param service
+     * @param <T> The service interface
+     * @param service The service interface
      * @return list of registrations
      */
     @SuppressWarnings("unchecked")

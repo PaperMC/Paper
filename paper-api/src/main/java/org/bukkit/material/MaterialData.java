@@ -75,6 +75,7 @@ public class MaterialData {
     /**
      * Creates a new ItemStack based on this MaterialData
      *
+     * @param amount The stack size of the new stak
      * @return New ItemStack containing a copy of this MaterialData
      */
     public ItemStack toItemStack(int amount) {
