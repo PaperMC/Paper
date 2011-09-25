@@ -109,7 +109,7 @@ public enum Material {
     DIODE_BLOCK_ON(94, Diode.class),
     LOCKED_CHEST(95),
     TRAP_DOOR(96, TrapDoor.class),
-    MONSTER_EGGS(97),
+    MONSTER_EGGS(97, MonsterEggs.class),
     SMOOTH_BRICK(98, SmoothBrick.class),
     HUGE_MUSHROOM_1(99),
     HUGE_MUSHROOM_2(100),
