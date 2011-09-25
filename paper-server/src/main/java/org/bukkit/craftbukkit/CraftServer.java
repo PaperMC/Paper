@@ -6,6 +6,7 @@ import com.avaje.ebean.config.DataSourceConfig;
 import com.avaje.ebean.config.ServerConfig;
 import com.avaje.ebean.config.dbplatform.SQLitePlatform;
 import com.avaje.ebeaninternal.server.lib.sql.TransactionIsolation;
+import com.google.common.collect.MapMaker;
 import net.minecraft.server.IWorldAccess;
 import org.bukkit.World.Environment;
 import org.bukkit.command.*;
@@ -89,6 +90,7 @@ public final class CraftServer implements Server {
     private final Map<String, World> worlds = new LinkedHashMap<String, World>();
     private final Configuration configuration;
     private final Yaml yaml = new Yaml(new SafeConstructor());
+    private final Map<String, OfflinePlayer> offlinePlayers = new MapMaker().softValues().makeMap();
 
     public CraftServer(MinecraftServer console, ServerConfigurationManager server) {
         this.console = console;
@@ -790,9 +792,17 @@ public final class CraftServer implements Server {
 
     public OfflinePlayer getOfflinePlayer(String name) {
         OfflinePlayer result = getPlayerExact(name);
+        String lname = name.toLowerCase();
 
         if (result == null) {
-            result = new CraftOfflinePlayer(this, name);
+            result = offlinePlayers.get(lname);
+
+            if (result == null) {
+                result = new CraftOfflinePlayer(this, name);
+                offlinePlayers.put(lname, result);
+            }
+        } else {
+            offlinePlayers.remove(lname);
         }
 
         return result;
