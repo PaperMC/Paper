@@ -130,20 +130,28 @@ public final class Bukkit {
         return server.getWorlds();
     }
 
+    @Deprecated
     public static World createWorld(String name, Environment environment) {
         return server.createWorld(name, environment);
     }
 
+    @Deprecated
     public static World createWorld(String name, Environment environment, long seed) {
         return server.createWorld(name, environment, seed);
     }
 
+    @Deprecated
     public static World createWorld(String name, Environment environment, ChunkGenerator generator) {
         return server.createWorld(name, environment, generator);
     }
 
+    @Deprecated
     public static World createWorld(String name, Environment environment, long seed, ChunkGenerator generator) {
         return server.createWorld(name, environment, seed, generator);
+    }
+
+    public static World createWorld(WorldCreator options) {
+        return server.createWorld(options);
     }
 
     public static boolean unloadWorld(String name, boolean save) {
