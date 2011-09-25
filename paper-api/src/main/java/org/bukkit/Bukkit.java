@@ -273,4 +273,8 @@ public final class Bukkit {
     public static ConsoleCommandSender getConsoleSender() {
         return server.getConsoleSender();
     }
+
+    public static Set<OfflinePlayer> getOperators() {
+        return server.getOperators();
+    }
 }

@@ -477,6 +477,13 @@ public interface Server {
     public Set<OfflinePlayer> getBannedPlayers();
 
     /**
+     * Gets a set containing all player operators
+     *
+     * @return Set containing player operators
+     */
+    public Set<OfflinePlayer> getOperators();
+
+    /**
      * Gets the default {@link GameMode} for new players
      *
      * @return Default game mode
