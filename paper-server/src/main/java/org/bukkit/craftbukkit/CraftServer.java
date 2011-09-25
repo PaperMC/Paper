@@ -26,7 +26,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.UUID;
 import java.util.Set;
 import java.util.logging.Level;
@@ -830,6 +829,16 @@ public final class CraftServer implements Server {
         Set<OfflinePlayer> result = new HashSet<OfflinePlayer>();
 
         for (Object name : server.getWhitelisted()) {
+            result.add(getOfflinePlayer((String)name));
+        }
+
+        return result;
+    }
+
+    public Set<OfflinePlayer> getOperators() {
+        Set<OfflinePlayer> result = new HashSet<OfflinePlayer>();
+
+        for (Object name : server.operators) {
             result.add(getOfflinePlayer((String)name));
         }
 
