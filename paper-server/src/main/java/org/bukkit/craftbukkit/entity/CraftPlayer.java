@@ -124,6 +124,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         getHandle().displayName = name;
     }
 
+    public String getListName() {
+        return getHandle().listName;
+    }
+
+    public void setListName(String name) {
+        server.getHandle().changeListName(getHandle(), name);
+    }
+
     @Override
     public String toString() {
         return "CraftPlayer{" + "name=" + getName() + '}';
