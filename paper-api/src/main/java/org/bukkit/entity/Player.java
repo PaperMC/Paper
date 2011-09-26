@@ -36,6 +36,31 @@ public interface Player extends HumanEntity, CommandSender, OfflinePlayer {
      * @param name The new display name.
      */
     public void setDisplayName(String name);
+    
+    /**
+     * Gets the name that is shown on the player list.
+     *
+     * @return the player list name
+     */
+    public String getListName();
+
+    /**
+     * Sets the name that is shown on the player list. The name cannot
+     * be longer than 16 characters, but color is supported. If the same
+     * name is passed (with no change), then nothing will happen.
+     * Case-sensitivity matters -- two names with different casing will
+     * appear as two different people. If a player joins afterwards with
+     * a name that conflicts with a player's custom list name, the
+     * joining player's player list name will have a random number appended to it
+     * (1-2 characters long in the default implementation). If the joining
+     * player's name is 15 or 16 characters long, part of the name will
+     * be truncated at the end to allow the addition of the two digits.
+     *
+     * @param name new player list name
+     * @throws IllegalArgumentException if the name is already used by someone else
+     * @throws IllegalArgumentException if the length of the name is too long
+     */
+    public void setListName(String name);
 
     /**
      * Set the target of the player's compass.
