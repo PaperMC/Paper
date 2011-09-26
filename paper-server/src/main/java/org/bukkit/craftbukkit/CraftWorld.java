@@ -687,7 +687,7 @@ public class CraftWorld implements World {
         } else if (Egg.class.isAssignableFrom(clazz)) {
             entity = new EntityEgg(world, x, y, z);
         } else if (FallingSand.class.isAssignableFrom(clazz)) {
-            entity = new EntityFallingSand(world, x, y, z, 0);
+            entity = new EntityFallingSand(world, x, y, z, 0, 0);
         } else if (Fireball.class.isAssignableFrom(clazz)) {
             entity = new EntityFireball(world);
             ((EntityFireball) entity).setPositionRotation(x, y, z, yaw, pitch);

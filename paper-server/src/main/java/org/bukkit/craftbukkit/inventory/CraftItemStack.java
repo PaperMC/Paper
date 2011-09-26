@@ -10,9 +10,13 @@ public class CraftItemStack extends ItemStack {
         super(
             item != null ? item.id: 0,
             item != null ? item.count : 0,
-            (short)(item != null ? item.damage : 0)
+            (short)(item != null ? item.getData() : 0)
         );
         this.item = item;
+    }
+
+    public CraftItemStack(ItemStack item) {
+        this(item.getTypeId(), item.getAmount(), item.getDurability());
     }
 
     /* 'Overwritten' constructors from ItemStack, yay for Java sucking */
@@ -105,15 +109,15 @@ public class CraftItemStack extends ItemStack {
         // Ignore damage if item is null
         if (item != null) {
             super.setDurability(durability);
-            item.damage = durability;
+            item.b(durability);
         }
     }
 
     @Override
     public short getDurability() {
         if (item != null) {
-            super.setDurability((short) item.damage); // sync, needed?
-            return (short) item.damage;
+            super.setDurability((short) item.getData()); // sync, needed?
+            return (short) item.getData();
         } else {
             return -1;
         }

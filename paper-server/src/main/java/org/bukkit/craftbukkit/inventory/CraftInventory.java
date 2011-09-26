@@ -199,12 +199,13 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
 
     public int firstPartial(ItemStack item) {
         ItemStack[] inventory = getContents();
+        ItemStack filteredItem = new CraftItemStack(item);
         if (item == null) {
             return -1;
         }
         for (int i = 0; i < inventory.length; i++) {
             ItemStack cItem = inventory[i];
-            if (cItem != null && cItem.getTypeId() == item.getTypeId() && cItem.getAmount() < cItem.getMaxStackSize() && cItem.getDurability() == item.getDurability()) {
+            if (cItem != null && cItem.getTypeId() == filteredItem.getTypeId() && cItem.getAmount() < cItem.getMaxStackSize() && cItem.getDurability() == filteredItem.getDurability()) {
                 return i;
             }
         }
