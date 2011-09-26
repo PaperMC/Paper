@@ -30,6 +30,12 @@ public class ItemInWorldManager {
         this.world = world;
     }
 
+    // CraftBukkit start - keep this for backwards compatibility
+    public ItemInWorldManager(WorldServer world) {
+        this.world = world;
+    }
+    // CraftBukkit end
+
     public void a(int i) {
         this.c = i;
         if (i == 0) {

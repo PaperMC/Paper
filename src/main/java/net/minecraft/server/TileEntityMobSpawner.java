@@ -21,6 +21,17 @@ public class TileEntityMobSpawner extends TileEntity {
         return this.world.a((double) this.x + 0.5D, (double) this.y + 0.5D, (double) this.z + 0.5D, 16.0D) != null;
     }
 
+    // CraftBukkit start
+    public int getId() {
+        return EntityTypes.getIdFromClass(EntityTypes.getClassFromName(mobName));
+    }
+
+    public void setId(int id) {
+        mobName = EntityTypes.getNameFromClass(EntityTypes.getClassFromId(id));
+        System.out.println("Setting mob type to: " + mobName);
+    }
+    // CraftBukkit end
+
     public void h_() {
         this.c = this.b;
         if (this.a()) {
@@ -48,28 +59,30 @@ public class TileEntityMobSpawner extends TileEntity {
                 byte b0 = 4;
 
                 for (int i = 0; i < b0; ++i) {
-                    EntityLiving entityliving = (EntityLiving) ((EntityLiving) EntityTypes.a(this.mobName, this.world));
+                    // CraftBukkit start
+                    Entity entity = EntityTypes.a(this.mobName, this.world);
 
-                    if (entityliving == null) {
+                    if (entity == null) {
                         return;
                     }
 
-                    int j = this.world.a(entityliving.getClass(), AxisAlignedBB.b((double) this.x, (double) this.y, (double) this.z, (double) (this.x + 1), (double) (this.y + 1), (double) (this.z + 1)).b(8.0D, 4.0D, 8.0D)).size();
+                    int j = this.world.a(entity.getClass(), AxisAlignedBB.b((double) this.x, (double) this.y, (double) this.z, (double) (this.x + 1), (double) (this.y + 1), (double) (this.z + 1)).b(8.0D, 4.0D, 8.0D)).size();
 
                     if (j >= 6) {
                         this.c();
                         return;
                     }
 
-                    if (entityliving != null) {
+                    if (entity != null) {
                         double d3 = (double) this.x + (this.world.random.nextDouble() - this.world.random.nextDouble()) * 4.0D;
                         double d4 = (double) (this.y + this.world.random.nextInt(3) - 1);
                         double d5 = (double) this.z + (this.world.random.nextDouble() - this.world.random.nextDouble()) * 4.0D;
 
-                        entityliving.setPositionRotation(d3, d4, d5, this.world.random.nextFloat() * 360.0F, 0.0F);
-                        if (entityliving.d()) {
+                        entity.setPositionRotation(d3, d4, d5, this.world.random.nextFloat() * 360.0F, 0.0F);
+                        if (entity.world.containsEntity(entity.boundingBox) && entity.world.getEntities(entity, entity.boundingBox).size() == 0 && !entity.world.c(entity.boundingBox)) {
+                            // CraftBukkit end
                             // CraftBukkit - added a reason for spawning this creature
-                            this.world.addEntity(entityliving, SpawnReason.SPAWNER);
+                            this.world.addEntity(entity, SpawnReason.SPAWNER);
 
                             for (int k = 0; k < 20; ++k) {
                                 d0 = (double) this.x + 0.5D + ((double) this.world.random.nextFloat() - 0.5D) * 2.0D;
@@ -79,7 +92,7 @@ public class TileEntityMobSpawner extends TileEntity {
                                 this.world.a("flame", d0, d1, d2, 0.0D, 0.0D, 0.0D);
                             }
 
-                            entityliving.ab();
+                            // entity.ab(); // CraftBukkit - client side code, and not available in entity
                             this.c();
                         }
                     }

@@ -23,6 +23,7 @@ public class EntityPainting extends Entity {
         this.a = 0;
         this.height = 0.0F;
         this.b(0.5F, 0.5F);
+        this.e = EnumArt.values()[this.random.nextInt(EnumArt.values().length)]; // CraftBukkit - generate a non-null painting
     }
 
     public EntityPainting(World world, int i, int j, int k, int l) {

@@ -5,7 +5,7 @@ public final class ItemStack {
     public int count;
     public int b;
     public int id;
-    public int damage; // CraftBukkit - private -> public
+    private int damage;
 
     public ItemStack(Block block) {
         this(block, 1);
@@ -35,7 +35,7 @@ public final class ItemStack {
         this.count = 0;
         this.id = i;
         this.count = j;
-        this.damage = k;
+        b(k); // CraftBukkit
     }
 
     public static ItemStack a(NBTTagCompound nbttagcompound) {
@@ -122,7 +122,7 @@ public final class ItemStack {
     }
 
     public void b(int i) {
-        this.damage = i;
+        this.damage = (id > 0) && (id < 256) ? Item.byId[id].filterData(i) : i; // CraftBukkit
     }
 
     public int i() {
