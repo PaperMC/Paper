@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.event;
 
+import java.net.InetAddress;
 import java.util.List;
 import net.minecraft.server.ChunkCoordinates;
 import net.minecraft.server.EntityCaveSpider;
@@ -29,6 +30,7 @@ import net.minecraft.server.ItemStack;
 import net.minecraft.server.World;
 import net.minecraft.server.WorldServer;
 import org.bukkit.Bukkit;
+import org.bukkit.Server;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -48,6 +50,7 @@ import org.bukkit.event.block.*;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.player.*;
+import org.bukkit.event.server.ServerListPingEvent;
 
 public class CraftEventFactory {
     private static boolean canBuild(CraftWorld world, Player player, int x, int z) {
@@ -306,6 +309,15 @@ public class CraftEventFactory {
             world.dropItemNaturally(entity.getLocation(), stack);
         }
 
+        return event;
+    }
+
+    /**
+     * Server methods
+     */
+    public static ServerListPingEvent callServerListPingEvent(Server craftServer, InetAddress address, String motd, int numPlayers, int maxPlayers) {
+        ServerListPingEvent event = new ServerListPingEvent(address, motd, numPlayers, maxPlayers);
+        craftServer.getPluginManager().callEvent(event);
         return event;
     }
 }
