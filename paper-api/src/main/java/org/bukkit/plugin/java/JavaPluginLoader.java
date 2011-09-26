@@ -584,6 +584,13 @@ public class JavaPluginLoader implements PluginLoader {
                 }
             };
 
+        case SERVER_LIST_PING:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((ServerListener) listener).onServerListPing((ServerListPingEvent) event);
+                }
+            };
+
         // World Events
         case CHUNK_LOAD:
             return new EventExecutor() {

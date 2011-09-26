@@ -504,6 +504,12 @@ public abstract class Event implements Serializable {
          * @see org.bukkit.event.server.MapInitializeEvent
          */
         MAP_INITIALIZE (Category.SERVER),
+        /**
+         * Called when a client pings a server.
+         *
+         * @see org.bukkit.event.server.ServerListPingEvent
+         */
+        SERVER_LIST_PING (Category.SERVER),
 
         /**
          * WORLD EVENTS
