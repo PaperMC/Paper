@@ -161,6 +161,7 @@ public final class SpawnerCreature {
 
         while (iterator.hasNext()) {
             EntityHuman entityhuman = (EntityHuman) iterator.next();
+            if (entityhuman.fauxSleeping) continue; // CraftBukkit - Do not generate nightmares for humans ignoring sleep
             Class[] aclass = a;
 
             if (aclass != null && aclass.length != 0) {
