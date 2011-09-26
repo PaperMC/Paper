@@ -47,7 +47,56 @@ public class ServerConfigurationManager {
 
     // CraftBukkit start
     private CraftServer cserver;
+    
+    public void changeListName(EntityPlayer entityPlayer, String newName) {
+        String oldName = entityPlayer.listName;
+        
+        if (oldName.equals(newName)) {
+            return;
+        }
+        
+        if (newName.length() > 16) {
+            throw new IllegalArgumentException("Player list names can only be a maximum of 16 characters long");
+        }
+        
+        // Collisions will make for invisible people
+        for (int i = 0; i < this.players.size(); ++i) {
+            if (((EntityPlayer) this.players.get(i)).listName.equals(newName)) {
+                throw new IllegalArgumentException(newName + " is already assigned as a player list name for someone");
+            }
+        }
 
+        entityPlayer.listName = newName;
+        
+        // Change the name on the client side
+        this.sendAll(new Packet201PlayerInfo(oldName, false, 9999));
+        this.sendAll(new Packet201PlayerInfo(newName, true, entityPlayer.i));
+    }
+    
+    private void detectListNameConflict(EntityPlayer entityPlayer) {
+        // Collisions will make for invisible people
+        for (int i = 0; i < this.players.size(); ++i) {
+            EntityPlayer testEntityPlayer = (EntityPlayer) this.players.get(i);
+            
+            // We have a problem!
+            if (testEntityPlayer != entityPlayer && testEntityPlayer.listName.equals(entityPlayer.listName)) {
+                String oldName = entityPlayer.listName;
+                int spaceLeft = 16 - oldName.length();
+            
+                if (spaceLeft <= 1) {  // We also hit the list name length limit!
+                    entityPlayer.listName = oldName.subSequence(0, oldName.length() - 2 - spaceLeft)
+                            + String.valueOf(System.currentTimeMillis() % 99);
+                } else {
+                    entityPlayer.listName = oldName + String.valueOf(System.currentTimeMillis() % 99);
+                }
+                
+                return;
+            }
+        }
+    }
+    // CraftBukkit end
+
+    // CraftBukkit start
     public ServerConfigurationManager(MinecraftServer minecraftserver) {
         minecraftserver.server = new CraftServer(minecraftserver, this);
         minecraftserver.console = ColouredConsoleSender.getInstance();
@@ -111,7 +160,10 @@ public class ServerConfigurationManager {
     }
 
     public void c(EntityPlayer entityplayer) {
-        this.sendAll(new Packet201PlayerInfo(entityplayer.name, true, 1000));
+        // CraftBukkit
+        detectListNameConflict(entityplayer);
+        this.sendAll(new Packet201PlayerInfo(entityplayer.listName, true, 1000));
+        // CraftBukkit end
         this.players.add(entityplayer);
         WorldServer worldserver = this.server.getWorldServer(entityplayer.dimension);
 
@@ -138,7 +190,9 @@ public class ServerConfigurationManager {
         for (int i = 0; i < this.players.size(); ++i) {
             EntityPlayer entityplayer1 = (EntityPlayer) this.players.get(i);
 
-            entityplayer.netServerHandler.sendPacket(new Packet201PlayerInfo(entityplayer1.name, true, entityplayer1.i));
+            // CraftBukkit start - .name -> .listName
+            entityplayer.netServerHandler.sendPacket(new Packet201PlayerInfo(entityplayer1.listName, true, entityplayer1.i));
+            // CraftBukkit end
         }
     }
 
@@ -158,7 +212,9 @@ public class ServerConfigurationManager {
         this.server.getWorldServer(entityplayer.dimension).kill(entityplayer);
         this.players.remove(entityplayer);
         this.getPlayerManager(entityplayer.dimension).removePlayer(entityplayer);
-        this.sendAll(new Packet201PlayerInfo(entityplayer.name, false, 9999));
+        // CraftBukkit start - .name -> .listName
+        this.sendAll(new Packet201PlayerInfo(entityplayer.listName, false, 9999));
+        // CraftBukkit end
 
         return playerQuitEvent.getQuitMessage(); // CraftBukkit
     }
@@ -331,7 +387,7 @@ public class ServerConfigurationManager {
             }
             this.p = 200; // <-- this resetting of flushtime is missing! though whole code is commented out now :)
         }
-        */
+        */ 
 
         for (i = 0; i < this.server.worlds.size(); ++i) {
             this.server.worlds.get(i).manager.flush();

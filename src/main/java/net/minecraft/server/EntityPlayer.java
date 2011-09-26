@@ -57,9 +57,11 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
         // CraftBukkit start
         this.displayName = this.name;
+        this.listName = this.name;
     }
 
     public String displayName;
+    public String listName;
     public org.bukkit.Location compassTarget;
     public int newExp = 0;
     // CraftBukkit end
