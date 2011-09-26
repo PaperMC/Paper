@@ -154,11 +154,10 @@ public class CraftChunk implements Chunk {
 
         if (includeBiome || includeBiomeTempRain) {
             WorldChunkManager wcm = chunk.world.getWorldChunkManager();
-            BiomeBase[] biomeBase = wcm.getBiomes((BiomeBase[])null, getX() << 4, getZ() << 4, 16, 16);
 
             if (includeBiome) {
                 biome = new BiomeBase[256];
-                System.arraycopy(biomeBase, 0, biome, 0, biome.length);
+                wcm.a(biome, x << 4, z << 4, 16, 16);
             }
 
             if (includeBiomeTempRain) {
@@ -212,11 +211,10 @@ public class CraftChunk implements Chunk {
 
         if (includeBiome || includeBiomeTempRain) {
             WorldChunkManager wcm = world.getHandle().getWorldChunkManager();
-            BiomeBase[] biomeBase = wcm.getBiomes((BiomeBase[])null, x << 4, z << 4, 16, 16);
 
             if (includeBiome) {
                 biome = new BiomeBase[256];
-                System.arraycopy(biomeBase, 0, biome, 0, biome.length);
+                wcm.a(biome, x << 4, z << 4, 16, 16);
             }
 
             if (includeBiomeTempRain) {
