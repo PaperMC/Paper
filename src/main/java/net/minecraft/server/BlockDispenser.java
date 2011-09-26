@@ -102,7 +102,7 @@ public class BlockDispenser extends BlockContainer {
                 itemstack = tileentitydispenser.getContents()[dispenseSlot];
 
                 // Copy item stack, because we want it to have 1 item
-                itemstack = new ItemStack(itemstack.id, 1, itemstack.damage);
+                itemstack = new ItemStack(itemstack.id, 1, itemstack.getData());
             }
             // CraftBukkit end
 

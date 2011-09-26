@@ -60,29 +60,29 @@ public class TileEntityMobSpawner extends TileEntity {
 
                 for (int i = 0; i < b0; ++i) {
                     // CraftBukkit start
-                    Entity entity = EntityTypes.a(this.mobName, this.world);
+                    Entity entityliving = EntityTypes.a(this.mobName, this.world);
 
-                    if (entity == null) {
+                    if (entityliving == null) {
                         return;
                     }
 
-                    int j = this.world.a(entity.getClass(), AxisAlignedBB.b((double) this.x, (double) this.y, (double) this.z, (double) (this.x + 1), (double) (this.y + 1), (double) (this.z + 1)).b(8.0D, 4.0D, 8.0D)).size();
+                    int j = this.world.a(entityliving.getClass(), AxisAlignedBB.b((double) this.x, (double) this.y, (double) this.z, (double) (this.x + 1), (double) (this.y + 1), (double) (this.z + 1)).b(8.0D, 4.0D, 8.0D)).size();
 
                     if (j >= 6) {
                         this.c();
                         return;
                     }
 
-                    if (entity != null) {
+                    if (entityliving != null) {
                         double d3 = (double) this.x + (this.world.random.nextDouble() - this.world.random.nextDouble()) * 4.0D;
                         double d4 = (double) (this.y + this.world.random.nextInt(3) - 1);
                         double d5 = (double) this.z + (this.world.random.nextDouble() - this.world.random.nextDouble()) * 4.0D;
 
-                        entity.setPositionRotation(d3, d4, d5, this.world.random.nextFloat() * 360.0F, 0.0F);
-                        if (entity.world.containsEntity(entity.boundingBox) && entity.world.getEntities(entity, entity.boundingBox).size() == 0 && !entity.world.c(entity.boundingBox)) {
+                        entityliving.setPositionRotation(d3, d4, d5, this.world.random.nextFloat() * 360.0F, 0.0F);
+                        if (entityliving.world.containsEntity(entityliving.boundingBox) && entityliving.world.getEntities(entityliving, entityliving.boundingBox).size() == 0 && !entityliving.world.c(entityliving.boundingBox)) {
                             // CraftBukkit end
                             // CraftBukkit - added a reason for spawning this creature
-                            this.world.addEntity(entity, SpawnReason.SPAWNER);
+                            this.world.addEntity(entityliving, SpawnReason.SPAWNER);
 
                             for (int k = 0; k < 20; ++k) {
                                 d0 = (double) this.x + 0.5D + ((double) this.world.random.nextFloat() - 0.5D) * 2.0D;

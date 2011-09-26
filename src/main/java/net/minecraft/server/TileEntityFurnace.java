@@ -219,7 +219,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
                 this.items[2] = itemstack.cloneItemStack();
             } else if (this.items[2].id == itemstack.id) {
                 // CraftBukkit - compare damage too
-                if (this.items[2].damage == itemstack.damage) {
+                if (this.items[2].getData() == itemstack.getData()) {
                     this.items[2].count += itemstack.count;
                 }
                 // CraftBukkit end

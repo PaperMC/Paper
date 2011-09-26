@@ -35,7 +35,7 @@ public final class ItemStack {
         this.count = 0;
         this.id = i;
         this.count = j;
-        b(k); // CraftBukkit
+        this.b(k); // CraftBukkit
     }
 
     public static ItemStack a(NBTTagCompound nbttagcompound) {
@@ -122,7 +122,7 @@ public final class ItemStack {
     }
 
     public void b(int i) {
-        this.damage = (id > 0) && (id < 256) ? Item.byId[id].filterData(i) : i; // CraftBukkit
+        this.damage = (this.id > 0) && (this.id < 256) ? Item.byId[this.id].filterData(i) : i; // CraftBukkit
     }
 
     public int i() {

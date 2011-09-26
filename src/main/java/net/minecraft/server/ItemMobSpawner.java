@@ -1,44 +1,34 @@
 package net.minecraft.server;
+// CraftBukkit start - the whole file!
 
-public class ItemMobSpawner extends ItemLog {
+public class ItemMobSpawner extends ItemLog { // Actually not ItemLog but 'ItemUsingMetadata' orso.
 
-    public  ItemMobSpawner(int i) {
-        super(i, Block.MOB_SPAWNER);
+    public  ItemMobSpawner(int id) {
+        super(id, Block.MOB_SPAWNER);
     }
-    
-    public boolean a(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
-        if(!super.a(itemstack, entityhuman, world, i, j, k, l)) return false;
-        System.out.println("Placed the spawner, checking it's entity");
-        if (l == 0) {
-            --j;
-        }
 
-        if (l == 1) {
-            ++j;
-        }
+    // interact
+    public boolean a(ItemStack itemstack, EntityHuman entityhuman, World world, int x, int y, int z, int face) {
 
-        if (l == 2) {
-            --k;
-        }
+        // super.interact (for ItemBlock this normally attempts to place it)
+        if (!super.a(itemstack, entityhuman, world, x, y, z, face)) return false;
 
-        if (l == 3) {
-            ++k;
-        }
+        // Adjust the coords for the face clicked.
+        if (face == 0) { y--; }
+        else if (face == 1) { y++; }
+        else if (face == 2) { z--; }
+        else if (face == 3) { z++; }
+        else if (face == 4) { x--; }
+        else if (face == 5) { x++; }
 
-        if (l == 4) {
-            --i;
-        }
-
-        if (l == 5) {
-            ++i;
-        }
-        TileEntity entity = world.getTileEntity(i, j, k);
-        System.out.println(entity);
+        // Set the remembered datavalue for the spawner
+        TileEntity entity = world.getTileEntity(x, y, z);
         if (entity instanceof TileEntityMobSpawner) {
-            System.out.println("Got a valid spawner, attempt to set its type");
-            ((TileEntityMobSpawner)entity).setId(itemstack.getData());
+            ((TileEntityMobSpawner) entity).setId(itemstack.getData());
             return true;
         }
-        else return false;
+
+        return false;
     }
 }
+// CraftBukkit end - the whole file!
