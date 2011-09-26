@@ -29,12 +29,13 @@ public class ItemFood extends Item {
     public ItemStack b(ItemStack itemstack, World world, EntityHuman entityhuman) {
         --itemstack.count;
         // CraftBukkit start
+        int oldFoodLevel = entityhuman.getFoodData().foodLevel;
+
         FoodLevelChangeEvent event = new FoodLevelChangeEvent(entityhuman.getBukkitEntity(), Math.min(this.k() + entityhuman.getFoodData().foodLevel, 20));
         entityhuman.world.getServer().getPluginManager().callEvent(event);
 
         if (!event.isCancelled()) {
-            entityhuman.getFoodData().foodLevel = event.getFoodLevel();
-            entityhuman.getFoodData().saturationLevel = Math.min(entityhuman.getFoodData().saturationLevel + (float) event.getFoodLevel() - entityhuman.getFoodData().foodLevel * this.l() * 2.0F, (float) entityhuman.getFoodData().foodLevel);
+            entityhuman.getFoodData().a(event.getFoodLevel() - oldFoodLevel, this.l());
         }
         // CraftBukkit end
 
