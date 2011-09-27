@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.collect.MapMaker;
 import net.minecraft.server.*;
 
 import org.bukkit.Location;
@@ -11,9 +12,12 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import org.bukkit.Bukkit;
 
 public abstract class CraftEntity implements org.bukkit.entity.Entity {
+    private static final Map<String, CraftPlayer> players = new MapMaker().softValues().makeMap();
     protected final CraftServer server;
     protected Entity entity;
     private EntityDamageEvent lastDamageEvent;
@@ -30,7 +34,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         if (entity instanceof EntityLiving) {
             // Players
             if (entity instanceof EntityHuman) {
-                if (entity instanceof EntityPlayer) { return new CraftPlayer(server, (EntityPlayer) entity); }
+                if (entity instanceof EntityPlayer) { return getPlayer((EntityPlayer)entity); }
                 else { return new CraftHumanEntity(server, (EntityHuman) entity); }
             }
             else if (entity instanceof EntityCreature) {
@@ -268,5 +272,18 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     public UUID getUniqueId() {
         return getHandle().uniqueId;
+    }
+
+    private static CraftPlayer getPlayer(EntityPlayer entity) {
+        CraftPlayer result = players.get(entity.name);
+
+        if (result == null) {
+            result = new CraftPlayer((CraftServer)Bukkit.getServer(), entity);
+            players.put(entity.name, result);
+        } else {
+            result.setHandle(entity);
+        }
+
+        return result;
     }
 }
