@@ -28,7 +28,13 @@ public class TileEntityMobSpawner extends TileEntity {
 
     public void setId(int id) {
         mobName = EntityTypes.getNameFromClass(EntityTypes.getClassFromId(id));
-        System.out.println("Setting mob type to: " + mobName);
+        if(mobName == null || mobName.isEmpty()) mobName = "Pig";
+        try {
+            EntityTypes.a(mobName,  world);
+        }
+        catch (Throwable t) { // If we get any error at all, fallback to a Pig
+            mobName = "Pig";
+        }
     }
     // CraftBukkit end
 
