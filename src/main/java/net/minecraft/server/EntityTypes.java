@@ -29,7 +29,7 @@ public class EntityTypes {
                 entity = (Entity) oclass.getConstructor(new Class[] { World.class}).newInstance(new Object[] { world});
             }
         } catch (Exception exception) {
-            exception.printStackTrace();
+            // CraftBukkit - don't do anything here
         }
 
         return entity;
@@ -45,7 +45,7 @@ public class EntityTypes {
                 entity = (Entity) oclass.getConstructor(new Class[] { World.class}).newInstance(new Object[] { world});
             }
         } catch (Exception exception) {
-            exception.printStackTrace();
+            // CraftBukkit - don't do anything here
         }
 
         if (entity != null) {

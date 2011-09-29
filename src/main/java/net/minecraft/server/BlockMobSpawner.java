@@ -17,7 +17,7 @@ public class BlockMobSpawner extends BlockContainer {
     }
 
     public int a(Random random) {
-        return 1; // CraftBukkit
+        return 0; // CraftBukkit
     }
 
     // CraftBukkit start

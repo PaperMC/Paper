@@ -28,11 +28,10 @@ public class TileEntityMobSpawner extends TileEntity {
 
     public void setId(int id) {
         mobName = EntityTypes.getNameFromClass(EntityTypes.getClassFromId(id));
-        if(mobName == null || mobName.isEmpty()) mobName = "Pig";
-        try {
-            EntityTypes.a(mobName,  world);
+        if (mobName == null || mobName.length() == 0) {
+            mobName = "Pig";
         }
-        catch (Throwable t) { // If we get any error at all, fallback to a Pig
+        if  (EntityTypes.a(mobName,  world) == null) {
             mobName = "Pig";
         }
     }
