@@ -90,7 +90,7 @@ public abstract class Event implements Serializable {
 
         /**
          * Represents Player-based events
-         * 
+         *
          * @see #LIVING_ENTITY
          */
         PLAYER,
@@ -689,6 +689,12 @@ public abstract class Event implements Serializable {
          * @see org.bukkit.event.entity.ProjectileHitEvent
          */
         PROJECTILE_HIT (Category.ENTITY),
+        /**
+         * Called when a Slime splits into smaller Slimes upon death
+         *
+         * @see org.bukkit.event.entity.SlimeSplitEvent
+         */
+        SLIME_SPLIT (Category.LIVING_ENTITY),
         /**
          * Called when a LivingEntity is regains health
          *

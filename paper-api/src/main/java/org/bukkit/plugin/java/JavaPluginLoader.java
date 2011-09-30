@@ -797,6 +797,13 @@ public class JavaPluginLoader implements PluginLoader {
                 }
         };
 
+        case SLIME_SPLIT:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((EntityListener) listener).onSlimeSplit((SlimeSplitEvent) event);
+                }
+            };
+
         // Vehicle Events
         case VEHICLE_CREATE:
             return new EventExecutor() {
