@@ -3,6 +3,8 @@ package net.minecraft.server;
 import java.util.ArrayList;
 
 // CraftBukkit start
+import org.bukkit.block.BlockFace;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.block.BlockPistonExtendEvent;
 // CraftBukkit end
@@ -66,7 +68,7 @@ public class BlockPiston extends Block {
                 if (length >= 0) {
                     org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
 
-                    BlockPistonExtendEvent event = new BlockPistonExtendEvent(block, length);
+                    BlockPistonExtendEvent event = new BlockPistonExtendEvent(block, length, CraftBlock.notchToBlockFace(i1));
                     world.getServer().getPluginManager().callEvent(event);
 
                     if (event.isCancelled()) {
@@ -81,7 +83,7 @@ public class BlockPiston extends Block {
                 // CraftBukkit start
                 org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
 
-                BlockPistonRetractEvent event = new BlockPistonRetractEvent(block);
+                BlockPistonRetractEvent event = new BlockPistonRetractEvent(block, CraftBlock.notchToBlockFace(i1));
                 world.getServer().getPluginManager().callEvent(event);
 
                 if (event.isCancelled()) {
