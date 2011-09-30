@@ -205,4 +205,11 @@ public class PlayerListener implements Listener {
      * @param event Relevant event details
      */
     public void onPlayerGameModeChange(PlayerGameModeChangeEvent event) {}
+
+    /**
+     * Called after a player changes to a new world
+     *
+     * @param event Relevant event details
+     */
+    public void onPlayerChangedWorld(PlayerChangedWorldEvent event) {}
 }

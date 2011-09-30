@@ -313,6 +313,13 @@ public abstract class Event implements Serializable {
         PLAYER_GAME_MODE_CHANGE(Category.PLAYER),
 
         /**
+         * Called after a player has changed to a new world
+         *
+         * @see org.bukkit.event.player.PlayerChangedWorldEvent
+         */
+        PLAYER_CHANGED_WORLD(Category.PLAYER),
+
+        /**
          * BLOCK EVENTS
          */
 
