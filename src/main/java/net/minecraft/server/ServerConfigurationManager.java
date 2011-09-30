@@ -47,18 +47,18 @@ public class ServerConfigurationManager {
 
     // CraftBukkit start
     private CraftServer cserver;
-    
+
     public void changeListName(EntityPlayer entityPlayer, String newName) {
         String oldName = entityPlayer.listName;
-        
+
         if (oldName.equals(newName)) {
             return;
         }
-        
+
         if (newName.length() > 16) {
             throw new IllegalArgumentException("Player list names can only be a maximum of 16 characters long");
         }
-        
+
         // Collisions will make for invisible people
         for (int i = 0; i < this.players.size(); ++i) {
             if (((EntityPlayer) this.players.get(i)).listName.equals(newName)) {
@@ -67,29 +67,29 @@ public class ServerConfigurationManager {
         }
 
         entityPlayer.listName = newName;
-        
+
         // Change the name on the client side
         this.sendAll(new Packet201PlayerInfo(oldName, false, 9999));
         this.sendAll(new Packet201PlayerInfo(newName, true, entityPlayer.i));
     }
-    
+
     private void detectListNameConflict(EntityPlayer entityPlayer) {
         // Collisions will make for invisible people
         for (int i = 0; i < this.players.size(); ++i) {
             EntityPlayer testEntityPlayer = (EntityPlayer) this.players.get(i);
-            
+
             // We have a problem!
             if (testEntityPlayer != entityPlayer && testEntityPlayer.listName.equals(entityPlayer.listName)) {
                 String oldName = entityPlayer.listName;
                 int spaceLeft = 16 - oldName.length();
-            
+
                 if (spaceLeft <= 1) {  // We also hit the list name length limit!
                     entityPlayer.listName = oldName.subSequence(0, oldName.length() - 2 - spaceLeft)
                             + String.valueOf(System.currentTimeMillis() % 99);
                 } else {
                     entityPlayer.listName = oldName + String.valueOf(System.currentTimeMillis() % 99);
                 }
-                
+
                 return;
             }
         }
@@ -279,6 +279,7 @@ public class ServerConfigurationManager {
 
         // CraftBukkit start
         EntityPlayer entityplayer1 = entityplayer;
+        org.bukkit.World fromWorld = entityplayer1.getBukkitEntity().getWorld();
 
         if (location == null) {
             boolean isBedSpawn = false;
@@ -331,6 +332,10 @@ public class ServerConfigurationManager {
         entityplayer1.spawnIn(worldserver);
         entityplayer1.dead = false;
         entityplayer1.netServerHandler.teleport(new Location(worldserver.getWorld(), entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch));
+
+        org.bukkit.event.player.PlayerChangedWorldEvent event = new org.bukkit.event.player.PlayerChangedWorldEvent((Player) entityplayer1.getBukkitEntity(), fromWorld);
+        Bukkit.getServer().getPluginManager().callEvent(event);
+
         // CraftBukkit end
         this.a(entityplayer1, worldserver);
         this.getPlayerManager(entityplayer1.dimension).addPlayer(entityplayer1);
@@ -387,7 +392,7 @@ public class ServerConfigurationManager {
             }
             this.p = 200; // <-- this resetting of flushtime is missing! though whole code is commented out now :)
         }
-        */ 
+        */
 
         for (i = 0; i < this.server.worlds.size(); ++i) {
             this.server.worlds.get(i).manager.flush();
