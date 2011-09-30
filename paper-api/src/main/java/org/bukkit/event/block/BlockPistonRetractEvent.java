@@ -2,10 +2,11 @@ package org.bukkit.event.block;
 
 import org.bukkit.Location;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 
 public class BlockPistonRetractEvent extends BlockPistonEvent {
-    public BlockPistonRetractEvent(Block block) {
-        super(Type.BLOCK_PISTON_RETRACT, block);
+    public BlockPistonRetractEvent(Block block, BlockFace direction) {
+        super(Type.BLOCK_PISTON_RETRACT, block, direction);
     }
 
     /**

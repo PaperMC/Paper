@@ -8,9 +8,11 @@ import org.bukkit.material.PistonBaseMaterial;
 
 public abstract class BlockPistonEvent extends BlockEvent implements Cancellable                                                                                                                                                              {
     private boolean cancelled;
+    private BlockFace direction;
 
-    public BlockPistonEvent(Type type, Block block) {
+    public BlockPistonEvent(Type type, Block block, BlockFace direction) {
         super(type, block);
+        this.direction = direction;
     }
 
     public boolean isCancelled() {
@@ -37,7 +39,8 @@ public abstract class BlockPistonEvent extends BlockEvent implements Cancellable
      */
     public BlockFace getDirection() {
         // Both are meh!
-        // return ((PistonBaseMaterial) block.getType().getNewData(block.getData                                                                                                                                                             ())).getFacing();
-        return ((PistonBaseMaterial) block.getState().getData()).getFacing();
+        // return ((PistonBaseMaterial) block.getType().getNewData(block.getData())).getFacing();
+        // return ((PistonBaseMaterial) block.getState().getData()).getFacing();
+        return direction;
     }
 }

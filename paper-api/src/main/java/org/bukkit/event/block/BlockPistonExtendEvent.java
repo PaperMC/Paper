@@ -5,13 +5,14 @@ import java.util.Collections;
 import java.util.List;
 
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 
 public class BlockPistonExtendEvent extends BlockPistonEvent {
     private int length;
     private List<Block> blocks;
 
-    public BlockPistonExtendEvent(Block block, int length) {
-        super(Type.BLOCK_PISTON_EXTEND, block);
+    public BlockPistonExtendEvent(Block block, int length, BlockFace direction) {
+        super(Type.BLOCK_PISTON_EXTEND, block, direction);
 
         this.length = length;
     }
