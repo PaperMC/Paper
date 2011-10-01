@@ -20,6 +20,7 @@ import org.bukkit.event.weather.WeatherChangeEvent;
 import org.bukkit.event.weather.ThunderChangeEvent;
 import org.bukkit.event.world.SpawnChangeEvent;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Boat;
 import org.bukkit.Chunk;
 import org.bukkit.inventory.ItemStack;
@@ -755,7 +756,37 @@ public class CraftWorld implements World {
             }
 
         } else if (Painting.class.isAssignableFrom(clazz)) {
-            // negative
+            Block block = getBlockAt(location);
+            BlockFace face = BlockFace.SELF;
+            if (block.getRelative(BlockFace.EAST).getTypeId() == 0) {
+                face = BlockFace.EAST;
+            } else if (block.getRelative(BlockFace.NORTH).getTypeId() == 0) {
+                face = BlockFace.NORTH;
+            } else if (block.getRelative(BlockFace.WEST).getTypeId() == 0) {
+                face = BlockFace.WEST;
+            } else if (block.getRelative(BlockFace.SOUTH).getTypeId() == 0) {
+                face = BlockFace.SOUTH;
+            }
+            int dir;
+            switch(face) {
+            case EAST:
+            default:
+                dir = 0;
+                break;
+            case NORTH:
+                dir = 1;
+                break;
+            case WEST:
+                dir = 2;
+                break;
+            case SOUTH:
+                dir = 3;;
+                break;
+            }
+            entity = new EntityPainting(world, (int) x, (int) y, (int) z, dir);
+            if (!((EntityPainting)entity).i()) {
+                entity = null;
+            }
         } else if (TNTPrimed.class.isAssignableFrom(clazz)) {
             entity = new EntityTNTPrimed(world, x, y, z);
         } else if (ExperienceOrb.class.isAssignableFrom(clazz)) {
