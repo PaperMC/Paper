@@ -463,7 +463,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             }
 
             if (this.player.itemInWorldManager.b()) {
-                flag1 = false;
+                flag1 = true; // CraftBukkit - false -> true
             }
 
             int i = packet14blockdig.a;
@@ -681,10 +681,11 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     }
 
     public void a(Packet16BlockItemSwitch packet16blockitemswitch) {
-        if (this.player.dead) return; // CraftBukkit
+        // CraftBukkit start
+        if (this.player.dead) return;
 
-        if (packet16blockitemswitch.itemInHandIndex >= 0 && packet16blockitemswitch.itemInHandIndex <= InventoryPlayer.g()) {
-            // CraftBukkit start
+        // Changed <= to <
+        if (packet16blockitemswitch.itemInHandIndex >= 0 && packet16blockitemswitch.itemInHandIndex < InventoryPlayer.g()) {
             PlayerItemHeldEvent event = new PlayerItemHeldEvent(this.getPlayer(), this.player.inventory.itemInHandIndex, packet16blockitemswitch.itemInHandIndex);
             this.server.getPluginManager().callEvent(event);
             // CraftBukkit end
@@ -763,7 +764,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         }
         // CraftBukkit end
 
-        /* CraftBukkit start - No longer neaded av we have already handled it server.dispatchCommand above.
+        /* CraftBukkit start - No longer neaded as we have already handled it in server.dispatchCommand above.
         if (s.toLowerCase().startsWith("/me ")) {
             s = "* " + this.player.name + " " + s.substring(s.indexOf(" ")).trim();
             a.info(s);
