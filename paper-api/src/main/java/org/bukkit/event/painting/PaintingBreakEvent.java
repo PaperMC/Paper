@@ -42,9 +42,20 @@ public class PaintingBreakEvent extends PaintingEvent implements Cancellable {
          */
         ENTITY,
         /**
-         * Removed by the world - block the painting is on is destroyed, water flowing over etc
+         * Removed by fire
          */
-        WORLD
-
+        FIRE,
+        /**
+         * Removed by placing a block on it
+         */
+        OBSTRUCTION,
+        /**
+         * Removed by water flowing over it
+         */
+        WATER,
+        /**
+         * Removed by destroying the block behind it, etc
+         */
+        PHYSICS,
     }
 }
