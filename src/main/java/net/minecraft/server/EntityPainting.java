@@ -4,8 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 // CraftBukkit start
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Painting;
 import org.bukkit.event.painting.PaintingBreakByEntityEvent;
-import org.bukkit.event.painting.PaintingBreakByWorldEvent;
+import org.bukkit.event.painting.PaintingBreakEvent.RemoveCause;
+import org.bukkit.event.painting.PaintingBreakEvent;
 // CraftBukkit end
 
 public class EntityPainting extends Entity {
@@ -123,7 +126,17 @@ public class EntityPainting extends Entity {
             this.f = 0;
             if (!this.i()) {
                 // CraftBukkit start
-                PaintingBreakByWorldEvent event = new PaintingBreakByWorldEvent((org.bukkit.entity.Painting) this.getBukkitEntity());
+                Material material = this.world.getMaterial((int)this.locX, (int)this.locY, (int)this.locZ);
+                RemoveCause cause;
+                if (material.equals(Material.WATER)) {
+                    cause = RemoveCause.WATER;
+                } else if (!material.equals(Material.AIR)) {
+                    // TODO: This feels insufficient to catch 100% of suffocation cases
+                    cause = RemoveCause.OBSTRUCTION;
+                } else {
+                    cause = RemoveCause.PHYSICS;
+                }
+                PaintingBreakEvent event = new PaintingBreakEvent((Painting) this.getBukkitEntity(), cause);
                 this.world.getServer().getPluginManager().callEvent(event);
 
                 if (event.isCancelled()) {
@@ -204,11 +217,21 @@ public class EntityPainting extends Entity {
     public boolean damageEntity(DamageSource damagesource, int i) {
         if (!this.dead && !this.world.isStatic) {
             // CraftBukkit start
-            PaintingBreakByEntityEvent event = new PaintingBreakByEntityEvent((org.bukkit.entity.Painting) this.getBukkitEntity(), damagesource.getEntity() == null ? null : damagesource.getEntity().getBukkitEntity());
-            this.world.getServer().getPluginManager().callEvent(event);
+            PaintingBreakEvent event = null;
+            if (damagesource.getEntity() != null) {
+                event = new PaintingBreakByEntityEvent((Painting) this.getBukkitEntity(), damagesource.getEntity() == null ? null : damagesource.getEntity().getBukkitEntity());
+            } else {
+                if (damagesource == DamageSource.FIRE) {
+                    event = new PaintingBreakEvent((Painting) this.getBukkitEntity(), RemoveCause.FIRE);
+                }
+                // TODO: Could put other stuff here?
+            }
+            if (event != null) {
+                this.world.getServer().getPluginManager().callEvent(event);
 
-            if (event.isCancelled()) {
-                return true;
+                if (event.isCancelled()) {
+                    return true;
+                }
             }
 
             if(!dead) {
@@ -221,6 +244,25 @@ public class EntityPainting extends Entity {
 
         return true;
     }
+
+    // CraftBukkit start - copy of a method in Entity except for the CraftBukkit-specific code
+    // TODO: Better way?
+    public void a(EntityWeatherStorm entityweatherstorm) {
+        // CraftBukkit start
+        PaintingBreakByEntityEvent event = new PaintingBreakByEntityEvent((Painting) this.getBukkitEntity(), entityweatherstorm.getBukkitEntity());
+        Bukkit.getServer().getPluginManager().callEvent(event);
+
+        if (event.isCancelled()) {
+            return;
+        }
+        // CraftBukkit end
+
+        ++this.fireTicks;
+        if (this.fireTicks == 0) {
+            this.fireTicks = 300;
+        }
+    }
+    // CraftBukkit end
 
     public void b(NBTTagCompound nbttagcompound) {
         nbttagcompound.a("Dir", (byte) this.a);
