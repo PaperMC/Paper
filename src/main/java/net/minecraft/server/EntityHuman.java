@@ -500,6 +500,7 @@ public abstract class EntityHuman extends EntityLiving {
             nbttagcompound.a("SpawnX", this.b.x);
             nbttagcompound.a("SpawnY", this.b.y);
             nbttagcompound.a("SpawnZ", this.b.z);
+            nbttagcompound.setString("SpawnWorld", spawnWorld); // CraftBukkit - fixes bed spawns for multiworld worlds
         }
 
         this.foodData.b(nbttagcompound);
