@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.bukkit.Location;
 import org.bukkit.block.Block;
+import org.bukkit.util.Callback;
 
 /**
  * Represents a living entity, such as a monster or player
@@ -46,6 +47,34 @@ public interface LivingEntity extends Entity {
      * @return a Location at the eyes of the LivingEntity.
      */
     public Location getEyeLocation();
+
+    /**
+     * Gets all blocks along the player's line of sight
+     * List iterates from player's position to target inclusive
+     *
+     * @param callback Through every iteration it will call {@link Callback#call(Object)}. If set to/returns <code>null</code> only air is considered transparent.
+     * @param maxDistance This is the maximum distance to scan. This may be further limited by the server, but never to less than 100 blocks.
+     * @return List containing all blocks along the player's line of sight
+     */
+    public List<Block> getLineOfSight(Callback<Boolean, Block> callback, int maxDistance);
+
+    /**
+     * Gets the block that the player has targeted
+     *
+     * @param callback Through every iteration it will call {@link Callback#call(Object)}. If set to/returns <code>null</code> only air is considered transparent.
+     * @param maxDistance This is the maximum distance to scan. This may be further limited by the server, but never to less than 100 blocks.
+     * @return Block that the player has targeted
+     */
+    public Block getTargetBlock(Callback<Boolean, Block> callback, int maxDistance);
+
+    /**
+     * Gets the block that the player has targeted
+     *
+     * @param callback Through every iteration it will call {@link Callback#call(Object)}. If set to/returns <code>null</code> only air is considered transparent.
+     * @param maxDistance This is the maximum distance to scan. This may be further limited by the server, but never to less than 100 blocks.
+     * @return Block that the player has targeted
+     */
+    public List<Block> getLastTwoTargetBlocks(Callback<Boolean, Block> callback, int maxDistance);
 
     /**
      * Gets all blocks along the player's line of sight
