@@ -283,10 +283,6 @@ public class ServerConfigurationManager {
         entityplayer1.spawnIn(worldserver);
         entityplayer1.dead = false;
         entityplayer1.netServerHandler.teleport(new Location(worldserver.getWorld(), entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch));
-
-        org.bukkit.event.player.PlayerChangedWorldEvent event = new org.bukkit.event.player.PlayerChangedWorldEvent((Player) entityplayer1.getBukkitEntity(), fromWorld);
-        Bukkit.getServer().getPluginManager().callEvent(event);
-
         // CraftBukkit end
         this.a(entityplayer1, worldserver);
         this.getPlayerManager(entityplayer1.dimension).addPlayer(entityplayer1);
@@ -294,6 +290,12 @@ public class ServerConfigurationManager {
         this.players.add(entityplayer1);
         this.updateClient(entityplayer1); // CraftBukkit
         entityplayer1.w();
+        // CraftBukkit start - don't fire on respawn
+        if (fromWorld != location.getWorld()) {
+            org.bukkit.event.player.PlayerChangedWorldEvent event = new org.bukkit.event.player.PlayerChangedWorldEvent((Player) entityplayer1.getBukkitEntity(), fromWorld);
+            Bukkit.getServer().getPluginManager().callEvent(event);
+        }
+        // CraftBukkit end
         return entityplayer1;
     }
 
