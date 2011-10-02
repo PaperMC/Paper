@@ -605,7 +605,10 @@ public class Chunk {
             tileentity.n();
             this.tileEntities.put(chunkposition, tileentity);
         } else {
-            System.out.println("Attempted to place a tile entity where there was no entity tile!");
+            // CraftBukkit start
+            System.out.println("Attempted to place a tile entity (" + tileentity + ") at " + tileentity.x + "," + tileentity.y + "," + tileentity.z
+                    + " (" + org.bukkit.Material.getMaterial(getTypeId(i, j, k)) + ") where there was no entity tile!");
+            // CraftBukkit end
         }
     }
 

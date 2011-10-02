@@ -36,6 +36,62 @@ public class WorldServer extends World implements BlockChangeDelegate {
         return height;
     }
 
+    @Override
+    public TileEntity getTileEntity(int i, int j, int k) {
+        TileEntity result = super.getTileEntity(i, j, k);
+        int type = getTypeId(i, j, k);
+
+        if (type == Block.CHEST.id) {
+            if (!(result instanceof TileEntityChest)) {
+                result = fixTileEntity(i, j, k, type, result);
+            }
+        } else if (type == Block.FURNACE.id) {
+            if (!(result instanceof TileEntityFurnace)) {
+                result = fixTileEntity(i, j, k, type, result);
+            }
+        } else if (type == Block.PISTON_MOVING.id) {
+            if (!(result instanceof TileEntityPiston)) {
+                result = fixTileEntity(i, j, k, type, result);
+            }
+        } else if (type == Block.DISPENSER.id) {
+            if (!(result instanceof TileEntityDispenser)) {
+                result = fixTileEntity(i, j, k, type, result);
+            }
+        } else if (type == Block.JUKEBOX.id) {
+            if (!(result instanceof TileEntityRecordPlayer)) {
+                result = fixTileEntity(i, j, k, type, result);
+            }
+        } else if (type == Block.NOTE_BLOCK.id) {
+            if (!(result instanceof TileEntityNote)) {
+                result = fixTileEntity(i, j, k, type, result);
+            }
+        } else if (type == Block.MOB_SPAWNER.id) {
+            if (!(result instanceof TileEntityMobSpawner)) {
+                result = fixTileEntity(i, j, k, type, result);
+            }
+        } else if ((type == Block.SIGN_POST.id) || (type == Block.WALL_SIGN.id)) {
+            if (!(result instanceof TileEntitySign)) {
+                result = fixTileEntity(i, j, k, type, result);
+            }
+        }
+
+        return result;
+    }
+
+    private TileEntity fixTileEntity(int x, int y, int z, int type, TileEntity found) {
+        getServer().getLogger().severe("Block at " + x + "," + y + "," + z + " is " + org.bukkit.Material.getMaterial(type).toString() + " but has " + found + ". "
+                + "Bukkit will attempt to fix this, but there may be additional damage that we cannot recover.");
+
+        if (Block.byId[type] instanceof BlockContainer) {
+            TileEntity replacement = ((BlockContainer)Block.byId[type]).a_();
+            setTileEntity(x, y, z, replacement);
+            return replacement;
+        } else {
+            getServer().getLogger().severe("Don't know how to fix for this type... Can't do anything! :(");
+            return found;
+        }
+    }
+
     public final int dimension;
     public EntityTracker tracker;
     public PlayerManager manager;
