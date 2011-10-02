@@ -2,6 +2,7 @@ package org.bukkit.entity;
 
 import java.net.InetSocketAddress;
 import org.bukkit.Achievement;
+import org.bukkit.ChatColor;
 import org.bukkit.Effect;
 import org.bukkit.Instrument;
 import org.bukkit.Location;
@@ -42,13 +43,16 @@ public interface Player extends HumanEntity, CommandSender, OfflinePlayer {
      *
      * @return the player list name
      */
-    public String getListName();
+    public String getPlayerListName();
 
     /**
-     * Sets the name that is shown on the player list. The name cannot
-     * be longer than 16 characters, but color is supported. If the same
-     * name is passed (with no change), then nothing will happen.
-     * Case-sensitivity matters -- two names with different casing will
+     * Sets the name that is shown on the in-game player list.
+     * <p>
+     * The name cannot be longer than 16 characters, but {@link ChatColor} is supported.
+     * <p>
+     * If the value is null, the name will be identical to {@link #getName()}.
+     * <p>
+     * This name is case sensitive and unique, two names with different casing will
      * appear as two different people. If a player joins afterwards with
      * a name that conflicts with a player's custom list name, the
      * joining player's player list name will have a random number appended to it
@@ -60,7 +64,7 @@ public interface Player extends HumanEntity, CommandSender, OfflinePlayer {
      * @throws IllegalArgumentException if the name is already used by someone else
      * @throws IllegalArgumentException if the length of the name is too long
      */
-    public void setListName(String name);
+    public void setPlayerListName(String name);
 
     /**
      * Set the target of the player's compass.
