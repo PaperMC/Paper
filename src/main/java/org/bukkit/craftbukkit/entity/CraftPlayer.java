@@ -6,6 +6,7 @@ import net.minecraft.server.EntityHuman;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.Packet131;
 import net.minecraft.server.Packet200Statistic;
+import net.minecraft.server.Packet201PlayerInfo;
 import net.minecraft.server.Packet3Chat;
 import net.minecraft.server.Packet51MapChunk;
 import net.minecraft.server.Packet53BlockChange;
@@ -124,12 +125,37 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         getHandle().displayName = name;
     }
 
-    public String getListName() {
+    public String getPlayerListName() {
         return getHandle().listName;
     }
 
-    public void setListName(String name) {
-        server.getHandle().changeListName(getHandle(), name);
+    public void setPlayerListName(String name) {
+        String oldName = getHandle().listName;
+
+        if (name == null) {
+            name = getName();
+        }
+
+        if (oldName.equals(name)) {
+            return;
+        }
+
+        if (name.length() > 16) {
+            throw new IllegalArgumentException("Player list names can only be a maximum of 16 characters long");
+        }
+
+        // Collisions will make for invisible people
+        for (int i = 0; i < server.getHandle().players.size(); ++i) {
+            if (((EntityPlayer) server.getHandle().players.get(i)).listName.equals(name)) {
+                throw new IllegalArgumentException(name + " is already assigned as a player list name for someone");
+            }
+        }
+
+        getHandle().listName = name;
+
+        // Change the name on the client side
+        server.getHandle().sendAll(new Packet201PlayerInfo(oldName, false, 9999));
+        server.getHandle().sendAll(new Packet201PlayerInfo(name, true, getHandle().i));
     }
 
     @Override

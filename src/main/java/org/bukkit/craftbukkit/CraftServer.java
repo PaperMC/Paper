@@ -876,4 +876,26 @@ public final class CraftServer implements Server {
     public ConsoleCommandSender getConsoleSender() {
         return console.console;
     }
+
+    public void detectListNameConflict(EntityPlayer entityPlayer) {
+        // Collisions will make for invisible people
+        for (int i = 0; i < getHandle().players.size(); ++i) {
+            EntityPlayer testEntityPlayer = (EntityPlayer)getHandle().players.get(i);
+
+            // We have a problem!
+            if (testEntityPlayer != entityPlayer && testEntityPlayer.listName.equals(entityPlayer.listName)) {
+                String oldName = entityPlayer.listName;
+                int spaceLeft = 16 - oldName.length();
+
+                if (spaceLeft <= 1) {  // We also hit the list name length limit!
+                    entityPlayer.listName = oldName.subSequence(0, oldName.length() - 2 - spaceLeft)
+                            + String.valueOf(System.currentTimeMillis() % 99);
+                } else {
+                    entityPlayer.listName = oldName + String.valueOf(System.currentTimeMillis() % 99);
+                }
+
+                return;
+            }
+        }
+    }
 }

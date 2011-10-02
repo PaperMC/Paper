@@ -48,55 +48,6 @@ public class ServerConfigurationManager {
     // CraftBukkit start
     private CraftServer cserver;
 
-    public void changeListName(EntityPlayer entityPlayer, String newName) {
-        String oldName = entityPlayer.listName;
-
-        if (oldName.equals(newName)) {
-            return;
-        }
-
-        if (newName.length() > 16) {
-            throw new IllegalArgumentException("Player list names can only be a maximum of 16 characters long");
-        }
-
-        // Collisions will make for invisible people
-        for (int i = 0; i < this.players.size(); ++i) {
-            if (((EntityPlayer) this.players.get(i)).listName.equals(newName)) {
-                throw new IllegalArgumentException(newName + " is already assigned as a player list name for someone");
-            }
-        }
-
-        entityPlayer.listName = newName;
-
-        // Change the name on the client side
-        this.sendAll(new Packet201PlayerInfo(oldName, false, 9999));
-        this.sendAll(new Packet201PlayerInfo(newName, true, entityPlayer.i));
-    }
-
-    private void detectListNameConflict(EntityPlayer entityPlayer) {
-        // Collisions will make for invisible people
-        for (int i = 0; i < this.players.size(); ++i) {
-            EntityPlayer testEntityPlayer = (EntityPlayer) this.players.get(i);
-
-            // We have a problem!
-            if (testEntityPlayer != entityPlayer && testEntityPlayer.listName.equals(entityPlayer.listName)) {
-                String oldName = entityPlayer.listName;
-                int spaceLeft = 16 - oldName.length();
-
-                if (spaceLeft <= 1) {  // We also hit the list name length limit!
-                    entityPlayer.listName = oldName.subSequence(0, oldName.length() - 2 - spaceLeft)
-                            + String.valueOf(System.currentTimeMillis() % 99);
-                } else {
-                    entityPlayer.listName = oldName + String.valueOf(System.currentTimeMillis() % 99);
-                }
-
-                return;
-            }
-        }
-    }
-    // CraftBukkit end
-
-    // CraftBukkit start
     public ServerConfigurationManager(MinecraftServer minecraftserver) {
         minecraftserver.server = new CraftServer(minecraftserver, this);
         minecraftserver.console = ColouredConsoleSender.getInstance();
@@ -161,7 +112,7 @@ public class ServerConfigurationManager {
 
     public void c(EntityPlayer entityplayer) {
         // CraftBukkit
-        detectListNameConflict(entityplayer);
+        cserver.detectListNameConflict(entityplayer);
         this.sendAll(new Packet201PlayerInfo(entityplayer.listName, true, 1000));
         // CraftBukkit end
         this.players.add(entityplayer);
