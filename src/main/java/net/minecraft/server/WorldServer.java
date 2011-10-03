@@ -49,10 +49,6 @@ public class WorldServer extends World implements BlockChangeDelegate {
             if (!(result instanceof TileEntityFurnace)) {
                 result = fixTileEntity(i, j, k, type, result);
             }
-        } else if (type == Block.PISTON_MOVING.id) {
-            if (!(result instanceof TileEntityPiston)) {
-                result = fixTileEntity(i, j, k, type, result);
-            }
         } else if (type == Block.DISPENSER.id) {
             if (!(result instanceof TileEntityDispenser)) {
                 result = fixTileEntity(i, j, k, type, result);
