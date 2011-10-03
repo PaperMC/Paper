@@ -22,6 +22,7 @@ public class BanCommand extends VanillaCommand {
         }
 
         Bukkit.getOfflinePlayer(args[0]).setBanned(true);
+        if (Bukkit.getPlayer(args[0]) != null) Bukkit.getPlayer(args[0]).kickPlayer("Banned by admin.");
         Command.broadcastCommandMessage(sender, "Banning " + args[0]);
 
         return true;
