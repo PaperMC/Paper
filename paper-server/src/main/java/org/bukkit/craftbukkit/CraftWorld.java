@@ -34,6 +34,7 @@ import org.bukkit.TreeType;
 import org.bukkit.World;
 import org.bukkit.block.Biome;
 import org.bukkit.generator.BlockPopulator;
+import org.bukkit.Difficulty;
 
 public class CraftWorld implements World {
     private final WorldServer world;
@@ -576,6 +577,14 @@ public class CraftWorld implements World {
 
     public void setAutoSave(boolean value) {
         world.savingDisabled = !value;
+    }
+
+    public void setDifficulty(Difficulty difficulty) {
+        this.getHandle().difficulty = difficulty.getValue();
+    }
+
+    public Difficulty getDifficulty() {
+        return Difficulty.getByValue(this.getHandle().difficulty);
     }
 
     public boolean hasStorm() {
