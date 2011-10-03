@@ -372,6 +372,7 @@ public final class CraftServer implements Server {
 
         boolean animals = config.getBoolean("spawn-animals", console.spawnAnimals);
         boolean monsters = config.getBoolean("spawn-monsters", console.worlds.get(0).difficulty > 0);
+        int difficulty = config.getInt("difficulty", console.worlds.get(0).difficulty);
 
         console.onlineMode = config.getBoolean("online-mode", console.onlineMode);
         console.spawnAnimals = config.getBoolean("spawn-animals", console.spawnAnimals);
@@ -379,7 +380,7 @@ public final class CraftServer implements Server {
         console.allowFlight = config.getBoolean("allow-flight", console.allowFlight);
 
         for (WorldServer world : console.worlds) {
-            world.difficulty = monsters ? 1 : 0;
+            world.difficulty = difficulty;
             world.setSpawnFlags(monsters, animals);
         }
 
