@@ -18,7 +18,6 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Snowball;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.util.BlockIterator;
-import org.bukkit.util.Callback;
 
 import java.util.List;
 import java.util.HashSet;
@@ -85,45 +84,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     public double getEyeHeight(boolean ignoreSneaking) {
         return getEyeHeight();
-    }
-
-    private List<Block> getLineOfSight(Callback<Boolean, Block> callback, int maxDistance, int maxLength) {
-        if (maxDistance > 120) {
-            maxDistance = 120;
-        }
-        ArrayList<Block> blocks = new ArrayList<Block>(maxLength == 0 ? 10 : maxLength);
-        Iterator<Block> itr = new BlockIterator(this, maxDistance);
-        while (itr.hasNext()) {
-            Block block = itr.next();
-            if (maxLength != 0 && blocks.size() + 1 > maxLength) {
-                blocks.remove(0);
-            }
-            blocks.add(block);
-            if (callback == null) {
-                if (block.getTypeId() != 0) {
-                    break;
-                }
-            } else {
-                Boolean result = callback.call(block);
-                if (result != null && !result) {
-                    break;
-                }
-            }
-        }
-        return blocks;
-    }
-
-    public List<Block> getLineOfSight(Callback<Boolean, Block> callback, int maxDistance) {
-        return getLineOfSight(callback, maxDistance, 0);
-    }
-
-    public Block getTargetBlock(Callback<Boolean, Block> callback, int maxDistance) {
-        List<Block> blocks = getLineOfSight(callback, maxDistance, 1);
-        return blocks.get(0);
-    }
-
-    public List<Block> getLastTwoTargetBlocks(Callback<Boolean, Block> callback, int maxDistance) {
-        return getLineOfSight(callback, maxDistance, 2);
     }
 
     private List<Block> getLineOfSight(HashSet<Byte> transparent, int maxDistance, int maxLength) {
