@@ -726,6 +726,20 @@ public interface World {
     public void setAutoSave(boolean value);
 
     /**
+     * Sets the Difficulty of the world.
+     *
+     * @param difficulty the new difficulty you want to set the world to
+     */
+    public void setDifficulty(Difficulty difficulty);
+
+    /**
+     * Gets the Difficulty of the world.
+     *
+     * @return The difficulty of the world.
+     */
+    public Difficulty getDifficulty();
+
+    /**
      * Represents various map environment types that a world may be
      */
     public enum Environment {
