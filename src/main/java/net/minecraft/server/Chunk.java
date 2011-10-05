@@ -56,10 +56,12 @@ public class Chunk {
         Arrays.fill(this.c, -999);
 
         // CraftBukkit start
-        org.bukkit.craftbukkit.CraftWorld cworld = this.world.getWorld();
-        this.bukkitChunk = (cworld == null) ? null : cworld.popPreservedChunk(i, j);
-        if (this.bukkitChunk == null) {
-            this.bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
+        if (!(this instanceof EmptyChunk)) {
+            org.bukkit.craftbukkit.CraftWorld cworld = this.world.getWorld();
+            this.bukkitChunk = (cworld == null) ? null : cworld.popPreservedChunk(i, j);
+            if (this.bukkitChunk == null) {
+                this.bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
+            }
         }
     }
 
