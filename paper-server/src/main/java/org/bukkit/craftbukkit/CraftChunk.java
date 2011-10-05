@@ -1,10 +1,9 @@
 package org.bukkit.craftbukkit;
 
-import com.google.common.collect.MapMaker;
 import java.lang.ref.WeakReference;
-import java.util.concurrent.ConcurrentMap;
 import net.minecraft.server.ChunkPosition;
 
+import net.minecraft.server.EmptyChunk;
 import net.minecraft.server.WorldServer;
 
 import org.bukkit.Chunk;
@@ -19,13 +18,14 @@ import net.minecraft.server.WorldChunkManager;
 
 public class CraftChunk implements Chunk {
     private WeakReference<net.minecraft.server.Chunk> weakChunk;
-    private final ConcurrentMap<Integer, Block> cache = new MapMaker().softValues().makeMap();
     private WorldServer worldServer;
     private int x;
     private int z;
 
     public CraftChunk(net.minecraft.server.Chunk chunk) {
-        this.weakChunk = new WeakReference<net.minecraft.server.Chunk>(chunk);
+        if(!(chunk instanceof EmptyChunk)) {
+            this.weakChunk = new WeakReference<net.minecraft.server.Chunk>(chunk);
+        }
         worldServer = (WorldServer) getHandle().world;
         x = getHandle().x;
         z = getHandle().z;
@@ -39,7 +39,9 @@ public class CraftChunk implements Chunk {
         net.minecraft.server.Chunk c = weakChunk.get();
         if (c == null) {
             c = worldServer.getChunkAt(x, z);
-            weakChunk = new WeakReference<net.minecraft.server.Chunk>(c);
+            if(!(c instanceof EmptyChunk)) {
+                weakChunk = new WeakReference<net.minecraft.server.Chunk>(c);
+            }
         }
         return c;
     }
@@ -62,18 +64,7 @@ public class CraftChunk implements Chunk {
     }
 
     public Block getBlock(int x, int y, int z) {
-        int pos = (x & 0xF) << 11 | (z & 0xF) << 7 | (y & 0x7F);
-        Block block = this.cache.get(pos);
-        if (block == null) {
-            Block newBlock = new CraftBlock(this, (getX() << 4) | (x & 0xF), y & 0x7F, (getZ() << 4) | (z & 0xF));
-            Block oldBlock = this.cache.put(pos, newBlock);
-            if (oldBlock == null) {
-                block = newBlock;
-            } else {
-                block = oldBlock;
-            }
-        }
-        return block;
+        return new CraftBlock(this, (getX() << 4) | (x & 0xF), y & 0x7F, (getZ() << 4) | (z & 0xF));
     }
 
     public Entity[] getEntities() {
