@@ -85,7 +85,7 @@ public class TileEntityMobSpawner extends TileEntity {
 
                         entityliving.setPositionRotation(d3, d4, d5, this.world.random.nextFloat() * 360.0F, 0.0F);
                         if ((entityliving instanceof EntityLiving && ((EntityLiving)entityliving).d()) ||
-                            (entityliving.world.containsEntity(entityliving.boundingBox) && entityliving.world.getEntities(entityliving, entityliving.boundingBox).size() == 0 && !entityliving.world.c(entityliving.boundingBox))) {
+                            (!(entityliving instanceof EntityLiving) && entityliving.world.containsEntity(entityliving.boundingBox) && entityliving.world.getEntities(entityliving, entityliving.boundingBox).size() == 0 && !entityliving.world.c(entityliving.boundingBox))) {
                             // CraftBukkit end
                             // CraftBukkit - added a reason for spawning this creature
                             this.world.addEntity(entityliving, SpawnReason.SPAWNER);
