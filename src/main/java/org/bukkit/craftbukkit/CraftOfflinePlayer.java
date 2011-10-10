@@ -77,7 +77,6 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     }
     
     public static OfflinePlayer deserialize(Map<String, Object> args) {
-        System.out.println("Deserializing CraftOfflinePlayer with args " + args);
         return Bukkit.getServer().getOfflinePlayer((String)args.get("name"));
     }
 
