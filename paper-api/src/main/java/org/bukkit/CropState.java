@@ -5,7 +5,6 @@ import java.util.Map;
 
 /**
  * Represents the different growth states of crops
- * @author sunkid
  */
 public enum CropState {
 

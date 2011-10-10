@@ -55,8 +55,6 @@ public  class YamlConfigurationTest extends FileConfigurationTest {
         String result = config.saveToString();
         String expected = "section:\n         key: 1\n";
         
-        System.out.println(result);
-        
         assertEquals(expected, result);
     }
 }

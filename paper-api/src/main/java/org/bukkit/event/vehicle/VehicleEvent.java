@@ -5,8 +5,6 @@ import org.bukkit.event.Event;
 
 /**
  * Represents a vehicle-related event.
- *
- * @author sk89q
  */
 public class VehicleEvent extends Event {
     protected Vehicle vehicle;

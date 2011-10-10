@@ -5,7 +5,6 @@ import java.util.Map;
 
 /**
  * Represents the different species of trees regardless of size.
- * @author sunkid
  */
 public enum TreeSpecies {
 

@@ -4,8 +4,6 @@ import org.bukkit.inventory.Inventory;
 
 /**
  * Represents a storage minecart.
- *
- * @author sk89q
  */
 public interface StorageMinecart extends Minecart {
 

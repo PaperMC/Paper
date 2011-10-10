@@ -4,9 +4,6 @@ import org.bukkit.entity.CreatureType;
 
 /**
  * Represents a creature spawner.
- *
- * @author sk89q
- * @author Cogito
  */
 public interface CreatureSpawner extends BlockState {
 

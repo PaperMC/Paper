@@ -5,7 +5,6 @@ import java.util.Map;
 
 /**
  * Represents the two types of coal
- * @author sunkid
  */
 public enum CoalType {
     COAL((byte) 0x0),

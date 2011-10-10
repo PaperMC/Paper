@@ -10,8 +10,6 @@ import java.util.List;
  * services manager in order to use a service (if one is available). If
  * multiple plugins register a service, then the service with the highest
  * priority takes precedence.
- *
- * @author sk89q
  */
 public interface ServicesManager {
 

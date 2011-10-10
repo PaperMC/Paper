@@ -8,12 +8,9 @@ import org.bukkit.entity.LivingEntity;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.lang.IllegalStateException;
 
 /**
  * This class performs ray tracing and iterates along blocks on a line
- *
- * @author raphfrk
  */
 
 public class BlockIterator implements Iterator<Block> {

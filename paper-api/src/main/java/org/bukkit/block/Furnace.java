@@ -2,8 +2,6 @@ package org.bukkit.block;
 
 /**
  * Represents a furnace.
- *
- * @author sk89q
  */
 public interface Furnace extends BlockState, ContainerBlock {
 

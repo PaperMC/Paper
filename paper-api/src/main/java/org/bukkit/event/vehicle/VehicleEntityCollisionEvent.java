@@ -6,8 +6,6 @@ import org.bukkit.event.Cancellable;
 
 /**
  * Raised when a vehicle collides with an entity.
- *
- * @author sk89q
  */
 public class VehicleEntityCollisionEvent extends VehicleCollisionEvent implements Cancellable {
     private Entity entity;

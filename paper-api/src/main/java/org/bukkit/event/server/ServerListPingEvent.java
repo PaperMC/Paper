@@ -6,8 +6,6 @@ import org.bukkit.event.Event;
 
 /**
  * Called when a server list ping is coming in.
- * 
- * @author sk89q
  */
 public class ServerListPingEvent extends ServerEvent {
     

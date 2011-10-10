@@ -2,8 +2,7 @@ package org.bukkit.plugin;
 
 /**
  * A registered service provider.
- *
- * @author sk89q
+ * 
  * @param <T> Service
  */
 public class RegisteredServiceProvider<T> implements Comparable<RegisteredServiceProvider<?>> {

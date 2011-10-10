@@ -8,11 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.World;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.material.MaterialData;
 import org.bukkit.util.Vector;
 
 /**

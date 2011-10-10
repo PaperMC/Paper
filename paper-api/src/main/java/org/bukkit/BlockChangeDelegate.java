@@ -4,8 +4,6 @@ package org.bukkit;
  * A delegate for handling block changes. This serves as a direct interface
  * between generation algorithms in the server implementation and utilizing
  * code.
- *
- * @author sk89q
  */
 public interface BlockChangeDelegate {
 

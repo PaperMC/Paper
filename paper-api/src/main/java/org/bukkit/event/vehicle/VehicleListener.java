@@ -4,8 +4,6 @@ import org.bukkit.event.Listener;
 
 /**
  * Listener for vehicle events.
- *
- * @author sk89q
  */
 public class VehicleListener implements Listener {
     public VehicleListener() {}

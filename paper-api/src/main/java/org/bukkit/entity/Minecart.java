@@ -4,8 +4,6 @@ import org.bukkit.util.Vector;
 
 /**
  * Represents a minecart entity.
- *
- * @author sk89q
  */
 public interface Minecart extends Vehicle {
 

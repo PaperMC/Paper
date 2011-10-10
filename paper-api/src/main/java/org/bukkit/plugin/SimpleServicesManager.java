@@ -11,8 +11,6 @@ import java.util.NoSuchElementException;
 
 /**
  * A simple services manager.
- *
- * @author sk89q
  */
 public class SimpleServicesManager implements ServicesManager {
 
