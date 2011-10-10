@@ -2,6 +2,8 @@ package org.bukkit.craftbukkit.entity;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.Packet131;
@@ -24,6 +26,8 @@ import org.bukkit.Material;
 import org.bukkit.Note;
 import org.bukkit.Statistic;
 import org.bukkit.World;
+import org.bukkit.configuration.serialization.DelegateDeserialization;
+import org.bukkit.craftbukkit.CraftOfflinePlayer;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.map.CraftMapView;
@@ -33,6 +37,7 @@ import org.bukkit.event.player.PlayerGameModeChangeEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.map.MapView;
 
+@DelegateDeserialization(CraftOfflinePlayer.class)
 public class CraftPlayer extends CraftHumanEntity implements Player {
     public CraftPlayer(CraftServer server, EntityPlayer entity) {
         super(server, entity);
@@ -534,5 +539,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         } else {
             return null;
         }
+    }
+
+    public Map<String, Object> serialize() {
+        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        
+        result.put("name", getName());
+        
+        return result;
     }
 }
