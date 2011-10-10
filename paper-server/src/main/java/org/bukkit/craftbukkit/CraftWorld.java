@@ -870,4 +870,23 @@ public class CraftWorld implements World {
             }
         }
     }
+
+    @Override
+    public int hashCode() {
+        return getUID().hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        
+        final CraftWorld other = (CraftWorld) obj;
+        
+        return this.getUID() == other.getUID();
+    }
 }
