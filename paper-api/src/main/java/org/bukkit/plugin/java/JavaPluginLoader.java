@@ -17,7 +17,6 @@ import java.util.regex.Pattern;
 import org.bukkit.Server;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
-import org.bukkit.configuration.serialization.SerializableAs;
 import org.bukkit.event.CustomEventListener;
 import org.bukkit.event.Event;
 import org.bukkit.event.Listener;
