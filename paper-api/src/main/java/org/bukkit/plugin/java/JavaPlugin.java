@@ -111,10 +111,24 @@ public abstract class JavaPlugin implements Plugin {
      */
     @Deprecated
     public Configuration getConfiguration() {
+        if (config == null) {
+            config = new Configuration(configFile);
+            config.load();
+        }
         return config;
     }
     
     public FileConfiguration getConfig() {
+        if (newConfig == null) {
+            newConfig = YamlConfiguration.loadConfiguration(configFile);
+            
+            InputStream defConfigStream = getResource("config.yml");
+            if (defConfigStream != null) {
+                YamlConfiguration defConfig = YamlConfiguration.loadConfiguration(defConfigStream);
+                
+                newConfig.setDefaults(defConfig);
+            }
+        }
         return newConfig;
     }
     
@@ -184,16 +198,6 @@ public abstract class JavaPlugin implements Plugin {
             this.dataFolder = dataFolder;
             this.classLoader = classLoader;
             this.configFile = new File(dataFolder, "config.yml");
-            this.config = new Configuration(configFile);
-            this.config.load();
-            this.newConfig = YamlConfiguration.loadConfiguration(configFile);
-            
-            InputStream defConfigStream = getResource("config.yml");
-            if (defConfigStream != null) {
-                YamlConfiguration defConfig = YamlConfiguration.loadConfiguration(defConfigStream);
-                
-                newConfig.setDefaults(defConfig);
-            }
 
             if (description.isDatabaseEnabled()) {
                 ServerConfig db = new ServerConfig();
