@@ -1,9 +1,15 @@
 package org.bukkit.craftbukkit;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Server;
+import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.configuration.serialization.SerializableAs;
 
-public class CraftOfflinePlayer implements OfflinePlayer {
+@SerializableAs("Player")
+public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializable {
     private final String name;
     private final CraftServer server;
 
@@ -60,5 +66,23 @@ public class CraftOfflinePlayer implements OfflinePlayer {
         } else {
             server.getHandle().removeWhitelist(name.toLowerCase());
         }
+    }
+
+    public Map<String, Object> serialize() {
+        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        
+        result.put("name", name);
+        
+        return result;
+    }
+    
+    public static OfflinePlayer deserialize(Map<String, Object> args) {
+        System.out.println("Deserializing CraftOfflinePlayer with args " + args);
+        return Bukkit.getServer().getOfflinePlayer((String)args.get("name"));
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[name=" + name + "]";
     }
 }

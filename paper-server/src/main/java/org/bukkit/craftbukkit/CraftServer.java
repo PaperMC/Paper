@@ -52,6 +52,9 @@ import net.minecraft.server.WorldMap;
 import net.minecraft.server.WorldMapCollection;
 import net.minecraft.server.WorldSettings;
 import org.bukkit.*;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.permissions.Permissible;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
@@ -71,8 +74,6 @@ import org.bukkit.util.permissions.DefaultPermissions;
 import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.permissions.Permission;
 import org.bukkit.plugin.PluginLoadOrder;
-import org.bukkit.util.config.Configuration;
-import org.bukkit.util.config.ConfigurationNode;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.MarkedYAMLException;
@@ -88,9 +89,13 @@ public final class CraftServer implements Server {
     protected final MinecraftServer console;
     protected final ServerConfigurationManager server;
     private final Map<String, World> worlds = new LinkedHashMap<String, World>();
-    private final Configuration configuration;
+    private YamlConfiguration configuration;
     private final Yaml yaml = new Yaml(new SafeConstructor());
     private final Map<String, OfflinePlayer> offlinePlayers = new MapMaker().softValues().makeMap();
+
+    static {
+        ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
+    }
 
     public CraftServer(MinecraftServer console, ServerConfigurationManager server) {
         this.console = console;
@@ -99,35 +104,27 @@ public final class CraftServer implements Server {
 
         Bukkit.setServer(this);
 
-        configuration = new Configuration((File) console.options.valueOf("bukkit-settings"));
-        loadConfig();
+        configuration = YamlConfiguration.loadConfiguration(getConfigFile());
+        configuration.options().copyDefaults(true);
+        configuration.setDefaults(YamlConfiguration.loadConfiguration(getClass().getClassLoader().getResourceAsStream("configurations/bukkit.yml")));
+        saveConfig();
+        
         loadPlugins();
         enablePlugins(PluginLoadOrder.STARTUP);
 
         ChunkCompressionThread.startThread();
     }
-
-    private void loadConfig() {
-        configuration.load();
-        configuration.getString("database.url", "jdbc:sqlite:{DIR}{NAME}.db");
-        configuration.getString("database.username", "bukkit");
-        configuration.getString("database.password", "walrus");
-        configuration.getString("database.driver", "org.sqlite.JDBC");
-        configuration.getString("database.isolation", "SERIALIZABLE");
-
-        configuration.getString("settings.update-folder", "update");
-        configuration.getInt("settings.spawn-radius", 16);
-
-        configuration.getString("settings.permissions-file", "permissions.yml");
-
-        configuration.getInt("settings.ping-packet-limit", 100);
-
-        if (configuration.getNode("aliases") == null) {
-            List<String> icanhasbukkit = new ArrayList<String>();
-            icanhasbukkit.add("version");
-            configuration.setProperty("aliases.icanhasbukkit", icanhasbukkit);
+    
+    private File getConfigFile() {
+        return (File)console.options.valueOf("bukkit-settings");
+    }
+    
+    private void saveConfig() {
+        try {
+            configuration.save(getConfigFile());
+        } catch (IOException ex) {
+            Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, "Could not save " + getConfigFile(), ex);
         }
-        configuration.save();
     }
 
     public void loadPlugins() {
@@ -365,7 +362,7 @@ public final class CraftServer implements Server {
     }
 
     public void reload() {
-        loadConfig();
+        configuration = YamlConfiguration.loadConfiguration(getConfigFile());
         PropertyManager config = new PropertyManager(console.options);
 
         console.propertyManager = config;
@@ -692,17 +689,18 @@ public final class CraftServer implements Server {
     }
 
     public Map<String, String[]> getCommandAliases() {
-        ConfigurationNode node = configuration.getNode("aliases");
+        ConfigurationSection section = configuration.getConfigurationSection("aliases");
         Map<String, String[]> result = new LinkedHashMap<String, String[]>();
 
-        if (node != null) {
-            for (String key : node.getKeys()) {
-                List<String> commands = new ArrayList<String>();
+        if (section != null) {
+            for (String key : section.getKeys(false)) {
+                List<String> commands = null;
 
-                if (node.getProperty(key) instanceof List) {
-                    commands = node.getStringList(key, null);
+                if (section.isList(key)) {
+                    commands = section.getList(key);
                 } else {
-                    commands.add(node.getString(key));
+                    commands = new ArrayList<String>();
+                    commands.add(section.getString(key));
                 }
 
                 result.put(key, commands.toArray(new String[0]));
@@ -717,8 +715,8 @@ public final class CraftServer implements Server {
     }
 
     public void setSpawnRadius(int value) {
-        configuration.setProperty("settings.spawn-radius", value);
-        configuration.save();
+        configuration.set("settings.spawn-radius", value);
+        saveConfig();
     }
 
     public boolean getOnlineMode() {
@@ -730,14 +728,14 @@ public final class CraftServer implements Server {
     }
 
     public ChunkGenerator getGenerator(String world) {
-        ConfigurationNode node = configuration.getNode("worlds");
+        ConfigurationSection section = configuration.getConfigurationSection("worlds");
         ChunkGenerator result = null;
 
-        if (node != null) {
-            node = node.getNode(world);
+        if (section != null) {
+            section = section.getConfigurationSection(world);
 
-            if (node != null) {
-                String name = node.getString("generator");
+            if (section != null) {
+                String name = section.getString("generator");
 
                 if ((name != null) && (!name.equals(""))) {
                     String[] split = name.split(":", 2);
