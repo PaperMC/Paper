@@ -194,6 +194,15 @@ public class Explosion {
 
         EntityExplodeEvent event = new EntityExplodeEvent(explode, location, blockList);
         this.world.getServer().getPluginManager().callEvent(event);
+        
+        arraylist.clear();
+        blocks.clear();
+        
+        for (org.bukkit.block.Block block : event.blockList()) {
+            ChunkCoordinates coords = new ChunkCoordinates(block.getX(), block.getY(), block.getZ());
+            arraylist.add(coords);
+            blocks.add(coords);
+        }
 
         if (event.isCancelled()) {
             this.wasCanceled = true;
