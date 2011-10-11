@@ -242,7 +242,7 @@ public class JavaPluginLoader implements PluginLoader {
     public void removeClass(String name) {
         Class<?> clazz = classes.remove(name);
         
-        if (ConfigurationSerializable.class.isAssignableFrom(clazz)) {
+        if ((clazz != null) && (ConfigurationSerializable.class.isAssignableFrom(clazz))) {
             Class<? extends ConfigurationSerializable> serializable = (Class<? extends ConfigurationSerializable>)clazz;
             ConfigurationSerialization.unregisterClass(serializable);
         }
