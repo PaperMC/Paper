@@ -120,16 +120,20 @@ public abstract class JavaPlugin implements Plugin {
     
     public FileConfiguration getConfig() {
         if (newConfig == null) {
-            newConfig = YamlConfiguration.loadConfiguration(configFile);
-            
-            InputStream defConfigStream = getResource("config.yml");
-            if (defConfigStream != null) {
-                YamlConfiguration defConfig = YamlConfiguration.loadConfiguration(defConfigStream);
-                
-                newConfig.setDefaults(defConfig);
-            }
+            reloadConfig();
         }
         return newConfig;
+    }
+    
+    public void reloadConfig() {
+        newConfig = YamlConfiguration.loadConfiguration(configFile);
+
+        InputStream defConfigStream = getResource("config.yml");
+        if (defConfigStream != null) {
+            YamlConfiguration defConfig = YamlConfiguration.loadConfiguration(defConfigStream);
+
+            newConfig.setDefaults(defConfig);
+        }
     }
     
     public void saveConfig() {

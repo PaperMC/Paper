@@ -58,6 +58,11 @@ public interface Plugin extends CommandExecutor {
      * Saves the {@link FileConfiguration} retrievable by {@link #getConfig()}.
      */
     public void saveConfig();
+    
+    /**
+     * Discards any data in {@link #getConfig()} and reloads from disk.
+     */
+    public void reloadConfig();
 
     /**
      * Gets the associated PluginLoader responsible for this plugin
