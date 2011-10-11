@@ -139,7 +139,7 @@ public interface Block {
      */
     void setData(byte data);
 
-    void setData(byte data, boolean applyPhyiscs);
+    void setData(byte data, boolean applyPhysics);
 
     /**
      * Sets the type of this block
@@ -158,7 +158,7 @@ public interface Block {
 
     boolean setTypeId(int type, boolean applyPhysics);
 
-    boolean setTypeIdAndData(int type, byte data, boolean applyPhyiscs);
+    boolean setTypeIdAndData(int type, byte data, boolean applyPhysics);
 
     /**
      * Gets the face relation of this block compared to the given block<br />

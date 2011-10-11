@@ -1,7 +1,6 @@
 package org.bukkit.command.defaults;
 
 import org.bukkit.Bukkit;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -17,17 +16,17 @@ public class ListCommand extends VanillaCommand {
     public boolean execute(CommandSender sender, String currentAlias, String[] args) {
         if (!testPermission(sender)) return true;
 
-        String players = "";
+        StringBuilder players = new StringBuilder();
 
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (players.length() > 0) {
-                players += ", ";
+                players.append(", ");
             }
 
-            players += player.getDisplayName();
+            players.append(player.getDisplayName());
         }
 
-        sender.sendMessage("Connected players: " + players);
+        sender.sendMessage("Connected players: " + players.toString());
 
         return true;
     }

@@ -27,11 +27,11 @@ public class TellCommand extends VanillaCommand {
         if (player == null) {
             sender.sendMessage("There's no player by that name online.");
         } else {
-            String message = "";
+            StringBuilder message = new StringBuilder();
 
             for (int i = 1; i < args.length; i++) {
-                if (i > 1) message += " ";
-                message += args[i];
+                if (i > 1) message.append(" ");
+                message.append(args[i]);
             }
 
             String result = ChatColor.GRAY + sender.getName() + " whispers " + message;

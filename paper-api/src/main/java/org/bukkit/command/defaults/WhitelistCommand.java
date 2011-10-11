@@ -39,17 +39,17 @@ public class WhitelistCommand extends VanillaCommand {
             } else if (args[0].equalsIgnoreCase("list")) {
                 if (badPerm(sender, "list")) return true;
 
-                String result = "";
+                StringBuilder result = new StringBuilder();
 
                 for (OfflinePlayer player : Bukkit.getWhitelistedPlayers()) {
                     if (result.length() > 0) {
-                        result += " ";
+                        result.append(" ");
                     }
 
-                    result += player.getName();
+                    result.append(player.getName());
                 }
 
-                sender.sendMessage("White-listed players: " + result);
+                sender.sendMessage("White-listed players: " + result.toString());
                 return true;
             }
         } else if (args.length == 2) {
