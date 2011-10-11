@@ -205,29 +205,34 @@ public class MemorySection implements ConfigurationSection {
     }
 
     public Object get(String path, Object def) {
-        Object result = null;
-        String[] split = path.split(Pattern.quote(Character.toString(getRoot().options().pathSeparator())));
-        ConfigurationSection section = this;
-        
         if (path == null) {
             throw new IllegalArgumentException("Path cannot be null");
         } else if (path.length() == 0) {
             return this;
         }
 
-        for (int i = 0; (i < split.length - 1) && (section != null); i++) {
-            section = getConfigurationSection(split[i]);
+        Object result = null;
+        String[] split = path.split(Pattern.quote(Character.toString(getRoot().options().pathSeparator())));
+        ConfigurationSection section = this;
+
+        for (int i = 0; i < split.length - 1; i++) {
+            section = section.getConfigurationSection(split[i]);
+            
+            if (section == null) {
+                return def;
+            }
         }
 
         String key = split[split.length - 1];
 
         if (section == this) {
             result = map.get(key);
+            return (result == null) ? def : result;
         } else if (section != null) {
-            result = section.get(key);
+            return section.get(key, def);
+        } else {
+            return def;
         }
-
-        return (result == null) ? def : result;
     }
 
     public ConfigurationSection createSection(String path) {
