@@ -875,7 +875,7 @@ public abstract class EntityHuman extends EntityLiving {
     }
 
     public void a(boolean flag, boolean flag1, boolean flag2) {
-        if (this.fauxSleeping) return; // CraftBukkit - Can't leave bed if not in one!
+        if (this.fauxSleeping && !this.sleeping) return; // CraftBukkit - Can't leave bed if not in one!
 
         this.b(0.6F, 1.8F);
         this.m_();
