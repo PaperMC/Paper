@@ -162,7 +162,15 @@ public abstract class ConfigurationSectionTest {
         ConfigurationSection section = getConfigurationSection();
         
         section.set("exists", "hello world");
+        
+        assertTrue(section.contains("exists"));
+        assertTrue(section.isSet("exists"));
         assertEquals("hello world", section.get("exists"));
+        
+        section.set("exists", null);
+        
+        assertFalse(section.contains("exists"));
+        assertFalse(section.isSet("exists"));
     }
 
     @Test

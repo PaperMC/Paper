@@ -186,7 +186,11 @@ public class MemorySection implements ConfigurationSection {
         String key = split[split.length - 1];
 
         if (section == this) {
-            map.put(key, prepForStorage(value));
+            if (value == null) {
+                map.remove(key);
+            } else {
+                map.put(key, prepForStorage(value));
+            }
         } else {
             section.set(key, value);
         }
