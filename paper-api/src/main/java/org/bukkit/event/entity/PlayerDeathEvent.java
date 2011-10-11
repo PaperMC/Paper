@@ -52,7 +52,7 @@ public class PlayerDeathEvent extends EntityDeathEvent {
      * Sets how much EXP the Player should have at respawn.
      * <p>
      * This does not indicate how much EXP should be dropped, please see
-     * {@link #setDropedExp(int)} for that.
+     * {@link #setDroppedExp(int)} for that.
      * 
      * @get exp New EXP of the respawned player
      */
