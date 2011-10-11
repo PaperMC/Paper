@@ -2,11 +2,13 @@ package org.bukkit.craftbukkit;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import net.minecraft.server.EntityPlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Server;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
+import org.bukkit.entity.Player;
 
 @SerializableAs("Player")
 public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializable {
@@ -19,7 +21,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     }
 
     public boolean isOnline() {
-        return false;
+        return getPlayer() != null;
     }
 
     public String getName() {
@@ -83,5 +85,16 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     @Override
     public String toString() {
         return getClass().getSimpleName() + "[name=" + name + "]";
+    }
+
+    public Player getPlayer() {
+        for (Object obj: server.getHandle().players) {
+            EntityPlayer player = (EntityPlayer)obj;
+            if (player.name.equalsIgnoreCase(getName())) {
+                return (player.netServerHandler != null) ? player.netServerHandler.getPlayer() : null;
+            }
+        }
+        
+        return null;
     }
 }
