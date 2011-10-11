@@ -548,4 +548,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         
         return result;
     }
+
+    public Player getPlayer() {
+        return this;
+    }
 }
