@@ -173,4 +173,23 @@ public interface Entity {
      * @return unique id
      */
     public UUID getUniqueId();
+    
+    /**
+     * Gets the amount of ticks this entity has lived for.
+     * <p>
+     * This is the equivalent to "age" in entities.
+     * 
+     * @return Age of entity
+     */
+    public int getTicksLived();
+    
+    /**
+     * Sets the amount of ticks this entity has lived for.
+     * <p>
+     * This is the equivalent to "age" in entities. May not be
+     * less than one tick.
+     * 
+     * @param value Age of entity
+     */
+    public void setTicksLived(int value);
 }
