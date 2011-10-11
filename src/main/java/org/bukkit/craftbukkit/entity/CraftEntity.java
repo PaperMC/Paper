@@ -286,4 +286,15 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
         return result;
     }
+    
+    public int getTicksLived() {
+        return getHandle().ticksLived;
+    }
+    
+    public void setTicksLived(int value) {
+        if (value <= 0) {
+            throw new IllegalArgumentException("Age must be at least 1 tick");
+        }
+        getHandle().ticksLived = value;
+    }
 }
