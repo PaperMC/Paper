@@ -137,12 +137,17 @@ public class YamlConfiguration extends FileConfiguration {
         }
         
         StringBuilder builder = new StringBuilder();
-        String[] lines = header.split("\r?\n");
+        String[] lines = header.split("\r?\n", -1);
+        boolean startedHeader = false;
         
-        for (int i = 0; i < lines.length; i++) {
-            builder.append(COMMENT_PREFIX);
-            builder.append(lines[i]);
-            builder.append("\n");
+        for (int i = lines.length - 1; i >= 0; i--) {
+            builder.insert(0, "\n");
+            
+            if ((startedHeader) || (lines[i].length() != 0)) {
+                builder.insert(0, lines[i]);
+                builder.insert(0, COMMENT_PREFIX);
+                startedHeader = true;
+            }
         }
         
         return builder.toString();

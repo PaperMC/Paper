@@ -31,7 +31,7 @@ public  class YamlConfigurationTest extends FileConfigurationTest {
     }
 
     @Test
-    public void testSaveToStringWithheader() {
+    public void testSaveToStringWithHeader() {
         YamlConfiguration config = getConfig();
         config.options().header("This is a sample\nheader.");
         
@@ -41,6 +41,21 @@ public  class YamlConfigurationTest extends FileConfigurationTest {
         
         String result = config.saveToString();
         String expected = "# This is a sample\n# header.\n" + getTestValuesString();
+        
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testSaveToStringWithLongHeader() {
+        YamlConfiguration config = getConfig();
+        config.options().header("This is a sample\nheader.\n\nNewline above should be commented.\n\n");
+        
+        for (Map.Entry<String, Object> entry : getTestValues().entrySet()) {
+            config.set(entry.getKey(), entry.getValue());
+        }
+        
+        String result = config.saveToString();
+        String expected = "# This is a sample\n# header.\n# \n# Newline above should be commented.\n\n\n" + getTestValuesString();
         
         assertEquals(expected, result);
     }

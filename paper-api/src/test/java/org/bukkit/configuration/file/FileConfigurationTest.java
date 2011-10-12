@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.Map;
-import java.util.Scanner;
 import org.bukkit.configuration.MemoryConfigurationTest;
 import org.junit.Rule;
 import org.junit.Test;
