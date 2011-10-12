@@ -509,7 +509,7 @@ public final class CraftServer implements Server {
         }
 
         int dimension = 10 + console.worlds.size();
-        WorldServer internal = new WorldServer(console, new ServerNBTManager(new File("."), name, true), name, dimension, new WorldSettings(creator.seed(), getDefaultGameMode().getValue(), true), creator.environment(), generator);
+        WorldServer internal = new WorldServer(console, new ServerNBTManager(getWorldContainer(), name, true), name, dimension, new WorldSettings(creator.seed(), getDefaultGameMode().getValue(), true), creator.environment(), generator);
 
         if (!(worlds.containsKey(name.toLowerCase()))) {
             return null;
@@ -897,5 +897,9 @@ public final class CraftServer implements Server {
                 return;
             }
         }
+    }
+    
+    public File getWorldContainer() {
+        return new File(configuration.getString("settings.world-container", "."));
     }
 }

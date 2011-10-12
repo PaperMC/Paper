@@ -188,7 +188,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
             WorldSettings settings = new WorldSettings(i, j, true);
 
             if (k == 0) {
-                world = new WorldServer(this, new ServerNBTManager(new File("."), s, true), s, dimension, settings, org.bukkit.World.Environment.getEnvironment(dimension), gen); // CraftBukkit
+                world = new WorldServer(this, new ServerNBTManager(server.getWorldContainer(), s, true), s, dimension, settings, org.bukkit.World.Environment.getEnvironment(dimension), gen); // CraftBukkit
             } else {
                 String dim = "DIM-1";
 
@@ -218,7 +218,7 @@ public class MinecraftServer implements Runnable, ICommandListener {
                     }
                 }
 
-                world = new SecondaryWorldServer(this, new ServerNBTManager(new File("."), name, true), name, dimension, settings, this.worlds.get(0), org.bukkit.World.Environment.getEnvironment(dimension), gen); // CraftBukkit
+                world = new SecondaryWorldServer(this, new ServerNBTManager(server.getWorldContainer(), name, true), name, dimension, settings, this.worlds.get(0), org.bukkit.World.Environment.getEnvironment(dimension), gen); // CraftBukkit
             }
 
             if (gen != null) {
