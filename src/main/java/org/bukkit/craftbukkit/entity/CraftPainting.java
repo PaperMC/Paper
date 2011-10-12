@@ -9,6 +9,7 @@ import net.minecraft.server.WorldServer;
 import org.bukkit.Art;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.craftbukkit.CraftArt;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.Painting;
@@ -31,8 +32,7 @@ public class CraftPainting extends CraftEntity implements Painting {
 
     public Art getArt() {
         EnumArt art = getHandle().e;
-        // Since both EnumArt and Art have exactly the same enum constants, this works
-        return Art.getByName(art.toString());
+        return CraftArt.NotchToBukkit(art);
     }
 
     public boolean setArt(Art art) {
@@ -42,7 +42,7 @@ public class CraftPainting extends CraftEntity implements Painting {
     public boolean setArt(Art art, boolean force) {
         EntityPainting painting = getHandle();
         EnumArt oldArt = painting.e;
-        EnumArt newArt = EnumArt.valueOf(art.toString());
+        EnumArt newArt = CraftArt.BukkitToNotch(art);
         painting.e = newArt;
         painting.b(painting.a);
         if(!force && !painting.i()) {
