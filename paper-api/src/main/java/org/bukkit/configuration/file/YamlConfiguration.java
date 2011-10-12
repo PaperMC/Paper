@@ -61,6 +61,7 @@ public class YamlConfiguration extends FileConfiguration {
             throw new InvalidConfigurationException("Specified contents is not a valid Configuration", ex);
         }
         
+        options().header(parseHeader(contents));
         deserializeValues(input, this);
     }
     
@@ -127,6 +128,32 @@ public class YamlConfiguration extends FileConfiguration {
                 output.put(entry.getKey(), value);
             }
         }
+    }
+    
+    protected String parseHeader(String input) {
+        String[] lines = input.split("\r?\n", -1);
+        StringBuilder result = new StringBuilder();
+        boolean readingHeader = true;
+        
+        for (int i = 0; (i < lines.length) && (readingHeader); i++) {
+            String line = lines[i];
+            
+            if (line.startsWith(COMMENT_PREFIX)) {
+                if (i > 0) {
+                    result.append("\n");
+                }
+                
+                if (line.length() > COMMENT_PREFIX.length()) {
+                    result.append(line.substring(COMMENT_PREFIX.length()));
+                }
+            } else if (line.length() == 0) {
+                result.append("\n");
+            } else {
+                readingHeader = false;
+            }
+        }
+        
+        return result.toString();
     }
     
     protected String buildHeader() {

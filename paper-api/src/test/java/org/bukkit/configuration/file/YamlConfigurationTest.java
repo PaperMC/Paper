@@ -61,6 +61,25 @@ public  class YamlConfigurationTest extends FileConfigurationTest {
     }
 
     @Test
+    public void testParseHeader() throws Exception {
+        YamlConfiguration config = getConfig();
+        Map<String, Object> values = getTestValues();
+        String saved = getTestValuesString();
+        String header = "# This is a sample\n# header.\n# \n# Newline above should be commented.\n\n\n";
+        String expected = "This is a sample\nheader.\n\nNewline above should be commented.\n\n";
+        
+        config.loadFromString(header + saved);
+        
+        assertEquals(expected, config.options().header());
+        
+        for (Map.Entry<String, Object> entry : values.entrySet()) {
+            assertEquals(entry.getValue(), config.get(entry.getKey()));
+        }
+        
+        assertEquals(values.keySet(), config.getKeys(true));
+    }
+
+    @Test
     public void testSaveToStringWithIndent() {
         YamlConfiguration config = getConfig();
         config.options().indent(9);
