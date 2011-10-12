@@ -39,13 +39,14 @@ public class YamlConfiguration extends FileConfiguration {
         
         serializeValues(output, getValues(false));
         
+        String header = buildHeader();
         String dump = yaml.dump(output);
         
         if (dump.equals(BLANK_CONFIG)) {
             dump = "";
         }
         
-        return buildHeader() + dump;
+        return header + dump;
     }
 
     @Override
@@ -61,7 +62,12 @@ public class YamlConfiguration extends FileConfiguration {
             throw new InvalidConfigurationException("Specified contents is not a valid Configuration", ex);
         }
         
-        options().header(parseHeader(contents));
+        String header = parseHeader(contents);
+        
+        if (header.length() > 0) {
+            options().header(header);
+        }
+        
         deserializeValues(input, this);
     }
     
@@ -158,6 +164,19 @@ public class YamlConfiguration extends FileConfiguration {
     
     protected String buildHeader() {
         String header = options().header();
+        
+        if (options().copyHeader()) {
+            Configuration def = getDefaults();
+            
+            if ((def != null) && (def instanceof FileConfiguration)) {
+                FileConfiguration filedefaults = (FileConfiguration)def;
+                String defaultsHeader = filedefaults.buildHeader();
+                
+                if ((defaultsHeader != null) && (defaultsHeader.length() > 0)) {
+                    return defaultsHeader;
+                }
+            }
+        }
         
         if (header == null) {
             return "";

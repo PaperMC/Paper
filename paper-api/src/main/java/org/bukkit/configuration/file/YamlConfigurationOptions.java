@@ -32,6 +32,12 @@ public class YamlConfigurationOptions extends FileConfigurationOptions {
         super.header(value);
         return this;
     }
+
+    @Override
+    public YamlConfigurationOptions copyHeader(boolean value) {
+        super.copyHeader(value);
+        return this;
+    }
     
     /**
      * Gets how much spaces should be used to indent each line.

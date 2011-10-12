@@ -178,6 +178,16 @@ public abstract class FileConfiguration extends MemoryConfiguration {
      * @throws IllegalArgumentException Thrown if contents is null.
      */
     public abstract void loadFromString(String contents) throws InvalidConfigurationException;
+    
+    /**
+     * Compiles the header for this {@link FileConfiguration} and returns the result.
+     * <p>
+     * This will use the header from {@link #options()} -> {@link FileConfigurationOptions#header()},
+     * respecting the rules of {@link FileConfigurationOptions#copyHeader()} if set.
+     * 
+     * @return Compiled header
+     */
+    protected abstract String buildHeader();
 
     @Override
     public FileConfigurationOptions options() {

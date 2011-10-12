@@ -1,9 +1,7 @@
 package org.bukkit.configuration.file;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.Map;
 import org.bukkit.configuration.MemoryConfigurationTest;
@@ -20,6 +18,10 @@ public abstract class FileConfigurationTest extends MemoryConfigurationTest {
     public abstract FileConfiguration getConfig();
     
     public abstract String getTestValuesString();
+    
+    public abstract String getTestHeaderInput();
+    
+    public abstract String getTestHeaderResult();
     
     @Test
     public void testSave_File() throws Exception {
@@ -122,5 +124,65 @@ public abstract class FileConfigurationTest extends MemoryConfigurationTest {
         }
         
         assertEquals(values.keySet(), config.getKeys(true));
+        assertEquals(saved, config.saveToString());
+    }
+
+    @Test
+    public void testSaveToStringWithHeader() {
+        FileConfiguration config = getConfig();
+        config.options().header(getTestHeaderInput());
+        
+        for (Map.Entry<String, Object> entry : getTestValues().entrySet()) {
+            config.set(entry.getKey(), entry.getValue());
+        }
+        
+        String result = config.saveToString();
+        String expected = getTestHeaderResult() + "\n" + getTestValuesString();
+        
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testParseHeader() throws Exception {
+        FileConfiguration config = getConfig();
+        Map<String, Object> values = getTestValues();
+        String saved = getTestValuesString();
+        String header = getTestHeaderResult();
+        String expected = getTestHeaderInput();
+        
+        config.loadFromString(header + "\n" + saved);
+        
+        assertEquals(expected, config.options().header());
+        
+        for (Map.Entry<String, Object> entry : values.entrySet()) {
+            assertEquals(entry.getValue(), config.get(entry.getKey()));
+        }
+        
+        assertEquals(values.keySet(), config.getKeys(true));
+        assertEquals(header + "\n" + saved, config.saveToString());
+    }
+
+    @Test
+    public void testCopyHeader() throws Exception {
+        FileConfiguration config = getConfig();
+        FileConfiguration defaults = getConfig();
+        Map<String, Object> values = getTestValues();
+        String saved = getTestValuesString();
+        String header = getTestHeaderResult();
+        String expected = getTestHeaderInput();
+        
+        defaults.loadFromString(header);
+        config.loadFromString(saved);
+        config.setDefaults(defaults);
+        
+        assertNull(config.options().header());
+        assertEquals(expected, defaults.options().header());
+        
+        for (Map.Entry<String, Object> entry : values.entrySet()) {
+            assertEquals(entry.getValue(), config.get(entry.getKey()));
+        }
+        
+        assertEquals(values.keySet(), config.getKeys(true));
+        assertEquals(header + "\n" + saved, config.saveToString());
     }
 }

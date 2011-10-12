@@ -7,6 +7,7 @@ import org.bukkit.configuration.*;
  */
 public class FileConfigurationOptions extends MemoryConfigurationOptions {
     private String header = null;
+    private boolean copyHeader = true;
     
     protected FileConfigurationOptions(MemoryConfiguration configuration) {
         super(configuration);
@@ -62,6 +63,47 @@ public class FileConfigurationOptions extends MemoryConfigurationOptions {
      */
     public FileConfigurationOptions header(String value) {
         this.header = value;
+        return this;
+    }
+    
+    /**
+     * Gets whether or not the header should be copied from a default source.
+     * <p>
+     * If this is true, if a default {@link FileConfiguration} is passed to
+     * {@link FileConfiguration#setDefaults(org.bukkit.configuration.Configuration)}
+     * then upon saving it will use the header from that config, instead of the one provided here.
+     * <p>
+     * If no default is set on the configuration, or the default is not of type FileConfiguration,
+     * or that config has no header ({@link #header()} returns null) then the header
+     * specified in this configuration will be used.
+     * <p>
+     * Defaults to true.
+     * 
+     * @return Whether or not to copy the header
+     */
+    public boolean copyHeader() {
+        return copyHeader;
+    }
+    
+    /**
+     * Sets whether or not the header should be copied from a default source.
+     * <p>
+     * If this is true, if a default {@link FileConfiguration} is passed to
+     * {@link FileConfiguration#setDefaults(org.bukkit.configuration.Configuration)}
+     * then upon saving it will use the header from that config, instead of the one provided here.
+     * <p>
+     * If no default is set on the configuration, or the default is not of type FileConfiguration,
+     * or that config has no header ({@link #header()} returns null) then the header
+     * specified in this configuration will be used.
+     * <p>
+     * Defaults to true.
+     * 
+     * @param value Whether or not to copy the header
+     * @return This object, for chaining
+     */
+    public FileConfigurationOptions copyHeader(boolean value) {
+        copyHeader = value;
+        
         return this;
     }
 }
