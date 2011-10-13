@@ -5,7 +5,9 @@ import org.bukkit.entity.Vehicle;
 import org.bukkit.event.Cancellable;
 
 /**
- * Raised when a vehicle is destroyed
+ * Raised when a vehicle is destroyed, which could be caused by either a player
+ * or the environment. This is not raised if the boat is simply 'removed'
+ * due to other means.
  */
 public class VehicleDestroyEvent extends VehicleEvent implements Cancellable {
     private Entity attacker;
@@ -17,9 +19,9 @@ public class VehicleDestroyEvent extends VehicleEvent implements Cancellable {
     }
 
     /**
-     * Gets the Entity that has destroyed the vehicle
+     * Gets the Entity that has destroyed the vehicle, potentially null
      *
-     * @return the Entity that has destroyed the vehicle
+     * @return the Entity that has destroyed the vehicle, potentially null
      */
     public Entity getAttacker() {
         return attacker;
