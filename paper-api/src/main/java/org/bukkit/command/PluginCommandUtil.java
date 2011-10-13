@@ -7,7 +7,7 @@ import java.util.Map.Entry;
 
 import org.bukkit.plugin.Plugin;
 
-public class PluginCommandYamlParser {
+public class PluginCommandUtil {
 
     @SuppressWarnings("unchecked")
     public static List<Command> parse(Plugin plugin) {
@@ -59,4 +59,31 @@ public class PluginCommandYamlParser {
         }
         return pluginCmds;
     }
+    
+    public static Command parse(CommandDefinition command, Plugin plugin) {
+        Command newCmd = new PluginCommand(command.getName(), plugin);
+        String description = command.getDescription();
+        String usage = command.getUsage();
+        List<String> aliases = command.getAliases();
+        String permission = command.getPermission();
+
+        if (description != null) {
+            newCmd.setDescription(description);
+        }
+
+        if (usage != null) {
+            newCmd.setUsage(usage);
+        }
+
+        if (aliases != null) {
+            newCmd.setAliases(aliases);
+        }
+
+        if (permission != null) {
+            newCmd.setPermission(permission);
+        }
+        
+        return newCmd;
+    }
+    
 }

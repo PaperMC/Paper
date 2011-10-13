@@ -23,7 +23,10 @@ import java.util.regex.Matcher;
 import org.bukkit.Server;
 import java.util.regex.Pattern;
 import org.bukkit.command.Command;
-import org.bukkit.command.PluginCommandYamlParser;
+import org.bukkit.command.CommandMap;
+import org.bukkit.command.CommandDefinition;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.PluginCommandUtil;
 import org.bukkit.command.SimpleCommandMap;
 
 import org.bukkit.event.Event;
@@ -270,7 +273,7 @@ public final class SimplePluginManager implements PluginManager {
 
     public void enablePlugin(final Plugin plugin) {
         if (!plugin.isEnabled()) {
-            List<Command> pluginCommands = PluginCommandYamlParser.parse(plugin);
+            List<Command> pluginCommands = PluginCommandUtil.parse(plugin);
 
             if (!pluginCommands.isEmpty()) {
                 commandMap.registerAll(plugin.getDescription().getName(), pluginCommands);
@@ -539,5 +542,9 @@ public final class SimplePluginManager implements PluginManager {
 
     public Set<Permission> getPermissions() {
         return new HashSet<Permission>(permissions.values());
+    }
+    
+    public void registerCommand(CommandDefinition command, Plugin plugin) {
+        commandMap.register(plugin.getDescription().getName(), PluginCommandUtil.parse(command, plugin));
     }
 }

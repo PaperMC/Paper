@@ -3,6 +3,9 @@ package org.bukkit.plugin;
 import java.io.File;
 import java.util.Set;
 
+import org.bukkit.command.CommandDefinition;
+import org.bukkit.command.CommandMap;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.event.Event;
 import org.bukkit.event.Event.Priority;
 import org.bukkit.event.Listener;
@@ -252,4 +255,12 @@ public interface PluginManager {
      * @return Set containing all current registered permissions
      */
     public Set<Permission> getPermissions();
+    
+    /**
+     * Registers a plugin command dynamically.
+     * 
+     * @param command Command definition to use
+     * @param plugin Plugin to associate it with
+     */
+    public void registerCommand(CommandDefinition command, Plugin plugin);
 }
