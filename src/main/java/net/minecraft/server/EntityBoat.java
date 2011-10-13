@@ -303,6 +303,13 @@ public class EntityBoat extends Entity {
 
             if (this.positionChanged && d4 > 0.15D) {
                 if (!this.world.isStatic) {
+                    // CraftBukkit start
+                    Vehicle vehicle = (Vehicle) this.getBukkitEntity();
+                    VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, null);
+                    this.world.getServer().getPluginManager().callEvent(destroyEvent);
+
+                    if (!destroyEvent.isCancelled()) {
+                    // CraftBukkit end
                     this.die();
 
                     int k;
@@ -314,6 +321,7 @@ public class EntityBoat extends Entity {
                     for (k = 0; k < 2; ++k) {
                         this.a(Item.STICK.id, 1, 0.0F);
                     }
+                    }// CraftBukkit
                 }
             } else {
                 this.motX *= 0.9900000095367432D;
