@@ -600,6 +600,12 @@ public abstract class Event implements Serializable {
          * @see org.bukkit.event.world.TreeGrowEvent
          */
         STRUCTURE_GROW(Category.WORLD),
+        /**
+         * Called when an item despawns from a world
+         *
+         * @see org.bukkit.event.entity.ItemDespawnEvent
+         */
+        ITEM_DESPAWN (Category.WORLD),
 
         /**
          * ENTITY EVENTS

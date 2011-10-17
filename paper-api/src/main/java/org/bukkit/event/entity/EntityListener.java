@@ -162,4 +162,11 @@ public class EntityListener implements Listener {
      * @param event Relevant event details
      */
     public void onSlimeSplit(SlimeSplitEvent event) {}
+
+    /**
+     * Called when an item despawns from a world
+     *
+     * @param event Relevant event details
+     */
+    public void onItemDespawn(ItemDespawnEvent event) {}
 }

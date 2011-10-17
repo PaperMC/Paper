@@ -840,6 +840,13 @@ public class JavaPluginLoader implements PluginLoader {
                 }
             };
 
+        case ITEM_DESPAWN:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((EntityListener) listener).onItemDespawn((ItemDespawnEvent) event);
+                }
+            };
+
         // Vehicle Events
         case VEHICLE_CREATE:
             return new EventExecutor() {
