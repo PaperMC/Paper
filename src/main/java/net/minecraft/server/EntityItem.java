@@ -1,6 +1,9 @@
 package net.minecraft.server;
 
-import org.bukkit.event.player.PlayerPickupItemEvent; // CraftBukkit
+// CraftBukkit start
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.player.PlayerPickupItemEvent;
+// CraftBukkit End
 
 public class EntityItem extends Entity {
 
@@ -83,6 +86,12 @@ public class EntityItem extends Entity {
         ++this.e;
         ++this.b;
         if (this.b >= 6000) {
+            // CraftBukkit start
+            if(CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
+                this.b = 0;
+                return;
+            }
+            // CraftBukkit end
             this.die();
         }
     }
