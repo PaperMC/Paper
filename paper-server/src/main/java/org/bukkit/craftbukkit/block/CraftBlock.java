@@ -274,6 +274,11 @@ public class CraftBlock implements Block {
         return this.x == other.x && this.y == other.y && this.z == other.z && this.getWorld().equals(other.getWorld());
     }
 
+    @Override
+    public int hashCode() {
+        return this.y << 24 ^ this.x ^ this.z ^ this.getWorld().hashCode();
+    }
+
     public boolean isBlockFacePowered(BlockFace face) {
         return chunk.getHandle().world.isBlockFacePowered(x, y, z, blockFaceToNotch(face));
     }
