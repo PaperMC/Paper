@@ -128,32 +128,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         return launchProjectile(Arrow.class);
     }
 
-    public boolean isInsideVehicle() {
-        return getHandle().vehicle != null;
-    }
-
-    public boolean leaveVehicle() {
-        if (getHandle().vehicle == null) {
-            return false;
-        }
-
-        getHandle().setPassengerOf(null);
-        return true;
-    }
-
-    public Vehicle getVehicle() {
-        if (getHandle().vehicle == null) {
-            return null;
-        }
-
-        org.bukkit.entity.Entity vehicle = (getHandle().vehicle.getBukkitEntity());
-        if (vehicle instanceof Vehicle) {
-            return (Vehicle) vehicle;
-        }
-
-        return null;
-    }
-
     public int getRemainingAir() {
         return getHandle().getAirTicks();
     }

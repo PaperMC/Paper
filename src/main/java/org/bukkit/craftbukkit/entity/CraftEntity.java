@@ -9,6 +9,7 @@ import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.entity.Vehicle;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
@@ -341,5 +342,26 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     public void removeMetadata(String metadataKey, Plugin owningPlugin) {
         server.getEntityMetadata().removeMetadata(this, metadataKey, owningPlugin);
+    }
+
+    public boolean isInsideVehicle() {
+        return getHandle().vehicle != null;
+    }
+
+    public boolean leaveVehicle() {
+        if (getHandle().vehicle == null) {
+            return false;
+        }
+
+        getHandle().setPassengerOf(null);
+        return true;
+    }
+
+    public org.bukkit.entity.Entity getVehicle() {
+        if (getHandle().vehicle == null) {
+            return null;
+        }
+
+        return getHandle().vehicle.getBukkitEntity();
     }
 }
