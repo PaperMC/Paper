@@ -115,7 +115,7 @@ public enum ChatColor {
             return null;
         }
 
-        return input.replaceAll("(?i)\u00A7[0-F]", "");
+        return input.replaceAll("(?i)\u00A7[0-9A-F]", "");
     }
 
     static {
