@@ -2,6 +2,7 @@ package org.bukkit.configuration;
 
 import org.bukkit.Material;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.bukkit.inventory.ItemStack;
@@ -375,11 +376,26 @@ public abstract class ConfigurationSectionTest {
     public void testGetList_String() {
         ConfigurationSection section = getConfigurationSection();
         String key = "exists";
-        List value = Arrays.asList("One", "Two", "Three");
+        Map<String, Object> map = new HashMap<String, Object>();
+        
+        map.put("one", 1);
+        map.put("two", "two");
+        map.put("three", 3.14);
+        
+        List value = Arrays.asList((Object)"One", "Two", "Three", 4, "5", 6.0, true, "false", map);
         
         section.set(key, value);
         
         assertEquals(value, section.getList(key));
+        assertEquals(Arrays.asList((Object)"One", "Two", "Three", "4", "5", "6.0", "true", "false"), section.getStringList(key));
+        assertEquals(Arrays.asList((Object)4, 5, 6), section.getIntegerList(key));
+        assertEquals(Arrays.asList((Object)true, false), section.getBooleanList(key));
+        assertEquals(Arrays.asList((Object)4.0, 5.0, 6.0), section.getDoubleList(key));
+        assertEquals(Arrays.asList((Object)4.0f, 5.0f, 6.0f), section.getFloatList(key));
+        assertEquals(Arrays.asList((Object)4l, 5l, 6l), section.getLongList(key));
+        assertEquals(Arrays.asList((Object)(byte)4, (byte)5, (byte)6), section.getByteList(key));
+        assertEquals(Arrays.asList((Object)(short)4, (short)5, (short)6), section.getShortList(key));
+        assertEquals(map, section.getMapList(key).get(0));
         assertNull(section.getString("doesntExist"));
     }
 

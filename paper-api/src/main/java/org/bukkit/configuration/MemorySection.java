@@ -2,6 +2,7 @@ package org.bukkit.configuration;
 
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -428,6 +429,310 @@ public class MemorySection implements ConfigurationSection {
 
         Object val = get(path);
         return val instanceof List;
+    }
+
+    public List getStringList(String path) {
+        if (path == null) {
+            throw new IllegalArgumentException("Path cannot be null");
+        }
+
+        List<Object> list = getList(path);
+        List<String> result = new ArrayList();
+        
+        for (Object object : list) {
+            if ((object instanceof String) || (isPrimitiveWrapper(object))) {
+                result.add(String.valueOf(object));
+            }
+        }
+        
+        return result;
+    }
+
+    public List getIntegerList(String path) {
+        if (path == null) {
+            throw new IllegalArgumentException("Path cannot be null");
+        }
+
+        List<Object> list = getList(path);
+        List<Integer> result = new ArrayList();
+        
+        for (Object object : list) {
+            if (object instanceof Integer) {
+                result.add((Integer)object);
+            } else if (object instanceof String) {
+                try {
+                    result.add(Integer.valueOf((String)object));
+                } catch (Exception ex) {}
+            } else if (object instanceof Byte) {
+                result.add((Integer)(int)(byte)(Byte)object);
+            } else if (object instanceof Character) {
+                result.add((Integer)(int)(char)(Character)object);
+            } else if (object instanceof Short) {
+                result.add((Integer)(int)(short)(Short)object);
+            } else if (object instanceof Integer) {
+                result.add((Integer)(int)(int)(Integer)object);
+            } else if (object instanceof Long) {
+                result.add((Integer)(int)(long)(Long)object);
+            } else if (object instanceof Float) {
+                result.add((Integer)(int)(float)(Float)object);
+            } else if (object instanceof Double) {
+                result.add((Integer)(int)(double)(Double)object);
+            }
+        }
+        
+        return result;
+    }
+
+    public List getBooleanList(String path) {
+        if (path == null) {
+            throw new IllegalArgumentException("Path cannot be null");
+        }
+
+        List<Object> list = getList(path);
+        List<Boolean> result = new ArrayList();
+        
+        for (Object object : list) {
+            if (object instanceof Boolean) {
+                result.add((Boolean)object);
+            } else if (object instanceof String) {
+                if (Boolean.TRUE.toString().equals(object)) {
+                    result.add(true);
+                } else if (Boolean.FALSE.toString().equals(object)) {
+                    result.add(false);
+                }
+            }
+        }
+        
+        return result;
+    }
+
+    public List getDoubleList(String path) {
+        if (path == null) {
+            throw new IllegalArgumentException("Path cannot be null");
+        }
+
+        List<Object> list = getList(path);
+        List<Double> result = new ArrayList();
+        
+        for (Object object : list) {
+            if (object instanceof Double) {
+                result.add((Double)object);
+            } else if (object instanceof String) {
+                try {
+                    result.add(Double.valueOf((String)object));
+                } catch (Exception ex) {}
+            } else if (object instanceof Byte) {
+                result.add((Double)(double)(byte)(Byte)object);
+            } else if (object instanceof Character) {
+                result.add((Double)(double)(char)(Character)object);
+            } else if (object instanceof Short) {
+                result.add((Double)(double)(short)(Short)object);
+            } else if (object instanceof Integer) {
+                result.add((Double)(double)(int)(Integer)object);
+            } else if (object instanceof Long) {
+                result.add((Double)(double)(long)(Long)object);
+            } else if (object instanceof Float) {
+                result.add((Double)(double)(float)(Float)object);
+            } else if (object instanceof Double) {
+                result.add((Double)(double)(double)(Double)object);
+            }
+        }
+        
+        return result;
+    }
+
+    public List getFloatList(String path) {
+        if (path == null) {
+            throw new IllegalArgumentException("Path cannot be null");
+        }
+
+        List<Object> list = getList(path);
+        List<Float> result = new ArrayList();
+        
+        for (Object object : list) {
+            if (object instanceof Float) {
+                result.add((Float)object);
+            } else if (object instanceof String) {
+                try {
+                    result.add(Float.valueOf((String)object));
+                } catch (Exception ex) {}
+            } else if (object instanceof Byte) {
+                result.add((Float)(float)(byte)(Byte)object);
+            } else if (object instanceof Character) {
+                result.add((Float)(float)(char)(Character)object);
+            } else if (object instanceof Short) {
+                result.add((Float)(float)(short)(Short)object);
+            } else if (object instanceof Integer) {
+                result.add((Float)(float)(int)(Integer)object);
+            } else if (object instanceof Long) {
+                result.add((Float)(float)(long)(Long)object);
+            } else if (object instanceof Float) {
+                result.add((Float)(float)(float)(Float)object);
+            } else if (object instanceof Double) {
+                result.add((Float)(float)(double)(Double)object);
+            }
+        }
+        
+        return result;
+    }
+
+    public List getLongList(String path) {
+        if (path == null) {
+            throw new IllegalArgumentException("Path cannot be null");
+        }
+
+        List<Object> list = getList(path);
+        List<Long> result = new ArrayList();
+        
+        for (Object object : list) {
+            if (object instanceof Long) {
+                result.add((Long)object);
+            } else if (object instanceof String) {
+                try {
+                    result.add(Long.valueOf((String)object));
+                } catch (Exception ex) {}
+            } else if (object instanceof Byte) {
+                result.add((Long)(long)(byte)(Byte)object);
+            } else if (object instanceof Character) {
+                result.add((Long)(long)(char)(Character)object);
+            } else if (object instanceof Short) {
+                result.add((Long)(long)(short)(Short)object);
+            } else if (object instanceof Integer) {
+                result.add((Long)(long)(int)(Integer)object);
+            } else if (object instanceof Long) {
+                result.add((Long)(long)(long)(Long)object);
+            } else if (object instanceof Float) {
+                result.add((Long)(long)(float)(Float)object);
+            } else if (object instanceof Double) {
+                result.add((Long)(long)(double)(Double)object);
+            }
+        }
+        
+        return result;
+    }
+
+    public List getByteList(String path) {
+        if (path == null) {
+            throw new IllegalArgumentException("Path cannot be null");
+        }
+
+        List<Object> list = getList(path);
+        List<Byte> result = new ArrayList();
+        
+        for (Object object : list) {
+            if (object instanceof Byte) {
+                result.add((Byte)object);
+            } else if (object instanceof String) {
+                try {
+                    result.add(Byte.valueOf((String)object));
+                } catch (Exception ex) {}
+            } else if (object instanceof Byte) {
+                result.add((Byte)(byte)(byte)(Byte)object);
+            } else if (object instanceof Character) {
+                result.add((Byte)(byte)(char)(Character)object);
+            } else if (object instanceof Short) {
+                result.add((Byte)(byte)(short)(Short)object);
+            } else if (object instanceof Integer) {
+                result.add((Byte)(byte)(int)(Integer)object);
+            } else if (object instanceof Long) {
+                result.add((Byte)(byte)(long)(Long)object);
+            } else if (object instanceof Float) {
+                result.add((Byte)(byte)(float)(Float)object);
+            } else if (object instanceof Double) {
+                result.add((Byte)(byte)(double)(Double)object);
+            }
+        }
+        
+        return result;
+    }
+
+    public List getCharacterList(String path) {
+        if (path == null) {
+            throw new IllegalArgumentException("Path cannot be null");
+        }
+
+        List<Object> list = getList(path);
+        List<Character> result = new ArrayList();
+        
+        for (Object object : list) {
+            if (object instanceof Character) {
+                result.add((Character)object);
+            } else if (object instanceof String) {
+                String str = (String)object;
+                
+                if (str.length() == 1) {
+                    result.add(str.charAt(0));
+                }
+            } else if (object instanceof Byte) {
+                result.add((Character)(char)(byte)(Byte)object);
+            } else if (object instanceof Character) {
+                result.add((Character)(char)(char)(Character)object);
+            } else if (object instanceof Short) {
+                result.add((Character)(char)(short)(Short)object);
+            } else if (object instanceof Integer) {
+                result.add((Character)(char)(int)(Integer)object);
+            } else if (object instanceof Long) {
+                result.add((Character)(char)(long)(Long)object);
+            } else if (object instanceof Float) {
+                result.add((Character)(char)(float)(Float)object);
+            } else if (object instanceof Double) {
+                result.add((Character)(char)(double)(Double)object);
+            }
+        }
+        
+        return result;
+    }
+
+    public List getShortList(String path) {
+        if (path == null) {
+            throw new IllegalArgumentException("Path cannot be null");
+        }
+
+        List<Object> list = getList(path);
+        List<Short> result = new ArrayList();
+        
+        for (Object object : list) {
+            if (object instanceof Short) {
+                result.add((Short)object);
+            } else if (object instanceof String) {
+                try {
+                    result.add(Short.valueOf((String)object));
+                } catch (Exception ex) {}
+            } else if (object instanceof Byte) {
+                result.add((Short)(short)(byte)(Byte)object);
+            } else if (object instanceof Character) {
+                result.add((Short)(short)(char)(Character)object);
+            } else if (object instanceof Short) {
+                result.add((Short)(short)(short)(Short)object);
+            } else if (object instanceof Integer) {
+                result.add((Short)(short)(int)(Integer)object);
+            } else if (object instanceof Long) {
+                result.add((Short)(short)(long)(Long)object);
+            } else if (object instanceof Float) {
+                result.add((Short)(short)(float)(Float)object);
+            } else if (object instanceof Double) {
+                result.add((Short)(short)(double)(Double)object);
+            }
+        }
+        
+        return result;
+    }
+
+    public List<Map<String, Object>> getMapList(String path) {
+        if (path == null) {
+            throw new IllegalArgumentException("Path cannot be null");
+        }
+
+        List<Object> list = getList(path);
+        List<Map<String, Object>> result = new ArrayList();
+        
+        for (Object object : list) {
+            if (object instanceof Map) {
+                result.add((Map<String, Object>)object);
+            }
+        }
+        
+        return result;
     }
 
 // Bukkit
