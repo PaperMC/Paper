@@ -1,7 +1,6 @@
 package org.bukkit.configuration;
 
 import org.bukkit.Material;
-import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -22,9 +21,10 @@ public abstract class ConfigurationSectionTest {
         section.set("subsection.subkey2", true);
         section.set("subsection.subsubsection.key", true);
         section.set("key2", true);
+        section.set("42", true);
 
-        assertArrayEquals(new String[] {"key", "subsection", "key2"}, section.getKeys(false).toArray());
-        assertArrayEquals(new String[] {"key", "subsection", "subsection.subkey", "subsection.subkey2", "subsection.subsubsection", "subsection.subsubsection.key", "key2"}, section.getKeys(true).toArray());
+        assertArrayEquals(new String[] {"key", "subsection", "key2", "42"}, section.getKeys(false).toArray());
+        assertArrayEquals(new String[] {"key", "subsection", "subsection.subkey", "subsection.subkey2", "subsection.subsubsection", "subsection.subsubsection.key", "key2", "42"}, section.getKeys(true).toArray());
         assertArrayEquals(new String[] {"subkey", "subkey2", "subsubsection", "subsubsection.key"}, section.getConfigurationSection("subsection").getKeys(true).toArray());
     }
 

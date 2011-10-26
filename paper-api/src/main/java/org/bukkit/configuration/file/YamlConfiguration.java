@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -55,11 +56,14 @@ public class YamlConfiguration extends FileConfiguration {
             throw new IllegalArgumentException("Contents cannot be null");
         }
         
-        Map<String, Object> input;
-        try {
-            input = (Map<String, Object>)yaml.load(contents);
-        } catch (Throwable ex) {
-            throw new InvalidConfigurationException("Specified contents is not a valid Configuration", ex);
+        Map<Object, Object> input = (Map<Object, Object>)yaml.load(contents);
+        int size = (input == null) ? 0 : input.size();
+        Map<String, Object> result = new LinkedHashMap<String, Object>(size);
+        
+        if (size > 0) {
+            for (Map.Entry<Object, Object> entry : input.entrySet()) {
+                result.put(entry.getKey().toString(), entry.getValue());
+            }
         }
         
         String header = parseHeader(contents);
@@ -68,7 +72,7 @@ public class YamlConfiguration extends FileConfiguration {
             options().header(header);
         }
         
-        deserializeValues(input, this);
+        deserializeValues(result, this);
     }
     
     protected void deserializeValues(Map<String, Object> input, ConfigurationSection section) throws InvalidConfigurationException {
@@ -80,12 +84,14 @@ public class YamlConfiguration extends FileConfiguration {
             Object value = entry.getValue();
             
             if (value instanceof Map) {
-                Map<String, Object> subvalues;
-                
-                try {
-                    subvalues = (Map<String, Object>) value;
-                } catch (ClassCastException ex) {
-                    throw new InvalidConfigurationException("Map found where type is not <String, Object>", ex);
+                Map<Object, Object> subinput = (Map<Object, Object>)value;
+                int size = (subinput == null) ? 0 : subinput.size();
+                Map<String, Object> subvalues = new LinkedHashMap<String, Object>(size);
+             
+                if (size > 0) {
+                    for (Map.Entry<Object, Object> subentry : subinput.entrySet()) {
+                        subvalues.put(subentry.getKey().toString(), subentry.getValue());
+                    }
                 }
                 
                 if (subvalues.containsKey(ConfigurationSerialization.SERIALIZED_TYPE_KEY)) {
