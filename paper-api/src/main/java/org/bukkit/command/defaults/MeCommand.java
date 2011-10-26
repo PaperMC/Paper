@@ -23,8 +23,7 @@ public class MeCommand extends VanillaCommand {
         StringBuilder message = new StringBuilder();
         message.append(sender.getName());
         if (args.length > 0) {
-	        message.append(args[0]);
-	        for (int i = 1; i < args.length; i++) {
+	        for (int i = 0; i < args.length; i++) {
 	            message.append(" ");
 	            message.append(args[i]);
 	        }
