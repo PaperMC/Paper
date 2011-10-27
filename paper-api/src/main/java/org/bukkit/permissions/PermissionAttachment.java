@@ -1,8 +1,8 @@
 
 package org.bukkit.permissions;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.TreeMap;
 import org.bukkit.plugin.Plugin;
 
 /**
@@ -10,7 +10,7 @@ import org.bukkit.plugin.Plugin;
  */
 public class PermissionAttachment {
     private PermissionRemovedExecutor removed;
-    private final TreeMap<String, Boolean> permissions = new TreeMap<String, Boolean>();
+    private final Map<String, Boolean> permissions = new LinkedHashMap<String, Boolean>();
     private final Permissible permissible;
     private final Plugin plugin;
 
@@ -69,7 +69,7 @@ public class PermissionAttachment {
      * @return Copy of all permissions and values expressed by this attachment
      */
     public Map<String, Boolean> getPermissions() {
-        return (Map<String, Boolean>)permissions.clone();
+        return new LinkedHashMap<String, Boolean>(permissions);
     }
 
     /**
