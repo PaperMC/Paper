@@ -14,7 +14,7 @@ public class EntityFallingSand extends Entity {
     public EntityFallingSand(World world, double d0, double d1, double d2, int i, int data) {
         super(world);
         this.a = i;
-        this.data = data;
+        this.data = data; // CraftBukkit
         this.aY = true;
         this.b(0.98F, 0.98F);
         this.height = this.width / 2.0F;

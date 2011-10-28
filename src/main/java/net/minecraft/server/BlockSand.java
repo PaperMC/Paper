@@ -27,6 +27,7 @@ public class BlockSand extends Block {
             byte b0 = 32;
 
             if (!instaFall && world.a(i - b0, j - b0, k - b0, i + b0, j + b0, k + b0)) {
+                // CraftBukkit Change call to add data
                 EntityFallingSand entityfallingsand = new EntityFallingSand(world, (double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), this.id, world.getData(i, j, k));
 
                 world.addEntity(entityfallingsand);
