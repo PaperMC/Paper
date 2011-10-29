@@ -22,7 +22,11 @@ public enum CreatureType {
     WOLF("Wolf", Wolf.class),
     CAVE_SPIDER("CaveSpider", CaveSpider.class),
     ENDERMAN("Enderman", Enderman.class),
-    SILVERFISH("Silverfish", Silverfish.class);
+    SILVERFISH("Silverfish", Silverfish.class),
+    ENDER_DRAGON("EnderDragon", EnderDragon.class),
+    VILLAGER("Villager", Villager.class),
+    BLAZE("Blaze", Blaze.class),
+    MUSHROOM_COW("MushroomCow", MushroomCow.class);
 
     private String name;
     private Class<? extends Entity> clazz;
