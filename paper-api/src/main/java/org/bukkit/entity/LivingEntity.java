@@ -12,18 +12,26 @@ import org.bukkit.block.Block;
 public interface LivingEntity extends Entity {
 
     /**
-     * Gets the entity's health from 0-20, where 0 is dead and 20 is full
+     * Gets the entity's health from 0 to {@link #getMaxHealth()}, where 0 is dead
      *
-     * @return Health represented from 0-20
+     * @return Health represented from 0 to max
      */
     public int getHealth();
 
     /**
-     * Sets the entity's health from 0-20, where 0 is dead and 20 is full
+     * Sets the entity's health from 0 to {@link #getMaxHealth()}, where 0 is dead
      *
-     * @param health New health represented from 0-20
+     * @param health New health represented from 0 to max
+     * @throws IllegalArgumentException Thrown if the health is < 0 or > max
      */
     public void setHealth(int health);
+    
+    /**
+     * Gets the maximum health this entity may have
+     * 
+     * @return Maximum health
+     */
+    public int getMaxHealth();
 
     /**
      * Gets the height of the entity's head above its Location
