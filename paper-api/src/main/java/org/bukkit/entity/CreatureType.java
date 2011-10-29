@@ -5,26 +5,27 @@ import java.util.HashMap;
 import java.util.Map;
 
 public enum CreatureType {
-    CHICKEN("Chicken"),
-    COW("Cow"),
-    CREEPER("Creeper"),
-    GHAST("Ghast"),
-    GIANT("Giant"),
-    MONSTER("Monster"),
-    PIG("Pig"),
-    PIG_ZOMBIE("PigZombie"),
-    SHEEP("Sheep"),
-    SKELETON("Skeleton"),
-    SLIME("Slime"),
-    SPIDER("Spider"),
-    SQUID("Squid"),
-    ZOMBIE("Zombie"),
-    WOLF("Wolf"),
-    CAVE_SPIDER("CaveSpider"),
-    ENDERMAN("Enderman"),
-    SILVERFISH("Silverfish");
+    CHICKEN("Chicken", Chicken.class),
+    COW("Cow", Cow.class),
+    CREEPER("Creeper", Creeper.class),
+    GHAST("Ghast", Ghast.class),
+    GIANT("Giant", Giant.class),
+    MONSTER("Monster", Monster.class),
+    PIG("Pig", Pig.class),
+    PIG_ZOMBIE("PigZombie", PigZombie.class),
+    SHEEP("Sheep", Sheep.class),
+    SKELETON("Skeleton", Skeleton.class),
+    SLIME("Slime", Slime.class),
+    SPIDER("Spider", Spider.class),
+    SQUID("Squid", Squid.class),
+    ZOMBIE("Zombie", Zombie.class),
+    WOLF("Wolf", Wolf.class),
+    CAVE_SPIDER("CaveSpider", CaveSpider.class),
+    ENDERMAN("Enderman", Enderman.class),
+    SILVERFISH("Silverfish", Silverfish.class);
 
     private String name;
+    private Class<? extends Entity> clazz;
 
     private static final Map<String, CreatureType> mapping = new HashMap<String, CreatureType>();
 
@@ -34,12 +35,17 @@ public enum CreatureType {
         }
     }
 
-    private CreatureType(String name) {
+    private CreatureType(String name, Class<? extends Entity> clazz) {
         this.name = name;
+        this.clazz = clazz;
     }
 
     public String getName() {
         return name;
+    }
+    
+    public Class<? extends Entity> getEntityClass() {
+        return clazz;
     }
 
     public static CreatureType fromName(String name) {
