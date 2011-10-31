@@ -70,6 +70,7 @@ import org.bukkit.craftbukkit.inventory.CraftShapelessRecipe;
 import org.bukkit.craftbukkit.map.CraftMapView;
 import org.bukkit.scheduler.BukkitWorker;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
+import org.bukkit.craftbukkit.util.Versioning;
 import org.bukkit.util.permissions.DefaultPermissions;
 import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.permissions.Permission;
@@ -82,6 +83,7 @@ public final class CraftServer implements Server {
     private final String serverName = "Craftbukkit";
     private final String serverVersion;
     private final String protocolVersion = "1.8.1";
+    private final String bukkitVersion = Versioning.getBukkitVersion();
     private final ServicesManager servicesManager = new SimpleServicesManager();
     private final BukkitScheduler scheduler = new CraftScheduler(this);
     private final SimpleCommandMap commandMap = new SimpleCommandMap(this);
@@ -190,6 +192,10 @@ public final class CraftServer implements Server {
 
     public String getVersion() {
         return serverVersion + " (MC: " + protocolVersion + ")";
+    }
+    
+    public String getBukkitVersion() {
+        return bukkitVersion;
     }
 
     @SuppressWarnings("unchecked")
