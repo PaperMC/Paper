@@ -53,6 +53,13 @@ public interface Server {
      * @return version of this server implementation
      */
     public String getVersion();
+    
+    /**
+     * Gets the Bukkit version that this server is running.
+     * 
+     * @return Version of Bukkit
+     */
+    public String getBukkitVersion();
 
     /**
      * Gets a list of all currently logged in players

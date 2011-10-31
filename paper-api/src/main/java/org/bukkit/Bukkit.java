@@ -51,7 +51,7 @@ public final class Bukkit {
         }
 
         Bukkit.server = server;
-        server.getLogger().info("This server is running " + getName() + " version " + getVersion());
+        server.getLogger().info("This server is running " + getName() + " version " + getVersion() + " (Implementing API version " + getBukkitVersion() + ")");
     }
 
     public static String getName() {
@@ -60,6 +60,10 @@ public final class Bukkit {
 
     public static String getVersion() {
         return server.getVersion();
+    }
+
+    public static String getBukkitVersion() {
+        return server.getBukkitVersion();
     }
 
     public static Player[] getOnlinePlayers() {
