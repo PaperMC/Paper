@@ -76,7 +76,7 @@ public class PermissibleBase implements Permissible {
             if (perm != null) {
                 return perm.getDefault().getValue(isOp());
             } else {
-                return false;
+                return Permission.DEFAULT_PERMISSION.getValue(isOp());
             }
         }
     }
