@@ -3,6 +3,7 @@ package org.bukkit.configuration;
 import org.bukkit.Material;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.bukkit.inventory.ItemStack;
@@ -180,6 +181,19 @@ public abstract class ConfigurationSectionTest {
         ConfigurationSection subsection = section.createSection("subsection");
         
         assertEquals("subsection", subsection.getName());
+    }
+
+    @Test
+    public void testSectionMap() {
+        ConfigurationSection config = getConfigurationSection();
+        Map<String, Object> testMap = new LinkedHashMap<String, Object>();
+        
+        testMap.put("string", "Hello World");
+        testMap.put("integer", 15);
+        
+        config.createSection("test.path", testMap);
+        
+        assertEquals(testMap, config.getConfigurationSection("test.path").getValues(false));
     }
 
     @Test

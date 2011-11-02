@@ -1,7 +1,6 @@
 package org.bukkit.configuration;
 
 import java.util.LinkedHashMap;
-import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;

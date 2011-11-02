@@ -164,6 +164,17 @@ public interface ConfigurationSection {
      * @return Newly created section
      */
     public ConfigurationSection createSection(String path);
+    
+    /**
+     * Creates a {@link ConfigurationSection} at the specified path, with specified values.
+     * <p>
+     * Any value that was previously set at this path will be overwritten. If the
+     * previous value was itself a {@link ConfigurationSection}, it will be orphaned.
+     *
+     * @param path Path to create the section at.
+     * @return Newly created section
+     */
+    public ConfigurationSection createSection(String path, Map<String, Object> map);
 
     // Primitives
     /**

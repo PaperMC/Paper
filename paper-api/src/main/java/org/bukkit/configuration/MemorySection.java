@@ -266,6 +266,20 @@ public class MemorySection implements ConfigurationSection {
             return section.createSection(key);
         }
     }
+    
+    public ConfigurationSection createSection(String path, Map<String, Object> map) {
+        ConfigurationSection section = createSection(path);
+
+        for(Map.Entry<String, Object> entry : map.entrySet()) {
+            if(entry.getValue() instanceof Map) {
+                section.createSection(entry.getKey(), (Map<String, Object>)entry.getValue());
+            } else {
+                section.set(entry.getKey(), entry.getValue());
+            }
+        }
+
+        return section;
+    }
 
     // Primitives
     public String getString(String path) {
