@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
+import static org.bukkit.craftbukkit.Main.*;
+
 public class ThreadCommandReader extends Thread {
 
     final MinecraftServer server;
@@ -13,13 +15,19 @@ public class ThreadCommandReader extends Thread {
     }
 
     public void run() {
+        // CraftBukkit start
+        if (!useConsole) {
+            return;
+        }
+        // CraftBukkit end
+
         jline.ConsoleReader bufferedreader = this.server.reader; // CraftBukkit
         String s = null;
 
         try {
             // CraftBukkit start - JLine disabling compatibility
             while (!this.server.isStopped && MinecraftServer.isRunning(this.server)) {
-                if (org.bukkit.craftbukkit.Main.useJline) {
+                if (useJline) {
                     s = bufferedreader.readLine(">", null);
                 } else {
                     s = bufferedreader.readLine();

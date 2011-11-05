@@ -13,6 +13,7 @@ import net.minecraft.server.MinecraftServer;
 
 public class Main {
     public static boolean useJline = true;
+    public static boolean useConsole = true;
 
     public static void main(String[] args) {
         // Todo: Installation script
@@ -93,6 +94,8 @@ public class Main {
                         .describedAs("Yml file");
 
                 acceptsAll(asList("nojline"), "Disables jline and emulates the vanilla console");
+                
+                acceptsAll(asList("noconsole"), "Disables the console");
 
                 acceptsAll(asList("v", "version"), "Show the CraftBukkit Version");
             }
@@ -122,6 +125,10 @@ public class Main {
                     System.setProperty("jline.terminal", "jline.UnsupportedTerminal");
                     System.setProperty("user.language", "en");
                     useJline = false;
+                }
+                
+                if (options.has("noconsole")) {
+                    useConsole = false;
                 }
 
                 MinecraftServer.main(options);
