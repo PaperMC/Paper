@@ -29,6 +29,7 @@ import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.world.WorldSaveEvent;
 import org.bukkit.generator.ChunkGenerator;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginLoadOrder;
 // CraftBukkit end
 
@@ -658,7 +659,30 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
     }
 
     public String getPlugins() {
-        return "";
+        // CraftBukkit start - whole method
+        StringBuilder result = new StringBuilder();
+        Plugin[] plugins = server.getPluginManager().getPlugins();
+
+        result.append(server.getName());
+        result.append(" on Bukkit ");
+        result.append(server.getBukkitVersion());
+
+        if (plugins.length > 0) {
+            result.append(": ");
+
+            for (int i = 0; i < plugins.length; i++) {
+                if (i > 0) {
+                    result.append("; ");
+                }
+
+                result.append(plugins[i].getDescription().getName());
+                result.append(" ");
+                result.append(plugins[i].getDescription().getVersion().replaceAll(";", ","));
+            }
+        }
+
+        return result.toString();
+        // CraftBukkit end
     }
 
     public void o() {}
@@ -670,7 +694,7 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
     }
 
     public boolean isDebugging() {
-        return false;
+        return this.propertyManager.getBoolean("debug", false); // CraftBukkit - don't hardcode
     }
 
     public void severe(String s) {
