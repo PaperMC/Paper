@@ -105,6 +105,10 @@ public final class CraftServer implements Server {
         this.serverVersion = CraftServer.class.getPackage().getImplementationVersion();
 
         Bukkit.setServer(this);
+        
+        if (!Main.useConsole) {
+            getLogger().info("Console input is disabled due to --noconsole command argument");
+        }
 
         configuration = YamlConfiguration.loadConfiguration(getConfigFile());
         configuration.options().copyDefaults(true);
