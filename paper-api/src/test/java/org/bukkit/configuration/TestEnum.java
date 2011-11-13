@@ -1,1 +1,0 @@
-package org.bukkit.configuration;
