@@ -1,5 +1,9 @@
 package org.bukkit.plugin;
 
+import org.bukkit.Bukkit;
+import org.bukkit.event.server.ServiceRegisterEvent;
+import org.bukkit.event.server.ServiceUnregisterEvent;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -37,12 +41,15 @@ public class SimpleServicesManager implements ServicesManager {
                 registered = new ArrayList<RegisteredServiceProvider<?>>();
                 providers.put(service, registered);
             }
+            RegisteredServiceProvider<T> registeredProvider = new RegisteredServiceProvider<T>(service, provider, priority, plugin);
 
-            registered.add(new RegisteredServiceProvider<T>(service, provider, priority, plugin));
+            registered.add(registeredProvider);
 
             // Make sure that providers are in the right order in order
             // for priorities to work correctly
             Collections.sort(registered);
+
+            Bukkit.getServer().getPluginManager().callEvent(new ServiceRegisterEvent(registeredProvider));
         }
     }
 
@@ -64,8 +71,11 @@ public class SimpleServicesManager implements ServicesManager {
                         // Removed entries that are from this plugin
 
                         while (it2.hasNext()) {
-                            if (it2.next().getPlugin() == plugin) {
+                            RegisteredServiceProvider<?> registered = it2.next();
+
+                            if (registered.getPlugin() == plugin) {
                                 it2.remove();
+                                Bukkit.getServer().getPluginManager().callEvent(new ServiceUnregisterEvent(registered));
                             }
                         }
                     } catch (NoSuchElementException e) { // Why does Java suck
@@ -105,8 +115,11 @@ public class SimpleServicesManager implements ServicesManager {
                         // Removed entries that are from this plugin
 
                         while (it2.hasNext()) {
-                            if (it2.next().getProvider() == provider) {
+                            RegisteredServiceProvider<?> registered = it2.next();
+
+                            if (registered.getProvider() == provider) {
                                 it2.remove();
+                                Bukkit.getServer().getPluginManager().callEvent(new ServiceUnregisterEvent(registered));
                             }
                         }
                     } catch (NoSuchElementException e) { // Why does Java suck
@@ -139,8 +152,11 @@ public class SimpleServicesManager implements ServicesManager {
                         // Removed entries that are from this plugin
 
                         while (it2.hasNext()) {
-                            if (it2.next().getProvider() == provider) {
+                            RegisteredServiceProvider<?> registered = it2.next();
+
+                            if (registered.getProvider() == provider) {
                                 it2.remove();
+                                Bukkit.getServer().getPluginManager().callEvent(new ServiceUnregisterEvent(registered));
                             }
                         }
                     } catch (NoSuchElementException e) { // Why does Java suck
