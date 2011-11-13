@@ -9,6 +9,8 @@ import com.avaje.ebeaninternal.server.ddl.DdlGenerator;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -148,8 +150,15 @@ public abstract class JavaPlugin implements Plugin {
         if (filename == null) {
             throw new IllegalArgumentException("Filename cannot be null");
         }
-        
-        return getClassLoader().getResourceAsStream(filename);
+
+        try {
+            URL url = getClassLoader().getResource(filename);
+            URLConnection connection = url.openConnection();
+            connection.setUseCaches(false);
+            return connection.getInputStream();
+        } catch (IOException ex) {
+            return null;
+        }
     }
 
     /**
