@@ -40,12 +40,12 @@ public class CraftPainting extends CraftEntity implements Painting {
     }
 
     public boolean setArt(Art art, boolean force) {
-        EntityPainting painting = getHandle();
+        EntityPainting painting = this.getHandle();
         EnumArt oldArt = painting.e;
         EnumArt newArt = CraftArt.BukkitToNotch(art);
         painting.e = newArt;
         painting.b(painting.a);
-        if(!force && !painting.i()) {
+        if (!force && !painting.j()) {
             // Revert painting since it doesn't fit
             painting.e = oldArt;
             painting.b(painting.a);
@@ -70,7 +70,7 @@ public class CraftPainting extends CraftEntity implements Painting {
         painting.b = block.getX();
         painting.c = block.getY();
         painting.d = block.getZ();
-        switch(face) {
+        switch (face) {
         case EAST:
         default:
             getHandle().b(0);
@@ -85,7 +85,7 @@ public class CraftPainting extends CraftEntity implements Painting {
             getHandle().b(3);
             break;
         }
-        if(!force && !painting.i()) {
+        if (!force && !painting.j()) {
             // Revert painting since it doesn't fit
             painting.b = x;
             painting.c = y;
@@ -98,7 +98,7 @@ public class CraftPainting extends CraftEntity implements Painting {
     }
 
     public BlockFace getFacing() {
-        switch(getHandle().a) {
+        switch (this.getHandle().a) {
         case 0:
         default:
             return BlockFace.EAST;

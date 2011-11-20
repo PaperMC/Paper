@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import net.minecraft.server.Chunk;
+import net.minecraft.server.ChunkPosition;
+import net.minecraft.server.EnumCreatureType;
 import net.minecraft.server.IChunkProvider;
 import net.minecraft.server.IProgressUpdate;
 import net.minecraft.server.World;
@@ -55,5 +57,13 @@ public class NormalChunkGenerator extends InternalChunkGenerator {
 
     public boolean canSave() {
         return provider.canSave();
+    }
+
+    public List a(EnumCreatureType ect, int i, int i1, int i2) {
+        return provider.a(ect, i, i1, i2);
+    }
+
+    public ChunkPosition a(World world, String string, int i, int i1, int i2) {
+        return provider.a(world, string, i, i1, i2);
     }
 }

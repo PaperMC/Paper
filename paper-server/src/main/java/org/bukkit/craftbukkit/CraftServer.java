@@ -82,7 +82,6 @@ import org.yaml.snakeyaml.error.MarkedYAMLException;
 public final class CraftServer implements Server {
     private final String serverName = "Craftbukkit";
     private final String serverVersion;
-    private final String protocolVersion = "1.8.1";
     private final String bukkitVersion = Versioning.getBukkitVersion();
     private final ServicesManager servicesManager = new SimpleServicesManager();
     private final BukkitScheduler scheduler = new CraftScheduler(this);
@@ -105,7 +104,7 @@ public final class CraftServer implements Server {
         this.serverVersion = CraftServer.class.getPackage().getImplementationVersion();
 
         Bukkit.setServer(this);
-        
+
         if (!Main.useConsole) {
             getLogger().info("Console input is disabled due to --noconsole command argument");
         }
@@ -114,17 +113,17 @@ public final class CraftServer implements Server {
         configuration.options().copyDefaults(true);
         configuration.setDefaults(YamlConfiguration.loadConfiguration(getClass().getClassLoader().getResourceAsStream("configurations/bukkit.yml")));
         saveConfig();
-        
+
         loadPlugins();
         enablePlugins(PluginLoadOrder.STARTUP);
 
         ChunkCompressionThread.startThread();
     }
-    
+
     private File getConfigFile() {
         return (File)console.options.valueOf("bukkit-settings");
     }
-    
+
     private void saveConfig() {
         try {
             configuration.save(getConfigFile());
@@ -195,9 +194,9 @@ public final class CraftServer implements Server {
     }
 
     public String getVersion() {
-        return serverVersion + " (MC: " + protocolVersion + ")";
+        return serverVersion + " (MC: " + console.getVersion() + ")";
     }
-    
+
     public String getBukkitVersion() {
         return bukkitVersion;
     }
@@ -471,7 +470,7 @@ public final class CraftServer implements Server {
 
     @Override
     public String toString() {
-        return "CraftServer{" + "serverName=" + serverName + ",serverVersion=" + serverVersion + ",protocolVersion=" + protocolVersion + '}';
+        return "CraftServer{" + "serverName=" + serverName + ",serverVersion=" + serverVersion + ",minecraftVersion=" + console.getVersion() + '}';
     }
 
     public World createWorld(String name, World.Environment environment) {
@@ -519,7 +518,8 @@ public final class CraftServer implements Server {
         }
 
         int dimension = 10 + console.worlds.size();
-        WorldServer internal = new WorldServer(console, new ServerNBTManager(getWorldContainer(), name, true), name, dimension, new WorldSettings(creator.seed(), getDefaultGameMode().getValue(), true), creator.environment(), generator);
+        boolean hardcore = false;
+        WorldServer internal = new WorldServer(console, new ServerNBTManager(getWorldContainer(), name, true), name, dimension, new WorldSettings(creator.seed(), getDefaultGameMode().getValue(), true, hardcore), creator.environment(), generator);
 
         if (!(worlds.containsKey(name.toLowerCase()))) {
             return null;
@@ -908,7 +908,7 @@ public final class CraftServer implements Server {
             }
         }
     }
-    
+
     public File getWorldContainer() {
         return new File(configuration.getString("settings.world-container", "."));
     }

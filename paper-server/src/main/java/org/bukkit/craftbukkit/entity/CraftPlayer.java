@@ -489,7 +489,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public int getLevel() {
-        return getHandle().expLevel;
+        return (int)getHandle().expLevel;
     }
 
     public void setLevel(int level) {
