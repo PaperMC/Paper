@@ -16,7 +16,7 @@ public class EntityTNTPrimed extends Entity {
     public EntityTNTPrimed(World world) {
         super(world);
         this.fuseTicks = 0;
-        this.aY = true;
+        this.bc = true;
         this.b(0.98F, 0.98F);
         this.height = this.width / 2.0F;
     }
@@ -37,15 +37,15 @@ public class EntityTNTPrimed extends Entity {
 
     protected void b() {}
 
-    protected boolean e_() {
+    protected boolean g_() {
         return false;
     }
 
-    public boolean r_() {
+    public boolean e_() {
         return !this.dead;
     }
 
-    public void s_() {
+    public void w_() {
         this.lastX = this.locX;
         this.lastY = this.locY;
         this.lastZ = this.locZ;
@@ -95,6 +95,6 @@ public class EntityTNTPrimed extends Entity {
     }
 
     protected void a(NBTTagCompound nbttagcompound) {
-        this.fuseTicks = nbttagcompound.c("Fuse");
+        this.fuseTicks = nbttagcompound.d("Fuse");
     }
 }

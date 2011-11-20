@@ -79,7 +79,7 @@ public class NetworkManager {
 
             synchronized (this.g) {
                 this.x += packet.a() + 1;
-                if (packet.k) {
+                if (packet.l) {
                     this.lowPriorityQueue.add(packet);
                 } else {
                     this.highPriorityQueue.add(packet);

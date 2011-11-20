@@ -6,7 +6,9 @@ import org.bukkit.BlockChangeDelegate; // CraftBukkit
 
 public class WorldGenTaiga2 extends WorldGenerator {
 
-    public WorldGenTaiga2() {}
+    public WorldGenTaiga2(boolean flag) {
+        super(flag);
+    }
 
     public boolean a(World world, Random random, int i, int j, int k) {
         // CraftBukkit start
@@ -25,103 +27,91 @@ public class WorldGenTaiga2 extends WorldGenerator {
         int k1 = 2 + random.nextInt(2);
         boolean flag = true;
 
-        if (j >= 1) {
-            int l1 = j + l + 1;
+        if (j >= 1 && j + l + 1 <= world.getHeight()) { // CraftBukkit
+            int l1;
+            int i2;
+            int j2;
+            int k2;
 
-            world.getClass();
-            if (l1 <= 128) {
-                int i2;
-                int j2;
-                int k2;
-                int l2;
+            for (l1 = j; l1 <= j + 1 + l && flag; ++l1) {
+                boolean flag1 = true;
 
-                for (i2 = j; i2 <= j + 1 + l && flag; ++i2) {
-                    boolean flag1 = true;
+                if (l1 - j < i1) {
+                    k2 = 0;
+                } else {
+                    k2 = k1;
+                }
 
-                    if (i2 - j < i1) {
-                        l2 = 0;
-                    } else {
-                        l2 = k1;
-                    }
-
-                    for (j2 = i - l2; j2 <= i + l2 && flag; ++j2) {
-                        for (int i3 = k - l2; i3 <= k + l2 && flag; ++i3) {
-                            if (i2 >= 0) {
-                                world.getClass();
-                                if (i2 < 128) {
-                                    k2 = world.getTypeId(j2, i2, i3);
-                                    if (k2 != 0 && k2 != Block.LEAVES.id) {
-                                        flag = false;
-                                    }
-                                    continue;
-                                }
+                for (i2 = i - k2; i2 <= i + k2 && flag; ++i2) {
+                    for (int l2 = k - k2; l2 <= k + k2 && flag; ++l2) {
+                        if (l1 >= 0 && l1 < world.getHeight()) { // CraftBukkit
+                            j2 = world.getTypeId(i2, l1, l2);
+                            if (j2 != 0 && j2 != Block.LEAVES.id) {
+                                flag = false;
                             }
-
+                        } else {
                             flag = false;
                         }
                     }
                 }
+            }
 
-                if (!flag) {
+            if (!flag) {
+                return false;
+            } else {
+                l1 = world.getTypeId(i, j - 1, k);
+                if ((l1 == Block.GRASS.id || l1 == Block.DIRT.id) && j < world.getHeight() - l - 1) { // CraftBukkit
+                    world.setRawTypeId(i, j - 1, k, Block.DIRT.id);
+                    k2 = random.nextInt(2);
+                    i2 = 1;
+                    byte b0 = 0;
+
+                    int i3;
+                    int j3;
+
+                    for (j2 = 0; j2 <= j1; ++j2) {
+                        j3 = j + l - j2;
+
+                        for (i3 = i - k2; i3 <= i + k2; ++i3) {
+                            int k3 = i3 - i;
+
+                            for (int l3 = k - k2; l3 <= k + k2; ++l3) {
+                                int i4 = l3 - k;
+
+                                if ((Math.abs(k3) != k2 || Math.abs(i4) != k2 || k2 <= 0) && !Block.o[world.getTypeId(i3, j3, l3)]) {
+                                    this.a(world, i3, j3, l3, Block.LEAVES.id, 1);
+                                }
+                            }
+                        }
+
+                        if (k2 >= i2) {
+                            k2 = b0;
+                            b0 = 1;
+                            ++i2;
+                            if (i2 > k1) {
+                                i2 = k1;
+                            }
+                        } else {
+                            ++k2;
+                        }
+                    }
+
+                    j2 = random.nextInt(3);
+
+                    for (j3 = 0; j3 < l - j2; ++j3) {
+                        i3 = world.getTypeId(i, j + j3, k);
+                        if (i3 == 0 || i3 == Block.LEAVES.id) {
+                            this.a(world, i, j + j3, k, Block.LOG.id, 1);
+                        }
+                    }
+
+                    return true;
+                } else {
                     return false;
                 }
-
-                i2 = world.getTypeId(i, j - 1, k);
-                if (i2 == Block.GRASS.id || i2 == Block.DIRT.id) {
-                    world.getClass();
-                    if (j < 128 - l - 1) {
-                        world.setRawTypeId(i, j - 1, k, Block.DIRT.id);
-                        l2 = random.nextInt(2);
-                        j2 = 1;
-                        byte b0 = 0;
-
-                        int j3;
-                        int k3;
-
-                        for (k2 = 0; k2 <= j1; ++k2) {
-                            k3 = j + l - k2;
-
-                            for (j3 = i - l2; j3 <= i + l2; ++j3) {
-                                int l3 = j3 - i;
-
-                                for (int i4 = k - l2; i4 <= k + l2; ++i4) {
-                                    int j4 = i4 - k;
-
-                                    if ((Math.abs(l3) != l2 || Math.abs(j4) != l2 || l2 <= 0) && !Block.o[world.getTypeId(j3, k3, i4)]) {
-                                        world.setRawTypeIdAndData(j3, k3, i4, Block.LEAVES.id, 1);
-                                    }
-                                }
-                            }
-
-                            if (l2 >= j2) {
-                                l2 = b0;
-                                b0 = 1;
-                                ++j2;
-                                if (j2 > k1) {
-                                    j2 = k1;
-                                }
-                            } else {
-                                ++l2;
-                            }
-                        }
-
-                        k2 = random.nextInt(3);
-
-                        for (k3 = 0; k3 < l - k2; ++k3) {
-                            j3 = world.getTypeId(i, j + k3, k);
-                            if (j3 == 0 || j3 == Block.LEAVES.id) {
-                                world.setRawTypeIdAndData(i, j + k3, k, Block.LOG.id, 1);
-                            }
-                        }
-
-                        return true;
-                    }
-                }
-
-                return false;
             }
+        } else {
+            return false;
         }
-
-        return false;
     }
 }

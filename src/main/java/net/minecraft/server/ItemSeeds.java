@@ -9,19 +9,21 @@ import org.bukkit.event.block.BlockPlaceEvent;
 public class ItemSeeds extends Item {
 
     private int id;
+    private int b;
 
-    public ItemSeeds(int i, int j) {
+    public ItemSeeds(int i, int j, int k) {
         super(i);
         this.id = j;
+        this.b = k;
     }
 
     public boolean a(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
         if (l != 1) {
             return false;
-        } else if (entityhuman.c(i, j, k) && entityhuman.c(i, j + 1, k)) {
+        } else if (entityhuman.d(i, j, k) && entityhuman.d(i, j + 1, k)) {
             int i1 = world.getTypeId(i, j, k);
 
-            if (i1 == Block.SOIL.id && world.isEmpty(i, j + 1, k)) {
+            if (i1 == this.b && world.isEmpty(i, j + 1, k)) {
                 CraftBlockState blockState = CraftBlockState.getBlockState(world, i, j + 1, k); // CraftBukkit
 
                 world.setTypeId(i, j + 1, k, this.id);

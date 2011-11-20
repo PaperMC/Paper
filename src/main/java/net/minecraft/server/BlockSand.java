@@ -11,30 +11,32 @@ public class BlockSand extends Block {
     }
 
     public void a(World world, int i, int j, int k) {
-        world.c(i, j, k, this.id, this.c());
+        world.c(i, j, k, this.id, this.d());
     }
 
     public void doPhysics(World world, int i, int j, int k, int l) {
-        world.c(i, j, k, this.id, this.c());
+        world.c(i, j, k, this.id, this.d());
     }
 
     public void a(World world, int i, int j, int k, Random random) {
-        this.g(world, i, j, k);
+        this.h(world, i, j, k);
     }
 
-    private void g(World world, int i, int j, int k) {
-        if (d_(world, i, j - 1, k) && j >= 0) {
+    private void h(World world, int i, int j, int k) {
+        if (g(world, i, j - 1, k) && j >= 0) {
             byte b0 = 32;
 
             if (!instaFall && world.a(i - b0, j - b0, k - b0, i + b0, j + b0, k + b0)) {
-                // CraftBukkit Change call to add data
-                EntityFallingSand entityfallingsand = new EntityFallingSand(world, (double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), this.id, world.getData(i, j, k));
+                if (!world.isStatic) {
+                    // CraftBukkit Change call to add data
+                    EntityFallingSand entityfallingsand = new EntityFallingSand(world, (double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), this.id, world.getData(i, j, k));
 
-                world.addEntity(entityfallingsand);
+                    world.addEntity(entityfallingsand);
+                }
             } else {
                 world.setTypeId(i, j, k, 0);
 
-                while (d_(world, i, j - 1, k) && j > 0) {
+                while (g(world, i, j - 1, k) && j > 0) {
                     --j;
                 }
 
@@ -45,11 +47,11 @@ public class BlockSand extends Block {
         }
     }
 
-    public int c() {
+    public int d() {
         return 3;
     }
 
-    public static boolean d_(World world, int i, int j, int k) {
+    public static boolean g(World world, int i, int j, int k) {
         int l = world.getTypeId(i, j, k);
 
         if (l == 0) {

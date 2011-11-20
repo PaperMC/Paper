@@ -60,6 +60,10 @@ public class PropertyManager {
         }
     }
 
+    public File c() {
+        return this.c;
+    }
+
     public String getString(String s, String s1) {
         if (!this.properties.containsKey(s)) {
             s1 = this.getOverride(s, s1); // CraftBukkit
@@ -88,6 +92,10 @@ public class PropertyManager {
             this.properties.setProperty(s, "" + flag);
             return flag;
         }
+    }
+
+    public void a(String s, Object object) {
+        this.properties.setProperty(s, "" + object);
     }
 
     public void setBoolean(String s, boolean flag) {

@@ -16,15 +16,12 @@ import org.bukkit.event.vehicle.VehicleUpdateEvent;
 
 public class EntityBoat extends Entity {
 
-    public int damage;
-    public int b;
-    public int c;
-    private int d;
+    private int a;
+    private double b;
+    private double c;
+    private double d;
     private double e;
     private double f;
-    private double g;
-    private double h;
-    private double i;
 
     // CraftBukkit start
     public double maxSpeed = 0.4D;
@@ -49,29 +46,30 @@ public class EntityBoat extends Entity {
 
     public EntityBoat(World world) {
         super(world);
-        this.damage = 0;
-        this.b = 0;
-        this.c = 1;
-        this.aY = true;
+        this.bc = true;
         this.b(1.5F, 0.6F);
         this.height = this.width / 2.0F;
     }
 
-    protected boolean e_() {
+    protected boolean g_() {
         return false;
     }
 
-    protected void b() {}
+    protected void b() {
+        this.datawatcher.a(17, new Integer(0));
+        this.datawatcher.a(18, new Integer(1));
+        this.datawatcher.a(19, new Integer(0));
+    }
 
-    public AxisAlignedBB b(Entity entity) {
+    public AxisAlignedBB a_(Entity entity) {
         return entity.boundingBox;
     }
 
-    public AxisAlignedBB f() {
+    public AxisAlignedBB h_() {
         return this.boundingBox;
     }
 
-    public boolean g() {
+    public boolean f_() {
         return true;
     }
 
@@ -88,7 +86,7 @@ public class EntityBoat extends Entity {
         this.world.getServer().getPluginManager().callEvent(new VehicleCreateEvent((Vehicle) this.getBukkitEntity())); // CraftBukkit
     }
 
-    public double n() {
+    public double q() {
         return (double) this.width * 0.0D - 0.30000001192092896D;
     }
 
@@ -107,18 +105,17 @@ public class EntityBoat extends Entity {
             // i = event.getDamage(); // TODO Why don't we do this?
             // CraftBukkit end
 
-            this.c = -this.c;
-            this.b = 10;
-            this.damage += i * 10;
-            this.aq();
-            if (this.damage > 40) {
-
+            this.d(-this.l());
+            this.c(10);
+            this.setDamage(this.getDamage() + i * 10);
+            this.aB();
+            if (this.getDamage() > 40) {
                 // CraftBukkit start
                 VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, attacker);
                 this.world.getServer().getPluginManager().callEvent(destroyEvent);
 
                 if (destroyEvent.isCancelled()) {
-                    this.damage = 40; // Maximize damage so this doesn't get triggered again right away
+                    this.setDamage(40); // Maximize damage so this doesn't get triggered again right away
                     return true;
                 }
                 // CraftBukkit end
@@ -146,11 +143,11 @@ public class EntityBoat extends Entity {
         }
     }
 
-    public boolean r_() {
+    public boolean e_() {
         return !this.dead;
     }
 
-    public void s_() {
+    public void w_() {
         // CraftBukkit start
         double prevX = this.locX;
         double prevY = this.locY;
@@ -159,13 +156,13 @@ public class EntityBoat extends Entity {
         float prevPitch = this.pitch;
         // CraftBukkit end
 
-        super.s_();
-        if (this.b > 0) {
-            --this.b;
+        super.w_();
+        if (this.k() > 0) {
+            this.c(this.k() - 1);
         }
 
-        if (this.damage > 0) {
-            --this.damage;
+        if (this.getDamage() > 0) {
+            this.setDamage(this.getDamage() - 1);
         }
 
         this.lastX = this.locX;
@@ -184,35 +181,59 @@ public class EntityBoat extends Entity {
             }
         }
 
-        double d3;
+        double d3 = Math.sqrt(this.motX * this.motX + this.motZ * this.motZ);
         double d4;
         double d5;
-        double d6;
+
+        if (d3 > 0.15D) {
+            d4 = Math.cos((double) this.yaw * 3.141592653589793D / 180.0D);
+            d5 = Math.sin((double) this.yaw * 3.141592653589793D / 180.0D);
+
+            for (int j = 0; (double) j < 1.0D + d3 * 60.0D; ++j) {
+                double d6 = (double) (this.random.nextFloat() * 2.0F - 1.0F);
+                double d7 = (double) (this.random.nextInt(2) * 2 - 1) * 0.7D;
+                double d8;
+                double d9;
+
+                if (this.random.nextBoolean()) {
+                    d8 = this.locX - d4 * d6 * 0.8D + d5 * d7;
+                    d9 = this.locZ - d5 * d6 * 0.8D - d4 * d7;
+                    this.world.a("splash", d8, this.locY - 0.125D, d9, this.motX, this.motY, this.motZ);
+                } else {
+                    d8 = this.locX + d4 + d5 * d6 * 0.7D;
+                    d9 = this.locZ + d5 - d4 * d6 * 0.7D;
+                    this.world.a("splash", d8, this.locY - 0.125D, d9, this.motX, this.motY, this.motZ);
+                }
+            }
+        }
+
+        double d10;
+        double d11;
 
         if (this.world.isStatic) {
-            if (this.d > 0) {
-                d3 = this.locX + (this.e - this.locX) / (double) this.d;
-                d4 = this.locY + (this.f - this.locY) / (double) this.d;
-                d5 = this.locZ + (this.g - this.locZ) / (double) this.d;
+            if (this.a > 0) {
+                d4 = this.locX + (this.b - this.locX) / (double) this.a;
+                d5 = this.locY + (this.c - this.locY) / (double) this.a;
+                d10 = this.locZ + (this.d - this.locZ) / (double) this.a;
 
-                for (d6 = this.h - (double) this.yaw; d6 < -180.0D; d6 += 360.0D) {
+                for (d11 = this.e - (double) this.yaw; d11 < -180.0D; d11 += 360.0D) {
                     ;
                 }
 
-                while (d6 >= 180.0D) {
-                    d6 -= 360.0D;
+                while (d11 >= 180.0D) {
+                    d11 -= 360.0D;
                 }
 
-                this.yaw = (float) ((double) this.yaw + d6 / (double) this.d);
-                this.pitch = (float) ((double) this.pitch + (this.i - (double) this.pitch) / (double) this.d);
-                --this.d;
-                this.setPosition(d3, d4, d5);
+                this.yaw = (float) ((double) this.yaw + d11 / (double) this.a);
+                this.pitch = (float) ((double) this.pitch + (this.f - (double) this.pitch) / (double) this.a);
+                --this.a;
+                this.setPosition(d4, d5, d10);
                 this.c(this.yaw, this.pitch);
             } else {
-                d3 = this.locX + this.motX;
-                d4 = this.locY + this.motY;
-                d5 = this.locZ + this.motZ;
-                this.setPosition(d3, d4, d5);
+                d4 = this.locX + this.motX;
+                d5 = this.locY + this.motY;
+                d10 = this.locZ + this.motZ;
+                this.setPosition(d4, d5, d10);
                 if (this.onGround) {
                     this.motX *= 0.5D;
                     this.motY *= 0.5D;
@@ -225,8 +246,8 @@ public class EntityBoat extends Entity {
             }
         } else {
             if (d0 < 1.0D) {
-                d3 = d0 * 2.0D - 1.0D;
-                this.motY += 0.03999999910593033D * d3;
+                d4 = d0 * 2.0D - 1.0D;
+                this.motY += 0.03999999910593033D * d4;
             } else {
                 if (this.motY < 0.0D) {
                     this.motY /= 2.0D;
@@ -254,21 +275,21 @@ public class EntityBoat extends Entity {
             // CraftBukkit end
 
             // CraftBukkit
-            d3 = this.maxSpeed;
-            if (this.motX < -d3) {
-                this.motX = -d3;
+            d4 = this.maxSpeed;
+            if (this.motX < -d4) {
+                this.motX = -d4;
             }
 
-            if (this.motX > d3) {
-                this.motX = d3;
+            if (this.motX > d4) {
+                this.motX = d4;
             }
 
-            if (this.motZ < -d3) {
-                this.motZ = -d3;
+            if (this.motZ < -d4) {
+                this.motZ = -d4;
             }
 
-            if (this.motZ > d3) {
-                this.motZ = d3;
+            if (this.motZ > d4) {
+                this.motZ = d4;
             }
 
             if (this.onGround && !landBoats) { // CraftBukkit
@@ -278,30 +299,7 @@ public class EntityBoat extends Entity {
             }
 
             this.move(this.motX, this.motY, this.motZ);
-            d4 = Math.sqrt(this.motX * this.motX + this.motZ * this.motZ);
-            if (d4 > 0.15D) {
-                d5 = Math.cos((double) this.yaw * 3.141592653589793D / 180.0D);
-                d6 = Math.sin((double) this.yaw * 3.141592653589793D / 180.0D);
-
-                for (int j = 0; (double) j < 1.0D + d4 * 60.0D; ++j) {
-                    double d7 = (double) (this.random.nextFloat() * 2.0F - 1.0F);
-                    double d8 = (double) (this.random.nextInt(2) * 2 - 1) * 0.7D;
-                    double d9;
-                    double d10;
-
-                    if (this.random.nextBoolean()) {
-                        d9 = this.locX - d5 * d7 * 0.8D + d6 * d8;
-                        d10 = this.locZ - d6 * d7 * 0.8D - d5 * d8;
-                        this.world.a("splash", d9, this.locY - 0.125D, d10, this.motX, this.motY, this.motZ);
-                    } else {
-                        d9 = this.locX + d5 + d6 * d7 * 0.7D;
-                        d10 = this.locZ + d6 - d5 * d7 * 0.7D;
-                        this.world.a("splash", d9, this.locY - 0.125D, d10, this.motX, this.motY, this.motZ);
-                    }
-                }
-            }
-
-            if (this.positionChanged && d4 > 0.15D) {
+            if (this.positionChanged && d3 > 0.2D) {
                 if (!this.world.isStatic) {
                     // CraftBukkit start
                     Vehicle vehicle = (Vehicle) this.getBukkitEntity();
@@ -321,7 +319,7 @@ public class EntityBoat extends Entity {
                     for (k = 0; k < 2; ++k) {
                         this.a(Item.STICK.id, 1, 0.0F);
                     }
-                    }// CraftBukkit
+                    } // CraftBukkit
                 }
             } else {
                 this.motX *= 0.9900000095367432D;
@@ -331,11 +329,10 @@ public class EntityBoat extends Entity {
 
             this.pitch = 0.0F;
             d5 = (double) this.yaw;
-            d6 = this.lastX - this.locX;
-            double d11 = this.lastZ - this.locZ;
-
-            if (d6 * d6 + d11 * d11 > 0.0010D) {
-                d5 = (double) ((float) (Math.atan2(d11, d6) * 180.0D / 3.141592653589793D));
+            d10 = this.lastX - this.locX;
+            d11 = this.lastZ - this.locZ;
+            if (d10 * d10 + d11 * d11 > 0.0010D) {
+                d5 = (double) ((float) (Math.atan2(d11, d10) * 180.0D / 3.141592653589793D));
             }
 
             double d12;
@@ -382,7 +379,7 @@ public class EntityBoat extends Entity {
                 for (l = 0; l < list.size(); ++l) {
                     Entity entity = (Entity) list.get(l);
 
-                    if (entity != this.passenger && entity.g() && entity instanceof EntityBoat) {
+                    if (entity != this.passenger && entity.f_() && entity instanceof EntityBoat) {
                         entity.collide(this);
                     }
                 }
@@ -405,12 +402,12 @@ public class EntityBoat extends Entity {
         }
     }
 
-    public void g_() {
+    public void i() {
         if (this.passenger != null) {
             double d0 = Math.cos((double) this.yaw * 3.141592653589793D / 180.0D) * 0.4D;
             double d1 = Math.sin((double) this.yaw * 3.141592653589793D / 180.0D) * 0.4D;
 
-            this.passenger.setPosition(this.locX + d0, this.locY + this.n() + this.passenger.M(), this.locZ + d1);
+            this.passenger.setPosition(this.locX + d0, this.locY + this.q() + this.passenger.R(), this.locZ + d1);
         }
     }
 
@@ -437,5 +434,29 @@ public class EntityBoat extends Entity {
 
             return true;
         }
+    }
+
+    public void setDamage(int i) {
+        this.datawatcher.watch(19, Integer.valueOf(i));
+    }
+
+    public int getDamage() {
+        return this.datawatcher.getInt(19);
+    }
+
+    public void c(int i) {
+        this.datawatcher.watch(17, Integer.valueOf(i));
+    }
+
+    public int k() {
+        return this.datawatcher.getInt(17);
+    }
+
+    public void d(int i) {
+        this.datawatcher.watch(18, Integer.valueOf(i));
+    }
+
+    public int l() {
+        return this.datawatcher.getInt(18);
     }
 }

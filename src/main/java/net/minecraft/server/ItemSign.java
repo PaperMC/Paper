@@ -41,7 +41,7 @@ public class ItemSign extends Item {
                 ++i;
             }
 
-            if (!entityhuman.c(i, j, k)) {
+            if (!entityhuman.d(i, j, k)) {
                 return false;
             } else if (!Block.SIGN_POST.canPlace(world, i, j, k)) {
                 return false;

@@ -4,19 +4,19 @@ public class Slot {
 
     public final int index; // CraftBukkit - private -> public
     public final IInventory inventory;
-    public int b;
     public int c;
     public int d;
+    public int e;
 
     public Slot(IInventory iinventory, int i, int j, int k) {
         this.inventory = iinventory;
         this.index = i;
-        this.c = j;
-        this.d = k;
+        this.d = j;
+        this.e = k;
     }
 
-    public void a(ItemStack itemstack) {
-        this.c();
+    public void b(ItemStack itemstack) {
+        this.d();
     }
 
     public boolean isAllowed(ItemStack itemstack) {
@@ -27,20 +27,20 @@ public class Slot {
         return this.inventory.getItem(this.index);
     }
 
-    public boolean b() {
+    public boolean c() {
         return this.getItem() != null;
     }
 
     public void c(ItemStack itemstack) {
         this.inventory.setItem(this.index, itemstack);
-        this.c();
+        this.d();
     }
 
-    public void c() {
+    public void d() {
         this.inventory.update();
     }
 
-    public int d() {
+    public int a() {
         return this.inventory.getMaxStackSize();
     }
 

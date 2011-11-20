@@ -52,6 +52,10 @@ public class BlockSign extends BlockContainer {
         }
     }
 
+    public int c() {
+        return -1;
+    }
+
     public boolean b() {
         return false;
     }
@@ -68,7 +72,7 @@ public class BlockSign extends BlockContainer {
         }
     }
 
-    public int a(int i, Random random) {
+    public int a(int i, Random random, int j) {
         return Item.SIGN.id;
     }
 
@@ -101,7 +105,7 @@ public class BlockSign extends BlockContainer {
         }
 
         if (flag) {
-            this.g(world, i, j, k, world.getData(i, j, k));
+            this.b(world, i, j, k, world.getData(i, j, k), 0);
             world.setTypeId(i, j, k, 0);
         }
 

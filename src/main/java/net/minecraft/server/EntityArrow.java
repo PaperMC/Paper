@@ -43,7 +43,7 @@ public class EntityArrow extends Entity {
         this.shooter = entityliving;
         this.fromPlayer = entityliving instanceof EntityHuman;
         this.b(0.5F, 0.5F);
-        this.setPositionRotation(entityliving.locX, entityliving.locY + (double) entityliving.t(), entityliving.locZ, entityliving.yaw, entityliving.pitch);
+        this.setPositionRotation(entityliving.locX, entityliving.locY + (double) entityliving.x(), entityliving.locZ, entityliving.yaw, entityliving.pitch);
         this.locX -= (double) (MathHelper.cos(this.yaw / 180.0F * 3.1415927F) * 0.16F);
         this.locY -= 0.10000000149011612D;
         this.locZ -= (double) (MathHelper.sin(this.yaw / 180.0F * 3.1415927F) * 0.16F);
@@ -79,8 +79,8 @@ public class EntityArrow extends Entity {
         this.k = 0;
     }
 
-    public void s_() {
-        super.s_();
+    public void w_() {
+        super.w_();
         if (this.lastPitch == 0.0F && this.lastYaw == 0.0F) {
             float f = MathHelper.a(this.motX * this.motX + this.motZ * this.motZ);
 
@@ -142,7 +142,7 @@ public class EntityArrow extends Entity {
             for (k = 0; k < list.size(); ++k) {
                 Entity entity1 = (Entity) list.get(k);
 
-                if (entity1.r_() && (entity1 != this.shooter || this.l >= 5)) {
+                if (entity1.e_() && (entity1 != this.shooter || this.l >= 5)) {
                     f1 = 0.3F;
                     AxisAlignedBB axisalignedbb1 = entity1.boundingBox.b((double) f1, (double) f1, (double) f1);
                     MovingObjectPosition movingobjectposition1 = axisalignedbb1.a(vec3d, vec3d1);
@@ -174,7 +174,15 @@ public class EntityArrow extends Entity {
                     int l = (int) Math.ceil((double) f2 * 2.0D);
 
                     if (this.d) {
-                        l = l * 3 / 2 + 1;
+                        l += this.random.nextInt(l / 2 + 2);
+                    }
+
+                    DamageSource damagesource = null;
+
+                    if (this.shooter == null) {
+                        damagesource = DamageSource.arrow(this, this);
+                    } else {
+                        damagesource = DamageSource.arrow(this, this.shooter);
                     }
 
                     // CraftBukkit start
@@ -196,18 +204,18 @@ public class EntityArrow extends Entity {
                             stick = !projectile.doesBounce();
                         } else {
                             // this function returns if the arrow should stick in or not, i.e. !bounce
-                            stick = movingobjectposition.entity.damageEntity(DamageSource.arrow(this, this.shooter), event.getDamage());
+                            stick = movingobjectposition.entity.damageEntity(damagesource, event.getDamage());
                         }
                     } else {
-                        stick = movingobjectposition.entity.damageEntity(DamageSource.arrow(this, this.shooter), l);
+                        stick = movingobjectposition.entity.damageEntity(damagesource, l);
                     }
                     if (stick) {
                         // CraftBukkit end
                         if (movingobjectposition.entity instanceof EntityLiving) {
-                            ++((EntityLiving) movingobjectposition.entity).aD;
+                            ++((EntityLiving) movingobjectposition.entity).aH;
                         }
 
-                        this.world.makeSound(this, "random.drr", 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
+                        this.world.makeSound(this, "random.bowhit", 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
                         this.die();
                     } else {
                         this.motX *= -0.10000000149011612D;
@@ -230,7 +238,7 @@ public class EntityArrow extends Entity {
                     this.locX -= this.motX / (double) f2 * 0.05000000074505806D;
                     this.locY -= this.motY / (double) f2 * 0.05000000074505806D;
                     this.locZ -= this.motZ / (double) f2 * 0.05000000074505806D;
-                    this.world.makeSound(this, "random.drr", 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
+                    this.world.makeSound(this, "random.bowhit", 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
                     this.inGround = true;
                     this.shake = 7;
                     this.d = false;
@@ -270,7 +278,7 @@ public class EntityArrow extends Entity {
             float f3 = 0.99F;
 
             f1 = 0.05F;
-            if (this.ao()) {
+            if (this.az()) {
                 for (int i1 = 0; i1 < 4; ++i1) {
                     float f4 = 0.25F;
 
@@ -300,14 +308,14 @@ public class EntityArrow extends Entity {
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        this.e = nbttagcompound.d("xTile");
-        this.f = nbttagcompound.d("yTile");
-        this.g = nbttagcompound.d("zTile");
-        this.h = nbttagcompound.c("inTile") & 255;
-        this.i = nbttagcompound.c("inData") & 255;
-        this.shake = nbttagcompound.c("shake") & 255;
-        this.inGround = nbttagcompound.c("inGround") == 1;
-        this.fromPlayer = nbttagcompound.m("player");
+        this.e = nbttagcompound.e("xTile");
+        this.f = nbttagcompound.e("yTile");
+        this.g = nbttagcompound.e("zTile");
+        this.h = nbttagcompound.d("inTile") & 255;
+        this.i = nbttagcompound.d("inData") & 255;
+        this.shake = nbttagcompound.d("shake") & 255;
+        this.inGround = nbttagcompound.d("inGround") == 1;
+        this.fromPlayer = nbttagcompound.n("player");
     }
 
     public void a_(EntityHuman entityhuman) {

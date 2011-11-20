@@ -14,9 +14,33 @@ public class PortalTravelAgent {
     public PortalTravelAgent() {}
 
     public void a(World world, Entity entity) {
-        if (!this.b(world, entity)) {
-            this.c(world, entity);
-            this.b(world, entity);
+        if (world.worldProvider.dimension != 1) {
+            if (!this.b(world, entity)) {
+                this.c(world, entity);
+                this.b(world, entity);
+            }
+        } else {
+            int i = MathHelper.floor(entity.locX);
+            int j = MathHelper.floor(entity.locY) - 1;
+            int k = MathHelper.floor(entity.locZ);
+            byte b0 = 1;
+            byte b1 = 0;
+
+            for (int l = -2; l <= 2; ++l) {
+                for (int i1 = -2; i1 <= 2; ++i1) {
+                    for (int j1 = -1; j1 < 3; ++j1) {
+                        int k1 = i + i1 * b0 + l * b1;
+                        int l1 = j + j1;
+                        int i2 = k + i1 * b1 - l * b0;
+                        boolean flag = j1 < 0;
+
+                        world.setTypeId(k1, l1, i2, flag ? Block.OBSIDIAN.id : 0);
+                    }
+                }
+            }
+
+            entity.setPositionRotation((double) i, (double) j, (double) k, entity.yaw, 0.0F);
+            entity.motX = entity.motY = entity.motZ = 0.0D;
         }
     }
 
@@ -37,9 +61,7 @@ public class PortalTravelAgent {
             for (int k1 = i1 - short1; k1 <= i1 + short1; ++k1) {
                 double d3 = (double) k1 + 0.5D - entity.locZ;
 
-                world.getClass();
-
-                for (int l1 = 128 - 1; l1 >= 0; --l1) {
+                for (int l1 = world.height - 1; l1 >= 0; --l1) {
                     if (world.getTypeId(j1, l1, k1) == Block.PORTAL.id) {
                         while (world.getTypeId(j1, l1 - 1, k1) == Block.PORTAL.id) {
                             --l1;
@@ -121,10 +143,9 @@ public class PortalTravelAgent {
 
             for (j2 = k - b0; j2 <= k + b0; ++j2) {
                 d2 = (double) j2 + 0.5D - entity.locZ;
-                world.getClass();
 
                 label274:
-                for (l2 = 128 - 1; l2 >= 0; --l2) {
+                for (l2 = world.height - 1; l2 >= 0; --l2) {
                     if (world.isEmpty(i2, l2, j2)) {
                         while (l2 > 0 && world.isEmpty(i2, l2 - 1, j2)) {
                             --l2;
@@ -173,10 +194,9 @@ public class PortalTravelAgent {
 
                 for (j2 = k - b0; j2 <= k + b0; ++j2) {
                     d2 = (double) j2 + 0.5D - entity.locZ;
-                    world.getClass();
 
                     label222:
-                    for (l2 = 128 - 1; l2 >= 0; --l2) {
+                    for (l2 = world.height - 1; l2 >= 0; --l2) {
                         if (world.isEmpty(i2, l2, j2)) {
                             while (l2 > 0 && world.isEmpty(i2, l2 - 1, j2)) {
                                 --l2;
@@ -237,8 +257,8 @@ public class PortalTravelAgent {
                 i1 = 70;
             }
 
-            if (i1 > 118) {
-                i1 = 118;
+            if (i1 > world.height - 10) {
+                i1 = world.height - 10;
             }
 
             j5 = i1;
@@ -279,10 +299,8 @@ public class PortalTravelAgent {
                 i1 = 70;
             }
 
-            world.getClass();
-            if (i1 > 128 - 10) {
-                world.getClass();
-                i1 = 128 - 10;
+            if (i1 > world.height - 10) {
+                i1 = world.height - 10;
             }
 
             j5 = i1;

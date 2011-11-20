@@ -13,12 +13,16 @@ public class EntitySheep extends EntityAnimal {
         this.b(0.9F, 1.3F);
     }
 
+    public int getMaxHealth() {
+        return 8;
+    }
+
     protected void b() {
         super.b();
         this.datawatcher.a(16, new Byte((byte) 0));
     }
 
-    protected void a(boolean flag) {
+    protected void a(boolean flag, int i) {
         // CraftBukkit start - whole method
         java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
 
@@ -30,7 +34,7 @@ public class EntitySheep extends EntityAnimal {
         // CraftBukkit end
     }
 
-    protected int k() {
+    protected int e() {
         return Block.WOOL.id;
     }
 
@@ -54,7 +58,7 @@ public class EntitySheep extends EntityAnimal {
             itemstack.damage(1, entityhuman);
         }
 
-        return false;
+        return super.b(entityhuman);
     }
 
     public void b(NBTTagCompound nbttagcompound) {
@@ -65,19 +69,19 @@ public class EntitySheep extends EntityAnimal {
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        this.setSheared(nbttagcompound.m("Sheared"));
-        this.setColor(nbttagcompound.c("Color"));
+        this.setSheared(nbttagcompound.n("Sheared"));
+        this.setColor(nbttagcompound.d("Color"));
     }
 
-    protected String h() {
+    protected String c_() {
         return "mob.sheep";
     }
 
-    protected String i() {
+    protected String m() {
         return "mob.sheep";
     }
 
-    protected String j() {
+    protected String n() {
         return "mob.sheep";
     }
 
@@ -109,5 +113,18 @@ public class EntitySheep extends EntityAnimal {
         int i = random.nextInt(100);
 
         return i < 5 ? 15 : (i < 10 ? 7 : (i < 15 ? 8 : (i < 18 ? 12 : (random.nextInt(500) == 0 ? 6 : 0))));
+    }
+
+    protected EntityAnimal createChild(EntityAnimal entityanimal) {
+        EntitySheep entitysheep = (EntitySheep) entityanimal;
+        EntitySheep entitysheep1 = new EntitySheep(this.world);
+
+        if (this.random.nextBoolean()) {
+            entitysheep1.setColor(this.getColor());
+        } else {
+            entitysheep1.setColor(entitysheep.getColor());
+        }
+
+        return entitysheep1;
     }
 }

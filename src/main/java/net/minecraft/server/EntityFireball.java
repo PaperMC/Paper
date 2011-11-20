@@ -15,15 +15,14 @@ import org.bukkit.event.entity.ProjectileHitEvent;
 
 public class EntityFireball extends Entity {
 
+    private int e = -1;
     private int f = -1;
     private int g = -1;
-    private int h = -1;
-    private int i = 0;
-    private boolean j = false;
-    public int a = 0;
+    private int h = 0;
+    private boolean i = false;
     public EntityLiving shooter;
-    private int k;
-    private int l = 0;
+    private int j;
+    private int k = 0;
     public double dirX;
     public double dirY;
     public double dirZ;
@@ -61,33 +60,33 @@ public class EntityFireball extends Entity {
         this.dirZ = d2 / d3 * 0.1D;
     }
 
-    public void s_() {
-        super.s_();
-        this.fireTicks = 10;
-        if (this.a > 0) {
-            --this.a;
+    public void w_() {
+        super.w_();
+        this.j(1);
+        if (!this.world.isStatic && (this.shooter == null || this.shooter.dead)) {
+            this.die();
         }
 
-        if (this.j) {
-            int i = this.world.getTypeId(this.f, this.g, this.h);
+        if (this.i) {
+            int i = this.world.getTypeId(this.e, this.f, this.g);
 
-            if (i == this.i) {
-                ++this.k;
-                if (this.k == 1200) {
+            if (i == this.h) {
+                ++this.j;
+                if (this.j == 1200) {
                     this.die();
                 }
 
                 return;
             }
 
-            this.j = false;
+            this.i = false;
             this.motX *= (double) (this.random.nextFloat() * 0.2F);
             this.motY *= (double) (this.random.nextFloat() * 0.2F);
             this.motZ *= (double) (this.random.nextFloat() * 0.2F);
+            this.j = 0;
             this.k = 0;
-            this.l = 0;
         } else {
-            ++this.l;
+            ++this.k;
         }
 
         Vec3D vec3d = Vec3D.create(this.locX, this.locY, this.locZ);
@@ -107,7 +106,7 @@ public class EntityFireball extends Entity {
         for (int j = 0; j < list.size(); ++j) {
             Entity entity1 = (Entity) list.get(j);
 
-            if (entity1.r_() && (entity1 != this.shooter || this.l >= 25)) {
+            if (entity1.e_() && (!entity1.a((Entity) this.shooter) || this.k >= 25)) {
                 float f = 0.3F;
                 AxisAlignedBB axisalignedbb = entity1.boundingBox.b((double) f, (double) f, (double) f);
                 MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
@@ -128,6 +127,57 @@ public class EntityFireball extends Entity {
         }
 
         if (movingobjectposition != null) {
+        }
+
+        this.locX += this.motX;
+        this.locY += this.motY;
+        this.locZ += this.motZ;
+        float f1 = MathHelper.a(this.motX * this.motX + this.motZ * this.motZ);
+
+        this.yaw = (float) (Math.atan2(this.motX, this.motZ) * 180.0D / 3.1415927410125732D);
+
+        for (this.pitch = (float) (Math.atan2(this.motY, (double) f1) * 180.0D / 3.1415927410125732D); this.pitch - this.lastPitch < -180.0F; this.lastPitch -= 360.0F) {
+            ;
+        }
+
+        while (this.pitch - this.lastPitch >= 180.0F) {
+            this.lastPitch += 360.0F;
+        }
+
+        while (this.yaw - this.lastYaw < -180.0F) {
+            this.lastYaw -= 360.0F;
+        }
+
+        while (this.yaw - this.lastYaw >= 180.0F) {
+            this.lastYaw += 360.0F;
+        }
+
+        this.pitch = this.lastPitch + (this.pitch - this.lastPitch) * 0.2F;
+        this.yaw = this.lastYaw + (this.yaw - this.lastYaw) * 0.2F;
+        float f2 = 0.95F;
+
+        if (this.az()) {
+            for (int k = 0; k < 4; ++k) {
+                float f3 = 0.25F;
+
+                this.world.a("bubble", this.locX - this.motX * (double) f3, this.locY - this.motY * (double) f3, this.locZ - this.motZ * (double) f3, this.motX, this.motY, this.motZ);
+            }
+
+            f2 = 0.8F;
+        }
+
+        this.motX += this.dirX;
+        this.motY += this.dirY;
+        this.motZ += this.dirZ;
+        this.motX *= (double) f2;
+        this.motY *= (double) f2;
+        this.motZ *= (double) f2;
+        this.world.a("smoke", this.locX, this.locY + 0.5D, this.locZ, 0.0D, 0.0D, 0.0D);
+        this.setPosition(this.locX, this.locY, this.locZ);
+    }
+
+    protected void a(MovingObjectPosition movingobjectposition) {
+        if (!this.world.isStatic) {
             // CraftBukkit start
             ProjectileHitEvent phe = new ProjectileHitEvent((Projectile) this.getBukkitEntity());
             this.world.getServer().getPluginManager().callEvent(phe);
@@ -170,82 +220,39 @@ public class EntityFireball extends Entity {
                 // CraftBukkit end
             }
 
+            // this.world.createExplosion((Entity) null, this.locX, this.locY, this.locZ, 1.0F, true); // CraftBukkit
             this.die();
         }
-
-        this.locX += this.motX;
-        this.locY += this.motY;
-        this.locZ += this.motZ;
-        float f1 = MathHelper.a(this.motX * this.motX + this.motZ * this.motZ);
-
-        this.yaw = (float) (Math.atan2(this.motX, this.motZ) * 180.0D / 3.1415927410125732D);
-
-        for (this.pitch = (float) (Math.atan2(this.motY, (double) f1) * 180.0D / 3.1415927410125732D); this.pitch - this.lastPitch < -180.0F; this.lastPitch -= 360.0F) {
-            ;
-        }
-
-        while (this.pitch - this.lastPitch >= 180.0F) {
-            this.lastPitch += 360.0F;
-        }
-
-        while (this.yaw - this.lastYaw < -180.0F) {
-            this.lastYaw -= 360.0F;
-        }
-
-        while (this.yaw - this.lastYaw >= 180.0F) {
-            this.lastYaw += 360.0F;
-        }
-
-        this.pitch = this.lastPitch + (this.pitch - this.lastPitch) * 0.2F;
-        this.yaw = this.lastYaw + (this.yaw - this.lastYaw) * 0.2F;
-        float f2 = 0.95F;
-
-        if (this.ao()) {
-            for (int k = 0; k < 4; ++k) {
-                float f3 = 0.25F;
-
-                this.world.a("bubble", this.locX - this.motX * (double) f3, this.locY - this.motY * (double) f3, this.locZ - this.motZ * (double) f3, this.motX, this.motY, this.motZ);
-            }
-
-            f2 = 0.8F;
-        }
-
-        this.motX += this.dirX;
-        this.motY += this.dirY;
-        this.motZ += this.dirZ;
-        this.motX *= (double) f2;
-        this.motY *= (double) f2;
-        this.motZ *= (double) f2;
-        this.world.a("smoke", this.locX, this.locY + 0.5D, this.locZ, 0.0D, 0.0D, 0.0D);
-        this.setPosition(this.locX, this.locY, this.locZ);
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("xTile", (short) this.f);
-        nbttagcompound.a("yTile", (short) this.g);
-        nbttagcompound.a("zTile", (short) this.h);
-        nbttagcompound.a("inTile", (byte) this.i);
-        nbttagcompound.a("shake", (byte) this.a);
-        nbttagcompound.a("inGround", (byte) (this.j ? 1 : 0));
+        nbttagcompound.a("xTile", (short) this.e);
+        nbttagcompound.a("yTile", (short) this.f);
+        nbttagcompound.a("zTile", (short) this.g);
+        nbttagcompound.a("inTile", (byte) this.h);
+        nbttagcompound.a("inGround", (byte) (this.i ? 1 : 0));
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        this.f = nbttagcompound.d("xTile");
-        this.g = nbttagcompound.d("yTile");
-        this.h = nbttagcompound.d("zTile");
-        this.i = nbttagcompound.c("inTile") & 255;
-        this.a = nbttagcompound.c("shake") & 255;
-        this.j = nbttagcompound.c("inGround") == 1;
+        this.e = nbttagcompound.e("xTile");
+        this.f = nbttagcompound.e("yTile");
+        this.g = nbttagcompound.e("zTile");
+        this.h = nbttagcompound.d("inTile") & 255;
+        this.i = nbttagcompound.d("inGround") == 1;
     }
 
-    public boolean r_() {
+    public boolean e_() {
         return true;
     }
 
+    public float j_() {
+        return 1.0F;
+    }
+
     public boolean damageEntity(DamageSource damagesource, int i) {
-        this.aq();
+        this.aB();
         if (damagesource.getEntity() != null) {
-            Vec3D vec3d = damagesource.getEntity().ai();
+            Vec3D vec3d = damagesource.getEntity().ap();
 
             if (vec3d != null) {
                 this.motX = vec3d.a;
@@ -256,9 +263,17 @@ public class EntityFireball extends Entity {
                 this.dirZ = this.motZ * 0.1D;
             }
 
+            if (damagesource.getEntity() instanceof EntityLiving) {
+                this.shooter = (EntityLiving) damagesource.getEntity();
+            }
+
             return true;
         } else {
             return false;
         }
+    }
+
+    public float a(float f) {
+        return 1.0F;
     }
 }

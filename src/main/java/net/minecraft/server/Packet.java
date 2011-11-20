@@ -11,38 +11,36 @@ import java.util.Set;
 
 public abstract class Packet {
 
-    private static EntityList a = new EntityList();
-    private static Map b = new HashMap();
+    public static EntityList j = new EntityList();
+    private static Map a = new HashMap();
+    private static Set b = new HashSet();
     private static Set c = new HashSet();
-    private static Set d = new HashSet();
     public final long timestamp = System.currentTimeMillis();
-    public boolean k = false;
-    private static EntityList e;
-    private static int f;
+    public boolean l = false;
 
     public Packet() {}
 
     static void a(int i, boolean flag, boolean flag1, Class oclass) {
-        if (a.b(i)) {
+        if (j.b(i)) {
             throw new IllegalArgumentException("Duplicate packet id:" + i);
-        } else if (b.containsKey(oclass)) {
+        } else if (a.containsKey(oclass)) {
             throw new IllegalArgumentException("Duplicate packet class:" + oclass);
         } else {
-            a.a(i, oclass);
-            b.put(oclass, Integer.valueOf(i));
+            j.a(i, oclass);
+            a.put(oclass, Integer.valueOf(i));
             if (flag) {
-                c.add(Integer.valueOf(i));
+                b.add(Integer.valueOf(i));
             }
 
             if (flag1) {
-                d.add(Integer.valueOf(i));
+                c.add(Integer.valueOf(i));
             }
         }
     }
 
     public static Packet a(int i) {
         try {
-            Class oclass = (Class) a.a(i);
+            Class oclass = (Class) j.a(i);
 
             return oclass == null ? null : (Packet) oclass.newInstance();
         } catch (Exception exception) {
@@ -53,7 +51,7 @@ public abstract class Packet {
     }
 
     public final int b() {
-        return ((Integer) b.get(this.getClass())).intValue();
+        return ((Integer) a.get(this.getClass())).intValue();
     }
 
     // CraftBukkit - throws IOException
@@ -69,7 +67,7 @@ public abstract class Packet {
                 return null;
             }
 
-            if (flag && !d.contains(Integer.valueOf(i)) || !flag && !c.contains(Integer.valueOf(i))) {
+            if (flag && !c.contains(Integer.valueOf(i)) || !flag && !b.contains(Integer.valueOf(i))) {
                 throw new IOException("Bad packet id " + i);
             }
 
@@ -94,19 +92,7 @@ public abstract class Packet {
         }
         // CraftBukkit end
 
-        PacketCounter packetcounter = (PacketCounter) e.a(i);
-
-        if (packetcounter == null) {
-            packetcounter = new PacketCounter((EmptyClass1) null);
-            e.a(i, packetcounter);
-        }
-
-        packetcounter.a(packet.a());
-        ++f;
-        if (f % 1000 == 0) {
-            ;
-        }
-
+        PacketCounter.a(i, (long) packet.a());
         return packet;
     }
 
@@ -152,6 +138,60 @@ public abstract class Packet {
     public abstract void a(NetHandler nethandler);
 
     public abstract int a();
+
+    protected ItemStack b(DataInputStream datainputstream) throws IOException { // CraftBukkit
+        ItemStack itemstack = null;
+        short short1 = datainputstream.readShort();
+
+        if (short1 >= 0) {
+            byte b0 = datainputstream.readByte();
+            short short2 = datainputstream.readShort();
+
+            itemstack = new ItemStack(short1, b0, short2);
+            if (Item.byId[short1].g()) {
+                itemstack.tag = this.c(datainputstream);
+            }
+        }
+
+        return itemstack;
+    }
+
+    protected void a(ItemStack itemstack, DataOutputStream dataoutputstream) throws IOException { // CraftBukkit
+        if (itemstack == null) {
+            dataoutputstream.writeShort(-1);
+        } else {
+            dataoutputstream.writeShort(itemstack.id);
+            dataoutputstream.writeByte(itemstack.count);
+            dataoutputstream.writeShort(itemstack.getData());
+            if (itemstack.getItem().g()) {
+                this.a(itemstack.tag, dataoutputstream);
+            }
+        }
+    }
+
+    protected NBTTagCompound c(DataInputStream datainputstream) throws IOException { // CraftBukkit
+        short short1 = datainputstream.readShort();
+
+        if (short1 < 0) {
+            return null;
+        } else {
+            byte[] abyte = new byte[short1];
+
+            datainputstream.readFully(abyte);
+            return CompressedStreamTools.a(abyte);
+        }
+    }
+
+    protected void a(NBTTagCompound nbttagcompound, DataOutputStream dataoutputstream) throws IOException { // CraftBukkit
+        if (nbttagcompound == null) {
+            dataoutputstream.writeShort(-1);
+        } else {
+            byte[] abyte = CompressedStreamTools.a(nbttagcompound);
+
+            dataoutputstream.writeShort((short) abyte.length);
+            dataoutputstream.write(abyte);
+        }
+    }
 
     static {
         a(0, true, true, Packet0KeepAlive.class);
@@ -212,13 +252,12 @@ public abstract class Packet {
         a(105, true, false, Packet105CraftProgressBar.class);
         a(106, true, true, Packet106Transaction.class);
         a(107, true, true, Packet107SetCreativeSlot.class);
+        a(108, false, true, Packet108.class);
         a(130, true, true, Packet130UpdateSign.class);
         a(131, true, false, Packet131.class);
         a(200, true, false, Packet200Statistic.class);
         a(201, true, false, Packet201PlayerInfo.class);
         a(254, false, true, Packet254GetInfo.class);
         a(255, true, true, Packet255KickDisconnect.class);
-        e = new EntityList();
-        f = 0;
     }
 }

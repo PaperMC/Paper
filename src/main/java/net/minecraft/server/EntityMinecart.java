@@ -17,21 +17,18 @@ import org.bukkit.event.vehicle.VehicleUpdateEvent;
 public class EntityMinecart extends Entity implements IInventory {
 
     private ItemStack[] items;
-    public int damage;
-    public int b;
-    public int c;
-    private boolean i;
+    private int e;
+    private boolean f;
     public int type;
-    public int e;
-    public double f;
-    public double g;
+    public double b;
+    public double c;
     private static final int[][][] matrix = new int[][][] { { { 0, 0, -1}, { 0, 0, 1}}, { { -1, 0, 0}, { 1, 0, 0}}, { { -1, -1, 0}, { 1, 0, 0}}, { { -1, 0, 0}, { 1, -1, 0}}, { { 0, 0, -1}, { 0, -1, 1}}, { { 0, -1, -1}, { 0, 0, 1}}, { { 0, 0, 1}, { 1, 0, 0}}, { { 0, 0, 1}, { -1, 0, 0}}, { { 0, 0, -1}, { -1, 0, 0}}, { { 0, 0, -1}, { 1, 0, 0}}};
-    private int k;
+    private int h;
+    private double i;
+    private double j;
+    private double k;
     private double l;
     private double m;
-    private double n;
-    private double o;
-    private double p;
 
     // CraftBukkit start
     public boolean slowWhenEmpty = true;
@@ -51,30 +48,33 @@ public class EntityMinecart extends Entity implements IInventory {
     public EntityMinecart(World world) {
         super(world);
         this.items = new ItemStack[27]; // CraftBukkit
-        this.damage = 0;
-        this.b = 0;
-        this.c = 1;
-        this.i = false;
-        this.aY = true;
+        this.e = 0;
+        this.f = false;
+        this.bc = true;
         this.b(0.98F, 0.7F);
         this.height = this.width / 2.0F;
     }
 
-    protected boolean e_() {
+    protected boolean g_() {
         return false;
     }
 
-    protected void b() {}
+    protected void b() {
+        this.datawatcher.a(16, new Byte((byte) 0));
+        this.datawatcher.a(17, new Integer(0));
+        this.datawatcher.a(18, new Integer(1));
+        this.datawatcher.a(19, new Integer(0));
+    }
 
-    public AxisAlignedBB b(Entity entity) {
+    public AxisAlignedBB a_(Entity entity) {
         return entity.boundingBox;
     }
 
-    public AxisAlignedBB f() {
+    public AxisAlignedBB h_() {
         return null;
     }
 
-    public boolean g() {
+    public boolean f_() {
         return true;
     }
 
@@ -92,7 +92,7 @@ public class EntityMinecart extends Entity implements IInventory {
         this.world.getServer().getPluginManager().callEvent(new VehicleCreateEvent((Vehicle) this.getBukkitEntity())); // CraftBukkit
     }
 
-    public double n() {
+    public double q() {
         return (double) this.width * 0.0D - 0.30000001192092896D;
     }
 
@@ -112,11 +112,11 @@ public class EntityMinecart extends Entity implements IInventory {
             i = event.getDamage();
             // CraftBukkit end
 
-            this.c = -this.c;
-            this.b = 10;
-            this.aq();
-            this.damage += i * 10;
-            if (this.damage > 40) {
+            this.d(-this.m());
+            this.c(10);
+            this.aB();
+            this.setDamage(this.getDamage() + i * 10);
+            if (this.getDamage() > 40) {
                 if (this.passenger != null) {
                     this.passenger.mount(this);
                 }
@@ -126,7 +126,7 @@ public class EntityMinecart extends Entity implements IInventory {
                 this.world.getServer().getPluginManager().callEvent(destroyEvent);
 
                 if (destroyEvent.isCancelled()) {
-                    this.damage = 40; // Maximize damage so this doesn't get triggered again right away
+                    this.setDamage(40); // Maximize damage so this doesn't get triggered again right away
                     return true;
                 }
                 // CraftBukkit end
@@ -175,7 +175,7 @@ public class EntityMinecart extends Entity implements IInventory {
         }
     }
 
-    public boolean r_() {
+    public boolean e_() {
         return !this.dead;
     }
 
@@ -210,7 +210,7 @@ public class EntityMinecart extends Entity implements IInventory {
         super.die();
     }
 
-    public void s_() {
+    public void w_() {
         // CraftBukkit start
         double prevX = this.locX;
         double prevY = this.locY;
@@ -219,34 +219,38 @@ public class EntityMinecart extends Entity implements IInventory {
         float prevPitch = this.pitch;
         // CraftBukkit end
 
-        if (this.b > 0) {
-            --this.b;
+        if (this.l() > 0) {
+            this.c(this.l() - 1);
         }
 
-        if (this.damage > 0) {
-            --this.damage;
+        if (this.getDamage() > 0) {
+            this.setDamage(this.getDamage() - 1);
         }
 
-        double d0;
+        if (this.j() && this.random.nextInt(4) == 0) {
+            this.world.a("largesmoke", this.locX, this.locY + 0.8D, this.locZ, 0.0D, 0.0D, 0.0D);
+        }
 
-        if (this.world.isStatic && this.k > 0) {
-            if (this.k > 0) {
-                double d1 = this.locX + (this.l - this.locX) / (double) this.k;
-                double d2 = this.locY + (this.m - this.locY) / (double) this.k;
-                double d3 = this.locZ + (this.n - this.locZ) / (double) this.k;
+        if (this.world.isStatic) {
+            if (this.h > 0) {
+                double d0 = this.locX + (this.i - this.locX) / (double) this.h;
+                double d1 = this.locY + (this.j - this.locY) / (double) this.h;
+                double d2 = this.locZ + (this.k - this.locZ) / (double) this.h;
 
-                for (d0 = this.o - (double) this.yaw; d0 < -180.0D; d0 += 360.0D) {
+                double d3;
+
+                for (d3 = this.l - (double) this.yaw; d3 < -180.0D; d3 += 360.0D) {
                     ;
                 }
 
-                while (d0 >= 180.0D) {
-                    d0 -= 360.0D;
+                while (d3 >= 180.0D) {
+                    d3 -= 360.0D;
                 }
 
-                this.yaw = (float) ((double) this.yaw + d0 / (double) this.k);
-                this.pitch = (float) ((double) this.pitch + (this.p - (double) this.pitch) / (double) this.k);
-                --this.k;
-                this.setPosition(d1, d2, d3);
+                this.yaw = (float) ((double) this.yaw + d3 / (double) this.h);
+                this.pitch = (float) ((double) this.pitch + (this.m - (double) this.pitch) / (double) this.h);
+                --this.h;
+                this.setPosition(d0, d1, d2);
                 this.c(this.yaw, this.pitch);
             } else {
                 this.setPosition(this.locX, this.locY, this.locZ);
@@ -267,25 +271,23 @@ public class EntityMinecart extends Entity implements IInventory {
 
             // CraftBukkit
             double d4 = this.maxSpeed;
-            boolean flag = false;
-
-            d0 = 0.0078125D;
+            double d5 = 0.0078125D;
             int l = this.world.getTypeId(i, j, k);
 
-            if (BlockMinecartTrack.c(l)) {
+            if (BlockMinecartTrack.d(l)) {
                 Vec3D vec3d = this.h(this.locX, this.locY, this.locZ);
                 int i1 = this.world.getData(i, j, k);
 
                 this.locY = (double) j;
+                boolean flag = false;
                 boolean flag1 = false;
-                boolean flag2 = false;
 
                 if (l == Block.GOLDEN_RAIL.id) {
-                    flag1 = (i1 & 8) != 0;
-                    flag2 = !flag1;
+                    flag = (i1 & 8) != 0;
+                    flag1 = !flag;
                 }
 
-                if (((BlockMinecartTrack) Block.byId[l]).f()) {
+                if (((BlockMinecartTrack) Block.byId[l]).h()) {
                     i1 &= 7;
                 }
 
@@ -294,41 +296,41 @@ public class EntityMinecart extends Entity implements IInventory {
                 }
 
                 if (i1 == 2) {
-                    this.motX -= d0;
+                    this.motX -= d5;
                 }
 
                 if (i1 == 3) {
-                    this.motX += d0;
+                    this.motX += d5;
                 }
 
                 if (i1 == 4) {
-                    this.motZ += d0;
+                    this.motZ += d5;
                 }
 
                 if (i1 == 5) {
-                    this.motZ -= d0;
+                    this.motZ -= d5;
                 }
 
                 int[][] aint = matrix[i1];
-                double d5 = (double) (aint[1][0] - aint[0][0]);
-                double d6 = (double) (aint[1][2] - aint[0][2]);
-                double d7 = Math.sqrt(d5 * d5 + d6 * d6);
-                double d8 = this.motX * d5 + this.motZ * d6;
+                double d6 = (double) (aint[1][0] - aint[0][0]);
+                double d7 = (double) (aint[1][2] - aint[0][2]);
+                double d8 = Math.sqrt(d6 * d6 + d7 * d7);
+                double d9 = this.motX * d6 + this.motZ * d7;
 
-                if (d8 < 0.0D) {
-                    d5 = -d5;
+                if (d9 < 0.0D) {
                     d6 = -d6;
+                    d7 = -d7;
                 }
 
-                double d9 = Math.sqrt(this.motX * this.motX + this.motZ * this.motZ);
+                double d10 = Math.sqrt(this.motX * this.motX + this.motZ * this.motZ);
 
-                this.motX = d9 * d5 / d7;
-                this.motZ = d9 * d6 / d7;
-                double d10;
+                this.motX = d10 * d6 / d8;
+                this.motZ = d10 * d7 / d8;
+                double d11;
 
-                if (flag2) {
-                    d10 = Math.sqrt(this.motX * this.motX + this.motZ * this.motZ);
-                    if (d10 < 0.03D) {
+                if (flag1) {
+                    d11 = Math.sqrt(this.motX * this.motX + this.motZ * this.motZ);
+                    if (d11 < 0.03D) {
                         this.motX *= 0.0D;
                         this.motY *= 0.0D;
                         this.motZ *= 0.0D;
@@ -339,39 +341,39 @@ public class EntityMinecart extends Entity implements IInventory {
                     }
                 }
 
-                d10 = 0.0D;
-                double d11 = (double) i + 0.5D + (double) aint[0][0] * 0.5D;
-                double d12 = (double) k + 0.5D + (double) aint[0][2] * 0.5D;
-                double d13 = (double) i + 0.5D + (double) aint[1][0] * 0.5D;
-                double d14 = (double) k + 0.5D + (double) aint[1][2] * 0.5D;
+                d11 = 0.0D;
+                double d12 = (double) i + 0.5D + (double) aint[0][0] * 0.5D;
+                double d13 = (double) k + 0.5D + (double) aint[0][2] * 0.5D;
+                double d14 = (double) i + 0.5D + (double) aint[1][0] * 0.5D;
+                double d15 = (double) k + 0.5D + (double) aint[1][2] * 0.5D;
 
-                d5 = d13 - d11;
                 d6 = d14 - d12;
-                double d15;
+                d7 = d15 - d13;
                 double d16;
                 double d17;
+                double d18;
 
-                if (d5 == 0.0D) {
+                if (d6 == 0.0D) {
                     this.locX = (double) i + 0.5D;
-                    d10 = this.locZ - (double) k;
-                } else if (d6 == 0.0D) {
+                    d11 = this.locZ - (double) k;
+                } else if (d7 == 0.0D) {
                     this.locZ = (double) k + 0.5D;
-                    d10 = this.locX - (double) i;
+                    d11 = this.locX - (double) i;
                 } else {
-                    d16 = this.locX - d11;
-                    d15 = this.locZ - d12;
-                    d17 = (d16 * d5 + d15 * d6) * 2.0D;
-                    d10 = d17;
+                    d16 = this.locX - d12;
+                    d18 = this.locZ - d13;
+                    d17 = (d16 * d6 + d18 * d7) * 2.0D;
+                    d11 = d17;
                 }
 
-                this.locX = d11 + d5 * d10;
-                this.locZ = d12 + d6 * d10;
+                this.locX = d12 + d6 * d11;
+                this.locZ = d13 + d7 * d11;
                 this.setPosition(this.locX, this.locY + (double) this.height, this.locZ);
                 d16 = this.motX;
-                d15 = this.motZ;
+                d18 = this.motZ;
                 if (this.passenger != null) {
                     d16 *= 0.75D;
-                    d15 *= 0.75D;
+                    d18 *= 0.75D;
                 }
 
                 if (d16 < -d4) {
@@ -382,15 +384,15 @@ public class EntityMinecart extends Entity implements IInventory {
                     d16 = d4;
                 }
 
-                if (d15 < -d4) {
-                    d15 = -d4;
+                if (d18 < -d4) {
+                    d18 = -d4;
                 }
 
-                if (d15 > d4) {
-                    d15 = d4;
+                if (d18 > d4) {
+                    d18 = d4;
                 }
 
-                this.move(d16, 0.0D, d15);
+                this.move(d16, 0.0D, d18);
                 if (aint[0][1] != 0 && MathHelper.floor(this.locX) - i == aint[0][0] && MathHelper.floor(this.locZ) - k == aint[0][2]) {
                     this.setPosition(this.locX, this.locY + (double) aint[0][1], this.locZ);
                 } else if (aint[1][1] != 0 && MathHelper.floor(this.locX) - i == aint[1][0] && MathHelper.floor(this.locZ) - k == aint[1][2]) {
@@ -404,18 +406,17 @@ public class EntityMinecart extends Entity implements IInventory {
                     this.motZ *= 0.996999979019165D;
                 } else {
                     if (this.type == 2) {
-                        d17 = (double) MathHelper.a(this.f * this.f + this.g * this.g);
+                        d17 = (double) MathHelper.a(this.b * this.b + this.c * this.c);
                         if (d17 > 0.01D) {
-                            flag = true;
-                            this.f /= d17;
-                            this.g /= d17;
-                            double d18 = 0.04D;
+                            this.b /= d17;
+                            this.c /= d17;
+                            double d19 = 0.04D;
 
                             this.motX *= 0.800000011920929D;
                             this.motY *= 0.0D;
                             this.motZ *= 0.800000011920929D;
-                            this.motX += this.f * d18;
-                            this.motZ += this.g * d18;
+                            this.motX += this.b * d19;
+                            this.motZ += this.c * d19;
                         } else {
                             this.motX *= 0.8999999761581421D;
                             this.motY *= 0.0D;
@@ -431,12 +432,12 @@ public class EntityMinecart extends Entity implements IInventory {
                 Vec3D vec3d1 = this.h(this.locX, this.locY, this.locZ);
 
                 if (vec3d1 != null && vec3d != null) {
-                    double d19 = (vec3d.b - vec3d1.b) * 0.05D;
+                    double d20 = (vec3d.b - vec3d1.b) * 0.05D;
 
-                    d9 = Math.sqrt(this.motX * this.motX + this.motZ * this.motZ);
-                    if (d9 > 0.0D) {
-                        this.motX = this.motX / d9 * (d9 + d19);
-                        this.motZ = this.motZ / d9 * (d9 + d19);
+                    d10 = Math.sqrt(this.motX * this.motX + this.motZ * this.motZ);
+                    if (d10 > 0.0D) {
+                        this.motX = this.motX / d10 * (d10 + d20);
+                        this.motZ = this.motZ / d10 * (d10 + d20);
                     }
 
                     this.setPosition(this.locX, vec3d1.b, this.locZ);
@@ -446,35 +447,35 @@ public class EntityMinecart extends Entity implements IInventory {
                 int k1 = MathHelper.floor(this.locZ);
 
                 if (j1 != i || k1 != k) {
-                    d9 = Math.sqrt(this.motX * this.motX + this.motZ * this.motZ);
-                    this.motX = d9 * (double) (j1 - i);
-                    this.motZ = d9 * (double) (k1 - k);
+                    d10 = Math.sqrt(this.motX * this.motX + this.motZ * this.motZ);
+                    this.motX = d10 * (double) (j1 - i);
+                    this.motZ = d10 * (double) (k1 - k);
                 }
 
-                double d20;
+                double d21;
 
                 if (this.type == 2) {
-                    d20 = (double) MathHelper.a(this.f * this.f + this.g * this.g);
-                    if (d20 > 0.01D && this.motX * this.motX + this.motZ * this.motZ > 0.0010D) {
-                        this.f /= d20;
-                        this.g /= d20;
-                        if (this.f * this.motX + this.g * this.motZ < 0.0D) {
-                            this.f = 0.0D;
-                            this.g = 0.0D;
+                    d21 = (double) MathHelper.a(this.b * this.b + this.c * this.c);
+                    if (d21 > 0.01D && this.motX * this.motX + this.motZ * this.motZ > 0.0010D) {
+                        this.b /= d21;
+                        this.c /= d21;
+                        if (this.b * this.motX + this.c * this.motZ < 0.0D) {
+                            this.b = 0.0D;
+                            this.c = 0.0D;
                         } else {
-                            this.f = this.motX;
-                            this.g = this.motZ;
+                            this.b = this.motX;
+                            this.c = this.motZ;
                         }
                     }
                 }
 
-                if (flag1) {
-                    d20 = Math.sqrt(this.motX * this.motX + this.motZ * this.motZ);
-                    if (d20 > 0.01D) {
-                        double d21 = 0.06D;
+                if (flag) {
+                    d21 = Math.sqrt(this.motX * this.motX + this.motZ * this.motZ);
+                    if (d21 > 0.01D) {
+                        double d22 = 0.06D;
 
-                        this.motX += this.motX / d20 * d21;
-                        this.motZ += this.motZ / d20 * d21;
+                        this.motX += this.motX / d21 * d22;
+                        this.motZ += this.motZ / d21 * d22;
                     } else if (i1 == 1) {
                         if (this.world.e(i - 1, j, k)) {
                             this.motX = 0.02D;
@@ -525,29 +526,29 @@ public class EntityMinecart extends Entity implements IInventory {
             }
 
             this.pitch = 0.0F;
-            double d22 = this.lastX - this.locX;
-            double d23 = this.lastZ - this.locZ;
+            double d23 = this.lastX - this.locX;
+            double d24 = this.lastZ - this.locZ;
 
-            if (d22 * d22 + d23 * d23 > 0.0010D) {
-                this.yaw = (float) (Math.atan2(d23, d22) * 180.0D / 3.141592653589793D);
-                if (this.i) {
+            if (d23 * d23 + d24 * d24 > 0.0010D) {
+                this.yaw = (float) (Math.atan2(d24, d23) * 180.0D / 3.141592653589793D);
+                if (this.f) {
                     this.yaw += 180.0F;
                 }
             }
 
-            double d24;
+            double d25;
 
-            for (d24 = (double) (this.yaw - this.lastYaw); d24 >= 180.0D; d24 -= 360.0D) {
+            for (d25 = (double) (this.yaw - this.lastYaw); d25 >= 180.0D; d25 -= 360.0D) {
                 ;
             }
 
-            while (d24 < -180.0D) {
-                d24 += 360.0D;
+            while (d25 < -180.0D) {
+                d25 += 360.0D;
             }
 
-            if (d24 < -170.0D || d24 >= 170.0D) {
+            if (d25 < -170.0D || d25 >= 170.0D) {
                 this.yaw += 180.0F;
-                this.i = !this.i;
+                this.f = !this.f;
             }
 
             this.c(this.yaw, this.pitch);
@@ -571,25 +572,29 @@ public class EntityMinecart extends Entity implements IInventory {
                 for (int l1 = 0; l1 < list.size(); ++l1) {
                     Entity entity = (Entity) list.get(l1);
 
-                    if (entity != this.passenger && entity.g() && entity instanceof EntityMinecart) {
+                    if (entity != this.passenger && entity.f_() && entity instanceof EntityMinecart) {
                         entity.collide(this);
                     }
                 }
             }
 
             if (this.passenger != null && this.passenger.dead) {
-                this.passenger.vehicle = null; // CraftBukkit
+                if (this.passenger.vehicle == this) {
+                    this.passenger.vehicle = null;
+                }
+
                 this.passenger = null;
             }
 
-            if (flag && this.random.nextInt(4) == 0) {
+            if (this.e > 0) {
                 --this.e;
-                if (this.e < 0) {
-                    this.f = this.g = 0.0D;
-                }
-
-                this.world.a("largesmoke", this.locX, this.locY + 0.8D, this.locZ, 0.0D, 0.0D, 0.0D);
             }
+
+            if (this.e <= 0) {
+                this.b = this.c = 0.0D;
+            }
+
+            this.a(this.e > 0);
         }
     }
 
@@ -604,11 +609,11 @@ public class EntityMinecart extends Entity implements IInventory {
 
         int l = this.world.getTypeId(i, j, k);
 
-        if (BlockMinecartTrack.c(l)) {
+        if (BlockMinecartTrack.d(l)) {
             int i1 = this.world.getData(i, j, k);
 
             d1 = (double) j;
-            if (((BlockMinecartTrack) Block.byId[l]).f()) {
+            if (((BlockMinecartTrack) Block.byId[l]).h()) {
                 i1 &= 7;
             }
 
@@ -662,8 +667,8 @@ public class EntityMinecart extends Entity implements IInventory {
     protected void b(NBTTagCompound nbttagcompound) {
         nbttagcompound.a("Type", this.type);
         if (this.type == 2) {
-            nbttagcompound.a("PushX", this.f);
-            nbttagcompound.a("PushZ", this.g);
+            nbttagcompound.a("PushX", this.b);
+            nbttagcompound.a("PushZ", this.c);
             nbttagcompound.a("Fuel", (short) this.e);
         } else if (this.type == 1) {
             NBTTagList nbttaglist = new NBTTagList();
@@ -683,19 +688,19 @@ public class EntityMinecart extends Entity implements IInventory {
     }
 
     protected void a(NBTTagCompound nbttagcompound) {
-        this.type = nbttagcompound.e("Type");
+        this.type = nbttagcompound.f("Type");
         if (this.type == 2) {
-            this.f = nbttagcompound.h("PushX");
-            this.g = nbttagcompound.h("PushZ");
-            this.e = nbttagcompound.d("Fuel");
+            this.b = nbttagcompound.i("PushX");
+            this.c = nbttagcompound.i("PushZ");
+            this.e = nbttagcompound.e("Fuel");
         } else if (this.type == 1) {
-            NBTTagList nbttaglist = nbttagcompound.l("Items");
+            NBTTagList nbttaglist = nbttagcompound.m("Items");
 
             this.items = new ItemStack[this.getSize()];
 
-            for (int i = 0; i < nbttaglist.c(); ++i) {
+            for (int i = 0; i < nbttaglist.d(); ++i) {
                 NBTTagCompound nbttagcompound1 = (NBTTagCompound) nbttaglist.a(i);
-                int j = nbttagcompound1.c("Slot") & 255;
+                int j = nbttagcompound1.d("Slot") & 255;
 
                 if (j >= 0 && j < this.items.length) {
                     this.items[j] = ItemStack.a(nbttagcompound1);
@@ -749,17 +754,18 @@ public class EntityMinecart extends Entity implements IInventory {
                     d1 *= d3;
                     d0 *= 0.10000000149011612D;
                     d1 *= 0.10000000149011612D;
-                    d0 *= (double) (1.0F - this.bK);
-                    d1 *= (double) (1.0F - this.bK);
+                    d0 *= (double) (1.0F - this.bO);
+                    d1 *= (double) (1.0F - this.bO);
                     d0 *= 0.5D;
                     d1 *= 0.5D;
                     if (entity instanceof EntityMinecart) {
                         double d4 = entity.locX - this.locX;
                         double d5 = entity.locZ - this.locZ;
-                        double d6 = d4 * entity.motZ + d5 * entity.lastX;
+                        Vec3D vec3d = Vec3D.create(d4, 0.0D, d5).b();
+                        Vec3D vec3d1 = Vec3D.create((double) MathHelper.cos(this.yaw * 3.1415927F / 180.0F), 0.0D, (double) MathHelper.sin(this.yaw * 3.1415927F / 180.0F)).b();
+                        double d6 = Math.abs(vec3d.a(vec3d1));
 
-                        d6 *= d6;
-                        if (d6 > 5.0D) {
+                        if (d6 < 0.800000011920929D) {
                             return;
                         }
 
@@ -769,28 +775,28 @@ public class EntityMinecart extends Entity implements IInventory {
                         if (((EntityMinecart) entity).type == 2 && this.type != 2) {
                             this.motX *= 0.20000000298023224D;
                             this.motZ *= 0.20000000298023224D;
-                            this.b(entity.motX - d0, 0.0D, entity.motZ - d1);
-                            entity.motX *= 0.699999988079071D;
-                            entity.motZ *= 0.699999988079071D;
+                            this.b_(entity.motX - d0, 0.0D, entity.motZ - d1);
+                            entity.motX *= 0.949999988079071D;
+                            entity.motZ *= 0.949999988079071D;
                         } else if (((EntityMinecart) entity).type != 2 && this.type == 2) {
                             entity.motX *= 0.20000000298023224D;
                             entity.motZ *= 0.20000000298023224D;
-                            entity.b(this.motX + d0, 0.0D, this.motZ + d1);
-                            this.motX *= 0.699999988079071D;
-                            this.motZ *= 0.699999988079071D;
+                            entity.b_(this.motX + d0, 0.0D, this.motZ + d1);
+                            this.motX *= 0.949999988079071D;
+                            this.motZ *= 0.949999988079071D;
                         } else {
                             d7 /= 2.0D;
                             d8 /= 2.0D;
                             this.motX *= 0.20000000298023224D;
                             this.motZ *= 0.20000000298023224D;
-                            this.b(d7 - d0, 0.0D, d8 - d1);
+                            this.b_(d7 - d0, 0.0D, d8 - d1);
                             entity.motX *= 0.20000000298023224D;
                             entity.motZ *= 0.20000000298023224D;
-                            entity.b(d7 + d0, 0.0D, d8 + d1);
+                            entity.b_(d7 + d0, 0.0D, d8 + d1);
                         }
                     } else {
-                        this.b(-d0, 0.0D, -d1);
-                        entity.b(d0 / 4.0D, 0.0D, d1 / 4.0D);
+                        this.b_(-d0, 0.0D, -d1);
+                        entity.b_(d0 / 4.0D, 0.0D, d1 / 4.0D);
                     }
                 }
             }
@@ -875,21 +881,57 @@ public class EntityMinecart extends Entity implements IInventory {
                     entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, (ItemStack) null);
                 }
 
-                this.e += 1200;
+                this.e += 3600;
             }
 
-            this.f = this.locX - entityhuman.locX;
-            this.g = this.locZ - entityhuman.locZ;
+            this.b = this.locX - entityhuman.locX;
+            this.c = this.locZ - entityhuman.locZ;
         }
 
         return true;
     }
 
     public boolean a(EntityHuman entityhuman) {
-        return this.dead ? false : entityhuman.h(this) <= 64.0D;
+        return this.dead ? false : entityhuman.i(this) <= 64.0D;
     }
 
-    public void e() {}
+    protected boolean j() {
+        return (this.datawatcher.getByte(16) & 1) != 0;
+    }
 
-    public void t_() {}
+    protected void a(boolean flag) {
+        if (flag) {
+            this.datawatcher.watch(16, Byte.valueOf((byte) (this.datawatcher.getByte(16) | 1)));
+        } else {
+            this.datawatcher.watch(16, Byte.valueOf((byte) (this.datawatcher.getByte(16) & -2)));
+        }
+    }
+
+    public void f() {}
+
+    public void g() {}
+
+    public void setDamage(int i) {
+        this.datawatcher.watch(19, Integer.valueOf(i));
+    }
+
+    public int getDamage() {
+        return this.datawatcher.getInt(19);
+    }
+
+    public void c(int i) {
+        this.datawatcher.watch(17, Integer.valueOf(i));
+    }
+
+    public int l() {
+        return this.datawatcher.getInt(17);
+    }
+
+    public void d(int i) {
+        this.datawatcher.watch(18, Integer.valueOf(i));
+    }
+
+    public int m() {
+        return this.datawatcher.getInt(18);
+    }
 }

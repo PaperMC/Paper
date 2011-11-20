@@ -13,7 +13,7 @@ public class BlockStairs extends Block {
         this.c(block.strength);
         this.b(block.durability / 3.0F);
         this.a(block.stepSound);
-        this.f(255);
+        this.g(255);
     }
 
     public void a(IBlockAccess iblockaccess, int i, int j, int k) {
@@ -30,6 +30,10 @@ public class BlockStairs extends Block {
 
     public boolean b() {
         return false;
+    }
+
+    public int c() {
+        return 10;
     }
 
     public void a(World world, int i, int j, int k, AxisAlignedBB axisalignedbb, ArrayList arraylist) {
@@ -72,14 +76,6 @@ public class BlockStairs extends Block {
         return this.a.a(entity);
     }
 
-    public int a(int i, Random random) {
-        return this.a.a(i, random);
-    }
-
-    public int a(Random random) {
-        return this.a.a(random);
-    }
-
     public int a(int i, int j) {
         return this.a.a(i, 0);
     }
@@ -88,16 +84,16 @@ public class BlockStairs extends Block {
         return this.a.a(i, 0);
     }
 
-    public int c() {
-        return this.a.c();
+    public int d() {
+        return this.a.d();
     }
 
     public void a(World world, int i, int j, int k, Entity entity, Vec3D vec3d) {
         this.a.a(world, i, j, k, entity, vec3d);
     }
 
-    public boolean q_() {
-        return this.a.q_();
+    public boolean v_() {
+        return this.a.v_();
     }
 
     public boolean a(int i, boolean flag) {
@@ -117,8 +113,8 @@ public class BlockStairs extends Block {
         this.a.remove(world, i, j, k);
     }
 
-    public void dropNaturally(World world, int i, int j, int k, int l, float f) {
-        this.a.dropNaturally(world, i, j, k, 0, f); // CraftBukkit - don't propagate stair direction
+    public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {
+        this.a.dropNaturally(world, i, j, k, 0, f, i1); // CraftBukkit - don't propagate stair direction
     }
 
     public void b(World world, int i, int j, int k, Entity entity) {

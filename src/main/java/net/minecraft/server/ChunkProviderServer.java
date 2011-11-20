@@ -31,11 +31,7 @@ public class ChunkProviderServer implements IChunkProvider {
     // CraftBukkit end
 
     public ChunkProviderServer(WorldServer worldserver, IChunkLoader ichunkloader, IChunkProvider ichunkprovider) {
-
-        worldserver.getClass();
-        EmptyChunk emptychunk = new EmptyChunk(worldserver, new byte[256 * 128], 0, 0);
-
-        this.emptyChunk = emptychunk;
+        this.emptyChunk = new EmptyChunk(worldserver, new byte[256 * worldserver.height], 0, 0);
         this.world = worldserver;
         this.e = ichunkloader;
         this.chunkProvider = ichunkprovider;
@@ -46,12 +42,16 @@ public class ChunkProviderServer implements IChunkProvider {
     }
 
     public void queueUnload(int i, int j) {
-        ChunkCoordinates chunkcoordinates = this.world.getSpawn();
-        int k = i * 16 + 8 - chunkcoordinates.x;
-        int l = j * 16 + 8 - chunkcoordinates.z;
-        short short1 = 128;
+        if (this.world.worldProvider.c()) {
+            ChunkCoordinates chunkcoordinates = this.world.getSpawn();
+            int k = i * 16 + 8 - chunkcoordinates.x;
+            int l = j * 16 + 8 - chunkcoordinates.z;
+            short short1 = 128;
 
-        if (k < -short1 || k > short1 || l < -short1 || l > short1 || !(this.world.keepSpawnInMemory)) { // CraftBukkit - added 'this.world.keepSpawnInMemory'
+            if (k < -short1 || k > short1 || l < -short1 || l > short1 || !(this.world.keepSpawnInMemory)) { // CraftBukkit - added 'this.world.keepSpawnInMemory'
+                this.unloadQueue.add(i, j); // CraftBukkit
+            }
+        } else {
             this.unloadQueue.add(i, j); // CraftBukkit
         }
     }
@@ -252,5 +252,13 @@ public class ChunkProviderServer implements IChunkProvider {
 
     public boolean canSave() {
         return !this.world.savingDisabled;
+    }
+
+    public List a(EnumCreatureType enumcreaturetype, int i, int j, int k) {
+        return this.chunkProvider.a(enumcreaturetype, i, j, k);
+    }
+
+    public ChunkPosition a(World world, String s, int i, int j, int k) {
+        return this.chunkProvider.a(world, s, i, j, k);
     }
 }

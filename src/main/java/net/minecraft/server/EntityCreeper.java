@@ -16,6 +16,10 @@ public class EntityCreeper extends EntityMonster {
         this.texture = "/mob/creeper.png";
     }
 
+    public int getMaxHealth() {
+        return 20;
+    }
+
     protected void b() {
         super.b();
         this.datawatcher.a(16, Byte.valueOf((byte) -1));
@@ -31,7 +35,7 @@ public class EntityCreeper extends EntityMonster {
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        this.datawatcher.watch(17, Byte.valueOf((byte) (nbttagcompound.m("powered") ? 1 : 0)));
+        this.datawatcher.watch(17, Byte.valueOf((byte) (nbttagcompound.n("powered") ? 1 : 0)));
     }
 
     protected void b(Entity entity, float f) {
@@ -46,10 +50,10 @@ public class EntityCreeper extends EntityMonster {
         }
     }
 
-    public void s_() {
+    public void w_() {
         this.b = this.fuseTicks;
         if (this.world.isStatic) {
-            int i = this.w();
+            int i = this.A();
 
             if (i > 0 && this.fuseTicks == 0) {
                 this.world.makeSound(this, "random.fuse", 1.0F, 0.5F);
@@ -65,7 +69,7 @@ public class EntityCreeper extends EntityMonster {
             }
         }
 
-        super.s_();
+        super.w_();
         if (this.target == null && this.fuseTicks > 0) {
             this.b(-1);
             --this.fuseTicks;
@@ -75,24 +79,24 @@ public class EntityCreeper extends EntityMonster {
         }
     }
 
-    protected String i() {
+    protected String m() {
         return "mob.creeper";
     }
 
-    protected String j() {
+    protected String n() {
         return "mob.creeperdeath";
     }
 
     public void die(DamageSource damagesource) {
         super.die(damagesource);
         if (damagesource.getEntity() instanceof EntitySkeleton) {
-            this.b(Item.GOLD_RECORD.id + this.random.nextInt(2), 1);
+            this.b(Item.RECORD_1.id + this.random.nextInt(2), 1);
         }
     }
 
     protected void a(Entity entity, float f) {
         if (!this.world.isStatic) {
-            int i = this.w();
+            int i = this.A();
 
             if ((i > 0 || f >= 3.0F) && (i <= 0 || f >= 7.0F)) {
                 this.b(-1);
@@ -132,11 +136,11 @@ public class EntityCreeper extends EntityMonster {
         return this.datawatcher.getByte(17) == 1;
     }
 
-    protected int k() {
+    protected int e() {
         return Item.SULPHUR.id;
     }
 
-    private int w() {
+    private int A() {
         return this.datawatcher.getByte(16);
     }
 

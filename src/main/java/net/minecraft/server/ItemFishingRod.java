@@ -6,16 +6,16 @@ public class ItemFishingRod extends Item {
 
     public ItemFishingRod(int i) {
         super(i);
-        this.d(64);
-        this.c(1);
+        this.f(64);
+        this.e(1);
     }
 
     public ItemStack a(ItemStack itemstack, World world, EntityHuman entityhuman) {
         if (entityhuman.hookedFish != null) {
-            int i = entityhuman.hookedFish.i();
+            int i = entityhuman.hookedFish.j();
 
             itemstack.damage(i, entityhuman);
-            entityhuman.v();
+            entityhuman.r_();
         } else {
             // CraftBukkit start
             PlayerFishEvent playerFishEvent = new PlayerFishEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), null,PlayerFishEvent.State.FISHING);
@@ -25,12 +25,13 @@ public class ItemFishingRod extends Item {
                 return itemstack;
             }
             // CraftBukkit end
-            world.makeSound(entityhuman, "random.bow", 0.5F, 0.4F / (b.nextFloat() * 0.4F + 0.8F));
+
+            world.makeSound(entityhuman, "random.bow", 0.5F, 0.4F / (c.nextFloat() * 0.4F + 0.8F));
             if (!world.isStatic) {
                 world.addEntity(new EntityFishingHook(world, entityhuman));
             }
 
-            entityhuman.v();
+            entityhuman.r_();
         }
 
         return itemstack;

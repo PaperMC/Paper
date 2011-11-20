@@ -154,20 +154,6 @@ public class Explosion {
         ArrayList arraylist = new ArrayList();
 
         arraylist.addAll(this.blocks);
-        if (this.a) {
-            for (int l2 = arraylist.size() - 1; l2 >= 0; --l2) {
-                ChunkPosition chunkposition = (ChunkPosition) arraylist.get(l2);
-                int i3 = chunkposition.x;
-                int j3 = chunkposition.y;
-                int k3 = chunkposition.z;
-                int l3 = this.world.getTypeId(i3, j3, k3);
-                int i4 = this.world.getTypeId(i3, j3 - 1, k3);
-
-                if (l3 == 0 && Block.o[i4] && this.h.nextInt(3) == 0) {
-                    this.world.setTypeId(i3, j3, k3, Block.FIRE.id);
-                }
-            }
-        }
     }
 
     public void a(boolean flag) {
@@ -193,10 +179,10 @@ public class Explosion {
 
         EntityExplodeEvent event = new EntityExplodeEvent(explode, location, blockList);
         this.world.getServer().getPluginManager().callEvent(event);
-        
+
         arraylist.clear();
         blocks.clear();
-        
+
         for (org.bukkit.block.Block block : event.blockList()) {
             ChunkPosition coords = new ChunkPosition(block.getX(), block.getY(), block.getZ());
             arraylist.add(coords);
@@ -209,13 +195,19 @@ public class Explosion {
         }
         // CraftBukkit end
 
-        for (int i = arraylist.size() - 1; i >= 0; --i) {
-            ChunkPosition chunkposition = (ChunkPosition) arraylist.get(i);
-            int j = chunkposition.x;
-            int k = chunkposition.y;
-            int l = chunkposition.z;
-            int i1 = this.world.getTypeId(j, k, l);
+        int i;
+        ChunkPosition chunkposition;
+        int j;
+        int k;
+        int l;
+        int i1;
 
+        for (i = arraylist.size() - 1; i >= 0; --i) {
+            chunkposition = (ChunkPosition) arraylist.get(i);
+            j = chunkposition.x;
+            k = chunkposition.y;
+            l = chunkposition.z;
+            i1 = this.world.getTypeId(j, k, l);
             if (flag) {
                 double d0 = (double) ((float) j + this.world.random.nextFloat());
                 double d1 = (double) ((float) k + this.world.random.nextFloat());
@@ -241,9 +233,24 @@ public class Explosion {
             // CraftBukkit - stop explosions from putting out fire
             if (i1 > 0 && i1 != Block.FIRE.id) {
                 // CraftBukkit
-                Block.byId[i1].dropNaturally(this.world, j, k, l, this.world.getData(j, k, l), event.getYield());
+                Block.byId[i1].dropNaturally(this.world, j, k, l, this.world.getData(j, k, l), event.getYield(), 0);
                 this.world.setTypeId(j, k, l, 0);
                 Block.byId[i1].a_(this.world, j, k, l);
+            }
+        }
+
+        if (this.a) {
+            for (i = arraylist.size() - 1; i >= 0; --i) {
+                chunkposition = (ChunkPosition) arraylist.get(i);
+                j = chunkposition.x;
+                k = chunkposition.y;
+                l = chunkposition.z;
+                i1 = this.world.getTypeId(j, k, l);
+                int j1 = this.world.getTypeId(j, k - 1, l);
+
+                if (i1 == 0 && Block.o[j1] && this.h.nextInt(3) == 0) {
+                    this.world.setTypeId(j, k, l, Block.FIRE.id);
+                }
             }
         }
     }

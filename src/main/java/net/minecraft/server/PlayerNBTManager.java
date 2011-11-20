@@ -20,6 +20,7 @@ public class PlayerNBTManager implements PlayerFileData, IDataManager {
     private final File c;
     private final File d;
     private final long e = System.currentTimeMillis();
+    private final String f;
     private UUID uuid = null; // CraftBukkit
 
     public PlayerNBTManager(File file1, String s, boolean flag) {
@@ -28,6 +29,7 @@ public class PlayerNBTManager implements PlayerFileData, IDataManager {
         this.c = new File(this.b, "players");
         this.d = new File(this.b, "data");
         this.d.mkdirs();
+        this.f = s;
         if (flag) {
             this.c.mkdirs();
         }
@@ -73,9 +75,14 @@ public class PlayerNBTManager implements PlayerFileData, IDataManager {
     }
 
     public IChunkLoader a(WorldProvider worldprovider) {
-        if (worldprovider instanceof WorldProviderHell) {
-            File file1 = new File(this.b, "DIM-1");
+        File file1;
 
+        if (worldprovider instanceof WorldProviderHell) {
+            file1 = new File(this.b, "DIM-1");
+            file1.mkdirs();
+            return new ChunkLoader(file1, true);
+        } else if (worldprovider instanceof WorldProviderSky) {
+            file1 = new File(this.b, "DIM1");
             file1.mkdirs();
             return new ChunkLoader(file1, true);
         } else {
@@ -91,7 +98,7 @@ public class PlayerNBTManager implements PlayerFileData, IDataManager {
         if (file1.exists()) {
             try {
                 nbttagcompound = CompressedStreamTools.a((InputStream) (new FileInputStream(file1)));
-                nbttagcompound1 = nbttagcompound.k("Data");
+                nbttagcompound1 = nbttagcompound.l("Data");
                 return new WorldData(nbttagcompound1);
             } catch (Exception exception) {
                 exception.printStackTrace();
@@ -102,7 +109,7 @@ public class PlayerNBTManager implements PlayerFileData, IDataManager {
         if (file1.exists()) {
             try {
                 nbttagcompound = CompressedStreamTools.a((InputStream) (new FileInputStream(file1)));
-                nbttagcompound1 = nbttagcompound.k("Data");
+                nbttagcompound1 = nbttagcompound.l("Data");
                 return new WorldData(nbttagcompound1);
             } catch (Exception exception1) {
                 exception1.printStackTrace();

@@ -53,13 +53,17 @@ public class BlockCactus extends Block {
         return false;
     }
 
+    public int c() {
+        return 13;
+    }
+
     public boolean canPlace(World world, int i, int j, int k) {
         return !super.canPlace(world, i, j, k) ? false : this.f(world, i, j, k);
     }
 
     public void doPhysics(World world, int i, int j, int k, int l) {
         if (!this.f(world, i, j, k)) {
-            this.g(world, i, j, k, world.getData(i, j, k));
+            this.b(world, i, j, k, world.getData(i, j, k), 0);
             world.setTypeId(i, j, k, 0);
         }
     }

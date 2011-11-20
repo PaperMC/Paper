@@ -5,9 +5,8 @@ public class EntityExperienceOrb extends Entity {
     public int a;
     public int b = 0;
     public int c;
-    private int e = 5;
+    private int d = 5;
     public int value; // CraftBukkit - priv to pub
-    public float d = (float) (Math.random() * 3.141592653589793D * 2.0D);
 
     public EntityExperienceOrb(World world, double d0, double d1, double d2, int i) {
         super(world);
@@ -21,7 +20,7 @@ public class EntityExperienceOrb extends Entity {
         this.value = i;
     }
 
-    protected boolean e_() {
+    protected boolean g_() {
         return false;
     }
 
@@ -33,8 +32,8 @@ public class EntityExperienceOrb extends Entity {
 
     protected void b() {}
 
-    public void s_() {
-        super.s_();
+    public void w_() {
+        super.w_();
         if (this.c > 0) {
             --this.c;
         }
@@ -56,7 +55,7 @@ public class EntityExperienceOrb extends Entity {
 
         if (entityhuman != null) {
             double d1 = (entityhuman.locX - this.locX) / d0;
-            double d2 = (entityhuman.locY + (double) entityhuman.t() - this.locY) / d0;
+            double d2 = (entityhuman.locY + (double) entityhuman.x() - this.locY) / d0;
             double d3 = (entityhuman.locZ - this.locZ) / d0;
             double d4 = Math.sqrt(d1 * d1 + d2 * d2 + d3 * d3);
             double d5 = 1.0D - d4;
@@ -95,7 +94,7 @@ public class EntityExperienceOrb extends Entity {
         }
     }
 
-    public boolean f_() {
+    public boolean i_() {
         return this.world.a(this.boundingBox, Material.WATER, this);
     }
 
@@ -104,9 +103,9 @@ public class EntityExperienceOrb extends Entity {
     }
 
     public boolean damageEntity(DamageSource damagesource, int i) {
-        this.aq();
-        this.e -= i;
-        if (this.e <= 0) {
+        this.aB();
+        this.d -= i;
+        if (this.d <= 0) {
             this.die();
         }
 
@@ -114,30 +113,30 @@ public class EntityExperienceOrb extends Entity {
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("Health", (short) ((byte) this.e));
+        nbttagcompound.a("Health", (short) ((byte) this.d));
         nbttagcompound.a("Age", (short) this.b);
         nbttagcompound.a("Value", (short) this.value);
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        this.e = nbttagcompound.d("Health") & 255;
-        this.b = nbttagcompound.d("Age");
-        this.value = nbttagcompound.d("Value");
+        this.d = nbttagcompound.e("Health") & 255;
+        this.b = nbttagcompound.e("Age");
+        this.value = nbttagcompound.e("Value");
     }
 
     public void a_(EntityHuman entityhuman) {
         if (!this.world.isStatic) {
-            if (this.c == 0 && entityhuman.w == 0) {
-                entityhuman.w = 2;
-                this.world.makeSound(this, "random.pop", 0.2F, 0.5F * ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.0F));
+            if (this.c == 0 && entityhuman.x == 0) {
+                entityhuman.x = 2;
+                this.world.makeSound(this, "random.orb", 0.1F, 0.5F * ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.8F));
                 entityhuman.receive(this, 1);
-                entityhuman.d(this.value);
+                entityhuman.h(this.value);
                 this.die();
             }
         }
     }
 
-    public int j_() {
+    public int g() {
         return this.value;
     }
 

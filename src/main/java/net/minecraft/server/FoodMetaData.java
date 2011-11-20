@@ -23,7 +23,7 @@ public class FoodMetaData {
     }
 
     public void a(ItemFood itemfood) {
-        this.a(itemfood.k(), itemfood.l());
+        this.a(itemfood.n(), itemfood.o());
     }
 
     public void a(EntityHuman entityhuman) {
@@ -46,17 +46,17 @@ public class FoodMetaData {
             }
         }
 
-        if (this.foodLevel >= 18 && entityhuman.W()) {
+        if (this.foodLevel >= 18 && entityhuman.ab()) {
             ++this.foodTickTimer;
             if (this.foodTickTimer >= 80) {
                 // CraftBukkit - added RegainReason.
-                entityhuman.c(1, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.SATIATED);
+                entityhuman.d(1, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.SATIATED);
                 this.foodTickTimer = 0;
             }
         } else if (this.foodLevel <= 0) {
             ++this.foodTickTimer;
             if (this.foodTickTimer >= 80) {
-                if (entityhuman.health > 10 || i >= 3 || entityhuman.health > 1 && i >= 2) {
+                if (entityhuman.getHealth() > 10 || i >= 3 || entityhuman.getHealth() > 1 && i >= 2) {
                     // CraftBukkit start
                     EntityDamageEvent event = new EntityDamageEvent(entityhuman.getBukkitEntity(), EntityDamageEvent.DamageCause.STARVATION, 1);
                     entityhuman.world.getServer().getPluginManager().callEvent(event);
@@ -76,10 +76,10 @@ public class FoodMetaData {
 
     public void a(NBTTagCompound nbttagcompound) {
         if (nbttagcompound.hasKey("foodLevel")) {
-            this.foodLevel = nbttagcompound.e("foodLevel");
-            this.foodTickTimer = nbttagcompound.e("foodTickTimer");
-            this.saturationLevel = nbttagcompound.g("foodSaturationLevel");
-            this.exhaustionLevel = nbttagcompound.g("foodExhaustionLevel");
+            this.foodLevel = nbttagcompound.f("foodLevel");
+            this.foodTickTimer = nbttagcompound.f("foodTickTimer");
+            this.saturationLevel = nbttagcompound.h("foodSaturationLevel");
+            this.exhaustionLevel = nbttagcompound.h("foodExhaustionLevel");
         }
     }
 

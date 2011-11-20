@@ -15,7 +15,7 @@ public class BlockButton extends Block {
         return null;
     }
 
-    public int c() {
+    public int d() {
         return 20;
     }
 
@@ -81,7 +81,7 @@ public class BlockButton extends Block {
             }
 
             if (flag) {
-                this.g(world, i, j, k, world.getData(i, j, k));
+                this.b(world, i, j, k, world.getData(i, j, k), 0);
                 world.setTypeId(i, j, k, 0);
             }
         }
@@ -89,7 +89,7 @@ public class BlockButton extends Block {
 
     private boolean h(World world, int i, int j, int k) {
         if (!this.canPlace(world, i, j, k)) {
-            this.g(world, i, j, k, world.getData(i, j, k));
+            this.b(world, i, j, k, world.getData(i, j, k), 0);
             world.setTypeId(i, j, k, 0);
             return false;
         } else {
@@ -162,7 +162,7 @@ public class BlockButton extends Block {
                 world.applyPhysics(i, j - 1, k, this.id);
             }
 
-            world.c(i, j, k, this.id, this.c());
+            world.c(i, j, k, this.id, this.d());
             return true;
         }
     }
@@ -244,5 +244,13 @@ public class BlockButton extends Block {
                 world.b(i, j, k, i, j, k);
             }
         }
+    }
+
+    public void f() {
+        float f = 0.1875F;
+        float f1 = 0.125F;
+        float f2 = 0.125F;
+
+        this.a(0.5F - f, 0.5F - f1, 0.5F - f2, 0.5F + f, 0.5F + f1, 0.5F + f2);
     }
 }

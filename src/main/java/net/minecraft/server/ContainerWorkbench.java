@@ -72,7 +72,7 @@ public class ContainerWorkbench extends Container {
         ItemStack itemstack = null;
         Slot slot = (Slot) this.e.get(i);
 
-        if (slot != null && slot.b()) {
+        if (slot != null && slot.c()) {
             ItemStack itemstack1 = slot.getItem();
 
             itemstack = itemstack1.cloneItemStack();
@@ -95,14 +95,14 @@ public class ContainerWorkbench extends Container {
             if (itemstack1.count == 0) {
                 slot.c((ItemStack) null);
             } else {
-                slot.c();
+                slot.d();
             }
 
             if (itemstack1.count == itemstack.count) {
                 return null;
             }
 
-            slot.a(itemstack1);
+            slot.b(itemstack1);
         }
 
         return itemstack;

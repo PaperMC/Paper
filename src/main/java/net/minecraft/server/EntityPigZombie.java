@@ -16,21 +16,21 @@ public class EntityPigZombie extends EntityZombie {
     public EntityPigZombie(World world) {
         super(world);
         this.texture = "/mob/pigzombie.png";
-        this.aU = 0.5F;
+        this.aY = 0.5F;
         this.damage = 5;
         this.fireProof = true;
     }
 
-    public void s_() {
-        this.aU = this.target != null ? 0.95F : 0.5F;
+    public void w_() {
+        this.aY = this.target != null ? 0.95F : 0.5F;
         if (this.soundDelay > 0 && --this.soundDelay == 0) {
-            this.world.makeSound(this, "mob.zombiepig.zpigangry", this.l() * 2.0F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 1.8F);
+            this.world.makeSound(this, "mob.zombiepig.zpigangry", this.o() * 2.0F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 1.8F);
         }
 
-        super.s_();
+        super.w_();
     }
 
-    public boolean d() {
+    public boolean g() {
         return this.world.difficulty > 0 && this.world.containsEntity(this.boundingBox) && this.world.getEntities(this, this.boundingBox).size() == 0 && !this.world.c(this.boundingBox);
     }
 
@@ -41,15 +41,15 @@ public class EntityPigZombie extends EntityZombie {
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        this.angerLevel = nbttagcompound.d("Anger");
+        this.angerLevel = nbttagcompound.e("Anger");
     }
 
     protected Entity findTarget() {
         return this.angerLevel == 0 ? null : super.findTarget();
     }
 
-    public void s() {
-        super.s();
+    public void d() {
+        super.d();
     }
 
     public boolean damageEntity(DamageSource damagesource, int i) {
@@ -64,17 +64,17 @@ public class EntityPigZombie extends EntityZombie {
                 if (entity1 instanceof EntityPigZombie) {
                     EntityPigZombie entitypigzombie = (EntityPigZombie) entity1;
 
-                    entitypigzombie.e(entity);
+                    entitypigzombie.f(entity);
                 }
             }
 
-            this.e(entity);
+            this.f(entity);
         }
 
         return super.damageEntity(damagesource, i);
     }
 
-    private void e(Entity entity) {
+    private void f(Entity entity) {
         // CraftBukkit start
         org.bukkit.entity.Entity bukkitTarget = entity == null ? null : entity.getBukkitEntity();
 
@@ -97,19 +97,35 @@ public class EntityPigZombie extends EntityZombie {
         this.soundDelay = this.random.nextInt(40);
     }
 
-    protected String h() {
+    protected String c_() {
         return "mob.zombiepig.zpig";
     }
 
-    protected String i() {
+    protected String m() {
         return "mob.zombiepig.zpighurt";
     }
 
-    protected String j() {
+    protected String n() {
         return "mob.zombiepig.zpigdeath";
     }
 
-    protected int k() {
-        return Item.GRILLED_PORK.id;
+    protected void a(boolean flag, int i) {
+        int j = this.random.nextInt(2 + i);
+
+        int k;
+
+        for (k = 0; k < j; ++k) {
+            this.b(Item.ROTTEN_FLESH.id, 1);
+        }
+
+        j = this.random.nextInt(2 + i);
+
+        for (k = 0; k < j; ++k) {
+            this.b(Item.GOLD_NUGGET.id, 1);
+        }
+    }
+
+    protected int e() {
+        return Item.ROTTEN_FLESH.id;
     }
 }

@@ -17,11 +17,11 @@ public class BlockDispenser extends BlockContainer {
         this.textureId = 45;
     }
 
-    public int c() {
+    public int d() {
         return 4;
     }
 
-    public int a(int i, Random random) {
+    public int a(int i, Random random, int j) {
         return Block.DISPENSER.id;
     }
 
@@ -111,7 +111,7 @@ public class BlockDispenser extends BlockContainer {
             double d2 = (double) k + (double) b1 * 0.6D + 0.5D;
 
             if (itemstack == null) {
-                world.e(1001, i, j, k, 0);
+                world.f(1001, i, j, k, 0);
             } else {
                 // CraftBukkit start
                 double d3 = random.nextDouble() * 0.1D + 0.2D;
@@ -148,19 +148,25 @@ public class BlockDispenser extends BlockContainer {
                     entityarrow.a((double) b0, 0.10000000149011612D, (double) b1, 1.1F, 6.0F);
                     entityarrow.fromPlayer = true;
                     world.addEntity(entityarrow);
-                    world.e(1002, i, j, k, 0);
+                    world.f(1002, i, j, k, 0);
                 } else if (itemstack.id == Item.EGG.id) {
                     EntityEgg entityegg = new EntityEgg(world, d0, d1, d2);
 
                     entityegg.a((double) b0, 0.10000000149011612D, (double) b1, 1.1F, 6.0F);
                     world.addEntity(entityegg);
-                    world.e(1002, i, j, k, 0);
+                    world.f(1002, i, j, k, 0);
                 } else if (itemstack.id == Item.SNOW_BALL.id) {
                     EntitySnowball entitysnowball = new EntitySnowball(world, d0, d1, d2);
 
                     entitysnowball.a((double) b0, 0.10000000149011612D, (double) b1, 1.1F, 6.0F);
                     world.addEntity(entitysnowball);
-                    world.e(1002, i, j, k, 0);
+                    world.f(1002, i, j, k, 0);
+                } else if (itemstack.id == Item.POTION.id && ItemPotion.c(itemstack.getData())) {
+                    EntityPotion entitypotion = new EntityPotion(world, d0, d1, d2, itemstack.getData());
+
+                    entitypotion.a((double) b0, 0.10000000149011612D, (double) b1, 1.375F, 3.0F);
+                    world.addEntity(entitypotion);
+                    world.f(1002, i, j, k, 0);
                 } else {
                     EntityItem entityitem = new EntityItem(world, d0, d1 - 0.3D, d2, itemstack);
                     // CraftBukkit start
@@ -170,10 +176,10 @@ public class BlockDispenser extends BlockContainer {
                     entityitem.motZ = motZ;
                     // CraftBukkit end
                     world.addEntity(entityitem);
-                    world.e(1000, i, j, k, 0);
+                    world.f(1000, i, j, k, 0);
                 }
 
-                world.e(2000, i, j, k, b0 + 1 + (b1 + 1) * 3);
+                world.f(2000, i, j, k, b0 + 1 + (b1 + 1) * 3);
             }
         }
     }
@@ -183,13 +189,13 @@ public class BlockDispenser extends BlockContainer {
             boolean flag = world.isBlockIndirectlyPowered(i, j, k) || world.isBlockIndirectlyPowered(i, j + 1, k);
 
             if (flag) {
-                world.c(i, j, k, this.id, this.c());
+                world.c(i, j, k, this.id, this.d());
             }
         }
     }
 
     public void a(World world, int i, int j, int k, Random random) {
-        if (world.isBlockIndirectlyPowered(i, j, k) || world.isBlockIndirectlyPowered(i, j + 1, k)) {
+        if (!world.isStatic && (world.isBlockIndirectlyPowered(i, j, k) || world.isBlockIndirectlyPowered(i, j + 1, k))) {
             this.dispense(world, i, j, k, random);
         }
     }

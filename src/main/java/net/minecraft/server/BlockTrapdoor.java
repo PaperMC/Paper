@@ -25,20 +25,30 @@ public class BlockTrapdoor extends Block {
         return false;
     }
 
+    public int c() {
+        return 0;
+    }
+
     public AxisAlignedBB e(World world, int i, int j, int k) {
-        this.a((IBlockAccess)world, i, j, k); // CraftBukkit - Make sure this points to the below method!
+        this.a(world, i, j, k);
         return super.e(world, i, j, k);
     }
 
     public void a(IBlockAccess iblockaccess, int i, int j, int k) {
-        this.c(iblockaccess.getData(i, j, k));
+        this.d(iblockaccess.getData(i, j, k));
     }
 
-    public void c(int i) {
+    public void f() {
+        float f = 0.1875F;
+
+        this.a(0.0F, 0.5F - f / 2.0F, 0.0F, 1.0F, 0.5F + f / 2.0F, 1.0F);
+    }
+
+    public void d(int i) {
         float f = 0.1875F;
 
         this.a(0.0F, 0.0F, 0.0F, 1.0F, f, 1.0F);
-        if (d(i)) {
+        if (e(i)) {
             if ((i & 3) == 0) {
                 this.a(0.0F, 0.0F, 1.0F - f, 1.0F, 1.0F, 1.0F);
             }
@@ -105,9 +115,9 @@ public class BlockTrapdoor extends Block {
                 --j1;
             }
 
-            if (!world.e(j1, j, k1)) {
+            if (!f(world.getTypeId(j1, j, k1))) {
                 world.setTypeId(i, j, k, 0);
-                this.g(world, i, j, k, i1);
+                this.b(world, i, j, k, i1, 0);
             }
 
             // CraftBukkit start
@@ -179,11 +189,21 @@ public class BlockTrapdoor extends Block {
                 --i;
             }
 
-            return world.e(i, j, k);
+            return f(world.getTypeId(i, j, k));
         }
     }
 
-    public static boolean d(int i) {
+    public static boolean e(int i) {
         return (i & 4) != 0;
+    }
+
+    private static boolean f(int i) {
+        if (i <= 0) {
+            return false;
+        } else {
+            Block block = Block.byId[i];
+
+            return block != null && block.material.j() && block.b() || block == Block.GLOWSTONE;
+        }
     }
 }

@@ -42,7 +42,7 @@ public class WorldMap extends WorldMapBase {
 
     public void a(NBTTagCompound nbttagcompound) {
         // CraftBukkit start
-        byte dimension = nbttagcompound.c("dimension");
+        byte dimension = nbttagcompound.d("dimension");
 
         if (dimension >= 10) {
             long least = nbttagcompound.getLong("UUIDLeast");
@@ -65,9 +65,9 @@ public class WorldMap extends WorldMapBase {
 
         this.map = dimension;
         // CraftBukkit end
-        this.b = nbttagcompound.e("xCenter");
-        this.c = nbttagcompound.e("zCenter");
-        this.e = nbttagcompound.c("scale");
+        this.b = nbttagcompound.f("xCenter");
+        this.c = nbttagcompound.f("zCenter");
+        this.e = nbttagcompound.d("scale");
         if (this.e < 0) {
             this.e = 0;
         }
@@ -76,13 +76,13 @@ public class WorldMap extends WorldMapBase {
             this.e = 4;
         }
 
-        short short1 = nbttagcompound.d("width");
-        short short2 = nbttagcompound.d("height");
+        short short1 = nbttagcompound.e("width");
+        short short2 = nbttagcompound.e("height");
 
         if (short1 == 128 && short2 == 128) {
-            this.f = nbttagcompound.j("colors");
+            this.f = nbttagcompound.k("colors");
         } else {
-            byte[] abyte = nbttagcompound.j("colors");
+            byte[] abyte = nbttagcompound.k("colors");
 
             this.f = new byte[16384];
             int i = (128 - short1) / 2;

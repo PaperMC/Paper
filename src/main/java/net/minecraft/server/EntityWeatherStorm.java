@@ -36,6 +36,7 @@ public class EntityWeatherStorm extends EntityWeather {
         this.lifeTicks = 2;
         this.a = this.random.nextLong();
         this.c = this.random.nextInt(3) + 1;
+
         // CraftBukkit
         if (!isEffect && world.difficulty >= 2 && world.areChunksLoaded(MathHelper.floor(d0), MathHelper.floor(d1), MathHelper.floor(d2), 10)) {
             int i = MathHelper.floor(d0);
@@ -72,8 +73,8 @@ public class EntityWeatherStorm extends EntityWeather {
         }
     }
 
-    public void s_() {
-        super.s_();
+    public void w_() {
+        super.w_();
         if (this.lifeTicks == 2) {
             this.world.makeSound(this.locX, this.locY, this.locZ, "ambient.weather.thunder", 10000.0F, 0.8F + this.random.nextFloat() * 0.2F);
             this.world.makeSound(this.locX, this.locY, this.locZ, "random.explode", 2.0F, 0.5F + this.random.nextFloat() * 0.2F);

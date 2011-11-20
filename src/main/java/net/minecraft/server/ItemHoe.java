@@ -11,11 +11,11 @@ public class ItemHoe extends Item {
     public ItemHoe(int i, EnumToolMaterial enumtoolmaterial) {
         super(i);
         this.maxStackSize = 1;
-        this.d(enumtoolmaterial.a());
+        this.f(enumtoolmaterial.a());
     }
 
     public boolean a(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
-        if (!entityhuman.c(i, j, k)) {
+        if (!entityhuman.d(i, j, k)) {
             return false;
         } else {
             int i1 = world.getTypeId(i, j, k);

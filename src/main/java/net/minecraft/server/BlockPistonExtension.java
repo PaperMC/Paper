@@ -26,8 +26,8 @@ public class BlockPistonExtension extends Block {
 
         if (j1 == Block.PISTON.id || j1 == Block.PISTON_STICKY.id) {
             l = world.getData(i, j, k);
-            if (BlockPiston.d(l)) {
-                Block.byId[j1].g(world, i, j, k, l);
+            if (BlockPiston.e(l)) {
+                Block.byId[j1].b(world, i, j, k, l, 0);
                 world.setTypeId(i, j, k, 0);
             }
         }
@@ -37,6 +37,10 @@ public class BlockPistonExtension extends Block {
         int k = b(j);
 
         return i == k ? (this.a >= 0 ? this.a : ((j & 8) != 0 ? this.textureId - 1 : this.textureId)) : (i == PistonBlockTextures.a[k] ? 107 : 108);
+    }
+
+    public int c() {
+        return 17;
     }
 
     public boolean a() {

@@ -32,12 +32,12 @@ public class ItemPainting extends Item {
                 b0 = 3;
             }
 
-            if (!entityhuman.c(i, j, k)) {
+            if (!entityhuman.d(i, j, k)) {
                 return false;
             } else {
                 EntityPainting entitypainting = new EntityPainting(world, i, j, k, b0);
 
-                if (entitypainting.i()) {
+                if (entitypainting.j()) {
                     if (!world.isStatic) {
                         // CraftBukkit start
                         Player who = (entityhuman == null) ? null : (Player) entityhuman.getBukkitEntity();

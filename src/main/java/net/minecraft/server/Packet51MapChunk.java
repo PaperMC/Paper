@@ -20,7 +20,7 @@ public class Packet51MapChunk extends Packet {
     public byte[] rawData; // CraftBukkit
 
     public Packet51MapChunk() {
-        this.k = true;
+        this.l = true;
     }
 
     // CraftBukkit start
@@ -30,7 +30,7 @@ public class Packet51MapChunk extends Packet {
 
     public Packet51MapChunk(int i, int j, int k, int l, int i1, int j1, byte[] data) {
         // CraftBukkit end
-        this.k = true;
+        this.l = true;
         this.a = i;
         this.b = j;
         this.c = k;

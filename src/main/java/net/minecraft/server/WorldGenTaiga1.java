@@ -25,90 +25,78 @@ public class WorldGenTaiga1 extends WorldGenerator {
         int k1 = 1 + random.nextInt(j1 + 1);
         boolean flag = true;
 
-        if (j >= 1) {
-            int l1 = j + l + 1;
+        if (j >= 1 && j + l + 1 <= world.getHeight()) { // CraftBukkit
+            int l1;
+            int i2;
+            int j2;
+            int k2;
+            int l2;
 
-            world.getClass();
-            if (l1 <= 128) {
-                int i2;
-                int j2;
-                int k2;
-                int l2;
-                int i3;
+            for (l1 = j; l1 <= j + 1 + l && flag; ++l1) {
+                boolean flag1 = true;
 
-                for (i2 = j; i2 <= j + 1 + l && flag; ++i2) {
-                    boolean flag1 = true;
+                if (l1 - j < i1) {
+                    l2 = 0;
+                } else {
+                    l2 = k1;
+                }
 
-                    if (i2 - j < i1) {
-                        i3 = 0;
-                    } else {
-                        i3 = k1;
-                    }
-
-                    for (j2 = i - i3; j2 <= i + i3 && flag; ++j2) {
-                        for (k2 = k - i3; k2 <= k + i3 && flag; ++k2) {
-                            if (i2 >= 0) {
-                                world.getClass();
-                                if (i2 < 128) {
-                                    l2 = world.getTypeId(j2, i2, k2);
-                                    if (l2 != 0 && l2 != Block.LEAVES.id) {
-                                        flag = false;
-                                    }
-                                    continue;
-                                }
+                for (i2 = i - l2; i2 <= i + l2 && flag; ++i2) {
+                    for (j2 = k - l2; j2 <= k + l2 && flag; ++j2) {
+                        if (l1 >= 0 && l1 < world.getHeight()) { // CraftBukkit
+                            k2 = world.getTypeId(i2, l1, j2);
+                            if (k2 != 0 && k2 != Block.LEAVES.id) {
+                                flag = false;
                             }
-
+                        } else {
                             flag = false;
                         }
                     }
                 }
+            }
 
-                if (!flag) {
-                    return false;
-                }
+            if (!flag) {
+                return false;
+            } else {
+                l1 = world.getTypeId(i, j - 1, k);
+                if ((l1 == Block.GRASS.id || l1 == Block.DIRT.id) && j < world.getHeight() - l - 1) { // CraftBukkit
+                    world.setRawTypeId(i, j - 1, k, Block.DIRT.id);
+                    l2 = 0;
 
-                i2 = world.getTypeId(i, j - 1, k);
-                if (i2 == Block.GRASS.id || i2 == Block.DIRT.id) {
-                    world.getClass();
-                    if (j < 128 - l - 1) {
-                        world.setRawTypeId(i, j - 1, k, Block.DIRT.id);
-                        i3 = 0;
+                    for (i2 = j + l; i2 >= j + i1; --i2) {
+                        for (j2 = i - l2; j2 <= i + l2; ++j2) {
+                            k2 = j2 - i;
 
-                        for (j2 = j + l; j2 >= j + i1; --j2) {
-                            for (k2 = i - i3; k2 <= i + i3; ++k2) {
-                                l2 = k2 - i;
+                            for (int i3 = k - l2; i3 <= k + l2; ++i3) {
+                                int j3 = i3 - k;
 
-                                for (int j3 = k - i3; j3 <= k + i3; ++j3) {
-                                    int k3 = j3 - k;
-
-                                    if ((Math.abs(l2) != i3 || Math.abs(k3) != i3 || i3 <= 0) && !Block.o[world.getTypeId(k2, j2, j3)]) {
-                                        world.setRawTypeIdAndData(k2, j2, j3, Block.LEAVES.id, 1);
-                                    }
+                                if ((Math.abs(k2) != l2 || Math.abs(j3) != l2 || l2 <= 0) && !Block.o[world.getTypeId(j2, i2, i3)]) {
+                                    world.setRawTypeIdAndData(j2, i2, i3, Block.LEAVES.id, 1);
                                 }
                             }
-
-                            if (i3 >= 1 && j2 == j + i1 + 1) {
-                                --i3;
-                            } else if (i3 < k1) {
-                                ++i3;
-                            }
                         }
 
-                        for (j2 = 0; j2 < l - 1; ++j2) {
-                            k2 = world.getTypeId(i, j + j2, k);
-                            if (k2 == 0 || k2 == Block.LEAVES.id) {
-                                world.setRawTypeIdAndData(i, j + j2, k, Block.LOG.id, 1);
-                            }
+                        if (l2 >= 1 && i2 == j + i1 + 1) {
+                            --l2;
+                        } else if (l2 < k1) {
+                            ++l2;
                         }
-
-                        return true;
                     }
+
+                    for (i2 = 0; i2 < l - 1; ++i2) {
+                        j2 = world.getTypeId(i, j + i2, k);
+                        if (j2 == 0 || j2 == Block.LEAVES.id) {
+                            world.setRawTypeIdAndData(i, j + i2, k, Block.LOG.id, 1);
+                        }
+                    }
+
+                    return true;
+                } else {
+                    return false;
                 }
-
-                return false;
             }
+        } else {
+            return false;
         }
-
-        return false;
     }
 }

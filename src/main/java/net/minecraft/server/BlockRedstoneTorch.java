@@ -42,7 +42,7 @@ public class BlockRedstoneTorch extends BlockTorch {
         this.a(true);
     }
 
-    public int c() {
+    public int d() {
         return 2;
     }
 
@@ -145,14 +145,14 @@ public class BlockRedstoneTorch extends BlockTorch {
 
     public void doPhysics(World world, int i, int j, int k, int l) {
         super.doPhysics(world, i, j, k, l);
-        world.c(i, j, k, this.id, this.c());
+        world.c(i, j, k, this.id, this.d());
     }
 
     public boolean d(World world, int i, int j, int k, int l) {
         return l == 0 ? this.a(world, i, j, k, l) : false;
     }
 
-    public int a(int i, Random random) {
+    public int a(int i, Random random, int j) {
         return Block.REDSTONE_TORCH_ON.id;
     }
 

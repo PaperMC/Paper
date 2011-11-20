@@ -9,7 +9,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
 
     protected ItemWorldMap(int i) {
         super(i);
-        this.c(1);
+        this.e(1);
     }
 
     public WorldMap a(ItemStack itemstack, World world) {
@@ -21,8 +21,8 @@ public class ItemWorldMap extends ItemWorldMapBase {
             String s = "map_" + itemstack.getData();
 
             worldmap = new WorldMap(s);
-            worldmap.b = world.p().c();
-            worldmap.c = world.p().e();
+            worldmap.b = world.r().c();
+            worldmap.c = world.r().e();
             worldmap.e = 3;
             worldmap.map = (byte) world.worldProvider.dimension;
             worldmap.a();
@@ -105,18 +105,17 @@ public class ItemWorldMap extends ItemWorldMapBase {
                                                 j5 = chunk.getTypeId(l4 + k3, k4 - 1, j4 + l3);
                                                 if (j5 == 0) {
                                                     flag1 = false;
-                                                } else if (k4 > 0 && j5 > 0 && Block.byId[j5].material.D == MaterialMapColor.b) {
+                                                } else if (k4 > 0 && j5 > 0 && Block.byId[j5].material.E == MaterialMapColor.b) {
                                                     flag1 = false;
                                                 }
 
                                                 if (!flag1) {
                                                     --k4;
-                                                    if (k4 <= 0) break; // CraftBukkit
                                                     j5 = chunk.getTypeId(l4 + k3, k4 - 1, j4 + l3);
                                                 }
-                                            } while (!flag1);
+                                            } while (k4 > 0 && !flag1);
 
-                                            if (j5 != 0 && Block.byId[j5].material.isLiquid()) {
+                                            if (k4 > 0 && j5 != 0 && Block.byId[j5].material.isLiquid()) {
                                                 i5 = k4 - 1;
                                                 boolean flag2 = false;
 
@@ -163,7 +162,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
 
                             i5 = 0;
                             if (j4 > 0) {
-                                MaterialMapColor materialmapcolor = Block.byId[j4].material.D;
+                                MaterialMapColor materialmapcolor = Block.byId[j4].material.E;
 
                                 if (materialmapcolor == MaterialMapColor.n) {
                                     d2 = (double) i4 * 0.1D + (double) (k1 + j2 & 1) * 0.2D;

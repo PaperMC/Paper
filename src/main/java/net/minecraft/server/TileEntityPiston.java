@@ -25,7 +25,7 @@ public class TileEntityPiston extends TileEntity {
         this.e = flag1;
     }
 
-    public int a() {
+    public int c() {
         return this.a;
     }
 
@@ -33,11 +33,11 @@ public class TileEntityPiston extends TileEntity {
         return this.b;
     }
 
-    public boolean c() {
+    public boolean e() {
         return this.d;
     }
 
-    public int d() {
+    public int f() {
         return this.c;
     }
 
@@ -56,7 +56,7 @@ public class TileEntityPiston extends TileEntity {
             f = 1.0F - f;
         }
 
-        AxisAlignedBB axisalignedbb = Block.PISTON_MOVING.a(this.world, this.x, this.y, this.z, this.a, f, this.c);
+        AxisAlignedBB axisalignedbb = Block.PISTON_MOVING.b(this.world, this.x, this.y, this.z, this.a, f, this.c);
 
         if (axisalignedbb != null) {
             List list = this.world.b((Entity) null, axisalignedbb);
@@ -76,8 +76,8 @@ public class TileEntityPiston extends TileEntity {
         }
     }
 
-    public void e() {
-        if (this.g < 1.0F) {
+    public void g() {
+        if (this.g < 1.0F && this.world != null) {
             this.g = this.f = 1.0F;
             this.world.n(this.x, this.y, this.z);
             this.i();
@@ -87,7 +87,7 @@ public class TileEntityPiston extends TileEntity {
         }
     }
 
-    public void h_() {
+    public void l_() {
         if (this.world == null) return; // CraftBukkit
 
         this.g = this.f;
@@ -112,11 +112,11 @@ public class TileEntityPiston extends TileEntity {
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        this.a = nbttagcompound.e("blockId");
-        this.b = nbttagcompound.e("blockData");
-        this.c = nbttagcompound.e("facing");
-        this.g = this.f = nbttagcompound.g("progress");
-        this.d = nbttagcompound.m("extending");
+        this.a = nbttagcompound.f("blockId");
+        this.b = nbttagcompound.f("blockData");
+        this.c = nbttagcompound.f("facing");
+        this.g = this.f = nbttagcompound.h("progress");
+        this.d = nbttagcompound.n("extending");
     }
 
     public void b(NBTTagCompound nbttagcompound) {

@@ -5,6 +5,7 @@ public final class ItemStack {
     public int count;
     public int b;
     public int id;
+    public NBTTagCompound tag;
     private int damage;
 
     public ItemStack(Block block) {
@@ -50,8 +51,14 @@ public final class ItemStack {
     }
 
     public ItemStack a(int i) {
+        ItemStack itemstack = new ItemStack(this.id, i, this.damage);
+
+        if (this.tag != null) {
+            itemstack.tag = (NBTTagCompound) this.tag.b();
+        }
+
         this.count -= i;
-        return new ItemStack(this.id, i, this.damage);
+        return itemstack;
     }
 
     public Item getItem() {
@@ -84,13 +91,20 @@ public final class ItemStack {
         nbttagcompound.a("id", (short) this.id);
         nbttagcompound.a("Count", (byte) this.count);
         nbttagcompound.a("Damage", (short) this.damage);
+        if (this.tag != null) {
+            nbttagcompound.a("tag", (NBTBase) this.tag);
+        }
+
         return nbttagcompound;
     }
 
     public void c(NBTTagCompound nbttagcompound) {
-        this.id = nbttagcompound.d("id");
-        this.count = nbttagcompound.c("Count");
-        this.damage = nbttagcompound.d("Damage");
+        this.id = nbttagcompound.e("id");
+        this.count = nbttagcompound.d("Count");
+        this.damage = nbttagcompound.e("Damage");
+        if (nbttagcompound.hasKey("tag")) {
+            this.tag = nbttagcompound.l("tag");
+        }
     }
 
     public int getMaxStackSize() {
@@ -106,7 +120,7 @@ public final class ItemStack {
     }
 
     public boolean usesData() {
-        return Item.byId[this.id].d();
+        return Item.byId[this.id].e();
     }
 
     public boolean f() {
@@ -129,12 +143,21 @@ public final class ItemStack {
         return Item.byId[this.id].getMaxDurability();
     }
 
-    public void damage(int i, Entity entity) {
+    public void damage(int i, EntityLiving entityliving) {
         if (this.d()) {
+            if (i > 0 && entityliving instanceof EntityHuman) {
+                int j = EnchantmentManager.c(((EntityHuman) entityliving).inventory);
+
+                if (j > 0 && entityliving.world.random.nextInt(j + 1) > 0) {
+                    return;
+                }
+            }
+
             this.damage += i;
             if (this.damage > this.i()) {
-                if (entity instanceof EntityHuman) {
-                    ((EntityHuman) entity).a(StatisticList.F[this.id], 1);
+                entityliving.c(this);
+                if (entityliving instanceof EntityHuman) {
+                    ((EntityHuman) entityliving).a(StatisticList.F[this.id], 1);
                 }
 
                 --this.count;
@@ -178,7 +201,16 @@ public final class ItemStack {
     }
 
     public ItemStack cloneItemStack() {
-        return new ItemStack(this.id, this.count, this.damage);
+        ItemStack itemstack = new ItemStack(this.id, this.count, this.damage);
+
+        if (this.tag != null) {
+            itemstack.tag = (NBTTagCompound) this.tag.b();
+            if (!itemstack.tag.equals(this.tag)) {
+                return itemstack;
+            }
+        }
+
+        return itemstack;
     }
 
     public static boolean equals(ItemStack itemstack, ItemStack itemstack1) {
@@ -186,7 +218,7 @@ public final class ItemStack {
     }
 
     private boolean d(ItemStack itemstack) {
-        return this.count != itemstack.count ? false : (this.id != itemstack.id ? false : this.damage == itemstack.damage);
+        return this.count != itemstack.count ? false : (this.id != itemstack.id ? false : (this.damage != itemstack.damage ? false : (this.tag == null && itemstack.tag != null ? false : this.tag == null || this.tag.equals(itemstack.tag))));
     }
 
     public boolean doMaterialsMatch(ItemStack itemstack) {
@@ -227,10 +259,55 @@ public final class ItemStack {
     }
 
     public EnumAnimation m() {
-        return this.getItem().b(this);
+        return this.getItem().d(this);
     }
 
     public void a(World world, EntityHuman entityhuman, int i) {
         this.getItem().a(this, world, entityhuman, i);
+    }
+
+    public boolean n() {
+        return this.tag != null;
+    }
+
+    public NBTTagCompound o() {
+        return this.tag;
+    }
+
+    public NBTTagList p() {
+        return this.tag == null ? null : (NBTTagList) this.tag.b("ench");
+    }
+
+    public void d(NBTTagCompound nbttagcompound) {
+        if (Item.byId[this.id].getMaxStackSize() != 1) {
+            throw new IllegalArgumentException("Cannot add tag data to a stackable item");
+        } else {
+            this.tag = nbttagcompound;
+        }
+    }
+
+    public boolean q() {
+        return !this.getItem().e(this) ? false : !this.r();
+    }
+
+    public void a(Enchantment enchantment, int i) {
+        if (this.tag == null) {
+            this.d(new NBTTagCompound());
+        }
+
+        if (!this.tag.hasKey("ench")) {
+            this.tag.a("ench", (NBTBase) (new NBTTagList("ench")));
+        }
+
+        NBTTagList nbttaglist = (NBTTagList) this.tag.b("ench");
+        NBTTagCompound nbttagcompound = new NBTTagCompound();
+
+        nbttagcompound.a("id", (short) enchantment.id);
+        nbttagcompound.a("lvl", (short) ((byte) i));
+        nbttaglist.a((NBTBase) nbttagcompound);
+    }
+
+    public boolean r() {
+        return this.tag != null && this.tag.hasKey("ench");
     }
 }

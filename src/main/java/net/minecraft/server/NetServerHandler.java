@@ -113,7 +113,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         s = event.getReason();
         // CraftBukkit end
 
-        this.player.A();
+        this.player.E();
         this.sendPacket(new Packet255KickDisconnect(s));
         this.networkManager.d();
 
@@ -136,244 +136,248 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         WorldServer worldserver = this.minecraftServer.getWorldServer(this.player.dimension);
 
         this.h = true;
-        double d0;
+        if (!this.player.j) {
+            double d0;
 
-        if (!this.checkMovement) {
-            d0 = packet10flying.y - this.y;
-            if (packet10flying.x == this.x && d0 * d0 < 0.01D && packet10flying.z == this.z) {
-                this.checkMovement = true;
-            }
-        }
-
-        // CraftBukkit start
-        Player player = this.getPlayer();
-        Location from = new Location(player.getWorld(), lastPosX, lastPosY, lastPosZ, lastYaw, lastPitch); // Get the Players previous Event location.
-        Location to = player.getLocation().clone(); // Start off the To location as the Players current location.
-
-        // If the packet contains movement information then we update the To location with the correct XYZ.
-        if (packet10flying.h && !(packet10flying.h && packet10flying.y == -999.0D && packet10flying.stance == -999.0D)) {
-            to.setX(packet10flying.x);
-            to.setY(packet10flying.y);
-            to.setZ(packet10flying.z);
-        }
-
-        // If the packet contains look information then we update the To location with the correct Yaw & Pitch.
-        if (packet10flying.hasLook) {
-            to.setYaw(packet10flying.yaw);
-            to.setPitch(packet10flying.pitch);
-        }
-
-        // Prevent 40 event-calls for less than a single pixel of movement >.>
-        double delta = Math.pow(this.lastPosX - to.getX(), 2) + Math.pow(this.lastPosY - to.getY(), 2) + Math.pow(this.lastPosZ - to.getZ(), 2);
-        float deltaAngle = Math.abs(this.lastYaw - to.getYaw()) + Math.abs(this.lastPitch - to.getPitch());
-
-        if ((delta > 1f / 256 || deltaAngle > 10f) && (this.checkMovement && !this.player.dead)) {
-            this.lastPosX = to.getX();
-            this.lastPosY = to.getY();
-            this.lastPosZ = to.getZ();
-            this.lastYaw = to.getYaw();
-            this.lastPitch = to.getPitch();
-
-            // Skip the first time we do this
-            if (from.getX() != Double.MAX_VALUE) {
-                PlayerMoveEvent event = new PlayerMoveEvent(player, from, to);
-                this.server.getPluginManager().callEvent(event);
-
-                // If the event is cancelled we move the player back to their old location.
-                if (event.isCancelled()) {
-                    this.player.netServerHandler.sendPacket(new Packet13PlayerLookMove(from.getX(), from.getY() + 1.6200000047683716D, from.getY(), from.getZ(), from.getYaw(), from.getPitch(), false));
-                    return;
-                }
-
-                /* If a Plugin has changed the To destination then we teleport the Player
-                   there to avoid any 'Moved wrongly' or 'Moved too quickly' errors.
-                   We only do this if the Event was not cancelled. */
-                if (!to.equals(event.getTo()) && !event.isCancelled()) {
-                    this.player.getBukkitEntity().teleport(event.getTo());
-                    return;
-                }
-
-                /* Check to see if the Players Location has some how changed during the call of the event.
-                   This can happen due to a plugin teleporting the player instead of using .setTo() */
-                if (!from.equals(this.getPlayer().getLocation()) && this.justTeleported) {
-                    this.justTeleported = false;
-                    return;
-                }
-            }
-        }
-
-        if (Double.isNaN(packet10flying.x) || Double.isNaN(packet10flying.y) || Double.isNaN(packet10flying.z) || Double.isNaN(packet10flying.stance)) {
-            player.teleport(player.getWorld().getSpawnLocation());
-            System.err.println(player.getName() + " was caught trying to crash the server with an invalid position.");
-            player.kickPlayer("Nope!");
-            return;
-        }
-
-        if (this.checkMovement && !this.player.dead) {
-            // CraftBukkit end
-            double d1;
-            double d2;
-            double d3;
-            double d4;
-
-            if (this.player.vehicle != null) {
-                float f = this.player.yaw;
-                float f1 = this.player.pitch;
-
-                this.player.vehicle.g_();
-                d1 = this.player.locX;
-                d2 = this.player.locY;
-                d3 = this.player.locZ;
-                double d5 = 0.0D;
-
-                d4 = 0.0D;
-                if (packet10flying.hasLook) {
-                    f = packet10flying.yaw;
-                    f1 = packet10flying.pitch;
-                }
-
-                if (packet10flying.h && packet10flying.y == -999.0D && packet10flying.stance == -999.0D) {
-                    d5 = packet10flying.x;
-                    d4 = packet10flying.z;
-                }
-
-                this.player.onGround = packet10flying.g;
-                this.player.b(true);
-                this.player.move(d5, 0.0D, d4);
-                this.player.setLocation(d1, d2, d3, f, f1);
-                this.player.motX = d5;
-                this.player.motZ = d4;
-                if (this.player.vehicle != null) {
-                    worldserver.vehicleEnteredWorld(this.player.vehicle, true);
-                }
-
-                if (this.player.vehicle != null) {
-                    this.player.vehicle.g_();
-                }
-
-                this.minecraftServer.serverConfigurationManager.d(this.player);
-                this.x = this.player.locX;
-                this.y = this.player.locY;
-                this.z = this.player.locZ;
-                worldserver.playerJoinedWorld(this.player);
-                return;
-            }
-
-            if (this.player.isSleeping()) {
-                this.player.b(true);
-                this.player.setLocation(this.x, this.y, this.z, this.player.yaw, this.player.pitch);
-                worldserver.playerJoinedWorld(this.player);
-                return;
-            }
-
-            d0 = this.player.locY;
-            this.x = this.player.locX;
-            this.y = this.player.locY;
-            this.z = this.player.locZ;
-            d1 = this.player.locX;
-            d2 = this.player.locY;
-            d3 = this.player.locZ;
-            float f2 = this.player.yaw;
-            float f3 = this.player.pitch;
-
-            if (packet10flying.h && packet10flying.y == -999.0D && packet10flying.stance == -999.0D) {
-                packet10flying.h = false;
-            }
-
-            if (packet10flying.h) {
-                d1 = packet10flying.x;
-                d2 = packet10flying.y;
-                d3 = packet10flying.z;
-                d4 = packet10flying.stance - packet10flying.y;
-                if (!this.player.isSleeping() && (d4 > 1.65D || d4 < 0.1D)) {
-                    this.disconnect("Illegal stance");
-                    a.warning(this.player.name + " had an illegal stance: " + d4);
-                    return;
-                }
-
-                if (Math.abs(packet10flying.x) > 3.2E7D || Math.abs(packet10flying.z) > 3.2E7D) {
-                    this.disconnect("Illegal position");
-                    return;
-                }
-            }
-
-            if (packet10flying.hasLook) {
-                f2 = packet10flying.yaw;
-                f3 = packet10flying.pitch;
-            }
-
-            this.player.b(true);
-            this.player.bH = 0.0F;
-            this.player.setLocation(this.x, this.y, this.z, f2, f3);
             if (!this.checkMovement) {
-                return;
+                d0 = packet10flying.y - this.y;
+                if (packet10flying.x == this.x && d0 * d0 < 0.01D && packet10flying.z == this.z) {
+                    this.checkMovement = true;
+                }
             }
 
-            d4 = d1 - this.player.locX;
-            double d6 = d2 - this.player.locY;
-            double d7 = d3 - this.player.locZ;
-            double d8 = d4 * d4 + d6 * d6 + d7 * d7;
+            // CraftBukkit start
+            Player player = this.getPlayer();
+            Location from = new Location(player.getWorld(), lastPosX, lastPosY, lastPosZ, lastYaw, lastPitch); // Get the Players previous Event location.
+            Location to = player.getLocation().clone(); // Start off the To location as the Players current location.
 
-            if (d8 > 100.0D && this.checkMovement) { // CraftBukkit - Added this.checkMovement condition to solve this check being triggered by teleports
-                a.warning(this.player.name + " moved too quickly!");
-                this.disconnect("You moved too quickly :( (Hacking?)");
-                return;
+            // If the packet contains movement information then we update the To location with the correct XYZ.
+            if (packet10flying.h && !(packet10flying.h && packet10flying.y == -999.0D && packet10flying.stance == -999.0D)) {
+                to.setX(packet10flying.x);
+                to.setY(packet10flying.y);
+                to.setZ(packet10flying.z);
             }
 
-            float f4 = 0.0625F;
-            boolean flag = worldserver.getEntities(this.player, this.player.boundingBox.clone().shrink((double) f4, (double) f4, (double) f4)).size() == 0;
-
-            if (this.player.onGround && !packet10flying.g && d6 > 0.0D) {
-                this.player.b(0.2F);
+            // If the packet contains look information then we update the To location with the correct Yaw & Pitch.
+            if (packet10flying.hasLook) {
+                to.setYaw(packet10flying.yaw);
+                to.setPitch(packet10flying.pitch);
             }
 
-            this.player.move(d4, d6, d7);
-            this.player.onGround = packet10flying.g;
-            this.player.a(d4, d6, d7);
-            d4 = d1 - this.player.locX;
-            d6 = d2 - this.player.locY;
-            if (d6 > -0.5D || d6 < 0.5D) {
-                d6 = 0.0D;
-            }
+            // Prevent 40 event-calls for less than a single pixel of movement >.>
+            double delta = Math.pow(this.lastPosX - to.getX(), 2) + Math.pow(this.lastPosY - to.getY(), 2) + Math.pow(this.lastPosZ - to.getZ(), 2);
+            float deltaAngle = Math.abs(this.lastYaw - to.getYaw()) + Math.abs(this.lastPitch - to.getPitch());
 
-            d7 = d3 - this.player.locZ;
-            d8 = d4 * d4 + d6 * d6 + d7 * d7;
-            boolean flag1 = false;
+            if ((delta > 1f / 256 || deltaAngle > 10f) && (this.checkMovement && !this.player.dead)) {
+                this.lastPosX = to.getX();
+                this.lastPosY = to.getY();
+                this.lastPosZ = to.getZ();
+                this.lastYaw = to.getYaw();
+                this.lastPitch = to.getPitch();
 
-            if (d8 > 0.0625D && !this.player.isSleeping() && !this.player.itemInWorldManager.b()) {
-                flag1 = true;
-                a.warning(this.player.name + " moved wrongly!");
-                System.out.println("Got position " + d1 + ", " + d2 + ", " + d3);
-                System.out.println("Expected " + this.player.locX + ", " + this.player.locY + ", " + this.player.locZ);
-            }
+                // Skip the first time we do this
+                if (from.getX() != Double.MAX_VALUE) {
+                    PlayerMoveEvent event = new PlayerMoveEvent(player, from, to);
+                    this.server.getPluginManager().callEvent(event);
 
-            this.player.setLocation(d1, d2, d3, f2, f3);
-            boolean flag2 = worldserver.getEntities(this.player, this.player.boundingBox.clone().shrink((double) f4, (double) f4, (double) f4)).size() == 0;
+                    // If the event is cancelled we move the player back to their old location.
+                    if (event.isCancelled()) {
+                        this.player.netServerHandler.sendPacket(new Packet13PlayerLookMove(from.getX(), from.getY() + 1.6200000047683716D, from.getY(), from.getZ(), from.getYaw(), from.getPitch(), false));
+                        return;
+                    }
 
-            if (flag && (flag1 || !flag2) && !this.player.isSleeping()) {
-                this.a(this.x, this.y, this.z, f2, f3);
-                return;
-            }
+                    /* If a Plugin has changed the To destination then we teleport the Player
+                    there to avoid any 'Moved wrongly' or 'Moved too quickly' errors.
+                    We only do this if the Event was not cancelled. */
+                    if (!to.equals(event.getTo()) && !event.isCancelled()) {
+                        this.player.getBukkitEntity().teleport(event.getTo());
+                        return;
+                    }
 
-            AxisAlignedBB axisalignedbb = this.player.boundingBox.clone().b((double) f4, (double) f4, (double) f4).a(0.0D, -0.55D, 0.0D);
-
-            if (!this.minecraftServer.allowFlight && !this.player.itemInWorldManager.b() && !worldserver.b(axisalignedbb)) {
-                if (d6 >= -0.03125D) {
-                    ++this.g;
-                    if (this.g > 80) {
-                        a.warning(this.player.name + " was kicked for floating too long!");
-                        this.disconnect("Flying is not enabled on this server");
+                    /* Check to see if the Players Location has some how changed during the call of the event.
+                    This can happen due to a plugin teleporting the player instead of using .setTo() */
+                    if (!from.equals(this.getPlayer().getLocation()) && this.justTeleported) {
+                        this.justTeleported = false;
                         return;
                     }
                 }
-            } else {
-                this.g = 0;
             }
 
-            this.player.onGround = packet10flying.g;
-            this.minecraftServer.serverConfigurationManager.d(this.player);
-            if (this.player.itemInWorldManager.b()) return; // CraftBukkit - fixed fall distance accumulating while being in Creative mode.
-            this.player.b(this.player.locY - d0, packet10flying.g);
+            if (Double.isNaN(packet10flying.x) || Double.isNaN(packet10flying.y) || Double.isNaN(packet10flying.z) || Double.isNaN(packet10flying.stance)) {
+                player.teleport(player.getWorld().getSpawnLocation());
+                System.err.println(player.getName() + " was caught trying to crash the server with an invalid position.");
+                player.kickPlayer("Nope!");
+                return;
+            }
+
+            if (this.checkMovement && !this.player.dead) {
+                // CraftBukkit end
+                double d1;
+                double d2;
+                double d3;
+                double d4;
+
+                if (this.player.vehicle != null) {
+                    float f = this.player.yaw;
+                    float f1 = this.player.pitch;
+
+                    this.player.vehicle.i();
+                    d1 = this.player.locX;
+                    d2 = this.player.locY;
+                    d3 = this.player.locZ;
+                    double d5 = 0.0D;
+
+                    d4 = 0.0D;
+                    if (packet10flying.hasLook) {
+                        f = packet10flying.yaw;
+                        f1 = packet10flying.pitch;
+                    }
+
+                    if (packet10flying.h && packet10flying.y == -999.0D && packet10flying.stance == -999.0D) {
+                        d5 = packet10flying.x;
+                        d4 = packet10flying.z;
+                    }
+
+                    this.player.onGround = packet10flying.g;
+                    this.player.a(true);
+                    this.player.move(d5, 0.0D, d4);
+                    this.player.setLocation(d1, d2, d3, f, f1);
+                    this.player.motX = d5;
+                    this.player.motZ = d4;
+                    if (this.player.vehicle != null) {
+                        worldserver.vehicleEnteredWorld(this.player.vehicle, true);
+                    }
+
+                    if (this.player.vehicle != null) {
+                        this.player.vehicle.i();
+                    }
+
+                    this.minecraftServer.serverConfigurationManager.d(this.player);
+                    this.x = this.player.locX;
+                    this.y = this.player.locY;
+                    this.z = this.player.locZ;
+                    worldserver.playerJoinedWorld(this.player);
+                    return;
+                }
+
+                if (this.player.isSleeping()) {
+                    this.player.a(true);
+                    this.player.setLocation(this.x, this.y, this.z, this.player.yaw, this.player.pitch);
+                    worldserver.playerJoinedWorld(this.player);
+                    return;
+                }
+
+                d0 = this.player.locY;
+                this.x = this.player.locX;
+                this.y = this.player.locY;
+                this.z = this.player.locZ;
+                d1 = this.player.locX;
+                d2 = this.player.locY;
+                d3 = this.player.locZ;
+                float f2 = this.player.yaw;
+                float f3 = this.player.pitch;
+
+                if (packet10flying.h && packet10flying.y == -999.0D && packet10flying.stance == -999.0D) {
+                    packet10flying.h = false;
+                }
+
+                if (packet10flying.h) {
+                    d1 = packet10flying.x;
+                    d2 = packet10flying.y;
+                    d3 = packet10flying.z;
+                    d4 = packet10flying.stance - packet10flying.y;
+                    if (!this.player.isSleeping() && (d4 > 1.65D || d4 < 0.1D)) {
+                        this.disconnect("Illegal stance");
+                        a.warning(this.player.name + " had an illegal stance: " + d4);
+                        return;
+                    }
+
+                    if (Math.abs(packet10flying.x) > 3.2E7D || Math.abs(packet10flying.z) > 3.2E7D) {
+                        this.disconnect("Illegal position");
+                        return;
+                    }
+                }
+
+                if (packet10flying.hasLook) {
+                    f2 = packet10flying.yaw;
+                    f3 = packet10flying.pitch;
+                }
+
+                this.player.a(true);
+                this.player.bL = 0.0F;
+                this.player.setLocation(this.x, this.y, this.z, f2, f3);
+                if (!this.checkMovement) {
+                    return;
+                }
+
+                d4 = d1 - this.player.locX;
+                double d6 = d2 - this.player.locY;
+                double d7 = d3 - this.player.locZ;
+                double d8 = d4 * d4 + d6 * d6 + d7 * d7;
+
+                if (d8 > 100.0D && this.checkMovement) { // CraftBukkit - Added this.checkMovement condition to solve this check being triggered by teleports
+                    a.warning(this.player.name + " moved too quickly!");
+                    this.disconnect("You moved too quickly :( (Hacking?)");
+                    return;
+                }
+
+                float f4 = 0.0625F;
+                boolean flag = worldserver.getEntities(this.player, this.player.boundingBox.clone().shrink((double) f4, (double) f4, (double) f4)).size() == 0;
+
+                if (this.player.onGround && !packet10flying.g && d6 > 0.0D) {
+                    this.player.c(0.2F);
+                }
+
+                this.player.move(d4, d6, d7);
+                this.player.onGround = packet10flying.g;
+                this.player.b(d4, d6, d7);
+                double d9 = d6;
+
+                d4 = d1 - this.player.locX;
+                d6 = d2 - this.player.locY;
+                if (d6 > -0.5D || d6 < 0.5D) {
+                    d6 = 0.0D;
+                }
+
+                d7 = d3 - this.player.locZ;
+                d8 = d4 * d4 + d6 * d6 + d7 * d7;
+                boolean flag1 = false;
+
+                if (d8 > 0.0625D && !this.player.isSleeping() && !this.player.itemInWorldManager.b()) {
+                    flag1 = true;
+                    a.warning(this.player.name + " moved wrongly!");
+                    System.out.println("Got position " + d1 + ", " + d2 + ", " + d3);
+                    System.out.println("Expected " + this.player.locX + ", " + this.player.locY + ", " + this.player.locZ);
+                }
+
+                this.player.setLocation(d1, d2, d3, f2, f3);
+                boolean flag2 = worldserver.getEntities(this.player, this.player.boundingBox.clone().shrink((double) f4, (double) f4, (double) f4)).size() == 0;
+
+                if (flag && (flag1 || !flag2) && !this.player.isSleeping()) {
+                    this.a(this.x, this.y, this.z, f2, f3);
+                    return;
+                }
+
+                AxisAlignedBB axisalignedbb = this.player.boundingBox.clone().b((double) f4, (double) f4, (double) f4).a(0.0D, -0.55D, 0.0D);
+
+                if (!this.minecraftServer.allowFlight && !this.player.itemInWorldManager.b() && !worldserver.b(axisalignedbb)) {
+                    if (d9 >= -0.03125D) {
+                        ++this.g;
+                        if (this.g > 80) {
+                            a.warning(this.player.name + " was kicked for floating too long!");
+                            this.disconnect("Flying is not enabled on this server");
+                            return;
+                        }
+                    }
+                } else {
+                    this.g = 0;
+                }
+
+                this.player.onGround = packet10flying.g;
+                this.minecraftServer.serverConfigurationManager.d(this.player);
+                if (this.player.itemInWorldManager.b()) return; // CraftBukkit - fixed fall distance accumulating while being in Creative mode.
+                this.player.b(this.player.locY - d0, packet10flying.g);
+            }
         }
     }
 
@@ -447,9 +451,9 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 }
             }
             // CraftBukkit end
-            this.player.J();
+            this.player.N();
         } else if (packet14blockdig.e == 5) {
-            this.player.E();
+            this.player.I();
         } else {
             boolean flag = worldserver.weirdIsOpCache = worldserver.dimension != 0 || this.minecraftServer.serverConfigurationManager.isOp(this.player.name); // CraftBukkit
             boolean flag1 = false;
@@ -462,17 +466,13 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 flag1 = true;
             }
 
-            if (this.player.itemInWorldManager.b()) {
-                flag1 = true; // CraftBukkit - false -> true
-            }
-
             int i = packet14blockdig.a;
             int j = packet14blockdig.b;
             int k = packet14blockdig.c;
 
             if (flag1) {
                 double d0 = this.player.locX - ((double) i + 0.5D);
-                double d1 = this.player.locY - ((double) j + 0.5D);
+                double d1 = this.player.locY - ((double) j + 0.5D) + 1.5D;
                 double d2 = this.player.locZ - ((double) k + 0.5D);
                 double d3 = d0 * d0 + d1 * d1 + d2 * d2;
 
@@ -629,13 +629,13 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         if (itemstack == null || itemstack.l() == 0) {
             this.player.h = true;
             this.player.inventory.items[this.player.inventory.itemInHandIndex] = ItemStack.b(this.player.inventory.items[this.player.inventory.itemInHandIndex]);
-            Slot slot = this.player.activeContainer.a(this.player.inventory, this.player.inventory.itemInHandIndex);
+            Slot slot = this.player.activeContainer.a((IInventory) this.player.inventory, this.player.inventory.itemInHandIndex);
 
             this.player.activeContainer.a();
             this.player.h = false;
             // CraftBukkit | TODO CHECK IF NEEDED -- new if structure might not need 'always'. Kept it in for now, but may be able to remove in future
             if (!ItemStack.equals(this.player.inventory.getItemInHand(), packet15place.itemstack) || always) {
-                this.sendPacket(new Packet103SetSlot(this.player.activeContainer.windowId, slot.b, this.player.inventory.getItemInHand()));
+                this.sendPacket(new Packet103SetSlot(this.player.activeContainer.windowId, slot.c, this.player.inventory.getItemInHand()));
             }
         }
 
@@ -671,7 +671,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 this.networkManager.queue(new Packet3Chat(line));
             }
             packet = null;
-        } else if (packet.k == true) {
+        } else if (packet.l == true) {
             // Reroute all low-priority packets through to compression thread.
             ChunkCompressionThread.sendPacket(this.player, packet);
             packet = null;
@@ -684,8 +684,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         // CraftBukkit start
         if (this.player.dead) return;
 
-        // Changed <= to <
-        if (packet16blockitemswitch.itemInHandIndex >= 0 && packet16blockitemswitch.itemInHandIndex < InventoryPlayer.g()) {
+        if (packet16blockitemswitch.itemInHandIndex >= 0 && packet16blockitemswitch.itemInHandIndex < InventoryPlayer.h()) {
             PlayerItemHeldEvent event = new PlayerItemHeldEvent(this.getPlayer(), this.player.inventory.itemInHandIndex, packet16blockitemswitch.itemInHandIndex);
             this.server.getPluginManager().callEvent(event);
             // CraftBukkit end
@@ -832,7 +831,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             if (event.isCancelled()) return;
             // CraftBukkit end
 
-            this.player.v();
+            this.player.r_();
         }
     }
 
@@ -895,7 +894,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         WorldServer worldserver = this.minecraftServer.getWorldServer(this.player.dimension);
         Entity entity = worldserver.getEntity(packet7useentity.target);
 
-        if (entity != null && this.player.f(entity) && this.player.h(entity) < 36.0D) {
+        if (entity != null && this.player.g(entity) && this.player.i(entity) < 36.0D) {
             ItemStack itemInHand = this.player.inventory.getItemInHand(); // CraftBukkit
             if (packet7useentity.c == 0) {
                 // CraftBukkit start
@@ -906,14 +905,14 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                     return;
                 }
                 // CraftBukkit end
-                this.player.c(entity);
+                this.player.e(entity);
                 // CraftBukkit start - update the client if the item is an infinite one
                 if (itemInHand != null && itemInHand.count <= -1) {
                     this.player.updateInventory(this.player.activeContainer);
                 }
                 // CraftBukkit end
             } else if (packet7useentity.c == 1) {
-                this.player.d(entity);
+                this.player.f(entity);
                 // CraftBukkit start - update the client if the item is an infinite one
                 if (itemInHand != null && itemInHand.count <= -1) {
                     this.player.updateInventory(this.player.activeContainer);
@@ -924,17 +923,22 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     }
 
     public void a(Packet9Respawn packet9respawn) {
-        if (this.player.health <= 0) {
-            this.player = this.minecraftServer.serverConfigurationManager.moveToWorld(this.player, 0);
+        if (this.player.j) {
+            this.player = this.minecraftServer.serverConfigurationManager.moveToWorld(this.player, 0, true);
+        } else {
+            if (this.player.getHealth() > 0) {
+                return;
+            }
 
-            this.getPlayer().setHandle(this.player); // CraftBukkit
+            this.player = this.minecraftServer.serverConfigurationManager.moveToWorld(this.player, 0, false);
         }
+        this.getPlayer().setHandle(this.player); // CraftBukkit
     }
 
     public void a(Packet101CloseWindow packet101closewindow) {
         if (this.player.dead) return; // CraftBukkit
 
-        this.player.z();
+        this.player.D();
     }
 
     public void a(Packet102WindowClick packet102windowclick) {
@@ -947,7 +951,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 this.player.netServerHandler.sendPacket(new Packet106Transaction(packet102windowclick.a, packet102windowclick.d, true));
                 this.player.h = true;
                 this.player.activeContainer.a();
-                this.player.y();
+                this.player.C();
                 this.player.h = false;
             } else {
                 this.q.a(this.player.activeContainer.windowId, Short.valueOf(packet102windowclick.d));
@@ -964,22 +968,31 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         }
     }
 
+    public void a(Packet108 packet108) {
+        if (this.player.activeContainer.windowId == packet108.a && this.player.activeContainer.c(this.player)) {
+            this.player.activeContainer.a((EntityHuman) this.player, packet108.b);
+            this.player.activeContainer.a();
+        }
+    }
+
     public void a(Packet107SetCreativeSlot packet107setcreativeslot) {
         if (this.player.itemInWorldManager.b()) {
-            boolean flag = packet107setcreativeslot.a >= 36 && packet107setcreativeslot.a < 36 + InventoryPlayer.g();
-            boolean flag1 = packet107setcreativeslot.b >= -1 && packet107setcreativeslot.b < Item.byId.length && (packet107setcreativeslot.b < 0 || Item.byId[packet107setcreativeslot.b] != null);
-            boolean flag2 = packet107setcreativeslot.d >= 0 && packet107setcreativeslot.c >= 0 && packet107setcreativeslot.c <= 64;
+            boolean flag = packet107setcreativeslot.a < 0;
+            ItemStack itemstack = packet107setcreativeslot.b;
+            boolean flag1 = packet107setcreativeslot.a >= 36 && packet107setcreativeslot.a < 36 + InventoryPlayer.h();
+            boolean flag2 = itemstack == null || itemstack.id < Item.byId.length && itemstack.id >= 0 && Item.byId[itemstack.id] != null;
+            boolean flag3 = itemstack == null || itemstack.getData() >= 0 && itemstack.getData() >= 0 && itemstack.count <= 64 && itemstack.count > 0;
 
-            if (flag && flag1 && flag2) {
-                if (packet107setcreativeslot.b <= 0) {
+            if (flag1 && flag2 && flag3) {
+                if (itemstack == null) {
                     this.player.defaultContainer.a(packet107setcreativeslot.a, (ItemStack) null);
                 } else {
-                    this.player.defaultContainer.a(packet107setcreativeslot.a, new ItemStack(packet107setcreativeslot.b, packet107setcreativeslot.c, packet107setcreativeslot.d));
+                    this.player.defaultContainer.a(packet107setcreativeslot.a, itemstack);
                 }
 
                 this.player.defaultContainer.a(this.player, true);
-            } else if (!flag && flag1 && flag2 && packet107setcreativeslot.a == -1 && packet107setcreativeslot.b > 0) {
-                this.player.b(new ItemStack(packet107setcreativeslot.b, packet107setcreativeslot.c, packet107setcreativeslot.d));
+            } else if (flag && flag2 && flag3) {
+                this.player.b(itemstack);
             }
         }
     }
@@ -1004,8 +1017,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             if (tileentity instanceof TileEntitySign) {
                 TileEntitySign tileentitysign = (TileEntitySign) tileentity;
 
-                if (!tileentitysign.a()) {
-                    this.minecraftServer.c("Player " + this.player.name + " just tried to change non-editable sign");
+                if (!tileentitysign.c()) {
+                    this.minecraftServer.warning("Player " + this.player.name + " just tried to change non-editable sign");
                     // CraftBukkit
                     this.sendPacket(new Packet130UpdateSign(packet130updatesign.x, packet130updatesign.y, packet130updatesign.z, tileentitysign.lines));
                     return;

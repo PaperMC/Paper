@@ -20,7 +20,7 @@ public class BlockFire extends Block {
         this.a(true);
     }
 
-    public void h() {
+    public void j() {
         this.a(Block.WOOD.id, 5, 20);
         this.a(Block.FENCE.id, 5, 20);
         this.a(Block.WOOD_STAIRS.id, 5, 20);
@@ -50,22 +50,30 @@ public class BlockFire extends Block {
         return false;
     }
 
+    public int c() {
+        return 3;
+    }
+
     public int a(Random random) {
         return 0;
     }
 
-    public int c() {
+    public int d() {
         return 40;
     }
 
     public void a(World world, int i, int j, int k, Random random) {
         boolean flag = world.getTypeId(i, j - 1, k) == Block.NETHERRACK.id;
 
+        if (world.worldProvider instanceof WorldProviderSky && world.getTypeId(i, j - 1, k) == Block.BEDROCK.id) {
+            flag = true;
+        }
+
         if (!this.canPlace(world, i, j, k)) {
             world.setTypeId(i, j, k, 0);
         }
 
-        if (!flag && world.u() && (world.s(i, j, k) || world.s(i - 1, j, k) || world.s(i + 1, j, k) || world.s(i, j, k - 1) || world.s(i, j, k + 1))) {
+        if (!flag && world.w() && (world.v(i, j, k) || world.v(i - 1, j, k) || world.v(i + 1, j, k) || world.v(i, j, k - 1) || world.v(i, j, k + 1))) {
             world.setTypeId(i, j, k, 0);
         } else {
             int l = world.getData(i, j, k);
@@ -74,7 +82,7 @@ public class BlockFire extends Block {
                 world.setRawData(i, j, k, l + random.nextInt(3) / 2);
             }
 
-            world.c(i, j, k, this.id, this.c());
+            world.c(i, j, k, this.id, this.d());
             if (!flag && !this.g(world, i, j, k)) {
                 if (!world.e(i, j - 1, k) || l > 3) {
                     world.setTypeId(i, j, k, 0);
@@ -112,7 +120,7 @@ public class BlockFire extends Block {
                                 if (i2 > 0) {
                                     int j2 = (i2 + 40) / (l + 30);
 
-                                    if (j2 > 0 && random.nextInt(l1) <= j2 && (!world.u() || !world.s(i1, k1, j1)) && !world.s(i1 - 1, k1, k) && !world.s(i1 + 1, k1, j1) && !world.s(i1, k1, j1 - 1) && !world.s(i1, k1, j1 + 1)) {
+                                    if (j2 > 0 && random.nextInt(l1) <= j2 && (!world.w() || !world.v(i1, k1, j1)) && !world.v(i1 - 1, k1, k) && !world.v(i1 + 1, k1, j1) && !world.v(i1, k1, j1 - 1) && !world.v(i1, k1, j1 + 1)) {
                                         int k2 = l + random.nextInt(5) / 4;
 
                                         if (k2 > 15) {
@@ -167,7 +175,7 @@ public class BlockFire extends Block {
             }
             // CraftBukkit end
 
-            if (random.nextInt(i1 + 10) < 5 && !world.s(i, j, k)) {
+            if (random.nextInt(i1 + 10) < 5 && !world.v(i, j, k)) {
                 int k1 = i1 + random.nextInt(5) / 4;
 
                 if (k1 > 15) {
@@ -206,7 +214,7 @@ public class BlockFire extends Block {
         }
     }
 
-    public boolean q_() {
+    public boolean v_() {
         return false;
     }
 
@@ -231,11 +239,11 @@ public class BlockFire extends Block {
     }
 
     public void a(World world, int i, int j, int k) {
-        if (world.getTypeId(i, j - 1, k) != Block.OBSIDIAN.id || !Block.PORTAL.b_(world, i, j, k)) {
+        if (world.worldProvider.dimension > 0 || world.getTypeId(i, j - 1, k) != Block.OBSIDIAN.id || !Block.PORTAL.b_(world, i, j, k)) {
             if (!world.e(i, j - 1, k) && !this.g(world, i, j, k)) {
                 world.setTypeId(i, j, k, 0);
             } else {
-                world.c(i, j, k, this.id, this.c());
+                world.c(i, j, k, this.id, this.d());
             }
         }
     }

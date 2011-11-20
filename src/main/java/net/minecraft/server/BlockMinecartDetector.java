@@ -12,7 +12,7 @@ public class BlockMinecartDetector extends BlockMinecartTrack {
         this.a(true);
     }
 
-    public int c() {
+    public int d() {
         return 20;
     }
 
@@ -84,7 +84,7 @@ public class BlockMinecartDetector extends BlockMinecartTrack {
         }
 
         if (flag1) {
-            world.c(i, j, k, this.id, this.c());
+            world.c(i, j, k, this.id, this.d());
         }
     }
 }

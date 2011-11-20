@@ -166,7 +166,7 @@ public class BlockPortal extends BlockBreakable {
             world.getServer().getPluginManager().callEvent(event);
             // CraftBukkit end
 
-            entity.T();
+            entity.Y();
         }
     }
 }

@@ -67,13 +67,13 @@ public class InventoryLargeChest implements IInventory {
         return this.b.a(entityhuman) && this.c.a(entityhuman);
     }
 
-    public void e() {
-        this.b.e();
-        this.c.e();
+    public void f() {
+        this.b.f();
+        this.c.f();
     }
 
-    public void t_() {
-        this.b.t_();
-        this.c.t_();
+    public void g() {
+        this.b.g();
+        this.c.g();
     }
 }

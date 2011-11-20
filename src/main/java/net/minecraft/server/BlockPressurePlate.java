@@ -22,7 +22,7 @@ public class BlockPressurePlate extends Block {
         this.a(f, 0.0F, f, 1.0F - f, 0.03125F, 1.0F - f);
     }
 
-    public int c() {
+    public int d() {
         return 20;
     }
 
@@ -52,7 +52,7 @@ public class BlockPressurePlate extends Block {
         }
 
         if (flag) {
-            this.g(world, i, j, k, world.getData(i, j, k));
+            this.b(world, i, j, k, world.getData(i, j, k), 0);
             world.setTypeId(i, j, k, 0);
         }
     }
@@ -144,7 +144,7 @@ public class BlockPressurePlate extends Block {
         }
 
         if (flag1) {
-            world.c(i, j, k, this.id, this.c());
+            world.c(i, j, k, this.id, this.d());
         }
     }
 
@@ -182,7 +182,15 @@ public class BlockPressurePlate extends Block {
         return true;
     }
 
-    public int e() {
+    public void f() {
+        float f = 0.5F;
+        float f1 = 0.125F;
+        float f2 = 0.5F;
+
+        this.a(0.5F - f, 0.5F - f1, 0.5F - f2, 0.5F + f, 0.5F + f1, 0.5F + f2);
+    }
+
+    public int g() {
         return 1;
     }
 }

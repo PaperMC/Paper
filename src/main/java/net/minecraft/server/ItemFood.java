@@ -5,21 +5,21 @@ import org.bukkit.event.entity.FoodLevelChangeEvent; // CraftBukkit
 public class ItemFood extends Item {
 
     public final int a;
-    private final int bt;
-    private final float bu;
-    private final boolean bv;
-    private boolean bw;
-    private int bx;
-    private int by;
-    private int bz;
-    private float bA;
+    private final int b;
+    private final float bR;
+    private final boolean bS;
+    private boolean bT;
+    private int bU;
+    private int bV;
+    private int bW;
+    private float bX;
 
     public ItemFood(int i, int j, float f, boolean flag) {
         super(i);
         this.a = 32;
-        this.bt = j;
-        this.bv = flag;
-        this.bu = f;
+        this.b = j;
+        this.bS = flag;
+        this.bR = f;
     }
 
     public ItemFood(int i, int j, boolean flag) {
@@ -31,16 +31,16 @@ public class ItemFood extends Item {
         // CraftBukkit start
         int oldFoodLevel = entityhuman.getFoodData().foodLevel;
 
-        FoodLevelChangeEvent event = new FoodLevelChangeEvent(entityhuman.getBukkitEntity(), Math.min(this.k() + entityhuman.getFoodData().foodLevel, 20));
+        FoodLevelChangeEvent event = new FoodLevelChangeEvent(entityhuman.getBukkitEntity(), Math.min(this.n() + entityhuman.getFoodData().foodLevel, 20));
         entityhuman.world.getServer().getPluginManager().callEvent(event);
 
         if (!event.isCancelled()) {
-            entityhuman.getFoodData().a(event.getFoodLevel() - oldFoodLevel, this.l());
+            entityhuman.getFoodData().a(event.getFoodLevel() - oldFoodLevel, this.o());
         }
         // CraftBukkit end
 
-        if (!world.isStatic && this.bx > 0 && world.random.nextFloat() < this.bA) {
-            entityhuman.addEffect(new MobEffect(this.bx, this.by * 20, this.bz));
+        if (!world.isStatic && this.bU > 0 && world.random.nextFloat() < this.bX) {
+            entityhuman.addEffect(new MobEffect(this.bU, this.bV * 20, this.bW));
         }
 
         return itemstack;
@@ -50,40 +50,40 @@ public class ItemFood extends Item {
         return 32;
     }
 
-    public EnumAnimation b(ItemStack itemstack) {
+    public EnumAnimation d(ItemStack itemstack) {
         return EnumAnimation.b;
     }
 
     public ItemStack a(ItemStack itemstack, World world, EntityHuman entityhuman) {
-        if (entityhuman.c(this.bw)) {
+        if (entityhuman.b(this.bT)) {
             entityhuman.a(itemstack, this.c(itemstack));
         }
 
         return itemstack;
     }
 
-    public int k() {
-        return this.bt;
+    public int n() {
+        return this.b;
     }
 
-    public float l() {
-        return this.bu;
+    public float o() {
+        return this.bR;
     }
 
-    public boolean m() {
-        return this.bv;
+    public boolean p() {
+        return this.bS;
     }
 
     public ItemFood a(int i, int j, int k, float f) {
-        this.bx = i;
-        this.by = j;
-        this.bz = k;
-        this.bA = f;
+        this.bU = i;
+        this.bV = j;
+        this.bW = k;
+        this.bX = f;
         return this;
     }
 
-    public ItemFood n() {
-        this.bw = true;
+    public ItemFood q() {
+        this.bT = true;
         return this;
     }
 

@@ -47,7 +47,7 @@ public class ItemReed extends Item {
             }
         }
 
-        if (!entityhuman.c(i, j, k)) {
+        if (!entityhuman.d(i, j, k)) {
             return false;
         } else if (itemstack.count == 0) {
             return false;

@@ -29,7 +29,7 @@ public class EntityItem extends Entity {
         this.motZ = (double) ((float) (Math.random() * 0.20000000298023224D - 0.10000000149011612D));
     }
 
-    protected boolean e_() {
+    protected boolean g_() {
         return false;
     }
 
@@ -41,8 +41,8 @@ public class EntityItem extends Entity {
 
     protected void b() {}
 
-    public void s_() {
-        super.s_();
+    public void w_() {
+        super.w_();
         // CraftBukkit start
         int currentTick = (int) (System.currentTimeMillis() / 50);
         this.pickupDelay -= (currentTick - this.lastTick);
@@ -87,7 +87,7 @@ public class EntityItem extends Entity {
         }
     }
 
-    public boolean f_() {
+    public boolean i_() {
         return this.world.a(this.boundingBox, Material.WATER, this);
     }
 
@@ -96,7 +96,7 @@ public class EntityItem extends Entity {
     }
 
     public boolean damageEntity(DamageSource damagesource, int i) {
-        this.aq();
+        this.aB();
         this.f -= i;
         if (this.f <= 0) {
             this.die();
@@ -112,9 +112,9 @@ public class EntityItem extends Entity {
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        this.f = nbttagcompound.d("Health") & 255;
-        this.b = nbttagcompound.d("Age");
-        NBTTagCompound nbttagcompound1 = nbttagcompound.k("Item");
+        this.f = nbttagcompound.e("Health") & 255;
+        this.b = nbttagcompound.e("Age");
+        NBTTagCompound nbttagcompound1 = nbttagcompound.l("Item");
 
         this.itemStack = ItemStack.a(nbttagcompound1);
         if (this.itemStack == null) {
@@ -153,6 +153,14 @@ public class EntityItem extends Entity {
                     entityhuman.a((Statistic) AchievementList.t);
                 }
 
+                if (this.itemStack.id == Item.DIAMOND.id) {
+                    entityhuman.a((Statistic) AchievementList.w);
+                }
+
+                if (this.itemStack.id == Item.BLAZE_ROD.id) {
+                    entityhuman.a((Statistic) AchievementList.z);
+                }
+
                 this.world.makeSound(this, "random.pop", 0.2F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
                 entityhuman.receive(this, i);
                 if (this.itemStack.count <= 0) {
@@ -162,7 +170,7 @@ public class EntityItem extends Entity {
         }
     }
 
-    public String Y() {
+    public String ad() {
         return StatisticCollector.a("item." + this.itemStack.k());
     }
 }

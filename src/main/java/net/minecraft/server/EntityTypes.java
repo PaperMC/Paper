@@ -86,9 +86,17 @@ public class EntityTypes {
     static {
         a(EntityItem.class, "Item", 1);
         a(EntityExperienceOrb.class, "XPOrb", 2);
+        a(EntityPainting.class, "Painting", 9);
         a(EntityArrow.class, "Arrow", 10);
         a(EntitySnowball.class, "Snowball", 11);
-        a(EntityPainting.class, "Painting", 9);
+        a(EntityFireball.class, "Fireball", 12);
+        a(EntitySmallFireball.class, "SmallFireball", 13);
+        a(EntityEnderPearl.class, "ThrownEnderpearl", 14);
+        a(EntityEnderSignal.class, "EyeOfEnderSignal", 15);
+        a(EntityTNTPrimed.class, "PrimedTnt", 20);
+        a(EntityFallingSand.class, "FallingSand", 21);
+        a(EntityMinecart.class, "Minecart", 40);
+        a(EntityBoat.class, "Boat", 41);
         a(EntityLiving.class, "Mob", 48);
         a(EntityMonster.class, "Monster", 49);
         a(EntityCreeper.class, "Creeper", 50);
@@ -102,15 +110,18 @@ public class EntityTypes {
         a(EntityEnderman.class, "Enderman", 58);
         a(EntityCaveSpider.class, "CaveSpider", 59);
         a(EntitySilverfish.class, "Silverfish", 60);
+        a(EntityBlaze.class, "Blaze", 61);
+        a(EntityLavaSlime.class, "LavaSlime", 62);
+        a(EntityEnderDragon.class, "EnderDragon", 63);
         a(EntityPig.class, "Pig", 90);
         a(EntitySheep.class, "Sheep", 91);
         a(EntityCow.class, "Cow", 92);
         a(EntityChicken.class, "Chicken", 93);
         a(EntitySquid.class, "Squid", 94);
         a(EntityWolf.class, "Wolf", 95);
-        a(EntityTNTPrimed.class, "PrimedTnt", 20);
-        a(EntityFallingSand.class, "FallingSand", 21);
-        a(EntityMinecart.class, "Minecart", 40);
-        a(EntityBoat.class, "Boat", 41);
+        a(EntityMushroomCow.class, "MushroomCow", 96);
+        a(EntitySnowman.class, "SnowMan", 97);
+        a(EntityVillager.class, "Villager", 120);
+        a(EntityEnderCrystal.class, "EnderCrystal", 200);
     }
 }

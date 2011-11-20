@@ -7,13 +7,21 @@ public class EntityZombie extends EntityMonster {
     public EntityZombie(World world) {
         super(world);
         this.texture = "/mob/zombie.png";
-        this.aU = 0.5F;
-        this.damage = 5;
+        this.aY = 0.5F;
+        this.damage = 4;
     }
 
-    public void s() {
-        if (this.world.d() && !this.world.isStatic) {
-            float f = this.a_(1.0F);
+    public int getMaxHealth() {
+        return 20;
+    }
+
+    protected int O() {
+        return 2;
+    }
+
+    public void d() {
+        if (this.world.e() && !this.world.isStatic) {
+            float f = this.a(1.0F);
 
             if (f > 0.5F && this.world.isChunkLoaded(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ)) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
                 // CraftBukkit start
@@ -21,28 +29,32 @@ public class EntityZombie extends EntityMonster {
                 this.world.getServer().getPluginManager().callEvent(event);
 
                 if (!event.isCancelled()) {
-                    this.fireTicks = 300;
+                    this.j(8);
                 }
                 // CraftBukkit end
             }
         }
 
-        super.s();
+        super.d();
     }
 
-    protected String h() {
+    protected String c_() {
         return "mob.zombie";
     }
 
-    protected String i() {
+    protected String m() {
         return "mob.zombiehurt";
     }
 
-    protected String j() {
+    protected String n() {
         return "mob.zombiedeath";
     }
 
-    protected int k() {
+    protected int e() {
         return Item.ROTTEN_FLESH.id;
+    }
+
+    public EnchantmentDamage t() {
+        return EnchantmentDamage.b;
     }
 }

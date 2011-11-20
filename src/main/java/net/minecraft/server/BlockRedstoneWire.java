@@ -33,6 +33,10 @@ public class BlockRedstoneWire extends Block {
         return false;
     }
 
+    public int c() {
+        return 5;
+    }
+
     public boolean canPlace(World world, int i, int j, int k) {
         return world.e(i, j - 1, k);
     }
@@ -280,7 +284,7 @@ public class BlockRedstoneWire extends Block {
             boolean flag = this.canPlace(world, i, j, k);
 
             if (!flag) {
-                this.g(world, i, j, k, i1);
+                this.b(world, i, j, k, i1, 0);
                 world.setTypeId(i, j, k, 0);
             } else {
                 this.g(world, i, j, k);
@@ -290,7 +294,7 @@ public class BlockRedstoneWire extends Block {
         }
     }
 
-    public int a(int i, Random random) {
+    public int a(int i, Random random, int j) {
         return Item.REDSTONE.id;
     }
 
@@ -306,25 +310,25 @@ public class BlockRedstoneWire extends Block {
         } else if (l == 1) {
             return true;
         } else {
-            boolean flag = c(iblockaccess, i - 1, j, k, 1) || !iblockaccess.e(i - 1, j, k) && c(iblockaccess, i - 1, j - 1, k, -1);
-            boolean flag1 = c(iblockaccess, i + 1, j, k, 3) || !iblockaccess.e(i + 1, j, k) && c(iblockaccess, i + 1, j - 1, k, -1);
-            boolean flag2 = c(iblockaccess, i, j, k - 1, 2) || !iblockaccess.e(i, j, k - 1) && c(iblockaccess, i, j - 1, k - 1, -1);
-            boolean flag3 = c(iblockaccess, i, j, k + 1, 0) || !iblockaccess.e(i, j, k + 1) && c(iblockaccess, i, j - 1, k + 1, -1);
+            boolean flag = d(iblockaccess, i - 1, j, k, 1) || !iblockaccess.e(i - 1, j, k) && d(iblockaccess, i - 1, j - 1, k, -1);
+            boolean flag1 = d(iblockaccess, i + 1, j, k, 3) || !iblockaccess.e(i + 1, j, k) && d(iblockaccess, i + 1, j - 1, k, -1);
+            boolean flag2 = d(iblockaccess, i, j, k - 1, 2) || !iblockaccess.e(i, j, k - 1) && d(iblockaccess, i, j - 1, k - 1, -1);
+            boolean flag3 = d(iblockaccess, i, j, k + 1, 0) || !iblockaccess.e(i, j, k + 1) && d(iblockaccess, i, j - 1, k + 1, -1);
 
             if (!iblockaccess.e(i, j + 1, k)) {
-                if (iblockaccess.e(i - 1, j, k) && c(iblockaccess, i - 1, j + 1, k, -1)) {
+                if (iblockaccess.e(i - 1, j, k) && d(iblockaccess, i - 1, j + 1, k, -1)) {
                     flag = true;
                 }
 
-                if (iblockaccess.e(i + 1, j, k) && c(iblockaccess, i + 1, j + 1, k, -1)) {
+                if (iblockaccess.e(i + 1, j, k) && d(iblockaccess, i + 1, j + 1, k, -1)) {
                     flag1 = true;
                 }
 
-                if (iblockaccess.e(i, j, k - 1) && c(iblockaccess, i, j + 1, k - 1, -1)) {
+                if (iblockaccess.e(i, j, k - 1) && d(iblockaccess, i, j + 1, k - 1, -1)) {
                     flag2 = true;
                 }
 
-                if (iblockaccess.e(i, j, k + 1) && c(iblockaccess, i, j + 1, k + 1, -1)) {
+                if (iblockaccess.e(i, j, k + 1) && d(iblockaccess, i, j + 1, k + 1, -1)) {
                     flag3 = true;
                 }
             }
@@ -344,14 +348,30 @@ public class BlockRedstoneWire extends Block {
             return true;
         } else if (i1 == 0) {
             return false;
-        } else if (Block.byId[i1].isPowerSource()) {
+        } else if (Block.byId[i1].isPowerSource() && l != -1) {
             return true;
         } else if (i1 != Block.DIODE_OFF.id && i1 != Block.DIODE_ON.id) {
             return false;
         } else {
             int j1 = iblockaccess.getData(i, j, k);
 
-            return l == Direction.e[j1 & 3];
+            return l == (j1 & 3) || l == Direction.e[j1 & 3];
+        }
+    }
+
+    public static boolean d(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+        if (c(iblockaccess, i, j, k, l)) {
+            return true;
+        } else {
+            int i1 = iblockaccess.getTypeId(i, j, k);
+
+            if (i1 == Block.DIODE_ON.id) {
+                int j1 = iblockaccess.getData(i, j, k);
+
+                return l == (j1 & 3);
+            } else {
+                return false;
+            }
         }
     }
 }

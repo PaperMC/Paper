@@ -31,7 +31,7 @@ public class ServerConfigurationManager {
     public static Logger a = Logger.getLogger("Minecraft");
     public List players = new ArrayList();
     public MinecraftServer server; // CraftBukkit - private -> public
-    // private PlayerManager[] d = new PlayerManager[2]; // CraftBukkit - removed
+    // private PlayerManager[] d = new PlayerManager[3]; // CraftBukkit - removed
     public int maxPlayers; // CraftBukkit - private -> public
     public Set banByName = new HashSet(); // CraftBukkit - private -> public
     public Set banByIP = new HashSet(); // CraftBukkit - private -> public
@@ -64,19 +64,19 @@ public class ServerConfigurationManager {
         // CraftBukkit - removed playermanagers
         this.maxPlayers = minecraftserver.propertyManager.getInt("max-players", 20);
         this.hasWhitelist = minecraftserver.propertyManager.getBoolean("white-list", false);
-        this.i();
-        this.k();
-        this.m();
-        this.o();
-        this.j();
         this.l();
         this.n();
         this.p();
+        this.r();
+        this.m();
+        this.o();
+        this.q();
+        this.s();
     }
 
     public void setPlayerFileData(WorldServer[] aworldserver) {
         if (this.playerFileData != null) return; // CraftBukkit
-        this.playerFileData = aworldserver[0].o().d();
+        this.playerFileData = aworldserver[0].q().d();
     }
 
     public void a(EntityPlayer entityplayer) {
@@ -216,7 +216,7 @@ public class ServerConfigurationManager {
     }
 
     // CraftBukkit start
-    public EntityPlayer moveToWorld(EntityPlayer entityplayer, int i) {
+    public EntityPlayer moveToWorld(EntityPlayer entityplayer, int i, boolean flag) {
         return this.moveToWorld(entityplayer, i, null);
     }
 
@@ -279,7 +279,7 @@ public class ServerConfigurationManager {
 
         // CraftBukkit start
         byte actualDimension = (byte) (worldserver.getWorld().getEnvironment().getId());
-        entityplayer1.netServerHandler.sendPacket(new Packet9Respawn(actualDimension, (byte) worldserver.difficulty, worldserver.getSeed(), 128, entityplayer1.itemInWorldManager.a()));
+        entityplayer1.netServerHandler.sendPacket(new Packet9Respawn(actualDimension, (byte) worldserver.difficulty, worldserver.getSeed(), worldserver.height, entityplayer1.itemInWorldManager.a()));
         entityplayer1.spawnIn(worldserver);
         entityplayer1.dead = false;
         entityplayer1.netServerHandler.teleport(new Location(worldserver.getWorld(), entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch));
@@ -289,7 +289,7 @@ public class ServerConfigurationManager {
         worldserver.addEntity(entityplayer1);
         this.players.add(entityplayer1);
         this.updateClient(entityplayer1); // CraftBukkit
-        entityplayer1.w();
+        entityplayer1.A();
         // CraftBukkit start - don't fire on respawn
         if (fromWorld != location.getWorld()) {
             org.bukkit.event.player.PlayerChangedWorldEvent event = new org.bukkit.event.player.PlayerChangedWorldEvent((Player) entityplayer1.getBukkitEntity(), fromWorld);
@@ -299,15 +299,14 @@ public class ServerConfigurationManager {
         return entityplayer1;
     }
 
-    public void f(EntityPlayer entityplayer) {
+    public void a(EntityPlayer entityplayer, int i) {
         // CraftBukkit start -- Replaced the standard handling of portals with a more customised method.
         int dimension = entityplayer.dimension;
         WorldServer fromWorld = this.server.getWorldServer(dimension);
         WorldServer toWorld = null;
         if (dimension < 10) {
-            int toDimension = dimension == -1 ? 0 : -1;
             for (WorldServer world : this.server.worlds) {
-                if (world.dimension == toDimension) {
+                if (world.dimension == i) {
                     toWorld = world;
                 }
             }
@@ -334,20 +333,19 @@ public class ServerConfigurationManager {
     }
 
     public void b() {
-        int i;
+        if (++this.p > 200) {
+            this.p = 0;
+        }
 
         /* CraftBukkit start -- remove updating of lag to players -- it spams way to much on big servers.
-        if (this.p-- <= 0) {
-            for (i = 0; i < this.players.size(); ++i) {
-                EntityPlayer entityplayer = (EntityPlayer) this.players.get(i);
+        if (this.p < this.players.size()) {
+            EntityPlayer entityplayer = (EntityPlayer) this.players.get(this.p);
 
-                this.sendAll(new Packet201PlayerInfo(entityplayer.name, true, entityplayer.i));
-            }
-            this.p = 200; // <-- this resetting of flushtime is missing! though whole code is commented out now :)
+            this.sendAll(new Packet201PlayerInfo(entityplayer.name, true, entityplayer.i));
         }
         */
 
-        for (i = 0; i < this.server.worlds.size(); ++i) {
+        for (int i = 0; i < this.server.worlds.size(); ++i) {
             this.server.worlds.get(i).manager.flush();
             // CraftBukkit end
         }
@@ -389,17 +387,27 @@ public class ServerConfigurationManager {
         return s;
     }
 
+    public String[] d() {
+        String[] astring = new String[this.players.size()];
+
+        for (int i = 0; i < this.players.size(); ++i) {
+            astring[i] = ((EntityPlayer) this.players.get(i)).name;
+        }
+
+        return astring;
+    }
+
     public void addUserBan(String s) {
         this.banByName.add(s.toLowerCase());
-        this.j();
+        this.m();
     }
 
     public void removeUserBan(String s) {
         this.banByName.remove(s.toLowerCase());
-        this.j();
+        this.m();
     }
 
-    private void i() {
+    private void l() {
         try {
             this.banByName.clear();
             BufferedReader bufferedreader = new BufferedReader(new FileReader(this.j));
@@ -415,7 +423,7 @@ public class ServerConfigurationManager {
         }
     }
 
-    private void j() {
+    private void m() {
         try {
             PrintWriter printwriter = new PrintWriter(new FileWriter(this.j, false));
             Iterator iterator = this.banByName.iterator();
@@ -432,17 +440,25 @@ public class ServerConfigurationManager {
         }
     }
 
+    public Set e() {
+        return this.banByName;
+    }
+
+    public Set f() {
+        return this.banByIP;
+    }
+
     public void addIpBan(String s) {
         this.banByIP.add(s.toLowerCase());
-        this.l();
+        this.o();
     }
 
     public void removeIpBan(String s) {
         this.banByIP.remove(s.toLowerCase());
-        this.l();
+        this.o();
     }
 
-    private void k() {
+    private void n() {
         try {
             this.banByIP.clear();
             BufferedReader bufferedreader = new BufferedReader(new FileReader(this.k));
@@ -458,7 +474,7 @@ public class ServerConfigurationManager {
         }
     }
 
-    private void l() {
+    private void o() {
         try {
             PrintWriter printwriter = new PrintWriter(new FileWriter(this.k, false));
             Iterator iterator = this.banByIP.iterator();
@@ -477,7 +493,7 @@ public class ServerConfigurationManager {
 
     public void addOp(String s) {
         this.operators.add(s.toLowerCase());
-        this.n();
+        this.q();
 
         // Craftbukkit start
         Player player = server.server.getPlayer(s);
@@ -489,7 +505,7 @@ public class ServerConfigurationManager {
 
     public void removeOp(String s) {
         this.operators.remove(s.toLowerCase());
-        this.n();
+        this.q();
 
         // Craftbukkit start
         Player player = server.server.getPlayer(s);
@@ -499,7 +515,7 @@ public class ServerConfigurationManager {
         // Craftbukkit end
     }
 
-    private void m() {
+    private void p() {
         try {
             this.operators.clear();
             BufferedReader bufferedreader = new BufferedReader(new FileReader(this.l));
@@ -511,12 +527,11 @@ public class ServerConfigurationManager {
 
             bufferedreader.close();
         } catch (Exception exception) {
-            // CraftBukkit - corrected text
-            a.warning("Failed to load ops: " + exception);
+            a.warning("Failed to load operators list: " + exception);
         }
     }
 
-    private void n() {
+    private void q() {
         try {
             PrintWriter printwriter = new PrintWriter(new FileWriter(this.l, false));
             Iterator iterator = this.operators.iterator();
@@ -529,12 +544,11 @@ public class ServerConfigurationManager {
 
             printwriter.close();
         } catch (Exception exception) {
-            // CraftBukkit - corrected text
-            a.warning("Failed to save ops: " + exception);
+            a.warning("Failed to save operators list: " + exception);
         }
     }
 
-    private void o() {
+    private void r() {
         try {
             this.whitelist.clear();
             BufferedReader bufferedreader = new BufferedReader(new FileReader(this.m));
@@ -550,7 +564,7 @@ public class ServerConfigurationManager {
         }
     }
 
-    private void p() {
+    private void s() {
         try {
             PrintWriter printwriter = new PrintWriter(new FileWriter(this.m, false));
             Iterator iterator = this.whitelist.iterator();
@@ -649,12 +663,12 @@ public class ServerConfigurationManager {
 
     public void addWhitelist(String s) {
         this.whitelist.add(s);
-        this.p();
+        this.s();
     }
 
     public void removeWhitelist(String s) {
         this.whitelist.remove(s);
-        this.p();
+        this.s();
     }
 
     public Set getWhitelisted() {
@@ -662,26 +676,26 @@ public class ServerConfigurationManager {
     }
 
     public void reloadWhitelist() {
-        this.o();
+        this.r();
     }
 
     public void a(EntityPlayer entityplayer, WorldServer worldserver) {
         entityplayer.netServerHandler.sendPacket(new Packet4UpdateTime(worldserver.getTime()));
-        if (worldserver.u()) {
+        if (worldserver.w()) {
             entityplayer.netServerHandler.sendPacket(new Packet70Bed(1, 0));
         }
     }
 
     public void updateClient(EntityPlayer entityplayer) {
         entityplayer.updateInventory(entityplayer.defaultContainer);
-        entityplayer.B();
+        entityplayer.s_();
     }
 
-    public int g() {
+    public int j() {
         return this.players.size();
     }
 
-    public int h() {
+    public int k() {
         return this.maxPlayers;
     }
 }

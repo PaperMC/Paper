@@ -32,19 +32,23 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public int getHealth() {
-        return getHandle().health;
+        return getHandle().getHealth();
     }
 
     public void setHealth(int health) {
-        if ((health < 0) || (health > 200)) {
-            throw new IllegalArgumentException("Health must be between 0 and 200");
+        if ((health < 0) || (health > getMaxHealth())) {
+            throw new IllegalArgumentException("Health must be between 0 and " + getMaxHealth());
         }
 
         if (entity instanceof EntityPlayer && health == 0) {
             ((EntityPlayer) entity).die(DamageSource.GENERIC);
         }
 
-        getHandle().health = health;
+        getHandle().setHealth(health);
+    }
+    
+    public int getMaxHealth() {
+        return getHandle().getMaxHealth();
     }
 
     @Override

@@ -22,7 +22,9 @@ public class WorldGenBigTree extends WorldGenerator {
     int n = 4;
     int[][] o;
 
-    public WorldGenBigTree() {}
+    public WorldGenBigTree(boolean flag) {
+        super(flag);
+    }
 
     void a() {
         this.f = (int) ((double) this.e * this.g);
@@ -119,7 +121,7 @@ public class WorldGenBigTree extends WorldGenerator {
                     if (l1 != 0 && l1 != 18) {
                         ++k1;
                     } else {
-                        this.c.setRawTypeId(aint1[0], aint1[1], aint1[2], l);
+                        this.a(this.c, aint1[0], aint1[1], aint1[2], l, 0);
                         ++k1;
                     }
                 }
@@ -195,7 +197,7 @@ public class WorldGenBigTree extends WorldGenerator {
                 aint3[b1] = MathHelper.floor((double) (aint[b1] + j) + 0.5D);
                 aint3[b2] = MathHelper.floor((double) aint[b2] + (double) j * d0 + 0.5D);
                 aint3[b3] = MathHelper.floor((double) aint[b3] + (double) j * d1 + 0.5D);
-                this.c.setRawTypeId(aint3[0], aint3[1], aint3[2], i);
+                this.a(this.c, aint3[0], aint3[1], aint3[2], i, 0);
             }
         }
     }

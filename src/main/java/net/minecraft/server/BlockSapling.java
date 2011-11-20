@@ -16,7 +16,7 @@ public class BlockSapling extends BlockFlower {
     public void a(World world, int i, int j, int k, Random random) {
         if (!world.isStatic) {
             super.a(world, i, j, k, random);
-            if (world.getLightLevel(i, j + 1, k) >= 9 && random.nextInt(30) == 0) {
+            if (world.getLightLevel(i, j + 1, k) >= 9 && random.nextInt(7) == 0) {
                 int l = world.getData(i, j, k);
 
                 if ((l & 8) == 0) {
@@ -42,15 +42,16 @@ public class BlockSapling extends BlockFlower {
         boolean grownTree;
         BlockChangeWithNotify delegate = new BlockChangeWithNotify(world);
 
+        // All of these are 'false' because we need the 'raw' calls so the block-delegate works
         if (l == 1) {
-            grownTree = new WorldGenTaiga2().generate(delegate, random, i, j, k);
+            grownTree = new WorldGenTaiga2(false).generate(delegate, random, i, j, k);
         } else if (l == 2) {
-            grownTree = new WorldGenForest().generate(delegate, random, i, j, k);
+            grownTree = new WorldGenForest(false).generate(delegate, random, i, j, k);
         } else {
             if (random.nextInt(10) == 0) {
-                grownTree = new WorldGenBigTree().generate(delegate, random, i, j, k);
+                grownTree = new WorldGenBigTree(false).generate(delegate, random, i, j, k);
             } else {
-                grownTree = new WorldGenTrees().generate(delegate, random, i, j, k);
+                grownTree = new WorldGenTrees(false).generate(delegate, random, i, j, k);
             }
         }
 
@@ -60,7 +61,7 @@ public class BlockSapling extends BlockFlower {
         // CraftBukkit end
     }
 
-    protected int a_(int i) {
+    protected int c(int i) {
         return i & 3;
     }
 

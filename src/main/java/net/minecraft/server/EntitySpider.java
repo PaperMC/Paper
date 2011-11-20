@@ -11,43 +11,63 @@ public class EntitySpider extends EntityMonster {
         super(world);
         this.texture = "/mob/spider.png";
         this.b(1.4F, 0.9F);
-        this.aU = 0.8F;
+        this.aY = 0.8F;
     }
 
-    public double n() {
+    protected void b() {
+        super.b();
+        this.datawatcher.a(16, new Byte((byte) 0));
+    }
+
+    public void d() {
+        super.d();
+    }
+
+    public void w_() {
+        super.w_();
+        if (!this.world.isStatic) {
+            this.a(this.positionChanged);
+        }
+    }
+
+    public int getMaxHealth() {
+        return 16;
+    }
+
+    public double q() {
         return (double) this.width * 0.75D - 0.5D;
     }
 
-    protected boolean e_() {
+    protected boolean g_() {
         return false;
     }
 
     protected Entity findTarget() {
-        float f = this.a_(1.0F);
+        float f = this.a(1.0F);
 
         if (f < 0.5F) {
             double d0 = 16.0D;
 
-            return this.world.findNearbyPlayer(this, d0);
+            return this.world.b(this, d0);
         } else {
             return null;
         }
     }
 
-    protected String h() {
+    protected String c_() {
         return "mob.spider";
     }
 
-    protected String i() {
+    protected String m() {
         return "mob.spider";
     }
 
-    protected String j() {
+    protected String n() {
         return "mob.spiderdeath";
     }
 
     protected void a(Entity entity, float f) {
-        float f1 = this.a_(1.0F);
+        float f1 = this.a(1.0F);
 
         if (f1 > 0.5F && this.random.nextInt(100) == 0) {
             // CraftBukkit start
@@ -88,13 +108,44 @@ public class EntitySpider extends EntityMonster {
         super.a(nbttagcompound);
     }
 
-    protected int k() {
+    protected int e() {
         return Item.STRING.id;
     }
 
-    public boolean p() {
-        return this.positionChanged;
+    protected void a(boolean flag, int i) {
+        super.a(flag, i);
+        if (flag && (this.random.nextInt(3) == 0 || this.random.nextInt(1 + i) > 0)) {
+            this.b(Item.SPIDER_EYE.id, 1);
+        }
     }
 
-    public void q() {}
+    public boolean r() {
+        return this.o_();
+    }
+
+    public void s() {}
+
+    public EnchantmentDamage t() {
+        return EnchantmentDamage.c;
+    }
+
+    public boolean a(MobEffect mobeffect) {
+        return mobeffect.getEffectId() == MobEffectList.POISON.id ? false : super.a(mobeffect);
+    }
+
+    public boolean o_() {
+        return (this.datawatcher.getByte(16) & 1) != 0;
+    }
+
+    public void a(boolean flag) {
+        byte b0 = this.datawatcher.getByte(16);
+
+        if (flag) {
+            b0 = (byte) (b0 | 1);
+        } else {
+            b0 &= -2;
+        }
+
+        this.datawatcher.watch(16, Byte.valueOf(b0));
+    }
 }

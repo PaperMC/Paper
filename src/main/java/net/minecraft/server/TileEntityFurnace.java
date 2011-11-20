@@ -64,21 +64,21 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        NBTTagList nbttaglist = nbttagcompound.l("Items");
+        NBTTagList nbttaglist = nbttagcompound.m("Items");
 
         this.items = new ItemStack[this.getSize()];
 
-        for (int i = 0; i < nbttaglist.c(); ++i) {
+        for (int i = 0; i < nbttaglist.d(); ++i) {
             NBTTagCompound nbttagcompound1 = (NBTTagCompound) nbttaglist.a(i);
-            byte b0 = nbttagcompound1.c("Slot");
+            byte b0 = nbttagcompound1.d("Slot");
 
             if (b0 >= 0 && b0 < this.items.length) {
                 this.items[b0] = ItemStack.a(nbttagcompound1);
             }
         }
 
-        this.burnTime = nbttagcompound.d("BurnTime");
-        this.cookTime = nbttagcompound.d("CookTime");
+        this.burnTime = nbttagcompound.e("BurnTime");
+        this.cookTime = nbttagcompound.e("CookTime");
         this.ticksForCurrentFuel = this.fuelTime(this.items[1]);
     }
 
@@ -109,7 +109,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         return this.burnTime > 0;
     }
 
-    public void h_() {
+    public void l_() {
         boolean flag = this.burnTime > 0;
         boolean flag1 = false;
 
@@ -162,7 +162,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
             }
 
             /* CraftBukkit start - moved up
-            if (this.f() && this.process()) {
+            if (this.isBurning() && this.canBurn()) {
                 ++this.cookTime;
                 if (this.cookTime == 200) {
                     this.cookTime = 0;
@@ -238,7 +238,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         } else {
             int i = itemstack.getItem().id;
 
-            return i < 256 && Block.byId[i].material == Material.WOOD ? 300 : (i == Item.STICK.id ? 100 : (i == Item.COAL.id ? 1600 : (i == Item.LAVA_BUCKET.id ? 20000 : (i == Block.SAPLING.id ? 100 : 0))));
+            return i < 256 && Block.byId[i].material == Material.WOOD ? 300 : (i == Item.STICK.id ? 100 : (i == Item.COAL.id ? 1600 : (i == Item.LAVA_BUCKET.id ? 20000 : (i == Block.SAPLING.id ? 100 : (i == Item.BLAZE_ROD.id ? 2400 : 0)))));
         }
     }
 
@@ -246,7 +246,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         return this.world.getTileEntity(this.x, this.y, this.z) != this ? false : entityhuman.e((double) this.x + 0.5D, (double) this.y + 0.5D, (double) this.z + 0.5D) <= 64.0D;
     }
 
-    public void e() {}
+    public void f() {}
 
-    public void t_() {}
+    public void g() {}
 }

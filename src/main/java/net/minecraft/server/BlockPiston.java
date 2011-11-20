@@ -3,7 +3,6 @@ package net.minecraft.server;
 import java.util.ArrayList;
 
 // CraftBukkit start
-import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.block.BlockPistonExtendEvent;
@@ -12,7 +11,7 @@ import org.bukkit.event.block.BlockPistonExtendEvent;
 public class BlockPiston extends Block {
 
     private boolean a;
-    private boolean b;
+    private static boolean b;
 
     public BlockPiston(int i, int j, boolean flag) {
         super(i, j, Material.PISTON);
@@ -22,9 +21,13 @@ public class BlockPiston extends Block {
     }
 
     public int a(int i, int j) {
-        int k = c(j);
+        int k = d(j);
 
-        return k > 5 ? this.textureId : (i == k ? (!d(j) && this.minX <= 0.0D && this.minY <= 0.0D && this.minZ <= 0.0D && this.maxX >= 1.0D && this.maxY >= 1.0D && this.maxZ >= 1.0D ? this.textureId : 110) : (i == PistonBlockTextures.a[k] ? 109 : 108));
+        return k > 5 ? this.textureId : (i == k ? (!e(j) && this.minX <= 0.0D && this.minY <= 0.0D && this.minZ <= 0.0D && this.maxX >= 1.0D && this.maxY >= 1.0D && this.maxZ >= 1.0D ? this.textureId : 110) : (i == PistonBlockTextures.a[k] ? 109 : 108));
+    }
+
+    public int c() {
+        return 16;
     }
 
     public boolean a() {
@@ -39,32 +42,32 @@ public class BlockPiston extends Block {
         int l = c(world, i, j, k, (EntityHuman) entityliving);
 
         world.setData(i, j, k, l);
-        if (!world.isStatic) {
+        if (!world.isStatic && !b) {
             this.g(world, i, j, k);
         }
     }
 
     public void doPhysics(World world, int i, int j, int k, int l) {
-        if (!world.isStatic && !this.b) {
+        if (!world.isStatic && !b) {
             this.g(world, i, j, k);
         }
     }
 
     public void a(World world, int i, int j, int k) {
-        if (!world.isStatic && world.getTileEntity(i, j, k) == null) {
+        if (!world.isStatic && world.getTileEntity(i, j, k) == null && !b) {
             this.g(world, i, j, k);
         }
     }
 
     private void g(World world, int i, int j, int k) {
         int l = world.getData(i, j, k);
-        int i1 = c(l);
+        int i1 = d(l);
         boolean flag = this.f(world, i, j, k, i1);
 
         if (l != 7) {
-            if (flag && !d(l)) {
+            if (flag && !e(l)) {
                 // CraftBukkit start
-                int length = h(world, i, j, k, i1);
+                int length = g(world, i, j, k, i1);
                 if (length >= 0) {
                     org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
 
@@ -79,7 +82,7 @@ public class BlockPiston extends Block {
                     world.setRawData(i, j, k, i1 | 8);
                     world.playNote(i, j, k, 0, i1);
                 }
-            } else if (!flag && d(l)) {
+            } else if (!flag && e(l)) {
                 // CraftBukkit start
                 org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
 
@@ -102,17 +105,19 @@ public class BlockPiston extends Block {
     }
 
     public void a(World world, int i, int j, int k, int l, int i1) {
-        this.b = true;
+        b = true;
         if (l == 0) {
-            if (this.i(world, i, j, k, i1)) {
+            if (this.h(world, i, j, k, i1)) {
                 world.setData(i, j, k, i1 | 8);
                 world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "tile.piston.out", 0.5F, world.random.nextFloat() * 0.25F + 0.6F);
+            } else {
+                world.setRawData(i, j, k, i1);
             }
         } else if (l == 1) {
             TileEntity tileentity = world.getTileEntity(i + PistonBlockTextures.b[i1], j + PistonBlockTextures.c[i1], k + PistonBlockTextures.d[i1]);
 
             if (tileentity != null && tileentity instanceof TileEntityPiston) {
-                ((TileEntityPiston) tileentity).e();
+                ((TileEntityPiston) tileentity).g();
             }
 
             world.setRawTypeIdAndData(i, j, k, Block.PISTON_MOVING.id, i1);
@@ -131,46 +136,46 @@ public class BlockPiston extends Block {
                     if (tileentity1 != null && tileentity1 instanceof TileEntityPiston) {
                         TileEntityPiston tileentitypiston = (TileEntityPiston) tileentity1;
 
-                        if (tileentitypiston.d() == i1 && tileentitypiston.c()) {
-                            tileentitypiston.e();
-                            i2 = tileentitypiston.a();
+                        if (tileentitypiston.f() == i1 && tileentitypiston.e()) {
+                            tileentitypiston.g();
+                            i2 = tileentitypiston.c();
                             j2 = tileentitypiston.j();
                             flag = true;
                         }
                     }
                 }
 
-                if (!flag && i2 > 0 && a(i2, world, j1, k1, l1, false) && (Block.byId[i2].e() == 0 || i2 == Block.PISTON.id || i2 == Block.PISTON_STICKY.id)) {
-                    this.b = false;
-                    world.setTypeId(j1, k1, l1, 0);
-                    this.b = true;
+                if (!flag && i2 > 0 && a(i2, world, j1, k1, l1, false) && (Block.byId[i2].g() == 0 || i2 == Block.PISTON.id || i2 == Block.PISTON_STICKY.id)) {
                     i += PistonBlockTextures.b[i1];
                     j += PistonBlockTextures.c[i1];
                     k += PistonBlockTextures.d[i1];
                     world.setRawTypeIdAndData(i, j, k, Block.PISTON_MOVING.id, j2);
                     world.setTileEntity(i, j, k, BlockPistonMoving.a(i2, j2, i1, false, false));
+                    b = false;
+                    world.setTypeId(j1, k1, l1, 0);
+                    b = true;
                 } else if (!flag) {
-                    this.b = false;
+                    b = false;
                     world.setTypeId(i + PistonBlockTextures.b[i1], j + PistonBlockTextures.c[i1], k + PistonBlockTextures.d[i1], 0);
-                    this.b = true;
+                    b = true;
                 }
             } else {
-                this.b = false;
+                b = false;
                 world.setTypeId(i + PistonBlockTextures.b[i1], j + PistonBlockTextures.c[i1], k + PistonBlockTextures.d[i1], 0);
-                this.b = true;
+                b = true;
             }
 
             world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "tile.piston.in", 0.5F, world.random.nextFloat() * 0.15F + 0.6F);
         }
 
-        this.b = false;
+        b = false;
     }
 
     public void a(IBlockAccess iblockaccess, int i, int j, int k) {
         int l = iblockaccess.getData(i, j, k);
 
-        if (d(l)) {
-            switch (c(l)) {
+        if (e(l)) {
+            switch (d(l)) {
             case 0:
                 this.a(0.0F, 0.25F, 0.0F, 1.0F, 1.0F, 1.0F);
                 break;
@@ -199,6 +204,10 @@ public class BlockPiston extends Block {
         }
     }
 
+    public void f() {
+        this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
+    }
+
     public void a(World world, int i, int j, int k, AxisAlignedBB axisalignedbb, ArrayList arraylist) {
         this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
         super.a(world, i, j, k, axisalignedbb, arraylist);
@@ -208,11 +217,11 @@ public class BlockPiston extends Block {
         return false;
     }
 
-    public static int c(int i) {
+    public static int d(int i) {
         return i & 7;
     }
 
-    public static boolean d(int i) {
+    public static boolean e(int i) {
         return (i & 8) != 0;
     }
 
@@ -239,29 +248,27 @@ public class BlockPiston extends Block {
             return false;
         } else {
             if (i != Block.PISTON.id && i != Block.PISTON_STICKY.id) {
-                if (Block.byId[i].j() == -1.0F) {
+                if (Block.byId[i].l() == -1.0F) {
                     return false;
                 }
 
-                if (Block.byId[i].e() == 2) {
+                if (Block.byId[i].g() == 2) {
                     return false;
                 }
 
-                if (!flag && Block.byId[i].e() == 1) {
+                if (!flag && Block.byId[i].g() == 1) {
                     return false;
                 }
-            } else if (d(world.getData(j, k, l))) {
+            } else if (e(world.getData(j, k, l))) {
                 return false;
             }
 
-            TileEntity tileentity = world.getTileEntity(j, k, l);
-
-            return tileentity == null;
+            return !(Block.byId[i] instanceof BlockContainer);
         }
     }
 
     // CraftBukkkit boolean -> int
-    private static int h(World world, int i, int j, int k, int l) {
+    private static int g(World world, int i, int j, int k, int l) {
         int i1 = i + PistonBlockTextures.b[l];
         int j1 = j + PistonBlockTextures.c[l];
         int k1 = k + PistonBlockTextures.d[l];
@@ -269,41 +276,36 @@ public class BlockPiston extends Block {
 
         while (true) {
             if (l1 < 13) {
-                if (j1 > 0) {
-                    world.getClass();
-                    if (j1 < 128 - 1) {
-                        int i2 = world.getTypeId(i1, j1, k1);
+                if (j1 <= 0 || j1 >= world.height - 1) {
+                    return -1; // CraftBukkit
+                }
 
-                        if (i2 != 0) {
-                            if (!a(i2, world, i1, j1, k1, true)) {
-                                return -1; // CraftBukkit
-                            }
+                int i2 = world.getTypeId(i1, j1, k1);
 
-                            if (Block.byId[i2].e() != 1) {
-                                if (l1 == 12) {
-                                    return -1; // CraftBukkit
-                                }
+                if (i2 != 0) {
+                    if (!a(i2, world, i1, j1, k1, true)) {
+                        return -1; // CraftBukkit
+                    }
 
-                                i1 += PistonBlockTextures.b[l];
-                                j1 += PistonBlockTextures.c[l];
-                                k1 += PistonBlockTextures.d[l];
-                                ++l1;
-                                continue;
-                            }
+                    if (Block.byId[i2].g() != 1) {
+                        if (l1 == 12) {
+                            return -1; // CraftBukkit
                         }
 
-                        return l1; // CraftBukkit
+                        i1 += PistonBlockTextures.b[l];
+                        j1 += PistonBlockTextures.c[l];
+                        k1 += PistonBlockTextures.d[l];
+                        ++l1;
+                        continue;
                     }
                 }
-                
-                return -1; // CraftBukkit
             }
 
             return l1; // CraftBukkit
         }
     }
 
-    private boolean i(World world, int i, int j, int k, int l) {
+    private boolean h(World world, int i, int j, int k, int l) {
         int i1 = i + PistonBlockTextures.b[l];
         int j1 = j + PistonBlockTextures.c[l];
         int k1 = k + PistonBlockTextures.d[l];
@@ -313,36 +315,30 @@ public class BlockPiston extends Block {
             int i2;
 
             if (l1 < 13) {
-                label63: {
-                    if (j1 > 0) {
-                        world.getClass();
-                        if (j1 < 128 - 1) {
-                            i2 = world.getTypeId(i1, j1, k1);
-                            if (i2 != 0) {
-                                if (!a(i2, world, i1, j1, k1, true)) {
-                                    return false;
-                                }
+                if (j1 <= 0 || j1 >= world.height - 1) {
+                    return false;
+                }
 
-                                if (Block.byId[i2].e() != 1) {
-                                    if (l1 == 12) {
-                                        return false;
-                                    }
-
-                                    i1 += PistonBlockTextures.b[l];
-                                    j1 += PistonBlockTextures.c[l];
-                                    k1 += PistonBlockTextures.d[l];
-                                    ++l1;
-                                    continue;
-                                }
-
-                                Block.byId[i2].g(world, i1, j1, k1, world.getData(i1, j1, k1));
-                                world.setTypeId(i1, j1, k1, 0);
-                            }
-                            break label63;
-                        }
+                i2 = world.getTypeId(i1, j1, k1);
+                if (i2 != 0) {
+                    if (!a(i2, world, i1, j1, k1, true)) {
+                        return false;
                     }
 
-                    return false;
+                    if (Block.byId[i2].g() != 1) {
+                        if (l1 == 12) {
+                            return false;
+                        }
+
+                        i1 += PistonBlockTextures.b[l];
+                        j1 += PistonBlockTextures.c[l];
+                        k1 += PistonBlockTextures.d[l];
+                        ++l1;
+                        continue;
+                    }
+
+                    Block.byId[i2].b(world, i1, j1, k1, world.getData(i1, j1, k1), 0);
+                    world.setTypeId(i1, j1, k1, 0);
                 }
             }
 

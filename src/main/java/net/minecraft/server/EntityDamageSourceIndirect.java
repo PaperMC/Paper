@@ -15,7 +15,7 @@ public class EntityDamageSourceIndirect extends EntityDamageSource {
 
     public String a(EntityHuman entityhuman) {
         // CraftBukkit start
-        String source = (this.n == null) ? "Herobrine" : this.n.Y();
+        String source = (this.n == null) ? "Herobrine" : this.n.ad();
         return StatisticCollector.a("death." + this.m, new Object[] { entityhuman.name, source});
         // CraftBukkit end
     }

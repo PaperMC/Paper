@@ -14,7 +14,7 @@ public class BlockMushroom extends BlockFlower {
     }
 
     public void a(World world, int i, int j, int k, Random random) {
-        if (random.nextInt(100) == 0) {
+        if (random.nextInt(25) == 0) {
             byte b0 = 4;
             int l = 5;
 
@@ -68,44 +68,37 @@ public class BlockMushroom extends BlockFlower {
         }
     }
 
-    protected boolean c(int i) {
+    protected boolean d(int i) {
         return Block.o[i];
     }
 
     public boolean f(World world, int i, int j, int k) {
-        if (j >= 0) {
-            world.getClass();
-            if (j < 128) {
-                return world.k(i, j, k) < 13 && this.c(world.getTypeId(i, j - 1, k));
-            }
-        }
+        if (j >= 0 && j < world.height) {
+            int l = world.getTypeId(i, j - 1, k);
 
-        return false;
+            return l == Block.MYCEL.id || world.k(i, j, k) < 13 && this.d(l);
+        } else {
+            return false;
+        }
     }
 
     public boolean b(World world, int i, int j, int k, Random random) {
-        int l = world.getTypeId(i, j - 1, k);
+        int l = world.getData(i, j, k);
 
-        if (l != Block.DIRT.id && l != Block.GRASS.id) {
-            return false;
+        world.setRawTypeId(i, j, k, 0);
+        WorldGenHugeMushroom worldgenhugemushroom = null;
+
+        if (this.id == Block.BROWN_MUSHROOM.id) {
+            worldgenhugemushroom = new WorldGenHugeMushroom(0);
+        } else if (this.id == Block.RED_MUSHROOM.id) {
+            worldgenhugemushroom = new WorldGenHugeMushroom(1);
+        }
+
+        if (worldgenhugemushroom != null && worldgenhugemushroom.a(world, random, i, j, k)) {
+            return true;
         } else {
-            int i1 = world.getData(i, j, k);
-
-            world.setRawTypeId(i, j, k, 0);
-            WorldGenHugeMushroom worldgenhugemushroom = null;
-
-            if (this.id == Block.BROWN_MUSHROOM.id) {
-                worldgenhugemushroom = new WorldGenHugeMushroom(0);
-            } else if (this.id == Block.RED_MUSHROOM.id) {
-                worldgenhugemushroom = new WorldGenHugeMushroom(1);
-            }
-
-            if (worldgenhugemushroom != null && worldgenhugemushroom.a(world, random, i, j, k)) {
-                return true;
-            } else {
-                world.setRawTypeIdAndData(i, j, k, this.id, i1);
-                return false;
-            }
+            world.setRawTypeIdAndData(i, j, k, this.id, l);
+            return false;
         }
     }
 }

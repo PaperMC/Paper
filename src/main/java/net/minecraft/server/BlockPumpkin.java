@@ -35,6 +35,21 @@ public class BlockPumpkin extends Block {
 
     public void a(World world, int i, int j, int k) {
         super.a(world, i, j, k);
+        if (world.getTypeId(i, j - 1, k) == Block.SNOW_BLOCK.id && world.getTypeId(i, j - 2, k) == Block.SNOW_BLOCK.id) {
+            if (!world.isStatic) {
+                world.setTypeId(i, j, k, 0);
+                world.setTypeId(i, j - 1, k, 0);
+                world.setTypeId(i, j - 2, k, 0);
+                EntitySnowman entitysnowman = new EntitySnowman(world);
+
+                entitysnowman.setPositionRotation((double) i + 0.5D, (double) j - 1.95D, (double) k + 0.5D, 0.0F, 0.0F);
+                world.addEntity(entitysnowman);
+            }
+
+            for (int l = 0; l < 120; ++l) {
+                world.a("snowshovel", (double) i + world.random.nextDouble(), (double) (j - 2) + world.random.nextDouble() * 2.5D, (double) k + world.random.nextDouble(), 0.0D, 0.0D, 0.0D);
+            }
+        }
     }
 
     public boolean canPlace(World world, int i, int j, int k) {

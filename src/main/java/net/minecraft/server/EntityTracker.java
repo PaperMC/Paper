@@ -37,21 +37,31 @@ public class EntityTracker {
             this.addEntity(entity, 64, 5, true);
         } else if (entity instanceof EntityArrow) {
             this.addEntity(entity, 64, 20, false);
+        } else if (entity instanceof EntitySmallFireball) {
+            this.addEntity(entity, 64, 10, false);
         } else if (entity instanceof EntityFireball) {
             this.addEntity(entity, 64, 10, false);
         } else if (entity instanceof EntitySnowball) {
             this.addEntity(entity, 64, 10, true);
+        } else if (entity instanceof EntityEnderPearl) {
+            this.addEntity(entity, 64, 10, true);
+        } else if (entity instanceof EntityEnderSignal) {
+            this.addEntity(entity, 64, 10, true);
         } else if (entity instanceof EntityEgg) {
+            this.addEntity(entity, 64, 10, true);
+        } else if (entity instanceof EntityPotion) {
             this.addEntity(entity, 64, 10, true);
         } else if (entity instanceof EntityItem) {
             this.addEntity(entity, 64, 20, true);
         } else if (entity instanceof EntityMinecart) {
-            this.addEntity(entity, 160, 5, true);
+            this.addEntity(entity, 80, 3, true);
         } else if (entity instanceof EntityBoat) {
-            this.addEntity(entity, 160, 5, true);
+            this.addEntity(entity, 80, 3, true);
         } else if (entity instanceof EntitySquid) {
-            this.addEntity(entity, 160, 3, true);
+            this.addEntity(entity, 64, 3, true);
         } else if (entity instanceof IAnimal) {
+            this.addEntity(entity, 80, 3, true);
+        } else if (entity instanceof EntityEnderDragon) {
             this.addEntity(entity, 160, 3, true);
         } else if (entity instanceof EntityTNTPrimed) {
             this.addEntity(entity, 160, 10, true);
@@ -61,6 +71,8 @@ public class EntityTracker {
             this.addEntity(entity, 160, Integer.MAX_VALUE, false);
         } else if (entity instanceof EntityExperienceOrb) {
             this.addEntity(entity, 160, 20, true);
+        } else if (entity instanceof EntityEnderCrystal) {
+            this.addEntity(entity, 256, Integer.MAX_VALUE, false);
         }
     }
 

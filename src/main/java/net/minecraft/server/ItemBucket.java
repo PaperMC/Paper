@@ -20,21 +20,11 @@ public class ItemBucket extends Item {
 
     public ItemStack a(ItemStack itemstack, World world, EntityHuman entityhuman) {
         float f = 1.0F;
-        float f1 = entityhuman.lastPitch + (entityhuman.pitch - entityhuman.lastPitch) * f;
-        float f2 = entityhuman.lastYaw + (entityhuman.yaw - entityhuman.lastYaw) * f;
         double d0 = entityhuman.lastX + (entityhuman.locX - entityhuman.lastX) * (double) f;
         double d1 = entityhuman.lastY + (entityhuman.locY - entityhuman.lastY) * (double) f + 1.62D - (double) entityhuman.height;
         double d2 = entityhuman.lastZ + (entityhuman.locZ - entityhuman.lastZ) * (double) f;
-        Vec3D vec3d = Vec3D.create(d0, d1, d2);
-        float f3 = MathHelper.cos(-f2 * 0.017453292F - 3.1415927F);
-        float f4 = MathHelper.sin(-f2 * 0.017453292F - 3.1415927F);
-        float f5 = -MathHelper.cos(-f1 * 0.017453292F);
-        float f6 = MathHelper.sin(-f1 * 0.017453292F);
-        float f7 = f4 * f5;
-        float f8 = f3 * f5;
-        double d3 = 5.0D;
-        Vec3D vec3d1 = vec3d.add((double) f7 * d3, (double) f6 * d3, (double) f8 * d3);
-        MovingObjectPosition movingobjectposition = world.rayTrace(vec3d, vec3d1, this.a == 0);
+        boolean flag = this.a == 0;
+        MovingObjectPosition movingobjectposition = this.a(world, entityhuman, flag);
 
         if (movingobjectposition == null) {
             return itemstack;
@@ -49,7 +39,7 @@ public class ItemBucket extends Item {
                 }
 
                 if (this.a == 0) {
-                    if (!entityhuman.c(i, j, k)) {
+                    if (!entityhuman.d(i, j, k)) {
                         return itemstack;
                     }
 
@@ -58,6 +48,10 @@ public class ItemBucket extends Item {
                         PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, i, j, k, -1, itemstack, Item.WATER_BUCKET);
 
                         if (event.isCancelled()) {
+                            return itemstack;
+                        }
+
+                        if (entityhuman.abilities.canInstantlyBuild) {
                             return itemstack;
                         }
 
@@ -74,6 +68,10 @@ public class ItemBucket extends Item {
                         PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, i, j, k, -1, itemstack, Item.LAVA_BUCKET);
 
                         if (event.isCancelled()) {
+                            return itemstack;
+                        }
+
+                        if (entityhuman.abilities.canInstantlyBuild) {
                             return itemstack;
                         }
 
@@ -125,7 +123,7 @@ public class ItemBucket extends Item {
                         ++i;
                     }
 
-                    if (!entityhuman.c(i, j, k)) {
+                    if (!entityhuman.d(i, j, k)) {
                         return itemstack;
                     }
 

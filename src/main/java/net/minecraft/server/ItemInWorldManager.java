@@ -215,17 +215,18 @@ public class ItemInWorldManager {
         if (this.b()) {
             ((EntityPlayer) this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
         } else {
-            ItemStack itemstack = this.player.K();
+            ItemStack itemstack = this.player.P();
+            boolean flag1 = this.player.b(Block.byId[l]);
 
             if (itemstack != null) {
                 itemstack.a(l, i, j, k, this.player);
                 if (itemstack.count == 0) {
                     itemstack.a(this.player);
-                    this.player.L();
+                    this.player.Q();
                 }
             }
 
-            if (flag && this.player.b(Block.byId[l])) {
+            if (flag && flag1) {
                 Block.byId[l].a(this.world, this.player, i, j, k, i1);
             }
         }

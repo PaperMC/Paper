@@ -60,7 +60,7 @@ public class EntityTrackerEntry {
         }
 
         ++this.t;
-        if (++this.l % this.c == 0 || this.tracker.ca) {
+        if (++this.l % this.c == 0 || this.tracker.cb) {
             int i = MathHelper.floor(this.tracker.locX * 32.0D);
             int j = MathHelper.floor(this.tracker.locY * 32.0D);
             int k = MathHelper.floor(this.tracker.locZ * 32.0D);
@@ -70,8 +70,8 @@ public class EntityTrackerEntry {
             int k1 = j - this.e;
             int l1 = k - this.f;
             Object object = null;
-            boolean flag = Math.abs(i) >= 8 || Math.abs(j) >= 8 || Math.abs(k) >= 8;
-            boolean flag1 = Math.abs(l - this.g) >= 8 || Math.abs(i1 - this.h) >= 8;
+            boolean flag = Math.abs(j1) >= 4 || Math.abs(k1) >= 4 || Math.abs(l1) >= 4;
+            boolean flag1 = Math.abs(l - this.g) >= 4 || Math.abs(i1 - this.h) >= 4;
 
             if (j1 >= -128 && j1 < 128 && k1 >= -128 && k1 < 128 && l1 >= -128 && l1 < 128 && this.t <= 400) {
                 if (flag && flag1) {
@@ -126,27 +126,26 @@ public class EntityTrackerEntry {
             }
         }
 
-        this.tracker.ca = false;
+        this.tracker.cb = false;
         if (this.tracker.velocityChanged) {
             // CraftBukkit start - create PlayerVelocity event
             boolean cancelled = false;
 
-            if(this.tracker instanceof EntityPlayer) {
+            if (this.tracker instanceof EntityPlayer) {
                 org.bukkit.entity.Player player = (org.bukkit.entity.Player) this.tracker.getBukkitEntity();
                 org.bukkit.util.Vector velocity = player.getVelocity();
 
                 org.bukkit.event.player.PlayerVelocityEvent event = new org.bukkit.event.player.PlayerVelocityEvent(player, velocity);
                 this.tracker.world.getServer().getPluginManager().callEvent(event);
 
-                if(event.isCancelled()) {
+                if (event.isCancelled()) {
                     cancelled = true;
-                }
-                else if(!velocity.equals(event.getVelocity())) {
+                } else if (!velocity.equals(event.getVelocity())) {
                     player.setVelocity(velocity);
                 }
             }
 
-            if(!cancelled) {
+            if (!cancelled) {
                 this.b((Packet) (new Packet28EntityVelocity(this.tracker)));
             }
             // CraftBukkit end
@@ -235,6 +234,10 @@ public class EntityTrackerEntry {
     }
 
     private Packet b() {
+        if (this.tracker.dead) {
+            System.out.println("Fetching addPacket for removed entity");
+        }
+
         if (this.tracker instanceof EntityItem) {
             EntityItem entityitem = (EntityItem) this.tracker;
             Packet21PickupSpawn packet21pickupspawn = new Packet21PickupSpawn(entityitem);
@@ -271,6 +274,8 @@ public class EntityTrackerEntry {
                 return new Packet23VehicleSpawn(this.tracker, 1);
             } else if (this.tracker instanceof IAnimal) {
                 return new Packet24MobSpawn((EntityLiving) this.tracker);
+            } else if (this.tracker instanceof EntityEnderDragon) {
+                return new Packet24MobSpawn((EntityLiving) this.tracker);
             } else if (this.tracker instanceof EntityFishingHook) {
                 return new Packet23VehicleSpawn(this.tracker, 90);
             } else if (this.tracker instanceof EntityArrow) {
@@ -279,40 +284,73 @@ public class EntityTrackerEntry {
                 return new Packet23VehicleSpawn(this.tracker, 60, entity != null ? entity.id : this.tracker.id);
             } else if (this.tracker instanceof EntitySnowball) {
                 return new Packet23VehicleSpawn(this.tracker, 61);
-            } else if (this.tracker instanceof EntityFireball) {
-                EntityFireball entityfireball = (EntityFireball) this.tracker;
-                // CraftBukkit start - added check for null shooter
-                int shooter = ((EntityFireball) this.tracker).shooter != null ? ((EntityFireball) this.tracker).shooter.id : 1;
-                Packet23VehicleSpawn packet23vehiclespawn = new Packet23VehicleSpawn(this.tracker, 63, shooter);
-                // CraftBukkit end
-
-                packet23vehiclespawn.e = (int) (entityfireball.dirX * 8000.0D);
-                packet23vehiclespawn.f = (int) (entityfireball.dirY * 8000.0D);
-                packet23vehiclespawn.g = (int) (entityfireball.dirZ * 8000.0D);
-                return packet23vehiclespawn;
-            } else if (this.tracker instanceof EntityEgg) {
-                return new Packet23VehicleSpawn(this.tracker, 62);
-            } else if (this.tracker instanceof EntityTNTPrimed) {
-                return new Packet23VehicleSpawn(this.tracker, 50);
+            } else if (this.tracker instanceof EntityPotion) {
+                return new Packet23VehicleSpawn(this.tracker, 73, ((EntityPotion) this.tracker).f());
+            } else if (this.tracker instanceof EntityEnderPearl) {
+                return new Packet23VehicleSpawn(this.tracker, 65);
+            } else if (this.tracker instanceof EntityEnderSignal) {
+                return new Packet23VehicleSpawn(this.tracker, 72);
             } else {
-                if (this.tracker instanceof EntityFallingSand) {
-                    EntityFallingSand entityfallingsand = (EntityFallingSand) this.tracker;
+                Packet23VehicleSpawn packet23vehiclespawn;
 
-                    if (entityfallingsand.a == Block.SAND.id) {
-                        return new Packet23VehicleSpawn(this.tracker, 70);
+                if (this.tracker instanceof EntitySmallFireball) {
+                    EntitySmallFireball entitysmallfireball = (EntitySmallFireball) this.tracker;
+
+                    packet23vehiclespawn = null;
+                    if (entitysmallfireball.shooter != null) {
+                        packet23vehiclespawn = new Packet23VehicleSpawn(this.tracker, 64, entitysmallfireball.shooter.id);
+                    } else {
+                        packet23vehiclespawn = new Packet23VehicleSpawn(this.tracker, 64, 0);
                     }
 
-                    if (entityfallingsand.a == Block.GRAVEL.id) {
-                        return new Packet23VehicleSpawn(this.tracker, 71);
-                    }
-                }
+                    packet23vehiclespawn.e = (int) (entitysmallfireball.dirX * 8000.0D);
+                    packet23vehiclespawn.f = (int) (entitysmallfireball.dirY * 8000.0D);
+                    packet23vehiclespawn.g = (int) (entitysmallfireball.dirZ * 8000.0D);
+                    return packet23vehiclespawn;
+                } else if (this.tracker instanceof EntityFireball) {
+                    EntityFireball entityfireball = (EntityFireball) this.tracker;
 
-                if (this.tracker instanceof EntityPainting) {
-                    return new Packet25EntityPainting((EntityPainting) this.tracker);
-                } else if (this.tracker instanceof EntityExperienceOrb) {
-                    return new Packet26AddExpOrb((EntityExperienceOrb) this.tracker);
+                    packet23vehiclespawn = null;
+                    if (entityfireball.shooter != null) {
+                        packet23vehiclespawn = new Packet23VehicleSpawn(this.tracker, 63, ((EntityFireball) this.tracker).shooter.id);
+                    } else {
+                        packet23vehiclespawn = new Packet23VehicleSpawn(this.tracker, 63, 0);
+                    }
+
+                    packet23vehiclespawn.e = (int) (entityfireball.dirX * 8000.0D);
+                    packet23vehiclespawn.f = (int) (entityfireball.dirY * 8000.0D);
+                    packet23vehiclespawn.g = (int) (entityfireball.dirZ * 8000.0D);
+                    return packet23vehiclespawn;
+                } else if (this.tracker instanceof EntityEgg) {
+                    return new Packet23VehicleSpawn(this.tracker, 62);
+                } else if (this.tracker instanceof EntityTNTPrimed) {
+                    return new Packet23VehicleSpawn(this.tracker, 50);
+                } else if (this.tracker instanceof EntityEnderCrystal) {
+                    return new Packet23VehicleSpawn(this.tracker, 51);
                 } else {
-                    throw new IllegalArgumentException("Don\'t know how to add " + this.tracker.getClass() + "!");
+                    if (this.tracker instanceof EntityFallingSand) {
+                        EntityFallingSand entityfallingsand = (EntityFallingSand) this.tracker;
+
+                        if (entityfallingsand.a == Block.SAND.id) {
+                            return new Packet23VehicleSpawn(this.tracker, 70);
+                        }
+
+                        if (entityfallingsand.a == Block.GRAVEL.id) {
+                            return new Packet23VehicleSpawn(this.tracker, 71);
+                        }
+
+                        if (entityfallingsand.a == Block.DRAGON_EGG.id) {
+                            return new Packet23VehicleSpawn(this.tracker, 74);
+                        }
+                    }
+
+                    if (this.tracker instanceof EntityPainting) {
+                        return new Packet25EntityPainting((EntityPainting) this.tracker);
+                    } else if (this.tracker instanceof EntityExperienceOrb) {
+                        return new Packet26AddExpOrb((EntityExperienceOrb) this.tracker);
+                    } else {
+                        throw new IllegalArgumentException("Don\'t know how to add " + this.tracker.getClass() + "!");
+                    }
                 }
             }
         }

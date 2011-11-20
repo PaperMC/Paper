@@ -4,6 +4,7 @@ public class EntitySlime extends EntityLiving implements IMonster {
 
     public float a;
     public float b;
+    public float c;
     private int size = 0;
 
     public EntitySlime(World world) {
@@ -14,7 +15,7 @@ public class EntitySlime extends EntityLiving implements IMonster {
         this.height = 0.0F;
         this.size = this.random.nextInt(20) + 10;
         this.setSize(i);
-        this.ax = i;
+        this.az = i;
     }
 
     protected void b() {
@@ -25,8 +26,14 @@ public class EntitySlime extends EntityLiving implements IMonster {
     public void setSize(int i) {
         this.datawatcher.watch(16, new Byte((byte) i));
         this.b(0.6F * (float) i, 0.6F * (float) i);
-        this.health = i * i;
         this.setPosition(this.locX, this.locY, this.locZ);
+        this.setHealth(this.getMaxHealth());
+    }
+
+    public int getMaxHealth() {
+        int i = this.getSize();
+
+        return i * i;
     }
 
     public int getSize() {
@@ -40,14 +47,27 @@ public class EntitySlime extends EntityLiving implements IMonster {
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        this.setSize(nbttagcompound.e("Size") + 1);
+        this.setSize(nbttagcompound.f("Size") + 1);
     }
 
-    public void s_() {
-        this.b = this.a;
+    protected String w() {
+        return "slime";
+    }
+
+    protected String E() {
+        return "mob.slime";
+    }
+
+    public void w_() {
+        if (!this.world.isStatic && this.world.difficulty == 0 && this.getSize() > 0) {
+            this.dead = true;
+        }
+
+        this.b += (this.a - this.b) * 0.5F;
+        this.c = this.b;
         boolean flag = this.onGround;
 
-        super.s_();
+        super.w_();
         if (this.onGround && !flag) {
             int i = this.getSize();
 
@@ -57,101 +77,142 @@ public class EntitySlime extends EntityLiving implements IMonster {
                 float f2 = MathHelper.sin(f) * (float) i * 0.5F * f1;
                 float f3 = MathHelper.cos(f) * (float) i * 0.5F * f1;
 
-                this.world.a("slime", this.locX + (double) f2, this.boundingBox.b, this.locZ + (double) f3, 0.0D, 0.0D, 0.0D);
+                this.world.a(this.w(), this.locX + (double) f2, this.boundingBox.b, this.locZ + (double) f3, 0.0D, 0.0D, 0.0D);
             }
 
-            if (i > 2) {
-                this.world.makeSound(this, "mob.slime", this.l(), ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) / 0.8F);
+            if (this.G()) {
+                this.world.makeSound(this, this.E(), this.o(), ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) / 0.8F);
             }
 
             this.a = -0.5F;
         }
 
-        this.a *= 0.6F;
+        this.B();
     }
 
-    protected void c_() {
-        this.ad();
-        EntityHuman entityhuman = this.world.findNearbyPlayer(this, 16.0D);
+    protected void m_() {
+        this.ak();
+        EntityHuman entityhuman = this.world.b(this, 16.0D);
 
         if (entityhuman != null) {
             this.a(entityhuman, 10.0F, 20.0F);
         }
 
         if (this.onGround && this.size-- <= 0) {
-            this.size = this.random.nextInt(20) + 10;
+            this.size = this.A();
             if (entityhuman != null) {
                 this.size /= 3;
             }
 
-            this.aS = true;
-            if (this.getSize() > 1) {
-                this.world.makeSound(this, "mob.slime", this.l(), ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 0.8F);
+            this.aW = true;
+            if (this.I()) {
+                this.world.makeSound(this, this.E(), this.o(), ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 0.8F);
             }
 
             this.a = 1.0F;
-            this.aP = 1.0F - this.random.nextFloat() * 2.0F;
-            this.aQ = (float) (1 * this.getSize());
+            this.aT = 1.0F - this.random.nextFloat() * 2.0F;
+            this.aU = (float) (1 * this.getSize());
         } else {
-            this.aS = false;
+            this.aW = false;
             if (this.onGround) {
-                this.aP = this.aQ = 0.0F;
+                this.aT = this.aU = 0.0F;
             }
         }
+    }
+
+    protected void B() {
+        this.a *= 0.6F;
+    }
+
+    protected int A() {
+        return this.random.nextInt(20) + 10;
+    }
+
+    protected EntitySlime y() {
+        return new EntitySlime(this.world);
     }
 
     public void die() {
         int i = this.getSize();
 
-        if (!this.world.isStatic && i > 1 && this.health == 0) {
+        if (!this.world.isStatic && i > 1 && this.getHealth() <= 0) {
+            int j = 2 + this.random.nextInt(3);
+
             // CraftBukkit start
-            org.bukkit.event.entity.SlimeSplitEvent event = new org.bukkit.event.entity.SlimeSplitEvent(this.getBukkitEntity(), 4);
+            org.bukkit.event.entity.SlimeSplitEvent event = new org.bukkit.event.entity.SlimeSplitEvent(this.getBukkitEntity(), j);
             this.world.getServer().getPluginManager().callEvent(event);
 
             if (!event.isCancelled() && event.getCount() > 0) {
-                for (int j = 0; j < event.getCount(); ++j) {
-                    float f = ((float) (j % 2) - 0.5F) * (float) i / 4.0F;
-                    float f1 = ((float) (j / 2) - 0.5F) * (float) i / 4.0F;
-                    EntitySlime entityslime = new EntitySlime(this.world);
-
-                    entityslime.setSize(i / 2);
-                    entityslime.setPositionRotation(this.locX + (double) f, this.locY + 0.5D, this.locZ + (double) f1, this.random.nextFloat() * 360.0F, 0.0F);
-                    this.world.addEntity(entityslime);
-                }
+                j = event.getCount();
+            } else {
+                super.die();
+                return;
             }
             // CraftBukkit end
+
+            for (int k = 0; k < j; ++k) {
+                float f = ((float) (k % 2) - 0.5F) * (float) i / 4.0F;
+                float f1 = ((float) (k / 2) - 0.5F) * (float) i / 4.0F;
+                EntitySlime entityslime = this.y();
+
+                entityslime.setSize(i / 2);
+                entityslime.setPositionRotation(this.locX + (double) f, this.locY + 0.5D, this.locZ + (double) f1, this.random.nextFloat() * 360.0F, 0.0F);
+                this.world.addEntity(entityslime);
+            }
         }
 
         super.die();
     }
 
     public void a_(EntityHuman entityhuman) {
-        int i = this.getSize();
+        if (this.C()) {
+            int i = this.getSize();
 
-        if (i > 1 && this.f(entityhuman) && (double) this.g(entityhuman) < 0.6D * (double) i && entityhuman.damageEntity(DamageSource.mobAttack(this), i)) {
-            this.world.makeSound(this, "mob.slimeattack", 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
+            if (this.g(entityhuman) && (double) this.h(entityhuman) < 0.6D * (double) i && entityhuman.damageEntity(DamageSource.mobAttack(this), this.D())) {
+                this.world.makeSound(this, "mob.slimeattack", 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
+            }
         }
     }
 
-    protected String i() {
+    protected boolean C() {
+        return this.getSize() > 1;
+    }
+
+    protected int D() {
+        return this.getSize();
+    }
+
+    protected String m() {
         return "mob.slime";
     }
 
-    protected String j() {
+    protected String n() {
         return "mob.slime";
     }
 
-    protected int k() {
+    protected int e() {
         return this.getSize() == 1 ? Item.SLIME_BALL.id : 0;
     }
 
-    public boolean d() {
+    public boolean g() {
         Chunk chunk = this.world.getChunkAtWorldCoords(MathHelper.floor(this.locX), MathHelper.floor(this.locZ));
 
-        return (this.getSize() == 1 || this.world.difficulty > 0) && this.random.nextInt(10) == 0 && chunk.a(987234911L).nextInt(10) == 0 && this.locY < 16.0D;
+        return (this.getSize() == 1 || this.world.difficulty > 0) && this.random.nextInt(10) == 0 && chunk.a(987234911L).nextInt(10) == 0 && this.locY < 40.0D ? super.g() : false;
     }
 
-    protected float l() {
-        return 0.6F;
+    protected float o() {
+        return 0.4F * (float) this.getSize();
+    }
+
+    protected int q_() {
+        return 0;
+    }
+
+    protected boolean I() {
+        return this.getSize() > 1;
+    }
+
+    protected boolean G() {
+        return this.getSize() > 2;
     }
 }

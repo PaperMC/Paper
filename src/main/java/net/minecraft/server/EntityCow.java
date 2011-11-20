@@ -4,10 +4,8 @@ package net.minecraft.server;
 import java.util.List;
 
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
 // CraftBukkit end
 
@@ -19,6 +17,10 @@ public class EntityCow extends EntityAnimal {
         this.b(0.9F, 1.3F);
     }
 
+    public int getMaxHealth() {
+        return 10;
+    }
+
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
     }
@@ -27,39 +29,39 @@ public class EntityCow extends EntityAnimal {
         super.a(nbttagcompound);
     }
 
-    protected String h() {
+    protected String c_() {
         return "mob.cow";
     }
 
-    protected String i() {
+    protected String m() {
         return "mob.cowhurt";
     }
 
-    protected String j() {
+    protected String n() {
         return "mob.cowhurt";
     }
 
-    protected float l() {
+    protected float o() {
         return 0.4F;
     }
 
-    protected int k() {
+    protected int e() {
         return Item.LEATHER.id;
     }
 
-    protected void a(boolean flag) {
+    protected void a(boolean flag, int i) {
         // CraftBukkit start - whole method
         List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
-        int count = this.random.nextInt(3);
+        int j = this.random.nextInt(3) + this.random.nextInt(1 + i);
 
-        if (count > 0) {
-            loot.add(new org.bukkit.inventory.ItemStack(Item.LEATHER.id, count));
+        if (j > 0) {
+            loot.add(new org.bukkit.inventory.ItemStack(Item.LEATHER.id, j));
         }
 
-        count = this.random.nextInt(3) + 1;
+        j = this.random.nextInt(3) + 1 + this.random.nextInt(1 + i);
 
-        if (count > 0) {
-            loot.add(new org.bukkit.inventory.ItemStack(this.fireTicks > 0 ? Item.COOKED_BEEF.id : Item.RAW_BEEF.id, count));
+        if (j > 0) {
+            loot.add(new org.bukkit.inventory.ItemStack(this.z() ? Item.COOKED_BEEF.id : Item.RAW_BEEF.id, j));
         }
 
         CraftEventFactory.callEntityDeathEvent(this, loot);
@@ -87,7 +89,11 @@ public class EntityCow extends EntityAnimal {
 
             return true;
         } else {
-            return false;
+            return super.b(entityhuman);
         }
+    }
+
+    protected EntityAnimal createChild(EntityAnimal entityanimal) {
+        return new EntityCow(this.world);
     }
 }

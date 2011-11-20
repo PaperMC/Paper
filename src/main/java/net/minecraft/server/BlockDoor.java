@@ -21,7 +21,7 @@ public class BlockDoor extends Block {
 
     public int a(int i, int j) {
         if (i != 0 && i != 1) {
-            int k = this.d(j);
+            int k = this.e(j);
 
             if ((k == 0 || k == 2) ^ i <= 3) {
                 return this.textureId;
@@ -50,16 +50,20 @@ public class BlockDoor extends Block {
         return false;
     }
 
+    public int c() {
+        return 7;
+    }
+
     public AxisAlignedBB e(World world, int i, int j, int k) {
         this.a((IBlockAccess)world, i, j, k); // CraftBukkit - Make sure this points to the below method!
         return super.e(world, i, j, k);
     }
 
     public void a(IBlockAccess iblockaccess, int i, int j, int k) {
-        this.c(this.d(iblockaccess.getData(i, j, k)));
+        this.d(this.e(iblockaccess.getData(i, j, k)));
     }
 
-    public void c(int i) {
+    public void d(int i) {
         float f = 0.1875F;
 
         this.a(0.0F, 0.0F, 0.0F, 1.0F, 2.0F, 1.0F);
@@ -160,7 +164,7 @@ public class BlockDoor extends Block {
 
             if (flag) {
                 if (!world.isStatic) {
-                    this.g(world, i, j, k, i1);
+                    this.b(world, i, j, k, i1, 0);
                 }
             } else if (l > 0 && Block.byId[l].isPowerSource()) {
                 // CraftBukkit start
@@ -184,7 +188,7 @@ public class BlockDoor extends Block {
         }
     }
 
-    public int a(int i, Random random) {
+    public int a(int i, Random random, int j) {
         return (i & 8) != 0 ? 0 : (this.material == Material.ORE ? Item.IRON_DOOR.id : Item.WOOD_DOOR.id);
     }
 
@@ -193,20 +197,19 @@ public class BlockDoor extends Block {
         return super.a(world, i, j, k, vec3d, vec3d1);
     }
 
-    public int d(int i) {
+    public int e(int i) {
         return (i & 4) == 0 ? i - 1 & 3 : i & 3;
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
-        world.getClass();
-        return j >= 128 - 1 ? false : world.e(i, j - 1, k) && super.canPlace(world, i, j, k) && super.canPlace(world, i, j + 1, k);
+        return j >= world.height - 1 ? false : world.e(i, j - 1, k) && super.canPlace(world, i, j, k) && super.canPlace(world, i, j + 1, k);
     }
 
-    public static boolean e(int i) {
+    public static boolean f(int i) {
         return (i & 4) != 0;
     }
 
-    public int e() {
+    public int g() {
         return 1;
     }
 }
