@@ -730,6 +730,9 @@ public class CraftWorld implements World {
             }
         } else if (EnderSignal.class.isAssignableFrom(clazz)) {
             entity = new EntityEnderSignal(world, x, y, z);
+        } else if (EnderCrystal.class.isAssignableFrom(clazz)) {
+            entity = new EntityEnderCrystal(world);
+            entity.setPositionRotation(x, y, z, 0, 0);
         } else if (LivingEntity.class.isAssignableFrom(clazz)) {
             if (Chicken.class.isAssignableFrom(clazz)) {
                 entity = new EntityChicken(world);
