@@ -700,15 +700,6 @@ public class CraftWorld implements World {
             entity = new EntityBoat(world, x, y, z);
         } else if (FallingSand.class.isAssignableFrom(clazz)) {
             entity = new EntityFallingSand(world, x, y, z, 0, 0);
-        } else if (Fireball.class.isAssignableFrom(clazz)) {
-            if (SmallFireball.class.isAssignableFrom(clazz)) {
-                entity = new EntitySmallFireball(world);
-            } else {
-                entity = new EntityFireball(world);
-            }
-            ((EntityFireball) entity).setPositionRotation(x, y, z, yaw, pitch);
-            Vector direction = location.getDirection().multiply(10);
-            ((EntityFireball) entity).setDirection(direction.getX(), direction.getY(), direction.getZ());
         } else if (Projectile.class.isAssignableFrom(clazz)) {
             if (Snowball.class.isAssignableFrom(clazz)) {
                 entity = new EntitySnowball(world, x, y, z);
@@ -716,6 +707,18 @@ public class CraftWorld implements World {
                 entity = new EntityEgg(world, x, y, z);
             } else if (EnderPearl.class.isAssignableFrom(clazz)) {
                 entity = new EntityEnderPearl(world, x, y, z);
+            } else if (Arrow.class.isAssignableFrom(clazz)) {
+                entity = new EntityArrow(world);
+                entity.setPositionRotation(x, y, z, 0, 0);
+            } else if (Fireball.class.isAssignableFrom(clazz)) {
+                if (SmallFireball.class.isAssignableFrom(clazz)) {
+                    entity = new EntitySmallFireball(world);
+                } else {
+                    entity = new EntityFireball(world);
+                }
+                ((EntityFireball) entity).setPositionRotation(x, y, z, yaw, pitch);
+                Vector direction = location.getDirection().multiply(10);
+                ((EntityFireball) entity).setDirection(direction.getX(), direction.getY(), direction.getZ());
             }
         } else if (Minecart.class.isAssignableFrom(clazz)) {
             if (PoweredMinecart.class.isAssignableFrom(clazz)) {
@@ -725,9 +728,6 @@ public class CraftWorld implements World {
             } else {
                 entity = new EntityMinecart(world, x, y, z, CraftMinecart.Type.Minecart.getId());
             }
-        } else if (Arrow.class.isAssignableFrom(clazz)) {
-            entity = new EntityArrow(world);
-            entity.setPositionRotation(x, y, z, 0, 0);
         } else if (EnderSignal.class.isAssignableFrom(clazz)) {
             entity = new EntityEnderSignal(world, x, y, z);
         } else if (LivingEntity.class.isAssignableFrom(clazz)) {
