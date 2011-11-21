@@ -133,7 +133,8 @@ public enum Material {
     CAULDRON(118),
     ENDER_PORTAL(119),
     ENTER_PORTAL_FRAME(120),
-    WHITESTONE(121),
+    ENDER_STONE(121),
+    DRAGON_EGG(122),
     // ----- Item Separator -----
     IRON_SPADE(256, 1, 250),
     IRON_PICKAXE(257, 1, 250),
