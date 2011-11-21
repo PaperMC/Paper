@@ -52,7 +52,7 @@ public abstract class ChunkGenerator {
         switch (world.getEnvironment()) {
             case NETHER:
                 return true;
-            case SKYLANDS:
+            case THE_END:
                 return highest.getType() != Material.AIR
                         && highest.getType() != Material.WATER
                         && highest.getType() != Material.LAVA;

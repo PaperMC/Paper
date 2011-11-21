@@ -752,9 +752,9 @@ public interface World {
          */
         NETHER(-1),
         /**
-         * Represents a sky-lands based map ("heaven")
+         * Represents the "end" map
          */
-        SKYLANDS(1);
+        THE_END(1);
 
         private final int id;
         private static final Map<Integer, Environment> lookup = new HashMap<Integer, Environment>();
