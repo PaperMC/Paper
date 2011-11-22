@@ -35,6 +35,7 @@ import org.bukkit.World;
 import org.bukkit.block.Biome;
 import org.bukkit.generator.BlockPopulator;
 import org.bukkit.Difficulty;
+import org.bukkit.craftbukkit.block.CraftBlock;
 
 public class CraftWorld implements World {
     private final WorldServer world;
@@ -476,29 +477,7 @@ public class CraftWorld implements World {
     public Biome getBiome(int x, int z) {
         BiomeBase base = getHandle().getWorldChunkManager().getBiome(x, z);
 
-        if (base == BiomeBase.SWAMPLAND) {
-            return Biome.SWAMPLAND;
-        } else if (base == BiomeBase.FOREST) {
-            return Biome.FOREST;
-        } else if (base == BiomeBase.TAIGA) {
-            return Biome.TAIGA;
-        } else if (base == BiomeBase.DESERT) {
-            return Biome.DESERT;
-        } else if (base == BiomeBase.PLAINS) {
-            return Biome.PLAINS;
-        } else if (base == BiomeBase.HELL) {
-            return Biome.HELL;
-        } else if (base == BiomeBase.SKY) {
-            return Biome.SKY;
-        } else if (base == BiomeBase.OCEAN) {
-            return Biome.OCEAN;
-        } else if (base == BiomeBase.EXTREME_HILLS) {
-            return Biome.EXTREME_HILLS;
-        } else if (base == BiomeBase.RIVER) {
-            return Biome.RIVER;
-        }
-
-        return null;
+        return CraftBlock.biomeBaseToBiome(base);
     }
 
     public double getTemperature(int x, int z) {
