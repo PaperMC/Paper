@@ -343,7 +343,7 @@ public class Chunk {
                     tileentity = this.d(i, j, k);
                     if (tileentity == null) {
                         tileentity = ((BlockContainer) Block.byId[l]).a_();
-                        this.world.setTileEntity(i, j, k, tileentity);
+                        this.world.setTileEntity(i2, j, j2, tileentity); // CraftBukkit - Use world rather than in-chunk coords
                     }
 
                     if (tileentity != null) {
