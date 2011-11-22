@@ -20,4 +20,10 @@ public enum Biome {
     OCEAN,
     RIVER,
     EXTREME_HILLS,
+    FROZEN_OCEAN,
+    FROZEN_RIVER,
+    ICE_PLAINS,
+    ICE_MOUNTAINS,
+    MUSHROOM_ISLAND,
+    MUSHROOM_SHORE
 }
