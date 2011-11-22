@@ -220,10 +220,10 @@ public class CraftBlock implements Block {
     }
 
     public Biome getBiome() {
-        return biomeBaseToBiome(chunk.getHandle().world.getWorldChunkManager().getBiome(x, z));
+        return getWorld().getBiome(x, z);
     }
 
-    public static final Biome biomeBaseToBiome(BiomeBase base) {
+    public static Biome biomeBaseToBiome(BiomeBase base) {
         if (base == BiomeBase.SWAMPLAND) {
             return Biome.SWAMPLAND;
         } else if (base == BiomeBase.FOREST) {
@@ -244,6 +244,18 @@ public class CraftBlock implements Block {
             return Biome.EXTREME_HILLS;
         } else if (base == BiomeBase.OCEAN) {
             return Biome.OCEAN;
+        } else if (base == BiomeBase.FROZEN_OCEAN) {
+        	return Biome.FROZEN_OCEAN;
+        } else if (base == BiomeBase.FROZEN_RIVER) {
+        	return Biome.FROZEN_RIVER;
+        } else if (base == BiomeBase.ICE_PLAINS) {
+        	return Biome.ICE_PLAINS;
+        } else if (base == BiomeBase.ICE_MOUNTAINS) {
+        	return Biome.ICE_MOUNTAINS;
+        } else if (base == BiomeBase.MUSHROOM_ISLAND) {
+        	return Biome.MUSHROOM_ISLAND;
+        } else if (base == BiomeBase.MUSHROOM_SHORE) {
+        	return Biome.MUSHROOM_SHORE;
         }
 
         return null;
