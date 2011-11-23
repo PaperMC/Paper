@@ -127,6 +127,7 @@ public class EntityFireball extends Entity {
         }
 
         if (movingobjectposition != null) {
+            this.a(movingobjectposition);
         }
 
         this.locX += this.motX;
