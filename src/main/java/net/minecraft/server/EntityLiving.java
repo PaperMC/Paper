@@ -134,8 +134,8 @@ public abstract class EntityLiving extends Entity {
             this.ae();
         }
 
+        // CraftBukkit start - don't inline the damage, perform it with an event
         if (this.aj() && this.T()) {
-            // CraftBukkit start
             EntityDamageEvent event = new EntityDamageEvent(this.getBukkitEntity(), EntityDamageEvent.DamageCause.SUFFOCATION, 1);
             this.world.getServer().getPluginManager().callEvent(event);
 
@@ -225,7 +225,7 @@ public abstract class EntityLiving extends Entity {
         if (this.deathTicks == 20) {
             int i;
 
-            // CraftBukkit start - update getExpReward() below if the removed if() changes!
+            // CraftBukkit start - update getExpReward() above if the removed if() changes!
             i = expToDrop;
             while (i > 0) {
                 int j = EntityExperienceOrb.b(i);

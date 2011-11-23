@@ -30,7 +30,7 @@ public class BlockTrapdoor extends Block {
     }
 
     public AxisAlignedBB e(World world, int i, int j, int k) {
-        this.a(world, i, j, k);
+        this.a((IBlockAccess)world, i, j, k); // CraftBukkit - Make sure this points to the below method!
         return super.e(world, i, j, k);
     }
 
@@ -121,14 +121,14 @@ public class BlockTrapdoor extends Block {
             }
 
             // CraftBukkit start
-            if (l > 0 && Block.byId[l] != null && Block.byId[l].isPowerSource()) {
+            if (l > 0) {
                 org.bukkit.World bworld = world.getWorld();
                 org.bukkit.block.Block block = bworld.getBlockAt(i, j, k);
 
                 int power = block.getBlockPower();
                 int oldPower = (world.getData(i, j, k) & 4) > 0 ? 15 : 0;
 
-                if (oldPower == 0 ^ power == 0) {
+                if (oldPower == 0 ^ power == 0 || (Block.byId[l] != null && Block.byId[l].isPowerSource())) {
                     BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, oldPower, power);
                     world.getServer().getPluginManager().callEvent(eventRedstone);
 
