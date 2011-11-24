@@ -312,7 +312,7 @@ public class InventoryPlayer implements IInventory {
     }
 
     public boolean b(Block block) {
-        if (block.material.k()) {
+        if (block != null && block.material.k()) { // CraftBukkit - fix NPE
             return true;
         } else {
             ItemStack itemstack = this.getItem(this.itemInHandIndex);
