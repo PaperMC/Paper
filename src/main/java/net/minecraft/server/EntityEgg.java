@@ -1,6 +1,7 @@
 package net.minecraft.server;
 
 import org.bukkit.Location;
+import org.bukkit.entity.Animals;
 import org.bukkit.entity.CreatureType;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
@@ -74,7 +75,11 @@ public class EntityEgg extends EntityProjectile {
 
         if (hatching) {
             for (int k = 0; k < numHatching; k++) {
-                world.getWorld().spawn(new Location(world.getWorld(), this.locX, this.locY, this.locZ, this.yaw, 0.0F), hatchingType.getEntityClass(), SpawnReason.EGG);
+                org.bukkit.entity.Entity entity = world.getWorld().spawn(new Location(world.getWorld(), this.locX, this.locY, this.locZ, this.yaw, 0.0F), hatchingType.getEntityClass(), SpawnReason.EGG);
+                
+                if (entity instanceof Animals) {
+                    ((Animals)entity).setAge(-24000);
+                }
             }
         }
         // CraftBukkit end
