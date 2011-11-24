@@ -596,7 +596,7 @@ public final class CraftServer implements Server {
         }
 
         WorldUnloadEvent e = new WorldUnloadEvent(handle.getWorld());
-        pluginManager.callEvent(new WorldUnloadEvent(handle.getWorld()));
+        pluginManager.callEvent(e);
 
         if (e.isCancelled()) {
             return false;
