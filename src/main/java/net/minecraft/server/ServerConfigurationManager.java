@@ -217,10 +217,10 @@ public class ServerConfigurationManager {
 
     // CraftBukkit start
     public EntityPlayer moveToWorld(EntityPlayer entityplayer, int i, boolean flag) {
-        return this.moveToWorld(entityplayer, i, null);
+        return this.moveToWorld(entityplayer, i, flag, null);
     }
 
-    public EntityPlayer moveToWorld(EntityPlayer entityplayer, int i, Location location) {
+    public EntityPlayer moveToWorld(EntityPlayer entityplayer, int i, boolean flag, Location location) {
         this.server.getTracker(entityplayer.dimension).untrackPlayer(entityplayer);
         // this.server.getTracker(entityplayer.dimension).untrackEntity(entityplayer); // CraftBukkit
         this.getPlayerManager(entityplayer.dimension).removePlayer(entityplayer);
@@ -231,6 +231,10 @@ public class ServerConfigurationManager {
         // CraftBukkit start
         EntityPlayer entityplayer1 = entityplayer;
         org.bukkit.World fromWorld = entityplayer1.getBukkitEntity().getWorld();
+
+        if (flag) {
+            entityplayer1.copyTo(entityplayer);
+        }
 
         if (location == null) {
             boolean isBedSpawn = false;
@@ -328,7 +332,7 @@ public class ServerConfigurationManager {
             finalLocation = event.getPortalTravelAgent().findOrCreate(finalLocation);
         }
         toWorld = ((CraftWorld) finalLocation.getWorld()).getHandle();
-        this.moveToWorld(entityplayer, toWorld.dimension, finalLocation);
+        this.moveToWorld(entityplayer, toWorld.dimension, true, finalLocation);
         // CraftBukkit end
     }
 

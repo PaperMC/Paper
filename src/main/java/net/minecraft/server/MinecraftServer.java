@@ -203,18 +203,18 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
         log.info("Default game type: " + j);
 
         // CraftBukkit start (+ removed worldsettings and servernbtmanager)
-        int worldCount = 2;
-
-        if (this.propertyManager.getBoolean("allow-nether", true)) {
-            worldCount++;
-        }
+        int worldCount = 3;
 
         for (int k = 0; k < worldCount; ++k) {
             WorldServer world;
             int dimension = 0;
 
             if (k == 1) {
-                dimension = -1;
+                if (this.propertyManager.getBoolean("allow-nether", true)) {
+                    dimension = -1;
+                } else {
+                    continue;
+                }
             }
 
             if (k == 2) {
