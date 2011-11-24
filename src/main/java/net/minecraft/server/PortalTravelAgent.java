@@ -3,8 +3,13 @@ package net.minecraft.server;
 import java.util.Random;
 
 // CraftBukkit start
-import org.bukkit.event.world.PortalCreateEvent;
-import org.bukkit.Bukkit;
+/*
+ * HEAR ME, HE WHOM WISHES TO COMMAND THE UPDATERING
+ *
+ * FOR SOME REASON WE HAVE OUR OWN PORTAL TRAVEL AGENT IN OBC, WE NEED TO UPDATE
+ * THAT WITH ANY NEW UPDATES TO THIS FILE. THIS FILE LEFT HERE AS A REMINDER.
+ *
+ */
 // CraftBukkit end
 
 public class PortalTravelAgent {
@@ -246,53 +251,6 @@ public class PortalTravelAgent {
         }
 
         boolean flag;
-
-        // CraftBukkit start - portal create event
-        java.util.Collection<org.bukkit.block.Block> blocks = new java.util.HashSet<org.bukkit.block.Block>();
-        // Find out what blocks the portal is going to modify, duplicated from below
-        org.bukkit.World bworld = world.getWorld();
-
-        if (d0 < 0.0D) {
-            if (i1 < 70) {
-                i1 = 70;
-            }
-
-            if (i1 > world.height - 10) {
-                i1 = world.height - 10;
-            }
-
-            j5 = i1;
-
-            for (l2 = -1; l2 <= 1; ++l2) {
-                for (k2 = 1; k2 < 3; ++k2) {
-                    for (j3 = -1; j3 < 3; ++j3) {
-                        i3 = i5 + (k2 - 1) * k5 + l2 * l5;
-                        l3 = j5 + j3;
-                        k3 = j2 + (k2 - 1) * l5 - l2 * k5;
-                        blocks.add(bworld.getBlockAt(i3, l3, k3));
-                    }
-                }
-            }
-        }
-
-        for (l2 = 0; l2 < 4; ++l2) {
-            for (k2 = 0; k2 < 4; ++k2) {
-                for (j3 = -1; j3 < 4; ++j3) {
-                    i3 = i5 + (k2 - 1) * k5;
-                    l3 = j5 + j3;
-                    k3 = j2 + (k2 - 1) * l5;
-                    blocks.add(bworld.getBlockAt(i3, l3, k3));
-                }
-            }
-        }
-
-        PortalCreateEvent event = new PortalCreateEvent(blocks, bworld);
-        Bukkit.getServer().getPluginManager().callEvent(event);
-
-        if (event.isCancelled()) {
-            return true;
-        }
-        // CraftBukkit end
 
         if (d0 < 0.0D) {
             if (i1 < 70) {
