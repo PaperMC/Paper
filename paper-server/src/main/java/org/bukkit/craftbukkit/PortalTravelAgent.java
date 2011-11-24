@@ -3,11 +3,13 @@ package org.bukkit.craftbukkit;
 import java.util.Random;
 
 import net.minecraft.server.Block;
+import net.minecraft.server.MathHelper;
 import net.minecraft.server.WorldServer;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.TravelAgent;
+import org.bukkit.World.Environment;
 import org.bukkit.event.world.PortalCreateEvent;
 
 public class PortalTravelAgent implements TravelAgent {
@@ -43,6 +45,32 @@ public class PortalTravelAgent implements TravelAgent {
 
     public Location findPortal(Location location) {
         net.minecraft.server.World world = ((CraftWorld) location.getWorld()).getHandle();
+
+        if (location.getWorld().getEnvironment() == Environment.THE_END) {
+            int i = MathHelper.floor(location.getBlockX());
+            int j = MathHelper.floor(location.getBlockY()) - 1;
+            int k = MathHelper.floor(location.getBlockZ());
+            byte b0 = 1;
+            byte b1 = 0;
+
+            for (int l = -2; l <= 2; ++l) {
+                for (int i1 = -2; i1 <= 2; ++i1) {
+                    for (int j1 = -1; j1 < 3; ++j1) {
+                        int k1 = i + i1 * b0 + l * b1;
+                        int l1 = j + j1;
+                        int i2 = k + i1 * b1 - l * b0;
+                        boolean flag = j1 < 0;
+
+                        if (world.getTypeId(k1, l1, i2) != (flag ? Block.OBSIDIAN.id : 0)) {
+                            return null;
+                        }
+                    }
+                }
+            }
+
+            return location;
+        }
+
         // short short1 = 128;
         double d0 = -1.0D;
         int i = 0;
@@ -59,7 +87,7 @@ public class PortalTravelAgent implements TravelAgent {
             for (int k1 = i1 - this.searchRadius; k1 <= i1 + this.searchRadius; ++k1) {
                 double d3 = (double) k1 + 0.5D - location.getZ();
 
-                for (int l1 = 127; l1 >= 0; --l1) {
+                for (int l1 = world.height - 1; l1 >= 0; --l1) {
                     if (world.getTypeId(j1, l1, k1) == Block.PORTAL.id) {
                         while (world.getTypeId(j1, l1 - 1, k1) == Block.PORTAL.id) {
                             --l1;
@@ -108,6 +136,31 @@ public class PortalTravelAgent implements TravelAgent {
 
     public boolean createPortal(Location location) {
         net.minecraft.server.World world = ((CraftWorld) location.getWorld()).getHandle();
+
+        
+        if (location.getWorld().getEnvironment() == Environment.THE_END) {
+            int i = MathHelper.floor(location.getBlockX());
+            int j = MathHelper.floor(location.getBlockY()) - 1;
+            int k = MathHelper.floor(location.getBlockZ());
+            byte b0 = 1;
+            byte b1 = 0;
+
+            for (int l = -2; l <= 2; ++l) {
+                for (int i1 = -2; i1 <= 2; ++i1) {
+                    for (int j1 = -1; j1 < 3; ++j1) {
+                        int k1 = i + i1 * b0 + l * b1;
+                        int l1 = j + j1;
+                        int i2 = k + i1 * b1 - l * b0;
+                        boolean flag = j1 < 0;
+
+                        world.setTypeId(k1, l1, i2, flag ? Block.OBSIDIAN.id : 0);
+                    }
+                }
+            }
+
+            return true;
+        }
+
         // byte b0 = 16;
         double d0 = -1.0D;
         int i = location.getBlockX();
@@ -142,7 +195,7 @@ public class PortalTravelAgent implements TravelAgent {
                 d2 = (double) j2 + 0.5D - location.getZ();
 
                 label271:
-                for (l2 = 127; l2 >= 0; --l2) {
+                for (l2 = world.height - 1; l2 >= 0; --l2) {
                     if (world.isEmpty(i2, l2, j2)) {
                         while (l2 > 0 && world.isEmpty(i2, l2 - 1, j2)) {
                             --l2;
@@ -193,7 +246,7 @@ public class PortalTravelAgent implements TravelAgent {
                     d2 = (double) j2 + 0.5D - location.getZ();
 
                     label219:
-                    for (l2 = 127; l2 >= 0; --l2) {
+                    for (l2 = world.height - 1; l2 >= 0; --l2) {
                         if (world.isEmpty(i2, l2, j2)) {
                             while (l2 > 0 && world.isEmpty(i2, l2 - 1, j2)) {
                                 --l2;
@@ -254,8 +307,8 @@ public class PortalTravelAgent implements TravelAgent {
                 i1 = 70;
             }
 
-            if (i1 > 118) {
-                i1 = 118;
+            if (i1 > world.height - 10) {
+                i1 = world.height - 10;
             }
 
             j5 = i1;
@@ -301,8 +354,8 @@ public class PortalTravelAgent implements TravelAgent {
                 i1 = 70;
             }
 
-            if (i1 > 118) {
-                i1 = 118;
+            if (i1 > world.height - 10) {
+                i1 = world.height - 10;
             }
 
             j5 = i1;
