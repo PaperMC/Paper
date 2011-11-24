@@ -19,4 +19,12 @@ public class CraftAnimals extends CraftCreature implements Animals {
     public EntityAnimal getHandle() {
         return (EntityAnimal) entity;
     }
+
+    public int getAge() {
+        return getHandle().getAge();
+    }
+
+    public void setAge(int age) {
+        getHandle().setAge(age);
+    }
 }
