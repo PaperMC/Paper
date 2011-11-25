@@ -1,6 +1,7 @@
 package org.bukkit;
 
 import com.avaje.ebean.config.ServerConfig;
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -280,5 +281,9 @@ public final class Bukkit {
 
     public static Set<OfflinePlayer> getOperators() {
         return server.getOperators();
+    }
+
+    public static File getWorldContainer() {
+        return server.getWorldContainer();
     }
 }

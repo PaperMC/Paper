@@ -511,4 +511,11 @@ public interface Server {
      * @return The Console CommandSender
      */
     public ConsoleCommandSender getConsoleSender();
+
+    /**
+     * Gets the folder that contains all of the various {@link World}s.
+     *
+     * @return World container folder
+     */
+    public File getWorldContainer();
 }

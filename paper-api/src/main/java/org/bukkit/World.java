@@ -1,5 +1,6 @@
 package org.bukkit;
 
+import java.io.File;
 import org.bukkit.generator.ChunkGenerator;
 import java.util.HashMap;
 import java.util.List;
@@ -738,6 +739,13 @@ public interface World {
      * @return The difficulty of the world.
      */
     public Difficulty getDifficulty();
+
+    /**
+     * Gets the folder of this world on disk.
+     *
+     * @return The folder of this world.
+     */
+    public File getWorldFolder();
 
     /**
      * Represents various map environment types that a world may be
