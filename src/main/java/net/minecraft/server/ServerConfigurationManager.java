@@ -308,7 +308,7 @@ public class ServerConfigurationManager {
         int dimension = i;
         WorldServer fromWorld = this.server.getWorldServer(entityplayer.dimension);
         WorldServer toWorld = null;
-        if (dimension < 10) {
+        if (entityplayer.dimension < 10) {
             for (WorldServer world : this.server.worlds) {
                 if (world.dimension == dimension) {
                     toWorld = world;
