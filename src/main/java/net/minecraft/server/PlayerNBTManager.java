@@ -53,7 +53,7 @@ public class PlayerNBTManager implements PlayerFileData, IDataManager {
         }
     }
 
-    protected File a() {
+    public File a() { // CraftBukkit - public to private
         return this.b;
     }
 

@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit;
 
 import com.google.common.collect.MapMaker;
+import java.io.File;
 import org.bukkit.craftbukkit.entity.*;
 import org.bukkit.entity.*;
 import org.bukkit.entity.Entity;
@@ -892,5 +893,9 @@ public class CraftWorld implements World {
         final CraftWorld other = (CraftWorld) obj;
         
         return this.getUID() == other.getUID();
+    }
+
+    public File getWorldFolder() {
+        return ((PlayerNBTManager)world.q()).a();
     }
 }
