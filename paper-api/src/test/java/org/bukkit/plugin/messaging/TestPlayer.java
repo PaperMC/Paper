@@ -760,4 +760,8 @@ public class TestPlayer implements Player {
     public boolean hasLineOfSight(Entity other) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
+
+    public boolean isValid() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }

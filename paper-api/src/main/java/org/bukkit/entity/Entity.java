@@ -130,6 +130,13 @@ public interface Entity extends Metadatable {
     public boolean isDead();
 
     /**
+     * Returns false if the entity has died or been despawned for some other
+     * reason.
+     * @return True if valid.
+     */
+    public boolean isValid();
+
+    /**
      * Gets the {@link Server} that contains this Entity
      *
      * @return Server instance running this Entity
