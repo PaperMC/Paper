@@ -198,7 +198,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public boolean isDead() {
-        return entity.dead;
+        return !entity.aj();
     }
 
     public Entity getHandle() {
