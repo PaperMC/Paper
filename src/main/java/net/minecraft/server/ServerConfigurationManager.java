@@ -320,7 +320,7 @@ public class ServerConfigurationManager {
         Location toLocation = null;
 
         if (toWorld != null) {
-            if ((dimension == -1) || (dimension == 0)) {
+            if (((dimension == -1) || (dimension == 0)) && ((entityplayer.dimension == -1) || (entityplayer.dimension == 0))) {
                 double blockRatio = dimension == 0 ? 8 : 0.125;
 
                 toLocation = toWorld == null ? null : new Location(toWorld.getWorld(), (entityplayer.locX * blockRatio), entityplayer.locY, (entityplayer.locZ * blockRatio), entityplayer.yaw, entityplayer.pitch);
