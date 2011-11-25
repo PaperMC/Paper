@@ -306,11 +306,11 @@ public class ServerConfigurationManager {
     public void a(EntityPlayer entityplayer, int i) {
         // CraftBukkit start -- Replaced the standard handling of portals with a more customised method.
         int dimension = i;
-        WorldServer fromWorld = this.server.getWorldServer(dimension);
+        WorldServer fromWorld = this.server.getWorldServer(entityplayer.dimension);
         WorldServer toWorld = null;
         if (dimension < 10) {
             for (WorldServer world : this.server.worlds) {
-                if (world.dimension == i) {
+                if (world.dimension == dimension) {
                     toWorld = world;
                 }
             }
