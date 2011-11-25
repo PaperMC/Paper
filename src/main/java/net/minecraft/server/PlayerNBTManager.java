@@ -53,7 +53,7 @@ public class PlayerNBTManager implements PlayerFileData, IDataManager {
         }
     }
 
-    public File a() { // CraftBukkit - public to private
+    public File a() { // CraftBukkit - prot to public. Also, hi zml2008.
         return this.b;
     }
 
