@@ -135,7 +135,7 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
             log.warning("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
             log.warning("The server will make no attempt to authenticate usernames. Beware.");
             log.warning("While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.");
-            log.warning("To change this, set \"online-mode\" to \"true\" in the server.settings file.");
+            log.warning("To change this, set \"online-mode\" to \"true\" in the server.properties file."); // CraftBukkit - type. Seriously. :D
         }
 
         this.serverConfigurationManager = new ServerConfigurationManager(this);
