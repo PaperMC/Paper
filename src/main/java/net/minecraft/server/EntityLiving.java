@@ -128,7 +128,7 @@ public abstract class EntityLiving extends Entity {
     public void af() {
         this.am = this.an;
         super.af();
-        MethodProfiler.a("mobBaseTick");
+        // MethodProfiler.a("mobBaseTick"); // CraftBukkit -- not in production code
         if (this.random.nextInt(1000) < this.a++) {
             this.a = -this.h();
             this.ae();
@@ -205,7 +205,7 @@ public abstract class EntityLiving extends Entity {
         this.W = this.V;
         this.lastYaw = this.yaw;
         this.lastPitch = this.pitch;
-        MethodProfiler.a();
+        // MethodProfiler.a(); // CraftBukkit -- not in production code
     }
 
     // CraftBukkit start
@@ -874,7 +874,7 @@ public abstract class EntityLiving extends Entity {
             }
         }
 
-        MethodProfiler.a("ai");
+        // MethodProfiler.a("ai"); // CraftBukkit -- not in production code
         if (this.L()) {
             this.aW = false;
             this.aT = 0.0F;
@@ -884,7 +884,7 @@ public abstract class EntityLiving extends Entity {
             this.m_();
         }
 
-        MethodProfiler.a();
+        // MethodProfiler.a(); // CraftBukkit -- not in production code
         boolean flag = this.az();
         boolean flag1 = this.aA();
 
@@ -909,7 +909,7 @@ public abstract class EntityLiving extends Entity {
         this.ak *= this.F();
         this.a(this.aT, this.aU);
         this.ak = f;
-        MethodProfiler.a("push");
+        // MethodProfiler.a("push"); // CraftBukkit -- not in production code
         List list1 = this.world.b((Entity) this, this.boundingBox.b(0.20000000298023224D, 0.0D, 0.20000000298023224D));
 
         if (list1 != null && list1.size() > 0) {
@@ -922,7 +922,7 @@ public abstract class EntityLiving extends Entity {
             }
         }
 
-        MethodProfiler.a();
+        // MethodProfiler.a(); // CraftBukkit -- not in production code
     }
 
     protected boolean L() {

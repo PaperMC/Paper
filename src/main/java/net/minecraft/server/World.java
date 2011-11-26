@@ -1084,8 +1084,8 @@ public class World implements IBlockAccess {
     }
 
     public void tickEntities() {
-        MethodProfiler.a("entities");
-        MethodProfiler.a("global");
+        // MethodProfiler.a("entities"); // CraftBukkit -- not in production code
+        // MethodProfiler.a("global"); // CraftBukkit -- not in production code
 
         int i;
         Entity entity;
@@ -1103,7 +1103,7 @@ public class World implements IBlockAccess {
             }
         }
 
-        MethodProfiler.b("remove");
+        // MethodProfiler.b("remove"); // CraftBukkit -- not in production code
         this.entityList.removeAll(this.J);
 
         int j;
@@ -1123,7 +1123,7 @@ public class World implements IBlockAccess {
         }
 
         this.J.clear();
-        MethodProfiler.b("regular");
+        // MethodProfiler.b("regular"); // CraftBukkit -- not in production code
 
         for (i = 0; i < this.entityList.size(); ++i) {
             entity = (Entity) this.entityList.get(i);
@@ -1140,7 +1140,7 @@ public class World implements IBlockAccess {
                 this.playerJoinedWorld(entity);
             }
 
-            MethodProfiler.a("remove");
+            // MethodProfiler.a("remove"); // CraftBukkit -- not in production code
             if (entity.dead) {
                 j = entity.bX;
                 k = entity.bZ;
@@ -1152,10 +1152,10 @@ public class World implements IBlockAccess {
                 this.d(entity);
             }
 
-            MethodProfiler.a();
+            // MethodProfiler.a(); // CraftBukkit -- not in production code
         }
 
-        MethodProfiler.b("tileEntities");
+        // MethodProfiler.b("tileEntities"); // CraftBukkit -- not in production code
         this.S = true;
         Iterator iterator = this.h.iterator();
 
@@ -1184,7 +1184,7 @@ public class World implements IBlockAccess {
             this.N.clear();
         }
 
-        MethodProfiler.b("pendingTileEntities");
+        // MethodProfiler.b("pendingTileEntities"); // CraftBukkit -- not in production code
         if (!this.M.isEmpty()) {
             Iterator iterator1 = this.M.iterator();
 
@@ -1217,8 +1217,8 @@ public class World implements IBlockAccess {
             this.M.clear();
         }
 
-        MethodProfiler.a();
-        MethodProfiler.a();
+        // MethodProfiler.a(); // CraftBukkit -- not in production code
+        // MethodProfiler.a(); // CraftBukkit -- not in production code
     }
 
     public void a(Collection collection) {
@@ -1252,7 +1252,7 @@ public class World implements IBlockAccess {
                 }
             }
 
-            MethodProfiler.a("chunkCheck");
+            // MethodProfiler.a("chunkCheck"); // CraftBukkit -- not in production code
             if (Double.isNaN(entity.locX) || Double.isInfinite(entity.locX)) {
                 entity.locX = entity.bI;
             }
@@ -1290,7 +1290,7 @@ public class World implements IBlockAccess {
                 }
             }
 
-            MethodProfiler.a();
+            // MethodProfiler.a(); // CraftBukkit -- not in production code
             if (flag && entity.bW && entity.passenger != null) {
                 if (!entity.passenger.dead && entity.passenger.vehicle == entity) {
                     this.playerJoinedWorld(entity.passenger);
@@ -1713,13 +1713,13 @@ public class World implements IBlockAccess {
             }
         }
 
-        MethodProfiler.a("mobSpawner");
+        // MethodProfiler.a("mobSpawner"); // CraftBukkit -- not in production code
         // CraftBukkit start - Only call spawner if we have players online and the world allows for mobs or animals
         if ((this.allowMonsters || this.allowAnimals) && (this instanceof WorldServer && this.getServer().getHandle().players.size() > 0)) {
             SpawnerCreature.spawnEntities(this, this.allowMonsters, this.allowAnimals && this.worldData.f() % 400L == 0L);
         }
         // CraftBukkit end
-        MethodProfiler.b("chunkSource");
+        // MethodProfiler.b("chunkSource"); // CraftBukkit -- not in production code
         this.chunkProvider.unloadChunks();
         int j = this.a(1.0F);
 
@@ -1729,16 +1729,16 @@ public class World implements IBlockAccess {
 
         i = this.worldData.f() + 1L;
         if (i % (long) this.u == 0L) {
-            MethodProfiler.b("save");
+            // MethodProfiler.b("save"); // CraftBukkit -- not in production code
             this.save(false, (IProgressUpdate) null);
         }
 
         this.worldData.a(i);
-        MethodProfiler.b("tickPending");
+        // MethodProfiler.b("tickPending"); // CraftBukkit -- not in production code
         this.a(false);
-        MethodProfiler.b("tickTiles");
+        // MethodProfiler.b("tickTiles"); // CraftBukkit -- not in production code
         this.k();
-        MethodProfiler.a();
+        // MethodProfiler.a(); // CraftBukkit -- not in production code
     }
 
     private void z() {
@@ -1857,7 +1857,7 @@ public class World implements IBlockAccess {
 
     protected void k() {
         this.T.clear();
-        MethodProfiler.a("buildList");
+        // MethodProfiler.a("buildList"); // CraftBukkit -- not in production code
 
         int i;
         int j;
@@ -1882,7 +1882,7 @@ public class World implements IBlockAccess {
         i = 0;
         int j1 = 0;
 
-        MethodProfiler.a();
+        // MethodProfiler.a(); // CraftBukkit -- not in production code
         Iterator iterator = this.T.iterator();
 
         while (iterator.hasNext()) {
@@ -1890,12 +1890,12 @@ public class World implements IBlockAccess {
             int k1 = chunkcoordintpair.x * 16;
 
             j = chunkcoordintpair.z * 16;
-            MethodProfiler.a("getChunk");
+            // MethodProfiler.a("getChunk"); // CraftBukkit -- not in production code
             Chunk chunk = this.getChunkAt(chunkcoordintpair.x, chunkcoordintpair.z);
 
-            MethodProfiler.b("tickChunk");
+            // MethodProfiler.b("tickChunk"); // CraftBukkit -- not in production code
             chunk.i();
-            MethodProfiler.b("moodSound");
+            // MethodProfiler.b("moodSound"); // CraftBukkit -- not in production code
             int l1;
             int i2;
             int j2;
@@ -1921,7 +1921,7 @@ public class World implements IBlockAccess {
                 }
             }
 
-            MethodProfiler.b("thunder");
+            // MethodProfiler.b("thunder"); // CraftBukkit -- not in production code
             if (this.random.nextInt(100000) == 0 && this.w() && this.v()) {
                 this.l = this.l * 3 + 1013904223;
                 l1 = this.l >> 2;
@@ -1934,7 +1934,7 @@ public class World implements IBlockAccess {
                 }
             }
 
-            MethodProfiler.b("iceandsnow");
+            // MethodProfiler.b("iceandsnow"); // CraftBukkit -- not in production code
             this.l = this.l * 3 + 1013904223;
             l1 = this.l >> 2;
             i2 = l1 & 15;
@@ -1966,9 +1966,9 @@ public class World implements IBlockAccess {
                 // CraftBukkit end
             }
 
-            MethodProfiler.b("checkLight");
+            // MethodProfiler.b("checkLight"); // CraftBukkit -- not in production code
             this.s(k1 + this.random.nextInt(16), this.random.nextInt(this.height), j + this.random.nextInt(16));
-            MethodProfiler.b("tickTiles");
+            // MethodProfiler.b("tickTiles"); // CraftBukkit -- not in production code
 
             for (l1 = 0; l1 < 20; ++l1) {
                 this.l = this.l * 3 + 1013904223;
@@ -1985,7 +1985,7 @@ public class World implements IBlockAccess {
                 }
             }
 
-            MethodProfiler.a();
+            // MethodProfiler.a(); // CraftBukkit -- not in production code
         }
     }
 
@@ -2461,7 +2461,7 @@ public class World implements IBlockAccess {
     }
 
     public PathEntity findPath(Entity entity, Entity entity1, float f) {
-        MethodProfiler.a("pathfind");
+        // MethodProfiler.a("pathfind"); // CraftBukkit -- not in production code
         int i = MathHelper.floor(entity.locX);
         int j = MathHelper.floor(entity.locY);
         int k = MathHelper.floor(entity.locZ);
@@ -2475,12 +2475,12 @@ public class World implements IBlockAccess {
         ChunkCache chunkcache = new ChunkCache(this, i1, j1, k1, l1, i2, j2);
         PathEntity pathentity = (new Pathfinder(chunkcache)).a(entity, entity1, f);
 
-        MethodProfiler.a();
+        // MethodProfiler.a(); // CraftBukkit -- not in production code
         return pathentity;
     }
 
     public PathEntity a(Entity entity, int i, int j, int k, float f) {
-        MethodProfiler.a("pathfind");
+        // MethodProfiler.a("pathfind"); // CraftBukkit -- not in production code
         int l = MathHelper.floor(entity.locX);
         int i1 = MathHelper.floor(entity.locY);
         int j1 = MathHelper.floor(entity.locZ);
@@ -2494,7 +2494,7 @@ public class World implements IBlockAccess {
         ChunkCache chunkcache = new ChunkCache(this, l1, i2, j2, k2, l2, i3);
         PathEntity pathentity = (new Pathfinder(chunkcache)).a(entity, i, j, k, f);
 
-        MethodProfiler.a();
+        // MethodProfiler.a(); // CraftBukkit -- not in production code
         return pathentity;
     }
 
