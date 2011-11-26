@@ -92,9 +92,9 @@ public class EntityChicken extends EntityAnimal {
         }
 
         if (this.z()) {
-            this.b(Item.COOKED_CHICKEN.id, 1);
+            loot.add(new org.bukkit.inventory.ItemStack(Item.COOKED_CHICKEN.id, 1));
         } else {
-            this.b(Item.RAW_CHICKEN.id, 1);
+            loot.add(new org.bukkit.inventory.ItemStack(Item.RAW_CHICKEN.id, 1));
         }
 
         CraftEventFactory.callEntityDeathEvent(this, loot);
