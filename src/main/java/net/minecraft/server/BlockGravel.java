@@ -9,7 +9,7 @@ public class BlockGravel extends BlockSand {
     }
 
     public int a(int i, Random random, int j) {
-        j = Math.max(j, 3); // CraftBukkit - added to fix crash when j > 3
+        j = Math.min(j, 3); // CraftBukkit - added to fix crash when j > 3
         return random.nextInt(10 - j * 3) == 0 ? Item.FLINT.id : this.id;
     }
 }
