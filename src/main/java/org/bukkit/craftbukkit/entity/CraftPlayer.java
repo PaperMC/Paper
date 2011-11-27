@@ -534,7 +534,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public Location getBedSpawnLocation() {
         World world = getServer().getWorld(getHandle().spawnWorld);
-        if (world != null) {
+        if ((world != null) && (getHandle().getBed() != null)) {
             return new Location(world, getHandle().getBed().x, getHandle().getBed().y, getHandle().getBed().z);
         } else {
             return null;
