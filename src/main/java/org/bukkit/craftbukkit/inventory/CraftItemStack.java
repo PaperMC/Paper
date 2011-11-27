@@ -26,7 +26,7 @@ public class CraftItemStack extends ItemStack {
 
     public CraftItemStack(ItemStack item) {
         this(item.getTypeId(), item.getAmount(), item.getDurability());
-        addEnchantments(item.getEnchantments());
+        addUnsafeEnchantments(item.getEnchantments());
     }
 
     /* 'Overwritten' constructors from ItemStack, yay for Java sucking */
