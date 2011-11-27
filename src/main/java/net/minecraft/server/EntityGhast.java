@@ -1,7 +1,10 @@
 package net.minecraft.server;
 
 // CraftBukkit start
+import java.util.List;
 import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.entity.EntityTargetEvent;
 // CraftBukkit end
 
@@ -196,19 +199,24 @@ public class EntityGhast extends EntityFlying implements IMonster {
     }
 
     protected void a(boolean flag, int i) {
+        // CraftBukkit start
+        List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
         int j = this.random.nextInt(2) + this.random.nextInt(1 + i);
 
         int k;
 
-        for (k = 0; k < j; ++k) {
-            this.b(Item.GHAST_TEAR.id, 1);
+        if (j > 0) {
+            loot.add(new CraftItemStack(Item.GHAST_TEAR.id, j));
         }
 
         j = this.random.nextInt(3) + this.random.nextInt(1 + i);
 
-        for (k = 0; k < j; ++k) {
-            this.b(Item.SULPHUR.id, 1);
+        if (j > 0) {
+            loot.add(new CraftItemStack(Item.SULPHUR.id, j));
         }
+
+        CraftEventFactory.callEntityDeathEvent(this, loot);
+        // CraftBukkit end
     }
 
     protected float o() {

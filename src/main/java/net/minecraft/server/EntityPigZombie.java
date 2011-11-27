@@ -4,6 +4,8 @@ import java.util.List;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.entity.EntityTargetEvent;
 // CraftBukkit end
 
@@ -110,19 +112,23 @@ public class EntityPigZombie extends EntityZombie {
     }
 
     protected void a(boolean flag, int i) {
+        // CraftBukkit start
+        List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
         int j = this.random.nextInt(2 + i);
 
         int k;
 
-        for (k = 0; k < j; ++k) {
-            this.b(Item.ROTTEN_FLESH.id, 1);
+        if (j > 0) {
+            loot.add(new CraftItemStack(Item.ROTTEN_FLESH.id, j));
         }
 
         j = this.random.nextInt(2 + i);
 
-        for (k = 0; k < j; ++k) {
-            this.b(Item.GOLD_NUGGET.id, 1);
+        if (j > 0) {
+            loot.add(new CraftItemStack(Item.GOLD_NUGGET.id, j));
         }
+        CraftEventFactory.callEntityDeathEvent(this, loot);
+        // CraftBukkit end
     }
 
     protected int e() {
