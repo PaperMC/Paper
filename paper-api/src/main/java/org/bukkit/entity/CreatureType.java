@@ -26,7 +26,8 @@ public enum CreatureType {
     ENDER_DRAGON("EnderDragon", EnderDragon.class),
     VILLAGER("Villager", Villager.class),
     BLAZE("Blaze", Blaze.class),
-    MUSHROOM_COW("MushroomCow", MushroomCow.class);
+    MUSHROOM_COW("MushroomCow", MushroomCow.class),
+    SNOWMAN("Snowman", Snowman.class);
 
     private String name;
     private Class<? extends Entity> clazz;
