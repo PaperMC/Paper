@@ -1,10 +1,13 @@
 package org.bukkit.inventory;
 
+import com.google.common.collect.ImmutableMap;
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.material.MaterialData;
 
 /**
@@ -15,6 +18,7 @@ public class ItemStack implements Serializable, ConfigurationSerializable {
     private int amount = 0;
     private MaterialData data = null;
     private short durability = 0;
+    private Map<Enchantment, Integer> enchantments = new HashMap<Enchantment, Integer>();
 
     public ItemStack(final int type) {
         this(type, 0);
@@ -213,35 +217,138 @@ public class ItemStack implements Serializable, ConfigurationSerializable {
         return hash;
     }
 
+    /**
+     * Checks if this ItemStack contains the given {@link Enchantment}
+     *
+     * @param ench Enchantment to test
+     * @return True if this has the given enchantment
+     */
+    public boolean containsEnchantment(Enchantment ench) {
+        return enchantments.containsKey(ench);
+    }
+
+    /**
+     * Gets the level of the specified enchantment on this item stack
+     *
+     * @param ench Enchantment to check
+     * @return Level of the enchantment, or 0
+     */
+    public int getEnchantmentLevel(Enchantment ench) {
+        return enchantments.get(ench);
+    }
+
+    /**
+     * Gets a map containing all enchantments and their levels on this item.
+     *
+     * @return Map of enchantments.
+     */
+    public Map<Enchantment, Integer> getEnchantments() {
+        return ImmutableMap.copyOf(enchantments);
+    }
+
+    /**
+     * Adds the specified {@link Enchantment} to this item stack.
+     * <p>
+     * If this item stack already contained the given enchantment (at any level), it will be replaced.
+     *
+     * @param ench Enchantment to add
+     * @param level Level of the enchantment
+     */
+    public void addEnchantment(Enchantment ench, int level) {
+        if ((level < ench.getStartLevel()) || (level > ench.getMaxLevel())) {
+            throw new IllegalArgumentException("Enchantment level is either too low or too high (given " + level + ", bounds are " + ench.getStartLevel() + " to " + ench.getMaxLevel());
+        } else if (!ench.canEnchantItem(this)) {
+            throw new IllegalArgumentException("Specified enchantment cannot be applied to this itemstack");
+        }
+
+        addUnsafeEnchantment(ench, level);
+    }
+
+    /**
+     * Adds the specified {@link Enchantment} to this item stack.
+     * <p>
+     * If this item stack already contained the given enchantment (at any level), it will be replaced.
+     * <p>
+     * This method is unsafe and will ignore level restrictions or item type. Use at your own
+     * discretion.
+     *
+     * @param ench Enchantment to add
+     * @param level Level of the enchantment
+     */
+    public void addUnsafeEnchantment(Enchantment ench, int level) {
+        enchantments.put(ench, level);
+    }
+
+    /**
+     * Removes the specified {@link Enchantment} if it exists on this item stack
+     *
+     * @param ench Enchantment to remove
+     * @return Previous level, or 0
+     */
+    public int removeEnchantment(Enchantment ench) {
+        Integer previous = enchantments.remove(ench);
+        return (previous == null) ? 0 : previous;
+    }
+
     public Map<String, Object> serialize() {
         Map<String, Object> result = new LinkedHashMap<String, Object>();
-        
+
         result.put("type", getType());
-        
+
         if (durability != 0) {
             result.put("damage", durability);
         }
-        
+
         if (amount != 1) {
             result.put("amount", amount);
         }
-        
+
+        Map<Enchantment, Integer> enchants = getEnchantments();
+
+        if (enchants.size() > 0) {
+            Map<String, Integer> safeEnchants = new HashMap<String, Integer>();
+
+            for (Map.Entry<Enchantment, Integer> entry : enchants.entrySet()) {
+                safeEnchants.put(entry.getKey().getName(), entry.getValue());
+            }
+
+            result.put("enchantments", safeEnchants);
+        }
+
         return result;
     }
-    
+
     public static ItemStack deserialize(Map<String, Object> args) {
         Material type = Material.getMaterial((String)args.get("type"));
         short damage = 0;
         int amount = 1;
-        
+
         if (args.containsKey("damage")) {
             damage = (Short)args.get("damage");
         }
-        
+
         if (args.containsKey("amount")) {
             amount = (Integer)args.get("amount");
         }
-        
-        return new ItemStack(type, amount, damage);
+
+        ItemStack result = new ItemStack(type, amount, damage);
+
+        if (args.containsKey("enchantments")) {
+            Object raw = args.get("enchantments");
+
+            if (raw instanceof Map) {
+                Map<Object, Object> map = (Map<Object, Object>)raw;
+
+                for (Map.Entry<Object, Object> entry : map.entrySet()) {
+                    Enchantment enchantment = Enchantment.getByName(entry.getKey().toString());
+
+                    if ((enchantment != null) && (entry.getValue() instanceof Integer)) {
+                        result.addEnchantment(enchantment, (Integer)entry.getValue());
+                    }
+                }
+            }
+        }
+
+        return result;
     }
 }
