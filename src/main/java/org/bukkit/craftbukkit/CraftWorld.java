@@ -37,6 +37,7 @@ import org.bukkit.block.Biome;
 import org.bukkit.generator.BlockPopulator;
 import org.bukkit.Difficulty;
 import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 
 public class CraftWorld implements World {
     private final WorldServer world;
@@ -290,12 +291,8 @@ public class CraftWorld implements World {
     }
 
     public org.bukkit.entity.Item dropItem(Location loc, ItemStack item) {
-        net.minecraft.server.ItemStack stack = new net.minecraft.server.ItemStack(
-            item.getTypeId(),
-            item.getAmount(),
-            item.getDurability()
-        );
-        EntityItem entity = new EntityItem(world, loc.getX(), loc.getY(), loc.getZ(), stack);
+        CraftItemStack clone = new CraftItemStack(item);
+        EntityItem entity = new EntityItem(world, loc.getX(), loc.getY(), loc.getZ(), clone.getHandle());
         entity.pickupDelay = 10;
         world.addEntity(entity);
         // TODO this is inconsistent with how Entity.getBukkitEntity() works.

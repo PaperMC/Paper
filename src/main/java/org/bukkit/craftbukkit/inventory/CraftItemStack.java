@@ -26,6 +26,7 @@ public class CraftItemStack extends ItemStack {
 
     public CraftItemStack(ItemStack item) {
         this(item.getTypeId(), item.getAmount(), item.getDurability());
+        addEnchantments(item.getEnchantments());
     }
 
     /* 'Overwritten' constructors from ItemStack, yay for Java sucking */
@@ -201,5 +202,9 @@ public class CraftItemStack extends ItemStack {
         }
 
         tag.a("ench", (NBTBase)list);
+    }
+
+    public net.minecraft.server.ItemStack getHandle() {
+        return item;
     }
 }
