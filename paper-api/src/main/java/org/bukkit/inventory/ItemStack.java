@@ -258,7 +258,7 @@ public class ItemStack implements Serializable, ConfigurationSerializable {
      * @param enchantments Enchantments to add
      */
     public void addEnchantments(Map<Enchantment, Integer> enchantments) {
-        for (Map.Entry<Enchantment, Integer> entry : getEnchantments().entrySet()) {
+        for (Map.Entry<Enchantment, Integer> entry : enchantments.entrySet()) {
             addEnchantment(entry.getKey(), entry.getValue());
         }
     }
@@ -290,7 +290,7 @@ public class ItemStack implements Serializable, ConfigurationSerializable {
      * @param enchantments Enchantments to add
      */
     public void addUnsafeEnchantments(Map<Enchantment, Integer> enchantments) {
-        for (Map.Entry<Enchantment, Integer> entry : getEnchantments().entrySet()) {
+        for (Map.Entry<Enchantment, Integer> entry : enchantments.entrySet()) {
             addUnsafeEnchantment(entry.getKey(), entry.getValue());
         }
     }
