@@ -35,6 +35,7 @@ import jline.ConsoleReader;
 import net.minecraft.server.ChunkCoordinates;
 import net.minecraft.server.ConvertProgressUpdater;
 import net.minecraft.server.Convertable;
+import net.minecraft.server.Enchantment;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityTracker;
 import net.minecraft.server.IProgressUpdate;
@@ -104,6 +105,11 @@ public final class CraftServer implements Server {
         this.serverVersion = CraftServer.class.getPackage().getImplementationVersion();
 
         Bukkit.setServer(this);
+
+        // Register all the Enchantments now so we can stop new registration immediately after
+        Enchantment.DAMAGE_ALL.getClass();
+        org.bukkit.enchantments.Enchantment.stopAcceptingRegistrations();
+        // Ugly hack :(
 
         if (!Main.useConsole) {
             getLogger().info("Console input is disabled due to --noconsole command argument");

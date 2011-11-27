@@ -1,5 +1,12 @@
 package org.bukkit.craftbukkit.inventory;
 
+import java.util.HashMap;
+import java.util.Map;
+import net.minecraft.server.EnchantmentManager;
+import net.minecraft.server.NBTBase;
+import net.minecraft.server.NBTTagCompound;
+import net.minecraft.server.NBTTagList;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
@@ -128,5 +135,71 @@ public class CraftItemStack extends ItemStack {
     @Override
     public int getMaxStackSize() {
         return item.getItem().getMaxStackSize();
+    }
+
+    @Override
+    public void addUnsafeEnchantment(Enchantment ench, int level) {
+        Map<Enchantment, Integer> enchantments = getEnchantments();
+        enchantments.put(ench, level);
+        rebuildEnchantments(enchantments);
+    }
+
+    @Override
+    public boolean containsEnchantment(Enchantment ench) {
+        return getEnchantmentLevel(ench) > 0;
+    }
+
+    @Override
+    public int getEnchantmentLevel(Enchantment ench) {
+        return EnchantmentManager.b(ench.getId(), item);
+    }
+
+    @Override
+    public int removeEnchantment(Enchantment ench) {
+        Map<Enchantment, Integer> enchantments = getEnchantments();
+        Integer previous = enchantments.remove(ench);
+
+        rebuildEnchantments(enchantments);
+
+        return (previous == null) ? 0 : previous;
+    }
+
+    @Override
+    public Map<Enchantment, Integer> getEnchantments() {
+        Map<Enchantment, Integer> result = new HashMap<Enchantment, Integer>();
+        NBTTagList list = item.p();
+
+        if (list == null) {
+            return result;
+        }
+
+        for (int i = 0; i < list.d(); i++) {
+            short id = ((NBTTagCompound)list.a(i)).e("id");
+            short level = ((NBTTagCompound)list.a(i)).e("lvl");
+
+            result.put(Enchantment.getById(id), (int)level);
+        }
+
+        return result;
+    }
+
+    private void rebuildEnchantments(Map<Enchantment, Integer> enchantments) {
+        NBTTagCompound tag = item.tag;
+        NBTTagList list = new NBTTagList("ench");
+
+        if (tag == null) {
+            tag = item.tag = new NBTTagCompound();
+        }
+
+        for (Map.Entry<Enchantment, Integer> entry : enchantments.entrySet()) {
+            NBTTagCompound subtag = new NBTTagCompound();
+
+            subtag.a("id", (short)entry.getKey().getId());
+            subtag.a("lvl", (short)(int)entry.getValue());
+
+            list.a(subtag);
+        }
+
+        tag.a("ench", (NBTBase)list);
     }
 }
