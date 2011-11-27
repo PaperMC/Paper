@@ -200,7 +200,7 @@ public class ItemStack implements Serializable, ConfigurationSerializable {
 
         ItemStack item = (ItemStack) obj;
 
-        return item.getAmount() == getAmount() && item.getTypeId() == getTypeId();
+        return item.getAmount() == getAmount() && item.getTypeId() == getTypeId() && getDurability() == item.getDurability() && getEnchantments().equals(item.getEnchantments());
     }
 
     @Override
