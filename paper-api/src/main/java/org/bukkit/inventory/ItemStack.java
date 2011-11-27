@@ -205,7 +205,10 @@ public class ItemStack implements Serializable, ConfigurationSerializable {
 
     @Override
     public ItemStack clone() {
-        return new ItemStack(type, amount, durability);
+        ItemStack result = new ItemStack(type, amount, durability);
+        result.addEnchantments(getEnchantments());
+
+        return result;
     }
 
     @Override
@@ -247,6 +250,20 @@ public class ItemStack implements Serializable, ConfigurationSerializable {
     }
 
     /**
+     * Adds the specified enchantments to this item stack.
+     * <p>
+     * This method is the same as calling {@link #addEnchantment(org.bukkit.enchantments.Enchantment, int)}
+     * for each element of the map.
+     *
+     * @param enchantments Enchantments to add
+     */
+    public void addEnchantments(Map<Enchantment, Integer> enchantments) {
+        for (Map.Entry<Enchantment, Integer> entry : getEnchantments().entrySet()) {
+            addEnchantment(entry.getKey(), entry.getValue());
+        }
+    }
+
+    /**
      * Adds the specified {@link Enchantment} to this item stack.
      * <p>
      * If this item stack already contained the given enchantment (at any level), it will be replaced.
@@ -262,6 +279,20 @@ public class ItemStack implements Serializable, ConfigurationSerializable {
         }
 
         addUnsafeEnchantment(ench, level);
+    }
+
+    /**
+     * Adds the specified enchantments to this item stack in an unsafe manner.
+     * <p>
+     * This method is the same as calling {@link #addUnsafeEnchantment(org.bukkit.enchantments.Enchantment, int)}
+     * for each element of the map.
+     *
+     * @param enchantments Enchantments to add
+     */
+    public void addUnsafeEnchantments(Map<Enchantment, Integer> enchantments) {
+        for (Map.Entry<Enchantment, Integer> entry : getEnchantments().entrySet()) {
+            addUnsafeEnchantment(entry.getKey(), entry.getValue());
+        }
     }
 
     /**
