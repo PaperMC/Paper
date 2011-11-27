@@ -141,7 +141,7 @@ public enum Material {
     IRON_AXE(258, 1, 250),
     FLINT_AND_STEEL(259, 1, 64),
     APPLE(260),
-    BOW(261, 1),
+    BOW(261, 1, 384),
     ARROW(262),
     COAL(263, Coal.class),
     DIAMOND(264),
