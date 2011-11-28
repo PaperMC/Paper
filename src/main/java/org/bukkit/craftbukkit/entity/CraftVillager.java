@@ -6,7 +6,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Villager;
 
 public class CraftVillager extends CraftCreature implements Villager {
-    public CraftVillager(CraftServer server, EntityCreature entity) {
+    public CraftVillager(CraftServer server, EntityVillager entity) {
         super(server, entity);
     }
 
