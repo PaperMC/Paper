@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.MagmaCube;
 
 public abstract class CraftEntity implements org.bukkit.entity.Entity {
     private static final Map<String, CraftPlayer> players = new MapMaker().softValues().makeMap();
@@ -79,7 +80,10 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
                 else { return new CraftCreature(server, (EntityCreature) entity); }
             }
             // Slimes are a special (and broken) case
-            else if (entity instanceof EntitySlime) { return new CraftSlime(server, (EntitySlime) entity); }
+            else if (entity instanceof EntitySlime) {
+                if (entity instanceof MagmaCube) { return new CraftMagmaCube(server, (EntityLavaSlime) entity); }
+                else { return new CraftSlime(server, (EntitySlime) entity); }
+            }
             // Flying
             else if (entity instanceof EntityFlying) {
                 if (entity instanceof EntityGhast) { return new CraftGhast(server, (EntityGhast) entity); }

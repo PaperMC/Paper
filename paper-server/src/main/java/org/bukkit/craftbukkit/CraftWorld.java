@@ -734,7 +734,11 @@ public class CraftWorld implements World {
             } else if (Skeleton.class.isAssignableFrom(clazz)) {
                 entity = new EntitySkeleton(world);
             } else if (Slime.class.isAssignableFrom(clazz)) {
-                entity = new EntitySlime(world);
+                if (MagmaCube.class.isAssignableFrom(clazz)) {
+                    entity = new EntityLavaSlime(world);
+                } else {
+                    entity = new EntitySlime(world);
+                }
             } else if (Spider.class.isAssignableFrom(clazz)) {
                 if (CaveSpider.class.isAssignableFrom(clazz)) {
                     entity = new EntityCaveSpider(world);
