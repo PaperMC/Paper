@@ -2,18 +2,23 @@ package org.bukkit.craftbukkit.event;
 
 import java.net.InetAddress;
 import java.util.List;
+
 import net.minecraft.server.ChunkCoordinates;
+import net.minecraft.server.EntityBlaze;
 import net.minecraft.server.EntityCaveSpider;
 import net.minecraft.server.EntityChicken;
 import net.minecraft.server.EntityCow;
 import net.minecraft.server.EntityCreeper;
+import net.minecraft.server.EntityEnderDragon;
 import net.minecraft.server.EntityEnderman;
 import net.minecraft.server.EntityGhast;
 import net.minecraft.server.EntityGiantZombie;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.EntityItem;
+import net.minecraft.server.EntityLavaSlime;
 import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntityMonster;
+import net.minecraft.server.EntityMushroomCow;
 import net.minecraft.server.EntityPig;
 import net.minecraft.server.EntityPigZombie;
 import net.minecraft.server.EntityPlayer;
@@ -21,8 +26,10 @@ import net.minecraft.server.EntitySheep;
 import net.minecraft.server.EntitySilverfish;
 import net.minecraft.server.EntitySkeleton;
 import net.minecraft.server.EntitySlime;
+import net.minecraft.server.EntitySnowman;
 import net.minecraft.server.EntitySpider;
 import net.minecraft.server.EntitySquid;
+import net.minecraft.server.EntityVillager;
 import net.minecraft.server.EntityWolf;
 import net.minecraft.server.EntityZombie;
 import net.minecraft.server.Item;
@@ -203,7 +210,8 @@ public class CraftEventFactory {
         if (entityliving instanceof EntityChicken) {
             type = CreatureType.CHICKEN;
         } else if (entityliving instanceof EntityCow) {
-            type = CreatureType.COW;
+            if (entityliving instanceof EntityMushroomCow) type = CreatureType.MUSHROOM_COW;
+            else type = CreatureType.COW;
         } else if (entityliving instanceof EntityCreeper) {
             type = CreatureType.CREEPER;
         } else if (entityliving instanceof EntityGhast) {
@@ -221,7 +229,8 @@ public class CraftEventFactory {
         } else if (entityliving instanceof EntitySkeleton) {
             type = CreatureType.SKELETON;
         } else if (entityliving instanceof EntitySlime) {
-            type = CreatureType.SLIME;
+            if (entityliving instanceof EntityLavaSlime) type = CreatureType.MAGMA_CUBE;
+            else type = CreatureType.SLIME;
         } else if (entityliving instanceof EntitySpider) {
             if (entityliving instanceof EntityCaveSpider) type = CreatureType.CAVE_SPIDER;
             else type = CreatureType.SPIDER;
@@ -231,6 +240,14 @@ public class CraftEventFactory {
             type = CreatureType.ZOMBIE;
         } else if (entityliving instanceof EntityEnderman) {
             type = CreatureType.ENDERMAN;
+        } else if (entityliving instanceof EntitySnowman) {
+            type = CreatureType.SNOWMAN;
+        } else if (entityliving instanceof EntityEnderDragon) {
+            type = CreatureType.ENDER_DRAGON;
+        } else if (entityliving instanceof EntityVillager) {
+            type = CreatureType.VILLAGER;
+        } else if (entityliving instanceof EntityBlaze) {
+            type = CreatureType.BLAZE;
         } else if (entityliving instanceof EntitySilverfish) {
             type = CreatureType.SILVERFISH;
             // Supertype of many, last!
