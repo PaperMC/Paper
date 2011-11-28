@@ -130,7 +130,7 @@ public class ServerConfigurationManager {
 
         String joinMessage = playerJoinEvent.getJoinMessage();
 
-        if (joinMessage != null) {
+        if ((joinMessage != null) && (joinMessage.length() > 0)) {
             this.server.serverConfigurationManager.sendAll(new Packet3Chat(joinMessage));
         }
         // CraftBukkit end
