@@ -226,4 +226,13 @@ public abstract class Enchantment {
     public static Enchantment getByName(String name) {
         return byName.get(name);
     }
+
+    /**
+     * Gets an array of all the registered {@link Enchantment}s
+     *
+     * @return Array of enchantments
+     */
+    public static Enchantment[] values() {
+        return byId.values().toArray(new Enchantment[byId.size()]);
+    }
 }
