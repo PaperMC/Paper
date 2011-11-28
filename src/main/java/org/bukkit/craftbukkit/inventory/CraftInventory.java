@@ -53,13 +53,13 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
             if (item == null || item.getTypeId() <= 0) {
                 mcItems[i] = null;
             } else {
-                mcItems[i] = new net.minecraft.server.ItemStack(item.getTypeId(), item.getAmount(), item.getDurability());
+                mcItems[i] = CraftItemStack.createNMSItemStack(item);
             }
         }
     }
 
     public void setItem(int index, ItemStack item) {
-        getInventory().setItem(index, (item == null ? null : new net.minecraft.server.ItemStack(item.getTypeId(), item.getAmount(), item.getDurability())));
+        getInventory().setItem(index, (item == null ? null : CraftItemStack.createNMSItemStack(item)));
     }
 
     public boolean contains(int materialId) {

@@ -207,4 +207,8 @@ public class CraftItemStack extends ItemStack {
     public net.minecraft.server.ItemStack getHandle() {
         return item;
     }
+
+    public static net.minecraft.server.ItemStack createNMSItemStack(ItemStack original) {
+        return new CraftItemStack(original).getHandle();
+    }
 }
