@@ -132,7 +132,7 @@ public enum Material {
     BREWING_STAND(117),
     CAULDRON(118),
     ENDER_PORTAL(119),
-    ENTER_PORTAL_FRAME(120),
+    ENDER_PORTAL_FRAME(120),
     ENDER_STONE(121),
     DRAGON_EGG(122),
     // ----- Item Separator -----
