@@ -27,6 +27,7 @@ public enum CreatureType {
     VILLAGER("Villager", Villager.class),
     BLAZE("Blaze", Blaze.class),
     MUSHROOM_COW("MushroomCow", MushroomCow.class),
+    MAGMA_CUBE("MagmaCube", MagmaCube.class),
     SNOWMAN("Snowman", Snowman.class);
 
     private String name;
