@@ -36,7 +36,7 @@ public class BlockPumpkin extends Block {
     public void a(World world, int i, int j, int k) {
         super.a(world, i, j, k);
         if (world.getTypeId(i, j - 1, k) == Block.SNOW_BLOCK.id && world.getTypeId(i, j - 2, k) == Block.SNOW_BLOCK.id) {
-            if (!world.isStatic) {
+            if (!world.isStatic && world.getServer().getServer().spawnAnimals) { // CraftBukkit - make snowmen obey spawning rules
                 world.setTypeId(i, j, k, 0);
                 world.setTypeId(i, j - 1, k, 0);
                 world.setTypeId(i, j - 2, k, 0);
