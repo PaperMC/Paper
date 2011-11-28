@@ -81,7 +81,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             }
             // Slimes are a special (and broken) case
             else if (entity instanceof EntitySlime) {
-                if (entity instanceof MagmaCube) { return new CraftMagmaCube(server, (EntityLavaSlime) entity); }
+                if (entity instanceof EntityLavaSlime) { return new CraftMagmaCube(server, (EntityLavaSlime) entity); }
                 else { return new CraftSlime(server, (EntitySlime) entity); }
             }
             // Flying
