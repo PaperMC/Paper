@@ -27,7 +27,7 @@ public class EntityListener implements Listener {
     public void onItemSpawn(ItemSpawnEvent event) {}
 
     /**
-     * Called when an entity combusts due to the sun.
+     * Called when an entity combusts.
      *<p />
      * If an Entity Combust event is cancelled, the entity will not combust.
      *
