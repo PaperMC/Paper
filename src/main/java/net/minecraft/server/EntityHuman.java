@@ -8,6 +8,7 @@ import org.bukkit.craftbukkit.entity.CraftItem;
 import org.bukkit.craftbukkit.TrigMath;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
+import org.bukkit.event.entity.EntityCombustByEntityEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityTargetEvent;
@@ -838,7 +839,12 @@ public abstract class EntityHuman extends EntityLiving {
                 int l = EnchantmentManager.c(this.inventory, (EntityLiving) entity);
 
                 if (l > 0) {
-                    entity.j(l * 4);
+                    // CraftBukkit start - raise a combust event when somebody hits with a fire enchanted item
+                    EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), l*4);
+                    if (!combustEvent.isCancelled()) {
+                        entity.j(combustEvent.getDuration());
+                    }
+                    // CraftBukkit end
                 }
             }
 

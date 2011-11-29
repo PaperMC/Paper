@@ -245,25 +245,6 @@ public class EntityPainting extends Entity {
         return true;
     }
 
-    // CraftBukkit start - copy of a method in Entity except for the CraftBukkit-specific code
-    // TODO: Better way?
-    public void a(EntityWeatherStorm entityweatherstorm) {
-        // CraftBukkit start
-        PaintingBreakByEntityEvent event = new PaintingBreakByEntityEvent((Painting) this.getBukkitEntity(), entityweatherstorm.getBukkitEntity());
-        Bukkit.getServer().getPluginManager().callEvent(event);
-
-        if (event.isCancelled()) {
-            return;
-        }
-        // CraftBukkit end
-
-        ++this.fireTicks;
-        if (this.fireTicks == 0) {
-            this.j(8);
-        }
-    }
-    // CraftBukkit end
-
     public void b(NBTTagCompound nbttagcompound) {
         nbttagcompound.a("Dir", (byte) this.a);
         nbttagcompound.setString("Motive", this.e.A);

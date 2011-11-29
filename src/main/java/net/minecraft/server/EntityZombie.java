@@ -25,11 +25,11 @@ public class EntityZombie extends EntityMonster {
 
             if (f > 0.5F && this.world.isChunkLoaded(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ)) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
                 // CraftBukkit start
-                EntityCombustEvent event = new EntityCombustEvent(this.getBukkitEntity());
+                EntityCombustEvent event = new EntityCombustEvent(this.getBukkitEntity(), 8);
                 this.world.getServer().getPluginManager().callEvent(event);
 
                 if (!event.isCancelled()) {
-                    this.j(8);
+                    this.j(event.getDuration());
                 }
                 // CraftBukkit end
             }

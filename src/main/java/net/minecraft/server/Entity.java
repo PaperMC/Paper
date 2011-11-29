@@ -8,7 +8,11 @@ import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Painting;
 import org.bukkit.entity.Vehicle;
+import org.bukkit.event.entity.EntityCombustByBlockEvent;
+import org.bukkit.event.entity.EntityCombustByEntityEvent;
+import org.bukkit.event.painting.PaintingBreakByEntityEvent;
 import org.bukkit.event.vehicle.VehicleBlockCollisionEvent;
 import org.bukkit.event.vehicle.VehicleExitEvent;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
@@ -16,6 +20,7 @@ import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.plugin.PluginManager;
 // CraftBukkit end
 
 public abstract class Entity {
@@ -300,7 +305,7 @@ public abstract class Entity {
 
     protected void av() {
         if (!this.fireProof) {
-            // CraftBukkit start - TODO: this event spams!
+            // CraftBukkit start - fallen in lava TODO: this event spams!
             if (this instanceof EntityLiving) {
                 org.bukkit.Server server = this.world.getServer();
 
@@ -317,18 +322,19 @@ public abstract class Entity {
 
                 if (this.fireTicks <= 0) {
                     // not on fire yet
-                    EntityCombustEvent combustEvent = new EntityCombustEvent(damagee);
+                    EntityCombustEvent combustEvent = new EntityCombustByBlockEvent(damager, damagee, 15);
                     server.getPluginManager().callEvent(combustEvent);
 
                     if (!combustEvent.isCancelled()) {
-                        this.j(15);
+                        this.j(combustEvent.getDuration());
                     }
                 } else {
+                    // This will be called every single tick the entity is in lava, so don't throw an event.
                     this.j(15);
                 }
                 return;
             }
-            // CraftBukkit end
+            // CraftBukkit end - we also don't throw an event unless the object in lava is living, to save on some event calls
 
             this.damageEntity(DamageSource.LAVA, 4);
             this.j(15);
@@ -620,12 +626,12 @@ public abstract class Entity {
                 if (!flag2) {
                     ++this.fireTicks;
                     // CraftBukkit start - not on fire yet
-                    if (this.fireTicks <= 0) {
-                        EntityCombustEvent event = new EntityCombustEvent(this.getBukkitEntity());
+                    if (this.fireTicks <= 0) { // only throw events on the first combust, otherwise it spams
+                        EntityCombustEvent event = new EntityCombustEvent(this.getBukkitEntity(), 8);
                         this.world.getServer().getPluginManager().callEvent(event);
 
                         if (!event.isCancelled()) {
-                            this.j(8);
+                            this.j(event.getDuration());
                         }
                     } else {
                         // CraftBukkit end
@@ -1299,8 +1305,21 @@ public abstract class Entity {
 
     public void a(EntityWeatherStorm entityweatherstorm) {
         // CraftBukkit start
-        EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(entityweatherstorm.getBukkitEntity(), this.getBukkitEntity(), EntityDamageEvent.DamageCause.LIGHTNING, 5);
-        Bukkit.getServer().getPluginManager().callEvent(event);
+        final org.bukkit.entity.Entity thisBukkitEntity = this.getBukkitEntity();
+        final org.bukkit.entity.Entity stormBukkitEntity = entityweatherstorm.getBukkitEntity();
+        final PluginManager pluginManager = Bukkit.getServer().getPluginManager();
+
+        if (thisBukkitEntity instanceof Painting) {
+            PaintingBreakByEntityEvent event = new PaintingBreakByEntityEvent((Painting) thisBukkitEntity, stormBukkitEntity);
+            pluginManager.callEvent(event);
+
+            if (event.isCancelled()) {
+                return;
+            }
+        }
+
+        EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(stormBukkitEntity, thisBukkitEntity, EntityDamageEvent.DamageCause.LIGHTNING, 5);
+        pluginManager.callEvent(event);
 
         if (event.isCancelled()) {
             return;
@@ -1311,7 +1330,13 @@ public abstract class Entity {
 
         ++this.fireTicks;
         if (this.fireTicks == 0) {
-            this.j(8);
+            // CraftBukkit start - raise a combust event when lightning strikes
+            EntityCombustByEntityEvent entityCombustEvent = new EntityCombustByEntityEvent(stormBukkitEntity, thisBukkitEntity, 8);
+            pluginManager.callEvent(entityCombustEvent);
+            if (!entityCombustEvent.isCancelled()) {
+                this.j(entityCombustEvent.getDuration());
+            }
+            // CraftBukkit end
         }
     }
 
