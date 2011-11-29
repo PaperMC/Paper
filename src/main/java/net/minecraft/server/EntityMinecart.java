@@ -12,6 +12,7 @@ import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.event.vehicle.VehicleEntityCollisionEvent;
 import org.bukkit.event.vehicle.VehicleMoveEvent;
 import org.bukkit.event.vehicle.VehicleUpdateEvent;
+import org.bukkit.util.Vector;
 // CraftBukkit end
 
 public class EntityMinecart extends Entity implements IInventory {
@@ -32,12 +33,12 @@ public class EntityMinecart extends Entity implements IInventory {
 
     // CraftBukkit start
     public boolean slowWhenEmpty = true;
-    public double derailedX = 0.5;
-    public double derailedY = 0.5;
-    public double derailedZ = 0.5;
-    public double flyingX = 0.95;
-    public double flyingY = 0.95;
-    public double flyingZ = 0.95;
+    private double derailedX = 0.5;
+    private double derailedY = 0.5;
+    private double derailedZ = 0.5;
+    private double flyingX = 0.95;
+    private double flyingY = 0.95;
+    private double flyingZ = 0.95;
     public double maxSpeed = 0.4D;
 
     public ItemStack[] getContents() {
@@ -934,4 +935,26 @@ public class EntityMinecart extends Entity implements IInventory {
     public int m() {
         return this.datawatcher.getInt(18);
     }
+
+    // CraftBukkit start - methods for getting and setting flying and derailed velocity modifiers
+    public Vector getFlyingVelocityMod() {
+        return new Vector(flyingX, flyingY, flyingZ);
+    }
+
+    public void setFlyingVelocityMod(Vector flying) {
+        flyingX = flying.getX();
+        flyingY = flying.getY();
+        flyingZ = flying.getZ();
+    }
+
+    public Vector getDerailedVelocityMod() {
+        return new Vector(derailedX, derailedY, derailedZ);
+    }
+
+    public void setDerailedVelocityMod(Vector derailed) {
+        derailedX = derailed.getX();
+        derailedY = derailed.getY();
+        derailedZ = derailed.getZ();
+    }
+    // CraftBukkit end
 }

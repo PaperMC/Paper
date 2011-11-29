@@ -12,8 +12,12 @@ public class CraftSkeleton extends CraftMonster implements Skeleton {
     }
 
     @Override
+    public EntitySkeleton getHandle() {
+        return (EntitySkeleton) entity;
+    }
+
+    @Override
     public String toString() {
         return "CraftSkeleton";
     }
-
 }

@@ -11,12 +11,12 @@ public class CraftMagmaCube extends CraftSlime implements MagmaCube {
         super(server, entity);
     }
 
+    public EntityLavaSlime getHandle() {
+        return (EntityLavaSlime) entity;
+    }
+
     @Override
     public String toString() {
         return "CraftMagmaCube";
-    }
-
-    public EntityLavaSlime getHandle() {
-        return (EntityLavaSlime) super.getHandle();
     }
 }

@@ -11,8 +11,12 @@ public class CraftGhast extends CraftFlying implements Ghast {
     }
 
     @Override
+    public EntityGhast getHandle() {
+        return (EntityGhast) entity;
+    }
+
+    @Override
     public String toString() {
         return "CraftGhast";
     }
-
 }

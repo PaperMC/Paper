@@ -13,6 +13,11 @@ public class CraftFallingSand extends CraftEntity implements FallingSand {
     }
 
     @Override
+    public EntityFallingSand getHandle() {
+        return (EntityFallingSand) entity;
+    }
+
+    @Override
     public String toString() {
         return "CraftFallingSand";
     }

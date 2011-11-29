@@ -12,16 +12,6 @@ public class CraftEnderman extends CraftMonster implements Enderman {
         super(server, entity);
     }
 
-    @Override
-    public EntityEnderman getHandle() {
-        return (EntityEnderman) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftEnderman";
-    }
-
     public MaterialData getCarriedMaterial() {
         return Material.getMaterial(getHandle().getCarriedId()).getNewData((byte) getHandle().getCarriedData());
     }
@@ -29,5 +19,15 @@ public class CraftEnderman extends CraftMonster implements Enderman {
     public void setCarriedMaterial(MaterialData data) {
         getHandle().setCarriedId(data.getItemTypeId());
         getHandle().setCarriedData(data.getData());
+    }
+
+    @Override
+    public EntityEnderman getHandle() {
+        return (EntityEnderman) entity;
+    }
+
+    @Override
+    public String toString() {
+        return "CraftEnderman";
     }
 }

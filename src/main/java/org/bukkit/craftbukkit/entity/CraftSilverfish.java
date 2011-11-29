@@ -11,7 +11,7 @@ public class CraftSilverfish extends CraftMonster implements Silverfish {
 
     @Override
     public EntitySilverfish getHandle() {
-        return (EntitySilverfish) super.getHandle();
+        return (EntitySilverfish) entity;
     }
 
     @Override

@@ -9,12 +9,17 @@ public class CraftLightningStrike extends CraftEntity implements LightningStrike
         super(server, entity);
     }
 
-    @Override
-    public EntityWeatherStorm getHandle() {
-        return (EntityWeatherStorm) super.getHandle();
-    }
-
     public boolean isEffect() {
         return ((EntityWeatherStorm) super.getHandle()).isEffect;
+    }
+
+    @Override
+    public EntityWeatherStorm getHandle() {
+        return (EntityWeatherStorm) entity;
+    }
+
+    @Override
+    public String toString() {
+        return "CraftLightningStrik";
     }
 }

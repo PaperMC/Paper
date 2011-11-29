@@ -11,16 +11,6 @@ public class CraftTNTPrimed extends CraftEntity implements TNTPrimed {
         super(server, entity);
     }
 
-    @Override
-    public String toString() {
-        return "CraftTNTPrimed";
-    }
-
-    @Override
-    public EntityTNTPrimed getHandle() {
-        return (EntityTNTPrimed) super.getHandle();
-    }
-
     public float getYield() {
         return getHandle().yield;
     }
@@ -43,6 +33,16 @@ public class CraftTNTPrimed extends CraftEntity implements TNTPrimed {
 
     public void setFuseTicks(int fuseTicks) {
         getHandle().fuseTicks = fuseTicks;
+    }
+
+    @Override
+    public EntityTNTPrimed getHandle() {
+        return (EntityTNTPrimed) entity;
+    }
+
+    @Override
+    public String toString() {
+        return "CraftTNTPrimed";
     }
 
 }

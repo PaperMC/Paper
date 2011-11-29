@@ -12,16 +12,6 @@ public class CraftCreeper extends CraftMonster implements Creeper {
         super(server, entity);
     }
 
-    @Override
-    public EntityCreeper getHandle() {
-        return (EntityCreeper) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftCreeper";
-    }
-
     public boolean isPowered() {
         return getHandle().isPowered();
     }
@@ -51,4 +41,13 @@ public class CraftCreeper extends CraftMonster implements Creeper {
 
     }
 
+    @Override
+    public EntityCreeper getHandle() {
+        return (EntityCreeper) entity;
+    }
+
+    @Override
+    public String toString() {
+        return "CraftCreeper";
+    }
 }

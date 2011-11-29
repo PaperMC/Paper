@@ -12,6 +12,11 @@ public class CraftWeather extends CraftEntity implements Weather {
 
     @Override
     public EntityWeather getHandle() {
-        return (EntityWeather) super.getHandle();
+        return (EntityWeather) entity;
+    }
+
+    @Override
+    public String toString() {
+        return "CraftWeather";
     }
 }

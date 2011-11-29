@@ -13,47 +13,51 @@ public class CraftFireball extends AbstractProjectile implements Fireball {
         super(server, entity);
     }
 
-    @Override
-    public String toString() {
-        return "CraftFireball";
-    }
-
     public float getYield() {
-        return ((EntityFireball) getHandle()).yield;
+        return getHandle().yield;
     }
 
     public boolean isIncendiary() {
-        return ((EntityFireball) getHandle()).isIncendiary;
+        return getHandle().isIncendiary;
     }
 
     public void setIsIncendiary(boolean isIncendiary) {
-        ((EntityFireball) getHandle()).isIncendiary = isIncendiary;
+        getHandle().isIncendiary = isIncendiary;
     }
 
     public void setYield(float yield) {
-        ((EntityFireball) getHandle()).yield = yield;
+        getHandle().yield = yield;
     }
 
     public LivingEntity getShooter() {
-        if (((EntityFireball) getHandle()).shooter != null) {
-            return (LivingEntity) ((EntityFireball) getHandle()).shooter.getBukkitEntity();
+        if (getHandle().shooter != null) {
+            return (LivingEntity) getHandle().shooter.getBukkitEntity();
         }
 
         return null;
-
     }
 
     public void setShooter(LivingEntity shooter) {
         if (shooter instanceof CraftLivingEntity) {
-            ((EntityFireball) getHandle()).shooter = (EntityLiving) ((CraftLivingEntity) shooter).entity;
+            getHandle().shooter = (EntityLiving) ((CraftLivingEntity) shooter).entity;
         }
     }
 
     public Vector getDirection() {
-        return new Vector(((EntityFireball) getHandle()).dirX, ((EntityFireball) getHandle()).dirY, ((EntityFireball) getHandle()).dirZ);
+        return new Vector(getHandle().dirX, getHandle().dirY, getHandle().dirZ);
     }
 
     public void setDirection(Vector direction) {
-        ((EntityFireball) getHandle()).setDirection(direction.getX(), direction.getY(), direction.getZ());
+        getHandle().setDirection(direction.getX(), direction.getY(), direction.getZ());
+    }
+
+    @Override
+    public EntityFireball getHandle() {
+        return (EntityFireball) entity;
+    }
+
+    @Override
+    public String toString() {
+        return "CraftFireball";
     }
 }

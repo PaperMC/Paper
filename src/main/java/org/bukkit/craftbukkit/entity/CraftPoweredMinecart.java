@@ -14,5 +14,4 @@ public class CraftPoweredMinecart extends CraftMinecart implements PoweredMineca
     public String toString() {
         return "CraftPoweredMinecart";
     }
-
 }

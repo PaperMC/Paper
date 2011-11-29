@@ -27,6 +27,11 @@ public abstract class CraftProjectile extends AbstractProjectile implements Proj
 
     @Override
     public EntityProjectile getHandle() {
-        return (EntityProjectile)entity;
+        return (EntityProjectile) entity;
+    }
+
+    @Override
+    public String toString() {
+        return "CraftProjectile";
     }
 }

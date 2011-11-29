@@ -26,62 +26,59 @@ public class CraftMinecart extends CraftVehicle implements Minecart {
         }
     }
 
-    protected EntityMinecart minecart;
-
     public CraftMinecart(CraftServer server, EntityMinecart entity) {
         super(server, entity);
-        minecart = entity;
     }
 
     public void setDamage(int damage) {
-        minecart.setDamage(damage);
+        getHandle().setDamage(damage);
     }
 
     public int getDamage() {
-        return minecart.getDamage();
+        return getHandle().getDamage();
     }
 
     public double getMaxSpeed() {
-        return minecart.maxSpeed;
+        return getHandle().maxSpeed;
     }
 
     public void setMaxSpeed(double speed) {
         if (speed >= 0D) {
-            minecart.maxSpeed = speed;
+            getHandle().maxSpeed = speed;
         }
     }
 
     public boolean isSlowWhenEmpty() {
-        return minecart.slowWhenEmpty;
+        return getHandle().slowWhenEmpty;
     }
 
     public void setSlowWhenEmpty(boolean slow) {
-        minecart.slowWhenEmpty = slow;
+        getHandle().slowWhenEmpty = slow;
     }
 
     public Vector getFlyingVelocityMod() {
-        return new Vector(minecart.flyingX, minecart.flyingY, minecart.flyingZ);
+        return getHandle().getFlyingVelocityMod();
     }
 
     public void setFlyingVelocityMod(Vector flying) {
-        minecart.flyingX = flying.getX();
-        minecart.flyingY = flying.getY();
-        minecart.flyingZ = flying.getZ();
+        getHandle().setFlyingVelocityMod(flying);
     }
 
     public Vector getDerailedVelocityMod() {
-        return new Vector(minecart.derailedX, minecart.derailedY, minecart.derailedZ);
+        return getHandle().getDerailedVelocityMod();
     }
 
     public void setDerailedVelocityMod(Vector derailed) {
-        minecart.derailedX = derailed.getX();
-        minecart.derailedY = derailed.getY();
-        minecart.derailedZ = derailed.getZ();
+        getHandle().setDerailedVelocityMod(derailed);
+    }
+
+    @Override
+    public EntityMinecart getHandle() {
+        return (EntityMinecart) entity;
     }
 
     @Override
     public String toString() {
         return "CraftMinecart";
     }
-
 }

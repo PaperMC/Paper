@@ -11,16 +11,6 @@ public class CraftPigZombie extends CraftZombie implements PigZombie {
         super(server, entity);
     }
 
-    @Override
-    public EntityPigZombie getHandle() {
-        return (EntityPigZombie) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftPigZombie";
-    }
-
     public int getAnger() {
         return getHandle().angerLevel;
     }
@@ -37,4 +27,13 @@ public class CraftPigZombie extends CraftZombie implements PigZombie {
         return getAnger() > 0;
     }
 
+    @Override
+    public EntityPigZombie getHandle() {
+        return (EntityPigZombie) entity;
+    }
+
+    @Override
+    public String toString() {
+        return "CraftPigZombie";
+    }
 }

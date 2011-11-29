@@ -11,6 +11,11 @@ public class CraftCow extends CraftAnimals implements Cow {
     }
 
     @Override
+    public EntityCow getHandle() {
+        return (EntityCow) entity;
+    }
+
+    @Override
     public String toString() {
         return "CraftCow";
     }

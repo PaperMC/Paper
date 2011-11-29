@@ -7,16 +7,21 @@ import org.bukkit.entity.ComplexEntityPart;
 import org.bukkit.entity.ComplexLivingEntity;
 
 public class CraftComplexPart extends CraftEntity implements ComplexEntityPart {
-    public CraftComplexPart(CraftServer server, Entity entity) {
+    public CraftComplexPart(CraftServer server, EntityComplexPart entity) {
         super(server, entity);
     }
 
     public ComplexLivingEntity getParent() {
-        return (ComplexLivingEntity)getHandle().a.getBukkitEntity();
+        return (ComplexLivingEntity) getHandle().a.getBukkitEntity();
     }
 
     @Override
     public EntityComplexPart getHandle() {
-        return (EntityComplexPart)super.getHandle();
+        return (EntityComplexPart) entity;
+    }
+
+    @Override
+    public String toString() {
+        return "CraftComplexPart";
     }
 }

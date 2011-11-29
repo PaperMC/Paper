@@ -12,24 +12,27 @@ public class CraftFish extends AbstractProjectile implements Fish {
         super(server, entity);
     }
 
-    @Override
-    public String toString() {
-        return "CraftFish";
-    }
-
     public LivingEntity getShooter() {
-        if (((EntityFishingHook) getHandle()).owner != null) {
-            return (LivingEntity) ((EntityFishingHook) getHandle()).owner.getBukkitEntity();
+        if (getHandle().owner != null) {
+            return (LivingEntity) getHandle().owner.getBukkitEntity();
         }
 
         return null;
-
     }
 
     public void setShooter(LivingEntity shooter) {
         if (shooter instanceof CraftHumanEntity) {
-            ((EntityFishingHook) getHandle()).owner = (EntityHuman) ((CraftHumanEntity) shooter).entity;
+            getHandle().owner = (EntityHuman) ((CraftHumanEntity) shooter).entity;
         }
     }
 
+    @Override
+    public EntityFishingHook getHandle() {
+        return (EntityFishingHook) entity;
+    }
+
+    @Override
+    public String toString() {
+        return "CraftFish";
+    }
 }

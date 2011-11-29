@@ -20,16 +20,6 @@ public class CraftPainting extends CraftEntity implements Painting {
         super(server, entity);
     }
 
-    @Override
-    public EntityPainting getHandle() {
-        return (EntityPainting) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftPainting[art=" + getArt() + "]";
-    }
-
     public Art getArt() {
         EnumArt art = getHandle().e;
         return CraftArt.NotchToBukkit(art);
@@ -123,5 +113,15 @@ public class CraftPainting extends CraftEntity implements Painting {
         getHandle().velocityChanged = true; // because this occurs when the painting is broken, so it might be important
         world.addEntity(painting);
         this.entity = painting;
+    }
+
+    @Override
+    public EntityPainting getHandle() {
+        return (EntityPainting) entity;
+    }
+
+    @Override
+    public String toString() {
+        return "CraftPainting{art=" + getArt() + "}";
     }
 }

@@ -10,6 +10,11 @@ public class CraftEgg extends CraftProjectile implements Egg {
     }
 
     @Override
+    public EntityEgg getHandle() {
+        return (EntityEgg) entity;
+    }
+
+    @Override
     public String toString() {
         return "CraftEgg";
     }

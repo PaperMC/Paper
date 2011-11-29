@@ -5,47 +5,50 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Boat;
 
 public class CraftBoat extends CraftVehicle implements Boat {
-    protected EntityBoat boat;
 
     public CraftBoat(CraftServer server, EntityBoat entity) {
         super(server, entity);
-        boat = entity;
     }
 
     public double getMaxSpeed() {
-        return boat.maxSpeed;
+        return getHandle().maxSpeed;
     }
 
     public void setMaxSpeed(double speed) {
         if (speed >= 0D) {
-            boat.maxSpeed = speed;
+            getHandle().maxSpeed = speed;
         }
     }
 
     public double getOccupiedDeceleration() {
-        return boat.occupiedDeceleration;
+        return getHandle().occupiedDeceleration;
     }
 
     public void setOccupiedDeceleration(double speed) {
         if (speed >= 0D) {
-            boat.occupiedDeceleration = speed;
+            getHandle().occupiedDeceleration = speed;
         }
     }
 
     public double getUnoccupiedDeceleration() {
-        return boat.unoccupiedDeceleration;
+        return getHandle().unoccupiedDeceleration;
     }
 
     public void setUnoccupiedDeceleration(double speed) {
-        boat.unoccupiedDeceleration = speed;
+        getHandle().unoccupiedDeceleration = speed;
     }
 
     public boolean getWorkOnLand() {
-        return boat.landBoats;
+        return getHandle().landBoats;
     }
 
     public void setWorkOnLand(boolean workOnLand) {
-        boat.landBoats = workOnLand;
+        getHandle().landBoats = workOnLand;
+    }
+
+    @Override
+    public EntityBoat getHandle() {
+        return (EntityBoat) entity;
     }
 
     @Override
