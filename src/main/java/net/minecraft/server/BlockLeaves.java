@@ -4,7 +4,7 @@ import java.util.Random;
 
 import org.bukkit.event.block.LeavesDecayEvent; // CraftBukkit
 
-public class BlockLeaves extends BlockLeavesBase {
+public class BlockLeaves extends BlockTransparant {
 
     private int c;
     int[] a;
@@ -134,7 +134,7 @@ public class BlockLeaves extends BlockLeavesBase {
         return random.nextInt(20) == 0 ? 1 : 0;
     }
 
-    public int a(int i, Random random, int j) {
+    public int getDropType(int i, Random random, int j) {
         return Block.SAPLING.id;
     }
 
@@ -147,7 +147,7 @@ public class BlockLeaves extends BlockLeavesBase {
         }
     }
 
-    protected int c(int i) {
+    protected int getDropData(int i) {
         return i & 3;
     }
 

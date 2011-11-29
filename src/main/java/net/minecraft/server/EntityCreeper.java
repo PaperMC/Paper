@@ -29,13 +29,13 @@ public class EntityCreeper extends EntityMonster {
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
         if (this.datawatcher.getByte(17) == 1) {
-            nbttagcompound.a("powered", true);
+            nbttagcompound.setBoolean("powered", true);
         }
     }
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        this.datawatcher.watch(17, Byte.valueOf((byte) (nbttagcompound.n("powered") ? 1 : 0)));
+        this.datawatcher.watch(17, Byte.valueOf((byte) (nbttagcompound.getBoolean("powered") ? 1 : 0)));
     }
 
     protected void b(Entity entity, float f) {
@@ -148,11 +148,11 @@ public class EntityCreeper extends EntityMonster {
         this.datawatcher.watch(16, Byte.valueOf((byte) i));
     }
 
-    public void a(EntityWeatherStorm entityweatherstorm) {
-        super.a(entityweatherstorm);
+    public void a(EntityWeatherLighting entityweatherlighting) {
+        super.a(entityweatherlighting);
 
         // CraftBukkit start
-        CreeperPowerEvent event = new CreeperPowerEvent(this.getBukkitEntity(), entityweatherstorm.getBukkitEntity(), CreeperPowerEvent.PowerCause.LIGHTNING);
+        CreeperPowerEvent event = new CreeperPowerEvent(this.getBukkitEntity(), entityweatherlighting.getBukkitEntity(), CreeperPowerEvent.PowerCause.LIGHTNING);
         this.world.getServer().getPluginManager().callEvent(event);
 
         if (event.isCancelled()) {

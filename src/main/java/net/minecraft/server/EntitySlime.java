@@ -5,7 +5,7 @@ public class EntitySlime extends EntityLiving implements IMonster {
     public float a;
     public float b;
     public float c;
-    private int size = 0;
+    private int jumpDelay = 0;
 
     public EntitySlime(World world) {
         super(world);
@@ -13,7 +13,7 @@ public class EntitySlime extends EntityLiving implements IMonster {
         int i = 1 << this.random.nextInt(3);
 
         this.height = 0.0F;
-        this.size = this.random.nextInt(20) + 10;
+        this.jumpDelay = this.random.nextInt(20) + 10;
         this.setSize(i);
         this.az = i;
     }
@@ -42,12 +42,12 @@ public class EntitySlime extends EntityLiving implements IMonster {
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
-        nbttagcompound.a("Size", this.getSize() - 1);
+        nbttagcompound.setInt("Size", this.getSize() - 1);
     }
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        this.setSize(nbttagcompound.f("Size") + 1);
+        this.setSize(nbttagcompound.getInt("Size") + 1);
     }
 
     protected String w() {
@@ -92,16 +92,16 @@ public class EntitySlime extends EntityLiving implements IMonster {
 
     protected void m_() {
         this.ak();
-        EntityHuman entityhuman = this.world.b(this, 16.0D);
+        EntityHuman entityhuman = this.world.findNearbyVulnerablePlayer(this, 16.0D);
 
         if (entityhuman != null) {
             this.a(entityhuman, 10.0F, 20.0F);
         }
 
-        if (this.onGround && this.size-- <= 0) {
-            this.size = this.A();
+        if (this.onGround && this.jumpDelay-- <= 0) {
+            this.jumpDelay = this.A();
             if (entityhuman != null) {
-                this.size /= 3;
+                this.jumpDelay /= 3;
             }
 
             this.aW = true;

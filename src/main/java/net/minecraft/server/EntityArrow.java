@@ -90,7 +90,7 @@ public class EntityArrow extends Entity {
         int i = this.world.getTypeId(this.e, this.f, this.g);
 
         if (i > 0) {
-            Block.byId[i].a((IBlockAccess) this.world, this.e, this.f, this.g);
+            Block.byId[i].updateShape(this.world, this.e, this.f, this.g);
             AxisAlignedBB axisalignedbb = Block.byId[i].e(this.world, this.e, this.f, this.g);
 
             if (axisalignedbb != null && axisalignedbb.a(Vec3D.create(this.locX, this.locY, this.locZ))) {
@@ -292,25 +292,25 @@ public class EntityArrow extends Entity {
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("xTile", (short) this.e);
-        nbttagcompound.a("yTile", (short) this.f);
-        nbttagcompound.a("zTile", (short) this.g);
-        nbttagcompound.a("inTile", (byte) this.h);
-        nbttagcompound.a("inData", (byte) this.i);
-        nbttagcompound.a("shake", (byte) this.shake);
-        nbttagcompound.a("inGround", (byte) (this.inGround ? 1 : 0));
-        nbttagcompound.a("player", this.fromPlayer);
+        nbttagcompound.setShort("xTile", (short) this.e);
+        nbttagcompound.setShort("yTile", (short) this.f);
+        nbttagcompound.setShort("zTile", (short) this.g);
+        nbttagcompound.setByte("inTile", (byte) this.h);
+        nbttagcompound.setByte("inData", (byte) this.i);
+        nbttagcompound.setByte("shake", (byte) this.shake);
+        nbttagcompound.setByte("inGround", (byte) (this.inGround ? 1 : 0));
+        nbttagcompound.setBoolean("player", this.fromPlayer);
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        this.e = nbttagcompound.e("xTile");
-        this.f = nbttagcompound.e("yTile");
-        this.g = nbttagcompound.e("zTile");
-        this.h = nbttagcompound.d("inTile") & 255;
-        this.i = nbttagcompound.d("inData") & 255;
-        this.shake = nbttagcompound.d("shake") & 255;
-        this.inGround = nbttagcompound.d("inGround") == 1;
-        this.fromPlayer = nbttagcompound.n("player");
+        this.e = nbttagcompound.getShort("xTile");
+        this.f = nbttagcompound.getShort("yTile");
+        this.g = nbttagcompound.getShort("zTile");
+        this.h = nbttagcompound.getByte("inTile") & 255;
+        this.i = nbttagcompound.getByte("inData") & 255;
+        this.shake = nbttagcompound.getByte("shake") & 255;
+        this.inGround = nbttagcompound.getByte("inGround") == 1;
+        this.fromPlayer = nbttagcompound.getBoolean("player");
     }
 
     public void a_(EntityHuman entityhuman) {

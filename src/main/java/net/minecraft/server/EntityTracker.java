@@ -8,7 +8,7 @@ import java.util.Set;
 public class EntityTracker {
 
     private Set a = new HashSet();
-    private EntityList trackedEntities = new EntityList();
+    private IntHashMap trackedEntities = new IntHashMap();
     private MinecraftServer c;
     private int d;
     private int e;
@@ -65,7 +65,7 @@ public class EntityTracker {
             this.addEntity(entity, 160, 3, true);
         } else if (entity instanceof EntityTNTPrimed) {
             this.addEntity(entity, 160, 10, true);
-        } else if (entity instanceof EntityFallingSand) {
+        } else if (entity instanceof EntityFallingBlock) {
             this.addEntity(entity, 160, 20, true);
         } else if (entity instanceof EntityPainting) {
             this.addEntity(entity, 160, Integer.MAX_VALUE, false);

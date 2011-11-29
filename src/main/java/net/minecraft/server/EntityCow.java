@@ -49,7 +49,7 @@ public class EntityCow extends EntityAnimal {
         return Item.LEATHER.id;
     }
 
-    protected void a(boolean flag, int i) {
+    protected void dropDeathLoot(boolean flag, int i) {
         // CraftBukkit start - whole method
         List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
         int j = this.random.nextInt(3) + this.random.nextInt(1 + i);

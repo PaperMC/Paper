@@ -13,25 +13,25 @@ import java.util.logging.Logger;
 
 import java.util.UUID; // CraftBukkit
 
-public class PlayerNBTManager implements PlayerFileData, IDataManager {
+public class WorldNBTStorage implements PlayerFileData, IDataManager {
 
-    private static final Logger a = Logger.getLogger("Minecraft");
-    private final File b;
-    private final File c;
-    private final File d;
-    private final long e = System.currentTimeMillis();
+    private static final Logger log = Logger.getLogger("Minecraft");
+    private final File baseDir;
+    private final File playerDir;
+    private final File dataDir;
+    private final long sessionId = System.currentTimeMillis();
     private final String f;
     private UUID uuid = null; // CraftBukkit
 
-    public PlayerNBTManager(File file1, String s, boolean flag) {
-        this.b = new File(file1, s);
-        this.b.mkdirs();
-        this.c = new File(this.b, "players");
-        this.d = new File(this.b, "data");
-        this.d.mkdirs();
+    public WorldNBTStorage(File file1, String s, boolean flag) {
+        this.baseDir = new File(file1, s);
+        this.baseDir.mkdirs();
+        this.playerDir = new File(this.baseDir, "players");
+        this.dataDir = new File(this.baseDir, "data");
+        this.dataDir.mkdirs();
         this.f = s;
         if (flag) {
-            this.c.mkdirs();
+            this.playerDir.mkdirs();
         }
 
         this.f();
@@ -39,11 +39,11 @@ public class PlayerNBTManager implements PlayerFileData, IDataManager {
 
     private void f() {
         try {
-            File file1 = new File(this.b, "session.lock");
+            File file1 = new File(this.baseDir, "session.lock");
             DataOutputStream dataoutputstream = new DataOutputStream(new FileOutputStream(file1));
 
             try {
-                dataoutputstream.writeLong(this.e);
+                dataoutputstream.writeLong(this.sessionId);
             } finally {
                 dataoutputstream.close();
             }
@@ -53,63 +53,63 @@ public class PlayerNBTManager implements PlayerFileData, IDataManager {
         }
     }
 
-    public File a() { // CraftBukkit - prot to public. Also, hi zml2008.
-        return this.b;
+    public File getDirectory() { // CraftBukkit - prot to public.
+        return this.baseDir;
     }
 
-    public void b() {
+    public void checkSession() {
         try {
-            File file1 = new File(this.b, "session.lock");
+            File file1 = new File(this.baseDir, "session.lock");
             DataInputStream datainputstream = new DataInputStream(new FileInputStream(file1));
 
             try {
-                if (datainputstream.readLong() != this.e) {
-                    throw new MinecraftException("The save is being accessed from another location, aborting");
+                if (datainputstream.readLong() != this.sessionId) {
+                    throw new WorldConlictException("The save is being accessed from another location, aborting");
                 }
             } finally {
                 datainputstream.close();
             }
         } catch (IOException ioexception) {
-            throw new MinecraftException("Failed to check session lock, aborting");
+            throw new WorldConlictException("Failed to check session lock, aborting");
         }
     }
 
-    public IChunkLoader a(WorldProvider worldprovider) {
+    public IChunkLoader createChunkLoader(WorldProvider worldprovider) {
         File file1;
 
         if (worldprovider instanceof WorldProviderHell) {
-            file1 = new File(this.b, "DIM-1");
+            file1 = new File(this.baseDir, "DIM-1");
             file1.mkdirs();
             return new ChunkLoader(file1, true);
-        } else if (worldprovider instanceof WorldProviderSky) {
-            file1 = new File(this.b, "DIM1");
+        } else if (worldprovider instanceof WorldProviderTheEnd) {
+            file1 = new File(this.baseDir, "DIM1");
             file1.mkdirs();
             return new ChunkLoader(file1, true);
         } else {
-            return new ChunkLoader(this.b, true);
+            return new ChunkLoader(this.baseDir, true);
         }
     }
 
-    public WorldData c() {
-        File file1 = new File(this.b, "level.dat");
+    public WorldData getWorldData() {
+        File file1 = new File(this.baseDir, "level.dat");
         NBTTagCompound nbttagcompound;
         NBTTagCompound nbttagcompound1;
 
         if (file1.exists()) {
             try {
-                nbttagcompound = CompressedStreamTools.a((InputStream) (new FileInputStream(file1)));
-                nbttagcompound1 = nbttagcompound.l("Data");
+                nbttagcompound = NBTCompressedStreamTools.a((InputStream) (new FileInputStream(file1)));
+                nbttagcompound1 = nbttagcompound.getCompound("Data");
                 return new WorldData(nbttagcompound1);
             } catch (Exception exception) {
                 exception.printStackTrace();
             }
         }
 
-        file1 = new File(this.b, "level.dat_old");
+        file1 = new File(this.baseDir, "level.dat_old");
         if (file1.exists()) {
             try {
-                nbttagcompound = CompressedStreamTools.a((InputStream) (new FileInputStream(file1)));
-                nbttagcompound1 = nbttagcompound.l("Data");
+                nbttagcompound = NBTCompressedStreamTools.a((InputStream) (new FileInputStream(file1)));
+                nbttagcompound1 = nbttagcompound.getCompound("Data");
                 return new WorldData(nbttagcompound1);
             } catch (Exception exception1) {
                 exception1.printStackTrace();
@@ -119,18 +119,18 @@ public class PlayerNBTManager implements PlayerFileData, IDataManager {
         return null;
     }
 
-    public void a(WorldData worlddata, List list) {
+    public void saveWorldData(WorldData worlddata, List list) {
         NBTTagCompound nbttagcompound = worlddata.a(list);
         NBTTagCompound nbttagcompound1 = new NBTTagCompound();
 
-        nbttagcompound1.a("Data", (NBTBase) nbttagcompound);
+        nbttagcompound1.set("Data", nbttagcompound);
 
         try {
-            File file1 = new File(this.b, "level.dat_new");
-            File file2 = new File(this.b, "level.dat_old");
-            File file3 = new File(this.b, "level.dat");
+            File file1 = new File(this.baseDir, "level.dat_new");
+            File file2 = new File(this.baseDir, "level.dat_old");
+            File file3 = new File(this.baseDir, "level.dat");
 
-            CompressedStreamTools.a(nbttagcompound1, (OutputStream) (new FileOutputStream(file1)));
+            NBTCompressedStreamTools.a(nbttagcompound1, (OutputStream) (new FileOutputStream(file1)));
             if (file2.exists()) {
                 file2.delete();
             }
@@ -149,18 +149,18 @@ public class PlayerNBTManager implements PlayerFileData, IDataManager {
         }
     }
 
-    public void a(WorldData worlddata) {
+    public void saveWorldData(WorldData worlddata) {
         NBTTagCompound nbttagcompound = worlddata.a();
         NBTTagCompound nbttagcompound1 = new NBTTagCompound();
 
-        nbttagcompound1.a("Data", (NBTBase) nbttagcompound);
+        nbttagcompound1.set("Data", nbttagcompound);
 
         try {
-            File file1 = new File(this.b, "level.dat_new");
-            File file2 = new File(this.b, "level.dat_old");
-            File file3 = new File(this.b, "level.dat");
+            File file1 = new File(this.baseDir, "level.dat_new");
+            File file2 = new File(this.baseDir, "level.dat_old");
+            File file3 = new File(this.baseDir, "level.dat");
 
-            CompressedStreamTools.a(nbttagcompound1, (OutputStream) (new FileOutputStream(file1)));
+            NBTCompressedStreamTools.a(nbttagcompound1, (OutputStream) (new FileOutputStream(file1)));
             if (file2.exists()) {
                 file2.delete();
             }
@@ -184,57 +184,57 @@ public class PlayerNBTManager implements PlayerFileData, IDataManager {
             NBTTagCompound nbttagcompound = new NBTTagCompound();
 
             entityhuman.d(nbttagcompound);
-            File file1 = new File(this.c, "_tmp_.dat");
-            File file2 = new File(this.c, entityhuman.name + ".dat");
+            File file1 = new File(this.playerDir, "_tmp_.dat");
+            File file2 = new File(this.playerDir, entityhuman.name + ".dat");
 
-            CompressedStreamTools.a(nbttagcompound, (OutputStream) (new FileOutputStream(file1)));
+            NBTCompressedStreamTools.a(nbttagcompound, (OutputStream) (new FileOutputStream(file1)));
             if (file2.exists()) {
                 file2.delete();
             }
 
             file1.renameTo(file2);
         } catch (Exception exception) {
-            a.warning("Failed to save player data for " + entityhuman.name);
+            log.warning("Failed to save player data for " + entityhuman.name);
         }
     }
 
     public void b(EntityHuman entityhuman) {
-        NBTTagCompound nbttagcompound = this.a(entityhuman.name);
+        NBTTagCompound nbttagcompound = this.getPlayerData(entityhuman.name);
 
         if (nbttagcompound != null) {
             entityhuman.e(nbttagcompound);
         }
     }
 
-    public NBTTagCompound a(String s) {
+    public NBTTagCompound getPlayerData(String s) {
         try {
-            File file1 = new File(this.c, s + ".dat");
+            File file1 = new File(this.playerDir, s + ".dat");
 
             if (file1.exists()) {
-                return CompressedStreamTools.a((InputStream) (new FileInputStream(file1)));
+                return NBTCompressedStreamTools.a((InputStream) (new FileInputStream(file1)));
             }
         } catch (Exception exception) {
-            a.warning("Failed to load player data for " + s);
+            log.warning("Failed to load player data for " + s);
         }
 
         return null;
     }
 
-    public PlayerFileData d() {
+    public PlayerFileData getPlayerFileData() {
         return this;
     }
 
     public void e() {}
 
-    public File b(String s) {
-        return new File(this.d, s + ".dat");
+    public File getDataFile(String s) {
+        return new File(this.dataDir, s + ".dat");
     }
 
     // CraftBukkit start
     public UUID getUUID() {
         if (uuid != null) return uuid;
         try {
-            File file1 = new File(this.b, "uid.dat");
+            File file1 = new File(this.baseDir, "uid.dat");
             if (!file1.exists()) {
                 DataOutputStream dos = new DataOutputStream(new FileOutputStream(file1));
                 uuid = UUID.randomUUID();

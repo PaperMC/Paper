@@ -53,7 +53,7 @@ public class EntityMinecart extends Entity implements IInventory {
         this.f = false;
         this.bc = true;
         this.b(0.98F, 0.7F);
-        this.height = this.width / 2.0F;
+        this.height = this.length / 2.0F;
     }
 
     protected boolean g_() {
@@ -94,7 +94,7 @@ public class EntityMinecart extends Entity implements IInventory {
     }
 
     public double q() {
-        return (double) this.width * 0.0D - 0.30000001192092896D;
+        return (double) this.length * 0.0D - 0.30000001192092896D;
     }
 
     public boolean damageEntity(DamageSource damagesource, int i) {
@@ -666,11 +666,11 @@ public class EntityMinecart extends Entity implements IInventory {
     }
 
     protected void b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("Type", this.type);
+        nbttagcompound.setInt("Type", this.type);
         if (this.type == 2) {
-            nbttagcompound.a("PushX", this.b);
-            nbttagcompound.a("PushZ", this.c);
-            nbttagcompound.a("Fuel", (short) this.e);
+            nbttagcompound.setDouble("PushX", this.b);
+            nbttagcompound.setDouble("PushZ", this.c);
+            nbttagcompound.setShort("Fuel", (short) this.e);
         } else if (this.type == 1) {
             NBTTagList nbttaglist = new NBTTagList();
 
@@ -678,30 +678,30 @@ public class EntityMinecart extends Entity implements IInventory {
                 if (this.items[i] != null) {
                     NBTTagCompound nbttagcompound1 = new NBTTagCompound();
 
-                    nbttagcompound1.a("Slot", (byte) i);
+                    nbttagcompound1.setByte("Slot", (byte) i);
                     this.items[i].b(nbttagcompound1);
-                    nbttaglist.a((NBTBase) nbttagcompound1);
+                    nbttaglist.add(nbttagcompound1);
                 }
             }
 
-            nbttagcompound.a("Items", (NBTBase) nbttaglist);
+            nbttagcompound.set("Items", nbttaglist);
         }
     }
 
     protected void a(NBTTagCompound nbttagcompound) {
-        this.type = nbttagcompound.f("Type");
+        this.type = nbttagcompound.getInt("Type");
         if (this.type == 2) {
-            this.b = nbttagcompound.i("PushX");
-            this.c = nbttagcompound.i("PushZ");
-            this.e = nbttagcompound.e("Fuel");
+            this.b = nbttagcompound.getDouble("PushX");
+            this.c = nbttagcompound.getDouble("PushZ");
+            this.e = nbttagcompound.getShort("Fuel");
         } else if (this.type == 1) {
-            NBTTagList nbttaglist = nbttagcompound.m("Items");
+            NBTTagList nbttaglist = nbttagcompound.getList("Items");
 
             this.items = new ItemStack[this.getSize()];
 
-            for (int i = 0; i < nbttaglist.d(); ++i) {
-                NBTTagCompound nbttagcompound1 = (NBTTagCompound) nbttaglist.a(i);
-                int j = nbttagcompound1.d("Slot") & 255;
+            for (int i = 0; i < nbttaglist.size(); ++i) {
+                NBTTagCompound nbttagcompound1 = (NBTTagCompound) nbttaglist.get(i);
+                int j = nbttagcompound1.getByte("Slot") & 255;
 
                 if (j >= 0 && j < this.items.length) {
                     this.items[j] = ItemStack.a(nbttagcompound1);

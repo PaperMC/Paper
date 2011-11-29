@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.map;
 
 import net.minecraft.server.WorldMap;
-import net.minecraft.server.WorldMapOrienter;
+import net.minecraft.server.WorldMapDecoration;
 
 import org.bukkit.entity.Player;
 import org.bukkit.map.MapCanvas;
@@ -25,7 +25,7 @@ public class CraftMapRenderer extends MapRenderer {
         // Map
         for (int x = 0; x < 128; ++x) {
             for (int y = 0; y < 128; ++y) {
-                canvas.setPixel(x, y, worldMap.f[y * 128 + x]);
+                canvas.setPixel(x, y, worldMap.colors[y * 128 + x]);
             }
         }
         
@@ -34,9 +34,9 @@ public class CraftMapRenderer extends MapRenderer {
         while (cursors.size() > 0) {
             cursors.removeCursor(cursors.getCursor(0));
         }
-        for (int i = 0; i < worldMap.i.size(); ++i) {
-            WorldMapOrienter orienter = (WorldMapOrienter) worldMap.i.get(i);
-            cursors.addCursor(orienter.b, orienter.c, (byte)(orienter.d & 15), (byte)(orienter.a));
+        for (int i = 0; i < worldMap.decorations.size(); ++i) {
+            WorldMapDecoration decoration = (WorldMapDecoration) worldMap.decorations.get(i);
+            cursors.addCursor(decoration.locX, decoration.locY, (byte)(decoration.rotation & 15), (byte)(decoration.type));
         }
     }
     

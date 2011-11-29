@@ -65,7 +65,7 @@ public class BlockFire extends Block {
     public void a(World world, int i, int j, int k, Random random) {
         boolean flag = world.getTypeId(i, j - 1, k) == Block.NETHERRACK.id;
 
-        if (world.worldProvider instanceof WorldProviderSky && world.getTypeId(i, j - 1, k) == Block.BEDROCK.id) {
+        if (world.worldProvider instanceof WorldProviderTheEnd && world.getTypeId(i, j - 1, k) == Block.BEDROCK.id) {
             flag = true;
         }
 
@@ -238,7 +238,7 @@ public class BlockFire extends Block {
         }
     }
 
-    public void a(World world, int i, int j, int k) {
+    public void onPlace(World world, int i, int j, int k) {
         if (world.worldProvider.dimension > 0 || world.getTypeId(i, j - 1, k) != Block.OBSIDIAN.id || !Block.PORTAL.b_(world, i, j, k)) {
             if (!world.e(i, j - 1, k) && !this.g(world, i, j, k)) {
                 world.setTypeId(i, j, k, 0);

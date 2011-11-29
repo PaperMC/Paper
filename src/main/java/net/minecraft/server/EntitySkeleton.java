@@ -57,7 +57,7 @@ public class EntitySkeleton extends EntityMonster {
                 this.world.getServer().getPluginManager().callEvent(event);
 
                 if (!event.isCancelled()) {
-                    this.j(event.getDuration());
+                    this.setOnFire(event.getDuration());
                 }
                 // CraftBukkit end
             }
@@ -99,7 +99,7 @@ public class EntitySkeleton extends EntityMonster {
         return Item.ARROW.id;
     }
 
-    protected void a(boolean flag, int i) {
+    protected void dropDeathLoot(boolean flag, int i) {
         // CraftBukkit start - whole method
         java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
 
@@ -117,7 +117,7 @@ public class EntitySkeleton extends EntityMonster {
         // CraftBukkit end
     }
 
-    public EnchantmentDamage t() {
-        return EnchantmentDamage.b;
+    public MonsterType getMonsterType() {
+        return MonsterType.UNDEAD;
     }
 }

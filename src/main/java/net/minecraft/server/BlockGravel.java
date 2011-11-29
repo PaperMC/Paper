@@ -8,7 +8,7 @@ public class BlockGravel extends BlockSand {
         super(i, j);
     }
 
-    public int a(int i, Random random, int j) {
+    public int getDropType(int i, Random random, int j) {
         j = Math.min(j, 3); // CraftBukkit - added to fix crash when j > 3
         return random.nextInt(10 - j * 3) == 0 ? Item.FLINT.id : this.id;
     }

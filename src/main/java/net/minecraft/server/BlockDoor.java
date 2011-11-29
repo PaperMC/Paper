@@ -55,11 +55,11 @@ public class BlockDoor extends Block {
     }
 
     public AxisAlignedBB e(World world, int i, int j, int k) {
-        this.a((IBlockAccess)world, i, j, k); // CraftBukkit - Make sure this points to the below method!
+        this.updateShape(world, i, j, k);
         return super.e(world, i, j, k);
     }
 
-    public void a(IBlockAccess iblockaccess, int i, int j, int k) {
+    public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
         this.d(this.e(iblockaccess.getData(i, j, k)));
     }
 
@@ -188,12 +188,12 @@ public class BlockDoor extends Block {
         }
     }
 
-    public int a(int i, Random random, int j) {
+    public int getDropType(int i, Random random, int j) {
         return (i & 8) != 0 ? 0 : (this.material == Material.ORE ? Item.IRON_DOOR.id : Item.WOOD_DOOR.id);
     }
 
     public MovingObjectPosition a(World world, int i, int j, int k, Vec3D vec3d, Vec3D vec3d1) {
-        this.a(world, i, j, k);
+        this.updateShape(world, i, j, k);
         return super.a(world, i, j, k, vec3d, vec3d1);
     }
 

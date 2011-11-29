@@ -1,7 +1,7 @@
 package net.minecraft.server;
 // CraftBukkit start - the whole file!
 
-public class ItemMobSpawner extends ItemLog { // Actually not ItemLog but 'ItemUsingMetadata' orso.
+public class ItemMobSpawner extends ItemWithAuxData {
 
     public  ItemMobSpawner(int id) {
         super(id, Block.MOB_SPAWNER);

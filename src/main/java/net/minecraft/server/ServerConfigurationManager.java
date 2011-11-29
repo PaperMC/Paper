@@ -76,7 +76,7 @@ public class ServerConfigurationManager {
 
     public void setPlayerFileData(WorldServer[] aworldserver) {
         if (this.playerFileData != null) return; // CraftBukkit
-        this.playerFileData = aworldserver[0].q().d();
+        this.playerFileData = aworldserver[0].getDataManager().getPlayerFileData();
     }
 
     public void a(EntityPlayer entityplayer) {
@@ -170,7 +170,7 @@ public class ServerConfigurationManager {
         return playerQuitEvent.getQuitMessage(); // CraftBukkit
     }
 
-    public EntityPlayer a(NetLoginHandler netloginhandler, String s) {
+    public EntityPlayer attemptLogin(NetLoginHandler netloginhandler, String s) {
         // CraftBukkit start - note: this entire method needs to be changed
         // Instead of kicking then returning, we need to store the kick reason
         // in the event, check with plugins to see if it's ok, and THEN kick
@@ -264,9 +264,9 @@ public class ServerConfigurationManager {
             entityplayer.fireTicks = 0;
             entityplayer.fallDistance = 0;
             entityplayer.foodData = new FoodMetaData();
+            entityplayer.expLevel = 0;
             entityplayer.expTotal = 0;
             entityplayer.exp = 0;
-            entityplayer.expLevel = 0;
             entityplayer.d(entityplayer.newExp);
         } else {
             location.setWorld(this.server.getWorldServer(i).getWorld());
@@ -303,7 +303,7 @@ public class ServerConfigurationManager {
         return entityplayer1;
     }
 
-    public void a(EntityPlayer entityplayer, int i) {
+    public void changeDimension(EntityPlayer entityplayer, int i) {
         // CraftBukkit start -- Replaced the standard handling of portals with a more customised method.
         int dimension = i;
         WorldServer fromWorld = this.server.getWorldServer(entityplayer.dimension);
@@ -351,7 +351,7 @@ public class ServerConfigurationManager {
         // CraftBukkit end
     }
 
-    public void b() {
+    public void tick() {
         if (++this.p > 200) {
             this.p = 0;
         }
@@ -459,11 +459,11 @@ public class ServerConfigurationManager {
         }
     }
 
-    public Set e() {
+    public Set getBannedPlayers() {
         return this.banByName;
     }
 
-    public Set f() {
+    public Set getBannedAddresses() {
         return this.banByIP;
     }
 
@@ -710,11 +710,11 @@ public class ServerConfigurationManager {
         entityplayer.s_();
     }
 
-    public int j() {
+    public int getPlayerCount() {
         return this.players.size();
     }
 
-    public int k() {
+    public int getMaxPlayers() {
         return this.maxPlayers;
     }
 }

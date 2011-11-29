@@ -23,7 +23,7 @@ public class BlockPiston extends Block {
     public int a(int i, int j) {
         int k = d(j);
 
-        return k > 5 ? this.textureId : (i == k ? (!e(j) && this.minX <= 0.0D && this.minY <= 0.0D && this.minZ <= 0.0D && this.maxX >= 1.0D && this.maxY >= 1.0D && this.maxZ >= 1.0D ? this.textureId : 110) : (i == PistonBlockTextures.a[k] ? 109 : 108));
+        return k > 5 ? this.textureId : (i == k ? (!e(j) && this.minX <= 0.0D && this.minY <= 0.0D && this.minZ <= 0.0D && this.maxX >= 1.0D && this.maxY >= 1.0D && this.maxZ >= 1.0D ? this.textureId : 110) : (i == Facing.a[k] ? 109 : 108));
     }
 
     public int c() {
@@ -53,7 +53,7 @@ public class BlockPiston extends Block {
         }
     }
 
-    public void a(World world, int i, int j, int k) {
+    public void onPlace(World world, int i, int j, int k) {
         if (!world.isStatic && world.getTileEntity(i, j, k) == null && !b) {
             this.g(world, i, j, k);
         }
@@ -114,7 +114,7 @@ public class BlockPiston extends Block {
                 world.setRawData(i, j, k, i1);
             }
         } else if (l == 1) {
-            TileEntity tileentity = world.getTileEntity(i + PistonBlockTextures.b[i1], j + PistonBlockTextures.c[i1], k + PistonBlockTextures.d[i1]);
+            TileEntity tileentity = world.getTileEntity(i + Facing.b[i1], j + Facing.c[i1], k + Facing.d[i1]);
 
             if (tileentity != null && tileentity instanceof TileEntityPiston) {
                 ((TileEntityPiston) tileentity).g();
@@ -123,9 +123,9 @@ public class BlockPiston extends Block {
             world.setRawTypeIdAndData(i, j, k, Block.PISTON_MOVING.id, i1);
             world.setTileEntity(i, j, k, BlockPistonMoving.a(this.id, i1, i1, false, true));
             if (this.a) {
-                int j1 = i + PistonBlockTextures.b[i1] * 2;
-                int k1 = j + PistonBlockTextures.c[i1] * 2;
-                int l1 = k + PistonBlockTextures.d[i1] * 2;
+                int j1 = i + Facing.b[i1] * 2;
+                int k1 = j + Facing.c[i1] * 2;
+                int l1 = k + Facing.d[i1] * 2;
                 int i2 = world.getTypeId(j1, k1, l1);
                 int j2 = world.getData(j1, k1, l1);
                 boolean flag = false;
@@ -146,9 +146,9 @@ public class BlockPiston extends Block {
                 }
 
                 if (!flag && i2 > 0 && a(i2, world, j1, k1, l1, false) && (Block.byId[i2].g() == 0 || i2 == Block.PISTON.id || i2 == Block.PISTON_STICKY.id)) {
-                    i += PistonBlockTextures.b[i1];
-                    j += PistonBlockTextures.c[i1];
-                    k += PistonBlockTextures.d[i1];
+                    i += Facing.b[i1];
+                    j += Facing.c[i1];
+                    k += Facing.d[i1];
                     world.setRawTypeIdAndData(i, j, k, Block.PISTON_MOVING.id, j2);
                     world.setTileEntity(i, j, k, BlockPistonMoving.a(i2, j2, i1, false, false));
                     b = false;
@@ -156,12 +156,12 @@ public class BlockPiston extends Block {
                     b = true;
                 } else if (!flag) {
                     b = false;
-                    world.setTypeId(i + PistonBlockTextures.b[i1], j + PistonBlockTextures.c[i1], k + PistonBlockTextures.d[i1], 0);
+                    world.setTypeId(i + Facing.b[i1], j + Facing.c[i1], k + Facing.d[i1], 0);
                     b = true;
                 }
             } else {
                 b = false;
-                world.setTypeId(i + PistonBlockTextures.b[i1], j + PistonBlockTextures.c[i1], k + PistonBlockTextures.d[i1], 0);
+                world.setTypeId(i + Facing.b[i1], j + Facing.c[i1], k + Facing.d[i1], 0);
                 b = true;
             }
 
@@ -171,7 +171,7 @@ public class BlockPiston extends Block {
         b = false;
     }
 
-    public void a(IBlockAccess iblockaccess, int i, int j, int k) {
+    public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
         int l = iblockaccess.getData(i, j, k);
 
         if (e(l)) {
@@ -269,9 +269,9 @@ public class BlockPiston extends Block {
 
     // CraftBukkkit boolean -> int
     private static int g(World world, int i, int j, int k, int l) {
-        int i1 = i + PistonBlockTextures.b[l];
-        int j1 = j + PistonBlockTextures.c[l];
-        int k1 = k + PistonBlockTextures.d[l];
+        int i1 = i + Facing.b[l];
+        int j1 = j + Facing.c[l];
+        int k1 = k + Facing.d[l];
         int l1 = 0;
 
         while (true) {
@@ -292,9 +292,9 @@ public class BlockPiston extends Block {
                             return -1; // CraftBukkit
                         }
 
-                        i1 += PistonBlockTextures.b[l];
-                        j1 += PistonBlockTextures.c[l];
-                        k1 += PistonBlockTextures.d[l];
+                        i1 += Facing.b[l];
+                        j1 += Facing.c[l];
+                        k1 += Facing.d[l];
                         ++l1;
                         continue;
                     }
@@ -306,9 +306,9 @@ public class BlockPiston extends Block {
     }
 
     private boolean h(World world, int i, int j, int k, int l) {
-        int i1 = i + PistonBlockTextures.b[l];
-        int j1 = j + PistonBlockTextures.c[l];
-        int k1 = k + PistonBlockTextures.d[l];
+        int i1 = i + Facing.b[l];
+        int j1 = j + Facing.c[l];
+        int k1 = k + Facing.d[l];
         int l1 = 0;
 
         while (true) {
@@ -330,9 +330,9 @@ public class BlockPiston extends Block {
                             return false;
                         }
 
-                        i1 += PistonBlockTextures.b[l];
-                        j1 += PistonBlockTextures.c[l];
-                        k1 += PistonBlockTextures.d[l];
+                        i1 += Facing.b[l];
+                        j1 += Facing.c[l];
+                        k1 += Facing.d[l];
                         ++l1;
                         continue;
                     }
@@ -343,9 +343,9 @@ public class BlockPiston extends Block {
             }
 
             while (i1 != i || j1 != j || k1 != k) {
-                l1 = i1 - PistonBlockTextures.b[l];
-                i2 = j1 - PistonBlockTextures.c[l];
-                int j2 = k1 - PistonBlockTextures.d[l];
+                l1 = i1 - Facing.b[l];
+                i2 = j1 - Facing.c[l];
+                int j2 = k1 - Facing.d[l];
                 int k2 = world.getTypeId(l1, i2, j2);
                 int l2 = world.getData(l1, i2, j2);
 

@@ -36,7 +36,7 @@ public final class ItemStack {
         this.count = 0;
         this.id = i;
         this.count = j;
-        this.b(k); // CraftBukkit
+        this.setData(k); // CraftBukkit
     }
 
     public static ItemStack a(NBTTagCompound nbttagcompound) {
@@ -54,7 +54,7 @@ public final class ItemStack {
         ItemStack itemstack = new ItemStack(this.id, i, this.damage);
 
         if (this.tag != null) {
-            itemstack.tag = (NBTTagCompound) this.tag.b();
+            itemstack.tag = (NBTTagCompound) this.tag.clone();
         }
 
         this.count -= i;
@@ -88,22 +88,22 @@ public final class ItemStack {
     }
 
     public NBTTagCompound b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("id", (short) this.id);
-        nbttagcompound.a("Count", (byte) this.count);
-        nbttagcompound.a("Damage", (short) this.damage);
+        nbttagcompound.setShort("id", (short) this.id);
+        nbttagcompound.setByte("Count", (byte) this.count);
+        nbttagcompound.setShort("Damage", (short) this.damage);
         if (this.tag != null) {
-            nbttagcompound.a("tag", (NBTBase) this.tag);
+            nbttagcompound.set("tag", this.tag);
         }
 
         return nbttagcompound;
     }
 
     public void c(NBTTagCompound nbttagcompound) {
-        this.id = nbttagcompound.e("id");
-        this.count = nbttagcompound.d("Count");
-        this.damage = nbttagcompound.e("Damage");
+        this.id = nbttagcompound.getShort("id");
+        this.count = nbttagcompound.getByte("Count");
+        this.damage = nbttagcompound.getShort("Damage");
         if (nbttagcompound.hasKey("tag")) {
-            this.tag = nbttagcompound.l("tag");
+            this.tag = nbttagcompound.getCompound("tag");
         }
     }
 
@@ -135,7 +135,7 @@ public final class ItemStack {
         return this.damage;
     }
 
-    public void b(int i) {
+    public void setData(int i) {
         this.damage = (this.id > 0) && (this.id < 256) ? Item.byId[this.id].filterData(i) : i; // CraftBukkit
     }
 
@@ -146,7 +146,7 @@ public final class ItemStack {
     public void damage(int i, EntityLiving entityliving) {
         if (this.d()) {
             if (i > 0 && entityliving instanceof EntityHuman) {
-                int j = EnchantmentManager.c(((EntityHuman) entityliving).inventory);
+                int j = EnchantmentManager.getDurabilityEnchantmentLevel(((EntityHuman) entityliving).inventory);
 
                 if (j > 0 && entityliving.world.random.nextInt(j + 1) > 0) {
                     return;
@@ -204,7 +204,7 @@ public final class ItemStack {
         ItemStack itemstack = new ItemStack(this.id, this.count, this.damage);
 
         if (this.tag != null) {
-            itemstack.tag = (NBTTagCompound) this.tag.b();
+            itemstack.tag = (NBTTagCompound) this.tag.clone();
             if (!itemstack.tag.equals(this.tag)) {
                 return itemstack;
             }
@@ -266,19 +266,19 @@ public final class ItemStack {
         this.getItem().a(this, world, entityhuman, i);
     }
 
-    public boolean n() {
+    public boolean hasTag() {
         return this.tag != null;
     }
 
-    public NBTTagCompound o() {
+    public NBTTagCompound getTag() {
         return this.tag;
     }
 
-    public NBTTagList p() {
-        return this.tag == null ? null : (NBTTagList) this.tag.b("ench");
+    public NBTTagList getEnchantments() {
+        return this.tag == null ? null : (NBTTagList) this.tag.get("ench");
     }
 
-    public void d(NBTTagCompound nbttagcompound) {
+    public void setTag(NBTTagCompound nbttagcompound) {
         if (Item.byId[this.id].getMaxStackSize() != 1) {
             throw new IllegalArgumentException("Cannot add tag data to a stackable item");
         } else {
@@ -287,27 +287,27 @@ public final class ItemStack {
     }
 
     public boolean q() {
-        return !this.getItem().e(this) ? false : !this.r();
+        return !this.getItem().e(this) ? false : !this.hasEnchantments();
     }
 
-    public void a(Enchantment enchantment, int i) {
+    public void addEnchantment(Enchantment enchantment, int i) {
         if (this.tag == null) {
-            this.d(new NBTTagCompound());
+            this.setTag(new NBTTagCompound());
         }
 
         if (!this.tag.hasKey("ench")) {
-            this.tag.a("ench", (NBTBase) (new NBTTagList("ench")));
+            this.tag.set("ench", new NBTTagList("ench"));
         }
 
-        NBTTagList nbttaglist = (NBTTagList) this.tag.b("ench");
+        NBTTagList nbttaglist = (NBTTagList) this.tag.get("ench");
         NBTTagCompound nbttagcompound = new NBTTagCompound();
 
-        nbttagcompound.a("id", (short) enchantment.id);
-        nbttagcompound.a("lvl", (short) ((byte) i));
-        nbttaglist.a((NBTBase) nbttagcompound);
+        nbttagcompound.setShort("id", (short) enchantment.id);
+        nbttagcompound.setShort("lvl", (short) ((byte) i));
+        nbttaglist.add(nbttagcompound);
     }
 
-    public boolean r() {
+    public boolean hasEnchantments() {
         return this.tag != null && this.tag.hasKey("ench");
     }
 }

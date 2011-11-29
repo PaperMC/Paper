@@ -85,7 +85,7 @@ public class NetLoginHandler extends NetHandler {
     }
 
     public void b(Packet1Login packet1login) {
-        EntityPlayer entityplayer = this.server.serverConfigurationManager.a(this, packet1login.name);
+        EntityPlayer entityplayer = this.server.serverConfigurationManager.attemptLogin(this, packet1login.name);
 
         if (entityplayer != null) {
             this.server.serverConfigurationManager.b(entityplayer);
@@ -96,11 +96,11 @@ public class NetLoginHandler extends NetHandler {
             WorldServer worldserver = (WorldServer) entityplayer.world; // CraftBukkit
             ChunkCoordinates chunkcoordinates = worldserver.getSpawn();
 
-            entityplayer.itemInWorldManager.b(worldserver.r().getGameType());
+            entityplayer.itemInWorldManager.b(worldserver.getWorldData().getGameType());
             NetServerHandler netserverhandler = new NetServerHandler(this.server, this.networkManager, entityplayer);
 
             // CraftBukkit start -- Don't send a higher than 60 MaxPlayer size, otherwise the PlayerInfo window won't render correctly.
-            int maxPlayers = this.server.serverConfigurationManager.k();
+            int maxPlayers = this.server.serverConfigurationManager.getMaxPlayers();
             if (maxPlayers > 60) {
                 maxPlayers = 60;
             }
@@ -137,8 +137,8 @@ public class NetLoginHandler extends NetHandler {
         if (this.networkManager.f() == null) return; // CraftBukkit - fix NPE when a client queries a server that is unable to handle it.
         try {
             // CraftBukkit start
-            ServerListPingEvent pingEvent = CraftEventFactory.callServerListPingEvent(this.server.server, getSocket().getInetAddress(), this.server.r, this.server.serverConfigurationManager.j(), this.server.serverConfigurationManager.k());
-            String s = pingEvent.getMotd() + "\u00A7" + this.server.serverConfigurationManager.j() + "\u00A7" + pingEvent.getMaxPlayers();
+            ServerListPingEvent pingEvent = CraftEventFactory.callServerListPingEvent(this.server.server, getSocket().getInetAddress(), this.server.r, this.server.serverConfigurationManager.getPlayerCount(), this.server.serverConfigurationManager.getMaxPlayers());
+            String s = pingEvent.getMotd() + "\u00A7" + this.server.serverConfigurationManager.getPlayerCount() + "\u00A7" + pingEvent.getMaxPlayers();
             // CraftBukkit end
 
             this.networkManager.queue(new Packet255KickDisconnect(s));

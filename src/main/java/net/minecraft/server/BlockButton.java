@@ -97,7 +97,7 @@ public class BlockButton extends Block {
         }
     }
 
-    public void a(IBlockAccess iblockaccess, int i, int j, int k) {
+    public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
         int l = iblockaccess.getData(i, j, k);
         int i1 = l & 7;
         boolean flag = (l & 8) > 0;

@@ -6,7 +6,7 @@ import java.util.List;
 public class PlayerManager {
 
     public List managedPlayers = new ArrayList();
-    private PlayerList b = new PlayerList();
+    private LongHashMap b = new LongHashMap();
     private List c = new ArrayList();
     private MinecraftServer server;
     private int e;
@@ -175,7 +175,7 @@ public class PlayerManager {
         return this.f * 16 - 16;
     }
 
-    static PlayerList a(PlayerManager playermanager) {
+    static LongHashMap a(PlayerManager playermanager) {
         return playermanager.b;
     }
 

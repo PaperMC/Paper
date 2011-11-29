@@ -271,7 +271,7 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
             world.addIWorldAccess(new WorldManager(this, world));
             world.difficulty = this.propertyManager.getInt("difficulty", 1);
             world.setSpawnFlags(this.propertyManager.getBoolean("spawn-monsters", true), this.spawnAnimals);
-            world.r().setGameType(j);
+            world.getWorldData().setGameType(j);
             this.worlds.add(world);
             this.serverConfigurationManager.setPlayerFileData(this.worlds.toArray(new WorldServer[0]));
         }
@@ -307,7 +307,7 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
 
                         worldserver.chunkProviderServer.getChunkAt(chunkcoordinates.x + j1 >> 4, chunkcoordinates.z + k1 >> 4);
 
-                        while (worldserver.x() && this.isRunning) {
+                        while (worldserver.updateLights() && this.isRunning) {
                             ;
                         }
                     }
@@ -503,7 +503,7 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
                 worldserver.doTick();
 
                 while (true) {
-                    if (!worldserver.x()) {
+                    if (!worldserver.updateLights()) {
                         worldserver.tickEntities();
                         break;
                     }
@@ -514,7 +514,7 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
         // } // CraftBukkit
 
         this.networkListenThread.a();
-        this.serverConfigurationManager.b();
+        this.serverConfigurationManager.tick();
 
         // CraftBukkit start
         for (k = 0; k < this.worlds.size(); ++k) {
@@ -643,11 +643,11 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
     }
 
     public int getPlayerCount() {
-        return this.serverConfigurationManager.j();
+        return this.serverConfigurationManager.getPlayerCount();
     }
 
     public int getMaxPlayers() {
-        return this.serverConfigurationManager.k();
+        return this.serverConfigurationManager.getMaxPlayers();
     }
 
     public String[] getPlayers() {
@@ -708,11 +708,11 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
     }
 
     public String[] q() {
-        return (String[]) this.serverConfigurationManager.f().toArray(new String[0]);
+        return (String[]) this.serverConfigurationManager.getBannedAddresses().toArray(new String[0]);
     }
 
     public String[] r() {
-        return (String[]) this.serverConfigurationManager.e().toArray(new String[0]);
+        return (String[]) this.serverConfigurationManager.getBannedPlayers().toArray(new String[0]);
     }
 
     public static boolean isRunning(MinecraftServer minecraftserver) {

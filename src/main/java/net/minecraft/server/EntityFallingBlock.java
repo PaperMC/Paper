@@ -1,23 +1,23 @@
 package net.minecraft.server;
 
-public class EntityFallingSand extends Entity {
+public class EntityFallingBlock extends Entity {
 
     public int a;
     public int data; // CraftBukkit
     public int b = 0;
 
-    public EntityFallingSand(World world) {
+    public EntityFallingBlock(World world) {
         super(world);
     }
 
     // CraftBukkit -- changed method signature
-    public EntityFallingSand(World world, double d0, double d1, double d2, int i, int data) {
+    public EntityFallingBlock(World world, double d0, double d1, double d2, int i, int data) {
         super(world);
         this.a = i;
         this.bc = true;
         this.data = data; // CraftBukkit
         this.b(0.98F, 0.98F);
-        this.height = this.width / 2.0F;
+        this.height = this.length / 2.0F;
         this.setPosition(d0, d1, d2);
         this.motX = 0.0D;
         this.motY = 0.0D;
@@ -79,12 +79,12 @@ public class EntityFallingSand extends Entity {
     }
 
     protected void b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("Tile", (byte) this.a);
-        nbttagcompound.a("Data", (byte) this.data); // CraftBukkit
+        nbttagcompound.setByte("Tile", (byte) this.a);
+        nbttagcompound.setByte("Data", (byte) this.data); // CraftBukkit
     }
 
     protected void a(NBTTagCompound nbttagcompound) {
-        this.a = nbttagcompound.d("Tile") & 255;
-        this.data = nbttagcompound.d("Data") & 15; // CraftBukkit
+        this.a = nbttagcompound.getByte("Tile") & 255;
+        this.data = nbttagcompound.getByte("Data") & 15; // CraftBukkit
     }
 }

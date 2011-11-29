@@ -195,8 +195,8 @@ public class BlockRedstoneWire extends Block {
         }
     }
 
-    public void a(World world, int i, int j, int k) {
-        super.a(world, i, j, k);
+    public void onPlace(World world, int i, int j, int k) {
+        super.onPlace(world, i, j, k);
         if (!world.isStatic) {
             this.g(world, i, j, k);
             world.applyPhysics(i, j + 1, k, this.id);
@@ -294,7 +294,7 @@ public class BlockRedstoneWire extends Block {
         }
     }
 
-    public int a(int i, Random random, int j) {
+    public int getDropType(int i, Random random, int j) {
         return Item.REDSTONE.id;
     }
 

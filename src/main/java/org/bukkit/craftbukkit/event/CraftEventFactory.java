@@ -15,7 +15,7 @@ import net.minecraft.server.EntityGhast;
 import net.minecraft.server.EntityGiantZombie;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.EntityItem;
-import net.minecraft.server.EntityLavaSlime;
+import net.minecraft.server.EntityMagmaCube;
 import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntityMonster;
 import net.minecraft.server.EntityMushroomCow;
@@ -229,7 +229,7 @@ public class CraftEventFactory {
         } else if (entityliving instanceof EntitySkeleton) {
             type = CreatureType.SKELETON;
         } else if (entityliving instanceof EntitySlime) {
-            if (entityliving instanceof EntityLavaSlime) type = CreatureType.MAGMA_CUBE;
+            if (entityliving instanceof EntityMagmaCube) type = CreatureType.MAGMA_CUBE;
             else type = CreatureType.SLIME;
         } else if (entityliving instanceof EntitySpider) {
             if (entityliving instanceof EntityCaveSpider) type = CreatureType.CAVE_SPIDER;

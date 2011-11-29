@@ -76,7 +76,7 @@ public class EntityBlaze extends EntityMonster {
         }
 
         for (int i = 0; i < 2; ++i) {
-            this.world.a("largesmoke", this.locX + (this.random.nextDouble() - 0.5D) * (double) this.length, this.locY + this.random.nextDouble() * (double) this.width, this.locZ + (this.random.nextDouble() - 0.5D) * (double) this.length, 0.0D, 0.0D, 0.0D);
+            this.world.a("largesmoke", this.locX + (this.random.nextDouble() - 0.5D) * (double) this.width, this.locY + this.random.nextDouble() * (double) this.length, this.locZ + (this.random.nextDouble() - 0.5D) * (double) this.width, 0.0D, 0.0D, 0.0D);
         }
 
         super.d();
@@ -88,7 +88,7 @@ public class EntityBlaze extends EntityMonster {
             this.d(entity);
         } else if (f < 30.0F) {
             double d0 = entity.locX - this.locX;
-            double d1 = entity.boundingBox.b + (double) (entity.width / 2.0F) - (this.locY + (double) (this.width / 2.0F));
+            double d1 = entity.boundingBox.b + (double) (entity.length / 2.0F) - (this.locY + (double) (this.length / 2.0F));
             double d2 = entity.locZ - this.locZ;
 
             if (this.attackTicks == 0) {
@@ -112,7 +112,7 @@ public class EntityBlaze extends EntityMonster {
                     for (int i = 0; i < 1; ++i) {
                         EntitySmallFireball entitysmallfireball = new EntitySmallFireball(this.world, this, d0 + this.random.nextGaussian() * (double) f1, d1, d2 + this.random.nextGaussian() * (double) f1);
 
-                        entitysmallfireball.locY = this.locY + (double) (this.width / 2.0F) + 0.5D;
+                        entitysmallfireball.locY = this.locY + (double) (this.length / 2.0F) + 0.5D;
                         this.world.addEntity(entitysmallfireball);
                     }
                 }
@@ -141,7 +141,7 @@ public class EntityBlaze extends EntityMonster {
         return this.A();
     }
 
-    protected void a(boolean flag, int i) {
+    protected void dropDeathLoot(boolean flag, int i) {
         if (flag) {
             // CraftBukkit start
             List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();

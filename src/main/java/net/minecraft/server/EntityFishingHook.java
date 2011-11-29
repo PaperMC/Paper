@@ -105,7 +105,7 @@ public class EntityFishingHook extends Entity {
             if (!this.world.isStatic) {
                 ItemStack itemstack = this.owner.P();
 
-                if (this.owner.dead || !this.owner.aj() || itemstack == null || itemstack.getItem() != Item.FISHING_ROD || this.i(this.owner) > 1024.0D) {
+                if (this.owner.dead || !this.owner.isAlive() || itemstack == null || itemstack.getItem() != Item.FISHING_ROD || this.i(this.owner) > 1024.0D) {
                     this.die();
                     this.owner.hookedFish = null;
                     return;
@@ -114,7 +114,7 @@ public class EntityFishingHook extends Entity {
                 if (this.c != null) {
                     if (!this.c.dead) {
                         this.locX = this.c.locX;
-                        this.locY = this.c.boundingBox.b + (double) this.c.width * 0.8D;
+                        this.locY = this.c.boundingBox.b + (double) this.c.length * 0.8D;
                         this.locZ = this.c.locZ;
                         return;
                     }
@@ -279,15 +279,15 @@ public class EntityFishingHook extends Entity {
                             int l;
                             float f5;
 
-                            for (l = 0; (float) l < 1.0F + this.length * 20.0F; ++l) {
-                                f5 = (this.random.nextFloat() * 2.0F - 1.0F) * this.length;
-                                f4 = (this.random.nextFloat() * 2.0F - 1.0F) * this.length;
+                            for (l = 0; (float) l < 1.0F + this.width * 20.0F; ++l) {
+                                f5 = (this.random.nextFloat() * 2.0F - 1.0F) * this.width;
+                                f4 = (this.random.nextFloat() * 2.0F - 1.0F) * this.width;
                                 this.world.a("bubble", this.locX + (double) f5, (double) (f3 + 1.0F), this.locZ + (double) f4, this.motX, this.motY - (double) (this.random.nextFloat() * 0.2F), this.motZ);
                             }
 
-                            for (l = 0; (float) l < 1.0F + this.length * 20.0F; ++l) {
-                                f5 = (this.random.nextFloat() * 2.0F - 1.0F) * this.length;
-                                f4 = (this.random.nextFloat() * 2.0F - 1.0F) * this.length;
+                            for (l = 0; (float) l < 1.0F + this.width * 20.0F; ++l) {
+                                f5 = (this.random.nextFloat() * 2.0F - 1.0F) * this.width;
+                                f4 = (this.random.nextFloat() * 2.0F - 1.0F) * this.width;
                                 this.world.a("splash", this.locX + (double) f5, (double) (f3 + 1.0F), this.locZ + (double) f4, this.motX, this.motY, this.motZ);
                             }
                         }
@@ -314,21 +314,21 @@ public class EntityFishingHook extends Entity {
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("xTile", (short) this.d);
-        nbttagcompound.a("yTile", (short) this.e);
-        nbttagcompound.a("zTile", (short) this.f);
-        nbttagcompound.a("inTile", (byte) this.g);
-        nbttagcompound.a("shake", (byte) this.a);
-        nbttagcompound.a("inGround", (byte) (this.h ? 1 : 0));
+        nbttagcompound.setShort("xTile", (short) this.d);
+        nbttagcompound.setShort("yTile", (short) this.e);
+        nbttagcompound.setShort("zTile", (short) this.f);
+        nbttagcompound.setByte("inTile", (byte) this.g);
+        nbttagcompound.setByte("shake", (byte) this.a);
+        nbttagcompound.setByte("inGround", (byte) (this.h ? 1 : 0));
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        this.d = nbttagcompound.e("xTile");
-        this.e = nbttagcompound.e("yTile");
-        this.f = nbttagcompound.e("zTile");
-        this.g = nbttagcompound.d("inTile") & 255;
-        this.a = nbttagcompound.d("shake") & 255;
-        this.h = nbttagcompound.d("inGround") == 1;
+        this.d = nbttagcompound.getShort("xTile");
+        this.e = nbttagcompound.getShort("yTile");
+        this.f = nbttagcompound.getShort("zTile");
+        this.g = nbttagcompound.getByte("inTile") & 255;
+        this.a = nbttagcompound.getByte("shake") & 255;
+        this.h = nbttagcompound.getByte("inGround") == 1;
     }
 
     public int j() {

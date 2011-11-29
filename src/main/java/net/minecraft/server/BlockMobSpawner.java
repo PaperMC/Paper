@@ -12,7 +12,7 @@ public class BlockMobSpawner extends BlockContainer {
         return new TileEntityMobSpawner();
     }
 
-    public int a(int i, Random random, int j) {
+    public int getDropType(int i, Random random, int j) {
         return Block.MOB_SPAWNER.id; // CraftBukkit
     }
 
@@ -35,7 +35,7 @@ public class BlockMobSpawner extends BlockContainer {
         super.remove(world, i, j, k);
     }
 
-    protected int c(int i) {
+    protected int getDropData(int i) {
         return i;
     }
     // CraftBukkit end

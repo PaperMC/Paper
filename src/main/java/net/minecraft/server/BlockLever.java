@@ -112,7 +112,7 @@ public class BlockLever extends Block {
         }
     }
 
-    public void a(IBlockAccess iblockaccess, int i, int j, int k) {
+    public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
         int l = iblockaccess.getData(i, j, k) & 7;
         float f = 0.1875F;
 

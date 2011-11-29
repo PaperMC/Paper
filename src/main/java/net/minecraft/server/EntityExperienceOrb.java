@@ -11,7 +11,7 @@ public class EntityExperienceOrb extends Entity {
     public EntityExperienceOrb(World world, double d0, double d1, double d2, int i) {
         super(world);
         this.b(0.5F, 0.5F);
-        this.height = this.width / 2.0F;
+        this.height = this.length / 2.0F;
         this.setPosition(d0, d1, d2);
         this.yaw = (float) (Math.random() * 360.0D);
         this.motX = (double) ((float) (Math.random() * 0.20000000298023224D - 0.10000000149011612D) * 2.0F);
@@ -27,7 +27,7 @@ public class EntityExperienceOrb extends Entity {
     public EntityExperienceOrb(World world) {
         super(world);
         this.b(0.25F, 0.25F);
-        this.height = this.width / 2.0F;
+        this.height = this.length / 2.0F;
     }
 
     protected void b() {}
@@ -113,15 +113,15 @@ public class EntityExperienceOrb extends Entity {
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("Health", (short) ((byte) this.d));
-        nbttagcompound.a("Age", (short) this.b);
-        nbttagcompound.a("Value", (short) this.value);
+        nbttagcompound.setShort("Health", (short) ((byte) this.d));
+        nbttagcompound.setShort("Age", (short) this.b);
+        nbttagcompound.setShort("Value", (short) this.value);
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        this.d = nbttagcompound.e("Health") & 255;
-        this.b = nbttagcompound.e("Age");
-        this.value = nbttagcompound.e("Value");
+        this.d = nbttagcompound.getShort("Health") & 255;
+        this.b = nbttagcompound.getShort("Age");
+        this.value = nbttagcompound.getShort("Value");
     }
 
     public void a_(EntityHuman entityhuman) {
@@ -130,7 +130,7 @@ public class EntityExperienceOrb extends Entity {
                 entityhuman.x = 2;
                 this.world.makeSound(this, "random.orb", 0.1F, 0.5F * ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.8F));
                 entityhuman.receive(this, 1);
-                entityhuman.h(this.value);
+                entityhuman.giveExp(this.value);
                 this.die();
             }
         }

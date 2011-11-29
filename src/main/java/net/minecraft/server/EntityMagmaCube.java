@@ -1,8 +1,8 @@
 package net.minecraft.server;
 
-public class EntityLavaSlime extends EntitySlime {
+public class EntityMagmaCube extends EntitySlime {
 
-    public EntityLavaSlime(World world) {
+    public EntityMagmaCube(World world) {
         super(world);
         this.texture = "/mob/lava.png";
         this.fireProof = true;
@@ -26,7 +26,7 @@ public class EntityLavaSlime extends EntitySlime {
     }
 
     protected EntitySlime y() {
-        return new EntityLavaSlime(this.world);
+        return new EntityMagmaCube(this.world);
     }
 
     protected int e() {

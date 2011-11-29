@@ -46,8 +46,8 @@ public class EntityWolf extends EntityAnimal {
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
-        nbttagcompound.a("Angry", this.isAngry());
-        nbttagcompound.a("Sitting", this.isSitting());
+        nbttagcompound.setBoolean("Angry", this.isAngry());
+        nbttagcompound.setBoolean("Sitting", this.isSitting());
         if (this.getOwnerName() == null) {
             nbttagcompound.setString("Owner", "");
         } else {
@@ -57,8 +57,8 @@ public class EntityWolf extends EntityAnimal {
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        this.setAngry(nbttagcompound.n("Angry"));
-        this.setSitting(nbttagcompound.n("Sitting"));
+        this.setAngry(nbttagcompound.getBoolean("Angry"));
+        this.setSitting(nbttagcompound.getBoolean("Sitting"));
         String s = nbttagcompound.getString("Owner");
 
         if (s.length() > 0) {
@@ -197,8 +197,8 @@ public class EntityWolf extends EntityAnimal {
                 int i = (int) (MathHelper.sin((this.i - 0.4F) * 3.1415927F) * 7.0F);
 
                 for (int j = 0; j < i; ++j) {
-                    float f1 = (this.random.nextFloat() * 2.0F - 1.0F) * this.length * 0.5F;
-                    float f2 = (this.random.nextFloat() * 2.0F - 1.0F) * this.length * 0.5F;
+                    float f1 = (this.random.nextFloat() * 2.0F - 1.0F) * this.width * 0.5F;
+                    float f2 = (this.random.nextFloat() * 2.0F - 1.0F) * this.width * 0.5F;
 
                     this.world.a("splash", this.locX + (double) f1, (double) (f + 0.8F), this.locZ + (double) f2, this.motX, this.motY, this.motZ);
                 }
@@ -207,7 +207,7 @@ public class EntityWolf extends EntityAnimal {
     }
 
     public float x() {
-        return this.width * 0.8F;
+        return this.length * 0.8F;
     }
 
     protected int q_() {
@@ -422,7 +422,7 @@ public class EntityWolf extends EntityAnimal {
             double d1 = this.random.nextGaussian() * 0.02D;
             double d2 = this.random.nextGaussian() * 0.02D;
 
-            this.world.a(s, this.locX + (double) (this.random.nextFloat() * this.length * 2.0F) - (double) this.length, this.locY + 0.5D + (double) (this.random.nextFloat() * this.width), this.locZ + (double) (this.random.nextFloat() * this.length * 2.0F) - (double) this.length, d0, d1, d2);
+            this.world.a(s, this.locX + (double) (this.random.nextFloat() * this.width * 2.0F) - (double) this.width, this.locY + 0.5D + (double) (this.random.nextFloat() * this.length), this.locZ + (double) (this.random.nextFloat() * this.width * 2.0F) - (double) this.width, d0, d1, d2);
         }
     }
 

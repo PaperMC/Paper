@@ -8,7 +8,7 @@ import org.bukkit.event.block.BlockIgniteEvent;
 import org.bukkit.event.block.BlockIgniteEvent.IgniteCause;
 // CraftBukkit end
 
-public class EntityWeatherStorm extends EntityWeather {
+public class EntityWeatherLighting extends EntityWeather {
 
     private int lifeTicks;
     public long a = 0L;
@@ -18,11 +18,11 @@ public class EntityWeatherStorm extends EntityWeather {
     private CraftWorld cworld;
     public boolean isEffect = false;
 
-    public EntityWeatherStorm(World world, double d0, double d1, double d2) {
+    public EntityWeatherLighting(World world, double d0, double d1, double d2) {
         this(world, d0, d1, d2, false);
     }
 
-    public EntityWeatherStorm(World world, double d0, double d1, double d2, boolean isEffect) {
+    public EntityWeatherLighting(World world, double d0, double d1, double d2, boolean isEffect) {
         // CraftBukkit end
 
         super(world);

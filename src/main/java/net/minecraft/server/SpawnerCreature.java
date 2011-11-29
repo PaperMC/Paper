@@ -99,7 +99,7 @@ public final class SpawnerCreature {
                                                     float f1 = (float) i3;
                                                     float f2 = (float) j3 + 0.5F;
 
-                                                    if (world.a((double) f, (double) f1, (double) f2, 24.0D) == null) {
+                                                    if (world.findNearbyPlayer((double) f, (double) f1, (double) f2, 24.0D) == null) {
                                                         float f3 = f - (float) chunkcoordinates.x;
                                                         float f4 = f1 - (float) chunkcoordinates.y;
                                                         float f5 = f2 - (float) chunkcoordinates.z;

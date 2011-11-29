@@ -11,7 +11,7 @@ import java.util.Set;
 
 public abstract class Packet {
 
-    public static EntityList j = new EntityList();
+    public static IntHashMap j = new IntHashMap();
     private static Map a = new HashMap();
     private static Set b = new HashSet();
     private static Set c = new HashSet();
@@ -178,7 +178,7 @@ public abstract class Packet {
             byte[] abyte = new byte[short1];
 
             datainputstream.readFully(abyte);
-            return CompressedStreamTools.a(abyte);
+            return NBTCompressedStreamTools.a(abyte);
         }
     }
 
@@ -186,7 +186,7 @@ public abstract class Packet {
         if (nbttagcompound == null) {
             dataoutputstream.writeShort(-1);
         } else {
-            byte[] abyte = CompressedStreamTools.a(nbttagcompound);
+            byte[] abyte = NBTCompressedStreamTools.a(nbttagcompound);
 
             dataoutputstream.writeShort((short) abyte.length);
             dataoutputstream.write(abyte);
@@ -211,7 +211,7 @@ public abstract class Packet {
         a(14, false, true, Packet14BlockDig.class);
         a(15, false, true, Packet15Place.class);
         a(16, false, true, Packet16BlockItemSwitch.class);
-        a(17, true, false, Packet17.class);
+        a(17, true, false, Packet17EntityLocationAction.class);
         a(18, true, true, Packet18ArmAnimation.class);
         a(19, false, true, Packet19EntityAction.class);
         a(20, true, false, Packet20NamedEntitySpawn.class);
@@ -221,7 +221,7 @@ public abstract class Packet {
         a(24, true, false, Packet24MobSpawn.class);
         a(25, true, false, Packet25EntityPainting.class);
         a(26, true, false, Packet26AddExpOrb.class);
-        a(27, false, false, Packet27.class); // CraftBukkit - true -> false; disabled unused packet. TODO -- check if needed
+        a(27, false, false, Packet27PlayerInput.class); // CraftBukkit - true -> false; disabled unused packet. TODO -- check if needed
         a(28, true, false, Packet28EntityVelocity.class);
         a(29, true, false, Packet29DestroyEntity.class);
         a(30, true, false, Packet30Entity.class);
@@ -241,7 +241,7 @@ public abstract class Packet {
         a(53, true, false, Packet53BlockChange.class);
         a(54, true, false, Packet54PlayNoteBlock.class);
         a(60, true, false, Packet60Explosion.class);
-        a(61, true, false, Packet61.class);
+        a(61, true, false, Packet61WorldEvent.class);
         a(70, true, false, Packet70Bed.class);
         a(71, true, false, Packet71Weather.class);
         a(100, true, false, Packet100OpenWindow.class);
@@ -252,9 +252,9 @@ public abstract class Packet {
         a(105, true, false, Packet105CraftProgressBar.class);
         a(106, true, true, Packet106Transaction.class);
         a(107, true, true, Packet107SetCreativeSlot.class);
-        a(108, false, true, Packet108.class);
+        a(108, false, true, Packet108ButtonClick.class);
         a(130, true, true, Packet130UpdateSign.class);
-        a(131, true, false, Packet131.class);
+        a(131, true, false, Packet131ItemData.class);
         a(200, true, false, Packet200Statistic.class);
         a(201, true, false, Packet201PlayerInfo.class);
         a(254, false, true, Packet254GetInfo.class);

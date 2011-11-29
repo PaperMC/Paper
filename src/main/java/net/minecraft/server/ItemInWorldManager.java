@@ -245,7 +245,7 @@ public class ItemInWorldManager {
             entityhuman.inventory.items[entityhuman.inventory.itemInHandIndex] = itemstack1;
             if (this.b()) {
                 itemstack1.count = i;
-                itemstack1.b(j);
+                itemstack1.setData(j);
             }
 
             if (itemstack1.count == 0) {
@@ -283,7 +283,7 @@ public class ItemInWorldManager {
 
                 // The item count should not decrement in Creative mode.
                 if (this.b()) {
-                    itemstack.b(j1);
+                    itemstack.setData(j1);
                     itemstack.count = k1;
                 }
             }

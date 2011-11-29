@@ -1,6 +1,6 @@
 package net.minecraft.server;
 
-public class InventoryPlayer implements IInventory {
+public class PlayerInventory implements IInventory {
 
     public ItemStack[] items = new ItemStack[36];
     public ItemStack[] armor = new ItemStack[4];
@@ -19,7 +19,7 @@ public class InventoryPlayer implements IInventory {
     }
     // CraftBukkit end
 
-    public InventoryPlayer(EntityHuman entityhuman) {
+    public PlayerInventory(EntityHuman entityhuman) {
         this.d = entityhuman;
     }
 
@@ -243,18 +243,18 @@ public class InventoryPlayer implements IInventory {
         for (i = 0; i < this.items.length; ++i) {
             if (this.items[i] != null) {
                 nbttagcompound = new NBTTagCompound();
-                nbttagcompound.a("Slot", (byte) i);
+                nbttagcompound.setByte("Slot", (byte) i);
                 this.items[i].b(nbttagcompound);
-                nbttaglist.a((NBTBase) nbttagcompound);
+                nbttaglist.add(nbttagcompound);
             }
         }
 
         for (i = 0; i < this.armor.length; ++i) {
             if (this.armor[i] != null) {
                 nbttagcompound = new NBTTagCompound();
-                nbttagcompound.a("Slot", (byte) (i + 100));
+                nbttagcompound.setByte("Slot", (byte) (i + 100));
                 this.armor[i].b(nbttagcompound);
-                nbttaglist.a((NBTBase) nbttagcompound);
+                nbttaglist.add(nbttagcompound);
             }
         }
 
@@ -265,9 +265,9 @@ public class InventoryPlayer implements IInventory {
         this.items = new ItemStack[36];
         this.armor = new ItemStack[4];
 
-        for (int i = 0; i < nbttaglist.d(); ++i) {
-            NBTTagCompound nbttagcompound = (NBTTagCompound) nbttaglist.a(i);
-            int j = nbttagcompound.d("Slot") & 255;
+        for (int i = 0; i < nbttaglist.size(); ++i) {
+            NBTTagCompound nbttagcompound = (NBTTagCompound) nbttaglist.get(i);
+            int j = nbttagcompound.getByte("Slot") & 255;
             ItemStack itemstack = ItemStack.a(nbttagcompound);
 
             if (itemstack != null) {
@@ -415,15 +415,15 @@ public class InventoryPlayer implements IInventory {
 
     public void g() {}
 
-    public void a(InventoryPlayer inventoryplayer) {
+    public void a(PlayerInventory playerinventory) {
         int i;
 
         for (i = 0; i < this.items.length; ++i) {
-            this.items[i] = ItemStack.b(inventoryplayer.items[i]);
+            this.items[i] = ItemStack.b(playerinventory.items[i]);
         }
 
         for (i = 0; i < this.armor.length; ++i) {
-            this.armor[i] = ItemStack.b(inventoryplayer.armor[i]);
+            this.armor[i] = ItemStack.b(playerinventory.armor[i]);
         }
     }
 }

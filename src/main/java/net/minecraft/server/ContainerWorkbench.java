@@ -9,12 +9,12 @@ public class ContainerWorkbench extends Container {
     private int i;
     private int j;
 
-    public ContainerWorkbench(InventoryPlayer inventoryplayer, World world, int i, int j, int k) {
+    public ContainerWorkbench(PlayerInventory playerinventory, World world, int i, int j, int k) {
         this.c = world;
         this.h = i;
         this.i = j;
         this.j = k;
-        this.a((Slot) (new SlotResult(inventoryplayer.d, this.craftInventory, this.resultInventory, 0, 124, 35)));
+        this.a((Slot) (new SlotResult(playerinventory.d, this.craftInventory, this.resultInventory, 0, 124, 35)));
 
         int l;
         int i1;
@@ -27,12 +27,12 @@ public class ContainerWorkbench extends Container {
 
         for (l = 0; l < 3; ++l) {
             for (i1 = 0; i1 < 9; ++i1) {
-                this.a(new Slot(inventoryplayer, i1 + l * 9 + 9, 8 + i1 * 18, 84 + l * 18));
+                this.a(new Slot(playerinventory, i1 + l * 9 + 9, 8 + i1 * 18, 84 + l * 18));
             }
         }
 
         for (l = 0; l < 9; ++l) {
-            this.a(new Slot(inventoryplayer, l, 8 + l * 18, 142));
+            this.a(new Slot(playerinventory, l, 8 + l * 18, 142));
         }
 
         this.a((IInventory) this.craftInventory);

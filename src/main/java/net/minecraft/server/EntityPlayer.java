@@ -70,13 +70,13 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
         if (nbttagcompound.hasKey("playerGameType")) {
-            this.itemInWorldManager.a(nbttagcompound.f("playerGameType"));
+            this.itemInWorldManager.a(nbttagcompound.getInt("playerGameType"));
         }
     }
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
-        nbttagcompound.a("playerGameType", this.itemInWorldManager.a());
+        nbttagcompound.setInt("playerGameType", this.itemInWorldManager.a());
     }
 
     public void spawnIn(World world) {
@@ -107,8 +107,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         // CraftBukkit end
     }
 
-    public void b(int i) {
-        super.b(i);
+    public void levelDown(int i) {
+        super.levelDown(i);
         this.cf = -1;
     }
 
@@ -278,7 +278,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
                             b0 = -1;
                         }
 
-                        this.b.serverConfigurationManager.a(this, b0);
+                        this.b.serverConfigurationManager.changeDimension(this, b0);
                         this.cf = -1;
                         this.cc = -1;
                         this.cd = -1;
@@ -309,9 +309,9 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             this.ce = this.foodData.c() == 0.0F;
         }
 
-        if (this.exp != this.cf) {
-            this.cf = this.exp;
-            this.netServerHandler.sendPacket(new Packet43SetExperience(this.expLevel, this.exp, this.expTotal));
+        if (this.expTotal != this.cf) {
+            this.cf = this.expTotal;
+            this.netServerHandler.sendPacket(new Packet43SetExperience(this.exp, this.expTotal, this.expLevel));
         }
     }
 
@@ -329,7 +329,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
                 this.netServerHandler.a((double) chunkcoordinates.x, (double) chunkcoordinates.y, (double) chunkcoordinates.z, 0.0F, 0.0F);
             }
 
-            this.b.serverConfigurationManager.a(this, 1);
+            this.b.serverConfigurationManager.changeDimension(this, 1);
             this.cf = -1;
             this.cc = -1;
             this.cd = -1;
@@ -379,19 +379,19 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
     public void A() {}
 
-    public EnumBedError a(int i, int j, int k) {
-        EnumBedError enumbederror = super.a(i, j, k);
+    public EnumBedResult a(int i, int j, int k) {
+        EnumBedResult enumbedresult = super.a(i, j, k);
 
-        if (enumbederror == EnumBedError.OK) {
+        if (enumbedresult == EnumBedResult.OK) {
             EntityTracker entitytracker = this.b.getTracker(this.dimension);
-            Packet17 packet17 = new Packet17(this, 0, i, j, k);
+            Packet17EntityLocationAction packet17entitylocationaction = new Packet17EntityLocationAction(this, 0, i, j, k);
 
-            entitytracker.a(this, packet17);
+            entitytracker.a(this, packet17entitylocationaction);
             this.netServerHandler.a(this.locX, this.locY, this.locZ, this.yaw, this.pitch);
-            this.netServerHandler.sendPacket(packet17);
+            this.netServerHandler.sendPacket(packet17entitylocationaction);
         }
 
-        return enumbederror;
+        return enumbedresult;
     }
 
     public void a(boolean flag, boolean flag1, boolean flag2) {
@@ -561,8 +561,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     }
 
     public void a(String s) {
-        StatisticStorage statisticstorage = StatisticStorage.a();
-        String s1 = statisticstorage.a(s);
+        LocaleLanguage localelanguage = LocaleLanguage.a();
+        String s1 = localelanguage.a(s);
 
         this.netServerHandler.sendPacket(new Packet3Chat(s1));
     }

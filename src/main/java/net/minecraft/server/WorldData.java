@@ -25,29 +25,29 @@ public class WorldData {
 
     public WorldData(NBTTagCompound nbttagcompound) {
         this.seed = nbttagcompound.getLong("RandomSeed");
-        this.gameType = nbttagcompound.f("GameType");
+        this.gameType = nbttagcompound.getInt("GameType");
         if (nbttagcompound.hasKey("MapFeatures")) {
-            this.useMapFeatures = nbttagcompound.n("MapFeatures");
+            this.useMapFeatures = nbttagcompound.getBoolean("MapFeatures");
         } else {
             this.useMapFeatures = true;
         }
 
-        this.spawnX = nbttagcompound.f("SpawnX");
-        this.spawnY = nbttagcompound.f("SpawnY");
-        this.spawnZ = nbttagcompound.f("SpawnZ");
+        this.spawnX = nbttagcompound.getInt("SpawnX");
+        this.spawnY = nbttagcompound.getInt("SpawnY");
+        this.spawnZ = nbttagcompound.getInt("SpawnZ");
         this.time = nbttagcompound.getLong("Time");
         this.lastPlayed = nbttagcompound.getLong("LastPlayed");
         this.sizeOnDisk = nbttagcompound.getLong("SizeOnDisk");
         this.name = nbttagcompound.getString("LevelName");
-        this.version = nbttagcompound.f("version");
-        this.rainTicks = nbttagcompound.f("rainTime");
-        this.isRaining = nbttagcompound.n("raining");
-        this.thunderTicks = nbttagcompound.f("thunderTime");
-        this.isThundering = nbttagcompound.n("thundering");
-        this.hardcore = nbttagcompound.n("hardcore");
+        this.version = nbttagcompound.getInt("version");
+        this.rainTicks = nbttagcompound.getInt("rainTime");
+        this.isRaining = nbttagcompound.getBoolean("raining");
+        this.thunderTicks = nbttagcompound.getInt("thunderTime");
+        this.isThundering = nbttagcompound.getBoolean("thundering");
+        this.hardcore = nbttagcompound.getBoolean("hardcore");
         if (nbttagcompound.hasKey("Player")) {
-            this.playerData = nbttagcompound.l("Player");
-            this.dimension = this.playerData.f("Dimension");
+            this.playerData = nbttagcompound.getCompound("Player");
+            this.dimension = this.playerData.getInt("Dimension");
         }
     }
 
@@ -107,23 +107,23 @@ public class WorldData {
 
     private void a(NBTTagCompound nbttagcompound, NBTTagCompound nbttagcompound1) {
         nbttagcompound.setLong("RandomSeed", this.seed);
-        nbttagcompound.a("GameType", this.gameType);
-        nbttagcompound.a("MapFeatures", this.useMapFeatures);
-        nbttagcompound.a("SpawnX", this.spawnX);
-        nbttagcompound.a("SpawnY", this.spawnY);
-        nbttagcompound.a("SpawnZ", this.spawnZ);
+        nbttagcompound.setInt("GameType", this.gameType);
+        nbttagcompound.setBoolean("MapFeatures", this.useMapFeatures);
+        nbttagcompound.setInt("SpawnX", this.spawnX);
+        nbttagcompound.setInt("SpawnY", this.spawnY);
+        nbttagcompound.setInt("SpawnZ", this.spawnZ);
         nbttagcompound.setLong("Time", this.time);
         nbttagcompound.setLong("SizeOnDisk", this.sizeOnDisk);
         nbttagcompound.setLong("LastPlayed", System.currentTimeMillis());
         nbttagcompound.setString("LevelName", this.name);
-        nbttagcompound.a("version", this.version);
-        nbttagcompound.a("rainTime", this.rainTicks);
-        nbttagcompound.a("raining", this.isRaining);
-        nbttagcompound.a("thunderTime", this.thunderTicks);
-        nbttagcompound.a("thundering", this.isThundering);
-        nbttagcompound.a("hardcore", this.hardcore);
+        nbttagcompound.setInt("version", this.version);
+        nbttagcompound.setInt("rainTime", this.rainTicks);
+        nbttagcompound.setBoolean("raining", this.isRaining);
+        nbttagcompound.setInt("thunderTime", this.thunderTicks);
+        nbttagcompound.setBoolean("thundering", this.isThundering);
+        nbttagcompound.setBoolean("hardcore", this.hardcore);
         if (nbttagcompound1 != null) {
-            nbttagcompound.a("Player", nbttagcompound1);
+            nbttagcompound.setCompound("Player", nbttagcompound1);
         }
     }
 

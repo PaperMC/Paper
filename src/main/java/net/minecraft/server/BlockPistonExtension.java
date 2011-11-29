@@ -17,11 +17,11 @@ public class BlockPistonExtension extends Block {
         super.remove(world, i, j, k);
         int l = world.getData(i, j, k);
         if (l > 5 || l < 0) return; // CraftBukkit - fixed a piston AIOOBE issue.
-        int i1 = PistonBlockTextures.a[b(l)];
+        int i1 = Facing.a[b(l)];
 
-        i += PistonBlockTextures.b[i1];
-        j += PistonBlockTextures.c[i1];
-        k += PistonBlockTextures.d[i1];
+        i += Facing.b[i1];
+        j += Facing.c[i1];
+        k += Facing.d[i1];
         int j1 = world.getTypeId(i, j, k);
 
         if (j1 == Block.PISTON.id || j1 == Block.PISTON_STICKY.id) {
@@ -36,7 +36,7 @@ public class BlockPistonExtension extends Block {
     public int a(int i, int j) {
         int k = b(j);
 
-        return i == k ? (this.a >= 0 ? this.a : ((j & 8) != 0 ? this.textureId - 1 : this.textureId)) : (i == PistonBlockTextures.a[k] ? 107 : 108);
+        return i == k ? (this.a >= 0 ? this.a : ((j & 8) != 0 ? this.textureId - 1 : this.textureId)) : (i == Facing.a[k] ? 107 : 108);
     }
 
     public int c() {
@@ -112,7 +112,7 @@ public class BlockPistonExtension extends Block {
         this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
     }
 
-    public void a(IBlockAccess iblockaccess, int i, int j, int k) {
+    public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
         int l = iblockaccess.getData(i, j, k);
 
         switch (b(l)) {
@@ -144,12 +144,12 @@ public class BlockPistonExtension extends Block {
     public void doPhysics(World world, int i, int j, int k, int l) {
         int i1 = b(world.getData(i, j, k));
         if (i1 > 5 || i1 < 0) return; // CraftBukkit - fixed a piston AIOOBE issue.
-        int j1 = world.getTypeId(i - PistonBlockTextures.b[i1], j - PistonBlockTextures.c[i1], k - PistonBlockTextures.d[i1]);
+        int j1 = world.getTypeId(i - Facing.b[i1], j - Facing.c[i1], k - Facing.d[i1]);
 
         if (j1 != Block.PISTON.id && j1 != Block.PISTON_STICKY.id) {
             world.setTypeId(i, j, k, 0);
         } else {
-            Block.byId[j1].doPhysics(world, i - PistonBlockTextures.b[i1], j - PistonBlockTextures.c[i1], k - PistonBlockTextures.d[i1], l);
+            Block.byId[j1].doPhysics(world, i - Facing.b[i1], j - Facing.c[i1], k - Facing.d[i1], l);
         }
     }
 

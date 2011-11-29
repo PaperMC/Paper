@@ -203,21 +203,21 @@ public abstract class EntityProjectile extends Entity {
     protected abstract void a(MovingObjectPosition movingobjectposition);
 
     public void b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("xTile", (short) this.blockX);
-        nbttagcompound.a("yTile", (short) this.blockY);
-        nbttagcompound.a("zTile", (short) this.blockZ);
-        nbttagcompound.a("inTile", (byte) this.inBlockId);
-        nbttagcompound.a("shake", (byte) this.shake);
-        nbttagcompound.a("inGround", (byte) (this.inGround ? 1 : 0));
+        nbttagcompound.setShort("xTile", (short) this.blockX);
+        nbttagcompound.setShort("yTile", (short) this.blockY);
+        nbttagcompound.setShort("zTile", (short) this.blockZ);
+        nbttagcompound.setByte("inTile", (byte) this.inBlockId);
+        nbttagcompound.setByte("shake", (byte) this.shake);
+        nbttagcompound.setByte("inGround", (byte) (this.inGround ? 1 : 0));
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        this.blockX = nbttagcompound.e("xTile");
-        this.blockY = nbttagcompound.e("yTile");
-        this.blockZ = nbttagcompound.e("zTile");
-        this.inBlockId = nbttagcompound.d("inTile") & 255;
-        this.shake = nbttagcompound.d("shake") & 255;
-        this.inGround = nbttagcompound.d("inGround") == 1;
+        this.blockX = nbttagcompound.getShort("xTile");
+        this.blockY = nbttagcompound.getShort("yTile");
+        this.blockZ = nbttagcompound.getShort("zTile");
+        this.inBlockId = nbttagcompound.getByte("inTile") & 255;
+        this.shake = nbttagcompound.getByte("shake") & 255;
+        this.inGround = nbttagcompound.getByte("inGround") == 1;
     }
 
     public void a_(EntityHuman entityhuman) {}

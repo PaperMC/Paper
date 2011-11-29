@@ -24,12 +24,12 @@ public class EntityPig extends EntityAnimal {
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
-        nbttagcompound.a("Saddle", this.hasSaddle());
+        nbttagcompound.setBoolean("Saddle", this.hasSaddle());
     }
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        this.setSaddle(nbttagcompound.n("Saddle"));
+        this.setSaddle(nbttagcompound.getBoolean("Saddle"));
     }
 
     protected String c_() {
@@ -71,12 +71,12 @@ public class EntityPig extends EntityAnimal {
         }
     }
 
-    public void a(EntityWeatherStorm entityweatherstorm) {
+    public void a(EntityWeatherLighting entityweatherlighting) {
         if (!this.world.isStatic) {
             EntityPigZombie entitypigzombie = new EntityPigZombie(this.world);
 
             // CraftBukkit start
-            PigZapEvent event = new PigZapEvent(this.getBukkitEntity(), entityweatherstorm.getBukkitEntity(), entitypigzombie.getBukkitEntity());
+            PigZapEvent event = new PigZapEvent(this.getBukkitEntity(), entityweatherlighting.getBukkitEntity(), entitypigzombie.getBukkitEntity());
             this.world.getServer().getPluginManager().callEvent(event);
 
             if (event.isCancelled()) {

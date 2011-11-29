@@ -24,7 +24,7 @@ public class BlockSign extends BlockContainer {
         return null;
     }
 
-    public void a(IBlockAccess iblockaccess, int i, int j, int k) {
+    public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
         if (!this.b) {
             int l = iblockaccess.getData(i, j, k);
             float f = 0.28125F;
@@ -72,7 +72,7 @@ public class BlockSign extends BlockContainer {
         }
     }
 
-    public int a(int i, Random random, int j) {
+    public int getDropType(int i, Random random, int j) {
         return Item.SIGN.id;
     }
 

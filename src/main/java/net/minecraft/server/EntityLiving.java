@@ -82,6 +82,7 @@ public abstract class EntityLiving extends Entity {
     private Entity e;
     protected int aZ = 0;
     public int expToDrop = 0; // CraftBukkit added
+    public int maxAirTicks = 300; // CraftBukkit added
 
     public EntityLiving(World world) {
         super(world);
@@ -110,7 +111,7 @@ public abstract class EntityLiving extends Entity {
     }
 
     public float x() {
-        return this.width * 0.85F;
+        return this.length * 0.85F;
     }
 
     public int h() {
@@ -135,7 +136,7 @@ public abstract class EntityLiving extends Entity {
         }
 
         // CraftBukkit start - don't inline the damage, perform it with an event
-        if (this.aj() && this.T()) {
+        if (this.isAlive() && this.T()) {
             EntityDamageEvent event = new EntityDamageEvent(this.getBukkitEntity(), EntityDamageEvent.DamageCause.SUFFOCATION, 1);
             this.world.getServer().getPluginManager().callEvent(event);
 
@@ -145,11 +146,11 @@ public abstract class EntityLiving extends Entity {
             // CraftBukkit end
         }
 
-        if (this.ax() || this.world.isStatic) {
-            this.aw();
+        if (this.isFireproof() || this.world.isStatic) {
+            this.extinguish();
         }
 
-        if (this.aj() && this.a(Material.WATER) && !this.f() && !this.effects.containsKey(Integer.valueOf(MobEffectList.WATER_BREATHING.id))) {
+        if (this.isAlive() && this.a(Material.WATER) && !this.f() && !this.effects.containsKey(Integer.valueOf(MobEffectList.WATER_BREATHING.id))) {
             this.setAirTicks(this.f(this.getAirTicks()));
             if (this.getAirTicks() == -20) {
                 this.setAirTicks(0);
@@ -172,9 +173,9 @@ public abstract class EntityLiving extends Entity {
                 // CraftBukkit end
             }
 
-            this.aw();
+            this.extinguish();
         } else {
-            this.setAirTicks(300);
+            this.setAirTicks(maxAirTicks); // CraftBukkit - update maxAirTicks if no longer 300
         }
 
         this.aw = this.ax;
@@ -243,7 +244,7 @@ public abstract class EntityLiving extends Entity {
                 double d1 = this.random.nextGaussian() * 0.02D;
                 double d2 = this.random.nextGaussian() * 0.02D;
 
-                this.world.a("explode", this.locX + (double) (this.random.nextFloat() * this.length * 2.0F) - (double) this.length, this.locY + (double) (this.random.nextFloat() * this.width), this.locZ + (double) (this.random.nextFloat() * this.length * 2.0F) - (double) this.length, d0, d1, d2);
+                this.world.a("explode", this.locX + (double) (this.random.nextFloat() * this.width * 2.0F) - (double) this.width, this.locY + (double) (this.random.nextFloat() * this.length), this.locZ + (double) (this.random.nextFloat() * this.width * 2.0F) - (double) this.width, d0, d1, d2);
             }
         }
     }
@@ -267,7 +268,7 @@ public abstract class EntityLiving extends Entity {
             double d2 = this.random.nextGaussian() * 0.02D;
             double d3 = 10.0D;
 
-            this.world.a("explode", this.locX + (double) (this.random.nextFloat() * this.length * 2.0F) - (double) this.length - d0 * d3, this.locY + (double) (this.random.nextFloat() * this.width) - d1 * d3, this.locZ + (double) (this.random.nextFloat() * this.length * 2.0F) - (double) this.length - d2 * d3, d0, d1, d2);
+            this.world.a("explode", this.locX + (double) (this.random.nextFloat() * this.width * 2.0F) - (double) this.width - d0 * d3, this.locY + (double) (this.random.nextFloat() * this.length) - d1 * d3, this.locZ + (double) (this.random.nextFloat() * this.width * 2.0F) - (double) this.width - d2 * d3, d0, d1, d2);
         }
     }
 
@@ -596,18 +597,18 @@ public abstract class EntityLiving extends Entity {
             int i = 0;
 
             if (entity instanceof EntityHuman) {
-                i = EnchantmentManager.f(((EntityHuman) entity).inventory);
+                i = EnchantmentManager.getBonusMonsterLootEnchantmentLevel(((EntityHuman) entity).inventory);
             }
 
             if (!this.l()) {
-                this.a(this.aG > 0, i);
+                this.dropDeathLoot(this.aG > 0, i);
             }
         }
 
         this.world.a(this, (byte) 3);
     }
 
-    protected void a(boolean flag, int i) {
+    protected void dropDeathLoot(boolean flag, int i) {
         int j = this.e();
 
         // CraftBukkit start - whole method
@@ -778,10 +779,10 @@ public abstract class EntityLiving extends Entity {
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("Health", (short) this.health);
-        nbttagcompound.a("HurtTime", (short) this.hurtTicks);
-        nbttagcompound.a("DeathTime", (short) this.deathTicks);
-        nbttagcompound.a("AttackTime", (short) this.attackTicks);
+        nbttagcompound.setShort("Health", (short) this.health);
+        nbttagcompound.setShort("HurtTime", (short) this.hurtTicks);
+        nbttagcompound.setShort("DeathTime", (short) this.deathTicks);
+        nbttagcompound.setShort("AttackTime", (short) this.attackTicks);
         if (!this.effects.isEmpty()) {
             NBTTagList nbttaglist = new NBTTagList();
             Iterator iterator = this.effects.values().iterator();
@@ -790,40 +791,40 @@ public abstract class EntityLiving extends Entity {
                 MobEffect mobeffect = (MobEffect) iterator.next();
                 NBTTagCompound nbttagcompound1 = new NBTTagCompound();
 
-                nbttagcompound1.a("Id", (byte) mobeffect.getEffectId());
-                nbttagcompound1.a("Amplifier", (byte) mobeffect.getAmplifier());
-                nbttagcompound1.a("Duration", mobeffect.getDuration());
-                nbttaglist.a((NBTBase) nbttagcompound1);
+                nbttagcompound1.setByte("Id", (byte) mobeffect.getEffectId());
+                nbttagcompound1.setByte("Amplifier", (byte) mobeffect.getAmplifier());
+                nbttagcompound1.setInt("Duration", mobeffect.getDuration());
+                nbttaglist.add(nbttagcompound1);
             }
 
-            nbttagcompound.a("ActiveEffects", (NBTBase) nbttaglist);
+            nbttagcompound.set("ActiveEffects", nbttaglist);
         }
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        this.health = nbttagcompound.e("Health");
+        this.health = nbttagcompound.getShort("Health");
         if (!nbttagcompound.hasKey("Health")) {
             this.health = this.getMaxHealth();
         }
 
-        this.hurtTicks = nbttagcompound.e("HurtTime");
-        this.deathTicks = nbttagcompound.e("DeathTime");
-        this.attackTicks = nbttagcompound.e("AttackTime");
+        this.hurtTicks = nbttagcompound.getShort("HurtTime");
+        this.deathTicks = nbttagcompound.getShort("DeathTime");
+        this.attackTicks = nbttagcompound.getShort("AttackTime");
         if (nbttagcompound.hasKey("ActiveEffects")) {
-            NBTTagList nbttaglist = nbttagcompound.m("ActiveEffects");
+            NBTTagList nbttaglist = nbttagcompound.getList("ActiveEffects");
 
-            for (int i = 0; i < nbttaglist.d(); ++i) {
-                NBTTagCompound nbttagcompound1 = (NBTTagCompound) nbttaglist.a(i);
-                byte b0 = nbttagcompound1.d("Id");
-                byte b1 = nbttagcompound1.d("Amplifier");
-                int j = nbttagcompound1.f("Duration");
+            for (int i = 0; i < nbttaglist.size(); ++i) {
+                NBTTagCompound nbttagcompound1 = (NBTTagCompound) nbttaglist.get(i);
+                byte b0 = nbttagcompound1.getByte("Id");
+                byte b1 = nbttagcompound1.getByte("Amplifier");
+                int j = nbttagcompound1.getInt("Duration");
 
                 this.effects.put(Integer.valueOf(b0), new MobEffect(b0, j, b1));
             }
         }
     }
 
-    public boolean aj() {
+    public boolean isAlive() {
         return !this.dead && this.health > 0;
     }
 
@@ -1160,7 +1161,7 @@ public abstract class EntityLiving extends Entity {
                 double d1 = (double) (i >> 8 & 255) / 255.0D;
                 double d2 = (double) (i >> 0 & 255) / 255.0D;
 
-                this.world.a("mobSpell", this.locX + (this.random.nextDouble() - 0.5D) * (double) this.length, this.locY + this.random.nextDouble() * (double) this.width - (double) this.height, this.locZ + (this.random.nextDouble() - 0.5D) * (double) this.length, d0, d1, d2);
+                this.world.a("mobSpell", this.locX + (this.random.nextDouble() - 0.5D) * (double) this.width, this.locY + this.random.nextDouble() * (double) this.length - (double) this.height, this.locZ + (this.random.nextDouble() - 0.5D) * (double) this.width, d0, d1, d2);
             }
         }
     }
@@ -1204,7 +1205,7 @@ public abstract class EntityLiving extends Entity {
     }
 
     public boolean a(MobEffect mobeffect) {
-        if (this.t() == EnchantmentDamage.b) {
+        if (this.getMonsterType() == MonsterType.UNDEAD) {
             int i = mobeffect.getEffectId();
 
             if (i == MobEffectList.REGENERATION.id || i == MobEffectList.POISON.id) {
@@ -1216,7 +1217,7 @@ public abstract class EntityLiving extends Entity {
     }
 
     public boolean at() {
-        return this.t() == EnchantmentDamage.b;
+        return this.getMonsterType() == MonsterType.UNDEAD;
     }
 
     protected void b(MobEffect mobeffect) {
@@ -1253,8 +1254,8 @@ public abstract class EntityLiving extends Entity {
         return false;
     }
 
-    public EnchantmentDamage t() {
-        return EnchantmentDamage.a;
+    public MonsterType getMonsterType() {
+        return MonsterType.UNDEFINED;
     }
 
     public void c(ItemStack itemstack) {

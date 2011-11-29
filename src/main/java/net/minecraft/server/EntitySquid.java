@@ -58,7 +58,7 @@ public class EntitySquid extends EntityWaterAnimal {
         return 0;
     }
 
-    protected void a(boolean flag, int i) {
+    protected void dropDeathLoot(boolean flag, int i) {
         // CraftBukkit start - whole method
         java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
 

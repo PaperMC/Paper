@@ -25,7 +25,7 @@ public class BlockSnow extends Block {
         return false;
     }
 
-    public void a(IBlockAccess iblockaccess, int i, int j, int k) {
+    public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
         int l = iblockaccess.getData(i, j, k) & 7;
         float f = (float) (2 * (1 + l)) / 16.0F;
 
@@ -66,7 +66,7 @@ public class BlockSnow extends Block {
         entityhuman.a(StatisticList.C[this.id], 1);
     }
 
-    public int a(int i, Random random, int j) {
+    public int getDropType(int i, Random random, int j) {
         return Item.SNOW_BALL.id;
     }
 

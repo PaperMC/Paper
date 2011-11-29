@@ -42,7 +42,7 @@ public class BlockPressurePlate extends Block {
         return world.e(i, j - 1, k) || world.getTypeId(i, j - 1, k) == Block.FENCE.id;
     }
 
-    public void a(World world, int i, int j, int k) {}
+    public void onPlace(World world, int i, int j, int k) {}
 
     public void doPhysics(World world, int i, int j, int k, int l) {
         boolean flag = false;
@@ -159,7 +159,7 @@ public class BlockPressurePlate extends Block {
         super.remove(world, i, j, k);
     }
 
-    public void a(IBlockAccess iblockaccess, int i, int j, int k) {
+    public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
         boolean flag = iblockaccess.getData(i, j, k) == 1;
         float f = 0.0625F;
 

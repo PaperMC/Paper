@@ -60,7 +60,7 @@ public class BlockGrass extends Block {
         }
     }
 
-    public int a(int i, Random random, int j) {
-        return Block.DIRT.a(0, random, j);
+    public int getDropType(int i, Random random, int j) {
+        return Block.DIRT.getDropType(0, random, j);
     }
 }

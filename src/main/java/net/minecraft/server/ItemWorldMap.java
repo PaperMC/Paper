@@ -17,13 +17,13 @@ public class ItemWorldMap extends ItemWorldMapBase {
         WorldMap worldmap = (WorldMap) world.a(WorldMap.class, "map_" + itemstack.getData());
 
         if (worldmap == null) {
-            itemstack.b(world.b("map"));
+            itemstack.setData(world.b("map"));
             String s = "map_" + itemstack.getData();
 
             worldmap = new WorldMap(s);
-            worldmap.b = world.r().c();
-            worldmap.c = world.r().e();
-            worldmap.e = 3;
+            worldmap.centerX = world.getWorldData().c();
+            worldmap.centerZ = world.getWorldData().e();
+            worldmap.scale = 3;
             worldmap.map = (byte) world.worldProvider.dimension;
             worldmap.a();
             world.a(s, (WorldMapBase) worldmap);
@@ -41,9 +41,9 @@ public class ItemWorldMap extends ItemWorldMapBase {
         if (((WorldServer) world).dimension == worldmap.map) { // CraftBukkit
             short short1 = 128;
             short short2 = 128;
-            int i = 1 << worldmap.e;
-            int j = worldmap.b;
-            int k = worldmap.c;
+            int i = 1 << worldmap.scale;
+            int j = worldmap.centerX;
+            int k = worldmap.centerZ;
             int l = MathHelper.floor(entity.locX - (double) j) / i + short1 / 2;
             int i1 = MathHelper.floor(entity.locZ - (double) k) / i + short2 / 2;
             int j1 = 128 / i;
@@ -181,7 +181,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
 
                             d0 = d1;
                             if (j2 >= 0 && k2 * k2 + l2 * l2 < j1 * j1 && (!flag || (k1 + j2 & 1) != 0)) {
-                                byte b4 = worldmap.f[k1 + j2 * short1];
+                                byte b4 = worldmap.colors[k1 + j2 * short1];
                                 byte b5 = (byte) (i5 * 4 + b3);
 
                                 if (b4 != b5) {
@@ -193,14 +193,14 @@ public class ItemWorldMap extends ItemWorldMapBase {
                                         i2 = j2;
                                     }
 
-                                    worldmap.f[k1 + j2 * short1] = b5;
+                                    worldmap.colors[k1 + j2 * short1] = b5;
                                 }
                             }
                         }
                     }
 
                     if (l1 <= i2) {
-                        worldmap.a(k1, l1, i2);
+                        worldmap.flagDirty(k1, l1, i2);
                     }
                 }
             }
@@ -224,21 +224,21 @@ public class ItemWorldMap extends ItemWorldMapBase {
     }
 
     public void d(ItemStack itemstack, World world, EntityHuman entityhuman) {
-        itemstack.b(world.b("map"));
+        itemstack.setData(world.b("map"));
         String s = "map_" + itemstack.getData();
         WorldMap worldmap = new WorldMap(s);
 
         world.a(s, (WorldMapBase) worldmap);
-        worldmap.b = MathHelper.floor(entityhuman.locX);
-        worldmap.c = MathHelper.floor(entityhuman.locZ);
-        worldmap.e = 3;
+        worldmap.centerX = MathHelper.floor(entityhuman.locX);
+        worldmap.centerZ = MathHelper.floor(entityhuman.locZ);
+        worldmap.scale = 3;
         worldmap.map = (byte) world.worldProvider.dimension;
         worldmap.a();
     }
 
     public Packet c(ItemStack itemstack, World world, EntityHuman entityhuman) {
-        byte[] abyte = this.a(itemstack, world).a(itemstack, world, entityhuman);
+        byte[] abyte = this.a(itemstack, world).getUpdatePacket(itemstack, world, entityhuman);
 
-        return abyte == null ? null : new Packet131((short) Item.MAP.id, (short) itemstack.getData(), abyte);
+        return abyte == null ? null : new Packet131ItemData((short) Item.MAP.id, (short) itemstack.getData(), abyte);
     }
 }

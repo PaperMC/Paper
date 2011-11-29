@@ -37,18 +37,18 @@ public class EntityEnderman extends EntityMonster {
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
-        nbttagcompound.a("carried", (short) this.getCarriedId());
-        nbttagcompound.a("carriedData", (short) this.getCarriedData());
+        nbttagcompound.setShort("carried", (short) this.getCarriedId());
+        nbttagcompound.setShort("carriedData", (short) this.getCarriedData());
     }
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        this.setCarriedId(nbttagcompound.e("carried"));
-        this.setCarriedData(nbttagcompound.e("carriedData"));
+        this.setCarriedId(nbttagcompound.getShort("carried"));
+        this.setCarriedData(nbttagcompound.getShort("carriedData"));
     }
 
     protected Entity findTarget() {
-        EntityHuman entityhuman = this.world.b(this, 64.0D);
+        EntityHuman entityhuman = this.world.findNearbyVulnerablePlayer(this, 64.0D);
 
         if (entityhuman != null) {
             if (this.c(entityhuman)) {
@@ -75,7 +75,7 @@ public class EntityEnderman extends EntityMonster {
             return false;
         } else {
             Vec3D vec3d = entityhuman.d(1.0F).b();
-            Vec3D vec3d1 = Vec3D.create(this.locX - entityhuman.locX, this.boundingBox.b + (double) (this.width / 2.0F) - (entityhuman.locY + (double) entityhuman.x()), this.locZ - entityhuman.locZ);
+            Vec3D vec3d1 = Vec3D.create(this.locX - entityhuman.locX, this.boundingBox.b + (double) (this.length / 2.0F) - (entityhuman.locY + (double) entityhuman.x()), this.locZ - entityhuman.locZ);
             double d0 = vec3d1.c();
 
             vec3d1 = vec3d1.b();
@@ -138,7 +138,7 @@ public class EntityEnderman extends EntityMonster {
         }
 
         for (i = 0; i < 2; ++i) {
-            this.world.a("portal", this.locX + (this.random.nextDouble() - 0.5D) * (double) this.length, this.locY + this.random.nextDouble() * (double) this.width - 0.25D, this.locZ + (this.random.nextDouble() - 0.5D) * (double) this.length, (this.random.nextDouble() - 0.5D) * 2.0D, -this.random.nextDouble(), (this.random.nextDouble() - 0.5D) * 2.0D);
+            this.world.a("portal", this.locX + (this.random.nextDouble() - 0.5D) * (double) this.width, this.locY + this.random.nextDouble() * (double) this.length - 0.25D, this.locZ + (this.random.nextDouble() - 0.5D) * (double) this.width, (this.random.nextDouble() - 0.5D) * 2.0D, -this.random.nextDouble(), (this.random.nextDouble() - 0.5D) * 2.0D);
         }
 
         if (this.world.e() && !this.world.isStatic) {
@@ -160,7 +160,7 @@ public class EntityEnderman extends EntityMonster {
             this.a(this.target, 100.0F, 100.0F);
         }
 
-        if (!this.world.isStatic && this.aj()) {
+        if (!this.world.isStatic && this.isAlive()) {
             if (this.target != null) {
                 if (this.target instanceof EntityHuman && this.c((EntityHuman) this.target)) {
                     this.aT = this.aU = 0.0F;
@@ -190,7 +190,7 @@ public class EntityEnderman extends EntityMonster {
     }
 
     protected boolean f(Entity entity) {
-        Vec3D vec3d = Vec3D.create(this.locX - entity.locX, this.boundingBox.b + (double) (this.width / 2.0F) - entity.locY + (double) entity.x(), this.locZ - entity.locZ);
+        Vec3D vec3d = Vec3D.create(this.locX - entity.locX, this.boundingBox.b + (double) (this.length / 2.0F) - entity.locY + (double) entity.x(), this.locZ - entity.locZ);
 
         vec3d = vec3d.b();
         double d0 = 16.0D;
@@ -247,9 +247,9 @@ public class EntityEnderman extends EntityMonster {
                 float f = (this.random.nextFloat() - 0.5F) * 0.2F;
                 float f1 = (this.random.nextFloat() - 0.5F) * 0.2F;
                 float f2 = (this.random.nextFloat() - 0.5F) * 0.2F;
-                double d7 = d3 + (this.locX - d3) * d6 + (this.random.nextDouble() - 0.5D) * (double) this.length * 2.0D;
-                double d8 = d4 + (this.locY - d4) * d6 + this.random.nextDouble() * (double) this.width;
-                double d9 = d5 + (this.locZ - d5) * d6 + (this.random.nextDouble() - 0.5D) * (double) this.length * 2.0D;
+                double d7 = d3 + (this.locX - d3) * d6 + (this.random.nextDouble() - 0.5D) * (double) this.width * 2.0D;
+                double d8 = d4 + (this.locY - d4) * d6 + this.random.nextDouble() * (double) this.length;
+                double d9 = d5 + (this.locZ - d5) * d6 + (this.random.nextDouble() - 0.5D) * (double) this.width * 2.0D;
 
                 this.world.a("portal", d7, d8, d9, (double) f, (double) f1, (double) f2);
             }
@@ -276,7 +276,7 @@ public class EntityEnderman extends EntityMonster {
         return Item.ENDER_PEARL.id;
     }
 
-    protected void a(boolean flag, int i) {
+    protected void dropDeathLoot(boolean flag, int i) {
         int j = this.e();
 
         if (j > 0) {

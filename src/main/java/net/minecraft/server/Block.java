@@ -123,8 +123,8 @@ public class Block {
     public static final Block SMOOTH_BRICK = (new BlockSmoothBrick(98)).c(1.5F).b(10.0F).a(h).a("stonebricksmooth");
     public static final Block BIG_MUSHROOM_1 = (new BlockHugeMushroom(99, Material.WOOD, 142, 0)).c(0.2F).a(e).a("mushroom").i();
     public static final Block BIG_MUSHROOM_2 = (new BlockHugeMushroom(100, Material.WOOD, 142, 1)).c(0.2F).a(e).a("mushroom").i();
-    public static final Block IRON_FENCE = (new BlockThin(101, 85, 85, Material.ORE, true)).c(5.0F).b(10.0F).a(i).a("fenceIron");
-    public static final Block THIN_GLASS = (new BlockThin(102, 49, 148, Material.SHATTERABLE, false)).c(0.3F).a(j).a("thinGlass");
+    public static final Block IRON_FENCE = (new BlockThinFence(101, 85, 85, Material.ORE, true)).c(5.0F).b(10.0F).a(i).a("fenceIron");
+    public static final Block THIN_GLASS = (new BlockThinFence(102, 49, 148, Material.SHATTERABLE, false)).c(0.3F).a(j).a("thinGlass");
     public static final Block MELON = (new BlockMelon(103)).c(1.0F).a(e).a("melon");
     public static final Block PUMPKIN_STEM = (new BlockStem(104, PUMPKIN)).c(0.0F).a(e).a("pumpkinStem").i();
     public static final Block MELON_STEM = (new BlockStem(105, MELON)).c(0.0F).a(e).a("pumpkinStem").i();
@@ -301,7 +301,7 @@ public class Block {
         return 10;
     }
 
-    public void a(World world, int i, int j, int k) {}
+    public void onPlace(World world, int i, int j, int k) {}
 
     public void remove(World world, int i, int j, int k) {}
 
@@ -309,7 +309,7 @@ public class Block {
         return 1;
     }
 
-    public int a(int i, Random random, int j) {
+    public int getDropType(int i, Random random, int j) {
         return this.id;
     }
 
@@ -323,15 +323,15 @@ public class Block {
 
     public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {
         if (!world.isStatic) {
-            int j1 = this.a(i1, world.random);
+            int j1 = this.getDropCount(i1, world.random);
 
             for (int k1 = 0; k1 < j1; ++k1) {
                 // CraftBukkit - <= to < to allow for plugins to completely disable block drops from explosions
                 if (world.random.nextFloat() < f) {
-                    int l1 = this.a(l, world.random, i1);
+                    int l1 = this.getDropType(l, world.random, i1);
 
                     if (l1 > 0) {
-                        this.a(world, i, j, k, new ItemStack(l1, 1, this.c(l)));
+                        this.a(world, i, j, k, new ItemStack(l1, 1, this.getDropData(l)));
                     }
                 }
             }
@@ -351,7 +351,7 @@ public class Block {
         }
     }
 
-    protected int c(int i) {
+    protected int getDropData(int i) {
         return 0;
     }
 
@@ -360,7 +360,7 @@ public class Block {
     }
 
     public MovingObjectPosition a(World world, int i, int j, int k, Vec3D vec3d, Vec3D vec3d1) {
-        this.a((IBlockAccess) world, i, j, k);
+        this.updateShape(world, i, j, k);
         vec3d = vec3d.add((double) (-i), (double) (-j), (double) (-k));
         vec3d1 = vec3d1.add((double) (-i), (double) (-j), (double) (-k));
         Vec3D vec3d2 = vec3d.a(vec3d1, this.minX);
@@ -489,7 +489,7 @@ public class Block {
 
     public void a(World world, int i, int j, int k, Entity entity, Vec3D vec3d) {}
 
-    public void a(IBlockAccess iblockaccess, int i, int j, int k) {}
+    public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {}
 
     public boolean a(IBlockAccess iblockaccess, int i, int j, int k, int l) {
         return false;
@@ -510,14 +510,14 @@ public class Block {
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
         entityhuman.a(StatisticList.C[this.id], 1);
         entityhuman.c(0.025F);
-        if (this.b() && !isTileEntity[this.id] && EnchantmentManager.d(entityhuman.inventory)) {
+        if (this.b() && !isTileEntity[this.id] && EnchantmentManager.hasSilkTouchEnchantment(entityhuman.inventory)) {
             ItemStack itemstack = this.a_(l);
 
             if (itemstack != null) {
                 this.a(world, i, j, k, itemstack);
             }
         } else {
-            int i1 = EnchantmentManager.e(entityhuman.inventory);
+            int i1 = EnchantmentManager.getBonusBlockLootEnchantmentLevel(entityhuman.inventory);
 
             this.b(world, i, j, k, l, i1);
         }
@@ -533,7 +533,7 @@ public class Block {
         return new ItemStack(this.id, 1, j);
     }
 
-    public int a(int i, Random random) {
+    public int getDropCount(int i, Random random) {
         return this.a(random);
     }
 
@@ -549,7 +549,7 @@ public class Block {
     }
 
     public String m() {
-        return StatisticCollector.a(this.n() + ".name");
+        return LocaleI18n.a(this.n() + ".name");
     }
 
     public String n() {
@@ -573,8 +573,8 @@ public class Block {
 
     static {
         Item.byId[WOOL.id] = (new ItemCloth(WOOL.id - 256)).a("cloth");
-        Item.byId[LOG.id] = (new ItemLog(LOG.id - 256, LOG)).a("log");
-        Item.byId[SMOOTH_BRICK.id] = (new ItemLog(SMOOTH_BRICK.id - 256, SMOOTH_BRICK)).a("stonebricksmooth");
+        Item.byId[LOG.id] = (new ItemWithAuxData(LOG.id - 256, LOG)).a("log");
+        Item.byId[SMOOTH_BRICK.id] = (new ItemWithAuxData(SMOOTH_BRICK.id - 256, SMOOTH_BRICK)).a("stonebricksmooth");
         Item.byId[STEP.id] = (new ItemStep(STEP.id - 256)).a("stoneSlab");
         Item.byId[SAPLING.id] = (new ItemSapling(SAPLING.id - 256)).a("sapling");
         Item.byId[LEAVES.id] = (new ItemLeaves(LEAVES.id - 256)).a("leaves");
@@ -583,8 +583,8 @@ public class Block {
         Item.byId[WATER_LILY.id] = new ItemWaterLily(WATER_LILY.id - 256);
         Item.byId[PISTON.id] = new ItemPiston(PISTON.id - 256);
         Item.byId[PISTON_STICKY.id] = new ItemPiston(PISTON_STICKY.id - 256);
-        Item.byId[BIG_MUSHROOM_1.id] = new ItemLog(BIG_MUSHROOM_1.id - 256, BIG_MUSHROOM_1); // CraftBukkit
-        Item.byId[BIG_MUSHROOM_2.id] = new ItemLog(BIG_MUSHROOM_2.id - 256, BIG_MUSHROOM_2); // CraftBukkit
+        Item.byId[BIG_MUSHROOM_1.id] = new ItemWithAuxData(BIG_MUSHROOM_1.id - 256, BIG_MUSHROOM_1); // CraftBukkit
+        Item.byId[BIG_MUSHROOM_2.id] = new ItemWithAuxData(BIG_MUSHROOM_2.id - 256, BIG_MUSHROOM_2); // CraftBukkit
         Item.byId[MOB_SPAWNER.id] = new ItemMobSpawner(MOB_SPAWNER.id - 256); // CraftBukkit
 
         for (int i = 0; i < 256; ++i) {

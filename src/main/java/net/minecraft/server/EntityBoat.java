@@ -48,7 +48,7 @@ public class EntityBoat extends Entity {
         super(world);
         this.bc = true;
         this.b(1.5F, 0.6F);
-        this.height = this.width / 2.0F;
+        this.height = this.length / 2.0F;
     }
 
     protected boolean g_() {
@@ -87,7 +87,7 @@ public class EntityBoat extends Entity {
     }
 
     public double q() {
-        return (double) this.width * 0.0D - 0.30000001192092896D;
+        return (double) this.length * 0.0D - 0.30000001192092896D;
     }
 
     public boolean damageEntity(DamageSource damagesource, int i) {

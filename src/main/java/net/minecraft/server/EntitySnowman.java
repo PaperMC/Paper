@@ -77,7 +77,7 @@ public class EntitySnowman extends EntityGolem {
         return Item.SNOW_BALL.id;
     }
 
-    protected void a(boolean flag, int i) {
+    protected void dropDeathLoot(boolean flag, int i) {
         // CraftBukkit start
         List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
         int j = this.random.nextInt(16);

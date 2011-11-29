@@ -6,21 +6,21 @@ import java.util.UUID; // CraftBukkit
 
 public interface IDataManager {
 
-    WorldData c();
+    WorldData getWorldData();
 
-    void b();
+    void checkSession();
 
-    IChunkLoader a(WorldProvider worldprovider);
+    IChunkLoader createChunkLoader(WorldProvider worldprovider);
 
-    void a(WorldData worlddata, List list);
+    void saveWorldData(WorldData worlddata, List list);
 
-    void a(WorldData worlddata);
+    void saveWorldData(WorldData worlddata);
 
-    PlayerFileData d();
+    PlayerFileData getPlayerFileData();
 
     void e();
 
-    File b(String s);
+    File getDataFile(String s);
 
     UUID getUUID(); // CraftBukkit
 }

@@ -3,7 +3,7 @@ package net.minecraft.server;
 import java.util.Random;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 
-public class BlockIce extends BlockBreakable {
+public class BlockIce extends BlockHalfTransparant {
 
     public BlockIce(int i, int j) {
         super(i, j, Material.ICE, false);

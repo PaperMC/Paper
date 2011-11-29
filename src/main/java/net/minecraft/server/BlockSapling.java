@@ -61,7 +61,7 @@ public class BlockSapling extends BlockFlower {
         // CraftBukkit end
     }
 
-    protected int c(int i) {
+    protected int getDropData(int i) {
         return i & 3;
     }
 

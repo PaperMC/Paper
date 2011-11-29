@@ -94,7 +94,7 @@ public class EntityTypes {
         a(EntityEnderPearl.class, "ThrownEnderpearl", 14);
         a(EntityEnderSignal.class, "EyeOfEnderSignal", 15);
         a(EntityTNTPrimed.class, "PrimedTnt", 20);
-        a(EntityFallingSand.class, "FallingSand", 21);
+        a(EntityFallingBlock.class, "FallingSand", 21);
         a(EntityMinecart.class, "Minecart", 40);
         a(EntityBoat.class, "Boat", 41);
         a(EntityLiving.class, "Mob", 48);
@@ -111,7 +111,7 @@ public class EntityTypes {
         a(EntityCaveSpider.class, "CaveSpider", 59);
         a(EntitySilverfish.class, "Silverfish", 60);
         a(EntityBlaze.class, "Blaze", 61);
-        a(EntityLavaSlime.class, "LavaSlime", 62);
+        a(EntityMagmaCube.class, "LavaSlime", 62);
         a(EntityEnderDragon.class, "EnderDragon", 63);
         a(EntityPig.class, "Pig", 90);
         a(EntitySheep.class, "Sheep", 91);

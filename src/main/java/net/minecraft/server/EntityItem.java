@@ -15,7 +15,7 @@ public class EntityItem extends Entity {
     public EntityItem(World world, double d0, double d1, double d2, ItemStack itemstack) {
         super(world);
         this.b(0.25F, 0.25F);
-        this.height = this.width / 2.0F;
+        this.height = this.length / 2.0F;
         this.setPosition(d0, d1, d2);
         this.itemStack = itemstack;
         // CraftBukkit start - infinite item fix
@@ -36,7 +36,7 @@ public class EntityItem extends Entity {
     public EntityItem(World world) {
         super(world);
         this.b(0.25F, 0.25F);
-        this.height = this.width / 2.0F;
+        this.height = this.length / 2.0F;
     }
 
     protected void b() {}
@@ -106,15 +106,15 @@ public class EntityItem extends Entity {
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("Health", (short) ((byte) this.f));
-        nbttagcompound.a("Age", (short) this.b);
-        nbttagcompound.a("Item", this.itemStack.b(new NBTTagCompound()));
+        nbttagcompound.setShort("Health", (short) ((byte) this.f));
+        nbttagcompound.setShort("Age", (short) this.b);
+        nbttagcompound.setCompound("Item", this.itemStack.b(new NBTTagCompound()));
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        this.f = nbttagcompound.e("Health") & 255;
-        this.b = nbttagcompound.e("Age");
-        NBTTagCompound nbttagcompound1 = nbttagcompound.l("Item");
+        this.f = nbttagcompound.getShort("Health") & 255;
+        this.b = nbttagcompound.getShort("Age");
+        NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("Item");
 
         this.itemStack = ItemStack.a(nbttagcompound1);
         if (this.itemStack == null) {
@@ -171,6 +171,6 @@ public class EntityItem extends Entity {
     }
 
     public String ad() {
-        return StatisticCollector.a("item." + this.itemStack.k());
+        return LocaleI18n.a("item." + this.itemStack.k());
     }
 }

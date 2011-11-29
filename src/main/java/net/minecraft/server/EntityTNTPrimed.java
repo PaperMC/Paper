@@ -18,7 +18,7 @@ public class EntityTNTPrimed extends Entity {
         this.fuseTicks = 0;
         this.bc = true;
         this.b(0.98F, 0.98F);
-        this.height = this.width / 2.0F;
+        this.height = this.length / 2.0F;
     }
 
     public EntityTNTPrimed(World world, double d0, double d1, double d2) {
@@ -91,10 +91,10 @@ public class EntityTNTPrimed extends Entity {
     }
 
     protected void b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("Fuse", (byte) this.fuseTicks);
+        nbttagcompound.setByte("Fuse", (byte) this.fuseTicks);
     }
 
     protected void a(NBTTagCompound nbttagcompound) {
-        this.fuseTicks = nbttagcompound.d("Fuse");
+        this.fuseTicks = nbttagcompound.getByte("Fuse");
     }
 }

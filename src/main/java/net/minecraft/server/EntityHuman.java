@@ -20,7 +20,7 @@ import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason;
 
 public abstract class EntityHuman extends EntityLiving {
 
-    public InventoryPlayer inventory = new InventoryPlayer(this);
+    public PlayerInventory inventory = new PlayerInventory(this);
     public Container defaultContainer;
     public Container activeContainer;
     protected FoodMetaData foodData = new FoodMetaData();
@@ -56,9 +56,9 @@ public abstract class EntityHuman extends EntityLiving {
     protected boolean J = false;
     public float K;
     public PlayerAbilities abilities = new PlayerAbilities();
+    public int expLevel;
     public int expTotal;
-    public int exp;
-    public float expLevel;
+    public float exp;
     private ItemStack d;
     private int e;
     protected float P = 0.1F;
@@ -167,7 +167,7 @@ public abstract class EntityHuman extends EntityLiving {
         }
 
         if (this.z() && this.abilities.isInvulnerable) {
-            this.aw();
+            this.extinguish();
         }
 
         this.y = this.B;
@@ -382,7 +382,7 @@ public abstract class EntityHuman extends EntityLiving {
     }
 
     protected int f(int i) {
-        int j = EnchantmentManager.a(this.inventory);
+        int j = EnchantmentManager.getOxygenEnchantmentLevel(this.inventory);
 
         return j > 0 && this.random.nextInt(j + 1) > 0 ? i : super.f(i);
     }
@@ -448,7 +448,7 @@ public abstract class EntityHuman extends EntityLiving {
     public float a(Block block) {
         float f = this.inventory.a(block);
         float f1 = f;
-        int i = EnchantmentManager.b(this.inventory);
+        int i = EnchantmentManager.getDigSpeedEnchantmentLevel(this.inventory);
 
         if (i > 0 && this.inventory.b(block)) {
             f1 = f + (float) (i * i + 1);
@@ -462,7 +462,7 @@ public abstract class EntityHuman extends EntityLiving {
             f1 *= 1.0F - (float) (this.getEffect(MobEffectList.SLOWER_DIG).getAmplifier() + 1) * 0.2F;
         }
 
-        if (this.a(Material.WATER) && !EnchantmentManager.g(this.inventory)) {
+        if (this.a(Material.WATER) && !EnchantmentManager.hasWaterWorkerEnchantment(this.inventory)) {
             f1 /= 5.0F;
         }
 
@@ -479,15 +479,15 @@ public abstract class EntityHuman extends EntityLiving {
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        NBTTagList nbttaglist = nbttagcompound.m("Inventory");
+        NBTTagList nbttaglist = nbttagcompound.getList("Inventory");
 
         this.inventory.b(nbttaglist);
-        this.dimension = nbttagcompound.f("Dimension");
-        this.sleeping = nbttagcompound.n("Sleeping");
-        this.sleepTicks = nbttagcompound.e("SleepTimer");
-        this.expLevel = nbttagcompound.h("XpP");
-        this.expTotal = nbttagcompound.f("XpLevel");
-        this.exp = nbttagcompound.f("XpTotal");
+        this.dimension = nbttagcompound.getInt("Dimension");
+        this.sleeping = nbttagcompound.getBoolean("Sleeping");
+        this.sleepTicks = nbttagcompound.getShort("SleepTimer");
+        this.exp = nbttagcompound.getFloat("XpP");
+        this.expLevel = nbttagcompound.getInt("XpLevel");
+        this.expTotal = nbttagcompound.getInt("XpTotal");
         if (this.sleeping) {
             this.F = new ChunkCoordinates(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ));
             this.a(true, true, false);
@@ -501,7 +501,7 @@ public abstract class EntityHuman extends EntityLiving {
         // CraftBukkit end
 
         if (nbttagcompound.hasKey("SpawnX") && nbttagcompound.hasKey("SpawnY") && nbttagcompound.hasKey("SpawnZ")) {
-            this.b = new ChunkCoordinates(nbttagcompound.f("SpawnX"), nbttagcompound.f("SpawnY"), nbttagcompound.f("SpawnZ"));
+            this.b = new ChunkCoordinates(nbttagcompound.getInt("SpawnX"), nbttagcompound.getInt("SpawnY"), nbttagcompound.getInt("SpawnZ"));
         }
 
         this.foodData.a(nbttagcompound);
@@ -510,17 +510,17 @@ public abstract class EntityHuman extends EntityLiving {
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
-        nbttagcompound.a("Inventory", (NBTBase) this.inventory.a(new NBTTagList()));
-        nbttagcompound.a("Dimension", this.dimension);
-        nbttagcompound.a("Sleeping", this.sleeping);
-        nbttagcompound.a("SleepTimer", (short) this.sleepTicks);
-        nbttagcompound.a("XpP", this.expLevel);
-        nbttagcompound.a("XpLevel", this.expTotal);
-        nbttagcompound.a("XpTotal", this.exp);
+        nbttagcompound.set("Inventory", this.inventory.a(new NBTTagList()));
+        nbttagcompound.setInt("Dimension", this.dimension);
+        nbttagcompound.setBoolean("Sleeping", this.sleeping);
+        nbttagcompound.setShort("SleepTimer", (short) this.sleepTicks);
+        nbttagcompound.setFloat("XpP", this.exp);
+        nbttagcompound.setInt("XpLevel", this.expLevel);
+        nbttagcompound.setInt("XpTotal", this.expTotal);
         if (this.b != null) {
-            nbttagcompound.a("SpawnX", this.b.x);
-            nbttagcompound.a("SpawnY", this.b.y);
-            nbttagcompound.a("SpawnZ", this.b.z);
+            nbttagcompound.setInt("SpawnX", this.b.x);
+            nbttagcompound.setInt("SpawnY", this.b.y);
+            nbttagcompound.setInt("SpawnZ", this.b.z);
             nbttagcompound.setString("SpawnWorld", spawnWorld); // CraftBukkit - fixes bed spawns for multiworld worlds
         }
 
@@ -759,7 +759,7 @@ public abstract class EntityHuman extends EntityLiving {
 
         if (entity instanceof EntityLiving) {
             k = EnchantmentManager.a(this.inventory, (EntityLiving) entity);
-            j += EnchantmentManager.b(this.inventory, (EntityLiving) entity);
+            j += EnchantmentManager.getKnockbackEnchantmentLevel(this.inventory, (EntityLiving) entity);
         }
 
         if (this.isSprinting()) {
@@ -831,18 +831,18 @@ public abstract class EntityHuman extends EntityLiving {
             }
 
             if (entity instanceof EntityLiving) {
-                if (entity.aj()) {
+                if (entity.isAlive()) {
                     this.a((EntityLiving) entity, true);
                 }
 
                 this.a(StatisticList.w, i);
-                int l = EnchantmentManager.c(this.inventory, (EntityLiving) entity);
+                int l = EnchantmentManager.getFireAspectEnchantmentLevel(this.inventory, (EntityLiving) entity);
 
                 if (l > 0) {
                     // CraftBukkit start - raise a combust event when somebody hits with a fire enchanted item
                     EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), l*4);
                     if (!combustEvent.isCancelled()) {
-                        entity.j(combustEvent.getDuration());
+                        entity.setOnFire(combustEvent.getDuration());
                     }
                     // CraftBukkit end
                 }
@@ -870,22 +870,22 @@ public abstract class EntityHuman extends EntityLiving {
         return !this.sleeping && super.T();
     }
 
-    public EnumBedError a(int i, int j, int k) {
+    public EnumBedResult a(int i, int j, int k) {
         if (!this.world.isStatic) {
-            if (this.isSleeping() || !this.aj()) {
-                return EnumBedError.OTHER_PROBLEM;
+            if (this.isSleeping() || !this.isAlive()) {
+                return EnumBedResult.OTHER_PROBLEM;
             }
 
             if (this.world.worldProvider.c) {
-                return EnumBedError.NOT_POSSIBLE_HERE;
+                return EnumBedResult.NOT_POSSIBLE_HERE;
             }
 
             if (this.world.e()) {
-                return EnumBedError.NOT_POSSIBLE_NOW;
+                return EnumBedResult.NOT_POSSIBLE_NOW;
             }
 
             if (Math.abs(this.locX - (double) i) > 3.0D || Math.abs(this.locY - (double) j) > 2.0D || Math.abs(this.locZ - (double) k) > 3.0D) {
-                return EnumBedError.TOO_FAR_AWAY;
+                return EnumBedResult.TOO_FAR_AWAY;
             }
 
             double d0 = 8.0D;
@@ -893,7 +893,7 @@ public abstract class EntityHuman extends EntityLiving {
             List list = this.world.a(EntityMonster.class, AxisAlignedBB.b((double) i - d0, (double) j - d1, (double) k - d0, (double) i + d0, (double) j + d1, (double) k + d0));
 
             if (!list.isEmpty()) {
-                return EnumBedError.NOT_SAFE;
+                return EnumBedResult.NOT_SAFE;
             }
         }
 
@@ -906,7 +906,7 @@ public abstract class EntityHuman extends EntityLiving {
             this.world.getServer().getPluginManager().callEvent(event);
 
             if (event.isCancelled()) {
-                return EnumBedError.OTHER_PROBLEM;
+                return EnumBedResult.OTHER_PROBLEM;
             }
         }
         // CraftBukkit end
@@ -950,7 +950,7 @@ public abstract class EntityHuman extends EntityLiving {
             this.world.everyoneSleeping();
         }
 
-        return EnumBedError.OK;
+        return EnumBedResult.OK;
     }
 
     private void c(int i) {
@@ -1187,30 +1187,30 @@ public abstract class EntityHuman extends EntityLiving {
         }
     }
 
-    public void h(int i) {
+    public void giveExp(int i) {
         this.q += i;
-        this.expLevel += (float) i / (float) this.Z();
-        this.exp += i;
+        this.exp += (float) i / (float) this.getExpTolevel();
+        this.expTotal += i;
 
-        while (this.expLevel >= 1.0F) {
-            --this.expLevel;
-            this.D();
+        while (this.exp >= 1.0F) {
+            --this.exp;
+            this.levelUp();
         }
     }
 
-    public void b(int i) {
-        this.expTotal -= i;
-        if (this.expTotal < 0) {
-            this.expTotal = 0;
+    public void levelDown(int i) {
+        this.expLevel -= i;
+        if (this.expLevel < 0) {
+            this.expLevel = 0;
         }
     }
 
-    public int Z() {
-        return 7 + (this.expTotal * 7 >> 1);
+    public int getExpTolevel() {
+        return 7 + (this.expLevel * 7 >> 1);
     }
 
-    private void D() {
-        ++this.expTotal;
+    private void levelUp() {
+        ++this.expLevel;
     }
 
     public void c(float f) {
@@ -1248,7 +1248,7 @@ public abstract class EntityHuman extends EntityLiving {
     }
 
     protected int a(EntityHuman entityhuman) {
-        int i = this.expTotal * 7;
+        int i = this.expLevel * 7;
 
         return i > 100 ? 100 : i;
     }
@@ -1267,9 +1267,9 @@ public abstract class EntityHuman extends EntityLiving {
         this.inventory.a(entityhuman.inventory);
         this.health = entityhuman.health;
         this.foodData = entityhuman.foodData;
+        this.expLevel = entityhuman.expLevel;
         this.expTotal = entityhuman.expTotal;
         this.exp = entityhuman.exp;
-        this.expLevel = entityhuman.expLevel;
         this.q = entityhuman.q;
     }
 }

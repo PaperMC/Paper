@@ -246,18 +246,18 @@ public class EntityPainting extends Entity {
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("Dir", (byte) this.a);
+        nbttagcompound.setByte("Dir", (byte) this.a);
         nbttagcompound.setString("Motive", this.e.A);
-        nbttagcompound.a("TileX", this.b);
-        nbttagcompound.a("TileY", this.c);
-        nbttagcompound.a("TileZ", this.d);
+        nbttagcompound.setInt("TileX", this.b);
+        nbttagcompound.setInt("TileY", this.c);
+        nbttagcompound.setInt("TileZ", this.d);
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        this.a = nbttagcompound.d("Dir");
-        this.b = nbttagcompound.f("TileX");
-        this.c = nbttagcompound.f("TileY");
-        this.d = nbttagcompound.f("TileZ");
+        this.a = nbttagcompound.getByte("Dir");
+        this.b = nbttagcompound.getInt("TileX");
+        this.c = nbttagcompound.getInt("TileY");
+        this.d = nbttagcompound.getInt("TileZ");
         String s = nbttagcompound.getString("Motive");
         EnumArt[] aenumart = EnumArt.values();
         int i = aenumart.length;

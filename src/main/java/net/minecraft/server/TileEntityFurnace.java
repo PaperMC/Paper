@@ -64,41 +64,41 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        NBTTagList nbttaglist = nbttagcompound.m("Items");
+        NBTTagList nbttaglist = nbttagcompound.getList("Items");
 
         this.items = new ItemStack[this.getSize()];
 
-        for (int i = 0; i < nbttaglist.d(); ++i) {
-            NBTTagCompound nbttagcompound1 = (NBTTagCompound) nbttaglist.a(i);
-            byte b0 = nbttagcompound1.d("Slot");
+        for (int i = 0; i < nbttaglist.size(); ++i) {
+            NBTTagCompound nbttagcompound1 = (NBTTagCompound) nbttaglist.get(i);
+            byte b0 = nbttagcompound1.getByte("Slot");
 
             if (b0 >= 0 && b0 < this.items.length) {
                 this.items[b0] = ItemStack.a(nbttagcompound1);
             }
         }
 
-        this.burnTime = nbttagcompound.e("BurnTime");
-        this.cookTime = nbttagcompound.e("CookTime");
+        this.burnTime = nbttagcompound.getShort("BurnTime");
+        this.cookTime = nbttagcompound.getShort("CookTime");
         this.ticksForCurrentFuel = this.fuelTime(this.items[1]);
     }
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
-        nbttagcompound.a("BurnTime", (short) this.burnTime);
-        nbttagcompound.a("CookTime", (short) this.cookTime);
+        nbttagcompound.setShort("BurnTime", (short) this.burnTime);
+        nbttagcompound.setShort("CookTime", (short) this.cookTime);
         NBTTagList nbttaglist = new NBTTagList();
 
         for (int i = 0; i < this.items.length; ++i) {
             if (this.items[i] != null) {
                 NBTTagCompound nbttagcompound1 = new NBTTagCompound();
 
-                nbttagcompound1.a("Slot", (byte) i);
+                nbttagcompound1.setByte("Slot", (byte) i);
                 this.items[i].b(nbttagcompound1);
-                nbttaglist.a((NBTBase) nbttagcompound1);
+                nbttaglist.add(nbttagcompound1);
             }
         }
 
-        nbttagcompound.a("Items", (NBTBase) nbttaglist);
+        nbttagcompound.set("Items", nbttaglist);
     }
 
     public int getMaxStackSize() {

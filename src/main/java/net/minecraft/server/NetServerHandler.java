@@ -49,7 +49,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     private double y;
     private double z;
     private boolean checkMovement = true;
-    private EntityList q = new EntityList();
+    private IntHashMap q = new IntHashMap();
 
     public NetServerHandler(MinecraftServer minecraftserver, NetworkManager networkmanager, EntityPlayer entityplayer) {
         this.minecraftServer = minecraftserver;
@@ -128,8 +128,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         this.disconnected = true;
     }
 
-    public void a(Packet27 packet27) {
-        this.player.a(packet27.c(), packet27.e(), packet27.g(), packet27.h(), packet27.d(), packet27.f());
+    public void a(Packet27PlayerInput packet27playerinput) {
+        this.player.a(packet27playerinput.c(), packet27playerinput.e(), packet27playerinput.g(), packet27playerinput.h(), packet27playerinput.d(), packet27playerinput.f());
     }
 
     public void a(Packet10Flying packet10flying) {
@@ -684,7 +684,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         // CraftBukkit start
         if (this.player.dead) return;
 
-        if (packet16blockitemswitch.itemInHandIndex >= 0 && packet16blockitemswitch.itemInHandIndex < InventoryPlayer.h()) {
+        if (packet16blockitemswitch.itemInHandIndex >= 0 && packet16blockitemswitch.itemInHandIndex < PlayerInventory.h()) {
             PlayerItemHeldEvent event = new PlayerItemHeldEvent(this.getPlayer(), this.player.inventory.itemInHandIndex, packet16blockitemswitch.itemInHandIndex);
             this.server.getPluginManager().callEvent(event);
             // CraftBukkit end
@@ -704,7 +704,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             s = s.trim();
 
             for (int i = 0; i < s.length(); ++i) {
-                if (FontAllowedCharacters.allowedCharacters.indexOf(s.charAt(i)) < 0) {
+                if (SharedConstants.allowedCharacters.indexOf(s.charAt(i)) < 0) {
                     this.disconnect("Illegal characters in chat");
                     return;
                 }
@@ -968,9 +968,9 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         }
     }
 
-    public void a(Packet108 packet108) {
-        if (this.player.activeContainer.windowId == packet108.a && this.player.activeContainer.c(this.player)) {
-            this.player.activeContainer.a((EntityHuman) this.player, packet108.b);
+    public void a(Packet108ButtonClick packet108buttonclick) {
+        if (this.player.activeContainer.windowId == packet108buttonclick.a && this.player.activeContainer.c(this.player)) {
+            this.player.activeContainer.a((EntityHuman) this.player, packet108buttonclick.b);
             this.player.activeContainer.a();
         }
     }
@@ -979,7 +979,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         if (this.player.itemInWorldManager.b()) {
             boolean flag = packet107setcreativeslot.a < 0;
             ItemStack itemstack = packet107setcreativeslot.b;
-            boolean flag1 = packet107setcreativeslot.a >= 36 && packet107setcreativeslot.a < 36 + InventoryPlayer.h();
+            boolean flag1 = packet107setcreativeslot.a >= 36 && packet107setcreativeslot.a < 36 + PlayerInventory.h();
             boolean flag2 = itemstack == null || itemstack.id < Item.byId.length && itemstack.id >= 0 && Item.byId[itemstack.id] != null;
             boolean flag3 = itemstack == null || itemstack.getData() >= 0 && itemstack.getData() >= 0 && itemstack.count <= 64 && itemstack.count > 0;
 
@@ -1035,7 +1035,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                     flag = false;
                 } else {
                     for (i = 0; i < packet130updatesign.lines[j].length(); ++i) {
-                        if (FontAllowedCharacters.allowedCharacters.indexOf(packet130updatesign.lines[j].charAt(i)) < 0) {
+                        if (SharedConstants.allowedCharacters.indexOf(packet130updatesign.lines[j].charAt(i)) < 0) {
                             flag = false;
                         }
                     }

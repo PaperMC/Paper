@@ -62,7 +62,7 @@ public class EntityFireball extends Entity {
 
     public void w_() {
         super.w_();
-        this.j(1);
+        this.setOnFire(1);
         if (!this.world.isStatic && (this.shooter == null || this.shooter.dead)) {
             this.die();
         }
@@ -224,19 +224,19 @@ public class EntityFireball extends Entity {
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("xTile", (short) this.e);
-        nbttagcompound.a("yTile", (short) this.f);
-        nbttagcompound.a("zTile", (short) this.g);
-        nbttagcompound.a("inTile", (byte) this.h);
-        nbttagcompound.a("inGround", (byte) (this.i ? 1 : 0));
+        nbttagcompound.setShort("xTile", (short) this.e);
+        nbttagcompound.setShort("yTile", (short) this.f);
+        nbttagcompound.setShort("zTile", (short) this.g);
+        nbttagcompound.setByte("inTile", (byte) this.h);
+        nbttagcompound.setByte("inGround", (byte) (this.i ? 1 : 0));
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        this.e = nbttagcompound.e("xTile");
-        this.f = nbttagcompound.e("yTile");
-        this.g = nbttagcompound.e("zTile");
-        this.h = nbttagcompound.d("inTile") & 255;
-        this.i = nbttagcompound.d("inGround") == 1;
+        this.e = nbttagcompound.getShort("xTile");
+        this.f = nbttagcompound.getShort("yTile");
+        this.g = nbttagcompound.getShort("zTile");
+        this.h = nbttagcompound.getByte("inTile") & 255;
+        this.i = nbttagcompound.getByte("inGround") == 1;
     }
 
     public boolean e_() {

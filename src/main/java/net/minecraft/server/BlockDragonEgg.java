@@ -8,7 +8,7 @@ public class BlockDragonEgg extends Block {
         super(i, j, Material.DRAGON_EGG);
     }
 
-    public void a(World world, int i, int j, int k) {
+    public void onPlace(World world, int i, int j, int k) {
         world.c(i, j, k, this.id, this.d());
     }
 
@@ -26,9 +26,9 @@ public class BlockDragonEgg extends Block {
 
             if (!BlockSand.instaFall && world.a(i - b0, j - b0, k - b0, i + b0, j + b0, k + b0)) {
                 // CraftBukkit - added data
-                EntityFallingSand entityfallingsand = new EntityFallingSand(world, (double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), this.id, world.getData(i, j, k));
+                EntityFallingBlock entityfallingblock = new EntityFallingBlock(world, (double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), this.id, world.getData(i, j, k));
 
-                world.addEntity(entityfallingsand);
+                world.addEntity(entityfallingblock);
             } else {
                 world.setTypeId(i, j, k, 0);
 

@@ -568,7 +568,7 @@ public final class CraftServer implements Server {
                     ChunkCoordinates chunkcoordinates = internal.getSpawn();
                     internal.chunkProviderServer.getChunkAt(chunkcoordinates.x + j >> 4, chunkcoordinates.z + k >> 4);
 
-                    while (internal.x()) {
+                    while (internal.updateLights()) {
                         ;
                     }
                 }

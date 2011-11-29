@@ -6,16 +6,16 @@ public class ContainerPlayer extends Container {
     public IInventory resultInventory;
     public boolean c;
 
-    public ContainerPlayer(InventoryPlayer inventoryplayer) {
-        this(inventoryplayer, true);
+    public ContainerPlayer(PlayerInventory playerinventory) {
+        this(playerinventory, true);
     }
 
-    public ContainerPlayer(InventoryPlayer inventoryplayer, boolean flag) {
+    public ContainerPlayer(PlayerInventory playerinventory, boolean flag) {
         this.craftInventory = new InventoryCrafting(this, 2, 2);
         this.resultInventory = new InventoryCraftResult();
         this.c = false;
         this.c = flag;
-        this.a((Slot) (new SlotResult(inventoryplayer.d, this.craftInventory, this.resultInventory, 0, 144, 36)));
+        this.a((Slot) (new SlotResult(playerinventory.d, this.craftInventory, this.resultInventory, 0, 144, 36)));
 
         int i;
         int j;
@@ -27,17 +27,17 @@ public class ContainerPlayer extends Container {
         }
 
         for (i = 0; i < 4; ++i) {
-            this.a((Slot) (new SlotArmor(this, inventoryplayer, inventoryplayer.getSize() - 1 - i, 8, 8 + i * 18, i)));
+            this.a((Slot) (new SlotArmor(this, playerinventory, playerinventory.getSize() - 1 - i, 8, 8 + i * 18, i)));
         }
 
         for (i = 0; i < 3; ++i) {
             for (j = 0; j < 9; ++j) {
-                this.a(new Slot(inventoryplayer, j + (i + 1) * 9, 8 + j * 18, 84 + i * 18));
+                this.a(new Slot(playerinventory, j + (i + 1) * 9, 8 + j * 18, 84 + i * 18));
             }
         }
 
         for (i = 0; i < 9; ++i) {
-            this.a(new Slot(inventoryplayer, i, 8 + i * 18, 142));
+            this.a(new Slot(playerinventory, i, 8 + i * 18, 142));
         }
 
         this.a((IInventory) this.craftInventory);

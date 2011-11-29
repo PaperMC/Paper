@@ -30,7 +30,7 @@ public class EntitySmallFireball extends EntityFireball {
             // CraftBukkit end
             if (movingobjectposition.entity != null) {
                 // CraftBukkit start - entity damage by entity event + combust event
-                if (!movingobjectposition.entity.ax()) { // check if not fireproof
+                if (!movingobjectposition.entity.isFireproof()) { // check if not fireproof
                     boolean stick;
                     org.bukkit.entity.Entity damagee = movingobjectposition.entity.getBukkitEntity();
                     Projectile projectile = (Projectile) this.getBukkitEntity();
@@ -54,7 +54,7 @@ public class EntitySmallFireball extends EntityFireball {
                         pluginManager.callEvent(combustEvent);
 
                         if (!combustEvent.isCancelled()) {
-                            movingobjectposition.entity.j(combustEvent.getDuration());
+                            movingobjectposition.entity.setOnFire(combustEvent.getDuration());
                         }
                     }
                     // CraftBukkit end

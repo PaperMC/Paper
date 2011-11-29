@@ -76,18 +76,18 @@ public class FoodMetaData {
 
     public void a(NBTTagCompound nbttagcompound) {
         if (nbttagcompound.hasKey("foodLevel")) {
-            this.foodLevel = nbttagcompound.f("foodLevel");
-            this.foodTickTimer = nbttagcompound.f("foodTickTimer");
-            this.saturationLevel = nbttagcompound.h("foodSaturationLevel");
-            this.exhaustionLevel = nbttagcompound.h("foodExhaustionLevel");
+            this.foodLevel = nbttagcompound.getInt("foodLevel");
+            this.foodTickTimer = nbttagcompound.getInt("foodTickTimer");
+            this.saturationLevel = nbttagcompound.getFloat("foodSaturationLevel");
+            this.exhaustionLevel = nbttagcompound.getFloat("foodExhaustionLevel");
         }
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.a("foodLevel", this.foodLevel);
-        nbttagcompound.a("foodTickTimer", this.foodTickTimer);
-        nbttagcompound.a("foodSaturationLevel", this.saturationLevel);
-        nbttagcompound.a("foodExhaustionLevel", this.exhaustionLevel);
+        nbttagcompound.setInt("foodLevel", this.foodLevel);
+        nbttagcompound.setInt("foodTickTimer", this.foodTickTimer);
+        nbttagcompound.setFloat("foodSaturationLevel", this.saturationLevel);
+        nbttagcompound.setFloat("foodExhaustionLevel", this.exhaustionLevel);
     }
 
     public int a() {

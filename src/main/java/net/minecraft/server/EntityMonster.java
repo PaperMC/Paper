@@ -34,7 +34,7 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
     }
 
     protected Entity findTarget() {
-        EntityHuman entityhuman = this.world.b(this, 16.0D);
+        EntityHuman entityhuman = this.world.findNearbyVulnerablePlayer(this, 16.0D);
 
         return entityhuman != null && this.g(entityhuman) ? entityhuman : null;
     }

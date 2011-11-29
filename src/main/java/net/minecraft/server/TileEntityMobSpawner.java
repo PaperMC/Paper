@@ -18,7 +18,7 @@ public class TileEntityMobSpawner extends TileEntity {
     }
 
     public boolean c() {
-        return this.world.a((double) this.x + 0.5D, (double) this.y + 0.5D, (double) this.z + 0.5D, 16.0D) != null;
+        return this.world.findNearbyPlayer((double) this.x + 0.5D, (double) this.y + 0.5D, (double) this.z + 0.5D, 16.0D) != null;
     }
 
     // CraftBukkit start
@@ -108,12 +108,12 @@ public class TileEntityMobSpawner extends TileEntity {
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
         this.mobName = nbttagcompound.getString("EntityId");
-        this.spawnDelay = nbttagcompound.e("Delay");
+        this.spawnDelay = nbttagcompound.getShort("Delay");
     }
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
         nbttagcompound.setString("EntityId", this.mobName);
-        nbttagcompound.a("Delay", (short) this.spawnDelay);
+        nbttagcompound.setShort("Delay", (short) this.spawnDelay);
     }
 }

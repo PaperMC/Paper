@@ -29,7 +29,7 @@ public class EntityZombie extends EntityMonster {
                 this.world.getServer().getPluginManager().callEvent(event);
 
                 if (!event.isCancelled()) {
-                    this.j(event.getDuration());
+                    this.setOnFire(event.getDuration());
                 }
                 // CraftBukkit end
             }
@@ -54,7 +54,7 @@ public class EntityZombie extends EntityMonster {
         return Item.ROTTEN_FLESH.id;
     }
 
-    public EnchantmentDamage t() {
-        return EnchantmentDamage.b;
+    public MonsterType getMonsterType() {
+        return MonsterType.UNDEAD;
     }
 }

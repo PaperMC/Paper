@@ -68,7 +68,7 @@ public class TileEntityPiston extends TileEntity {
                 while (iterator.hasNext()) {
                     Entity entity = (Entity) iterator.next();
 
-                    entity.move((double) (f1 * (float) PistonBlockTextures.b[this.c]), (double) (f1 * (float) PistonBlockTextures.c[this.c]), (double) (f1 * (float) PistonBlockTextures.d[this.c]));
+                    entity.move((double) (f1 * (float) Facing.b[this.c]), (double) (f1 * (float) Facing.c[this.c]), (double) (f1 * (float) Facing.d[this.c]));
                 }
 
                 h.clear();
@@ -112,19 +112,19 @@ public class TileEntityPiston extends TileEntity {
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        this.a = nbttagcompound.f("blockId");
-        this.b = nbttagcompound.f("blockData");
-        this.c = nbttagcompound.f("facing");
-        this.g = this.f = nbttagcompound.h("progress");
-        this.d = nbttagcompound.n("extending");
+        this.a = nbttagcompound.getInt("blockId");
+        this.b = nbttagcompound.getInt("blockData");
+        this.c = nbttagcompound.getInt("facing");
+        this.g = this.f = nbttagcompound.getFloat("progress");
+        this.d = nbttagcompound.getBoolean("extending");
     }
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
-        nbttagcompound.a("blockId", this.a);
-        nbttagcompound.a("blockData", this.b);
-        nbttagcompound.a("facing", this.c);
-        nbttagcompound.a("progress", this.g);
-        nbttagcompound.a("extending", this.d);
+        nbttagcompound.setInt("blockId", this.a);
+        nbttagcompound.setInt("blockData", this.b);
+        nbttagcompound.setInt("facing", this.c);
+        nbttagcompound.setFloat("progress", this.g);
+        nbttagcompound.setBoolean("extending", this.d);
     }
 }

@@ -46,9 +46,9 @@ public class BlockRedstoneTorch extends BlockTorch {
         return 2;
     }
 
-    public void a(World world, int i, int j, int k) {
+    public void onPlace(World world, int i, int j, int k) {
         if (world.getData(i, j, k) == 0) {
-            super.a(world, i, j, k);
+            super.onPlace(world, i, j, k);
         }
 
         if (this.isOn) {
@@ -152,7 +152,7 @@ public class BlockRedstoneTorch extends BlockTorch {
         return l == 0 ? this.a(world, i, j, k, l) : false;
     }
 
-    public int a(int i, Random random, int j) {
+    public int getDropType(int i, Random random, int j) {
         return Block.REDSTONE_TORCH_ON.id;
     }
 
