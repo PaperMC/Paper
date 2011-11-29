@@ -12,12 +12,12 @@ public class CraftMonster extends CraftCreature implements Monster {
     }
 
     @Override
-    public String toString() {
-        return "CraftMonster";
+    public EntityMonster getHandle() {
+        return (EntityMonster) entity;
     }
 
     @Override
-    public EntityMonster getHandle() {
-        return (EntityMonster) entity;
+    public String toString() {
+        return "CraftMonster";
     }
 }

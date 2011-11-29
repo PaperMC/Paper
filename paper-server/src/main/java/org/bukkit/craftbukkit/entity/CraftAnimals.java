@@ -10,9 +10,12 @@ public class CraftAnimals extends CraftCreature implements Animals {
         super(server, entity);
     }
 
-    @Override
-    public String toString() {
-        return "CraftAnimals";
+    public int getAge() {
+        return getHandle().getAge();
+    }
+
+    public void setAge(int age) {
+        getHandle().setAge(age);
     }
 
     @Override
@@ -20,11 +23,8 @@ public class CraftAnimals extends CraftCreature implements Animals {
         return (EntityAnimal) entity;
     }
 
-    public int getAge() {
-        return getHandle().getAge();
-    }
-
-    public void setAge(int age) {
-        getHandle().setAge(age);
+    @Override
+    public String toString() {
+        return "CraftAnimals";
     }
 }

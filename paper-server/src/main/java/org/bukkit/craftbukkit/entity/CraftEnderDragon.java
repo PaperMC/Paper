@@ -11,22 +11,27 @@ import org.bukkit.entity.ComplexEntityPart;
 import org.bukkit.entity.EnderDragon;
 
 public class CraftEnderDragon extends CraftComplexLivingEntity implements EnderDragon {
-    public CraftEnderDragon(CraftServer server, EntityLiving entity) {
+    public CraftEnderDragon(CraftServer server, EntityEnderDragon entity) {
         super(server, entity);
     }
 
     public Set<ComplexEntityPart> getParts() {
         Builder<ComplexEntityPart> builder = ImmutableSet.builder();
-        
+
         for (EntityComplexPart part : getHandle().f) {
-            builder.add((ComplexEntityPart)part.getBukkitEntity());
+            builder.add((ComplexEntityPart) part.getBukkitEntity());
         }
-        
+
         return builder.build();
     }
 
     @Override
     public EntityEnderDragon getHandle() {
-        return (EntityEnderDragon)super.getHandle();
+        return (EntityEnderDragon) entity;
+    }
+
+    @Override
+    public String toString() {
+        return "CraftEnderDragon";
     }
 }

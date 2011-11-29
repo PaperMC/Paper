@@ -31,17 +31,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         return getHandle().name;
     }
 
-    @Override
-    public EntityHuman getHandle() {
-        return (EntityHuman) entity;
-    }
-
-    public void setHandle(final EntityHuman entity) {
-        super.setHandle((EntityHuman) entity);
-        this.entity = entity;
-        this.inventory = new CraftInventoryPlayer(entity.inventory);
-    }
-
     public PlayerInventory getInventory() {
         return inventory;
     }
@@ -52,11 +41,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     public void setItemInHand(ItemStack item) {
         getInventory().setItemInHand(item);
-    }
-
-    @Override
-    public String toString() {
-        return "CraftHumanEntity{" + "id=" + getEntityId() + "name=" + getName() + '}';
     }
 
     public boolean isSleeping() {
@@ -130,5 +114,20 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         }
 
         this.mode = mode;
+    }
+
+    @Override
+    public EntityHuman getHandle() {
+        return (EntityHuman) entity;
+    }
+
+    public void setHandle(final EntityHuman entity) {
+        super.setHandle(entity);
+        this.inventory = new CraftInventoryPlayer(entity.inventory);
+    }
+
+    @Override
+    public String toString() {
+        return "CraftHumanEntity{" + "id=" + getEntityId() + "name=" + getName() + '}';
     }
 }

@@ -11,20 +11,21 @@ public class CraftSlime extends CraftLivingEntity implements Slime {
         super(server, entity);
     }
 
-    @Override
-    public String toString() {
-        return "CraftSlime";
-    }
-
-    public EntitySlime getHandle() {
-        return (EntitySlime) super.getHandle();
-    }
-
     public int getSize() {
         return getHandle().getSize();
     }
 
     public void setSize(int size) {
         getHandle().setSize(size);
+    }
+
+    @Override
+    public EntitySlime getHandle() {
+        return (EntitySlime) entity;
+    }
+
+    @Override
+    public String toString() {
+        return "CraftSlime";
     }
 }

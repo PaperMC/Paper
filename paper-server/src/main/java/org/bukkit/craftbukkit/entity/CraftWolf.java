@@ -110,6 +110,6 @@ public class CraftWolf extends CraftAnimals implements Wolf {
 
     @Override
     public String toString() {
-        return "CraftWolf[anger=" + isAngry() + ",owner=" + getOwner() + ",tame=" + isTamed() + ",sitting=" + isSitting() + "]";
+        return "CraftWolf{anger=" + isAngry() + ",owner=" + getOwner() + ",tame=" + isTamed() + ",sitting=" + isSitting() + "}";
     }
 }

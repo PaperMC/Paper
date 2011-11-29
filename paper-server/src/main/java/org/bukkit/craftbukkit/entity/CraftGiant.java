@@ -12,8 +12,12 @@ public class CraftGiant extends CraftMonster implements Giant {
     }
 
     @Override
+    public EntityGiantZombie getHandle() {
+        return (EntityGiantZombie) entity;
+    }
+
+    @Override
     public String toString() {
         return "CraftGiant";
     }
-
 }

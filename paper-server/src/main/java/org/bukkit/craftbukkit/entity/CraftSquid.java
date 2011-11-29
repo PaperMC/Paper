@@ -12,8 +12,12 @@ public class CraftSquid extends CraftWaterMob implements Squid {
     }
 
     @Override
+    public EntitySquid getHandle() {
+        return (EntitySquid) entity;
+    }
+
+    @Override
     public String toString() {
         return "CraftSquid";
     }
-
 }

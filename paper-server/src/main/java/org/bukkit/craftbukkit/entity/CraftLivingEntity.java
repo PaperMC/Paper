@@ -51,21 +51,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         return getHandle().getMaxHealth();
     }
 
-    @Override
-    public EntityLiving getHandle() {
-        return (EntityLiving) entity;
-    }
-
-    public void setHandle(final EntityLiving entity) {
-        super.setHandle((Entity) entity);
-        this.entity = entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftLivingEntity{" + "id=" + getEntityId() + '}';
-    }
-
     public Egg throwEgg() {
         net.minecraft.server.World world = ((CraftWorld) getWorld()).getHandle();
         EntityEgg egg = new EntityEgg(world, getHandle());
@@ -223,5 +208,19 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     public void setNoDamageTicks(int ticks) {
         getHandle().noDamageTicks = ticks;
+    }
+
+    @Override
+    public EntityLiving getHandle() {
+        return (EntityLiving) entity;
+    }
+
+    public void setHandle(final EntityLiving entity) {
+        super.setHandle(entity);
+    }
+
+    @Override
+    public String toString() {
+        return "CraftLivingEntity{" + "id=" + getEntityId() + '}';
     }
 }

@@ -35,7 +35,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         if (entity instanceof EntityLiving) {
             // Players
             if (entity instanceof EntityHuman) {
-                if (entity instanceof EntityPlayer) { return getPlayer((EntityPlayer)entity); }
+                if (entity instanceof EntityPlayer) { return getPlayer((EntityPlayer) entity); }
                 else { return new CraftHumanEntity(server, (EntityHuman) entity); }
             }
             else if (entity instanceof EntityCreature) {
@@ -75,7 +75,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
                     if (entity instanceof EntitySquid) { return new CraftSquid(server, (EntitySquid) entity); }
                     else { return new CraftWaterMob(server, (EntityWaterAnimal) entity); }
                 }
-                else if (entity instanceof EntitySnowman) { return new CraftSnowman(server, (EntityCreature) entity); }
+                else if (entity instanceof EntitySnowman) { return new CraftSnowman(server, (EntitySnowman) entity); }
                 else if (entity instanceof EntityVillager) { return new CraftVillager(server, (EntityVillager) entity); }
                 else { return new CraftCreature(server, (EntityCreature) entity); }
             }
@@ -95,8 +95,8 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             else  { return new CraftLivingEntity(server, (EntityLiving) entity); }
         }
         else if (entity instanceof EntityComplexPart) {
-            EntityComplexPart part = (EntityComplexPart)entity;
-            if (part.a instanceof EntityEnderDragon) { return new CraftEnderDragonPart(server, (EntityComplexPart)entity); }    
+            EntityComplexPart part = (EntityComplexPart) entity;
+            if (part.a instanceof EntityEnderDragon) { return new CraftEnderDragonPart(server, (EntityComplexPart) entity); }
             else { return new CraftComplexPart(server, (EntityComplexPart) entity); }
         }
         else if (entity instanceof EntityExperienceOrb) { return new CraftExperienceOrb(server, (EntityExperienceOrb) entity); }
@@ -118,21 +118,14 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         else if (entity instanceof EntityFishingHook) { return new CraftFish(server, (EntityFishingHook) entity); }
         else if (entity instanceof EntityItem) { return new CraftItem(server, (EntityItem) entity); }
         else if (entity instanceof EntityWeather) {
-            if (entity instanceof EntityWeatherStorm) {
-                return new CraftLightningStrike(server, (EntityWeatherStorm)entity);
-            } else {
-                return new CraftWeather(server, (EntityWeather)entity);
-            }
+            if (entity instanceof EntityWeatherStorm) { return new CraftLightningStrike(server, (EntityWeatherStorm) entity); }
+            else { return new CraftWeather(server, (EntityWeather) entity); }
         }
         else if (entity instanceof EntityMinecart) {
             EntityMinecart mc = (EntityMinecart) entity;
-            if (mc.type == CraftMinecart.Type.StorageMinecart.getId()) {
-                return new CraftStorageMinecart(server, mc);
-            } else if (mc.type == CraftMinecart.Type.PoweredMinecart.getId()) {
-                return new CraftPoweredMinecart(server, mc);
-            } else {
-                return new CraftMinecart(server, mc);
-            }
+            if (mc.type == CraftMinecart.Type.StorageMinecart.getId()) { return new CraftStorageMinecart(server, mc); }
+            else if (mc.type == CraftMinecart.Type.PoweredMinecart.getId()) { return new CraftPoweredMinecart(server, mc); }
+            else { return new CraftMinecart(server, mc); }
         }
         else if (entity instanceof EntityPainting) { return new CraftPainting(server, (EntityPainting) entity); }
         else if (entity instanceof EntityTNTPrimed) { return new CraftTNTPrimed(server, (EntityTNTPrimed) entity); }
@@ -205,14 +198,6 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         return !entity.aj();
     }
 
-    public Entity getHandle() {
-        return entity;
-    }
-
-    public void setHandle(final Entity entity) {
-        this.entity = entity;
-    }
-
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {
@@ -229,19 +214,6 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             return false;
         }
         return true;
-    }
-
-    @Override
-    public int hashCode() {
-        int hash = 7;
-        hash = 89 * hash + (this.server != null ? this.server.hashCode() : 0);
-        hash = 89 * hash + (this.entity != null ? this.entity.hashCode() : 0);
-        return hash;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftEntity{" + "id=" + getEntityId() + '}';
     }
 
     public Server getServer() {
@@ -314,15 +286,36 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
         return result;
     }
-    
+
     public int getTicksLived() {
         return getHandle().ticksLived;
     }
-    
+
     public void setTicksLived(int value) {
         if (value <= 0) {
             throw new IllegalArgumentException("Age must be at least 1 tick");
         }
         getHandle().ticksLived = value;
+    }
+
+    public Entity getHandle() {
+        return entity;
+    }
+
+    public void setHandle(final Entity entity) {
+        this.entity = entity;
+    }
+
+    @Override
+    public String toString() {
+        return "CraftEntity{" + "id=" + getEntityId() + '}';
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 89 * hash + (this.server != null ? this.server.hashCode() : 0);
+        hash = 89 * hash + (this.entity != null ? this.entity.hashCode() : 0);
+        return hash;
     }
 }

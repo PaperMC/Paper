@@ -86,11 +86,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
     }
 
-    @Override
-    public EntityPlayer getHandle() {
-        return (EntityPlayer) entity;
-    }
-
     public double getEyeHeight() {
         return getEyeHeight(false);
     }
@@ -105,11 +100,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
                 return 1.62D;
             }
         }
-    }
-
-    public void setHandle(final EntityPlayer entity) {
-        super.setHandle((EntityHuman) entity);
-        this.entity = entity;
     }
 
     public void sendRawMessage(String message) {
@@ -164,11 +154,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
-    public String toString() {
-        return "CraftPlayer{" + "name=" + getName() + '}';
-    }
-
-    @Override
     public boolean equals(Object obj) {
         if (obj == null) {
             return false;
@@ -181,13 +166,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             return false;
         }
         return true;
-    }
-
-    @Override
-    public int hashCode() {
-        int hash = 5;
-        hash = 97 * hash + (this.getName() != null ? this.getName().hashCode() : 0);
-        return hash;
     }
 
     public void kickPlayer(String message) {
@@ -543,13 +521,34 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public Map<String, Object> serialize() {
         Map<String, Object> result = new LinkedHashMap<String, Object>();
-        
+
         result.put("name", getName());
-        
+
         return result;
     }
 
     public Player getPlayer() {
         return this;
+    }
+
+    @Override
+    public EntityPlayer getHandle() {
+        return (EntityPlayer) entity;
+    }
+
+    public void setHandle(final EntityPlayer entity) {
+        super.setHandle(entity);
+    }
+
+    @Override
+    public String toString() {
+        return "CraftPlayer{" + "name=" + getName() + '}';
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 97 * hash + (this.getName() != null ? this.getName().hashCode() : 0);
+        return hash;
     }
 }

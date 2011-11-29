@@ -11,8 +11,12 @@ public class CraftFlying extends CraftLivingEntity implements Flying {
     }
 
     @Override
+    public EntityFlying getHandle() {
+        return (EntityFlying) entity;
+    }
+
+    @Override
     public String toString() {
         return "CraftFlying";
     }
-
 }

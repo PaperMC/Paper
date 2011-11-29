@@ -31,6 +31,11 @@ public class CraftItem extends CraftEntity implements Item {
     }
 
     @Override
+    public EntityItem getHandle() {
+        return (EntityItem) entity;
+    }
+
+    @Override
     public String toString() {
         return "CraftItem";
     }
