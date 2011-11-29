@@ -6,14 +6,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.EntityPlayer;
-import net.minecraft.server.Packet131;
+import net.minecraft.server.Packet131ItemData;
 import net.minecraft.server.Packet200Statistic;
 import net.minecraft.server.Packet201PlayerInfo;
 import net.minecraft.server.Packet3Chat;
 import net.minecraft.server.Packet51MapChunk;
 import net.minecraft.server.Packet53BlockChange;
 import net.minecraft.server.Packet54PlayNoteBlock;
-import net.minecraft.server.Packet61;
+import net.minecraft.server.Packet61WorldEvent;
 import net.minecraft.server.Packet6SpawnPosition;
 import net.minecraft.server.Packet70Bed;
 import net.minecraft.server.WorldServer;
@@ -211,7 +211,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (getHandle().netServerHandler == null) return;
 
         int packetData = effect.getId();
-        Packet61 packet = new Packet61(packetData, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), data);
+        Packet61WorldEvent packet = new Packet61WorldEvent(packetData, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), data);
         getHandle().netServerHandler.sendPacket(packet);
     }
 
@@ -268,7 +268,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             for (int y = 0; y < 128; ++y) {
                 bytes[y + 3] = data.buffer[y * 128 + x];
             }
-            Packet131 packet = new Packet131((short) Material.MAP.getId(), map.getId(), bytes);
+            Packet131ItemData packet = new Packet131ItemData((short) Material.MAP.getId(), map.getId(), bytes);
             getHandle().netServerHandler.sendPacket(packet);
         }
     }
@@ -459,7 +459,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public int getExperience() {
-        return getHandle().exp;
+        return getHandle().expTotal;
     }
 
     public void setExperience(int exp) {
@@ -467,22 +467,22 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public int getLevel() {
-        return (int)getHandle().expLevel;
+        return (int)getHandle().exp;
     }
 
     public void setLevel(int level) {
-        getHandle().expLevel = level;
+        getHandle().exp = level;
     }
 
     public int getTotalExperience() {
-        return getHandle().expTotal;
+        return getHandle().expLevel;
     }
 
     public void setTotalExperience(int exp) {
-        getHandle().expTotal = exp;
+        getHandle().expLevel = exp;
 
         if (getTotalExperience() > getExperience()) {
-            getHandle().exp = getTotalExperience();
+            getHandle().expTotal = getTotalExperience();
         }
     }
 

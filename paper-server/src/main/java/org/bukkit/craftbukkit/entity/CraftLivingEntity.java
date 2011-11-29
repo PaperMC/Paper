@@ -149,11 +149,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public int getRemainingAir() {
-        return getHandle().airTicks;
+        return getHandle().getAirTicks();
     }
 
     public void setRemainingAir(int ticks) {
-        getHandle().airTicks = ticks;
+        getHandle().setAirTicks(ticks);
     }
 
     public int getMaximumAir() {

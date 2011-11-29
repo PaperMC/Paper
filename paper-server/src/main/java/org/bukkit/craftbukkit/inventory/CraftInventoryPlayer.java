@@ -1,17 +1,16 @@
 package org.bukkit.craftbukkit.inventory;
 
-import net.minecraft.server.InventoryPlayer;
+import net.minecraft.server.PlayerInventory;
 
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.PlayerInventory;
 
-public class CraftInventoryPlayer extends CraftInventory implements PlayerInventory {
-    public CraftInventoryPlayer(net.minecraft.server.InventoryPlayer inventory) {
+public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.inventory.PlayerInventory {
+    public CraftInventoryPlayer(net.minecraft.server.PlayerInventory inventory) {
         super(inventory);
     }
 
-    public InventoryPlayer getInventory() {
-        return (InventoryPlayer) inventory;
+    public PlayerInventory getInventory() {
+        return (PlayerInventory) inventory;
     }
 
     public int getSize() {

@@ -46,11 +46,11 @@ public final class CraftMapView implements MapView {
     }
 
     public Scale getScale() {
-        return Scale.valueOf(worldMap.e);
+        return Scale.valueOf(worldMap.scale);
     }
 
     public void setScale(Scale scale) {
-        worldMap.e = scale.getValue();
+        worldMap.scale = scale.getValue();
     }
     
     public World getWorld() {
@@ -68,19 +68,19 @@ public final class CraftMapView implements MapView {
     }
 
     public int getCenterX() {
-        return worldMap.b;
+        return worldMap.centerX;
     }
 
     public int getCenterZ() {
-        return worldMap.c;
+        return worldMap.centerZ;
     }
 
     public void setCenterX(int x) {
-        worldMap.b = x;
+        worldMap.centerX = x;
     }
 
     public void setCenterZ(int z) {
-        worldMap.c = z;
+        worldMap.centerZ = z;
     }
 
     public List<MapRenderer> getRenderers() {
