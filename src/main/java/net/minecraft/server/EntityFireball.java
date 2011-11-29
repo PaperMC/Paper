@@ -191,11 +191,8 @@ public class EntityFireball extends Entity {
                         org.bukkit.entity.Entity damagee = movingobjectposition.entity.getBukkitEntity();
                         Projectile projectile = (Projectile) this.getBukkitEntity();
 
-                        // TODO @see EntityArrow#162
                         EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(projectile, damagee, EntityDamageEvent.DamageCause.PROJECTILE, 0);
                         this.world.getServer().getPluginManager().callEvent(event);
-
-                        this.shooter = (projectile.getShooter() == null) ? null : ((CraftLivingEntity) projectile.getShooter()).getHandle();
 
                         if (event.isCancelled()) {
                             stick = !projectile.doesBounce();

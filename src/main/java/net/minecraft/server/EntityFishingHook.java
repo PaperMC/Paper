@@ -190,13 +190,11 @@ public class EntityFishingHook extends Entity {
             if (movingobjectposition != null) {
                 if (movingobjectposition.entity != null) {
                     // CraftBukkit start
-                    // TODO add EntityDamagedByProjectileEvent : fishing hook?
                     boolean stick;
                     if (movingobjectposition.entity instanceof EntityLiving) {
                         org.bukkit.entity.Entity damagee = movingobjectposition.entity.getBukkitEntity();
                         Projectile projectile = (Projectile) this.getBukkitEntity();
 
-                        // TODO @see EntityArrow#162
                         EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(projectile, damagee, EntityDamageEvent.DamageCause.PROJECTILE, 0);
                         this.world.getServer().getPluginManager().callEvent(event);
 
@@ -204,7 +202,7 @@ public class EntityFishingHook extends Entity {
                             stick = !projectile.doesBounce();
                         } else {
                             // this function returns if the fish should stick in or not, i.e. !bounce
-                            stick = movingobjectposition.entity.damageEntity(DamageSource.projectile((Entity) this, this.owner), event.getDamage());
+                            stick = movingobjectposition.entity.damageEntity(DamageSource.projectile(this, this.owner), event.getDamage());
                         }
                     } else {
                         stick = movingobjectposition.entity.damageEntity(DamageSource.projectile(this, this.owner), 0);

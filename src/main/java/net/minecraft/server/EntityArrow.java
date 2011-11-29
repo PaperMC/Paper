@@ -3,7 +3,6 @@ package net.minecraft.server;
 import java.util.List;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -190,15 +189,11 @@ public class EntityArrow extends Entity {
                     if (entity instanceof EntityLiving) {
                         org.bukkit.Server server = this.world.getServer();
 
-                        // TODO decide if we should create DamageCause.ARROW, DamageCause.PROJECTILE
-                        // or leave as DamageCause.ENTITY_ATTACK
                         org.bukkit.entity.Entity damagee = movingobjectposition.entity.getBukkitEntity();
                         Projectile projectile = (Projectile) this.getBukkitEntity();
-                        // TODO deal with arrows being fired from a non-entity
 
                         EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(projectile, damagee, EntityDamageEvent.DamageCause.PROJECTILE, l);
                         server.getPluginManager().callEvent(event);
-                        this.shooter = (projectile.getShooter() == null) ? null : ((CraftLivingEntity) projectile.getShooter()).getHandle();
 
                         if (event.isCancelled()) {
                             stick = !projectile.doesBounce();
