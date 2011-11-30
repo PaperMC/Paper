@@ -267,6 +267,7 @@ public class ServerConfigurationManager {
             entityplayer.expLevel = 0;
             entityplayer.expTotal = 0;
             entityplayer.exp = 0;
+            entityplayer.deathTicks = 0;
             entityplayer.d(entityplayer.newExp);
         } else {
             location.setWorld(this.server.getWorldServer(i).getWorld());
