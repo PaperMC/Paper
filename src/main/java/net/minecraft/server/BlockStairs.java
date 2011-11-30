@@ -113,10 +113,6 @@ public class BlockStairs extends Block {
         this.a.remove(world, i, j, k);
     }
 
-    public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {
-        this.a.dropNaturally(world, i, j, k, 0, f, i1); // CraftBukkit - don't propagate stair direction
-    }
-
     public void b(World world, int i, int j, int k, Entity entity) {
         this.a.b(world, i, j, k, entity);
     }
