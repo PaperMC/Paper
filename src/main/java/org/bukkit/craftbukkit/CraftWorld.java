@@ -320,17 +320,13 @@ public class CraftWorld implements World {
     }
 
     public LivingEntity spawnCreature(Location loc, CreatureType creatureType) {
-        LivingEntity creature;
-        try {
-            EntityLiving entityCreature = (EntityLiving) EntityTypes.a(creatureType.getName(), world);
-            entityCreature.setPosition(loc.getX(), loc.getY(), loc.getZ());
-            creature = (LivingEntity) CraftEntity.getEntity(server, entityCreature);
-            world.addEntity(entityCreature, SpawnReason.CUSTOM);
-        } catch (Exception e) {
-            // if we fail, for any reason, return null.
-            creature = null;
+        Entity result = spawn(loc, creatureType.getEntityClass());
+
+        if (result == null) {
+            return null;
         }
-        return creature;
+
+        return (LivingEntity)result;
     }
 
     public LightningStrike strikeLightning(Location loc) {
