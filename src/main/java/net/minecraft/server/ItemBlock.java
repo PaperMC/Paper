@@ -89,6 +89,11 @@ public class ItemBlock extends Item {
             * replace this with.
             */
             if (world.setRawTypeIdAndData(i, j, k, this.id, this.filterData(itemstack.getData()))) { // <-- world.setTypeIdAndData does this to place the block
+                // Make sure the block-rotation already gets set before we call the event
+                if (Block.byId[this.id] instanceof BlockStairs) {
+                    Block.byId[this.id].postPlace(world, i, j, k, entityhuman);
+                }
+
                 BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, eventUseBlockBelow ? blockStateBelow : replacedBlockState, clickedX, clickedY, clickedZ, block);
 
                 if (event.isCancelled() || !event.canBuild()) {
