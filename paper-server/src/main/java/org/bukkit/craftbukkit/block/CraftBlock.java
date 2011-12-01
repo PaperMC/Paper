@@ -146,7 +146,7 @@ public class CraftBlock implements Block {
 
     @Override
     public String toString() {
-        return "CraftBlock{" + "chunk=" + chunk + "x=" + x + "y=" + y + "z=" + z + '}';
+        return "CraftBlock{" + "chunk=" + chunk + ",x=" + x + ",y=" + y + ",z=" + z + ",type=" + getType() + ",data=" + getData() + '}';
     }
 
     /**
