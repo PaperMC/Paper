@@ -20,12 +20,15 @@ public class WorldServer extends World implements BlockChangeDelegate {
     public boolean weirdIsOpCache = false;
     public boolean savingDisabled;
     public final MinecraftServer server; // CraftBukkit - private -> public final
-    private IntHashMap N = new IntHashMap();
+    private IntHashMap N;
 
     // CraftBukkit start - change signature
     public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, String s, int i, WorldSettings worldsettings, org.bukkit.World.Environment env, ChunkGenerator gen) {
         super(idatamanager, s, worldsettings, WorldProvider.byDimension(env.getId()), gen, env);
         this.server = minecraftserver;
+        if (this.N == null) {
+            this.N = new IntHashMap();
+        }
 
         this.dimension = i;
         this.pvpMode = minecraftserver.pvpMode;
@@ -155,6 +158,14 @@ public class WorldServer extends World implements BlockChangeDelegate {
 
         // CraftBukkit - Configurable spawn protection
         return i1 > this.getServer().getSpawnRadius() || this.server.serverConfigurationManager.isOp(entityhuman.name);
+    }
+
+    protected void c() {
+        if (this.N == null) {
+            this.N = new IntHashMap();
+        }
+
+        super.c();
     }
 
     protected void c(Entity entity) {

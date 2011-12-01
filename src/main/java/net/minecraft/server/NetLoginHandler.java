@@ -20,7 +20,7 @@ public class NetLoginHandler extends NetHandler {
     private int f = 0;
     private String g = null;
     private Packet1Login h = null;
-    private String i = Long.toString(d.nextLong(), 16); // CraftBukkit -- Thanks Jens! :D
+    private String i = Long.toString(d.nextLong(), 16); // CraftBukkit - Security fix
 
     public NetLoginHandler(MinecraftServer minecraftserver, Socket socket, String s) {
         this.server = minecraftserver;
@@ -60,7 +60,7 @@ public class NetLoginHandler extends NetHandler {
 
     public void a(Packet2Handshake packet2handshake) {
         if (this.server.onlineMode) {
-            // this.i = Long.toHexString(d.nextLong()); // CraftBukkit
+            this.i = Long.toString(d.nextLong(), 16);
             this.networkManager.queue(new Packet2Handshake(this.i));
         } else {
             this.networkManager.queue(new Packet2Handshake("-"));

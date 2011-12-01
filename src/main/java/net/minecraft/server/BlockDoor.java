@@ -143,7 +143,7 @@ public class BlockDoor extends Block {
                 world.setTypeId(i, j, k, 0);
             }
 
-            if (l > 0 && Block.byId[l].isPowerSource()) {
+            if (l > 0 && l != this.id) {
                 this.doPhysics(world, i, j - 1, k, l);
             }
         } else {
@@ -166,8 +166,8 @@ public class BlockDoor extends Block {
                 if (!world.isStatic) {
                     this.b(world, i, j, k, i1, 0);
                 }
+            } else if (l > 0 && l != this.id) {
                 // CraftBukkit start
-            } else if (l > 0 && Block.byId[l].isPowerSource()) {
                 org.bukkit.World bworld = world.getWorld();
                 org.bukkit.block.Block block = bworld.getBlockAt(i, j, k);
                 org.bukkit.block.Block blockTop = bworld.getBlockAt(i, j + 1, k);
