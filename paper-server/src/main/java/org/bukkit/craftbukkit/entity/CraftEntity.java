@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.bukkit.Bukkit;
-import org.bukkit.entity.MagmaCube;
 
 public abstract class CraftEntity implements org.bukkit.entity.Entity {
     private static final Map<String, CraftPlayer> players = new MapMaker().softValues().makeMap();
