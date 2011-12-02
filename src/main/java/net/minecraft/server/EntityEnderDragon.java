@@ -501,7 +501,7 @@ public class EntityEnderDragon extends EntityComplex {
         int j;
 
         if (!this.world.isStatic && this.r > 150 && this.r % 5 == 0) {
-            i = 1000;
+            i = expToDrop / 20; // CraftBukkit - drop experience as dragon falls from sky. use experience drop from death event. This is now set in getExpReward()
 
             while (i > 0) {
                 j = EntityExperienceOrb.b(i);
@@ -513,7 +513,7 @@ public class EntityEnderDragon extends EntityComplex {
         this.move(0.0D, 0.10000000149011612D, 0.0D);
         this.V = this.yaw += 20.0F;
         if (this.r == 200) {
-            i = 10000;
+            i = expToDrop - 10 * (expToDrop / 20); // CraftBukkit - drop the remaining experience
 
             while (i > 0) {
                 j = EntityExperienceOrb.b(i);
@@ -587,4 +587,12 @@ public class EntityEnderDragon extends EntityComplex {
     public boolean e_() {
         return false;
     }
+
+    // CraftBukkit start
+    public int getExpReward() {
+        // This value is equal to the amount of experience dropped while falling from the sky (10 * 1000)
+        // plus what is dropped when the dragon hits the ground (10000)
+        return 20000;
+    }
+    // CraftBukkit end
 }
