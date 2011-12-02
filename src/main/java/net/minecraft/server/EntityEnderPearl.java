@@ -42,7 +42,10 @@ public class EntityEnderPearl extends EntityProjectile {
                 this.shooter.fallDistance = 0.0F;
                 EntityDamageEvent event = new EntityDamageEvent(getBukkitEntity(), EntityDamageEvent.DamageCause.FALL, 5);
                 Bukkit.getPluginManager().callEvent(event);
-                this.shooter.damageEntity(DamageSource.FALL, event.getDamage());
+
+                if (!event.isCancelled()) {
+                    this.shooter.damageEntity(DamageSource.FALL, event.getDamage());
+                }
             }
             // CraftBukkit end
 
