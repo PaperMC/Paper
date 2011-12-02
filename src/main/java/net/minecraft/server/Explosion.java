@@ -7,6 +7,7 @@ import java.util.Random;
 import java.util.Set;
 
 // CraftBukkit start
+import org.bukkit.entity.TNTPrimed;
 import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -135,7 +136,14 @@ public class Explosion {
                         entity.motZ += d2 * d10;
                     }
                 } else {
-                    EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(this.source.getBukkitEntity(), damagee, EntityDamageEvent.DamageCause.ENTITY_EXPLOSION, damageDone);
+                    final org.bukkit.entity.Entity damager = this.source.getBukkitEntity();
+                    final EntityDamageEvent.DamageCause damageCause;
+                    if (damager instanceof TNTPrimed) {
+                        damageCause = EntityDamageEvent.DamageCause.BLOCK_EXPLOSION;
+                    } else {
+                        damageCause = EntityDamageEvent.DamageCause.ENTITY_EXPLOSION;
+                    }
+                    EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(damager, damagee, damageCause, damageDone);
                     server.getPluginManager().callEvent(event);
 
                     if (!event.isCancelled()) {
