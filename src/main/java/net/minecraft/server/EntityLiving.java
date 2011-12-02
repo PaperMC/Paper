@@ -624,10 +624,10 @@ public abstract class EntityLiving extends Entity {
             if (k > 0) {
                 loot.add(new org.bukkit.inventory.ItemStack(j, k));
             }
-
-            CraftEventFactory.callEntityDeathEvent(this, loot);
-            // CraftBukkit end
         }
+
+        CraftEventFactory.callEntityDeathEvent(this, loot); // raise event even for those times when the entity does not drop loot
+        // CraftBukkit end
     }
 
     protected int e() {
