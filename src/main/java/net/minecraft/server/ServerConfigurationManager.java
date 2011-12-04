@@ -703,6 +703,7 @@ public class ServerConfigurationManager {
     public void updateClient(EntityPlayer entityplayer) {
         entityplayer.updateInventory(entityplayer.defaultContainer);
         entityplayer.s_();
+        entityplayer.cf = -1; // CraftBukkit added
     }
 
     public int getPlayerCount() {

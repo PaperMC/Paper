@@ -27,7 +27,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     private int cc = -99999999;
     private int cd = -99999999;
     private boolean ce = true;
-    private int cf = -99999999;
+    public int cf = -99999999; // Craftbukkit - priv to pub - "lastSentExp"
     private int cg = 60;
     private ItemStack[] ch = new ItemStack[] { null, null, null, null, null};
     private int ci = 0;
