@@ -86,7 +86,7 @@ public abstract class Command {
             return true;
         }
 
-        target.sendMessage(ChatColor.RED + "Bukkit sad. Bukkit want you to access command, but Bukkit cannot let you. Bukkit will leak tears :'(");
+        target.sendMessage(ChatColor.RED + "I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you beleieve this is in error.");
         return false;
     }
 
