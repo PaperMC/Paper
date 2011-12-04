@@ -86,10 +86,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
     }
 
+    @Override
     public double getEyeHeight() {
         return getEyeHeight(false);
     }
 
+    @Override
     public double getEyeHeight(boolean ignoreSneaking) {
         if (ignoreSneaking) {
             return 1.62D;
@@ -274,7 +276,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
-    public boolean teleport(Location location) {
+    public boolean teleport(Location location, PlayerTeleportEvent.TeleportCause cause) {
         if (getHandle().netServerHandler == null) return false;
 
         // From = Players current Location
@@ -282,7 +284,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         // To = Players new Location if Teleport is Successful
         Location to = location;
         // Create & Call the Teleport Event.
-        PlayerTeleportEvent event = new PlayerTeleportEvent((Player) this, from, to);
+        PlayerTeleportEvent event = new PlayerTeleportEvent((Player) this, from, to, cause);
         server.getPluginManager().callEvent(event);
         // Return False to inform the Plugin that the Teleport was unsuccessful/cancelled.
         if (event.isCancelled() == true) {

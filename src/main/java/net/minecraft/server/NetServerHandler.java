@@ -190,7 +190,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                     there to avoid any 'Moved wrongly' or 'Moved too quickly' errors.
                     We only do this if the Event was not cancelled. */
                     if (!to.equals(event.getTo()) && !event.isCancelled()) {
-                        this.player.getBukkitEntity().teleport(event.getTo());
+                        this.player.getBukkitEntity().teleport(event.getTo(), PlayerTeleportEvent.TeleportCause.UNKNOWN);
                         return;
                     }
 
@@ -204,7 +204,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             }
 
             if (Double.isNaN(packet10flying.x) || Double.isNaN(packet10flying.y) || Double.isNaN(packet10flying.z) || Double.isNaN(packet10flying.stance)) {
-                player.teleport(player.getWorld().getSpawnLocation());
+                player.teleport(player.getWorld().getSpawnLocation(), PlayerTeleportEvent.TeleportCause.UNKNOWN);
                 System.err.println(player.getName() + " was caught trying to crash the server with an invalid position.");
                 player.kickPlayer("Nope!");
                 return;
@@ -386,7 +386,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         Player player = this.getPlayer();
         Location from = player.getLocation();
         Location to = new Location(this.getPlayer().getWorld(), d0, d1, d2, f, f1);
-        PlayerTeleportEvent event = new PlayerTeleportEvent(player, from, to);
+        PlayerTeleportEvent event = new PlayerTeleportEvent(player, from, to, PlayerTeleportEvent.TeleportCause.UNKNOWN);
         this.server.getPluginManager().callEvent(event);
 
         from = event.getFrom();

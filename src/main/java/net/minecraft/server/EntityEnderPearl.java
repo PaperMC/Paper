@@ -3,6 +3,8 @@ package net.minecraft.server;
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.player.PlayerPortalEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 
 public class EntityEnderPearl extends EntityProjectile {
     public EntityEnderPearl(World world) {
@@ -28,23 +30,36 @@ public class EntityEnderPearl extends EntityProjectile {
 
         if (!this.world.isStatic) {
             // CraftBukkit start - dupe fix + damage event
-            boolean damage = false;
+            boolean teleport = false;
+            PlayerTeleportEvent teleEvent = null;
+
             if (this.shooter != null) {
                 if (this.shooter instanceof EntityPlayer) {
-                    damage = ((CraftPlayer)this.shooter.bukkitEntity).isOnline();
+                    CraftPlayer player = (CraftPlayer)this.shooter.bukkitEntity;
+                    teleport = player.isOnline();
+                    
+                    if (teleport) {
+                        teleEvent = new PlayerTeleportEvent(player, player.getLocation(), getBukkitEntity().getLocation(), PlayerTeleportEvent.TeleportCause.ENDER_PEARL);
+                        Bukkit.getPluginManager().callEvent(teleEvent);
+                        teleport = !teleEvent.isCancelled();
+                    }
                 } else {
-                    damage = true;
+                    teleport = true;
                 }
             }
 
-            if (damage) {
-                this.shooter.a_(this.locX, this.locY, this.locZ);
+            if (teleport) {
+                if (this.shooter instanceof EntityPlayer) {
+                    ((EntityPlayer)this.shooter).netServerHandler.teleport(teleEvent.getTo());
+                } else {
+                    this.shooter.a_(this.locX, this.locY, this.locZ);
+                }
                 this.shooter.fallDistance = 0.0F;
-                EntityDamageEvent event = new EntityDamageEvent(getBukkitEntity(), EntityDamageEvent.DamageCause.FALL, 5);
-                Bukkit.getPluginManager().callEvent(event);
+                EntityDamageEvent damageEvent = new EntityDamageEvent(getBukkitEntity(), EntityDamageEvent.DamageCause.FALL, 5);
+                Bukkit.getPluginManager().callEvent(damageEvent);
 
-                if (!event.isCancelled()) {
-                    this.shooter.damageEntity(DamageSource.FALL, event.getDamage());
+                if (!damageEvent.isCancelled()) {
+                    this.shooter.damageEntity(DamageSource.FALL, damageEvent.getDamage());
                 }
             }
             // CraftBukkit end
