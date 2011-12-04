@@ -153,7 +153,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public boolean teleport(Location location) {
-        return teleport(this, TeleportCause.PLUGIN);
+        return teleport(location, TeleportCause.PLUGIN);
     }
 
     public boolean teleport(Location location, TeleportCause cause) {
