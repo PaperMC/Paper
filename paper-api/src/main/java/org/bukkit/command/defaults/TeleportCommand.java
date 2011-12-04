@@ -5,6 +5,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 
 public class TeleportCommand extends VanillaCommand {
     public TeleportCommand() {
@@ -31,7 +32,7 @@ public class TeleportCommand extends VanillaCommand {
             sender.sendMessage("Can't find user " + args[1] + ". No tp.");
         } else {
             Command.broadcastCommandMessage(sender, "Teleporting " + victim.getName() + " to " + target.getName());
-            victim.teleport(target);
+            victim.teleport(target, TeleportCause.COMMAND);
         }
 
         return true;

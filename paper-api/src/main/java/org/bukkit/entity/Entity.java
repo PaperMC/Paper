@@ -8,6 +8,7 @@ import org.bukkit.util.Vector;
 
 import java.util.List;
 import java.util.UUID;
+import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 
 /**
  * Represents a base entity in the world
@@ -51,12 +52,30 @@ public interface Entity {
     public boolean teleport(Location location);
 
     /**
+     * Teleports this entity to the given location
+     *
+     * @param location New location to teleport this entity to
+     * @praram cause The cause of this teleportation
+     * @return <code>true</code> if the teleport was successful
+     */
+    public boolean teleport(Location location, TeleportCause cause);
+
+    /**
      * Teleports this entity to the target Entity
      *
      * @param destination Entity to teleport this entity to
      * @return <code>true</code> if the teleport was successful
      */
     public boolean teleport(Entity destination);
+
+    /**
+     * Teleports this entity to the target Entity
+     *
+     * @param destination Entity to teleport this entity to
+     * @praram cause The cause of this teleportation
+     * @return <code>true</code> if the teleport was successful
+     */
+    public boolean teleport(Entity destination, TeleportCause cause);
 
     /**
      * Returns a list of entities within a bounding box defined by x,y,z centered around player
