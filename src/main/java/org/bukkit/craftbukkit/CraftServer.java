@@ -51,6 +51,7 @@ import net.minecraft.server.Item;
 import net.minecraft.server.ItemStack;
 import net.minecraft.server.WorldMap;
 import net.minecraft.server.WorldMapCollection;
+import net.minecraft.server.WorldNBTStorage;
 import net.minecraft.server.WorldSettings;
 import org.bukkit.*;
 import org.bukkit.configuration.ConfigurationSection;
@@ -71,6 +72,7 @@ import org.bukkit.craftbukkit.inventory.CraftShapelessRecipe;
 import org.bukkit.craftbukkit.map.CraftMapView;
 import org.bukkit.scheduler.BukkitWorker;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
+import org.bukkit.craftbukkit.util.DatFileFilter;
 import org.bukkit.craftbukkit.util.Versioning;
 import org.bukkit.util.permissions.DefaultPermissions;
 import org.bukkit.event.world.WorldInitEvent;
@@ -917,5 +919,17 @@ public final class CraftServer implements Server {
 
     public File getWorldContainer() {
         return new File(configuration.getString("settings.world-container", "."));
+    }
+
+    public OfflinePlayer[] getOfflinePlayers() {
+        WorldNBTStorage storage = (WorldNBTStorage)console.worlds.get(0).getDataManager();
+        String[] files = storage.getPlayerDir().list(new DatFileFilter());
+        OfflinePlayer[] players = new OfflinePlayer[files.length];
+
+        for (int i = 0; i < files.length; i++) {
+            players[i] = getOfflinePlayer(files[i].substring(0, files[i].length() - 4));
+        }
+
+        return players;
     }
 }

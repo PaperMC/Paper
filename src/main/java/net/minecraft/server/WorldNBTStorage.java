@@ -253,5 +253,9 @@ public class WorldNBTStorage implements PlayerFileData, IDataManager {
             return null;
         }
     }
+
+    public File getPlayerDir() {
+        return playerDir;
+    }
     // CraftBukkit end
 }
