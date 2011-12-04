@@ -518,4 +518,11 @@ public interface Server {
      * @return World container folder
      */
     public File getWorldContainer();
+
+    /**
+     * Gets every player that has ever played on this server.
+     *
+     * @return Array containing all players
+     */
+    public OfflinePlayer[] getOfflinePlayers();
 }
