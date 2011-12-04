@@ -205,7 +205,7 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
         }
         for (int i = 0; i < inventory.length; i++) {
             ItemStack cItem = inventory[i];
-            if (cItem != null && cItem.getTypeId() == filteredItem.getTypeId() && cItem.getAmount() < cItem.getMaxStackSize() && cItem.getDurability() == filteredItem.getDurability()) {
+            if (cItem != null && cItem.getTypeId() == filteredItem.getTypeId() && cItem.getAmount() < cItem.getMaxStackSize() && cItem.getDurability() == filteredItem.getDurability() && cItem.getEnchantments().equals(filteredItem.getEnchantments())) {
                 return i;
             }
         }
@@ -239,7 +239,9 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
                     } else {
                         // More than a single stack!
                         if (item.getAmount() > getMaxItemStack()) {
-                            setItem(firstFree, new CraftItemStack(item.getTypeId(), getMaxItemStack(), item.getDurability()));
+                            CraftItemStack stack = new CraftItemStack(item.getTypeId(), getMaxItemStack(), item.getDurability());
+                            stack.addUnsafeEnchantments(item.getEnchantments());
+                            setItem(firstFree, stack);
                             item.setAmount(item.getAmount() - getMaxItemStack());
                         } else {
                             // Just store it
@@ -280,7 +282,7 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
             int toDelete = item.getAmount();
 
             while (true) {
-                int first = first(item.getType());
+                int first = first(item);
 
                 // Drat! we don't have this type in the inventory
                 if (first == -1) {
