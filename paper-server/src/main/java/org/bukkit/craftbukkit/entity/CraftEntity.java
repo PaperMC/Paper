@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.bukkit.Bukkit;
+import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 
 public abstract class CraftEntity implements org.bukkit.entity.Entity {
     private static final Map<String, CraftPlayer> players = new MapMaker().softValues().makeMap();
@@ -152,6 +153,10 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public boolean teleport(Location location) {
+        return teleport(this, TeleportCause.PLUGIN);
+    }
+
+    public boolean teleport(Location location, TeleportCause cause) {
         entity.world = ((CraftWorld) location.getWorld()).getHandle();
         entity.setLocation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         // entity.setLocation() throws no event, and so cannot be cancelled
@@ -160,6 +165,10 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     public boolean teleport(org.bukkit.entity.Entity destination) {
         return teleport(destination.getLocation());
+    }
+
+    public boolean teleport(org.bukkit.entity.Entity destination, TeleportCause cause) {
+        return teleport(destination.getLocation(), cause);
     }
 
     public List<org.bukkit.entity.Entity> getNearbyEntities(double x, double y, double z) {
