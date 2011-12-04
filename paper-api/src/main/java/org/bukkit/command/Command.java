@@ -86,7 +86,7 @@ public abstract class Command {
             return true;
         }
 
-        target.sendMessage(ChatColor.RED + "I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you beleieve this is in error.");
+        target.sendMessage(ChatColor.RED + "I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.");
         return false;
     }
 
