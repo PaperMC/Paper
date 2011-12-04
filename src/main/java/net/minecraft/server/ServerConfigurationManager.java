@@ -262,15 +262,7 @@ public class ServerConfigurationManager {
             this.cserver.getPluginManager().callEvent(respawnEvent);
 
             location = respawnEvent.getRespawnLocation();
-            entityplayer.health = 20;
-            entityplayer.fireTicks = 0;
-            entityplayer.fallDistance = 0;
-            entityplayer.foodData = new FoodMetaData();
-            entityplayer.expLevel = 0;
-            entityplayer.expTotal = 0;
-            entityplayer.exp = 0;
-            entityplayer.deathTicks = 0;
-            entityplayer.d(entityplayer.newExp);
+            entityplayer.reset();
         } else {
             location.setWorld(this.server.getWorldServer(i).getWorld());
         }
