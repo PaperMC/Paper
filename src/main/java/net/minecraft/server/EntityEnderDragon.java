@@ -1,5 +1,9 @@
 package net.minecraft.server;
 
+import org.bukkit.Bukkit;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+
 import java.util.Iterator;
 import java.util.List;
 
@@ -388,7 +392,19 @@ public class EntityEnderDragon extends EntityComplex {
             Entity entity = (Entity) list.get(i);
 
             if (entity instanceof EntityLiving) {
-                entity.damageEntity(DamageSource.mobAttack(this), 10);
+                // CraftBukkit start - throw damage events when the dragon attacks
+                // The EntityHuman case is handled in EntityHuman, so don't throw it here
+                if (!(entity instanceof EntityHuman)) {
+                    EntityDamageByEntityEvent damageEvent = new EntityDamageByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), EntityDamageEvent.DamageCause.ENTITY_ATTACK, 10);
+                    Bukkit.getPluginManager().callEvent(damageEvent);
+
+                    if (!damageEvent.isCancelled()) {
+                        entity.damageEntity(DamageSource.mobAttack(this), damageEvent.getDamage());
+                    }
+                } else {
+                    entity.damageEntity(DamageSource.mobAttack(this), 10);
+                }
+                // CraftBukkit end
             }
         }
     }
