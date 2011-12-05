@@ -3,6 +3,7 @@ package net.minecraft.server;
 import java.util.List;
 
 // CraftBukkit start
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -196,7 +197,7 @@ public class EntityFishingHook extends Entity {
                         Projectile projectile = (Projectile) this.getBukkitEntity();
 
                         EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(projectile, damagee, EntityDamageEvent.DamageCause.PROJECTILE, 0);
-                        this.world.getServer().getPluginManager().callEvent(event);
+                        Bukkit.getPluginManager().callEvent(event);
 
                         if (event.isCancelled()) {
                             stick = !projectile.doesBounce();

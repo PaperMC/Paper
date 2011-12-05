@@ -4,6 +4,7 @@ import java.util.Iterator;
 import java.util.List;
 
 // CraftBukkit start
+import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.entity.CraftItem;
 import org.bukkit.craftbukkit.TrigMath;
 import org.bukkit.entity.Player;
@@ -591,7 +592,7 @@ public abstract class EntityHuman extends EntityLiving {
                             org.bukkit.entity.Entity damagee = this.getBukkitEntity();
 
                             EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(damager, damagee, EntityDamageEvent.DamageCause.ENTITY_ATTACK, i);
-                            this.world.getServer().getPluginManager().callEvent(event);
+                            Bukkit.getPluginManager().callEvent(event);
 
                             if (event.isCancelled() || event.getDamage() == 0) {
                                 return false;
@@ -779,7 +780,7 @@ public abstract class EntityHuman extends EntityLiving {
                 org.bukkit.entity.Entity damagee = (entity == null) ? null : entity.getBukkitEntity();
 
                 EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(damager, damagee, EntityDamageEvent.DamageCause.ENTITY_ATTACK, i);
-                this.world.getServer().getPluginManager().callEvent(event);
+                Bukkit.getPluginManager().callEvent(event);
 
                 if (event.isCancelled() || event.getDamage() == 0) {
                     return;

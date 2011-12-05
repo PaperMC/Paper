@@ -3,6 +3,7 @@ package net.minecraft.server;
 import java.util.List;
 
 // CraftBukkit start
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -187,13 +188,12 @@ public class EntityArrow extends Entity {
                     // CraftBukkit start
                     boolean stick;
                     if (entity instanceof EntityLiving) {
-                        org.bukkit.Server server = this.world.getServer();
 
                         org.bukkit.entity.Entity damagee = movingobjectposition.entity.getBukkitEntity();
                         Projectile projectile = (Projectile) this.getBukkitEntity();
 
                         EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(projectile, damagee, EntityDamageEvent.DamageCause.PROJECTILE, l);
-                        server.getPluginManager().callEvent(event);
+                        Bukkit.getPluginManager().callEvent(event);
 
                         if (event.isCancelled()) {
                             stick = !projectile.doesBounce();

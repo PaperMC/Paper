@@ -1305,7 +1305,7 @@ public abstract class Entity {
         // CraftBukkit start
         final org.bukkit.entity.Entity thisBukkitEntity = this.getBukkitEntity();
         final org.bukkit.entity.Entity stormBukkitEntity = entityweatherlighting.getBukkitEntity();
-        final PluginManager pluginManager = Bukkit.getServer().getPluginManager();
+        final PluginManager pluginManager = Bukkit.getPluginManager();
 
         if (thisBukkitEntity instanceof Painting) {
             PaintingBreakByEntityEvent event = new PaintingBreakByEntityEvent((Painting) thisBukkitEntity, stormBukkitEntity);

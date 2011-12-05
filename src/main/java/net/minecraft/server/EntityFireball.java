@@ -3,6 +3,7 @@ package net.minecraft.server;
 import java.util.List;
 
 // CraftBukkit start
+import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.entity.Explosive;
@@ -192,7 +193,7 @@ public class EntityFireball extends Entity {
                         Projectile projectile = (Projectile) this.getBukkitEntity();
 
                         EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(projectile, damagee, EntityDamageEvent.DamageCause.PROJECTILE, 0);
-                        this.world.getServer().getPluginManager().callEvent(event);
+                        Bukkit.getPluginManager().callEvent(event);
 
                         if (event.isCancelled()) {
                             stick = !projectile.doesBounce();

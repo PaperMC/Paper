@@ -1,6 +1,7 @@
 package net.minecraft.server;
 
 // CraftBukkit start
+import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -31,16 +32,17 @@ public class EntitySnowball extends EntityProjectile {
             }
             // CraftBukkit start
             ProjectileHitEvent hitEvent = new ProjectileHitEvent((Projectile) this.getBukkitEntity());
-            this.world.getServer().getPluginManager().callEvent(hitEvent);
+            Bukkit.getPluginManager().callEvent(hitEvent);
+            final Entity movingEntity = movingobjectposition.entity;
             boolean stick = false;
 
-            if (movingobjectposition.entity != null) {
-                if (movingobjectposition.entity instanceof EntityLiving) {
-                    org.bukkit.entity.Entity damagee = movingobjectposition.entity.getBukkitEntity();
+            if (movingEntity != null) {
+                if (movingEntity instanceof EntityLiving) {
+                    org.bukkit.entity.Entity damagee = movingEntity.getBukkitEntity();
                     Projectile projectile = (Projectile) this.getBukkitEntity();
 
                     EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(projectile, damagee, EntityDamageEvent.DamageCause.PROJECTILE, b0);
-                    this.world.getServer().getPluginManager().callEvent(event);
+                    Bukkit.getPluginManager().callEvent(event);
                     this.shooter = (projectile.getShooter() == null) ? null : ((CraftLivingEntity) projectile.getShooter()).getHandle();
                     b0 = (byte) event.getDamage();
 
@@ -48,10 +50,10 @@ public class EntitySnowball extends EntityProjectile {
                         stick = !projectile.doesBounce();
                     } else {
                         // this function returns if the snowball should stick in or not, i.e. !bounce
-                        stick = movingobjectposition.entity.damageEntity(DamageSource.projectile(this, this.shooter), b0);
+                        stick = movingEntity.damageEntity(DamageSource.projectile(this, this.shooter), b0);
                     }
                 } else {
-                    stick = movingobjectposition.entity.damageEntity(DamageSource.projectile(this, this.shooter), b0);
+                    stick = movingEntity.damageEntity(DamageSource.projectile(this, this.shooter), b0);
                 }
             }
 

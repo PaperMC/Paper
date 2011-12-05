@@ -7,6 +7,7 @@ import java.util.Random;
 import java.util.Set;
 
 // CraftBukkit start
+import org.bukkit.Bukkit;
 import org.bukkit.entity.TNTPrimed;
 import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -117,7 +118,6 @@ public class Explosion {
                 double d10 = (1.0D - d7) * d9;
 
                 // CraftBukkit start - explosion damage hook
-                org.bukkit.Server server = this.world.getServer();
                 org.bukkit.entity.Entity damagee = (entity == null) ? null : entity.getBukkitEntity();
                 int damageDone = (int) ((d10 * d10 + d10) / 2.0D * 8.0D * (double) this.size + 1.0D);
 
@@ -127,7 +127,7 @@ public class Explosion {
                     // TODO: get the x/y/z of the tnt block?
                     // does this even get called ever? @see EntityTNTPrimed - not BlockTNT or whatever
                     EntityDamageByBlockEvent event = new EntityDamageByBlockEvent(null, damagee, EntityDamageEvent.DamageCause.BLOCK_EXPLOSION, damageDone);
-                    server.getPluginManager().callEvent(event);
+                    Bukkit.getPluginManager().callEvent(event);
 
                     if (!event.isCancelled()) {
                         entity.damageEntity(DamageSource.EXPLOSION, event.getDamage());
@@ -144,7 +144,7 @@ public class Explosion {
                         damageCause = EntityDamageEvent.DamageCause.ENTITY_EXPLOSION;
                     }
                     EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(damager, damagee, damageCause, damageDone);
-                    server.getPluginManager().callEvent(event);
+                    Bukkit.getPluginManager().callEvent(event);
 
                     if (!event.isCancelled()) {
                         entity.damageEntity(DamageSource.EXPLOSION, event.getDamage());

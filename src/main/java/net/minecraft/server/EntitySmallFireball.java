@@ -1,6 +1,7 @@
 package net.minecraft.server;
 
 // CraftBukkit start
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.EntityCombustByEntityEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -25,16 +26,17 @@ public class EntitySmallFireball extends EntityFireball {
         if (!this.world.isStatic) {
             // CraftBukkit start - projectile hit event
             ProjectileHitEvent phe = new ProjectileHitEvent((Projectile) this.getBukkitEntity());
-            final PluginManager pluginManager = this.world.getServer().getPluginManager();
+            final PluginManager pluginManager = Bukkit.getPluginManager();
             pluginManager.callEvent(phe);
             // CraftBukkit end
-            if (movingobjectposition.entity != null) {
+            final Entity movingEntity = movingobjectposition.entity;
+            if (movingEntity != null) {
                 // CraftBukkit start - entity damage by entity event + combust event
-                if (!movingobjectposition.entity.isFireproof()) { // check if not fireproof
+                if (!movingEntity.isFireproof()) { // check if not fireproof
                     boolean stick;
-                    org.bukkit.entity.Entity damagee = movingobjectposition.entity.getBukkitEntity();
+                    org.bukkit.entity.Entity damagee = movingEntity.getBukkitEntity();
                     Projectile projectile = (Projectile) this.getBukkitEntity();
-                    if (movingobjectposition.entity instanceof EntityLiving) {
+                    if (movingEntity instanceof EntityLiving) {
 
                         EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(projectile, damagee, EntityDamageEvent.DamageCause.PROJECTILE, 5);
                         pluginManager.callEvent(event);
@@ -43,10 +45,10 @@ public class EntitySmallFireball extends EntityFireball {
                             stick = !projectile.doesBounce();
                         } else {
                             // this function returns if the fireball should stick in or not, i.e. !bounce
-                            stick = movingobjectposition.entity.damageEntity(DamageSource.fireball(this, this.shooter), event.getDamage());
+                            stick = movingEntity.damageEntity(DamageSource.fireball(this, this.shooter), event.getDamage());
                         }
                     } else {
-                        stick = movingobjectposition.entity.damageEntity(DamageSource.fireball(this, this.shooter), 5);
+                        stick = movingEntity.damageEntity(DamageSource.fireball(this, this.shooter), 5);
                     }
                     if (stick) {
                         // if the fireball 'sticks', ignite the target
@@ -54,7 +56,7 @@ public class EntitySmallFireball extends EntityFireball {
                         pluginManager.callEvent(combustEvent);
 
                         if (!combustEvent.isCancelled()) {
-                            movingobjectposition.entity.setOnFire(combustEvent.getDuration());
+                            movingEntity.setOnFire(combustEvent.getDuration());
                         }
                     }
                     // CraftBukkit end

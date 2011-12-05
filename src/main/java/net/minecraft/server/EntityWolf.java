@@ -4,6 +4,7 @@ import java.util.Iterator;
 import java.util.List;
 
 // CraftBukkit start
+import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -341,7 +342,7 @@ public class EntityWolf extends EntityAnimal {
             org.bukkit.entity.Entity damagee = entity == null ? null : entity.getBukkitEntity();
 
             EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(damager, damagee, EntityDamageEvent.DamageCause.ENTITY_ATTACK, b0);
-            this.world.getServer().getPluginManager().callEvent(event);
+            Bukkit.getPluginManager().callEvent(event);
 
             if (event.isCancelled()) {
                 return;
