@@ -160,12 +160,24 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
     }
 
     public int first(ItemStack item) {
+        return first(item, true);
+    }
+
+    public int first(ItemStack item, boolean withAmount) {
         if (item == null) {
             return -1;
         }
         ItemStack[] inventory = getContents();
         for (int i = 0; i < inventory.length; i++) {
-            if (item.equals(inventory[i])) {
+            boolean equals = false;
+
+            if (withAmount) {
+                equals = item.equals(inventory[i]);
+            } else {
+                equals = item.getTypeId() == inventory[i].getTypeId() && item.getDurability() == inventory[i].getDurability() && item.getEnchantments().equals(inventory[i].getEnchantments());
+            }
+
+            if (equals) {
                 return i;
             }
         }
@@ -282,7 +294,7 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
             int toDelete = item.getAmount();
 
             while (true) {
-                int first = first(item);
+                int first = first(item, false);
 
                 // Drat! we don't have this type in the inventory
                 if (first == -1) {
