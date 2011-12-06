@@ -125,6 +125,31 @@ public class LongHashset extends LongHash {
         return 0;
     }
 
+    public long[] popAll() {
+        int index = 0;
+        rl.lock();
+        try {
+            long[] ret = new long[this.count];
+            for (long[][] outer: this.values) {
+                if (outer == null) continue;
+
+                for (int oIdx = outer.length - 1; oIdx >= 0; oIdx--) {
+                    long[] inner = outer[oIdx];
+                    if (inner == null) continue;
+
+                    for (long entry: inner) {
+                        ret[index++] = entry;
+                    }
+                    outer[oIdx] = null;
+                }
+            }
+            count = 0;
+            return ret;
+        } finally {
+            rl.unlock();
+        }
+    }
+
     public long[] keys() {
         int index = 0;
         rl.lock();
