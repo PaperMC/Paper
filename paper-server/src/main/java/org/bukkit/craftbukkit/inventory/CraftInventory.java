@@ -169,6 +169,8 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
         }
         ItemStack[] inventory = getContents();
         for (int i = 0; i < inventory.length; i++) {
+            if (inventory[i] == null) continue;
+            
             boolean equals = false;
 
             if (withAmount) {
