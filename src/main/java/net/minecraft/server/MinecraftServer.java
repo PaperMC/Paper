@@ -267,7 +267,7 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
 
             this.server.getPluginManager().callEvent(new WorldInitEvent(world.getWorld()));
 
-            world.tracker = new EntityTracker(this, dimension);
+            world.tracker = new EntityTracker(this, world); // CraftBukkit
             world.addIWorldAccess(new WorldManager(this, world));
             world.difficulty = this.propertyManager.getInt("difficulty", 1);
             world.setSpawnFlags(this.propertyManager.getBoolean("spawn-monsters", true), this.spawnAnimals);

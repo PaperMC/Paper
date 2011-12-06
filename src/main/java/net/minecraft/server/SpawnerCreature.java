@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -7,11 +8,28 @@ import java.util.List;
 import java.util.Random;
 
 // CraftBukkit
+import org.bukkit.craftbukkit.util.LongAbstractHashtable;
+import org.bukkit.craftbukkit.util.EntryBase;
+import org.bukkit.craftbukkit.util.LongHash;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 
 public final class SpawnerCreature {
 
-    private static HashMap b = new HashMap();
+    // private static HashMap b = new HashMap(); // CraftBukkit -- moved local to spawnEntities
+    static private class ChunkEntry extends EntryBase {
+        public boolean spawn;
+        public ChunkEntry (int x, int z, boolean spawn) {
+            super(LongHash.toLong(x, z));
+            this.spawn = spawn;
+        }
+        int getX() {
+            return LongHash.msw(key);
+        }
+        int getZ() {
+            return LongHash.lsw(key);
+        }
+    }
+
     protected static final Class[] a = new Class[] { EntitySpider.class, EntityZombie.class, EntitySkeleton.class};
 
     public SpawnerCreature() {}
@@ -28,7 +46,9 @@ public final class SpawnerCreature {
         if (!flag && !flag1) {
             return 0;
         } else {
-            b.clear();
+            // b.clear(); // CraftBukkit
+            LongAbstractHashtable chunkCoords; // CraftBukkit
+            chunkCoords = new LongAbstractHashtable() {};
 
             int i;
             int j;
@@ -43,19 +63,22 @@ public final class SpawnerCreature {
                 for (int l = -b0; l <= b0; ++l) {
                     for (int i1 = -b0; i1 <= b0; ++i1) {
                         boolean flag2 = l == -b0 || l == b0 || i1 == -b0 || i1 == b0;
-                        ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(l + k, i1 + j);
+                        // CraftBukkit start
+                        long chunkCoord = LongHash.toLong(l + k, i1 + j);
 
                         if (!flag2) {
-                            b.put(chunkcoordintpair, Boolean.valueOf(false));
-                        } else if (!b.containsKey(chunkcoordintpair)) {
-                            b.put(chunkcoordintpair, Boolean.valueOf(true));
+                            chunkCoords.put(new ChunkEntry(l + k, i1 + j, false));
+                        } else if (!chunkCoords.containsKey(chunkCoord)) {
+                            chunkCoords.put(new ChunkEntry(l + k, i1 + j, true));
                         }
+                        // CraftBukkit end
                     }
                 }
             }
 
             i = 0;
             ChunkCoordinates chunkcoordinates = world.getSpawn();
+            ArrayList<EntryBase> entries = chunkCoords.entries(); // CraftBukkit
             EnumCreatureType[] aenumcreaturetype = EnumCreatureType.values();
 
             j = aenumcreaturetype.length;
@@ -63,15 +86,14 @@ public final class SpawnerCreature {
             for (int j1 = 0; j1 < j; ++j1) {
                 EnumCreatureType enumcreaturetype = aenumcreaturetype[j1];
 
-                if ((!enumcreaturetype.d() || flag1) && (enumcreaturetype.d() || flag) && world.a(enumcreaturetype.a()) <= enumcreaturetype.b() * b.size() / 256) {
-                    Iterator iterator = b.keySet().iterator();
+
+                if ((!enumcreaturetype.d() || flag1) && (enumcreaturetype.d() || flag) && world.a(enumcreaturetype.a()) <= enumcreaturetype.b() * entries.size() / 256) {
 
                     label108:
-                    while (iterator.hasNext()) {
-                        ChunkCoordIntPair chunkcoordintpair1 = (ChunkCoordIntPair) iterator.next();
-
-                        if (!((Boolean) b.get(chunkcoordintpair1)).booleanValue()) {
-                            ChunkPosition chunkposition = a(world, chunkcoordintpair1.x * 16, chunkcoordintpair1.z * 16);
+                    for (EntryBase base : entries) {
+                        ChunkEntry entry = (SpawnerCreature.ChunkEntry) base;
+                        if (!entry.spawn) {
+                            ChunkPosition chunkposition = a(world, LongHash.msw(entry.getX()) * 16, entry.getZ() * 16);
                             int k1 = chunkposition.x;
                             int l1 = chunkposition.y;
                             int i2 = chunkposition.z;

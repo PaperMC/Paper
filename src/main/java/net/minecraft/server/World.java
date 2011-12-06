@@ -14,6 +14,8 @@ import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.craftbukkit.util.LongHash;
+import org.bukkit.craftbukkit.util.LongHashset;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -74,7 +76,7 @@ public class World implements IBlockAccess {
     private boolean S;
     public boolean allowMonsters; // CraftBukkit - private -> public
     public boolean allowAnimals; // CraftBukkit - private -> public
-    private Set T;
+    private LongHashset T; // CraftBukkit
     private int U;
     int[] H;
     private List V;
@@ -145,7 +147,7 @@ public class World implements IBlockAccess {
         this.R = new ArrayList();
         this.allowMonsters = true;
         this.allowAnimals = true;
-        this.T = new HashSet();
+        this.T = new LongHashset(); // CraftBukkit
         this.U = this.random.nextInt(12000);
         this.H = new int['\u8000'];
         this.V = new ArrayList();
@@ -1856,7 +1858,7 @@ public class World implements IBlockAccess {
     }
 
     protected void k() {
-        this.T.clear();
+        // this.T.clear(); // CraftBukkit -- removed
         // MethodProfiler.a("buildList"); // CraftBukkit -- not in production code
 
         int i;
@@ -1870,7 +1872,7 @@ public class World implements IBlockAccess {
 
             for (j = -b0; j <= b0; ++j) {
                 for (int i1 = -b0; i1 <= b0; ++i1) {
-                    this.T.add(new ChunkCoordIntPair(j + k, i1 + l));
+                    this.T.add(LongHash.toLong(j + k, i1 + l)); // CraftBukkit
                 }
             }
         }
@@ -1883,15 +1885,19 @@ public class World implements IBlockAccess {
         int j1 = 0;
 
         // MethodProfiler.a(); // CraftBukkit -- not in production code
-        Iterator iterator = this.T.iterator();
+        // Iterator iterator = this.T.iterator(); CraftBukkit == removed
 
-        while (iterator.hasNext()) {
-            ChunkCoordIntPair chunkcoordintpair = (ChunkCoordIntPair) iterator.next();
-            int k1 = chunkcoordintpair.x * 16;
+        // CraftBukkit start
+        for (long chunkCoord : this.T.popAll()) {
+            int chunkX = LongHash.msw(chunkCoord);
+            int chunkZ = LongHash.lsw(chunkCoord);
+            // ChunkCoordIntPair chunkcoordintpair = (ChunkCoordIntPair) iterator.next();
+            int k1 = chunkX * 16;
 
-            j = chunkcoordintpair.z * 16;
+            j = chunkZ * 16;
             // MethodProfiler.a("getChunk"); // CraftBukkit -- not in production code
-            Chunk chunk = this.getChunkAt(chunkcoordintpair.x, chunkcoordintpair.z);
+            Chunk chunk = this.getChunkAt(chunkX, chunkZ);
+            // CraftBukkit end
 
             // MethodProfiler.b("tickChunk"); // CraftBukkit -- not in production code
             chunk.i();

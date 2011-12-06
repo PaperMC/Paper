@@ -175,7 +175,9 @@ public abstract class EntityLiving extends Entity {
 
             this.extinguish();
         } else {
-            this.setAirTicks(maxAirTicks); // CraftBukkit - update maxAirTicks if no longer 300
+            if (this.getAirTicks() != 300) {
+                this.setAirTicks(maxAirTicks);
+            }
         }
 
         this.aw = this.ax;

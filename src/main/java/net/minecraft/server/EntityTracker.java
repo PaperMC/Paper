@@ -11,9 +11,9 @@ public class EntityTracker {
     private IntHashMap trackedEntities = new IntHashMap();
     private MinecraftServer c;
     private int d;
-    private int e;
+    private World e; // CraftBukkit - change type
 
-    public EntityTracker(MinecraftServer minecraftserver, int i) {
+    public EntityTracker(MinecraftServer minecraftserver, World i) { // CraftBukkit - change method signature
         this.c = minecraftserver;
         this.e = i;
         this.d = minecraftserver.serverConfigurationManager.a();
@@ -94,7 +94,7 @@ public class EntityTracker {
 
             this.a.add(entitytrackerentry);
             this.trackedEntities.a(entity.id, entitytrackerentry);
-            entitytrackerentry.scanPlayers(this.c.getWorldServer(this.e).players);
+            entitytrackerentry.scanPlayers(this.e.players); // CraftBukkit
         }
     }
 
@@ -127,7 +127,7 @@ public class EntityTracker {
         while (iterator.hasNext()) {
             EntityTrackerEntry entitytrackerentry = (EntityTrackerEntry) iterator.next();
 
-            entitytrackerentry.track(this.c.getWorldServer(this.e).players);
+            entitytrackerentry.track(this.e.players); // CraftBukkit
             if (entitytrackerentry.m && entitytrackerentry.tracker instanceof EntityPlayer) {
                 arraylist.add((EntityPlayer) entitytrackerentry.tracker);
             }
