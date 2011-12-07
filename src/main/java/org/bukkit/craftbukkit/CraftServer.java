@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit;
 
 import java.io.FileNotFoundException;
+
+import org.bukkit.craftbukkit.command.CraftConsoleCommandSender;
 import org.bukkit.generator.ChunkGenerator;
 import com.avaje.ebean.config.DataSourceConfig;
 import com.avaje.ebean.config.ServerConfig;
