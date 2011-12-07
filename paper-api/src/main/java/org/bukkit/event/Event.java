@@ -506,6 +506,12 @@ public abstract class Event implements Serializable {
          */
         SERVER_COMMAND (Category.SERVER),
         /**
+         * Called when a remote server command is called
+         *
+         * @see org.bukkit.event.server.ServerCommandEvent
+         */
+        REMOTE_COMMAND(Category.SERVER),
+        /**
          * Called when a map is initialized (created or loaded into memory)
          *
          * @see org.bukkit.event.server.MapInitializeEvent

@@ -9,10 +9,15 @@ import org.bukkit.command.ConsoleCommandSender;
 public class ServerCommandEvent extends ServerEvent {
     private String command;
     private CommandSender sender;
+    @Deprecated
     public ServerCommandEvent(ConsoleCommandSender console, String message) {
-        super(Type.SERVER_COMMAND);
-        command = message;
-        sender = console;
+        this(Type.SERVER_COMMAND, console, message);
+    }
+
+    public ServerCommandEvent(Type type, CommandSender sender, String command) {
+        super(type);
+        this.command = command;
+        this.sender = sender;
     }
 
     /**
