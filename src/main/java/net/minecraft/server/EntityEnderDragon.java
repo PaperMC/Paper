@@ -1,11 +1,17 @@
 package net.minecraft.server;
 
-import org.bukkit.Bukkit;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-
 import java.util.Iterator;
 import java.util.List;
+
+// CraftBukkit start
+import org.bukkit.Bukkit;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
+
+import java.util.ArrayList;
+// CraftBukkit end
 
 public class EntityEnderDragon extends EntityComplex {
 
@@ -455,6 +461,10 @@ public class EntityEnderDragon extends EntityComplex {
         boolean flag = false;
         boolean flag1 = false;
 
+        // CraftBukkit start - create a list to hold all the destroyed blocks
+        List<org.bukkit.block.Block> destroyedBlocks = new ArrayList<org.bukkit.block.Block>();
+        CraftWorld craftWorld = this.world.getWorld();
+        // CraftBukkit end
         for (int k1 = i; k1 <= l; ++k1) {
             for (int l1 = j; l1 <= i1; ++l1) {
                 for (int i2 = k; i2 <= j1; ++i2) {
@@ -463,7 +473,10 @@ public class EntityEnderDragon extends EntityComplex {
                     if (j2 != 0) {
                         if (j2 != Block.OBSIDIAN.id && j2 != Block.WHITESTONE.id && j2 != Block.BEDROCK.id) {
                             flag1 = true;
-                            this.world.setTypeId(k1, l1, i2, 0);
+                            // CraftBukkit start - add blocks to list rather than destroying them
+                            //this.world.setTypeId(k1, l1, i2, 0);
+                            destroyedBlocks.add(craftWorld.getBlockAt(k1, l1, i2));
+                            // CraftBukkit end
                         } else {
                             flag = true;
                         }
@@ -473,6 +486,19 @@ public class EntityEnderDragon extends EntityComplex {
         }
 
         if (flag1) {
+            // CraftBukkit start - set off an EntityExplodeEvent for the dragon exploding all these blocks
+            org.bukkit.entity.Entity bukkitEntity = this.getBukkitEntity();
+            EntityExplodeEvent event = new EntityExplodeEvent(bukkitEntity, bukkitEntity.getLocation(), destroyedBlocks, 0F);
+            if (event.isCancelled()) {
+                 // this flag literally means 'Dragon hit something hard' (Obsidian, White Stone or Bedrock) and will  cause the dragon to slow down.
+                 // We should consider adding an event extension for it, or perhaps returning true if the event is cancelled.
+                return flag;
+            } else {
+                for (org.bukkit.block.Block block : event.blockList()) {
+                    craftWorld.explodeBlock(block, event.getYield());
+                }
+            }
+            // CraftBukkit end
             double d0 = axisalignedbb.a + (axisalignedbb.d - axisalignedbb.a) * (double) this.random.nextFloat();
             double d1 = axisalignedbb.b + (axisalignedbb.e - axisalignedbb.b) * (double) this.random.nextFloat();
             double d2 = axisalignedbb.c + (axisalignedbb.f - axisalignedbb.c) * (double) this.random.nextFloat();

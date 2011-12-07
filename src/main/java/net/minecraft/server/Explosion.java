@@ -185,7 +185,7 @@ public class Explosion {
             }
         }
 
-        EntityExplodeEvent event = new EntityExplodeEvent(explode, location, blockList);
+        EntityExplodeEvent event = new EntityExplodeEvent(explode, location, blockList, 0.3F);
         this.world.getServer().getPluginManager().callEvent(event);
 
         arraylist.clear();
