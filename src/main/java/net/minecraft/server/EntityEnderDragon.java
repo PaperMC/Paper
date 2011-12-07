@@ -489,6 +489,7 @@ public class EntityEnderDragon extends EntityComplex {
             // CraftBukkit start - set off an EntityExplodeEvent for the dragon exploding all these blocks
             org.bukkit.entity.Entity bukkitEntity = this.getBukkitEntity();
             EntityExplodeEvent event = new EntityExplodeEvent(bukkitEntity, bukkitEntity.getLocation(), destroyedBlocks, 0F);
+            Bukkit.getPluginManager().callEvent(event);
             if (event.isCancelled()) {
                  // this flag literally means 'Dragon hit something hard' (Obsidian, White Stone or Bedrock) and will  cause the dragon to slow down.
                  // We should consider adding an event extension for it, or perhaps returning true if the event is cancelled.
