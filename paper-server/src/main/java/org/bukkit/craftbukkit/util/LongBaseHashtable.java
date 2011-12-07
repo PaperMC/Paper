@@ -7,7 +7,7 @@ import java.util.ArrayList;
 
 import static org.bukkit.craftbukkit.util.Java15Compat.Arrays_copyOf;
 
-public abstract class LongAbstractHashtable extends LongHash {
+public class LongBaseHashtable extends LongHash {
 
     EntryBase[][][] values = new EntryBase[256][][];
     EntryBase cache = null;

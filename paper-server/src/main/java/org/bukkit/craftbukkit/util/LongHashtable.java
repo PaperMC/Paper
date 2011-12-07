@@ -1,11 +1,10 @@
 package org.bukkit.craftbukkit.util;
 
 import java.util.ArrayList;
-import net.minecraft.server.Chunk;
-import net.minecraft.server.MinecraftServer;
+
 import static org.bukkit.craftbukkit.util.Java15Compat.Arrays_copyOf;
 
-public class LongHashtable<V> extends LongAbstractHashtable {
+public class LongHashtable<V> extends LongBaseHashtable {
 
     public void put(int msw, int lsw, V value) {
         put(toLong(msw, lsw), value);
@@ -20,7 +19,7 @@ public class LongHashtable<V> extends LongAbstractHashtable {
     }
 
     public synchronized V get(long key) {
-        Entry entry = ((Entry)getEntry(key));
+        Entry entry = ((Entry) getEntry(key));
         return entry != null ? entry.value : null;
     }
 
@@ -30,7 +29,7 @@ public class LongHashtable<V> extends LongAbstractHashtable {
         ArrayList<EntryBase> entries = entries();
 
         for(EntryBase entry : entries) {
-            ret.add(((Entry)entry).value);
+            ret.add(((Entry) entry).value);
         }
         return ret;
     }
