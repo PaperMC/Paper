@@ -175,7 +175,7 @@ public abstract class EntityLiving extends Entity {
 
             this.extinguish();
         } else {
-            if (this.getAirTicks() != 300) {
+            if (this.getAirTicks() != 300) { // CraftBukkit -- only set if needed to work around a datawatcher inefficiency
                 this.setAirTicks(maxAirTicks);
             }
         }
