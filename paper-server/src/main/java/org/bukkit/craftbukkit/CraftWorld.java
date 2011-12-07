@@ -898,7 +898,7 @@ public class CraftWorld implements World {
 
     public void explodeBlock(Block block, float yield) {
         // First of all, don't explode fire
-        if (block.getType().equals(Material.FIRE)) {
+        if (block.getType().equals(org.bukkit.Material.AIR) || block.getType().equals(org.bukkit.Material.FIRE)) {
             return;
         }
         int blockId = block.getTypeId();
