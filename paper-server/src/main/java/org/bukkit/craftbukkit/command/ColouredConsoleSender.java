@@ -10,15 +10,15 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.craftbukkit.CraftServer;
 
-public class ColouredConsoleSender extends ConsoleCommandSender {
+public class ColouredConsoleSender extends CraftConsoleCommandSender {
     private final ConsoleReader reader;
     private final Terminal terminal;
     private final Map<ChatColor, String> replacements = new EnumMap<ChatColor, String>(ChatColor.class);
     private final ChatColor[] colors = ChatColor.values();
 
-    protected ColouredConsoleSender(CraftServer server) {
-        super(server);
-        this.reader = server.getReader();
+    protected ColouredConsoleSender() {
+        super();
+        this.reader = ((CraftServer) getServer()).getReader();
         this.terminal = reader.getTerminal();
 
         replacements.put(ChatColor.BLACK, ANSICodes.attrib(0));
@@ -61,7 +61,7 @@ public class ColouredConsoleSender extends ConsoleCommandSender {
         if (Bukkit.getConsoleSender() != null) {
             return Bukkit.getConsoleSender();
         } else {
-            return new ColouredConsoleSender((CraftServer)Bukkit.getServer());
+            return new ColouredConsoleSender();
         }
     }
 }
