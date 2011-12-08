@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit;
 
 import java.io.File;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.NBTTagCompound;
@@ -13,6 +14,8 @@ import org.bukkit.Server;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
 import org.bukkit.entity.Player;
+import org.bukkit.metadata.MetadataValue;
+import org.bukkit.plugin.Plugin;
 
 @SerializableAs("Player")
 public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializable {
@@ -197,5 +200,21 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
             return new Location(server.getWorld(spawnWorld), data.getInt("SpawnX"), data.getInt("SpawnY"), data.getInt("SpawnZ"));
         }
         return null;
+    }
+
+    public void setMetadata(String metadataKey, MetadataValue metadataValue) {
+        server.getPlayerMetadata().setMetadata(this, metadataKey, metadataValue);
+    }
+
+    public List<MetadataValue> getMetadata(String metadataKey) {
+        return server.getPlayerMetadata().getMetadata(this, metadataKey);
+    }
+
+    public boolean hasMetadata(String metadataKey) {
+        return server.getPlayerMetadata().hasMetadata(this, metadataKey);
+    }
+
+    public void removeMetadata(String metadataKey, Plugin plugin) {
+        server.getPlayerMetadata().removeMetadata(this, metadataKey, plugin);
     }
 }

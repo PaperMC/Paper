@@ -6,6 +6,7 @@ import java.util.Set;
 import org.apache.commons.lang.Validate;
 
 import org.bukkit.craftbukkit.entity.*;
+import org.bukkit.craftbukkit.metadata.BlockMetadataStore;
 import org.bukkit.entity.*;
 import org.bukkit.entity.Entity;
 
@@ -30,6 +31,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Boat;
 import org.bukkit.Chunk;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
 import org.bukkit.BlockChangeDelegate;
@@ -53,6 +55,7 @@ public class CraftWorld implements World {
     private ConcurrentMap<Integer, CraftChunk> unloadedChunks = new MapMaker().weakValues().makeMap();
     private final ChunkGenerator generator;
     private final List<BlockPopulator> populators = new ArrayList<BlockPopulator>();
+    private final BlockMetadataStore blockMetadata = new BlockMetadataStore(this);
 
     private static final Random rand = new Random();
 
@@ -631,6 +634,10 @@ public class CraftWorld implements World {
         return Difficulty.getByValue(this.getHandle().difficulty);
     }
 
+    public BlockMetadataStore getBlockMetadata() {
+        return blockMetadata;
+    }
+
     public boolean hasStorm() {
         return world.worldData.hasStorm();
     }
@@ -1030,5 +1037,21 @@ public class CraftWorld implements World {
 
     public void setTicksPerMonsterSpawns(int ticksPerMonsterSpawns) {
         world.ticksPerMonsterSpawns = ticksPerMonsterSpawns;
+    }
+
+    public void setMetadata(String metadataKey, MetadataValue newMetadataValue) {
+        server.getWorldMetadata().setMetadata(this, metadataKey, newMetadataValue);
+    }
+
+    public List<MetadataValue> getMetadata(String metadataKey) {
+        return server.getWorldMetadata().getMetadata(this, metadataKey);
+    }
+
+    public boolean hasMetadata(String metadataKey) {
+        return server.getWorldMetadata().hasMetadata(this, metadataKey);
+    }
+
+    public void removeMetadata(String metadataKey, Plugin owningPlugin) {
+        server.getWorldMetadata().removeMetadata(this, metadataKey, owningPlugin);
     }
 }

@@ -35,6 +35,10 @@ public class CraftChunk implements Chunk {
         return worldServer.getWorld();
     }
 
+    public CraftWorld getCraftWorld() {
+        return (CraftWorld) getWorld();
+    }
+
     public net.minecraft.server.Chunk getHandle() {
         net.minecraft.server.Chunk c = weakChunk.get();
         if (c == null) {

@@ -64,6 +64,9 @@ import org.bukkit.craftbukkit.inventory.CraftShapedRecipe;
 import org.bukkit.craftbukkit.inventory.CraftShapelessRecipe;
 import org.bukkit.craftbukkit.inventory.RecipeIterator;
 import org.bukkit.craftbukkit.map.CraftMapView;
+import org.bukkit.craftbukkit.metadata.EntityMetadataStore;
+import org.bukkit.craftbukkit.metadata.PlayerMetadataStore;
+import org.bukkit.craftbukkit.metadata.WorldMetadataStore;
 import org.bukkit.craftbukkit.potion.CraftPotionBrewer;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 import org.bukkit.craftbukkit.updater.AutoUpdater;
@@ -127,6 +130,9 @@ public final class CraftServer implements Server {
     private final Yaml yaml = new Yaml(new SafeConstructor());
     private final Map<String, OfflinePlayer> offlinePlayers = new MapMaker().softValues().makeMap();
     private AutoUpdater updater;
+    private final EntityMetadataStore entityMetadata = new EntityMetadataStore();
+    private final PlayerMetadataStore playerMetadata = new PlayerMetadataStore();
+    private final WorldMetadataStore worldMetadata = new WorldMetadataStore();
 
     static {
         ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
@@ -1013,6 +1019,18 @@ public final class CraftServer implements Server {
 
     public ConsoleCommandSender getConsoleSender() {
         return console.console;
+    }
+
+    public EntityMetadataStore getEntityMetadata() {
+        return entityMetadata;
+    }
+
+    public PlayerMetadataStore getPlayerMetadata() {
+        return playerMetadata;
+    }
+
+    public WorldMetadataStore getWorldMetadata() {
+        return worldMetadata;
     }
 
     public void detectListNameConflict(EntityPlayer entityPlayer) {
