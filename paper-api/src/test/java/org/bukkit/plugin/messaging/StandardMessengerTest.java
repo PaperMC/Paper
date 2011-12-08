@@ -11,8 +11,9 @@ public class StandardMessengerTest {
         return new StandardMessenger();
     }
 
+    private int count = 0;
     public TestPlugin getPlugin() {
-        return new TestPlugin();
+        return new TestPlugin("" + count++);
     }
 
     @Test

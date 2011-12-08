@@ -1,8 +1,8 @@
 package org.bukkit.plugin.messaging;
 
-import com.avaje.ebean.EbeanServer;
 import java.io.File;
 import java.io.InputStream;
+
 import org.bukkit.Server;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -13,11 +13,23 @@ import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoader;
 import org.bukkit.plugin.PluginLogger;
 
-public class TestPlugin implements Plugin {
+import com.avaje.ebean.EbeanServer;
+
+public class TestPlugin extends Plugin {
     private boolean enabled = true;
+
+    final private String pluginName;
+
+    public TestPlugin(String pluginName) {
+        this.pluginName = pluginName;
+    }
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public String getName() {
+        return pluginName;
     }
 
     public File getDataFolder() {
@@ -25,7 +37,7 @@ public class TestPlugin implements Plugin {
     }
 
     public PluginDescriptionFile getDescription() {
-        throw new UnsupportedOperationException("Not supported.");
+        return new PluginDescriptionFile(pluginName, "1.0", "test.test");
     }
 
     public FileConfiguration getConfig() {
@@ -100,4 +112,19 @@ public class TestPlugin implements Plugin {
         throw new UnsupportedOperationException("Not supported.");
     }
 
+    @Override
+    public int hashCode() {
+        return getName().hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        return getName().equals(((TestPlugin) obj).getName());
+    }
 }

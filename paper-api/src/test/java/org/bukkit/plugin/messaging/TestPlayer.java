@@ -22,6 +22,7 @@ import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.map.MapView;
+import org.bukkit.metadata.MetadataValue;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionAttachment;
 import org.bukkit.permissions.PermissionAttachmentInfo;
@@ -657,5 +658,21 @@ public class TestPlayer implements Player {
 
     public EntityType getType() {
         return EntityType.PLAYER;
+    }
+
+    public void setMetadata(String metadataKey, MetadataValue newMetadataValue) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public List<MetadataValue> getMetadata(String metadataKey) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public boolean hasMetadata(String metadataKey) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public void removeMetadata(String metadataKey, Plugin owningPlugin) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

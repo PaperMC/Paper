@@ -5,6 +5,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.material.MaterialData;
+import org.bukkit.metadata.Metadatable;
 
 /**
  * Represents a captured state of a block, which will not change automatically.
@@ -14,7 +15,7 @@ import org.bukkit.material.MaterialData;
  * the state of the block and you will not know, or they may change the block to
  * another type entirely, causing your BlockState to become invalid.
  */
-public interface BlockState {
+public interface BlockState extends Metadatable {
 
     /**
      * Gets the block represented by this BlockState

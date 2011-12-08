@@ -34,7 +34,7 @@ import com.avaje.ebeaninternal.server.ddl.DdlGenerator;
 /**
  * Represents a Java plugin
  */
-public abstract class JavaPlugin implements Plugin {
+public abstract class JavaPlugin extends Plugin {
     private boolean isEnabled = false;
     private boolean initialized = false;
     private PluginLoader loader = null;

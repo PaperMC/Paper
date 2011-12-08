@@ -7,6 +7,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.Location;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.metadata.Metadatable;
 
 /**
  * Represents a block. This is a live object, and only one Block may exist for
@@ -14,7 +15,7 @@ import org.bukkit.inventory.ItemStack;
  * to your own handling of it; use block.getState() to get a snapshot state of a
  * block which will not be modified.
  */
-public interface Block {
+public interface Block extends Metadatable {
 
     /**
      * Gets the metadata for this block
