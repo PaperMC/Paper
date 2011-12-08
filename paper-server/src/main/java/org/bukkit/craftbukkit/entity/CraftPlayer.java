@@ -8,6 +8,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
@@ -29,6 +30,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerGameModeChangeEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.map.MapView;
+import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.messaging.StandardMessenger;
 
@@ -704,5 +706,24 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public EntityType getType() {
         return EntityType.PLAYER;
+    }
+
+    public void setMetadata(String metadataKey, MetadataValue newMetadataValue) {
+        server.getPlayerMetadata().setMetadata(this, metadataKey, newMetadataValue);
+    }
+
+    @Override
+    public List<MetadataValue> getMetadata(String metadataKey) {
+        return server.getPlayerMetadata().getMetadata(this, metadataKey);
+    }
+
+    @Override
+    public boolean hasMetadata(String metadataKey) {
+        return server.getPlayerMetadata().hasMetadata(this, metadataKey);
+    }
+
+    @Override
+    public void removeMetadata(String metadataKey, Plugin owningPlugin) {
+        server.getPlayerMetadata().removeMetadata(this, metadataKey, owningPlugin);
     }
 }
