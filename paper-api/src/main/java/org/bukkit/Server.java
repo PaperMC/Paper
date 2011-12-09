@@ -110,6 +110,13 @@ public interface Server {
      * @return The ID of this server
      */
     public String getServerId();
+    
+    /**
+     * Gets whether this server allows the End or not.
+     *
+     * @return Whether this server allows the End or not.
+     */
+    public boolean getAllowEnd();
 
     /**
      * Gets whether this server allows the Nether or not.
