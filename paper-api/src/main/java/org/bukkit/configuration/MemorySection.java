@@ -445,12 +445,17 @@ public class MemorySection implements ConfigurationSection {
         return val instanceof List;
     }
 
-    public List getStringList(String path) {
+    public List<String> getStringList(String path) {
         if (path == null) {
             throw new IllegalArgumentException("Path cannot be null");
         }
 
         List<Object> list = getList(path);
+        
+        if (list == null) {
+            return null;
+        }
+        
         List<String> result = new ArrayList();
         
         for (Object object : list) {
@@ -462,12 +467,17 @@ public class MemorySection implements ConfigurationSection {
         return result;
     }
 
-    public List getIntegerList(String path) {
+    public List<Integer> getIntegerList(String path) {
         if (path == null) {
             throw new IllegalArgumentException("Path cannot be null");
         }
 
         List<Object> list = getList(path);
+        
+        if (list == null) {
+            return null;
+        }
+        
         List<Integer> result = new ArrayList();
         
         for (Object object : list) {
@@ -497,12 +507,17 @@ public class MemorySection implements ConfigurationSection {
         return result;
     }
 
-    public List getBooleanList(String path) {
+    public List<Boolean> getBooleanList(String path) {
         if (path == null) {
             throw new IllegalArgumentException("Path cannot be null");
         }
 
         List<Object> list = getList(path);
+        
+        if (list == null) {
+            return null;
+        }
+        
         List<Boolean> result = new ArrayList();
         
         for (Object object : list) {
@@ -520,12 +535,17 @@ public class MemorySection implements ConfigurationSection {
         return result;
     }
 
-    public List getDoubleList(String path) {
+    public List<Double> getDoubleList(String path) {
         if (path == null) {
             throw new IllegalArgumentException("Path cannot be null");
         }
 
         List<Object> list = getList(path);
+        
+        if (list == null) {
+            return null;
+        }
+        
         List<Double> result = new ArrayList();
         
         for (Object object : list) {
@@ -555,12 +575,17 @@ public class MemorySection implements ConfigurationSection {
         return result;
     }
 
-    public List getFloatList(String path) {
+    public List<Float> getFloatList(String path) {
         if (path == null) {
             throw new IllegalArgumentException("Path cannot be null");
         }
 
         List<Object> list = getList(path);
+        
+        if (list == null) {
+            return null;
+        }
+        
         List<Float> result = new ArrayList();
         
         for (Object object : list) {
@@ -590,12 +615,17 @@ public class MemorySection implements ConfigurationSection {
         return result;
     }
 
-    public List getLongList(String path) {
+    public List<Long> getLongList(String path) {
         if (path == null) {
             throw new IllegalArgumentException("Path cannot be null");
         }
 
         List<Object> list = getList(path);
+        
+        if (list == null) {
+            return null;
+        }
+        
         List<Long> result = new ArrayList();
         
         for (Object object : list) {
@@ -625,12 +655,17 @@ public class MemorySection implements ConfigurationSection {
         return result;
     }
 
-    public List getByteList(String path) {
+    public List<Byte> getByteList(String path) {
         if (path == null) {
             throw new IllegalArgumentException("Path cannot be null");
         }
 
         List<Object> list = getList(path);
+        
+        if (list == null) {
+            return null;
+        }
+        
         List<Byte> result = new ArrayList();
         
         for (Object object : list) {
@@ -660,12 +695,17 @@ public class MemorySection implements ConfigurationSection {
         return result;
     }
 
-    public List getCharacterList(String path) {
+    public List<Character> getCharacterList(String path) {
         if (path == null) {
             throw new IllegalArgumentException("Path cannot be null");
         }
 
         List<Object> list = getList(path);
+        
+        if (list == null) {
+            return null;
+        }
+        
         List<Character> result = new ArrayList();
         
         for (Object object : list) {
@@ -697,12 +737,17 @@ public class MemorySection implements ConfigurationSection {
         return result;
     }
 
-    public List getShortList(String path) {
+    public List<Short> getShortList(String path) {
         if (path == null) {
             throw new IllegalArgumentException("Path cannot be null");
         }
 
         List<Object> list = getList(path);
+        
+        if (list == null) {
+            return null;
+        }
+        
         List<Short> result = new ArrayList();
         
         for (Object object : list) {
