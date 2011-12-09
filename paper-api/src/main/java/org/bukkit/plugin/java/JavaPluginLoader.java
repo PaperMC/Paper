@@ -241,10 +241,15 @@ public class JavaPluginLoader implements PluginLoader {
     
     public void removeClass(String name) {
         Class<?> clazz = classes.remove(name);
-        
-        if ((clazz != null) && (ConfigurationSerializable.class.isAssignableFrom(clazz))) {
-            Class<? extends ConfigurationSerializable> serializable = (Class<? extends ConfigurationSerializable>)clazz;
-            ConfigurationSerialization.unregisterClass(serializable);
+
+        try {
+            if ((clazz != null) && (ConfigurationSerializable.class.isAssignableFrom(clazz))) {
+                Class<? extends ConfigurationSerializable> serializable = (Class<? extends ConfigurationSerializable>)clazz;
+                ConfigurationSerialization.unregisterClass(serializable);
+            }
+        } catch (NullPointerException ex) {
+            // Boggle!
+            // (Native methods throwing NPEs is not fun when you can't stop it before-hand)
         }
     }
 
