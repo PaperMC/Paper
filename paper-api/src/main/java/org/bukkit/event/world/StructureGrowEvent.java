@@ -73,12 +73,10 @@ public class StructureGrowEvent extends WorldEvent implements Cancellable {
         return blocks;
     }
 
-    @Override
     public boolean isCancelled() {
         return cancelled;
     }
 
-    @Override
     public void setCancelled(boolean cancel) {
         cancelled = cancel;
     }
