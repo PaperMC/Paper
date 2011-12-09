@@ -593,6 +593,12 @@ public abstract class Event implements Serializable {
          * @see org.bukkit.event.world.PortalCreateEvent
          */
         PORTAL_CREATE (Category.WORLD),
+        /**
+         * Called when an organic structure attempts to grow (Sapling -> Tree), (Mushroom -> Huge Mushroom), naturally or using bonemeal.
+         *
++        * @see org.bukkit.event.world.TreeGrowEvent
+         */
+        STRUCTURE_GROW (Category.WORLD),
 
         /**
          * ENTITY EVENTS

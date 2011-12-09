@@ -56,8 +56,7 @@ public class WorldListener implements Listener {
      *
      * @param event Relevant event details
      */
-    public void onWorldInit(WorldInitEvent event) {
-    }
+    public void onWorldInit(WorldInitEvent event) {}
 
     /**
      * Called when a World is loaded
@@ -72,4 +71,10 @@ public class WorldListener implements Listener {
      * @param event Relevant event details
      */
     public void onWorldUnload(WorldUnloadEvent event) { }
+    /**
+     * Event that is called when an organic structure attempts to grow (Sapling -> Tree), (Mushroom -> Huge Mushroom), naturally or using bonemeal.
+     *
+     * @param event Relevant event details
+     */
+    public void onStructureGrow(StructureGrowEvent event) {}
 }
