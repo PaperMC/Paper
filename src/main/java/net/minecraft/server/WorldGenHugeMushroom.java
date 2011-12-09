@@ -1,6 +1,13 @@
 package net.minecraft.server;
 
 import java.util.Random;
+// Craftbukkit start
+import org.bukkit.Bukkit;
+import org.bukkit.block.BlockState;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.event.world.StructureGrowEvent;
+import org.bukkit.material.MaterialData;
+// Craftbukkit end
 
 public class WorldGenHugeMushroom extends WorldGenerator {
 
@@ -12,7 +19,13 @@ public class WorldGenHugeMushroom extends WorldGenerator {
 
     public WorldGenHugeMushroom() {}
 
+    // CraftBukkit start - delegate to grow()
     public boolean a(World world, Random random, int i, int j, int k) {
+        return grow(world, random, i, j, k, null, null, null);
+    }
+
+    public boolean grow(World world, Random random, int i, int j, int k, StructureGrowEvent event, ItemStack itemstack, CraftWorld bukkitWorld) {
+        // CraftBukkit end
         int l = random.nextInt(2);
 
         if (this.a >= 0) {
@@ -58,7 +71,15 @@ public class WorldGenHugeMushroom extends WorldGenerator {
                 } else if (!Block.BROWN_MUSHROOM.canPlace(world, i, j, k)) {
                     return false;
                 } else {
-                    world.setRawTypeId(i, j - 1, k, Block.DIRT.id);
+                    // Craftbukkit start
+                    if (event == null) {
+                        world.setRawTypeId(i, j - 1, k, Block.DIRT.id);
+                    } else {
+                        BlockState dirtState = bukkitWorld.getBlockAt(i, j - 1, k).getState();
+                        dirtState.setTypeId(Block.DIRT.id);
+                        event.getBlocks().add(dirtState);
+                    }
+                    // Craftbukkit end
                     int j2 = j + i1;
 
                     if (l == 1) {
@@ -138,7 +159,16 @@ public class WorldGenHugeMushroom extends WorldGenerator {
                                 }
 
                                 if ((l2 != 0 || j >= j + i1 - 1) && !Block.o[world.getTypeId(i2, k1, k2)]) {
-                                    world.setRawTypeIdAndData(i2, k1, k2, Block.BIG_MUSHROOM_1.id + l, l2);
+                                    // Craftbukkit start
+                                    if (event == null) {
+                                        world.setRawTypeIdAndData(i2, k1, k2, Block.BIG_MUSHROOM_1.id + l, l2);
+                                    } else {
+                                        BlockState state = bukkitWorld.getBlockAt(i2, k1, k2).getState();
+                                        state.setTypeId(Block.BIG_MUSHROOM_1.id + l);
+                                        state.setData(new MaterialData(Block.BIG_MUSHROOM_1.id + l, (byte) l2));
+                                        event.getBlocks().add(state);
+                                    }
+                                    // Craftbukkit end
                                 }
                             }
                         }
@@ -147,10 +177,31 @@ public class WorldGenHugeMushroom extends WorldGenerator {
                     for (k1 = 0; k1 < i1; ++k1) {
                         l1 = world.getTypeId(i, j + k1, k);
                         if (!Block.o[l1]) {
-                            world.setRawTypeIdAndData(i, j + k1, k, Block.BIG_MUSHROOM_1.id + l, 10);
+                            // Craftbukkit start
+                            if (event == null) {
+                                world.setRawTypeIdAndData(i, j + k1, k, Block.BIG_MUSHROOM_1.id + l, 10);
+                            } else {
+                                BlockState state = bukkitWorld.getBlockAt(i, j + k1, k).getState();
+                                state.setTypeId(Block.BIG_MUSHROOM_1.id + l);
+                                state.setData(new MaterialData(Block.BIG_MUSHROOM_1.id + l, (byte) 10));
+                                event.getBlocks().add(state);
+                            }
+                            // Craftbukkit end
                         }
                     }
-
+                    // Craftbukkit start
+                    if (event != null) {
+                        Bukkit.getPluginManager().callEvent(event);
+                        if (!event.isCancelled()) {
+                            for (BlockState state : event.getBlocks()) {
+                                state.update(true);
+                            }
+                            if (event.isFromBonemeal() && itemstack != null) {
+                                --itemstack.count;
+                            }
+                        }
+                    }
+                    // Craftbukkit end
                     return true;
                 }
             }

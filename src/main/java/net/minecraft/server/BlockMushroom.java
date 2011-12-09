@@ -1,7 +1,15 @@
 package net.minecraft.server;
 
+import java.util.ArrayList;
 import java.util.Random;
+// Craftbukkit start
+import org.bukkit.Location;
+import org.bukkit.TreeType;
+import org.bukkit.block.BlockState;
+import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockSpreadEvent;
+import org.bukkit.event.world.StructureGrowEvent;
+// Craftbukkit end
 
 public class BlockMushroom extends BlockFlower {
 
@@ -82,23 +90,32 @@ public class BlockMushroom extends BlockFlower {
         }
     }
 
-    public boolean b(World world, int i, int j, int k, Random random) {
+    // CraftBukkit - added bonemeal, player and itemstack
+    public boolean b(World world, int i, int j, int k, Random random, boolean bonemeal, Player player, ItemStack itemstack) {
         int l = world.getData(i, j, k);
 
         world.setRawTypeId(i, j, k, 0);
+        // CraftBukkit start
+        boolean grown = false;
+        StructureGrowEvent event = null;
+        Location location = new Location(world.getWorld(), i, j, k);
         WorldGenHugeMushroom worldgenhugemushroom = null;
 
         if (this.id == Block.BROWN_MUSHROOM.id) {
+            event = new StructureGrowEvent(location, TreeType.BROWN_MUSHROOM, bonemeal, player, new ArrayList<BlockState>());
             worldgenhugemushroom = new WorldGenHugeMushroom(0);
         } else if (this.id == Block.RED_MUSHROOM.id) {
+            event = new StructureGrowEvent(location, TreeType.RED_MUSHROOM, bonemeal, player, new ArrayList<BlockState>());
             worldgenhugemushroom = new WorldGenHugeMushroom(1);
         }
-
-        if (worldgenhugemushroom != null && worldgenhugemushroom.a(world, random, i, j, k)) {
-            return true;
-        } else {
+        if (worldgenhugemushroom != null && event != null){
+            grown = worldgenhugemushroom.grow(world, random, i, j, k, event, itemstack, world.getWorld());
+        }
+        if (!grown || event.isCancelled()){
             world.setRawTypeIdAndData(i, j, k, this.id, l);
             return false;
         }
+        return true;
+        // CraftBukkit end
     }
 }

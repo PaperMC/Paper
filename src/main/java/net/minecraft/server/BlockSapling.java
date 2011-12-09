@@ -1,8 +1,15 @@
 package net.minecraft.server;
 
+import java.util.ArrayList;
 import java.util.Random;
-
-import org.bukkit.BlockChangeDelegate; // CraftBukkit
+// CraftBukkit start
+import org.bukkit.BlockChangeDelegate;
+import org.bukkit.Location;
+import org.bukkit.TreeType;
+import org.bukkit.block.BlockState;
+import org.bukkit.entity.Player;
+import org.bukkit.event.world.StructureGrowEvent;
+// Craftbukkit end
 
 public class BlockSapling extends BlockFlower {
 
@@ -22,7 +29,7 @@ public class BlockSapling extends BlockFlower {
                 if ((l & 8) == 0) {
                     world.setData(i, j, k, l | 8);
                 } else {
-                    this.b(world, i, j, k, random);
+                    this.b(world, i, j, k, random, false, null, null); // Craftbukkit - added bonemeal, player and itemstack
                 }
             }
         }
@@ -33,7 +40,8 @@ public class BlockSapling extends BlockFlower {
         return j == 1 ? 63 : (j == 2 ? 79 : super.a(i, j));
     }
 
-    public void b(World world, int i, int j, int k, Random random) {
+    // CraftBukkit - added bonemeal, player and itemstack
+    public void b(World world, int i, int j, int k, Random random, boolean bonemeal, Player player, ItemStack itemstack) {
         int l = world.getData(i, j, k) & 3;
 
         world.setRawTypeId(i, j, k, 0);
@@ -41,21 +49,28 @@ public class BlockSapling extends BlockFlower {
         // CraftBukkit start - fixes client updates on recently grown trees
         boolean grownTree;
         BlockChangeWithNotify delegate = new BlockChangeWithNotify(world);
-
+        StructureGrowEvent event = null;
+        Location location = new Location(world.getWorld(), i, j, k);
         // All of these are 'false' because we need the 'raw' calls so the block-delegate works
         if (l == 1) {
-            grownTree = new WorldGenTaiga2(false).generate(delegate, random, i, j, k);
+            event = new StructureGrowEvent(location, TreeType.REDWOOD, bonemeal, player, new ArrayList<BlockState>());
+            grownTree = new WorldGenTaiga2(false).generate(delegate, random, i, j, k, event, itemstack, world.getWorld());
         } else if (l == 2) {
-            grownTree = new WorldGenForest(false).generate(delegate, random, i, j, k);
+            event = new StructureGrowEvent(location, TreeType.BIRCH, bonemeal, player, new ArrayList<BlockState>());
+            grownTree = new WorldGenForest(false).generate(delegate, random, i, j, k, event, itemstack, world.getWorld());
         } else {
             if (random.nextInt(10) == 0) {
-                grownTree = new WorldGenBigTree(false).generate(delegate, random, i, j, k);
+                event = new StructureGrowEvent(location, TreeType.BIG_TREE, bonemeal, player, new ArrayList<BlockState>());
+                grownTree = new WorldGenBigTree(false).generate(delegate, random, i, j, k, event, itemstack, world.getWorld());
             } else {
-                grownTree = new WorldGenTrees(false).generate(delegate, random, i, j, k);
+                event = new StructureGrowEvent(location, TreeType.TREE, bonemeal, player, new ArrayList<BlockState>());
+                grownTree = new WorldGenTrees(false).generate(delegate, random, i, j, k, event, itemstack, world.getWorld());
             }
         }
-
-        if (!grownTree) {
+        if (event == null) {
+            return;
+        }
+        if (!grownTree || event.isCancelled()) {
             world.setRawTypeIdAndData(i, j, k, this.id, l);
         }
         // CraftBukkit end
@@ -69,7 +84,9 @@ public class BlockSapling extends BlockFlower {
     private class BlockChangeWithNotify implements BlockChangeDelegate {
         World world;
 
-        BlockChangeWithNotify(World world) { this.world = world; }
+        BlockChangeWithNotify(World world) {
+            this.world = world;
+        }
 
         public boolean setRawTypeId(int x, int y, int z, int type) {
             return this.world.setTypeId(x, y, z, type);

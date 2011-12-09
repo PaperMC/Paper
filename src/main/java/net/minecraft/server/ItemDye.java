@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import org.bukkit.entity.Player; // Craftbukkit
+
 public class ItemDye extends Item {
 
     public static final String[] a = new String[] { "black", "red", "green", "brown", "blue", "purple", "cyan", "silver", "gray", "pink", "lime", "yellow", "lightBlue", "magenta", "orange", "white"};
@@ -26,16 +28,23 @@ public class ItemDye extends Item {
 
                 if (i1 == Block.SAPLING.id) {
                     if (!world.isStatic) {
-                        ((BlockSapling) Block.SAPLING).b(world, i, j, k, world.random);
-                        --itemstack.count;
+                        // Craftbukkit start
+                        Player player = (entityhuman instanceof EntityPlayer) ? (Player)entityhuman.getBukkitEntity() : null;
+                        ((BlockSapling) Block.SAPLING).b(world, i, j, k, world.random, true, player, itemstack);
+                        //--itemstack.count; - called later if the bonemeal attempt was succesful
+                        // Craftbukkit end
                     }
 
                     return true;
                 }
 
                 if (i1 == Block.BROWN_MUSHROOM.id || i1 == Block.RED_MUSHROOM.id) {
-                    if (!world.isStatic && ((BlockMushroom) Block.byId[i1]).b(world, i, j, k, world.random)) {
-                        --itemstack.count;
+                    // Craftbukkit start
+                    if (!world.isStatic) {
+                        Player player = (entityhuman instanceof EntityPlayer) ? (Player)entityhuman.getBukkitEntity() : null;
+                        ((BlockMushroom) Block.byId[i1]).b(world, i, j, k, world.random, true, player, itemstack);
+                        //--itemstack.count; - called later if the bonemeal attempt was succesful
+                        // Craftbukkit end
                     }
 
                     return true;
