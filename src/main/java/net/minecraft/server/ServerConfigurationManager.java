@@ -321,7 +321,9 @@ public class ServerConfigurationManager {
                 toLocation = toWorld == null ? null : new Location(toWorld.getWorld(), (entityplayer.locX * blockRatio), entityplayer.locY, (entityplayer.locZ * blockRatio), entityplayer.yaw, entityplayer.pitch);
             } else {
                 ChunkCoordinates coords = toWorld.d();
-                toLocation = new Location(toWorld.getWorld(), coords.x, coords.y, coords.z, 90, 0);
+                if (coords != null) {
+                    toLocation = new Location(toWorld.getWorld(), coords.x, coords.y, coords.z, 90, 0);
+                }
             }
         }
 
