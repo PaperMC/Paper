@@ -223,7 +223,13 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
             }
 
             if (k == 2) {
-                dimension = 1;
+                // CraftBukkit start (+ don't do this in server.properties, do it in bukkit.yml)
+                if (this.server.getAllowEnd()) {
+                    dimension = 1;
+                } else {
+                    continue;
+                }
+                // CraftBukkit end
             }
 
             String worldType = Environment.getEnvironment(dimension).toString().toLowerCase();

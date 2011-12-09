@@ -309,6 +309,10 @@ public final class CraftServer implements Server {
         return this.getConfigString("server-id", "unnamed");
     }
 
+    public boolean getAllowEnd() {
+        return this.configuration.getBoolean("settings.allow-end");
+    }
+
     public boolean getAllowNether() {
         return this.getConfigBoolean("allow-nether", true);
     }
