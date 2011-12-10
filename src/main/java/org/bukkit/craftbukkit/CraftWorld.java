@@ -590,10 +590,11 @@ public class CraftWorld implements World {
     }
 
     public boolean isThundering() {
-        return world.worldData.isThundering();
+        return hasStorm() && world.worldData.isThundering();
     }
 
     public void setThundering(boolean thundering) {
+        if (thundering && !hasStorm()) setStorm(true);
         CraftServer server = world.getServer();
 
         ThunderChangeEvent thunder = new ThunderChangeEvent((org.bukkit.World) this, thundering);
@@ -886,9 +887,9 @@ public class CraftWorld implements World {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        
+
         final CraftWorld other = (CraftWorld) obj;
-        
+
         return this.getUID() == other.getUID();
     }
 
