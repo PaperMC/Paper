@@ -1,8 +1,11 @@
 package net.minecraft.server;
 
 // CraftBukkit start
+import java.util.List;
+
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.event.entity.EntityTargetEvent;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
 // CraftBukkit end
 
 public class EntitySpider extends EntityMonster {
@@ -113,10 +116,25 @@ public class EntitySpider extends EntityMonster {
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
-        super.dropDeathLoot(flag, i);
+        // CraftBukkit start - whole method; adapted from super.dropDeathLoot.
+        List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
+
+         int k = this.random.nextInt(3);
+
+         if (i > 0) {
+             k += this.random.nextInt(i + 1);
+         }
+
+         if (k > 0) {
+             loot.add(new org.bukkit.inventory.ItemStack(Item.STRING.id, k));
+         }
+
         if (flag && (this.random.nextInt(3) == 0 || this.random.nextInt(1 + i) > 0)) {
-            this.b(Item.SPIDER_EYE.id, 1);
+            loot.add(new org.bukkit.inventory.ItemStack(Item.SPIDER_EYE.id, 1));
         }
+
+        CraftEventFactory.callEntityDeathEvent(this, loot); // raise event even for those times when the entity does not drop loot
+        // CraftBukkit end
     }
 
     public boolean r() {
