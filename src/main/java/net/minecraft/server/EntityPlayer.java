@@ -323,11 +323,13 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             this.netServerHandler.sendPacket(new Packet70Bed(4, 0));
         } else {
             this.a((Statistic) AchievementList.B);
+            /* //CraftBukkit start - removed to fix our handling of The End portals
             ChunkCoordinates chunkcoordinates = this.b.getWorldServer(i).d();
 
             if (chunkcoordinates != null) {
                 this.netServerHandler.a((double) chunkcoordinates.x, (double) chunkcoordinates.y, (double) chunkcoordinates.z, 0.0F, 0.0F);
             }
+            //CraftBukkit end */
 
             this.b.serverConfigurationManager.changeDimension(this, 1);
             this.cf = -1;
