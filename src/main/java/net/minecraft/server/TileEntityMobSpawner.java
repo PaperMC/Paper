@@ -21,22 +21,6 @@ public class TileEntityMobSpawner extends TileEntity {
         return this.world.findNearbyPlayer((double) this.x + 0.5D, (double) this.y + 0.5D, (double) this.z + 0.5D, 16.0D) != null;
     }
 
-    // CraftBukkit start
-    public int getId() {
-        return EntityTypes.getIdFromClass(EntityTypes.getClassFromName(mobName));
-    }
-
-    public void setId(int id) {
-        mobName = EntityTypes.getNameFromClass(EntityTypes.getClassFromId(id));
-        if (mobName == null || mobName.length() == 0) {
-            mobName = "Pig";
-        }
-        if  (EntityTypes.a(mobName,  world) == null) {
-            mobName = "Pig";
-        }
-    }
-    // CraftBukkit end
-
     public void l_() {
         this.c = this.b;
         if (this.c()) {
@@ -64,7 +48,7 @@ public class TileEntityMobSpawner extends TileEntity {
                 byte b0 = 4;
 
                 for (int i = 0; i < b0; ++i) {
-                    Entity entityliving = EntityTypes.a(this.mobName, this.world); // CraftBukkit
+                    EntityLiving entityliving = (EntityLiving) ((EntityLiving) EntityTypes.a(this.mobName, this.world));
 
                     if (entityliving == null) {
                         return;
@@ -84,13 +68,12 @@ public class TileEntityMobSpawner extends TileEntity {
 
                         entityliving.setPositionRotation(d3, d4, d5, this.world.random.nextFloat() * 360.0F, 0.0F);
                         // CraftBukkit start
-                        if ((entityliving instanceof EntityLiving && ((EntityLiving) entityliving).g()) ||
-                            (!(entityliving instanceof EntityLiving) && entityliving.world.containsEntity(entityliving.boundingBox) && entityliving.world.getEntities(entityliving, entityliving.boundingBox).size() == 0 && !entityliving.world.c(entityliving.boundingBox))) {
+                        if (entityliving.g()) {
                             this.world.addEntity(entityliving, SpawnReason.SPAWNER);
                             // CraftBukkit end
 
                             this.world.f(2004, this.x, this.y, this.z, 0);
-                            // entityliving.ah(); // CraftBukkit -- only avail on clientside
+                            entityliving.ah();
                             this.e();
                         }
                     }
