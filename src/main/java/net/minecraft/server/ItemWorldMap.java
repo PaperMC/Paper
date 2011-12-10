@@ -24,7 +24,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
             worldmap.centerX = world.getWorldData().c();
             worldmap.centerZ = world.getWorldData().e();
             worldmap.scale = 3;
-            worldmap.map = (byte) world.worldProvider.dimension;
+            worldmap.map = (byte) ((WorldServer) world).dimension; // CraftBukkit - fixes Bukkit multiworld maps.
             worldmap.a();
             world.a(s, (WorldMapBase) worldmap);
 
@@ -72,6 +72,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
                             byte b2 = 0;
                             int[] aint = new int[256];
                             Chunk chunk = world.getChunkAtWorldCoords(i3, j3);
+                            if (chunk.isEmpty()) continue; // CraftBukkit - fixes maps erasing themselves on low chunk visibility.
                             int k3 = i3 & 15;
                             int l3 = j3 & 15;
                             int i4 = 0;
@@ -232,7 +233,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
         worldmap.centerX = MathHelper.floor(entityhuman.locX);
         worldmap.centerZ = MathHelper.floor(entityhuman.locZ);
         worldmap.scale = 3;
-        worldmap.map = (byte) world.worldProvider.dimension;
+        worldmap.map = (byte) ((WorldServer) world).dimension; // CraftBukkit - fixes Bukkit multiworld maps.
         worldmap.a();
     }
 
