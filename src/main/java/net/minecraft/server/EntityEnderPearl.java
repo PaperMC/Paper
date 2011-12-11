@@ -2,8 +2,7 @@ package net.minecraft.server;
 
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.player.PlayerPortalEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 
 public class EntityEnderPearl extends EntityProjectile {
@@ -37,7 +36,7 @@ public class EntityEnderPearl extends EntityProjectile {
                 if (this.shooter instanceof EntityPlayer) {
                     CraftPlayer player = (CraftPlayer)this.shooter.bukkitEntity;
                     teleport = player.isOnline();
-                    
+
                     if (teleport) {
                         teleEvent = new PlayerTeleportEvent(player, player.getLocation(), getBukkitEntity().getLocation(), PlayerTeleportEvent.TeleportCause.ENDER_PEARL);
                         Bukkit.getPluginManager().callEvent(teleEvent);
@@ -55,11 +54,13 @@ public class EntityEnderPearl extends EntityProjectile {
                     this.shooter.a_(this.locX, this.locY, this.locZ);
                 }
                 this.shooter.fallDistance = 0.0F;
-                EntityDamageEvent damageEvent = new EntityDamageEvent(getBukkitEntity(), EntityDamageEvent.DamageCause.FALL, 5);
+                EntityDamageByEntityEvent damageEvent = new EntityDamageByEntityEvent(this.getBukkitEntity(), this.shooter.getBukkitEntity(), EntityDamageByEntityEvent.DamageCause.FALL, 5);
                 Bukkit.getPluginManager().callEvent(damageEvent);
 
                 if (!damageEvent.isCancelled()) {
-                    this.shooter.damageEntity(DamageSource.FALL, damageEvent.getDamage());
+                    org.bukkit.entity.Player bPlayer = Bukkit.getPlayerExact(((EntityPlayer) this.shooter).name);
+                    ((CraftPlayer) bPlayer).getHandle().cg = -1; // Remove spawning invulnerability.
+                    ((CraftPlayer) bPlayer).getHandle().damageEntity(DamageSource.FALL, 5); // Damage the new player instead of the old
                 }
             }
             // CraftBukkit end
