@@ -215,4 +215,12 @@ public interface LivingEntity extends Entity {
      */
     public void setNoDamageTicks(int ticks);
 
+    /**
+     * Gets the player identified as the killer of this entity.
+     * <p>
+     * May be null.
+     *
+     * @return Killer player, or null if none found.
+     */
+    public Player getKiller();
 }
