@@ -13,11 +13,13 @@ import org.bukkit.block.PistonMoveReaction;
 import net.minecraft.server.BiomeBase;
 import net.minecraft.server.BlockRedstoneWire;
 import net.minecraft.server.EnumSkyBlock;
+import net.minecraft.server.MinecraftServer;
 
 import org.bukkit.*;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.CraftChunk;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.util.BlockVector;
 
 public class CraftBlock implements Block {
@@ -25,6 +27,7 @@ public class CraftBlock implements Block {
     private final int x;
     private final int y;
     private final int z;
+    private static final Biome BIOME_MAPPING[];
 
     public CraftBlock(CraftChunk chunk, int x, int y, int z) {
         this.x = x;
@@ -243,51 +246,11 @@ public class CraftBlock implements Block {
     }
 
     public static Biome biomeBaseToBiome(BiomeBase base) {
-        if (base == BiomeBase.SWAMPLAND) {
-            return Biome.SWAMPLAND;
-        } else if (base == BiomeBase.FOREST) {
-            return Biome.FOREST;
-        } else if (base == BiomeBase.TAIGA) {
-            return Biome.TAIGA;
-        } else if (base == BiomeBase.DESERT) {
-            return Biome.DESERT;
-        } else if (base == BiomeBase.PLAINS) {
-            return Biome.PLAINS;
-        } else if (base == BiomeBase.HELL) {
-            return Biome.HELL;
-        } else if (base == BiomeBase.SKY) {
-            return Biome.SKY;
-        } else if (base == BiomeBase.RIVER) {
-            return Biome.RIVER;
-        } else if (base == BiomeBase.EXTREME_HILLS) {
-            return Biome.EXTREME_HILLS;
-        } else if (base == BiomeBase.OCEAN) {
-            return Biome.OCEAN;
-        } else if (base == BiomeBase.FROZEN_OCEAN) {
-            return Biome.FROZEN_OCEAN;
-        } else if (base == BiomeBase.FROZEN_RIVER) {
-            return Biome.FROZEN_RIVER;
-        } else if (base == BiomeBase.ICE_PLAINS) {
-            return Biome.ICE_PLAINS;
-        } else if (base == BiomeBase.ICE_MOUNTAINS) {
-            return Biome.ICE_MOUNTAINS;
-        } else if (base == BiomeBase.MUSHROOM_ISLAND) {
-            return Biome.MUSHROOM_ISLAND;
-        } else if (base == BiomeBase.MUSHROOM_SHORE) {
-            return Biome.MUSHROOM_SHORE;
-        } else if (base == BiomeBase.BEACH) {
-            return Biome.BEACH;
-        } else if (base == BiomeBase.DESERT_HILLS) {
-            return Biome.DESERT_HILLS;
-        } else if (base == BiomeBase.FOREST_HILLS) {
-            return Biome.FOREST_HILLS;
-        } else if (base == BiomeBase.TAIGA_HILLS) {
-            return Biome.TAIGA_HILLS;
-        } else if (base == BiomeBase.SMALL_MOUNTAINS) {
-            return Biome.SMALL_MOUNTAINS;
+        if (base == null) {
+            return null;
         }
 
-        return null;
+        return BIOME_MAPPING[base.K];
     }
 
     public double getTemperature() {
@@ -406,6 +369,39 @@ public class CraftBlock implements Block {
             return getDrops();
         } else {
             return Collections.emptyList();
+        }
+    }
+
+    /* Build biome index based lookup table for BiomeBase to Biome mapping */
+    static {
+        BIOME_MAPPING = new Biome[BiomeBase.a.length];
+        BIOME_MAPPING[BiomeBase.SWAMPLAND.K] = Biome.SWAMPLAND;
+        BIOME_MAPPING[BiomeBase.FOREST.K] = Biome.FOREST;
+        BIOME_MAPPING[BiomeBase.TAIGA.K] = Biome.TAIGA;
+        BIOME_MAPPING[BiomeBase.DESERT.K] = Biome.DESERT;
+        BIOME_MAPPING[BiomeBase.PLAINS.K] = Biome.PLAINS;
+        BIOME_MAPPING[BiomeBase.HELL.K] = Biome.HELL;
+        BIOME_MAPPING[BiomeBase.SKY.K] = Biome.SKY;
+        BIOME_MAPPING[BiomeBase.RIVER.K] = Biome.RIVER;
+        BIOME_MAPPING[BiomeBase.EXTREME_HILLS.K] = Biome.EXTREME_HILLS;
+        BIOME_MAPPING[BiomeBase.OCEAN.K] = Biome.OCEAN;
+        BIOME_MAPPING[BiomeBase.FROZEN_OCEAN.K] = Biome.FROZEN_OCEAN;
+        BIOME_MAPPING[BiomeBase.FROZEN_RIVER.K] = Biome.FROZEN_RIVER;
+        BIOME_MAPPING[BiomeBase.ICE_PLAINS.K] = Biome.ICE_PLAINS;
+        BIOME_MAPPING[BiomeBase.ICE_MOUNTAINS.K] = Biome.ICE_MOUNTAINS;
+        BIOME_MAPPING[BiomeBase.MUSHROOM_ISLAND.K] = Biome.MUSHROOM_ISLAND;
+        BIOME_MAPPING[BiomeBase.MUSHROOM_SHORE.K] = Biome.MUSHROOM_SHORE;
+        BIOME_MAPPING[BiomeBase.BEACH.K] = Biome.BEACH;
+        BIOME_MAPPING[BiomeBase.DESERT_HILLS.K] = Biome.DESERT_HILLS;
+        BIOME_MAPPING[BiomeBase.FOREST_HILLS.K] = Biome.FOREST_HILLS;
+        BIOME_MAPPING[BiomeBase.TAIGA_HILLS.K] = Biome.TAIGA_HILLS;
+        BIOME_MAPPING[BiomeBase.SMALL_MOUNTAINS.K] = Biome.SMALL_MOUNTAINS;
+        /* Sanity check - we should have a record for each record in the BiomeBase.a table */
+        /* Helps avoid missed biomes when we upgrade bukkit to new code with new biomes */
+        for (int i = 0; i < BIOME_MAPPING.length; i++) {
+            if ((BiomeBase.a[i] != null) && (BIOME_MAPPING[i] == null)) {
+                throw new IllegalArgumentException("Missing Biome mapping for BiomeBase[" + i + "]");
+            }
         }
     }
 }
