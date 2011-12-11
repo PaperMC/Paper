@@ -48,11 +48,20 @@ public class TileEntityMobSpawner extends TileEntity {
                 byte b0 = 4;
 
                 for (int i = 0; i < b0; ++i) {
-                    EntityLiving entityliving = (EntityLiving) ((EntityLiving) EntityTypes.a(this.mobName, this.world));
+                    // CraftBukkit start - bad entity detection
+                    Entity mob = EntityTypes.a(this.mobName, this.world);
+
+                    if (!(mob instanceof EntityLiving)) {
+                        mobName = "Pig";
+                        return;
+                    }
+
+                    EntityLiving entityliving = (EntityLiving) ((EntityLiving) mob);
 
                     if (entityliving == null) {
                         return;
                     }
+                    // CraftBukkit end
 
                     int j = this.world.a(entityliving.getClass(), AxisAlignedBB.b((double) this.x, (double) this.y, (double) this.z, (double) (this.x + 1), (double) (this.y + 1), (double) (this.z + 1)).b(8.0D, 4.0D, 8.0D)).size();
 
