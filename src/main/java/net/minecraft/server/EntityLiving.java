@@ -56,7 +56,7 @@ public abstract class EntityLiving extends Entity {
     public float aC;
     public float aD;
     public float aE;
-    protected EntityHuman aF = null;
+    public EntityHuman aF = null; // CraftBukkit - prot to pub - "killer"
     protected int aG = 0;
     public int aH = 0;
     public int aI = 0;
