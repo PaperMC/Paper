@@ -15,6 +15,7 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Egg;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.entity.Snowball;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.util.BlockIterator;
@@ -24,6 +25,7 @@ import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.Iterator;
 import net.minecraft.server.DamageSource;
+import net.minecraft.server.EntityHuman;
 import org.bukkit.entity.HumanEntity;
 
 public class CraftLivingEntity extends CraftEntity implements LivingEntity {
@@ -222,5 +224,9 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public String toString() {
         return "CraftLivingEntity{" + "id=" + getEntityId() + '}';
+    }
+
+    public Player getKiller() {
+        return getHandle().aF == null ? null : (Player)getHandle().aF.getBukkitEntity();
     }
 }
