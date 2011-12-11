@@ -8,6 +8,7 @@ import org.bukkit.entity.*;
 import org.bukkit.entity.Entity;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentMap;
 import java.util.List;
@@ -518,6 +519,32 @@ public class CraftWorld implements World {
                 // Assuming that bukkitEntity isn't null
                 if (bukkitEntity != null && bukkitEntity instanceof LivingEntity) {
                     list.add((LivingEntity) bukkitEntity);
+                }
+            }
+        }
+
+        return list;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends Entity> Collection<T> getEntitiesByClass(Class<T>... classes) {
+        Collection<T> list = new ArrayList<T>();
+
+        for (Object entity: world.entityList) {
+            if (entity instanceof net.minecraft.server.Entity) {
+                Entity bukkitEntity = ((net.minecraft.server.Entity) entity).getBukkitEntity();
+
+                if (bukkitEntity == null) {
+                    continue;
+                }
+
+                Class<?> bukkitClass = bukkitEntity.getClass();
+
+                for (Class<?> clazz : classes) {
+                    if (clazz.isAssignableFrom(bukkitClass)) {
+                        list.add((T) bukkitEntity);
+                        break;
+                    }
                 }
             }
         }
