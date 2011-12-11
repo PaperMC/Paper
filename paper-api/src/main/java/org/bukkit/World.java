@@ -2,6 +2,7 @@ package org.bukkit;
 
 import java.io.File;
 import org.bukkit.generator.ChunkGenerator;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -340,6 +341,13 @@ public interface World extends PluginMessageRecipient {
      * @return A List of all LivingEntities currently residing in this world
      */
     public List<LivingEntity> getLivingEntities();
+
+    /**
+     * Get a collection of all entities in this World matching the given class/interface
+     *
+     * @return A List of all Entities currently residing in this world that match the given class/interface
+     */
+    public <T extends Entity> Collection<T> getEntitiesByClass(Class<T>... classes);
 
     /**
      * Get a list of all players in this World
