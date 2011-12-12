@@ -2,9 +2,12 @@ package org.bukkit.craftbukkit.entity;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import net.minecraft.server.EntityPlayer;
+import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.Packet131ItemData;
 import net.minecraft.server.Packet200Statistic;
 import net.minecraft.server.Packet201PlayerInfo;
@@ -39,8 +42,14 @@ import org.bukkit.map.MapView;
 
 @DelegateDeserialization(CraftOfflinePlayer.class)
 public class CraftPlayer extends CraftHumanEntity implements Player {
+    private long firstPlayed = 0;
+    private long lastPlayed = 0;
+    private boolean hasPlayedBefore = false;
+
     public CraftPlayer(CraftServer server, EntityPlayer entity) {
         super(server, entity);
+
+        firstPlayed = System.currentTimeMillis();
     }
 
     @Override
@@ -566,5 +575,43 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         int hash = 5;
         hash = 97 * hash + (this.getName() != null ? this.getName().hashCode() : 0);
         return hash;
+    }
+
+    public long getFirstPlayed() {
+        return firstPlayed;
+    }
+
+    public long getLastPlayed() {
+        return lastPlayed;
+    }
+
+    public boolean hasPlayedBefore() {
+        return hasPlayedBefore;
+    }
+
+    public void setFirstPlayed(long firstPlayed) {
+        this.firstPlayed = firstPlayed;
+    }
+
+    public void readExtraData(NBTTagCompound nbttagcompound) {
+        hasPlayedBefore = true;
+        if (nbttagcompound.hasKey("bukkit")) {
+            NBTTagCompound data = nbttagcompound.getCompound("bukkit");
+
+            if (data.hasKey("firstPlayed")) {
+                firstPlayed = data.getLong("firstPlayed");
+                lastPlayed = data.getLong("lastPlayed");
+            }
+        }
+    }
+
+    public void setExtraData(NBTTagCompound nbttagcompound) {
+        if (!nbttagcompound.hasKey("bukkit")) {
+            nbttagcompound.setCompound("bukkit", new NBTTagCompound());
+        }
+
+        NBTTagCompound data = nbttagcompound.getCompound("bukkit");
+        data.setLong("firstPlayed", getFirstPlayed());
+        data.setLong("lastPlayed", System.currentTimeMillis());
     }
 }
