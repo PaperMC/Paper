@@ -64,6 +64,15 @@ public class Location implements Cloneable {
     }
 
     /**
+     * Gets the chunk at the represented location
+     *
+     * @return Chunk at the represented location
+     */
+    public Chunk getChunk() {
+        return world.getChunkAt(this);
+    }
+
+    /**
      * Gets the block at the represented location
      *
      * @return Block at the represented location
