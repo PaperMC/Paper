@@ -211,9 +211,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
                 return;
             }
 
-            org.bukkit.inventory.ItemStack oldResult = furnaceSmeltEvent.getResult();
-            ItemStack newResult = new ItemStack(oldResult.getTypeId(), oldResult.getAmount(), oldResult.getDurability());
-            itemstack = newResult;
+            itemstack = CraftItemStack.createNMSItemStack(furnaceSmeltEvent.getResult());
 
             if (this.items[2] == null) {
                 this.items[2] = itemstack.cloneItemStack();

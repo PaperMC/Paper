@@ -102,7 +102,7 @@ public class BlockDispenser extends BlockContainer {
                 itemstack = tileentitydispenser.getContents()[dispenseSlot];
 
                 // Copy item stack, because we want it to have 1 item
-                itemstack = new ItemStack(itemstack.id, 1, itemstack.getData());
+                itemstack = new ItemStack(itemstack.id, 1, itemstack.getData(), itemstack.getEnchantments());
             }
             // CraftBukkit end
 
@@ -139,7 +139,7 @@ public class BlockDispenser extends BlockContainer {
                 motY = event.getVelocity().getY();
                 motZ = event.getVelocity().getZ();
 
-                itemstack = new ItemStack(event.getItem().getTypeId(), event.getItem().getAmount(), event.getItem().getDurability());
+                itemstack = CraftItemStack.createNMSItemStack(event.getItem());
                 // CraftBukkit end
 
                 if (itemstack.id == Item.ARROW.id) {
@@ -244,7 +244,7 @@ public class BlockDispenser extends BlockContainer {
                         }
 
                         itemstack.count -= i1;
-                        EntityItem entityitem = new EntityItem(world, (double) ((float) i + f), (double) ((float) j + f1), (double) ((float) k + f2), new ItemStack(itemstack.id, i1, itemstack.getData()));
+                        EntityItem entityitem = new EntityItem(world, (double) ((float) i + f), (double) ((float) j + f1), (double) ((float) k + f2), new ItemStack(itemstack.id, i1, itemstack.getData(), itemstack.getEnchantments())); // CraftBukkit - make sure enchantments are copied over
                         float f3 = 0.05F;
 
                         entityitem.motX = (double) ((float) this.a.nextGaussian() * f3);

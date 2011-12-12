@@ -80,11 +80,7 @@ public class EntityCow extends EntityAnimal {
                 return false;
             }
 
-            CraftItemStack itemInHand = (CraftItemStack) event.getItemStack();
-            byte data = itemInHand.getData() == null ? (byte) 0 : itemInHand.getData().getData();
-            itemstack = new ItemStack(itemInHand.getTypeId(), itemInHand.getAmount(), data);
-
-            entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, itemstack);
+            entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, CraftItemStack.createNMSItemStack(event.getItemStack()));
             // CraftBukkit end
 
             return true;

@@ -54,13 +54,10 @@ public class ItemBucket extends Item {
                         if (entityhuman.abilities.canInstantlyBuild) {
                             return itemstack;
                         }
-
-                        CraftItemStack itemInHand = (CraftItemStack) event.getItemStack();
-                        byte data = itemInHand.getData() == null ? (byte) 0 : itemInHand.getData().getData();
                         // CraftBukkit end
 
                         world.setTypeId(i, j, k, 0);
-                        return new ItemStack(itemInHand.getTypeId(), itemInHand.getAmount(), data); // CraftBukkit
+                        return CraftItemStack.createNMSItemStack(event.getItemStack()); // CraftBukkit
                     }
 
                     if (world.getMaterial(i, j, k) == Material.LAVA && world.getData(i, j, k) == 0) {
@@ -74,13 +71,10 @@ public class ItemBucket extends Item {
                         if (entityhuman.abilities.canInstantlyBuild) {
                             return itemstack;
                         }
-
-                        CraftItemStack itemInHand = (CraftItemStack) event.getItemStack();
-                        byte data = itemInHand.getData() == null ? (byte) 0 : itemInHand.getData().getData();
                         // CraftBukkit end
 
                         world.setTypeId(i, j, k, 0);
-                        return new ItemStack(itemInHand.getTypeId(), itemInHand.getAmount(), data); // CraftBukkit
+                        return CraftItemStack.createNMSItemStack(event.getItemStack()); // CraftBukkit
                     }
                 } else {
                     if (this.a < 0) {
@@ -91,9 +85,7 @@ public class ItemBucket extends Item {
                             return itemstack;
                         }
 
-                        CraftItemStack itemInHand = (CraftItemStack) event.getItemStack();
-                        byte data = itemInHand.getData() == null ? (byte) 0 : itemInHand.getData().getData();
-                        return new ItemStack(itemInHand.getTypeId(), itemInHand.getAmount(), data);
+                        return CraftItemStack.createNMSItemStack(event.getItemStack());
                     }
 
                     int clickedX = i, clickedY = j, clickedZ = k;
@@ -151,10 +143,7 @@ public class ItemBucket extends Item {
                         }
 
                         // CraftBukkit start
-                        CraftItemStack itemInHand = (CraftItemStack) event.getItemStack();
-                        byte data = itemInHand.getData() == null ? (byte) 0 : itemInHand.getData().getData();
-
-                        return new ItemStack(itemInHand.getTypeId(), itemInHand.getAmount(), data);
+                        return CraftItemStack.createNMSItemStack(event.getItemStack());
                         // CraftBukkit end
                     }
                 }
@@ -167,9 +156,7 @@ public class ItemBucket extends Item {
                     return itemstack;
                 }
 
-                CraftItemStack itemInHand = (CraftItemStack) event.getItemStack();
-                byte data = itemInHand.getData() == null ? (byte) 0 : itemInHand.getData().getData();
-                return new ItemStack(itemInHand.getTypeId(), itemInHand.getAmount(), data);
+                return CraftItemStack.createNMSItemStack(event.getItemStack());
                 // CraftBukkit end
             }
 
