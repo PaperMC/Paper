@@ -750,6 +750,8 @@ public class CraftWorld implements World {
                 entity = new EntityPigZombie(world);
             } else if (Zombie.class.isAssignableFrom(clazz)) {
                 entity = new EntityZombie(world);
+            } else if (Giant.class.isAssignableFrom(clazz)) {
+                entity = new EntityGiantZombie(world);
             } else if (Silverfish.class.isAssignableFrom(clazz)) {
                 entity = new EntitySilverfish(world);
             } else if (Enderman.class.isAssignableFrom(clazz)) {
