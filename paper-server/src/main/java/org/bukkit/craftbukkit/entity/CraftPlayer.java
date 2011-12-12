@@ -497,6 +497,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public void setLevel(int level) {
         getHandle().expLevel = level;
+        getHandle().cf = -1;
     }
 
     public int getTotalExperience() {
@@ -505,6 +506,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public void setTotalExperience(int exp) {
         getHandle().expTotal = exp;
+        getHandle().cf = -1;
 
         if (getTotalExperience() > getExperience()) {
             getHandle().expTotal = getTotalExperience();
