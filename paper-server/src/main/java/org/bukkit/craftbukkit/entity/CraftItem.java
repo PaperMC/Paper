@@ -19,7 +19,7 @@ public class CraftItem extends CraftEntity implements Item {
     }
 
     public void setItemStack(ItemStack stack) {
-        item.itemStack = new net.minecraft.server.ItemStack(stack.getTypeId(), stack.getAmount(), stack.getDurability());
+        item.itemStack = CraftItemStack.createNMSItemStack(stack);
     }
 
     public int getPickupDelay() {
