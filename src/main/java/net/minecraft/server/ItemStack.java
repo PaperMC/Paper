@@ -43,7 +43,7 @@ public final class ItemStack {
     public ItemStack(int id, int count, int data, NBTTagList enchantments) {
         this(id, count, data);
         // taken from .addEnchantment
-        if (Item.byId[this.id].getMaxStackSize() == 1) {
+        if (enchantments != null && Item.byId[this.id].getMaxStackSize() == 1) {
             if (this.tag == null) {
                 this.setTag(new NBTTagCompound());
             }
