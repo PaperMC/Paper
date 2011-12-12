@@ -4,7 +4,6 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import net.minecraft.server.EntityHuman;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.Packet131ItemData;
 import net.minecraft.server.Packet200Statistic;
@@ -24,6 +23,7 @@ import org.bukkit.Instrument;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Note;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.Statistic;
 import org.bukkit.World;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
@@ -160,14 +160,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (obj == null) {
             return false;
         }
-        if (getClass() != obj.getClass()) {
+        if (!(obj instanceof OfflinePlayer)) {
             return false;
         }
-        final CraftPlayer other = (CraftPlayer) obj;
-        if ((this.getName() == null) ? (other.getName() != null) : !this.getName().equals(other.getName())) {
+        OfflinePlayer other = (OfflinePlayer)obj;
+        if ((this.getName() == null) || (other.getName() == null)) {
             return false;
         }
-        return true;
+        return this.getName().equalsIgnoreCase(other.getName());
     }
 
     public void kickPlayer(String message) {

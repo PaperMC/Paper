@@ -97,4 +97,26 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         
         return null;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (!(obj instanceof OfflinePlayer)) {
+            return false;
+        }
+        OfflinePlayer other = (OfflinePlayer)obj;
+        if ((this.getName() == null) || (other.getName() == null)) {
+            return false;
+        }
+        return this.getName().equalsIgnoreCase(other.getName());
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 97 * hash + (this.getName() != null ? this.getName().hashCode() : 0);
+        return hash;
+    }
 }
