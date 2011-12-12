@@ -9,6 +9,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.craftbukkit.ChunkCompressionThread;
 import org.bukkit.Location;
 import org.bukkit.command.CommandException;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
@@ -924,7 +925,10 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
     public void a(Packet9Respawn packet9respawn) {
         if (this.player.j) {
-            this.player = this.minecraftServer.serverConfigurationManager.moveToWorld(this.player, 0, true);
+            CraftWorld cworld = (CraftWorld) this.server.getWorlds().get(0);
+            ChunkCoordinates chunkcoordinates = cworld.getHandle().getSpawn();
+            Location location = new Location(cworld, chunkcoordinates.x + 0.5, chunkcoordinates.y, chunkcoordinates.z + 0.5);
+            this.player = this.minecraftServer.serverConfigurationManager.moveToWorld(this.player, 0, true, location);
         } else {
             if (this.player.getHealth() > 0) {
                 return;
@@ -932,7 +936,10 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
             this.player = this.minecraftServer.serverConfigurationManager.moveToWorld(this.player, 0, false);
         }
-        this.getPlayer().setHandle(this.player); // CraftBukkit
+        // CraftBukkit start
+        this.getPlayer().setHandle(this.player);
+        this.player.j = false; // allow the player to receive movement packets again.
+        // CraftBukkit end
     }
 
     public void a(Packet101CloseWindow packet101closewindow) {
