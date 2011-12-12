@@ -9,9 +9,9 @@ import java.util.Set;
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.ChunkCompressionThread;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason;
 import org.bukkit.event.entity.PlayerDeathEvent;
 // CraftBukkit end
 
@@ -72,11 +72,13 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         if (nbttagcompound.hasKey("playerGameType")) {
             this.itemInWorldManager.a(nbttagcompound.getInt("playerGameType"));
         }
+        getPlayer().readExtraData(nbttagcompound); // CraftBukkit
     }
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
         nbttagcompound.setInt("playerGameType", this.itemInWorldManager.a());
+        getPlayer().setExtraData(nbttagcompound); // CraftBukkit
     }
 
     public void spawnIn(World world) {
@@ -646,6 +648,10 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         this.activeContainer = this.defaultContainer;
         this.cf = -1; // lastSentExp. Find line: "if (this.expTotal != this.XXXX) {"
         this.giveExp(this.newExp);
+    }
+
+    public CraftPlayer getPlayer() {
+        return (CraftPlayer)getBukkitEntity();
     }
     // CraftBukkit end
 }

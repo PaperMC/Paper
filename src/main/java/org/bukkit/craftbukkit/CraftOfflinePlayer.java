@@ -1,8 +1,11 @@
 package org.bukkit.craftbukkit;
 
+import java.io.File;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import net.minecraft.server.EntityPlayer;
+import net.minecraft.server.NBTTagCompound;
+import net.minecraft.server.WorldNBTStorage;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Server;
@@ -14,10 +17,12 @@ import org.bukkit.entity.Player;
 public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializable {
     private final String name;
     private final CraftServer server;
+    private final WorldNBTStorage storage;
 
     protected CraftOfflinePlayer(CraftServer server, String name) {
         this.server = server;
         this.name = name;
+        this.storage = (WorldNBTStorage)(server.console.worlds.get(0).getDataManager());
     }
 
     public boolean isOnline() {
@@ -118,5 +123,66 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         int hash = 5;
         hash = 97 * hash + (this.getName() != null ? this.getName().hashCode() : 0);
         return hash;
+    }
+
+    private NBTTagCompound getData() {
+        return storage.getPlayerData(getName());
+    }
+
+    private NBTTagCompound getBukkitData() {
+        NBTTagCompound result = getData();
+
+        if (result != null) {
+            if (!result.hasKey("bukkit")) {
+                result.setCompound("bukkit", new NBTTagCompound());
+            }
+            result = result.getCompound("bukkit");
+        }
+
+        return result;
+    }
+
+    private File getDataFile() {
+        return new File(storage.getPlayerDir(), name + ".dat");
+    }
+
+    public long getFirstPlayed() {
+        Player player = getPlayer();
+        if (player != null) return player.getFirstPlayed();
+
+        NBTTagCompound data = getBukkitData();
+
+        if (data != null) {
+            if (data.hasKey("firstPlayed")) {
+                return data.getLong("firstPlayed");
+            } else {
+                File file = getDataFile();
+                return file.lastModified();
+            }
+        } else {
+            return 0;
+        }
+    }
+
+    public long getLastPlayed() {
+        Player player = getPlayer();
+        if (player != null) return player.getFirstPlayed();
+
+        NBTTagCompound data = getBukkitData();
+
+        if (data != null) {
+            if (data.hasKey("lastPlayed")) {
+                return data.getLong("lastPlayed");
+            } else {
+                File file = getDataFile();
+                return file.lastModified();
+            }
+        } else {
+            return 0;
+        }
+    }
+
+    public boolean hasPlayedBefore() {
+        return getData() != null;
     }
 }

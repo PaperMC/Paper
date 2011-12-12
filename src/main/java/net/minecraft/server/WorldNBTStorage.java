@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import java.util.UUID; // CraftBukkit
+import org.bukkit.craftbukkit.entity.CraftPlayer; // CraftBukkit
 
 public class WorldNBTStorage implements PlayerFileData, IDataManager {
 
@@ -202,6 +203,12 @@ public class WorldNBTStorage implements PlayerFileData, IDataManager {
         NBTTagCompound nbttagcompound = this.getPlayerData(entityhuman.name);
 
         if (nbttagcompound != null) {
+            // CraftBukkit start
+            if (entityhuman instanceof EntityPlayer) {
+                CraftPlayer player = (CraftPlayer)entityhuman.bukkitEntity;
+                player.setFirstPlayed(new File(playerDir, entityhuman.name + ".dat").lastModified());
+            }
+            // CraftBukkit end
             entityhuman.e(nbttagcompound);
         }
     }
