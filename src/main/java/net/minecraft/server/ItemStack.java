@@ -43,11 +43,13 @@ public final class ItemStack {
     public ItemStack(int id, int count, int data, NBTTagList enchantments) {
         this(id, count, data);
         // taken from .addEnchantment
-        if (this.tag == null) {
-            this.setTag(new NBTTagCompound());
-        }
+        if (Item.byId[this.id].getMaxStackSize() == 1) {
+            if (this.tag == null) {
+                this.setTag(new NBTTagCompound());
+            }
 
-        this.tag.set("ench", enchantments); // modify this part to use passed in enchantments list
+            this.tag.set("ench", enchantments.clone()); // modify this part to use passed in enchantments list
+        }
     }
     // CraftBukkit end
 
