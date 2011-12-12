@@ -925,10 +925,12 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
     public void a(Packet9Respawn packet9respawn) {
         if (this.player.j) {
+            // CraftBukkit start
             CraftWorld cworld = (CraftWorld) this.server.getWorlds().get(0);
             ChunkCoordinates chunkcoordinates = cworld.getHandle().getSpawn();
             Location location = new Location(cworld, chunkcoordinates.x + 0.5, chunkcoordinates.y, chunkcoordinates.z + 0.5);
             this.player = this.minecraftServer.serverConfigurationManager.moveToWorld(this.player, 0, true, location);
+            // CraftBukkit end
         } else {
             if (this.player.getHealth() > 0) {
                 return;
