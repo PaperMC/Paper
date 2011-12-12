@@ -1,7 +1,6 @@
 package org.bukkit.inventory;
 
 import com.google.common.collect.ImmutableMap;
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -13,7 +12,7 @@ import org.bukkit.material.MaterialData;
 /**
  * Represents a stack of items
  */
-public class ItemStack implements Serializable, ConfigurationSerializable {
+public class ItemStack implements ConfigurationSerializable {
     private int type;
     private int amount = 0;
     private MaterialData data = null;
