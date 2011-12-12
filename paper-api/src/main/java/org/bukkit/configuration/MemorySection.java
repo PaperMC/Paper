@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
+import static org.bukkit.util.NumberConversions.*;
 
 /**
  * A type of {@link ConfigurationSection} that is stored in memory.
@@ -315,7 +316,7 @@ public class MemorySection implements ConfigurationSection {
         }
 
         Object def = getDefault(path);
-        return getInt(path, (def instanceof Integer) ? (Integer)def : 0);
+        return getInt(path, (def instanceof Number) ? toInt(def) : 0);
     }
 
     public int getInt(String path, int def) {
@@ -324,7 +325,7 @@ public class MemorySection implements ConfigurationSection {
         }
 
         Object val = get(path, def);
-        return (val instanceof Integer) ? (Integer)val : def;
+        return (val instanceof Number) ? toInt(val) : def;
     }
 
     public boolean isInt(String path) {
@@ -369,7 +370,7 @@ public class MemorySection implements ConfigurationSection {
         }
 
         Object def = getDefault(path);
-        return getDouble(path, (def instanceof Double) ? (Double)def : 0);
+        return getDouble(path, (def instanceof Number) ? toDouble(def) : 0);
     }
 
     public double getDouble(String path, double def) {
@@ -378,7 +379,7 @@ public class MemorySection implements ConfigurationSection {
         }
 
         Object val = get(path, def);
-        return (val instanceof Double) ? (Double)val : def;
+        return (val instanceof Number) ? toDouble(val) : def;
     }
 
     public boolean isDouble(String path) {
@@ -396,7 +397,7 @@ public class MemorySection implements ConfigurationSection {
         }
 
         Object def = getDefault(path);
-        return getLong(path, (def instanceof Long) ? (Long)def : 0);
+        return getLong(path, (def instanceof Number) ? toLong(def) : 0);
     }
 
     public long getLong(String path, long def) {
@@ -405,7 +406,7 @@ public class MemorySection implements ConfigurationSection {
         }
 
         Object val = get(path, def);
-        return (val instanceof Long) ? (Long)val : def;
+        return (val instanceof Number) ? toLong(val) : def;
     }
 
     public boolean isLong(String path) {

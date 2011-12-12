@@ -315,9 +315,21 @@ public abstract class ConfigurationSectionTest {
         ConfigurationSection section = getConfigurationSection();
         String key = "exists";
         double value = Double.MAX_VALUE;
-        
+
         section.set(key, value);
-        
+
+        assertEquals(value, section.getDouble(key), 1);
+        assertNull(section.getString("doesntExist"));
+    }
+
+    @Test
+    public void testGetDoubleFromInt() {
+        ConfigurationSection section = getConfigurationSection();
+        String key = "exists";
+        double value = 123;
+
+        section.set(key, (int)value);
+
         assertEquals(value, section.getDouble(key), 1);
         assertNull(section.getString("doesntExist"));
     }
