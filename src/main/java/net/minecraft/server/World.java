@@ -2306,7 +2306,13 @@ public class World implements IBlockAccess {
             throw new IllegalStateException("TickNextTick list out of synch");
         } else {
             if (i > 1000) {
-                i = 1000;
+                // CraftBukkit start - if the server has too much to process over time, try to alleviate that
+                if(i > 20 * 1000) {
+                    i = i / 20;
+                } else {
+                    i = 1000;
+                }
+                // CraftBukkit end
             }
 
             for (int j = 0; j < i; ++j) {
