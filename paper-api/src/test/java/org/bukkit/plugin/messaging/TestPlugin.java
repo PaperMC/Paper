@@ -12,6 +12,7 @@ import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoader;
+import org.bukkit.plugin.PluginLogger;
 import org.bukkit.util.config.Configuration;
 
 public class TestPlugin implements Plugin {
@@ -54,6 +55,10 @@ public class TestPlugin implements Plugin {
     }
 
     public void reloadConfig() {
+        throw new UnsupportedOperationException("Not supported.");
+    }
+
+    public PluginLogger getLogger() {
         throw new UnsupportedOperationException("Not supported.");
     }
 

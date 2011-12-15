@@ -977,6 +977,9 @@ public class JavaPluginLoader implements PluginLoader {
         }
 
         if (!plugin.isEnabled()) {
+            String message = String.format("[%s] Loading %s.", plugin.getDescription().getName(), plugin.getDescription().getFullName());
+            server.getLogger().info(message);
+
             JavaPlugin jPlugin = (JavaPlugin) plugin;
 
             String pluginName = jPlugin.getDescription().getName();
@@ -1003,6 +1006,9 @@ public class JavaPluginLoader implements PluginLoader {
         }
 
         if (plugin.isEnabled()) {
+            String message = String.format("[%s] Unloading %s.", plugin.getDescription().getName(), plugin.getDescription().getFullName());
+            server.getLogger().info(message);
+
             server.getPluginManager().callEvent(new PluginDisableEvent(plugin));
 
             JavaPlugin jPlugin = (JavaPlugin) plugin;
