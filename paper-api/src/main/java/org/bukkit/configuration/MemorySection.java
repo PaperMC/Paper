@@ -289,7 +289,7 @@ public class MemorySection implements ConfigurationSection {
         }
 
         Object def = getDefault(path);
-        return getString(path, (def instanceof String) ? (String)def : null);
+        return getString(path, def != null ? def.toString() : null);
     }
 
     public String getString(String path, String def) {
@@ -298,7 +298,7 @@ public class MemorySection implements ConfigurationSection {
         }
 
         Object val = get(path, def);
-        return (val instanceof String) ? (String)val : def;
+        return (val != null) ? val.toString() : def;
     }
 
     public boolean isString(String path) {
