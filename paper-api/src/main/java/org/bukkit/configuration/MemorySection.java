@@ -881,9 +881,13 @@ public class MemorySection implements ConfigurationSection {
         if (path == null) {
             throw new IllegalArgumentException("Path cannot be null");
         }
-
-        Object val = get(path, getDefault(path));
-        return (val instanceof ConfigurationSection) ? (ConfigurationSection)val : null;
+        
+        Object val = get(path, null);
+        if (val != null)
+            return (val instanceof ConfigurationSection) ? (ConfigurationSection)val : null;
+        
+        val = get(path, getDefault(path));
+        return (val instanceof ConfigurationSection) ? createSection(path) : null;
     }
 
     public boolean isConfigurationSection(String path) {
