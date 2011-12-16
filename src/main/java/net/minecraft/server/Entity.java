@@ -14,6 +14,7 @@ import org.bukkit.event.entity.EntityCombustByBlockEvent;
 import org.bukkit.event.entity.EntityCombustByEntityEvent;
 import org.bukkit.event.painting.PaintingBreakByEntityEvent;
 import org.bukkit.event.vehicle.VehicleBlockCollisionEvent;
+import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.event.vehicle.VehicleExitEvent;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.event.entity.EntityCombustEvent;
@@ -1228,6 +1229,17 @@ public abstract class Entity {
             this.vehicle = null;
             this.setPositionRotation(entity.locX, entity.boundingBox.b + (double) entity.length, entity.locZ, this.yaw, this.pitch);
         } else {
+            // CraftBukkit start
+            if ((this.getBukkitEntity() instanceof LivingEntity) && (entity != null) && (entity.getBukkitEntity() instanceof Vehicle)) {
+                VehicleEnterEvent event = new VehicleEnterEvent((Vehicle) entity.getBukkitEntity(), (LivingEntity) this.getBukkitEntity());
+                this.world.getServer().getPluginManager().callEvent(event);
+                
+                if (event.isCancelled()) {
+                    return;
+                }
+            }
+            // CraftBukkit end
+
             if (this.vehicle != null) {
                 this.vehicle.passenger = null;
             }

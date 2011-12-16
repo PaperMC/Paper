@@ -725,14 +725,7 @@ public class EntityMinecart extends Entity implements IInventory {
                 }
 
                 if (entity instanceof EntityLiving && !(entity instanceof EntityHuman) && this.type == 0 && this.motX * this.motX + this.motZ * this.motZ > 0.01D && this.passenger == null && entity.vehicle == null) {
-                    if (!collisionEvent.isPickupCancelled()) {
-                        VehicleEnterEvent enterEvent = new VehicleEnterEvent(vehicle, hitEntity);
-                        this.world.getServer().getPluginManager().callEvent(enterEvent);
-
-                        if (!enterEvent.isCancelled()) {
-                            entity.mount(this);
-                        }
-                    }
+                    entity.mount(this);
                 }
                 // CraftBukkit end
 
@@ -857,17 +850,6 @@ public class EntityMinecart extends Entity implements IInventory {
             }
 
             if (!this.world.isStatic) {
-                // CraftBukkit start
-                org.bukkit.entity.Entity player = (entityhuman == null) ? null : entityhuman.getBukkitEntity();
-
-                VehicleEnterEvent event = new VehicleEnterEvent((Vehicle) this.getBukkitEntity(), player);
-                this.world.getServer().getPluginManager().callEvent(event);
-
-                if (event.isCancelled()) {
-                    return true;
-                }
-                // CraftBukkit end
-
                 entityhuman.mount(this);
             }
         } else if (this.type == 1) {

@@ -420,15 +420,6 @@ public class EntityBoat extends Entity {
             return true;
         } else {
             if (!this.world.isStatic) {
-                // CraftBukkit start
-                VehicleEnterEvent event = new VehicleEnterEvent((Vehicle) this.getBukkitEntity(), entityhuman.getBukkitEntity());
-                this.world.getServer().getPluginManager().callEvent(event);
-
-                if (event.isCancelled()) {
-                    return true;
-                }
-                // CraftBukkit end
-
                 entityhuman.mount(this);
             }
 
