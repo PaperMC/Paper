@@ -1200,15 +1200,17 @@ public abstract class Entity {
         // b(null) doesn't really fly for overloaded methods,
         // so this method is needed
 
+        PluginManager pluginManager = Bukkit.getPluginManager();
+        this.getBukkitEntity(); // make sure bukkitEntity is initialised
         // CraftBukkit end
         this.e = 0.0D;
         this.f = 0.0D;
         if (entity == null) {
             if (this.vehicle != null) {
                 // CraftBukkit start
-                if ((this.getBukkitEntity() instanceof LivingEntity) && (this.vehicle.getBukkitEntity() instanceof Vehicle)) {
-                    VehicleExitEvent event = new VehicleExitEvent((Vehicle) this.vehicle.getBukkitEntity(), (LivingEntity) this.getBukkitEntity());
-                    this.world.getServer().getPluginManager().callEvent(event);
+                if ((this.bukkitEntity instanceof LivingEntity) && (this.vehicle.getBukkitEntity() instanceof Vehicle)) {
+                    VehicleExitEvent event = new VehicleExitEvent((Vehicle) this.vehicle.getBukkitEntity(), (LivingEntity) this.bukkitEntity);
+                    pluginManager.callEvent(event);
                 }
                 // CraftBukkit end
 
@@ -1219,9 +1221,9 @@ public abstract class Entity {
             this.vehicle = null;
         } else if (this.vehicle == entity) {
             // CraftBukkit start
-            if ((this.getBukkitEntity() instanceof LivingEntity) && (this.vehicle.getBukkitEntity() instanceof Vehicle)) {
-                VehicleExitEvent event = new VehicleExitEvent((Vehicle) this.vehicle.getBukkitEntity(), (LivingEntity) this.getBukkitEntity());
-                this.world.getServer().getPluginManager().callEvent(event);
+            if ((this.bukkitEntity instanceof LivingEntity) && (this.vehicle.getBukkitEntity() instanceof Vehicle)) {
+                VehicleExitEvent event = new VehicleExitEvent((Vehicle) this.vehicle.getBukkitEntity(), (LivingEntity) this.bukkitEntity);
+                pluginManager.callEvent(event);
             }
             // CraftBukkit end
 
@@ -1230,10 +1232,10 @@ public abstract class Entity {
             this.setPositionRotation(entity.locX, entity.boundingBox.b + (double) entity.length, entity.locZ, this.yaw, this.pitch);
         } else {
             // CraftBukkit start
-            if ((this.getBukkitEntity() instanceof LivingEntity) && (entity != null) && (entity.getBukkitEntity() instanceof Vehicle)) {
-                VehicleEnterEvent event = new VehicleEnterEvent((Vehicle) entity.getBukkitEntity(), (LivingEntity) this.getBukkitEntity());
-                this.world.getServer().getPluginManager().callEvent(event);
-                
+            if ((this.bukkitEntity instanceof LivingEntity) && (entity.getBukkitEntity() instanceof Vehicle)) {
+                VehicleEnterEvent event = new VehicleEnterEvent((Vehicle) entity.getBukkitEntity(), this.bukkitEntity);
+                pluginManager.callEvent(event);
+
                 if (event.isCancelled()) {
                     return;
                 }
