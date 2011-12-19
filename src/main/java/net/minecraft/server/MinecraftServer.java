@@ -241,7 +241,7 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
             if (k == 0) {
                 world = new WorldServer(this, new ServerNBTManager(server.getWorldContainer(), s, true), s, dimension, settings, org.bukkit.World.Environment.getEnvironment(dimension), gen); // CraftBukkit
             } else {
-                String dim = "DIM-1";
+                String dim = "DIM" + dimension;
 
                 File newWorld = new File(new File(name), dim);
                 File oldWorld = new File(new File(s), dim);
@@ -257,7 +257,7 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
                         log.info("---- Migration of old " + worldType + " folder failed ----");
                     } else if (newWorld.getParentFile().mkdirs()) {
                         if (oldWorld.renameTo(newWorld)) {
-                            log.info("Success! To restore the nether in the future, simply move " + newWorld + " to " + oldWorld);
+                            log.info("Success! To restore " + worldType + " in the future, simply move " + newWorld + " to " + oldWorld);
                             log.info("---- Migration of old " + worldType + " folder complete ----");
                         } else {
                             log.severe("Could not move folder " + oldWorld + " to " + newWorld + "!");
