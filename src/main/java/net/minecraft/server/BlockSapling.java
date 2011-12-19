@@ -70,6 +70,9 @@ public class BlockSapling extends BlockFlower {
         if (event == null) {
             return;
         }
+        if (event.isFromBonemeal() && itemstack != null) {
+            --itemstack.count;
+        }
         if (!grownTree || event.isCancelled()) {
             world.setRawTypeIdAndData(i, j, k, this.id, l);
         }
@@ -82,6 +85,7 @@ public class BlockSapling extends BlockFlower {
 
     // CraftBukkit start
     private class BlockChangeWithNotify implements BlockChangeDelegate {
+
         World world;
 
         BlockChangeWithNotify(World world) {

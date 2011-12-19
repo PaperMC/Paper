@@ -401,9 +401,6 @@ public class WorldGenBigTree extends WorldGenerator {
                     for (BlockState state : event.getBlocks()) {
                         state.update();
                     }
-                    if (event.isFromBonemeal() && itemstack != null) {
-                        --itemstack.count;
-                    }
                 }
             }
             // Craftbukkit end

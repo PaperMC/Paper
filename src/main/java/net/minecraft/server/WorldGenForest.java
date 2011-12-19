@@ -126,9 +126,6 @@ public class WorldGenForest extends WorldGenerator {
                             for (BlockState state : event.getBlocks()) {
                                 state.update(true);
                             }
-                            if (event.isFromBonemeal() && itemstack != null) {
-                                --itemstack.count;
-                            }
                         }
                     }
                     // Craftbukkit end

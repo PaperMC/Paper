@@ -108,10 +108,13 @@ public class BlockMushroom extends BlockFlower {
             event = new StructureGrowEvent(location, TreeType.RED_MUSHROOM, bonemeal, player, new ArrayList<BlockState>());
             worldgenhugemushroom = new WorldGenHugeMushroom(1);
         }
-        if (worldgenhugemushroom != null && event != null){
+        if (worldgenhugemushroom != null && event != null) {
             grown = worldgenhugemushroom.grow(world, random, i, j, k, event, itemstack, world.getWorld());
+            if (event.isFromBonemeal() && itemstack != null) {
+                --itemstack.count;
+            }
         }
-        if (!grown || event.isCancelled()){
+        if (!grown || event.isCancelled()) {
             world.setRawTypeIdAndData(i, j, k, this.id, l);
             return false;
         }
