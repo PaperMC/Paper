@@ -74,6 +74,10 @@ public class CraftWorld implements World {
     }
 
     public int getHighestBlockYAt(int x, int z) {
+        if (!isChunkLoaded(x >> 4, z >> 4)){
+            loadChunk(x >> 4, z >> 4);
+        }
+
         return world.getHighestBlockYAt(x, z);
     }
 
