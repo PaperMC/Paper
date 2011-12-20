@@ -399,7 +399,7 @@ public class WorldGenBigTree extends WorldGenerator {
                 if (!event.isCancelled()) {
                     world.setRawTypeId(i, j, k, 0);
                     for (BlockState state : event.getBlocks()) {
-                        state.update();
+                        state.update(true);
                     }
                 }
             }
