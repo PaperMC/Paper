@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public enum CreatureType {
+    // These strings MUST match the strings in nms.EntityTypes and are case sensitive.
     CHICKEN("Chicken", Chicken.class),
     COW("Cow", Cow.class),
     CREEPER("Creeper", Creeper.class),
@@ -27,8 +28,8 @@ public enum CreatureType {
     VILLAGER("Villager", Villager.class),
     BLAZE("Blaze", Blaze.class),
     MUSHROOM_COW("MushroomCow", MushroomCow.class),
-    MAGMA_CUBE("MagmaCube", MagmaCube.class),
-    SNOWMAN("Snowman", Snowman.class);
+    MAGMA_CUBE("LavaSlime", MagmaCube.class),
+    SNOWMAN("SnowMan", Snowman.class);
 
     private String name;
     private Class<? extends Entity> clazz;
