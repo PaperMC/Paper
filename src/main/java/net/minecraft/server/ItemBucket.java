@@ -50,13 +50,13 @@ public class ItemBucket extends Item {
                         if (event.isCancelled()) {
                             return itemstack;
                         }
+                        world.setTypeId(i, j, k, 0);
 
                         if (entityhuman.abilities.canInstantlyBuild) {
                             return itemstack;
                         }
                         // CraftBukkit end
 
-                        world.setTypeId(i, j, k, 0);
                         return CraftItemStack.createNMSItemStack(event.getItemStack()); // CraftBukkit
                     }
 
@@ -67,13 +67,13 @@ public class ItemBucket extends Item {
                         if (event.isCancelled()) {
                             return itemstack;
                         }
+                        world.setTypeId(i, j, k, 0);
 
                         if (entityhuman.abilities.canInstantlyBuild) {
                             return itemstack;
                         }
                         // CraftBukkit end
 
-                        world.setTypeId(i, j, k, 0);
                         return CraftItemStack.createNMSItemStack(event.getItemStack()); // CraftBukkit
                     }
                 } else {
