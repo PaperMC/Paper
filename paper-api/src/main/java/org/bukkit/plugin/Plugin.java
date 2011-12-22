@@ -58,6 +58,23 @@ public interface Plugin extends CommandExecutor {
      * Saves the {@link FileConfiguration} retrievable by {@link #getConfig()}.
      */
     public void saveConfig();
+
+    /**
+     * Saves the raw contents of the default config.yml file to the location retrievable by {@link #getConfig()}.
+     * If there is no default config.yml embedded in the plugin, an empty config.yml file is saved.
+     */
+    public void saveDefaultConfig();
+
+    /**
+     * Saves the raw contents of any resource embedded with a plugin's .jar file assuming it can be found using
+     * {@link #getResource(String)}. The resource is saved into the plugin's data folder using the same hierarchy
+     * as the .jar file (subdirectories are preserved).
+     * 
+     * @param resourcePath the embedded resource path to look for within the plugin's .jar file. (No preceding slash).
+     * @param replace if true, the embedded resource will overwrite the contents of an existing file.
+     * @throws IllegalArgumentException if the resource path is null, empty, or points to a nonexistent resource.
+     */
+    public void saveResource(String resourcePath, boolean replace);
     
     /**
      * Discards any data in {@link #getConfig()} and reloads from disk.
