@@ -365,16 +365,16 @@ public class CraftWorld implements World {
     public boolean generateTree(Location loc, TreeType type, BlockChangeDelegate delegate) {
         switch (type) {
         case BIG_TREE:
-            return new WorldGenBigTree(false).generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), null, null, null);
+            return new WorldGenBigTree(false).generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
         case BIRCH:
-            return new WorldGenForest(false).generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), null, null, null);
+            return new WorldGenForest(false).generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
         case REDWOOD:
-            return new WorldGenTaiga2(false).generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), null, null, null);
+            return new WorldGenTaiga2(false).generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
         case TALL_REDWOOD:
             return new WorldGenTaiga1().generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
         case TREE:
         default:
-            return new WorldGenTrees(false).generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), null, null, null);
+            return new WorldGenTrees(false).generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
         }
     }
 

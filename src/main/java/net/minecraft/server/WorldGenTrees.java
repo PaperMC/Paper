@@ -2,13 +2,7 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-// CraftBukkit start
-import org.bukkit.BlockChangeDelegate;
-import org.bukkit.Bukkit;
-import org.bukkit.block.BlockState;
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.event.world.StructureGrowEvent;
-// CraftBukkit end
+import org.bukkit.BlockChangeDelegate; // CraftBukkit
 
 public class WorldGenTrees extends WorldGenerator {
 
@@ -22,10 +16,10 @@ public class WorldGenTrees extends WorldGenerator {
         // BlockChangeDelegate and then we can implicitly cast World to
         // WorldServer (a safe cast, AFAIK) and no code will be broken. This
         // then allows plugins to catch manually-invoked generation events
-        return this.generate((BlockChangeDelegate) world, random, i, j, k, null, null, world.getWorld());
+        return this.generate((BlockChangeDelegate) world, random, i, j, k);
     }
 
-    public boolean generate(BlockChangeDelegate world, Random random, int i, int j, int k, StructureGrowEvent event, ItemStack itemstack, CraftWorld bukkitWorld) {
+    public boolean generate(BlockChangeDelegate world, Random random, int i, int j, int k) {
         // CraftBukkit end
         int l = random.nextInt(3) + 4;
         boolean flag = true;
@@ -66,15 +60,7 @@ public class WorldGenTrees extends WorldGenerator {
             } else {
                 i1 = world.getTypeId(i, j - 1, k);
                 if ((i1 == Block.GRASS.id || i1 == Block.DIRT.id) && j < world.getHeight() - l - 1) { // CraftBukkit
-                    // CraftBukkit start
-                    if (event == null) {
-                        world.setRawTypeId(i, j - 1, k, Block.DIRT.id);
-                    } else {
-                        BlockState dirtState = bukkitWorld.getBlockAt(i, j - 1, k).getState();
-                        dirtState.setTypeId(Block.DIRT.id);
-                        event.getBlocks().add(dirtState);
-                    }
-                    // CraftBukkit end
+                    world.setRawTypeId(i, j - 1, k, Block.DIRT.id);
 
                     int i2;
 
@@ -89,15 +75,7 @@ public class WorldGenTrees extends WorldGenerator {
                                 int l2 = k2 - k;
 
                                 if ((Math.abs(j2) != k1 || Math.abs(l2) != k1 || random.nextInt(2) != 0 && j1 != 0) && !Block.o[world.getTypeId(l1, i2, k2)]) {
-                                    // CraftBukkit start
-                                    if (event == null) {
-                                        this.setTypeAndData(world, l1, i2, k2, Block.LEAVES.id, 0);
-                                    } else {
-                                        BlockState leavesState = bukkitWorld.getBlockAt(l1, i2, k2).getState();
-                                        leavesState.setTypeId(Block.LEAVES.id);
-                                        event.getBlocks().add(leavesState);
-                                    }
-                                    // CraftBukkit end
+                                    this.setTypeAndData(world, l1, i2, k2, Block.LEAVES.id, 0);
                                 }
                             }
                         }
@@ -106,27 +84,10 @@ public class WorldGenTrees extends WorldGenerator {
                     for (i2 = 0; i2 < l; ++i2) {
                         j1 = world.getTypeId(i, j + i2, k);
                         if (j1 == 0 || j1 == Block.LEAVES.id) {
-                            // CraftBukkit start
-                            if (event == null) {
-                                this.setTypeAndData(world, i, j + i2, k, Block.LOG.id, 0);
-                            } else {
-                                BlockState logState = bukkitWorld.getBlockAt(i, j + i2, k).getState();
-                                logState.setTypeId(Block.LOG.id);
-                                event.getBlocks().add(logState);
-                            }
-                            // CraftBukkit end
+                            this.setTypeAndData(world, i, j + i2, k, Block.LOG.id, 0);
                         }
                     }
-                    // CraftBukkit start
-                    if (event != null) {
-                        Bukkit.getPluginManager().callEvent(event);
-                        if (!event.isCancelled()) {
-                            for (BlockState state : event.getBlocks()) {
-                                state.update(true);
-                            }
-                        }
-                    }
-                    // CraftBukkit end
+
                     return true;
                 } else {
                     return false;
