@@ -712,6 +712,7 @@ public final class CraftServer implements Server {
         return true;
     }
 
+    @SuppressWarnings("unchecked")
     public Map<String, String[]> getCommandAliases() {
         ConfigurationSection section = configuration.getConfigurationSection("aliases");
         Map<String, String[]> result = new LinkedHashMap<String, String[]>();
