@@ -17,7 +17,7 @@ public interface PluginLoader {
      *
      * @param file File to attempt to load
      * @return Plugin that was contained in the specified file, or null if
-     * unsuccessful
+     *         unsuccessful
      * @throws InvalidPluginException Thrown when the specified file is not a plugin
      * @throws InvalidDescriptionException If the plugin description file was invalid
      * @throws UnknownDependencyException If a required dependency could not be found
@@ -30,7 +30,7 @@ public interface PluginLoader {
      * @param file File to attempt to load
      * @param ignoreSoftDependencies Loader will ignore soft dependencies if this flag is set to true
      * @return Plugin that was contained in the specified file, or null if
-     * unsuccessful
+     *         unsuccessful
      * @throws InvalidPluginException Thrown when the specified file is not a plugin
      * @throws InvalidDescriptionException If the plugin description file was invalid
      * @throws UnknownDependencyException If a required dependency could not be found
@@ -39,6 +39,7 @@ public interface PluginLoader {
 
     /**
      * Returns a list of all filename filters expected by this PluginLoader
+     *
      * @return The filters
      */
     public Pattern[] getPluginFileFilters();

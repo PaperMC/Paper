@@ -29,9 +29,11 @@ import org.yaml.snakeyaml.representer.Representer;
  * select child nodes by delimiting node names with periods.
  *
  * <p>
- * For example, given the following configuration file:</p>
+ * For example, given the following configuration file:
+ * </p>
  *
- * <pre>members:
+ * <pre>
+ * members:
  *     - Hollie
  *     - Jason
  *     - Bobo
@@ -44,13 +46,14 @@ import org.yaml.snakeyaml.representer.Representer;
  * sturmeh:
  *     cool: false
  *     eats:
- *         babies: true</pre>
+ *         babies: true
+ * </pre>
  *
- * <p>Calling code could access sturmeh's baby eating state by using
- * <code>getBoolean("sturmeh.eats.babies", false)</code>. For lists, there are
- * methods such as <code>getStringList</code> that will return a type safe list.
+ * <p>
+ * Calling code could access sturmeh's baby eating state by using <code>getBoolean("sturmeh.eats.babies", false)</code>. For lists, there are methods such as <code>getStringList</code> that will return a type safe list.
  *
- * <p>This class is currently incomplete. It is not yet possible to get a node.
+ * <p>
+ * This class is currently incomplete. It is not yet possible to get a node.
  * </p>
  *
  * @deprecated See {@link YamlConfiguration}
@@ -163,7 +166,8 @@ public class Configuration extends ConfigurationNode {
             }
             yaml.dump(root, writer);
             return true;
-        } catch (IOException e) {} finally {
+        } catch (IOException e) {
+        } finally {
             try {
                 if (stream != null) {
                     stream.close();
@@ -190,6 +194,7 @@ public class Configuration extends ConfigurationNode {
     /**
      * This method returns an empty ConfigurationNode for using as a
      * default in methods that select a node from a node list.
+     *
      * @return The empty node.
      */
     public static ConfigurationNode getEmptyNode() {

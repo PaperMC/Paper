@@ -23,12 +23,14 @@ public interface Block {
     /**
      * @deprecated use {@link #getRelative(BlockFace face)}
      */
-    @Deprecated Block getFace(BlockFace face);
+    @Deprecated
+    Block getFace(BlockFace face);
 
     /**
      * @deprecated use {@link #getRelative(BlockFace face, int distance)}
      */
-    @Deprecated Block getFace(BlockFace face, int distance);
+    @Deprecated
+    Block getFace(BlockFace face, int distance);
 
     /**
      * Gets the block at the given offsets
@@ -56,8 +58,9 @@ public interface Block {
      * <br />
      * For example, the following method places water at 100,102,100; two blocks
      * above 100,100,100.
+     *
      * <pre>
-     * Block block = world.getBlockAt(100,100,100);
+     * Block block = world.getBlockAt(100, 100, 100);
      * Block shower = block.getFace(BlockFace.UP, 2);
      * shower.setType(Material.WATER);
      * </pre>
@@ -164,12 +167,14 @@ public interface Block {
      * Gets the face relation of this block compared to the given block<br />
      * <br />
      * For example:
+     *
      * <pre>
      * Block current = world.getBlockAt(100, 100, 100);
      * Block target = world.getBlockAt(100, 101, 100);
      *
      * current.getFace(target) == BlockFace.Up;
      * </pre>
+     *
      * <br />
      * If the given block is not connected to this block, null may be returned
      *

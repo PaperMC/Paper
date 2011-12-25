@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 /**
  * Fired when a player changes their currently held item
  */
+@SuppressWarnings("serial")
 public class PlayerItemHeldEvent extends PlayerEvent {
     private int previous;
     private int current;

@@ -1,12 +1,12 @@
 package org.bukkit.event.entity;
 
-
 import org.bukkit.entity.Entity;
 import org.bukkit.Location;
 
 /**
  * Stores data for entities standing inside a portal block
  */
+@SuppressWarnings("serial")
 public class EntityPortalEnterEvent extends EntityEvent {
 
     private Location location;

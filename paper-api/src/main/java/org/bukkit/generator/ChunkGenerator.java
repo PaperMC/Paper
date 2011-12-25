@@ -17,10 +17,11 @@ public abstract class ChunkGenerator {
      * Shapes the chunk for the given coordinates.<br />
      * <br />
      * This method should return a byte[32768] in the following format:
+     *
      * <pre>
-     * for (int x = 0; x < 16; x++) {
-     *     for (int z = 0; z < 16; z++) {
-     *         for (int y = 0; y < 128; y++) {
+     * for (int x = 0; x &lt; 16; x++) {
+     *     for (int z = 0; z &lt; 16; z++) {
+     *         for (int y = 0; y &lt; 128; y++) {
      *             // result[(x * 16 + z) * 128 + y] = ??;
      *         }
      *     }
@@ -50,16 +51,13 @@ public abstract class ChunkGenerator {
         Block highest = world.getBlockAt(x, world.getHighestBlockYAt(x, z), z);
 
         switch (world.getEnvironment()) {
-            case NETHER:
-                return true;
-            case THE_END:
-                return highest.getType() != Material.AIR
-                        && highest.getType() != Material.WATER
-                        && highest.getType() != Material.LAVA;
-            case NORMAL:
-            default:
-                return highest.getType() == Material.SAND
-                        || highest.getType() == Material.GRAVEL;
+        case NETHER:
+            return true;
+        case THE_END:
+            return highest.getType() != Material.AIR && highest.getType() != Material.WATER && highest.getType() != Material.LAVA;
+        case NORMAL:
+        default:
+            return highest.getType() == Material.SAND || highest.getType() == Material.GRAVEL;
         }
     }
 

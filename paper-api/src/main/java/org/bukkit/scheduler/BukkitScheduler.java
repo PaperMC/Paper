@@ -77,7 +77,7 @@ public interface BukkitScheduler {
      * Calls a method on the main thread and returns a Future object
      * This task will be executed by the main server thread
      *
-     * Note:  The Future.get() methods must NOT be called from the main thread
+     * Note: The Future.get() methods must NOT be called from the main thread
      * Note2: There is at least an average of 10ms latency until the isDone() method returns true
      *
      * @param <T> The callable's return type
@@ -142,7 +142,7 @@ public interface BukkitScheduler {
     public List<BukkitWorker> getActiveWorkers();
 
     /**
-     * Returns a list of all pending tasks.  The ordering of the tasks is not related to their order of execution.
+     * Returns a list of all pending tasks. The ordering of the tasks is not related to their order of execution.
      *
      * @return Active workers
      */

@@ -16,6 +16,7 @@ public class ShapelessRecipe implements Recipe {
     /**
      * Create a shapeless recipe to craft the specified ItemStack. The constructor merely determines the
      * result and type; to set the actual recipe, you'll need to call the appropriate methods.
+     *
      * @param result The item you want the recipe to create.
      * @see ShapelessRecipe#addIngredient(Material)
      * @see ShapelessRecipe#addIngredient(MaterialData)
@@ -26,6 +27,7 @@ public class ShapelessRecipe implements Recipe {
 
     /**
      * Adds the specified ingredient.
+     *
      * @param ingredient The ingredient to add.
      * @return The changed recipe, so you can chain calls.
      */
@@ -35,6 +37,7 @@ public class ShapelessRecipe implements Recipe {
 
     /**
      * Adds the specified ingredient.
+     *
      * @param ingredient The ingredient to add.
      * @return The changed recipe, so you can chain calls.
      */
@@ -44,6 +47,7 @@ public class ShapelessRecipe implements Recipe {
 
     /**
      * Adds the specified ingredient.
+     *
      * @param ingredient The ingredient to add.
      * @param rawdata The data value.
      * @return The changed recipe, so you can chain calls.
@@ -54,6 +58,7 @@ public class ShapelessRecipe implements Recipe {
 
     /**
      * Adds multiples of the specified ingredient.
+     *
      * @param count How many to add (can't be more than 9!)
      * @param ingredient The ingredient to add.
      * @return The changed recipe, so you can chain calls.
@@ -70,6 +75,7 @@ public class ShapelessRecipe implements Recipe {
 
     /**
      * Adds multiples of the specified ingredient.
+     *
      * @param count How many to add (can't be more than 9!)
      * @param ingredient The ingredient to add.
      * @return The changed recipe, so you can chain calls.
@@ -80,6 +86,7 @@ public class ShapelessRecipe implements Recipe {
 
     /**
      * Adds multiples of the specified ingredient.
+     *
      * @param count How many to add (can't be more than 9!)
      * @param ingredient The ingredient to add.
      * @param rawdata The data value.
@@ -97,6 +104,7 @@ public class ShapelessRecipe implements Recipe {
     /**
      * Removes an ingredient from the list. If the ingredient occurs multiple times,
      * only one instance of it is removed.
+     *
      * @param ingredient The ingredient to remove
      * @return The changed recipe.
      */
@@ -107,6 +115,7 @@ public class ShapelessRecipe implements Recipe {
 
     /**
      * Get the result of this recipe.
+     *
      * @return The result stack.
      */
     public ItemStack getResult() {
@@ -115,6 +124,7 @@ public class ShapelessRecipe implements Recipe {
 
     /**
      * Get the list of ingredients used for this recipe.
+     *
      * @return The input list
      */
     public ArrayList<MaterialData> getIngredientList() {

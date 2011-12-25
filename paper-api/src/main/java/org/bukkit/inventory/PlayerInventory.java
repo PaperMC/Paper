@@ -43,7 +43,7 @@ public interface PlayerInventory extends Inventory {
     /**
      * Put the given ItemStacks into the armor slots
      *
-     *  @param items The ItemStacks to use as armour
+     * @param items The ItemStacks to use as armour
      */
     public void setArmorContents(ItemStack[] items);
 

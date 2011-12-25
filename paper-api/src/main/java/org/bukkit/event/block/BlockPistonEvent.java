@@ -4,9 +4,9 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.event.Cancellable;
-import org.bukkit.material.PistonBaseMaterial;
 
-public abstract class BlockPistonEvent extends BlockEvent implements Cancellable                                                                                                                                                              {
+@SuppressWarnings("serial")
+public abstract class BlockPistonEvent extends BlockEvent implements Cancellable {
     private boolean cancelled;
     private BlockFace direction;
 

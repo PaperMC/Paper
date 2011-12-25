@@ -6,6 +6,7 @@ import org.bukkit.entity.Vehicle;
 /**
  * Raised when a vehicle collides with a block.
  */
+@SuppressWarnings("serial")
 public class VehicleBlockCollisionEvent extends VehicleCollisionEvent {
     private Block block;
 

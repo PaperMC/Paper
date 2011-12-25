@@ -7,6 +7,7 @@ import org.bukkit.event.Cancellable;
 /**
  * Thrown when a player drops an item from their inventory
  */
+@SuppressWarnings("serial")
 public class PlayerDropItemEvent extends PlayerEvent implements Cancellable {
     private final Item drop;
     private boolean cancel = false;

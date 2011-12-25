@@ -8,14 +8,14 @@ import org.bukkit.configuration.*;
 public class FileConfigurationOptions extends MemoryConfigurationOptions {
     private String header = null;
     private boolean copyHeader = true;
-    
+
     protected FileConfigurationOptions(MemoryConfiguration configuration) {
         super(configuration);
     }
 
     @Override
     public FileConfiguration configuration() {
-        return (FileConfiguration)super.configuration();
+        return (FileConfiguration) super.configuration();
     }
 
     @Override
@@ -29,7 +29,7 @@ public class FileConfigurationOptions extends MemoryConfigurationOptions {
         super.pathSeparator(value);
         return this;
     }
-    
+
     /**
      * Gets the header that will be applied to the top of the saved output.
      * <p>
@@ -40,13 +40,13 @@ public class FileConfigurationOptions extends MemoryConfigurationOptions {
      * <p>
      * Null is a valid value which will indicate that no header is to be applied.
      * The default value is null.
-     * 
+     *
      * @return Header
      */
     public String header() {
         return header;
     }
-    
+
     /**
      * Sets the header that will be applied to the top of the saved output.
      * <p>
@@ -56,8 +56,8 @@ public class FileConfigurationOptions extends MemoryConfigurationOptions {
      * but you may include one if you wish for extra spacing.
      * <p>
      * Null is a valid value which will indicate that no header is to be applied.
-     * The default value is null.
      * 
+     *
      * @param value New header
      * @return This object, for chaining
      */
@@ -65,7 +65,7 @@ public class FileConfigurationOptions extends MemoryConfigurationOptions {
         this.header = value;
         return this;
     }
-    
+
     /**
      * Gets whether or not the header should be copied from a default source.
      * <p>
@@ -78,13 +78,13 @@ public class FileConfigurationOptions extends MemoryConfigurationOptions {
      * specified in this configuration will be used.
      * <p>
      * Defaults to true.
-     * 
+     *
      * @return Whether or not to copy the header
      */
     public boolean copyHeader() {
         return copyHeader;
     }
-    
+
     /**
      * Sets whether or not the header should be copied from a default source.
      * <p>
@@ -97,13 +97,13 @@ public class FileConfigurationOptions extends MemoryConfigurationOptions {
      * specified in this configuration will be used.
      * <p>
      * Defaults to true.
-     * 
+     *
      * @param value Whether or not to copy the header
      * @return This object, for chaining
      */
     public FileConfigurationOptions copyHeader(boolean value) {
         copyHeader = value;
-        
+
         return this;
     }
 }

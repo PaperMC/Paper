@@ -6,6 +6,7 @@ import org.bukkit.event.Cancellable;
 /**
  * Triggered when a painting is removed
  */
+@SuppressWarnings("serial")
 public class PaintingBreakEvent extends PaintingEvent implements Cancellable {
 
     private boolean cancelled;

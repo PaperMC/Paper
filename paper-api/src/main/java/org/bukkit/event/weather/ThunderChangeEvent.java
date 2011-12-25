@@ -6,6 +6,7 @@ import org.bukkit.event.Cancellable;
 /**
  * Stores data for thunder state changing in a world
  */
+@SuppressWarnings("serial")
 public class ThunderChangeEvent extends WeatherEvent implements Cancellable {
 
     private boolean canceled;

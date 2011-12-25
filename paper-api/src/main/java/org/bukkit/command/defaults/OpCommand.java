@@ -29,7 +29,7 @@ public class OpCommand extends VanillaCommand {
         player.setOp(true);
 
         if (player instanceof Player) {
-            ((Player)player).sendMessage(ChatColor.YELLOW + "You are now op!");
+            ((Player) player).sendMessage(ChatColor.YELLOW + "You are now op!");
         }
 
         return true;

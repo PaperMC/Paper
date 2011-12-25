@@ -6,6 +6,7 @@ import org.bukkit.inventory.Inventory;
 /**
  * Represents a player related inventory event
  */
+@SuppressWarnings("serial")
 public class PlayerInventoryEvent extends PlayerEvent {
     protected Inventory inventory;
 

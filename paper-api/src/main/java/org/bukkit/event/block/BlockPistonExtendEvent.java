@@ -7,6 +7,7 @@ import java.util.List;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 
+@SuppressWarnings("serial")
 public class BlockPistonExtendEvent extends BlockPistonEvent {
     private int length;
     private List<Block> blocks;

@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 /**
  * Stores details for players attempting to log in
  */
+@SuppressWarnings("serial")
 public class PlayerLoginEvent extends PlayerEvent {
     private Result result;
     private String message;

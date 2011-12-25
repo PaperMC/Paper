@@ -3,6 +3,7 @@ package org.bukkit.event.player;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
+@SuppressWarnings("serial")
 public class PlayerRespawnEvent extends PlayerEvent {
     private Location respawnLocation;
     private boolean isBedSpawn;

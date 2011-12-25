@@ -79,13 +79,13 @@ public interface ConfigurationSection {
      * @return Path of this section relative to its root
      */
     public String getCurrentPath();
-    
+
     /**
      * Gets the name of this individual {@link ConfigurationSection}, in the path.
      * <p>
      * This will always be the final part of {@link #getCurrentPath()}, unless the
      * section is orphaned.
-     * 
+     *
      * @return Name of this section
      */
     public String getName();
@@ -146,7 +146,7 @@ public interface ConfigurationSection {
      * <p>
      * Some implementations may have limitations on what you may store. See their
      * individual javadocs for details. No implementations should allow you to store
-     * {@link Configuration}s or {@link ConfigurationSection}s, please use 
+     * {@link Configuration}s or {@link ConfigurationSection}s, please use
      * {@link #createSection(java.lang.String)} for that.
      *
      * @param path Path of the object to set.
@@ -164,7 +164,7 @@ public interface ConfigurationSection {
      * @return Newly created section
      */
     public ConfigurationSection createSection(String path);
-    
+
     /**
      * Creates a {@link ConfigurationSection} at the specified path, with specified values.
      * <p>
@@ -213,7 +213,6 @@ public interface ConfigurationSection {
      */
     public boolean isString(String path);
 
-
     /**
      * Gets the requested int by path.
      * <p>
@@ -249,7 +248,6 @@ public interface ConfigurationSection {
      * @return Whether or not the specified path is an int.
      */
     public boolean isInt(String path);
-
 
     /**
      * Gets the requested boolean by path.
@@ -287,7 +285,6 @@ public interface ConfigurationSection {
      */
     public boolean isBoolean(String path);
 
-
     /**
      * Gets the requested double by path.
      * <p>
@@ -323,7 +320,6 @@ public interface ConfigurationSection {
      * @return Whether or not the specified path is a double.
      */
     public boolean isDouble(String path);
-
 
     /**
      * Gets the requested long by path.
@@ -361,8 +357,6 @@ public interface ConfigurationSection {
      */
     public boolean isLong(String path);
 
-
-
     // Java
     /**
      * Gets the requested List by path.
@@ -374,6 +368,7 @@ public interface ConfigurationSection {
      * @param path Path of the List to get.
      * @return Requested List.
      */
+    @SuppressWarnings("rawtypes")
     public List getList(String path);
 
     /**
@@ -385,7 +380,8 @@ public interface ConfigurationSection {
      * @param path Path of the List to get.
      * @return Requested List.
      */
-    public List getList(String path, List def);
+    @SuppressWarnings("rawtypes")
+    public List getList(String path, List<?> def);
 
     /**
      * Checks if the specified path is a List.
@@ -399,7 +395,6 @@ public interface ConfigurationSection {
      * @return Whether or not the specified path is a List.
      */
     public boolean isList(String path);
-
 
     /**
      * Gets the requested List of String by path.
@@ -551,7 +546,6 @@ public interface ConfigurationSection {
      */
     public List<Map<String, Object>> getMapList(String path);
 
-
     // Bukkit
     /**
      * Gets the requested Vector by path.
@@ -589,7 +583,6 @@ public interface ConfigurationSection {
      */
     public boolean isVector(String path);
 
-
     /**
      * Gets the requested OfflinePlayer by path.
      * <p>
@@ -625,7 +618,6 @@ public interface ConfigurationSection {
      * @return Whether or not the specified path is an OfflinePlayer.
      */
     public boolean isOfflinePlayer(String path);
-
 
     /**
      * Gets the requested ItemStack by path.
@@ -663,7 +655,6 @@ public interface ConfigurationSection {
      */
     public boolean isItemStack(String path);
 
-
     /**
      * Gets the requested ConfigurationSection by path.
      * <p>
@@ -688,18 +679,18 @@ public interface ConfigurationSection {
      * @return Whether or not the specified path is a ConfigurationSection.
      */
     public boolean isConfigurationSection(String path);
-    
+
     /**
      * Gets the equivalent {@link ConfigurationSection} from the default {@link Configuration} defined in {@link #getRoot()}.
      * <p>
      * If the root contains no defaults, or the defaults doesn't contain a value
      * for this path, or the value at this path is not a {@link ConfigurationSection} then
      * this will return null.
-     * 
+     *
      * @return Equivalent section in root configuration
      */
     public ConfigurationSection getDefaultSection();
-    
+
     /**
      * Sets the default value in the root at the given path as provided.
      * <p>

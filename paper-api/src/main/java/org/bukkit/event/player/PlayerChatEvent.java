@@ -10,6 +10,7 @@ import org.bukkit.event.Cancellable;
 /**
  * Holds information for player chat and commands
  */
+@SuppressWarnings("serial")
 public class PlayerChatEvent extends PlayerEvent implements Cancellable {
     private boolean cancel = false;
     private String message;

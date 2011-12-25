@@ -6,6 +6,7 @@ import org.bukkit.event.Cancellable;
 /**
  * Represents a player animation event
  */
+@SuppressWarnings("serial")
 public class PlayerAnimationEvent extends PlayerEvent implements Cancellable {
 
     private PlayerAnimationType animationType;

@@ -7,6 +7,7 @@ import org.bukkit.event.Event;
 /**
  * Stores data for damage events
  */
+@SuppressWarnings("serial")
 public class EntityDamageEvent extends EntityEvent implements Cancellable {
 
     private int damage;

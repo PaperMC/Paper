@@ -1,4 +1,4 @@
 package org.bukkit.command;
 
-public interface RemoteConsoleCommandSender extends CommandSender{
+public interface RemoteConsoleCommandSender extends CommandSender {
 }

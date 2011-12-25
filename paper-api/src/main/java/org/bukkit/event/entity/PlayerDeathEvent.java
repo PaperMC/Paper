@@ -8,6 +8,7 @@ import org.bukkit.inventory.ItemStack;
 /**
  * Thrown whenever a {@link Player} dies
  */
+@SuppressWarnings("serial")
 public class PlayerDeathEvent extends EntityDeathEvent {
     private int newExp = 0;
     private String deathMessage = "";
@@ -53,7 +54,7 @@ public class PlayerDeathEvent extends EntityDeathEvent {
      * <p>
      * This does not indicate how much EXP should be dropped, please see
      * {@link #setDroppedExp(int)} for that.
-     * 
+     *
      * @get exp New EXP of the respawned player
      */
     public void setNewExp(int exp) {

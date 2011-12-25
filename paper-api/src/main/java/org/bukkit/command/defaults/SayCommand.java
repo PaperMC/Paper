@@ -23,11 +23,11 @@ public class SayCommand extends VanillaCommand {
 
         StringBuilder message = new StringBuilder();
         if (args.length > 0) {
-	        message.append(args[0]);
-	        for (int i = 1; i < args.length; i++) {
-	            message.append(" ");
-	            message.append(args[i]);
-	        }
+            message.append(args[0]);
+            for (int i = 1; i < args.length; i++) {
+                message.append(" ");
+                message.append(args[i]);
+            }
         }
 
         if (!(sender instanceof ConsoleCommandSender)) {

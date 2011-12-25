@@ -14,7 +14,7 @@ import java.lang.annotation.Target;
 public @interface DelegateDeserialization {
     /**
      * Which class should be used as a delegate for this classes deserialization
-     * 
+     *
      * @return Delegate class
      */
     public Class<? extends ConfigurationSerializable> value();

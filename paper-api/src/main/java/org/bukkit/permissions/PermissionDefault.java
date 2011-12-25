@@ -27,16 +27,16 @@ public enum PermissionDefault {
      */
     public boolean getValue(boolean op) {
         switch (this) {
-            case TRUE:
-                return true;
-            case FALSE:
-                return false;
-            case OP:
-                return op;
-            case NOT_OP:
-                return !op;
-            default:
-                return false;
+        case TRUE:
+            return true;
+        case FALSE:
+            return false;
+        case OP:
+            return op;
+        case NOT_OP:
+            return !op;
+        default:
+            return false;
         }
     }
 
@@ -54,7 +54,7 @@ public enum PermissionDefault {
     public String toString() {
         return names[0];
     }
-    
+
     static {
         for (PermissionDefault value : values()) {
             for (String name : value.names) {

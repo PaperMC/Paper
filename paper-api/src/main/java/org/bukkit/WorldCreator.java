@@ -226,7 +226,7 @@ public class WorldCreator {
         if (output == null) {
             output = Bukkit.getConsoleSender();
         }
-        
+
         if (name != null) {
             String[] split = name.split(":", 2);
             String id = (split.length > 1) ? split[1] : null;

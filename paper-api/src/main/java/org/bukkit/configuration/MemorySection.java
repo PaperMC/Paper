@@ -40,7 +40,7 @@ public class MemorySection implements ConfigurationSection {
         this.path = "";
         this.fullPath = "";
         this.parent = null;
-        this.root = (Configuration)this;
+        this.root = (Configuration) this;
     }
 
     /**
@@ -65,16 +65,16 @@ public class MemorySection implements ConfigurationSection {
         if (root == null) {
             throw new IllegalArgumentException("Path cannot be orphaned");
         }
-        
+
         this.fullPath = createPath(parent, path);
     }
 
     public Set<String> getKeys(boolean deep) {
         Set<String> result = new LinkedHashSet<String>();
-        
+
         if (getRoot().options().copyDefaults()) {
             ConfigurationSection defaults = getDefaultSection();
-            
+
             if (defaults != null) {
                 result.addAll(defaults.getKeys(deep));
             }
@@ -87,10 +87,10 @@ public class MemorySection implements ConfigurationSection {
 
     public Map<String, Object> getValues(boolean deep) {
         Map<String, Object> result = new LinkedHashMap<String, Object>();
-        
+
         if (getRoot().options().copyDefaults()) {
             ConfigurationSection defaults = getDefaultSection();
-            
+
             if (defaults != null) {
                 result.putAll(defaults.getValues(deep));
             }
@@ -124,7 +124,7 @@ public class MemorySection implements ConfigurationSection {
     public String getCurrentPath() {
         return fullPath;
     }
-    
+
     public String getName() {
         return path;
     }
@@ -136,32 +136,32 @@ public class MemorySection implements ConfigurationSection {
     public ConfigurationSection getParent() {
         return parent;
     }
-    
+
     public void addDefault(String path, Object value) {
         if (path == null) {
             throw new IllegalArgumentException("Path cannot be null");
         }
-        
+
         if (root == null) {
             throw new IllegalStateException("Cannot set default on orphaned section");
         } else {
             root.addDefault(createPath(this, path), value);
         }
     }
-    
+
     public ConfigurationSection getDefaultSection() {
         if (getRoot() == null) {
             return null;
         }
-        
+
         Configuration defaults = getRoot().getDefaults();
-        
+
         if (defaults != null) {
             if (defaults.isConfigurationSection(getCurrentPath())) {
                 return defaults.getConfigurationSection(getCurrentPath());
             }
         }
-        
+
         return null;
     }
 
@@ -169,9 +169,7 @@ public class MemorySection implements ConfigurationSection {
         String[] split = path.split(Pattern.quote(Character.toString(getRoot().options().pathSeparator())));
         ConfigurationSection section = this;
 
-        if (path == null) {
-            throw new IllegalArgumentException("Path cannot be null");
-        } else if (path.length() == 0) {
+        if (path.length() == 0) {
             throw new IllegalArgumentException("Cannot set to an empty path");
         }
 
@@ -219,7 +217,7 @@ public class MemorySection implements ConfigurationSection {
 
         for (int i = 0; i < split.length - 1; i++) {
             section = section.getConfigurationSection(split[i]);
-            
+
             if (section == null) {
                 return def;
             }
@@ -230,11 +228,8 @@ public class MemorySection implements ConfigurationSection {
         if (section == this) {
             result = map.get(key);
             return (result == null) ? def : result;
-        } else if (section != null) {
-            return section.get(key, def);
-        } else {
-            return def;
         }
+        return section.get(key, def);
     }
 
     public ConfigurationSection createSection(String path) {
@@ -267,13 +262,14 @@ public class MemorySection implements ConfigurationSection {
             return section.createSection(key);
         }
     }
-    
+
+    @SuppressWarnings("unchecked")
     public ConfigurationSection createSection(String path, Map<String, Object> map) {
         ConfigurationSection section = createSection(path);
 
-        for(Map.Entry<String, Object> entry : map.entrySet()) {
-            if(entry.getValue() instanceof Map) {
-                section.createSection(entry.getKey(), (Map<String, Object>)entry.getValue());
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            if (entry.getValue() instanceof Map) {
+                section.createSection(entry.getKey(), (Map<String, Object>) entry.getValue());
             } else {
                 section.set(entry.getKey(), entry.getValue());
             }
@@ -343,7 +339,7 @@ public class MemorySection implements ConfigurationSection {
         }
 
         Object def = getDefault(path);
-        return getBoolean(path, (def instanceof Boolean) ? (Boolean)def : false);
+        return getBoolean(path, (def instanceof Boolean) ? (Boolean) def : false);
     }
 
     public boolean getBoolean(String path, boolean def) {
@@ -352,7 +348,7 @@ public class MemorySection implements ConfigurationSection {
         }
 
         Object val = get(path, def);
-        return (val instanceof Boolean) ? (Boolean)val : def;
+        return (val instanceof Boolean) ? (Boolean) val : def;
     }
 
     public boolean isBoolean(String path) {
@@ -418,23 +414,25 @@ public class MemorySection implements ConfigurationSection {
         return val instanceof Long;
     }
 
-// Java
-    public List getList(String path) {
+    // Java
+    @SuppressWarnings("unchecked")
+    public List<Object> getList(String path) {
         if (path == null) {
             throw new IllegalArgumentException("Path cannot be null");
         }
 
         Object def = getDefault(path);
-        return getList(path, (def instanceof List) ? (List)def : null);
+        return getList(path, (def instanceof List) ? (List<Object>) def : null);
     }
 
-    public List getList(String path, List def) {
+    @SuppressWarnings("unchecked")
+    public List<Object> getList(String path, List<?> def) {
         if (path == null) {
             throw new IllegalArgumentException("Path cannot be null");
         }
 
         Object val = get(path, def);
-        return (val instanceof List) ? (List)val : def;
+        return (List<Object>) ((val instanceof List) ? val : def);
     }
 
     public boolean isList(String path) {
@@ -452,19 +450,19 @@ public class MemorySection implements ConfigurationSection {
         }
 
         List<Object> list = getList(path);
-        
+
         if (list == null) {
             return null;
         }
-        
-        List<String> result = new ArrayList();
-        
+
+        List<String> result = new ArrayList<String>();
+
         for (Object object : list) {
             if ((object instanceof String) || (isPrimitiveWrapper(object))) {
                 result.add(String.valueOf(object));
             }
         }
-        
+
         return result;
     }
 
@@ -474,37 +472,38 @@ public class MemorySection implements ConfigurationSection {
         }
 
         List<Object> list = getList(path);
-        
+
         if (list == null) {
             return null;
         }
-        
-        List<Integer> result = new ArrayList();
-        
+
+        List<Integer> result = new ArrayList<Integer>();
+
         for (Object object : list) {
             if (object instanceof Integer) {
-                result.add((Integer)object);
+                result.add((Integer) object);
             } else if (object instanceof String) {
                 try {
-                    result.add(Integer.valueOf((String)object));
-                } catch (Exception ex) {}
+                    result.add(Integer.valueOf((String) object));
+                } catch (Exception ex) {
+                }
             } else if (object instanceof Byte) {
-                result.add((Integer)(int)(byte)(Byte)object);
+                result.add((Integer) (int) (byte) (Byte) object);
             } else if (object instanceof Character) {
-                result.add((Integer)(int)(char)(Character)object);
+                result.add((Integer) (int) (char) (Character) object);
             } else if (object instanceof Short) {
-                result.add((Integer)(int)(short)(Short)object);
+                result.add((Integer) (int) (short) (Short) object);
             } else if (object instanceof Integer) {
-                result.add((Integer)(int)(int)(Integer)object);
+                result.add((Integer) (int) (int) (Integer) object);
             } else if (object instanceof Long) {
-                result.add((Integer)(int)(long)(Long)object);
+                result.add((Integer) (int) (long) (Long) object);
             } else if (object instanceof Float) {
-                result.add((Integer)(int)(float)(Float)object);
+                result.add((Integer) (int) (float) (Float) object);
             } else if (object instanceof Double) {
-                result.add((Integer)(int)(double)(Double)object);
+                result.add((Integer) (int) (double) (Double) object);
             }
         }
-        
+
         return result;
     }
 
@@ -514,16 +513,16 @@ public class MemorySection implements ConfigurationSection {
         }
 
         List<Object> list = getList(path);
-        
+
         if (list == null) {
             return null;
         }
-        
-        List<Boolean> result = new ArrayList();
-        
+
+        List<Boolean> result = new ArrayList<Boolean>();
+
         for (Object object : list) {
             if (object instanceof Boolean) {
-                result.add((Boolean)object);
+                result.add((Boolean) object);
             } else if (object instanceof String) {
                 if (Boolean.TRUE.toString().equals(object)) {
                     result.add(true);
@@ -532,7 +531,7 @@ public class MemorySection implements ConfigurationSection {
                 }
             }
         }
-        
+
         return result;
     }
 
@@ -542,37 +541,38 @@ public class MemorySection implements ConfigurationSection {
         }
 
         List<Object> list = getList(path);
-        
+
         if (list == null) {
             return null;
         }
-        
-        List<Double> result = new ArrayList();
-        
+
+        List<Double> result = new ArrayList<Double>();
+
         for (Object object : list) {
             if (object instanceof Double) {
-                result.add((Double)object);
+                result.add((Double) object);
             } else if (object instanceof String) {
                 try {
-                    result.add(Double.valueOf((String)object));
-                } catch (Exception ex) {}
+                    result.add(Double.valueOf((String) object));
+                } catch (Exception ex) {
+                }
             } else if (object instanceof Byte) {
-                result.add((Double)(double)(byte)(Byte)object);
+                result.add((Double) (double) (byte) (Byte) object);
             } else if (object instanceof Character) {
-                result.add((Double)(double)(char)(Character)object);
+                result.add((Double) (double) (char) (Character) object);
             } else if (object instanceof Short) {
-                result.add((Double)(double)(short)(Short)object);
+                result.add((Double) (double) (short) (Short) object);
             } else if (object instanceof Integer) {
-                result.add((Double)(double)(int)(Integer)object);
+                result.add((Double) (double) (int) (Integer) object);
             } else if (object instanceof Long) {
-                result.add((Double)(double)(long)(Long)object);
+                result.add((Double) (double) (long) (Long) object);
             } else if (object instanceof Float) {
-                result.add((Double)(double)(float)(Float)object);
+                result.add((Double) (double) (float) (Float) object);
             } else if (object instanceof Double) {
-                result.add((Double)(double)(double)(Double)object);
+                result.add((Double) (double) (double) (Double) object);
             }
         }
-        
+
         return result;
     }
 
@@ -582,37 +582,38 @@ public class MemorySection implements ConfigurationSection {
         }
 
         List<Object> list = getList(path);
-        
+
         if (list == null) {
             return null;
         }
-        
-        List<Float> result = new ArrayList();
-        
+
+        List<Float> result = new ArrayList<Float>();
+
         for (Object object : list) {
             if (object instanceof Float) {
-                result.add((Float)object);
+                result.add((Float) object);
             } else if (object instanceof String) {
                 try {
-                    result.add(Float.valueOf((String)object));
-                } catch (Exception ex) {}
+                    result.add(Float.valueOf((String) object));
+                } catch (Exception ex) {
+                }
             } else if (object instanceof Byte) {
-                result.add((Float)(float)(byte)(Byte)object);
+                result.add((Float) (float) (byte) (Byte) object);
             } else if (object instanceof Character) {
-                result.add((Float)(float)(char)(Character)object);
+                result.add((Float) (float) (char) (Character) object);
             } else if (object instanceof Short) {
-                result.add((Float)(float)(short)(Short)object);
+                result.add((Float) (float) (short) (Short) object);
             } else if (object instanceof Integer) {
-                result.add((Float)(float)(int)(Integer)object);
+                result.add((Float) (float) (int) (Integer) object);
             } else if (object instanceof Long) {
-                result.add((Float)(float)(long)(Long)object);
+                result.add((Float) (float) (long) (Long) object);
             } else if (object instanceof Float) {
-                result.add((Float)(float)(float)(Float)object);
+                result.add((Float) (float) (float) (Float) object);
             } else if (object instanceof Double) {
-                result.add((Float)(float)(double)(Double)object);
+                result.add((Float) (float) (double) (Double) object);
             }
         }
-        
+
         return result;
     }
 
@@ -622,37 +623,38 @@ public class MemorySection implements ConfigurationSection {
         }
 
         List<Object> list = getList(path);
-        
+
         if (list == null) {
             return null;
         }
-        
-        List<Long> result = new ArrayList();
-        
+
+        List<Long> result = new ArrayList<Long>();
+
         for (Object object : list) {
             if (object instanceof Long) {
-                result.add((Long)object);
+                result.add((Long) object);
             } else if (object instanceof String) {
                 try {
-                    result.add(Long.valueOf((String)object));
-                } catch (Exception ex) {}
+                    result.add(Long.valueOf((String) object));
+                } catch (Exception ex) {
+                }
             } else if (object instanceof Byte) {
-                result.add((Long)(long)(byte)(Byte)object);
+                result.add((Long) (long) (byte) (Byte) object);
             } else if (object instanceof Character) {
-                result.add((Long)(long)(char)(Character)object);
+                result.add((Long) (long) (char) (Character) object);
             } else if (object instanceof Short) {
-                result.add((Long)(long)(short)(Short)object);
+                result.add((Long) (long) (short) (Short) object);
             } else if (object instanceof Integer) {
-                result.add((Long)(long)(int)(Integer)object);
+                result.add((Long) (long) (int) (Integer) object);
             } else if (object instanceof Long) {
-                result.add((Long)(long)(long)(Long)object);
+                result.add((Long) (long) (long) (Long) object);
             } else if (object instanceof Float) {
-                result.add((Long)(long)(float)(Float)object);
+                result.add((Long) (long) (float) (Float) object);
             } else if (object instanceof Double) {
-                result.add((Long)(long)(double)(Double)object);
+                result.add((Long) (long) (double) (Double) object);
             }
         }
-        
+
         return result;
     }
 
@@ -662,37 +664,38 @@ public class MemorySection implements ConfigurationSection {
         }
 
         List<Object> list = getList(path);
-        
+
         if (list == null) {
             return null;
         }
-        
-        List<Byte> result = new ArrayList();
-        
+
+        List<Byte> result = new ArrayList<Byte>();
+
         for (Object object : list) {
             if (object instanceof Byte) {
-                result.add((Byte)object);
+                result.add((Byte) object);
             } else if (object instanceof String) {
                 try {
-                    result.add(Byte.valueOf((String)object));
-                } catch (Exception ex) {}
+                    result.add(Byte.valueOf((String) object));
+                } catch (Exception ex) {
+                }
             } else if (object instanceof Byte) {
-                result.add((Byte)(byte)(byte)(Byte)object);
+                result.add((Byte) (byte) (byte) (Byte) object);
             } else if (object instanceof Character) {
-                result.add((Byte)(byte)(char)(Character)object);
+                result.add((Byte) (byte) (char) (Character) object);
             } else if (object instanceof Short) {
-                result.add((Byte)(byte)(short)(Short)object);
+                result.add((Byte) (byte) (short) (Short) object);
             } else if (object instanceof Integer) {
-                result.add((Byte)(byte)(int)(Integer)object);
+                result.add((Byte) (byte) (int) (Integer) object);
             } else if (object instanceof Long) {
-                result.add((Byte)(byte)(long)(Long)object);
+                result.add((Byte) (byte) (long) (Long) object);
             } else if (object instanceof Float) {
-                result.add((Byte)(byte)(float)(Float)object);
+                result.add((Byte) (byte) (float) (Float) object);
             } else if (object instanceof Double) {
-                result.add((Byte)(byte)(double)(Double)object);
+                result.add((Byte) (byte) (double) (Double) object);
             }
         }
-        
+
         return result;
     }
 
@@ -702,39 +705,39 @@ public class MemorySection implements ConfigurationSection {
         }
 
         List<Object> list = getList(path);
-        
+
         if (list == null) {
             return null;
         }
-        
-        List<Character> result = new ArrayList();
-        
+
+        List<Character> result = new ArrayList<Character>();
+
         for (Object object : list) {
             if (object instanceof Character) {
-                result.add((Character)object);
+                result.add((Character) object);
             } else if (object instanceof String) {
-                String str = (String)object;
-                
+                String str = (String) object;
+
                 if (str.length() == 1) {
                     result.add(str.charAt(0));
                 }
             } else if (object instanceof Byte) {
-                result.add((Character)(char)(byte)(Byte)object);
+                result.add((Character) (char) (byte) (Byte) object);
             } else if (object instanceof Character) {
-                result.add((Character)(char)(char)(Character)object);
+                result.add((Character) (char) (char) (Character) object);
             } else if (object instanceof Short) {
-                result.add((Character)(char)(short)(Short)object);
+                result.add((Character) (char) (short) (Short) object);
             } else if (object instanceof Integer) {
-                result.add((Character)(char)(int)(Integer)object);
+                result.add((Character) (char) (int) (Integer) object);
             } else if (object instanceof Long) {
-                result.add((Character)(char)(long)(Long)object);
+                result.add((Character) (char) (long) (Long) object);
             } else if (object instanceof Float) {
-                result.add((Character)(char)(float)(Float)object);
+                result.add((Character) (char) (float) (Float) object);
             } else if (object instanceof Double) {
-                result.add((Character)(char)(double)(Double)object);
+                result.add((Character) (char) (double) (Double) object);
             }
         }
-        
+
         return result;
     }
 
@@ -744,65 +747,67 @@ public class MemorySection implements ConfigurationSection {
         }
 
         List<Object> list = getList(path);
-        
+
         if (list == null) {
             return null;
         }
-        
-        List<Short> result = new ArrayList();
-        
+
+        List<Short> result = new ArrayList<Short>();
+
         for (Object object : list) {
             if (object instanceof Short) {
-                result.add((Short)object);
+                result.add((Short) object);
             } else if (object instanceof String) {
                 try {
-                    result.add(Short.valueOf((String)object));
-                } catch (Exception ex) {}
+                    result.add(Short.valueOf((String) object));
+                } catch (Exception ex) {
+                }
             } else if (object instanceof Byte) {
-                result.add((Short)(short)(byte)(Byte)object);
+                result.add((Short) (short) (byte) (Byte) object);
             } else if (object instanceof Character) {
-                result.add((Short)(short)(char)(Character)object);
+                result.add((Short) (short) (char) (Character) object);
             } else if (object instanceof Short) {
-                result.add((Short)(short)(short)(Short)object);
+                result.add((Short) (short) (short) (Short) object);
             } else if (object instanceof Integer) {
-                result.add((Short)(short)(int)(Integer)object);
+                result.add((Short) (short) (int) (Integer) object);
             } else if (object instanceof Long) {
-                result.add((Short)(short)(long)(Long)object);
+                result.add((Short) (short) (long) (Long) object);
             } else if (object instanceof Float) {
-                result.add((Short)(short)(float)(Float)object);
+                result.add((Short) (short) (float) (Float) object);
             } else if (object instanceof Double) {
-                result.add((Short)(short)(double)(Double)object);
+                result.add((Short) (short) (double) (Double) object);
             }
         }
-        
+
         return result;
     }
 
+    @SuppressWarnings("unchecked")
     public List<Map<String, Object>> getMapList(String path) {
         if (path == null) {
             throw new IllegalArgumentException("Path cannot be null");
         }
 
         List<Object> list = getList(path);
-        List<Map<String, Object>> result = new ArrayList();
-        
+        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
+
         for (Object object : list) {
             if (object instanceof Map) {
-                result.add((Map<String, Object>)object);
+                result.add((Map<String, Object>) object);
             }
         }
-        
+
         return result;
     }
 
-// Bukkit
+    // Bukkit
     public Vector getVector(String path) {
         if (path == null) {
             throw new IllegalArgumentException("Path cannot be null");
         }
 
         Object def = getDefault(path);
-        return getVector(path, (def instanceof Vector) ? (Vector)def : null);
+        return getVector(path, (def instanceof Vector) ? (Vector) def : null);
     }
 
     public Vector getVector(String path, Vector def) {
@@ -811,7 +816,7 @@ public class MemorySection implements ConfigurationSection {
         }
 
         Object val = get(path, def);
-        return (val instanceof Vector) ? (Vector)val : def;
+        return (val instanceof Vector) ? (Vector) val : def;
     }
 
     public boolean isVector(String path) {
@@ -829,7 +834,7 @@ public class MemorySection implements ConfigurationSection {
         }
 
         Object def = getDefault(path);
-        return getOfflinePlayer(path, (def instanceof OfflinePlayer) ? (OfflinePlayer)def : null);
+        return getOfflinePlayer(path, (def instanceof OfflinePlayer) ? (OfflinePlayer) def : null);
     }
 
     public OfflinePlayer getOfflinePlayer(String path, OfflinePlayer def) {
@@ -838,7 +843,7 @@ public class MemorySection implements ConfigurationSection {
         }
 
         Object val = get(path, def);
-        return (val instanceof OfflinePlayer) ? (OfflinePlayer)val : def;
+        return (val instanceof OfflinePlayer) ? (OfflinePlayer) val : def;
     }
 
     public boolean isOfflinePlayer(String path) {
@@ -856,7 +861,7 @@ public class MemorySection implements ConfigurationSection {
         }
 
         Object def = getDefault(path);
-        return getItemStack(path, (def instanceof ItemStack) ? (ItemStack)def : null);
+        return getItemStack(path, (def instanceof ItemStack) ? (ItemStack) def : null);
     }
 
     public ItemStack getItemStack(String path, ItemStack def) {
@@ -865,7 +870,7 @@ public class MemorySection implements ConfigurationSection {
         }
 
         Object val = get(path, def);
-        return (val instanceof ItemStack) ? (ItemStack)val : def;
+        return (val instanceof ItemStack) ? (ItemStack) val : def;
     }
 
     public boolean isItemStack(String path) {
@@ -881,11 +886,12 @@ public class MemorySection implements ConfigurationSection {
         if (path == null) {
             throw new IllegalArgumentException("Path cannot be null");
         }
-        
+
         Object val = get(path, null);
-        if (val != null)
-            return (val instanceof ConfigurationSection) ? (ConfigurationSection)val : null;
-        
+        if (val != null) {
+            return (val instanceof ConfigurationSection) ? (ConfigurationSection) val : null;
+        }
+
         val = get(path, getDefault(path));
         return (val instanceof ConfigurationSection) ? createSection(path) : null;
     }
@@ -903,7 +909,7 @@ public class MemorySection implements ConfigurationSection {
         if (input == null) {
             throw new IllegalArgumentException("Cannot store null");
         }
-        
+
         if (isPrimitiveWrapper(input) || isNaturallyStorable(input)) {
             return input;
         } else if (input instanceof ConfigurationSerializable) {
@@ -912,14 +918,14 @@ public class MemorySection implements ConfigurationSection {
 
         throw new IllegalArgumentException("Cannot store " + input + " into " + this + ", unsupported class");
     }
-    
+
     protected boolean isPrimitiveWrapper(Object input) {
         return input instanceof Integer || input instanceof Boolean ||
                 input instanceof Character || input instanceof Byte ||
                 input instanceof Short || input instanceof Double ||
                 input instanceof Long || input instanceof Float;
     }
-    
+
     protected boolean isNaturallyStorable(Object input) {
         return input instanceof List || input instanceof Iterable ||
                 input instanceof String || input instanceof File ||
@@ -937,13 +943,13 @@ public class MemorySection implements ConfigurationSection {
 
     protected void mapChildrenKeys(Set<String> output, ConfigurationSection section, boolean deep) {
         if (section instanceof MemorySection) {
-            MemorySection sec = (MemorySection)section;
+            MemorySection sec = (MemorySection) section;
 
             for (Map.Entry<String, Object> entry : sec.map.entrySet()) {
                 output.add(createPath(section, entry.getKey(), this));
 
                 if ((deep) && (entry.getValue() instanceof ConfigurationSection)) {
-                    ConfigurationSection subsection = (ConfigurationSection)entry.getValue();
+                    ConfigurationSection subsection = (ConfigurationSection) entry.getValue();
                     mapChildrenKeys(output, subsection, deep);
                 }
             }
@@ -958,14 +964,14 @@ public class MemorySection implements ConfigurationSection {
 
     protected void mapChildrenValues(Map<String, Object> output, ConfigurationSection section, boolean deep) {
         if (section instanceof MemorySection) {
-            MemorySection sec = (MemorySection)section;
+            MemorySection sec = (MemorySection) section;
 
             for (Map.Entry<String, Object> entry : sec.map.entrySet()) {
                 output.put(createPath(section, entry.getKey(), this), entry.getValue());
-                
+
                 if (entry.getValue() instanceof ConfigurationSection) {
                     if (deep) {
-                        mapChildrenValues(output, (ConfigurationSection)entry.getValue(), deep);
+                        mapChildrenValues(output, (ConfigurationSection) entry.getValue(), deep);
                     }
                 }
             }
@@ -982,7 +988,7 @@ public class MemorySection implements ConfigurationSection {
      * Creates a full path to the given {@link ConfigurationSection} from its root {@link Configuration}.
      * <p>
      * You may use this method for any given {@link ConfigurationSection}, not only {@link MemorySection}.
-     * 
+     *
      * @param section Section to create a path for.
      * @param key Name of the specified section.
      * @return Full path of the section from its root.
@@ -991,12 +997,11 @@ public class MemorySection implements ConfigurationSection {
         return createPath(section, key, (section == null) ? null : section.getRoot());
     }
 
-
     /**
      * Creates a relative path to the given {@link ConfigurationSection} from the given relative section.
      * <p>
      * You may use this method for any given {@link ConfigurationSection}, not only {@link MemorySection}.
-     * 
+     *
      * @param section Section to create a path for.
      * @param key Name of the specified section.
      * @param relativeTo Section to create the path relative to.
@@ -1022,21 +1027,21 @@ public class MemorySection implements ConfigurationSection {
 
             builder.append(key);
         }
-        
+
         return builder.toString();
     }
 
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        
+
         builder.append(getClass().getSimpleName());
         builder.append("[path='");
         builder.append(getCurrentPath());
         builder.append("', root='");
         builder.append(root.getClass().getSimpleName());
         builder.append("']");
-        
+
         return builder.toString();
     }
 }

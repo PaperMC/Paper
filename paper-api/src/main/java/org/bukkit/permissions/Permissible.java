@@ -1,4 +1,3 @@
-
 package org.bukkit.permissions;
 
 import java.util.Set;

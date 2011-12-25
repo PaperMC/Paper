@@ -7,6 +7,7 @@ import org.bukkit.event.Cancellable;
 /**
  * Thrown when a player picks an item up from the ground
  */
+@SuppressWarnings("serial")
 public class PlayerPickupItemEvent extends PlayerEvent implements Cancellable {
     private final Item item;
     private boolean cancel = false;

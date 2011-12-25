@@ -7,6 +7,7 @@ import org.bukkit.event.Event;
 /**
  * Stores data for health-regain events
  */
+@SuppressWarnings("serial")
 public class EntityRegainHealthEvent extends EntityEvent implements Cancellable {
 
     private boolean cancelled;

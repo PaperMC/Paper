@@ -15,27 +15,27 @@ import java.util.NoSuchElementException;
 
 public class BlockIterator implements Iterator<Block> {
 
-    private final World  world;
-    private final int    maxDistance;
+    private final World world;
+    private final int maxDistance;
 
-    private static final int    gridSize = 1 << 24;
+    private static final int gridSize = 1 << 24;
 
-    private boolean      end = false;
+    private boolean end = false;
 
-    private Block[]      blockQueue = new Block[3];
-    private int          currentBlock = 0;
-    private int          currentDistance = 0;
-    private int          maxDistanceInt;
+    private Block[] blockQueue = new Block[3];
+    private int currentBlock = 0;
+    private int currentDistance = 0;
+    private int maxDistanceInt;
 
-    private int          secondError;
-    private int          thirdError;
+    private int secondError;
+    private int thirdError;
 
-    private int          secondStep;
-    private int          thirdStep;
+    private int secondStep;
+    private int thirdStep;
 
-    private BlockFace    mainFace;
-    private BlockFace    secondFace;
-    private BlockFace    thirdFace;
+    private BlockFace mainFace;
+    private BlockFace secondFace;
+    private BlockFace thirdFace;
 
     /**
      * Constructs the BlockIterator
@@ -66,7 +66,7 @@ public class BlockIterator implements Iterator<Block> {
         double secondPosition = 0;
         double thirdPosition = 0;
 
-        Block startBlock = world.getBlockAt((int) Math.floor(startClone.getX()), (int) Math.floor(startClone.getY()), (int) Math.floor(startClone.getZ()));
+        Block startBlock = this.world.getBlockAt((int) Math.floor(startClone.getX()), (int) Math.floor(startClone.getY()), (int) Math.floor(startClone.getZ()));
 
         if (getXLength(direction) > mainDirection) {
             mainFace = getXFace(direction);
@@ -214,15 +214,15 @@ public class BlockIterator implements Iterator<Block> {
     }
 
     private double getXLength(Vector direction) {
-        return(Math.abs(direction.getX()));
+        return Math.abs(direction.getX());
     }
 
     private double getYLength(Vector direction) {
-        return(Math.abs(direction.getY()));
+        return Math.abs(direction.getY());
     }
 
     private double getZLength(Vector direction) {
-        return(Math.abs(direction.getZ()));
+        return Math.abs(direction.getZ());
     }
 
     private double getPosition(double direction, double position, int blockPosition) {
@@ -281,7 +281,7 @@ public class BlockIterator implements Iterator<Block> {
      * Constructs the BlockIterator.
      *
      * @param entity Information from the entity is used to set up the trace
-     * @param maxDistance  This is the maximum distance in blocks for the trace. Setting this value above 140 may lead to problems with unloaded chunks. A value of 0 indicates no limit
+     * @param maxDistance This is the maximum distance in blocks for the trace. Setting this value above 140 may lead to problems with unloaded chunks. A value of 0 indicates no limit
      *
      */
 

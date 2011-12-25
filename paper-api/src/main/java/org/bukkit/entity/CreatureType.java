@@ -50,7 +50,7 @@ public enum CreatureType {
     public String getName() {
         return name;
     }
-    
+
     public Class<? extends Entity> getEntityClass() {
         return clazz;
     }

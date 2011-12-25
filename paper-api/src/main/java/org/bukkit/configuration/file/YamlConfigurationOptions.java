@@ -5,14 +5,14 @@ package org.bukkit.configuration.file;
  */
 public class YamlConfigurationOptions extends FileConfigurationOptions {
     private int indent = 2;
-    
+
     protected YamlConfigurationOptions(YamlConfiguration configuration) {
         super(configuration);
     }
 
     @Override
     public YamlConfiguration configuration() {
-        return (YamlConfiguration)super.configuration();
+        return (YamlConfiguration) super.configuration();
     }
 
     @Override
@@ -38,23 +38,23 @@ public class YamlConfigurationOptions extends FileConfigurationOptions {
         super.copyHeader(value);
         return this;
     }
-    
+
     /**
      * Gets how much spaces should be used to indent each line.
      * <p>
      * The minimum value this may be is 2, and the maximum is 9.
-     * 
+     *
      * @return How much to indent by
      */
     public int indent() {
         return indent;
     }
-    
+
     /**
      * Sets how much spaces should be used to indent each line.
      * <p>
      * The minimum value this may be is 2, and the maximum is 9.
-     * 
+     *
      * @param value New indent
      * @return This object, for chaining
      */
@@ -62,7 +62,7 @@ public class YamlConfigurationOptions extends FileConfigurationOptions {
         if ((indent < 2) || (value > 9)) {
             throw new IllegalArgumentException("Indent must be between 1 and 10 characters");
         }
-        
+
         this.indent = value;
         return this;
     }

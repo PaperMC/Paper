@@ -5,9 +5,10 @@ import org.bukkit.event.Cancellable;
 
 /**
  * Called when a block is destroyed as a result of being burnt by fire.
- *<p />
+ * <p />
  * If a Block Burn event is cancelled, the block will not be destroyed as a result of being burnt by fire.
  */
+@SuppressWarnings("serial")
 public class BlockBurnEvent extends BlockEvent implements Cancellable {
     private boolean cancelled;
 

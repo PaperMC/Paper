@@ -6,6 +6,7 @@ import org.bukkit.event.Cancellable;
 /**
  * Stores data for pigs being zapped
  */
+@SuppressWarnings("serial")
 public class PigZapEvent extends EntityEvent implements Cancellable {
 
     private boolean canceled;

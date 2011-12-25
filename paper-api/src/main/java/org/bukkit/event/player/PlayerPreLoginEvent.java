@@ -6,6 +6,7 @@ import org.bukkit.event.Event;
 /**
  * Stores details for players attempting to log in
  */
+@SuppressWarnings("serial")
 public class PlayerPreLoginEvent extends Event {
     private Result result;
     private String message;

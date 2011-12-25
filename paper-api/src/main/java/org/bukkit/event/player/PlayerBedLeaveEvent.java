@@ -6,6 +6,7 @@ import org.bukkit.entity.Player;
 /**
  * This event is fired when the player is leaving a bed.
  */
+@SuppressWarnings("serial")
 public class PlayerBedLeaveEvent extends PlayerEvent {
 
     private Block bed;

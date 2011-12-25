@@ -7,6 +7,7 @@ import org.bukkit.event.Event;
 /**
  * Holds information for player teleport events
  */
+@SuppressWarnings("serial")
 public class PlayerTeleportEvent extends PlayerMoveEvent {
     private TeleportCause cause = TeleportCause.UNKNOWN;
 
@@ -32,6 +33,7 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
 
     /**
      * Gets the cause of this teleportation event
+     *
      * @return Cause of the event
      */
     public TeleportCause getCause() {

@@ -10,6 +10,7 @@ import org.bukkit.inventory.ItemStack;
  * <p />
  * If a Block Damage event is cancelled, the block will not be damaged.
  */
+@SuppressWarnings("serial")
 public class BlockDamageEvent extends BlockEvent implements Cancellable {
     private Player player;
     private boolean instaBreak;

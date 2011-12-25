@@ -27,14 +27,14 @@ public abstract class TexturedMaterial extends MaterialData {
 
     /**
      * Retrieve a list of possible textures. The first element of the list will be used as a default.
-     * 
+     *
      * @return a list of possible textures for this block
      */
     public abstract List<Material> getTextures();
 
     /**
      * Gets the current Material this block is made of
-     * 
+     *
      * @return Material of this block
      */
     public Material getMaterial() {
@@ -42,13 +42,13 @@ public abstract class TexturedMaterial extends MaterialData {
         if (n > getTextures().size() - 1) {
             n = 0;
         }
-        
+
         return getTextures().get(n);
     }
 
     /**
      * Sets the material this block is made of
-     * 
+     *
      * @param material
      *            New material of this block
      */

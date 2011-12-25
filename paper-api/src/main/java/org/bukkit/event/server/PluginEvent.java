@@ -5,6 +5,7 @@ import org.bukkit.plugin.Plugin;
 /**
  * Used for plugin enable and disable events
  */
+@SuppressWarnings("serial")
 public class PluginEvent extends ServerEvent {
     private final Plugin plugin;
 

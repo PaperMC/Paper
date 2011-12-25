@@ -8,6 +8,7 @@ import org.bukkit.event.Event;
 /**
  * Holds information for player movement events
  */
+@SuppressWarnings("serial")
 public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
     private boolean cancel = false;
     private Location from;

@@ -11,6 +11,7 @@ import org.bukkit.event.block.Action;
 /**
  * Called when a player interacts with an object or air.
  */
+@SuppressWarnings("serial")
 public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
     protected ItemStack item;
     protected Action action;
@@ -141,6 +142,7 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
     /**
      * This controls the action to take with the block (if any) that was clicked on
      * This event gets processed for all blocks, but most don't have a default action
+     *
      * @return the action to take with the interacted block
      */
     public Result useInteractedBlock() {
@@ -158,6 +160,7 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
      * This controls the action to take with the item the player is holding
      * This includes both blocks and items (such as flint and steel or records)
      * When this is set to default, it will be allowed if no action is taken on the interacted block
+     *
      * @return the action to take with the item in hand
      */
     public Result useItemInHand() {

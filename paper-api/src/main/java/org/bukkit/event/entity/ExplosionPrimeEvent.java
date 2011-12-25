@@ -7,6 +7,7 @@ import org.bukkit.event.Cancellable;
 /**
  * Called when an entity has made a decision to explode.
  */
+@SuppressWarnings("serial")
 public class ExplosionPrimeEvent extends EntityEvent implements Cancellable {
     private boolean cancel;
     private float radius;

@@ -32,7 +32,7 @@ public class MemoryConfiguration extends MemorySection implements Configuration 
         if (path == null) {
             throw new IllegalArgumentException("Path may not be null");
         }
-        
+
         if (defaults == null) {
             defaults = new MemoryConfiguration();
         }
@@ -79,7 +79,7 @@ public class MemoryConfiguration extends MemorySection implements Configuration 
         if (options == null) {
             options = new MemoryConfigurationOptions(this);
         }
-        
+
         return options;
     }
 }

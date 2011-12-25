@@ -6,6 +6,7 @@ import org.bukkit.event.Cancellable;
 /**
  * Called when a human entity's food level changes
  */
+@SuppressWarnings("serial")
 public class FoodLevelChangeEvent extends EntityEvent implements Cancellable {
     private boolean cancel = false;
     private int level;

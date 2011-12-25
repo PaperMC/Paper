@@ -8,7 +8,7 @@ import java.util.Set;
 public interface ComplexLivingEntity extends LivingEntity {
     /**
      * Gets a list of parts that belong to this complex entity
-     * 
+     *
      * @return List of parts
      */
     public Set<ComplexEntityPart> getParts();

@@ -17,6 +17,7 @@ public class Bed extends MaterialData implements Directional {
 
     /**
      * Instantiate a bed facing in a particular direction.
+     *
      * @param direction the direction the bed's head is facing
      */
     public Bed(BlockFace direction) {
@@ -51,6 +52,7 @@ public class Bed extends MaterialData implements Directional {
 
     /**
      * Configure this to be either the head or the foot of the bed
+     *
      * @param isHeadOfBed True to make it the head.
      */
     public void setHeadOfBed(boolean isHeadOfBed) {

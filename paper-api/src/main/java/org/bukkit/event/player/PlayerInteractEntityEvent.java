@@ -7,6 +7,7 @@ import org.bukkit.event.Cancellable;
 /**
  * Represents an event that is called when a player right clicks an entity.
  */
+@SuppressWarnings("serial")
 public class PlayerInteractEntityEvent extends PlayerEvent implements Cancellable {
     protected Entity clickedEntity;
     boolean cancelled = false;

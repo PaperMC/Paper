@@ -51,6 +51,7 @@ public class JavaPluginLoader implements PluginLoader {
         return loadPlugin(file, false);
     }
 
+    @SuppressWarnings("unchecked")
     public Plugin loadPlugin(File file, boolean ignoreSoftDependencies) throws InvalidPluginException, InvalidDescriptionException, UnknownDependencyException {
         JavaPlugin result = null;
         PluginDescriptionFile description = null;
@@ -117,7 +118,7 @@ public class JavaPluginLoader implements PluginLoader {
         ArrayList<String> depend;
 
         try {
-            depend = (ArrayList) description.getDepend();
+            depend = (ArrayList<String>) description.getDepend();
             if (depend == null) {
                 depend = new ArrayList<String>();
             }
@@ -140,7 +141,7 @@ public class JavaPluginLoader implements PluginLoader {
             ArrayList<String> softDepend;
 
             try {
-                softDepend = (ArrayList) description.getSoftDepend();
+                softDepend = (ArrayList<String>) description.getSoftDepend();
                 if (softDepend == null) {
                     softDepend = new ArrayList<String>();
                 }
@@ -231,20 +232,22 @@ public class JavaPluginLoader implements PluginLoader {
     public void setClass(final String name, final Class<?> clazz) {
         if (!classes.containsKey(name)) {
             classes.put(name, clazz);
-            
+
             if (ConfigurationSerializable.class.isAssignableFrom(clazz)) {
-                Class<? extends ConfigurationSerializable> serializable = (Class<? extends ConfigurationSerializable>)clazz;
+                @SuppressWarnings("unchecked")
+                Class<? extends ConfigurationSerializable> serializable = (Class<? extends ConfigurationSerializable>) clazz;
                 ConfigurationSerialization.registerClass(serializable);
             }
         }
     }
-    
+
     public void removeClass(String name) {
         Class<?> clazz = classes.remove(name);
 
         try {
             if ((clazz != null) && (ConfigurationSerializable.class.isAssignableFrom(clazz))) {
-                Class<? extends ConfigurationSerializable> serializable = (Class<? extends ConfigurationSerializable>)clazz;
+                @SuppressWarnings("unchecked")
+                Class<? extends ConfigurationSerializable> serializable = (Class<? extends ConfigurationSerializable>) clazz;
                 ConfigurationSerialization.unregisterClass(serializable);
             }
         } catch (NullPointerException ex) {
@@ -407,11 +410,11 @@ public class JavaPluginLoader implements PluginLoader {
             };
 
         case PLAYER_TOGGLE_SPRINT:
-                return new EventExecutor() {
-                    public void execute(Listener listener, Event event) {
-                        ((PlayerListener) listener).onPlayerToggleSprint((PlayerToggleSprintEvent) event);
-                    }
-                };
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((PlayerListener) listener).onPlayerToggleSprint((PlayerToggleSprintEvent) event);
+                }
+            };
 
         case PLAYER_BUCKET_EMPTY:
             return new EventExecutor() {
@@ -553,7 +556,6 @@ public class JavaPluginLoader implements PluginLoader {
                     ((BlockListener) listener).onBlockSpread((BlockSpreadEvent) event);
                 }
             };
-
 
         case BLOCK_FADE:
             return new EventExecutor() {
@@ -829,7 +831,7 @@ public class JavaPluginLoader implements PluginLoader {
                 public void execute(Listener listener, Event event) {
                     ((EntityListener) listener).onFoodLevelChange((FoodLevelChangeEvent) event);
                 }
-        };
+            };
 
         case SLIME_SPLIT:
             return new EventExecutor() {

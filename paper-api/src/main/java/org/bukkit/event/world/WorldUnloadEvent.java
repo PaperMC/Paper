@@ -6,6 +6,7 @@ import org.bukkit.event.Cancellable;
 /**
  * Called when a World is unloaded
  */
+@SuppressWarnings("serial")
 public class WorldUnloadEvent extends WorldEvent implements Cancellable {
     private boolean isCancelled;
 

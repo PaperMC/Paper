@@ -47,7 +47,7 @@ public interface NoteBlock extends BlockState {
 
     /**
      * Plays an arbitrary note with an arbitrary instrument
-     * 
+     *
      * @param instrument Instrument ID
      * @param note Note ID
      * @return true if successful, otherwise false
@@ -56,7 +56,7 @@ public interface NoteBlock extends BlockState {
 
     /**
      * Plays an arbitrary note with an arbitrary instrument
-     * 
+     *
      * @param instrument The instrument
      * @param note The note
      * @return true if successful, otherwise false

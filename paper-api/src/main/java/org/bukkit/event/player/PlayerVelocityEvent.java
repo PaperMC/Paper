@@ -5,6 +5,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.util.Vector;
 
+@SuppressWarnings("serial")
 public class PlayerVelocityEvent extends PlayerEvent implements Cancellable {
 
     /**

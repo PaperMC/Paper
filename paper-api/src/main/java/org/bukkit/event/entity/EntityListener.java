@@ -12,7 +12,7 @@ public class EntityListener implements Listener {
 
     /**
      * Called when a creature is spawned into a world.
-     *<p />
+     * <p />
      * If a Creature Spawn event is cancelled, the creature will not spawn.
      *
      * @param event Relevant event details
@@ -28,7 +28,7 @@ public class EntityListener implements Listener {
 
     /**
      * Called when an entity combusts.
-     *<p />
+     * <p />
      * If an Entity Combust event is cancelled, the entity will not combust.
      *
      * @param event Relevant event details
@@ -107,7 +107,7 @@ public class EntityListener implements Listener {
 
     /**
      * Called when a Creeper is struck by lightning.
-     *<p />
+     * <p />
      * If a Creeper Power event is cancelled, the Creeper will not be powered.
      *
      * @param event Relevant event details

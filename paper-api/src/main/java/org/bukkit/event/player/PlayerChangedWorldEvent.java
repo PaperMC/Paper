@@ -3,6 +3,7 @@ package org.bukkit.event.player;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
+@SuppressWarnings("serial")
 public class PlayerChangedWorldEvent extends PlayerEvent {
 
     private final World from;

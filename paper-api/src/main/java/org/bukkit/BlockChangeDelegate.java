@@ -32,6 +32,7 @@ public interface BlockChangeDelegate {
 
     /**
      * Get the block type at the location.
+     *
      * @param x X coordinate
      * @param y Y coordinate
      * @param z Z coordinate

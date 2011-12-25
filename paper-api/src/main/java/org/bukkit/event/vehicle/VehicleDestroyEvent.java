@@ -9,6 +9,7 @@ import org.bukkit.event.Cancellable;
  * or the environment. This is not raised if the boat is simply 'removed'
  * due to other means.
  */
+@SuppressWarnings("serial")
 public class VehicleDestroyEvent extends VehicleEvent implements Cancellable {
     private Entity attacker;
     private boolean cancelled;

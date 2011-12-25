@@ -25,10 +25,10 @@ public interface LivingEntity extends Entity {
      * @throws IllegalArgumentException Thrown if the health is < 0 or > max
      */
     public void setHealth(int health);
-    
+
     /**
      * Gets the maximum health this entity may have
-     * 
+     *
      * @return Maximum health
      */
     public int getMaxHealth();
@@ -86,12 +86,14 @@ public interface LivingEntity extends Entity {
 
     /**
      * Throws an egg from the entity.
+     *
      * @return The egg thrown.
      */
     public Egg throwEgg();
 
     /**
      * Throws a snowball from the entity.
+     *
      * @return The snowball thrown.
      */
     public Snowball throwSnowball();

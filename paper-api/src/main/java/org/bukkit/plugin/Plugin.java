@@ -35,25 +35,25 @@ public interface Plugin extends CommandExecutor {
      * @return The configuration
      */
     public Configuration getConfiguration();
-    
+
     /**
      * Gets a {@link FileConfiguration} for this plugin, read through "config.yml"
      * <p>
      * If there is a default config.yml embedded in this plugin, it will be provided
      * as a default for this Configuration.
-     * 
+     *
      * @return Plugin configuration
      */
     public FileConfiguration getConfig();
-    
+
     /**
      * Gets an embedded resource in this plugin
-     * 
+     *
      * @param filename Filename of the resource
      * @return File if found, otherwise null
      */
     public InputStream getResource(String filename);
-    
+
     /**
      * Saves the {@link FileConfiguration} retrievable by {@link #getConfig()}.
      */
@@ -69,13 +69,13 @@ public interface Plugin extends CommandExecutor {
      * Saves the raw contents of any resource embedded with a plugin's .jar file assuming it can be found using
      * {@link #getResource(String)}. The resource is saved into the plugin's data folder using the same hierarchy
      * as the .jar file (subdirectories are preserved).
-     * 
+     *
      * @param resourcePath the embedded resource path to look for within the plugin's .jar file. (No preceding slash).
      * @param replace if true, the embedded resource will overwrite the contents of an existing file.
      * @throws IllegalArgumentException if the resource path is null, empty, or points to a nonexistent resource.
      */
     public void saveResource(String resourcePath, boolean replace);
-    
+
     /**
      * Discards any data in {@link #getConfig()} and reloads from disk.
      */
@@ -120,12 +120,14 @@ public interface Plugin extends CommandExecutor {
 
     /**
      * Simple boolean if we can still nag to the logs about things
+     *
      * @return boolean whether we can nag
      */
     public boolean isNaggable();
 
     /**
      * Set naggable state
+     *
      * @param canNag is this plugin still naggable?
      */
     public void setNaggable(boolean canNag);

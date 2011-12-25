@@ -79,7 +79,7 @@ public class SimpleCommandMap implements CommandMap {
     public boolean register(String label, String fallbackPrefix, Command command) {
         boolean registeredPassedLabel = register(label, fallbackPrefix, command, false);
 
-        Iterator iterator = command.getAliases().iterator();
+        Iterator<String> iterator = command.getAliases().iterator();
         while (iterator.hasNext()) {
             if (!register((String) iterator.next(), fallbackPrefix, command, true)) {
                 iterator.remove();
@@ -94,12 +94,13 @@ public class SimpleCommandMap implements CommandMap {
 
     /**
      * Registers a command with the given name is possible, otherwise uses fallbackPrefix to create a unique name if its not an alias
+     *
      * @param name the name of the command, without the '/'-prefix.
      * @param fallbackPrefix a prefix which is prepended to the command with a ':' one or more times to make the command unique
      * @param command the command to register
      * @return true if command was registered with the passed in label, false otherwise.
-     * If isAlias was true a return of false indicates no command was registerd
-     * If isAlias was false a return of false indicates the fallbackPrefix was used one or more times to create a unique name for the command
+     *         If isAlias was true a return of false indicates no command was registerd
+     *         If isAlias was false a return of false indicates the fallbackPrefix was used one or more times to create a unique name for the command
      */
     private synchronized boolean register(String label, String fallbackPrefix, Command command, boolean isAlias) {
         String lowerLabel = label.trim().toLowerCase();

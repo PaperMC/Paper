@@ -8,6 +8,7 @@ import org.bukkit.entity.Projectile;
  *
  * @deprecated use {@link EntityDamageByEntityEvent} instead, where {@link EntityDamageByEntityEvent#getDamager()} will return the {@link Projectile}
  */
+@SuppressWarnings("serial")
 @Deprecated
 public class EntityDamageByProjectileEvent extends EntityDamageByEntityEvent {
 

@@ -32,6 +32,7 @@ public class PoweredRail extends ExtendedRails implements Redstone {
 
     /**
      * Set whether this PoweredRail should be powered or not.
+     *
      * @param isPowered whether or not the rail is powered
      */
     public void setPowered(boolean isPowered) {

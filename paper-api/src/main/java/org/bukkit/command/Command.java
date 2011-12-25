@@ -149,7 +149,6 @@ public abstract class Command {
         return false;
     }
 
-
     private boolean allowChangesFrom(CommandMap commandMap) {
         return (null == this.commandMap || this.commandMap == commandMap);
     }
@@ -237,7 +236,7 @@ public abstract class Command {
 
         for (Permissible user : users) {
             if (user instanceof CommandSender) {
-                CommandSender target = (CommandSender)user;
+                CommandSender target = (CommandSender) user;
 
                 if (target instanceof ConsoleCommandSender) {
                     target.sendMessage(result);

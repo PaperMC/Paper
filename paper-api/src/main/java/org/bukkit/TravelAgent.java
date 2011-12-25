@@ -64,7 +64,7 @@ public interface TravelAgent {
 
     /**
      * Attempt to create a portal near the given location.
-     * 
+     *
      * @param location The desired location of the portal.
      * @return True if a nether portal was successfully created.
      */

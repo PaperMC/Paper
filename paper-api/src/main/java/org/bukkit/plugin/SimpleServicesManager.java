@@ -28,8 +28,7 @@ public class SimpleServicesManager implements ServicesManager {
      * @param plugin plugin with the provider
      * @param priority priority of the provider
      */
-    public <T> void register(Class<T> service, T provider,
-            Plugin plugin, ServicePriority priority) {
+    public <T> void register(Class<T> service, T provider, Plugin plugin, ServicePriority priority) {
 
         synchronized (providers) {
             List<RegisteredServiceProvider<?>> registered = providers.get(service);

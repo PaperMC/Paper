@@ -6,13 +6,14 @@ import org.bukkit.event.Cancellable;
 
 /**
  * Called when a block is broken by a player.
- *<p />
+ * <p />
  * Note:
  * Plugins wanting to simulate a traditional block drop should set the block to air and utilise their own methods for determining
  *   what the default drop for the block being broken is and what to do about it, if anything.
- *<p />
+ * <p />
  * If a Block Break event is cancelled, the block will not break.
  */
+@SuppressWarnings("serial")
 public class BlockBreakEvent extends BlockEvent implements Cancellable {
 
     private Player player;

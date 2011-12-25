@@ -28,7 +28,7 @@ public class ExpCommand extends VanillaCommand {
             try {
                 int exp = Integer.parseInt(args[1]);
 
-                Command.broadcastCommandMessage(sender, "Giving " + exp + " exp to " +  player.getName());
+                Command.broadcastCommandMessage(sender, "Giving " + exp + " exp to " + player.getName());
 
                 player.giveExp(exp);
             } catch (NumberFormatException ex) {

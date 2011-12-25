@@ -9,6 +9,7 @@ import java.util.Collection;
 /**
  * Called when the world attempts to create a matching end to a portal
  */
+@SuppressWarnings("serial")
 public class PortalCreateEvent extends WorldEvent implements Cancellable {
     private boolean cancel = false;
     private ArrayList<Block> blocks = new ArrayList<Block>();

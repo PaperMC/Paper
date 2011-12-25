@@ -258,7 +258,7 @@ public final class Bukkit {
     public static void unbanIP(String address) {
         server.unbanIP(address);
     }
-    
+
     public static Set<OfflinePlayer> getBannedPlayers() {
         return server.getBannedPlayers();
     }

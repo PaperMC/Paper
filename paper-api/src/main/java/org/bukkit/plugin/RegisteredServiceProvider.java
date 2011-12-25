@@ -2,7 +2,7 @@ package org.bukkit.plugin;
 
 /**
  * A registered service provider.
- * 
+ *
  * @param <T> Service
  */
 public class RegisteredServiceProvider<T> implements Comparable<RegisteredServiceProvider<?>> {
@@ -12,8 +12,7 @@ public class RegisteredServiceProvider<T> implements Comparable<RegisteredServic
     private T provider;
     private ServicePriority priority;
 
-    public RegisteredServiceProvider(Class<T> service, T provider,
-            ServicePriority priority, Plugin plugin) {
+    public RegisteredServiceProvider(Class<T> service, T provider, ServicePriority priority, Plugin plugin) {
 
         this.service = service;
         this.plugin = plugin;

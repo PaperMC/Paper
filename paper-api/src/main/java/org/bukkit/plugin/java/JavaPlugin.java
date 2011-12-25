@@ -108,7 +108,7 @@ public abstract class JavaPlugin implements Plugin {
      * the configuration file will have no values.
      *
      * @return The configuration.
-     * @deprecated See the new 
+     * @deprecated See the new
      */
     @Deprecated
     public Configuration getConfiguration() {
@@ -118,14 +118,14 @@ public abstract class JavaPlugin implements Plugin {
         }
         return config;
     }
-    
+
     public FileConfiguration getConfig() {
         if (newConfig == null) {
             reloadConfig();
         }
         return newConfig;
     }
-    
+
     public void reloadConfig() {
         newConfig = YamlConfiguration.loadConfiguration(configFile);
 
@@ -136,7 +136,7 @@ public abstract class JavaPlugin implements Plugin {
             newConfig.setDefaults(defConfig);
         }
     }
-    
+
     public void saveConfig() {
         try {
             newConfig.save(configFile);
@@ -150,36 +150,31 @@ public abstract class JavaPlugin implements Plugin {
     }
 
     public void saveResource(String resourcePath, boolean replace) {
-        if(resourcePath == null || resourcePath.equals("")) {
+        if (resourcePath == null || resourcePath.equals("")) {
             throw new IllegalArgumentException("ResourcePath cannot be null or empty");
         }
 
         resourcePath = resourcePath.replace('\\', '/');
         InputStream in = getResource(resourcePath);
-        if(in == null) {
+        if (in == null) {
             throw new IllegalArgumentException("The embedded resource '" + resourcePath + "' cannot be found in " + getFile());
         }
 
-        File outFile = new File(getDataFolder(), resourcePath);  
+        File outFile = new File(getDataFolder(), resourcePath);
         int lastIndex = resourcePath.lastIndexOf('/');
         File outDir = new File(getDataFolder(), resourcePath.substring(0, lastIndex >= 0 ? lastIndex : 0));
-        
-        
-        if(!outDir.exists()) {
+
+        if (!outDir.exists()) {
             outDir.mkdirs();
         }
 
-        if(in == null) {
-            in = new ByteArrayInputStream(new byte[0]);
-        }
-
         try {
-            if(!outFile.exists() || replace) {
+            if (!outFile.exists() || replace) {
                 OutputStream out = new FileOutputStream(outFile);
                 byte[] buf = new byte[1024];
                 int len;
-                while((len=in.read(buf))>0) {
-                    out.write(buf,0,len);
+                while ((len = in.read(buf)) > 0) {
+                    out.write(buf, 0, len);
                 }
                 out.close();
                 in.close();
@@ -190,7 +185,7 @@ public abstract class JavaPlugin implements Plugin {
             Logger.getLogger(JavaPlugin.class.getName()).log(Level.SEVERE, "Could not save " + outFile.getName() + " to " + outFile, ex);
         }
     }
-    
+
     public InputStream getResource(String filename) {
         if (filename == null) {
             throw new IllegalArgumentException("Filename cannot be null");
@@ -249,9 +244,7 @@ public abstract class JavaPlugin implements Plugin {
      * @param file File containing this plugin
      * @param classLoader ClassLoader which holds this plugin
      */
-    protected final void initialize(PluginLoader loader, Server server,
-            PluginDescriptionFile description, File dataFolder, File file,
-            ClassLoader classLoader) {
+    protected final void initialize(PluginLoader loader, Server server, PluginDescriptionFile description, File dataFolder, File file, ClassLoader classLoader) {
         if (!initialized) {
             this.initialized = true;
             this.loader = loader;

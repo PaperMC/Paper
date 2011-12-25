@@ -23,7 +23,7 @@ public interface Minecart extends Vehicle {
 
     /**
      * Gets the maximum speed of a minecart. The speed is unrelated to the velocity.
-     * 
+     *
      * @return The max speed
      */
     public double getMaxSpeed();
@@ -69,6 +69,7 @@ public interface Minecart extends Vehicle {
      * Gets the derailed velocity modifier. Used for minecarts that are on the ground, but not on rails.
      *
      * A derailed minecart's velocity is multiplied by this factor each tick.
+     *
      * @return derailed visible speed
      */
     public Vector getDerailedVelocityMod();

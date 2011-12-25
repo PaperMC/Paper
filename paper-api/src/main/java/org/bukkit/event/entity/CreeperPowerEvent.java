@@ -5,9 +5,10 @@ import org.bukkit.event.Cancellable;
 
 /**
  * Called when a Creeper is struck by lightning.
- *<p />
+ * <p />
  * If a Creeper Power event is cancelled, the Creeper will not be powered.
  */
+@SuppressWarnings("serial")
 public class CreeperPowerEvent extends EntityEvent implements Cancellable {
 
     private boolean canceled;

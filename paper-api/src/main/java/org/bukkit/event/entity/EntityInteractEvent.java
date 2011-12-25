@@ -7,6 +7,7 @@ import org.bukkit.event.Cancellable;
 /**
  * Called when an entity interacts with an object
  */
+@SuppressWarnings("serial")
 public class EntityInteractEvent extends EntityEvent implements Cancellable {
     protected Block block;
 

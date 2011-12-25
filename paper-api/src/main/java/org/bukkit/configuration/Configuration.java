@@ -70,12 +70,12 @@ public interface Configuration extends ConfigurationSection {
      * @return Configuration source for default values, or null if none exist.
      */
     public Configuration getDefaults();
-    
+
     /**
      * Gets the {@link ConfigurationOptions} for this {@link Configuration}.
      * <p>
      * All setters through this method are chainable.
-     * 
+     *
      * @return Options for this configuration
      */
     public ConfigurationOptions options();

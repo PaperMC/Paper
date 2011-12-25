@@ -5,6 +5,7 @@ import org.bukkit.Chunk;
 /**
  * Represents a Chunk related event
  */
+@SuppressWarnings("serial")
 public class ChunkEvent extends WorldEvent {
     protected Chunk chunk;
 

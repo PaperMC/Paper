@@ -165,7 +165,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
     }
 
     /**
-     * Get the distance between this vector and another.  The value
+     * Get the distance between this vector and another. The value
      * of this method is not cached and uses a costly square-root function, so
      * do not repeatedly call this method to get the vector's magnitude. NaN
      * will be returned if the inner result of the sqrt() function overflows,
@@ -641,29 +641,29 @@ public class Vector implements Cloneable, ConfigurationSerializable {
 
     public Map<String, Object> serialize() {
         Map<String, Object> result = new LinkedHashMap<String, Object>();
-        
+
         result.put("x", getX());
         result.put("y", getY());
         result.put("z", getZ());
-        
+
         return result;
     }
-    
+
     public static Vector deserialize(Map<String, Object> args) {
         double x = 0;
         double y = 0;
         double z = 0;
-        
+
         if (args.containsKey("x")) {
-            x = (Double)args.get("x");
+            x = (Double) args.get("x");
         }
         if (args.containsKey("y")) {
-            y = (Double)args.get("y");
+            y = (Double) args.get("y");
         }
         if (args.containsKey("z")) {
-            z = (Double)args.get("z");
+            z = (Double) args.get("z");
         }
-        
+
         return new Vector(x, y, z);
     }
 }

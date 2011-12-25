@@ -8,6 +8,7 @@ import org.bukkit.generator.BlockPopulator;
  *
  * If your intent is to populate the chunk using this event, please see {@link BlockPopulator}
  */
+@SuppressWarnings("serial")
 public class ChunkPopulateEvent extends ChunkEvent {
     public ChunkPopulateEvent(final Chunk chunk) {
         super(Type.CHUNK_POPULATED, chunk);

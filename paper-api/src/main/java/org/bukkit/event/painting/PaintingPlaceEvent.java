@@ -10,6 +10,7 @@ import org.bukkit.event.Event;
 /**
  * Triggered when a painting is created in the world
  */
+@SuppressWarnings("serial")
 public class PaintingPlaceEvent extends PaintingEvent implements Cancellable {
 
     private boolean cancelled;

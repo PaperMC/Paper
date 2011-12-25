@@ -7,6 +7,7 @@ import org.bukkit.event.Cancellable;
 /**
  * Raised when a living entity exits a vehicle.
  */
+@SuppressWarnings("serial")
 public class VehicleExitEvent extends VehicleEvent implements Cancellable {
     private boolean cancelled;
     private LivingEntity exited;

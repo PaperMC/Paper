@@ -29,6 +29,7 @@ public class Door extends MaterialData implements Directional {
 
     /**
      * Check to see if the door is open.
+     *
      * @return true if the door has swung counterclockwise around its hinge.
      */
     public boolean isOpen() {
@@ -37,6 +38,7 @@ public class Door extends MaterialData implements Directional {
 
     /**
      * Configure this door to be either open or closed;
+     *
      * @param isOpen True to open the door.
      */
     public void setOpen(boolean isOpen) {
@@ -52,6 +54,7 @@ public class Door extends MaterialData implements Directional {
 
     /**
      * Configure this part of the door to be either the top or the bottom half;
+     *
      * @param isTopHalf True to make it the top half.
      */
     public void setTopHalf(boolean isTopHalf) {
@@ -82,6 +85,7 @@ public class Door extends MaterialData implements Directional {
 
     /**
      * Set the direction that this door should is facing.
+     *
      * @param face the direction
      */
     public void setFacingDirection(BlockFace face) {
@@ -104,6 +108,7 @@ public class Door extends MaterialData implements Directional {
 
     /**
      * Get the direction that this door is facing.
+     *
      * @return the direction
      */
     public BlockFace getFacing() {

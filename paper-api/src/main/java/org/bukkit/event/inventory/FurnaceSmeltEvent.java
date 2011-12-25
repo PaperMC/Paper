@@ -8,7 +8,8 @@ import org.bukkit.inventory.ItemStack;
 /**
  * Called when an ItemStack is successfully smelted in a furnace.
  */
-public class FurnaceSmeltEvent extends Event implements Cancellable{
+@SuppressWarnings("serial")
+public class FurnaceSmeltEvent extends Event implements Cancellable {
     private Block furnace;
     private ItemStack source;
     private ItemStack result;
@@ -56,7 +57,7 @@ public class FurnaceSmeltEvent extends Event implements Cancellable{
      * @param result new result ItemStack
      */
     public void setResult(ItemStack result) {
-         this.result = result;
+        this.result = result;
     }
 
     public boolean isCancelled() {

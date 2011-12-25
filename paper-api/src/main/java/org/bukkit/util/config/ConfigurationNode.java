@@ -40,17 +40,16 @@ public class ConfigurationNode {
         Map<String, Object> map = new TreeMap<String, Object>();
 
         Set<String> keys = node.keySet();
-        for( String k : keys ) {
+        for (String k : keys) {
             Object tmp = node.get(k);
-            if( tmp instanceof Map<?,?> ) {
-                Map<String, Object> rec = recursiveBuilder((Map <String,Object>) tmp);
+            if (tmp instanceof Map<?, ?>) {
+                Map<String, Object> rec = recursiveBuilder((Map<String, Object>) tmp);
 
                 Set<String> subkeys = rec.keySet();
-                for( String sk : subkeys ) {
+                for (String sk : subkeys) {
                     map.put(k + "." + sk, rec.get(sk));
                 }
-            }
-            else {
+            } else {
                 map.put(k, tmp);
             }
         }

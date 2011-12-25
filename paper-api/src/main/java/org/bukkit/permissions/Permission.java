@@ -1,4 +1,3 @@
-
 package org.bukkit.permissions;
 
 import java.util.ArrayList;
@@ -53,7 +52,7 @@ public class Permission {
         this.name = name;
         this.description = (description == null) ? "" : description;
         this.defaultValue = (defaultValue == null) ? PermissionDefault.FALSE : defaultValue;
-        
+
         if (children != null) {
             this.children.putAll(children);
         }
@@ -282,7 +281,7 @@ public class Permission {
 
         if (data.containsKey("description")) {
             try {
-                desc = (String)data.get("description");
+                desc = (String) data.get("description");
             } catch (ClassCastException ex) {
                 throw new IllegalArgumentException("'description' key is of wrong type", ex);
             }
@@ -295,7 +294,7 @@ public class Permission {
                 Object parents = data.get("parents");
 
                 if (parents instanceof String) {
-                    result.addParent((String)parents, true);
+                    result.addParent((String) parents, true);
                 }
             } catch (ClassCastException ex) {
                 throw new IllegalArgumentException("'parents' key is of wrong type", ex);
@@ -305,33 +304,31 @@ public class Permission {
         return result;
     }
 
-
+    @SuppressWarnings("unchecked")
     private static Map<String, Boolean> extractChildren(Map<String, Object> data, String name, PermissionDefault def, List<Permission> output) {
-        Map<String, Object> input = (Map<String, Object>)data.get("children");
-        Map<String, Boolean> children = new LinkedHashMap();
+        Map<String, Object> input = (Map<String, Object>) data.get("children");
+        Map<String, Boolean> children = new LinkedHashMap<String, Boolean>();
 
         for (Map.Entry<String, Object> entry : input.entrySet()) {
             if ((entry.getValue() instanceof Boolean)) {
-                children.put(entry.getKey(), (Boolean)entry.getValue());
+                children.put(entry.getKey(), (Boolean) entry.getValue());
             } else if ((entry.getValue() instanceof Map)) {
                 try {
-                    try
-                    {
-                        Permission perm = loadPermission((String)entry.getKey(), (Map<String, Object>)entry.getValue(), def, output);
+                    try {
+                        Permission perm = loadPermission((String) entry.getKey(), (Map<String, Object>) entry.getValue(), def, output);
                         children.put(perm.getName(), Boolean.valueOf(true));
 
                         if (output != null) {
                             output.add(perm);
                         }
-                    }
-                    catch (Throwable ex) {
-                        Bukkit.getServer().getLogger().log(Level.SEVERE, "Permission node '" + (String)entry.getKey() + "' in child of " + name + " is invalid", ex);
+                    } catch (Throwable ex) {
+                        Bukkit.getServer().getLogger().log(Level.SEVERE, "Permission node '" + (String) entry.getKey() + "' in child of " + name + " is invalid", ex);
                     }
                 } catch (ClassCastException ex) {
-                    throw new IllegalArgumentException("Child '" + (String)entry.getKey() + "' contains invalid map type");
+                    throw new IllegalArgumentException("Child '" + (String) entry.getKey() + "' contains invalid map type");
                 }
             } else {
-                throw new IllegalArgumentException("Child '" + (String)entry.getKey() + "' contains invalid value");
+                throw new IllegalArgumentException("Child '" + (String) entry.getKey() + "' contains invalid value");
             }
         }
 

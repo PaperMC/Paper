@@ -122,6 +122,7 @@ public interface Entity {
 
     /**
      * Returns true if this entity has been marked for removal.
+     *
      * @return True if it is dead.
      */
     public boolean isDead();
@@ -165,49 +166,53 @@ public interface Entity {
 
     /**
      * Returns the distance this entity has fallen
+     *
      * @return The distance.
      */
     public float getFallDistance();
 
     /**
      * Sets the fall distance for this entity
+     *
      * @param distance The new distance.
      */
     public void setFallDistance(float distance);
 
     /**
      * Record the last {@link EntityDamageEvent} inflicted on this entity
+     *
      * @param event a {@link EntityDamageEvent}
      */
     public void setLastDamageCause(EntityDamageEvent event);
 
     /**
      * Retrieve the last {@link EntityDamageEvent} inflicted on this entity. This event may have been cancelled.
+     *
      * @return the last known {@link EntityDamageEvent} or null if hitherto unharmed
      */
     public EntityDamageEvent getLastDamageCause();
 
     /**
      * Returns a unique and persistent id for this entity
+     *
      * @return unique id
      */
     public UUID getUniqueId();
-    
+
     /**
      * Gets the amount of ticks this entity has lived for.
      * <p>
      * This is the equivalent to "age" in entities.
-     * 
+     *
      * @return Age of entity
      */
     public int getTicksLived();
-    
+
     /**
      * Sets the amount of ticks this entity has lived for.
      * <p>
-     * This is the equivalent to "age" in entities. May not be
-     * less than one tick.
-     * 
+     * This is the equivalent to "age" in entities. May not be less than one tick.
+     *
      * @param value Age of entity
      */
     public void setTicksLived(int value);

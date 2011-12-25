@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 /**
  * Called when a player leaves a server
  */
+@SuppressWarnings("serial")
 public class PlayerQuitEvent extends PlayerEvent {
 
     private String quitMessage;

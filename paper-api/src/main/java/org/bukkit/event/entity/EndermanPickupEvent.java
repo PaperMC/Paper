@@ -4,6 +4,7 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 
+@SuppressWarnings("serial")
 public class EndermanPickupEvent extends EntityEvent implements Cancellable {
 
     private boolean cancel;

@@ -53,10 +53,10 @@ public interface Server {
      * @return version of this server implementation
      */
     public String getVersion();
-    
+
     /**
      * Gets the Bukkit version that this server is running.
-     * 
+     *
      * @return Version of Bukkit
      */
     public String getBukkitVersion();
@@ -110,7 +110,7 @@ public interface Server {
      * @return The ID of this server
      */
     public String getServerId();
-    
+
     /**
      * Gets whether this server allows the End or not.
      *
@@ -304,7 +304,7 @@ public interface Server {
      */
     public World createWorld(WorldCreator creator);
 
-     /**
+    /**
      * Unloads a world with the given name.
      *
      * @param name Name of the world to unload
@@ -398,6 +398,7 @@ public interface Server {
 
     /**
      * Adds a recipe to the crafting manager.
+     *
      * @param recipe The recipe to add.
      * @return True to indicate that the recipe was added.
      */

@@ -9,6 +9,7 @@ import org.bukkit.event.Cancellable;
  * <p />
  * If a Sign Change event is cancelled, the sign will not be changed.
  */
+@SuppressWarnings("serial")
 public class SignChangeEvent extends BlockEvent implements Cancellable {
     private boolean cancel = false;
     private Player player;

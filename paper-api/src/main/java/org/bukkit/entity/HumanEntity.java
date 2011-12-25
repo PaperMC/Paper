@@ -40,14 +40,6 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, Permissible {
     public void setItemInHand(ItemStack item);
 
     /**
-     * Changes the item in hand to another of your 'action slots'.
-     *
-     * @param index The new index to use, only valid ones are 0-8.
-     *
-     public void selectItemInHand(int index);
-     */
-
-    /**
      * Returns whether this player is slumbering.
      *
      * @return slumber state

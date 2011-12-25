@@ -7,6 +7,7 @@ import org.bukkit.inventory.ItemStack;
 /**
  * Thrown whenever a LivingEntity dies
  */
+@SuppressWarnings("serial")
 public class EntityDeathEvent extends EntityEvent {
     private List<ItemStack> drops;
     private int dropExp = 0;

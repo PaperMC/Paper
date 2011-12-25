@@ -6,6 +6,7 @@ import org.bukkit.event.Cancellable;
 /**
  * Called when a Slime splits into smaller Slimes upon death
  */
+@SuppressWarnings("serial")
 public class SlimeSplitEvent extends EntityEvent implements Cancellable {
     private boolean cancel;
     private int count;

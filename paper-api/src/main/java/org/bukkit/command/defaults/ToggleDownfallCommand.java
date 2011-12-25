@@ -29,7 +29,7 @@ public class ToggleDownfallCommand extends VanillaCommand {
                 return true;
             }
         } else if (sender instanceof Player) {
-            world = ((Player)sender).getWorld();
+            world = ((Player) sender).getWorld();
         } else {
             world = Bukkit.getWorlds().get(0);
         }

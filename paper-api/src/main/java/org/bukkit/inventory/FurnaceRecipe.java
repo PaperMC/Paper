@@ -12,6 +12,7 @@ public class FurnaceRecipe implements Recipe {
 
     /**
      * Create a furnace recipe to craft the specified ItemStack.
+     *
      * @param result The item you want the recipe to create.
      * @param source The input material.
      */
@@ -24,6 +25,7 @@ public class FurnaceRecipe implements Recipe {
 
     /**
      * Create a furnace recipe to craft the specified ItemStack.
+     *
      * @param result The item you want the recipe to create.
      * @param source The input material.
      */
@@ -34,6 +36,7 @@ public class FurnaceRecipe implements Recipe {
 
     /**
      * Sets the input of this furnace recipe.
+     *
      * @param input The input material.
      * @return The changed recipe, so you can chain calls.
      */
@@ -44,6 +47,7 @@ public class FurnaceRecipe implements Recipe {
 
     /**
      * Sets the input of this furnace recipe.
+     *
      * @param input The input material.
      * @return The changed recipe, so you can chain calls.
      */
@@ -57,6 +61,7 @@ public class FurnaceRecipe implements Recipe {
 
     /**
      * Get the input material.
+     *
      * @return The input material.
      */
     public MaterialData getInput() {
@@ -65,6 +70,7 @@ public class FurnaceRecipe implements Recipe {
 
     /**
      * Get the result of this recipe.
+     *
      * @return The resulting stack.
      */
     public ItemStack getResult() {

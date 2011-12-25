@@ -5,6 +5,7 @@ import org.bukkit.block.Block;
 /**
  * Called when a redstone current changes
  */
+@SuppressWarnings("serial")
 public class BlockRedstoneEvent extends BlockEvent {
     private int oldCurrent;
     private int newCurrent;

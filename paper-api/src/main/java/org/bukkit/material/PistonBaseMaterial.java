@@ -1,4 +1,3 @@
-
 package org.bukkit.material;
 
 import org.bukkit.Material;
@@ -25,46 +24,46 @@ public class PistonBaseMaterial extends MaterialData implements Directional, Red
     }
 
     public void setFacingDirection(BlockFace face) {
-        byte data = (byte)(getData() & 0x8);
+        byte data = (byte) (getData() & 0x8);
 
         switch (face) {
-            case UP:
-                data |= 1;
-                break;
-            case EAST:
-                data |= 2;
-                break;
-            case WEST:
-                data |= 3;
-                break;
-            case NORTH:
-                data |= 4;
-                break;
-            case SOUTH:
-                data |= 5;
-                break;
+        case UP:
+            data |= 1;
+            break;
+        case EAST:
+            data |= 2;
+            break;
+        case WEST:
+            data |= 3;
+            break;
+        case NORTH:
+            data |= 4;
+            break;
+        case SOUTH:
+            data |= 5;
+            break;
         }
         setData(data);
     }
 
     public BlockFace getFacing() {
-        byte dir = (byte)(getData() & 7);
+        byte dir = (byte) (getData() & 7);
 
         switch (dir) {
-            case 0:
-                return BlockFace.DOWN;
-            case 1:
-                return BlockFace.UP;
-            case 2:
-                return BlockFace.EAST;
-            case 3:
-                return BlockFace.WEST;
-            case 4:
-                return BlockFace.NORTH;
-            case 5:
-                return BlockFace.SOUTH;
-            default:
-                return BlockFace.SELF;
+        case 0:
+            return BlockFace.DOWN;
+        case 1:
+            return BlockFace.UP;
+        case 2:
+            return BlockFace.EAST;
+        case 3:
+            return BlockFace.WEST;
+        case 4:
+            return BlockFace.NORTH;
+        case 5:
+            return BlockFace.SOUTH;
+        default:
+            return BlockFace.SELF;
         }
     }
 

@@ -6,6 +6,7 @@ import org.bukkit.event.Cancellable;
 /**
  * Called when a player toggles their sneaking state
  */
+@SuppressWarnings("serial")
 public class PlayerToggleSneakEvent extends PlayerEvent implements Cancellable {
     private boolean isSneaking;
     private boolean cancel = false;

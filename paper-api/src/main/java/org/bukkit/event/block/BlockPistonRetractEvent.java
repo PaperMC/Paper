@@ -4,6 +4,7 @@ import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 
+@SuppressWarnings("serial")
 public class BlockPistonRetractEvent extends BlockPistonEvent {
     public BlockPistonRetractEvent(Block block, BlockFace direction) {
         super(Type.BLOCK_PISTON_RETRACT, block, direction);

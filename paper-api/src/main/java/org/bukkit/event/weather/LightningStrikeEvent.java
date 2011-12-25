@@ -7,6 +7,7 @@ import org.bukkit.event.Cancellable;
 /**
  * Stores data for lightning striking
  */
+@SuppressWarnings("serial")
 public class LightningStrikeEvent extends WeatherEvent implements Cancellable {
 
     private boolean canceled;

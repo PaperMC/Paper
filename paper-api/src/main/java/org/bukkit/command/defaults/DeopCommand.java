@@ -29,7 +29,7 @@ public class DeopCommand extends VanillaCommand {
         player.setOp(false);
 
         if (player instanceof Player) {
-            ((Player)player).sendMessage(ChatColor.YELLOW + "You are no longer op!");
+            ((Player) player).sendMessage(ChatColor.YELLOW + "You are no longer op!");
         }
 
         return true;

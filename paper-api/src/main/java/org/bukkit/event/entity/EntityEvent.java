@@ -6,6 +6,7 @@ import org.bukkit.event.Event;
 /**
  * Represents an Entity-related event
  */
+@SuppressWarnings("serial")
 public class EntityEvent extends Event {
     protected Entity entity;
 

@@ -6,6 +6,7 @@ import org.bukkit.event.Event;
 /**
  * Represents a vehicle-related event.
  */
+@SuppressWarnings("serial")
 public class VehicleEvent extends Event {
     protected Vehicle vehicle;
 

@@ -6,9 +6,10 @@ import org.bukkit.event.Cancellable;
 
 /**
  * Represents events with a source block and a destination block, currently only applies to liquid (lava and water).
- *<p />
+ * <p />
  * If a Block From To event is cancelled, the block will not move (the liquid will not flow).
  */
+@SuppressWarnings("serial")
 public class BlockFromToEvent extends BlockEvent implements Cancellable {
     protected Block to;
     protected BlockFace face;

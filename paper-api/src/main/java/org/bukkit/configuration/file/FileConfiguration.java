@@ -48,7 +48,7 @@ public abstract class FileConfiguration extends MemoryConfiguration {
         if (file == null) {
             throw new IllegalArgumentException("File cannot be null");
         }
-        
+
         Files.createParentDirs(file);
 
         String data = saveToString();
@@ -76,7 +76,7 @@ public abstract class FileConfiguration extends MemoryConfiguration {
         if (file == null) {
             throw new IllegalArgumentException("File cannot be null");
         }
-        
+
         save(new File(file));
     }
 
@@ -108,7 +108,7 @@ public abstract class FileConfiguration extends MemoryConfiguration {
 
         load(new FileInputStream(file));
     }
-    
+
     /**
      * Loads this {@link FileConfiguration} from the specified stream.
      * <p>
@@ -124,7 +124,7 @@ public abstract class FileConfiguration extends MemoryConfiguration {
         if (stream == null) {
             throw new IllegalArgumentException("Stream cannot be null");
         }
-        
+
         InputStreamReader reader = new InputStreamReader(stream);
         StringBuilder builder = new StringBuilder();
         BufferedReader input = new BufferedReader(reader);
@@ -178,13 +178,13 @@ public abstract class FileConfiguration extends MemoryConfiguration {
      * @throws IllegalArgumentException Thrown if contents is null.
      */
     public abstract void loadFromString(String contents) throws InvalidConfigurationException;
-    
+
     /**
      * Compiles the header for this {@link FileConfiguration} and returns the result.
      * <p>
      * This will use the header from {@link #options()} -> {@link FileConfigurationOptions#header()},
      * respecting the rules of {@link FileConfigurationOptions#copyHeader()} if set.
-     * 
+     *
      * @return Compiled header
      */
     protected abstract String buildHeader();
@@ -194,7 +194,7 @@ public abstract class FileConfiguration extends MemoryConfiguration {
         if (options == null) {
             options = new FileConfigurationOptions(this);
         }
-        
-        return (FileConfigurationOptions)options;
+
+        return (FileConfigurationOptions) options;
     }
 }

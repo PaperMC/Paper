@@ -38,6 +38,7 @@ public final class PluginDescriptionFile {
 
     /**
      * Loads a PluginDescriptionFile from the specified reader
+     *
      * @param reader The reader
      * @throws InvalidDescriptionException If the PluginDescriptionFile is invalid
      */
@@ -153,6 +154,7 @@ public final class PluginDescriptionFile {
         return defaultPerm;
     }
 
+    @SuppressWarnings("unchecked")
     private void loadMap(Map<String, Object> map) throws InvalidDescriptionException {
         try {
             name = map.get("name").toString();
@@ -235,7 +237,7 @@ public final class PluginDescriptionFile {
 
         if (map.containsKey("load")) {
             try {
-                order = PluginLoadOrder.valueOf(((String)map.get("load")).toUpperCase().replaceAll("\\W", ""));
+                order = PluginLoadOrder.valueOf(((String) map.get("load")).toUpperCase().replaceAll("\\W", ""));
             } catch (ClassCastException ex) {
                 throw new InvalidDescriptionException(ex, "load is of wrong type");
             } catch (IllegalArgumentException ex) {
@@ -265,7 +267,7 @@ public final class PluginDescriptionFile {
 
         if (map.containsKey("default-permission")) {
             try {
-                defaultPerm = defaultPerm.getByName((String)map.get("default-permission"));
+                defaultPerm = PermissionDefault.getByName((String) map.get("default-permission"));
             } catch (ClassCastException ex) {
                 throw new InvalidDescriptionException(ex, "default-permission is of wrong type");
             } catch (IllegalArgumentException ex) {
@@ -275,9 +277,9 @@ public final class PluginDescriptionFile {
 
         if (map.containsKey("permissions")) {
             try {
-                 Map<String, Map<String, Object>> perms = (Map<String, Map<String, Object>>) map.get("permissions");
+                Map<String, Map<String, Object>> perms = (Map<String, Map<String, Object>>) map.get("permissions");
 
-                 permissions = Permission.loadPermissions(perms, "Permission node '%s' in plugin description file for " + getFullName() + " is invalid", defaultPerm);
+                permissions = Permission.loadPermissions(perms, "Permission node '%s' in plugin description file for " + getFullName() + " is invalid", defaultPerm);
             } catch (ClassCastException ex) {
                 throw new InvalidDescriptionException(ex, "permissions are of wrong type");
             }

@@ -1,4 +1,3 @@
-
 package org.bukkit.util.noise;
 
 import java.util.Random;
@@ -9,7 +8,7 @@ import org.bukkit.World;
  */
 public class SimplexOctaveGenerator extends OctaveGenerator {
     private double wScale = 1;
-    
+
     /**
      * Creates a simplex octave generator for the given world
      *
@@ -102,8 +101,8 @@ public class SimplexOctaveGenerator extends OctaveGenerator {
         z *= zScale;
         w *= wScale;
 
-        for (int i = 0; i < octaves.length; i++) {
-            result += ((SimplexNoiseGenerator)octaves[i]).noise(x * freq, y * freq, z * freq, w * freq) * amp;
+        for (NoiseGenerator octave : octaves) {
+            result += ((SimplexNoiseGenerator) octave).noise(x * freq, y * freq, z * freq, w * freq) * amp;
             max += amp;
             freq *= frequency;
             amp *= amplitude;

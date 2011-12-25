@@ -14,6 +14,7 @@ public class Pumpkin extends MaterialData implements Directional {
 
     /**
      * Instantiate a pumpkin facing in a particular direction.
+     *
      * @param direction the direction the pumkin's face is facing
      */
     public Pumpkin(BlockFace direction) {

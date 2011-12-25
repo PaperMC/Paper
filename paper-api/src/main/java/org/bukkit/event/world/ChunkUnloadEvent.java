@@ -6,6 +6,7 @@ import org.bukkit.event.Cancellable;
 /**
  * Called when a chunk is unloaded
  */
+@SuppressWarnings("serial")
 public class ChunkUnloadEvent extends ChunkEvent implements Cancellable {
     private boolean cancel = false;
 

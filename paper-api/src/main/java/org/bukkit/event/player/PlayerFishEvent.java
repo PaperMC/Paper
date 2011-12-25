@@ -7,6 +7,7 @@ import org.bukkit.entity.Entity;
 /**
  * Thrown when a player is fishing
  */
+@SuppressWarnings("serial")
 public class PlayerFishEvent extends PlayerEvent implements Cancellable {
     private final Entity entity;
     private boolean cancel = false;

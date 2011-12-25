@@ -23,6 +23,7 @@ public class BlockVector extends Vector {
 
     /**
      * Construct the vector with another vector.
+     *
      * @param vec The other vector.
      */
     public BlockVector(Vector vec) {
@@ -111,22 +112,22 @@ public class BlockVector extends Vector {
         v.z = z;
         return v;
     }
-    
+
     public static BlockVector deserialize(Map<String, Object> args) {
         double x = 0;
         double y = 0;
         double z = 0;
-        
+
         if (args.containsKey("x")) {
-            x = (Double)args.get("x");
+            x = (Double) args.get("x");
         }
         if (args.containsKey("y")) {
-            y = (Double)args.get("y");
+            y = (Double) args.get("y");
         }
         if (args.containsKey("z")) {
-            z = (Double)args.get("z");
+            z = (Double) args.get("z");
         }
-        
+
         return new BlockVector(x, y, z);
     }
 }

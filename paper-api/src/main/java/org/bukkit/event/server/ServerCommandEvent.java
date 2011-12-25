@@ -6,9 +6,11 @@ import org.bukkit.command.ConsoleCommandSender;
 /**
  * Server Command events
  */
+@SuppressWarnings("serial")
 public class ServerCommandEvent extends ServerEvent {
     private String command;
     private CommandSender sender;
+
     @Deprecated
     public ServerCommandEvent(ConsoleCommandSender console, String message) {
         this(Type.SERVER_COMMAND, console, message);
@@ -40,6 +42,7 @@ public class ServerCommandEvent extends ServerEvent {
 
     /**
      * Get the command sender.
+     *
      * @return The sender
      */
     public CommandSender getSender() {

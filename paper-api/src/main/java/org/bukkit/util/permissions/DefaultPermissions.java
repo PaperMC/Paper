@@ -7,9 +7,8 @@ import org.bukkit.permissions.PermissionDefault;
 
 public final class DefaultPermissions {
     private static final String ROOT = "craftbukkit";
-    private static final String PREFIX = ROOT + ".";
     private static final String LEGACY_PREFIX = "craft";
-    
+
     private DefaultPermissions() {}
 
     public static Permission registerPermission(Permission perm) {

@@ -7,9 +7,11 @@ import java.util.Map;
  * <p>
  * These objects MUST implement one of the following, in addition to the methods
  * as defined by this interface:
- * - A static method "deserialize" that accepts a single {@link Map<String, Object>} and returns the class.
- * - A static method "valueOf" that accepts a single {@link Map<String, Object>} and returns the class.
- * - A constructor that accepts a single {@link Map<String, Object>}.
+ * <ul>
+ * <li>A static method "deserialize" that accepts a single {@link Map<String, Object>} and returns the class.</li>
+ * <li>A static method "valueOf" that accepts a single {@link Map<String, Object>} and returns the class.</li>
+ * <li>A constructor that accepts a single {@link Map<String, Object>}.</li>
+ * </ul>
  */
 public interface ConfigurationSerializable {
     /**
@@ -17,7 +19,7 @@ public interface ConfigurationSerializable {
      * <p>
      * This class must provide a method to restore this class, as defined in the
      * {@link ConfigurationSerializable} interface javadocs.
-     * 
+     *
      * @return Map containing the current state of this class
      */
     public Map<String, Object> serialize();

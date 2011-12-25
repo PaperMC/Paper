@@ -5,6 +5,7 @@ import org.bukkit.entity.Entity;
 /**
  * Called when an entity is damaged by an entity
  */
+@SuppressWarnings("serial")
 public class EntityDamageByEntityEvent extends EntityDamageEvent {
 
     private Entity damager;

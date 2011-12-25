@@ -6,6 +6,7 @@ import org.bukkit.event.Cancellable;
 /**
  * Stores data for weather changing in a world
  */
+@SuppressWarnings("serial")
 public class WeatherChangeEvent extends WeatherEvent implements Cancellable {
 
     private boolean canceled;

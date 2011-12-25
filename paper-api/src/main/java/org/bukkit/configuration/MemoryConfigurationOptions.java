@@ -10,7 +10,7 @@ public class MemoryConfigurationOptions extends ConfigurationOptions {
 
     @Override
     public MemoryConfiguration configuration() {
-        return (MemoryConfiguration)super.configuration();
+        return (MemoryConfiguration) super.configuration();
     }
 
     @Override

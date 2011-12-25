@@ -2,6 +2,7 @@ package org.bukkit.event.entity;
 
 import org.bukkit.entity.Entity;
 
+@SuppressWarnings("serial")
 public class EntityCombustByEntityEvent extends EntityCombustEvent {
 
     private Entity combuster;
@@ -13,6 +14,7 @@ public class EntityCombustByEntityEvent extends EntityCombustEvent {
 
     /**
      * The combuster can be a WeatherStorm a Blaze, or an Entity holding a FIRE_ASPECT enchanted item.
+     *
      * @return the Entity that set the combustee alight.
      */
     public Entity getCombuster() {

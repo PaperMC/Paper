@@ -1,4 +1,3 @@
-
 package org.bukkit.util.noise;
 
 /**
@@ -12,7 +11,7 @@ public abstract class NoiseGenerator {
 
     /**
      * Speedy floor, faster than (int)Math.floor(x)
-     * 
+     *
      * @param x Value to floor
      * @return Floored value
      */

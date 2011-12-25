@@ -47,13 +47,13 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @param value true if whitelisted
      */
     public void setWhitelisted(boolean value);
-    
+
     /**
      * Gets a {@link Player} object that this represents, if there is one
      * <p>
      * If the player is online, this will return that player. Otherwise,
      * it will return null.
-     * 
+     *
      * @return Online player
      */
     public Player getPlayer();

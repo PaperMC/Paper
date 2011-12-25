@@ -240,10 +240,10 @@ public class Location implements Cloneable {
         z += vec.z;
         return this;
     }
- 
-     /**
+
+    /**
      * Adds the location by a vector.
-     * 
+     *
      * @see Vector
      * @param vec Vector to use
      * @return the same location
@@ -289,10 +289,10 @@ public class Location implements Cloneable {
         z -= vec.z;
         return this;
     }
- 
-     /**
+
+    /**
      * Subtracts the location by a vector.
-     * 
+     *
      * @see Vector
      * @param vec The vector to use
      * @return the same location
@@ -348,7 +348,7 @@ public class Location implements Cloneable {
     }
 
     /**
-     * Get the distance between this location and another.  The value
+     * Get the distance between this location and another. The value
      * of this method is not cached and uses a costly square-root function, so
      * do not repeatedly call this method to get the location's magnitude. NaN
      * will be returned if the inner result of the sqrt() function overflows,

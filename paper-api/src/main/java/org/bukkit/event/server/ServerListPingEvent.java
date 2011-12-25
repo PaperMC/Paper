@@ -7,13 +7,14 @@ import org.bukkit.event.Event;
 /**
  * Called when a server list ping is coming in.
  */
+@SuppressWarnings("serial")
 public class ServerListPingEvent extends ServerEvent {
-    
+
     private InetAddress address;
     private String motd;
     private int numPlayers;
     private int maxPlayers;
-    
+
     public ServerListPingEvent(InetAddress address, String motd, int numPlayers, int maxPlayers) {
         super(Event.Type.SERVER_LIST_PING);
         this.address = address;
@@ -24,7 +25,7 @@ public class ServerListPingEvent extends ServerEvent {
 
     /**
      * Get the address the ping is coming from.
-     * 
+     *
      * @return the address
      */
     public InetAddress getAddress() {
@@ -33,7 +34,7 @@ public class ServerListPingEvent extends ServerEvent {
 
     /**
      * Get the message of the day message.
-     * 
+     *
      * @return the message of the day
      */
     public String getMotd() {
@@ -42,7 +43,7 @@ public class ServerListPingEvent extends ServerEvent {
 
     /**
      * Change the message of the day message.
-     * 
+     *
      * @param motd the message of the day
      */
     public void setMotd(String motd) {
@@ -51,7 +52,7 @@ public class ServerListPingEvent extends ServerEvent {
 
     /**
      * Get the number of players sent.
-     * 
+     *
      * @return the number of players
      */
     public int getNumPlayers() {
@@ -60,7 +61,7 @@ public class ServerListPingEvent extends ServerEvent {
 
     /**
      * Get the maximum number of players sent.
-     * 
+     *
      * @return the the maximum number of player
      */
     public int getMaxPlayers() {
@@ -69,7 +70,7 @@ public class ServerListPingEvent extends ServerEvent {
 
     /**
      * Set the maximum number of players sent.
-     * 
+     *
      * @param maxPlayers the maximum number of player
      */
     public void setMaxPlayers(int maxPlayers) {

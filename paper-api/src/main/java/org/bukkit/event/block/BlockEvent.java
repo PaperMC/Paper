@@ -6,6 +6,7 @@ import org.bukkit.event.Event;
 /**
  * Represents a block related event.
  */
+@SuppressWarnings("serial")
 public class BlockEvent extends Event {
     protected Block block;
 

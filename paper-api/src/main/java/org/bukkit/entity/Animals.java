@@ -7,7 +7,7 @@ package org.bukkit.entity;
 public interface Animals extends Creature {
     /**
      * Gets the age of this animal.
-     * 
+     *
      * @return Age
      */
     public int getAge();

@@ -7,6 +7,7 @@ import org.bukkit.event.Cancellable;
 /**
  * Raised when an entity enters a vehicle.
  */
+@SuppressWarnings("serial")
 public class VehicleEnterEvent extends VehicleEvent implements Cancellable {
     private boolean cancelled;
     private Entity entered;

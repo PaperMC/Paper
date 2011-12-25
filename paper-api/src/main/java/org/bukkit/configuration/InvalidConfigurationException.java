@@ -3,6 +3,7 @@ package org.bukkit.configuration;
 /**
  * Exception thrown when attempting to load an invalid {@link Configuration}
  */
+@SuppressWarnings("serial")
 public class InvalidConfigurationException extends Exception {
     /**
      * Creates a new instance of InvalidConfigurationException without a message or cause.

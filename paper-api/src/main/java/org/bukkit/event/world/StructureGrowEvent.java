@@ -47,7 +47,7 @@ public class StructureGrowEvent extends WorldEvent implements Cancellable {
     }
 
     /**
-     * Checks if structure  was grown using bonemeal.
+     * Checks if structure was grown using bonemeal.
      *
      * @return True if the structure was grown using bonemeal.
      */

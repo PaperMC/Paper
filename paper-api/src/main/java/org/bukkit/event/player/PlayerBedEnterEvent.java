@@ -7,6 +7,7 @@ import org.bukkit.event.Cancellable;
 /**
  * This event is fired when the player is almost about to enter the bed.
  */
+@SuppressWarnings("serial")
 public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
 
     private boolean cancel = false;

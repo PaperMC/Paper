@@ -21,7 +21,7 @@ public @interface SerializableAs {
      * <p>
      * This name MUST be unique. We recommend using names such as "MyPluginThing" instead of
      * "Thing".
-     * 
+     *
      * @return Name to serialize the class as.
      */
     public String value();

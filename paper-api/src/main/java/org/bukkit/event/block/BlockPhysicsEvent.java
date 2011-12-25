@@ -7,6 +7,7 @@ import org.bukkit.event.Cancellable;
 /**
  * Thrown when a block physics check is called
  */
+@SuppressWarnings("serial")
 public class BlockPhysicsEvent extends BlockEvent implements Cancellable {
     private final int changed;
     private boolean cancel = false;

@@ -39,6 +39,7 @@ public class Lever extends SimpleAttachableMaterialData implements Redstone {
 
     /**
      * Set this lever to be powered or not.
+     *
      * @param isPowered whether the lever should be powered or not
      */
     public void setPowered(boolean isPowered) {

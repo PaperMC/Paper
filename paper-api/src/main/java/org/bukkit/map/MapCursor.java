@@ -4,13 +4,14 @@ package org.bukkit.map;
  * Represents a cursor on a map.
  */
 public final class MapCursor {
-    
+
     private byte x, y;
     private byte direction, type;
     private boolean visible;
 
     /**
      * Initialize the map cursor.
+     *
      * @param x The x coordinate, from -128 to 127.
      * @param y The y coordinate, from -128 to 127.
      * @param direction The facing of the cursor, from 0 to 15.
@@ -24,73 +25,82 @@ public final class MapCursor {
         setRawType(type);
         this.visible = visible;
     }
-    
+
     /**
      * Get the X position of this cursor.
+     *
      * @return The X coordinate.
      */
     public byte getX() {
         return x;
     }
-    
+
     /**
      * Get the Y position of this cursor.
+     *
      * @return The Y coordinate.
      */
     public byte getY() {
         return y;
     }
-    
+
     /**
      * Get the direction of this cursor.
+     *
      * @return The facing of the cursor, from 0 to 15.
      */
     public byte getDirection() {
         return direction;
     }
-    
+
     /**
      * Get the type of this cursor.
+     *
      * @return The type (color/style) of the map cursor.
      */
     public Type getType() {
         return Type.byValue(type);
     }
-    
+
     /**
      * Get the type of this cursor.
+     *
      * @return The type (color/style) of the map cursor.
      */
     public byte getRawType() {
         return type;
     }
-    
+
     /**
      * Get the visibility status of this cursor.
+     *
      * @return True if visible, false otherwise.
      */
     public boolean isVisible() {
         return visible;
     }
-    
+
     /**
      * Set the X position of this cursor.
+     *
      * @param x The X coordinate.
      */
     public void setX(byte x) {
         this.x = x;
     }
-    
+
     /**
      * Set the Y position of this cursor.
+     *
      * @param y The Y coordinate.
      */
     public void setY(byte y) {
         this.y = y;
     }
-    
+
     /**
      * Set the direction of this cursor.
+     *
      * @param direction The facing of the cursor, from 0 to 15.
      */
     public void setDirection(byte direction) {
@@ -99,17 +109,19 @@ public final class MapCursor {
         }
         this.direction = direction;
     }
-    
+
     /**
      * Set the type of this cursor.
+     *
      * @param type The type (color/style) of the map cursor.
      */
     public void setType(Type type) {
         setRawType(type.value);
     }
-    
+
     /**
      * Set the type of this cursor.
+     *
      * @param type The type (color/style) of the map cursor.
      */
     public void setRawType(byte type) {
@@ -118,17 +130,18 @@ public final class MapCursor {
         }
         this.type = type;
     }
-    
+
     /**
      * Set the visibility status of this cursor.
+     *
      * @param visible True if visible.
      */
     public void setVisible(boolean visible) {
         this.visible = visible;
     }
-    
+
     /**
-     * Represents the standard types of map cursors. More may be made available 
+     * Represents the standard types of map cursors. More may be made available
      * by texture packs - the value is used by the client as an index in the
      * file './misc/mapicons.png' from minecraft.jar or from a texture pack.
      */
@@ -138,17 +151,17 @@ public final class MapCursor {
         RED_POINTER(2),
         BLUE_POINTER(3),
         WHITE_CROSS(4);
-        
+
         private byte value;
-        
+
         private Type(int value) {
             this.value = (byte) value;
         }
-        
+
         public byte getValue() {
             return value;
         }
-        
+
         public static Type byValue(byte value) {
             for (Type t : values()) {
                 if (t.value == value) return t;
@@ -156,5 +169,5 @@ public final class MapCursor {
             return null;
         }
     }
-    
+
 }

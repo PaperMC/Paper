@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 /**
  * Called when a player joins a server
  */
+@SuppressWarnings("serial")
 public class PlayerJoinEvent extends PlayerEvent {
     private String joinMessage;
 

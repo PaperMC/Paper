@@ -6,6 +6,7 @@ import org.bukkit.entity.Vehicle;
 /**
  * Raised when a vehicle moves.
  */
+@SuppressWarnings("serial")
 public class VehicleMoveEvent extends VehicleEvent {
     private Location from;
     private Location to;

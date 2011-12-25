@@ -6,7 +6,7 @@ package org.bukkit.entity;
 public interface Pig extends Animals, Vehicle {
 
     /**
-     *  Check if the pig has a saddle.
+     * Check if the pig has a saddle.
      *
      * @return if the pig has been saddled.
      */

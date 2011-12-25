@@ -4,9 +4,9 @@ package org.bukkit.map;
  * Represents the built-in Minecraft font.
  */
 public class MinecraftFont extends MapFont {
-    
+
     private static final int spaceSize = 2;
-    
+
     private static final String fontChars =
         " !\"#$%&'()*+,-./0123456789:;<=>?" +
         "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_" +
@@ -17,7 +17,7 @@ public class MinecraftFont extends MapFont {
         "\u00FF\u00D6\u00DC\u00F8\u00A3\u00D8\u00D7\u0191" + // ÿÖÜø£Ø×ƒ
         "\u00E1\u00ED\u00F3\u00FA\u00F1\u00D1\u00AA\u00BA" + // áíóúñÑªº
         "\u00BF\u00AE\u00AC\u00BD\u00BC\u00A1\u00AB\u00BB";  // ¿®¬½¼¡«»
-    
+
     private static final int[][] fontData = new int[][] {
         /* null */  {0,0,0,0,0,0,0,0},
         /* 1 */  {126,129,165,129,189,153,129,126},
@@ -276,31 +276,31 @@ public class MinecraftFont extends MapFont {
         /* 254 */  {0,0,60,60,60,60,0,0},
         /* 255 */  {0,0,0,0,0,0,0,0},
     };
-    
+
     /**
      * A static non-malleable MinecraftFont.
      */
     public static final MinecraftFont Font = new MinecraftFont(false);
-    
+
     /**
      * Initialize a new MinecraftFont.
      */
     public MinecraftFont() {
         this(true);
     }
-    
+
     private MinecraftFont(boolean malleable) {
         for (int i = 1; i < fontData.length; ++i) {
             char ch = (char) i;
             if (i >= 32 && i < 32 + fontChars.length()) {
                 ch = fontChars.charAt(i - 32);
             }
-            
+
             if (ch == ' ') {
                 setChar(ch, new CharacterSprite(spaceSize, 8, new boolean[spaceSize * 8]));
                 continue;
             }
-            
+
             int[] rows = fontData[i];
             int width = 0;
             for (int r = 0; r < 8; ++r) {
@@ -311,18 +311,18 @@ public class MinecraftFont extends MapFont {
                 }
             }
             ++width;
-            
+
             boolean[] data = new boolean[width * 8];
             for (int r = 0; r < 8; ++r) {
                 for (int c = 0; c < width; ++c) {
                     data[r * width + c] = (rows[r] & (1 << c)) != 0;
                 }
             }
-            
+
             setChar(ch, new CharacterSprite(width, 8, data));
         }
-        
+
         this.malleable = malleable;
     }
-    
+
 }

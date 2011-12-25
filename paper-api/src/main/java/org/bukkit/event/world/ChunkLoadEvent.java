@@ -5,6 +5,7 @@ import org.bukkit.Chunk;
 /**
  * Called when a chunk is loaded
  */
+@SuppressWarnings("serial")
 public class ChunkLoadEvent extends ChunkEvent {
     private final boolean newChunk;
 

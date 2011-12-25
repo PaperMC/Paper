@@ -3,7 +3,7 @@ package org.bukkit.scheduler;
 import org.bukkit.plugin.Plugin;
 
 /**
- * Represents a worker thread for the scheduler.  This gives information about
+ * Represents a worker thread for the scheduler. This gives information about
  * the Thread object for the task, owner of the task and the taskId.
  *
  * Workers are used to execute async tasks.

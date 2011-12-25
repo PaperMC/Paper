@@ -7,6 +7,7 @@ import org.bukkit.entity.Player;
 /**
  * Called when a player completes the portaling process by standing in a portal
  */
+@SuppressWarnings("serial")
 public class PlayerPortalEvent extends PlayerTeleportEvent {
 
     protected boolean useTravelAgent = true;

@@ -7,6 +7,7 @@ import org.bukkit.entity.Player;
 /**
  * Called when a player throws an egg and it might hatch
  */
+@SuppressWarnings("serial")
 public class PlayerEggThrowEvent extends PlayerEvent {
     private Egg egg;
     private boolean hatching;
@@ -44,7 +45,7 @@ public class PlayerEggThrowEvent extends PlayerEvent {
      * Sets whether the egg will hatch or not.
      *
      * @param hatching true if you want the egg to hatch
-     *                 false if you want it not to
+     *            false if you want it not to
      */
     public void setHatching(boolean hatching) {
         this.hatching = hatching;
