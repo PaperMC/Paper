@@ -95,7 +95,7 @@ public class BlockPortal extends BlockHalfTransparant {
                 }
             }
 
-            PortalCreateEvent event = new PortalCreateEvent(blocks, bworld);
+            PortalCreateEvent event = new PortalCreateEvent(blocks, bworld, PortalCreateEvent.CreateReason.FIRE);
             world.getServer().getPluginManager().callEvent(event);
 
             if (event.isCancelled()) {

@@ -341,7 +341,7 @@ public class PortalTravelAgent implements TravelAgent {
             }
         }
 
-        PortalCreateEvent event = new PortalCreateEvent(blocks, (org.bukkit.World) craftWorld);
+        PortalCreateEvent event = new PortalCreateEvent(blocks, (org.bukkit.World) craftWorld, PortalCreateEvent.CreateReason.OBC_DESTINATION);
         Bukkit.getServer().getPluginManager().callEvent(event);
         if (event.isCancelled()) {
             return false;
