@@ -587,7 +587,9 @@ public abstract class EntityHuman extends EntityLiving {
                         // also damage the player in this way. For example, EntitySlime.
 
                         // We handle projectiles in their individual classes!
-                        if (!(entity.getBukkitEntity() instanceof Projectile)) {
+                        boolean isProjectile = damagesource instanceof EntityDamageSourceIndirect && ((EntityDamageSourceIndirect) damagesource).getProximateDamageSource().getBukkitEntity() instanceof Projectile;
+
+                        if (!isProjectile) {
                             org.bukkit.entity.Entity damager = ((Entity) entity1).getBukkitEntity();
                             org.bukkit.entity.Entity damagee = this.getBukkitEntity();
 

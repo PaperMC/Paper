@@ -17,6 +17,10 @@ public class EntityDamageSourceIndirect extends EntityDamageSource {
         // CraftBukkit start
         String source = (this.n == null) ? "Herobrine" : this.n.ad();
         return LocaleI18n.a("death." + this.m, new Object[] { entityhuman.name, source});
+    }
+
+    public Entity getProximateDamageSource() {
+        return super.getEntity();
         // CraftBukkit end
     }
 }
