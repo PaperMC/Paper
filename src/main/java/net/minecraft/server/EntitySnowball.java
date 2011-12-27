@@ -6,7 +6,6 @@ import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.ProjectileHitEvent;
 // CraftBukkit end
 
 public class EntitySnowball extends EntityProjectile {
@@ -31,8 +30,6 @@ public class EntitySnowball extends EntityProjectile {
                 b0 = 3;
             }
             // CraftBukkit start
-            ProjectileHitEvent hitEvent = new ProjectileHitEvent((Projectile) this.getBukkitEntity());
-            Bukkit.getPluginManager().callEvent(hitEvent);
             final Entity movingEntity = movingobjectposition.entity;
             boolean stick = false;
 

@@ -27,9 +27,6 @@ public class EntityEgg extends EntityProjectile {
 
     protected void a(MovingObjectPosition movingobjectposition) {
         // CraftBukkit start
-        ProjectileHitEvent phe = new ProjectileHitEvent((Projectile) this.getBukkitEntity());
-        this.world.getServer().getPluginManager().callEvent(phe);
-
         if (movingobjectposition.entity != null) {
             boolean stick;
             if (movingobjectposition.entity instanceof EntityLiving) {
