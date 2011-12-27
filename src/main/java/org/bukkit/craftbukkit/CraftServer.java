@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit;
 
 import java.io.FileNotFoundException;
 
-import org.bukkit.craftbukkit.command.CraftConsoleCommandSender;
 import org.bukkit.generator.ChunkGenerator;
 import com.avaje.ebean.config.DataSourceConfig;
 import com.avaje.ebean.config.ServerConfig;
@@ -25,6 +24,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -929,14 +929,15 @@ public final class CraftServer implements Server {
     }
 
     public OfflinePlayer[] getOfflinePlayers() {
-        WorldNBTStorage storage = (WorldNBTStorage)console.worlds.get(0).getDataManager();
+        WorldNBTStorage storage = (WorldNBTStorage) console.worlds.get(0).getDataManager();
         String[] files = storage.getPlayerDir().list(new DatFileFilter());
-        OfflinePlayer[] players = new OfflinePlayer[files.length];
+        Set<OfflinePlayer> players = new HashSet<OfflinePlayer>();
 
         for (int i = 0; i < files.length; i++) {
-            players[i] = getOfflinePlayer(files[i].substring(0, files[i].length() - 4));
+            players.add(getOfflinePlayer(files[i].substring(0, files[i].length() - 4)));
         }
+        players.addAll(Arrays.asList(getOnlinePlayers()));
 
-        return players;
+        return (OfflinePlayer[]) players.toArray();
     }
 }
