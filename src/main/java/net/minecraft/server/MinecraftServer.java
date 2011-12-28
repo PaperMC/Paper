@@ -164,11 +164,11 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
         log.info("Preparing level \"" + s + "\"");
         this.a(new WorldLoaderServer(new File(".")), s, j);
 
-        // CraftBukkit start
+        // CraftBukkit start - display seconds for the completion time
         long elapsed = System.nanoTime() - i;
-        String time = String.format("%.3fs", elapsed / 10000000000.0D);
+        String time = String.format("%.3fs", elapsed / 1000000000.0D);
         log.info("Done (" + time + ")! For help, type \"help\" or \"?\"");
-        // CratBukkit end
+        // CraftBukkit end
 
         if (this.propertyManager.getBoolean("enable-query", false)) {
             log.info("Starting GS4 status listener");
