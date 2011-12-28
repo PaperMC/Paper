@@ -1,6 +1,8 @@
 package net.minecraft.server;
 
 // CraftBukkit start
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 // CraftBukkit end
@@ -76,10 +78,22 @@ public class EntitySkeleton extends EntityMonster {
                 double d2 = entity.locY + (double) entity.y() - 0.699999988079071D - entityarrow.locY;
                 float f1 = MathHelper.sqrt(d0 * d0 + d1 * d1) * 0.2F;
 
-                this.world.makeSound(this, "random.bow", 1.0F, 1.0F / (this.random.nextFloat() * 0.4F + 0.8F));
-                this.world.addEntity(entityarrow);
+                this.world.makeSound(this, "random.bow", 1.0F, 1.0F / (this.random.nextFloat() * 0.4F + 0.8F)); // CraftBukkit - moved down
+                // this.world.addEntity(entityarrow); // CraftBukkit - moved down
                 entityarrow.shoot(d0, d2 + (double) f1, d1, 1.6F, 12.0F);
                 this.attackTicks = 60;
+
+                // CraftBukkit start
+                EntityShootBowEvent event = CraftEventFactory.callEntityShootBowEvent(this, null, entityarrow, 0.5F);
+                if (event.isCancelled()) {
+                    if (event.getProjectile() != null) {
+                        event.getProjectile().remove();
+                    }
+                } else if (event.getProjectile() == entityarrow.getBukkitEntity()) {
+                    world.addEntity(entityarrow);
+                }
+                this.world.makeSound(this, "random.bow", 1.0F, 1.0F / (this.random.nextFloat() * 0.4F + 0.8F));
+                // CraftBukkit end
             }
 
             this.yaw = (float) (Math.atan2(d1, d0) * 180.0D / 3.1415927410125732D) - 90.0F;
