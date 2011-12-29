@@ -25,4 +25,12 @@ public class CraftItemStackTest {
         assert (clone.getTypeId() == itemStack.getTypeId());
         assert (clone.getData().equals(itemStack.getData()));
     }
+
+    @Test
+    public void testCloneNullItem() throws Exception {
+        net.minecraft.server.ItemStack nmsItemStack = null;
+        ItemStack itemStack = new CraftItemStack(nmsItemStack);
+        ItemStack clone = itemStack.clone();
+        assert (clone.equals(itemStack));
+    }
 }
