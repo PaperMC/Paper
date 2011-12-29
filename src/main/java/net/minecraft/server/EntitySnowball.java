@@ -24,7 +24,7 @@ public class EntitySnowball extends EntityProjectile {
 
     protected void a(MovingObjectPosition movingobjectposition) {
         if (movingobjectposition.entity != null) {
-            byte b0 = 0;
+            int b0 = 0; //Craftbukkit - byte -> int
 
             if (movingobjectposition.entity instanceof EntityBlaze) {
                 b0 = 3;
@@ -41,7 +41,7 @@ public class EntitySnowball extends EntityProjectile {
                     EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(projectile, damagee, EntityDamageEvent.DamageCause.PROJECTILE, b0);
                     Bukkit.getPluginManager().callEvent(event);
                     this.shooter = (projectile.getShooter() == null) ? null : ((CraftLivingEntity) projectile.getShooter()).getHandle();
-                    b0 = (byte) event.getDamage();
+                    b0 = event.getDamage();
 
                     if (event.isCancelled()) {
                         stick = !projectile.doesBounce();
