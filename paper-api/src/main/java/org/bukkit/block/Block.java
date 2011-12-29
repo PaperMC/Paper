@@ -93,6 +93,24 @@ public interface Block {
     byte getLightLevel();
 
     /**
+     * Get the amount of light at this block from the sky.
+     * <p>
+     * Any light given from other sources (such as blocks like torches) will be ignored.
+     *
+     * @return Sky light level
+     */
+    byte getLightFromSky();
+
+    /**
+     * Get the amount of light at this block from nearby blocks.
+     * <p>
+     * Any light given from other sources (such as the sun) will be ignored.
+     *
+     * @return Block light level
+     */
+    byte getLightFromBlocks();
+
+    /**
      * Gets the world which contains this Block
      *
      * @return World containing this block
