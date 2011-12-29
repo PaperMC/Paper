@@ -7,6 +7,8 @@ import org.bukkit.block.PistonMoveReaction;
 
 import net.minecraft.server.BiomeBase;
 import net.minecraft.server.BlockRedstoneWire;
+import net.minecraft.server.EnumSkyBlock;
+
 import org.bukkit.*;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.CraftChunk;
@@ -108,6 +110,15 @@ public class CraftBlock implements Block {
     public byte getLightLevel() {
         return (byte) chunk.getHandle().world.getLightLevel(this.x, this.y, this.z);
     }
+
+    public byte getLightFromSky() {
+        return (byte) chunk.getHandle().a(EnumSkyBlock.SKY, this.x & 0xF, this.y & 0x7F, this.z & 0xF);
+    }
+
+    public byte getLightFromBlocks() {
+        return (byte) chunk.getHandle().a(EnumSkyBlock.BLOCK, this.x & 0xF, this.y & 0x7F, this.z & 0xF);
+    }
+
 
     public Block getFace(final BlockFace face) {
         return getRelative(face, 1);
