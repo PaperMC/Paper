@@ -938,6 +938,6 @@ public final class CraftServer implements Server {
         }
         players.addAll(Arrays.asList(getOnlinePlayers()));
 
-        return (OfflinePlayer[]) players.toArray();
+        return players.toArray(new OfflinePlayer[players.size()]);
     }
 }
