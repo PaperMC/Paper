@@ -108,7 +108,7 @@ public abstract class JavaPlugin implements Plugin {
      * the configuration file will have no values.
      *
      * @return The configuration.
-     * @deprecated See the new
+     * @deprecated See the new {@link JavaPlugin#getConfig()}
      */
     @Deprecated
     public Configuration getConfiguration() {

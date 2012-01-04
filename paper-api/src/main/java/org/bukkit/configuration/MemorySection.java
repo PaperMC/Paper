@@ -34,7 +34,7 @@ public class MemorySection implements ConfigurationSection {
      */
     protected MemorySection() {
         if (!(this instanceof Configuration)) {
-            throw new IllegalStateException("Cannot contruct a root MemorySection when not a Configuration");
+            throw new IllegalStateException("Cannot construct a root MemorySection when not a Configuration");
         }
 
         this.path = "";
