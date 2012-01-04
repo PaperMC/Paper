@@ -248,7 +248,7 @@ public enum Material {
     RAW_CHICKEN(365),
     COOKED_CHICKEN(366),
     ROTTEN_FLESH(367),
-    ENDER_PEARL(368),
+    ENDER_PEARL(368, 16),
     BLAZE_ROD(369),
     GHAST_TEAR(370),
     GOLD_NUGGET(371),
