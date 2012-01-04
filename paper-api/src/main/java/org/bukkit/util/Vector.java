@@ -220,9 +220,9 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return a new midpoint vector
      */
     public Vector getMidpoint(Vector other) {
-        x = (x + other.x) / 2;
-        y = (y + other.y) / 2;
-        z = (z + other.z) / 2;
+        double x = (this.x + other.x) / 2;
+        double y = (this.y + other.y) / 2;
+        double z = (this.z + other.z) / 2;
         return new Vector(x, y, z);
     }
 
