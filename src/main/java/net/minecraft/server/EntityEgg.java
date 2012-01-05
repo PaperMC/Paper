@@ -75,7 +75,7 @@ public class EntityEgg extends EntityProjectile {
                 org.bukkit.entity.Entity entity = world.getWorld().spawn(new Location(world.getWorld(), this.locX, this.locY, this.locZ, this.yaw, 0.0F), hatchingType.getEntityClass(), SpawnReason.EGG);
 
                 if (entity instanceof Animals) {
-                    ((Animals) entity).setAge(-24000);
+                    ((Animals) entity).setBaby();
                 }
             }
         }

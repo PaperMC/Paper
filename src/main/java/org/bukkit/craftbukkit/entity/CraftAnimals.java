@@ -23,6 +23,42 @@ public class CraftAnimals extends CraftCreature implements Animals {
         return (EntityAnimal) entity;
     }
 
+    public void setAgeLock(boolean lock) {
+        getHandle().ageLocked = lock;
+    }
+
+    public boolean getAgeLock() {
+        return getHandle().ageLocked;
+    }
+
+    public void setBaby() {
+        if (isAdult()) {
+            setAge(-24000);
+        }
+    }
+
+    public void setAdult() {
+        if (!isAdult()) {
+            setAge(0);
+        }
+    }
+
+    public boolean isAdult() {
+        return getAge() >= 0;
+    }
+
+    public boolean canBreed() {
+        return getAge() == 0;
+    }
+
+    public void setBreed(boolean breed) {
+        if (breed) {
+            setAge(0);
+        } else if (isAdult()) {
+            setAge(6000);
+        }
+    }
+
     @Override
     public String toString() {
         return "CraftAnimals";
