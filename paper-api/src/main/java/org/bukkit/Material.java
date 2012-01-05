@@ -253,7 +253,7 @@ public enum Material {
     GHAST_TEAR(370),
     GOLD_NUGGET(371),
     NETHER_STALK(372),
-    POTION(373),
+    POTION(373, 1),
     GLASS_BOTTLE(374),
     SPIDER_EYE(375),
     FERMENTED_SPIDER_EYE(376),
