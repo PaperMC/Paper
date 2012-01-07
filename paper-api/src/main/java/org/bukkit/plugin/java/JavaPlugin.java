@@ -139,7 +139,7 @@ public abstract class JavaPlugin implements Plugin {
 
     public void saveConfig() {
         try {
-            newConfig.save(configFile);
+            getConfig().save(configFile);
         } catch (IOException ex) {
             Logger.getLogger(JavaPlugin.class.getName()).log(Level.SEVERE, "Could not save config to " + configFile, ex);
         }
