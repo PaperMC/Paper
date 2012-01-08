@@ -170,19 +170,40 @@ public abstract class FileConfigurationTest extends MemoryConfigurationTest {
         String saved = getTestValuesString();
         String header = getTestHeaderResult();
         String expected = getTestHeaderInput();
-        
+
         defaults.loadFromString(header);
         config.loadFromString(saved);
         config.setDefaults(defaults);
-        
+
         assertNull(config.options().header());
         assertEquals(expected, defaults.options().header());
-        
+
         for (Map.Entry<String, Object> entry : values.entrySet()) {
             assertEquals(entry.getValue(), config.get(entry.getKey()));
         }
-        
+
         assertEquals(values.keySet(), config.getKeys(true));
         assertEquals(header + "\n" + saved, config.saveToString());
+
+        config = getConfig();
+        config.loadFromString(getTestHeaderResult() + saved);
+        assertEquals(getTestHeaderResult() + saved, config.saveToString());
+    }
+
+    @Test
+    public void testReloadEmptyConfig() throws Exception {
+        FileConfiguration config = getConfig();
+
+        assertEquals("", config.saveToString());
+
+        config = getConfig();
+        config.loadFromString("");
+
+        assertEquals("", config.saveToString());
+
+        config = getConfig();
+        config.loadFromString("\n\n"); // Should trim the first newlines of a header
+
+        assertEquals("", config.saveToString());
     }
 }

@@ -148,6 +148,7 @@ public class YamlConfiguration extends FileConfiguration {
         String[] lines = input.split("\r?\n", -1);
         StringBuilder result = new StringBuilder();
         boolean readingHeader = true;
+        boolean foundHeader = false;
 
         for (int i = 0; (i < lines.length) && (readingHeader); i++) {
             String line = lines[i];
@@ -160,9 +161,11 @@ public class YamlConfiguration extends FileConfiguration {
                 if (line.length() > COMMENT_PREFIX.length()) {
                     result.append(line.substring(COMMENT_PREFIX.length()));
                 }
-            } else if (line.length() == 0) {
+
+                foundHeader = true;
+            } else if ((foundHeader) && (line.length() == 0)) {
                 result.append("\n");
-            } else {
+            } else if (foundHeader) {
                 readingHeader = false;
             }
         }
