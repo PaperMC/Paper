@@ -93,6 +93,8 @@ public class ItemInWorldManager {
 
         if (this.b()) {
             if (event.isCancelled()) {
+                // Let the client know the block still exists
+                ((EntityPlayer) this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
                 return;
             }
             this.c(i, j, k);
@@ -133,6 +135,8 @@ public class ItemInWorldManager {
             BlockDamageEvent blockEvent = CraftEventFactory.callBlockDamageEvent(this.player, i, j, k, this.player.inventory.getItemInHand(), toolDamage >= 1.0f);
 
             if (blockEvent.isCancelled()) {
+                // Let the client know the block still exists
+                ((EntityPlayer) this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
                 return;
             }
 
@@ -201,6 +205,8 @@ public class ItemInWorldManager {
             this.world.getServer().getPluginManager().callEvent(event);
 
             if (event.isCancelled()) {
+                // Let the client know the block still exists
+                ((EntityPlayer) this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
                 return false;
             }
         }
