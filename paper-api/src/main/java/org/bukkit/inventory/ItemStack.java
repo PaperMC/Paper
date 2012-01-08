@@ -122,8 +122,9 @@ public class ItemStack implements ConfigurationSerializable {
      * @return MaterialData for this item
      */
     public MaterialData getData() {
-        if (Material.getMaterial(getTypeId()).getData() != null) {
-            data = Material.getMaterial(getTypeId()).getNewData((byte) this.durability);
+        Material mat = Material.getMaterial(getTypeId());
+        if (mat != null && mat.getData() != null) {
+            data = mat.getNewData((byte) this.durability);
         }
 
         return data;
