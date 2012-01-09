@@ -6,6 +6,7 @@ import java.io.InputStream;
 import org.bukkit.Server;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.event.Event;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.util.config.Configuration;
 
@@ -147,4 +148,10 @@ public interface Plugin extends CommandExecutor {
      * @return ChunkGenerator for use in the default world generation
      */
     public ChunkGenerator getDefaultWorldGenerator(String worldName, String id);
+
+    public long getTiming(Event.Type type);
+
+    public void incTiming(Event.Type type, long delta);
+
+    public void resetTimings();
 }

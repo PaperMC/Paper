@@ -20,6 +20,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.event.Event;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
@@ -43,6 +44,7 @@ public abstract class JavaPlugin implements Plugin {
     private EbeanServer ebean = null;
     private FileConfiguration newConfig = null;
     private File configFile = null;
+    private long[] timings = new long[Event.Type.values().length];
 
     public JavaPlugin() {}
 
@@ -366,5 +368,17 @@ public abstract class JavaPlugin implements Plugin {
     @Override
     public String toString() {
         return getDescription().getFullName();
+    }
+
+    public long getTiming(Event.Type type) {
+        return timings[type.ordinal()];
+    }
+
+    public void incTiming(Event.Type type, long delta) {
+        timings[type.ordinal()] += delta;
+    }
+
+    public void resetTimings() {
+        timings = new long[Event.Type.values().length];
     }
 }

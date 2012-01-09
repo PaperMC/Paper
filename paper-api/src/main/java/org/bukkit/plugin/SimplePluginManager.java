@@ -336,7 +336,9 @@ public final class SimplePluginManager implements PluginManager {
         if (eventListeners != null) {
             for (RegisteredListener registration : eventListeners) {
                 try {
+                    long start = System.nanoTime();
                     registration.callEvent(event);
+                    registration.getPlugin().incTiming(event.getType(), System.nanoTime() - start);
                 } catch (AuthorNagException ex) {
                     Plugin plugin = registration.getPlugin();
 
