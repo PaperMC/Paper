@@ -12,14 +12,14 @@ public class GiveCommand extends VanillaCommand {
     public GiveCommand() {
         super("give");
         this.description = "Gives the specified player a certain amount of items";
-        this.usageMessage = "/give <player> <item> [amount]";
+        this.usageMessage = "/give <player> <item> [amount [data]]";
         this.setPermission("bukkit.command.give");
     }
 
     @Override
     public boolean execute(CommandSender sender, String currentAlias, String[] args) {
         if (!testPermission(sender)) return true;
-        if ((args.length < 2) || (args.length > 3)) {
+        if ((args.length < 2) || (args.length > 4)) {
             sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
             return false;
         }
@@ -33,6 +33,7 @@ public class GiveCommand extends VanillaCommand {
                 Command.broadcastCommandMessage(sender, "Giving " + player.getName() + " some " + material.getId() + " (" + material + ")");
 
                 int amount = 1;
+                short data = 0;
 
                 if (args.length >= 3) {
                     try {
@@ -41,9 +42,14 @@ public class GiveCommand extends VanillaCommand {
 
                     if (amount < 1) amount = 1;
                     if (amount > 64) amount = 64;
+                    if (args.length >= 4) {
+                        try {
+                            data = Short.parseShort(args[3]);
+                        } catch (NumberFormatException ex) {}
+                    }
                 }
 
-                player.getInventory().addItem(new ItemStack(material, amount));
+                player.getInventory().addItem(new ItemStack(material, amount, data));
             } else {
                 sender.sendMessage("There's no item called " + args[1]);
             }
