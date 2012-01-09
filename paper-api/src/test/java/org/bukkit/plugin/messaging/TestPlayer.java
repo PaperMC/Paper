@@ -1,6 +1,7 @@
 package org.bukkit.plugin.messaging;
 
 import java.net.InetSocketAddress;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,8 @@ import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionAttachment;
 import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 public class TestPlayer implements Player {
@@ -619,6 +622,30 @@ public class TestPlayer implements Player {
     }
 
     public boolean canSee(Player player) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public boolean addPotionEffect(PotionEffect effect) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public boolean addPotionEffect(PotionEffect effect, boolean force) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public boolean addPotionEffects(Collection<PotionEffect> effects) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public boolean hasPotionEffect(PotionEffectType type) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public void removePotionEffect(PotionEffectType type) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public Collection<PotionEffect> getActivePotionEffects() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 }
