@@ -2,7 +2,9 @@ package net.minecraft.server;
 
 // CraftBukkit start
 import org.bukkit.Bukkit;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason;
@@ -62,6 +64,8 @@ public class MobEffectList {
         }
 
         this.N = j;
+
+        PotionEffectType.registerPotionEffectType(new CraftPotionEffectType(this)); // CraftBukkit
     }
 
     protected MobEffectList a(int i, int j) {

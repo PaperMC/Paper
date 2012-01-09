@@ -42,6 +42,7 @@ import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityTracker;
 import net.minecraft.server.IProgressUpdate;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.MobEffectList;
 import net.minecraft.server.PropertyManager;
 import net.minecraft.server.ServerConfigurationManager;
 import net.minecraft.server.ServerNBTManager;
@@ -74,6 +75,7 @@ import org.bukkit.craftbukkit.inventory.CraftRecipe;
 import org.bukkit.craftbukkit.inventory.CraftShapedRecipe;
 import org.bukkit.craftbukkit.inventory.CraftShapelessRecipe;
 import org.bukkit.craftbukkit.map.CraftMapView;
+import org.bukkit.craftbukkit.potion.CraftPotionBrewer;
 import org.bukkit.scheduler.BukkitWorker;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 import org.bukkit.craftbukkit.util.DatFileFilter;
@@ -82,6 +84,8 @@ import org.bukkit.util.permissions.DefaultPermissions;
 import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.permissions.Permission;
 import org.bukkit.plugin.PluginLoadOrder;
+import org.bukkit.potion.Potion;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.plugin.messaging.StandardMessenger;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -114,9 +118,13 @@ public final class CraftServer implements Server {
 
         Bukkit.setServer(this);
 
-        // Register all the Enchantments now so we can stop new registration immediately after
+        // Register all the Enchantments and PotionTypes now so we can stop new registration immediately after
         Enchantment.DAMAGE_ALL.getClass();
         org.bukkit.enchantments.Enchantment.stopAcceptingRegistrations();
+
+        Potion.setPotionBrewer(new CraftPotionBrewer());
+        MobEffectList.BLINDNESS.getClass();
+        PotionEffectType.stopAcceptingRegistrations();
         // Ugly hack :(
 
         if (!Main.useConsole) {
@@ -565,7 +573,7 @@ public final class CraftServer implements Server {
         do {
             for (WorldServer server : console.worlds) {
                 used = server.dimension == dimension;
-               if (used) {
+                if (used) {
                     dimension++;
                     break;
                 }

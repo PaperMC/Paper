@@ -6,10 +6,13 @@ import net.minecraft.server.EntityEgg;
 import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntitySnowball;
 import net.minecraft.server.EntityPlayer;
+import net.minecraft.server.MobEffect;
+import net.minecraft.server.MobEffectList;
 
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 
 import org.bukkit.block.Block;
 import org.bukkit.entity.Arrow;
@@ -18,8 +21,11 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Snowball;
 import org.bukkit.entity.Vehicle;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.BlockIterator;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.HashSet;
 import java.util.ArrayList;
@@ -227,5 +233,47 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     public Player getKiller() {
         return getHandle().killer == null ? null : (Player) getHandle().killer.getBukkitEntity();
+    }
+
+    public boolean addPotionEffect(PotionEffect effect) {
+        return addPotionEffect(effect, false);
+    }
+
+    public boolean addPotionEffect(PotionEffect effect, boolean force) {
+        if (hasPotionEffect(effect.getType())) {
+            if (!force) {
+                return false;
+            }
+            removePotionEffect(effect.getType());
+        }
+        getHandle().addEffect(new MobEffect(effect.getType().getId(), effect.getDuration(), effect.getAmplifier()));
+        return true;
+    }
+
+    public boolean addPotionEffects(Collection<PotionEffect> effects) {
+        boolean success = true;
+        for (PotionEffect effect : effects) {
+            success &= addPotionEffect(effect);
+        }
+        return success;
+    }
+
+    public boolean hasPotionEffect(PotionEffectType type) {
+        return getHandle().hasEffect(MobEffectList.byId[type.getId()]);
+    }
+
+    public void removePotionEffect(PotionEffectType type) {
+        getHandle().effects.remove(type.getId());
+    }
+
+    public Collection<PotionEffect> getActivePotionEffects() {
+        List<PotionEffect> effects = new ArrayList<PotionEffect>();
+        for (Object raw : getHandle().effects.values()) {
+            if (!(raw instanceof MobEffect))
+                continue;
+            MobEffect handle = (MobEffect) raw;
+            effects.add(new PotionEffect(PotionEffectType.getById(handle.getEffectId()), handle.getDuration(), handle.getAmplifier()));
+        }
+        return effects;
     }
 }

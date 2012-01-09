@@ -63,7 +63,7 @@ public abstract class EntityLiving extends Entity {
     protected EntityLiving lastDamager = null;
     public int aJ = 0;
     public int aK = 0;
-    protected HashMap effects = new HashMap();
+    public HashMap effects = new HashMap(); // CraftBukkit - protected -> public
     private boolean b = true;
     private int c;
     private ControllerLook lookController;
