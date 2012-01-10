@@ -373,8 +373,10 @@ public class Location implements Cloneable {
      */
     public double distanceSquared(Location o) {
         if (o == null) {
+            throw new IllegalArgumentException("Cannot measure distance to a null location");
+        } else if (o.getWorld() == null || getWorld() == null) {
             throw new IllegalArgumentException("Cannot measure distance to a null world");
-        } else if (o == null || o.getWorld() != getWorld()) {
+        } else if (o.getWorld() != getWorld()) {
             throw new IllegalArgumentException("Cannot measure distance between " + getWorld().getName() + " and " + o.getWorld().getName());
         }
 
