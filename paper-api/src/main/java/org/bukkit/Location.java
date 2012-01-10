@@ -360,7 +360,11 @@ public class Location implements Cloneable {
      * @throws IllegalArgumentException for differing worlds
      */
     public double distance(Location o) {
-        return Math.sqrt(distanceSquared(o));
+        if (o == null || o.getWorld() != getWorld()) {
+            throw new IllegalArgumentException("Cannot measure distance between worlds or to null");
+        }
+
+        return Math.sqrt(Math.pow(x - o.x, 2) + Math.pow(y - o.y, 2) + Math.pow(z - o.z, 2));
     }
 
     /**
@@ -372,10 +376,8 @@ public class Location implements Cloneable {
      * @throws IllegalArgumentException for differing worlds
      */
     public double distanceSquared(Location o) {
-        if (o == null) {
-            throw new IllegalArgumentException("Cannot measure distance to a null world");
-        } else if (o == null || o.getWorld() != getWorld()) {
-            throw new IllegalArgumentException("Cannot measure distance between " + getWorld().getName() + " and " + o.getWorld().getName());
+        if (o == null || o.getWorld() != getWorld()) {
+            throw new IllegalArgumentException("Cannot measure distance between worlds or to null");
         }
 
         return Math.pow(x - o.x, 2) + Math.pow(y - o.y, 2) + Math.pow(z - o.z, 2);
