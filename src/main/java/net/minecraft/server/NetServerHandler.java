@@ -495,11 +495,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 if (i1 < this.server.getSpawnRadius() && !flag) {
                     this.player.netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, worldserver));
                 } else {
-                    // CraftBukkit start
-                    if (this.getPlayer().getTargetBlock(null, 6).getLocation().equals(new Location(worldserver.getWorld(), i, j, k))) {
-                        this.player.itemInWorldManager.dig(i, j, k, packet14blockdig.face);
-                    }
-                    // CraftBukkit end
+                    this.player.itemInWorldManager.dig(i, j, k, packet14blockdig.face);
                 }
             } else if (packet14blockdig.e == 2) {
                 this.player.itemInWorldManager.a(i, j, k);
@@ -591,11 +587,11 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 return;
             }
             flag = true; // spawn protection moved to ItemBlock!!!
+            // CraftBukkit end
 
-            if (j1 > 16 || flag && this.getPlayer().getTargetBlock(null, 6).getLocation().equals(new Location(worldserver.getWorld(), i, j, k))) {
+            if (j1 > 16 || flag) {
                 this.player.itemInWorldManager.interact(this.player, worldserver, itemstack, i, j, k, l);
             }
-            // CraftBukkit end
 
             this.player.netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, worldserver));
             if (l == 0) {
