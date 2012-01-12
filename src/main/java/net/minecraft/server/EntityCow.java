@@ -61,7 +61,7 @@ public class EntityCow extends EntityAnimal {
         j = this.random.nextInt(3) + 1 + this.random.nextInt(1 + i);
 
         if (j > 0) {
-            loot.add(new org.bukkit.inventory.ItemStack(this.z() ? Item.COOKED_BEEF.id : Item.RAW_BEEF.id, j));
+            loot.add(new org.bukkit.inventory.ItemStack(this.A() ? Item.COOKED_BEEF.id : Item.RAW_BEEF.id, j));
         }
 
         CraftEventFactory.callEntityDeathEvent(this, loot);

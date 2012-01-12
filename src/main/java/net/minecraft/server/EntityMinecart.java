@@ -51,7 +51,7 @@ public class EntityMinecart extends Entity implements IInventory {
         this.items = new ItemStack[27]; // CraftBukkit
         this.e = 0;
         this.f = false;
-        this.bc = true;
+        this.bf = true;
         this.b(0.98F, 0.7F);
         this.height = this.length / 2.0F;
     }
@@ -115,7 +115,7 @@ public class EntityMinecart extends Entity implements IInventory {
 
             this.d(-this.m());
             this.c(10);
-            this.aB();
+            this.aM();
             this.setDamage(this.getDamage() + i * 10);
             if (this.getDamage() > 40) {
                 if (this.passenger != null) {
@@ -211,7 +211,7 @@ public class EntityMinecart extends Entity implements IInventory {
         super.die();
     }
 
-    public void w_() {
+    public void y_() {
         // CraftBukkit start
         double prevX = this.locX;
         double prevY = this.locY;
@@ -748,8 +748,8 @@ public class EntityMinecart extends Entity implements IInventory {
                     d1 *= d3;
                     d0 *= 0.10000000149011612D;
                     d1 *= 0.10000000149011612D;
-                    d0 *= (double) (1.0F - this.bO);
-                    d1 *= (double) (1.0F - this.bO);
+                    d0 *= (double) (1.0F - this.bR);
+                    d1 *= (double) (1.0F - this.bR);
                     d0 *= 0.5D;
                     d1 *= 0.5D;
                     if (entity instanceof EntityMinecart) {

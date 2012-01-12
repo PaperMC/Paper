@@ -228,6 +228,10 @@ public final class ItemStack {
     }
 
     public static boolean equals(ItemStack itemstack, ItemStack itemstack1) {
+        return itemstack == null && itemstack1 == null ? true : (itemstack != null && itemstack1 != null ? (itemstack.tag == null && itemstack1.tag != null ? false : itemstack.tag == null || itemstack.tag.equals(itemstack1.tag)) : false);
+    }
+
+    public static boolean matches(ItemStack itemstack, ItemStack itemstack1) {
         return itemstack == null && itemstack1 == null ? true : (itemstack != null && itemstack1 != null ? itemstack.d(itemstack1) : false);
     }
 
@@ -293,15 +297,11 @@ public final class ItemStack {
     }
 
     public void setTag(NBTTagCompound nbttagcompound) {
-        if (Item.byId[this.id].getMaxStackSize() != 1) {
-            throw new IllegalArgumentException("Cannot add tag data to a stackable item");
-        } else {
-            this.tag = nbttagcompound;
-        }
+        this.tag = nbttagcompound;
     }
 
     public boolean q() {
-        return !this.getItem().e(this) ? false : !this.hasEnchantments();
+        return !this.getItem().f(this) ? false : !this.hasEnchantments();
     }
 
     public void addEnchantment(Enchantment enchantment, int i) {

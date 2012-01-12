@@ -128,7 +128,7 @@ public class ItemBucket extends Item {
                         }
                         // CraftBukkit end
 
-                        if (world.worldProvider.d && this.a == Block.WATER.id) {
+                        if (world.worldProvider.e && this.a == Block.WATER.id) {
                             world.makeSound(d0 + 0.5D, d1 + 0.5D, d2 + 0.5D, "random.fizz", 0.5F, 2.6F + (world.random.nextFloat() - world.random.nextFloat()) * 0.8F);
 
                             for (int l = 0; l < 8; ++l) {

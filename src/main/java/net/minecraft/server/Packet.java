@@ -148,7 +148,7 @@ public abstract class Packet {
             short short2 = datainputstream.readShort();
 
             itemstack = new ItemStack(short1, b0, short2);
-            if (Item.byId[short1].g()) {
+            if (Item.byId[short1].g() || Item.byId[short1].i()) {
                 itemstack.tag = this.c(datainputstream);
             }
         }
@@ -163,7 +163,7 @@ public abstract class Packet {
             dataoutputstream.writeShort(itemstack.id);
             dataoutputstream.writeByte(itemstack.count);
             dataoutputstream.writeShort(itemstack.getData());
-            if (itemstack.getItem().g()) {
+            if (itemstack.getItem().g() || itemstack.getItem().i()) {
                 this.a(itemstack.tag, dataoutputstream);
             }
         }
@@ -221,7 +221,6 @@ public abstract class Packet {
         a(24, true, false, Packet24MobSpawn.class);
         a(25, true, false, Packet25EntityPainting.class);
         a(26, true, false, Packet26AddExpOrb.class);
-        a(27, false, false, Packet27PlayerInput.class); // CraftBukkit - true -> false; disabled unused packet. TODO -- check if needed
         a(28, true, false, Packet28EntityVelocity.class);
         a(29, true, false, Packet29DestroyEntity.class);
         a(30, true, false, Packet30Entity.class);
@@ -257,6 +256,7 @@ public abstract class Packet {
         a(131, true, false, Packet131ItemData.class);
         a(200, true, false, Packet200Statistic.class);
         a(201, true, false, Packet201PlayerInfo.class);
+        a(250, true, true, Packet250CustomPayload.class);
         a(254, false, true, Packet254GetInfo.class);
         a(255, true, true, Packet255KickDisconnect.class);
     }

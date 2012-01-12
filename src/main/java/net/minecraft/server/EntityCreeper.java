@@ -50,10 +50,10 @@ public class EntityCreeper extends EntityMonster {
         }
     }
 
-    public void w_() {
+    public void y_() {
         this.b = this.fuseTicks;
         if (this.world.isStatic) {
-            int i = this.A();
+            int i = this.B();
 
             if (i > 0 && this.fuseTicks == 0) {
                 this.world.makeSound(this, "random.fuse", 1.0F, 0.5F);
@@ -69,7 +69,7 @@ public class EntityCreeper extends EntityMonster {
             }
         }
 
-        super.w_();
+        super.y_();
         if (this.target == null && this.fuseTicks > 0) {
             this.b(-1);
             --this.fuseTicks;
@@ -90,13 +90,13 @@ public class EntityCreeper extends EntityMonster {
     public void die(DamageSource damagesource) {
         super.die(damagesource);
         if (damagesource.getEntity() instanceof EntitySkeleton) {
-            this.b(Item.RECORD_1.id + this.random.nextInt(2), 1);
+            this.b(Item.RECORD_1.id + this.random.nextInt(10), 1);
         }
     }
 
     protected void a(Entity entity, float f) {
         if (!this.world.isStatic) {
-            int i = this.A();
+            int i = this.B();
 
             if ((i > 0 || f >= 3.0F) && (i <= 0 || f >= 7.0F)) {
                 this.b(-1);
@@ -140,7 +140,7 @@ public class EntityCreeper extends EntityMonster {
         return Item.SULPHUR.id;
     }
 
-    private int A() {
+    private int B() {
         return this.datawatcher.getByte(16);
     }
 

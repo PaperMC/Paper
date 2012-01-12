@@ -108,7 +108,7 @@ public class Chunk {
                     i = l;
                 }
 
-                if (!this.world.worldProvider.e) {
+                if (!this.world.worldProvider.f) {
                     int j1 = 15;
                     int k1 = this.world.height - 1;
 
@@ -239,7 +239,7 @@ public class Chunk {
             l1 = this.z * 16 + k;
             int j2;
 
-            if (!this.world.worldProvider.e) {
+            if (!this.world.worldProvider.f) {
                 if (i1 < l) {
                     for (i2 = i1; i2 < l; ++i2) {
                         this.h.a(i, i2, k, 15);
@@ -274,7 +274,7 @@ public class Chunk {
                 k2 = l;
             }
 
-            if (!this.world.worldProvider.e) {
+            if (!this.world.worldProvider.f) {
                 this.d(k1 - 1, l1, j2, k2);
                 this.d(k1 + 1, l1, j2, k2);
                 this.d(k1, l1 - 1, j2, k2);
@@ -311,13 +311,13 @@ public class Chunk {
             if (l1 != 0) {
                 if (!this.world.isStatic) {
                     Block.byId[l1].remove(this.world, i2, j, j2);
-                } else if (Block.byId[l1] instanceof BlockContainer) {
+                } else if (Block.byId[l1] instanceof BlockContainer && l1 != l) {
                     this.world.n(i2, j, j2);
                 }
             }
 
             this.g.a(i, j, k, i1);
-            if (!this.world.worldProvider.e) {
+            if (!this.world.worldProvider.f) {
                 if (Block.q[b0 & 255] != 0) {
                     if (j >= k1) {
                         this.g(i, j + 1, k);
@@ -343,7 +343,7 @@ public class Chunk {
                     tileentity = this.d(i, j, k);
                     if (tileentity == null) {
                         tileentity = ((BlockContainer) Block.byId[l]).a_();
-                        this.world.setTileEntity(i2, j, j2, tileentity); // CraftBukkit - Use world rather than in-chunk coords
+                        this.world.setTileEntity(i2, j, j2, tileentity);
                     }
 
                     if (tileentity != null) {
@@ -407,7 +407,7 @@ public class Chunk {
                     tileentity = this.d(i, j, k);
                     if (tileentity == null) {
                         tileentity = ((BlockContainer) Block.byId[l]).a_();
-                        this.world.setTileEntity(l1, j, i2, tileentity); // CraftBukkit - Use world rather than in-chunk coords
+                        this.world.setTileEntity(l1, j, i2, tileentity);
                     }
 
                     if (tileentity != null) {
@@ -460,7 +460,7 @@ public class Chunk {
     public void a(EnumSkyBlock enumskyblock, int i, int j, int k, int l) {
         this.q = true;
         if (enumskyblock == EnumSkyBlock.SKY) {
-            if (!this.world.worldProvider.e) {
+            if (!this.world.worldProvider.f) {
                 this.h.a(i, j, k, l);
             }
         } else {
@@ -473,7 +473,7 @@ public class Chunk {
     }
 
     public int c(int i, int j, int k, int l) {
-        int i1 = this.world.worldProvider.e ? 0 : this.h.a(i, j, k);
+        int i1 = this.world.worldProvider.f ? 0 : this.h.a(i, j, k);
 
         if (i1 > 0) {
             a = true;
@@ -512,15 +512,15 @@ public class Chunk {
             k = this.entitySlices.length - 1;
         }
 
-        entity.bW = true;
-        entity.bX = this.x;
-        entity.bY = k;
-        entity.bZ = this.z;
+        entity.bZ = true;
+        entity.ca = this.x;
+        entity.cb = k;
+        entity.cc = this.z;
         this.entitySlices[k].add(entity);
     }
 
     public void b(Entity entity) {
-        this.a(entity, entity.bY);
+        this.a(entity, entity.cb);
     }
 
     public void a(Entity entity, int i) {
@@ -670,7 +670,7 @@ public class Chunk {
 
                 if (entity1 != entity && entity1.boundingBox.a(axisalignedbb)) {
                     list.add(entity1);
-                    Entity[] aentity = entity1.aG();
+                    Entity[] aentity = entity1.aR();
 
                     if (aentity != null) {
                         for (int i1 = 0; i1 < aentity.length; ++i1) {
@@ -848,7 +848,7 @@ public class Chunk {
     }
 
     public void i() {
-        if (this.v && !this.world.worldProvider.e) {
+        if (this.v && !this.world.worldProvider.f) {
             this.k();
         }
     }

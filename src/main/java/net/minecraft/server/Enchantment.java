@@ -22,6 +22,10 @@ public abstract class Enchantment {
     public static final Enchantment SILK_TOUCH = new EnchantmentSilkTouch(33, 1);
     public static final Enchantment DURABILITY = new EnchantmentDurability(34, 5);
     public static final Enchantment LOOT_BONUS_BLOCKS = new EnchantmentLootBonus(35, 2, EnchantmentSlotType.DIGGER);
+    public static final Enchantment ARROW_DAMAGE = new EnchantmentArrowDamage(48, 10);
+    public static final Enchantment ARROW_KNOCKBACK = new EnchantmentArrowKnockback(49, 2);
+    public static final Enchantment ARROW_FIRE = new EnchantmentFlameArrows(50, 2);
+    public static final Enchantment ARROW_INFINITE = new EnchantmentInfiniteArrows(51, 1);
     public final int id;
     private final int weight;
     public EnchantmentSlotType slot;

@@ -6,6 +6,7 @@ import org.bukkit.craftbukkit.event.CraftEventFactory;
 public class EntitySheep extends EntityAnimal {
 
     public static final float[][] a = new float[][] { { 1.0F, 1.0F, 1.0F}, { 0.95F, 0.7F, 0.2F}, { 0.9F, 0.5F, 0.85F}, { 0.6F, 0.7F, 0.95F}, { 0.9F, 0.9F, 0.2F}, { 0.5F, 0.8F, 0.1F}, { 0.95F, 0.7F, 0.8F}, { 0.3F, 0.3F, 0.3F}, { 0.6F, 0.6F, 0.6F}, { 0.3F, 0.6F, 0.7F}, { 0.7F, 0.4F, 0.9F}, { 0.2F, 0.4F, 0.8F}, { 0.5F, 0.4F, 0.3F}, { 0.4F, 0.5F, 0.2F}, { 0.8F, 0.3F, 0.3F}, { 0.1F, 0.1F, 0.1F}};
+    private int b;
 
     public EntitySheep(World world) {
         super(world);
@@ -38,13 +39,75 @@ public class EntitySheep extends EntityAnimal {
         return Block.WOOL.id;
     }
 
+    public void d() {
+        super.d();
+        if (this.b > 0) {
+            --this.b;
+        }
+    }
+
+    protected void o_() {
+        if (this.b <= 0) {
+            super.o_();
+        }
+    }
+
+    protected void m_() {
+        super.m_();
+        int i;
+        int j;
+        int k;
+
+        if (!this.E() && this.b <= 0 && (this.l() && this.random.nextInt(50) == 0 || this.random.nextInt(1000) == 0)) {
+            i = MathHelper.floor(this.locX);
+            j = MathHelper.floor(this.locY);
+            k = MathHelper.floor(this.locZ);
+            if (this.world.getTypeId(i, j, k) == Block.LONG_GRASS.id && this.world.getData(i, j, k) == 1 || this.world.getTypeId(i, j - 1, k) == Block.GRASS.id) {
+                this.b = 40;
+                this.world.a(this, (byte) 10);
+            }
+        } else if (this.b == 4) {
+            i = MathHelper.floor(this.locX);
+            j = MathHelper.floor(this.locY);
+            k = MathHelper.floor(this.locZ);
+            boolean flag = false;
+
+            if (this.world.getTypeId(i, j, k) == Block.LONG_GRASS.id) {
+                this.world.f(2001, i, j, k, Block.LONG_GRASS.id + 256);
+                this.world.setTypeId(i, j, k, 0);
+                flag = true;
+            } else if (this.world.getTypeId(i, j - 1, k) == Block.GRASS.id) {
+                this.world.f(2001, i, j - 1, k, Block.GRASS.id);
+                this.world.setTypeId(i, j - 1, k, Block.DIRT.id);
+                flag = true;
+            }
+
+            if (flag) {
+                this.setSheared(false);
+                if (this.l()) {
+                    int l = this.getAge() + 1200;
+
+                    if (l > 0) {
+                        l = 0;
+                    }
+
+                    this.setAge(l);
+                }
+            }
+        }
+    }
+
+    protected boolean v() {
+        return this.b > 0;
+    }
+
     public boolean b(EntityHuman entityhuman) {
         ItemStack itemstack = entityhuman.inventory.getItemInHand();
 
-        if (itemstack != null && itemstack.id == Item.SHEARS.id && !this.isSheared()) {
+        if (itemstack != null && itemstack.id == Item.SHEARS.id && !this.isSheared() && !this.l()) {
             if (!this.world.isStatic) {
                 this.setSheared(true);
-                int i = 2 + this.random.nextInt(3);
+                int i = 1 + this.random.nextInt(3);
 
                 for (int j = 0; j < i; ++j) {
                     EntityItem entityitem = this.a(new ItemStack(Block.WOOL.id, 1, this.getColor()), 1.0F);

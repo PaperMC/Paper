@@ -3,6 +3,7 @@ package net.minecraft.server;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -53,6 +54,16 @@ public class ChunkProviderServer implements IChunkProvider {
             }
         } else {
             this.unloadQueue.add(i, j); // CraftBukkit
+        }
+    }
+
+    public void c() {
+        Iterator iterator = this.chunkList.iterator();
+
+        while (iterator.hasNext()) {
+            Chunk chunk = (Chunk) iterator.next();
+
+            this.queueUnload(chunk.x, chunk.z);
         }
     }
 
@@ -252,6 +263,10 @@ public class ChunkProviderServer implements IChunkProvider {
 
     public boolean canSave() {
         return !this.world.savingDisabled;
+    }
+
+    public String d() {
+        return "ServerChunkCache: " + this.chunks.values().size() + " Drop: " + this.unloadQueue.size();
     }
 
     public List getMobsFor(EnumCreatureType enumcreaturetype, int i, int j, int k) {

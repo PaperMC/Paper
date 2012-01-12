@@ -19,10 +19,10 @@ public class EntityEnderman extends EntityMonster {
     public EntityEnderman(World world) {
         super(world);
         this.texture = "/mob/enderman.png";
-        this.aY = 0.2F;
+        this.bb = 0.2F;
         this.damage = 7;
         this.b(0.6F, 2.9F);
-        this.bM = 1.0F;
+        this.bP = 1.0F;
     }
 
     public int getMaxHealth() {
@@ -74,8 +74,8 @@ public class EntityEnderman extends EntityMonster {
         if (itemstack != null && itemstack.id == Block.PUMPKIN.id) {
             return false;
         } else {
-            Vec3D vec3d = entityhuman.d(1.0F).b();
-            Vec3D vec3d1 = Vec3D.create(this.locX - entityhuman.locX, this.boundingBox.b + (double) (this.length / 2.0F) - (entityhuman.locY + (double) entityhuman.x()), this.locZ - entityhuman.locZ);
+            Vec3D vec3d = entityhuman.e(1.0F).b();
+            Vec3D vec3d1 = Vec3D.create(this.locX - entityhuman.locX, this.boundingBox.b + (double) (this.length / 2.0F) - (entityhuman.locY + (double) entityhuman.y()), this.locZ - entityhuman.locZ);
             double d0 = vec3d1.c();
 
             vec3d1 = vec3d1.b();
@@ -86,12 +86,12 @@ public class EntityEnderman extends EntityMonster {
     }
 
     public void d() {
-        if (this.ay()) {
+        if (this.aJ()) {
             this.damageEntity(DamageSource.DROWN, 1);
         }
 
         this.a = this.target != null;
-        this.aY = this.target != null ? 6.5F : 0.3F;
+        this.bb = this.target != null ? 6.5F : 0.3F;
         int i;
 
         if (!this.world.isStatic) {
@@ -146,16 +146,16 @@ public class EntityEnderman extends EntityMonster {
 
             if (f > 0.5F && this.world.isChunkLoaded(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ)) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
                 this.target = null;
-                this.u_();
+                this.w_();
             }
         }
 
-        if (this.ay()) {
+        if (this.aJ()) {
             this.target = null;
-            this.u_();
+            this.w_();
         }
 
-        this.aW = false;
+        this.aZ = false;
         if (this.target != null) {
             this.a(this.target, 100.0F, 100.0F);
         }
@@ -163,10 +163,10 @@ public class EntityEnderman extends EntityMonster {
         if (!this.world.isStatic && this.isAlive()) {
             if (this.target != null) {
                 if (this.target instanceof EntityHuman && this.c((EntityHuman) this.target)) {
-                    this.aT = this.aU = 0.0F;
-                    this.aY = 0.0F;
+                    this.aW = this.aX = 0.0F;
+                    this.bb = 0.0F;
                     if (this.target.i(this) < 16.0D) {
-                        this.u_();
+                        this.w_();
                     }
 
                     this.g = 0;
@@ -181,7 +181,7 @@ public class EntityEnderman extends EntityMonster {
         super.d();
     }
 
-    protected boolean u_() {
+    protected boolean w_() {
         double d0 = this.locX + (this.random.nextDouble() - 0.5D) * 64.0D;
         double d1 = this.locY + (double) (this.random.nextInt(64) - 32);
         double d2 = this.locZ + (this.random.nextDouble() - 0.5D) * 64.0D;
@@ -190,7 +190,7 @@ public class EntityEnderman extends EntityMonster {
     }
 
     protected boolean f(Entity entity) {
-        Vec3D vec3d = Vec3D.create(this.locX - entity.locX, this.boundingBox.b + (double) (this.length / 2.0F) - entity.locY + (double) entity.x(), this.locZ - entity.locZ);
+        Vec3D vec3d = Vec3D.create(this.locX - entity.locX, this.boundingBox.b + (double) (this.length / 2.0F) - entity.locY + (double) entity.y(), this.locZ - entity.locZ);
 
         vec3d = vec3d.b();
         double d0 = 16.0D;
@@ -230,7 +230,7 @@ public class EntityEnderman extends EntityMonster {
 
             if (flag1) {
                 this.setPosition(this.locX, this.locY, this.locZ);
-                if (this.world.a(this, this.boundingBox).size() == 0 && !this.world.c(this.boundingBox)) {
+                if (this.world.a((Entity) this, this.boundingBox).size() == 0 && !this.world.c(this.boundingBox)) {
                     flag = true;
                 }
             }
@@ -312,7 +312,7 @@ public class EntityEnderman extends EntityMonster {
     public boolean damageEntity(DamageSource damagesource, int i) {
         if (damagesource instanceof EntityDamageSourceIndirect) {
             for (int j = 0; j < 64; ++j) {
-                if (this.u_()) {
+                if (this.w_()) {
                     return true;
                 }
             }

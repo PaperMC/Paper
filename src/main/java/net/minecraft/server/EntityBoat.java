@@ -46,7 +46,7 @@ public class EntityBoat extends Entity {
 
     public EntityBoat(World world) {
         super(world);
-        this.bc = true;
+        this.bf = true;
         this.b(1.5F, 0.6F);
         this.height = this.length / 2.0F;
     }
@@ -108,7 +108,7 @@ public class EntityBoat extends Entity {
             this.d(-this.l());
             this.c(10);
             this.setDamage(this.getDamage() + i * 10);
-            this.aB();
+            this.aM();
             if (this.getDamage() > 40) {
                 // CraftBukkit start
                 VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, attacker);
@@ -147,7 +147,7 @@ public class EntityBoat extends Entity {
         return !this.dead;
     }
 
-    public void w_() {
+    public void y_() {
         // CraftBukkit start
         double prevX = this.locX;
         double prevY = this.locY;
@@ -156,7 +156,7 @@ public class EntityBoat extends Entity {
         float prevPitch = this.pitch;
         // CraftBukkit end
 
-        super.w_();
+        super.y_();
         if (this.k() > 0) {
             this.c(this.k() - 1);
         }
@@ -407,7 +407,7 @@ public class EntityBoat extends Entity {
             double d0 = Math.cos((double) this.yaw * 3.141592653589793D / 180.0D) * 0.4D;
             double d1 = Math.sin((double) this.yaw * 3.141592653589793D / 180.0D) * 0.4D;
 
-            this.passenger.setPosition(this.locX + d0, this.locY + this.q() + this.passenger.R(), this.locZ + d1);
+            this.passenger.setPosition(this.locX + d0, this.locY + this.q() + this.passenger.S(), this.locZ + d1);
         }
     }
 

@@ -60,7 +60,7 @@ public class EntityTrackerEntry {
         }
 
         ++this.t;
-        if (++this.l % this.c == 0 || this.tracker.cb) {
+        if (++this.l % this.c == 0 || this.tracker.ce) {
             int i = MathHelper.floor(this.tracker.locX * 32.0D);
             int j = MathHelper.floor(this.tracker.locY * 32.0D);
             int k = MathHelper.floor(this.tracker.locZ * 32.0D);
@@ -126,7 +126,7 @@ public class EntityTrackerEntry {
             }
         }
 
-        this.tracker.cb = false;
+        this.tracker.ce = false;
         if (this.tracker.velocityChanged) {
             // CraftBukkit start - create PlayerVelocity event
             boolean cancelled = false;
@@ -329,17 +329,17 @@ public class EntityTrackerEntry {
                     return new Packet23VehicleSpawn(this.tracker, 51);
                 } else {
                     if (this.tracker instanceof EntityFallingBlock) {
-                        EntityFallingBlock entityfallingsand = (EntityFallingBlock) this.tracker;
+                        EntityFallingBlock entityfallingblock = (EntityFallingBlock) this.tracker;
 
-                        if (entityfallingsand.a == Block.SAND.id) {
+                        if (entityfallingblock.a == Block.SAND.id) {
                             return new Packet23VehicleSpawn(this.tracker, 70);
                         }
 
-                        if (entityfallingsand.a == Block.GRAVEL.id) {
+                        if (entityfallingblock.a == Block.GRAVEL.id) {
                             return new Packet23VehicleSpawn(this.tracker, 71);
                         }
 
-                        if (entityfallingsand.a == Block.DRAGON_EGG.id) {
+                        if (entityfallingblock.a == Block.DRAGON_EGG.id) {
                             return new Packet23VehicleSpawn(this.tracker, 74);
                         }
                     }

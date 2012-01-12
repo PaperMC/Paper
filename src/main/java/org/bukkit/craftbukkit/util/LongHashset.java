@@ -21,6 +21,10 @@ public class LongHashset extends LongHash {
         }
     }
 
+    public int size() {
+        return count;
+    }
+
     public void add(int msw, int lsw) {
         add(toLong(msw, lsw));
     }

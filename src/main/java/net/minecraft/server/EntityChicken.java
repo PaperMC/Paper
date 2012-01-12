@@ -91,7 +91,7 @@ public class EntityChicken extends EntityAnimal {
             loot.add(new org.bukkit.inventory.ItemStack(Item.FEATHER.id, j));
         }
 
-        if (this.z()) {
+        if (this.A()) {
             loot.add(new org.bukkit.inventory.ItemStack(Item.COOKED_CHICKEN.id, 1));
         } else {
             loot.add(new org.bukkit.inventory.ItemStack(Item.RAW_CHICKEN.id, 1));

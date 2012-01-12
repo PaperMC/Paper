@@ -237,10 +237,12 @@ public class NetworkManager {
     }
 
     public void d() {
-        this.a();
-        this.q = true;
-        this.s.interrupt();
-        (new NetworkMonitorThread(this)).start();
+        if (!this.q) {
+            this.a();
+            this.q = true;
+            this.s.interrupt();
+            (new NetworkMonitorThread(this)).start();
+        }
     }
 
     public int e() {

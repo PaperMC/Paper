@@ -14,7 +14,7 @@ public class EntityBlaze extends EntityMonster {
         this.texture = "/mob/fire.png";
         this.fireProof = true;
         this.damage = 6;
-        this.az = 10;
+        this.aA = 10;
     }
 
     public int getMaxHealth() {
@@ -52,7 +52,7 @@ public class EntityBlaze extends EntityMonster {
 
     public void d() {
         if (!this.world.isStatic) {
-            if (this.ay()) {
+            if (this.aJ()) {
                 this.damageEntity(DamageSource.DROWN, 1);
             }
 
@@ -62,7 +62,7 @@ public class EntityBlaze extends EntityMonster {
                 this.a = 0.5F + (float) this.random.nextGaussian() * 3.0F;
             }
 
-            if (this.E() != null && this.E().locY + (double) this.E().x() > this.locY + (double) this.x() + (double) this.a) {
+            if (this.F() != null && this.F().locY + (double) this.F().y() > this.locY + (double) this.y() + (double) this.a) {
                 this.motY += (0.30000001192092896D - this.motY) * 0.30000001192092896D;
             }
         }
@@ -137,8 +137,8 @@ public class EntityBlaze extends EntityMonster {
         return Item.BLAZE_ROD.id;
     }
 
-    public boolean z() {
-        return this.A();
+    public boolean A() {
+        return this.B();
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
@@ -156,7 +156,7 @@ public class EntityBlaze extends EntityMonster {
         }
     }
 
-    public boolean A() {
+    public boolean B() {
         return (this.datawatcher.getByte(16) & 1) != 0;
     }
 
@@ -172,7 +172,7 @@ public class EntityBlaze extends EntityMonster {
         this.datawatcher.watch(16, Byte.valueOf(b0));
     }
 
-    protected boolean y() {
+    protected boolean z() {
         return true;
     }
 }

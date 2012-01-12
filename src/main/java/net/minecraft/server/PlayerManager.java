@@ -35,6 +35,14 @@ public class PlayerManager {
         }
 
         this.c.clear();
+        if (this.managedPlayers.isEmpty()) {
+            WorldServer worldserver = this.server.getWorldServer(this.e);
+            WorldProvider worldprovider = worldserver.worldProvider;
+
+            if (!worldprovider.c()) {
+                worldserver.chunkProviderServer.c();
+            }
+        }
     }
 
     private PlayerInstance a(int i, int j, boolean flag) {

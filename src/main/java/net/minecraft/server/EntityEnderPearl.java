@@ -6,6 +6,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 
 public class EntityEnderPearl extends EntityProjectile {
+
     public EntityEnderPearl(World world) {
         super(world);
     }
@@ -59,7 +60,7 @@ public class EntityEnderPearl extends EntityProjectile {
 
                 if (!damageEvent.isCancelled()) {
                     org.bukkit.entity.Player bPlayer = Bukkit.getPlayerExact(((EntityPlayer) this.shooter).name);
-                    ((CraftPlayer) bPlayer).getHandle().cg = -1; // Remove spawning invulnerability.
+                    ((CraftPlayer) bPlayer).getHandle().cj = -1; // Remove spawning invulnerability.
                     ((CraftPlayer) bPlayer).getHandle().damageEntity(DamageSource.FALL, 5); // Damage the new player instead of the old
                 }
             }

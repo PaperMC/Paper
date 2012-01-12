@@ -24,7 +24,7 @@ public class EntityGhast extends EntityFlying implements IMonster {
         this.texture = "/mob/ghast.png";
         this.b(4.0F, 4.0F);
         this.fireProof = true;
-        this.az = 5;
+        this.aA = 5;
     }
 
     public boolean damageEntity(DamageSource damagesource, int i) {
@@ -46,8 +46,8 @@ public class EntityGhast extends EntityFlying implements IMonster {
         return 10;
     }
 
-    public void w_() {
-        super.w_();
+    public void y_() {
+        super.y_();
         byte b0 = this.datawatcher.getByte(16);
 
         this.texture = b0 == 1 ? "/mob/ghast_fire.png" : "/mob/ghast.png";
@@ -58,7 +58,7 @@ public class EntityGhast extends EntityFlying implements IMonster {
             this.die();
         }
 
-        this.ak();
+        this.au();
         this.e = this.f;
         double d0 = this.b - this.locX;
         double d1 = this.c - this.locY;
@@ -138,7 +138,7 @@ public class EntityGhast extends EntityFlying implements IMonster {
                     this.world.a((EntityHuman) null, 1008, (int) this.locX, (int) this.locY, (int) this.locZ, 0);
                     EntityFireball entityfireball = new EntityFireball(this.world, this, d5, d6, d7);
                     double d8 = 4.0D;
-                    Vec3D vec3d = this.d(1.0F);
+                    Vec3D vec3d = this.e(1.0F);
 
                     entityfireball.locX = this.locX + vec3d.a * d8;
                     entityfireball.locY = this.locY + (double) (this.length / 2.0F) + 0.5D;
@@ -174,7 +174,7 @@ public class EntityGhast extends EntityFlying implements IMonster {
 
         for (int i = 1; (double) i < d3; ++i) {
             axisalignedbb.d(d4, d5, d6);
-            if (this.world.a(this, axisalignedbb).size() > 0) {
+            if (this.world.a((Entity) this, axisalignedbb).size() > 0) {
                 return false;
             }
         }

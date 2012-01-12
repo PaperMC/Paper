@@ -34,6 +34,6 @@ public class Packet3Chat extends Packet {
     }
 
     public int a() {
-        return this.message.length();
+        return 2 + this.message.length() * 2;
     }
 }

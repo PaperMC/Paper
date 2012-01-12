@@ -32,8 +32,8 @@ public class EntityExperienceOrb extends Entity {
 
     protected void b() {}
 
-    public void w_() {
-        super.w_();
+    public void y_() {
+        super.y_();
         if (this.c > 0) {
             --this.c;
         }
@@ -55,7 +55,7 @@ public class EntityExperienceOrb extends Entity {
 
         if (entityhuman != null) {
             double d1 = (entityhuman.locX - this.locX) / d0;
-            double d2 = (entityhuman.locY + (double) entityhuman.x() - this.locY) / d0;
+            double d2 = (entityhuman.locY + (double) entityhuman.y() - this.locY) / d0;
             double d3 = (entityhuman.locZ - this.locZ) / d0;
             double d4 = Math.sqrt(d1 * d1 + d2 * d2 + d3 * d3);
             double d5 = 1.0D - d4;
@@ -103,7 +103,7 @@ public class EntityExperienceOrb extends Entity {
     }
 
     public boolean damageEntity(DamageSource damagesource, int i) {
-        this.aB();
+        this.aM();
         this.d -= i;
         if (this.d <= 0) {
             this.die();

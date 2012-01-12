@@ -69,8 +69,8 @@ public class NetLoginHandler extends NetHandler {
 
     public void a(Packet1Login packet1login) {
         this.g = packet1login.name;
-        if (packet1login.a != 22) {
-            if (packet1login.a > 22) {
+        if (packet1login.a != 23) {
+            if (packet1login.a > 23) {
                 this.disconnect("Outdated server!");
             } else {
                 this.disconnect("Outdated client!");
@@ -104,7 +104,7 @@ public class NetLoginHandler extends NetHandler {
             if (maxPlayers > 60) {
                 maxPlayers = 60;
             }
-            netserverhandler.sendPacket(new Packet1Login("", entityplayer.id, worldserver.getSeed(), entityplayer.itemInWorldManager.getGameMode(), (byte) worldserver.worldProvider.dimension, (byte) worldserver.difficulty, (byte) worldserver.height, (byte) maxPlayers));
+            netserverhandler.sendPacket(new Packet1Login("", entityplayer.id, worldserver.getSeed(), worldserver.getWorldData().getType(), entityplayer.itemInWorldManager.getGameMode(), (byte) worldserver.worldProvider.dimension, (byte) worldserver.difficulty, (byte) worldserver.height, (byte) maxPlayers));
             // CraftBukkit end
 
             netserverhandler.sendPacket(new Packet6SpawnPosition(chunkcoordinates.x, chunkcoordinates.y, chunkcoordinates.z));
@@ -137,7 +137,7 @@ public class NetLoginHandler extends NetHandler {
         if (this.networkManager.f() == null) return; // CraftBukkit - fix NPE when a client queries a server that is unable to handle it.
         try {
             // CraftBukkit start
-            ServerListPingEvent pingEvent = CraftEventFactory.callServerListPingEvent(this.server.server, getSocket().getInetAddress(), this.server.r, this.server.serverConfigurationManager.getPlayerCount(), this.server.serverConfigurationManager.getMaxPlayers());
+            ServerListPingEvent pingEvent = CraftEventFactory.callServerListPingEvent(this.server.server, getSocket().getInetAddress(), this.server.s, this.server.serverConfigurationManager.getPlayerCount(), this.server.serverConfigurationManager.getMaxPlayers());
             String s = pingEvent.getMotd() + "\u00A7" + this.server.serverConfigurationManager.getPlayerCount() + "\u00A7" + pingEvent.getMaxPlayers();
             // CraftBukkit end
 

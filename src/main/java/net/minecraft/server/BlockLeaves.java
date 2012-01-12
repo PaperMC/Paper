@@ -138,8 +138,15 @@ public class BlockLeaves extends BlockTransparant {
         return Block.SAPLING.id;
     }
 
+    public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {
+        super.dropNaturally(world, i, j, k, l, f, i1);
+        if (!world.isStatic && (l & 3) == 0 && world.random.nextInt(200) == 0) {
+            this.a(world, i, j, k, new ItemStack(Item.APPLE, 1, 0));
+        }
+    }
+
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
-        if (!world.isStatic && entityhuman.P() != null && entityhuman.P().id == Item.SHEARS.id) {
+        if (!world.isStatic && entityhuman.Q() != null && entityhuman.Q().id == Item.SHEARS.id) {
             entityhuman.a(StatisticList.C[this.id], 1);
             this.a(world, i, j, k, new ItemStack(Block.LEAVES.id, 1, l & 3));
         } else {

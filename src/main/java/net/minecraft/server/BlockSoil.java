@@ -47,8 +47,8 @@ public class BlockSoil extends Block {
         }
     }
 
-    public void b(World world, int i, int j, int k, Entity entity) {
-        if (world.random.nextInt(4) == 0) {
+    public void a(World world, int i, int j, int k, Entity entity, float f) {
+        if (world.random.nextFloat() < f - 0.5F) {
             // CraftBukkit start - Interact Soil
             org.bukkit.event.Cancellable cancellable;
             if (entity instanceof EntityHuman) {

@@ -214,7 +214,7 @@ public class BlockFire extends Block {
         }
     }
 
-    public boolean v_() {
+    public boolean x_() {
         return false;
     }
 

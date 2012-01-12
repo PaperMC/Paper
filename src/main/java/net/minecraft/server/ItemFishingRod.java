@@ -15,7 +15,7 @@ public class ItemFishingRod extends Item {
             int i = entityhuman.hookedFish.j();
 
             itemstack.damage(i, entityhuman);
-            entityhuman.r_();
+            entityhuman.s_();
         } else {
             // CraftBukkit start
             PlayerFishEvent playerFishEvent = new PlayerFishEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), null,PlayerFishEvent.State.FISHING);
@@ -31,7 +31,7 @@ public class ItemFishingRod extends Item {
                 world.addEntity(new EntityFishingHook(world, entityhuman));
             }
 
-            entityhuman.r_();
+            entityhuman.s_();
         }
 
         return itemstack;

@@ -30,7 +30,7 @@ public abstract class EntityProjectile extends Entity {
         super(world);
         this.shooter = entityliving;
         this.b(0.25F, 0.25F);
-        this.setPositionRotation(entityliving.locX, entityliving.locY + (double) entityliving.x(), entityliving.locZ, entityliving.yaw, entityliving.pitch);
+        this.setPositionRotation(entityliving.locX, entityliving.locY + (double) entityliving.y(), entityliving.locZ, entityliving.yaw, entityliving.pitch);
         this.locX -= (double) (MathHelper.cos(this.yaw / 180.0F * 3.1415927F) * 0.16F);
         this.locY -= 0.10000000149011612D;
         this.locZ -= (double) (MathHelper.sin(this.yaw / 180.0F * 3.1415927F) * 0.16F);
@@ -82,11 +82,11 @@ public abstract class EntityProjectile extends Entity {
         this.h = 0;
     }
 
-    public void w_() {
-        this.bI = this.locX;
-        this.bJ = this.locY;
-        this.bK = this.locZ;
-        super.w_();
+    public void y_() {
+        this.bL = this.locX;
+        this.bM = this.locY;
+        this.bN = this.locZ;
+        super.y_();
         if (this.shake > 0) {
             --this.shake;
         }
@@ -190,7 +190,7 @@ public abstract class EntityProjectile extends Entity {
         float f2 = 0.99F;
         float f3 = this.e();
 
-        if (this.az()) {
+        if (this.aK()) {
             for (int k = 0; k < 4; ++k) {
                 float f4 = 0.25F;
 

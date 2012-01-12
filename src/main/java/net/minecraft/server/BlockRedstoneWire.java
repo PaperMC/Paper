@@ -171,7 +171,7 @@ public class BlockRedstoneWire extends Block {
                 }
             }
 
-            if (k1 == 0 || l1 == 0) {
+            if (k1 < l1 || l1 == 0) {
                 this.b.add(new ChunkPosition(i, j, k));
                 this.b.add(new ChunkPosition(i - 1, j, k));
                 this.b.add(new ChunkPosition(i + 1, j, k));
@@ -236,6 +236,10 @@ public class BlockRedstoneWire extends Block {
         if (!world.isStatic) {
             world.applyPhysics(i, j + 1, k, this.id);
             world.applyPhysics(i, j - 1, k, this.id);
+            world.applyPhysics(i + 1, j, k, this.id);
+            world.applyPhysics(i - 1, j, k, this.id);
+            world.applyPhysics(i, j, k + 1, this.id);
+            world.applyPhysics(i, j, k - 1, this.id);
             this.g(world, i, j, k);
             this.h(world, i - 1, j, k);
             this.h(world, i + 1, j, k);
@@ -348,10 +352,8 @@ public class BlockRedstoneWire extends Block {
             return true;
         } else if (i1 == 0) {
             return false;
-        } else if (Block.byId[i1].isPowerSource() && l != -1) {
-            return true;
         } else if (i1 != Block.DIODE_OFF.id && i1 != Block.DIODE_ON.id) {
-            return false;
+            return Block.byId[i1].isPowerSource() && l != -1;
         } else {
             int j1 = iblockaccess.getData(i, j, k);
 

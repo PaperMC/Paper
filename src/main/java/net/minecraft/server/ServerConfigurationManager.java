@@ -279,7 +279,7 @@ public class ServerConfigurationManager {
 
         // CraftBukkit start
         byte actualDimension = (byte) (worldserver.getWorld().getEnvironment().getId());
-        entityplayer1.netServerHandler.sendPacket(new Packet9Respawn(actualDimension, (byte) worldserver.difficulty, worldserver.getSeed(), worldserver.height, entityplayer1.itemInWorldManager.getGameMode()));
+        entityplayer1.netServerHandler.sendPacket(new Packet9Respawn(actualDimension, (byte) worldserver.difficulty, worldserver.getSeed(), entityplayer1.world.getWorldData().getType(), worldserver.height, entityplayer.itemInWorldManager.getGameMode()));
         entityplayer1.spawnIn(worldserver);
         entityplayer1.dead = false;
         entityplayer1.netServerHandler.teleport(new Location(worldserver.getWorld(), entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch));
@@ -705,7 +705,7 @@ public class ServerConfigurationManager {
 
     public void updateClient(EntityPlayer entityplayer) {
         entityplayer.updateInventory(entityplayer.defaultContainer);
-        entityplayer.s_();
+        entityplayer.t_();
         entityplayer.lastSentExp = -1; // CraftBukkit
     }
 

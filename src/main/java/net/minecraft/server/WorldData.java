@@ -5,6 +5,7 @@ import java.util.List;
 public class WorldData {
 
     private long seed;
+    private WorldType type;
     private int spawnX;
     private int spawnY;
     private int spawnZ;
@@ -21,10 +22,21 @@ public class WorldData {
     private int thunderTicks;
     private int gameType;
     private boolean useMapFeatures;
-    private boolean hardcore = false;
+    private boolean hardcore;
 
     public WorldData(NBTTagCompound nbttagcompound) {
+        this.type = WorldType.NORMAL;
+        this.hardcore = false;
         this.seed = nbttagcompound.getLong("RandomSeed");
+        if (nbttagcompound.hasKey("generatorName")) {
+            String s = nbttagcompound.getString("generatorName");
+
+            this.type = WorldType.a(s);
+            if (this.type == null) {
+                this.type = WorldType.NORMAL;
+            }
+        }
+
         this.gameType = nbttagcompound.getInt("GameType");
         if (nbttagcompound.hasKey("MapFeatures")) {
             this.useMapFeatures = nbttagcompound.getBoolean("MapFeatures");
@@ -52,15 +64,21 @@ public class WorldData {
     }
 
     public WorldData(WorldSettings worldsettings, String s) {
+        this.type = WorldType.NORMAL;
+        this.hardcore = false;
         this.seed = worldsettings.a();
         this.gameType = worldsettings.b();
         this.useMapFeatures = worldsettings.d();
         this.name = s;
         this.hardcore = worldsettings.c();
+        this.type = worldsettings.e();
     }
 
     public WorldData(WorldData worlddata) {
+        this.type = WorldType.NORMAL;
+        this.hardcore = false;
         this.seed = worlddata.seed;
+        this.type = worlddata.type;
         this.gameType = worlddata.gameType;
         this.useMapFeatures = worlddata.useMapFeatures;
         this.spawnX = worlddata.spawnX;
@@ -107,6 +125,7 @@ public class WorldData {
 
     private void a(NBTTagCompound nbttagcompound, NBTTagCompound nbttagcompound1) {
         nbttagcompound.setLong("RandomSeed", this.seed);
+        nbttagcompound.setString("generatorName", this.type.name());
         nbttagcompound.setInt("GameType", this.gameType);
         nbttagcompound.setBoolean("MapFeatures", this.useMapFeatures);
         nbttagcompound.setInt("SpawnX", this.spawnX);
@@ -227,5 +246,9 @@ public class WorldData {
 
     public boolean isHardcore() {
         return this.hardcore;
+    }
+
+    public WorldType getType() {
+        return this.type;
     }
 }

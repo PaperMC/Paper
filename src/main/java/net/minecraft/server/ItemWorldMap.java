@@ -48,7 +48,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
             int i1 = MathHelper.floor(entity.locZ - (double) k) / i + short2 / 2;
             int j1 = 128 / i;
 
-            if (world.worldProvider.e) {
+            if (world.worldProvider.f) {
                 j1 /= 2;
             }
 
@@ -82,7 +82,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
                             int l4;
                             int i5;
 
-                            if (world.worldProvider.e) {
+                            if (world.worldProvider.f) {
                                 l4 = i3 + j3 * 231871;
                                 l4 = l4 * l4 * 31287121 + l4 * 11;
                                 if ((l4 >> 20 & 1) == 0) {

@@ -17,7 +17,7 @@ public class EntitySnowman extends EntityGolem {
 
     public void d() {
         super.d();
-        if (this.target == null && !this.D() && this.world.random.nextInt(100) == 0) {
+        if (this.target == null && !this.E() && this.world.random.nextInt(100) == 0) {
             List list = this.world.a(EntityMonster.class, AxisAlignedBB.b(this.locX, this.locY, this.locZ, this.locX + 1.0D, this.locY + 1.0D, this.locZ + 1.0D).grow(16.0D, 4.0D, 16.0D));
 
             if (!list.isEmpty()) {
@@ -51,7 +51,7 @@ public class EntitySnowman extends EntityGolem {
 
             if (this.attackTicks == 0) {
                 EntitySnowball entitysnowball = new EntitySnowball(this.world, this);
-                double d2 = entity.locY + (double) entity.x() - 1.100000023841858D - entitysnowball.locY;
+                double d2 = entity.locY + (double) entity.y() - 1.100000023841858D - entitysnowball.locY;
                 float f1 = MathHelper.a(d0 * d0 + d1 * d1) * 0.2F;
 
                 this.world.makeSound(this, "random.bow", 1.0F, 1.0F / (this.random.nextFloat() * 0.4F + 0.8F));

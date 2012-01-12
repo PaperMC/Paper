@@ -35,7 +35,7 @@ public class BlockFlowing extends BlockFluids {
         int l = this.g(world, i, j, k);
         byte b0 = 1;
 
-        if (this.material == Material.LAVA && !world.worldProvider.d) {
+        if (this.material == Material.LAVA && !world.worldProvider.e) {
             b0 = 2;
         }
 

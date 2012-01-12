@@ -55,6 +55,7 @@ import net.minecraft.server.WorldMap;
 import net.minecraft.server.WorldMapCollection;
 import net.minecraft.server.WorldNBTStorage;
 import net.minecraft.server.WorldSettings;
+import net.minecraft.server.WorldType;
 import org.bukkit.*;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -512,6 +513,7 @@ public final class CraftServer implements Server {
         ChunkGenerator generator = creator.generator();
         File folder = new File(name);
         World world = getWorld(name);
+        WorldType type = WorldType.a(creator.type().getName());
 
         if (world != null) {
             return world;
@@ -533,7 +535,7 @@ public final class CraftServer implements Server {
 
         int dimension = 10 + console.worlds.size();
         boolean hardcore = false;
-        WorldServer internal = new WorldServer(console, new ServerNBTManager(getWorldContainer(), name, true), name, dimension, new WorldSettings(creator.seed(), getDefaultGameMode().getValue(), true, hardcore), creator.environment(), generator);
+        WorldServer internal = new WorldServer(console, new ServerNBTManager(getWorldContainer(), name, true), name, dimension, new WorldSettings(creator.seed(), getDefaultGameMode().getValue(), true, hardcore, type), creator.environment(), generator);
 
         if (!(worlds.containsKey(name.toLowerCase()))) {
             return null;

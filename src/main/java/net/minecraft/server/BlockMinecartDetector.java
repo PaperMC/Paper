@@ -52,7 +52,7 @@ public class BlockMinecartDetector extends BlockMinecartTrack {
         boolean flag = (l & 8) != 0;
         boolean flag1 = false;
         float f = 0.125F;
-        List list = world.a(EntityMinecart.class, AxisAlignedBB.b((double) ((float) i + f), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) j + 0.25D, (double) ((float) (k + 1) - f)));
+        List list = world.a(EntityMinecart.class, AxisAlignedBB.b((double) ((float) i + f), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) ((float) (j + 1) - f), (double) ((float) (k + 1) - f)));
 
         if (list.size() > 0) {
             flag1 = true;

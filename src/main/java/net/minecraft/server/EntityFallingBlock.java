@@ -14,7 +14,7 @@ public class EntityFallingBlock extends Entity {
     public EntityFallingBlock(World world, double d0, double d1, double d2, int i, int data) {
         super(world);
         this.a = i;
-        this.bc = true;
+        this.bf = true;
         this.data = data; // CraftBukkit
         this.b(0.98F, 0.98F);
         this.height = this.length / 2.0F;
@@ -37,7 +37,7 @@ public class EntityFallingBlock extends Entity {
         return !this.dead;
     }
 
-    public void w_() {
+    public void y_() {
         if (this.a == 0) {
             this.die();
         } else {

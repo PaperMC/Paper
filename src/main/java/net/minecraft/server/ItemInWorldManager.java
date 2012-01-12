@@ -221,14 +221,14 @@ public class ItemInWorldManager {
         if (this.b()) {
             ((EntityPlayer) this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
         } else {
-            ItemStack itemstack = this.player.P();
+            ItemStack itemstack = this.player.Q();
             boolean flag1 = this.player.b(Block.byId[l]);
 
             if (itemstack != null) {
                 itemstack.a(l, i, j, k, this.player);
                 if (itemstack.count == 0) {
                     itemstack.a(this.player);
-                    this.player.Q();
+                    this.player.R();
                 }
             }
 

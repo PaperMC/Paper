@@ -102,6 +102,9 @@ public class WorldServer extends World implements BlockChangeDelegate {
             entity.die();
         }
         // CraftBukkit end */
+        if (!this.server.spawnNPCs && entity instanceof NPC) {
+            entity.die();
+        }
 
         if (entity.passenger == null || !(entity.passenger instanceof EntityHuman)) {
             super.entityJoinedWorld(entity, flag);
@@ -171,7 +174,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
     protected void c(Entity entity) {
         super.c(entity);
         this.N.a(entity.id, entity);
-        Entity[] aentity = entity.aG();
+        Entity[] aentity = entity.aR();
 
         if (aentity != null) {
             for (int i = 0; i < aentity.length; ++i) {
@@ -183,7 +186,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
     protected void d(Entity entity) {
         super.d(entity);
         this.N.d(entity.id);
-        Entity[] aentity = entity.aG();
+        Entity[] aentity = entity.aR();
 
         if (aentity != null) {
             for (int i = 0; i < aentity.length; ++i) {

@@ -75,7 +75,7 @@ public class EntitySquid extends EntityWaterAnimal {
         return super.b(entityhuman);
     }
 
-    public boolean az() {
+    public boolean aK() {
         return this.world.a(this.boundingBox.grow(0.0D, -0.6000000238418579D, 0.0D), Material.WATER, this);
     }
 
@@ -93,7 +93,7 @@ public class EntitySquid extends EntityWaterAnimal {
             }
         }
 
-        if (this.az()) {
+        if (this.aK()) {
             float f;
 
             if (this.h < 3.1415927F) {
@@ -111,7 +111,7 @@ public class EntitySquid extends EntityWaterAnimal {
                 this.n *= 0.99F;
             }
 
-            if (!this.aj) {
+            if (!this.world.isStatic) {
                 this.motX = (double) (this.o * this.l);
                 this.motY = (double) (this.p * this.l);
                 this.motZ = (double) (this.q * this.l);
@@ -124,7 +124,7 @@ public class EntitySquid extends EntityWaterAnimal {
             this.a += (-((float) Math.atan2((double) f, this.motY)) * 180.0F / 3.1415927F - this.a) * 0.1F;
         } else {
             this.j = MathHelper.abs(MathHelper.sin(this.h)) * 3.1415927F * 0.25F;
-            if (!this.aj) {
+            if (!this.world.isStatic) {
                 this.motX = 0.0D;
                 this.motY -= 0.08D;
                 this.motY *= 0.9800000190734863D;
@@ -140,10 +140,10 @@ public class EntitySquid extends EntityWaterAnimal {
     }
 
     protected void m_() {
-        ++this.aS;
-        if (this.aS > 100) {
+        ++this.aV;
+        if (this.aV > 100) {
             this.o = this.p = this.q = 0.0F;
-        } else if (this.random.nextInt(50) == 0 || !this.bS || this.o == 0.0F && this.p == 0.0F && this.q == 0.0F) {
+        } else if (this.random.nextInt(50) == 0 || !this.bV || this.o == 0.0F && this.p == 0.0F && this.q == 0.0F) {
             float f = this.random.nextFloat() * 3.1415927F * 2.0F;
 
             this.o = MathHelper.cos(f) * 0.2F;
@@ -151,7 +151,7 @@ public class EntitySquid extends EntityWaterAnimal {
             this.q = MathHelper.sin(f) * 0.2F;
         }
 
-        this.ak();
+        this.au();
     }
 
     public boolean g() {

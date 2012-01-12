@@ -36,7 +36,7 @@ public class EntitySkeleton extends EntityMonster {
 
     public void die(DamageSource damagesource) {
         super.die(damagesource);
-        if (damagesource.g() instanceof EntityArrow && damagesource.getEntity() instanceof EntityHuman) {
+        if (damagesource.b() instanceof EntityArrow && damagesource.getEntity() instanceof EntityHuman) {
             EntityHuman entityhuman = (EntityHuman) damagesource.getEntity();
             double d0 = entityhuman.locX - this.locX;
             double d1 = entityhuman.locZ - this.locZ;
@@ -73,7 +73,7 @@ public class EntitySkeleton extends EntityMonster {
 
             if (this.attackTicks == 0) {
                 EntityArrow entityarrow = new EntityArrow(this.world, this, 1.0F);
-                double d2 = entity.locY + (double) entity.x() - 0.699999988079071D - entityarrow.locY;
+                double d2 = entity.locY + (double) entity.y() - 0.699999988079071D - entityarrow.locY;
                 float f1 = MathHelper.a(d0 * d0 + d1 * d1) * 0.2F;
 
                 this.world.makeSound(this, "random.bow", 1.0F, 1.0F / (this.random.nextFloat() * 0.4F + 0.8F));

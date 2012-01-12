@@ -35,7 +35,7 @@ public class BlockSnow extends Block {
     public boolean canPlace(World world, int i, int j, int k) {
         int l = world.getTypeId(i, j - 1, k);
 
-        return l != 0 && Block.byId[l].a() ? world.getMaterial(i, j - 1, k).isSolid() : false;
+        return l != 0 && (l == Block.LEAVES.id || Block.byId[l].a()) ? world.getMaterial(i, j - 1, k).isSolid() : false;
     }
 
     public void doPhysics(World world, int i, int j, int k, int l) {

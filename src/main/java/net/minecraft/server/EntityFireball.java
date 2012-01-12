@@ -62,8 +62,8 @@ public class EntityFireball extends Entity {
     }
     // CraftBukkit end
 
-    public void w_() {
-        super.w_();
+    public void y_() {
+        super.y_();
         this.setOnFire(1);
         if (!this.world.isStatic && (this.shooter == null || this.shooter.dead)) {
             this.die();
@@ -159,7 +159,7 @@ public class EntityFireball extends Entity {
         this.yaw = this.lastYaw + (this.yaw - this.lastYaw) * 0.2F;
         float f2 = 0.95F;
 
-        if (this.az()) {
+        if (this.aK()) {
             for (int k = 0; k < 4; ++k) {
                 float f3 = 0.25F;
 
@@ -250,9 +250,9 @@ public class EntityFireball extends Entity {
     }
 
     public boolean damageEntity(DamageSource damagesource, int i) {
-        this.aB();
+        this.aM();
         if (damagesource.getEntity() != null) {
-            Vec3D vec3d = damagesource.getEntity().ap();
+            Vec3D vec3d = damagesource.getEntity().aA();
 
             if (vec3d != null) {
                 this.motX = vec3d.a;

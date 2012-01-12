@@ -43,7 +43,7 @@ public class PlayerInventory implements IInventory {
 
     private int firstPartial(ItemStack itemstack) {
         for (int i = 0; i < this.items.length; ++i) {
-            if (this.items[i] != null && this.items[i].id == itemstack.id && this.items[i].isStackable() && this.items[i].count < this.items[i].getMaxStackSize() && this.items[i].count < this.getMaxStackSize() && (!this.items[i].usesData() || this.items[i].getData() == itemstack.getData())) {
+            if (this.items[i] != null && this.items[i].id == itemstack.id && this.items[i].isStackable() && this.items[i].count < this.items[i].getMaxStackSize() && this.items[i].count < this.getMaxStackSize() && (!this.items[i].usesData() || this.items[i].getData() == itemstack.getData()) && ItemStack.equals(this.items[i], itemstack)) {
                 return i;
             }
         }
@@ -104,6 +104,9 @@ public class PlayerInventory implements IInventory {
             } else {
                 if (this.items[k] == null) {
                     this.items[k] = new ItemStack(i, 0, itemstack.getData());
+                    if (itemstack.hasTag()) {
+                        this.items[k].setTag((NBTTagCompound) itemstack.getTag().clone());
+                    }
                 }
 
                 int l = j;

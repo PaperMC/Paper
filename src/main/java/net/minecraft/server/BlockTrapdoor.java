@@ -121,7 +121,7 @@ public class BlockTrapdoor extends Block {
             }
 
             // CraftBukkit start
-            if (l > 0 && Block.byId[l] != null && Block.byId[l].isPowerSource()) {
+            if (l == 0 || l > 0 && Block.byId[l] != null && Block.byId[l].isPowerSource()) {
                 org.bukkit.World bworld = world.getWorld();
                 org.bukkit.block.Block block = bworld.getBlockAt(i, j, k);
 

@@ -43,6 +43,8 @@ public class CraftEnchantment extends Enchantment {
                 return EnchantmentTarget.TOOL;
             case WEAPON:
                 return EnchantmentTarget.WEAPON;
+            case BOW:
+                return EnchantmentTarget.BOW;
             default:
                 return null;
         }
@@ -90,6 +92,14 @@ public class CraftEnchantment extends Enchantment {
                 return "DURABILITY";
             case 35:
                 return "LOOT_BONUS_BLOCKS";
+            case 48:
+                return "ARROW_DAMAGE";
+            case 49:
+                return "ARROW_KNOCKBACK";
+            case 50:
+                return "ARROW_FIRE";
+            case 51:
+                return "ARROW_INFINITE";
             default:
                 return "UNKNOWN_ENCHANT_" + target.id;
         }

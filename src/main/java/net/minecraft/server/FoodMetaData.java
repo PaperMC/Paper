@@ -23,7 +23,7 @@ public class FoodMetaData {
     }
 
     public void a(ItemFood itemfood) {
-        this.a(itemfood.n(), itemfood.o());
+        this.a(itemfood.o(), itemfood.p());
     }
 
     public void a(EntityHuman entityhuman) {

@@ -14,7 +14,7 @@ public class EntitySpider extends EntityMonster {
         super(world);
         this.texture = "/mob/spider.png";
         this.b(1.4F, 0.9F);
-        this.aY = 0.8F;
+        this.bb = 0.8F;
     }
 
     protected void b() {
@@ -26,8 +26,8 @@ public class EntitySpider extends EntityMonster {
         super.d();
     }
 
-    public void w_() {
-        super.w_();
+    public void y_() {
+        super.y_();
         if (!this.world.isStatic) {
             this.a(this.positionChanged);
         }
@@ -138,7 +138,7 @@ public class EntitySpider extends EntityMonster {
     }
 
     public boolean r() {
-        return this.o_();
+        return this.u();
     }
 
     public void s() {}
@@ -151,7 +151,7 @@ public class EntitySpider extends EntityMonster {
         return mobeffect.getEffectId() == MobEffectList.POISON.id ? false : super.a(mobeffect);
     }
 
-    public boolean o_() {
+    public boolean u() {
         return (this.datawatcher.getByte(16) & 1) != 0;
     }
 
