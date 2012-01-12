@@ -48,7 +48,7 @@ public abstract class EntityHuman extends EntityLiving {
     // CraftBukkit end
 
     public ChunkCoordinates F;
-    public int sleepTicks; // CraftBukkit private -> public
+    public int sleepTicks; // CraftBukkit - private -> public
     public float G;
     public float H;
     private ChunkCoordinates b;

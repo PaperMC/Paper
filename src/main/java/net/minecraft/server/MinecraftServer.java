@@ -190,7 +190,7 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
             this.propertyManager.properties.remove("spawn-protection");
             this.propertyManager.savePropertiesFile();
         }
-        // CratBukkit end
+        // CraftBukkit end
 
         return true;
     }
@@ -700,7 +700,7 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
 
     public String d(String s) {
         RemoteControlCommandListener.a.a();
-        // CraftBukkt start
+        // CraftBukkit start
         ServerCommandEvent event = new ServerCommandEvent(Event.Type.REMOTE_COMMAND, this.remoteConsole, s);
         this.server.getPluginManager().callEvent(event);
         ServerCommand servercommand = new ServerCommand(event.getCommand(), RemoteControlCommandListener.a);

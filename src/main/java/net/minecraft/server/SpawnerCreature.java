@@ -15,7 +15,7 @@ import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 
 public final class SpawnerCreature {
 
-    // private static HashMap b = new HashMap(); // CraftBukkit -- moved local to spawnEntities
+    // private static HashMap b = new HashMap(); // CraftBukkit - moved local to spawnEntities
     static private class ChunkEntry extends EntryBase {
         public boolean spawn;
         public ChunkEntry (int x, int z, boolean spawn) {

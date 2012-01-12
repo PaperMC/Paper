@@ -73,7 +73,7 @@ public class BlockCauldron extends Block {
 
                         if (!entityhuman.inventory.pickup(itemstack1)) {
                             world.addEntity(new EntityItem(world, (double) i + 0.5D, (double) j + 1.5D, (double) k + 0.5D, itemstack1));
-                        } else if (entityhuman instanceof EntityPlayer) { //CraftBukkit
+                        } else if (entityhuman instanceof EntityPlayer) { // CraftBukkit
                             ((EntityPlayer) entityhuman).updateInventory(entityhuman.defaultContainer); // CraftBukkit
                         }
 

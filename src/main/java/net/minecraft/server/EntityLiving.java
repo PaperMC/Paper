@@ -81,8 +81,8 @@ public abstract class EntityLiving extends Entity {
     private int d = 0;
     private Entity e;
     protected int aZ = 0;
-    public int expToDrop = 0; // CraftBukkit added
-    public int maxAirTicks = 300; // CraftBukkit added
+    public int expToDrop = 0; // CraftBukkit
+    public int maxAirTicks = 300; // CraftBukkit
 
     public EntityLiving(World world) {
         super(world);
@@ -129,7 +129,7 @@ public abstract class EntityLiving extends Entity {
     public void af() {
         this.am = this.an;
         super.af();
-        // MethodProfiler.a("mobBaseTick"); // CraftBukkit -- not in production code
+        // MethodProfiler.a("mobBaseTick"); // CraftBukkit - not in production code
         if (this.random.nextInt(1000) < this.a++) {
             this.a = -this.h();
             this.ae();
@@ -175,7 +175,7 @@ public abstract class EntityLiving extends Entity {
 
             this.extinguish();
         } else {
-            if (this.getAirTicks() != 300) { // CraftBukkit -- only set if needed to work around a datawatcher inefficiency
+            if (this.getAirTicks() != 300) { // CraftBukkit - only set if needed to work around a datawatcher inefficiency
                 this.setAirTicks(maxAirTicks);
             }
         }
@@ -208,7 +208,7 @@ public abstract class EntityLiving extends Entity {
         this.W = this.V;
         this.lastYaw = this.yaw;
         this.lastPitch = this.pitch;
-        // MethodProfiler.a(); // CraftBukkit -- not in production code
+        // MethodProfiler.a(); // CraftBukkit - not in production code
     }
 
     // CraftBukkit start
@@ -877,7 +877,7 @@ public abstract class EntityLiving extends Entity {
             }
         }
 
-        // MethodProfiler.a("ai"); // CraftBukkit -- not in production code
+        // MethodProfiler.a("ai"); // CraftBukkit - not in production code
         if (this.L()) {
             this.aW = false;
             this.aT = 0.0F;
@@ -887,7 +887,7 @@ public abstract class EntityLiving extends Entity {
             this.m_();
         }
 
-        // MethodProfiler.a(); // CraftBukkit -- not in production code
+        // MethodProfiler.a(); // CraftBukkit - not in production code
         boolean flag = this.az();
         boolean flag1 = this.aA();
 
@@ -912,7 +912,7 @@ public abstract class EntityLiving extends Entity {
         this.ak *= this.F();
         this.a(this.aT, this.aU);
         this.ak = f;
-        // MethodProfiler.a("push"); // CraftBukkit -- not in production code
+        // MethodProfiler.a("push"); // CraftBukkit - not in production code
         List list1 = this.world.b((Entity) this, this.boundingBox.b(0.20000000298023224D, 0.0D, 0.20000000298023224D));
 
         if (list1 != null && list1.size() > 0) {
@@ -925,7 +925,7 @@ public abstract class EntityLiving extends Entity {
             }
         }
 
-        // MethodProfiler.a(); // CraftBukkit -- not in production code
+        // MethodProfiler.a(); // CraftBukkit - not in production code
     }
 
     protected boolean L() {

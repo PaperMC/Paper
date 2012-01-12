@@ -22,7 +22,7 @@ public abstract class EntityCreature extends EntityLiving {
     }
 
     protected void m_() {
-        // MethodProfiler.a("ai"); // CraftBukkit -- not in production code
+        // MethodProfiler.a("ai"); // CraftBukkit - not in production code
         if (this.f > 0) {
             --this.f;
         }
@@ -73,7 +73,7 @@ public abstract class EntityCreature extends EntityLiving {
             }
         }
 
-        // MethodProfiler.a(); // CraftBukkit -- not in production code
+        // MethodProfiler.a(); // CraftBukkit - not in production code
         if (!this.e && this.target != null && (this.pathEntity == null || this.random.nextInt(20) == 0)) {
             this.pathEntity = this.world.findPath(this, this.target, f);
         } else if (!this.e && (this.pathEntity == null && this.random.nextInt(180) == 0 || this.random.nextInt(120) == 0 || this.f > 0) && this.aS < 100) {
@@ -86,7 +86,7 @@ public abstract class EntityCreature extends EntityLiving {
 
         this.pitch = 0.0F;
         if (this.pathEntity != null && this.random.nextInt(100) != 0) {
-            // MethodProfiler.a("followpath"); // CraftBukkit -- not in production code
+            // MethodProfiler.a("followpath"); // CraftBukkit - not in production code
             Vec3D vec3d = this.pathEntity.a(this);
             double d0 = (double) (this.width * 2.0F);
 
@@ -154,7 +154,7 @@ public abstract class EntityCreature extends EntityLiving {
                 this.aW = true;
             }
 
-            // MethodProfiler.a(); // CraftBukkit -- not in production code
+            // MethodProfiler.a(); // CraftBukkit - not in production code
         } else {
             super.m_();
             this.pathEntity = null;
@@ -162,7 +162,7 @@ public abstract class EntityCreature extends EntityLiving {
     }
 
     protected void C() {
-        // MethodProfiler.a("stroll"); // CraftBukkit -- not in production code
+        // MethodProfiler.a("stroll"); // CraftBukkit - not in production code
         boolean flag = false;
         int i = -1;
         int j = -1;
@@ -188,7 +188,7 @@ public abstract class EntityCreature extends EntityLiving {
             this.pathEntity = this.world.a(this, i, j, k, 10.0F);
         }
 
-        // MethodProfiler.a(); // CraftBukkit -- not in production code
+        // MethodProfiler.a(); // CraftBukkit - not in production code
     }
 
     protected void a(Entity entity, float f) {}

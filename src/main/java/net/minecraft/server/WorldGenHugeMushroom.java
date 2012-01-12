@@ -1,13 +1,13 @@
 package net.minecraft.server;
 
 import java.util.Random;
-// Craftbukkit start
+// CraftBukkit start
 import org.bukkit.Bukkit;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.material.MaterialData;
-// Craftbukkit end
+// CraftBukkit end
 
 public class WorldGenHugeMushroom extends WorldGenerator {
 
@@ -71,7 +71,7 @@ public class WorldGenHugeMushroom extends WorldGenerator {
                 } else if (!Block.BROWN_MUSHROOM.canPlace(world, i, j, k)) {
                     return false;
                 } else {
-                    // Craftbukkit start
+                    // CraftBukkit start
                     if (event == null) {
                         world.setRawTypeId(i, j - 1, k, Block.DIRT.id);
                     } else {
@@ -79,7 +79,7 @@ public class WorldGenHugeMushroom extends WorldGenerator {
                         dirtState.setTypeId(Block.DIRT.id);
                         event.getBlocks().add(dirtState);
                     }
-                    // Craftbukkit end
+                    // CraftBukkit end
                     int j2 = j + i1;
 
                     if (l == 1) {
@@ -159,7 +159,7 @@ public class WorldGenHugeMushroom extends WorldGenerator {
                                 }
 
                                 if ((l2 != 0 || j >= j + i1 - 1) && !Block.o[world.getTypeId(i2, k1, k2)]) {
-                                    // Craftbukkit start
+                                    // CraftBukkit start
                                     if (event == null) {
                                         world.setRawTypeIdAndData(i2, k1, k2, Block.BIG_MUSHROOM_1.id + l, l2);
                                     } else {
@@ -168,7 +168,7 @@ public class WorldGenHugeMushroom extends WorldGenerator {
                                         state.setData(new MaterialData(Block.BIG_MUSHROOM_1.id + l, (byte) l2));
                                         event.getBlocks().add(state);
                                     }
-                                    // Craftbukkit end
+                                    // CraftBukkit end
                                 }
                             }
                         }
@@ -177,7 +177,7 @@ public class WorldGenHugeMushroom extends WorldGenerator {
                     for (k1 = 0; k1 < i1; ++k1) {
                         l1 = world.getTypeId(i, j + k1, k);
                         if (!Block.o[l1]) {
-                            // Craftbukkit start
+                            // CraftBukkit start
                             if (event == null) {
                                 world.setRawTypeIdAndData(i, j + k1, k, Block.BIG_MUSHROOM_1.id + l, 10);
                             } else {
@@ -186,10 +186,10 @@ public class WorldGenHugeMushroom extends WorldGenerator {
                                 state.setData(new MaterialData(Block.BIG_MUSHROOM_1.id + l, (byte) 10));
                                 event.getBlocks().add(state);
                             }
-                            // Craftbukkit end
+                            // CraftBukkit end
                         }
                     }
-                    // Craftbukkit start
+                    // CraftBukkit start
                     if (event != null) {
                         Bukkit.getPluginManager().callEvent(event);
                         if (!event.isCancelled()) {
@@ -198,7 +198,7 @@ public class WorldGenHugeMushroom extends WorldGenerator {
                             }
                         }
                     }
-                    // Craftbukkit end
+                    // CraftBukkit end
                     return true;
                 }
             }

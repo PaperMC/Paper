@@ -42,7 +42,7 @@ public class ServerConfigurationManager {
     private File l;
     private File m;
     public PlayerFileData playerFileData; // CraftBukkit - private - >public
-    public boolean hasWhitelist; // Craftbukkit - private -> public
+    public boolean hasWhitelist; // CraftBukkit - private -> public
     private int p = 0;
 
     // CraftBukkit start
@@ -511,24 +511,24 @@ public class ServerConfigurationManager {
         this.operators.add(s.toLowerCase());
         this.q();
 
-        // Craftbukkit start
+        // CraftBukkit start
         Player player = server.server.getPlayer(s);
         if (player != null) {
             player.recalculatePermissions();
         }
-        // Craftbukkit end
+        // CraftBukkit end
     }
 
     public void removeOp(String s) {
         this.operators.remove(s.toLowerCase());
         this.q();
 
-        // Craftbukkit start
+        // CraftBukkit start
         Player player = server.server.getPlayer(s);
         if (player != null) {
             player.recalculatePermissions();
         }
-        // Craftbukkit end
+        // CraftBukkit end
     }
 
     private void p() {
@@ -705,7 +705,7 @@ public class ServerConfigurationManager {
     public void updateClient(EntityPlayer entityplayer) {
         entityplayer.updateInventory(entityplayer.defaultContainer);
         entityplayer.s_();
-        entityplayer.cf = -1; // CraftBukkit added
+        entityplayer.cf = -1; // CraftBukkit
     }
 
     public int getPlayerCount() {

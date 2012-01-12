@@ -1,6 +1,6 @@
 package net.minecraft.server;
 
-import org.bukkit.entity.Player; // Craftbukkit
+import org.bukkit.entity.Player; // CraftBukkit
 
 public class ItemDye extends Item {
 
@@ -28,23 +28,23 @@ public class ItemDye extends Item {
 
                 if (i1 == Block.SAPLING.id) {
                     if (!world.isStatic) {
-                        // Craftbukkit start
+                        // CraftBukkit start
                         Player player = (entityhuman instanceof EntityPlayer) ? (Player)entityhuman.getBukkitEntity() : null;
                         ((BlockSapling) Block.SAPLING).b(world, i, j, k, world.random, true, player, itemstack);
                         //--itemstack.count; - called later if the bonemeal attempt was succesful
-                        // Craftbukkit end
+                        // CraftBukkit end
                     }
 
                     return true;
                 }
 
                 if (i1 == Block.BROWN_MUSHROOM.id || i1 == Block.RED_MUSHROOM.id) {
-                    // Craftbukkit start
+                    // CraftBukkit start
                     if (!world.isStatic) {
                         Player player = (entityhuman instanceof EntityPlayer) ? (Player)entityhuman.getBukkitEntity() : null;
                         ((BlockMushroom) Block.byId[i1]).b(world, i, j, k, world.random, true, player, itemstack);
                         //--itemstack.count; - called later if the bonemeal attempt was succesful
-                        // Craftbukkit end
+                        // CraftBukkit end
                     }
 
                     return true;

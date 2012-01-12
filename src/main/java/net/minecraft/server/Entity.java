@@ -196,7 +196,7 @@ public abstract class Entity {
     }
 
     public void af() {
-        // MethodProfiler.a("entityBaseTick"); // CraftBukkit -- not in production code
+        // MethodProfiler.a("entityBaseTick"); // CraftBukkit - not in production code
         if (this.vehicle != null && this.vehicle.dead) {
             this.vehicle = null;
         }
@@ -299,7 +299,7 @@ public abstract class Entity {
         }
 
         this.justCreated = false;
-        // MethodProfiler.a(); // CraftBukkit -- not in production code
+        // MethodProfiler.a(); // CraftBukkit - not in production code
     }
 
     protected void av() {
@@ -370,7 +370,7 @@ public abstract class Entity {
             this.locY = this.boundingBox.b + (double) this.height - (double) this.bL;
             this.locZ = (this.boundingBox.c + this.boundingBox.f) / 2.0D;
         } else {
-            // MethodProfiler.a("move"); // CraftBukkit -- not in production code
+            // MethodProfiler.a("move"); // CraftBukkit - not in production code
             this.bL *= 0.4F;
             double d3 = this.locX;
             double d4 = this.locZ;
@@ -532,8 +532,8 @@ public abstract class Entity {
                 }
             }
 
-            // MethodProfiler.a(); // CraftBukkit -- not in production code
-            // MethodProfiler.a("rest"); // CraftBukkit -- not in production code
+            // MethodProfiler.a(); // CraftBukkit - not in production code
+            // MethodProfiler.a("rest"); // CraftBukkit - not in production code
             this.locX = (this.boundingBox.a + this.boundingBox.d) / 2.0D;
             this.locY = this.boundingBox.b + (double) this.height - (double) this.bL;
             this.locZ = (this.boundingBox.c + this.boundingBox.f) / 2.0D;
@@ -646,7 +646,7 @@ public abstract class Entity {
                 this.fireTicks = -this.maxFireTicks;
             }
 
-            // MethodProfiler.a(); // CraftBukkit -- not in production code
+            // MethodProfiler.a(); // CraftBukkit - not in production code
         }
     }
 

@@ -5,7 +5,7 @@ import java.util.Random;
 // CraftBukkit start
 import org.bukkit.event.block.BlockSpreadEvent;
 import org.bukkit.event.block.BlockFadeEvent;
-//CraftBukkit end
+// CraftBukkit end
 
 public class BlockGrass extends Block {
 

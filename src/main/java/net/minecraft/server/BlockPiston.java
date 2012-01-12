@@ -267,7 +267,7 @@ public class BlockPiston extends Block {
         }
     }
 
-    // CraftBukkkit boolean -> int
+    // CraftBukkit - boolean -> int
     private static int g(World world, int i, int j, int k, int l) {
         int i1 = i + Facing.b[l];
         int j1 = j + Facing.c[l];

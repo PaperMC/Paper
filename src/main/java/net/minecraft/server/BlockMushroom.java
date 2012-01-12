@@ -2,14 +2,14 @@ package net.minecraft.server;
 
 import java.util.ArrayList;
 import java.util.Random;
-// Craftbukkit start
+// CraftBukkit start
 import org.bukkit.Location;
 import org.bukkit.TreeType;
 import org.bukkit.block.BlockState;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockSpreadEvent;
 import org.bukkit.event.world.StructureGrowEvent;
-// Craftbukkit end
+// CraftBukkit end
 
 public class BlockMushroom extends BlockFlower {
 

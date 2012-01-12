@@ -104,7 +104,7 @@ public class ItemDoor extends Item {
                 return false;
             }
         }
-        //CraftBukkit end
+        // CraftBukkit end
         world.setTypeIdAndData(i, j + 1, k, block.id, l + 8);
         world.suppressPhysics = false;
         world.applyPhysics(i, j, k, block.id);

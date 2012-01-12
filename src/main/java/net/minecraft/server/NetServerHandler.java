@@ -634,7 +634,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
             this.player.activeContainer.a();
             this.player.h = false;
-            // CraftBukkit | TODO CHECK IF NEEDED -- new if structure might not need 'always'. Kept it in for now, but may be able to remove in future
+            // CraftBukkit - TODO CHECK IF NEEDED -- new if structure might not need 'always'. Kept it in for now, but may be able to remove in future
             if (!ItemStack.equals(this.player.inventory.getItemInHand(), packet15place.itemstack) || always) {
                 this.sendPacket(new Packet103SetSlot(this.player.activeContainer.windowId, slot.c, this.player.inventory.getItemInHand()));
             }

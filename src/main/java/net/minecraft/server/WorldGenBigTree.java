@@ -8,17 +8,17 @@ import org.bukkit.Bukkit;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.world.StructureGrowEvent;
-// Craftbukkit end
+// CraftBukkit end
 
 public class WorldGenBigTree extends WorldGenerator {
 
     static final byte[] a = new byte[] { (byte) 2, (byte) 0, (byte) 0, (byte) 1, (byte) 2, (byte) 1};
     Random b = new Random();
-    // Craftbukkit start
+    // CraftBukkit start
     BlockChangeDelegate c;
     StructureGrowEvent event;
     CraftWorld bukkitWorld;
-    // Craftbukkit end
+    // CraftBukkit end
     int[] d = new int[] { 0, 0, 0};
     int e = 0;
     int f;
@@ -131,7 +131,7 @@ public class WorldGenBigTree extends WorldGenerator {
                     if (l1 != 0 && l1 != 18) {
                         ++k1;
                     } else {
-                        // Craftbukkit start
+                        // CraftBukkit start
                         if (event == null) {
                             this.a(this.c, aint1[0], aint1[1], aint1[2], l, 0);
                         } else {
@@ -139,7 +139,7 @@ public class WorldGenBigTree extends WorldGenerator {
                             state.setTypeId(l);
                             event.getBlocks().add(state);
                         }
-                        // Craftbukkit end
+                        // CraftBukkit end
                         ++k1;
                     }
                 }
@@ -215,7 +215,7 @@ public class WorldGenBigTree extends WorldGenerator {
                 aint3[b1] = MathHelper.floor((double) (aint[b1] + j) + 0.5D);
                 aint3[b2] = MathHelper.floor((double) aint[b2] + (double) j * d0 + 0.5D);
                 aint3[b3] = MathHelper.floor((double) aint[b3] + (double) j * d1 + 0.5D);
-                // Craftbukkit start
+                // CraftBukkit start
                 if (event == null) {
                 this.a(this.c, aint3[0], aint3[1], aint3[2], i, 0);
                 } else {
@@ -223,7 +223,7 @@ public class WorldGenBigTree extends WorldGenerator {
                     state.setTypeId(i);
                     event.getBlocks().add(state);
                 }
-                // Craftbukkit end
+                // CraftBukkit end
             }
         }
     }
@@ -393,7 +393,7 @@ public class WorldGenBigTree extends WorldGenerator {
             this.b();
             this.c();
             this.d();
-            // Craftbukkit start
+            // CraftBukkit start
             if (event != null) {
                 Bukkit.getPluginManager().callEvent(event);
                 if (!event.isCancelled()) {
@@ -403,7 +403,7 @@ public class WorldGenBigTree extends WorldGenerator {
                     }
                 }
             }
-            // Craftbukkit end
+            // CraftBukkit end
             return true;
         }
     }

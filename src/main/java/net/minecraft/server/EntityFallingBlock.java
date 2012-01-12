@@ -10,7 +10,7 @@ public class EntityFallingBlock extends Entity {
         super(world);
     }
 
-    // CraftBukkit -- changed method signature
+    // CraftBukkit - changed method signature
     public EntityFallingBlock(World world, double d0, double d1, double d2, int i, int data) {
         super(world);
         this.a = i;
@@ -66,7 +66,7 @@ public class EntityFallingBlock extends Entity {
                 this.motY *= -0.5D;
                 if (this.world.getTypeId(i, j, k) != Block.PISTON_MOVING.id) {
                     this.die();
-                    // CraftBukkit -- setTypeId => setTypeIdAndData
+                    // CraftBukkit - setTypeId => setTypeIdAndData
                     if ((!this.world.a(this.a, i, j, k, true, 1) || BlockSand.g(this.world, i, j - 1, k) || !this.world.setTypeIdAndData(i, j, k, this.a, this.data)) && !this.world.isStatic) {
                         this.b(this.a, 1);
                     }

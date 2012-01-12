@@ -24,7 +24,7 @@ public class EntitySnowball extends EntityProjectile {
 
     protected void a(MovingObjectPosition movingobjectposition) {
         if (movingobjectposition.entity != null) {
-            int b0 = 0; //Craftbukkit - byte -> int
+            int b0 = 0; // CraftBukkit - byte -> int
 
             if (movingobjectposition.entity instanceof EntityBlaze) {
                 b0 = 3;

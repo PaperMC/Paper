@@ -2,13 +2,13 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-// Craftbukkit start
+// CraftBukkit start
 import org.bukkit.BlockChangeDelegate;
 import org.bukkit.Bukkit;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.world.StructureGrowEvent;
-// Craftbukkit end
+// CraftBukkit end
 
 public class WorldGenTrees extends WorldGenerator {
 
@@ -66,7 +66,7 @@ public class WorldGenTrees extends WorldGenerator {
             } else {
                 i1 = world.getTypeId(i, j - 1, k);
                 if ((i1 == Block.GRASS.id || i1 == Block.DIRT.id) && j < world.getHeight() - l - 1) { // CraftBukkit
-                    // Craftbukkit start
+                    // CraftBukkit start
                     if (event == null) {
                         world.setRawTypeId(i, j - 1, k, Block.DIRT.id);
                     } else {
@@ -74,7 +74,7 @@ public class WorldGenTrees extends WorldGenerator {
                         dirtState.setTypeId(Block.DIRT.id);
                         event.getBlocks().add(dirtState);
                     }
-                    // Craftbukkit end
+                    // CraftBukkit end
 
                     int i2;
 
@@ -89,7 +89,7 @@ public class WorldGenTrees extends WorldGenerator {
                                 int l2 = k2 - k;
 
                                 if ((Math.abs(j2) != k1 || Math.abs(l2) != k1 || random.nextInt(2) != 0 && j1 != 0) && !Block.o[world.getTypeId(l1, i2, k2)]) {
-                                    // Craftbukkit start
+                                    // CraftBukkit start
                                     if (event == null) {
                                         this.a(world, l1, i2, k2, Block.LEAVES.id, 0);
                                     } else {
@@ -97,7 +97,7 @@ public class WorldGenTrees extends WorldGenerator {
                                         leavesState.setTypeId(Block.LEAVES.id);
                                         event.getBlocks().add(leavesState);
                                     }
-                                    // Craftbukkit end
+                                    // CraftBukkit end
                                 }
                             }
                         }
@@ -106,7 +106,7 @@ public class WorldGenTrees extends WorldGenerator {
                     for (i2 = 0; i2 < l; ++i2) {
                         j1 = world.getTypeId(i, j + i2, k);
                         if (j1 == 0 || j1 == Block.LEAVES.id) {
-                            // Craftbukkit start
+                            // CraftBukkit start
                             if (event == null) {
                                 this.a(world, i, j + i2, k, Block.LOG.id, 0);
                             } else {
@@ -114,10 +114,10 @@ public class WorldGenTrees extends WorldGenerator {
                                 logState.setTypeId(Block.LOG.id);
                                 event.getBlocks().add(logState);
                             }
-                            // Craftbukkit end
+                            // CraftBukkit end
                         }
                     }
-                    // Craftbukkit start
+                    // CraftBukkit start
                     if (event != null) {
                         Bukkit.getPluginManager().callEvent(event);
                         if (!event.isCancelled()) {
@@ -126,7 +126,7 @@ public class WorldGenTrees extends WorldGenerator {
                             }
                         }
                     }
-                    // Craftbukkit end
+                    // CraftBukkit end
                     return true;
                 } else {
                     return false;

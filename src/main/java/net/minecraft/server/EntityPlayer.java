@@ -27,7 +27,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     private int cc = -99999999;
     private int cd = -99999999;
     private boolean ce = true;
-    public int cf = -99999999; // Craftbukkit - priv to pub - "lastSentExp"
+    public int cf = -99999999; // CraftBukkit - priv to pub - "lastSentExp"
     public int cg = 60; // CraftBukkit - private to public; temporary until we get an API out
     private ItemStack[] ch = new ItemStack[] { null, null, null, null, null};
     private int ci = 0;
@@ -325,13 +325,13 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             this.netServerHandler.sendPacket(new Packet70Bed(4, 0));
         } else {
             this.a((Statistic) AchievementList.B);
-            /* //CraftBukkit start - removed to fix our handling of The End portals
+            /* CraftBukkit start - removed to fix our handling of The End portals
             ChunkCoordinates chunkcoordinates = this.b.getWorldServer(i).d();
 
             if (chunkcoordinates != null) {
                 this.netServerHandler.a((double) chunkcoordinates.x, (double) chunkcoordinates.y, (double) chunkcoordinates.z, 0.0F, 0.0F);
             }
-            //CraftBukkit end */
+            // CraftBukkit end */
 
             this.b.serverConfigurationManager.changeDimension(this, 1);
             this.cf = -1;

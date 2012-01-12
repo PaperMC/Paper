@@ -388,7 +388,7 @@ public class EntityWolf extends EntityAnimal {
 
                 if (itemfood.p() && this.datawatcher.getInt(18) < 20) {
                     --itemstack.count;
-                    this.d(itemfood.n(), RegainReason.EATING); // Craftbukkit
+                    this.d(itemfood.n(), RegainReason.EATING); // CraftBukkit
                     if (itemstack.count <= 0) {
                         entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, (ItemStack) null);
                     }

@@ -68,7 +68,7 @@ public class WorldGenTaiga2 extends WorldGenerator {
             } else {
                 l1 = world.getTypeId(i, j - 1, k);
                 if ((l1 == Block.GRASS.id || l1 == Block.DIRT.id) && j < world.getHeight() - l - 1) { // CraftBukkit
-                    // Craftbukkit start
+                    // CraftBukkit start
                     if (event == null) {
                         world.setRawTypeId(i, j - 1, k, Block.DIRT.id);
                     } else {
@@ -76,7 +76,7 @@ public class WorldGenTaiga2 extends WorldGenerator {
                         dirtState.setTypeId(Block.DIRT.id);
                         event.getBlocks().add(dirtState);
                     }
-                    // Craftbukkit end
+                    // CraftBukkit end
                     k2 = random.nextInt(2);
                     i2 = 1;
                     byte b0 = 0;
@@ -94,7 +94,7 @@ public class WorldGenTaiga2 extends WorldGenerator {
                                 int i4 = l3 - k;
 
                                 if ((Math.abs(k3) != k2 || Math.abs(i4) != k2 || k2 <= 0) && !Block.o[world.getTypeId(i3, j3, l3)]) {
-                                    // Craftbukkit start
+                                    // CraftBukkit start
                                     if (event == null) {
                                         this.a(world, i3, j3, l3, Block.LEAVES.id, 1);
                                     } else {
@@ -103,7 +103,7 @@ public class WorldGenTaiga2 extends WorldGenerator {
                                         leavesState.setData(new MaterialData(Block.LEAVES.id, (byte) 1));
                                         event.getBlocks().add(leavesState);
                                     }
-                                    // Craftbukkit end
+                                    // CraftBukkit end
                                 }
                             }
                         }
@@ -125,7 +125,7 @@ public class WorldGenTaiga2 extends WorldGenerator {
                     for (j3 = 0; j3 < l - j2; ++j3) {
                         i3 = world.getTypeId(i, j + j3, k);
                         if (i3 == 0 || i3 == Block.LEAVES.id) {
-                            // Craftbukkit start
+                            // CraftBukkit start
                             if (event == null) {
                                 this.a(world, i, j + j3, k, Block.LOG.id, 1);
                             } else {
@@ -134,10 +134,10 @@ public class WorldGenTaiga2 extends WorldGenerator {
                                 logState.setData(new MaterialData(Block.LOG.id, (byte) 1));
                                 event.getBlocks().add(logState);
                             }
-                            // Craftbukkit end
+                            // CraftBukkit end
                         }
                     }
-                    // Craftbukkit start
+                    // CraftBukkit start
                     if (event != null) {
                         Bukkit.getPluginManager().callEvent(event);
                         if (!event.isCancelled()) {
@@ -146,7 +146,7 @@ public class WorldGenTaiga2 extends WorldGenerator {
                             }
                         }
                     }
-                    // Craftbukkit end
+                    // CraftBukkit end
                     return true;
                 } else {
                     return false;
