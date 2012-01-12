@@ -325,7 +325,7 @@ public class CraftBlock implements Block {
     }
 
     public PistonMoveReaction getPistonMoveReaction() {
-        return PistonMoveReaction.getById(net.minecraft.server.Block.byId[this.getTypeId()].material.l());
+        return PistonMoveReaction.getById(net.minecraft.server.Block.byId[this.getTypeId()].material.getPushReaction());
 
     }
 }

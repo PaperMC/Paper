@@ -57,7 +57,7 @@ public final class ChunkCompressionThread implements Runnable {
         Packet51MapChunk packet = (Packet51MapChunk) queuedPacket.packet;
 
         // If 'packet.g' is set then this packet has already been compressed.
-        if (packet.g != null) {
+        if (packet.buffer != null) {
             return;
         }
 
@@ -76,9 +76,9 @@ public final class ChunkCompressionThread implements Runnable {
         }
 
         // copy compressed data to packet
-        packet.g = new byte[size];
-        packet.h = size;
-        System.arraycopy(deflateBuffer, 0, packet.g, 0, size);
+        packet.buffer = new byte[size];
+        packet.size = size;
+        System.arraycopy(deflateBuffer, 0, packet.buffer, 0, size);
     }
 
     private void sendToNetworkQueue(QueuedPacket queuedPacket) {

@@ -59,11 +59,11 @@ public class NormalChunkGenerator extends InternalChunkGenerator {
         return provider.canSave();
     }
 
-    public List a(EnumCreatureType ect, int i, int i1, int i2) {
-        return provider.a(ect, i, i1, i2);
+    public List getMobsFor(EnumCreatureType ect, int i, int i1, int i2) {
+        return provider.getMobsFor(ect, i, i1, i2);
     }
 
-    public ChunkPosition a(World world, String string, int i, int i1, int i2) {
-        return provider.a(world, string, i, i1, i2);
+    public ChunkPosition findNearestMapFeature(World world, String string, int i, int i1, int i2) {
+        return provider.findNearestMapFeature(world, string, i, i1, i2);
     }
 }

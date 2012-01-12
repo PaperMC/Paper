@@ -78,19 +78,19 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
         return generator.getDefaultPopulators(world);
     }
 
-    public List a(EnumCreatureType type, int x, int y, int z) {
+    public List getMobsFor(EnumCreatureType type, int x, int y, int z) {
         WorldChunkManager worldchunkmanager = world.getWorldChunkManager();
 
         if (worldchunkmanager == null) {
             return null;
         } else {
-            BiomeBase biomebase = worldchunkmanager.a(new ChunkCoordIntPair(x >> 4, z >> 4));
+            BiomeBase biomebase = worldchunkmanager.getBiome(new ChunkCoordIntPair(x >> 4, z >> 4));
 
-            return biomebase == null ? null : biomebase.a(type);
+            return biomebase == null ? null : biomebase.getMobs(type);
         }
     }
 
-    public ChunkPosition a(World world, String type, int x, int y, int z) {
-        return "Stronghold".equals(type) && this.strongholdGen != null ? this.strongholdGen.a(world, x, y, z) : null;
+    public ChunkPosition findNearestMapFeature(World world, String type, int x, int y, int z) {
+        return "Stronghold".equals(type) && this.strongholdGen != null ? this.strongholdGen.getNearestGeneratedFeature(world, x, y, z) : null;
     }
 }

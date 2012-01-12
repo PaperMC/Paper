@@ -148,7 +148,7 @@ public class CraftChunk implements Chunk {
 
             if (includeBiome) {
                 biome = new BiomeBase[256];
-                wcm.a(biome, x << 4, z << 4, 16, 16);
+                wcm.getBiomeBlock(biome, x << 4, z << 4, 16, 16);
             }
 
             if (includeBiomeTempRain) {
@@ -205,7 +205,7 @@ public class CraftChunk implements Chunk {
 
             if (includeBiome) {
                 biome = new BiomeBase[256];
-                wcm.a(biome, x << 4, z << 4, 16, 16);
+                wcm.getBiomeBlock(biome, x << 4, z << 4, 16, 16);
             }
 
             if (includeBiomeTempRain) {
