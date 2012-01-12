@@ -93,6 +93,26 @@ public abstract class Enchantment {
      */
     public static final Enchantment LOOT_BONUS_BLOCKS = new EnchantmentWrapper(35);
 
+    /**
+     * Provides extra damage when shooting arrows from bows
+     */
+    public static final Enchantment ARROW_DAMAGE = new EnchantmentWrapper(48);
+
+    /**
+     * Provides a knockback when an entity is hit by an arrow from a bow
+     */
+    public static final Enchantment ARROW_KNOCKBACK = new EnchantmentWrapper(49);
+
+    /**
+     * Sets entities on fire when hit by arrows shot from a bow
+     */
+    public static final Enchantment ARROW_FIRE = new EnchantmentWrapper(50);
+
+    /**
+     * Provides infinite arrows when shooting a bow
+     */
+    public static final Enchantment ARROW_INFINITE = new EnchantmentWrapper(51);
+
     private static final Map<Integer, Enchantment> byId = new HashMap<Integer, Enchantment>();
     private static final Map<String, Enchantment> byName = new HashMap<String, Enchantment>();
     private static boolean acceptingNew = true;

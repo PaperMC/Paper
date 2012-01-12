@@ -42,5 +42,10 @@ public enum EnchantmentTarget {
     /**
      * Allows the Enchantment to be placed on tools (spades, pickaxe, hoes, axes)
      */
-    TOOL;
+    TOOL,
+
+    /**
+     * Allows the Enchantment to be placed on bows.
+     */
+    BOW;
 }

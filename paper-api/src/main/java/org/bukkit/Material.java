@@ -263,6 +263,7 @@ public enum Material {
     CAULDRON_ITEM(380),
     EYE_OF_ENDER(381),
     SPECKLED_MELON(382),
+    MONSTER_EGG(383, 1),
     GOLD_RECORD(2256, 1),
     GREEN_RECORD(2257, 1),
     RECORD_3(2258, 1),

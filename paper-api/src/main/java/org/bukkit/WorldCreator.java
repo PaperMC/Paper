@@ -13,6 +13,7 @@ public class WorldCreator {
     private long seed;
     private World.Environment environment = World.Environment.NORMAL;
     private ChunkGenerator generator = null;
+    private WorldType type = WorldType.NORMAL;
 
     /**
      * Creates an empty WorldCreationOptions for the given world name
@@ -111,6 +112,27 @@ public class WorldCreator {
      */
     public WorldCreator environment(World.Environment env) {
         this.environment = env;
+
+        return this;
+    }
+
+    /**
+     * Gets the type of the world that will be created or loaded
+     *
+     * @return World type
+     */
+    public WorldType type() {
+        return type;
+    }
+
+    /**
+     * Sets the type of the world that will be created or loaded
+     *
+     * @param type World type
+     * @return This object, for chaining
+     */
+    public WorldCreator type(WorldType type) {
+        this.type = type;
 
         return this;
     }
