@@ -513,7 +513,7 @@ public class EntityMinecart extends Entity implements IInventory {
                     this.motX *= this.derailedX;
                     this.motY *= this.derailedY;
                     this.motZ *= this.derailedZ;
-                    // CraftBukkit start
+                    // CraftBukkit end
                 }
 
                 this.move(this.motX, this.motY, this.motZ);
@@ -522,7 +522,7 @@ public class EntityMinecart extends Entity implements IInventory {
                     this.motX *= this.flyingX;
                     this.motY *= this.flyingY;
                     this.motZ *= this.flyingZ;
-                    // CraftBukkit start
+                    // CraftBukkit end
                 }
             }
 

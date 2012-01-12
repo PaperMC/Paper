@@ -2421,11 +2421,9 @@ public class World implements IBlockAccess {
         Entity entity = null;
         for (int i = 0; i < list.size(); ++i) {
             entity = (Entity) list.get(i);
-            // CraftBukkit start - fixed an NPE
             if (entity == null) {
                 continue;
             }
-            // CraftBukkit end
             this.entityList.add(entity);
             // CraftBukkit end
             this.c((Entity) list.get(i));

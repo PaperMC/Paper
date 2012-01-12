@@ -364,7 +364,7 @@ public class EntityWolf extends EntityAnimal {
                 }
 
                 if (!this.world.isStatic) {
-                    // CraftBukkit - added event call and isCancelled check.
+                    // CraftBukkit start - added event call and isCancelled check.
                     if (this.random.nextInt(3) == 0 && !CraftEventFactory.callEntityTameEvent(this, entityhuman).isCancelled()) {
                         // CraftBukkit end
                         this.setTamed(true);

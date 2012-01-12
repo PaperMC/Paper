@@ -46,7 +46,7 @@ public class EntityFireball extends Entity {
         this.setPosition(this.locX, this.locY, this.locZ);
         this.height = 0.0F;
         this.motX = this.motY = this.motZ = 0.0D;
-        // CraftBukkit start (added setDirection method)
+        // CraftBukkit start - (added setDirection method)
         this.setDirection(d0, d1, d2);
     }
 
@@ -60,6 +60,7 @@ public class EntityFireball extends Entity {
         this.dirY = d1 / d3 * 0.1D;
         this.dirZ = d2 / d3 * 0.1D;
     }
+    // CraftBukkit end
 
     public void w_() {
         super.w_();

@@ -111,7 +111,7 @@ public class ServerConfigurationManager {
     }
 
     public void c(EntityPlayer entityplayer) {
-        // CraftBukkit
+        // CraftBukkit start
         cserver.detectListNameConflict(entityplayer);
         this.sendAll(new Packet201PlayerInfo(entityplayer.listName, true, 1000));
         // CraftBukkit end
@@ -223,6 +223,7 @@ public class ServerConfigurationManager {
     }
 
     public EntityPlayer moveToWorld(EntityPlayer entityplayer, int i, boolean flag, Location location) {
+        // CraftBukkit end
         this.server.getTracker(entityplayer.dimension).untrackPlayer(entityplayer);
         // this.server.getTracker(entityplayer.dimension).untrackEntity(entityplayer); // CraftBukkit
         this.getPlayerManager(entityplayer.dimension).removePlayer(entityplayer);

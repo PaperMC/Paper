@@ -39,7 +39,7 @@ public final class ItemStack {
         this.setData(k); // CraftBukkit
     }
 
-    // CraftBukkit - used to create a new ItemStack, specifying the enchantments at time of creation.
+    // CraftBukkit start - used to create a new ItemStack, specifying the enchantments at time of creation.
     public ItemStack(int id, int count, int data, NBTTagList enchantments) {
         this(id, count, data);
         // taken from .addEnchantment

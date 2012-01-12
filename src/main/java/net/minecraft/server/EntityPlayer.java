@@ -173,7 +173,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             this.b.serverConfigurationManager.sendAll(new Packet3Chat(event.getDeathMessage()));
         }
 
-        // CraftBukkit - we clean the player's inventory after the EntityDeathEvent is called so plugins can get the exact state of the inventory.
+        // CraftBukkit start - we clean the player's inventory after the EntityDeathEvent is called so plugins can get the exact state of the inventory.
         for (int i = 0; i < this.inventory.items.length; ++i) {
             this.inventory.items[i] = null;
         }

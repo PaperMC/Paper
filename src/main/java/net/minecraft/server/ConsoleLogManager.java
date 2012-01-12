@@ -43,7 +43,7 @@ public class ConsoleLogManager {
             int count = ((Integer)server.options.valueOf("log-count")).intValue();
             boolean append = ((Boolean)server.options.valueOf("log-append")).booleanValue();
             FileHandler filehandler = new FileHandler(pattern, limit, count, append);
-            // CraftBukkit start
+            // CraftBukkit end
 
             filehandler.setFormatter(consolelogformatter);
             a.addHandler(filehandler);
