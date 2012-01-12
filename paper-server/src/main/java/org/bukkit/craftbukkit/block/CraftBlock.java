@@ -1,5 +1,10 @@
 package org.bukkit.craftbukkit.block;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
@@ -12,6 +17,7 @@ import net.minecraft.server.EnumSkyBlock;
 import org.bukkit.*;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.CraftChunk;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.BlockVector;
 
 public class CraftBlock implements Block {
@@ -347,6 +353,57 @@ public class CraftBlock implements Block {
 
     public PistonMoveReaction getPistonMoveReaction() {
         return PistonMoveReaction.getById(net.minecraft.server.Block.byId[this.getTypeId()].material.getPushReaction());
+    }
 
+    private boolean itemCausesDrops(ItemStack item) {
+        net.minecraft.server.Block block = net.minecraft.server.Block.byId[this.getTypeId()];
+        net.minecraft.server.Item itemType = item != null ? net.minecraft.server.Item.byId[item.getTypeId()] : null;
+        return block != null && (block.material.k() || (itemType != null && itemType.a(block)));
+    }
+
+    public boolean breakNaturally() {
+        net.minecraft.server.Block block = net.minecraft.server.Block.byId[this.getTypeId()];
+        byte data = getData();
+
+        setTypeId(Material.AIR.getId());
+        if (block != null) {
+            block.dropNaturally(chunk.getHandle().world, x, y, z, data, 1.0F, 0);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean breakNaturally(ItemStack item) {
+        if (itemCausesDrops(item)) {
+            return breakNaturally();
+        } else {
+            return setTypeId(Material.AIR.getId());
+        }
+    }
+
+    public Collection<ItemStack> getDrops() {
+        List<ItemStack> drops = new ArrayList<ItemStack>();
+
+        net.minecraft.server.Block block = net.minecraft.server.Block.byId[this.getTypeId()];
+        if (block != null) {
+            byte data = getData();
+            // based on nms.Block.dropNaturally
+            int count = block.getDropCount(0, chunk.getHandle().world.random);
+            for (int i = 0; i < count; ++i) {
+                int item = block.getDropType(data, chunk.getHandle().world.random, 0);
+                if (item > 0) {
+                    drops.add(new ItemStack(item, 1, (short) net.minecraft.server.Block.getDropData(block, data)));
+                }
+            }
+        }
+        return drops;
+    }
+
+    public Collection<ItemStack> getDrops(ItemStack item) {
+        if (itemCausesDrops(item)) {
+            return getDrops();
+        } else {
+            return Collections.emptyList();
+        }
     }
 }
