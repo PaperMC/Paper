@@ -783,7 +783,7 @@ public final class CraftServer implements Server {
 
     public CraftMapView getMap(short id) {
         WorldMapCollection collection = console.worlds.get(0).worldMaps;
-        WorldMap worldmap = (WorldMap) collection.a(WorldMap.class, "map_" + id);
+        WorldMap worldmap = (WorldMap) collection.get(WorldMap.class, "map_" + id);
         if (worldmap == null) {
             return null;
         }
@@ -792,7 +792,7 @@ public final class CraftServer implements Server {
 
     public CraftMapView createMap(World world) {
         ItemStack stack = new ItemStack(Item.MAP, 1, -1);
-        WorldMap worldmap = Item.MAP.a(stack, ((CraftWorld) world).getHandle());
+        WorldMap worldmap = Item.MAP.getSavedMap(stack, ((CraftWorld) world).getHandle());
         return worldmap.mapView;
     }
 

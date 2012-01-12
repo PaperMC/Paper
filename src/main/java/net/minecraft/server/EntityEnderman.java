@@ -230,7 +230,7 @@ public class EntityEnderman extends EntityMonster {
 
             if (flag1) {
                 this.setPosition(this.locX, this.locY, this.locZ);
-                if (this.world.getEntities(this, this.boundingBox).size() == 0 && !this.world.c(this.boundingBox)) {
+                if (this.world.a(this, this.boundingBox).size() == 0 && !this.world.c(this.boundingBox)) {
                     flag = true;
                 }
             }

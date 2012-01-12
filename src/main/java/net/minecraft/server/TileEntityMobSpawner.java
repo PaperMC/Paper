@@ -63,7 +63,7 @@ public class TileEntityMobSpawner extends TileEntity {
                     }
                     // CraftBukkit end
 
-                    int j = this.world.a(entityliving.getClass(), AxisAlignedBB.b((double) this.x, (double) this.y, (double) this.z, (double) (this.x + 1), (double) (this.y + 1), (double) (this.z + 1)).b(8.0D, 4.0D, 8.0D)).size();
+                    int j = this.world.a(entityliving.getClass(), AxisAlignedBB.b((double) this.x, (double) this.y, (double) this.z, (double) (this.x + 1), (double) (this.y + 1), (double) (this.z + 1)).grow(8.0D, 4.0D, 8.0D)).size();
 
                     if (j >= 6) {
                         this.e();

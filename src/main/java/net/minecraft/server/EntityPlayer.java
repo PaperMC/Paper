@@ -27,12 +27,12 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     private int cc = -99999999;
     private int cd = -99999999;
     private boolean ce = true;
-    public int cf = -99999999; // CraftBukkit - priv to pub - "lastSentExp"
+    public int lastSentExp = -99999999; // CraftBukkit - priv to pub
     public int cg = 60; // CraftBukkit - private to public; temporary until we get an API out
     private ItemStack[] ch = new ItemStack[] { null, null, null, null, null};
     private int ci = 0;
     public boolean h;
-    public int i;
+    public int ping;
     public boolean j = false;
 
     public EntityPlayer(MinecraftServer minecraftserver, World world, String s, ItemInWorldManager iteminworldmanager) {
@@ -70,14 +70,14 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
         if (nbttagcompound.hasKey("playerGameType")) {
-            this.itemInWorldManager.a(nbttagcompound.getInt("playerGameType"));
+            this.itemInWorldManager.setGameMode(nbttagcompound.getInt("playerGameType"));
         }
         getPlayer().readExtraData(nbttagcompound); // CraftBukkit
     }
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
-        nbttagcompound.setInt("playerGameType", this.itemInWorldManager.a());
+        nbttagcompound.setInt("playerGameType", this.itemInWorldManager.getGameMode());
         getPlayer().setExtraData(nbttagcompound); // CraftBukkit
     }
 
@@ -102,16 +102,16 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             this.setPosition(position.x + 0.5, position.y, position.z + 0.5);
         }
         this.dimension = ((WorldServer) this.world).dimension;
-        int oldMode = itemInWorldManager.a();
+        int oldMode = itemInWorldManager.getGameMode();
         this.itemInWorldManager = new ItemInWorldManager((WorldServer) world);
         this.itemInWorldManager.player = this;
-        this.itemInWorldManager.a(oldMode);
+        this.itemInWorldManager.setGameMode(oldMode);
         // CraftBukkit end
     }
 
     public void levelDown(int i) {
         super.levelDown(i);
-        this.cf = -1;
+        this.lastSentExp = -1;
     }
 
     public void syncInventory() {
@@ -281,7 +281,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
                         }
 
                         this.b.serverConfigurationManager.changeDimension(this, b0);
-                        this.cf = -1;
+                        this.lastSentExp = -1;
                         this.cc = -1;
                         this.cd = -1;
                         this.a((Statistic) AchievementList.x);
@@ -311,8 +311,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             this.ce = this.foodData.c() == 0.0F;
         }
 
-        if (this.expTotal != this.cf) {
-            this.cf = this.expTotal;
+        if (this.expTotal != this.lastSentExp) {
+            this.lastSentExp = this.expTotal;
             this.netServerHandler.sendPacket(new Packet43SetExperience(this.exp, this.expTotal, this.expLevel));
         }
     }
@@ -334,7 +334,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             // CraftBukkit end */
 
             this.b.serverConfigurationManager.changeDimension(this, 1);
-            this.cf = -1;
+            this.lastSentExp = -1;
             this.cc = -1;
             this.cd = -1;
         }
@@ -646,7 +646,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         this.deathTicks = 0;
         effects.clear();
         this.activeContainer = this.defaultContainer;
-        this.cf = -1; // lastSentExp. Find line: "if (this.expTotal != this.XXXX) {"
+        this.lastSentExp = -1; // lastSentExp. Find line: "if (this.expTotal != this.XXXX) {"
         this.giveExp(this.newExp);
     }
 

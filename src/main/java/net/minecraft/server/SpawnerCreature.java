@@ -197,7 +197,7 @@ public final class SpawnerCreature {
     }
 
     public static void a(World world, BiomeBase biomebase, int i, int j, int k, int l, Random random) {
-        List list = biomebase.a(EnumCreatureType.CREATURE);
+        List list = biomebase.getMobs(EnumCreatureType.CREATURE);
 
         if (!list.isEmpty()) {
             while (random.nextFloat() < biomebase.d()) {

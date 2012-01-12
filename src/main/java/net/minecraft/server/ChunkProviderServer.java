@@ -254,11 +254,11 @@ public class ChunkProviderServer implements IChunkProvider {
         return !this.world.savingDisabled;
     }
 
-    public List a(EnumCreatureType enumcreaturetype, int i, int j, int k) {
-        return this.chunkProvider.a(enumcreaturetype, i, j, k);
+    public List getMobsFor(EnumCreatureType enumcreaturetype, int i, int j, int k) {
+        return this.chunkProvider.getMobsFor(enumcreaturetype, i, j, k);
     }
 
-    public ChunkPosition a(World world, String s, int i, int j, int k) {
-        return this.chunkProvider.a(world, s, i, j, k);
+    public ChunkPosition findNearestMapFeature(World world, String s, int i, int j, int k) {
+        return this.chunkProvider.findNearestMapFeature(world, s, i, j, k);
     }
 }

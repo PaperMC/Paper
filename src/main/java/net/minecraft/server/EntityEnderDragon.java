@@ -20,7 +20,7 @@ public class EntityEnderDragon extends EntityComplex {
     public double c;
     public double[][] d = new double[64][3];
     public int e = -1;
-    public EntityComplexPart[] f;
+    public EntityComplexPart[] children;
     public EntityComplexPart g;
     public EntityComplexPart h;
     public EntityComplexPart i;
@@ -38,7 +38,7 @@ public class EntityEnderDragon extends EntityComplex {
 
     public EntityEnderDragon(World world) {
         super(world);
-        this.f = new EntityComplexPart[] { this.g = new EntityComplexPart(this, "head", 6.0F, 6.0F), this.h = new EntityComplexPart(this, "body", 8.0F, 8.0F), this.i = new EntityComplexPart(this, "tail", 4.0F, 4.0F), this.j = new EntityComplexPart(this, "tail", 4.0F, 4.0F), this.k = new EntityComplexPart(this, "tail", 4.0F, 4.0F), this.l = new EntityComplexPart(this, "wing", 4.0F, 4.0F), this.m = new EntityComplexPart(this, "wing", 4.0F, 4.0F)};
+        this.children = new EntityComplexPart[] { this.g = new EntityComplexPart(this, "head", 6.0F, 6.0F), this.h = new EntityComplexPart(this, "body", 8.0F, 8.0F), this.i = new EntityComplexPart(this, "tail", 4.0F, 4.0F), this.j = new EntityComplexPart(this, "tail", 4.0F, 4.0F), this.k = new EntityComplexPart(this, "tail", 4.0F, 4.0F), this.l = new EntityComplexPart(this, "wing", 4.0F, 4.0F), this.m = new EntityComplexPart(this, "wing", 4.0F, 4.0F)};
         this.t = 200;
         this.setHealth(this.t);
         this.texture = "/mob/enderdragon/ender.png";
@@ -286,9 +286,9 @@ public class EntityEnderDragon extends EntityComplex {
             }
 
             if (!this.world.isStatic && this.as == 0) {
-                this.a(this.world.b((Entity) this, this.l.boundingBox.b(4.0D, 2.0D, 4.0D).d(0.0D, -2.0D, 0.0D)));
-                this.a(this.world.b((Entity) this, this.m.boundingBox.b(4.0D, 2.0D, 4.0D).d(0.0D, -2.0D, 0.0D)));
-                this.b(this.world.b((Entity) this, this.g.boundingBox.b(1.0D, 1.0D, 1.0D)));
+                this.a(this.world.getEntities(this, this.l.boundingBox.grow(4.0D, 2.0D, 4.0D).d(0.0D, -2.0D, 0.0D)));
+                this.a(this.world.getEntities(this, this.m.boundingBox.grow(4.0D, 2.0D, 4.0D).d(0.0D, -2.0D, 0.0D)));
+                this.b(this.world.getEntities(this, this.g.boundingBox.grow(1.0D, 1.0D, 1.0D)));
             }
 
             double[] adouble = this.a(5, 1.0F);
@@ -347,7 +347,7 @@ public class EntityEnderDragon extends EntityComplex {
 
         if (this.random.nextInt(10) == 0) {
             float f = 32.0F;
-            List list = this.world.a(EntityEnderCrystal.class, this.boundingBox.b((double) f, (double) f, (double) f));
+            List list = this.world.a(EntityEnderCrystal.class, this.boundingBox.grow((double) f, (double) f, (double) f));
             EntityEnderCrystal entityendercrystal = null;
             double d0 = Double.MAX_VALUE;
             Iterator iterator = list.iterator();
@@ -624,7 +624,7 @@ public class EntityEnderDragon extends EntityComplex {
     protected void ak() {}
 
     public Entity[] aG() {
-        return this.f;
+        return this.children;
     }
 
     public boolean e_() {

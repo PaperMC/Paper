@@ -125,7 +125,7 @@ public abstract class EntityProjectile extends Entity {
 
         if (!this.world.isStatic) {
             Entity entity = null;
-            List list = this.world.b((Entity) this, this.boundingBox.a(this.motX, this.motY, this.motZ).b(1.0D, 1.0D, 1.0D));
+            List list = this.world.getEntities(this, this.boundingBox.a(this.motX, this.motY, this.motZ).grow(1.0D, 1.0D, 1.0D));
             double d0 = 0.0D;
 
             for (int j = 0; j < list.size(); ++j) {
@@ -133,7 +133,7 @@ public abstract class EntityProjectile extends Entity {
 
                 if (entity1.e_() && (entity1 != this.shooter || this.i >= 5)) {
                     float f = 0.3F;
-                    AxisAlignedBB axisalignedbb = entity1.boundingBox.b((double) f, (double) f, (double) f);
+                    AxisAlignedBB axisalignedbb = entity1.boundingBox.grow((double) f, (double) f, (double) f);
                     MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
 
                     if (movingobjectposition1 != null) {

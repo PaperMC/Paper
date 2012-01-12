@@ -334,7 +334,7 @@ public abstract class EntityHuman extends EntityLiving {
         this.s += (f - this.s) * 0.4F;
         this.ax += (f1 - this.ax) * 0.8F;
         if (this.getHealth() > 0) {
-            List list = this.world.b((Entity) this, this.boundingBox.b(1.0D, 0.0D, 1.0D));
+            List list = this.world.getEntities(this, this.boundingBox.grow(1.0D, 0.0D, 1.0D));
 
             if (list != null) {
                 for (int i = 0; i < list.size(); ++i) {
@@ -653,7 +653,7 @@ public abstract class EntityHuman extends EntityLiving {
             }
 
             if (!(entityliving instanceof EntityHuman) || this.y()) {
-                List list = this.world.a(EntityWolf.class, AxisAlignedBB.b(this.locX, this.locY, this.locZ, this.locX + 1.0D, this.locY + 1.0D, this.locZ + 1.0D).b(16.0D, 4.0D, 16.0D));
+                List list = this.world.a(EntityWolf.class, AxisAlignedBB.b(this.locX, this.locY, this.locZ, this.locX + 1.0D, this.locY + 1.0D, this.locZ + 1.0D).grow(16.0D, 4.0D, 16.0D));
                 Iterator iterator = list.iterator();
 
                 while (iterator.hasNext()) {

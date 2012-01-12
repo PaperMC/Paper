@@ -21,14 +21,14 @@ public class CraftJukebox extends CraftBlockState implements Jukebox {
     }
 
     public Material getPlaying() {
-        return Material.getMaterial(jukebox.a);
+        return Material.getMaterial(jukebox.record);
     }
 
     public void setPlaying(Material record) {
         if (record == null) {
             record = Material.AIR;
         }
-        jukebox.a = record.getId();
+        jukebox.record = record.getId();
         jukebox.update();
         if (record == Material.AIR) {
             world.getHandle().setData(getX(), getY(), getZ(), 0);
@@ -44,7 +44,7 @@ public class CraftJukebox extends CraftBlockState implements Jukebox {
 
     public boolean eject() {
         boolean result = isPlaying();
-        ((BlockJukeBox)net.minecraft.server.Block.JUKEBOX).c_(world.getHandle(), getX(), getY(), getZ());
+        ((BlockJukeBox)net.minecraft.server.Block.JUKEBOX).dropRecord(world.getHandle(), getX(), getY(), getZ());
         return result;
     }
 }

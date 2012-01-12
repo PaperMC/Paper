@@ -98,7 +98,7 @@ public class Explosion {
         int l1 = MathHelper.floor(this.posY + (double) this.size + 1.0D);
         int i2 = MathHelper.floor(this.posZ - (double) this.size - 1.0D);
         int j2 = MathHelper.floor(this.posZ + (double) this.size + 1.0D);
-        List list = this.world.b(this.source, AxisAlignedBB.b((double) i, (double) k, (double) i2, (double) j, (double) l1, (double) j2));
+        List list = this.world.getEntities(this.source, AxisAlignedBB.b((double) i, (double) k, (double) i2, (double) j, (double) l1, (double) j2));
         Vec3D vec3d = Vec3D.create(this.posX, this.posY, this.posZ);
 
         for (int k2 = 0; k2 < list.size(); ++k2) {
@@ -243,7 +243,7 @@ public class Explosion {
                 // CraftBukkit
                 Block.byId[i1].dropNaturally(this.world, j, k, l, this.world.getData(j, k, l), event.getYield(), 0);
                 this.world.setTypeId(j, k, l, 0);
-                Block.byId[i1].a_(this.world, j, k, l);
+                Block.byId[i1].wasExploded(this.world, j, k, l);
             }
         }
 

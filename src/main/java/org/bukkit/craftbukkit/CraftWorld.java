@@ -319,7 +319,7 @@ public class CraftWorld implements World {
         EntityArrow arrow = new EntityArrow(world);
         arrow.setPositionRotation(loc.getX(), loc.getY(), loc.getZ(), 0, 0);
         world.addEntity(arrow);
-        arrow.a(velocity.getX(), velocity.getY(), velocity.getZ(), speed, spread);
+        arrow.shoot(velocity.getX(), velocity.getY(), velocity.getZ(), speed, spread);
         return (Arrow) arrow.getBukkitEntity();
     }
 
@@ -802,7 +802,7 @@ public class CraftWorld implements World {
                     break;
             }
             entity = new EntityPainting(world, (int) x, (int) y, (int) z, dir);
-            if (!((EntityPainting) entity).j()) {
+            if (!((EntityPainting) entity).survives()) {
                 entity = null;
             }
         } else if (TNTPrimed.class.isAssignableFrom(clazz)) {
@@ -917,6 +917,6 @@ public class CraftWorld implements World {
         block.setType(org.bukkit.Material.AIR);
         // not sure what this does, seems to have something to do with the 'base' material of a block.
         // For example, WOODEN_STAIRS does something with WOOD in this method
-        net.minecraft.server.Block.byId[blockId].a_(this.world, blockX, blockY, blockZ);
+        net.minecraft.server.Block.byId[blockId].wasExploded(this.world, blockX, blockY, blockZ);
     }
 }

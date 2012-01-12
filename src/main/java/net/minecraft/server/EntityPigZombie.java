@@ -33,7 +33,7 @@ public class EntityPigZombie extends EntityZombie {
     }
 
     public boolean g() {
-        return this.world.difficulty > 0 && this.world.containsEntity(this.boundingBox) && this.world.getEntities(this, this.boundingBox).size() == 0 && !this.world.c(this.boundingBox);
+        return this.world.difficulty > 0 && this.world.containsEntity(this.boundingBox) && this.world.a(this, this.boundingBox).size() == 0 && !this.world.c(this.boundingBox);
     }
 
     public void b(NBTTagCompound nbttagcompound) {
@@ -58,7 +58,7 @@ public class EntityPigZombie extends EntityZombie {
         Entity entity = damagesource.getEntity();
 
         if (entity instanceof EntityHuman) {
-            List list = this.world.b((Entity) this, this.boundingBox.b(32.0D, 32.0D, 32.0D));
+            List list = this.world.getEntities(this, this.boundingBox.grow(32.0D, 32.0D, 32.0D));
 
             for (int j = 0; j < list.size(); ++j) {
                 Entity entity1 = (Entity) list.get(j);

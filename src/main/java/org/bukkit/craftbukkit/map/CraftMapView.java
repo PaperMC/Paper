@@ -28,7 +28,7 @@ public final class CraftMapView implements MapView {
     }
 
     public short getId() {
-        String text = worldMap.a;
+        String text = worldMap.id;
         if (text.startsWith("map_")) {
             try {
                 return Short.parseShort(text.substring("map_".length()));

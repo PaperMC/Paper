@@ -42,7 +42,7 @@ public class EntityPotion extends EntityProjectile {
             List list = Item.POTION.b(this.d);
 
             if (list != null && !list.isEmpty()) {
-                AxisAlignedBB axisalignedbb = this.boundingBox.b(4.0D, 2.0D, 4.0D);
+                AxisAlignedBB axisalignedbb = this.boundingBox.grow(4.0D, 2.0D, 4.0D);
                 List list1 = this.world.a(EntityLiving.class, axisalignedbb);
 
                 if (list1 != null && !list1.isEmpty()) {

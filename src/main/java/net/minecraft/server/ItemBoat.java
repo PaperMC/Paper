@@ -39,14 +39,14 @@ public class ItemBoat extends Item {
             Vec3D vec3d2 = entityhuman.d(f);
             boolean flag = false;
             float f9 = 1.0F;
-            List list = world.b((Entity) entityhuman, entityhuman.boundingBox.a(vec3d2.a * d3, vec3d2.b * d3, vec3d2.c * d3).b((double) f9, (double) f9, (double) f9));
+            List list = world.getEntities(entityhuman, entityhuman.boundingBox.a(vec3d2.a * d3, vec3d2.b * d3, vec3d2.c * d3).grow((double) f9, (double) f9, (double) f9));
 
             for (int i = 0; i < list.size(); ++i) {
                 Entity entity = (Entity) list.get(i);
 
                 if (entity.e_()) {
                     float f10 = entity.j_();
-                    AxisAlignedBB axisalignedbb = entity.boundingBox.b((double) f10, (double) f10, (double) f10);
+                    AxisAlignedBB axisalignedbb = entity.boundingBox.grow((double) f10, (double) f10, (double) f10);
 
                     if (axisalignedbb.a(vec3d)) {
                         flag = true;

@@ -52,12 +52,12 @@ public class EntityArrow extends Entity {
         this.motX = (double) (-MathHelper.sin(this.yaw / 180.0F * 3.1415927F) * MathHelper.cos(this.pitch / 180.0F * 3.1415927F));
         this.motZ = (double) (MathHelper.cos(this.yaw / 180.0F * 3.1415927F) * MathHelper.cos(this.pitch / 180.0F * 3.1415927F));
         this.motY = (double) (-MathHelper.sin(this.pitch / 180.0F * 3.1415927F));
-        this.a(this.motX, this.motY, this.motZ, f * 1.5F, 1.0F);
+        this.shoot(this.motX, this.motY, this.motZ, f * 1.5F, 1.0F);
     }
 
     protected void b() {}
 
-    public void a(double d0, double d1, double d2, float f, float f1) {
+    public void shoot(double d0, double d1, double d2, float f, float f1) {
         float f2 = MathHelper.a(d0 * d0 + d1 * d1 + d2 * d2);
 
         d0 /= (double) f2;
@@ -133,7 +133,7 @@ public class EntityArrow extends Entity {
             }
 
             Entity entity = null;
-            List list = this.world.b((Entity) this, this.boundingBox.a(this.motX, this.motY, this.motZ).b(1.0D, 1.0D, 1.0D));
+            List list = this.world.getEntities(this, this.boundingBox.a(this.motX, this.motY, this.motZ).grow(1.0D, 1.0D, 1.0D));
             double d0 = 0.0D;
 
             int k;
@@ -144,7 +144,7 @@ public class EntityArrow extends Entity {
 
                 if (entity1.e_() && (entity1 != this.shooter || this.l >= 5)) {
                     f1 = 0.3F;
-                    AxisAlignedBB axisalignedbb1 = entity1.boundingBox.b((double) f1, (double) f1, (double) f1);
+                    AxisAlignedBB axisalignedbb1 = entity1.boundingBox.grow((double) f1, (double) f1, (double) f1);
                     MovingObjectPosition movingobjectposition1 = axisalignedbb1.a(vec3d, vec3d1);
 
                     if (movingobjectposition1 != null) {

@@ -567,7 +567,7 @@ public class EntityMinecart extends Entity implements IInventory {
             }
             // CraftBukkit end
 
-            List list = this.world.b((Entity) this, this.boundingBox.b(0.20000000298023224D, 0.0D, 0.20000000298023224D));
+            List list = this.world.getEntities(this, this.boundingBox.grow(0.20000000298023224D, 0.0D, 0.20000000298023224D));
 
             if (list != null && list.size() > 0) {
                 for (int l1 = 0; l1 < list.size(); ++l1) {

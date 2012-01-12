@@ -161,7 +161,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         // Change the name on the client side
         server.getHandle().sendAll(new Packet201PlayerInfo(oldName, false, 9999));
-        server.getHandle().sendAll(new Packet201PlayerInfo(name, true, getHandle().i));
+        server.getHandle().sendAll(new Packet201PlayerInfo(name, true, getHandle().ping));
     }
 
     @Override
@@ -335,11 +335,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void loadData() {
-        server.getHandle().playerFileData.b(getHandle());
+        server.getHandle().playerFileData.load(getHandle());
     }
 
     public void saveData() {
-        server.getHandle().playerFileData.a(getHandle());
+        server.getHandle().playerFileData.save(getHandle());
     }
 
     public void updateInventory() {
@@ -459,14 +459,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
                 return;
             }
 
-            getHandle().itemInWorldManager.a(mode.getValue());
+            getHandle().itemInWorldManager.setGameMode(mode.getValue());
             getHandle().netServerHandler.sendPacket(new Packet70Bed(3, mode.getValue()));
         }
     }
 
     @Override
     public GameMode getGameMode() {
-        return GameMode.getByValue(getHandle().itemInWorldManager.a());
+        return GameMode.getByValue(getHandle().itemInWorldManager.getGameMode());
     }
 
     public void giveExp(int exp) {
@@ -497,7 +497,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public void setLevel(int level) {
         getHandle().expLevel = level;
-        getHandle().cf = -1;
+        getHandle().lastSentExp = -1;
     }
 
     public int getTotalExperience() {
@@ -506,7 +506,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public void setTotalExperience(int exp) {
         getHandle().expTotal = exp;
-        getHandle().cf = -1;
+        getHandle().lastSentExp = -1;
 
         if (getTotalExperience() > getExperience()) {
             getHandle().expTotal = getTotalExperience();

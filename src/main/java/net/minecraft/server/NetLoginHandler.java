@@ -104,7 +104,7 @@ public class NetLoginHandler extends NetHandler {
             if (maxPlayers > 60) {
                 maxPlayers = 60;
             }
-            netserverhandler.sendPacket(new Packet1Login("", entityplayer.id, worldserver.getSeed(), entityplayer.itemInWorldManager.a(), (byte) worldserver.worldProvider.dimension, (byte) worldserver.difficulty, (byte) worldserver.height, (byte) maxPlayers));
+            netserverhandler.sendPacket(new Packet1Login("", entityplayer.id, worldserver.getSeed(), entityplayer.itemInWorldManager.getGameMode(), (byte) worldserver.worldProvider.dimension, (byte) worldserver.difficulty, (byte) worldserver.height, (byte) maxPlayers));
             // CraftBukkit end
 
             netserverhandler.sendPacket(new Packet6SpawnPosition(chunkcoordinates.x, chunkcoordinates.y, chunkcoordinates.z));

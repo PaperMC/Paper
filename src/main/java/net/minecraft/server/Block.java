@@ -465,7 +465,7 @@ public class Block {
         return vec3d == null ? false : vec3d.a >= this.minX && vec3d.a <= this.maxX && vec3d.b >= this.minY && vec3d.b <= this.maxY;
     }
 
-    public void a_(World world, int i, int j, int k) {}
+    public void wasExploded(World world, int i, int j, int k) {}
 
     public boolean canPlace(World world, int i, int j, int k, int l) {
         return this.canPlace(world, i, j, k);
@@ -568,7 +568,7 @@ public class Block {
     }
 
     public int g() {
-        return this.material.l();
+        return this.material.getPushReaction();
     }
 
     static {

@@ -960,7 +960,7 @@ public class World implements IBlockAccess {
         this.z.add(iworldaccess);
     }
 
-    public List getEntities(Entity entity, AxisAlignedBB axisalignedbb) {
+    public List a(Entity entity, AxisAlignedBB axisalignedbb) {
         this.R.clear();
         int i = MathHelper.floor(axisalignedbb.a);
         int j = MathHelper.floor(axisalignedbb.d + 1.0D);
@@ -984,7 +984,7 @@ public class World implements IBlockAccess {
         }
 
         double d0 = 0.25D;
-        List list = this.b(entity, axisalignedbb.b(d0, d0, d0));
+        List list = this.getEntities(entity, axisalignedbb.grow(d0, d0, d0));
 
         for (int j2 = 0; j2 < list.size(); ++j2) {
             AxisAlignedBB axisalignedbb1 = ((Entity) list.get(j2)).h_();
@@ -1305,7 +1305,7 @@ public class World implements IBlockAccess {
     }
 
     public boolean containsEntity(AxisAlignedBB axisalignedbb) {
-        List list = this.b((Entity) null, axisalignedbb);
+        List list = this.getEntities(null, axisalignedbb);
 
         for (int i = 0; i < list.size(); ++i) {
             Entity entity = (Entity) list.get(i);
@@ -2356,7 +2356,7 @@ public class World implements IBlockAccess {
         return arraylist;
     }
 
-    public List b(Entity entity, AxisAlignedBB axisalignedbb) {
+    public List getEntities(Entity entity, AxisAlignedBB axisalignedbb) {
         this.V.clear();
         int i = MathHelper.floor((axisalignedbb.a - 2.0D) / 16.0D);
         int j = MathHelper.floor((axisalignedbb.d + 2.0D) / 16.0D);
@@ -2802,7 +2802,7 @@ public class World implements IBlockAccess {
     }
 
     public WorldMapBase a(Class oclass, String s) {
-        return this.worldMaps.a(oclass, s);
+        return this.worldMaps.get(oclass, s);
     }
 
     public int b(String s) {
@@ -2833,13 +2833,13 @@ public class World implements IBlockAccess {
     public void a(EnumSkyBlock enumskyblock, int i, int j, int k, int l, int i1, int j1) {}
 
     public BiomeMeta a(EnumCreatureType enumcreaturetype, int i, int j, int k) {
-        List list = this.p().a(enumcreaturetype, i, j, k);
+        List list = this.p().getMobsFor(enumcreaturetype, i, j, k);
 
         return list != null && !list.isEmpty() ? (BiomeMeta) WeightedRandom.a(this.random, (Collection) list) : null;
     }
 
     public ChunkPosition b(String s, int i, int j, int k) {
-        return this.p().a(this, s, i, j, k);
+        return this.p().findNearestMapFeature(this, s, i, j, k);
     }
 
     // CraftBukkit start

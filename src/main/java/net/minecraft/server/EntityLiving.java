@@ -56,7 +56,7 @@ public abstract class EntityLiving extends Entity {
     public float aC;
     public float aD;
     public float aE;
-    public EntityHuman aF = null; // CraftBukkit - prot to pub - "killer"
+    public EntityHuman killer = null; // CraftBukkit - prot to pub
     protected int aG = 0;
     public int aH = 0;
     public int aI = 0;
@@ -200,7 +200,7 @@ public abstract class EntityLiving extends Entity {
         if (this.aG > 0) {
             --this.aG;
         } else {
-            this.aF = null;
+            this.killer = null;
         }
 
         this.aq();
@@ -213,7 +213,7 @@ public abstract class EntityLiving extends Entity {
 
     // CraftBukkit start
     public int getExpReward() {
-        int exp = a(this.aF);
+        int exp = a(this.killer);
 
         if (!this.world.isStatic && (this.aG > 0 || this.ac()) && !this.l()) {
             return exp;
@@ -464,13 +464,13 @@ public abstract class EntityLiving extends Entity {
                 if (entity != null) {
                     if (entity instanceof EntityHuman) {
                         this.aG = 60;
-                        this.aF = (EntityHuman) entity;
+                        this.killer = (EntityHuman) entity;
                     } else if (entity instanceof EntityWolf) {
                         EntityWolf entitywolf = (EntityWolf) entity;
 
                         if (entitywolf.isTamed()) {
                             this.aG = 60;
-                            this.aF = null;
+                            this.killer = null;
                         }
                     }
                 }
@@ -859,7 +859,7 @@ public abstract class EntityLiving extends Entity {
             --this.aK;
             this.setPosition(d0, d1, d2);
             this.c(this.yaw, this.pitch);
-            List list = this.world.getEntities(this, this.boundingBox.shrink(0.03125D, 0.0D, 0.03125D));
+            List list = this.world.a(this, this.boundingBox.shrink(0.03125D, 0.0D, 0.03125D));
 
             if (list.size() > 0) {
                 double d4 = 0.0D;
@@ -913,7 +913,7 @@ public abstract class EntityLiving extends Entity {
         this.a(this.aT, this.aU);
         this.ak = f;
         // MethodProfiler.a("push"); // CraftBukkit - not in production code
-        List list1 = this.world.b((Entity) this, this.boundingBox.b(0.20000000298023224D, 0.0D, 0.20000000298023224D));
+        List list1 = this.world.getEntities(this, this.boundingBox.grow(0.20000000298023224D, 0.0D, 0.20000000298023224D));
 
         if (list1 != null && list1.size() > 0) {
             for (int j = 0; j < list1.size(); ++j) {
@@ -1076,7 +1076,7 @@ public abstract class EntityLiving extends Entity {
     public void an() {}
 
     public boolean g() {
-        return this.world.containsEntity(this.boundingBox) && this.world.getEntities(this, this.boundingBox).size() == 0 && !this.world.c(this.boundingBox);
+        return this.world.containsEntity(this.boundingBox) && this.world.a(this, this.boundingBox).size() == 0 && !this.world.c(this.boundingBox);
     }
 
     protected void ao() {

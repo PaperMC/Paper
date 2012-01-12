@@ -78,7 +78,7 @@ public class EntitySkeleton extends EntityMonster {
 
                 this.world.makeSound(this, "random.bow", 1.0F, 1.0F / (this.random.nextFloat() * 0.4F + 0.8F));
                 this.world.addEntity(entityarrow);
-                entityarrow.a(d0, d2 + (double) f1, d1, 1.6F, 12.0F);
+                entityarrow.shoot(d0, d2 + (double) f1, d1, 1.6F, 12.0F);
                 this.attackTicks = 60;
             }
 

@@ -12,7 +12,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
         this.e(1);
     }
 
-    public WorldMap a(ItemStack itemstack, World world) {
+    public WorldMap getSavedMap(ItemStack itemstack, World world) {
 
         WorldMap worldmap = (WorldMap) world.a(WorldMap.class, "map_" + itemstack.getData());
 
@@ -210,7 +210,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
 
     public void a(ItemStack itemstack, World world, Entity entity, int i, boolean flag) {
         if (!world.isStatic) {
-            WorldMap worldmap = this.a(itemstack, world);
+            WorldMap worldmap = this.getSavedMap(itemstack, world);
 
             if (entity instanceof EntityHuman) {
                 EntityHuman entityhuman = (EntityHuman) entity;
@@ -238,7 +238,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
     }
 
     public Packet c(ItemStack itemstack, World world, EntityHuman entityhuman) {
-        byte[] abyte = this.a(itemstack, world).getUpdatePacket(itemstack, world, entityhuman);
+        byte[] abyte = this.getSavedMap(itemstack, world).getUpdatePacket(itemstack, world, entityhuman);
 
         return abyte == null ? null : new Packet131ItemData((short) Item.MAP.id, (short) itemstack.getData(), abyte);
     }

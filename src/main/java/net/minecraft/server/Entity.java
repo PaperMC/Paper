@@ -358,7 +358,7 @@ public abstract class Entity {
 
     public boolean d(double d0, double d1, double d2) {
         AxisAlignedBB axisalignedbb = this.boundingBox.c(d0, d1, d2);
-        List list = this.world.getEntities(this, axisalignedbb);
+        List list = this.world.a(this, axisalignedbb);
 
         return list.size() > 0 ? false : !this.world.c(axisalignedbb);
     }
@@ -394,7 +394,7 @@ public abstract class Entity {
             if (flag) {
                 double d8;
 
-                for (d8 = 0.05D; d0 != 0.0D && this.world.getEntities(this, this.boundingBox.c(d0, -1.0D, 0.0D)).size() == 0; d5 = d0) {
+                for (d8 = 0.05D; d0 != 0.0D && this.world.a(this, this.boundingBox.c(d0, -1.0D, 0.0D)).size() == 0; d5 = d0) {
                     if (d0 < d8 && d0 >= -d8) {
                         d0 = 0.0D;
                     } else if (d0 > 0.0D) {
@@ -404,7 +404,7 @@ public abstract class Entity {
                     }
                 }
 
-                for (; d2 != 0.0D && this.world.getEntities(this, this.boundingBox.c(0.0D, -1.0D, d2)).size() == 0; d7 = d2) {
+                for (; d2 != 0.0D && this.world.a(this, this.boundingBox.c(0.0D, -1.0D, d2)).size() == 0; d7 = d2) {
                     if (d2 < d8 && d2 >= -d8) {
                         d2 = 0.0D;
                     } else if (d2 > 0.0D) {
@@ -415,7 +415,7 @@ public abstract class Entity {
                 }
             }
 
-            List list = this.world.getEntities(this, this.boundingBox.a(d0, d1, d2));
+            List list = this.world.a(this, this.boundingBox.a(d0, d1, d2));
 
             for (int i = 0; i < list.size(); ++i) {
                 d1 = ((AxisAlignedBB) list.get(i)).b(this.boundingBox, d1);
@@ -469,7 +469,7 @@ public abstract class Entity {
                 AxisAlignedBB axisalignedbb1 = this.boundingBox.clone();
 
                 this.boundingBox.b(axisalignedbb);
-                list = this.world.getEntities(this, this.boundingBox.a(d5, d1, d7));
+                list = this.world.a(this, this.boundingBox.a(d5, d1, d7));
 
                 for (k = 0; k < list.size(); ++k) {
                     d1 = ((AxisAlignedBB) list.get(k)).b(this.boundingBox, d1);
@@ -717,7 +717,7 @@ public abstract class Entity {
     }
 
     public boolean i_() {
-        return this.world.a(this.boundingBox.b(0.0D, -0.4000000059604645D, 0.0D).shrink(0.0010D, 0.0010D, 0.0010D), Material.WATER, this);
+        return this.world.a(this.boundingBox.grow(0.0D, -0.4000000059604645D, 0.0D).shrink(0.0010D, 0.0010D, 0.0010D), Material.WATER, this);
     }
 
     public boolean a(Material material) {
@@ -742,7 +742,7 @@ public abstract class Entity {
     }
 
     public boolean aA() {
-        return this.world.a(this.boundingBox.b(-0.10000000149011612D, -0.4000000059604645D, -0.10000000149011612D), Material.LAVA);
+        return this.world.a(this.boundingBox.grow(-0.10000000149011612D, -0.4000000059604645D, -0.10000000149011612D), Material.LAVA);
     }
 
     public void a(float f, float f1, float f2) {

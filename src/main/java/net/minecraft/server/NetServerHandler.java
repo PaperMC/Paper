@@ -323,7 +323,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 }
 
                 float f4 = 0.0625F;
-                boolean flag = worldserver.getEntities(this.player, this.player.boundingBox.clone().shrink((double) f4, (double) f4, (double) f4)).size() == 0;
+                boolean flag = worldserver.a(this.player, this.player.boundingBox.clone().shrink((double) f4, (double) f4, (double) f4)).size() == 0;
 
                 if (this.player.onGround && !packet10flying.g && d6 > 0.0D) {
                     this.player.c(0.2F);
@@ -352,14 +352,14 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 }
 
                 this.player.setLocation(d1, d2, d3, f2, f3);
-                boolean flag2 = worldserver.getEntities(this.player, this.player.boundingBox.clone().shrink((double) f4, (double) f4, (double) f4)).size() == 0;
+                boolean flag2 = worldserver.a(this.player, this.player.boundingBox.clone().shrink((double) f4, (double) f4, (double) f4)).size() == 0;
 
                 if (flag && (flag1 || !flag2) && !this.player.isSleeping()) {
                     this.a(this.x, this.y, this.z, f2, f3);
                     return;
                 }
 
-                AxisAlignedBB axisalignedbb = this.player.boundingBox.clone().b((double) f4, (double) f4, (double) f4).a(0.0D, -0.55D, 0.0D);
+                AxisAlignedBB axisalignedbb = this.player.boundingBox.clone().grow((double) f4, (double) f4, (double) f4).a(0.0D, -0.55D, 0.0D);
 
                 if (!this.minecraftServer.allowFlight && !this.player.itemInWorldManager.b() && !worldserver.b(axisalignedbb)) {
                     if (d9 >= -0.03125D) {
@@ -1086,7 +1086,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         if (packet0keepalive.a == this.i) {
             int i = (int) (System.nanoTime() / 1000000L - this.j);
 
-            this.player.i = (this.player.i * 3 + i) / 4;
+            this.player.ping = (this.player.ping * 3 + i) / 4;
         }
     }
 

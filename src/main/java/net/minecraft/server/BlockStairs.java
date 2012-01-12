@@ -125,8 +125,8 @@ public class BlockStairs extends Block {
         return this.a.interact(world, i, j, k, entityhuman);
     }
 
-    public void a_(World world, int i, int j, int k) {
-        this.a.a_(world, i, j, k);
+    public void wasExploded(World world, int i, int j, int k) {
+        this.a.wasExploded(world, i, j, k);
     }
 
     public void postPlace(World world, int i, int j, int k, EntityLiving entityliving) {

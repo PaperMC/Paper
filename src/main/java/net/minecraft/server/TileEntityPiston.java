@@ -59,7 +59,7 @@ public class TileEntityPiston extends TileEntity {
         AxisAlignedBB axisalignedbb = Block.PISTON_MOVING.b(this.world, this.x, this.y, this.z, this.a, f, this.c);
 
         if (axisalignedbb != null) {
-            List list = this.world.b((Entity) null, axisalignedbb);
+            List list = this.world.getEntities(null, axisalignedbb);
 
             if (!list.isEmpty()) {
                 h.addAll(list);

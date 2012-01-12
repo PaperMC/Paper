@@ -180,7 +180,7 @@ public class WorldNBTStorage implements PlayerFileData, IDataManager {
         }
     }
 
-    public void a(EntityHuman entityhuman) {
+    public void save(EntityHuman entityhuman) {
         try {
             NBTTagCompound nbttagcompound = new NBTTagCompound();
 
@@ -199,7 +199,7 @@ public class WorldNBTStorage implements PlayerFileData, IDataManager {
         }
     }
 
-    public void b(EntityHuman entityhuman) {
+    public void load(EntityHuman entityhuman) {
         NBTTagCompound nbttagcompound = this.getPlayerData(entityhuman.name);
 
         if (nbttagcompound != null) {

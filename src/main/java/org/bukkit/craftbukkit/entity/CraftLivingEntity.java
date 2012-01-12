@@ -25,7 +25,6 @@ import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.Iterator;
 import net.minecraft.server.DamageSource;
-import net.minecraft.server.EntityHuman;
 import org.bukkit.entity.HumanEntity;
 
 public class CraftLivingEntity extends CraftEntity implements LivingEntity {
@@ -227,6 +226,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public Player getKiller() {
-        return getHandle().aF == null ? null : (Player)getHandle().aF.getBukkitEntity();
+        return getHandle().killer == null ? null : (Player)getHandle().killer.getBukkitEntity();
     }
 }

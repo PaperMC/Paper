@@ -174,7 +174,7 @@ public class EntityGhast extends EntityFlying implements IMonster {
 
         for (int i = 1; (double) i < d3; ++i) {
             axisalignedbb.d(d4, d5, d6);
-            if (this.world.getEntities(this, axisalignedbb).size() > 0) {
+            if (this.world.a(this, axisalignedbb).size() > 0) {
                 return false;
             }
         }

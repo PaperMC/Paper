@@ -96,7 +96,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         }
         else if (entity instanceof EntityComplexPart) {
             EntityComplexPart part = (EntityComplexPart) entity;
-            if (part.a instanceof EntityEnderDragon) { return new CraftEnderDragonPart(server, (EntityComplexPart) entity); }
+            if (part.owner instanceof EntityEnderDragon) { return new CraftEnderDragonPart(server, (EntityComplexPart) entity); }
             else { return new CraftComplexPart(server, (EntityComplexPart) entity); }
         }
         else if (entity instanceof EntityExperienceOrb) { return new CraftExperienceOrb(server, (EntityExperienceOrb) entity); }
@@ -173,7 +173,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     public List<org.bukkit.entity.Entity> getNearbyEntities(double x, double y, double z) {
         @SuppressWarnings("unchecked")
-        List<Entity> notchEntityList = entity.world.b(entity, entity.boundingBox.b(x, y, z));
+        List<Entity> notchEntityList = entity.world.getEntities(entity, entity.boundingBox.grow(x, y, z));
         List<org.bukkit.entity.Entity> bukkitEntityList = new java.util.ArrayList<org.bukkit.entity.Entity>(notchEntityList.size());
 
         for (Entity e: notchEntityList) {

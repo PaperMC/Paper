@@ -21,7 +21,7 @@ public class CraftPainting extends CraftEntity implements Painting {
     }
 
     public Art getArt() {
-        EnumArt art = getHandle().e;
+        EnumArt art = getHandle().art;
         return CraftArt.NotchToBukkit(art);
     }
 
@@ -31,14 +31,14 @@ public class CraftPainting extends CraftEntity implements Painting {
 
     public boolean setArt(Art art, boolean force) {
         EntityPainting painting = this.getHandle();
-        EnumArt oldArt = painting.e;
+        EnumArt oldArt = painting.art;
         EnumArt newArt = CraftArt.BukkitToNotch(art);
-        painting.e = newArt;
-        painting.b(painting.a);
-        if (!force && !painting.j()) {
+        painting.art = newArt;
+        painting.setDirection(painting.direction);
+        if (!force && !painting.survives()) {
             // Revert painting since it doesn't fit
-            painting.e = oldArt;
-            painting.b(painting.a);
+            painting.art = oldArt;
+            painting.setDirection(painting.direction);
             return false;
         }
         this.update();
@@ -56,31 +56,31 @@ public class CraftPainting extends CraftEntity implements Painting {
     public boolean setFacingDirection(BlockFace face, boolean force) {
         Block block = getLocation().getBlock().getRelative(getAttachedFace()).getRelative(face.getOppositeFace()).getRelative(getFacing());
         EntityPainting painting = getHandle();
-        int x = painting.b, y = painting.c, z = painting.d, dir = painting.a;
-        painting.b = block.getX();
-        painting.c = block.getY();
-        painting.d = block.getZ();
+        int x = painting.x, y = painting.y, z = painting.z, dir = painting.direction;
+        painting.x = block.getX();
+        painting.y = block.getY();
+        painting.z = block.getZ();
         switch (face) {
         case EAST:
         default:
-            getHandle().b(0);
+            getHandle().setDirection(0);
             break;
         case NORTH:
-            getHandle().b(1);
+            getHandle().setDirection(1);
             break;
         case WEST:
-            getHandle().b(2);
+            getHandle().setDirection(2);
             break;
         case SOUTH:
-            getHandle().b(3);
+            getHandle().setDirection(3);
             break;
         }
-        if (!force && !painting.j()) {
+        if (!force && !painting.survives()) {
             // Revert painting since it doesn't fit
-            painting.b = x;
-            painting.c = y;
-            painting.d = z;
-            painting.b(dir);
+            painting.x = x;
+            painting.y = y;
+            painting.z = z;
+            painting.setDirection(dir);
             return false;
         }
         this.update();
@@ -88,7 +88,7 @@ public class CraftPainting extends CraftEntity implements Painting {
     }
 
     public BlockFace getFacing() {
-        switch (this.getHandle().a) {
+        switch (this.getHandle().direction) {
         case 0:
         default:
             return BlockFace.EAST;
@@ -104,11 +104,11 @@ public class CraftPainting extends CraftEntity implements Painting {
     private void update() {
         WorldServer world = ((CraftWorld)getWorld()).getHandle();
         EntityPainting painting = new EntityPainting(world);
-        painting.b = getHandle().b;
-        painting.c = getHandle().c;
-        painting.d = getHandle().d;
-        painting.e = getHandle().e;
-        painting.b(getHandle().a);
+        painting.x = getHandle().x;
+        painting.y = getHandle().y;
+        painting.z = getHandle().z;
+        painting.art = getHandle().art;
+        painting.setDirection(getHandle().direction);
         getHandle().die();
         getHandle().velocityChanged = true; // because this occurs when the painting is broken, so it might be important
         world.addEntity(painting);

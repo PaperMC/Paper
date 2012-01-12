@@ -76,7 +76,7 @@ public class EntitySquid extends EntityWaterAnimal {
     }
 
     public boolean az() {
-        return this.world.a(this.boundingBox.b(0.0D, -0.6000000238418579D, 0.0D), Material.WATER, this);
+        return this.world.a(this.boundingBox.grow(0.0D, -0.6000000238418579D, 0.0D), Material.WATER, this);
     }
 
     public void d() {
