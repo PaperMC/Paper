@@ -616,4 +616,10 @@ public class Block {
         r[0] = true;
         StatisticList.b();
     }
+
+    // CraftBukkit start - getDropData(int) is protected
+    public static int getDropData(Block block, int data) {
+        return block.getDropData(data);
+    }
+    // CraftBukkit end
 }
