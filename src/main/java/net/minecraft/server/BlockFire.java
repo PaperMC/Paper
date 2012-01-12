@@ -3,6 +3,7 @@ package net.minecraft.server;
 import java.util.Random;
 
 // CraftBukkit start
+import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.block.BlockIgniteEvent;
 import org.bukkit.event.block.BlockIgniteEvent.IgniteCause;
 import org.bukkit.event.block.BlockBurnEvent;
@@ -70,11 +71,11 @@ public class BlockFire extends Block {
         }
 
         if (!this.canPlace(world, i, j, k)) {
-            world.setTypeId(i, j, k, 0);
+            fireExtinguished(world, i, j, k);   // CraftBukkit - invalid place location
         }
 
         if (!flag && world.w() && (world.v(i, j, k) || world.v(i - 1, j, k) || world.v(i + 1, j, k) || world.v(i, j, k - 1) || world.v(i, j, k + 1))) {
-            world.setTypeId(i, j, k, 0);
+            fireExtinguished(world, i, j, k);   // CraftBukkit - extinguished by rain
         } else {
             int l = world.getData(i, j, k);
 
@@ -85,10 +86,10 @@ public class BlockFire extends Block {
             world.c(i, j, k, this.id, this.d());
             if (!flag && !this.g(world, i, j, k)) {
                 if (!world.e(i, j - 1, k) || l > 3) {
-                    world.setTypeId(i, j, k, 0);
+                    fireExtinguished(world, i, j, k);   // CraftBukkit - burn out
                 }
             } else if (!flag && !this.b(world, i, j - 1, k) && l == 15 && random.nextInt(4) == 0) {
-                world.setTypeId(i, j, k, 0);
+                fireExtinguished(world, i, j, k);   // CraftBukkit - burn out
             } else {
                 this.a(world, i + 1, j, k, 300, random, l);
                 this.a(world, i - 1, j, k, 300, random, l);
@@ -234,17 +235,24 @@ public class BlockFire extends Block {
 
     public void doPhysics(World world, int i, int j, int k, int l) {
         if (!world.e(i, j - 1, k) && !this.g(world, i, j, k)) {
-            world.setTypeId(i, j, k, 0);
+            fireExtinguished(world, i, j, k);   // CraftBukkit - fuel block gone
         }
     }
 
     public void onPlace(World world, int i, int j, int k) {
         if (world.worldProvider.dimension > 0 || world.getTypeId(i, j - 1, k) != Block.OBSIDIAN.id || !Block.PORTAL.b_(world, i, j, k)) {
             if (!world.e(i, j - 1, k) && !this.g(world, i, j, k)) {
-                world.setTypeId(i, j, k, 0);
+                fireExtinguished(world, i, j, k);   // CraftBukkit - fuel block broke
             } else {
                 world.c(i, j, k, this.id, this.d());
             }
         }
     }
+    // CraftBukkit start
+    private void fireExtinguished(World world, int x, int y, int z) {
+        if (CraftEventFactory.callBlockFadeEvent(world.getWorld().getBlockAt(x, y, z), 0).isCancelled() == false) {
+            world.setTypeId(x, y, z, 0);
+        }
+    }
+    // CraftBukkit end
 }
