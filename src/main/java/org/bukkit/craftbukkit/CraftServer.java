@@ -67,6 +67,7 @@ import org.bukkit.plugin.ServicesManager;
 import org.bukkit.plugin.SimplePluginManager;
 import org.bukkit.plugin.SimpleServicesManager;
 import org.bukkit.plugin.java.JavaPluginLoader;
+import org.bukkit.plugin.messaging.Messenger;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.craftbukkit.inventory.CraftFurnaceRecipe;
 import org.bukkit.craftbukkit.inventory.CraftRecipe;
@@ -81,6 +82,7 @@ import org.bukkit.util.permissions.DefaultPermissions;
 import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.permissions.Permission;
 import org.bukkit.plugin.PluginLoadOrder;
+import org.bukkit.plugin.messaging.StandardMessenger;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.MarkedYAMLException;
@@ -92,6 +94,7 @@ public final class CraftServer implements Server {
     private final ServicesManager servicesManager = new SimpleServicesManager();
     private final BukkitScheduler scheduler = new CraftScheduler(this);
     private final SimpleCommandMap commandMap = new SimpleCommandMap(this);
+    private final StandardMessenger messenger = new StandardMessenger();
     private final PluginManager pluginManager = new SimplePluginManager(this, commandMap);
     protected final MinecraftServer console;
     protected final ServerConfigurationManager server;
@@ -941,5 +944,27 @@ public final class CraftServer implements Server {
         players.addAll(Arrays.asList(getOnlinePlayers()));
 
         return players.toArray(new OfflinePlayer[players.size()]);
+    }
+
+    public Messenger getMessenger() {
+        return messenger;
+    }
+
+    public void sendPluginMessage(Plugin source, String channel, byte[] message) {
+        StandardMessenger.validatePluginMessage(getMessenger(), source, channel, message);
+
+        for (Player player : getOnlinePlayers()) {
+            player.sendPluginMessage(source, channel, message);
+        }
+    }
+
+    public Set<String> getListeningPluginChannels() {
+        Set<String> result = new HashSet<String>();
+
+        for (Player player : getOnlinePlayers()) {
+            result.addAll(player.getListeningPluginChannels());
+        }
+
+        return result;
     }
 }

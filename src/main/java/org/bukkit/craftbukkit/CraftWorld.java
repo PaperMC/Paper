@@ -2,11 +2,13 @@ package org.bukkit.craftbukkit;
 
 import com.google.common.collect.MapMaker;
 import java.io.File;
+import java.util.Set;
 import org.bukkit.craftbukkit.entity.*;
 import org.bukkit.entity.*;
 import org.bukkit.entity.Entity;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.concurrent.ConcurrentMap;
 import java.util.List;
 import java.util.Random;
@@ -25,6 +27,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Boat;
 import org.bukkit.Chunk;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
 import org.bukkit.BlockChangeDelegate;
 import org.bukkit.Bukkit;
@@ -38,6 +41,7 @@ import org.bukkit.generator.BlockPopulator;
 import org.bukkit.Difficulty;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.plugin.messaging.StandardMessenger;
 
 public class CraftWorld implements World {
     private final WorldServer world;
@@ -918,5 +922,23 @@ public class CraftWorld implements World {
         // not sure what this does, seems to have something to do with the 'base' material of a block.
         // For example, WOODEN_STAIRS does something with WOOD in this method
         net.minecraft.server.Block.byId[blockId].wasExploded(this.world, blockX, blockY, blockZ);
+    }
+
+    public void sendPluginMessage(Plugin source, String channel, byte[] message) {
+        StandardMessenger.validatePluginMessage(server.getMessenger(), source, channel, message);
+
+        for (Player player : getPlayers()) {
+            player.sendPluginMessage(source, channel, message);
+        }
+    }
+
+    public Set<String> getListeningPluginChannels() {
+        Set<String> result = new HashSet<String>();
+
+        for (Player player : getPlayers()) {
+            result.addAll(player.getListeningPluginChannels());
+        }
+
+        return result;
     }
 }

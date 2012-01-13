@@ -1,7 +1,9 @@
 package net.minecraft.server;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 // CraftBukkit start
@@ -1101,4 +1103,31 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     public boolean c() {
         return true;
     }
+
+    // CraftBukkit start
+    @Override
+    public void a(Packet250CustomPayload packet) {
+        if (packet.tag.equals("REGISTER")) {
+            try {
+                String channels = new String(packet.data, "UTF8");
+                for (String channel : channels.split("\0")) {
+                    getPlayer().addChannel(channel);
+                }
+            } catch (UnsupportedEncodingException ex) {
+                Logger.getLogger(NetServerHandler.class.getName()).log(Level.SEVERE, "Could not parse REGISTER payload in plugin message packet", ex);
+            }
+        } else if (packet.tag.equals("UNREGISTER")) {
+            try {
+                String channels = new String(packet.data, "UTF8");
+                for (String channel : channels.split("\0")) {
+                    getPlayer().removeChannel(channel);
+                }
+            } catch (UnsupportedEncodingException ex) {
+                Logger.getLogger(NetServerHandler.class.getName()).log(Level.SEVERE, "Could not parse UNREGISTER payload in plugin message packet", ex);
+            }
+        } else {
+            server.getMessenger().dispatchIncomingMessage(player.getPlayer(), packet.tag, packet.data);
+        }
+    }
+    // CraftBukkit end
 }
