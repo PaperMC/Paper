@@ -66,7 +66,7 @@ public class EntityPotion extends EntityProjectile {
                                 int i = mobeffect.getEffectId();
 
                                 if (MobEffectList.byId[i].b()) {
-                                    MobEffectList.byId[i].a(this.shooter, (EntityLiving) entity, mobeffect.getAmplifier(), d1);
+                                    MobEffectList.byId[i].a(this.shooter, (EntityLiving) entity, mobeffect.getAmplifier(), d1, this); // CraftBukkit - added 'this'
                                 } else {
                                     int j = (int) (d1 * (double) mobeffect.getDuration() + 0.5D);
 
