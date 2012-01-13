@@ -8,6 +8,7 @@ import org.bukkit.event.Event.Priority;
 import org.bukkit.event.Listener;
 import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.Permission;
+import org.bukkit.plugin.messaging.PluginMessageListener;
 
 /**
  * Handles all plugin management from the Server

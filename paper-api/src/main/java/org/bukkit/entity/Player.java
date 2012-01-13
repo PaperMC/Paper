@@ -12,12 +12,13 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.Statistic;
 import org.bukkit.command.CommandSender;
 import org.bukkit.map.MapView;
+import org.bukkit.plugin.messaging.PluginMessageRecipient;
 
 /**
  * Represents a player, connected or not
  *
  */
-public interface Player extends HumanEntity, CommandSender, OfflinePlayer {
+public interface Player extends HumanEntity, CommandSender, OfflinePlayer, PluginMessageRecipient {
     /**
      * Gets the "friendly" name to display of this player. This may include color.
      *

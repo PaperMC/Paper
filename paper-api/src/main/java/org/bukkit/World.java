@@ -12,12 +12,13 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.*;
 import org.bukkit.generator.BlockPopulator;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.messaging.PluginMessageRecipient;
 import org.bukkit.util.Vector;
 
 /**
  * Represents a world, which may contain entities, chunks and blocks
  */
-public interface World {
+public interface World extends PluginMessageRecipient {
 
     /**
      * Gets the {@link Block} at the given coordinates

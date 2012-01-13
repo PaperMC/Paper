@@ -20,12 +20,14 @@ import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.map.MapView;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.ServicesManager;
+import org.bukkit.plugin.messaging.Messenger;
+import org.bukkit.plugin.messaging.PluginMessageRecipient;
 import org.bukkit.scheduler.BukkitScheduler;
 
 /**
  * Represents a server implementation
  */
-public interface Server {
+public interface Server extends PluginMessageRecipient {
     /**
      * Used for all administrative messages, such as an operator using a command.
      *
@@ -533,4 +535,11 @@ public interface Server {
      * @return Array containing all players
      */
     public OfflinePlayer[] getOfflinePlayers();
+
+    /**
+     * Gets the {@link Messenger} responsible for this server.
+     *
+     * @return Messenger responsible for this server.
+     */
+    public Messenger getMessenger();
 }
