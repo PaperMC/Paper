@@ -15,7 +15,7 @@ public enum WorldType {
 
     static {
         for (WorldType type : values()) {
-            lookup.put(type.getName(), type);
+            lookup.put(type.name, type);
         }
     }
 
