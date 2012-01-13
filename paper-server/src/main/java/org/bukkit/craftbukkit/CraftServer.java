@@ -513,7 +513,7 @@ public final class CraftServer implements Server {
         ChunkGenerator generator = creator.generator();
         File folder = new File(name);
         World world = getWorld(name);
-        WorldType type = WorldType.a(creator.type().getName());
+        WorldType type = WorldType.a(creator.type().name());
 
         if (world != null) {
             return world;
