@@ -1,16 +1,18 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.collect.ImmutableSet;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.Calendar;
-import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.Packet131ItemData;
 import net.minecraft.server.Packet200Statistic;
 import net.minecraft.server.Packet201PlayerInfo;
+import net.minecraft.server.Packet250CustomPayload;
 import net.minecraft.server.Packet3Chat;
 import net.minecraft.server.Packet51MapChunk;
 import net.minecraft.server.Packet53BlockChange;
@@ -39,12 +41,15 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerGameModeChangeEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.map.MapView;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.messaging.StandardMessenger;
 
 @DelegateDeserialization(CraftOfflinePlayer.class)
 public class CraftPlayer extends CraftHumanEntity implements Player {
     private long firstPlayed = 0;
     private long lastPlayed = 0;
     private boolean hasPlayedBefore = false;
+    private Set<String> channels = new HashSet<String>();
 
     public CraftPlayer(CraftServer server, EntityPlayer entity) {
         super(server, entity);
@@ -615,5 +620,29 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         NBTTagCompound data = nbttagcompound.getCompound("bukkit");
         data.setLong("firstPlayed", getFirstPlayed());
         data.setLong("lastPlayed", System.currentTimeMillis());
+    }
+
+    public void sendPluginMessage(Plugin source, String channel, byte[] message) {
+        StandardMessenger.validatePluginMessage(server.getMessenger(), source, channel, message);
+
+        if (channels.contains(channel)) {
+            Packet250CustomPayload packet = new Packet250CustomPayload();
+            packet.tag = channel;
+            packet.length = message.length;
+            packet.data = message;
+            getHandle().netServerHandler.sendPacket(packet);
+        }
+    }
+
+    public void addChannel(String channel) {
+        channels.add(channel);
+    }
+
+    public void removeChannel(String channel) {
+        channels.remove(channel);
+    }
+
+    public Set<String> getListeningPluginChannels() {
+        return ImmutableSet.copyOf(channels);
     }
 }
