@@ -5,7 +5,6 @@ import java.util.Collection;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
-import static org.junit.matchers.JUnitMatchers.*;
 
 public class StandardMessengerTest {
     public StandardMessenger getMessenger() {
