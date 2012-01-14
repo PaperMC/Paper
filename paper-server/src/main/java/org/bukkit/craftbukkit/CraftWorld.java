@@ -46,7 +46,7 @@ import org.bukkit.plugin.messaging.StandardMessenger;
 public class CraftWorld implements World {
     private final WorldServer world;
     private Environment environment;
-    private final CraftServer server = (CraftServer)Bukkit.getServer();
+    private final CraftServer server = (CraftServer) Bukkit.getServer();
     private ConcurrentMap<Integer, CraftChunk> unloadedChunks = new MapMaker().weakValues().makeMap();
     private final ChunkGenerator generator;
     private final List<BlockPopulator> populators = new ArrayList<BlockPopulator>();
@@ -78,7 +78,7 @@ public class CraftWorld implements World {
     }
 
     public int getHighestBlockYAt(int x, int z) {
-        if (!isChunkLoaded(x >> 4, z >> 4)){
+        if (!isChunkLoaded(x >> 4, z >> 4)) {
             loadChunk(x >> 4, z >> 4);
         }
 
@@ -221,7 +221,6 @@ public class CraftWorld implements World {
         return true;
     }
 
-
     public boolean isChunkInUse(int x, int z) {
         Player[] players = server.getOnlinePlayers();
 
@@ -334,7 +333,7 @@ public class CraftWorld implements World {
             return null;
         }
 
-        return (LivingEntity)result;
+        return (LivingEntity) result;
     }
 
     public LightningStrike strikeLightning(Location loc) {
@@ -355,17 +354,17 @@ public class CraftWorld implements World {
 
     public boolean generateTree(Location loc, TreeType type, BlockChangeDelegate delegate) {
         switch (type) {
-            case BIG_TREE:
-                return new WorldGenBigTree(false).generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), null, null, null);
-            case BIRCH:
-                return new WorldGenForest(false).generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), null, null, null);
-            case REDWOOD:
-                return new WorldGenTaiga2(false).generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), null, null, null);
-            case TALL_REDWOOD:
-                return new WorldGenTaiga1().generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
-            case TREE:
-            default:
-                return new WorldGenTrees(false).generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), null, null, null);
+        case BIG_TREE:
+            return new WorldGenBigTree(false).generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), null, null, null);
+        case BIRCH:
+            return new WorldGenForest(false).generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), null, null, null);
+        case REDWOOD:
+            return new WorldGenTaiga2(false).generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), null, null, null);
+        case TALL_REDWOOD:
+            return new WorldGenTaiga1().generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+        case TREE:
+        default:
+            return new WorldGenTrees(false).generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), null, null, null);
         }
     }
 
@@ -411,7 +410,7 @@ public class CraftWorld implements World {
         world.setTime(time);
 
         // Forces the client to update to the new time immediately
-        for (Player p: getPlayers()) {
+        for (Player p : getPlayers()) {
             CraftPlayer cp = (CraftPlayer) p;
             cp.getHandle().netServerHandler.sendPacket(new Packet4UpdateTime(cp.getHandle().getPlayerTime()));
         }
@@ -493,7 +492,7 @@ public class CraftWorld implements World {
     public List<Entity> getEntities() {
         List<Entity> list = new ArrayList<Entity>();
 
-        for (Object o: world.entityList) {
+        for (Object o : world.entityList) {
             if (o instanceof net.minecraft.server.Entity) {
                 net.minecraft.server.Entity mcEnt = (net.minecraft.server.Entity) o;
                 Entity bukkitEntity = mcEnt.getBukkitEntity();
@@ -511,7 +510,7 @@ public class CraftWorld implements World {
     public List<LivingEntity> getLivingEntities() {
         List<LivingEntity> list = new ArrayList<LivingEntity>();
 
-        for (Object o: world.entityList) {
+        for (Object o : world.entityList) {
             if (o instanceof net.minecraft.server.Entity) {
                 net.minecraft.server.Entity mcEnt = (net.minecraft.server.Entity) o;
                 Entity bukkitEntity = mcEnt.getBukkitEntity();
@@ -790,20 +789,21 @@ public class CraftWorld implements World {
                 face = BlockFace.SOUTH;
             }
             int dir;
-            switch(face) {
-                case EAST:
-                default:
-                    dir = 0;
-                    break;
-                case NORTH:
-                    dir = 1;
-                    break;
-                case WEST:
-                    dir = 2;
-                    break;
-                case SOUTH:
-                    dir = 3;;
-                    break;
+            switch (face) {
+            case EAST:
+            default:
+                dir = 0;
+                break;
+            case NORTH:
+                dir = 1;
+                break;
+            case WEST:
+                dir = 2;
+                break;
+            case SOUTH:
+                dir = 3;
+                ;
+                break;
             }
             entity = new EntityPainting(world, (int) x, (int) y, (int) z, dir);
             if (!((EntityPainting) entity).survives()) {
@@ -866,7 +866,7 @@ public class CraftWorld implements World {
         ChunkCoordinates chunkcoordinates = this.world.getSpawn();
         int chunkCoordX = chunkcoordinates.x >> 4;
         int chunkCoordZ = chunkcoordinates.z >> 4;
-        //  Cycle through the 25x25 Chunks around it to load/unload the chunks.
+        // Cycle through the 25x25 Chunks around it to load/unload the chunks.
         for (int x = -12; x <= 12; x++) {
             for (int z = -12; z <= 12; z++) {
                 if (keepLoaded) {
@@ -904,7 +904,7 @@ public class CraftWorld implements World {
     }
 
     public File getWorldFolder() {
-        return ((WorldNBTStorage)world.getDataManager()).getDirectory();
+        return ((WorldNBTStorage) world.getDataManager()).getDirectory();
     }
 
     public void explodeBlock(Block block, float yield) {

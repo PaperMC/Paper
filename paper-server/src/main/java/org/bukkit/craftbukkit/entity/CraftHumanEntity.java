@@ -1,4 +1,3 @@
-
 package org.bukkit.craftbukkit.entity;
 
 import java.util.Set;

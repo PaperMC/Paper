@@ -13,7 +13,7 @@ public class ServerCommandListener implements ICommandListener {
     public ServerCommandListener(CommandSender commandSender) {
         this.commandSender = commandSender;
         String[] parts = commandSender.getClass().getName().split("\\.");
-        this.prefix = parts[parts.length-1];
+        this.prefix = parts[parts.length - 1];
     }
 
     public void sendMessage(String msg) {

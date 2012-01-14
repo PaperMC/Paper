@@ -137,7 +137,6 @@ public class PortalTravelAgent implements TravelAgent {
     public boolean createPortal(Location location) {
         net.minecraft.server.World world = ((CraftWorld) location.getWorld()).getHandle();
 
-        
         if (location.getWorld().getEnvironment() == Environment.THE_END) {
             int i = MathHelper.floor(location.getBlockX());
             int j = MathHelper.floor(location.getBlockY()) - 1;
@@ -400,9 +399,6 @@ public class PortalTravelAgent implements TravelAgent {
 
         return true;
     }
-
-
-
 
     public TravelAgent setSearchRadius(int radius) {
         this.searchRadius = radius;

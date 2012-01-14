@@ -94,7 +94,7 @@ public class Main {
                         .describedAs("Yml file");
 
                 acceptsAll(asList("nojline"), "Disables jline and emulates the vanilla console");
-                
+
                 acceptsAll(asList("noconsole"), "Disables the console");
 
                 acceptsAll(asList("v", "version"), "Show the CraftBukkit Version");
@@ -126,7 +126,7 @@ public class Main {
                     System.setProperty("user.language", "en");
                     useJline = false;
                 }
-                
+
                 if (options.has("noconsole")) {
                     useConsole = false;
                 }

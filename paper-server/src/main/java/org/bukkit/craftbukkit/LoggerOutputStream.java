@@ -1,4 +1,3 @@
-
 package org.bukkit.craftbukkit;
 
 import java.io.ByteArrayOutputStream;

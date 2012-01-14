@@ -13,7 +13,7 @@ public abstract class CraftProjectile extends AbstractProjectile implements Proj
 
     public LivingEntity getShooter() {
         if (getHandle().shooter instanceof EntityLiving) {
-            return (LivingEntity)getHandle().shooter.getBukkitEntity();
+            return (LivingEntity) getHandle().shooter.getBukkitEntity();
         }
 
         return null;
@@ -21,7 +21,7 @@ public abstract class CraftProjectile extends AbstractProjectile implements Proj
 
     public void setShooter(LivingEntity shooter) {
         if (shooter instanceof CraftLivingEntity) {
-            getHandle().shooter = (EntityLiving)((CraftLivingEntity)shooter).entity;
+            getHandle().shooter = (EntityLiving) ((CraftLivingEntity) shooter).entity;
         }
     }
 

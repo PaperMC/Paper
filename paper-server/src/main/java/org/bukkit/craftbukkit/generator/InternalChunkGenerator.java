@@ -1,4 +1,3 @@
-
 package org.bukkit.craftbukkit.generator;
 
 import net.minecraft.server.IChunkProvider;

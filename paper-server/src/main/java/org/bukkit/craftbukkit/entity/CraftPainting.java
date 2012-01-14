@@ -102,7 +102,7 @@ public class CraftPainting extends CraftEntity implements Painting {
     }
 
     private void update() {
-        WorldServer world = ((CraftWorld)getWorld()).getHandle();
+        WorldServer world = ((CraftWorld) getWorld()).getHandle();
         EntityPainting painting = new EntityPainting(world);
         painting.x = getHandle().x;
         painting.y = getHandle().y;

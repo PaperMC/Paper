@@ -175,21 +175,21 @@ public class CraftBlock implements Block {
     }
 
     public static int blockFaceToNotch(BlockFace face) {
-        switch(face) {
-            case DOWN:
-                return 0;
-            case UP:
-                return 1;
-            case EAST:
-                return 2;
-            case WEST:
-                return 3;
-            case NORTH:
-                return 4;
-            case SOUTH:
-                return 5;
-            default:
-                return 7; // Good as anything here, but technically invalid
+        switch (face) {
+        case DOWN:
+            return 0;
+        case UP:
+            return 1;
+        case EAST:
+            return 2;
+        case WEST:
+            return 3;
+        case NORTH:
+            return 4;
+        case SOUTH:
+            return 5;
+        default:
+            return 7; // Good as anything here, but technically invalid
         }
     }
 
@@ -197,25 +197,25 @@ public class CraftBlock implements Block {
         Material material = getType();
 
         switch (material) {
-            case SIGN:
-            case SIGN_POST:
-            case WALL_SIGN:
-                return new CraftSign(this);
-            case CHEST:
-                return new CraftChest(this);
-            case BURNING_FURNACE:
-            case FURNACE:
-                return new CraftFurnace(this);
-            case DISPENSER:
-                return new CraftDispenser(this);
-            case MOB_SPAWNER:
-                return new CraftCreatureSpawner(this);
-            case NOTE_BLOCK:
-                return new CraftNoteBlock(this);
-            case JUKEBOX:
-                return new CraftJukebox(this);
-            default:
-                return new CraftBlockState(this);
+        case SIGN:
+        case SIGN_POST:
+        case WALL_SIGN:
+            return new CraftSign(this);
+        case CHEST:
+            return new CraftChest(this);
+        case BURNING_FURNACE:
+        case FURNACE:
+            return new CraftFurnace(this);
+        case DISPENSER:
+            return new CraftDispenser(this);
+        case MOB_SPAWNER:
+            return new CraftCreatureSpawner(this);
+        case NOTE_BLOCK:
+            return new CraftNoteBlock(this);
+        case JUKEBOX:
+            return new CraftJukebox(this);
+        default:
+            return new CraftBlockState(this);
         }
     }
 
@@ -245,27 +245,27 @@ public class CraftBlock implements Block {
         } else if (base == BiomeBase.OCEAN) {
             return Biome.OCEAN;
         } else if (base == BiomeBase.FROZEN_OCEAN) {
-        	return Biome.FROZEN_OCEAN;
+            return Biome.FROZEN_OCEAN;
         } else if (base == BiomeBase.FROZEN_RIVER) {
-        	return Biome.FROZEN_RIVER;
+            return Biome.FROZEN_RIVER;
         } else if (base == BiomeBase.ICE_PLAINS) {
-        	return Biome.ICE_PLAINS;
+            return Biome.ICE_PLAINS;
         } else if (base == BiomeBase.ICE_MOUNTAINS) {
-        	return Biome.ICE_MOUNTAINS;
+            return Biome.ICE_MOUNTAINS;
         } else if (base == BiomeBase.MUSHROOM_ISLAND) {
-        	return Biome.MUSHROOM_ISLAND;
+            return Biome.MUSHROOM_ISLAND;
         } else if (base == BiomeBase.MUSHROOM_SHORE) {
-        	return Biome.MUSHROOM_SHORE;
+            return Biome.MUSHROOM_SHORE;
         } else if (base == BiomeBase.BEACH) {
-        	return Biome.BEACH;
+            return Biome.BEACH;
         } else if (base == BiomeBase.DESERT_HILLS) {
-        	return Biome.DESERT_HILLS;
+            return Biome.DESERT_HILLS;
         } else if (base == BiomeBase.FOREST_HILLS) {
-        	return Biome.FOREST_HILLS;
+            return Biome.FOREST_HILLS;
         } else if (base == BiomeBase.TAIGA_HILLS) {
-        	return Biome.TAIGA_HILLS;
+            return Biome.TAIGA_HILLS;
         } else if (base == BiomeBase.SMALL_MOUNTAINS) {
-        	return Biome.SMALL_MOUNTAINS;
+            return Biome.SMALL_MOUNTAINS;
         }
 
         return null;

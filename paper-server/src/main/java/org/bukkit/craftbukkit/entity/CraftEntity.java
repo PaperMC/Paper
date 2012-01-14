@@ -177,7 +177,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         List<Entity> notchEntityList = entity.world.getEntities(entity, entity.boundingBox.grow(x, y, z));
         List<org.bukkit.entity.Entity> bukkitEntityList = new java.util.ArrayList<org.bukkit.entity.Entity>(notchEntityList.size());
 
-        for (Entity e: notchEntityList) {
+        for (Entity e : notchEntityList) {
             bukkitEntityList.add(e.getBukkitEntity());
         }
         return bukkitEntityList;
@@ -269,7 +269,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         CraftPlayer result = players.get(entity.name);
 
         if (result == null) {
-            result = new CraftPlayer((CraftServer)Bukkit.getServer(), entity);
+            result = new CraftPlayer((CraftServer) Bukkit.getServer(), entity);
             players.put(entity.name, result);
         } else {
             result.setHandle(entity);

@@ -76,7 +76,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public boolean isOnline() {
-        for (Object obj: server.getHandle().players) {
+        for (Object obj : server.getHandle().players) {
             EntityPlayer player = (EntityPlayer) obj;
             if (player.name.equalsIgnoreCase(getName())) {
                 return true;
@@ -173,7 +173,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (!(obj instanceof OfflinePlayer)) {
             return false;
         }
-        OfflinePlayer other = (OfflinePlayer)obj;
+        OfflinePlayer other = (OfflinePlayer) obj;
         if ((this.getName() == null) || (other.getName() == null)) {
             return false;
         }
@@ -485,7 +485,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public int getExperience() {
-        return (int)(getExp() * 100);
+        return (int) (getExp() * 100);
     }
 
     public void setExperience(int exp) {
@@ -493,7 +493,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public int getLevel() {
-        return (int)getHandle().expLevel;
+        return (int) getHandle().expLevel;
     }
 
     public void setLevel(int level) {
@@ -655,7 +655,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             for (String channel : listening) {
                 try {
                     stream.write(channel.getBytes("UTF8"));
-                    stream.write((byte)0);
+                    stream.write((byte) 0);
                 } catch (IOException ex) {
                     Logger.getLogger(CraftPlayer.class.getName()).log(Level.SEVERE, "Could not send Plugin Channel REGISTER to " + getName(), ex);
                 }

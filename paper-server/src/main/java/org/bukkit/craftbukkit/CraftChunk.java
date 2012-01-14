@@ -23,7 +23,7 @@ public class CraftChunk implements Chunk {
     private int z;
 
     public CraftChunk(net.minecraft.server.Chunk chunk) {
-        if(!(chunk instanceof EmptyChunk)) {
+        if (!(chunk instanceof EmptyChunk)) {
             this.weakChunk = new WeakReference<net.minecraft.server.Chunk>(chunk);
         }
         worldServer = (WorldServer) getHandle().world;
@@ -39,7 +39,7 @@ public class CraftChunk implements Chunk {
         net.minecraft.server.Chunk c = weakChunk.get();
         if (c == null) {
             c = worldServer.getChunkAt(x, z);
-            if(!(c instanceof EmptyChunk)) {
+            if (!(c instanceof EmptyChunk)) {
                 weakChunk = new WeakReference<net.minecraft.server.Chunk>(c);
             }
         }
@@ -76,7 +76,7 @@ public class CraftChunk implements Chunk {
 
         Entity[] entities = new Entity[count];
         for (int i = 0; i < 8; i++) {
-            for (Object obj: chunk.entitySlices[i].toArray()) {
+            for (Object obj : chunk.entitySlices[i].toArray()) {
                 if (!(obj instanceof net.minecraft.server.Entity)) {
                     continue;
                 }
@@ -155,10 +155,10 @@ public class CraftChunk implements Chunk {
                 biomeTemp = new double[256];
                 biomeRain = new double[256];
                 float[] dat = wcm.getTemperatures((float[]) null, getX() << 4, getZ() << 4, 16, 16);
-                for(int i = 0; i < 256; i++)
+                for (int i = 0; i < 256; i++)
                     biomeTemp[i] = dat[i];
                 dat = wcm.getWetness((float[]) null, getX() << 4, getZ() << 4, 16, 16);
-                for(int i = 0; i < 256; i++)
+                for (int i = 0; i < 256; i++)
                     biomeRain[i] = dat[i];
             }
         }
@@ -212,10 +212,10 @@ public class CraftChunk implements Chunk {
                 biomeTemp = new double[256];
                 biomeRain = new double[256];
                 float[] dat = wcm.getTemperatures((float[]) null, x << 4, z << 4, 16, 16);
-                for(int i = 0; i < 256; i++)
+                for (int i = 0; i < 256; i++)
                     biomeTemp[i] = dat[i];
                 dat = wcm.getWetness((float[]) null, x << 4, z << 4, 16, 16);
-                for(int i = 0; i < 256; i++)
+                for (int i = 0; i < 256; i++)
                     biomeRain[i] = dat[i];
             }
         }

@@ -28,7 +28,7 @@ public class LongHashtable<V> extends LongBaseHashtable {
 
         ArrayList<EntryBase> entries = entries();
 
-        for(EntryBase entry : entries) {
+        for (EntryBase entry : entries) {
             ret.add(((Entry) entry).value);
         }
         return ret;
@@ -36,6 +36,7 @@ public class LongHashtable<V> extends LongBaseHashtable {
 
     private class Entry extends EntryBase {
         V value;
+
         Entry(long k, V v) {
             super(k);
             this.value = v;
