@@ -383,7 +383,7 @@ public final class SimplePluginManager implements PluginManager {
             throw new IllegalArgumentException("Priority cannot be null");
         }
         if (plugin == null) {
-            throw new IllegalArgumentException("Priority cannot be null");
+            throw new IllegalArgumentException("Plugin cannot be null");
         }
         if (!plugin.isEnabled()) {
             throw new IllegalPluginAccessException("Plugin attempted to register " + type + " while not enabled");
@@ -412,7 +412,7 @@ public final class SimplePluginManager implements PluginManager {
             throw new IllegalArgumentException("Priority cannot be null");
         }
         if (plugin == null) {
-            throw new IllegalArgumentException("Priority cannot be null");
+            throw new IllegalArgumentException("Plugin cannot be null");
         }
         if (!plugin.isEnabled()) {
             throw new IllegalPluginAccessException("Plugin attempted to register " + type + " while not enabled");
