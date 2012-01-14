@@ -4,6 +4,7 @@ import com.google.common.collect.MapMaker;
 import net.minecraft.server.*;
 
 import org.bukkit.Location;
+import org.bukkit.EntityEffect;
 import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.CraftServer;
@@ -290,6 +291,10 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     public Entity getHandle() {
         return entity;
+    }
+
+    public void playEffect(EntityEffect type) {
+        this.getHandle().world.a(getHandle(), type.getData());
     }
 
     public void setHandle(final Entity entity) {
