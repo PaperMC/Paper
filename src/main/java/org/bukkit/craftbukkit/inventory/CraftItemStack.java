@@ -203,7 +203,11 @@ public class CraftItemStack extends ItemStack {
             list.add(subtag);
         }
 
-        tag.set("ench", list);
+        if (enchantments.isEmpty()) {
+            tag.remove("ench");
+        } else {
+            tag.set("ench", list);
+        }
     }
 
     public net.minecraft.server.ItemStack getHandle() {
