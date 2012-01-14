@@ -1,12 +1,16 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.collect.ImmutableSet;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.Packet131ItemData;
@@ -644,5 +648,30 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public Set<String> getListeningPluginChannels() {
         return ImmutableSet.copyOf(channels);
+    }
+
+    public void sendSupportedChannels() {
+        Set<String> listening = server.getMessenger().getIncomingChannels();
+
+        if (!listening.isEmpty()) {
+            Packet250CustomPayload packet = new Packet250CustomPayload();
+
+            packet.tag = "REGISTER";
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+
+            for (String channel : listening) {
+                try {
+                    stream.write(channel.getBytes("UTF8"));
+                    stream.write((byte)0);
+                } catch (IOException ex) {
+                    Logger.getLogger(CraftPlayer.class.getName()).log(Level.SEVERE, "Could not send Plugin Channel REGISTER to " + getName(), ex);
+                }
+            }
+
+            packet.data = stream.toByteArray();
+            packet.length = packet.data.length;
+
+            getHandle().netServerHandler.sendPacket(packet);
+        }
     }
 }
