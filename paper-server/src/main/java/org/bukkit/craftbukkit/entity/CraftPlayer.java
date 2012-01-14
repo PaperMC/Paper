@@ -54,6 +54,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     private long lastPlayed = 0;
     private boolean hasPlayedBefore = false;
     private Set<String> channels = new HashSet<String>();
+    private int hash = 0;
 
     public CraftPlayer(CraftServer server, EntityPlayer entity) {
         super(server, entity);
@@ -583,8 +584,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public int hashCode() {
-        int hash = 5;
-        hash = 97 * hash + (this.getName() != null ? this.getName().hashCode() : 0);
+        if (hash == 0 || hash == 485) {
+            hash = 97 * 5 + (this.getName() != null ? this.getName().hashCode() : 0);
+        }
         return hash;
     }
 

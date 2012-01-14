@@ -206,24 +206,6 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         return !entity.isAlive();
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final CraftEntity other = (CraftEntity) obj;
-        if (this.server != other.server && (this.server == null || !this.server.equals(other.server))) {
-            return false;
-        }
-        if (this.entity != other.entity && (this.entity == null || !this.entity.equals(other.entity))) {
-            return false;
-        }
-        return true;
-    }
-
     public Server getServer() {
         return server;
     }
@@ -320,10 +302,21 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final CraftEntity other = (CraftEntity) obj;
+        return (this.getEntityId() == other.getEntityId());
+    }
+
+    @Override
     public int hashCode() {
         int hash = 7;
-        hash = 89 * hash + (this.server != null ? this.server.hashCode() : 0);
-        hash = 89 * hash + (this.entity != null ? this.entity.hashCode() : 0);
+        hash = 29 * hash + this.getEntityId();
         return hash;
     }
 }
