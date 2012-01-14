@@ -1,4 +1,3 @@
-
 package org.bukkit.craftbukkit.block;
 
 import org.bukkit.Location;
@@ -205,5 +204,47 @@ public class CraftBlockState implements BlockState {
 
     public void setData(byte data) {
         createData(data);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final CraftBlockState other = (CraftBlockState) obj;
+        if (this.world != other.world && (this.world == null || !this.world.equals(other.world))) {
+            return false;
+        }
+        if (this.x != other.x) {
+            return false;
+        }
+        if (this.y != other.y) {
+            return false;
+        }
+        if (this.z != other.z) {
+            return false;
+        }
+        if (this.type != other.type) {
+            return false;
+        }
+        if (this.data != other.data && (this.data == null || !this.data.equals(other.data))) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 73 * hash + (this.world != null ? this.world.hashCode() : 0);
+        hash = 73 * hash + this.x;
+        hash = 73 * hash + this.y;
+        hash = 73 * hash + this.z;
+        hash = 73 * hash + this.type;
+        hash = 73 * hash + (this.data != null ? this.data.hashCode() : 0);
+        return hash;
     }
 }
