@@ -9,6 +9,7 @@ import java.util.logging.Logger;
 import java.util.logging.Handler;
 import org.bukkit.craftbukkit.util.ShortConsoleLogFormatter;
 import org.bukkit.craftbukkit.util.TerminalConsoleHandler;
+
 // CraftBukkit end
 
 public class ConsoleLogManager {
@@ -16,7 +17,8 @@ public class ConsoleLogManager {
     public static Logger a = Logger.getLogger("Minecraft");
     public static Logger global = Logger.getLogger(""); // CraftBukkit
 
-    public ConsoleLogManager() {}
+    public ConsoleLogManager() {
+    }
 
     // CraftBukkit - change of method signature!
     public static void init(MinecraftServer server) {
@@ -26,7 +28,7 @@ public class ConsoleLogManager {
         // CraftBukkit start
         ConsoleHandler consolehandler = new TerminalConsoleHandler(server.reader);
 
-        for (Handler handler: global.getHandlers()) {
+        for (Handler handler : global.getHandlers()) {
             global.removeHandler(handler);
         }
 
@@ -38,10 +40,10 @@ public class ConsoleLogManager {
 
         try {
             // CraftBukkit start
-            String pattern = (String)server.options.valueOf("log-pattern");
-            int limit = ((Integer)server.options.valueOf("log-limit")).intValue();
-            int count = ((Integer)server.options.valueOf("log-count")).intValue();
-            boolean append = ((Boolean)server.options.valueOf("log-append")).booleanValue();
+            String pattern = (String) server.options.valueOf("log-pattern");
+            int limit = ((Integer) server.options.valueOf("log-limit")).intValue();
+            int count = ((Integer) server.options.valueOf("log-count")).intValue();
+            boolean append = ((Boolean) server.options.valueOf("log-append")).booleanValue();
             FileHandler filehandler = new FileHandler(pattern, limit, count, append);
             // CraftBukkit end
 

@@ -217,7 +217,7 @@ public class WorldGenBigTree extends WorldGenerator {
                 aint3[b3] = MathHelper.floor((double) aint[b3] + (double) j * d1 + 0.5D);
                 // CraftBukkit start
                 if (event == null) {
-                this.setTypeAndData(this.world, aint3[0], aint3[1], aint3[2], i, 0);
+                    this.setTypeAndData(this.world, aint3[0], aint3[1], aint3[2], i, 0);
                 } else {
                     BlockState state = bukkitWorld.getBlockAt(aint3[0], aint3[1], aint3[2]).getState();
                     state.setTypeId(i);

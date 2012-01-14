@@ -159,7 +159,7 @@ public class TileEntityChest extends TileEntity implements IInventory {
         TileEntity entity = this.world.getTileEntity(x, y, z);
 
         if (entity instanceof TileEntityChest) {
-            return (TileEntityChest)entity;
+            return (TileEntityChest) entity;
         } else {
             String name = "null";
             if (entity != null) {

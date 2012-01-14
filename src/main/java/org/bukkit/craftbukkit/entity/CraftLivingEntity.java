@@ -47,7 +47,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
         getHandle().setHealth(health);
     }
-    
+
     public int getMaxHealth() {
         return getHandle().getMaxHealth();
     }
@@ -173,9 +173,9 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         DamageSource reason = DamageSource.GENERIC;
 
         if (source instanceof HumanEntity) {
-            reason = DamageSource.playerAttack(((CraftHumanEntity)source).getHandle());
+            reason = DamageSource.playerAttack(((CraftHumanEntity) source).getHandle());
         } else if (source instanceof LivingEntity) {
-            reason = DamageSource.mobAttack(((CraftLivingEntity)source).getHandle());
+            reason = DamageSource.mobAttack(((CraftLivingEntity) source).getHandle());
         }
 
         entity.damageEntity(reason, amount);
@@ -226,6 +226,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public Player getKiller() {
-        return getHandle().killer == null ? null : (Player)getHandle().killer.getBukkitEntity();
+        return getHandle().killer == null ? null : (Player) getHandle().killer.getBukkitEntity();
     }
 }

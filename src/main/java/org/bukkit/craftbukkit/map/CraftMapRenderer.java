@@ -10,7 +10,7 @@ import org.bukkit.map.MapView;
 import org.bukkit.map.MapCursorCollection;
 
 public class CraftMapRenderer extends MapRenderer {
-    
+
     private final CraftMapView mapView;
     private final WorldMap worldMap;
 
@@ -28,7 +28,7 @@ public class CraftMapRenderer extends MapRenderer {
                 canvas.setPixel(x, y, worldMap.colors[y * 128 + x]);
             }
         }
-        
+
         // Cursors
         MapCursorCollection cursors = canvas.getCursors();
         while (cursors.size() > 0) {
@@ -36,8 +36,8 @@ public class CraftMapRenderer extends MapRenderer {
         }
         for (int i = 0; i < worldMap.decorations.size(); ++i) {
             WorldMapDecoration decoration = (WorldMapDecoration) worldMap.decorations.get(i);
-            cursors.addCursor(decoration.locX, decoration.locY, (byte)(decoration.rotation & 15), (byte)(decoration.type));
+            cursors.addCursor(decoration.locX, decoration.locY, (byte) (decoration.rotation & 15), (byte) (decoration.type));
         }
     }
-    
+
 }

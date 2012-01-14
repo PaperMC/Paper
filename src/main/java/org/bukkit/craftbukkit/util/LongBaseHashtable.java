@@ -84,7 +84,7 @@ public class LongBaseHashtable extends LongHash {
             if (inner[i].key == key) {
                 for (i++; i < inner.length; i++) {
                     if (inner[i] == null) break;
-                    inner[i-1] = inner[i];
+                    inner[i - 1] = inner[i];
                 }
 
                 inner[i-1] = null;
@@ -97,13 +97,13 @@ public class LongBaseHashtable extends LongHash {
     public synchronized ArrayList<EntryBase> entries() {
         ArrayList<EntryBase> ret = new ArrayList<EntryBase>();
 
-        for (EntryBase[][] outer: this.values) {
+        for (EntryBase[][] outer : this.values) {
             if (outer == null) continue;
 
-            for (EntryBase[] inner: outer) {
+            for (EntryBase[] inner : outer) {
                 if (inner == null) continue;
 
-                for (EntryBase entry: inner) {
+                for (EntryBase entry : inner) {
                     if (entry == null) break;
 
                     ret.add(entry);

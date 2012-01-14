@@ -633,12 +633,12 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
     public void reset() {
         float exp = 0;
-        if(this.keepLevel) {
+        if (this.keepLevel) {
             exp = this.exp;
             this.newTotalExp = this.expTotal;
             this.newLevel = this.expLevel;
         }
-        
+
         this.health = 20;
         this.fireTicks = 0;
         this.fallDistance = 0;
@@ -650,7 +650,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         effects.clear();
         this.activeContainer = this.defaultContainer;
         this.lastSentExp = -1;
-        if(this.keepLevel) {
+        if (this.keepLevel) {
             this.exp = exp;
         } else {
             this.giveExp(this.newExp);
@@ -659,7 +659,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     }
 
     public CraftPlayer getPlayer() {
-        return (CraftPlayer)getBukkitEntity();
+        return (CraftPlayer) getBukkitEntity();
     }
     // CraftBukkit end
 }

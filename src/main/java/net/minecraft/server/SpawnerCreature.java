@@ -18,13 +18,16 @@ public final class SpawnerCreature {
     // private static HashMap b = new HashMap(); // CraftBukkit - moved local to spawnEntities
     static private class ChunkEntry extends EntryBase {
         public boolean spawn;
-        public ChunkEntry (int x, int z, boolean spawn) {
+
+        public ChunkEntry(int x, int z, boolean spawn) {
             super(LongHash.toLong(x, z));
             this.spawn = spawn;
         }
+
         int getX() {
             return LongHash.msw(key);
         }
+
         int getZ() {
             return LongHash.lsw(key);
         }

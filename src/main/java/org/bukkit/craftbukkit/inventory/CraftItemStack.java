@@ -175,10 +175,10 @@ public class CraftItemStack extends ItemStack {
         }
 
         for (int i = 0; i < list.size(); i++) {
-            short id = ((NBTTagCompound)list.get(i)).getShort("id");
-            short level = ((NBTTagCompound)list.get(i)).getShort("lvl");
+            short id = ((NBTTagCompound) list.get(i)).getShort("id");
+            short level = ((NBTTagCompound) list.get(i)).getShort("lvl");
 
-            result.put(Enchantment.getById(id), (int)level);
+            result.put(Enchantment.getById(id), (int) level);
         }
 
         return result;
@@ -197,8 +197,8 @@ public class CraftItemStack extends ItemStack {
         for (Map.Entry<Enchantment, Integer> entry : enchantments.entrySet()) {
             NBTTagCompound subtag = new NBTTagCompound();
 
-            subtag.setShort("id", (short)entry.getKey().getId());
-            subtag.setShort("lvl", (short)(int)entry.getValue());
+            subtag.setShort("id", (short) entry.getKey().getId());
+            subtag.setShort("lvl", (short) (int) entry.getValue());
 
             list.add(subtag);
         }

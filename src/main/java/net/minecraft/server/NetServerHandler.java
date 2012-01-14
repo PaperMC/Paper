@@ -65,6 +65,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         // CraftBukkit start
         this.server = minecraftserver.server;
     }
+
     private final CraftServer server;
     private int lastTick = MinecraftServer.currentTick;
     private int lastDropTick = MinecraftServer.currentTick;
@@ -674,7 +675,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             this.player.compassTarget = new Location(this.getPlayer().getWorld(), packet6.x, packet6.y, packet6.z);
         } else if (packet instanceof Packet3Chat) {
             String message = ((Packet3Chat) packet).message;
-            for (final String line: TextWrapper.wrapText(message)) {
+            for (final String line : TextWrapper.wrapText(message)) {
                 this.networkManager.queue(new Packet3Chat(line));
             }
             packet = null;

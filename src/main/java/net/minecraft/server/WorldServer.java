@@ -82,7 +82,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
                 + "Bukkit will attempt to fix this, but there may be additional damage that we cannot recover.");
 
         if (Block.byId[type] instanceof BlockContainer) {
-            TileEntity replacement = ((BlockContainer)Block.byId[type]).a_();
+            TileEntity replacement = ((BlockContainer) Block.byId[type]).a_();
             setTileEntity(x, y, z, replacement);
             return replacement;
         } else {

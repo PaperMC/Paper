@@ -125,7 +125,7 @@ public class EntityPainting extends Entity {
             this.f = 0;
             if (!this.survives()) {
                 // CraftBukkit start
-                Material material = this.world.getMaterial((int)this.locX, (int)this.locY, (int)this.locZ);
+                Material material = this.world.getMaterial((int) this.locX, (int) this.locY, (int) this.locZ);
                 RemoveCause cause;
                 if (material.equals(Material.WATER)) {
                     cause = RemoveCause.WATER;
@@ -142,7 +142,7 @@ public class EntityPainting extends Entity {
                     return;
                 }
 
-                if(!dead) {
+                if (!dead) {
                     this.die();
                     this.world.addEntity(new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.PAINTING)));
                 }

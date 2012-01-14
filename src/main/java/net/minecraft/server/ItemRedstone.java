@@ -61,7 +61,7 @@ public class ItemRedstone extends Item {
                     return false;
                 }
 
-                world.update( i, j, k, Block.REDSTONE_WIRE.id); // Must take place after BlockPlaceEvent, we need to update all other blocks.
+                world.update(i, j, k, Block.REDSTONE_WIRE.id); // Must take place after BlockPlaceEvent, we need to update all other blocks.
                 // CraftBukkit end
 
                 --itemstack.count; // CraftBukkit - ORDER MATTERS

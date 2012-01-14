@@ -29,7 +29,7 @@ public class ItemDye extends Item {
                 if (i1 == Block.SAPLING.id) {
                     if (!world.isStatic) {
                         // CraftBukkit start
-                        Player player = (entityhuman instanceof EntityPlayer) ? (Player)entityhuman.getBukkitEntity() : null;
+                        Player player = (entityhuman instanceof EntityPlayer) ? (Player) entityhuman.getBukkitEntity() : null;
                         ((BlockSapling) Block.SAPLING).grow(world, i, j, k, world.random, true, player, itemstack);
                         //--itemstack.count; - called later if the bonemeal attempt was succesful
                         // CraftBukkit end
@@ -41,7 +41,7 @@ public class ItemDye extends Item {
                 if (i1 == Block.BROWN_MUSHROOM.id || i1 == Block.RED_MUSHROOM.id) {
                     // CraftBukkit start
                     if (!world.isStatic) {
-                        Player player = (entityhuman instanceof EntityPlayer) ? (Player)entityhuman.getBukkitEntity() : null;
+                        Player player = (entityhuman instanceof EntityPlayer) ? (Player) entityhuman.getBukkitEntity() : null;
                         ((BlockMushroom) Block.byId[i1]).grow(world, i, j, k, world.random, true, player, itemstack);
                         //--itemstack.count; - called later if the bonemeal attempt was succesful
                         // CraftBukkit end

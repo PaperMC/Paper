@@ -502,7 +502,7 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
 
         // Send timeupdates to everyone, it will get the right time from the world the player is in.
         if (this.ticks % 20 == 0) {
-            for ( k = 0; k < this.serverConfigurationManager.players.size(); ++k) {
+            for (k = 0; k < this.serverConfigurationManager.players.size(); ++k) {
                 EntityPlayer entityplayer = (EntityPlayer) this.serverConfigurationManager.players.get(k);
                 entityplayer.netServerHandler.sendPacket(new Packet4UpdateTime(entityplayer.getPlayerTime())); // Add support for per player time
             }

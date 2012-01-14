@@ -35,7 +35,7 @@ public class EntityEnderPearl extends EntityProjectile {
 
             if (this.shooter != null) {
                 if (this.shooter instanceof EntityPlayer) {
-                    CraftPlayer player = (CraftPlayer)this.shooter.bukkitEntity;
+                    CraftPlayer player = (CraftPlayer) this.shooter.bukkitEntity;
                     teleport = player.isOnline();
 
                     if (teleport) {
@@ -50,7 +50,7 @@ public class EntityEnderPearl extends EntityProjectile {
 
             if (teleport) {
                 if (this.shooter instanceof EntityPlayer) {
-                    ((EntityPlayer)this.shooter).netServerHandler.teleport(teleEvent.getTo());
+                    ((EntityPlayer) this.shooter).netServerHandler.teleport(teleEvent.getTo());
                 } else {
                     this.shooter.enderTeleportTo(this.locX, this.locY, this.locZ);
                 }

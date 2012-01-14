@@ -1,4 +1,3 @@
-
 package org.bukkit.craftbukkit.util;
 
 import net.minecraft.server.MinecraftServer;

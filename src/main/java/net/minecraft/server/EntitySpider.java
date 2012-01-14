@@ -119,15 +119,15 @@ public class EntitySpider extends EntityMonster {
         // CraftBukkit start - whole method; adapted from super.dropDeathLoot.
         List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
 
-         int k = this.random.nextInt(3);
+        int k = this.random.nextInt(3);
 
-         if (i > 0) {
-             k += this.random.nextInt(i + 1);
-         }
+        if (i > 0) {
+            k += this.random.nextInt(i + 1);
+        }
 
-         if (k > 0) {
-             loot.add(new org.bukkit.inventory.ItemStack(Item.STRING.id, k));
-         }
+        if (k > 0) {
+            loot.add(new org.bukkit.inventory.ItemStack(Item.STRING.id, k));
+        }
 
         if (flag && (this.random.nextInt(3) == 0 || this.random.nextInt(1 + i) > 0)) {
             loot.add(new org.bukkit.inventory.ItemStack(Item.SPIDER_EYE.id, 1));

@@ -103,7 +103,7 @@ public abstract class Packet {
     }
 
     // CraftBukkit - throws IOException
-    public static void a(String s, DataOutputStream dataoutputstream)  throws IOException {
+    public static void a(String s, DataOutputStream dataoutputstream) throws IOException {
         if (s.length() > 32767) {
             throw new IOException("String too big");
         } else {
@@ -113,7 +113,7 @@ public abstract class Packet {
     }
 
     // CraftBukkit - throws IOException
-    public static String a(DataInputStream datainputstream, int i)  throws IOException {
+    public static String a(DataInputStream datainputstream, int i) throws IOException {
         short short1 = datainputstream.readShort();
 
         if (short1 > i) {

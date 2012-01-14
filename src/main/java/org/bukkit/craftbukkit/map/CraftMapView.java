@@ -16,12 +16,12 @@ import org.bukkit.map.MapRenderer;
 import org.bukkit.map.MapView;
 
 public final class CraftMapView implements MapView {
-    
+
     private final Map<CraftPlayer, RenderData> renderCache = new HashMap<CraftPlayer, RenderData>();
     private final List<MapRenderer> renderers = new ArrayList<MapRenderer>();
     private final Map<MapRenderer, Map<CraftPlayer, CraftMapCanvas>> canvases = new HashMap<MapRenderer, Map<CraftPlayer, CraftMapCanvas>>();
     protected final WorldMap worldMap;
-    
+
     public CraftMapView(WorldMap worldMap) {
         this.worldMap = worldMap;
         addRenderer(new CraftMapRenderer(this, worldMap));
@@ -52,7 +52,7 @@ public final class CraftMapView implements MapView {
     public void setScale(Scale scale) {
         worldMap.scale = scale.getValue();
     }
-    
+
     public World getWorld() {
         byte dimension = worldMap.map;
         for (World world : Bukkit.getServer().getWorlds()) {
@@ -111,51 +111,51 @@ public final class CraftMapView implements MapView {
             return false;
         }
     }
-    
+
     private boolean isContextual() {
         for (MapRenderer renderer : renderers) {
             if (renderer.isContextual()) return true;
         }
         return false;
     }
-    
+
     public RenderData render(CraftPlayer player) {
         boolean context = isContextual();
         RenderData render = renderCache.get(context ? player : null);
-        
+
         if (render == null) {
             render = new RenderData();
             renderCache.put(context ? player : null, render);
         }
-        
+
         if (context && renderCache.containsKey(null)) {
             renderCache.remove(null);
         }
-        
+
         Arrays.fill(render.buffer, (byte) 0);
         render.cursors.clear();
-        
+
         for (MapRenderer renderer : renderers) {
             CraftMapCanvas canvas = canvases.get(renderer).get(renderer.isContextual() ? player : null);
             if (canvas == null) {
                 canvas = new CraftMapCanvas(this);
                 canvases.get(renderer).put(renderer.isContextual() ? player : null, canvas);
             }
-            
+
             canvas.setBase(render.buffer);
             renderer.render(this, canvas, player);
-            
+
             byte[] buf = canvas.getBuffer();
             for (int i = 0; i < buf.length; ++i) {
                 if (buf[i] >= 0) render.buffer[i] = buf[i];
             }
-            
+
             for (int i = 0; i < canvas.getCursors().size(); ++i) {
                 render.cursors.add(canvas.getCursors().getCursor(i));
             }
         }
-        
+
         return render;
     }
-    
+
 }

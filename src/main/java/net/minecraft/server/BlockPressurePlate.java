@@ -101,7 +101,7 @@ public class BlockPressurePlate extends Block {
 
         if (flag != flag1) {
             if (flag1) {
-                for (Object object: list) {
+                for (Object object : list) {
                     if (object != null) {
                         org.bukkit.event.Cancellable cancellable;
 

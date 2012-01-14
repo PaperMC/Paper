@@ -843,7 +843,7 @@ public abstract class EntityHuman extends EntityLiving {
 
                 if (l > 0) {
                     // CraftBukkit start - raise a combust event when somebody hits with a fire enchanted item
-                    EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), l*4);
+                    EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), l * 4);
                     Bukkit.getPluginManager().callEvent(combustEvent);
 
                     if (!combustEvent.isCancelled()) {

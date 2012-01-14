@@ -15,6 +15,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
 
     // CraftBukkit start
     private int lastTick = (int) (System.currentTimeMillis() / 50);
+
     public ItemStack[] getContents() {
         return this.items;
     }

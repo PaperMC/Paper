@@ -205,7 +205,7 @@ public class WorldNBTStorage implements PlayerFileData, IDataManager {
         if (nbttagcompound != null) {
             // CraftBukkit start
             if (entityhuman instanceof EntityPlayer) {
-                CraftPlayer player = (CraftPlayer)entityhuman.bukkitEntity;
+                CraftPlayer player = (CraftPlayer) entityhuman.bukkitEntity;
                 player.setFirstPlayed(new File(playerDir, entityhuman.name + ".dat").lastModified());
             }
             // CraftBukkit end

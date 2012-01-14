@@ -147,6 +147,7 @@ public class CraftEventFactory {
         }
         return callPlayerInteractEvent(who, action, 0, 255, 0, 0, itemstack);
     }
+
     public static PlayerInteractEvent callPlayerInteractEvent(EntityHuman who, Action action, int clickedX, int clickedY, int clickedZ, int clickedFace, ItemStack itemstack) {
         Player player = (who == null) ? null : (Player) who.getBukkitEntity();
         CraftItemStack itemInHand = new CraftItemStack(itemstack);
@@ -160,12 +161,12 @@ public class CraftEventFactory {
         if (clickedY == 255) {
             blockClicked = null;
             switch (action) {
-                case LEFT_CLICK_BLOCK:
-                    action = Action.LEFT_CLICK_AIR;
-                    break;
-                case RIGHT_CLICK_BLOCK:
-                    action = Action.RIGHT_CLICK_AIR;
-                    break;
+            case LEFT_CLICK_BLOCK:
+                action = Action.LEFT_CLICK_AIR;
+                break;
+            case RIGHT_CLICK_BLOCK:
+                action = Action.RIGHT_CLICK_AIR;
+                break;
             }
         }
 
@@ -317,7 +318,7 @@ public class CraftEventFactory {
 
         victim.expToDrop = event.getDroppedExp();
 
-        for (org.bukkit.inventory.ItemStack stack: event.getDrops()) {
+        for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
             world.dropItemNaturally(entity.getLocation(), stack);
         }
 
@@ -325,7 +326,7 @@ public class CraftEventFactory {
     }
 
     public static PlayerDeathEvent callPlayerDeathEvent(EntityPlayer victim, List<org.bukkit.inventory.ItemStack> drops, String deathMessage) {
-        CraftPlayer entity = (CraftPlayer)victim.getBukkitEntity();
+        CraftPlayer entity = (CraftPlayer) victim.getBukkitEntity();
         PlayerDeathEvent event = new PlayerDeathEvent(entity, drops, victim.getExpReward(), 0, deathMessage);
         org.bukkit.World world = entity.getWorld();
         Bukkit.getServer().getPluginManager().callEvent(event);
@@ -337,7 +338,7 @@ public class CraftEventFactory {
         victim.expToDrop = event.getDroppedExp();
         victim.newExp = event.getNewExp();
 
-        for (org.bukkit.inventory.ItemStack stack: event.getDrops()) {
+        for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
             world.dropItemNaturally(entity.getLocation(), stack);
         }
 

@@ -117,7 +117,7 @@ public class EntityWolf extends EntityAnimal {
                 EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), bukkitTarget, EntityTargetEvent.TargetReason.RANDOM_TARGET);
                 this.world.getServer().getPluginManager().callEvent(event);
 
-                if (!event.isCancelled() || event.getTarget() != null ) {
+                if (!event.isCancelled() || event.getTarget() != null) {
                     this.setTarget(entity);
                 }
                 // CraftBukkit end

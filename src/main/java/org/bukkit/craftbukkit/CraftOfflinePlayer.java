@@ -22,7 +22,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     protected CraftOfflinePlayer(CraftServer server, String name) {
         this.server = server;
         this.name = name;
-        this.storage = (WorldNBTStorage)(server.console.worlds.get(0).getDataManager());
+        this.storage = (WorldNBTStorage) (server.console.worlds.get(0).getDataManager());
     }
 
     public boolean isOnline() {
@@ -77,14 +77,14 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
 
     public Map<String, Object> serialize() {
         Map<String, Object> result = new LinkedHashMap<String, Object>();
-        
+
         result.put("name", name);
-        
+
         return result;
     }
-    
+
     public static OfflinePlayer deserialize(Map<String, Object> args) {
-        return Bukkit.getServer().getOfflinePlayer((String)args.get("name"));
+        return Bukkit.getServer().getOfflinePlayer((String) args.get("name"));
     }
 
     @Override
@@ -93,13 +93,13 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     }
 
     public Player getPlayer() {
-        for (Object obj: server.getHandle().players) {
-            EntityPlayer player = (EntityPlayer)obj;
+        for (Object obj : server.getHandle().players) {
+            EntityPlayer player = (EntityPlayer) obj;
             if (player.name.equalsIgnoreCase(getName())) {
                 return (player.netServerHandler != null) ? player.netServerHandler.getPlayer() : null;
             }
         }
-        
+
         return null;
     }
 
@@ -111,7 +111,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         if (!(obj instanceof OfflinePlayer)) {
             return false;
         }
-        OfflinePlayer other = (OfflinePlayer)obj;
+        OfflinePlayer other = (OfflinePlayer) obj;
         if ((this.getName() == null) || (other.getName() == null)) {
             return false;
         }

@@ -3,7 +3,7 @@ package net.minecraft.server;
 // CraftBukkit start
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.player.PlayerPickupItemEvent;
-// CraftBukkit End
+// CraftBukkit end
 
 public class EntityItem extends Entity {
 

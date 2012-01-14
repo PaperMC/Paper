@@ -864,9 +864,8 @@ public class World implements IBlockAccess {
         return this.addEntity(entity, SpawnReason.CUSTOM); // Set reason as Custom by default
     }
 
-
     public boolean addEntity(Entity entity, SpawnReason spawnReason) { // Changed signature, added SpawnReason
-    // CraftBukkit end
+        // CraftBukkit end
         int i = MathHelper.floor(entity.locX / 16.0D);
         int j = MathHelper.floor(entity.locZ / 16.0D);
         boolean flag = false;
@@ -2307,7 +2306,7 @@ public class World implements IBlockAccess {
         } else {
             if (i > 1000) {
                 // CraftBukkit start - if the server has too much to process over time, try to alleviate that
-                if(i > 20 * 1000) {
+                if (i > 20 * 1000) {
                     i = i / 20;
                 } else {
                     i = 1000;
