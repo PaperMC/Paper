@@ -6,16 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import org.bukkit.Achievement;
-import org.bukkit.Effect;
-import org.bukkit.GameMode;
-import org.bukkit.Instrument;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Note;
-import org.bukkit.Server;
-import org.bukkit.Statistic;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Egg;
@@ -600,6 +591,10 @@ public class TestPlayer implements Player {
     }
 
     public Set<String> getListeningPluginChannels() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public void playEffect(EntityEffect type) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 }

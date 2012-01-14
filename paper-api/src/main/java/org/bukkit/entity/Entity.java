@@ -1,6 +1,7 @@
 package org.bukkit.entity;
 
 import org.bukkit.Location;
+import org.bukkit.EntityEffect;
 import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -216,4 +217,13 @@ public interface Entity {
      * @param value Age of entity
      */
     public void setTicksLived(int value);
+
+    /**
+     * Performs the specified {@link EntityEffect} for this entity.
+     * <p>
+     * This will be viewable to all players near the entity.
+     *
+     * @param type Effect to play.
+     */
+    public void playEffect(EntityEffect type);
 }
