@@ -648,7 +648,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         this.deathTicks = 0;
         effects.clear();
         this.activeContainer = this.defaultContainer;
-        this.lastSentExp = -1; // lastSentExp. Find line: "if (this.expTotal != this.XXXX) {"
+        this.lastSentExp = -1;
         if(this.keepLevel) {
             this.exp = exp;
         } else {
