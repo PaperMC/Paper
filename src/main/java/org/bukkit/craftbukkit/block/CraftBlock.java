@@ -256,6 +256,16 @@ public class CraftBlock implements Block {
         	return Biome.MUSHROOM_ISLAND;
         } else if (base == BiomeBase.MUSHROOM_SHORE) {
         	return Biome.MUSHROOM_SHORE;
+        } else if (base == BiomeBase.BEACH) {
+        	return Biome.BEACH;
+        } else if (base == BiomeBase.DESERT_HILLS) {
+        	return Biome.DESERT_HILLS;
+        } else if (base == BiomeBase.FOREST_HILLS) {
+        	return Biome.FOREST_HILLS;
+        } else if (base == BiomeBase.TAIGA_HILLS) {
+        	return Biome.TAIGA_HILLS;
+        } else if (base == BiomeBase.SMALL_MOUNTAINS) {
+        	return Biome.SMALL_MOUNTAINS;
         }
 
         return null;
