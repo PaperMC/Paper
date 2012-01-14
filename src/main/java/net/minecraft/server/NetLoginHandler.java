@@ -12,15 +12,15 @@ import org.bukkit.event.server.ServerListPingEvent;
 
 public class NetLoginHandler extends NetHandler {
 
-    public static Logger a = Logger.getLogger("Minecraft");
-    private static Random d = new Random();
+    public static Logger logger = Logger.getLogger("Minecraft");
+    private static Random random = new Random();
     public NetworkManager networkManager;
     public boolean c = false;
     private MinecraftServer server;
     private int f = 0;
     private String g = null;
     private Packet1Login h = null;
-    private String i = Long.toString(d.nextLong(), 16); // CraftBukkit - Security fix
+    private String loginKey = Long.toString(random.nextLong(), 16); // CraftBukkit - Security fix
 
     public NetLoginHandler(MinecraftServer minecraftserver, Socket socket, String s) {
         this.server = minecraftserver;
@@ -49,7 +49,7 @@ public class NetLoginHandler extends NetHandler {
 
     public void disconnect(String s) {
         try {
-            a.info("Disconnecting " + this.b() + ": " + s);
+            logger.info("Disconnecting " + this.getName() + ": " + s);
             this.networkManager.queue(new Packet255KickDisconnect(s));
             this.networkManager.d();
             this.c = true;
@@ -60,8 +60,8 @@ public class NetLoginHandler extends NetHandler {
 
     public void a(Packet2Handshake packet2handshake) {
         if (this.server.onlineMode) {
-            this.i = Long.toString(d.nextLong(), 16);
-            this.networkManager.queue(new Packet2Handshake(this.i));
+            this.loginKey = Long.toString(random.nextLong(), 16);
+            this.networkManager.queue(new Packet2Handshake(this.loginKey));
         } else {
             this.networkManager.queue(new Packet2Handshake("-"));
         }
@@ -92,7 +92,7 @@ public class NetLoginHandler extends NetHandler {
             // entityplayer.a((World) this.server.a(entityplayer.dimension)); // CraftBukkit - set by Entity
             entityplayer.itemInWorldManager.a((WorldServer) entityplayer.world);
             // CraftBukkit - add world and location to 'logged in' message.
-            a.info(this.b() + " logged in with entity id " + entityplayer.id + " at ([" + entityplayer.world.worldData.name + "] " + entityplayer.locX + ", " + entityplayer.locY + ", " + entityplayer.locZ + ")");
+            logger.info(this.getName() + " logged in with entity id " + entityplayer.id + " at ([" + entityplayer.world.worldData.name + "] " + entityplayer.locX + ", " + entityplayer.locY + ", " + entityplayer.locZ + ")");
             WorldServer worldserver = (WorldServer) entityplayer.world; // CraftBukkit
             ChunkCoordinates chunkcoordinates = worldserver.getSpawn();
 
@@ -130,21 +130,21 @@ public class NetLoginHandler extends NetHandler {
     }
 
     public void a(String s, Object[] aobject) {
-        a.info(this.b() + " lost connection");
+        logger.info(this.getName() + " lost connection");
         this.c = true;
     }
 
     public void a(Packet254GetInfo packet254getinfo) {
-        if (this.networkManager.f() == null) return; // CraftBukkit - fix NPE when a client queries a server that is unable to handle it.
+        if (this.networkManager.getSocket() == null) return; // CraftBukkit - fix NPE when a client queries a server that is unable to handle it.
         try {
             // CraftBukkit start
-            ServerListPingEvent pingEvent = CraftEventFactory.callServerListPingEvent(this.server.server, getSocket().getInetAddress(), this.server.s, this.server.serverConfigurationManager.getPlayerCount(), this.server.serverConfigurationManager.getMaxPlayers());
+            ServerListPingEvent pingEvent = CraftEventFactory.callServerListPingEvent(this.server.server, getSocket().getInetAddress(), this.server.motd, this.server.serverConfigurationManager.getPlayerCount(), this.server.serverConfigurationManager.getMaxPlayers());
             String s = pingEvent.getMotd() + "\u00A7" + this.server.serverConfigurationManager.getPlayerCount() + "\u00A7" + pingEvent.getMaxPlayers();
             // CraftBukkit end
 
             this.networkManager.queue(new Packet255KickDisconnect(s));
             this.networkManager.d();
-            this.server.networkListenThread.a(this.networkManager.f());
+            this.server.networkListenThread.a(this.networkManager.getSocket());
             this.c = true;
         } catch (Exception exception) {
             exception.printStackTrace();
@@ -155,7 +155,7 @@ public class NetLoginHandler extends NetHandler {
         this.disconnect("Protocol error");
     }
 
-    public String b() {
+    public String getName() {
         return this.g != null ? this.g + " [" + this.networkManager.getSocketAddress().toString() + "]" : this.networkManager.getSocketAddress().toString();
     }
 
@@ -164,7 +164,7 @@ public class NetLoginHandler extends NetHandler {
     }
 
     static String a(NetLoginHandler netloginhandler) {
-        return netloginhandler.i;
+        return netloginhandler.loginKey;
     }
 
     static Packet1Login a(NetLoginHandler netloginhandler, Packet1Login packet1login) {

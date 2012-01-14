@@ -140,7 +140,7 @@ public class EntityExperienceOrb extends Entity {
         return this.value;
     }
 
-    public static int b(int i) {
+    public static int getOrbValue(int i) {
         // CraftBukkit start
         if (i > 162670129) return i - 100000;
         if (i > 81335063) return 81335063;

@@ -20,14 +20,14 @@ public class WorldServer extends World implements BlockChangeDelegate {
     public boolean weirdIsOpCache = false;
     public boolean savingDisabled;
     public final MinecraftServer server; // CraftBukkit - private -> public final
-    private IntHashMap N;
+    private IntHashMap entitiesById;
 
     // CraftBukkit start - change signature
     public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, String s, int i, WorldSettings worldsettings, org.bukkit.World.Environment env, ChunkGenerator gen) {
         super(idatamanager, s, worldsettings, WorldProvider.byDimension(env.getId()), gen, env);
         this.server = minecraftserver;
-        if (this.N == null) {
-            this.N = new IntHashMap();
+        if (this.entitiesById == null) {
+            this.entitiesById = new IntHashMap();
         }
 
         this.dimension = i;
@@ -140,8 +140,8 @@ public class WorldServer extends World implements BlockChangeDelegate {
     public List getTileEntities(int i, int j, int k, int l, int i1, int j1) {
         ArrayList arraylist = new ArrayList();
 
-        for (int k1 = 0; k1 < this.h.size(); ++k1) {
-            TileEntity tileentity = (TileEntity) this.h.get(k1);
+        for (int k1 = 0; k1 < this.tileEntityList.size(); ++k1) {
+            TileEntity tileentity = (TileEntity) this.tileEntityList.get(k1);
 
             if (tileentity.x >= i && tileentity.y >= j && tileentity.z >= k && tileentity.x < l && tileentity.y < i1 && tileentity.z < j1) {
                 arraylist.add(tileentity);
@@ -164,8 +164,8 @@ public class WorldServer extends World implements BlockChangeDelegate {
     }
 
     protected void c() {
-        if (this.N == null) {
-            this.N = new IntHashMap();
+        if (this.entitiesById == null) {
+            this.entitiesById = new IntHashMap();
         }
 
         super.c();
@@ -173,30 +173,30 @@ public class WorldServer extends World implements BlockChangeDelegate {
 
     protected void c(Entity entity) {
         super.c(entity);
-        this.N.a(entity.id, entity);
+        this.entitiesById.a(entity.id, entity);
         Entity[] aentity = entity.aR();
 
         if (aentity != null) {
             for (int i = 0; i < aentity.length; ++i) {
-                this.N.a(aentity[i].id, aentity[i]);
+                this.entitiesById.a(aentity[i].id, aentity[i]);
             }
         }
     }
 
     protected void d(Entity entity) {
         super.d(entity);
-        this.N.d(entity.id);
+        this.entitiesById.d(entity.id);
         Entity[] aentity = entity.aR();
 
         if (aentity != null) {
             for (int i = 0; i < aentity.length; ++i) {
-                this.N.d(aentity[i].id);
+                this.entitiesById.d(aentity[i].id);
             }
         }
     }
 
     public Entity getEntity(int i) {
-        return (Entity) this.N.a(i);
+        return (Entity) this.entitiesById.a(i);
     }
 
     public boolean strikeLightning(Entity entity) {

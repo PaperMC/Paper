@@ -91,7 +91,7 @@ public class BlockMushroom extends BlockFlower {
     }
 
     // CraftBukkit - added bonemeal, player and itemstack
-    public boolean b(World world, int i, int j, int k, Random random, boolean bonemeal, Player player, ItemStack itemstack) {
+    public boolean grow(World world, int i, int j, int k, Random random, boolean bonemeal, Player player, ItemStack itemstack) {
         int l = world.getData(i, j, k);
 
         world.setRawTypeId(i, j, k, 0);

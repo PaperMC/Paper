@@ -52,7 +52,7 @@ public class EntityEnderPearl extends EntityProjectile {
                 if (this.shooter instanceof EntityPlayer) {
                     ((EntityPlayer)this.shooter).netServerHandler.teleport(teleEvent.getTo());
                 } else {
-                    this.shooter.a_(this.locX, this.locY, this.locZ);
+                    this.shooter.enderTeleportTo(this.locX, this.locY, this.locZ);
                 }
                 this.shooter.fallDistance = 0.0F;
                 EntityDamageByEntityEvent damageEvent = new EntityDamageByEntityEvent(this.getBukkitEntity(), this.shooter.getBukkitEntity(), EntityDamageByEntityEvent.DamageCause.FALL, 5);
@@ -60,7 +60,7 @@ public class EntityEnderPearl extends EntityProjectile {
 
                 if (!damageEvent.isCancelled()) {
                     org.bukkit.entity.Player bPlayer = Bukkit.getPlayerExact(((EntityPlayer) this.shooter).name);
-                    ((CraftPlayer) bPlayer).getHandle().cj = -1; // Remove spawning invulnerability.
+                    ((CraftPlayer) bPlayer).getHandle().invulnerableTicks = -1; // Remove spawning invulnerability.
                     ((CraftPlayer) bPlayer).getHandle().damageEntity(DamageSource.FALL, 5); // Damage the new player instead of the old
                 }
             }

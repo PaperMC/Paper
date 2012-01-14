@@ -59,7 +59,7 @@ public class EntityZombie extends EntityMonster {
         return "mob.zombiedeath";
     }
 
-    protected int e() {
+    protected int getLootId() {
         return Item.ROTTEN_FLESH.id;
     }
 

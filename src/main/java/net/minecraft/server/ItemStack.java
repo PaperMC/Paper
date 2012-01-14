@@ -90,7 +90,7 @@ public final class ItemStack {
     }
 
     public float a(Block block) {
-        return this.getItem().a(this, block);
+        return this.getItem().getDestroySpeed(this, block);
     }
 
     public ItemStack a(World world, EntityHuman entityhuman) {
@@ -252,7 +252,7 @@ public final class ItemStack {
     }
 
     public String toString() {
-        return this.count + "x" + Item.byId[this.id].b() + "@" + this.damage;
+        return this.count + "x" + Item.byId[this.id].getName() + "@" + this.damage;
     }
 
     public void a(World world, Entity entity, int i, boolean flag) {

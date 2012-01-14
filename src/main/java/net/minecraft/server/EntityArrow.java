@@ -60,7 +60,7 @@ public class EntityArrow extends Entity {
     protected void b() {}
 
     public void shoot(double d0, double d1, double d2, float f, float f1) {
-        float f2 = MathHelper.a(d0 * d0 + d1 * d1 + d2 * d2);
+        float f2 = MathHelper.sqrt(d0 * d0 + d1 * d1 + d2 * d2);
 
         d0 /= (double) f2;
         d1 /= (double) f2;
@@ -74,7 +74,7 @@ public class EntityArrow extends Entity {
         this.motX = d0;
         this.motY = d1;
         this.motZ = d2;
-        float f3 = MathHelper.a(d0 * d0 + d2 * d2);
+        float f3 = MathHelper.sqrt(d0 * d0 + d2 * d2);
 
         this.lastYaw = this.yaw = (float) (Math.atan2(d0, d2) * 180.0D / 3.1415927410125732D);
         this.lastPitch = this.pitch = (float) (Math.atan2(d1, (double) f3) * 180.0D / 3.1415927410125732D);
@@ -84,7 +84,7 @@ public class EntityArrow extends Entity {
     public void y_() {
         super.y_();
         if (this.lastPitch == 0.0F && this.lastYaw == 0.0F) {
-            float f = MathHelper.a(this.motX * this.motX + this.motZ * this.motZ);
+            float f = MathHelper.sqrt(this.motX * this.motX + this.motZ * this.motZ);
 
             this.lastYaw = this.yaw = (float) (Math.atan2(this.motX, this.motZ) * 180.0D / 3.1415927410125732D);
             this.lastPitch = this.pitch = (float) (Math.atan2(this.motY, (double) f) * 180.0D / 3.1415927410125732D);
@@ -172,7 +172,7 @@ public class EntityArrow extends Entity {
                 this.world.getServer().getPluginManager().callEvent(phe);
                 // CraftBukkit end
                 if (movingobjectposition.entity != null) {
-                    f2 = MathHelper.a(this.motX * this.motX + this.motY * this.motY + this.motZ * this.motZ);
+                    f2 = MathHelper.sqrt(this.motX * this.motX + this.motY * this.motY + this.motZ * this.motZ);
                     int l = (int) Math.ceil((double) f2 * this.damage);
 
                     if (this.d) {
@@ -187,7 +187,7 @@ public class EntityArrow extends Entity {
                         damagesource = DamageSource.arrow(this, this.shooter);
                     }
 
-                    if (this.A()) {
+                    if (this.isBurning()) {
                         movingobjectposition.entity.setOnFire(5);
                     }
 
@@ -215,7 +215,7 @@ public class EntityArrow extends Entity {
                         if (movingobjectposition.entity instanceof EntityLiving) {
                             ++((EntityLiving) movingobjectposition.entity).aJ;
                             if (this.n > 0) {
-                                float f3 = MathHelper.a(this.motX * this.motX + this.motZ * this.motZ);
+                                float f3 = MathHelper.sqrt(this.motX * this.motX + this.motZ * this.motZ);
 
                                 if (f3 > 0.0F) {
                                     movingobjectposition.entity.b_(this.motX * (double) this.n * 0.6000000238418579D / (double) f3, 0.1D, this.motZ * (double) this.n * 0.6000000238418579D / (double) f3);
@@ -242,7 +242,7 @@ public class EntityArrow extends Entity {
                     this.motX = (double) ((float) (movingobjectposition.f.a - this.locX));
                     this.motY = (double) ((float) (movingobjectposition.f.b - this.locY));
                     this.motZ = (double) ((float) (movingobjectposition.f.c - this.locZ));
-                    f2 = MathHelper.a(this.motX * this.motX + this.motY * this.motY + this.motZ * this.motZ);
+                    f2 = MathHelper.sqrt(this.motX * this.motX + this.motY * this.motY + this.motZ * this.motZ);
                     this.locX -= this.motX / (double) f2 * 0.05000000074505806D;
                     this.locY -= this.motY / (double) f2 * 0.05000000074505806D;
                     this.locZ -= this.motZ / (double) f2 * 0.05000000074505806D;
@@ -262,7 +262,7 @@ public class EntityArrow extends Entity {
             this.locX += this.motX;
             this.locY += this.motY;
             this.locZ += this.motZ;
-            f2 = MathHelper.a(this.motX * this.motX + this.motZ * this.motZ);
+            f2 = MathHelper.sqrt(this.motX * this.motX + this.motZ * this.motZ);
             this.yaw = (float) (Math.atan2(this.motX, this.motZ) * 180.0D / 3.1415927410125732D);
 
             for (this.pitch = (float) (Math.atan2(this.motY, (double) f2) * 180.0D / 3.1415927410125732D); this.pitch - this.lastPitch < -180.0F; this.lastPitch -= 360.0F) {

@@ -224,7 +224,7 @@ public abstract class Entity {
 
         if (this.i_()) {
             if (!this.bV && !this.justCreated) {
-                float f = MathHelper.a(this.motX * this.motX * 0.20000000298023224D + this.motY * this.motY + this.motZ * this.motZ * 0.20000000298023224D) * 0.2F;
+                float f = MathHelper.sqrt(this.motX * this.motX * 0.20000000298023224D + this.motY * this.motY + this.motZ * this.motZ * 0.20000000298023224D) * 0.2F;
 
                 if (f > 1.0F) {
                     f = 1.0F;
@@ -581,7 +581,7 @@ public abstract class Entity {
             // CraftBukkit end
 
             if (this.g_() && !flag && this.vehicle == null) {
-                this.bJ = (float) ((double) this.bJ + (double) MathHelper.a(d9 * d9 + d10 * d10) * 0.6D);
+                this.bJ = (float) ((double) this.bJ + (double) MathHelper.sqrt(d9 * d9 + d10 * d10) * 0.6D);
                 l = MathHelper.floor(this.locX);
                 i1 = MathHelper.floor(this.locY - 0.20000000298023224D - (double) this.height);
                 j1 = MathHelper.floor(this.locZ);
@@ -855,7 +855,7 @@ public abstract class Entity {
         double d4 = this.locY - d1;
         double d5 = this.locZ - d2;
 
-        return (double) MathHelper.a(d3 * d3 + d4 * d4 + d5 * d5);
+        return (double) MathHelper.sqrt(d3 * d3 + d4 * d4 + d5 * d5);
     }
 
     public double i(Entity entity) {
@@ -875,7 +875,7 @@ public abstract class Entity {
             double d2 = MathHelper.a(d0, d1);
 
             if (d2 >= 0.009999999776482582D) {
-                d2 = (double) MathHelper.a(d2);
+                d2 = (double) MathHelper.sqrt(d2);
                 d0 /= d2;
                 d1 /= d2;
                 double d3 = 1.0D / d2;
@@ -1104,7 +1104,7 @@ public abstract class Entity {
         return !this.dead;
     }
 
-    public boolean U() {
+    public boolean inBlock() {
         for (int i = 0; i < 8; ++i) {
             float f = ((float) ((i >> 0) % 2) - 0.5F) * this.width * 0.8F;
             float f1 = ((float) ((i >> 1) % 2) - 0.5F) * 0.1F;
@@ -1284,7 +1284,7 @@ public abstract class Entity {
         return null;
     }
 
-    public boolean A() {
+    public boolean isBurning() {
         return this.fireTicks > 0 || this.k(0);
     }
 
@@ -1454,7 +1454,7 @@ public abstract class Entity {
         this.fallDistance = 0.0F;
     }
 
-    public String ad() {
+    public String getLocalizedName() {
         String s = EntityTypes.b(this);
 
         if (s == null) {

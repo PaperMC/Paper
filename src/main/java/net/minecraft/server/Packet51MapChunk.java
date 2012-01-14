@@ -20,7 +20,7 @@ public class Packet51MapChunk extends Packet {
     public byte[] rawData; // CraftBukkit
 
     public Packet51MapChunk() {
-        this.l = true;
+        this.lowPriority = true;
     }
 
     // CraftBukkit start
@@ -30,26 +30,27 @@ public class Packet51MapChunk extends Packet {
 
     public Packet51MapChunk(int i, int j, int k, int l, int i1, int j1, byte[] data) {
         // CraftBukkit end
-        this.l = true;
+        this.lowPriority = true;
         this.a = i;
         this.b = j;
         this.c = k;
         this.d = l;
         this.e = i1;
         this.f = j1;
-        /* CraftBukkit - Moved compression into its own method.
+        /* CraftBukkit start - Moved compression into its own method.
         byte[] abyte = data; // CraftBukkit - uses data from above constructor
         Deflater deflater = new Deflater(-1);
 
         try {
             deflater.setInput(abyte);
             deflater.finish();
-            this.g = new byte[l * i1 * j1 * 5 / 2];
-            this.h = deflater.deflate(this.g);
+            this.buffer = new byte[l * i1 * j1 * 5 / 2];
+            this.size = deflater.deflate(this.buffer);
         } finally {
             deflater.end();
-        }*/
-        this.rawData = data; // CraftBukkit
+        } */
+        this.rawData = data;
+        // CraftBukkit end
     }
 
     public void a(DataInputStream datainputstream) throws IOException { // CraftBukkit - throws IOEXception
@@ -88,7 +89,7 @@ public class Packet51MapChunk extends Packet {
         dataoutputstream.write(this.buffer, 0, this.size);
     }
 
-    public void a(NetHandler nethandler) {
+    public void handle(NetHandler nethandler) {
         nethandler.a(this);
     }
 

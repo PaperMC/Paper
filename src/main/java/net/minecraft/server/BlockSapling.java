@@ -29,7 +29,7 @@ public class BlockSapling extends BlockFlower {
                 if ((l & 8) == 0) {
                     world.setData(i, j, k, l | 8);
                 } else {
-                    this.b(world, i, j, k, random, false, null, null); // CraftBukkit - added bonemeal, player and itemstack
+                    this.grow(world, i, j, k, random, false, null, null); // CraftBukkit - added bonemeal, player and itemstack
                 }
             }
         }
@@ -41,11 +41,10 @@ public class BlockSapling extends BlockFlower {
     }
 
     // CraftBukkit - added bonemeal, player and itemstack
-    public void b(World world, int i, int j, int k, Random random, boolean bonemeal, Player player, ItemStack itemstack) {
+    public void grow(World world, int i, int j, int k, Random random, boolean bonemeal, Player player, ItemStack itemstack) {
         int l = world.getData(i, j, k) & 3;
 
         world.setRawTypeId(i, j, k, 0);
-
         // CraftBukkit start - fixes client updates on recently grown trees
         boolean grownTree;
         BlockChangeWithNotify delegate = new BlockChangeWithNotify(world);
@@ -74,9 +73,9 @@ public class BlockSapling extends BlockFlower {
             --itemstack.count;
         }
         if (!grownTree || event.isCancelled()) {
+            // CraftBukkit end
             world.setRawTypeIdAndData(i, j, k, this.id, l);
         }
-        // CraftBukkit end
     }
 
     protected int getDropData(int i) {

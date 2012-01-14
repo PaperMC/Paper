@@ -61,7 +61,7 @@ public abstract class EntityProjectile extends Entity {
     }
 
     public void a(double d0, double d1, double d2, float f, float f1) {
-        float f2 = MathHelper.a(d0 * d0 + d1 * d1 + d2 * d2);
+        float f2 = MathHelper.sqrt(d0 * d0 + d1 * d1 + d2 * d2);
 
         d0 /= (double) f2;
         d1 /= (double) f2;
@@ -75,7 +75,7 @@ public abstract class EntityProjectile extends Entity {
         this.motX = d0;
         this.motY = d1;
         this.motZ = d2;
-        float f3 = MathHelper.a(d0 * d0 + d2 * d2);
+        float f3 = MathHelper.sqrt(d0 * d0 + d2 * d2);
 
         this.lastYaw = this.yaw = (float) (Math.atan2(d0, d2) * 180.0D / 3.1415927410125732D);
         this.lastPitch = this.pitch = (float) (Math.atan2(d1, (double) f3) * 180.0D / 3.1415927410125732D);
@@ -165,7 +165,7 @@ public abstract class EntityProjectile extends Entity {
         this.locX += this.motX;
         this.locY += this.motY;
         this.locZ += this.motZ;
-        float f1 = MathHelper.a(this.motX * this.motX + this.motZ * this.motZ);
+        float f1 = MathHelper.sqrt(this.motX * this.motX + this.motZ * this.motZ);
 
         this.yaw = (float) (Math.atan2(this.motX, this.motZ) * 180.0D / 3.1415927410125732D);
 

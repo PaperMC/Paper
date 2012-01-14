@@ -12,7 +12,7 @@ public class EntityMagmaCube extends EntitySlime {
         this.al = 0.2F;
     }
 
-    public boolean g() {
+    public boolean canSpawn() {
         return this.world.difficulty > 0 && this.world.containsEntity(this.boundingBox) && this.world.a((Entity) this, this.boundingBox).size() == 0 && !this.world.c(this.boundingBox);
     }
 
@@ -32,14 +32,14 @@ public class EntityMagmaCube extends EntitySlime {
         return new EntityMagmaCube(this.world);
     }
 
-    protected int e() {
+    protected int getLootId() {
         return Item.MAGMA_CREAM.id;
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
         // CraftBukkit start - whole method
         List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
-        int j = this.e();
+        int j = this.getLootId();
 
         if (j > 0 && this.getSize() > 1) {
             int k = this.random.nextInt(4) - 2;
@@ -55,7 +55,7 @@ public class EntityMagmaCube extends EntitySlime {
         // CraftBukkit end
     }
 
-    public boolean A() {
+    public boolean isBurning() {
         return false;
     }
 

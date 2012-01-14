@@ -203,12 +203,12 @@ public abstract class EntityCreature extends EntityLiving {
         return null;
     }
 
-    public boolean g() {
+    public boolean canSpawn() {
         int i = MathHelper.floor(this.locX);
         int j = MathHelper.floor(this.boundingBox.b);
         int k = MathHelper.floor(this.locZ);
 
-        return super.g() && this.a(i, j, k) >= 0.0F;
+        return super.canSpawn() && this.a(i, j, k) >= 0.0F;
     }
 
     public boolean E() {

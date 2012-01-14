@@ -66,7 +66,7 @@ public class Packet1Login extends Packet {
         dataoutputstream.writeByte(this.i);
     }
 
-    public void a(NetHandler nethandler) {
+    public void handle(NetHandler nethandler) {
         nethandler.a(this);
     }
 

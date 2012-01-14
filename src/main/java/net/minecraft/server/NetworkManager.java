@@ -24,8 +24,8 @@ public class NetworkManager {
     private List m = Collections.synchronizedList(new ArrayList());
     private List highPriorityQueue = Collections.synchronizedList(new ArrayList());
     private List lowPriorityQueue = Collections.synchronizedList(new ArrayList());
-    private NetHandler p;
-    private boolean q = false;
+    private NetHandler packetListener;
+    private boolean synched = false;
     private Thread r;
     private Thread s;
     private boolean t = false;
@@ -41,7 +41,7 @@ public class NetworkManager {
     public NetworkManager(Socket socket, String s, NetHandler nethandler) {
         this.socket = socket;
         this.i = socket.getRemoteSocketAddress();
-        this.p = nethandler;
+        this.packetListener = nethandler;
 
         // CraftBukkit start - IPv6 stack in Java on BSD/OSX doesn't support setTrafficClass
         try {
@@ -70,16 +70,16 @@ public class NetworkManager {
     }
 
     public void a(NetHandler nethandler) {
-        this.p = nethandler;
+        this.packetListener = nethandler;
     }
 
     public void queue(Packet packet) {
-        if (!this.q) {
+        if (!this.synched) {
             Object object = this.g;
 
             synchronized (this.g) {
                 this.x += packet.a() + 1;
-                if (packet.l) {
+                if (packet.lowPriority) {
                     this.lowPriorityQueue.add(packet);
                 } else {
                     this.highPriorityQueue.add(packet);
@@ -146,7 +146,7 @@ public class NetworkManager {
         boolean flag = false;
 
         try {
-            Packet packet = Packet.a(this.input, this.p.c());
+            Packet packet = Packet.a(this.input, this.packetListener.c());
 
             if (packet != null) {
                 int[] aint = d;
@@ -223,12 +223,12 @@ public class NetworkManager {
         while (!this.m.isEmpty() && i-- >= 0) {
             Packet packet = (Packet) this.m.remove(0);
 
-            if (!this.q) packet.a(this.p); // CraftBukkit
+            if (!this.synched) packet.handle(this.packetListener); // CraftBukkit
         }
 
         this.a();
         if (this.t && this.m.isEmpty()) {
-            this.p.a(this.u, this.v);
+            this.packetListener.a(this.u, this.v);
         }
     }
 
@@ -237,9 +237,9 @@ public class NetworkManager {
     }
 
     public void d() {
-        if (!this.q) {
+        if (!this.synched) {
             this.a();
-            this.q = true;
+            this.synched = true;
             this.s.interrupt();
             (new NetworkMonitorThread(this)).start();
         }
@@ -249,7 +249,7 @@ public class NetworkManager {
         return this.lowPriorityQueue.size();
     }
 
-    public Socket f() {
+    public Socket getSocket() {
         return this.socket;
     }
 
@@ -258,7 +258,7 @@ public class NetworkManager {
     }
 
     static boolean b(NetworkManager networkmanager) {
-        return networkmanager.q;
+        return networkmanager.synched;
     }
 
     static boolean c(NetworkManager networkmanager) {

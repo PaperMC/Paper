@@ -43,7 +43,7 @@ public class World implements IBlockAccess {
     private List J;
     private TreeSet K;
     private Set L;
-    public List h;
+    public List tileEntityList;
     private List M;
     private List N;
     public List players;
@@ -76,7 +76,7 @@ public class World implements IBlockAccess {
     private boolean S;
     public boolean allowMonsters; // CraftBukkit - private -> public
     public boolean allowAnimals; // CraftBukkit - private -> public
-    private LongHashset T; // CraftBukkit
+    private LongHashset chunkTickList; // CraftBukkit
     private int U;
     int[] H;
     private List V;
@@ -127,7 +127,7 @@ public class World implements IBlockAccess {
         this.J = new ArrayList();
         this.K = new TreeSet();
         this.L = new HashSet();
-        this.h = new ArrayList();
+        this.tileEntityList = new ArrayList();
         this.M = new ArrayList();
         this.N = new ArrayList();
         this.players = new ArrayList();
@@ -147,7 +147,7 @@ public class World implements IBlockAccess {
         this.R = new ArrayList();
         this.allowMonsters = true;
         this.allowAnimals = true;
-        this.T = new LongHashset(); // CraftBukkit
+        this.chunkTickList = new LongHashset(); // CraftBukkit
         this.U = this.random.nextInt(12000);
         this.H = new int['\u8000'];
         this.V = new ArrayList();
@@ -245,7 +245,7 @@ public class World implements IBlockAccess {
         }
     }
 
-    public ChunkCoordinates d() {
+    public ChunkCoordinates getDimensionSpawn() {
         return this.worldProvider.d();
     }
 
@@ -1026,7 +1026,7 @@ public class World implements IBlockAccess {
     }
 
     public float b(float f) {
-        return this.worldProvider.a(this.worldData.f(), f);
+        return this.worldProvider.a(this.worldData.getTime(), f);
     }
 
     public int e(int i, int j) {
@@ -1065,7 +1065,7 @@ public class World implements IBlockAccess {
         } else {
             if (this.a(i - b0, j - b0, k - b0, i + b0, j + b0, k + b0)) {
                 if (l > 0) {
-                    nextticklistentry.a((long) i1 + this.worldData.f());
+                    nextticklistentry.a((long) i1 + this.worldData.getTime());
                 }
 
                 if (!this.L.contains(nextticklistentry)) {
@@ -1080,7 +1080,7 @@ public class World implements IBlockAccess {
         NextTickListEntry nextticklistentry = new NextTickListEntry(i, j, k, l);
 
         if (l > 0) {
-            nextticklistentry.a((long) i1 + this.worldData.f());
+            nextticklistentry.a((long) i1 + this.worldData.getTime());
         }
 
         if (!this.L.contains(nextticklistentry)) {
@@ -1163,7 +1163,7 @@ public class World implements IBlockAccess {
 
         // MethodProfiler.b("tileEntities"); // CraftBukkit - not in production code
         this.S = true;
-        Iterator iterator = this.h.iterator();
+        Iterator iterator = this.tileEntityList.iterator();
 
         while (iterator.hasNext()) {
             TileEntity tileentity = (TileEntity) iterator.next();
@@ -1186,7 +1186,7 @@ public class World implements IBlockAccess {
 
         this.S = false;
         if (!this.N.isEmpty()) {
-            this.h.removeAll(this.N);
+            this.tileEntityList.removeAll(this.N);
             this.N.clear();
         }
 
@@ -1209,8 +1209,8 @@ public class World implements IBlockAccess {
                         if (chunk1 != null) {
                             chunk1.a(tileentity1.x & 15, tileentity1.y, tileentity1.z & 15, tileentity1);
                             // CraftBukkit start - moved in from above
-                            if (!this.h.contains(tileentity1)) {
-                                this.h.add(tileentity1);
+                            if (!this.tileEntityList.contains(tileentity1)) {
+                                this.tileEntityList.add(tileentity1);
                             }
                             // CraftBukkit end
                         }
@@ -1231,7 +1231,7 @@ public class World implements IBlockAccess {
         if (this.S) {
             this.M.addAll(collection);
         } else {
-            this.h.addAll(collection);
+            this.tileEntityList.addAll(collection);
         }
     }
 
@@ -1625,7 +1625,7 @@ public class World implements IBlockAccess {
 
                 if (chunk != null) {
                     chunk.a(i & 15, j, k & 15, tileentity);
-                    this.h.add(tileentity); // CraftBukkit - moved in from above
+                    this.tileEntityList.add(tileentity); // CraftBukkit - moved in from above
                 }
             }
         }
@@ -1640,7 +1640,7 @@ public class World implements IBlockAccess {
         } else {
             if (tileentity != null) {
                 this.M.remove(tileentity);
-                this.h.remove(tileentity);
+                this.tileEntityList.remove(tileentity);
             }
 
             Chunk chunk = this.getChunkAt(i >> 4, k >> 4);
@@ -1713,7 +1713,7 @@ public class World implements IBlockAccess {
             }
 
             if (!flag) {
-                i = this.worldData.f() + 24000L;
+                i = this.worldData.getTime() + 24000L;
                 this.worldData.a(i - i % 24000L);
                 this.t();
             }
@@ -1722,7 +1722,7 @@ public class World implements IBlockAccess {
         // MethodProfiler.a("mobSpawner"); // CraftBukkit - not in production code
         // CraftBukkit start - Only call spawner if we have players online and the world allows for mobs or animals
         if ((this.allowMonsters || this.allowAnimals) && (this instanceof WorldServer && this.getServer().getHandle().players.size() > 0)) {
-            SpawnerCreature.spawnEntities(this, this.allowMonsters, this.allowAnimals && this.worldData.f() % 400L == 0L);
+            SpawnerCreature.spawnEntities(this, this.allowMonsters, this.allowAnimals && this.worldData.getTime() % 400L == 0L);
         }
         // CraftBukkit end
         // MethodProfiler.b("chunkSource"); // CraftBukkit - not in production code
@@ -1733,7 +1733,7 @@ public class World implements IBlockAccess {
             this.k = j;
         }
 
-        i = this.worldData.f() + 1L;
+        i = this.worldData.getTime() + 1L;
         if (i % (long) this.u == 0L) {
             // MethodProfiler.b("save"); // CraftBukkit - not in production code
             this.save(false, (IProgressUpdate) null);
@@ -1876,7 +1876,7 @@ public class World implements IBlockAccess {
 
             for (j = -b0; j <= b0; ++j) {
                 for (int i1 = -b0; i1 <= b0; ++i1) {
-                    this.T.add(LongHash.toLong(j + k, i1 + l)); // CraftBukkit
+                    this.chunkTickList.add(LongHash.toLong(j + k, i1 + l)); // CraftBukkit
                 }
             }
         }
@@ -1892,7 +1892,7 @@ public class World implements IBlockAccess {
         // Iterator iterator = this.T.iterator(); // CraftBukkit - removed
 
         // CraftBukkit start
-        for (long chunkCoord : this.T.popAll()) {
+        for (long chunkCoord : this.chunkTickList.popAll()) {
             int chunkX = LongHash.msw(chunkCoord);
             int chunkZ = LongHash.lsw(chunkCoord);
             // ChunkCoordIntPair chunkcoordintpair = (ChunkCoordIntPair) iterator.next();
@@ -2105,7 +2105,7 @@ public class World implements IBlockAccess {
     }
 
     private int e(int i, int j, int k, int l, int i1, int j1) {
-        int k1 = Block.s[i1];
+        int k1 = Block.lightEmission[i1];
         int l1 = this.a(EnumSkyBlock.BLOCK, j - 1, k, l) - j1;
         int i2 = this.a(EnumSkyBlock.BLOCK, j + 1, k, l) - j1;
         int j2 = this.a(EnumSkyBlock.BLOCK, j, k - 1, l) - j1;
@@ -2147,7 +2147,7 @@ public class World implements IBlockAccess {
             int j1 = this.a(enumskyblock, i, j, k);
             boolean flag = false;
             int k1 = this.getTypeId(i, j, k);
-            int l1 = Block.q[k1];
+            int l1 = Block.lightBlock[k1];
 
             if (l1 == 0) {
                 l1 = 1;
@@ -2211,7 +2211,7 @@ public class World implements IBlockAccess {
                                     int l4 = i2 + (l3 / 2 + 2) % 3 / 2 * i4;
 
                                     l2 = this.a(enumskyblock, j4, k4, l4);
-                                    int i5 = Block.q[this.getTypeId(j4, k4, l4)];
+                                    int i5 = Block.lightBlock[this.getTypeId(j4, k4, l4)];
 
                                     if (i5 == 0) {
                                         i5 = 1;
@@ -2237,7 +2237,7 @@ public class World implements IBlockAccess {
                 k1 = (j1 >> 12 & 63) - 32 + k;
                 l1 = this.a(enumskyblock, j5, j2, k1);
                 i2 = this.getTypeId(j5, j2, k1);
-                k2 = Block.q[i2];
+                k2 = Block.lightBlock[i2];
                 if (k2 == 0) {
                     k2 = 1;
                 }
@@ -2318,7 +2318,7 @@ public class World implements IBlockAccess {
             for (int j = 0; j < i; ++j) {
                 NextTickListEntry nextticklistentry = (NextTickListEntry) this.K.first();
 
-                if (!flag && nextticklistentry.e > this.worldData.f()) {
+                if (!flag && nextticklistentry.e > this.worldData.getTime()) {
                     break;
                 }
 
@@ -2446,7 +2446,7 @@ public class World implements IBlockAccess {
         this.J.addAll(list);
     }
 
-    public boolean a(int i, int j, int k, int l, boolean flag, int i1) {
+    public boolean mayPlace(int i, int j, int k, int l, boolean flag, int i1) {
         int j1 = this.getTypeId(j, k, l);
         Block block = Block.byId[j1];
         Block block1 = Block.byId[i];
@@ -2659,7 +2659,7 @@ public class World implements IBlockAccess {
     }
 
     public void setTimeAndFixTicklists(long i) {
-        long j = i - this.worldData.f();
+        long j = i - this.worldData.getTime();
 
         NextTickListEntry nextticklistentry;
 
@@ -2675,7 +2675,7 @@ public class World implements IBlockAccess {
     }
 
     public long getTime() {
-        return this.worldData.f();
+        return this.worldData.getTime();
     }
 
     public ChunkCoordinates getSpawn() {

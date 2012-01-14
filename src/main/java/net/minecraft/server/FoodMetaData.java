@@ -17,13 +17,13 @@ public class FoodMetaData {
 
     public FoodMetaData() {}
 
-    public void a(int i, float f) {
+    public void eat(int i, float f) {
         this.foodLevel = Math.min(i + this.foodLevel, 20);
         this.saturationLevel = Math.min(this.saturationLevel + (float) i * f * 2.0F, (float) this.foodLevel);
     }
 
     public void a(ItemFood itemfood) {
-        this.a(itemfood.o(), itemfood.p());
+        this.eat(itemfood.getNutrition(), itemfood.getSaturationModifier());
     }
 
     public void a(EntityHuman entityhuman) {
@@ -50,7 +50,7 @@ public class FoodMetaData {
             ++this.foodTickTimer;
             if (this.foodTickTimer >= 80) {
                 // CraftBukkit - added RegainReason.
-                entityhuman.d(1, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.SATIATED);
+                entityhuman.heal(1, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.SATIATED);
                 this.foodTickTimer = 0;
             }
         } else if (this.foodLevel <= 0) {

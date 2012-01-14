@@ -51,16 +51,16 @@ public class EntityFireball extends Entity {
     }
 
     public void setDirection(double d0, double d1, double d2) {
+        // CraftBukkit end
         d0 += this.random.nextGaussian() * 0.4D;
         d1 += this.random.nextGaussian() * 0.4D;
         d2 += this.random.nextGaussian() * 0.4D;
-        double d3 = (double) MathHelper.a(d0 * d0 + d1 * d1 + d2 * d2);
+        double d3 = (double) MathHelper.sqrt(d0 * d0 + d1 * d1 + d2 * d2);
 
         this.dirX = d0 / d3 * 0.1D;
         this.dirY = d1 / d3 * 0.1D;
         this.dirZ = d2 / d3 * 0.1D;
     }
-    // CraftBukkit end
 
     public void y_() {
         super.y_();
@@ -135,7 +135,7 @@ public class EntityFireball extends Entity {
         this.locX += this.motX;
         this.locY += this.motY;
         this.locZ += this.motZ;
-        float f1 = MathHelper.a(this.motX * this.motX + this.motZ * this.motZ);
+        float f1 = MathHelper.sqrt(this.motX * this.motX + this.motZ * this.motZ);
 
         this.yaw = (float) (Math.atan2(this.motX, this.motZ) * 180.0D / 3.1415927410125732D);
 

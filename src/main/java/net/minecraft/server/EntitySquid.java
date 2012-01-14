@@ -54,7 +54,7 @@ public class EntitySquid extends EntityWaterAnimal {
         return 0.4F;
     }
 
-    protected int e() {
+    protected int getLootId() {
         return 0;
     }
 
@@ -117,7 +117,7 @@ public class EntitySquid extends EntityWaterAnimal {
                 this.motZ = (double) (this.q * this.l);
             }
 
-            f = MathHelper.a(this.motX * this.motX + this.motZ * this.motZ);
+            f = MathHelper.sqrt(this.motX * this.motX + this.motZ * this.motZ);
             this.V += (-((float) Math.atan2(this.motX, this.motZ)) * 180.0F / 3.1415927F - this.V) * 0.1F;
             this.yaw = this.V;
             this.c += 3.1415927F * this.n * 1.5F;
@@ -154,7 +154,7 @@ public class EntitySquid extends EntityWaterAnimal {
         this.au();
     }
 
-    public boolean g() {
-        return this.locY > 45.0D && this.locY < (double) this.world.seaLevel && super.g();
+    public boolean canSpawn() {
+        return this.locY > 45.0D && this.locY < (double) this.world.seaLevel && super.canSpawn();
     }
 }

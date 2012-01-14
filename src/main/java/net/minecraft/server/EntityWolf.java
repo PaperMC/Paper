@@ -88,7 +88,7 @@ public class EntityWolf extends EntityAnimal {
         return 0.4F;
     }
 
-    protected int e() {
+    protected int getLootId() {
         return -1;
     }
 
@@ -324,7 +324,7 @@ public class EntityWolf extends EntityAnimal {
             if (this.onGround) {
                 double d0 = entity.locX - this.locX;
                 double d1 = entity.locZ - this.locZ;
-                float f1 = MathHelper.a(d0 * d0 + d1 * d1);
+                float f1 = MathHelper.sqrt(d0 * d0 + d1 * d1);
 
                 this.motX = d0 / (double) f1 * 0.5D * 0.800000011920929D + this.motX * 0.20000000298023224D;
                 this.motZ = d1 / (double) f1 * 0.5D * 0.800000011920929D + this.motZ * 0.20000000298023224D;
@@ -388,7 +388,7 @@ public class EntityWolf extends EntityAnimal {
 
                 if (itemfood.q() && this.datawatcher.getInt(18) < 20) {
                     --itemstack.count;
-                    this.d(itemfood.o(), RegainReason.EATING); // CraftBukkit
+                    this.heal(itemfood.getNutrition(), RegainReason.EATING); // CraftBukkit
                     if (itemstack.count <= 0) {
                         entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, (ItemStack) null);
                     }

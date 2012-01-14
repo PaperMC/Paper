@@ -67,7 +67,7 @@ public class BlockTrapdoor extends Block {
         }
     }
 
-    public void b(World world, int i, int j, int k, EntityHuman entityhuman) {
+    public void attack(World world, int i, int j, int k, EntityHuman entityhuman) {
         this.interact(world, i, j, k, entityhuman);
     }
 
@@ -83,7 +83,7 @@ public class BlockTrapdoor extends Block {
         }
     }
 
-    public void a(World world, int i, int j, int k, boolean flag) {
+    public void setOpen(World world, int i, int j, int k, boolean flag) {
         int l = world.getData(i, j, k);
         boolean flag1 = (l & 4) > 0;
 
@@ -132,7 +132,7 @@ public class BlockTrapdoor extends Block {
                     BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, oldPower, power);
                     world.getServer().getPluginManager().callEvent(eventRedstone);
 
-                    this.a(world, i, j, k, eventRedstone.getNewCurrent() > 0);
+                    this.setOpen(world, i, j, k, eventRedstone.getNewCurrent() > 0);
                 }
                 // CraftBukkit end
             }

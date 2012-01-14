@@ -190,14 +190,14 @@ public class EntitySlime extends EntityLiving implements IMonster {
         return "mob.slime";
     }
 
-    protected int e() {
+    protected int getLootId() {
         return this.getSize() == 1 ? Item.SLIME_BALL.id : 0;
     }
 
-    public boolean g() {
+    public boolean canSpawn() {
         Chunk chunk = this.world.getChunkAtWorldCoords(MathHelper.floor(this.locX), MathHelper.floor(this.locZ));
 
-        return (this.getSize() == 1 || this.world.difficulty > 0) && this.random.nextInt(10) == 0 && chunk.a(987234911L).nextInt(10) == 0 && this.locY < 40.0D ? super.g() : false;
+        return (this.getSize() == 1 || this.world.difficulty > 0) && this.random.nextInt(10) == 0 && chunk.a(987234911L).nextInt(10) == 0 && this.locY < 40.0D ? super.canSpawn() : false;
     }
 
     protected float o() {

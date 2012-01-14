@@ -133,11 +133,11 @@ public class EntityBlaze extends EntityMonster {
         super.a(nbttagcompound);
     }
 
-    protected int e() {
+    protected int getLootId() {
         return Item.BLAZE_ROD.id;
     }
 
-    public boolean A() {
+    public boolean isBurning() {
         return this.B();
     }
 

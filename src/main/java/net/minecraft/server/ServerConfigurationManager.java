@@ -289,7 +289,7 @@ public class ServerConfigurationManager {
         worldserver.addEntity(entityplayer1);
         this.players.add(entityplayer1);
         this.updateClient(entityplayer1); // CraftBukkit
-        entityplayer1.A();
+        entityplayer1.B();
         // CraftBukkit start - don't fire on respawn
         if (fromWorld != location.getWorld()) {
             org.bukkit.event.player.PlayerChangedWorldEvent event = new org.bukkit.event.player.PlayerChangedWorldEvent((Player) entityplayer1.getBukkitEntity(), fromWorld);
@@ -321,7 +321,7 @@ public class ServerConfigurationManager {
 
                 toLocation = toWorld == null ? null : new Location(toWorld.getWorld(), (entityplayer.locX * blockRatio), entityplayer.locY, (entityplayer.locZ * blockRatio), entityplayer.yaw, entityplayer.pitch);
             } else {
-                ChunkCoordinates coords = toWorld.d();
+                ChunkCoordinates coords = toWorld.getDimensionSpawn();
                 if (coords != null) {
                     toLocation = new Location(toWorld.getWorld(), coords.x, coords.y, coords.z, 90, 0);
                 }
@@ -358,7 +358,7 @@ public class ServerConfigurationManager {
         if (this.p < this.players.size()) {
             EntityPlayer entityplayer = (EntityPlayer) this.players.get(this.p);
 
-            this.sendAll(new Packet201PlayerInfo(entityplayer.name, true, entityplayer.i));
+            this.sendAll(new Packet201PlayerInfo(entityplayer.name, true, entityplayer.ping));
         }
         */
 

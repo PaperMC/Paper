@@ -136,7 +136,7 @@ public class EntityCreeper extends EntityMonster {
         return this.datawatcher.getByte(17) == 1;
     }
 
-    protected int e() {
+    protected int getLootId() {
         return Item.SULPHUR.id;
     }
 

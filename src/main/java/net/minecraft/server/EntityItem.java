@@ -9,7 +9,7 @@ public class EntityItem extends Entity {
 
     public ItemStack itemStack;
     private int e;
-    public int b = 0;
+    public int age = 0;
     public int pickupDelay;
     private int f = 5;
     public float d = (float) (Math.random() * 3.141592653589793D * 2.0D);
@@ -84,11 +84,11 @@ public class EntityItem extends Entity {
         }
 
         ++this.e;
-        ++this.b;
-        if (this.b >= 6000) {
+        ++this.age;
+        if (this.age >= 6000) {
             // CraftBukkit start
-            if(CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
-                this.b = 0;
+            if (CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
+                this.age = 0;
                 return;
             }
             // CraftBukkit end
@@ -116,13 +116,13 @@ public class EntityItem extends Entity {
 
     public void b(NBTTagCompound nbttagcompound) {
         nbttagcompound.setShort("Health", (short) ((byte) this.f));
-        nbttagcompound.setShort("Age", (short) this.b);
+        nbttagcompound.setShort("Age", (short) this.age);
         nbttagcompound.setCompound("Item", this.itemStack.b(new NBTTagCompound()));
     }
 
     public void a(NBTTagCompound nbttagcompound) {
         this.f = nbttagcompound.getShort("Health") & 255;
-        this.b = nbttagcompound.getShort("Age");
+        this.age = nbttagcompound.getShort("Age");
         NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("Item");
 
         this.itemStack = ItemStack.a(nbttagcompound1);
@@ -179,7 +179,7 @@ public class EntityItem extends Entity {
         }
     }
 
-    public String ad() {
+    public String getLocalizedName() {
         return LocaleI18n.a("item." + this.itemStack.k());
     }
 }

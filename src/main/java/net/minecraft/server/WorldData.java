@@ -162,7 +162,7 @@ public class WorldData {
         return this.spawnZ;
     }
 
-    public long f() {
+    public long getTime() {
         return this.time;
     }
 

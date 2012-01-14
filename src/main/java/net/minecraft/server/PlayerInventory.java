@@ -27,7 +27,7 @@ public class PlayerInventory implements IInventory {
         return this.itemInHandIndex < 9 && this.itemInHandIndex >= 0 ? this.items[this.itemInHandIndex] : null;
     }
 
-    public static int h() {
+    public static int getHotbarSize() {
         return 9;
     }
 

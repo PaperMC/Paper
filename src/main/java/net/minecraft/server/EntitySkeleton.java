@@ -74,7 +74,7 @@ public class EntitySkeleton extends EntityMonster {
             if (this.attackTicks == 0) {
                 EntityArrow entityarrow = new EntityArrow(this.world, this, 1.0F);
                 double d2 = entity.locY + (double) entity.y() - 0.699999988079071D - entityarrow.locY;
-                float f1 = MathHelper.a(d0 * d0 + d1 * d1) * 0.2F;
+                float f1 = MathHelper.sqrt(d0 * d0 + d1 * d1) * 0.2F;
 
                 this.world.makeSound(this, "random.bow", 1.0F, 1.0F / (this.random.nextFloat() * 0.4F + 0.8F));
                 this.world.addEntity(entityarrow);
@@ -95,7 +95,7 @@ public class EntitySkeleton extends EntityMonster {
         super.a(nbttagcompound);
     }
 
-    protected int e() {
+    protected int getLootId() {
         return Item.ARROW.id;
     }
 

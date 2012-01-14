@@ -407,7 +407,7 @@ public class EntityMinecart extends Entity implements IInventory {
                     this.motZ *= 0.996999979019165D;
                 } else {
                     if (this.type == 2) {
-                        d17 = (double) MathHelper.a(this.b * this.b + this.c * this.c);
+                        d17 = (double) MathHelper.sqrt(this.b * this.b + this.c * this.c);
                         if (d17 > 0.01D) {
                             this.b /= d17;
                             this.c /= d17;
@@ -456,7 +456,7 @@ public class EntityMinecart extends Entity implements IInventory {
                 double d21;
 
                 if (this.type == 2) {
-                    d21 = (double) MathHelper.a(this.b * this.b + this.c * this.c);
+                    d21 = (double) MathHelper.sqrt(this.b * this.b + this.c * this.c);
                     if (d21 > 0.01D && this.motX * this.motX + this.motZ * this.motZ > 0.0010D) {
                         this.b /= d21;
                         this.c /= d21;
@@ -735,7 +735,7 @@ public class EntityMinecart extends Entity implements IInventory {
 
                 // CraftBukkit - Collision
                 if (d2 >= 9.999999747378752E-5D && !collisionEvent.isCollisionCancelled()) {
-                    d2 = (double) MathHelper.a(d2);
+                    d2 = (double) MathHelper.sqrt(d2);
                     d0 /= d2;
                     d1 /= d2;
                     double d3 = 1.0D / d2;

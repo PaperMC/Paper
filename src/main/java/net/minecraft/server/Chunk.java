@@ -99,7 +99,7 @@ public class Chunk {
 
                 int i1;
 
-                for (i1 = j << this.world.heightBitsPlusFour | k << this.world.heightBits; l > 0 && Block.q[this.b[i1 + l - 1] & 255] == 0; --l) {
+                for (i1 = j << this.world.heightBitsPlusFour | k << this.world.heightBits; l > 0 && Block.lightBlock[this.b[i1 + l - 1] & 255] == 0; --l) {
                     ;
                 }
 
@@ -113,7 +113,7 @@ public class Chunk {
                     int k1 = this.world.height - 1;
 
                     do {
-                        j1 -= Block.q[this.b[i1 + k1] & 255];
+                        j1 -= Block.lightBlock[this.b[i1 + k1] & 255];
                         if (j1 > 0) {
                             this.h.a(j, k1, k, j1);
                         }
@@ -208,7 +208,7 @@ public class Chunk {
             i1 = j;
         }
 
-        for (int j1 = i << this.world.heightBitsPlusFour | k << this.world.heightBits; i1 > 0 && Block.q[this.b[j1 + i1 - 1] & 255] == 0; --i1) {
+        for (int j1 = i << this.world.heightBitsPlusFour | k << this.world.heightBits; i1 > 0 && Block.lightBlock[this.b[j1 + i1 - 1] & 255] == 0; --i1) {
             ;
         }
 
@@ -252,7 +252,7 @@ public class Chunk {
 
                 for (i2 = 15; i1 > 0 && i2 > 0; this.h.a(i, i1, k, i2)) {
                     --i1;
-                    j2 = Block.q[this.getTypeId(i, i1, k)];
+                    j2 = Block.lightBlock[this.getTypeId(i, i1, k)];
                     if (j2 == 0) {
                         j2 = 1;
                     }
@@ -318,7 +318,7 @@ public class Chunk {
 
             this.g.a(i, j, k, i1);
             if (!this.world.worldProvider.f) {
-                if (Block.q[b0 & 255] != 0) {
+                if (Block.lightBlock[b0 & 255] != 0) {
                     if (j >= k1) {
                         this.g(i, j + 1, k);
                     }
@@ -385,7 +385,7 @@ public class Chunk {
             }
 
             this.g.a(i, j, k, 0);
-            if (Block.q[b0 & 255] != 0) {
+            if (Block.lightBlock[b0 & 255] != 0) {
                 if (j >= j1) {
                     this.g(i, j + 1, k);
                 }
@@ -573,7 +573,7 @@ public class Chunk {
 
         this.a(i, j, k, tileentity);
         if (this.e) {
-            this.world.h.add(tileentity);
+            this.world.tileEntityList.add(tileentity);
         }
     }
 

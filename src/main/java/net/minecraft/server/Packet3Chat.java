@@ -29,7 +29,7 @@ public class Packet3Chat extends Packet {
         a(this.message, dataoutputstream);
     }
 
-    public void a(NetHandler nethandler) {
+    public void handle(NetHandler nethandler) {
         nethandler.a(this);
     }
 

@@ -63,7 +63,7 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
     public boolean spawnNPCs;
     public boolean pvpMode;
     public boolean allowFlight;
-    public String s;
+    public String motd;
     private RemoteStatusListener z;
     private RemoteControlListener A;
 
@@ -118,8 +118,8 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
         this.spawnNPCs = this.propertyManager.getBoolean("spawn-npcs", true);
         this.pvpMode = this.propertyManager.getBoolean("pvp", true);
         this.allowFlight = this.propertyManager.getBoolean("allow-flight", false);
-        this.s = this.propertyManager.getString("motd", "A Minecraft Server");
-        this.s.replace('\u00a7', '$');
+        this.motd = this.propertyManager.getString("motd", "A Minecraft Server");
+        this.motd.replace('\u00a7', '$');
         InetAddress inetaddress = null;
 
         if (this.t.length() > 0) {
@@ -565,7 +565,7 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
             // CraftBukkit start - ServerCommand for preprocessing
             ServerCommandEvent event = new ServerCommandEvent(Event.Type.SERVER_COMMAND, this.console, servercommand.command);
             this.server.getPluginManager().callEvent(event);
-            servercommand = new ServerCommand(event.getCommand(), servercommand.b);
+            servercommand = new ServerCommand(event.getCommand(), servercommand.source);
             // CraftBukkit end
 
             // this.consoleCommandHandler.handle(servercommand); // CraftBukkit - Removed its now called in server.dispatchCommand
@@ -654,7 +654,7 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
     }
 
     public String getServerAddress() {
-        return this.s;
+        return this.motd;
     }
 
     public String getVersion() {

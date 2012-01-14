@@ -54,7 +54,7 @@ public class ItemInWorldManager {
         return this.c;
     }
 
-    public boolean b() {
+    public boolean isCreative() {
         return this.c == 1;
     }
 
@@ -78,7 +78,7 @@ public class ItemInWorldManager {
 
                 if (f >= 1.0F) {
                     this.j = false;
-                    this.c(this.k, this.l, this.m);
+                    this.breakBlock(this.k, this.l, this.m);
                 }
             } else {
                 this.j = false;
@@ -88,21 +88,23 @@ public class ItemInWorldManager {
 
     public void dig(int i, int j, int k, int l) {
         // this.world.douseFire((EntityHuman) null, i, j, k, l); // CraftBukkit - moved down
-        // CraftBukkit start
+        // CraftBukkit
         PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, i, j, k, l, this.player.inventory.getItemInHand());
 
-        if (this.b()) {
+        if (this.isCreative()) {
+            // CraftBukkit start
             if (event.isCancelled()) {
                 // Let the client know the block still exists
                 ((EntityPlayer) this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
                 return;
             }
-            this.c(i, j, k);
+            // CraftBukkit end
+            this.breakBlock(i, j, k);
         } else {
             this.lastDigTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit
             int i1 = this.world.getTypeId(i, j, k);
 
-            // Swings at air do *NOT* exist.
+            // CraftBukkit start - Swings at air do *NOT* exist.
             if (i1 <= 0) {
                 return;
             }
@@ -118,7 +120,7 @@ public class ItemInWorldManager {
                     ((EntityPlayer) this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
                 }
             } else {
-                Block.byId[i1].b(this.world, i, j, k, this.player);
+                Block.byId[i1].attack(this.world, i, j, k, this.player);
                 // Allow fire punching to be blocked
                 this.world.douseFire((EntityHuman) null, i, j, k, l);
             }
@@ -146,7 +148,7 @@ public class ItemInWorldManager {
 
             if (toolDamage >= 1.0F) {
                 // CraftBukkit end
-                this.c(i, j, k);
+                this.breakBlock(i, j, k);
             } else {
                 this.f = i;
                 this.g = j;
@@ -166,7 +168,7 @@ public class ItemInWorldManager {
                 float f = block.getDamage(this.player) * (float) (l + 1);
 
                 if (f >= 0.7F) {
-                    this.c(i, j, k);
+                    this.breakBlock(i, j, k);
                 } else if (!this.j) {
                     this.j = true;
                     this.k = i;
@@ -196,7 +198,7 @@ public class ItemInWorldManager {
         return flag;
     }
 
-    public boolean c(int i, int j, int k) {
+    public boolean breakBlock(int i, int j, int k) {
         // CraftBukkit start
         if (this.player instanceof EntityPlayer) {
             org.bukkit.block.Block block = this.world.getWorld().getBlockAt(i, j, k);
@@ -218,7 +220,7 @@ public class ItemInWorldManager {
         this.world.a(this.player, 2001, i, j, k, l + this.world.getData(i, j, k) * 256);
         boolean flag = this.b(i, j, k);
 
-        if (this.b()) {
+        if (this.isCreative()) {
             ((EntityPlayer) this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
         } else {
             ItemStack itemstack = this.player.Q();
@@ -249,7 +251,7 @@ public class ItemInWorldManager {
             return false;
         } else {
             entityhuman.inventory.items[entityhuman.inventory.itemInHandIndex] = itemstack1;
-            if (this.b()) {
+            if (this.isCreative()) {
                 itemstack1.count = i;
                 itemstack1.setData(j);
             }
@@ -288,7 +290,7 @@ public class ItemInWorldManager {
                 result = itemstack.placeItem(entityhuman, world, i, j, k, l);
 
                 // The item count should not decrement in Creative mode.
-                if (this.b()) {
+                if (this.isCreative()) {
                     itemstack.setData(j1);
                     itemstack.count = k1;
                 }

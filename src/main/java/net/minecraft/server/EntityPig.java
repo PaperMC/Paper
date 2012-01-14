@@ -55,8 +55,8 @@ public class EntityPig extends EntityAnimal {
         }
     }
 
-    protected int e() {
-        return this.A() ? Item.GRILLED_PORK.id : Item.PORK.id;
+    protected int getLootId() {
+        return this.isBurning() ? Item.GRILLED_PORK.id : Item.PORK.id;
     }
 
     public boolean hasSaddle() {

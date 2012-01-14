@@ -91,7 +91,7 @@ public class WorldGenTrees extends WorldGenerator {
                                 if ((Math.abs(j2) != k1 || Math.abs(l2) != k1 || random.nextInt(2) != 0 && j1 != 0) && !Block.o[world.getTypeId(l1, i2, k2)]) {
                                     // CraftBukkit start
                                     if (event == null) {
-                                        this.a(world, l1, i2, k2, Block.LEAVES.id, 0);
+                                        this.setTypeAndData(world, l1, i2, k2, Block.LEAVES.id, 0);
                                     } else {
                                         BlockState leavesState = bukkitWorld.getBlockAt(l1, i2, k2).getState();
                                         leavesState.setTypeId(Block.LEAVES.id);
@@ -108,7 +108,7 @@ public class WorldGenTrees extends WorldGenerator {
                         if (j1 == 0 || j1 == Block.LEAVES.id) {
                             // CraftBukkit start
                             if (event == null) {
-                                this.a(world, i, j + i2, k, Block.LOG.id, 0);
+                                this.setTypeAndData(world, i, j + i2, k, Block.LOG.id, 0);
                             } else {
                                 BlockState logState = bukkitWorld.getBlockAt(i, j + i2, k).getState();
                                 logState.setTypeId(Block.LOG.id);

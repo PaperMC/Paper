@@ -55,10 +55,10 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
                     if (!event.isCancelled()) {
                         if (event.getTarget() == null) {
                             this.target = null;
-                            this.aI = null;
+                            this.lastDamager = null;
                         } else {
                             this.target = ((CraftEntity) event.getTarget()).getHandle();
-                            this.aI = this.target instanceof EntityLiving ? (EntityLiving) this.target : null;
+                            this.lastDamager = this.target instanceof EntityLiving ? (EntityLiving) this.target : null;
                         }
                     }
                     // CraftBukkit end
@@ -146,7 +146,7 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
         }
     }
 
-    public boolean g() {
-        return this.z() && super.g();
+    public boolean canSpawn() {
+        return this.z() && super.canSpawn();
     }
 }

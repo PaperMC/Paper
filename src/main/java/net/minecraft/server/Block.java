@@ -18,9 +18,9 @@ public class Block {
     public static final boolean[] n = new boolean[256];
     public static final boolean[] o = new boolean[256];
     public static final boolean[] isTileEntity = new boolean[256];
-    public static final int[] q = new int[256];
+    public static final int[] lightBlock = new int[256];
     public static final boolean[] r = new boolean[256];
-    public static final int[] s = new int[256];
+    public static final int[] lightEmission = new int[256];
     public static final boolean[] t = new boolean[256];
     public static boolean[] u = new boolean[256];
     public static final Block STONE = (new BlockStone(1, 1)).c(1.5F).b(10.0F).a(h).a("stone");
@@ -177,7 +177,7 @@ public class Block {
             this.id = i;
             this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
             o[i] = this.a();
-            q[i] = this.a() ? 255 : 0;
+            lightBlock[i] = this.a() ? 255 : 0;
             r[i] = !material.blocksLight();
             isTileEntity[i] = false;
         }
@@ -201,12 +201,12 @@ public class Block {
     }
 
     protected Block g(int i) {
-        q[this.id] = i;
+        lightBlock[this.id] = i;
         return this;
     }
 
     protected Block a(float f) {
-        s[this.id] = (int) (15.0F * f);
+        lightEmission[this.id] = (int) (15.0F * f);
         return this;
     }
 
@@ -485,7 +485,7 @@ public class Block {
 
     public void postPlace(World world, int i, int j, int k, int l) {}
 
-    public void b(World world, int i, int j, int k, EntityHuman entityhuman) {}
+    public void attack(World world, int i, int j, int k, EntityHuman entityhuman) {}
 
     public void a(World world, int i, int j, int k, Entity entity, Vec3D vec3d) {}
 
@@ -548,7 +548,7 @@ public class Block {
         return this;
     }
 
-    public String m() {
+    public String getName() {
         return LocaleI18n.a(this.n() + ".name");
     }
 

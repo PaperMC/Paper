@@ -36,7 +36,7 @@ public class ItemDoor extends Item {
                     int i1 = MathHelper.floor((double) ((entityhuman.yaw + 180.0F) * 4.0F / 360.0F) - 0.5D) & 3;
 
                     // CraftBukkit start
-                    if (a(world, i, j, k, i1, block, entityhuman)) {
+                    if (place(world, i, j, k, i1, block, entityhuman)) {
                         --itemstack.count;
                         return true;
                     }
@@ -49,12 +49,12 @@ public class ItemDoor extends Item {
         }
     }
 
-    public static void a(World world, int i, int j, int k, int l, Block block) {
+    public static void place(World world, int i, int j, int k, int l, Block block) {
         // CraftBukkit start
-        a(world, i, j, k, l, block, null);
+        place(world, i, j, k, l, block, null);
     }
 
-    public static boolean a(World world, int i, int j, int k, int l, Block block, EntityHuman entityhuman) {
+    public static boolean place(World world, int i, int j, int k, int l, Block block, EntityHuman entityhuman) {
         // CraftBukkit end
         byte b0 = 0;
         byte b1 = 0;

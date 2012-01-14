@@ -63,7 +63,7 @@ public class EntityGhast extends EntityFlying implements IMonster {
         double d0 = this.b - this.locX;
         double d1 = this.c - this.locY;
         double d2 = this.d - this.locZ;
-        double d3 = (double) MathHelper.a(d0 * d0 + d1 * d1 + d2 * d2);
+        double d3 = (double) MathHelper.sqrt(d0 * d0 + d1 * d1 + d2 * d2);
 
         if (d3 < 1.0D || d3 > 60.0D) {
             this.b = this.locX + (double) ((this.random.nextFloat() * 2.0F - 1.0F) * 16.0F);
@@ -194,7 +194,7 @@ public class EntityGhast extends EntityFlying implements IMonster {
         return "mob.ghast.death";
     }
 
-    protected int e() {
+    protected int getLootId() {
         return Item.SULPHUR.id;
     }
 
@@ -223,8 +223,8 @@ public class EntityGhast extends EntityFlying implements IMonster {
         return 10.0F;
     }
 
-    public boolean g() {
-        return this.random.nextInt(20) == 0 && super.g() && this.world.difficulty > 0;
+    public boolean canSpawn() {
+        return this.random.nextInt(20) == 0 && super.canSpawn() && this.world.difficulty > 0;
     }
 
     public int p() {

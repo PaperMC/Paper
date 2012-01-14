@@ -51,7 +51,7 @@ public abstract class EntityHuman extends EntityLiving {
     public int sleepTicks; // CraftBukkit - private -> public
     public float G;
     public float H;
-    private ChunkCoordinates b;
+    private ChunkCoordinates server;
     private ChunkCoordinates c;
     public int I = 20;
     protected boolean J = false;
@@ -167,7 +167,7 @@ public abstract class EntityHuman extends EntityLiving {
             }
         }
 
-        if (this.A() && this.abilities.isInvulnerable) {
+        if (this.isBurning() && this.abilities.isInvulnerable) {
             this.extinguish();
         }
 
@@ -302,7 +302,7 @@ public abstract class EntityHuman extends EntityLiving {
 
         if (this.world.difficulty == 0 && this.getHealth() < this.getMaxHealth() && this.ticksLived % 20 * 12 == 0) {
             // CraftBukkit - added regain reason of "REGEN" for filtering purposes.
-            this.d(1, RegainReason.REGEN);
+            this.heal(1, RegainReason.REGEN);
         }
 
         this.inventory.i();
@@ -315,7 +315,7 @@ public abstract class EntityHuman extends EntityLiving {
             this.am = (float) ((double) this.am + (double) this.Q * 0.3D);
         }
 
-        float f = MathHelper.a(this.motX * this.motX + this.motZ * this.motZ);
+        float f = MathHelper.sqrt(this.motX * this.motX + this.motZ * this.motZ);
         // CraftBukkit - Math -> TrigMath
         float f1 = (float) TrigMath.atan(-this.motY * 0.20000000298023224D) * 15.0F;
 
@@ -502,7 +502,7 @@ public abstract class EntityHuman extends EntityLiving {
         // CraftBukkit end
 
         if (nbttagcompound.hasKey("SpawnX") && nbttagcompound.hasKey("SpawnY") && nbttagcompound.hasKey("SpawnZ")) {
-            this.b = new ChunkCoordinates(nbttagcompound.getInt("SpawnX"), nbttagcompound.getInt("SpawnY"), nbttagcompound.getInt("SpawnZ"));
+            this.server = new ChunkCoordinates(nbttagcompound.getInt("SpawnX"), nbttagcompound.getInt("SpawnY"), nbttagcompound.getInt("SpawnZ"));
         }
 
         this.foodData.a(nbttagcompound);
@@ -518,10 +518,10 @@ public abstract class EntityHuman extends EntityLiving {
         nbttagcompound.setFloat("XpP", this.exp);
         nbttagcompound.setInt("XpLevel", this.expLevel);
         nbttagcompound.setInt("XpTotal", this.expTotal);
-        if (this.b != null) {
-            nbttagcompound.setInt("SpawnX", this.b.x);
-            nbttagcompound.setInt("SpawnY", this.b.y);
-            nbttagcompound.setInt("SpawnZ", this.b.z);
+        if (this.server != null) {
+            nbttagcompound.setInt("SpawnX", this.server.x);
+            nbttagcompound.setInt("SpawnY", this.server.y);
+            nbttagcompound.setInt("SpawnZ", this.server.z);
             nbttagcompound.setString("SpawnWorld", spawnWorld); // CraftBukkit - fixes bed spawns for multiworld worlds
         }
 
@@ -746,7 +746,7 @@ public abstract class EntityHuman extends EntityLiving {
         }
     }
 
-    public void f(Entity entity) {
+    public void attack(Entity entity) {
         int i = this.inventory.a(entity);
 
         if (this.hasEffect(MobEffectList.INCREASE_DAMAGE)) {
@@ -871,8 +871,8 @@ public abstract class EntityHuman extends EntityLiving {
         }
     }
 
-    public boolean U() {
-        return !this.sleeping && super.U();
+    public boolean inBlock() {
+        return !this.sleeping && super.inBlock();
     }
 
     public EnumBedResult a(int i, int j, int k) {
@@ -1060,15 +1060,15 @@ public abstract class EntityHuman extends EntityLiving {
     public void a(String s) {}
 
     public ChunkCoordinates getBed() {
-        return this.b;
+        return this.server;
     }
 
     public void a(ChunkCoordinates chunkcoordinates) {
         if (chunkcoordinates != null) {
-            this.b = new ChunkCoordinates(chunkcoordinates);
+            this.server = new ChunkCoordinates(chunkcoordinates);
             this.spawnWorld = this.world.worldData.name; // CraftBukkit
         } else {
-            this.b = null;
+            this.server = null;
         }
     }
 
@@ -1113,13 +1113,13 @@ public abstract class EntityHuman extends EntityLiving {
             int i;
 
             if (this.a(Material.WATER)) {
-                i = Math.round(MathHelper.a(d0 * d0 + d1 * d1 + d2 * d2) * 100.0F);
+                i = Math.round(MathHelper.sqrt(d0 * d0 + d1 * d1 + d2 * d2) * 100.0F);
                 if (i > 0) {
                     this.a(StatisticList.q, i);
                     this.c(0.015F * (float) i * 0.01F);
                 }
             } else if (this.aK()) {
-                i = Math.round(MathHelper.a(d0 * d0 + d2 * d2) * 100.0F);
+                i = Math.round(MathHelper.sqrt(d0 * d0 + d2 * d2) * 100.0F);
                 if (i > 0) {
                     this.a(StatisticList.m, i);
                     this.c(0.015F * (float) i * 0.01F);
@@ -1129,7 +1129,7 @@ public abstract class EntityHuman extends EntityLiving {
                     this.a(StatisticList.o, (int) Math.round(d1 * 100.0D));
                 }
             } else if (this.onGround) {
-                i = Math.round(MathHelper.a(d0 * d0 + d2 * d2) * 100.0F);
+                i = Math.round(MathHelper.sqrt(d0 * d0 + d2 * d2) * 100.0F);
                 if (i > 0) {
                     this.a(StatisticList.l, i);
                     if (this.isSprinting()) {
@@ -1139,7 +1139,7 @@ public abstract class EntityHuman extends EntityLiving {
                     }
                 }
             } else {
-                i = Math.round(MathHelper.a(d0 * d0 + d2 * d2) * 100.0F);
+                i = Math.round(MathHelper.sqrt(d0 * d0 + d2 * d2) * 100.0F);
                 if (i > 25) {
                     this.a(StatisticList.p, i);
                 }
@@ -1149,7 +1149,7 @@ public abstract class EntityHuman extends EntityLiving {
 
     private void h(double d0, double d1, double d2) {
         if (this.vehicle != null) {
-            int i = Math.round(MathHelper.a(d0 * d0 + d1 * d1 + d2 * d2) * 100.0F);
+            int i = Math.round(MathHelper.sqrt(d0 * d0 + d1 * d1 + d2 * d2) * 100.0F);
 
             if (i > 0) {
                 if (this.vehicle instanceof EntityMinecart) {
@@ -1257,17 +1257,17 @@ public abstract class EntityHuman extends EntityLiving {
         return true;
     }
 
-    protected int a(EntityHuman entityhuman) {
+    protected int getExpValue(EntityHuman entityhuman) {
         int i = this.expLevel * 7;
 
         return i > 100 ? 100 : i;
     }
 
-    protected boolean ac() {
+    protected boolean alwaysGivesExp() {
         return true;
     }
 
-    public String ad() {
+    public String getLocalizedName() {
         return this.name;
     }
 

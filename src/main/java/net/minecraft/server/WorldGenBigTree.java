@@ -15,7 +15,7 @@ public class WorldGenBigTree extends WorldGenerator {
     static final byte[] a = new byte[] { (byte) 2, (byte) 0, (byte) 0, (byte) 1, (byte) 2, (byte) 1};
     Random b = new Random();
     // CraftBukkit start
-    BlockChangeDelegate c;
+    BlockChangeDelegate world;
     StructureGrowEvent event;
     CraftWorld bukkitWorld;
     // CraftBukkit end
@@ -126,14 +126,14 @@ public class WorldGenBigTree extends WorldGenerator {
                     ++k1;
                 } else {
                     aint1[b2] = aint[b2] + k1;
-                    int l1 = this.c.getTypeId(aint1[0], aint1[1], aint1[2]);
+                    int l1 = this.world.getTypeId(aint1[0], aint1[1], aint1[2]);
 
                     if (l1 != 0 && l1 != 18) {
                         ++k1;
                     } else {
                         // CraftBukkit start
                         if (event == null) {
-                            this.a(this.c, aint1[0], aint1[1], aint1[2], l, 0);
+                            this.setTypeAndData(this.world, aint1[0], aint1[1], aint1[2], l, 0);
                         } else {
                             BlockState state = bukkitWorld.getBlockAt(aint1[0], aint1[1], aint1[2]).getState();
                             state.setTypeId(l);
@@ -217,7 +217,7 @@ public class WorldGenBigTree extends WorldGenerator {
                 aint3[b3] = MathHelper.floor((double) aint[b3] + (double) j * d1 + 0.5D);
                 // CraftBukkit start
                 if (event == null) {
-                this.a(this.c, aint3[0], aint3[1], aint3[2], i, 0);
+                this.setTypeAndData(this.world, aint3[0], aint3[1], aint3[2], i, 0);
                 } else {
                     BlockState state = bukkitWorld.getBlockAt(aint3[0], aint3[1], aint3[2]).getState();
                     state.setTypeId(i);
@@ -320,7 +320,7 @@ public class WorldGenBigTree extends WorldGenerator {
                 aint3[b1] = aint[b1] + i;
                 aint3[b2] = MathHelper.floor((double) aint[b2] + (double) i * d0);
                 aint3[b3] = MathHelper.floor((double) aint[b3] + (double) i * d1);
-                int k = this.c.getTypeId(aint3[0], aint3[1], aint3[2]);
+                int k = this.world.getTypeId(aint3[0], aint3[1], aint3[2]);
 
                 if (k != 0 && k != 18) {
                     break;
@@ -334,7 +334,7 @@ public class WorldGenBigTree extends WorldGenerator {
     boolean e() {
         int[] aint = new int[] { this.d[0], this.d[1], this.d[2]};
         int[] aint1 = new int[] { this.d[0], this.d[1] + this.e - 1, this.d[2]};
-        int i = this.c.getTypeId(this.d[0], this.d[1] - 1, this.d[2]);
+        int i = this.world.getTypeId(this.d[0], this.d[1] - 1, this.d[2]);
 
         if (i != 2 && i != 3) {
             return false;
@@ -375,7 +375,7 @@ public class WorldGenBigTree extends WorldGenerator {
         this.event = event;
         this.bukkitWorld = bukkitWorld;
         // CraftBukkit end
-        this.c = world;
+        this.world = world;
         long l = random.nextLong();
 
         this.b.setSeed(l);

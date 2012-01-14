@@ -49,7 +49,7 @@ public class TileEntityMobSpawner extends TileEntity {
 
                 for (int i = 0; i < b0; ++i) {
                     // CraftBukkit start - bad entity detection
-                    Entity mob = EntityTypes.a(this.mobName, this.world);
+                    Entity mob = EntityTypes.createEntityByName(this.mobName, this.world);
 
                     if (!(mob instanceof EntityLiving)) {
                         mobName = "Pig";
@@ -77,7 +77,7 @@ public class TileEntityMobSpawner extends TileEntity {
 
                         entityliving.setPositionRotation(d3, d4, d5, this.world.random.nextFloat() * 360.0F, 0.0F);
                         // CraftBukkit start
-                        if (entityliving.g()) {
+                        if (entityliving.canSpawn()) {
                             this.world.addEntity(entityliving, SpawnReason.SPAWNER);
                             // CraftBukkit end
 

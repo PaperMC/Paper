@@ -84,7 +84,7 @@ public class BlockDoor extends Block {
         }
     }
 
-    public void b(World world, int i, int j, int k, EntityHuman entityhuman) {
+    public void attack(World world, int i, int j, int k, EntityHuman entityhuman) {
         this.interact(world, i, j, k, entityhuman);
     }
 

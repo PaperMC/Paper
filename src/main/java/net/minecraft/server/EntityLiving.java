@@ -59,8 +59,8 @@ public abstract class EntityLiving extends Entity {
     public float aE;
     public float aF;
     public EntityHuman killer = null; // CraftBukkit - prot to pub
-    protected int aH = 0;
-    protected EntityLiving aI = null;
+    protected int lastDamageByPlayerTime = 0;
+    protected EntityLiving lastDamager = null;
     public int aJ = 0;
     public int aK = 0;
     protected HashMap effects = new HashMap();
@@ -128,7 +128,7 @@ public abstract class EntityLiving extends Entity {
     }
 
     public EntityLiving aj() {
-        return this.aI;
+        return this.lastDamager;
     }
 
     public int ak() {
@@ -177,7 +177,7 @@ public abstract class EntityLiving extends Entity {
         }
 
         // CraftBukkit start - don't inline the damage, perform it with an event
-        if (this.isAlive() && this.U()) {
+        if (this.isAlive() && this.inBlock()) {
             EntityDamageEvent event = new EntityDamageEvent(this.getBukkitEntity(), EntityDamageEvent.DamageCause.SUFFOCATION, 1);
             this.world.getServer().getPluginManager().callEvent(event);
 
@@ -238,8 +238,8 @@ public abstract class EntityLiving extends Entity {
             this.an();
         }
 
-        if (this.aH > 0) {
-            --this.aH;
+        if (this.lastDamageByPlayerTime > 0) {
+            --this.lastDamageByPlayerTime;
         } else {
             this.killer = null;
         }
@@ -255,9 +255,9 @@ public abstract class EntityLiving extends Entity {
 
     // CraftBukkit start
     public int getExpReward() {
-        int exp = this.a(this.killer);
+        int exp = this.getExpValue(this.killer);
 
-        if (!this.world.isStatic && (this.aH > 0 || this.ac()) && !this.l()) {
+        if (!this.world.isStatic && (this.lastDamageByPlayerTime > 0 || this.alwaysGivesExp()) && !this.isBaby()) {
             return exp;
         } else {
             return 0;
@@ -273,7 +273,7 @@ public abstract class EntityLiving extends Entity {
             // CraftBukkit start - update getExpReward() above if the removed if() changes!
             i = expToDrop;
             while (i > 0) {
-                int j = EntityExperienceOrb.b(i);
+                int j = EntityExperienceOrb.getOrbValue(i);
 
                 i -= j;
                 this.world.addEntity(new EntityExperienceOrb(this.world, this.locX, this.locY, this.locZ, j));
@@ -297,11 +297,11 @@ public abstract class EntityLiving extends Entity {
         return i - 1;
     }
 
-    protected int a(EntityHuman entityhuman) {
+    protected int getExpValue(EntityHuman entityhuman) {
         return this.aA;
     }
 
-    protected boolean ac() {
+    protected boolean alwaysGivesExp() {
         return false;
     }
 
@@ -339,7 +339,7 @@ public abstract class EntityLiving extends Entity {
         this.d();
         double d0 = this.locX - this.lastX;
         double d1 = this.locZ - this.lastZ;
-        float f = MathHelper.a(d0 * d0 + d1 * d1);
+        float f = MathHelper.sqrt(d0 * d0 + d1 * d1);
         float f1 = this.V;
         float f2 = 0.0F;
 
@@ -436,11 +436,11 @@ public abstract class EntityLiving extends Entity {
     }
 
     // CraftBukkit start - delegate so we can handle providing a reason for health being regained
-    public void d(int i) {
-        d(i, RegainReason.CUSTOM);
+    public void heal(int i) {
+        heal(i, RegainReason.CUSTOM);
     }
 
-    public void d(int i, RegainReason regainReason) {
+    public void heal(int i, RegainReason regainReason) {
         if (this.health > 0) {
             EntityRegainHealthEvent event = new EntityRegainHealthEvent(this.getBukkitEntity(), i, regainReason);
             this.world.getServer().getPluginManager().callEvent(event);
@@ -505,13 +505,13 @@ public abstract class EntityLiving extends Entity {
 
                 if (entity != null) {
                     if (entity instanceof EntityHuman) {
-                        this.aH = 60;
+                        this.lastDamageByPlayerTime = 60;
                         this.killer = (EntityHuman) entity;
                     } else if (entity instanceof EntityWolf) {
                         EntityWolf entitywolf = (EntityWolf) entity;
 
                         if (entitywolf.isTamed()) {
-                            this.aH = 60;
+                            this.lastDamageByPlayerTime = 60;
                             this.killer = null;
                         }
                     }
@@ -552,7 +552,7 @@ public abstract class EntityLiving extends Entity {
     }
 
     private float v() {
-        return this.l() ? (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.5F : (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F;
+        return this.isBaby() ? (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.5F : (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F;
     }
 
     public int P() {
@@ -611,7 +611,7 @@ public abstract class EntityLiving extends Entity {
 
     public void a(Entity entity, int i, double d0, double d1) {
         this.ce = true;
-        float f = MathHelper.a(d0 * d0 + d1 * d1);
+        float f = MathHelper.sqrt(d0 * d0 + d1 * d1);
         float f1 = 0.4F;
 
         this.motX /= 2.0D;
@@ -644,8 +644,8 @@ public abstract class EntityLiving extends Entity {
                 i = EnchantmentManager.getBonusMonsterLootEnchantmentLevel(((EntityHuman) entity).inventory);
             }
 
-            if (!this.l()) {
-                this.dropDeathLoot(this.aH > 0, i);
+            if (!this.isBaby()) {
+                this.dropDeathLoot(this.lastDamageByPlayerTime > 0, i);
             }
         }
 
@@ -653,7 +653,7 @@ public abstract class EntityLiving extends Entity {
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
-        int j = this.e();
+        int j = this.getLootId();
 
         // CraftBukkit start - whole method
         List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
@@ -674,7 +674,7 @@ public abstract class EntityLiving extends Entity {
         // CraftBukkit end
     }
 
-    protected int e() {
+    protected int getLootId() {
         return 0;
     }
 
@@ -804,7 +804,7 @@ public abstract class EntityLiving extends Entity {
         this.aD = this.aE;
         d0 = this.locX - this.lastX;
         double d1 = this.locZ - this.lastZ;
-        float f6 = MathHelper.a(d0 * d0 + d1 * d1) * 4.0F;
+        float f6 = MathHelper.sqrt(d0 * d0 + d1 * d1) * 4.0F;
 
         if (f6 > 1.0F) {
             f6 = 1.0F;
@@ -1047,8 +1047,8 @@ public abstract class EntityLiving extends Entity {
     protected void av() {
         ++this.aV;
         this.au();
-        if (this.aI != null && !this.aI.isAlive()) {
-            this.aI = null;
+        if (this.lastDamager != null && !this.lastDamager.isAlive()) {
+            this.lastDamager = null;
         }
 
         this.goalSelector.a();
@@ -1116,7 +1116,7 @@ public abstract class EntityLiving extends Entity {
             d2 = (entity.boundingBox.b + entity.boundingBox.e) / 2.0D - (this.locY + (double) this.y());
         }
 
-        double d3 = (double) MathHelper.a(d0 * d0 + d1 * d1);
+        double d3 = (double) MathHelper.sqrt(d0 * d0 + d1 * d1);
         float f2 = (float) (Math.atan2(d1, d0) * 180.0D / 3.1415927410125732D) - 90.0F;
         float f3 = (float) (-(Math.atan2(d2, d3) * 180.0D / 3.1415927410125732D));
 
@@ -1156,7 +1156,7 @@ public abstract class EntityLiving extends Entity {
 
     public void ay() {}
 
-    public boolean g() {
+    public boolean canSpawn() {
         return this.world.containsEntity(this.boundingBox) && this.world.a((Entity) this, this.boundingBox).size() == 0 && !this.world.c(this.boundingBox);
     }
 
@@ -1329,11 +1329,11 @@ public abstract class EntityLiving extends Entity {
         return f;
     }
 
-    public void a_(double d0, double d1, double d2) {
+    public void enderTeleportTo(double d0, double d1, double d2) {
         this.setPositionRotation(d0, d1, d2, this.yaw, this.pitch);
     }
 
-    public boolean l() {
+    public boolean isBaby() {
         return false;
     }
 

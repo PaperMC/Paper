@@ -31,11 +31,11 @@ public class ItemFood extends Item {
         // CraftBukkit start
         int oldFoodLevel = entityhuman.getFoodData().foodLevel;
 
-        FoodLevelChangeEvent event = new FoodLevelChangeEvent(entityhuman.getBukkitEntity(), Math.min(this.o() + entityhuman.getFoodData().foodLevel, 20));
+        FoodLevelChangeEvent event = new FoodLevelChangeEvent(entityhuman.getBukkitEntity(), Math.min(this.getNutrition() + entityhuman.getFoodData().foodLevel, 20));
         entityhuman.world.getServer().getPluginManager().callEvent(event);
 
         if (!event.isCancelled()) {
-            entityhuman.getFoodData().a(event.getFoodLevel() - oldFoodLevel, this.p());
+            entityhuman.getFoodData().eat(event.getFoodLevel() - oldFoodLevel, this.getSaturationModifier());
         }
         // CraftBukkit end
 
@@ -62,11 +62,11 @@ public class ItemFood extends Item {
         return itemstack;
     }
 
-    public int o() {
+    public int getNutrition() {
         return this.b;
     }
 
-    public float p() {
+    public float getSaturationModifier() {
         return this.bS;
     }
 

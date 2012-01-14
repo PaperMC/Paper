@@ -96,7 +96,7 @@ public class WorldGenTaiga2 extends WorldGenerator {
                                 if ((Math.abs(k3) != k2 || Math.abs(i4) != k2 || k2 <= 0) && !Block.o[world.getTypeId(i3, j3, l3)]) {
                                     // CraftBukkit start
                                     if (event == null) {
-                                        this.a(world, i3, j3, l3, Block.LEAVES.id, 1);
+                                        this.setTypeAndData(world, i3, j3, l3, Block.LEAVES.id, 1);
                                     } else {
                                         BlockState leavesState = bukkitWorld.getBlockAt(i3, j3, l3).getState();
                                         leavesState.setTypeId(Block.LEAVES.id);
@@ -127,7 +127,7 @@ public class WorldGenTaiga2 extends WorldGenerator {
                         if (i3 == 0 || i3 == Block.LEAVES.id) {
                             // CraftBukkit start
                             if (event == null) {
-                                this.a(world, i, j + j3, k, Block.LOG.id, 1);
+                                this.setTypeAndData(world, i, j + j3, k, Block.LOG.id, 1);
                             } else {
                                 BlockState logState = bukkitWorld.getBlockAt(i, j + j3, k).getState();
                                 logState.setTypeId(Block.LOG.id);

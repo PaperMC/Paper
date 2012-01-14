@@ -11,7 +11,7 @@ public class ItemHoe extends Item {
     public ItemHoe(int i, EnumToolMaterial enumtoolmaterial) {
         super(i);
         this.maxStackSize = 1;
-        this.f(enumtoolmaterial.a());
+        this.setMaxDurability(enumtoolmaterial.a());
     }
 
     public boolean a(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {

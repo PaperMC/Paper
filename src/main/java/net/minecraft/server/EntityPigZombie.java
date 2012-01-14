@@ -36,7 +36,7 @@ public class EntityPigZombie extends EntityZombie {
         super.y_();
     }
 
-    public boolean g() {
+    public boolean canSpawn() {
         return this.world.difficulty > 0 && this.world.containsEntity(this.boundingBox) && this.world.a((Entity) this, this.boundingBox).size() == 0 && !this.world.c(this.boundingBox);
     }
 
@@ -135,7 +135,7 @@ public class EntityPigZombie extends EntityZombie {
         // CraftBukkit end
     }
 
-    protected int e() {
+    protected int getLootId() {
         return Item.ROTTEN_FLESH.id;
     }
 }

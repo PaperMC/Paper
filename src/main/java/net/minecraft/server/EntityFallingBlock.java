@@ -2,7 +2,7 @@ package net.minecraft.server;
 
 public class EntityFallingBlock extends Entity {
 
-    public int a;
+    public int id;
     public int data; // CraftBukkit
     public int b = 0;
 
@@ -13,7 +13,7 @@ public class EntityFallingBlock extends Entity {
     // CraftBukkit - changed method signature
     public EntityFallingBlock(World world, double d0, double d1, double d2, int i, int data) {
         super(world);
-        this.a = i;
+        this.id = i;
         this.bf = true;
         this.data = data; // CraftBukkit
         this.b(0.98F, 0.98F);
@@ -38,7 +38,7 @@ public class EntityFallingBlock extends Entity {
     }
 
     public void y_() {
-        if (this.a == 0) {
+        if (this.id == 0) {
             this.die();
         } else {
             this.lastX = this.locX;
@@ -54,7 +54,7 @@ public class EntityFallingBlock extends Entity {
             int j = MathHelper.floor(this.locY);
             int k = MathHelper.floor(this.locZ);
 
-            if (this.b == 1 && this.world.getTypeId(i, j, k) == this.a) {
+            if (this.b == 1 && this.world.getTypeId(i, j, k) == this.id) {
                 this.world.setTypeId(i, j, k, 0);
             } else if (!this.world.isStatic && this.b == 1) {
                 this.die();
@@ -67,24 +67,24 @@ public class EntityFallingBlock extends Entity {
                 if (this.world.getTypeId(i, j, k) != Block.PISTON_MOVING.id) {
                     this.die();
                     // CraftBukkit - setTypeId => setTypeIdAndData
-                    if ((!this.world.a(this.a, i, j, k, true, 1) || BlockSand.g(this.world, i, j - 1, k) || !this.world.setTypeIdAndData(i, j, k, this.a, this.data)) && !this.world.isStatic) {
-                        this.b(this.a, 1);
+                    if ((!this.world.mayPlace(this.id, i, j, k, true, 1) || BlockSand.canFall(this.world, i, j - 1, k) || !this.world.setTypeIdAndData(i, j, k, this.id, this.data)) && !this.world.isStatic) {
+                        this.b(this.id, 1);
                     }
                 }
             } else if (this.b > 100 && !this.world.isStatic) {
-                this.b(this.a, 1);
+                this.b(this.id, 1);
                 this.die();
             }
         }
     }
 
     protected void b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.setByte("Tile", (byte) this.a);
+        nbttagcompound.setByte("Tile", (byte) this.id);
         nbttagcompound.setByte("Data", (byte) this.data); // CraftBukkit
     }
 
     protected void a(NBTTagCompound nbttagcompound) {
-        this.a = nbttagcompound.getByte("Tile") & 255;
+        this.id = nbttagcompound.getByte("Tile") & 255;
         this.data = nbttagcompound.getByte("Data") & 15; // CraftBukkit
     }
 }

@@ -15,10 +15,10 @@ public class WorldMapHumanTracker {
     private int f;
     private byte[] g;
 
-    final WorldMap d;
+    final WorldMap worldMap;
 
     public WorldMapHumanTracker(WorldMap worldmap, EntityHuman entityhuman) {
-        this.d = worldmap;
+        this.worldMap = worldmap;
         this.b = new int[128];
         this.c = new int[128];
         this.e = 0;
@@ -34,8 +34,8 @@ public class WorldMapHumanTracker {
     public byte[] a(ItemStack itemstack) {
         int i;
         int j;
-        
-        RenderData render = this.d.mapView.render((CraftPlayer) trackee.getBukkitEntity()); // CraftBukkit
+
+        RenderData render = this.worldMap.mapView.render((CraftPlayer) trackee.getBukkitEntity()); // CraftBukkit
 
         if (--this.f < 0) {
             this.f = 4;
@@ -47,7 +47,7 @@ public class WorldMapHumanTracker {
             for (i = 0; i < render.cursors.size(); ++i) {
                 MapCursor cursor = render.cursors.get(i);
                 if (!cursor.isVisible()) continue;
-                
+
                 byte value = (byte) (((cursor.getRawType() == 0 || cursor.getDirection() < 8 ? cursor.getDirection() : cursor.getDirection() - 1) & 15) * 16);
                 abyte[i * 3 + 1] = (byte) (value | (cursor.getRawType() != 0 && value < 0 ? 16 - cursor.getRawType() : cursor.getRawType()));
                 abyte[i * 3 + 2] = (byte) cursor.getX();

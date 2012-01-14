@@ -21,7 +21,7 @@ public class BlockDragonEgg extends Block {
     }
 
     private void g(World world, int i, int j, int k) {
-        if (BlockSand.g(world, i, j - 1, k) && j >= 0) {
+        if (BlockSand.canFall(world, i, j - 1, k) && j >= 0) {
             byte b0 = 32;
 
             if (!BlockSand.instaFall && world.a(i - b0, j - b0, k - b0, i + b0, j + b0, k + b0)) {
@@ -32,7 +32,7 @@ public class BlockDragonEgg extends Block {
             } else {
                 world.setTypeId(i, j, k, 0);
 
-                while (BlockSand.g(world, i, j - 1, k) && j > 0) {
+                while (BlockSand.canFall(world, i, j - 1, k) && j > 0) {
                     --j;
                 }
 
@@ -48,7 +48,7 @@ public class BlockDragonEgg extends Block {
         return true;
     }
 
-    public void b(World world, int i, int j, int k, EntityHuman entityhuman) {
+    public void attack(World world, int i, int j, int k, EntityHuman entityhuman) {
         this.h(world, i, j, k);
     }
 

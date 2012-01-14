@@ -18,7 +18,7 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 public class EntityPlayer extends EntityHuman implements ICrafting {
 
     public NetServerHandler netServerHandler;
-    public MinecraftServer b;
+    public MinecraftServer server;
     public ItemInWorldManager itemInWorldManager;
     public double d;
     public double e;
@@ -28,12 +28,12 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     private int cg = -99999999;
     private boolean ch = true;
     public int lastSentExp = -99999999; // CraftBukkit - priv to pub
-    public int cj = 60; // CraftBukkit - private to public; temporary until we get an API out
+    public int invulnerableTicks = 60; // CraftBukkit - private to public; temporary until we get an API out
     private ItemStack[] ck = new ItemStack[] { null, null, null, null, null};
     private int cl = 0;
     public boolean h;
     public int ping;
-    public boolean j = false;
+    public boolean viewingCredits = false;
 
     public EntityPlayer(MinecraftServer minecraftserver, World world, String s, ItemInWorldManager iteminworldmanager) {
         super(world);
@@ -51,7 +51,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         }
 
         this.setPositionRotation((double) i + 0.5D, (double) k, (double) j + 0.5D, 0.0F, 0.0F);
-        this.b = minecraftserver;
+        this.server = minecraftserver;
         this.bP = 0.0F;
         this.name = s;
         this.height = 0.0F;
@@ -135,14 +135,14 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
     public void y_() {
         this.itemInWorldManager.c();
-        --this.cj;
+        --this.invulnerableTicks;
         this.activeContainer.a();
 
         for (int i = 0; i < 5; ++i) {
             ItemStack itemstack = this.c(i);
 
             if (itemstack != this.ck[i]) {
-                this.b.getTracker(this.dimension).a(this, new Packet5EntityEquipment(this.id, i, itemstack));
+                this.server.getTracker(this.dimension).a(this, new Packet5EntityEquipment(this.id, i, itemstack));
                 this.ck[i] = itemstack;
             }
         }
@@ -168,12 +168,12 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             }
         }
 
-        PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, damagesource.a(this));
+        PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, damagesource.getLocalizedDeathMessage(this));
 
         String deathMessage = event.getDeathMessage();
 
         if (deathMessage != null && deathMessage.length() > 0) {
-            this.b.serverConfigurationManager.sendAll(new Packet3Chat(event.getDeathMessage()));
+            this.server.serverConfigurationManager.sendAll(new Packet3Chat(event.getDeathMessage()));
         }
 
         // CraftBukkit start - we clean the player's inventory after the EntityDeathEvent is called so plugins can get the exact state of the inventory.
@@ -190,7 +190,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     }
 
     public boolean damageEntity(DamageSource damagesource, int i) {
-        if (this.cj > 0) {
+        if (this.invulnerableTicks > 0) {
             return false;
         } else {
             // CraftBukkit - this.b.pvpMode -> this.world.pvpMode
@@ -215,11 +215,11 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     }
 
     protected boolean z() {
-        return this.b.pvpMode;
+        return this.server.pvpMode;
     }
 
-    public void d(int i) {
-        super.d(i);
+    public void heal(int i) {
+        super.heal(i);
     }
 
     public void a(boolean flag) {
@@ -228,7 +228,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         for (int i = 0; i < this.inventory.getSize(); ++i) {
             ItemStack itemstack = this.inventory.getItem(i);
 
-            if (itemstack != null && Item.byId[itemstack.id].n_() && this.netServerHandler.b() <= 2) {
+            if (itemstack != null && Item.byId[itemstack.id].n_() && this.netServerHandler.lowPriorityCount() <= 2) {
                 Packet packet = ((ItemWorldMapBase) Item.byId[itemstack.id]).c(itemstack, this.world, this);
 
                 if (packet != null) {
@@ -243,12 +243,13 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             if (chunkcoordintpair != null) {
                 boolean flag1 = false;
 
-                if (this.netServerHandler.b() + ChunkCompressionThread.getPlayerQueueSize(this) < 4) { // CraftBukkit - Add check against Chunk Packets in the ChunkCompressionThread.
+                // CraftBukkit - Add check against Chunk Packets in the ChunkCompressionThread.
+                if (this.netServerHandler.lowPriorityCount() + ChunkCompressionThread.getPlayerQueueSize(this) < 4) {
                     flag1 = true;
                 }
 
                 if (flag1) {
-                    WorldServer worldserver = this.b.getWorldServer(this.dimension);
+                    WorldServer worldserver = this.server.getWorldServer(this.dimension);
 
                     this.chunkCoordIntPairQueue.remove(chunkcoordintpair);
                     this.netServerHandler.sendPacket(new Packet51MapChunk(chunkcoordintpair.x * 16, 0, chunkcoordintpair.z * 16, 16, worldserver.height, 16, worldserver));
@@ -262,7 +263,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         }
 
         if (this.J) {
-            //if (this.b.propertyManager.getBoolean("allow-nether", true)) { // CraftBukkit
+            //if (this.server.propertyManager.getBoolean("allow-nether", true)) { // CraftBukkit
                 if (this.activeContainer != this.defaultContainer) {
                     this.closeInventory();
                 }
@@ -283,7 +284,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
                             b0 = -1;
                         }
 
-                        this.b.serverConfigurationManager.changeDimension(this, b0);
+                        this.server.serverConfigurationManager.changeDimension(this, b0);
                         this.lastSentExp = -1;
                         this.cf = -1;
                         this.cg = -1;
@@ -324,7 +325,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         if (this.dimension == 1 && i == 1) {
             this.a((Statistic) AchievementList.C);
             this.world.kill(this);
-            this.j = true;
+            this.viewingCredits = true;
             this.netServerHandler.sendPacket(new Packet70Bed(4, 0));
         } else {
             this.a((Statistic) AchievementList.B);
@@ -336,7 +337,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             }
             // CraftBukkit end */
 
-            this.b.serverConfigurationManager.changeDimension(this, 1);
+            this.server.serverConfigurationManager.changeDimension(this, 1);
             this.lastSentExp = -1;
             this.cf = -1;
             this.cg = -1;
@@ -355,7 +356,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
     public void receive(Entity entity, int i) {
         if (!entity.dead) {
-            EntityTracker entitytracker = this.b.getTracker(this.dimension);
+            EntityTracker entitytracker = this.server.getTracker(this.dimension);
 
             if (entity instanceof EntityItem) {
                 entitytracker.a(entity, new Packet22Collect(entity.id, this.id));
@@ -378,7 +379,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         if (!this.t) {
             this.u = -1;
             this.t = true;
-            EntityTracker entitytracker = this.b.getTracker(this.dimension);
+            EntityTracker entitytracker = this.server.getTracker(this.dimension);
 
             entitytracker.a(this, new Packet18ArmAnimation(this, 1));
         }
@@ -390,7 +391,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         EnumBedResult enumbedresult = super.a(i, j, k);
 
         if (enumbedresult == EnumBedResult.OK) {
-            EntityTracker entitytracker = this.b.getTracker(this.dimension);
+            EntityTracker entitytracker = this.server.getTracker(this.dimension);
             Packet17EntityLocationAction packet17entitylocationaction = new Packet17EntityLocationAction(this, 0, i, j, k);
 
             entitytracker.a(this, packet17entitylocationaction);
@@ -403,7 +404,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
     public void a(boolean flag, boolean flag1, boolean flag2) {
         if (this.isSleeping()) {
-            EntityTracker entitytracker = this.b.getTracker(this.dimension);
+            EntityTracker entitytracker = this.server.getTracker(this.dimension);
 
             entitytracker.sendPacketToEntity(this, new Packet18ArmAnimation(this, 3));
         }
@@ -574,7 +575,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public void a(ItemStack itemstack, int i) {
         super.a(itemstack, i);
         if (itemstack != null && itemstack.getItem() != null && itemstack.getItem().d(itemstack) == EnumAnimation.b) {
-            EntityTracker entitytracker = this.b.getTracker(this.dimension);
+            EntityTracker entitytracker = this.server.getTracker(this.dimension);
 
             entitytracker.sendPacketToEntity(this, new Packet18ArmAnimation(this, 5));
         }
@@ -595,18 +596,18 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         this.netServerHandler.sendPacket(new Packet42RemoveMobEffect(this.id, mobeffect));
     }
 
-    public void a_(double d0, double d1, double d2) {
+    public void enderTeleportTo(double d0, double d1, double d2) {
         this.netServerHandler.a(d0, d1, d2, this.yaw, this.pitch);
     }
 
     public void c(Entity entity) {
-        EntityTracker entitytracker = this.b.getTracker(this.dimension);
+        EntityTracker entitytracker = this.server.getTracker(this.dimension);
 
         entitytracker.sendPacketToEntity(this, new Packet18ArmAnimation(entity, 6));
     }
 
     public void d(Entity entity) {
-        EntityTracker entitytracker = this.b.getTracker(this.dimension);
+        EntityTracker entitytracker = this.server.getTracker(this.dimension);
 
         entitytracker.sendPacketToEntity(this, new Packet18ArmAnimation(entity, 7));
     }
