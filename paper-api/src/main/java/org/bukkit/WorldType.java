@@ -7,8 +7,8 @@ import java.util.Map;
  * Represents various types of worlds that may exist
  */
 public enum WorldType {
-    NORMAL("normal"),
-    FLAT("flat");
+    NORMAL("DEFAULT"),
+    FLAT("FLAT");
 
     private final static Map<String, WorldType> lookup = new HashMap<String, WorldType>();
     private final String name;
