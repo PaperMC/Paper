@@ -25,16 +25,7 @@ import net.minecraft.server.Packet61WorldEvent;
 import net.minecraft.server.Packet6SpawnPosition;
 import net.minecraft.server.Packet70Bed;
 import net.minecraft.server.WorldServer;
-import org.bukkit.Achievement;
-import org.bukkit.Effect;
-import org.bukkit.GameMode;
-import org.bukkit.Instrument;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Note;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.Statistic;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.CraftOfflinePlayer;
 import org.bukkit.craftbukkit.CraftServer;
@@ -156,8 +147,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             return;
         }
 
-        if (name.length() > 16) {
-            throw new IllegalArgumentException("Player list names can only be a maximum of 16 characters long");
+        if (ChatColor.stripColor(name).length() > 16) {
+            throw new IllegalArgumentException("Player list names can only be a maximum of 16 characters long without colour codes");
         }
 
         // Collisions will make for invisible people
