@@ -922,10 +922,15 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 if (itemInHand != null && itemInHand.count <= -1) {
                     this.player.updateInventory(this.player.activeContainer);
                 }
-                // CraftBukkit end
             } else if (packet7useentity.c == 1) {
+                if (entity instanceof EntityItem) {
+                    disconnect("Attacking an item is not permitted");
+                    System.out.println("Player " + player.name + " tried to attack an item entity, so I have disconnected them for exploiting.");
+                    return;
+                }
+                
                 this.player.f(entity);
-                // CraftBukkit start - update the client if the item is an infinite one
+
                 if (itemInHand != null && itemInHand.count <= -1) {
                     this.player.updateInventory(this.player.activeContainer);
                 }
