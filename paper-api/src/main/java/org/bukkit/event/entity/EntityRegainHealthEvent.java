@@ -84,6 +84,14 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
          */
         EATING,
         /**
+         * When a player is healed by a potion or spell
+         */
+        MAGIC,
+        /**
+         * When a player is healed over time by a potion or spell
+         */
+        MAGIC_REGEN,
+        /**
          * Any other reason not covered by the reasons above
          */
         CUSTOM

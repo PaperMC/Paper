@@ -168,6 +168,18 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          */
         STARVATION,
         /**
+         * Damage caused due to an ongoing poison effect
+         *
+         * Damage: 1
+         */
+        POISON,
+        /**
+         * Damage caused by being hit by a damage potion or spell
+         *
+         * Damage: variable
+         */
+        MAGIC,
+        /**
          * Custom damage.
          * <p />
          * Damage: variable
