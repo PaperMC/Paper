@@ -65,6 +65,9 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public String listName;
     public org.bukkit.Location compassTarget;
     public int newExp = 0;
+    public int newLevel = 0;
+    public int newTotalExp = 0;
+    public boolean keepLevel = false;
     // CraftBukkit end
 
     public void a(NBTTagCompound nbttagcompound) {
@@ -553,6 +556,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
     public void t_() {
         this.cf = -99999999;
+        this.lastSentExp = -1; // CraftBukkit - Added to reset
     }
 
     public void a(String s) {
@@ -627,18 +631,30 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     }
 
     public void reset() {
+        float exp = 0;
+        if(this.keepLevel) {
+            exp = this.exp;
+            this.newTotalExp = this.expTotal;
+            this.newLevel = this.expLevel;
+        }
+        
         this.health = 20;
         this.fireTicks = 0;
         this.fallDistance = 0;
         this.foodData = new FoodMetaData();
-        this.expLevel = 0;
-        this.expTotal = 0;
+        this.expLevel = this.newLevel;
+        this.expTotal = this.newTotalExp;
         this.exp = 0;
         this.deathTicks = 0;
         effects.clear();
         this.activeContainer = this.defaultContainer;
         this.lastSentExp = -1; // lastSentExp. Find line: "if (this.expTotal != this.XXXX) {"
-        this.giveExp(this.newExp);
+        if(this.keepLevel) {
+            this.exp = exp;
+        } else {
+            this.giveExp(this.newExp);
+        }
+        this.keepLevel = false;
     }
 
     public CraftPlayer getPlayer() {

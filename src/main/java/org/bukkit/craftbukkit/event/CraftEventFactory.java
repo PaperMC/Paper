@@ -330,6 +330,10 @@ public class CraftEventFactory {
         org.bukkit.World world = entity.getWorld();
         Bukkit.getServer().getPluginManager().callEvent(event);
 
+        // TODO: Possibly a way to persist this incase of disconnect
+        victim.keepLevel = event.getKeepLevel();
+        victim.newLevel = event.getNewLevel();
+        victim.newTotalExp = event.getNewTotalExp();
         victim.expToDrop = event.getDroppedExp();
         victim.newExp = event.getNewExp();
 
