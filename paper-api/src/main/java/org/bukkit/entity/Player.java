@@ -471,4 +471,19 @@ public interface Player extends HumanEntity, CommandSender, OfflinePlayer, Plugi
      * @return Bed Spawn Location if bed exists, otherwise null.
      */
     public Location getBedSpawnLocation();
+    
+    /**
+     * Determines if the Player is allowed to fly via jump key double-tap like in creative mode.
+     * 
+     * @return True if the player is allowed to fly.
+     */
+    public boolean getAllowFlight();
+    
+    /**
+     * Sets if the Player is allowed to fly via jump key double-tap like in creative mode.
+     * 
+     * @param flight If flight should be allowed.
+     */
+    public void setAllowFlight(boolean flight);
+    
 }

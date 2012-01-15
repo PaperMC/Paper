@@ -597,4 +597,12 @@ public class TestPlayer implements Player {
     public void playEffect(EntityEffect type) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
+
+    public boolean getAllowFlight() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public void setAllowFlight(boolean flight) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }
