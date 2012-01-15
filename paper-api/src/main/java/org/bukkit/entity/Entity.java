@@ -79,11 +79,11 @@ public interface Entity {
     public boolean teleport(Entity destination, TeleportCause cause);
 
     /**
-     * Returns a list of entities within a bounding box defined by x,y,z centered around player
+     * Returns a list of entities within a bounding box centered around this entity
      *
-     * @param x Size of the box along x axis
-     * @param y Size of the box along y axis
-     * @param z Size of the box along z axis
+     * @param x 1/2 the size of the box along x axis
+     * @param y 1/2 the size of the box along y axis
+     * @param z 1/2 the size of the box along z axis
      * @return List<Entity> List of entities nearby
      */
     public List<org.bukkit.entity.Entity> getNearbyEntities(double x, double y, double z);
