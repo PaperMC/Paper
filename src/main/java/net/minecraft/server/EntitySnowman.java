@@ -1,7 +1,11 @@
 package net.minecraft.server;
 
 import java.util.List;
+// Craftbukkit start
+import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.block.EntityBlockFormEvent;
+// Craftbukkit end
 
 public class EntitySnowman extends EntityGolem {
 
@@ -39,7 +43,17 @@ public class EntitySnowman extends EntityGolem {
             int l = MathHelper.floor(this.locZ + (double) ((float) (i / 2 % 2 * 2 - 1) * 0.25F));
 
             if (this.world.getTypeId(j, k, l) == 0 && this.world.getWorldChunkManager().a(j, k, l) < 0.8F && Block.SNOW.canPlace(this.world, j, k, l)) {
-                this.world.setTypeId(j, k, l, Block.SNOW.id);
+                // CraftBukkit start
+                BlockState blockState = this.world.getWorld().getBlockAt(j, k, l).getState();
+                blockState.setTypeId(Block.SNOW.id);
+
+                EntityBlockFormEvent event = new EntityBlockFormEvent(this.getBukkitEntity(), blockState.getBlock(), blockState);
+                this.world.getServer().getPluginManager().callEvent(event);
+
+                if(!event.isCancelled()) {
+                    blockState.update(true);
+                }
+                // CraftBukkit end
             }
         }
     }
