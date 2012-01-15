@@ -991,6 +991,8 @@ public class JavaPluginLoader implements PluginLoader {
         }
 
         if (plugin.isEnabled()) {
+            server.getPluginManager().callEvent(new PluginDisableEvent(plugin));
+            
             JavaPlugin jPlugin = (JavaPlugin) plugin;
             ClassLoader cloader = jPlugin.getClassLoader();
 
@@ -999,8 +1001,6 @@ public class JavaPluginLoader implements PluginLoader {
             } catch (Throwable ex) {
                 server.getLogger().log(Level.SEVERE, "Error occurred while disabling " + plugin.getDescription().getFullName() + " (Is it up to date?): " + ex.getMessage(), ex);
             }
-
-            server.getPluginManager().callEvent(new PluginDisableEvent(plugin));
 
             loaders.remove(jPlugin.getDescription().getName());
 
