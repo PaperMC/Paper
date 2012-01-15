@@ -9,8 +9,13 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.Location;
+import org.bukkit.event.entity.EntityCreatePortalEvent;
 
 import java.util.ArrayList;
+import org.bukkit.PortalType;
+import org.bukkit.block.BlockState;
+import org.bukkit.craftbukkit.util.BlockStateListPopulator;
 // CraftBukkit end
 
 public class EntityEnderDragon extends EntityComplex {
@@ -584,6 +589,10 @@ public class EntityEnderDragon extends EntityComplex {
 
         BlockEnderPortal.a = true;
         byte b0 = 4;
+        
+        // CraftBukkit start - Replace any "this.world" in the following with just "world"!
+        EntityCreatePortalEvent event = new EntityCreatePortalEvent(this.getBukkitEntity(), new ArrayList<BlockState>(), PortalType.ENDER);
+        BlockStateListPopulator world = new BlockStateListPopulator(this.world.getWorld(), event.getBlocks());
 
         for (int l = k - 1; l <= k + 32; ++l) {
             for (int i1 = i - b0; i1 <= i + b0; ++i1) {
@@ -595,29 +604,39 @@ public class EntityEnderDragon extends EntityComplex {
                     if (d2 <= (double) b0 - 0.5D) {
                         if (l < k) {
                             if (d2 <= (double) (b0 - 1) - 0.5D) {
-                                this.world.setTypeId(i1, l, j1, Block.BEDROCK.id);
+                                world.setTypeId(i1, l, j1, Block.BEDROCK.id);
                             }
                         } else if (l > k) {
-                            this.world.setTypeId(i1, l, j1, 0);
+                            world.setTypeId(i1, l, j1, 0);
                         } else if (d2 > (double) (b0 - 1) - 0.5D) {
-                            this.world.setTypeId(i1, l, j1, Block.BEDROCK.id);
+                            world.setTypeId(i1, l, j1, Block.BEDROCK.id);
                         } else {
-                            this.world.setTypeId(i1, l, j1, Block.ENDER_PORTAL.id);
+                            world.setTypeId(i1, l, j1, Block.ENDER_PORTAL.id);
                         }
                     }
                 }
             }
         }
 
-        this.world.setTypeId(i, k + 0, j, Block.BEDROCK.id);
-        this.world.setTypeId(i, k + 1, j, Block.BEDROCK.id);
-        this.world.setTypeId(i, k + 2, j, Block.BEDROCK.id);
-        this.world.setTypeId(i - 1, k + 2, j, Block.TORCH.id);
-        this.world.setTypeId(i + 1, k + 2, j, Block.TORCH.id);
-        this.world.setTypeId(i, k + 2, j - 1, Block.TORCH.id);
-        this.world.setTypeId(i, k + 2, j + 1, Block.TORCH.id);
-        this.world.setTypeId(i, k + 3, j, Block.BEDROCK.id);
-        this.world.setTypeId(i, k + 4, j, Block.DRAGON_EGG.id);
+        world.setTypeId(i, k + 0, j, Block.BEDROCK.id);
+        world.setTypeId(i, k + 1, j, Block.BEDROCK.id);
+        world.setTypeId(i, k + 2, j, Block.BEDROCK.id);
+        world.setTypeId(i - 1, k + 2, j, Block.TORCH.id);
+        world.setTypeId(i + 1, k + 2, j, Block.TORCH.id);
+        world.setTypeId(i, k + 2, j - 1, Block.TORCH.id);
+        world.setTypeId(i, k + 2, j + 1, Block.TORCH.id);
+        world.setTypeId(i, k + 3, j, Block.BEDROCK.id);
+        world.setTypeId(i, k + 4, j, Block.DRAGON_EGG.id);
+
+        this.world.getServer().getPluginManager().callEvent(event);
+
+        if (!event.isCancelled()) {
+            for (BlockState state : event.getBlocks()) {
+                state.update(true);
+            }
+        }
+        // CraftBukkit end
+
         BlockEnderPortal.a = false;
     }
 
