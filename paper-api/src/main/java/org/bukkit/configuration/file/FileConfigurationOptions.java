@@ -56,7 +56,6 @@ public class FileConfigurationOptions extends MemoryConfigurationOptions {
      * but you may include one if you wish for extra spacing.
      * <p>
      * Null is a valid value which will indicate that no header is to be applied.
-     * 
      *
      * @param value New header
      * @return This object, for chaining

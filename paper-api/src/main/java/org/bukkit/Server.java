@@ -30,14 +30,14 @@ import org.bukkit.scheduler.BukkitScheduler;
 public interface Server extends PluginMessageRecipient {
     /**
      * Used for all administrative messages, such as an operator using a command.
-     *
+     * <p />
      * For use in {@link #broadcast(java.lang.String, java.lang.String)}
      */
     public static final String BROADCAST_CHANNEL_ADMINISTRATIVE = "bukkit.broadcast.admin";
 
     /**
      * Used for all announcement messages, such as informing users that a player has joined.
-     *
+     * <p />
      * For use in {@link #broadcast(java.lang.String, java.lang.String)}
      */
     public static final String BROADCAST_CHANNEL_USERS = "bukkit.broadcast.user";
@@ -155,7 +155,7 @@ public interface Server extends PluginMessageRecipient {
 
     /**
      * Broadcast a message to all players.
-     *
+     * <p />
      * This is the same as calling {@link #broadcast(java.lang.String, java.lang.String)} to {@link #BROADCAST_CHANNEL_USERS}
      *
      * @param message the message
@@ -166,7 +166,7 @@ public interface Server extends PluginMessageRecipient {
     /**
      * Gets the name of the update folder. The update folder is used to safely update
      * plugins at the right moment on a plugin load.
-     *
+     * <p />
      * The update folder name is relative to the plugins folder.
      *
      * @return The name of the update folder
@@ -183,7 +183,7 @@ public interface Server extends PluginMessageRecipient {
 
     /**
      * Gets a player object by the given username
-     *
+     * <p />
      * This method may not return objects for offline players
      *
      * @param name Name to look up
@@ -202,7 +202,7 @@ public interface Server extends PluginMessageRecipient {
     /**
      * Attempts to match any players with the given name, and returns a list
      * of all possibly matches
-     *
+     * <p />
      * This list is not sorted in any particular order. If an exact match is found,
      * the returned list will only contain a single result.
      *
@@ -457,7 +457,7 @@ public interface Server extends PluginMessageRecipient {
 
     /**
      * Gets the player by the given name, regardless if they are offline or online.
-     *
+     * <p />
      * This will return an object even if the player does not exist. To this method, all players will exist.
      *
      * @param name Name of the player to retrieve

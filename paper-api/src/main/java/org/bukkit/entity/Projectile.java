@@ -24,7 +24,7 @@ public interface Projectile extends Entity {
 
     /**
      * Determine if this projectile should bounce or not when it hits.
-     *
+     * <p />
      * If a small fireball does not bounce it will set the target on fire.
      *
      * @return true if it should bounce.

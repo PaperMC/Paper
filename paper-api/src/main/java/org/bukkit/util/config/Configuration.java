@@ -27,7 +27,6 @@ import org.yaml.snakeyaml.representer.Representer;
  * a file and call its load() method. For specifying node paths in the
  * various get*() methods, they support SK's path notation, allowing you to
  * select child nodes by delimiting node names with periods.
- *
  * <p>
  * For example, given the following configuration file:
  * </p>
@@ -48,7 +47,6 @@ import org.yaml.snakeyaml.representer.Representer;
  *     eats:
  *         babies: true
  * </pre>
- *
  * <p>
  * Calling code could access sturmeh's baby eating state by using <code>getBoolean("sturmeh.eats.babies", false)</code>. For lists, there are methods such as <code>getStringList</code> that will return a type safe list.
  *

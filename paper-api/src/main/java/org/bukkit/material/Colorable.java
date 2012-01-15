@@ -4,7 +4,6 @@ import org.bukkit.DyeColor;
 
 /**
  * An object that can be colored.
- *
  */
 public interface Colorable {
 

@@ -37,9 +37,7 @@ import org.yaml.snakeyaml.error.YAMLException;
  */
 public class JavaPluginLoader implements PluginLoader {
     private final Server server;
-    protected final Pattern[] fileFilters = new Pattern[] {
-        Pattern.compile("\\.jar$"),
-    };
+    protected final Pattern[] fileFilters = new Pattern[] { Pattern.compile("\\.jar$"), };
     protected final Map<String, Class<?>> classes = new HashMap<String, Class<?>>();
     protected final Map<String, PluginClassLoader> loaders = new HashMap<String, PluginClassLoader>();
 
@@ -1006,7 +1004,7 @@ public class JavaPluginLoader implements PluginLoader {
 
         if (plugin.isEnabled()) {
             server.getPluginManager().callEvent(new PluginDisableEvent(plugin));
-            
+
             JavaPlugin jPlugin = (JavaPlugin) plugin;
             ClassLoader cloader = jPlugin.getClassLoader();
 

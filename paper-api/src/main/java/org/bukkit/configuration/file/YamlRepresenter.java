@@ -1,4 +1,3 @@
-
 package org.bukkit.configuration.file;
 
 import java.util.LinkedHashMap;
@@ -9,7 +8,6 @@ import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 
 import org.yaml.snakeyaml.nodes.Node;
-import org.yaml.snakeyaml.representer.Represent;
 import org.yaml.snakeyaml.representer.Representer;
 
 public class YamlRepresenter extends Representer {
@@ -20,6 +18,7 @@ public class YamlRepresenter extends Representer {
     }
 
     private class RepresentConfigurationSection extends RepresentMap {
+        @Override
         @SuppressWarnings("unchecked")
         public Node representData(Object data) {
             return super.representData(((ConfigurationSection) data).getValues(false));
@@ -27,6 +26,7 @@ public class YamlRepresenter extends Representer {
     }
 
     private class RepresentConfigurationSerializable extends RepresentMap {
+        @Override
         @SuppressWarnings("unchecked")
         public Node representData(Object data) {
             ConfigurationSerializable serializable = (ConfigurationSerializable) data;

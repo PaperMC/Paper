@@ -362,7 +362,7 @@ public class StandardMessenger implements Messenger {
 
         synchronized (incomingLock) {
             Set<PluginMessageListenerRegistration> registrations = incomingByPlugin.get(registration.getPlugin());
-            
+
             if (registrations != null) {
                 return registrations.contains(registration);
             }

@@ -29,8 +29,7 @@ public class TimingsCommand extends Command {
                 plugin.resetTimings();
             }
             sender.sendMessage("Timings reset");
-        }
-        else if("merged".equals(args[0]) || seperate) {
+        } else if ("merged".equals(args[0]) || seperate) {
 
             int index = 0;
             int pluginIdx = 0;

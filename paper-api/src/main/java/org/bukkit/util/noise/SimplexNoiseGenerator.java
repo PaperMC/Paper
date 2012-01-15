@@ -5,7 +5,7 @@ import org.bukkit.World;
 
 /**
  * Generates simplex-based noise.
- *
+ * <p />
  * This is a modified version of the freely published version in the paper by
  * Stefan Gustavson at http://staffwww.itn.liu.se/~stegu/simplexnoise/simplexnoise.pdf
  */

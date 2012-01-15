@@ -40,7 +40,6 @@ public interface Inventory {
 
     /**
      * Stores the given ItemStacks in the inventory.
-     *
      * This will try to fill existing stacks and empty slots as good as it can.
      * It will return a HashMap of what it couldn't fit.
      *
@@ -51,7 +50,7 @@ public interface Inventory {
 
     /**
      * Removes the given ItemStacks from the inventory.
-     *
+     * <p />
      * It will try to remove 'as much as possible' from the types and amounts you
      * give as arguments. It will return a HashMap of what it couldn't remove.
      *

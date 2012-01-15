@@ -15,7 +15,7 @@ public abstract class OctaveGenerator {
 
     /**
      * Sets the scale used for all coordinates passed to this generator.
-     *
+     * <p />
      * This is the equivalent to setting each coordinate to the specified value.
      *
      * @param scale New value to scale each coordinate by
@@ -176,8 +176,8 @@ public abstract class OctaveGenerator {
         y *= yScale;
         z *= zScale;
 
-        for (int i = 0; i < octaves.length; i++) {
-            result += octaves[i].noise(x * freq, y * freq, z * freq) * amp;
+        for (NoiseGenerator octave : octaves) {
+            result += octave.noise(x * freq, y * freq, z * freq) * amp;
             max += amp;
             freq *= frequency;
             amp *= amplitude;

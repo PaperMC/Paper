@@ -172,7 +172,7 @@ public class EntityListener implements Listener {
 
     /**
      * Called when an entity creates a portal.
-     * 
+     *
      * @param event Relevant event details
      */
     public void onEntityCreatePortalEvent(EntityCreatePortalEvent event) {}

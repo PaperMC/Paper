@@ -73,7 +73,7 @@ public abstract class ChunkGenerator {
 
     /**
      * Gets a fixed spawn location to use for a given world.
-     *
+     * <p />
      * A null value is returned if a world should not use a fixed spawn point,
      * and will instead attempt to find one randomly.
      *

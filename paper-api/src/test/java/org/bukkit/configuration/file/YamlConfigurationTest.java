@@ -4,13 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bukkit.configuration.InvalidConfigurationException;
-import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.inventory.ItemStack;
 
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-public  class YamlConfigurationTest extends FileConfigurationTest {
+public class YamlConfigurationTest extends FileConfigurationTest {
     @Override
     public YamlConfiguration getConfig() {
         return new YamlConfiguration();
@@ -25,7 +24,7 @@ public  class YamlConfigurationTest extends FileConfigurationTest {
     public String getTestHeaderResult() {
         return "# This is a sample\n# header.\n# \n# Newline above should be commented.\n\n";
     }
-    
+
     @Override
     public String getTestValuesString() {
         return "integer: -2147483648\n" +
@@ -51,12 +50,12 @@ public  class YamlConfigurationTest extends FileConfigurationTest {
     public void testSaveToStringWithIndent() {
         YamlConfiguration config = getConfig();
         config.options().indent(9);
-        
+
         config.set("section.key", 1);
-        
+
         String result = config.saveToString();
         String expected = "section:\n         key: 1\n";
-        
+
         assertEquals(expected, result);
     }
 

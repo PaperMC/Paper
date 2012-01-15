@@ -19,11 +19,11 @@ public class PlayerDeathEvent extends EntityDeathEvent {
     public PlayerDeathEvent(Player player, List<ItemStack> drops, int droppedExp, String deathMessage) {
         this(player, drops, droppedExp, 0, deathMessage);
     }
-    
+
     public PlayerDeathEvent(Player player, List<ItemStack> drops, int droppedExp, int newExp, String deathMessage) {
         this(player, drops, droppedExp, newExp, 0, 0, deathMessage);
     }
-    
+
     public PlayerDeathEvent(Player player, List<ItemStack> drops, int droppedExp, int newExp, int newTotalExp, int newLevel, String deathMessage) {
         super(player, drops, droppedExp);
         this.newExp = newExp;
@@ -73,59 +73,59 @@ public class PlayerDeathEvent extends EntityDeathEvent {
     public void setNewExp(int exp) {
         newExp = exp;
     }
-    
+
     /**
      * Gets the Level the Player should have at respawn.
-     * 
+     *
      * @return New Level of the respawned player
      */
     public int getNewLevel() {
         return newLevel;
     }
-    
+
     /**
      * Sets the Level the Player should have at respawn.
-     * 
+     *
      * @get level New Level of the respawned player
      */
     public void setNewLevel(int level) {
         newLevel = level;
     }
-    
+
     /**
      * Gets the Total EXP the Player should have at respawn.
-     * 
+     *
      * @return New Total EXP of the respawned player
      */
     public int getNewTotalExp() {
         return newTotalExp;
     }
-    
+
     /**
      * Sets the Total EXP the Player should have at respawn.
-     * 
+     *
      * @get totalExp New Total EXP of the respawned player
      */
     public void setNewTotalExp(int totalExp) {
         newTotalExp = totalExp;
     }
-    
+
     /**
      * Gets if the Player should keep all EXP at respawn.
      * <p>
      * This flag overrides other EXP settings
-     * 
+     *
      * @return True if Player should keep all pre-death exp
      */
     public boolean getKeepLevel() {
         return keepLevel;
     }
-    
+
     /**
      * Sets if the Player should keep all EXP at respawn.
      * <p>
      * This overrides all other EXP settings
-     * 
+     *
      * @param keepLevel True to keep all current value levels
      */
     public void setKeepLevel(boolean keepLevel) {

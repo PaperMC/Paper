@@ -186,7 +186,7 @@ public interface Block {
     /**
      * Captures the current state of this block. You may then cast that state
      * into any accepted type, such as Furnace or Sign.
-     *
+     * <p />
      * The returned object will never be updated, and you are not guaranteed that
      * (for example) a sign is still a sign after you capture its state.
      *
@@ -248,7 +248,7 @@ public interface Block {
 
     /**
      * Checks if this block is empty.
-     *
+     * <p />
      * A block is considered empty when {@link #getType()} returns {@link Material#AIR}.
      *
      * @return true if this block is empty
@@ -257,7 +257,7 @@ public interface Block {
 
     /**
      * Checks if this block is liquid.
-     *
+     * <p />
      * A block is considered liquid when {@link #getType()} returns {@link Material#WATER}, {@link Material#STATIONARY_WATER}, {@link Material#LAVA} or {@link Material#STATIONARY_LAVA}.
      *
      * @return true if this block is liquid

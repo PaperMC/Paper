@@ -33,7 +33,7 @@ public final class PluginMessageListenerRegistration {
 
     /**
      * Gets the plugin channel that this registration is about.
-     * 
+     *
      * @return Plugin channel.
      */
     public String getChannel() {

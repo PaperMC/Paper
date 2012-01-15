@@ -168,7 +168,7 @@ public final class SimplePluginManager implements PluginManager {
 
     /**
      * Loads the plugin in the specified file
-     *
+     * <p />
      * File must be valid according to the current enabled Plugin interfaces
      *
      * @param file File containing the plugin to load
@@ -183,7 +183,7 @@ public final class SimplePluginManager implements PluginManager {
 
     /**
      * Loads the plugin in the specified file
-     *
+     * <p />
      * File must be valid according to the current enabled Plugin interfaces
      *
      * @param file File containing the plugin to load
@@ -226,7 +226,7 @@ public final class SimplePluginManager implements PluginManager {
 
     /**
      * Checks if the given plugin is loaded and returns it when applicable
-     *
+     * <p />
      * Please note that the name of the plugin is case-sensitive
      *
      * @param name Name of the plugin to check
@@ -242,7 +242,7 @@ public final class SimplePluginManager implements PluginManager {
 
     /**
      * Checks if the given plugin is enabled or not
-     *
+     * <p />
      * Please note that the name of the plugin is case-sensitive.
      *
      * @param name Name of the plugin to check
@@ -332,7 +332,7 @@ public final class SimplePluginManager implements PluginManager {
      */
     public synchronized void callEvent(Event event) {
         for (RegisteredListener registration : getEventListeners(event.getType())) {
-            if(!registration.getPlugin().isEnabled()) {
+            if (!registration.getPlugin().isEnabled()) {
                 continue;
             }
 

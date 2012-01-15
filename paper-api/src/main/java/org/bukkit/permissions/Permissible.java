@@ -25,7 +25,7 @@ public interface Permissible extends ServerOperator {
 
     /**
      * Gets the value of the specified permission, if set.
-     *
+     * <p />
      * If a permission override is not set on this object, the default value of the permission will be returned.
      *
      * @param name Name of the permission
@@ -35,7 +35,7 @@ public interface Permissible extends ServerOperator {
 
     /**
      * Gets the value of the specified permission, if set.
-     *
+     * <p />
      * If a permission override is not set on this object, the default value of the permission will be returned
      *
      * @param perm Permission to get
@@ -91,7 +91,7 @@ public interface Permissible extends ServerOperator {
 
     /**
      * Recalculates the permissions for this object, if the attachments have changed values.
-     *
+     * <p />
      * This should very rarely need to be called from a plugin.
      */
     public void recalculatePermissions();

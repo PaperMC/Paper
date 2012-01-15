@@ -5,7 +5,7 @@ import org.bukkit.generator.BlockPopulator;
 
 /**
  * Thrown when a new chunk has finished being populated.
- *
+ * <p />
  * If your intent is to populate the chunk using this event, please see {@link BlockPopulator}
  */
 @SuppressWarnings("serial")

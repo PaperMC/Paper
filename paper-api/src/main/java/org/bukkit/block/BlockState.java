@@ -7,7 +7,7 @@ import org.bukkit.material.MaterialData;
 
 /**
  * Represents a captured state of a block, which will not change automatically.
- *
+ * <p />
  * Unlike Block, which only one object can exist per coordinate, BlockState can
  * exist multiple times for any given Block. Note that another plugin may change
  * the state of the block and you will not know, or they may change the block to

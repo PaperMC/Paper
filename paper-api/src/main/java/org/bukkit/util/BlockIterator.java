@@ -259,7 +259,6 @@ public class BlockIterator implements Iterator<Block> {
      *
      * @param loc The location for the start of the ray trace
      * @param yOffset The trace begins vertically offset from the start vector by this value
-     *
      */
 
     public BlockIterator(Location loc, double yOffset) {
@@ -270,7 +269,6 @@ public class BlockIterator implements Iterator<Block> {
      * Constructs the BlockIterator.
      *
      * @param loc The location for the start of the ray trace
-     *
      */
 
     public BlockIterator(Location loc) {
@@ -293,7 +291,6 @@ public class BlockIterator implements Iterator<Block> {
      * Constructs the BlockIterator.
      *
      * @param entity Information from the entity is used to set up the trace
-     *
      */
 
     public BlockIterator(LivingEntity entity) {
@@ -302,7 +299,6 @@ public class BlockIterator implements Iterator<Block> {
 
     /**
      * Returns true if the iteration has more elements
-     *
      */
 
     public boolean hasNext() {

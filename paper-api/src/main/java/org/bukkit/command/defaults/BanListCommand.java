@@ -20,7 +20,7 @@ public class BanListCommand extends VanillaCommand {
         StringBuilder message = new StringBuilder().append(ChatColor.GRAY).append("Ban list:");
 
         int count = 0;
-        for (OfflinePlayer p : Bukkit.getServer().getBannedPlayers()){
+        for (OfflinePlayer p : Bukkit.getServer().getBannedPlayers()) {
             if (count++ > 0) {
                 message.append(", ");
             }

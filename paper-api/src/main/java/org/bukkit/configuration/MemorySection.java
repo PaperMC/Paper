@@ -1,7 +1,5 @@
 package org.bukkit.configuration;
 
-import org.bukkit.configuration.serialization.ConfigurationSerializable;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;

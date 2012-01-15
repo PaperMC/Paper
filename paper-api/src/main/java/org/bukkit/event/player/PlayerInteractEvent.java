@@ -54,7 +54,7 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
     /**
      * Sets the cancellation state of this event. A canceled event will not
      * be executed in the server, but will still pass to other plugins
-     *
+     * <p />
      * Canceling this event will prevent use of food (player won't lose the
      * food item), prevent bows/snowballs/eggs from firing, etc. (player won't
      * lose the ammo)

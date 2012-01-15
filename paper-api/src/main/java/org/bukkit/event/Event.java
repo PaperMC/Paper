@@ -78,7 +78,7 @@ public abstract class Event implements Serializable {
         Highest,
         /**
          * Event is listened to purely for monitoring the outcome of an event.
-         *
+         * <p />
          * No modifications to the event should be made under this priority
          */
         Monitor
@@ -333,7 +333,7 @@ public abstract class Event implements Serializable {
         /**
          * Called when a block is undergoing a universe physics
          * check on whether it can be built
-         *
+         * <p />
          * For example, cacti cannot be built on grass unless overridden here
          *
          * @see org.bukkit.event.block.BlockCanBuildEvent
@@ -355,7 +355,7 @@ public abstract class Event implements Serializable {
         BLOCK_IGNITE(Category.BLOCK),
         /**
          * Called when a block undergoes a physics check
-         *
+         * <p />
          * A physics check is commonly called when an adjacent block changes
          * type
          *
@@ -531,7 +531,7 @@ public abstract class Event implements Serializable {
 
         /**
          * Called when a chunk is loaded
-         *
+         * <p />
          * If a new chunk is being generated for loading, it will call
          * Type.CHUNK_GENERATION and then Type.CHUNK_LOADED upon completion
          *
@@ -546,7 +546,7 @@ public abstract class Event implements Serializable {
         CHUNK_UNLOAD(Category.WORLD),
         /**
          * Called when a newly created chunk has been populated.
-         *
+         * <p />
          * If your intent is to populate the chunk using this event, please see {@link org.bukkit.generator.BlockPopulator}
          *
          * @see org.bukkit.event.world.ChunkPopulateEvent
@@ -605,7 +605,7 @@ public abstract class Event implements Serializable {
          *
          * @see org.bukkit.event.entity.ItemDespawnEvent
          */
-        ITEM_DESPAWN (Category.WORLD),
+        ITEM_DESPAWN(Category.WORLD),
 
         /**
          * ENTITY EVENTS
@@ -667,10 +667,10 @@ public abstract class Event implements Serializable {
         ENTITY_EXPLODE(Category.LIVING_ENTITY),
         /**
          * Called when an entity has made a decision to explode.
-         *
+         * <p />
          * Provides an opportunity to act on the entity, change the explosion radius,
          * or to change the fire-spread flag.
-         *
+         * <p />
          * Canceling the event negates the entity's decision to explode.
          * For EntityCreeper, this resets the fuse but does not kill the Entity.
          * For EntityFireball and EntityTNTPrimed....?

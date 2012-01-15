@@ -91,7 +91,7 @@ public class Permission {
 
     /**
      * Sets the default value of this permission.
-     *
+     * <p />
      * This will not be saved to disk, and is a temporary operation until the server reloads permissions.
      * Changing this default will cause all {@link Permissible}s that contain this permission to recalculate their permissions
      *
@@ -117,7 +117,7 @@ public class Permission {
 
     /**
      * Sets the description of this permission.
-     *
+     * <p />
      * This will not be saved to disk, and is a temporary operation until the server reloads permissions.
      *
      * @param value The new description to set
@@ -132,7 +132,7 @@ public class Permission {
 
     /**
      * Gets a set containing every {@link Permissible} that has this permission.
-     *
+     * <p />
      * This set cannot be modified.
      *
      * @return Set containing permissibles with this permission
@@ -143,7 +143,7 @@ public class Permission {
 
     /**
      * Recalculates all {@link Permissible}s that contain this permission.
-     *
+     * <p />
      * This should be called after modifying the children, and is automatically called after modifying the default value
      */
     public void recalculatePermissibles() {
@@ -158,7 +158,7 @@ public class Permission {
 
     /**
      * Adds this permission to the specified parent permission.
-     *
+     * <p />
      * If the parent permission does not exist, it will be created and registered.
      *
      * @param name Name of the parent permission
@@ -194,7 +194,7 @@ public class Permission {
 
     /**
      * Loads a list of Permissions from a map of data, usually used from retrieval from a yaml file.
-     *
+     * <p />
      * The data may contain a list of name:data, where the data contains the following keys:
      * default: Boolean true or false. If not specified, false.
      * children: Map<String, Boolean> of child permissions. If not specified, empty list.
@@ -220,7 +220,7 @@ public class Permission {
 
     /**
      * Loads a Permission from a map of data, usually used from retrieval from a yaml file.
-     *
+     * <p />
      * The data may contain the following keys:
      * default: Boolean true or false. If not specified, false.
      * children: Map<String, Boolean> of child permissions. If not specified, empty list.
@@ -236,7 +236,7 @@ public class Permission {
 
     /**
      * Loads a Permission from a map of data, usually used from retrieval from a yaml file.
-     *
+     * <p />
      * The data may contain the following keys:
      * default: Boolean true or false. If not specified, false.
      * children: Map<String, Boolean> of child permissions. If not specified, empty list.

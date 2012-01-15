@@ -16,7 +16,7 @@ public class WorldListener implements Listener {
 
     /**
      * Called when a newly created chunk has been populated.
-     *
+     * <p />
      * If your intent is to populate the chunk using this event, please see {@link org.bukkit.generator.BlockPopulator}
      *
      * @param event Relevant event details
@@ -70,7 +70,8 @@ public class WorldListener implements Listener {
      *
      * @param event Relevant event details
      */
-    public void onWorldUnload(WorldUnloadEvent event) { }
+    public void onWorldUnload(WorldUnloadEvent event) {}
+
     /**
      * Event that is called when an organic structure attempts to grow (Sapling -> Tree), (Mushroom -> Huge Mushroom), naturally or using bonemeal.
      *

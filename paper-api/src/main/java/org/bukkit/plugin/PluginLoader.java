@@ -55,7 +55,7 @@ public interface PluginLoader {
 
     /**
      * Enables the specified plugin
-     *
+     * <p />
      * Attempting to enable a plugin that is already enabled will have no effect
      *
      * @param plugin Plugin to enable
@@ -64,7 +64,7 @@ public interface PluginLoader {
 
     /**
      * Disables the specified plugin
-     *
+     * <p />
      * Attempting to disable a plugin that is not enabled will have no effect
      *
      * @param plugin Plugin to disable
