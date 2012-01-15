@@ -167,7 +167,14 @@ public class JavaPluginLoader implements PluginLoader {
             URL[] urls = new URL[1];
 
             urls[0] = file.toURI().toURL();
-            loader = new PluginClassLoader(this, urls, getClass().getClassLoader());
+
+            if (description.getClassLoaderOf() != null) {
+                loader = loaders.get(description.getClassLoaderOf());
+                loader.addURL(urls[0]);
+            } else {
+                loader = new PluginClassLoader(this, urls, getClass().getClassLoader());
+            }
+
             Class<?> jarClass = Class.forName(description.getMain(), true, loader);
             Class<? extends JavaPlugin> plugin = jarClass.asSubclass(JavaPlugin.class);
 

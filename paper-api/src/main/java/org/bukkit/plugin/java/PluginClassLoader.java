@@ -20,6 +20,11 @@ public class PluginClassLoader extends URLClassLoader {
     }
 
     @Override
+    public void addURL(URL url) { // Override for access level!
+        super.addURL(url);
+    }
+
+    @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
         return findClass(name, true);
     }
