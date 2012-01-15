@@ -114,7 +114,7 @@ public class EntityFireball extends Entity {
                 MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
 
                 if (movingobjectposition1 != null) {
-                    double d1 = vec3d.b(movingobjectposition1.f);
+                    double d1 = vec3d.c(movingobjectposition1.f); // CraftBukkit - distance efficiency
 
                     if (d1 < d0 || d0 == 0.0D) {
                         entity = entity1;

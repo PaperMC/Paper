@@ -175,7 +175,7 @@ public class EntityFishingHook extends Entity {
                     MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
 
                     if (movingobjectposition1 != null) {
-                        d5 = vec3d.b(movingobjectposition1.f);
+                        d5 = vec3d.c(movingobjectposition1.f); // CraftBukkit - distance efficiency
                         if (d5 < d4 || d4 == 0.0D) {
                             entity = entity1;
                             d4 = d5;
