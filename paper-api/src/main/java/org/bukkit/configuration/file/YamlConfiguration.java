@@ -27,8 +27,8 @@ public class YamlConfiguration extends FileConfiguration {
     protected static final String COMMENT_PREFIX = "# ";
     protected static final String BLANK_CONFIG = "{}\n";
     private final DumperOptions yamlOptions = new DumperOptions();
-    private final Representer yamlRepresenter = new Representer();
-    private final Yaml yaml = new Yaml(new SafeConstructor(), yamlRepresenter, yamlOptions);
+    private final Representer yamlRepresenter = new YamlRepresenter();
+    private final Yaml yaml = new Yaml(new YamlConstructor(), yamlRepresenter, yamlOptions);
 
     @Override
     public String saveToString() {
@@ -38,10 +38,8 @@ public class YamlConfiguration extends FileConfiguration {
         yamlOptions.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         yamlRepresenter.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
 
-        serializeValues(output, getValues(false));
-
         String header = buildHeader();
-        String dump = yaml.dump(output);
+        String dump = yaml.dump(getValues(false));
 
         if (dump.equals(BLANK_CONFIG)) {
             dump = "";
@@ -56,90 +54,34 @@ public class YamlConfiguration extends FileConfiguration {
             throw new IllegalArgumentException("Contents cannot be null");
         }
 
-        @SuppressWarnings("unchecked")
-        Map<Object, Object> input = (Map<Object, Object>) yaml.load(contents);
-        int size = (input == null) ? 0 : input.size();
-        Map<String, Object> result = new LinkedHashMap<String, Object>(size);
-
-        if (size > 0) {
-            for (Map.Entry<Object, Object> entry : input.entrySet()) {
-                result.put(entry.getKey().toString(), entry.getValue());
-            }
+        Map<Object, Object> input;
+        try {
+            input = (Map<Object, Object>) yaml.load(contents);
+        } catch (YAMLException e) {
+            throw new InvalidConfigurationException(e);
+        } catch (ClassCastException e) {
+            throw new InvalidConfigurationException("Top level is not a Map.");
         }
 
         String header = parseHeader(contents);
-
         if (header.length() > 0) {
             options().header(header);
         }
 
-        deserializeValues(result, this);
+        if (input != null) {
+            convertMapsToSections(input, this);
+        }
     }
 
-    protected void deserializeValues(Map<String, Object> input, ConfigurationSection section) throws InvalidConfigurationException {
-        if (input == null) {
-            return;
-        }
-
-        for (Map.Entry<String, Object> entry : input.entrySet()) {
+    protected void convertMapsToSections(Map<Object, Object> input, ConfigurationSection section) {
+        for (Map.Entry<Object, Object> entry : input.entrySet()) {
+            String key = entry.getKey().toString();
             Object value = entry.getValue();
 
-            if (value instanceof Map) {
-                @SuppressWarnings("unchecked")
-                Map<Object, Object> subinput = (Map<Object, Object>) value;
-                int size = (subinput == null) ? 0 : subinput.size();
-                Map<String, Object> subvalues = new LinkedHashMap<String, Object>(size);
-
-                if (size > 0) {
-                    for (Map.Entry<Object, Object> subentry : subinput.entrySet()) {
-                        subvalues.put(subentry.getKey().toString(), subentry.getValue());
-                    }
-                }
-
-                if (subvalues.containsKey(ConfigurationSerialization.SERIALIZED_TYPE_KEY)) {
-                    try {
-                        ConfigurationSerializable serializable = ConfigurationSerialization.deserializeObject(subvalues);
-                        section.set(entry.getKey(), serializable);
-                    } catch (IllegalArgumentException ex) {
-                        throw new InvalidConfigurationException("Could not deserialize object", ex);
-                    }
-                } else {
-                    ConfigurationSection subsection = section.createSection(entry.getKey());
-                    deserializeValues(subvalues, subsection);
-                }
+            if (value instanceof Map<?, ?>) {
+                convertMapsToSections((Map<Object, Object>) value, section.createSection(key));
             } else {
-                section.set(entry.getKey(), entry.getValue());
-            }
-        }
-    }
-
-    protected void serializeValues(Map<String, Object> output, Map<String, Object> input) {
-        if (input == null) {
-            return;
-        }
-
-        for (Map.Entry<String, Object> entry : input.entrySet()) {
-            Object value = entry.getValue();
-
-            if (value instanceof ConfigurationSection) {
-                ConfigurationSection subsection = (ConfigurationSection) entry.getValue();
-                Map<String, Object> subvalues = new LinkedHashMap<String, Object>();
-
-                serializeValues(subvalues, subsection.getValues(false));
-                value = subvalues;
-            } else if (value instanceof ConfigurationSerializable) {
-                ConfigurationSerializable serializable = (ConfigurationSerializable) value;
-                Map<String, Object> subvalues = new LinkedHashMap<String, Object>();
-                subvalues.put(ConfigurationSerialization.SERIALIZED_TYPE_KEY, ConfigurationSerialization.getAlias(serializable.getClass()));
-
-                serializeValues(subvalues, serializable.serialize());
-                value = subvalues;
-            } else if ((!isPrimitiveWrapper(value)) && (!isNaturallyStorable(value))) {
-                throw new IllegalStateException("Configuration contains non-serializable values, cannot process");
-            }
-
-            if (value != null) {
-                output.put(entry.getKey(), value);
+                section.set(key, value);
             }
         }
     }

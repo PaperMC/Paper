@@ -189,7 +189,7 @@ public class MemorySection implements ConfigurationSection {
             if (value == null) {
                 map.remove(key);
             } else {
-                map.put(key, prepForStorage(value));
+                map.put(key, value);
             }
         } else {
             section.set(key, value);
@@ -905,31 +905,11 @@ public class MemorySection implements ConfigurationSection {
         return val instanceof ConfigurationSection;
     }
 
-    protected Object prepForStorage(Object input) {
-        if (input == null) {
-            throw new IllegalArgumentException("Cannot store null");
-        }
-
-        if (isPrimitiveWrapper(input) || isNaturallyStorable(input)) {
-            return input;
-        } else if (input instanceof ConfigurationSerializable) {
-            return input;
-        }
-
-        throw new IllegalArgumentException("Cannot store " + input + " into " + this + ", unsupported class");
-    }
-
     protected boolean isPrimitiveWrapper(Object input) {
         return input instanceof Integer || input instanceof Boolean ||
                 input instanceof Character || input instanceof Byte ||
                 input instanceof Short || input instanceof Double ||
                 input instanceof Long || input instanceof Float;
-    }
-
-    protected boolean isNaturallyStorable(Object input) {
-        return input instanceof List || input instanceof Iterable ||
-                input instanceof String || input instanceof File ||
-                input instanceof Enum;
     }
 
     protected Object getDefault(String path) {

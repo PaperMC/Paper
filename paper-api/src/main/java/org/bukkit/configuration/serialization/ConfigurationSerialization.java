@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.BlockVector;
 import org.bukkit.util.Vector;
 
@@ -21,6 +22,7 @@ public class ConfigurationSerialization {
     static {
         registerClass(Vector.class);
         registerClass(BlockVector.class);
+        registerClass(ItemStack.class);
     }
 
     protected ConfigurationSerialization(Class<? extends ConfigurationSerializable> clazz) {

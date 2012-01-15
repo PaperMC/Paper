@@ -329,7 +329,7 @@ public class ItemStack implements ConfigurationSerializable {
     public Map<String, Object> serialize() {
         Map<String, Object> result = new LinkedHashMap<String, Object>();
 
-        result.put("type", getType());
+        result.put("type", getType().name());
 
         if (durability != 0) {
             result.put("damage", durability);
@@ -356,18 +356,18 @@ public class ItemStack implements ConfigurationSerializable {
 
     public static ItemStack deserialize(Map<String, Object> args) {
         Material type = Material.getMaterial((String) args.get("type"));
-        short damage = 0;
+        int damage = 0;
         int amount = 1;
 
         if (args.containsKey("damage")) {
-            damage = (Short) args.get("damage");
+            damage = (Integer) args.get("damage");
         }
 
         if (args.containsKey("amount")) {
             amount = (Integer) args.get("amount");
         }
 
-        ItemStack result = new ItemStack(type, amount, damage);
+        ItemStack result = new ItemStack(type, amount, (short) damage);
 
         if (args.containsKey("enchantments")) {
             Object raw = args.get("enchantments");
