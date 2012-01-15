@@ -131,7 +131,7 @@ public class LongHashset extends LongHash {
 
     public long[] popAll() {
         int index = 0;
-        rl.lock();
+        wl.lock();
         try {
             long[] ret = new long[this.count];
             for (long[][] outer : this.values) {
@@ -150,7 +150,7 @@ public class LongHashset extends LongHash {
             count = 0;
             return ret;
         } finally {
-            rl.unlock();
+            wl.unlock();
         }
     }
 
