@@ -78,7 +78,7 @@ public class Explosion {
                                 f1 -= (Block.byId[k1].a(this.source) + 0.3F) * f2;
                             }
 
-                            if (f1 > 0.0F) {
+                            if (f1 > 0.0F && i1 < world.height && i1 >= 0) { // CraftBukkit - Don't wrap explosions
                                 this.blocks.add(new ChunkPosition(l, i1, j1));
                             }
 
