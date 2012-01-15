@@ -538,6 +538,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         getHandle().getFoodData().foodLevel = value;
     }
 
+    public boolean getAllowFlight() {
+        return getHandle().itemInWorldManager.player.abilities.canFly;
+    }
+    
+    public void setAllowFlight(boolean flight) {
+        getHandle().itemInWorldManager.player.abilities.canFly = flight;
+    }
+    
     public Location getBedSpawnLocation() {
         World world = getServer().getWorld(getHandle().spawnWorld);
         if ((world != null) && (getHandle().getBed() != null)) {
