@@ -2,11 +2,13 @@ package org.bukkit;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.bukkit.material.*;
+import org.bukkit.util.Java15Compat;
 
 /**
  * An enum of all material ids accepted by the official server + client
@@ -278,7 +280,7 @@ public enum Material {
 
     private final int id;
     private final Class<? extends MaterialData> data;
-    private static final Map<Integer, Material> lookupId = new HashMap<Integer, Material>();
+    private static Material[] lookupId = new Material[3200];
     private static final Map<String, Material> lookupName = new HashMap<String, Material>();
     private final int maxStack;
     private final short durability;
@@ -419,7 +421,11 @@ public enum Material {
      * @return Material if found, or null
      */
     public static Material getMaterial(final int id) {
-        return lookupId.get(id);
+        if (lookupId.length > id) {
+            return lookupId[id];
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -461,7 +467,12 @@ public enum Material {
 
     static {
         for (Material material : values()) {
-            lookupId.put(material.getId(), material);
+            if (lookupId.length > material.id) {
+                lookupId[material.id] = material;
+            } else {
+                lookupId = Java15Compat.Arrays_copyOfRange(lookupId, 0, material.id + 2);
+                lookupId[material.id] = material;
+            }
             lookupName.put(material.name(), material);
         }
     }
