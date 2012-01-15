@@ -321,6 +321,10 @@ public final class CraftServer implements Server {
         return this.getConfigBoolean("allow-nether", true);
     }
 
+    public boolean getWarnOnOverload() {
+        return this.configuration.getBoolean("settings.warn-on-overload");
+    }
+
     public boolean hasWhitelist() {
         return this.getConfigBoolean("white-list", false);
     }

@@ -412,6 +412,7 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
                     long l = k - i;
 
                     if (l > 2000L) {
+                        if (this.server.getWarnOnOverload()) // CraftBukkit - Adding an option to suppress these warning messages
                         log.warning("Can\'t keep up! Did the system time change, or is the server overloaded?");
                         l = 2000L;
                     }
