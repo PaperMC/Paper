@@ -7,6 +7,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 // CraftBukkit start
+import java.util.Arrays;
+import java.util.HashSet;
 import org.bukkit.ChatColor;
 import org.bukkit.craftbukkit.ChunkCompressionThread;
 import org.bukkit.Location;
@@ -89,6 +91,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     public CraftPlayer getPlayer() {
         return (this.player == null) ? null : (CraftPlayer) this.player.getBukkitEntity();
     }
+    private final static HashSet<Integer> invalidItems = new HashSet<Integer>(Arrays.asList(8, 9, 10, 11, 26, 34, 36, 51, 52, 55, 59, 60, 63, 64, 68, 71, 75, 78, 83, 90, 92, 93, 94, 95));
     // CraftBukkit end
 
     public void a() {
@@ -1012,7 +1015,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             boolean flag = packet107setcreativeslot.a < 0;
             ItemStack itemstack = packet107setcreativeslot.b;
             boolean flag1 = packet107setcreativeslot.a >= 36 && packet107setcreativeslot.a < 36 + PlayerInventory.getHotbarSize();
-            boolean flag2 = itemstack == null || itemstack.id < Item.byId.length && itemstack.id >= 0 && Item.byId[itemstack.id] != null;
+            boolean flag2 = itemstack == null || itemstack.id < Item.byId.length && itemstack.id >= 0 && Item.byId[itemstack.id] != null && !invalidItems.contains(itemstack.id); // CraftBukkit
             boolean flag3 = itemstack == null || itemstack.getData() >= 0 && itemstack.getData() >= 0 && itemstack.count <= 64 && itemstack.count > 0;
 
             if (flag1 && flag2 && flag3) {
