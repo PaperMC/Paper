@@ -169,4 +169,11 @@ public class EntityListener implements Listener {
      * @param event Relevant event details
      */
     public void onItemDespawn(ItemDespawnEvent event) {}
+
+    /**
+     * Called when an entity creates a portal.
+     * 
+     * @param event Relevant event details
+     */
+    public void onEntityCreatePortalEvent(EntityCreatePortalEvent event) {}
 }

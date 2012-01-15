@@ -763,6 +763,13 @@ public class JavaPluginLoader implements PluginLoader {
                 }
             };
 
+        case ENTITY_CREATE_PORTAL:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((EntityListener) listener).onEntityCreatePortalEvent((EntityCreatePortalEvent) event);
+                }
+            };
+
         case CREATURE_SPAWN:
             return new EventExecutor() {
                 public void execute(Listener listener, Event event) {

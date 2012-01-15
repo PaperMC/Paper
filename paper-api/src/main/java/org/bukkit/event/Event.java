@@ -745,6 +745,12 @@ public abstract class Event implements Serializable {
          * @see org.bukkit.event.entity.FoodLevelChangeEvent
          */
         FOOD_LEVEL_CHANGE(Category.LIVING_ENTITY),
+        /**
+         * Called when an entity creates a portal in a world
+         *
+         * @see org.bukkit.event.entity.EntityCreatePortalEvent
+         */
+        ENTITY_CREATE_PORTAL(Category.LIVING_ENTITY),
 
         /**
          * WEATHER EVENTS
