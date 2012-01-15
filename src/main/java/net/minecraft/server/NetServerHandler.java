@@ -724,6 +724,11 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
     public boolean chat(String s) {
         if (!this.player.dead) {
+            if (s.length() == 0) {
+                a.warning(this.player.name + " tried to send an empty message");
+                return false;
+            }
+
             if (s.startsWith("/")) {
                 this.handleCommand(s);
                 return true;
