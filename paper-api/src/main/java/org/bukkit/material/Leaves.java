@@ -38,7 +38,7 @@ public class Leaves extends MaterialData {
      * @return TreeSpecies of this leave
      */
     public TreeSpecies getSpecies() {
-        return TreeSpecies.getByData(getData());
+        return TreeSpecies.getByData((byte) (getData() & 3));
     }
 
     /**
