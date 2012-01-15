@@ -174,6 +174,11 @@ public class ItemStack implements ConfigurationSerializable {
      * @return The maximum you can stack this material to.
      */
     public int getMaxStackSize() {
+        Material material = getType();
+        if (material != null) {
+            return material.getMaxStackSize();
+        }
+
         return -1;
     }
 
