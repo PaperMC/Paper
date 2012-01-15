@@ -747,6 +747,13 @@ public interface World extends PluginMessageRecipient {
     public File getWorldFolder();
 
     /**
+     * Gets the type of this world.
+     *
+     * @return Type of this world.
+     */
+    public WorldType getWorldType();
+
+    /**
      * Represents various map environment types that a world may be
      */
     public enum Environment {
