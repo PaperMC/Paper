@@ -5,6 +5,7 @@ import org.bukkit.event.Listener;
 /**
  * Handles all events fired in relation to weather
  */
+@Deprecated
 public class WeatherListener implements Listener {
     public WeatherListener() {}
 

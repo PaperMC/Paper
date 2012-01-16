@@ -4,6 +4,7 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
+import org.bukkit.event.HandlerList;
 
 /**
  * Called when a block is ignited. If you want to catch when a Player places fire, you need to use {@link BlockPlaceEvent}.
@@ -12,6 +13,7 @@ import org.bukkit.event.Event;
  */
 @SuppressWarnings("serial")
 public class BlockIgniteEvent extends BlockEvent implements Cancellable {
+    private static final HandlerList handlers = new HandlerList();
     private IgniteCause cause;
     private boolean cancel;
     private Player thePlayer;
@@ -70,5 +72,14 @@ public class BlockIgniteEvent extends BlockEvent implements Cancellable {
          * Block ignition caused by lightning.
          */
         LIGHTNING,
+    }
+
+    @Override
+    public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    public static HandlerList getHandlerList() {
+        return handlers;
     }
 }

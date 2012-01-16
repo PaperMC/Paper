@@ -7,7 +7,7 @@ import org.bukkit.event.Event;
  * Represents a painting-related event.
  */
 @SuppressWarnings("serial")
-public class PaintingEvent extends Event {
+public abstract class PaintingEvent extends Event {
 
     protected Painting painting;
 

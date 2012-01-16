@@ -5,6 +5,7 @@ import org.bukkit.event.Listener;
 /**
  * Handles all miscellaneous server events
  */
+@Deprecated
 public class ServerListener implements Listener {
 
     /**

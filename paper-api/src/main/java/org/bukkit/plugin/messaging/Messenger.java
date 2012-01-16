@@ -164,7 +164,7 @@ public interface Messenger {
      * <p>
      * A registration is considered valid if it has not be unregistered and that the plugin
      * is still enabled.
-     * 
+     *
      * @param registration Registration to check.
      * @return True if the registration is valid, otherwise false.
      */

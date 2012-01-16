@@ -2,6 +2,7 @@ package org.bukkit.event.entity;
 
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
+import org.bukkit.event.HandlerList;
 
 /**
  * Called when an entity combusts.
@@ -10,6 +11,7 @@ import org.bukkit.event.Cancellable;
  */
 @SuppressWarnings("serial")
 public class EntityCombustEvent extends EntityEvent implements Cancellable {
+    private static final HandlerList handlers = new HandlerList();
     private int duration;
     private boolean cancel;
 
@@ -43,5 +45,14 @@ public class EntityCombustEvent extends EntityEvent implements Cancellable {
      */
     public void setDuration(int duration) {
         this.duration = duration;
+    }
+
+    @Override
+    public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    public static HandlerList getHandlerList() {
+        return handlers;
     }
 }

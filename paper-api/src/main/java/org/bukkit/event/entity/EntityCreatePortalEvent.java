@@ -5,11 +5,13 @@ import org.bukkit.PortalType;
 import org.bukkit.block.BlockState;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
+import org.bukkit.event.HandlerList;
 
 /**
  * Thrown when a Living Entity creates a portal in a world.
  */
 public class EntityCreatePortalEvent extends EntityEvent implements Cancellable {
+    private static final HandlerList handlers = new HandlerList();
     private List<BlockState> blocks;
     private boolean cancelled = false;
     private PortalType type = PortalType.CUSTOM;
@@ -45,5 +47,14 @@ public class EntityCreatePortalEvent extends EntityEvent implements Cancellable 
      */
     public PortalType getPortalType() {
         return type;
+    }
+
+    @Override
+    public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    public static HandlerList getHandlerList() {
+        return handlers;
     }
 }

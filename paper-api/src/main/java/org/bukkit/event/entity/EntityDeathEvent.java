@@ -2,6 +2,7 @@ package org.bukkit.event.entity;
 
 import java.util.List;
 import org.bukkit.entity.Entity;
+import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -9,6 +10,7 @@ import org.bukkit.inventory.ItemStack;
  */
 @SuppressWarnings("serial")
 public class EntityDeathEvent extends EntityEvent {
+    private static final HandlerList handlers = new HandlerList();
     private List<ItemStack> drops;
     private int dropExp = 0;
 
@@ -53,5 +55,14 @@ public class EntityDeathEvent extends EntityEvent {
      */
     public List<ItemStack> getDrops() {
         return drops;
+    }
+
+    @Override
+    public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    public static HandlerList getHandlerList() {
+        return handlers;
     }
 }

@@ -37,11 +37,11 @@ public class YamlConfigurationTest extends FileConfigurationTest {
             "  x: 12345.67\n" +
             "  y: 64.0\n" +
             "  z: -12345.6789\n" +
-            "list:\n" + 
-            "- 1\n" + 
-            "- 2\n" + 
-            "- 3\n" + 
-            "- 4\n" + 
+            "list:\n" +
+            "- 1\n" +
+            "- 2\n" +
+            "- 3\n" +
+            "- 4\n" +
             "- 5\n" +
             "'42': The Answer\n";
     }

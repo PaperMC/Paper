@@ -2,6 +2,7 @@ package org.bukkit.event.world;
 
 import org.bukkit.World;
 import org.bukkit.Location;
+import org.bukkit.event.HandlerList;
 
 /**
  * An event that is called when a world's spawn changes. The
@@ -9,6 +10,7 @@ import org.bukkit.Location;
  */
 @SuppressWarnings("serial")
 public class SpawnChangeEvent extends WorldEvent {
+    private static final HandlerList handlers = new HandlerList();
     private Location previousLocation;
 
     public SpawnChangeEvent(World world, Location previousLocation) {
@@ -23,5 +25,14 @@ public class SpawnChangeEvent extends WorldEvent {
      */
     public Location getPreviousLocation() {
         return previousLocation;
+    }
+
+    @Override
+    public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    public static HandlerList getHandlerList() {
+        return handlers;
     }
 }

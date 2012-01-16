@@ -1,6 +1,7 @@
 package org.bukkit.event.server;
 
 import org.bukkit.event.Event;
+import org.bukkit.event.HandlerList;
 import org.bukkit.map.MapView;
 
 /**
@@ -8,6 +9,7 @@ import org.bukkit.map.MapView;
  */
 @SuppressWarnings("serial")
 public class MapInitializeEvent extends ServerEvent {
+    private static final HandlerList handlers = new HandlerList();
     private final MapView mapView;
 
     public MapInitializeEvent(MapView mapView) {
@@ -22,5 +24,14 @@ public class MapInitializeEvent extends ServerEvent {
      */
     public MapView getMap() {
         return mapView;
+    }
+
+    @Override
+    public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    public static HandlerList getHandlerList() {
+        return handlers;
     }
 }

@@ -2,9 +2,11 @@ package org.bukkit.event.player;
 
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.bukkit.event.HandlerList;
 
 @SuppressWarnings("serial")
 public class PlayerRespawnEvent extends PlayerEvent {
+    private static final HandlerList handlers = new HandlerList();
     private Location respawnLocation;
     private boolean isBedSpawn;
 
@@ -39,5 +41,14 @@ public class PlayerRespawnEvent extends PlayerEvent {
      */
     public boolean isBedSpawn() {
         return this.isBedSpawn;
+    }
+
+    @Override
+    public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    public static HandlerList getHandlerList() {
+        return handlers;
     }
 }

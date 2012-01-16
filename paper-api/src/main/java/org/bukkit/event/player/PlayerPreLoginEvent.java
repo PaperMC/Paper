@@ -2,12 +2,14 @@ package org.bukkit.event.player;
 
 import java.net.InetAddress;
 import org.bukkit.event.Event;
+import org.bukkit.event.HandlerList;
 
 /**
  * Stores details for players attempting to log in
  */
 @SuppressWarnings("serial")
 public class PlayerPreLoginEvent extends Event {
+    private static final HandlerList handlers = new HandlerList();
     private Result result;
     private String message;
     private String name;
@@ -92,6 +94,15 @@ public class PlayerPreLoginEvent extends Event {
      */
     public InetAddress getAddress() {
         return ipAddress;
+    }
+
+    @Override
+    public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    public static HandlerList getHandlerList() {
+        return handlers;
     }
 
     /**

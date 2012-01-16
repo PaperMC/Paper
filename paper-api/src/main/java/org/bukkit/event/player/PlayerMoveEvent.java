@@ -4,12 +4,14 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
+import org.bukkit.event.HandlerList;
 
 /**
  * Holds information for player movement events
  */
 @SuppressWarnings("serial")
 public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
+    private static final HandlerList handlers = new HandlerList();
     private boolean cancel = false;
     private Location from;
     private Location to;
@@ -88,5 +90,14 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      */
     public void setTo(Location to) {
         this.to = to;
+    }
+
+    @Override
+    public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    public static HandlerList getHandlerList() {
+        return handlers;
     }
 }

@@ -5,6 +5,7 @@ import org.bukkit.event.Listener;
 /**
  * Handles all World related events
  */
+@Deprecated
 public class WorldListener implements Listener {
 
     /**

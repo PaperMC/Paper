@@ -3,12 +3,14 @@ package org.bukkit.event.player;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
+import org.bukkit.event.HandlerList;
 
 /**
  * This event is fired when the player is almost about to enter the bed.
  */
 @SuppressWarnings("serial")
 public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
+    private static final HandlerList handlers = new HandlerList();
 
     private boolean cancel = false;
     private Block bed;
@@ -33,5 +35,14 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
      */
     public Block getBed() {
         return bed;
+    }
+
+    @Override
+    public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    public static HandlerList getHandlerList() {
+        return handlers;
     }
 }

@@ -2,12 +2,14 @@ package org.bukkit.event.player;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
+import org.bukkit.event.HandlerList;
 
 /**
  * Called when a player gets kicked from the server
  */
 @SuppressWarnings("serial")
 public class PlayerKickEvent extends PlayerEvent implements Cancellable {
+    private static final HandlerList handlers = new HandlerList();
     private String leaveMessage;
     private String kickReason;
     private Boolean cancel;
@@ -61,5 +63,14 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
      */
     public void setLeaveMessage(String leaveMessage) {
         this.leaveMessage = leaveMessage;
+    }
+
+    @Override
+    public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    public static HandlerList getHandlerList() {
+        return handlers;
     }
 }

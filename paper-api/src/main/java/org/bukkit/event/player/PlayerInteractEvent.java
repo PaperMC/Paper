@@ -2,6 +2,7 @@ package org.bukkit.event.player;
 
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -13,6 +14,7 @@ import org.bukkit.event.block.Action;
  */
 @SuppressWarnings("serial")
 public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
+    private static final HandlerList handlers = new HandlerList();
     protected ItemStack item;
     protected Action action;
     protected Block blockClicked;
@@ -172,5 +174,14 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
      */
     public void setUseItemInHand(Result useItemInHand) {
         this.useItemInHand = useItemInHand;
+    }
+
+    @Override
+    public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    public static HandlerList getHandlerList() {
+        return handlers;
     }
 }

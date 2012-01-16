@@ -3,12 +3,14 @@ package org.bukkit.event.player;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.entity.Entity;
+import org.bukkit.event.HandlerList;
 
 /**
  * Thrown when a player is fishing
  */
 @SuppressWarnings("serial")
 public class PlayerFishEvent extends PlayerEvent implements Cancellable {
+    private static final HandlerList handlers = new HandlerList();
     private final Entity entity;
     private boolean cancel = false;
     private State state;
@@ -43,6 +45,15 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
      */
     public State getState() {
         return state;
+    }
+
+    @Override
+    public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    public static HandlerList getHandlerList() {
+        return handlers;
     }
 
     /**

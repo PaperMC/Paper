@@ -3,12 +3,14 @@ package org.bukkit.event.entity;
 import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
+import org.bukkit.event.HandlerList;
 
 /**
  * Thrown when a LivingEntity is tamed
  */
 @SuppressWarnings("serial")
 public class EntityTameEvent extends EntityEvent implements Cancellable {
+    private static final HandlerList handlers = new HandlerList();
     private boolean cancelled;
     private AnimalTamer owner;
 
@@ -32,5 +34,14 @@ public class EntityTameEvent extends EntityEvent implements Cancellable {
      */
     public AnimalTamer getOwner() {
         return owner;
+    }
+
+    @Override
+    public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    public static HandlerList getHandlerList() {
+        return handlers;
     }
 }

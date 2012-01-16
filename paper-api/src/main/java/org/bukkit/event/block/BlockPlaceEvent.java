@@ -4,6 +4,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
+import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -13,6 +14,7 @@ import org.bukkit.inventory.ItemStack;
  */
 @SuppressWarnings("serial")
 public class BlockPlaceEvent extends BlockEvent implements Cancellable {
+    private static final HandlerList handlers = new HandlerList();
     protected boolean cancel;
     protected boolean canBuild;
     protected Block placedAgainst;
@@ -105,5 +107,14 @@ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
      */
     public void setBuild(boolean canBuild) {
         this.canBuild = canBuild;
+    }
+
+    @Override
+    public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    public static HandlerList getHandlerList() {
+        return handlers;
     }
 }

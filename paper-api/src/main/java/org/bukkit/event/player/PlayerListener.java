@@ -5,6 +5,7 @@ import org.bukkit.event.Listener;
 /**
  * Handles all events thrown in relation to a Player
  */
+@Deprecated
 public class PlayerListener implements Listener {
     public PlayerListener() {}
 
