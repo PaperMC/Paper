@@ -45,7 +45,6 @@ public abstract class JavaPlugin implements Plugin {
     private EbeanServer ebean = null;
     private FileConfiguration newConfig = null;
     private File configFile = null;
-    private long[] timings = new long[Event.Type.values().length];
     private PluginLogger logger = null;
 
     public JavaPlugin() {}
@@ -372,18 +371,6 @@ public abstract class JavaPlugin implements Plugin {
             logger = new PluginLogger(this);
         }
         return logger;
-    }
-
-    public long getTiming(Event.Type type) {
-        return timings[type.ordinal()];
-    }
-
-    public void incTiming(Event.Type type, long delta) {
-        timings[type.ordinal()] += delta;
-    }
-
-    public void resetTimings() {
-        timings = new long[Event.Type.values().length];
     }
 
     @Override

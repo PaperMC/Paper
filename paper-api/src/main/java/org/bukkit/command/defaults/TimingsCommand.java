@@ -4,11 +4,16 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.Event;
+import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.RegisteredListener;
+import org.bukkit.plugin.TimedRegisteredListener;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 public class TimingsCommand extends Command {
     public TimingsCommand(String name) {
@@ -22,11 +27,21 @@ public class TimingsCommand extends Command {
     public boolean execute(CommandSender sender, String currentAlias, String[] args) {
         if (!testPermission(sender)) return true;
         if (args.length != 1) return false;
+        if (!sender.getServer().getPluginManager().useTimings()) {
+            sender.sendMessage("Please enable timings by setting \"settings.plugin-profiling\" to true in bukkit.yml");
+            return true;
+        }
 
         boolean seperate = "seperate".equals(args[0]);
         if ("reset".equals(args[0])) {
-            for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
-                plugin.resetTimings();
+            for (HandlerList handlerList : HandlerList.getHandlerLists()) {
+                for (RegisteredListener[] listeners : handlerList.getRegisteredListeners()) {
+                    for (RegisteredListener listener : listeners) {
+                        if (listener instanceof TimedRegisteredListener) {
+                            ((TimedRegisteredListener)listener).reset();
+                        }
+                    }
+                }
             }
             sender.sendMessage("Timings reset");
         } else if ("merged".equals(args[0]) || seperate) {
@@ -53,11 +68,18 @@ public class TimingsCommand extends Command {
                         fileTimings.println("Plugin " + pluginIdx);
                     }
                     else fileTimings.println(plugin.getDescription().getFullName());
-                    for (Event.Type type : Event.Type.values()) {
-                        long time = plugin.getTiming(type);
-                        totalTime += time;
-                        if (time > 0) {
-                            fileTimings.println("    " + type.name() + " " + time);
+                    for (RegisteredListener listener : HandlerList.getRegisteredListeners(plugin)) {
+                        if (listener instanceof TimedRegisteredListener) {
+                            TimedRegisteredListener trl = (TimedRegisteredListener) listener;
+                            long time = trl.getTotalTime();
+                            int count = trl.getCount();
+                            if (count == 0) continue;
+                            long avg = time / count;
+                            totalTime += time;
+                            Event event = trl.getEvent();
+                            if (count > 0 && event != null) {
+                                fileTimings.println("    " + event.getClass().getSimpleName() + (trl.hasMultiple() ? " (and others)" : "") + " Time: " + time + " Count: " + count + " Avg: " + avg);
+                            }
                         }
                     }
                     fileTimings.println("    Total time " + totalTime + " (" + totalTime / 1000000000 + "s)");

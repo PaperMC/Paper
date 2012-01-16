@@ -158,10 +158,4 @@ public interface Plugin extends CommandExecutor {
      * @return Logger associated with this server
      */
     public Logger getLogger();
-
-    public long getTiming(Event.Type type);
-
-    public void incTiming(Event.Type type, long delta);
-
-    public void resetTimings();
 }

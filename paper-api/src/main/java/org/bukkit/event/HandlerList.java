@@ -132,4 +132,22 @@ public class HandlerList {
     public RegisteredListener[][] getRegisteredListeners() {
         return handlers;
     }
+
+    public static ArrayList<RegisteredListener> getRegisteredListeners(Plugin plugin) {
+        ArrayList<RegisteredListener> listeners = new ArrayList<RegisteredListener>();
+        for (HandlerList h : alllists) {
+            for (List<RegisteredListener> list : h.handlerslots.values()) {
+                for (RegisteredListener listener : list) {
+                    if (listener.getPlugin().equals(plugin)) {
+                        listeners.add(listener);
+                    }
+                }
+            }
+        }
+        return listeners;
+    }
+
+    public static ArrayList<HandlerList> getHandlerLists() {
+        return (ArrayList<HandlerList>) alllists.clone();
+    }
 }

@@ -992,6 +992,7 @@ public class JavaPluginLoader implements PluginLoader {
     }
 
     public Map<Class<? extends Event>, Set<RegisteredListener>> createRegisteredListeners(Listener listener, final Plugin plugin) {
+        boolean useTimings = server.getPluginManager().useTimings();
         Map<Class<? extends Event>, Set<RegisteredListener>> ret = new HashMap<Class<? extends Event>, Set<RegisteredListener>>();
         Method[] methods;
         try {
@@ -1016,7 +1017,7 @@ public class JavaPluginLoader implements PluginLoader {
                 eventSet = new HashSet<RegisteredListener>();
                 ret.put(eventClass, eventSet);
             }
-            eventSet.add(new RegisteredListener(listener, new EventExecutor() {
+            EventExecutor executor = new EventExecutor() {
                 public void execute(Listener listener, Event event) throws EventException {
                     try {
                         if (!eventClass.isAssignableFrom(event.getClass())) {
@@ -1027,7 +1028,12 @@ public class JavaPluginLoader implements PluginLoader {
                         throw new EventException(t);
                     }
                 }
-            }, eh.priority(), plugin));
+            };
+            if (useTimings) {
+                eventSet.add(new TimedRegisteredListener(listener, executor, eh.priority(), plugin));
+            } else {
+                eventSet.add(new RegisteredListener(listener, executor, eh.priority(), plugin));
+            }
         }
         return ret;
     }
