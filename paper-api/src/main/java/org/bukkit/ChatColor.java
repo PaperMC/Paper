@@ -11,7 +11,7 @@ public enum ChatColor {
     /**
      * Represents black
      */
-    BLACK('0', 0x01),
+    BLACK('0', 0x00),
     /**
      * Represents dark blue
      */
