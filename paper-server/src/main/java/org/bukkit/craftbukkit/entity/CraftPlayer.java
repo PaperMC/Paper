@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import net.minecraft.server.ChunkCoordinates;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.Packet131ItemData;
@@ -545,18 +546,22 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public boolean getAllowFlight() {
         return getHandle().itemInWorldManager.player.abilities.canFly;
     }
-    
+
     public void setAllowFlight(boolean flight) {
         getHandle().itemInWorldManager.player.abilities.canFly = flight;
     }
-    
+
     public Location getBedSpawnLocation() {
         World world = getServer().getWorld(getHandle().spawnWorld);
         if ((world != null) && (getHandle().getBed() != null)) {
             return new Location(world, getHandle().getBed().x, getHandle().getBed().y, getHandle().getBed().z);
-        } else {
-            return null;
         }
+        return null;
+    }
+
+    public void setBedSpawnLocation(Location location) {
+        getHandle().a(new ChunkCoordinates(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
+        getHandle().spawnWorld = location.getWorld().getName();
     }
 
     public Map<String, Object> serialize() {
