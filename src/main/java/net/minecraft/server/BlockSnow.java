@@ -45,7 +45,8 @@ public class BlockSnow extends Block {
     private boolean g(World world, int i, int j, int k) {
         if (!this.canPlace(world, i, j, k)) {
             this.b(world, i, j, k, world.getData(i, j, k), 0);
-            world.setTypeId(i, j, k, 0);
+            world.setRawTypeId(i, j, k, 0); // CraftBukkit
+            world.notify(i, j, k); // CraftBukkit - Notfiy clients of the reversion
             return false;
         } else {
             return true;
