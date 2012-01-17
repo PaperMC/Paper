@@ -605,4 +605,8 @@ public class TestPlayer implements Player {
     public void setAllowFlight(boolean flight) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
+
+    public void setBedSpawnLocation(Location location) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }

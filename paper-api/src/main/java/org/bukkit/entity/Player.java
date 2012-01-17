@@ -471,6 +471,13 @@ public interface Player extends HumanEntity, CommandSender, OfflinePlayer, Plugi
     public Location getBedSpawnLocation();
 
     /**
+     * Sets the Location where the player will spawn at their bed.
+     *
+     * @param location where to set the respawn location
+     */
+    public void setBedSpawnLocation(Location location);
+
+    /**
      * Determines if the Player is allowed to fly via jump key double-tap like in creative mode.
      *
      * @return True if the player is allowed to fly.
