@@ -312,6 +312,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         // Check if the fromWorld and toWorld are the same.
         if (fromWorld == toWorld) {
+            // Close any foreign inventory
+            if (getHandle().activeContainer != getHandle().defaultContainer){
+                getHandle().closeInventory();
+            }
             entity.netServerHandler.teleport(to);
         } else {
             server.getHandle().moveToWorld(entity, toWorld.dimension, true, to);
