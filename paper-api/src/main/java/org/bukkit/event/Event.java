@@ -793,6 +793,12 @@ public abstract class Event implements Serializable {
          * @see org.bukkit.event.entity.EntityCreatePortalEvent
          */
         ENTITY_CREATE_PORTAL(Category.LIVING_ENTITY, EntityCreatePortalEvent.class),
+        /**
+         * Called when a LivingEntity shoots a bow firing an arrow
+         *
+         * @see org.bukkit.event.entity.EntityShootBowEvent
+         */
+        ENTITY_SHOOT_BOW(Category.LIVING_ENTITY, EntityShootBowEvent.class),
 
         /**
          * WEATHER EVENTS

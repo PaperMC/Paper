@@ -158,6 +158,13 @@ public class EntityListener implements Listener {
     public void onFoodLevelChange(FoodLevelChangeEvent event) {}
 
     /**
+     * Called when a LivingEntity shoots a bow firing an arrow
+     *
+     * @param event Relevant event details
+     */
+    public void onEntityShootBow(EntityShootBowEvent event) {}
+
+    /**
      * Called when a Slime splits into smaller Slimes upon death
      *
      * @param event Relevant event details
