@@ -7,6 +7,7 @@ import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.WorldNBTStorage;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Server;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
@@ -184,5 +185,17 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
 
     public boolean hasPlayedBefore() {
         return getData() != null;
+    }
+
+    public Location getBedSpawnLocation() {
+        NBTTagCompound data = getData();
+        if (data.hasKey("SpawnX") && data.hasKey("SpawnY") && data.hasKey("SpawnZ")) {
+            String spawnWorld = data.getString("SpawnWorld");
+            if (spawnWorld.equals("")) {
+                spawnWorld = server.getWorlds().get(0).getName();
+            }
+            return new Location(server.getWorld(spawnWorld), data.getInt("SpawnX"), data.getInt("SpawnY"), data.getInt("SpawnZ"));
+        }
+        return null;
     }
 }
