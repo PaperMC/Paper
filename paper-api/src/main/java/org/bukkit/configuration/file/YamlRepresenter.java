@@ -19,7 +19,6 @@ public class YamlRepresenter extends Representer {
 
     private class RepresentConfigurationSection extends RepresentMap {
         @Override
-        @SuppressWarnings("unchecked")
         public Node representData(Object data) {
             return super.representData(((ConfigurationSection) data).getValues(false));
         }
@@ -27,7 +26,6 @@ public class YamlRepresenter extends Representer {
 
     private class RepresentConfigurationSerializable extends RepresentMap {
         @Override
-        @SuppressWarnings("unchecked")
         public Node representData(Object data) {
             ConfigurationSerializable serializable = (ConfigurationSerializable) data;
             Map<String, Object> values = new LinkedHashMap<String, Object>();

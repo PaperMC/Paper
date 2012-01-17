@@ -12,6 +12,7 @@ import org.bukkit.entity.Entity;
  * <li>Snow formed by a {@link org.bukkit.entity.Snowman}.</li>
  * </ul>
  */
+@SuppressWarnings("serial")
 public class EntityBlockFormEvent extends BlockFormEvent {
     private Entity entity;
 

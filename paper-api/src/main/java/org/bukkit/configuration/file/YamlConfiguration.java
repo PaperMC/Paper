@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -29,8 +28,6 @@ public class YamlConfiguration extends FileConfiguration {
 
     @Override
     public String saveToString() {
-        Map<String, Object> output = new LinkedHashMap<String, Object>();
-
         yamlOptions.setIndent(options().indent());
         yamlOptions.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         yamlRepresenter.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
@@ -45,6 +42,7 @@ public class YamlConfiguration extends FileConfiguration {
         return header + dump;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void loadFromString(String contents) throws InvalidConfigurationException {
         if (contents == null) {
@@ -70,6 +68,7 @@ public class YamlConfiguration extends FileConfiguration {
         }
     }
 
+    @SuppressWarnings("unchecked")
     protected void convertMapsToSections(Map<Object, Object> input, ConfigurationSection section) {
         for (Map.Entry<Object, Object> entry : input.entrySet()) {
             String key = entry.getKey().toString();
