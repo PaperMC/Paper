@@ -50,7 +50,12 @@ public class BlockRedstoneTorch extends BlockTorch {
         if (world.getData(i, j, k) == 0) {
             super.onPlace(world, i, j, k);
         }
+    // CraftBukkit start - onPlace(World, int, int, int) -> postPlace(World, int, int, int, int)
+    }
 
+    public void postPlace(World world, int i, int j, int k, int l) {
+        super.postPlace(world, i, j, k, l);
+        // CraftBukkit end
         if (this.isOn) {
             world.applyPhysics(i, j - 1, k, this.id);
             world.applyPhysics(i, j + 1, k, this.id);

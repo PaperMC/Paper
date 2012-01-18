@@ -8,7 +8,7 @@ public class BlockDragonEgg extends Block {
         super(i, j, Material.DRAGON_EGG);
     }
 
-    public void onPlace(World world, int i, int j, int k) {
+    public void postPlace(World world, int i, int j, int k, int l) { // CraftBukkit - onPlace(World, int, int, int) -> postPlace(World, int, int, int, int)
         world.c(i, j, k, this.id, this.d());
     }
 

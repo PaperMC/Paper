@@ -195,8 +195,8 @@ public class BlockRedstoneWire extends Block {
         }
     }
 
-    public void onPlace(World world, int i, int j, int k) {
-        super.onPlace(world, i, j, k);
+    public void postPlace(World world, int i, int j, int k, int l) { // CraftBukkit - onPlace(World, int, int, int) -> postPlace(World, int, int, int, int)
+        super.postPlace(world, i, j, k, l); // CraftBukkit - onPlace(World, int, int, int) -> postPlace(World, int, int, int, int)
         if (!world.isStatic) {
             this.g(world, i, j, k);
             world.applyPhysics(i, j + 1, k, this.id);

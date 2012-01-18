@@ -77,11 +77,11 @@ public class BlockMinecartTrack extends Block {
         return world.e(i, j - 1, k);
     }
 
-    public void onPlace(World world, int i, int j, int k) {
+    public void postPlace(World world, int i, int j, int k, int l) { // CraftBukkit - onPlace(World, int, int, int) -> postPlace(World, int, int, int, int)
         if (!world.isStatic) {
             this.a(world, i, j, k, true);
             if (this.id == Block.GOLDEN_RAIL.id) {
-                //this.doPhysics(world, i, j, k, this.id); // CraftBukkit - Fix dupe with pistons
+                this.doPhysics(world, i, j, k, this.id); // CraftBukkit - Fix dupe with pistons
             }
         }
     }

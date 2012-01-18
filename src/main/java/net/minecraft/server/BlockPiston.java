@@ -53,7 +53,7 @@ public class BlockPiston extends Block {
         }
     }
 
-    public void onPlace(World world, int i, int j, int k) {
+    public void postPlace(World world, int i, int j, int k, int l) { // CraftBukkit
         if (!world.isStatic && world.getTileEntity(i, j, k) == null && !b) {
             this.g(world, i, j, k);
         }
