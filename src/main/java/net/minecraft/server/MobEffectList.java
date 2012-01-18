@@ -81,7 +81,7 @@ public class MobEffectList {
         } else if (this.id == POISON.id) {
             if (entityliving.getHealth() > 1) {
                 // CraftBukkit start
-                EntityDamageEvent event = CraftEventFactory.callEntityDamageEvent(null, (EntityLiving) entityliving.getBukkitEntity(), DamageCause.POISON, 1);
+                EntityDamageEvent event = CraftEventFactory.callEntityDamageEvent(null, entityliving, DamageCause.POISON, 1);
                 Bukkit.getPluginManager().callEvent(event);
 
                 if (!event.isCancelled() && event.getDamage() > 0) {
@@ -94,7 +94,7 @@ public class MobEffectList {
         } else if ((this.id != HEAL.id || entityliving.aE()) && (this.id != HARM.id || !entityliving.aE())) {
             if (this.id == HARM.id && !entityliving.aE() || this.id == HEAL.id && entityliving.aE()) {
                 // CraftBukkit start
-                EntityDamageEvent event = CraftEventFactory.callEntityDamageEvent(null, (EntityLiving) entityliving.getBukkitEntity(), DamageCause.MAGIC, 6 << i);
+                EntityDamageEvent event = CraftEventFactory.callEntityDamageEvent(null, entityliving, DamageCause.MAGIC, 6 << i);
                 Bukkit.getPluginManager().callEvent(event);
 
                 if (!event.isCancelled() && event.getDamage() > 0) {
