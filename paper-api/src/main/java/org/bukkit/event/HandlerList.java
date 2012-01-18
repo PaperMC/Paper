@@ -50,7 +50,9 @@ public class HandlerList {
 
     public static void unregisterAll() {
         for (HandlerList h : alllists) {
-            h.handlerslots.clear();
+            for (List<RegisteredListener> list : h.handlerslots.values()) {
+                list.clear();
+            }
             h.baked = false;
         }
     }

@@ -11,5 +11,5 @@ public @interface EventHandler {
 
     Class<? extends Event> event();
 
-    EventPriority priority();
+    EventPriority priority() default EventPriority.NORMAL;
 }
