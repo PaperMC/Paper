@@ -37,6 +37,8 @@ import org.bukkit.Statistic;
 import org.bukkit.World;
 import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
+import org.bukkit.conversations.Conversation;
+import org.bukkit.craftbukkit.conversations.ConversationTracker;
 import org.bukkit.craftbukkit.CraftEffect;
 import org.bukkit.craftbukkit.CraftOfflinePlayer;
 import org.bukkit.craftbukkit.CraftServer;
@@ -59,6 +61,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     private long firstPlayed = 0;
     private long lastPlayed = 0;
     private boolean hasPlayedBefore = false;
+    private ConversationTracker conversationTracker = new ConversationTracker();
     private Set<String> channels = new HashSet<String>();
     private Map<String, Player> hiddenPlayers = new MapMaker().softValues().makeMap();
     private int hash = 0;
@@ -133,9 +136,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void sendMessage(String message) {
-        this.sendRawMessage(message);
+        if (!conversationTracker.isConversingModaly()) {
+            this.sendRawMessage(message);
+        }
     }
-    
+
     public void sendMessage(String[] messages) {
         for (String message : messages) {
             sendMessage(message);
@@ -692,6 +697,22 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         data.setLong("lastPlayed", System.currentTimeMillis());
     }
 
+    public boolean beginConversation(Conversation conversation) {
+        return conversationTracker.beginConversation(conversation);
+    }
+
+    public void abandonConversation(Conversation conversation) {
+        conversationTracker.abandonConversation(conversation);
+    }
+
+    public void acceptConversationInput(String input) {
+        conversationTracker.acceptConversationInput(input);
+    }
+
+    public boolean isConversing() {
+        return conversationTracker.isConversing();
+    }
+
     public void sendPluginMessage(Plugin source, String channel, byte[] message) {
         StandardMessenger.validatePluginMessage(server.getMessenger(), source, channel, message);
 
@@ -772,5 +793,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
         getHandle().setContainerData(container, prop.getId(), value);
         return true;
+    }
+
+    public void disconnect(String reason) {
+        conversationTracker.abandonAllConversations();
     }
 }

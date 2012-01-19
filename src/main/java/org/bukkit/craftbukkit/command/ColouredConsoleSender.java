@@ -42,16 +42,17 @@ public class ColouredConsoleSender extends CraftConsoleCommandSender {
     @Override
     public void sendMessage(String message) {
         if (terminal.isANSISupported()) {
-            String result = message;
-
-            for (ChatColor color : colors) {
-                if (replacements.containsKey(color)) {
-                    result = result.replaceAll(color.toString(), replacements.get(color));
-                } else {
-                    result = result.replaceAll(color.toString(), "");
+            if (!conversationTracker.isConversingModaly()) {
+                String result = message;
+                for (ChatColor color : colors) {
+                    if (replacements.containsKey(color)) {
+                        result = result.replaceAll(color.toString(), replacements.get(color));
+                    } else {
+                        result = result.replaceAll(color.toString(), "");
+                    }
                 }
+                System.out.println(result + ANSICodes.attrib(0));
             }
-            System.out.println(result + ANSICodes.attrib(0));
         } else {
             super.sendMessage(message);
         }

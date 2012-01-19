@@ -14,6 +14,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.craftbukkit.ChunkCompressionThread;
 import org.bukkit.Location;
 import org.bukkit.command.CommandException;
+import org.bukkit.conversations.Conversable;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -145,6 +146,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             if (leaveMessage != null) {
                 this.minecraftServer.serverConfigurationManager.sendAll(new Packet3Chat(leaveMessage));
             }
+            getPlayer().disconnect(s);
             // CraftBukkit end
 
             this.minecraftServer.serverConfigurationManager.disconnect(this.player);
@@ -750,6 +752,11 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 return false;
             }
 
+            if (getPlayer().isConversing()) {
+                getPlayer().acceptConversationInput(s);
+                return true;
+            }
+
             if (s.startsWith("/")) {
                 this.handleCommand(s);
                 return true;
@@ -801,7 +808,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         }
         // CraftBukkit end
 
-        /* // CraftBukkit start - No longer needed as we have already handled it in server.dispatchCommand above.
+        /* // CraftBukkit start - No longer needed as we have already handled it in server.dispatchServerCommand above.
         if (s.toLowerCase().startsWith("/me ")) {
             s = "* " + this.player.name + " " + s.substring(s.indexOf(" ")).trim();
             logger.info(s);
@@ -911,6 +918,9 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     }
 
     public void a(Packet255KickDisconnect packet255kickdisconnect) {
+        // CraftBukkit start
+        getPlayer().disconnect("disconnect.quitting");
+        // CraftBukkit end
         this.networkManager.a("disconnect.quitting", new Object[0]);
     }
 

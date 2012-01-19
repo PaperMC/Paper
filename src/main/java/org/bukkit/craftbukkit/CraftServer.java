@@ -58,6 +58,7 @@ import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
+import org.bukkit.conversations.Conversable;
 import org.bukkit.craftbukkit.help.SimpleHelpMap;
 import org.bukkit.craftbukkit.inventory.CraftFurnaceRecipe;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCustom;
@@ -443,7 +444,15 @@ public final class CraftServer implements Server {
     }
 
     // NOTE: Should only be called from MinecraftServer.b()
-    public boolean dispatchCommand(CommandSender sender, ServerCommand serverCommand) {
+    public boolean dispatchServerCommand(CommandSender sender, ServerCommand serverCommand) {
+        if (sender instanceof Conversable) {
+            Conversable conversable = (Conversable)sender;
+
+            if (conversable.isConversing()) {
+                conversable.acceptConversationInput(serverCommand.command);
+                return true;
+            }
+        }
         return dispatchCommand(sender, serverCommand.command);
     }
 
