@@ -49,7 +49,6 @@ public interface Player extends HumanEntity, CommandSender, OfflinePlayer, Plugi
      * Sets the name that is shown on the in-game player list.
      * <p>
      * The name cannot be longer than 16 characters, but {@link ChatColor} is supported.
-     * Colors do not count towards the length limitation.
      * <p>
      * If the value is null, the name will be identical to {@link #getName()}.
      * <p>
