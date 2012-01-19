@@ -57,6 +57,7 @@ public abstract class EntityHuman extends EntityLiving {
     protected boolean J = false;
     public float K;
     public PlayerAbilities abilities = new PlayerAbilities();
+    public int oldLevel = -1; // CraftBukkit
     public int expLevel;
     public int expTotal;
     public float exp;

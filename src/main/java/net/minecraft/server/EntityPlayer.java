@@ -319,6 +319,17 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             this.lastSentExp = this.expTotal;
             this.netServerHandler.sendPacket(new Packet43SetExperience(this.exp, this.expTotal, this.expLevel));
         }
+
+        // CraftBukkit start
+        if (this.oldLevel == -1) {
+            this.oldLevel = this.expLevel;
+        }
+
+        if (this.oldLevel != this.expLevel) {
+            CraftEventFactory.callPlayerLevelChangeEvent(this.world.getServer().getPlayer((EntityPlayer) this), this.oldLevel, this.expLevel);
+            this.oldLevel = this.expLevel;
+        }
+        // CraftBukkit end
     }
 
     public void e(int i) {

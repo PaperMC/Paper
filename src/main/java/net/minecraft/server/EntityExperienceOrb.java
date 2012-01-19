@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
+
 public class EntityExperienceOrb extends Entity {
 
     public int a;
@@ -130,7 +132,7 @@ public class EntityExperienceOrb extends Entity {
                 entityhuman.x = 2;
                 this.world.makeSound(this, "random.orb", 0.1F, 0.5F * ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.8F));
                 entityhuman.receive(this, 1);
-                entityhuman.giveExp(this.value);
+                entityhuman.giveExp(CraftEventFactory.callPlayerExpChangeEvent(entityhuman, this.value).getAmount()); // CraftBukkit - this.value to event.getAmount()
                 this.die();
             }
         }
