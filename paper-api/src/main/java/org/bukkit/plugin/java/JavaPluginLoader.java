@@ -18,9 +18,6 @@ import org.bukkit.Server;
 
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
-import org.bukkit.event.CustomEventListener;
-import org.bukkit.event.Event;
-import org.bukkit.event.Listener;
 import org.bukkit.event.*;
 import org.bukkit.event.block.*;
 import org.bukkit.event.painting.*;
@@ -381,6 +378,13 @@ public class JavaPluginLoader implements PluginLoader {
                 }
             };
 
+        case PLAYER_LEVEL_CHANGE:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((PlayerListener) listener).onPlayerLevelChange((PlayerLevelChangeEvent) event);
+                }
+            };
+
         case INVENTORY_OPEN:
             return new EventExecutor() {
                 public void execute(Listener listener, Event event) {
@@ -469,6 +473,13 @@ public class JavaPluginLoader implements PluginLoader {
             return new EventExecutor() {
                 public void execute(Listener listener, Event event) {
                     ((PlayerListener) listener).onPlayerChangedWorld((PlayerChangedWorldEvent) event);
+                }
+            };
+
+        case PLAYER_EXP_CHANGE:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((PlayerListener) listener).onPlayerExpChange((PlayerExpChangeEvent) event);
                 }
             };
 
@@ -816,6 +827,13 @@ public class JavaPluginLoader implements PluginLoader {
             return new EventExecutor() {
                 public void execute(Listener listener, Event event) {
                     ((EntityListener) listener).onEntityRegainHealth((EntityRegainHealthEvent) event);
+                }
+            };
+
+        case ENTITY_SHOOT_BOW:
+            return new EventExecutor() {
+                public void execute(Listener listener, Event event) {
+                    ((EntityListener) listener).onEntityShootBow((EntityShootBowEvent) event);
                 }
             };
 
