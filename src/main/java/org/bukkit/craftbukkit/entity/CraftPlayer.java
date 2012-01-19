@@ -148,8 +148,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             return;
         }
 
-        if (ChatColor.stripColor(name).length() > 16) {
-            throw new IllegalArgumentException("Player list names can only be a maximum of 16 characters long without colour codes");
+        if (name.length() > 16) {
+            throw new IllegalArgumentException("Player list names can only be a maximum of 16 characters long");
         }
 
         // Collisions will make for invisible people
