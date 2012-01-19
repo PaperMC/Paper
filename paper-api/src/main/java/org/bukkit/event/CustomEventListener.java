@@ -1,7 +1,5 @@
 package org.bukkit.event;
 
-import org.bukkit.event.Listener;
-
 /**
  * Handles all custom events
  */

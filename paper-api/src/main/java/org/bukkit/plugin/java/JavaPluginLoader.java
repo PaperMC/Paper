@@ -987,20 +987,21 @@ public class JavaPluginLoader implements PluginLoader {
             final EventHandler eh = method.getAnnotation(EventHandler.class);
             if (eh == null) continue;
             final Class<?> checkClass = method.getParameterTypes()[0];
-            if (!checkClass.isAssignableFrom(eh.event()) || method.getParameterTypes().length != 1) {
+            if (!Event.class.isAssignableFrom(checkClass) || method.getParameterTypes().length != 1) {
                 plugin.getServer().getLogger().severe("Wrong method arguments used for event type registered");
                 continue;
             }
+            final Class<? extends Event> eventClass = checkClass.asSubclass(Event.class);
             method.setAccessible(true);
-            Set<RegisteredListener> eventSet = ret.get(eh.event());
+            Set<RegisteredListener> eventSet = ret.get(eventClass);
             if (eventSet == null) {
                 eventSet = new HashSet<RegisteredListener>();
-                ret.put(eh.event(), eventSet);
+                ret.put(eventClass, eventSet);
             }
             eventSet.add(new RegisteredListener(listener, new EventExecutor() {
                 public void execute(Listener listener, Event event) throws EventException {
                     try {
-                        if (!checkClass.isAssignableFrom(event.getClass())) {
+                        if (!eventClass.isAssignableFrom(event.getClass())) {
                             throw new EventException("Wrong event type passed to registered method");
                         }
                         method.invoke(listener, event);

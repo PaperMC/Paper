@@ -52,6 +52,7 @@ public interface PluginLoader {
      * @param type Type of the event executor to create
      * @param listener the object that will handle the eventual call back
      * @return The new executor
+     * @deprecated see PluginLoader#createRegisteredListeners
      */
     @Deprecated
     public EventExecutor createExecutor(Event.Type type, Listener listener);
