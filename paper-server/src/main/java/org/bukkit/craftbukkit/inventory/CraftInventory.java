@@ -27,7 +27,7 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
     }
 
     public ItemStack getItem(int index) {
-        return new CraftItemStack(getInventory().getItem(index));
+        return getInventory().getItem(index).id == 0 ? null : new CraftItemStack(getInventory().getItem(index));
     }
 
     public ItemStack[] getContents() {
@@ -59,7 +59,7 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
     }
 
     public void setItem(int index, ItemStack item) {
-        getInventory().setItem(index, (item == null ? null : CraftItemStack.createNMSItemStack(item)));
+        getInventory().setItem(index, ((item == null || item.getTypeId() == 0) ? null : CraftItemStack.createNMSItemStack(item)));
     }
 
     public boolean contains(int materialId) {
@@ -170,7 +170,7 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
         ItemStack[] inventory = getContents();
         for (int i = 0; i < inventory.length; i++) {
             if (inventory[i] == null) continue;
-            
+
             boolean equals = false;
 
             if (withAmount) {

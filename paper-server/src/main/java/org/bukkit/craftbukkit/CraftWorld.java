@@ -3,6 +3,8 @@ package org.bukkit.craftbukkit;
 import com.google.common.collect.MapMaker;
 import java.io.File;
 import java.util.Set;
+import org.apache.commons.lang.Validate;
+
 import org.bukkit.craftbukkit.entity.*;
 import org.bukkit.entity.*;
 import org.bukkit.entity.Entity;
@@ -299,6 +301,8 @@ public class CraftWorld implements World {
     }
 
     public org.bukkit.entity.Item dropItem(Location loc, ItemStack item) {
+        Validate.notNull(item, "Cannot drop a Null item.");
+        Validate.isTrue(item.getTypeId() != 0, "Cannot drop AIR.");
         CraftItemStack clone = new CraftItemStack(item);
         EntityItem entity = new EntityItem(world, loc.getX(), loc.getY(), loc.getZ(), clone.getHandle());
         entity.pickupDelay = 10;
