@@ -3,6 +3,16 @@ package net.minecraft.server;
 import java.util.Iterator;
 import java.util.List;
 
+// CraftBukkit start
+import java.util.Collection;
+import java.util.HashMap;
+
+import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.event.entity.PotionSplashEvent;
+// CraftBukkit end
+
 public class EntityPotion extends EntityProjectile {
 
     private int d;
@@ -48,6 +58,9 @@ public class EntityPotion extends EntityProjectile {
                 if (list1 != null && !list1.isEmpty()) {
                     Iterator iterator = list1.iterator();
 
+                    // CraftBukkit
+                    HashMap<LivingEntity, Double> affected = new HashMap<LivingEntity, Double>();
+
                     while (iterator.hasNext()) {
                         Entity entity = (Entity) iterator.next();
                         double d0 = this.i(entity);
@@ -58,6 +71,21 @@ public class EntityPotion extends EntityProjectile {
                             if (entity == movingobjectposition.entity) {
                                 d1 = 1.0D;
                             }
+
+                            // CraftBukkit start
+                            affected.put((LivingEntity) entity.getBukkitEntity(), d1);
+                        }
+                    }
+
+                    PotionSplashEvent event = CraftEventFactory.callPotionSplashEvent(this, affected);
+                    if (!event.isCancelled()) {
+                        for (LivingEntity victim : event.getAffectedEntities()) {
+                            if (!(victim instanceof CraftLivingEntity)) {
+                                continue;
+                            }
+                            EntityLiving entity = ((CraftLivingEntity) victim).getHandle();
+                            double d1 = event.getIntensity(victim);
+                            // CraftBukkit end
 
                             Iterator iterator1 = list.iterator();
 
