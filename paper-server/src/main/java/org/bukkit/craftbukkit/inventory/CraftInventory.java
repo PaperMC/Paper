@@ -27,7 +27,7 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
     }
 
     public ItemStack getItem(int index) {
-        return getInventory().getItem(index).id == 0 ? null : new CraftItemStack(getInventory().getItem(index));
+        return (getInventory().getItem(index) == null || getInventory().getItem(index).id == 0) ? null : new CraftItemStack(getInventory().getItem(index));
     }
 
     public ItemStack[] getContents() {
