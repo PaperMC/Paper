@@ -796,6 +796,12 @@ public abstract class Event implements Serializable {
          */
         PROJECTILE_HIT(Category.ENTITY, ProjectileHitEvent.class),
         /**
+         * Called when a splash potion hits an area
+         *
+         * @see org.bukkit.event.entity.PotionSplashEvent
+         */
+        POTION_SPLASH(Category.ENTITY, PotionSplashEvent.class),
+        /**
          * Called when a Slime splits into smaller Slimes upon death
          *
          * @see org.bukkit.event.entity.SlimeSplitEvent
