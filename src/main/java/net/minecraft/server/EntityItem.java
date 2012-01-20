@@ -21,7 +21,10 @@ public class EntityItem extends Entity {
         this.height = this.length / 2.0F;
         this.setPosition(d0, d1, d2);
         this.itemStack = itemstack;
-        // CraftBukkit start - infinite item fix
+        // CraftBukkit start - infinite item fix & nullcheck
+        if (this.itemStack == null) {
+            throw new IllegalArgumentException("Can't create an EntityItem for a null item");
+        }
         if (this.itemStack.count <= -1) {
             this.itemStack.count = 1;
         }
@@ -117,7 +120,7 @@ public class EntityItem extends Entity {
     public void b(NBTTagCompound nbttagcompound) {
         nbttagcompound.setShort("Health", (short) ((byte) this.f));
         nbttagcompound.setShort("Age", (short) this.age);
-        nbttagcompound.setCompound("Item", this.itemStack.b(new NBTTagCompound()));
+        if (this.itemStack != null) nbttagcompound.setCompound("Item", this.itemStack.b(new NBTTagCompound())); // CraftBukkit - Nullchex!
     }
 
     public void a(NBTTagCompound nbttagcompound) {
@@ -132,7 +135,7 @@ public class EntityItem extends Entity {
     }
 
     public void a_(EntityHuman entityhuman) {
-        if (!this.world.isStatic) {
+        if ((!this.world.isStatic) && (this.itemStack != null)) { // CraftBukkit - nullcheck
             int i = this.itemStack.count;
 
             // CraftBukkit start
@@ -180,6 +183,7 @@ public class EntityItem extends Entity {
     }
 
     public String getLocalizedName() {
+        if (this.itemStack == null) return LocaleI18n.a("item.unknown"); // CraftBukkit - nullcheck
         return LocaleI18n.a("item." + this.itemStack.k());
     }
 }
