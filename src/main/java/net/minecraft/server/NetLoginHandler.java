@@ -6,6 +6,7 @@ import java.util.Random;
 import java.util.logging.Logger;
 
 // CraftBukkit start
+import org.bukkit.ChatColor;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.server.ServerListPingEvent;
 // CraftBukkit end
@@ -77,6 +78,12 @@ public class NetLoginHandler extends NetHandler {
             }
         } else {
             if (!this.server.onlineMode) {
+                // CraftBukkit start - disallow colour in names
+                if (!packet1login.name.equals(ChatColor.stripColor(packet1login.name))) {
+                    this.disconnect("Colourful names are not permitted!");
+                    return;
+                }
+                // CraftBukkit end
                 this.b(packet1login);
             } else {
                 (new ThreadLoginVerifier(this, packet1login, this.server.server)).start(); // CraftBukkit
