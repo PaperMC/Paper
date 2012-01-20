@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.event;
 
 import java.net.InetAddress;
 import java.util.List;
+import java.util.Map;
 
 import net.minecraft.server.ChunkCoordinates;
 import net.minecraft.server.Entity;
@@ -24,6 +25,7 @@ import net.minecraft.server.EntityMushroomCow;
 import net.minecraft.server.EntityPig;
 import net.minecraft.server.EntityPigZombie;
 import net.minecraft.server.EntityPlayer;
+import net.minecraft.server.EntityPotion;
 import net.minecraft.server.EntitySheep;
 import net.minecraft.server.EntitySilverfish;
 import net.minecraft.server.EntitySkeleton;
@@ -56,6 +58,7 @@ import org.bukkit.entity.Arrow;
 import org.bukkit.entity.CreatureType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.ThrownPotion;
 import org.bukkit.event.Event.Type;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.*;
@@ -65,6 +68,7 @@ import org.bukkit.event.player.*;
 import org.bukkit.event.server.ServerListPingEvent;
 
 public class CraftEventFactory {
+    // helper methods
     private static boolean canBuild(CraftWorld world, Player player, int x, int z) {
         WorldServer worldServer = world.getHandle();
         int spawnSize = Bukkit.getServer().getSpawnRadius();
@@ -318,6 +322,17 @@ public class CraftEventFactory {
         ItemDespawnEvent event = new ItemDespawnEvent(entity, entity.getLocation());
 
         ((CraftServer) entity.getServer()).getPluginManager().callEvent(event);
+        return event;
+    }
+
+    /**
+     * PotionSplashEvent
+     */
+    public static PotionSplashEvent callPotionSplashEvent(EntityPotion potion, Map<LivingEntity, Double> affectedEntities) {
+        ThrownPotion thrownPotion = (ThrownPotion) potion.getBukkitEntity();
+
+        PotionSplashEvent event = new PotionSplashEvent(thrownPotion, affectedEntities);
+        Bukkit.getPluginManager().callEvent(event);
         return event;
     }
 
