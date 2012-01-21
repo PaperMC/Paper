@@ -1,9 +1,6 @@
 package org.bukkit.plugin;
 
-import org.bukkit.event.Event;
-import org.bukkit.event.EventException;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
+import org.bukkit.event.*;
 
 /**
  * Stores relevant information for plugin listeners
@@ -13,12 +10,14 @@ public class RegisteredListener {
     private final EventPriority priority;
     private final Plugin plugin;
     private final EventExecutor executor;
+    private final boolean ignoreCancelled;
 
-    public RegisteredListener(final Listener pluginListener, final EventExecutor eventExecutor, final EventPriority eventPriority, final Plugin registeredPlugin) {
-        listener = pluginListener;
-        priority = eventPriority;
-        plugin = registeredPlugin;
-        executor = eventExecutor;
+    public RegisteredListener(final Listener listener, final EventExecutor executor, final EventPriority priority, final Plugin plugin, final boolean ignoreCancelled) {
+        this.listener = listener;
+        this.priority = priority;
+        this.plugin = plugin;
+        this.executor = executor;
+        this.ignoreCancelled = ignoreCancelled;
     }
 
     /**
@@ -53,7 +52,21 @@ public class RegisteredListener {
      *
      * @param event The event
      */
-    public void callEvent(Event event) throws EventException {
+    public void callEvent(final Event event) throws EventException {
+        if (event instanceof Cancellable){
+            if (((Cancellable) event).isCancelled() && isIgnoringCancelled()){
+                return;
+            }
+        }
         executor.execute(listener, event);
+    }
+
+     /**
+     * Whether this listener accepts cancelled events
+     *
+     * @return True when ignoring cancelled events
+     */
+    public boolean isIgnoringCancelled() {
+        return ignoreCancelled;
     }
 }

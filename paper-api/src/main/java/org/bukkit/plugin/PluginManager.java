@@ -141,6 +141,18 @@ public interface PluginManager {
     public void registerEvent(Class<? extends Event> event, Listener listener, EventPriority priority, EventExecutor executor, Plugin plugin);
 
     /**
+     * Registers the specified executor to the given event class
+     *
+     * @param event Event type to register
+     * @param listener Listener to register
+     * @param priority Priority to register this event at
+     * @param executor EventExecutor to register
+     * @param plugin Plugin to register
+     * @param ignoreCancelled Whether to pass cancelled events or not
+     */
+    public void registerEvent(Class<? extends Event> event, Listener listener, EventPriority priority, EventExecutor executor, Plugin plugin, boolean ignoreCancelled);
+
+    /**
      * Enables the specified plugin
      * <p />
      * Attempting to enable a plugin that is already enabled will have no effect
