@@ -241,7 +241,6 @@ public class EntityTrackerEntry {
 
         if (this.tracker instanceof EntityItem) {
             EntityItem entityitem = (EntityItem) this.tracker;
-            if (entityitem.dead|| entityitem.itemStack == null) return null; // CraftBukkit
             Packet21PickupSpawn packet21pickupspawn = new Packet21PickupSpawn(entityitem);
 
             entityitem.locX = (double) packet21pickupspawn.b / 32.0D;
