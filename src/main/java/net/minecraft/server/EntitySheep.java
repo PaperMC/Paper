@@ -1,7 +1,12 @@
 package net.minecraft.server;
 
 import java.util.Random;
+
+// CraftBukkit start
+import org.bukkit.Material;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
+// CraftBukkit end
 
 public class EntitySheep extends EntityAnimal {
 
@@ -73,17 +78,47 @@ public class EntitySheep extends EntityAnimal {
             boolean flag = false;
 
             if (this.world.getTypeId(i, j, k) == Block.LONG_GRASS.id) {
-                this.world.f(2001, i, j, k, Block.LONG_GRASS.id + 256);
-                this.world.setTypeId(i, j, k, 0);
-                flag = true;
+                // CraftBukkit start
+                org.bukkit.World bworld = this.world.getWorld();
+                org.bukkit.block.Block bblock = bworld.getBlockAt(i, j, k);
+
+                EntityChangeBlockEvent event = new EntityChangeBlockEvent(this.getBukkitEntity(), bblock, Material.AIR);
+                this.world.getServer().getPluginManager().callEvent(event);
+
+                if (!event.isCancelled()) {
+                    this.world.f(2001, i, j, k, Block.LONG_GRASS.id + 256);
+                    this.world.setTypeId(i, j, k, 0);
+                    flag = true;
+                }
+                // CraftBukkit end
             } else if (this.world.getTypeId(i, j - 1, k) == Block.GRASS.id) {
-                this.world.f(2001, i, j - 1, k, Block.GRASS.id);
-                this.world.setTypeId(i, j - 1, k, Block.DIRT.id);
-                flag = true;
+                // CraftBukkit start
+                org.bukkit.World bworld = this.world.getWorld();
+                org.bukkit.block.Block bblock = bworld.getBlockAt(i, j - 1, k);
+
+                EntityChangeBlockEvent event = new EntityChangeBlockEvent(this.getBukkitEntity(), bblock, Material.DIRT);
+                this.world.getServer().getPluginManager().callEvent(event);
+
+                if (!event.isCancelled()) {
+                    this.world.f(2001, i, j - 1, k, Block.GRASS.id);
+                    this.world.setTypeId(i, j - 1, k, Block.DIRT.id);
+                    flag = true;
+                }
+                // CraftBukkit end
             }
 
             if (flag) {
-                this.setSheared(false);
+               // CraftBukkit start
+                if (!this.isBaby()) {
+                    org.bukkit.event.entity.SheepRegrowWoolEvent event = new org.bukkit.event.entity.SheepRegrowWoolEvent(this.getBukkitEntity());
+                    this.world.getServer().getPluginManager().callEvent(event);
+
+                    if (!event.isCancelled()) {
+                        this.setSheared(false);
+                    }
+                }
+                // CraftBukkit end
+
                 if (this.isBaby()) {
                     int l = this.getAge() + 1200;
 
@@ -106,6 +141,15 @@ public class EntitySheep extends EntityAnimal {
 
         if (itemstack != null && itemstack.id == Item.SHEARS.id && !this.isSheared() && !this.isBaby()) {
             if (!this.world.isStatic) {
+                // CraftBukkit start
+                org.bukkit.event.player.PlayerShearEntityEvent event = new org.bukkit.event.player.PlayerShearEntityEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), this.getBukkitEntity());
+                this.world.getServer().getPluginManager().callEvent(event);
+
+                if (event.isCancelled()) {
+                    return false;
+                }
+                // CraftBukkit end
+
                 this.setSheared(true);
                 int i = 1 + this.random.nextInt(3);
 

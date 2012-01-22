@@ -113,7 +113,18 @@ public class ItemDye extends Item {
             int i = BlockCloth.d(itemstack.getData());
 
             if (!entitysheep.isSheared() && entitysheep.getColor() != i) {
-                entitysheep.setColor(i);
+                // CraftBukkit start
+                byte bColor = new Integer(i).byteValue();
+                org.bukkit.event.entity.SheepDyeWoolEvent event = new org.bukkit.event.entity.SheepDyeWoolEvent(entitysheep.getBukkitEntity(), org.bukkit.DyeColor.getByData(bColor));
+                entitysheep.world.getServer().getPluginManager().callEvent(event);
+
+                if (event.isCancelled()) {
+                    return;
+                }
+
+                int iColor = new Byte(event.getColor().getData()).intValue();
+                entitysheep.setColor(iColor);
+                // CraftBukkit end
                 --itemstack.count;
             }
         }
