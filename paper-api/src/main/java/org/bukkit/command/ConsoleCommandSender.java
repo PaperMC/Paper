@@ -1,4 +1,6 @@
 package org.bukkit.command;
 
-public interface ConsoleCommandSender extends CommandSender {
+import org.bukkit.conversations.Conversable;
+
+public interface ConsoleCommandSender extends CommandSender, Conversable {
 }
