@@ -17,7 +17,7 @@ public class BanListCommand extends VanillaCommand {
     public boolean execute(CommandSender sender, String currentAlias, String[] args) {
         if (!testPermission(sender)) return true;
 
-        StringBuilder message = new StringBuilder().append(ChatColor.GRAY).append("Ban list:");
+        StringBuilder message = new StringBuilder().append(ChatColor.GRAY).append("Ban list: ");
 
         int count = 0;
         for (OfflinePlayer p : Bukkit.getServer().getBannedPlayers()) {
