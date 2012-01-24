@@ -149,12 +149,14 @@ public abstract class EntityAnimal extends EntityCreature implements IAnimal {
         super.b(nbttagcompound);
         nbttagcompound.setInt("Age", this.getAge());
         nbttagcompound.setInt("InLove", this.love);
+        nbttagcompound.setBoolean("AgeLocked", this.ageLocked); // CraftBukkit
     }
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
         this.setAge(nbttagcompound.getInt("Age"));
         this.love = nbttagcompound.getInt("InLove");
+        this.ageLocked = nbttagcompound.getBoolean("AgeLocked"); // CraftBukkit
     }
 
     protected Entity findTarget() {
