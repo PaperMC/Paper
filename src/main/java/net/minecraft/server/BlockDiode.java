@@ -32,8 +32,10 @@ public class BlockDiode extends Block {
 
         if (this.c && !flag) {
             world.setTypeIdAndData(i, j, k, Block.DIODE_OFF.id, l);
+            this.postPlace(world, i, j, k, this.id); // CraftBukkit - update indirect neighbors
         } else if (!this.c) {
             world.setTypeIdAndData(i, j, k, Block.DIODE_ON.id, l);
+            this.postPlace(world, i, j, k, this.id); // CraftBukkit - update indirect neighbors
             if (!flag) {
                 int i1 = (l & 12) >> 2;
 
