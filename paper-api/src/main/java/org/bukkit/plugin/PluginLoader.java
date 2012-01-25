@@ -29,6 +29,7 @@ public interface PluginLoader {
     /**
      * Loads the plugin contained in the specified file
      *
+     * @deprecated SoftDependencies are always ignored
      * @param file File to attempt to load
      * @param ignoreSoftDependencies Loader will ignore soft dependencies if this flag is set to true
      * @return Plugin that was contained in the specified file, or null if
@@ -37,7 +38,18 @@ public interface PluginLoader {
      * @throws InvalidDescriptionException If the plugin description file was invalid
      * @throws UnknownDependencyException If a required dependency could not be found
      */
+    @Deprecated
     public Plugin loadPlugin(File file, boolean ignoreSoftDependencies) throws InvalidPluginException, InvalidDescriptionException, UnknownDependencyException;
+
+    /**
+     * Loads a PluginDescriptionFile from the specified file
+     *
+     * @param file File to attempt to load from
+     * @return A new PluginDescriptionFile loaded from the plugin.yml in the specified file
+     * @throws InvalidPluginException If when the specified file does not contain a plugin description file
+     * @throws InvalidDescriptionException If the plugin description file could not be created
+     */
+    public PluginDescriptionFile getPluginDescription(File file) throws InvalidPluginException, InvalidDescriptionException;
 
     /**
      * Returns a list of all filename filters expected by this PluginLoader
