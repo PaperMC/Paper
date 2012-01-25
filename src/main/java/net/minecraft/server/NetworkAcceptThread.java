@@ -25,7 +25,7 @@ class NetworkAcceptThread extends Thread {
                     synchronized (NetworkListenThread.b(this.b)) {
                         InetAddress inetaddress = socket.getInetAddress();
 
-                        if (NetworkListenThread.b(this.b).containsKey(inetaddress) && System.currentTimeMillis() - ((Long) NetworkListenThread.b(this.b).get(inetaddress)).longValue() < 6000L) { // CraftBukkit
+                        if (NetworkListenThread.b(this.b).containsKey(inetaddress) && System.currentTimeMillis() - ((Long) NetworkListenThread.b(this.b).get(inetaddress)).longValue() < 4000L) { // CraftBukkit
                             NetworkListenThread.b(this.b).put(inetaddress, Long.valueOf(System.currentTimeMillis()));
                             socket.close();
                             continue;
