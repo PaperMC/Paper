@@ -55,15 +55,14 @@ public class BlockRedstoneTorch extends BlockTorch {
 
     public void postPlace(World world, int i, int j, int k, int l) {
         super.postPlace(world, i, j, k, l);
+
+        world.applyPhysics(i, j - 1, k, this.id);
+        world.applyPhysics(i, j + 1, k, this.id);
+        world.applyPhysics(i - 1, j, k, this.id);
+        world.applyPhysics(i + 1, j, k, this.id);
+        world.applyPhysics(i, j, k - 1, this.id);
+        world.applyPhysics(i, j, k + 1, this.id);
         // CraftBukkit end
-        if (this.isOn) {
-            world.applyPhysics(i, j - 1, k, this.id);
-            world.applyPhysics(i, j + 1, k, this.id);
-            world.applyPhysics(i - 1, j, k, this.id);
-            world.applyPhysics(i + 1, j, k, this.id);
-            world.applyPhysics(i, j, k - 1, this.id);
-            world.applyPhysics(i, j, k + 1, this.id);
-        }
     }
 
     public void remove(World world, int i, int j, int k) {
@@ -121,6 +120,7 @@ public class BlockRedstoneTorch extends BlockTorch {
                 // CraftBukkit end
 
                 world.setTypeIdAndData(i, j, k, Block.REDSTONE_TORCH_OFF.id, world.getData(i, j, k));
+                this.postPlace(world, i, j, k, this.id); // CraftBukkit - update indirect neighbors
                 if (this.a(world, i, j, k, true)) {
                     world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), "random.fizz", 0.5F, 2.6F + (world.random.nextFloat() - world.random.nextFloat()) * 0.8F);
 
@@ -145,6 +145,7 @@ public class BlockRedstoneTorch extends BlockTorch {
             // CraftBukkit end
 
             world.setTypeIdAndData(i, j, k, Block.REDSTONE_TORCH_ON.id, world.getData(i, j, k));
+            this.postPlace(world, i, j, k, this.id); // CraftBukkit - update indirect neighbors
         }
     }
 
