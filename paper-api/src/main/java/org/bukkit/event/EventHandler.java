@@ -12,11 +12,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface EventHandler {
 
-    /**
-     * This field is now fetched from the event handler method's parameter
-     * @return
-     */
-    @Deprecated Class<? extends Event> event() default Event.class;
-
     EventPriority priority() default EventPriority.NORMAL;
 }
