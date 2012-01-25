@@ -15,16 +15,16 @@ public class PrepareItemEnchantEvent extends Event implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private Block table;
     private ItemStack item;
-    private int[] levels_offered;
+    private int[] levelsOffered;
     private int bonus;
     private boolean cancelled;
     private Player enchanter;
 
-    public PrepareItemEnchantEvent(Player enchanter, Block table, ItemStack item, int[] levels_offered, int bonus) {
+    public PrepareItemEnchantEvent(Player enchanter, Block table, ItemStack item, int[] levelsOffered, int bonus) {
         this.enchanter = enchanter;
         this.table = table;
         this.item = item;
-        this.levels_offered = levels_offered;
+        this.levelsOffered = levelsOffered;
         this.bonus = bonus;
         this.cancelled = false;
     }
@@ -61,7 +61,7 @@ public class PrepareItemEnchantEvent extends Event implements Cancellable {
      * @return experience level costs offered
      */
     public int[] getExpLevelCostsOffered() {
-        return levels_offered;
+        return levelsOffered;
     }
 
     /**
