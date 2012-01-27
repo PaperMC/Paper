@@ -180,7 +180,7 @@ public abstract class BlockFluids extends Block {
         super.a(world, i, j, k, random);
     }
 
-    public void postPlace(World world, int i, int j, int k, int l) { // CraftBukkit - onPlace(World, int, int, int) -> postPlace(World, int, int, int, int)
+    public void onPlace(World world, int i, int j, int k) {
         this.i(world, i, j, k);
     }
 
