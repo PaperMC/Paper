@@ -316,6 +316,8 @@ public class Chunk {
                 }
             }
 
+            if ((this.b[i << this.world.heightBitsPlusFour | k << this.world.heightBits | j] & 255) != l) return false; // CraftBukkit
+
             this.g.a(i, j, k, i1);
             if (!this.world.worldProvider.f) {
                 if (Block.lightBlock[b0 & 255] != 0) {
