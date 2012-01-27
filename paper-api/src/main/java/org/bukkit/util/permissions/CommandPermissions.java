@@ -81,7 +81,7 @@ public final class CommandPermissions {
     }
 
     public static Permission registerPermissions(Permission parent) {
-        Permission commands = DefaultPermissions.registerPermission(ROOT, "Gives the user the ability to use all Craftbukkit commands", parent);
+        Permission commands = DefaultPermissions.registerPermission(ROOT, "Gives the user the ability to use all CraftBukkit commands", parent);
 
         registerWhitelist(commands);
         registerBan(commands);
