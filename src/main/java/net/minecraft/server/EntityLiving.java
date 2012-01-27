@@ -823,6 +823,7 @@ public abstract class EntityLiving extends Entity {
     }
 
     public void b(NBTTagCompound nbttagcompound) {
+        if (this.health < Short.MIN_VALUE) this.health = Short.MIN_VALUE; // CraftBukkit
         nbttagcompound.setShort("Health", (short) this.health);
         nbttagcompound.setShort("HurtTime", (short) this.hurtTicks);
         nbttagcompound.setShort("DeathTime", (short) this.deathTicks);

@@ -1,11 +1,11 @@
 package net.minecraft.server;
 
 import java.util.List;
-// Craftbukkit start
+// CraftBukkit start
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.block.EntityBlockFormEvent;
-// Craftbukkit end
+// CraftBukkit end
 
 public class EntitySnowman extends EntityGolem {
 
