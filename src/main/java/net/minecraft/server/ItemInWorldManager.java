@@ -207,8 +207,8 @@ public class ItemInWorldManager {
             if (world.getTileEntity(i, j, k) == null) {
                 Packet53BlockChange packet = new Packet53BlockChange(i, j, k, this.world);
 
-                packet.material = block.getTypeId();
-                packet.data = block.getData();
+                packet.material = 0;
+                packet.data = 0;
                 ((EntityPlayer) this.player).netServerHandler.sendPacket(packet);
             }
 
