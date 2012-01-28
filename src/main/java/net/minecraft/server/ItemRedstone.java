@@ -61,7 +61,6 @@ public class ItemRedstone extends Item {
                     return false;
                 }
 
-                Block.REDSTONE_WIRE.postPlace( world, i, j, k, Block.REDSTONE_WIRE.id); // Call postPlace since it is now used.
                 world.update(i, j, k, Block.REDSTONE_WIRE.id); // Must take place after BlockPlaceEvent, we need to update all other blocks.
                 // CraftBukkit end
 

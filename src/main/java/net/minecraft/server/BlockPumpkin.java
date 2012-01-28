@@ -33,8 +33,8 @@ public class BlockPumpkin extends Block {
         return i == 1 ? this.textureId : (i == 0 ? this.textureId : (i == 3 ? this.textureId + 1 + 16 : this.textureId + 16));
     }
 
-    public void postPlace(World world, int i, int j, int k, int m) { // CraftBukkit - onPlace(World, int, int, int) -> postPlace(World, int, int, int, int)
-        super.postPlace(world, i, j, k, m); // CraftBukkit - onPlace(World, int, int, int) -> postPlace(World, int, int, int, int)
+    public void onPlace(World world, int i, int j, int k) {
+        super.onPlace(world, i, j, k);
         if (world.getTypeId(i, j - 1, k) == Block.SNOW_BLOCK.id && world.getTypeId(i, j - 2, k) == Block.SNOW_BLOCK.id) {
             if (!world.isStatic && world.getServer().getServer().spawnAnimals) { // CraftBukkit - make snowmen obey spawning rules
                 world.setTypeId(i, j, k, 0);
