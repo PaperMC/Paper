@@ -77,6 +77,11 @@ public class ItemBlock extends Item {
                 eventUseBlockBelow = itemstack.id == Block.STEP.id && blockStateBelow.getTypeId() == Block.STEP.id;
             }
 
+            BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, eventUseBlockBelow ? blockStateBelow : replacedBlockState, clickedX, clickedY, clickedZ, block);
+
+            if (event.isCancelled() || !event.canBuild()) {
+                return true;
+            }
             /**
             * @see net.minecraft.server.World#setTypeIdAndData(int i, int j, int k, int l, int i1)
             *
@@ -87,35 +92,8 @@ public class ItemBlock extends Item {
             * Whenever the call to 'world.setTypeIdAndData' changes we need to figure out again what to
             * replace this with.
             */
-            if (world.setRawTypeIdAndData(i, j, k, this.id, this.filterData(itemstack.getData()))) { // <-- world.setTypeIdAndData does this to place the block
-                // Make sure the block-rotation already gets set before we call the event
-                if (Block.byId[this.id] instanceof BlockStairs) {
-                    Block.byId[this.id].postPlace(world, i, j, k, entityhuman);
-                }
-
-                BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, eventUseBlockBelow ? blockStateBelow : replacedBlockState, clickedX, clickedY, clickedZ, block);
-
-                if (event.isCancelled() || !event.canBuild()) {
-                    if (blockStateBelow != null) { // Used for steps
-                        world.setTypeIdAndData(i, j, k, replacedBlockState.getTypeId(), replacedBlockState.getRawData());
-                        world.setTypeIdAndData(i, j - 1, k, blockStateBelow.getTypeId(), blockStateBelow.getRawData());
-
-                    } else {
-
-                        if (this.id == Block.ICE.id) {
-                            // Ice will explode if we set straight to 0
-                            world.setTypeId(i, j, k, 20);
-                        }
-
-                        world.setTypeIdAndData(i, j, k, replacedBlockState.getTypeId(), replacedBlockState.getRawData());
-                    }
-                    return true;
-
-                }
-                world.update(i, j, k, this.id); // <-- world.setTypeIdAndData does this on success (tell the world)
-
+            if (world.setTypeIdAndData(i, j, k, this.id, this.filterData(itemstack.getData()))) { // <-- world.setTypeIdAndData does this to place the block
                 // CraftBukkit end
-
                 if (world.getTypeId(i, j, k) == this.id) {
                     Block.byId[this.id].postPlace(world, i, j, k, l);
                     Block.byId[this.id].postPlace(world, i, j, k, entityhuman);
