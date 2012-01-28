@@ -531,8 +531,36 @@ public class CraftWorld implements World {
     }
 
     @SuppressWarnings("unchecked")
+    @Deprecated
     public <T extends Entity> Collection<T> getEntitiesByClass(Class<T>... classes) {
+        return (Collection<T>)getEntitiesByClasses(classes);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends Entity> Collection<T> getEntitiesByClass(Class<T> clazz) {
         Collection<T> list = new ArrayList<T>();
+
+        for (Object entity: world.entityList) {
+            if (entity instanceof net.minecraft.server.Entity) {
+                Entity bukkitEntity = ((net.minecraft.server.Entity) entity).getBukkitEntity();
+
+                if (bukkitEntity == null) {
+                    continue;
+                }
+
+                Class<?> bukkitClass = bukkitEntity.getClass();
+
+                if (clazz.isAssignableFrom(bukkitClass)) {
+                    list.add((T) bukkitEntity);
+                }
+            }
+        }
+
+        return list;
+    }
+
+    public Collection<Entity> getEntitiesByClasses(Class<?>... classes) {
+        Collection<Entity> list = new ArrayList<Entity>();
 
         for (Object entity: world.entityList) {
             if (entity instanceof net.minecraft.server.Entity) {
@@ -546,7 +574,7 @@ public class CraftWorld implements World {
 
                 for (Class<?> clazz : classes) {
                     if (clazz.isAssignableFrom(bukkitClass)) {
-                        list.add((T) bukkitEntity);
+                        list.add(bukkitEntity);
                         break;
                     }
                 }
