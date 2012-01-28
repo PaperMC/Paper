@@ -347,7 +347,22 @@ public interface World extends PluginMessageRecipient {
      *
      * @return A List of all Entities currently residing in this world that match the given class/interface
      */
+    @Deprecated
     public <T extends Entity> Collection<T> getEntitiesByClass(Class<T>... classes);
+
+    /**
+     * Get a collection of all entities in this World matching the given class/interface
+     *
+     * @return A List of all Entities currently residing in this world that match the given class/interface
+     */
+    public <T extends Entity> Collection<T> getEntitiesByClass(Class<T> cls);
+
+    /**
+     * Get a collection of all entities in this World matching any of the given classes/interfaces
+     *
+     * @return A List of all Entities currently residing in this world that match one or more of the given classes/interfaces
+     */
+    public Collection<Entity> getEntitiesByClasses(Class<?>... classes);
 
     /**
      * Get a list of all players in this World
