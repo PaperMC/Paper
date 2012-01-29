@@ -217,6 +217,7 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
         j = WorldSettings.a(j);
         log.info("Default game type: " + j);
         // CraftBukkit start (+ removed worldsettings and servernbtmanager)
+        boolean generateStructures = this.propertyManager.getBoolean("generate-structures", true);
         int worldCount = 3;
 
         for (int k = 0; k < worldCount; ++k) {
@@ -244,7 +245,7 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
             String name = (dimension == 0) ? s : s + "_" + worldType;
 
             ChunkGenerator gen = this.server.getGenerator(name);
-            WorldSettings settings = new WorldSettings(i, j, true, false, worldtype);
+            WorldSettings settings = new WorldSettings(i, j, generateStructures, false, worldtype);
 
             if (k == 0) {
                 world = new WorldServer(this, new ServerNBTManager(server.getWorldContainer(), s, true), s, dimension, settings, org.bukkit.World.Environment.getEnvironment(dimension), gen); // CraftBukkit
