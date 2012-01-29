@@ -120,11 +120,15 @@ public class ServerConfigurationManager {
 
         worldserver.chunkProviderServer.getChunkAt((int) entityplayer.locX >> 4, (int) entityplayer.locZ >> 4);
 
-        while (worldserver.a(entityplayer, entityplayer.boundingBox).size() != 0) {
-            entityplayer.setPosition(entityplayer.locX, entityplayer.locY + 1.0D, entityplayer.locZ);
+        // CraftBukkit start
+        if (!cserver.useExactLoginLocation()) {
+            while (worldserver.a(entityplayer, entityplayer.boundingBox).size() != 0) {
+                entityplayer.setPosition(entityplayer.locX, entityplayer.locY + 1.0D, entityplayer.locZ);
+            }
+        } else {
+            entityplayer.setPosition(entityplayer.locX, entityplayer.locY + entityplayer.getBukkitEntity().getEyeHeight(), entityplayer.locZ);
         }
 
-        // CraftBukkit start
         PlayerJoinEvent playerJoinEvent = new PlayerJoinEvent(this.cserver.getPlayer(entityplayer), "\u00A7e" + entityplayer.name + " joined the game.");
         this.cserver.getPluginManager().callEvent(playerJoinEvent);
 

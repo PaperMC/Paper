@@ -771,6 +771,10 @@ public final class CraftServer implements Server {
         return this.console.allowFlight;
     }
 
+    public boolean useExactLoginLocation() {
+        return configuration.getBoolean("settings.use-exact-login-location");
+    }
+
     public ChunkGenerator getGenerator(String world) {
         ConfigurationSection section = configuration.getConfigurationSection("worlds");
         ChunkGenerator result = null;
