@@ -442,7 +442,7 @@ public interface Server extends PluginMessageRecipient {
     public boolean getAllowFlight();
 
     /**
-     * Gets whether to use vanilla (false) or exact behaviour (false).
+     * Gets whether to use vanilla (false) or exact behaviour (true).
      *
      * Vanilla behaviour: check for collisions and move the player if needed.
      * Exact behaviour: spawn players exactly where they should be.
