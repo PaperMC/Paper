@@ -442,6 +442,16 @@ public interface Server extends PluginMessageRecipient {
     public boolean getAllowFlight();
 
     /**
+     * Gets whether to use vanilla (false) or exact behaviour (false).
+     *
+     * Vanilla behaviour: check for collisions and move the player if needed.
+     * Exact behaviour: spawn players exactly where they should be.
+     *
+     * @return Whether to use vanilla (false) or exact behaviour (true).
+     */
+    public boolean useExactLoginLocation();
+
+    /**
      * Shutdowns the server, stopping everything.
      */
     public void shutdown();
