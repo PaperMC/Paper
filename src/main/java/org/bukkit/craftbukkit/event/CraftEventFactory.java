@@ -377,6 +377,8 @@ public class CraftEventFactory {
         victim.newExp = event.getNewExp();
 
         for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
+            if (stack == null || stack.getType() == Material.AIR) continue;
+
             world.dropItemNaturally(entity.getLocation(), stack);
         }
 
