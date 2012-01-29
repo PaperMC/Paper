@@ -1141,7 +1141,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 Logger.getLogger(NetServerHandler.class.getName()).log(Level.SEVERE, "Could not parse UNREGISTER payload in plugin message packet", ex);
             }
         } else {
-            server.getMessenger().dispatchIncomingMessage(player.getPlayer(), packet.tag, packet.data);
+            server.getMessenger().dispatchIncomingMessage(player.getBukkitEntity(), packet.tag, packet.data);
         }
     }
     // CraftBukkit end

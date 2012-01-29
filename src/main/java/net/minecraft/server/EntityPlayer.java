@@ -75,13 +75,13 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         if (nbttagcompound.hasKey("playerGameType")) {
             this.itemInWorldManager.setGameMode(nbttagcompound.getInt("playerGameType"));
         }
-        getPlayer().readExtraData(nbttagcompound); // CraftBukkit
+        this.getBukkitEntity().readExtraData(nbttagcompound); // CraftBukkit
     }
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
         nbttagcompound.setInt("playerGameType", this.itemInWorldManager.getGameMode());
-        getPlayer().setExtraData(nbttagcompound); // CraftBukkit
+        this.getBukkitEntity().setExtraData(nbttagcompound); // CraftBukkit
     }
 
     public void spawnIn(World world) {
@@ -669,8 +669,9 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         this.keepLevel = false;
     }
 
-    public CraftPlayer getPlayer() {
-        return (CraftPlayer) getBukkitEntity();
+    @Override
+    public CraftPlayer getBukkitEntity() {
+        return (CraftPlayer) super.getBukkitEntity();
     }
     // CraftBukkit end
 }
