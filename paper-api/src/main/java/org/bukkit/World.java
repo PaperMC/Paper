@@ -762,6 +762,13 @@ public interface World extends PluginMessageRecipient {
     public WorldType getWorldType();
 
     /**
+     * Gets whether or not structures are being generated.
+     *
+     * @return True if structures are being generated.
+     */
+    public boolean canGenerateStructures();
+
+    /**
      * Represents various map environment types that a world may be
      */
     public enum Environment {
