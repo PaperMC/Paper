@@ -521,6 +521,7 @@ public final class CraftServer implements Server {
         File folder = new File(getWorldContainer(), name);
         World world = getWorld(name);
         WorldType type = WorldType.a(creator.type().getName());
+        boolean generateStructures = creator.generateStructures();
 
         if (world != null) {
             return world;
@@ -552,7 +553,8 @@ public final class CraftServer implements Server {
             }
         } while(used);
         boolean hardcore = false;
-        WorldServer internal = new WorldServer(console, new ServerNBTManager(getWorldContainer(), name, true), name, dimension, new WorldSettings(creator.seed(), getDefaultGameMode().getValue(), true, hardcore, type), creator.environment(), generator);
+
+        WorldServer internal = new WorldServer(console, new ServerNBTManager(getWorldContainer(), name, true), name, dimension, new WorldSettings(creator.seed(), getDefaultGameMode().getValue(), generateStructures, hardcore, type), creator.environment(), generator);
 
         if (!(worlds.containsKey(name.toLowerCase()))) {
             return null;
