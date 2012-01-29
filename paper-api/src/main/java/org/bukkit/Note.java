@@ -1,7 +1,10 @@
 package org.bukkit;
 
-import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.commons.lang.Validate;
+
+import com.google.common.collect.Maps;
 
 /**
  * A note class to store a specific note.
@@ -12,22 +15,23 @@ public class Note {
      * An enum holding tones.
      */
     public enum Tone {
-        F((byte) -0x1, true),
-        G((byte) 0x1, true),
-        A((byte) 0x3, true),
-        B((byte) 0x5, false),
-        C((byte) 0x6, true),
-        D((byte) 0x8, true),
-        E((byte) 0xA, false);
+        G(0x1, true),
+        A(0x3, true),
+        B(0x5, false),
+        C(0x6, true),
+        D(0x8, true),
+        E(0xA, false),
+        F(0xB, true);
 
         private final boolean sharpable;
         private final byte id;
-        private static final Map<Byte, Note.Tone> tones = new HashMap<Byte, Note.Tone>();
-        /** The number of tones including sharped tones. */
-        public static final byte TONES_COUNT;
 
-        private Tone(byte id, boolean sharpable) {
-            this.id = id;
+        private static final Map<Byte, Note.Tone> BY_DATA = Maps.newHashMap();
+        /** The number of tones including sharped tones. */
+        public static final byte TONES_COUNT = 12;
+
+        private Tone(int id, boolean sharpable) {
+            this.id = (byte) (id % TONES_COUNT);
             this.sharpable = sharpable;
         }
 
@@ -45,17 +49,13 @@ public class Note {
          * sharped id of the tone. If the tone couldn't be sharped it always
          * return the not sharped id of this tone.
          *
-         * @param sharped
-         *            Set to true to return the sharped id.
+         * @param sharped Set to true to return the sharped id.
          * @return the id of this tone.
          */
         public byte getId(boolean sharped) {
-            byte tempId = (byte) (sharped && sharpable ? id + 1 : id);
+            byte id = (byte) (sharped && sharpable ? this.id + 1 : this.id);
 
-            while (tempId < 0) {
-                tempId += TONES_COUNT;
-            }
-            return (byte) (tempId % TONES_COUNT);
+            return (byte) (id % TONES_COUNT);
         }
 
         /**
@@ -70,11 +70,9 @@ public class Note {
         /**
          * Returns if this tone id is the sharped id of the tone.
          *
-         * @param id
-         *            the id of the tone.
+         * @param id the id of the tone.
          * @return if the tone id is the sharped id of the tone.
-         * @throws IllegalArgumentException
-         *             if neither the tone nor the semitone have the id.
+         * @throws IllegalArgumentException if neither the tone nor the semitone have the id.
          */
         public boolean isSharped(byte id) {
             if (id == getId(false)) {
@@ -90,34 +88,35 @@ public class Note {
         /**
          * Returns the tone to id. Also returning the semitones.
          *
-         * @param id
-         *            the id of the tone.
+         * @param id the id of the tone.
+         * @return the tone to id.
+         * @deprecated use {@link #getById(byte)}
+         */
+        @Deprecated
+        public static Tone getToneById(byte id) {
+            return BY_DATA.get(id);
+        }
+
+        /**
+         * Returns the tone to id. Also returning the semitones.
+         *
+         * @param id the id of the tone.
          * @return the tone to id.
          */
-        public static Tone getToneById(byte id) {
-            return tones.get(id);
+        public static Tone getById(byte id) {
+            return BY_DATA.get(id);
         }
 
         static {
-            byte lowest = F.id;
-            byte highest = F.id;
-            for (Tone tone : Tone.values()) {
-                byte id = tone.id;
-                tones.put(id, tone);
-                if (id < lowest) {
-                    lowest = id;
-                }
+            for (Tone tone : values()) {
+                int id = tone.id % TONES_COUNT;
+                BY_DATA.put((byte) id, tone);
+
                 if (tone.isSharpable()) {
-                    id++;
-                    tones.put(id, tone);
-                }
-                if (id > highest) {
-                    highest = id;
+                    id = (id + 1) % TONES_COUNT;
+                    BY_DATA.put((byte) id, tone);
                 }
             }
-
-            TONES_COUNT = (byte) (highest - lowest + 1);
-            tones.put((byte) (TONES_COUNT - 1), F);
         }
     }
 
@@ -126,36 +125,29 @@ public class Note {
     /**
      * Creates a new note.
      *
-     * @param note
-     *            Internal note id. {@link #getId()} always return this value.
+     * @param note Internal note id. {@link #getId()} always return this value.
      *            The value has to be in the interval [0;&nbsp;24].
      */
-    public Note(byte note) {
-        if (note < 0 || note > 24) {
-            throw new IllegalArgumentException("The note value has to be between 0 and 24.");
-        }
-        this.note = note;
+    public Note(int note) {
+        Validate.isTrue(note >= 0 && note <= 24, "The note value has to be between 0 and 24.");
+
+        this.note = (byte) note;
     }
 
     /**
      * Creates a new note.
      *
-     * @param octave
-     *            The octave where the note is in. Has to be 0 - 2.
-     * @param note
-     *            The tone within the octave. If the octave is 2 the note has to
-     *            be F#.
-     * @param sharped
-     *            Set it the tone is sharped (e.g. for F#).
+     * @param octave The octave where the note is in. Has to be 0 - 2.
+     * @param tone The tone within the octave. If the octave is 2 the note has to be F#.
+     * @param sharped Set it the tone is sharped (e.g. for F#).
      */
-    public Note(byte octave, Tone note, boolean sharped) {
-        if (sharped && !note.isSharpable()) {
-            throw new IllegalArgumentException("This tone could not be sharped.");
-        }
-        if (octave < 0 || octave > 2 || (octave == 2 && !(note == Tone.F && sharped))) {
+    public Note(int octave, Tone tone, boolean sharped) {
+        Validate.isTrue(!(sharped && !tone.isSharpable()), "This tone could not be sharped.");
+        if (octave < 0 || octave > 2 || (octave == 2 && !(tone == Tone.F && sharped))) {
             throw new IllegalArgumentException("Tone and octave have to be between F#0 and F#2");
         }
-        this.note = (byte) (octave * Tone.TONES_COUNT + note.getId(sharped));
+
+        this.note = (byte) (octave * Tone.TONES_COUNT + tone.getId(sharped));
     }
 
     /**
@@ -186,7 +178,7 @@ public class Note {
      * @return the tone of this note.
      */
     public Tone getTone() {
-        return Tone.getToneById(getToneByte());
+        return Tone.getById(getToneByte());
     }
 
     /**
@@ -196,7 +188,28 @@ public class Note {
      */
     public boolean isSharped() {
         byte note = getToneByte();
-        return Tone.getToneById(note).isSharped(note);
+        return Tone.getById(note).isSharped(note);
     }
 
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + note;
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Note other = (Note) obj;
+        if (note != other.note)
+            return false;
+        return true;
+    }
 }

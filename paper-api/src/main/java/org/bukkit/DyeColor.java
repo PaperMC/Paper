@@ -1,7 +1,8 @@
 package org.bukkit;
 
-import java.util.HashMap;
 import java.util.Map;
+
+import com.google.common.collect.Maps;
 
 /**
  * All supported color values for dyes and cloth
@@ -11,73 +12,73 @@ public enum DyeColor {
     /**
      * Represents white dye
      */
-    WHITE((byte) 0x0),
+    WHITE(0x0),
     /**
      * Represents orange dye
      */
-    ORANGE((byte) 0x1),
+    ORANGE(0x1),
     /**
      * Represents magenta dye
      */
-    MAGENTA((byte) 0x2),
+    MAGENTA(0x2),
     /**
      * Represents light blue dye
      */
-    LIGHT_BLUE((byte) 0x3),
+    LIGHT_BLUE(0x3),
     /**
      * Represents yellow dye
      */
-    YELLOW((byte) 0x4),
+    YELLOW(0x4),
     /**
      * Represents lime dye
      */
-    LIME((byte) 0x5),
+    LIME(0x5),
     /**
      * Represents pink dye
      */
-    PINK((byte) 0x6),
+    PINK(0x6),
     /**
      * Represents gray dye
      */
-    GRAY((byte) 0x7),
+    GRAY(0x7),
     /**
      * Represents silver dye
      */
-    SILVER((byte) 0x8),
+    SILVER(0x8),
     /**
      * Represents cyan dye
      */
-    CYAN((byte) 0x9),
+    CYAN(0x9),
     /**
      * Represents purple dye
      */
-    PURPLE((byte) 0xA),
+    PURPLE(0xA),
     /**
      * Represents blue dye
      */
-    BLUE((byte) 0xB),
+    BLUE(0xB),
     /**
      * Represents brown dye
      */
-    BROWN((byte) 0xC),
+    BROWN(0xC),
     /**
      * Represents green dye
      */
-    GREEN((byte) 0xD),
+    GREEN(0xD),
     /**
      * Represents red dye
      */
-    RED((byte) 0xE),
+    RED(0xE),
     /**
      * Represents black dye
      */
-    BLACK((byte) 0xF);
+    BLACK(0xF);
 
     private final byte data;
-    private final static Map<Byte, DyeColor> colors = new HashMap<Byte, DyeColor>();
+    private final static Map<Byte, DyeColor> BY_DATA = Maps.newHashMap();
 
-    private DyeColor(final byte data) {
-        this.data = data;
+    private DyeColor(final int data) {
+        this.data = (byte) data;
     }
 
     /**
@@ -96,12 +97,12 @@ public enum DyeColor {
      * @return The {@link DyeColor} representing the given value, or null if it doesn't exist
      */
     public static DyeColor getByData(final byte data) {
-        return colors.get(data);
+        return BY_DATA.get(data);
     }
 
     static {
-        for (DyeColor color : DyeColor.values()) {
-            colors.put(color.getData(), color);
+        for (DyeColor color : values()) {
+            BY_DATA.put(color.getData(), color);
         }
     }
 }

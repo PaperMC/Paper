@@ -1,7 +1,8 @@
 package org.bukkit;
 
-import java.util.HashMap;
 import java.util.Map;
+
+import com.google.common.collect.Maps;
 
 /**
  * Represents a countable statistic, which is collected by the client
@@ -17,7 +18,7 @@ public enum Statistic {
     USE_ITEM(6908288, false),
     BREAK_ITEM(16973824, true);
 
-    private final static Map<Integer, Statistic> statistics = new HashMap<Integer, Statistic>();
+    private final static Map<Integer, Statistic> BY_ID = Maps.newHashMap();
     private final int id;
     private final boolean isSubstat;
     private final boolean isBlock;
@@ -70,14 +71,26 @@ public enum Statistic {
      *
      * @param id ID of the statistic to return
      * @return statistic with the given ID
+     * @deprecated See {@link #getById(int)}
      */
+    @Deprecated
     public static Statistic getStatistic(int id) {
-        return statistics.get(id);
+        return BY_ID.get(id);
+    }
+
+    /**
+     * Gets the statistic associated with the given ID.
+     *
+     * @param id ID of the statistic to return
+     * @return statistic with the given ID
+     */
+    public static Statistic getById(int id) {
+        return BY_ID.get(id);
     }
 
     static {
-        for (Statistic stat : values()) {
-            statistics.put(stat.getId(), stat);
+        for (Statistic statistic : values()) {
+            BY_ID.put(statistic.id, statistic);
         }
     }
 }

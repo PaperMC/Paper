@@ -1,7 +1,8 @@
 package org.bukkit;
 
-import java.util.HashMap;
 import java.util.Map;
+
+import com.google.common.collect.Maps;
 
 /**
  * Represents the different types of grass.
@@ -11,21 +12,21 @@ public enum GrassSpecies {
     /**
      * Represents the dead looking grass.
      */
-    DEAD((byte) 0x0),
+    DEAD(0x0),
     /**
      * Represents the normal grass species.
      */
-    NORMAL((byte) 0x1),
+    NORMAL(0x1),
     /**
      * Represents the fern-looking grass species.
      */
-    FERN_LIKE((byte) 0x2);
+    FERN_LIKE(0x2);
 
     private final byte data;
-    private final static Map<Byte, GrassSpecies> species = new HashMap<Byte, GrassSpecies>();
+    private final static Map<Byte, GrassSpecies> BY_DATA = Maps.newHashMap();
 
-    private GrassSpecies(final byte data) {
-        this.data = data;
+    private GrassSpecies(final int data) {
+        this.data = (byte) data;
     }
 
     /**
@@ -46,12 +47,12 @@ public enum GrassSpecies {
      *         it doesn't exist
      */
     public static GrassSpecies getByData(final byte data) {
-        return species.get(data);
+        return BY_DATA.get(data);
     }
 
     static {
-        for (GrassSpecies s : GrassSpecies.values()) {
-            species.put(s.getData(), s);
+        for (GrassSpecies grassSpecies : values()) {
+            BY_DATA.put(grassSpecies.getData(), grassSpecies);
         }
     }
 }

@@ -2,12 +2,15 @@ package org.bukkit;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.apache.commons.lang.Validate;
 import org.bukkit.material.*;
 import org.bukkit.util.Java15Compat;
+
+import com.google.common.collect.Maps;
 
 /**
  * An enum of all material ids accepted by the official server + client
@@ -76,12 +79,12 @@ public enum Material {
     SOIL(60, MaterialData.class),
     FURNACE(61, Furnace.class),
     BURNING_FURNACE(62, Furnace.class),
-    SIGN_POST(63, 1, Sign.class),
+    SIGN_POST(63, 64, Sign.class),
     WOODEN_DOOR(64, Door.class),
     LADDER(65, Ladder.class),
     RAILS(66, Rails.class),
     COBBLESTONE_STAIRS(67, Stairs.class),
-    WALL_SIGN(68, 1, Sign.class),
+    WALL_SIGN(68, 64, Sign.class),
     LEVER(69, Lever.class),
     STONE_PLATE(70, PressurePlate.class),
     IRON_DOOR_BLOCK(71, Door.class),
@@ -105,7 +108,7 @@ public enum Material {
     GLOWSTONE(89),
     PORTAL(90),
     JACK_O_LANTERN(91, Pumpkin.class),
-    CAKE_BLOCK(92, 1, Cake.class),
+    CAKE_BLOCK(92, 64, Cake.class),
     DIODE_BLOCK_OFF(93, Diode.class),
     DIODE_BLOCK_ON(94, Diode.class),
     LOCKED_CHEST(95),
@@ -179,11 +182,11 @@ public enum Material {
     SEEDS(295),
     WHEAT(296),
     BREAD(297),
-    LEATHER_HELMET(298, 1, 50),
+    LEATHER_HELMET(298, 1, 55),
     LEATHER_CHESTPLATE(299, 1, 80),
     LEATHER_LEGGINGS(300, 1, 75),
     LEATHER_BOOTS(301, 1, 65),
-    CHAINMAIL_HELMET(302, 1, 166),
+    CHAINMAIL_HELMET(302, 1, 165),
     CHAINMAIL_CHESTPLATE(303, 1, 240),
     CHAINMAIL_LEGGINGS(304, 1, 225),
     CHAINMAIL_BOOTS(305, 1, 195),
@@ -279,8 +282,8 @@ public enum Material {
 
     private final int id;
     private final Class<? extends MaterialData> data;
-    private static Material[] lookupId = new Material[3200];
-    private static final Map<String, Material> lookupName = new HashMap<String, Material>();
+    private static Material[] byId = new Material[383];
+    private final static Map<String, Material> BY_NAME = Maps.newHashMap();
     private final int maxStack;
     private final short durability;
 
@@ -301,14 +304,14 @@ public enum Material {
     }
 
     private Material(final int id, final int stack, final Class<? extends MaterialData> data) {
-        this(id, stack, -1, data);
+        this(id, stack, 0, data);
     }
 
     private Material(final int id, final int stack, final int durability, final Class<? extends MaterialData> data) {
         this.id = id;
         this.durability = (short) durability;
         this.maxStack = stack;
-        this.data = data;
+        this.data = data == null ? MaterialData.class : data;
     }
 
     /**
@@ -344,7 +347,7 @@ public enum Material {
      * @return MaterialData associated with this Material
      */
     public Class<? extends MaterialData> getData() {
-        return (data == null) ? MaterialData.class : data;
+        return data;
     }
 
     /**
@@ -355,10 +358,6 @@ public enum Material {
      * @return New MaterialData with the given data
      */
     public MaterialData getNewData(final byte raw) {
-        if (data == null) {
-            return new MaterialData(id, raw);
-        }
-
         try {
             Constructor<? extends MaterialData> ctor = data.getConstructor(int.class, byte.class);
 
@@ -420,8 +419,8 @@ public enum Material {
      * @return Material if found, or null
      */
     public static Material getMaterial(final int id) {
-        if (lookupId.length > id) {
-            return lookupId[id];
+        if (byId.length > id) {
+            return byId[id];
         } else {
             return null;
         }
@@ -436,7 +435,7 @@ public enum Material {
      * @return Material if found, or null
      */
     public static Material getMaterial(final String name) {
-        return lookupName.get(name);
+        return BY_NAME.get(name);
     }
 
     /**
@@ -448,6 +447,8 @@ public enum Material {
      * @return Material if found, or null
      */
     public static Material matchMaterial(final String name) {
+        Validate.notNull(name, "Name cannot be null");
+
         Material result = null;
 
         try {
@@ -458,7 +459,7 @@ public enum Material {
             String filtered = name.toUpperCase();
 
             filtered = filtered.replaceAll("\\s+", "_").replaceAll("\\W", "");
-            result = lookupName.get(filtered);
+            result = BY_NAME.get(filtered);
         }
 
         return result;
@@ -466,13 +467,13 @@ public enum Material {
 
     static {
         for (Material material : values()) {
-            if (lookupId.length > material.id) {
-                lookupId[material.id] = material;
+            if (byId.length > material.id) {
+                byId[material.id] = material;
             } else {
-                lookupId = Java15Compat.Arrays_copyOfRange(lookupId, 0, material.id + 2);
-                lookupId[material.id] = material;
+                byId = Java15Compat.Arrays_copyOfRange(byId, 0, material.id + 2);
+                byId[material.id] = material;
             }
-            lookupName.put(material.name(), material);
+            BY_NAME.put(material.name(), material);
         }
     }
 }

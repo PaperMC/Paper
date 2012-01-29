@@ -1,58 +1,71 @@
 package org.bukkit;
 
-import org.junit.AfterClass;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertThat;
+
 import org.junit.Test;
-import static org.junit.Assert.*;
-import org.junit.BeforeClass;
-import static org.hamcrest.CoreMatchers.*;
 
 public class ChatColorTest {
     @Test
-    public void testGetCode() {
-        ChatColor color = ChatColor.DARK_RED;
-        assertThat(color.getCode(), equalTo(4));
-    }
-
-    @Test
-    public void testGetChar() {
-        ChatColor color = ChatColor.MAGIC;
-        assertThat(color.getChar(), equalTo('k'));
-    }
-
-    @Test
-    public void testToString() {
-        ChatColor color = ChatColor.LIGHT_PURPLE;
-        assertThat(color.toString(), equalTo("\u00A7d"));
-    }
-
-    @Test
-    public void testGetByCode() {
-        ChatColor color = ChatColor.AQUA;
-        assertThat(ChatColor.getByCode(color.getCode()), equalTo(color));
-    }
-
-    @Test
-    public void testGetByChar_char() {
-        ChatColor color = ChatColor.GOLD;
-        assertThat(ChatColor.getByChar(color.getChar()), equalTo(color));
-    }
-
-    @Test
-    public void testGetByChar_String() {
-        ChatColor color = ChatColor.BLUE;
-        assertThat(ChatColor.getByChar(((Character)color.getChar()).toString()), equalTo(color));
-    }
-
-    @Test
-    public void testStripColor() {
-        String string = "";
-        String expected = "";
-
+    public void getByDeprecated() {
         for (ChatColor color : ChatColor.values()) {
-            string += color + "test";
-            expected += "test";
+            assertThat(ChatColor.getByCode(color.getCode()), is(color));
+        }
+    }
+
+    @Test
+    public void getByChar() {
+        for (ChatColor color : ChatColor.values()) {
+            assertThat(ChatColor.getByChar(color.getChar()), is(color));
+        }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void getByStringWithNull() {
+        ChatColor.getByChar((String) null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void getByStringWithEmpty() {
+        ChatColor.getByChar("");
+    }
+
+    @Test
+    public void getByNull() {
+        assertThat(ChatColor.stripColor(null), is(nullValue()));
+    }
+
+    @Test
+    public void getByString() {
+        for (ChatColor color : ChatColor.values()) {
+            assertThat(ChatColor.getByChar(String.valueOf(color.getChar())), is(color));
+        }
+    }
+
+    @Test
+    public void stripColorOnNullString() {
+        assertThat(ChatColor.stripColor(null), is(nullValue()));
+    }
+
+    @Test
+    public void stripColor() {
+        StringBuilder subject = new StringBuilder();
+        StringBuilder expected = new StringBuilder();
+
+        final String filler = "test";
+        for (ChatColor color : ChatColor.values()) {
+            subject.append(color).append(filler);
+            expected.append(filler);
         }
 
-        assertThat(ChatColor.stripColor(string), equalTo(expected));
+        assertThat(ChatColor.stripColor(subject.toString()), is(expected.toString()));
+    }
+
+    @Test
+    public void toStringWorks() {
+        for (ChatColor color : ChatColor.values()) {
+            assertThat(String.format("%c%c", ChatColor.COLOR_CHAR, color.getChar()), is(color.toString()));
+        }
     }
 }

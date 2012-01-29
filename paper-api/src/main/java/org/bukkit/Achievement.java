@@ -1,7 +1,8 @@
 package org.bukkit;
 
-import java.util.HashMap;
 import java.util.Map;
+
+import com.google.common.collect.Maps;
 
 /**
  * Represents an achievement, which may be given to players
@@ -27,8 +28,8 @@ public enum Achievement {
     /**
      * The offset used to distinguish Achievements and Statistics
      */
-    public final static int STATISTIC_OFFSET = 5242880;
-    private final static Map<Integer, Achievement> achievements = new HashMap<Integer, Achievement>();
+    public final static int STATISTIC_OFFSET = 0x500000;
+    private final static Map<Integer, Achievement> BY_ID = Maps.newHashMap();
     private final int id;
 
     private Achievement(int id) {
@@ -53,14 +54,28 @@ public enum Achievement {
      *
      * @param id ID of the achievement to return
      * @return Achievement with the given ID
+     * @deprecated use {@link Achievement#getById(int)}
      */
+    @Deprecated
     public static Achievement getAchievement(int id) {
-        return achievements.get(id);
+        return BY_ID.get(id);
+    }
+
+    /**
+     * Gets the achievement associated with the given ID.
+     * <p />
+     * Note that the ID must already be offset using {@link #STATISTIC_OFFSET}
+     *
+     * @param id ID of the achievement to return
+     * @return Achievement with the given ID
+     */
+    public static Achievement getById(int id) {
+        return BY_ID.get(id);
     }
 
     static {
-        for (Achievement ach : values()) {
-            achievements.put(ach.getId(), ach);
+        for (Achievement achievement : values()) {
+            BY_ID.put(achievement.id, achievement);
         }
     }
 }

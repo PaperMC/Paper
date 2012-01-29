@@ -1,7 +1,8 @@
 package org.bukkit;
 
-import java.util.HashMap;
 import java.util.Map;
+
+import com.google.common.collect.Maps;
 
 /**
  * Represents various types of worlds that may exist
@@ -10,14 +11,8 @@ public enum WorldType {
     NORMAL("DEFAULT"),
     FLAT("FLAT");
 
-    private final static Map<String, WorldType> lookup = new HashMap<String, WorldType>();
+    private final static Map<String, WorldType> BY_NAME = Maps.newHashMap();
     private final String name;
-
-    static {
-        for (WorldType type : values()) {
-            lookup.put(type.name, type);
-        }
-    }
 
     private WorldType(String name) {
         this.name = name;
@@ -39,6 +34,12 @@ public enum WorldType {
      * @return Requested WorldType, or null if not found
      */
     public static WorldType getByName(String name) {
-        return lookup.get(name.toUpperCase());
+        return BY_NAME.get(name.toUpperCase());
+    }
+
+    static {
+        for (WorldType type : values()) {
+            BY_NAME.put(type.name, type);
+        }
     }
 }

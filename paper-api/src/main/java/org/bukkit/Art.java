@@ -2,6 +2,10 @@ package org.bukkit;
 
 import java.util.HashMap;
 
+import org.apache.commons.lang.Validate;
+
+import com.google.common.collect.Maps;
+
 /**
  * Represents the art on a painting
  */
@@ -20,26 +24,21 @@ public enum Art {
     CREEBET(11, 2, 1),
     WANDERER(12, 1, 2),
     GRAHAM(13, 1, 2),
-    MATCH(14, 4, 2),
+    MATCH(14, 2, 2),
     BUST(15, 2, 2),
     STAGE(16, 2, 2),
     VOID(17, 2, 2),
     SKULL_AND_ROSES(18, 2, 2),
-    FIGHTERS(19, 2, 2),
+    FIGHTERS(19, 4, 2),
     POINTER(20, 4, 4),
     PIGSCENE(21, 4, 4),
     BURNINGSKULL(22, 4, 4),
     SKELETON(23, 4, 3),
     DONKEYKONG(24, 4, 3);
+
     private int id, width, height;
-    private static HashMap<String, Art> names = new HashMap<String, Art>();
-    private static HashMap<Integer, Art> ids = new HashMap<Integer, Art>();
-    static {
-        for (Art art : Art.values()) {
-            ids.put(art.id, art);
-            names.put(art.toString(), art);
-        }
-    }
+    private static final HashMap<String, Art> BY_NAME = Maps.newHashMap();
+    private static final HashMap<Integer, Art> BY_ID = Maps.newHashMap();
 
     private Art(int id, int width, int height) {
         this.id = id;
@@ -81,16 +80,27 @@ public enum Art {
      * @return The painting
      */
     public static Art getById(int id) {
-        return ids.get(id);
+        return BY_ID.get(id);
     }
 
     /**
      * Get a painting by its unique name
+     * <p />
+     * This ignores underscores and capitalization
      *
      * @param name The name
      * @return The painting
      */
     public static Art getByName(String name) {
-        return names.get(name);
+        Validate.notNull(name, "Name cannot be null");
+
+        return BY_NAME.get(name.toLowerCase().replaceAll("_", ""));
+    }
+
+    static {
+        for (Art art : values()) {
+            BY_ID.put(art.id, art);
+            BY_NAME.put(art.toString().toLowerCase().replaceAll("_", ""), art);
+        }
     }
 }

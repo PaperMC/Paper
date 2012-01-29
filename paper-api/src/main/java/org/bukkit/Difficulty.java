@@ -1,7 +1,8 @@
 package org.bukkit;
 
-import java.util.HashMap;
 import java.util.Map;
+
+import com.google.common.collect.Maps;
 
 /**
  * Represents the various difficulty levels that are available.
@@ -28,7 +29,7 @@ public enum Difficulty {
     HARD(3);
 
     private final int value;
-    private final static Map<Integer, Difficulty> difficulties = new HashMap<Integer, Difficulty>();
+    private final static Map<Integer, Difficulty> BY_ID = Maps.newHashMap();
 
     private Difficulty(final int value) {
         this.value = value;
@@ -50,12 +51,12 @@ public enum Difficulty {
      * @return Associative {@link Difficulty} with the given value, or null if it doesn't exist
      */
     public static Difficulty getByValue(final int value) {
-        return difficulties.get(value);
+        return BY_ID.get(value);
     }
 
     static {
-        for (Difficulty diff : Difficulty.values()) {
-            difficulties.put(diff.getValue(), diff);
+        for (Difficulty diff : values()) {
+            BY_ID.put(diff.value, diff);
         }
     }
 }

@@ -1,7 +1,8 @@
 package org.bukkit;
 
-import java.util.HashMap;
 import java.util.Map;
+
+import com.google.common.collect.Maps;
 
 /**
  * Represents the different growth states of crops
@@ -11,41 +12,41 @@ public enum CropState {
     /**
      * State when first seeded
      */
-    SEEDED((byte) 0x0),
+    SEEDED(0x0),
     /**
      * First growth stage
      */
-    GERMINATED((byte) 0x1),
+    GERMINATED(0x1),
     /**
      * Second growth stage
      */
-    VERY_SMALL((byte) 0x2),
+    VERY_SMALL(0x2),
     /**
      * Third growth stage
      */
-    SMALL((byte) 0x3),
+    SMALL(0x3),
     /**
      * Fourth growth stage
      */
-    MEDIUM((byte) 0x4),
+    MEDIUM(0x4),
     /**
      * Fifth growth stage
      */
-    TALL((byte) 0x5),
+    TALL(0x5),
     /**
      * Almost ripe stage
      */
-    VERY_TALL((byte) 0x6),
+    VERY_TALL(0x6),
     /**
      * Ripe stage
      */
-    RIPE((byte) 0x7);
+    RIPE(0x7);
 
     private final byte data;
-    private final static Map<Byte, CropState> states = new HashMap<Byte, CropState>();
+    private final static Map<Byte, CropState> BY_DATA = Maps.newHashMap();
 
-    private CropState(final byte data) {
-        this.data = data;
+    private CropState(final int data) {
+        this.data = (byte) data;
     }
 
     /**
@@ -66,12 +67,12 @@ public enum CropState {
      *         it doesn't exist
      */
     public static CropState getByData(final byte data) {
-        return states.get(data);
+        return BY_DATA.get(data);
     }
 
     static {
-        for (CropState s : CropState.values()) {
-            states.put(s.getData(), s);
+        for (CropState cropState : values()) {
+            BY_DATA.put(cropState.getData(), cropState);
         }
     }
 }

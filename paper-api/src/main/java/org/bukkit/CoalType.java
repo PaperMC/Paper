@@ -1,20 +1,21 @@
 package org.bukkit;
 
-import java.util.HashMap;
 import java.util.Map;
+
+import com.google.common.collect.Maps;
 
 /**
  * Represents the two types of coal
  */
 public enum CoalType {
-    COAL((byte) 0x0),
-    CHARCOAL((byte) 0x1);
+    COAL(0x0),
+    CHARCOAL(0x1);
 
     private final byte data;
-    private final static Map<Byte, CoalType> types = new HashMap<Byte, CoalType>();
+    private final static Map<Byte, CoalType> BY_DATA = Maps.newHashMap();
 
-    private CoalType(byte data) {
-        this.data = data;
+    private CoalType(final int data) {
+        this.data = (byte) data;
     }
 
     /**
@@ -35,12 +36,12 @@ public enum CoalType {
      *         it doesn't exist
      */
     public static CoalType getByData(final byte data) {
-        return types.get(data);
+        return BY_DATA.get(data);
     }
 
     static {
-        for (CoalType type : CoalType.values()) {
-            types.put(type.getData(), type);
+        for (CoalType type : values()) {
+            BY_DATA.put(type.data, type);
         }
     }
 }

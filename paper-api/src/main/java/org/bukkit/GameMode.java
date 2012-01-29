@@ -1,9 +1,10 @@
 package org.bukkit;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import org.bukkit.entity.HumanEntity;
+
+import com.google.common.collect.Maps;
 
 /**
  * Represents the various type of game modes that {@link HumanEntity}s may have
@@ -20,7 +21,7 @@ public enum GameMode {
     SURVIVAL(0);
 
     private final int value;
-    private final static Map<Integer, GameMode> modes = new HashMap<Integer, GameMode>();
+    private final static Map<Integer, GameMode> BY_ID = Maps.newHashMap();
 
     private GameMode(final int value) {
         this.value = value;
@@ -42,12 +43,12 @@ public enum GameMode {
      * @return Associative {@link GameMode} with the given value, or null if it doesn't exist
      */
     public static GameMode getByValue(final int value) {
-        return modes.get(value);
+        return BY_ID.get(value);
     }
 
     static {
-        for (GameMode mode : GameMode.values()) {
-            modes.put(mode.getValue(), mode);
+        for (GameMode mode : values()) {
+            BY_ID.put(mode.getValue(), mode);
         }
     }
 }
