@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -73,6 +74,19 @@ public class EntityTrackerEntry {
             boolean flag = Math.abs(j1) >= 4 || Math.abs(k1) >= 4 || Math.abs(l1) >= 4;
             boolean flag1 = Math.abs(l - this.g) >= 4 || Math.abs(i1 - this.h) >= 4;
 
+            // CraftBukkit start - code moved from below
+            if (flag) {
+                this.d = i;
+                this.e = j;
+                this.f = k;
+            }
+
+            if (flag1) {
+                this.g = l;
+                this.h = i1;
+            }
+            // CraftBukkit end
+
             if (j1 >= -128 && j1 < 128 && k1 >= -128 && k1 < 128 && l1 >= -128 && l1 < 128 && this.t <= 400) {
                 if (flag && flag1) {
                     object = new Packet33RelEntityMoveLook(this.tracker.id, (byte) j1, (byte) k1, (byte) l1, (byte) l, (byte) i1);
@@ -86,6 +100,11 @@ public class EntityTrackerEntry {
                 this.tracker.locX = (double) i / 32.0D;
                 this.tracker.locY = (double) j / 32.0D;
                 this.tracker.locZ = (double) k / 32.0D;
+                // CraftBukkit start
+                if (this.tracker instanceof EntityPlayer) {
+                    this.scanPlayers(new ArrayList(this.trackedPlayers));
+                }
+                // CraftBukkit end
                 object = new Packet34EntityTeleport(this.tracker.id, i, j, k, (byte) l, (byte) i1);
             }
 
@@ -113,8 +132,8 @@ public class EntityTrackerEntry {
             if (datawatcher.a()) {
                 this.broadcastIncludingSelf(new Packet40EntityMetadata(this.tracker.id, datawatcher));
             }
-
-            if (flag) {
+            // CraftBukkit start - code moved up
+            /* if (flag) {
                 this.d = i;
                 this.e = j;
                 this.f = k;
@@ -123,7 +142,8 @@ public class EntityTrackerEntry {
             if (flag1) {
                 this.g = l;
                 this.h = i1;
-            }
+            } */
+            // CraftBukkit end
         }
 
         this.tracker.ce = false;
