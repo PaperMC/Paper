@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.generator;
 
 import java.util.List;
 import java.util.Random;
+
 import net.minecraft.server.BiomeBase;
 import net.minecraft.server.Chunk;
 import net.minecraft.server.ChunkCoordIntPair;
@@ -13,6 +14,7 @@ import net.minecraft.server.World;
 import net.minecraft.server.WorldChunkManager;
 import net.minecraft.server.WorldGenStronghold;
 import net.minecraft.server.WorldServer;
+
 import org.bukkit.generator.BlockPopulator;
 import org.bukkit.generator.ChunkGenerator;
 
@@ -78,7 +80,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
         return generator.getDefaultPopulators(world);
     }
 
-    public List getMobsFor(EnumCreatureType type, int x, int y, int z) {
+    public List<?> getMobsFor(EnumCreatureType type, int x, int y, int z) {
         WorldChunkManager worldchunkmanager = world.getWorldChunkManager();
 
         if (worldchunkmanager == null) {

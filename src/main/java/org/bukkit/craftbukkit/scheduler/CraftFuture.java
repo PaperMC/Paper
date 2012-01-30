@@ -1,11 +1,11 @@
 package org.bukkit.craftbukkit.scheduler;
 
 import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.CancellationException;
 
 public class CraftFuture<T> implements Runnable, Future<T> {
 
@@ -18,7 +18,7 @@ public class CraftFuture<T> implements Runnable, Future<T> {
     private Exception e = null;
     private int taskId = -1;
 
-    CraftFuture(CraftScheduler craftScheduler, Callable callable) {
+    CraftFuture(CraftScheduler craftScheduler, Callable<T> callable) {
         this.callable = callable;
         this.craftScheduler = craftScheduler;
     }

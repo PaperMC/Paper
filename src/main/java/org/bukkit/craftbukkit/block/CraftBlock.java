@@ -5,21 +5,21 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import org.bukkit.block.BlockFace;
-import org.bukkit.block.Biome;
-import org.bukkit.block.Block;
-import org.bukkit.block.PistonMoveReaction;
-
 import net.minecraft.server.BiomeBase;
 import net.minecraft.server.BlockRedstoneWire;
 import net.minecraft.server.EnumSkyBlock;
-import net.minecraft.server.MinecraftServer;
 
-import org.bukkit.*;
+import org.bukkit.Chunk;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.World;
+import org.bukkit.block.Biome;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
+import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.craftbukkit.CraftChunk;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.util.BlockVector;
 
 public class CraftBlock implements Block {

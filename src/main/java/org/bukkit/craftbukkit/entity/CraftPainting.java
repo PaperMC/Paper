@@ -2,8 +2,6 @@ package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntityPainting;
 import net.minecraft.server.EnumArt;
-import net.minecraft.server.Packet25EntityPainting;
-import net.minecraft.server.Packet29DestroyEntity;
 import net.minecraft.server.WorldServer;
 
 import org.bukkit.Art;

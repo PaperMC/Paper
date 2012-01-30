@@ -2,8 +2,6 @@ package org.bukkit.craftbukkit.util;
 
 import java.util.ArrayList;
 
-import static org.bukkit.craftbukkit.util.Java15Compat.Arrays_copyOf;
-
 public class LongHashtable<V> extends LongBaseHashtable {
 
     public void put(int msw, int lsw, V value) {
@@ -18,11 +16,13 @@ public class LongHashtable<V> extends LongBaseHashtable {
         put(new Entry(key, value));
     }
 
+    @SuppressWarnings("unchecked")
     public synchronized V get(long key) {
         Entry entry = ((Entry) getEntry(key));
         return entry != null ? entry.value : null;
     }
 
+    @SuppressWarnings("unchecked")
     public synchronized ArrayList<V> values() {
         ArrayList<V> ret = new ArrayList<V>();
 

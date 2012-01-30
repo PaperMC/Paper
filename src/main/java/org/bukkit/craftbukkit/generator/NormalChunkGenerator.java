@@ -3,12 +3,14 @@ package org.bukkit.craftbukkit.generator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
 import net.minecraft.server.Chunk;
 import net.minecraft.server.ChunkPosition;
 import net.minecraft.server.EnumCreatureType;
 import net.minecraft.server.IChunkProvider;
 import net.minecraft.server.IProgressUpdate;
 import net.minecraft.server.World;
+
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.generator.BlockPopulator;
 
@@ -59,7 +61,7 @@ public class NormalChunkGenerator extends InternalChunkGenerator {
         return provider.canSave();
     }
 
-    public List getMobsFor(EnumCreatureType ect, int i, int i1, int i2) {
+    public List<?> getMobsFor(EnumCreatureType ect, int i, int i1, int i2) {
         return provider.getMobsFor(ect, i, i1, i2);
     }
 
