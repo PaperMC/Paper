@@ -77,7 +77,11 @@ public class ItemBlock extends Item {
                 eventUseBlockBelow = itemstack.id == Block.STEP.id && blockStateBelow.getTypeId() == Block.STEP.id;
             }
 
+            world.suppressPhysics = true;
+            world.setTypeIdAndData(i, j, k, this.id, this.filterData(itemstack.getData()));
             BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, eventUseBlockBelow ? blockStateBelow : replacedBlockState, clickedX, clickedY, clickedZ, block);
+            replacedBlockState.update(true);
+            world.suppressPhysics = false;
 
             if (event.isCancelled() || !event.canBuild()) {
                 return true;
