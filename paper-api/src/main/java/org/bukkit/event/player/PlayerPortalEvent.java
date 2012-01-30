@@ -17,8 +17,8 @@ public class PlayerPortalEvent extends PlayerTeleportEvent {
     protected Player player;
     protected TravelAgent travelAgent;
 
-    public PlayerPortalEvent(Player player, Location from, Location to, TravelAgent pta) {
-        super(Type.PLAYER_PORTAL, player, from, to);
+    public PlayerPortalEvent(final Player player, final Location from, final Location to, final TravelAgent pta) {
+        super(player, from, to);
         this.travelAgent = pta;
     }
 

@@ -11,8 +11,7 @@ public abstract class PaintingEvent extends Event {
 
     protected Painting painting;
 
-    protected PaintingEvent(final Type type, final Painting painting) {
-        super(type);
+    protected PaintingEvent(final Painting painting) {
         this.painting = painting;
     }
 

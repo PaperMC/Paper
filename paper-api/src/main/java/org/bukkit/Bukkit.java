@@ -1,24 +1,24 @@
 package org.bukkit;
 
-import com.avaje.ebean.config.ServerConfig;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
-import org.bukkit.World.Environment;
+
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
-import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.map.MapView;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.ServicesManager;
 import org.bukkit.plugin.messaging.Messenger;
 import org.bukkit.scheduler.BukkitScheduler;
+
+import com.avaje.ebean.config.ServerConfig;
 
 /**
  * Represents the Bukkit core, for version and Server singleton handling
@@ -134,26 +134,6 @@ public final class Bukkit {
 
     public static List<World> getWorlds() {
         return server.getWorlds();
-    }
-
-    @Deprecated
-    public static World createWorld(String name, Environment environment) {
-        return server.createWorld(name, environment);
-    }
-
-    @Deprecated
-    public static World createWorld(String name, Environment environment, long seed) {
-        return server.createWorld(name, environment, seed);
-    }
-
-    @Deprecated
-    public static World createWorld(String name, Environment environment, ChunkGenerator generator) {
-        return server.createWorld(name, environment, generator);
-    }
-
-    @Deprecated
-    public static World createWorld(String name, Environment environment, long seed, ChunkGenerator generator) {
-        return server.createWorld(name, environment, seed, generator);
     }
 
     public static World createWorld(WorldCreator options) {

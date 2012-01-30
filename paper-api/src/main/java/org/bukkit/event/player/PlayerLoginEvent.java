@@ -9,17 +9,15 @@ import org.bukkit.event.HandlerList;
 @SuppressWarnings("serial")
 public class PlayerLoginEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
-    private Result result;
-    private String message;
+    private Result result = Result.ALLOWED;
+    private String message = "";
 
     public PlayerLoginEvent(final Player player) {
-        super(Type.PLAYER_LOGIN, player);
-        this.result = Result.ALLOWED;
-        this.message = "";
+        super(player);
     }
 
-    public PlayerLoginEvent(final Type type, final Player player, final Result result, final String message) {
-        super(type, player);
+    public PlayerLoginEvent(final Player player, final Result result, final String message) {
+        this(player);
         this.result = result;
         this.message = message;
     }

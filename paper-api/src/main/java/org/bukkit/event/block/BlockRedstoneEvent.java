@@ -9,11 +9,11 @@ import org.bukkit.event.HandlerList;
 @SuppressWarnings("serial")
 public class BlockRedstoneEvent extends BlockEvent {
     private static final HandlerList handlers = new HandlerList();
-    private int oldCurrent;
+    private final int oldCurrent;
     private int newCurrent;
 
-    public BlockRedstoneEvent(Block block, int oldCurrent, int newCurrent) {
-        super(Type.REDSTONE_CHANGE, block);
+    public BlockRedstoneEvent(final Block block, final int oldCurrent, final int newCurrent) {
+        super(block);
         this.oldCurrent = oldCurrent;
         this.newCurrent = newCurrent;
     }

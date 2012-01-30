@@ -16,10 +16,10 @@ public class EndermanPlaceEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
 
     private boolean cancel;
-    private Location location;
+    private final Location location;
 
-    public EndermanPlaceEvent(Entity what, Location location) {
-        super(Type.ENDERMAN_PLACE, what);
+    public EndermanPlaceEvent(final Entity what, final Location location) {
+        super(what);
         this.location = location;
         this.cancel = false;
     }

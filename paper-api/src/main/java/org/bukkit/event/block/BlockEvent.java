@@ -10,8 +10,7 @@ import org.bukkit.event.Event;
 public abstract class BlockEvent extends Event {
     protected Block block;
 
-    public BlockEvent(final Event.Type type, final Block theBlock) {
-        super(type);
+    public BlockEvent(final Block theBlock) {
         block = theBlock;
     }
 

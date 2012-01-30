@@ -11,7 +11,7 @@ import org.bukkit.event.HandlerList;
 public class PlayerAnimationEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
 
-    private PlayerAnimationType animationType;
+    private final PlayerAnimationType animationType;
     private boolean isCancelled = false;
 
     /**
@@ -20,7 +20,7 @@ public class PlayerAnimationEvent extends PlayerEvent implements Cancellable {
      * @param player The player instance
      */
     public PlayerAnimationEvent(final Player player) {
-        super(Type.PLAYER_ANIMATION, player);
+        super(player);
 
         // Only supported animation type for now:
         animationType = PlayerAnimationType.ARM_SWING;

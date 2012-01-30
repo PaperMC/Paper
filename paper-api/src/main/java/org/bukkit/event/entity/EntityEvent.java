@@ -10,8 +10,7 @@ import org.bukkit.event.Event;
 public abstract class EntityEvent extends Event {
     protected Entity entity;
 
-    public EntityEvent(final Event.Type type, final Entity what) {
-        super(type);
+    public EntityEvent(final Entity what) {
         entity = what;
     }
 

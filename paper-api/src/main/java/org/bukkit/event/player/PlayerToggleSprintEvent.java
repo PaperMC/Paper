@@ -10,11 +10,11 @@ import org.bukkit.event.HandlerList;
 @SuppressWarnings("serial")
 public class PlayerToggleSprintEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
-    private boolean isSprinting;
+    private final boolean isSprinting;
     private boolean cancel = false;
 
-    public PlayerToggleSprintEvent(final Player player, boolean isSprinting) {
-        super(Type.PLAYER_TOGGLE_SPRINT, player);
+    public PlayerToggleSprintEvent(final Player player, final boolean isSprinting) {
+        super(player);
         this.isSprinting = isSprinting;
     }
 

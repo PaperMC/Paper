@@ -15,8 +15,8 @@ public class EntityInteractEvent extends EntityEvent implements Cancellable {
 
     private boolean cancelled;
 
-    public EntityInteractEvent(Entity entity, Block block) {
-        super(Type.ENTITY_INTERACT, entity);
+    public EntityInteractEvent(final Entity entity, final Block block) {
+        super(entity);
         this.block = block;
     }
 

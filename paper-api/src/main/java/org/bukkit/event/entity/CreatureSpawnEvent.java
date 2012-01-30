@@ -15,13 +15,13 @@ import org.bukkit.event.HandlerList;
 public class CreatureSpawnEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
 
-    private Location location;
+    private final Location location;
     private boolean canceled;
-    private CreatureType creatureType;
-    private SpawnReason spawnReason;
+    private final CreatureType creatureType;
+    private final SpawnReason spawnReason;
 
-    public CreatureSpawnEvent(Entity spawnee, CreatureType mobtype, Location loc, SpawnReason spawnReason) {
-        super(Type.CREATURE_SPAWN, spawnee);
+    public CreatureSpawnEvent(final Entity spawnee, final CreatureType mobtype, final Location loc, final SpawnReason spawnReason) {
+        super(spawnee);
         this.creatureType = mobtype;
         this.location = loc;
         this.spawnReason = spawnReason;

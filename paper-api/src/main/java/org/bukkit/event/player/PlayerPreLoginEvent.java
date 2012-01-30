@@ -12,11 +12,10 @@ public class PlayerPreLoginEvent extends Event {
     private static final HandlerList handlers = new HandlerList();
     private Result result;
     private String message;
-    private String name;
-    private InetAddress ipAddress;
+    private final String name;
+    private final InetAddress ipAddress;
 
-    public PlayerPreLoginEvent(String name, InetAddress ipAddress) {
-        super(Type.PLAYER_PRELOGIN);
+    public PlayerPreLoginEvent(final String name, final InetAddress ipAddress) {
         this.result = Result.ALLOWED;
         this.message = "";
         this.name = name;

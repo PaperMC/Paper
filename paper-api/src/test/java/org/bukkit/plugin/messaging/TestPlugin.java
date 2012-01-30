@@ -7,13 +7,11 @@ import org.bukkit.Server;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.event.Event.Type;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoader;
 import org.bukkit.plugin.PluginLogger;
-import org.bukkit.util.config.Configuration;
 
 public class TestPlugin implements Plugin {
     private boolean enabled = true;
@@ -27,10 +25,6 @@ public class TestPlugin implements Plugin {
     }
 
     public PluginDescriptionFile getDescription() {
-        throw new UnsupportedOperationException("Not supported.");
-    }
-
-    public Configuration getConfiguration() {
         throw new UnsupportedOperationException("Not supported.");
     }
 
@@ -99,18 +93,6 @@ public class TestPlugin implements Plugin {
     }
 
     public ChunkGenerator getDefaultWorldGenerator(String worldName, String id) {
-        throw new UnsupportedOperationException("Not supported.");
-    }
-
-    public long getTiming(Type type) {
-        throw new UnsupportedOperationException("Not supported.");
-    }
-
-    public void incTiming(Type type, long delta) {
-        throw new UnsupportedOperationException("Not supported.");
-    }
-
-    public void resetTimings() {
         throw new UnsupportedOperationException("Not supported.");
     }
 

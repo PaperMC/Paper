@@ -5,7 +5,6 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Painting;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
-import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 
 /**
@@ -17,12 +16,12 @@ public class PaintingPlaceEvent extends PaintingEvent implements Cancellable {
 
     private boolean cancelled;
 
-    private Player player;
-    private Block block;
-    private BlockFace blockFace;
+    private final Player player;
+    private final Block block;
+    private final BlockFace blockFace;
 
-    public PaintingPlaceEvent(final Painting painting, final Player player, Block block, BlockFace blockFace) {
-        super(Event.Type.PAINTING_PLACE, painting);
+    public PaintingPlaceEvent(final Painting painting, final Player player, final Block block, final BlockFace blockFace) {
+        super(painting);
         this.player = player;
         this.block = block;
         this.blockFace = blockFace;

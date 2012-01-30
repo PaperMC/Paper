@@ -18,11 +18,11 @@ import org.bukkit.event.HandlerList;
 public class BlockBreakEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
-    private Player player;
+    private final Player player;
     private boolean cancel;
 
-    public BlockBreakEvent(final Block theBlock, Player player) {
-        super(Type.BLOCK_BREAK, theBlock);
+    public BlockBreakEvent(final Block theBlock, final Player player) {
+        super(theBlock);
         this.player = player;
         this.cancel = false;
     }

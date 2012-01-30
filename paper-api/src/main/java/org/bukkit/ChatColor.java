@@ -96,16 +96,6 @@ public enum ChatColor {
     }
 
     /**
-     * Gets the data value associated with this color
-     *
-     * @return An integer value of this color code
-     * @deprecated Use {@link #getChar()}
-     */
-    public int getCode() {
-        return intCode;
-    }
-
-    /**
      * Gets the char value associated with this color
      *
      * @return A char value of this color code
@@ -117,17 +107,6 @@ public enum ChatColor {
     @Override
     public String toString() {
         return toString;
-    }
-
-    /**
-     * Gets the color represented by the specified color code
-     *
-     * @param code Code to check
-     * @return Associative {@link org.bukkit.ChatColor} with the given code, or null if it doesn't exist
-     * @deprecated Use {@link #getByChar(char)}
-     */
-    public static ChatColor getByCode(final int code) {
-        return BY_ID.get(code);
     }
 
     /**

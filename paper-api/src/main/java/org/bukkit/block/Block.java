@@ -24,18 +24,6 @@ public interface Block {
     byte getData();
 
     /**
-     * @deprecated use {@link #getRelative(BlockFace face)}
-     */
-    @Deprecated
-    Block getFace(BlockFace face);
-
-    /**
-     * @deprecated use {@link #getRelative(BlockFace face, int distance)}
-     */
-    @Deprecated
-    Block getFace(BlockFace face, int distance);
-
-    /**
      * Gets the block at the given offsets
      *
      * @param modX X-coordinate offset

@@ -6,12 +6,13 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a players experience changes naturally
  */
+@SuppressWarnings("serial")
 public class PlayerExpChangeEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
     private int exp;
 
-    public PlayerExpChangeEvent(Player player, int expAmount) {
-         super(Type.PLAYER_EXP_CHANGE, player);
+    public PlayerExpChangeEvent(final Player player, final int expAmount) {
+         super(player);
          exp = expAmount;
     }
 
@@ -33,6 +34,7 @@ public class PlayerExpChangeEvent extends PlayerEvent {
         exp = amount;
     }
 
+    @Override
     public HandlerList getHandlers() {
         return handlers;
     }

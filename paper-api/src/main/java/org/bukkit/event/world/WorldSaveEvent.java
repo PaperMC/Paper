@@ -6,8 +6,9 @@ import org.bukkit.event.HandlerList;
 @SuppressWarnings("serial")
 public class WorldSaveEvent extends WorldEvent {
     private static final HandlerList handlers = new HandlerList();
-    public WorldSaveEvent(World world) {
-        super(Type.WORLD_SAVE, world);
+
+    public WorldSaveEvent(final World world) {
+        super(world);
     }
 
     @Override

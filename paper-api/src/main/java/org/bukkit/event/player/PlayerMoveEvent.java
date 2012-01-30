@@ -3,7 +3,6 @@ package org.bukkit.event.player;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
-import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 
 /**
@@ -17,13 +16,7 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
     private Location to;
 
     public PlayerMoveEvent(final Player player, final Location from, final Location to) {
-        super(Type.PLAYER_MOVE, player);
-        this.from = from;
-        this.to = to;
-    }
-
-    PlayerMoveEvent(final Event.Type type, final Player player, final Location from, final Location to) {
-        super(type, player);
+        super(player);
         this.from = from;
         this.to = to;
     }

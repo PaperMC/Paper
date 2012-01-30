@@ -15,7 +15,7 @@ public class LeavesDecayEvent extends BlockEvent implements Cancellable {
     private boolean cancel = false;
 
     public LeavesDecayEvent(final Block block) {
-        super(Type.LEAVES_DECAY, block);
+        super(block);
     }
 
     public boolean isCancelled() {

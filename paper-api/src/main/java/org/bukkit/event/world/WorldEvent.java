@@ -10,9 +10,7 @@ import org.bukkit.event.Event;
 public abstract class WorldEvent extends Event {
     private final World world;
 
-    public WorldEvent(final Type type, final World world) {
-        super(type);
-
+    public WorldEvent(final World world) {
         this.world = world;
     }
 

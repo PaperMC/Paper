@@ -90,18 +90,6 @@ public class Note {
          *
          * @param id the id of the tone.
          * @return the tone to id.
-         * @deprecated use {@link #getById(byte)}
-         */
-        @Deprecated
-        public static Tone getToneById(byte id) {
-            return BY_DATA.get(id);
-        }
-
-        /**
-         * Returns the tone to id. Also returning the semitones.
-         *
-         * @param id the id of the tone.
-         * @return the tone to id.
          */
         public static Tone getById(byte id) {
             return BY_DATA.get(id);

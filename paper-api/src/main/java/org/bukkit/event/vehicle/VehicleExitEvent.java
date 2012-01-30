@@ -12,10 +12,10 @@ import org.bukkit.event.HandlerList;
 public class VehicleExitEvent extends VehicleEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancelled;
-    private LivingEntity exited;
+    private final LivingEntity exited;
 
-    public VehicleExitEvent(Vehicle vehicle, LivingEntity exited) {
-        super(Type.VEHICLE_EXIT, vehicle);
+    public VehicleExitEvent(final Vehicle vehicle, final LivingEntity exited) {
+        super(vehicle);
         this.exited = exited;
     }
 

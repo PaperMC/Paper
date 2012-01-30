@@ -10,10 +10,10 @@ import org.bukkit.event.HandlerList;
 @SuppressWarnings("serial")
 public class VehicleBlockCollisionEvent extends VehicleCollisionEvent {
     private static final HandlerList handlers = new HandlerList();
-    private Block block;
+    private final Block block;
 
-    public VehicleBlockCollisionEvent(Vehicle vehicle, Block block) {
-        super(Type.VEHICLE_COLLISION_BLOCK, vehicle);
+    public VehicleBlockCollisionEvent(final Vehicle vehicle, final Block block) {
+        super(vehicle);
         this.block = block;
     }
 

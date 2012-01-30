@@ -371,18 +371,6 @@ public interface World extends PluginMessageRecipient {
     public UUID getUID();
 
     /**
-     * Gets a semi-unique identifier for this world.
-     * <p />
-     * While it is highly unlikely that this may be shared with another World,
-     * it is not guaranteed to be unique
-     *
-     * @deprecated Replaced with {@link #getUID()}
-     * @return Id of this world
-     */
-    @Deprecated
-    public long getId();
-
-    /**
      * Gets the default spawn {@link Location} of this world
      *
      * @return The spawn location of this world

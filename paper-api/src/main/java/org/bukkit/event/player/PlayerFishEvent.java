@@ -13,10 +13,10 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private final Entity entity;
     private boolean cancel = false;
-    private State state;
+    private final State state;
 
-    public PlayerFishEvent(final Player player, final Entity entity, State state) {
-        super(Type.PLAYER_FISH, player);
+    public PlayerFishEvent(final Player player, final Entity entity, final State state) {
+        super(player);
         this.entity = entity;
         this.state = state;
     }

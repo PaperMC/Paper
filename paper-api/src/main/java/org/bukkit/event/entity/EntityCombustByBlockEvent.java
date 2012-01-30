@@ -6,9 +6,9 @@ import org.bukkit.entity.Entity;
 @SuppressWarnings("serial")
 public class EntityCombustByBlockEvent extends EntityCombustEvent {
 
-    private Block combuster;
+    private final Block combuster;
 
-    public EntityCombustByBlockEvent(Block combuster, Entity combustee, int duration) {
+    public EntityCombustByBlockEvent(final Block combuster, final Entity combustee, final int duration) {
         super(combustee, duration);
         this.combuster = combuster;
     }

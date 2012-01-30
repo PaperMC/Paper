@@ -17,14 +17,14 @@ import org.bukkit.inventory.ItemStack;
 @SuppressWarnings("serial")
 public class EnchantItemEvent extends Event implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
-    private Block table;
-    private ItemStack item;
+    private final Block table;
+    private final ItemStack item;
     private int level;
     private boolean cancelled;
-    private Map<Enchantment,Integer> enchants;
-    private Player enchanter;
+    private final Map<Enchantment,Integer> enchants;
+    private final Player enchanter;
 
-    public EnchantItemEvent(Player enchanter, Block table, ItemStack item, int level, Map<Enchantment, Integer> enchants) {
+    public EnchantItemEvent(final Player enchanter, final Block table, final ItemStack item, final int level, final Map<Enchantment, Integer> enchants) {
         this.enchanter = enchanter;
         this.table = table;
         this.item = item;

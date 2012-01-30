@@ -10,8 +10,7 @@ import org.bukkit.event.Event;
 public abstract class WeatherEvent extends Event {
     protected World world;
 
-    public WeatherEvent(final Event.Type type, final World where) {
-        super(type);
+    public WeatherEvent(final World where) {
         world = where;
     }
 

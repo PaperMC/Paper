@@ -9,8 +9,9 @@ import org.bukkit.plugin.Plugin;
 @SuppressWarnings("serial")
 public class PluginDisableEvent extends PluginEvent {
     private static final HandlerList handlers = new HandlerList();
-    public PluginDisableEvent(Plugin plugin) {
-        super(Type.PLUGIN_DISABLE, plugin);
+
+    public PluginDisableEvent(final Plugin plugin) {
+        super(plugin);
     }
 
     @Override

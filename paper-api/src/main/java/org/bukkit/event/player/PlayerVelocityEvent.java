@@ -2,7 +2,6 @@ package org.bukkit.event.player;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
-import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.bukkit.util.Vector;
 
@@ -17,12 +16,7 @@ public class PlayerVelocityEvent extends PlayerEvent implements Cancellable {
     private Vector velocity;
 
     public PlayerVelocityEvent(final Player player, final Vector velocity) {
-        super(Type.PLAYER_VELOCITY, player);
-        this.velocity = velocity;
-    }
-
-    PlayerVelocityEvent(final Event.Type type, final Player player, final Vector velocity) {
-        super(type, player);
+        super(player);
         this.velocity = velocity;
     }
 

@@ -17,10 +17,10 @@ import org.bukkit.event.HandlerList;
 public class PotionSplashEvent extends ProjectileHitEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancelled;
-    private Map<LivingEntity, Double> affectedEntities;
+    private final Map<LivingEntity, Double> affectedEntities;
 
-    public PotionSplashEvent(ThrownPotion potion, Map<LivingEntity, Double> affectedEntities) {
-        super(Type.POTION_SPLASH, potion);
+    public PotionSplashEvent(final ThrownPotion potion, final Map<LivingEntity, Double> affectedEntities) {
+        super(potion);
 
         this.affectedEntities = affectedEntities;
     }

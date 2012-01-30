@@ -14,8 +14,8 @@ public class BlockBurnEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancelled;
 
-    public BlockBurnEvent(Block block) {
-        super(Type.BLOCK_BURN, block);
+    public BlockBurnEvent(final Block block) {
+        super(block);
         this.cancelled = false;
     }
 

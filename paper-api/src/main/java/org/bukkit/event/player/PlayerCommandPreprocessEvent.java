@@ -10,8 +10,9 @@ import org.bukkit.event.HandlerList;
 @SuppressWarnings("serial")
 public class PlayerCommandPreprocessEvent extends PlayerChatEvent {
     private static final HandlerList handlers = new HandlerList();
+
     public PlayerCommandPreprocessEvent(final Player player, final String message) {
-        super(Type.PLAYER_COMMAND_PREPROCESS, player, message);
+        super(player, message);
     }
 
     @Override

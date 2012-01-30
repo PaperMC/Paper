@@ -16,13 +16,6 @@ import com.google.common.collect.Lists;
 
 public class NoteTest {
     @Test
-    public void getToneByDeprecated() {
-        for (Note.Tone tone : Note.Tone.values()) {
-            assertThat(Note.Tone.getToneById(tone.getId()), is(tone));
-        }
-    }
-
-    @Test
     public void getToneByData() {
         for (Note.Tone tone : Note.Tone.values()) {
             assertThat(Note.Tone.getById(tone.getId()), is(tone));

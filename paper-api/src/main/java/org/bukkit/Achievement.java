@@ -54,20 +54,6 @@ public enum Achievement {
      *
      * @param id ID of the achievement to return
      * @return Achievement with the given ID
-     * @deprecated use {@link Achievement#getById(int)}
-     */
-    @Deprecated
-    public static Achievement getAchievement(int id) {
-        return BY_ID.get(id);
-    }
-
-    /**
-     * Gets the achievement associated with the given ID.
-     * <p />
-     * Note that the ID must already be offset using {@link #STATISTIC_OFFSET}
-     *
-     * @param id ID of the achievement to return
-     * @return Achievement with the given ID
      */
     public static Achievement getById(int id) {
         return BY_ID.get(id);

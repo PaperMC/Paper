@@ -15,7 +15,7 @@ public class BlockPhysicsEvent extends BlockEvent implements Cancellable {
     private boolean cancel = false;
 
     public BlockPhysicsEvent(final Block block, final int changed) {
-        super(Type.BLOCK_PHYSICS, block);
+        super(block);
         this.changed = changed;
     }
 

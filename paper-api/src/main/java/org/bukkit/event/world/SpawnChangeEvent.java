@@ -11,10 +11,10 @@ import org.bukkit.event.HandlerList;
 @SuppressWarnings("serial")
 public class SpawnChangeEvent extends WorldEvent {
     private static final HandlerList handlers = new HandlerList();
-    private Location previousLocation;
+    private final Location previousLocation;
 
-    public SpawnChangeEvent(World world, Location previousLocation) {
-        super(Type.SPAWN_CHANGE, world);
+    public SpawnChangeEvent(final World world, final Location previousLocation) {
+        super(world);
         this.previousLocation = previousLocation;
     }
 

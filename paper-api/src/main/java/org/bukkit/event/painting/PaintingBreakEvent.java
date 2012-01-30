@@ -12,10 +12,10 @@ public class PaintingBreakEvent extends PaintingEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
 
     private boolean cancelled;
-    private RemoveCause cause;
+    private final RemoveCause cause;
 
-    public PaintingBreakEvent(final Painting painting, RemoveCause cause) {
-        super(Type.PAINTING_BREAK, painting);
+    public PaintingBreakEvent(final Painting painting, final RemoveCause cause) {
+        super(painting);
         this.cause = cause;
     }
 

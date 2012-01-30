@@ -71,18 +71,6 @@ public enum Statistic {
      *
      * @param id ID of the statistic to return
      * @return statistic with the given ID
-     * @deprecated See {@link #getById(int)}
-     */
-    @Deprecated
-    public static Statistic getStatistic(int id) {
-        return BY_ID.get(id);
-    }
-
-    /**
-     * Gets the statistic associated with the given ID.
-     *
-     * @param id ID of the statistic to return
-     * @return statistic with the given ID
      */
     public static Statistic getById(int id) {
         return BY_ID.get(id);

@@ -7,12 +7,6 @@ import static org.junit.Assert.assertThat;
 import org.junit.Test;
 
 public class ChatColorTest {
-    @Test
-    public void getByDeprecated() {
-        for (ChatColor color : ChatColor.values()) {
-            assertThat(ChatColor.getByCode(color.getCode()), is(color));
-        }
-    }
 
     @Test
     public void getByChar() {

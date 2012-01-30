@@ -2,8 +2,8 @@ package org.bukkit.plugin;
 
 import java.io.File;
 import java.util.Set;
+
 import org.bukkit.event.Event;
-import org.bukkit.event.Event.Priority;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.permissions.Permissible;
@@ -95,31 +95,6 @@ public interface PluginManager {
      * @return Called event
      */
     public void callEvent(Event event);
-
-    /**
-     * Registers the given event to the specified listener
-     *
-     * @param type EventType to register
-     * @param listener Listener to register
-     * @param priority Priority of this event
-     * @param plugin Plugin to register
-     * @deprecated see PluginManager#registerEvents
-     */
-    @Deprecated
-    public void registerEvent(Event.Type type, Listener listener, Priority priority, Plugin plugin);
-
-    /**
-     * Registers the given event to the specified executor
-     *
-     * @param type EventType to register
-     * @param listener Listener to register
-     * @param executor EventExecutor to register
-     * @param priority Priority of this event
-     * @param plugin Plugin to register
-     * @deprecated see PluginManager#registerEvent(Class, Listener, EventPriority, EventExecutor, Plugin)
-     */
-    @Deprecated
-    public void registerEvent(Event.Type type, Listener listener, EventExecutor executor, Priority priority, Plugin plugin);
 
     /**
      * Registers all the events in the given listener class
