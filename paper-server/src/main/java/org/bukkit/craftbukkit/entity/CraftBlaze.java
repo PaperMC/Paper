@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntityBlaze;
-import net.minecraft.server.EntityMonster;
+
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Blaze;
 

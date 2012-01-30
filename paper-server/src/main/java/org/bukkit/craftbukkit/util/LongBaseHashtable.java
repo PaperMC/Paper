@@ -1,11 +1,8 @@
 package org.bukkit.craftbukkit.util;
 
-import net.minecraft.server.Chunk;
-import net.minecraft.server.MinecraftServer;
+import static org.bukkit.craftbukkit.util.Java15Compat.Arrays_copyOf;
 
 import java.util.ArrayList;
-
-import static org.bukkit.craftbukkit.util.Java15Compat.Arrays_copyOf;
 
 public class LongBaseHashtable extends LongHash {
 

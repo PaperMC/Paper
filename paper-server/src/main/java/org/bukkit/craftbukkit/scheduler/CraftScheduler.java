@@ -1,32 +1,25 @@
 package org.bukkit.craftbukkit.scheduler;
 
-import java.util.LinkedList;
-import java.util.TreeMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.ArrayList;
-
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.bukkit.scheduler.BukkitScheduler;
-import org.bukkit.scheduler.BukkitWorker;
-import org.bukkit.scheduler.BukkitTask;
-
 import org.bukkit.plugin.Plugin;
-
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.scheduler.CraftTask;
+import org.bukkit.scheduler.BukkitScheduler;
+import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.scheduler.BukkitWorker;
 
 public class CraftScheduler implements BukkitScheduler, Runnable {
 
     private static final Logger logger = Logger.getLogger("Minecraft");
-
-    private final CraftServer server;
 
     private final CraftThreadManager craftThreadManager = new CraftThreadManager();
 
@@ -35,12 +28,16 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
 
     private final TreeMap<CraftTask, Boolean> schedulerQueue = new TreeMap<CraftTask, Boolean>();
 
-    private final Object currentTickSync = new Object();
     private Long currentTick = 0L;
 
     // This lock locks the mainThreadQueue and the currentTick value
     private final Lock mainThreadLock = new ReentrantLock();
     private final Lock syncedTasksLock = new ReentrantLock();
+
+    public CraftScheduler() {
+        Thread t = new Thread(this);
+        t.start();
+    }
 
     public void run() {
 
@@ -106,14 +103,6 @@ public class CraftScheduler implements BukkitScheduler, Runnable {
         } else {
             craftThreadManager.executeTask(task.getTask(), task.getOwner(), task.getIdNumber());
         }
-    }
-
-    public CraftScheduler(CraftServer server) {
-        this.server = server;
-
-        Thread t = new Thread(this);
-        t.start();
-
     }
 
     // If the main thread cannot obtain the lock, it doesn't wait

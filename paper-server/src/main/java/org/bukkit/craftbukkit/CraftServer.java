@@ -1,27 +1,8 @@
 package org.bukkit.craftbukkit;
 
-import java.io.FileNotFoundException;
-
-import org.bukkit.generator.ChunkGenerator;
-import com.avaje.ebean.config.DataSourceConfig;
-import com.avaje.ebean.config.ServerConfig;
-import com.avaje.ebean.config.dbplatform.SQLitePlatform;
-import com.avaje.ebeaninternal.server.lib.sql.TransactionIsolation;
-import com.google.common.collect.MapMaker;
-import net.minecraft.server.IWorldAccess;
-import org.bukkit.World.Environment;
-import org.bukkit.command.*;
-import org.bukkit.entity.Player;
-import org.bukkit.event.world.WorldLoadEvent;
-import org.bukkit.event.world.WorldSaveEvent;
-import org.bukkit.event.world.WorldUnloadEvent;
-import org.bukkit.inventory.FurnaceRecipe;
-import org.bukkit.inventory.Recipe;
-import org.bukkit.inventory.ShapedRecipe;
-import org.bukkit.inventory.ShapelessRecipe;
-
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,11 +10,11 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jline.ConsoleReader;
+
 import net.minecraft.server.ChunkCoordinates;
 import net.minecraft.server.ConvertProgressUpdater;
 import net.minecraft.server.Convertable;
@@ -41,64 +22,96 @@ import net.minecraft.server.Enchantment;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityTracker;
 import net.minecraft.server.IProgressUpdate;
+import net.minecraft.server.IWorldAccess;
+import net.minecraft.server.Item;
+import net.minecraft.server.ItemStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.MobEffectList;
 import net.minecraft.server.PropertyManager;
+import net.minecraft.server.ServerCommand;
 import net.minecraft.server.ServerConfigurationManager;
 import net.minecraft.server.ServerNBTManager;
 import net.minecraft.server.WorldLoaderServer;
 import net.minecraft.server.WorldManager;
-import net.minecraft.server.WorldServer;
-import net.minecraft.server.ServerCommand;
-import net.minecraft.server.Item;
-import net.minecraft.server.ItemStack;
 import net.minecraft.server.WorldMap;
 import net.minecraft.server.WorldMapCollection;
 import net.minecraft.server.WorldNBTStorage;
+import net.minecraft.server.WorldServer;
 import net.minecraft.server.WorldSettings;
 import net.minecraft.server.WorldType;
-import org.bukkit.*;
+
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.Server;
+import org.bukkit.World;
+import org.bukkit.World.Environment;
+import org.bukkit.WorldCreator;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
-import org.bukkit.permissions.Permissible;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginManager;
-import org.bukkit.plugin.ServicesManager;
-import org.bukkit.plugin.SimplePluginManager;
-import org.bukkit.plugin.SimpleServicesManager;
-import org.bukkit.plugin.java.JavaPluginLoader;
-import org.bukkit.plugin.messaging.Messenger;
-import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.craftbukkit.inventory.CraftFurnaceRecipe;
 import org.bukkit.craftbukkit.inventory.CraftRecipe;
 import org.bukkit.craftbukkit.inventory.CraftShapedRecipe;
 import org.bukkit.craftbukkit.inventory.CraftShapelessRecipe;
 import org.bukkit.craftbukkit.map.CraftMapView;
 import org.bukkit.craftbukkit.potion.CraftPotionBrewer;
-import org.bukkit.scheduler.BukkitWorker;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 import org.bukkit.craftbukkit.updater.AutoUpdater;
 import org.bukkit.craftbukkit.updater.BukkitDLUpdaterService;
 import org.bukkit.craftbukkit.util.DatFileFilter;
 import org.bukkit.craftbukkit.util.Versioning;
-import org.bukkit.util.permissions.DefaultPermissions;
+import org.bukkit.entity.Player;
 import org.bukkit.event.world.WorldInitEvent;
+import org.bukkit.event.world.WorldLoadEvent;
+import org.bukkit.event.world.WorldSaveEvent;
+import org.bukkit.event.world.WorldUnloadEvent;
+import org.bukkit.generator.ChunkGenerator;
+import org.bukkit.inventory.FurnaceRecipe;
+import org.bukkit.inventory.Recipe;
+import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.inventory.ShapelessRecipe;
+import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.Permission;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginLoadOrder;
+import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.ServicesManager;
+import org.bukkit.plugin.SimplePluginManager;
+import org.bukkit.plugin.SimpleServicesManager;
+import org.bukkit.plugin.java.JavaPluginLoader;
+import org.bukkit.plugin.messaging.Messenger;
 import org.bukkit.potion.Potion;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.plugin.messaging.StandardMessenger;
+import org.bukkit.scheduler.BukkitScheduler;
+import org.bukkit.scheduler.BukkitWorker;
+import org.bukkit.util.permissions.DefaultPermissions;
+
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.MarkedYAMLException;
+
+import com.avaje.ebean.config.DataSourceConfig;
+import com.avaje.ebean.config.ServerConfig;
+import com.avaje.ebean.config.dbplatform.SQLitePlatform;
+import com.avaje.ebeaninternal.server.lib.sql.TransactionIsolation;
+import com.google.common.collect.MapMaker;
+
+import jline.ConsoleReader;
 
 public final class CraftServer implements Server {
     private final String serverName = "CraftBukkit";
     private final String serverVersion;
     private final String bukkitVersion = Versioning.getBukkitVersion();
     private final ServicesManager servicesManager = new SimpleServicesManager();
-    private final BukkitScheduler scheduler = new CraftScheduler(this);
+    private final BukkitScheduler scheduler = new CraftScheduler();
     private final SimpleCommandMap commandMap = new SimpleCommandMap(this);
     private final StandardMessenger messenger = new StandardMessenger();
     private final PluginManager pluginManager = new SimplePluginManager(this, commandMap);
@@ -480,6 +493,7 @@ public final class CraftServer implements Server {
         enablePlugins(PluginLoadOrder.POSTWORLD);
     }
 
+    @SuppressWarnings({ "unchecked", "finally" })
     private void loadCustomPermissions() {
         File file = new File(configuration.getString("settings.permissions-file"));
         FileInputStream stream;
@@ -894,8 +908,9 @@ public final class CraftServer implements Server {
         return result;
     }
 
+    @SuppressWarnings("unchecked")
     public Set<String> getIPBans() {
-        return new HashSet(server.banByIP);
+        return new HashSet<String>(server.banByIP);
     }
 
     public void banIP(String address) {
