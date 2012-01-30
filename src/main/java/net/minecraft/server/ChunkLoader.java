@@ -67,8 +67,8 @@ public class ChunkLoader implements IChunkLoader {
 
                 if (!chunk.a(i, j)) {
                     System.out.println("Chunk file at " + i + "," + j + " is in the wrong location; relocating. (Expected " + i + ", " + j + ", got " + chunk.x + ", " + chunk.z + ")");
-                    nbttagcompound.setInt("xPos", i);
-                    nbttagcompound.setInt("zPos", j);
+                    nbttagcompound.getCompound("Level").setInt("xPos", i); // CraftBukkit - .getCompound("Level")
+                    nbttagcompound.getCompound("Level").setInt("zPos", j); // CraftBukkit - .getCompound("Level")
                     chunk = a(world, nbttagcompound.getCompound("Level"));
                 }
 

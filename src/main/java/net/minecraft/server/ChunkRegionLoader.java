@@ -1,10 +1,6 @@
 package net.minecraft.server;
 
-import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.DataOutput;
-import java.io.DataOutputStream;
-import java.io.File;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -58,8 +54,8 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
 
             if (!chunk.a(i, j)) {
                 System.out.println("Chunk file at " + i + "," + j + " is in the wrong location; relocating. (Expected " + i + ", " + j + ", got " + chunk.x + ", " + chunk.z + ")");
-                nbttagcompound.setInt("xPos", i);
-                nbttagcompound.setInt("zPos", j);
+                nbttagcompound.getCompound("Level").setInt("xPos", i); // CraftBukkit - .getCompound("Level")
+                nbttagcompound.getCompound("Level").setInt("zPos", j); // CraftBukkit - .getCompound("Level")
                 chunk = ChunkLoader.a(world, nbttagcompound.getCompound("Level"));
             }
 
@@ -126,7 +122,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
         return true;
     }
 
-    public void a(PendingChunkToSave pendingchunktosave) {
+    public void a(PendingChunkToSave pendingchunktosave) throws IOException { // CraftBukkit - Added throws
         DataOutputStream dataoutputstream = RegionFileCache.c(this.d, pendingchunktosave.a.x, pendingchunktosave.a.z);
 
         NBTCompressedStreamTools.a(pendingchunktosave.b, (DataOutput) dataoutputstream);
