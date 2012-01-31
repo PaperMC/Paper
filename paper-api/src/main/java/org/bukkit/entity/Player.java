@@ -490,4 +490,26 @@ public interface Player extends HumanEntity, CommandSender, OfflinePlayer, Plugi
      */
     public void setAllowFlight(boolean flight);
 
+    /**
+     * Hides a player from this player
+     *
+     * @param player Player to hide
+     */
+    public void hidePlayer(Player player);
+
+    /**
+     * Allows this player to see a player that was previously hidden
+     *
+     * @param player Player to show
+     */
+    public void showPlayer(Player player);
+
+    /**
+     * Checks to see if a player has been hidden from this player
+     *
+     * @param player Player to check
+     * @return True if the provided player is not being hidden from this player
+     */
+    public boolean canSee(Player player);
+
 }

@@ -609,4 +609,16 @@ public class TestPlayer implements Player {
     public void setBedSpawnLocation(Location location) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
+
+    public void hidePlayer(Player player) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public void showPlayer(Player player) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public boolean canSee(Player player) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }

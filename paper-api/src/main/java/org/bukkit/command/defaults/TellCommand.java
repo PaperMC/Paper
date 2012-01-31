@@ -24,7 +24,8 @@ public class TellCommand extends VanillaCommand {
 
         Player player = Bukkit.getPlayerExact(args[0]);
 
-        if (player == null) {
+        // If a player is hidden from the sender pretend they are offline
+        if (player == null || (sender instanceof Player && !((Player) sender).canSee(player))) {
             sender.sendMessage("There's no player by that name online.");
         } else {
             StringBuilder message = new StringBuilder();
