@@ -8,7 +8,7 @@ import java.util.Set;
 public class EntityTracker {
 
     private Set a = new HashSet();
-    private IntHashMap trackedEntities = new IntHashMap();
+    public IntHashMap trackedEntities = new IntHashMap(); // CraftBukkit - private -> public
     private MinecraftServer c;
     private int d;
     private World world; // CraftBukkit - change type
