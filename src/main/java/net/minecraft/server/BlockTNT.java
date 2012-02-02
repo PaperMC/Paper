@@ -14,7 +14,7 @@ public class BlockTNT extends Block {
 
     public void onPlace(World world, int i, int j, int k) {
         super.onPlace(world, i, j, k);
-        if (world.isBlockIndirectlyPowered(i, j, k)) {
+        if (!world.suppressPhysics && world.isBlockIndirectlyPowered(i, j, k)) { // CraftBukkit
             this.postBreak(world, i, j, k, 1);
             world.setTypeId(i, j, k, 0);
         }
