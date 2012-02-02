@@ -80,28 +80,21 @@ public class ItemBlock extends Item {
             world.suppressPhysics = true;
             world.setTypeIdAndData(i, j, k, this.id, this.filterData(itemstack.getData()));
             BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, eventUseBlockBelow ? blockStateBelow : replacedBlockState, clickedX, clickedY, clickedZ, block);
+            int id = world.getTypeId(i, j, k);
+            int data = world.getData(i, j, k);
             replacedBlockState.update(true);
             world.suppressPhysics = false;
 
             if (event.isCancelled() || !event.canBuild()) {
                 return true;
             }
-            /**
-            * @see net.minecraft.server.World#setTypeIdAndData(int i, int j, int k, int l, int i1)
-            *
-            * This replaces world.setTypeIdAndData(IIIII), we're doing this because we need to
-            * hook between the 'placement' and the informing to 'world' so we can
-            * sanely undo this.
-            *
-            * Whenever the call to 'world.setTypeIdAndData' changes we need to figure out again what to
-            * replace this with.
-            */
-            if (world.setTypeIdAndData(i, j, k, this.id, this.filterData(itemstack.getData()))) { // <-- world.setTypeIdAndData does this to place the block
-                // CraftBukkit end
-                if (world.getTypeId(i, j, k) == this.id) {
-                    Block.byId[this.id].postPlace(world, i, j, k, l);
-                    Block.byId[this.id].postPlace(world, i, j, k, entityhuman);
+
+            if (world.setTypeIdAndData(i, j, k, id, data)) {
+                if (Block.byId[id] != null) {
+                    Block.byId[id].postPlace(world, i, j, k, l);
+                    Block.byId[id].postPlace(world, i, j, k, entityhuman);
                 }
+                // CraftBukkit end
 
                 world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), block.stepSound.getName(), (block.stepSound.getVolume1() + 1.0F) / 2.0F, block.stepSound.getVolume2() * 0.8F);
                 --itemstack.count;
