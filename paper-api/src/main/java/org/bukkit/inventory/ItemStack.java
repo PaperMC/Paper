@@ -356,18 +356,18 @@ public class ItemStack implements ConfigurationSerializable {
 
     public static ItemStack deserialize(Map<String, Object> args) {
         Material type = Material.getMaterial((String) args.get("type"));
-        int damage = 0;
+        short damage = 0;
         int amount = 1;
 
         if (args.containsKey("damage")) {
-            damage = (Integer) args.get("damage");
+            damage = (Short) args.get("damage");
         }
 
         if (args.containsKey("amount")) {
             amount = (Integer) args.get("amount");
         }
 
-        ItemStack result = new ItemStack(type, amount, (short) damage);
+        ItemStack result = new ItemStack(type, amount, damage);
 
         if (args.containsKey("enchantments")) {
             Object raw = args.get("enchantments");
