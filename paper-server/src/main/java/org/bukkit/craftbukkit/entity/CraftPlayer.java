@@ -564,6 +564,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void hidePlayer(Player player) {
+        if (hiddenPlayers.contains(player)) return;
         hiddenPlayers.add(player);
 
         //remove this player from the hidden player's EntityTrackerEntry
@@ -579,6 +580,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void showPlayer(Player player) {
+        if (!hiddenPlayers.contains(player)) return;
         hiddenPlayers.remove(player);
 
         EntityTracker tracker = ((WorldServer) entity.world).tracker;
