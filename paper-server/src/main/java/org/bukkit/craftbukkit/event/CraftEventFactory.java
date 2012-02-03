@@ -277,9 +277,6 @@ public class CraftEventFactory {
             type = CreatureType.BLAZE;
         } else if (entityliving instanceof EntitySilverfish) {
             type = CreatureType.SILVERFISH;
-            // Supertype of many, last!
-        } else if (entityliving instanceof EntityMonster) {
-            type = CreatureType.MONSTER;
         }
 
         CreatureSpawnEvent event = new CreatureSpawnEvent(entity, type, entity.getLocation(), spawnReason);
