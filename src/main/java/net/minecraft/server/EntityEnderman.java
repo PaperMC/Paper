@@ -137,7 +137,9 @@ public class EntityEnderman extends EntityMonster {
                     EndermanPlaceEvent place = new EndermanPlaceEvent(this.getBukkitEntity(), new Location(this.world.getWorld(), i, j, k));
                     this.world.getServer().getPluginManager().callEvent(place);
 
-                    EntityChangeBlockEvent event = new EntityChangeBlockEvent(this.getBukkitEntity(), this.world.getWorld().getBlockAt(i, j, k), org.bukkit.Material.AIR);
+                    org.bukkit.block.Block bblock = this.world.getWorld().getBlockAt(i, j, k);
+
+                    EntityChangeBlockEvent event = new EntityChangeBlockEvent(this.getBukkitEntity(), bblock, bblock.getType());
                     this.world.getServer().getPluginManager().callEvent(event);
 
                     if (!place.isCancelled() && !event.isCancelled()) {
