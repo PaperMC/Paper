@@ -5,7 +5,11 @@ import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 
+/**
+ * @deprecated Use EntityChangeBlockEvent instead
+ */
 @SuppressWarnings("serial")
+@Deprecated
 public class EndermanPickupEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
 
