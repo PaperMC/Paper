@@ -18,12 +18,13 @@ public class ItemMonsterEgg extends Item {
             Entity entity = EntityTypes.a(itemstack.getData(), world);
 
             if (entity != null && entity instanceof EntityLiving) { // CraftBukkit
+
                 if (!entityhuman.abilities.canInstantlyBuild) {
                     --itemstack.count;
                 }
 
                 entity.setPositionRotation((double) i + 0.5D, (double) j, (double) k + 0.5D, 0.0F, 0.0F);
-                world.addEntity(entity);
+                world.addEntity(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // CraftBukkit
             }
 
             return true;
