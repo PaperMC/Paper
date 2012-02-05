@@ -38,7 +38,7 @@ public class EntityCreatePortalEvent extends EntityEvent implements Cancellable 
     }
 
     public void setCancelled(boolean cancel) {
-        this.cancelled = true;
+        this.cancelled = cancel;
     }
 
     /**
