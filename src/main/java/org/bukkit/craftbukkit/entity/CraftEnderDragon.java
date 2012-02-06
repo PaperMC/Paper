@@ -2,12 +2,16 @@ package org.bukkit.craftbukkit.entity;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSet.Builder;
+
 import java.util.Set;
+
 import net.minecraft.server.EntityComplexPart;
 import net.minecraft.server.EntityEnderDragon;
+
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.ComplexEntityPart;
 import org.bukkit.entity.EnderDragon;
+import org.bukkit.entity.EntityType;
 
 public class CraftEnderDragon extends CraftComplexLivingEntity implements EnderDragon {
     public CraftEnderDragon(CraftServer server, EntityEnderDragon entity) {
@@ -32,5 +36,9 @@ public class CraftEnderDragon extends CraftComplexLivingEntity implements EnderD
     @Override
     public String toString() {
         return "CraftEnderDragon";
+    }
+
+    public EntityType getType() {
+        return EntityType.ENDER_DRAGON;
     }
 }

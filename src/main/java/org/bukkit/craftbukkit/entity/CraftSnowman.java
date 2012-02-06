@@ -1,7 +1,9 @@
 package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntitySnowman;
+
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Snowman;
 
 public class CraftSnowman extends CraftCreature implements Snowman {
@@ -17,5 +19,9 @@ public class CraftSnowman extends CraftCreature implements Snowman {
     @Override
     public String toString() {
         return "CraftSnowman";
+    }
+
+    public EntityType getType() {
+        return EntityType.SNOWMAN;
     }
 }

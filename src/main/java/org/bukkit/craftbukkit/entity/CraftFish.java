@@ -4,6 +4,7 @@ import net.minecraft.server.EntityFishingHook;
 import net.minecraft.server.EntityHuman;
 
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fish;
 import org.bukkit.entity.LivingEntity;
 
@@ -34,5 +35,9 @@ public class CraftFish extends AbstractProjectile implements Fish {
     @Override
     public String toString() {
         return "CraftFish";
+    }
+
+    public EntityType getType() {
+        return EntityType.FISHING_HOOK;
     }
 }

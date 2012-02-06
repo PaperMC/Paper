@@ -24,6 +24,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.map.CraftMapView;
 import org.bukkit.craftbukkit.map.RenderData;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerGameModeChangeEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
@@ -717,5 +718,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
             getHandle().netServerHandler.sendPacket(packet);
         }
+    }
+
+    public EntityType getType() {
+        return EntityType.PLAYER;
     }
 }

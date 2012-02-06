@@ -21,6 +21,7 @@ import org.bukkit.craftbukkit.CraftWorld;
 
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Egg;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -274,5 +275,9 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             effects.add(new PotionEffect(PotionEffectType.getById(handle.getEffectId()), handle.getDuration(), handle.getAmplifier()));
         }
         return effects;
+    }
+
+    public EntityType getType() {
+        return EntityType.UNKNOWN;
     }
 }

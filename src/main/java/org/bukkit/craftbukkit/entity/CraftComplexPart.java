@@ -4,6 +4,7 @@ import net.minecraft.server.EntityComplexPart;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.ComplexEntityPart;
 import org.bukkit.entity.ComplexLivingEntity;
+import org.bukkit.entity.EntityType;
 
 public class CraftComplexPart extends CraftEntity implements ComplexEntityPart {
     public CraftComplexPart(CraftServer server, EntityComplexPart entity) {
@@ -22,5 +23,9 @@ public class CraftComplexPart extends CraftEntity implements ComplexEntityPart {
     @Override
     public String toString() {
         return "CraftComplexPart";
+    }
+
+    public EntityType getType() {
+        return EntityType.COMPLEX_PART;
     }
 }

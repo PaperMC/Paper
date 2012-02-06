@@ -3,7 +3,7 @@ package net.minecraft.server;
 // CraftBukkit start
 import org.bukkit.Location;
 import org.bukkit.entity.Animals;
-import org.bukkit.entity.CreatureType;
+import org.bukkit.entity.EntityType;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.player.PlayerEggThrowEvent;
 // CraftBukkit end
@@ -36,7 +36,7 @@ public class EntityEgg extends EntityProjectile {
             numHatching = 0;
         }
 
-        CreatureType hatchingType = CreatureType.CHICKEN;
+        EntityType hatchingType = EntityType.CHICKEN;
 
         if (this.shooter instanceof EntityPlayer) {
             org.bukkit.entity.Player player = (this.shooter == null) ? null : (org.bukkit.entity.Player) this.shooter.getBukkitEntity();
@@ -46,7 +46,7 @@ public class EntityEgg extends EntityProjectile {
 
             hatching = event.isHatching();
             numHatching = event.getNumHatches();
-            hatchingType = event.getHatchType();
+            hatchingType = event.getHatchingType();
         }
 
         if (hatching) {
