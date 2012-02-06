@@ -4,6 +4,7 @@ import net.minecraft.server.EntityFireball;
 import net.minecraft.server.EntityLiving;
 
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fireball;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.Vector;
@@ -59,5 +60,9 @@ public class CraftFireball extends AbstractProjectile implements Fireball {
     @Override
     public String toString() {
         return "CraftFireball";
+    }
+
+    public EntityType getType() {
+        return EntityType.FIREBALL;
     }
 }

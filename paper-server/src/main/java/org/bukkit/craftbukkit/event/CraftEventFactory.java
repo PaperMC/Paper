@@ -8,36 +8,13 @@ import net.minecraft.server.ChunkCoordinates;
 import net.minecraft.server.DamageSource;
 import net.minecraft.server.Entity;
 import net.minecraft.server.EntityArrow;
-import net.minecraft.server.EntityBlaze;
-import net.minecraft.server.EntityCaveSpider;
-import net.minecraft.server.EntityChicken;
 import net.minecraft.server.EntityComplexPart;
-import net.minecraft.server.EntityCow;
-import net.minecraft.server.EntityCreeper;
 import net.minecraft.server.EntityEnderCrystal;
-import net.minecraft.server.EntityEnderDragon;
-import net.minecraft.server.EntityEnderman;
-import net.minecraft.server.EntityGhast;
-import net.minecraft.server.EntityGiantZombie;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.EntityItem;
-import net.minecraft.server.EntityMagmaCube;
 import net.minecraft.server.EntityLiving;
-import net.minecraft.server.EntityMushroomCow;
-import net.minecraft.server.EntityPig;
-import net.minecraft.server.EntityPigZombie;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityPotion;
-import net.minecraft.server.EntitySheep;
-import net.minecraft.server.EntitySilverfish;
-import net.minecraft.server.EntitySkeleton;
-import net.minecraft.server.EntitySlime;
-import net.minecraft.server.EntitySnowman;
-import net.minecraft.server.EntitySpider;
-import net.minecraft.server.EntitySquid;
-import net.minecraft.server.EntityVillager;
-import net.minecraft.server.EntityWolf;
-import net.minecraft.server.EntityZombie;
 import net.minecraft.server.Item;
 import net.minecraft.server.ItemStack;
 import net.minecraft.server.World;
@@ -58,7 +35,6 @@ import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.Arrow;
-import org.bukkit.entity.CreatureType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
@@ -232,57 +208,10 @@ public class CraftEventFactory {
      * CreatureSpawnEvent
      */
     public static CreatureSpawnEvent callCreatureSpawnEvent(EntityLiving entityliving, SpawnReason spawnReason) {
-        org.bukkit.entity.Entity entity = entityliving.getBukkitEntity();
+        LivingEntity entity = (LivingEntity) entityliving.getBukkitEntity();
         CraftServer craftServer = (CraftServer) entity.getServer();
 
-        CreatureType type = null;
-
-        if (entityliving instanceof EntityChicken) {
-            type = CreatureType.CHICKEN;
-        } else if (entityliving instanceof EntityCow) {
-            if (entityliving instanceof EntityMushroomCow) type = CreatureType.MUSHROOM_COW;
-            else type = CreatureType.COW;
-        } else if (entityliving instanceof EntityCreeper) {
-            type = CreatureType.CREEPER;
-        } else if (entityliving instanceof EntityGhast) {
-            type = CreatureType.GHAST;
-        } else if (entityliving instanceof EntityGiantZombie) {
-            type = CreatureType.GIANT;
-        } else if (entityliving instanceof EntityWolf) {
-            type = CreatureType.WOLF;
-        } else if (entityliving instanceof EntityPig) {
-            type = CreatureType.PIG;
-        } else if (entityliving instanceof EntityPigZombie) {
-            type = CreatureType.PIG_ZOMBIE;
-        } else if (entityliving instanceof EntitySheep) {
-            type = CreatureType.SHEEP;
-        } else if (entityliving instanceof EntitySkeleton) {
-            type = CreatureType.SKELETON;
-        } else if (entityliving instanceof EntitySlime) {
-            if (entityliving instanceof EntityMagmaCube) type = CreatureType.MAGMA_CUBE;
-            else type = CreatureType.SLIME;
-        } else if (entityliving instanceof EntitySpider) {
-            if (entityliving instanceof EntityCaveSpider) type = CreatureType.CAVE_SPIDER;
-            else type = CreatureType.SPIDER;
-        } else if (entityliving instanceof EntitySquid) {
-            type = CreatureType.SQUID;
-        } else if (entityliving instanceof EntityZombie) {
-            type = CreatureType.ZOMBIE;
-        } else if (entityliving instanceof EntityEnderman) {
-            type = CreatureType.ENDERMAN;
-        } else if (entityliving instanceof EntitySnowman) {
-            type = CreatureType.SNOWMAN;
-        } else if (entityliving instanceof EntityEnderDragon) {
-            type = CreatureType.ENDER_DRAGON;
-        } else if (entityliving instanceof EntityVillager) {
-            type = CreatureType.VILLAGER;
-        } else if (entityliving instanceof EntityBlaze) {
-            type = CreatureType.BLAZE;
-        } else if (entityliving instanceof EntitySilverfish) {
-            type = CreatureType.SILVERFISH;
-        }
-
-        CreatureSpawnEvent event = new CreatureSpawnEvent(entity, type, entity.getLocation(), spawnReason);
+        CreatureSpawnEvent event = new CreatureSpawnEvent(entity, spawnReason);
         craftServer.getPluginManager().callEvent(event);
         return event;
     }

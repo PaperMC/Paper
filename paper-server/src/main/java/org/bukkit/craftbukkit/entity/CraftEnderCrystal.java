@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.entity;
 import net.minecraft.server.EntityEnderCrystal;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EnderCrystal;
+import org.bukkit.entity.EntityType;
 
 public class CraftEnderCrystal extends CraftEntity implements EnderCrystal {
     public CraftEnderCrystal(CraftServer server, EntityEnderCrystal entity) {
@@ -17,5 +18,9 @@ public class CraftEnderCrystal extends CraftEntity implements EnderCrystal {
     @Override
     public String toString() {
         return "CraftEnderCrystal";
+    }
+
+    public EntityType getType() {
+        return EntityType.ENDER_CRYSTAL;
     }
 }

@@ -5,6 +5,7 @@ import net.minecraft.server.EntityEnderman;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Enderman;
+import org.bukkit.entity.EntityType;
 import org.bukkit.material.MaterialData;
 
 public class CraftEnderman extends CraftMonster implements Enderman {
@@ -29,5 +30,9 @@ public class CraftEnderman extends CraftMonster implements Enderman {
     @Override
     public String toString() {
         return "CraftEnderman";
+    }
+
+    public EntityType getType() {
+        return EntityType.ENDERMAN;
     }
 }

@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntityMinecart;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Minecart;
 import org.bukkit.util.Vector;
 
@@ -80,5 +81,9 @@ public class CraftMinecart extends CraftVehicle implements Minecart {
     @Override
     public String toString() {
         return "CraftMinecart";
+    }
+
+    public EntityType getType() {
+        return EntityType.MINECART;
     }
 }

@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.entity;
 import net.minecraft.server.EntitySkeleton;
 
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Skeleton;
 
 public class CraftSkeleton extends CraftMonster implements Skeleton {
@@ -19,5 +20,9 @@ public class CraftSkeleton extends CraftMonster implements Skeleton {
     @Override
     public String toString() {
         return "CraftSkeleton";
+    }
+
+    public EntityType getType() {
+        return EntityType.SKELETON;
     }
 }

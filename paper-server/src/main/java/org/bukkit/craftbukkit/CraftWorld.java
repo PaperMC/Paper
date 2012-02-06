@@ -331,7 +331,12 @@ public class CraftWorld implements World {
         return (Arrow) arrow.getBukkitEntity();
     }
 
+    @Deprecated
     public LivingEntity spawnCreature(Location loc, CreatureType creatureType) {
+        return spawnCreature(loc, creatureType.toEntityType());
+    }
+
+    public LivingEntity spawnCreature(Location loc, EntityType creatureType) {
         Entity result = spawn(loc, creatureType.getEntityClass());
 
         if (result == null) {

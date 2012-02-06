@@ -4,6 +4,7 @@ import net.minecraft.server.EntitySheep;
 
 import org.bukkit.DyeColor;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Sheep;
 
 public class CraftSheep extends CraftAnimals implements Sheep {
@@ -37,4 +38,7 @@ public class CraftSheep extends CraftAnimals implements Sheep {
         return "CraftSheep";
     }
 
+    public EntityType getType() {
+        return EntityType.SHEEP;
+    }
 }
