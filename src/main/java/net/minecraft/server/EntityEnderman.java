@@ -7,6 +7,7 @@ import org.bukkit.Location;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.entity.EndermanPickupEvent;
 import org.bukkit.event.entity.EndermanPlaceEvent;
+import org.bukkit.event.entity.EntityTeleportEvent;
 // CraftBukkit end
 
 public class EntityEnderman extends EntityMonster {
@@ -229,10 +230,19 @@ public class EntityEnderman extends EntityMonster {
             }
 
             if (flag1) {
-                this.setPosition(this.locX, this.locY, this.locZ);
-                if (this.world.a((Entity) this, this.boundingBox).size() == 0 && !this.world.c(this.boundingBox)) {
-                    flag = true;
+                // CraftBukkit start - teleport event
+                EntityTeleportEvent teleport = new EntityTeleportEvent(this.getBukkitEntity(), new Location(this.world.getWorld(), d3, d4, d5), new Location(this.world.getWorld(), this.locX, this.locY, this.locZ));
+                this.world.getServer().getPluginManager().callEvent(teleport);
+                if (!teleport.isCancelled()) {
+                    Location to = teleport.getTo();
+                    this.setPosition(to.getX(), to.getY(), to.getZ());
+                    if (this.world.a((Entity) this, this.boundingBox).size() == 0 && !this.world.c(this.boundingBox)) {
+                        flag = true;
+                    }
+                } else {
+                    return false;
                 }
+                // CraftBukkit end
             }
         }
 
