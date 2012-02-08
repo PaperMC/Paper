@@ -43,7 +43,7 @@ public class BlockPumpkin extends Block {
                 EntitySnowman entitysnowman = new EntitySnowman(world);
 
                 entitysnowman.setPositionRotation((double) i + 0.5D, (double) j - 1.95D, (double) k + 0.5D, 0.0F, 0.0F);
-                world.addEntity(entitysnowman);
+                world.addEntity(entitysnowman, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BUILD_SNOWMAN); // CraftBukkit
             }
 
             for (int l = 0; l < 120; ++l) {
