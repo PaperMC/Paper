@@ -21,6 +21,7 @@ public abstract class Command {
     protected String description = "";
     protected String usageMessage;
     private String permission;
+    private String permissionMessage;
 
     protected Command(String name) {
         this(name, "", "/" + name, new ArrayList<String>());
@@ -86,7 +87,14 @@ public abstract class Command {
             return true;
         }
 
-        target.sendMessage(ChatColor.RED + "I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.");
+        if (permissionMessage == null) {
+            target.sendMessage(ChatColor.RED + "I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.");
+        } else if (permissionMessage.length() != 0) {
+            for (String line : permissionMessage.replace("<permission>", permission).split("\n")) {
+                target.sendMessage(line);
+            }
+        }
+
         return false;
     }
 
@@ -172,6 +180,15 @@ public abstract class Command {
     }
 
     /**
+     * Returns a message to be displayed on a failed permission check for this command
+     *
+     * @return Permission check failed message
+     */
+    public String getPermissionMessage() {
+        return permissionMessage;
+    }
+
+    /**
      * Gets a brief description of this command
      *
      * @return Description of this command
@@ -211,6 +228,17 @@ public abstract class Command {
      */
     public Command setDescription(String description) {
         this.description = description;
+        return this;
+    }
+
+    /**
+     * Sets the message sent when a permission check fails
+     *
+     * @param permissionMessage New permission message, null to indicate default message, or an empty string to indicate no message
+     * @return This command object, for linking
+     */
+    public Command setPermissionMessage(String permissionMessage) {
+        this.permissionMessage = permissionMessage;
         return this;
     }
 
