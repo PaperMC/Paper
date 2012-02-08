@@ -5,6 +5,7 @@ import java.util.List;
 // CraftBukkit start
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Projectile;
+import org.bukkit.event.entity.EntityCombustByEntityEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
@@ -188,7 +189,14 @@ public class EntityArrow extends Entity {
                     }
 
                     if (this.isBurning()) {
-                        movingobjectposition.entity.setOnFire(5);
+                        // CraftBukkit start
+                        EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), 5);
+                        Bukkit.getPluginManager().callEvent(combustEvent);
+
+                        if (!combustEvent.isCancelled()) {
+                            movingobjectposition.entity.setOnFire(combustEvent.getDuration());
+                        }
+                        // CraftBukkit end
                     }
 
                     // CraftBukkit start
