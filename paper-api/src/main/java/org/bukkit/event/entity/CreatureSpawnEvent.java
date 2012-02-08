@@ -101,6 +101,10 @@ public class CreatureSpawnEvent extends EntityEvent implements Cancellable {
          */
         BED,
         /**
+         * When a snowman is spawned by being built
+         */
+        BUILD_SNOWMAN,
+        /**
          * When a creature is manually spawned
          */
         CUSTOM
