@@ -177,7 +177,7 @@ public abstract class EntityLiving extends Entity {
         }
 
         // CraftBukkit start - don't inline the damage, perform it with an event
-        if (this.isAlive() && this.inBlock()) {
+        if (this.isAlive() && this.inBlock() && !(this instanceof EntityEnderDragon)) { // EnderDragon's don't suffocate.
             EntityDamageEvent event = new EntityDamageEvent(this.getBukkitEntity(), EntityDamageEvent.DamageCause.SUFFOCATION, 1);
             this.world.getServer().getPluginManager().callEvent(event);
 
