@@ -563,7 +563,7 @@ public abstract class Entity {
             // CraftBukkit start
             if ((this.positionChanged) && (this.getBukkitEntity() instanceof Vehicle)) {
                 Vehicle vehicle = (Vehicle) this.getBukkitEntity();
-                org.bukkit.block.Block block = this.world.getWorld().getBlockAt(MathHelper.floor(this.locX), MathHelper.floor(this.locY - 0.20000000298023224D - (double) this.height), MathHelper.floor(this.locZ));
+                org.bukkit.block.Block block = this.world.getWorld().getBlockAt(MathHelper.floor(this.locX), MathHelper.floor(this.locY - (double) this.height), MathHelper.floor(this.locZ));
 
                 if (d5 > d0) {
                     block = block.getRelative(BlockFace.SOUTH);
