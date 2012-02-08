@@ -1,5 +1,6 @@
 package org.bukkit.event.entity;
 
+import org.bukkit.entity.ComplexEntityPart;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
@@ -25,7 +26,11 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
         this.cause = cause;
         this.damage = damage;
 
-        damagee.setLastDamageCause(this);
+        if (damagee instanceof ComplexEntityPart) {
+            ((ComplexEntityPart) damagee).getParent().setLastDamageCause(this);
+        } else {
+            damagee.setLastDamageCause(this);
+        }
     }
 
     public boolean isCancelled() {
