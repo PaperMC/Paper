@@ -84,6 +84,10 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
          */
         EATING,
         /**
+         * When an ender dragon regains health from an ender crystal
+         */
+        ENDER_CRYSTAL,
+        /**
          * When a player is healed by a potion or spell
          */
         MAGIC,
