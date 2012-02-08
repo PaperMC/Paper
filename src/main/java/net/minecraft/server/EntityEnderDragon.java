@@ -9,8 +9,8 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
-import org.bukkit.Location;
 import org.bukkit.event.entity.EntityCreatePortalEvent;
+import org.bukkit.event.entity.EntityRegainHealthEvent;
 
 import java.util.ArrayList;
 import org.bukkit.PortalType;
@@ -346,7 +346,14 @@ public class EntityEnderDragon extends EntityComplex {
 
                 this.s = null;
             } else if (this.ticksLived % 10 == 0 && this.health < this.t) {
-                ++this.health;
+                // CraftBukkit start
+                EntityRegainHealthEvent event = new EntityRegainHealthEvent(this.getBukkitEntity(), 1, EntityRegainHealthEvent.RegainReason.ENDER_CRYSTAL);
+                this.world.getServer().getPluginManager().callEvent(event);
+
+                if (!event.isCancelled()) {
+                    this.health += event.getAmount();
+                }
+                // CraftBukkit end
             }
         }
 
@@ -589,7 +596,7 @@ public class EntityEnderDragon extends EntityComplex {
 
         BlockEnderPortal.a = true;
         byte b0 = 4;
-        
+
         // CraftBukkit start - Replace any "this.world" in the following with just "world"!
         EntityCreatePortalEvent event = new EntityCreatePortalEvent(this.getBukkitEntity(), new ArrayList<BlockState>(), PortalType.ENDER);
         BlockStateListPopulator world = new BlockStateListPopulator(this.world.getWorld(), event.getBlocks());
