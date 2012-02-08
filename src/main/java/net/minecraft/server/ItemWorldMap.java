@@ -236,6 +236,11 @@ public class ItemWorldMap extends ItemWorldMapBase {
         worldmap.scale = 3;
         worldmap.map = (byte) ((WorldServer) world).dimension; // CraftBukkit - fixes Bukkit multiworld maps.
         worldmap.a();
+
+        // CraftBukkit start
+        MapInitializeEvent event = new MapInitializeEvent(worldmap.mapView);
+        Bukkit.getServer().getPluginManager().callEvent(event);
+        // CraftBukkit end
     }
 
     public Packet c(ItemStack itemstack, World world, EntityHuman entityhuman) {
