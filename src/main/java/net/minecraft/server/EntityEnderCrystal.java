@@ -51,7 +51,7 @@ public class EntityEnderCrystal extends Entity {
             if (this.b <= 0) {
                 if (!this.world.isStatic) {
                     this.die();
-                    this.world.a((Entity) null, this.locX, this.locY, this.locZ, 6.0F);
+                    this.world.a(this, this.locX, this.locY, this.locZ, 6.0F); // CraftBukkit - (Entity) null -> this.
                 } else {
                     this.die();
                 }
