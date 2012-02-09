@@ -347,9 +347,9 @@ public class EntityWolf extends EntityAnimal {
             if (event.isCancelled()) {
                 return;
             }
-            // CraftBukkit end
 
-            entity.damageEntity(DamageSource.mobAttack(this), b0);
+            entity.damageEntity(DamageSource.mobAttack(this), event.getDamage());
+            // CraftBukkit end
         }
     }
 
