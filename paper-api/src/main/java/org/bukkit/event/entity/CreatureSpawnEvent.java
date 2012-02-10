@@ -81,6 +81,14 @@ public class CreatureSpawnEvent extends EntityEvent implements Cancellable {
          */
         NATURAL,
         /**
+         * When an entity spawns as a jockey of another entity (mostly spider jockeys)
+         */
+        JOCKEY,
+        /**
+         * When a creature spawns due to chunk generation
+         */
+        CHUNK_GEN,
+        /**
          * When a creature spawns from a spawner
          */
         SPAWNER,
