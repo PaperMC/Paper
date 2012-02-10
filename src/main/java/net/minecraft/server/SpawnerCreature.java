@@ -6,16 +6,17 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
-// CraftBukkit
+// CraftBukkit start
 import java.util.ArrayList;
 import org.bukkit.craftbukkit.util.LongBaseHashtable;
 import org.bukkit.craftbukkit.util.EntryBase;
 import org.bukkit.craftbukkit.util.LongHash;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
+// CraftBukkit end
 
 public final class SpawnerCreature {
-
-    // private static HashMap b = new HashMap(); // CraftBukkit - moved local to spawnEntities
+    // CraftBukkit start
+    // private static HashMap b = new HashMap(); // Moved local to spawnEntities
     static private class ChunkEntry extends EntryBase {
         public boolean spawn;
 
@@ -32,6 +33,7 @@ public final class SpawnerCreature {
             return LongHash.lsw(key);
         }
     }
+    // CraftBukkit end
 
     protected static final Class[] a = new Class[] { EntitySpider.class, EntityZombie.class, EntitySkeleton.class};
 
@@ -49,8 +51,10 @@ public final class SpawnerCreature {
         if (!flag && !flag1) {
             return 0;
         } else {
-            // b.clear(); // CraftBukkit
-            LongBaseHashtable chunkCoords = new LongBaseHashtable(); // CraftBukkit
+            // CraftBukkit start
+            // b.clear();
+            LongBaseHashtable chunkCoords = new LongBaseHashtable();
+            // CraftBukkit end
 
             int i;
             int j;
