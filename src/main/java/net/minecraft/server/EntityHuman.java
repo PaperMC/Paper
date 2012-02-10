@@ -778,7 +778,7 @@ public abstract class EntityHuman extends EntityLiving {
             }
 
             // CraftBukkit start - Don't call the event when the entity is human since it will be called with damageEntity
-            if ((entity instanceof EntityLiving || entity instanceof EntityComplexPart) && !(entity instanceof EntityHuman)) {
+            if ((entity instanceof EntityLiving || entity instanceof EntityComplexPart || entity instanceof EntityEnderCrystal) && !(entity instanceof EntityHuman)) {
                 org.bukkit.entity.Entity damager = this.getBukkitEntity();
                 org.bukkit.entity.Entity damagee = (entity == null) ? null : entity.getBukkitEntity();
 
