@@ -34,7 +34,7 @@ public class EntitySnowball extends EntityProjectile {
             boolean stick = false;
 
             if (movingEntity != null) {
-                if (movingEntity instanceof EntityLiving) {
+                if (movingEntity instanceof EntityLiving || movingEntity instanceof EntityComplexPart) {
                     org.bukkit.entity.Entity damagee = movingEntity.getBukkitEntity();
                     Projectile projectile = (Projectile) this.getBukkitEntity();
 

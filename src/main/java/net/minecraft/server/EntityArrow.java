@@ -201,8 +201,7 @@ public class EntityArrow extends Entity {
 
                     // CraftBukkit start
                     boolean stick;
-                    if (entity instanceof EntityLiving) {
-
+                    if (entity instanceof EntityLiving || entity instanceof EntityComplexPart) {
                         org.bukkit.entity.Entity damagee = movingobjectposition.entity.getBukkitEntity();
                         Projectile projectile = (Projectile) this.getBukkitEntity();
 
@@ -218,6 +217,7 @@ public class EntityArrow extends Entity {
                     } else {
                         stick = movingobjectposition.entity.damageEntity(damagesource, l);
                     }
+
                     if (stick) {
                         // CraftBukkit end
                         if (movingobjectposition.entity instanceof EntityLiving) {

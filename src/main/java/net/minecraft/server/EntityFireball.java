@@ -5,7 +5,6 @@ import java.util.List;
 // CraftBukkit start
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.entity.Explosive;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -189,7 +188,7 @@ public class EntityFireball extends Entity {
                 // CraftBukkit start
                 if (movingobjectposition.entity != null) {
                     boolean stick;
-                    if (movingobjectposition.entity instanceof EntityLiving) {
+                    if (movingobjectposition.entity instanceof EntityLiving || movingobjectposition.entity instanceof EntityComplexPart) {
                         org.bukkit.entity.Entity damagee = movingobjectposition.entity.getBukkitEntity();
                         Projectile projectile = (Projectile) this.getBukkitEntity();
 

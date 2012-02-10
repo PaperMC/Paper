@@ -8,7 +8,6 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerEggThrowEvent;
 
 public class EntityEgg extends EntityProjectile {
@@ -29,7 +28,7 @@ public class EntityEgg extends EntityProjectile {
         // CraftBukkit start
         if (movingobjectposition.entity != null) {
             boolean stick;
-            if (movingobjectposition.entity instanceof EntityLiving) {
+            if (movingobjectposition.entity instanceof EntityLiving || movingobjectposition.entity instanceof EntityComplexPart) {
                 org.bukkit.entity.Entity damagee = movingobjectposition.entity.getBukkitEntity();
                 Projectile projectile = (Projectile) this.getBukkitEntity();
 
