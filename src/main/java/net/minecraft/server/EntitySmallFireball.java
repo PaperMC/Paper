@@ -4,8 +4,6 @@ package net.minecraft.server;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.EntityCombustByEntityEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.plugin.PluginManager;
 // CraftBukkit end
@@ -25,7 +23,8 @@ public class EntitySmallFireball extends EntityFireball {
     protected void a(MovingObjectPosition movingobjectposition) {
         if (!this.world.isStatic) {
             // CraftBukkit start - projectile hit event
-            ProjectileHitEvent phe = new ProjectileHitEvent((Projectile) this.getBukkitEntity());
+            Projectile projectile = (Projectile) this.getBukkitEntity();
+            ProjectileHitEvent phe = new ProjectileHitEvent(projectile);
             final PluginManager pluginManager = Bukkit.getPluginManager();
             pluginManager.callEvent(phe);
             // CraftBukkit end
@@ -33,25 +32,9 @@ public class EntitySmallFireball extends EntityFireball {
             if (movingEntity != null) {
                 // CraftBukkit start - entity damage by entity event + combust event
                 if (!movingEntity.isFireproof()) { // check if not fireproof
-                    boolean stick;
                     org.bukkit.entity.Entity damagee = movingEntity.getBukkitEntity();
-                    Projectile projectile = (Projectile) this.getBukkitEntity();
 
-                    if (movingEntity instanceof EntityLiving || movingEntity instanceof EntityComplexPart) {
-                        EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(projectile, damagee, EntityDamageEvent.DamageCause.PROJECTILE, 5);
-                        pluginManager.callEvent(event);
-
-                        if (event.isCancelled()) {
-                            stick = !projectile.doesBounce();
-                        } else {
-                            // this function returns if the fireball should stick in or not, i.e. !bounce
-                            stick = movingEntity.damageEntity(DamageSource.fireball(this, this.shooter), event.getDamage());
-                        }
-                    } else {
-                        stick = movingEntity.damageEntity(DamageSource.fireball(this, this.shooter), 5);
-                    }
-
-                    if (stick) {
+                    if (org.bukkit.craftbukkit.event.CraftEventFactory.handleProjectileEvent(projectile, movingobjectposition.entity, DamageSource.projectile(this, this.shooter), 0)) {
                         // if the fireball 'sticks', ignite the target
                         EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(projectile, damagee, 5);
                         pluginManager.callEvent(combustEvent);

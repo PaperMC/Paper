@@ -3,12 +3,9 @@ package net.minecraft.server;
 import java.util.List;
 
 // CraftBukkit start
-import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.entity.Explosive;
 import org.bukkit.entity.Projectile;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.ExplosionPrimeEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 // CraftBukkit end
@@ -181,30 +178,14 @@ public class EntityFireball extends Entity {
     protected void a(MovingObjectPosition movingobjectposition) {
         if (!this.world.isStatic) {
             // CraftBukkit start
-            ProjectileHitEvent phe = new ProjectileHitEvent((Projectile) this.getBukkitEntity());
+            Projectile projectile = (Projectile) this.getBukkitEntity();
+            ProjectileHitEvent phe = new ProjectileHitEvent(projectile);
             this.world.getServer().getPluginManager().callEvent(phe);
             // CraftBukkit end
             if (!this.world.isStatic) {
                 // CraftBukkit start
                 if (movingobjectposition.entity != null) {
-                    boolean stick;
-                    if (movingobjectposition.entity instanceof EntityLiving || movingobjectposition.entity instanceof EntityComplexPart) {
-                        org.bukkit.entity.Entity damagee = movingobjectposition.entity.getBukkitEntity();
-                        Projectile projectile = (Projectile) this.getBukkitEntity();
-
-                        EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(projectile, damagee, EntityDamageEvent.DamageCause.PROJECTILE, 0);
-                        Bukkit.getPluginManager().callEvent(event);
-
-                        if (event.isCancelled()) {
-                            stick = !projectile.doesBounce();
-                        } else {
-                            // this function returns if the fireball should stick in or not, i.e. !bounce
-                            stick = movingobjectposition.entity.damageEntity(DamageSource.fireball(this, this.shooter), event.getDamage());
-                        }
-                    } else {
-                        stick = movingobjectposition.entity.damageEntity(DamageSource.fireball(this, this.shooter), 0);
-                    }
-                    if (stick) {
+                    if (org.bukkit.craftbukkit.event.CraftEventFactory.handleProjectileEvent(projectile, movingobjectposition.entity, DamageSource.projectile(this, this.shooter), 0)) {
                         ;
                     }
                 }

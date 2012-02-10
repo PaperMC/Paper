@@ -1,13 +1,5 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.entity.CraftLivingEntity;
-import org.bukkit.entity.Projectile;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-// CraftBukkit end
-
 public class EntitySnowball extends EntityProjectile {
 
     public EntitySnowball(World world) {
@@ -29,33 +21,8 @@ public class EntitySnowball extends EntityProjectile {
             if (movingobjectposition.entity instanceof EntityBlaze) {
                 b0 = 3;
             }
-            // CraftBukkit start
-            final Entity movingEntity = movingobjectposition.entity;
-            boolean stick = false;
-
-            if (movingEntity != null) {
-                if (movingEntity instanceof EntityLiving || movingEntity instanceof EntityComplexPart) {
-                    org.bukkit.entity.Entity damagee = movingEntity.getBukkitEntity();
-                    Projectile projectile = (Projectile) this.getBukkitEntity();
-
-                    EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(projectile, damagee, EntityDamageEvent.DamageCause.PROJECTILE, b0);
-                    Bukkit.getPluginManager().callEvent(event);
-                    this.shooter = (projectile.getShooter() == null) ? null : ((CraftLivingEntity) projectile.getShooter()).getHandle();
-                    b0 = event.getDamage();
-
-                    if (event.isCancelled()) {
-                        stick = !projectile.doesBounce();
-                    } else {
-                        // this function returns if the snowball should stick in or not, i.e. !bounce
-                        stick = movingEntity.damageEntity(DamageSource.projectile(this, this.shooter), b0);
-                    }
-                } else {
-                    stick = movingEntity.damageEntity(DamageSource.projectile(this, this.shooter), b0);
-                }
-            }
-
-            if (stick) {
-                // CraftBukkit end
+            // CraftBukkit - entity.damageEntity -> event function
+            if (org.bukkit.craftbukkit.event.CraftEventFactory.handleProjectileEvent((org.bukkit.entity.Projectile) this.getBukkitEntity(), movingobjectposition.entity, DamageSource.projectile(this, this.shooter), b0)) {
                 ;
             }
         }

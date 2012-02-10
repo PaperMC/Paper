@@ -6,8 +6,6 @@ import java.util.List;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.EntityCombustByEntityEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 // CraftBukkit end
@@ -169,7 +167,8 @@ public class EntityArrow extends Entity {
 
             if (movingobjectposition != null) {
                 // CraftBukkit start
-                ProjectileHitEvent phe = new ProjectileHitEvent((Projectile) this.getBukkitEntity());
+                Projectile projectile = (Projectile) this.getBukkitEntity();
+                ProjectileHitEvent phe = new ProjectileHitEvent(projectile);
                 this.world.getServer().getPluginManager().callEvent(phe);
                 // CraftBukkit end
                 if (movingobjectposition.entity != null) {
@@ -198,28 +197,8 @@ public class EntityArrow extends Entity {
                         }
                         // CraftBukkit end
                     }
-
-                    // CraftBukkit start
-                    boolean stick;
-                    if (entity instanceof EntityLiving || entity instanceof EntityComplexPart) {
-                        org.bukkit.entity.Entity damagee = movingobjectposition.entity.getBukkitEntity();
-                        Projectile projectile = (Projectile) this.getBukkitEntity();
-
-                        EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(projectile, damagee, EntityDamageEvent.DamageCause.PROJECTILE, l);
-                        Bukkit.getPluginManager().callEvent(event);
-
-                        if (event.isCancelled()) {
-                            stick = !projectile.doesBounce();
-                        } else {
-                            // this function returns if the arrow should stick in or not, i.e. !bounce
-                            stick = movingobjectposition.entity.damageEntity(damagesource, event.getDamage());
-                        }
-                    } else {
-                        stick = movingobjectposition.entity.damageEntity(damagesource, l);
-                    }
-
-                    if (stick) {
-                        // CraftBukkit end
+                    // CraftBukkit - entity.damageEntity -> event function
+                    if (org.bukkit.craftbukkit.event.CraftEventFactory.handleProjectileEvent(projectile, entity, damagesource, l)) {
                         if (movingobjectposition.entity instanceof EntityLiving) {
                             ++((EntityLiving) movingobjectposition.entity).aJ;
                             if (this.n > 0) {

@@ -2,13 +2,7 @@ package net.minecraft.server;
 
 import java.util.List;
 
-// CraftBukkit start
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Projectile;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.player.PlayerFishEvent;
-// CraftBukkit end
+import org.bukkit.event.player.PlayerFishEvent; // CraftBukkit
 
 public class EntityFishingHook extends Entity {
 
@@ -190,26 +184,8 @@ public class EntityFishingHook extends Entity {
 
             if (movingobjectposition != null) {
                 if (movingobjectposition.entity != null) {
-                    // CraftBukkit start
-                    boolean stick;
-                    if (movingobjectposition.entity instanceof EntityLiving || movingobjectposition.entity instanceof EntityComplexPart) {
-                        org.bukkit.entity.Entity damagee = movingobjectposition.entity.getBukkitEntity();
-                        Projectile projectile = (Projectile) this.getBukkitEntity();
-
-                        EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(projectile, damagee, EntityDamageEvent.DamageCause.PROJECTILE, 0);
-                        Bukkit.getPluginManager().callEvent(event);
-
-                        if (event.isCancelled()) {
-                            stick = !projectile.doesBounce();
-                        } else {
-                            // this function returns if the fish should stick in or not, i.e. !bounce
-                            stick = movingobjectposition.entity.damageEntity(DamageSource.projectile(this, this.owner), event.getDamage());
-                        }
-                    } else {
-                        stick = movingobjectposition.entity.damageEntity(DamageSource.projectile(this, this.owner), 0);
-                    }
-                    if (!stick) {
-                        // CraftBukkit end
+                    // CraftBukkit - entity.damageEntity -> event function
+                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleProjectileEvent((org.bukkit.entity.Projectile) this.getBukkitEntity(), entity, DamageSource.projectile(this, this.owner), 0)) {
                         this.hooked = movingobjectposition.entity;
                     }
                 } else {
