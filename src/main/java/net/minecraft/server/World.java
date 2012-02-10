@@ -77,6 +77,8 @@ public class World implements IBlockAccess {
     public boolean allowMonsters; // CraftBukkit - private -> public
     public boolean allowAnimals; // CraftBukkit - private -> public
     private LongHashset chunkTickList; // CraftBukkit
+    public long ticksPerAnimalSpawns; // CraftBukkit
+    public long ticksPerMonsterSpawns; // CraftBukkit
     private int U;
     int[] H;
     private List V;
@@ -148,6 +150,8 @@ public class World implements IBlockAccess {
         this.allowMonsters = true;
         this.allowAnimals = true;
         this.chunkTickList = new LongHashset(); // CraftBukkit
+        this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
+        this.ticksPerMonsterSpawns = this.getServer().getTicksPerMonsterSpawns(); // CraftBukkit
         this.U = this.random.nextInt(12000);
         this.H = new int['\u8000'];
         this.V = new ArrayList();
@@ -1722,8 +1726,9 @@ public class World implements IBlockAccess {
 
         // MethodProfiler.a("mobSpawner"); // CraftBukkit - not in production code
         // CraftBukkit start - Only call spawner if we have players online and the world allows for mobs or animals
+        long time = this.worldData.getTime();
         if ((this.allowMonsters || this.allowAnimals) && (this instanceof WorldServer && this.getServer().getHandle().players.size() > 0)) {
-            SpawnerCreature.spawnEntities(this, this.allowMonsters, this.allowAnimals && this.worldData.getTime() % 400L == 0L);
+            SpawnerCreature.spawnEntities(this, this.allowMonsters && (this.ticksPerMonsterSpawns != 0 && time % this.ticksPerMonsterSpawns == 0L), this.allowAnimals && (this.ticksPerAnimalSpawns != 0 && time % this.ticksPerAnimalSpawns == 0L));
         }
         // CraftBukkit end
         // MethodProfiler.b("chunkSource"); // CraftBukkit - not in production code

@@ -982,4 +982,20 @@ public class CraftWorld implements World {
     public boolean canGenerateStructures() {
         return world.getWorldData().o();
     }
+
+    public long getTicksPerAnimalSpawns() {
+        return world.ticksPerAnimalSpawns;
+    }
+
+    public void setTicksPerAnimalSpawns(int ticksPerAnimalSpawns) {
+        world.ticksPerAnimalSpawns = ticksPerAnimalSpawns;
+    }
+
+    public long getTicksPerMonsterSpawns() {
+        return world.ticksPerMonsterSpawns;
+    }
+
+    public void setTicksPerMonsterSpawns(int ticksPerMonsterSpawns) {
+        world.ticksPerMonsterSpawns = ticksPerMonsterSpawns;
+    }
 }

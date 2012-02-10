@@ -357,6 +357,14 @@ public final class CraftServer implements Server {
         return this.configuration.getInt("settings.ping-packet-limit", 100);
     }
 
+    public int getTicksPerAnimalSpawns() {
+        return this.configuration.getInt("ticks-per.animal-spawns");
+    }
+
+    public int getTicksPerMonsterSpawns() {
+        return this.configuration.getInt("ticks-per.monster-spawns");
+    }
+
     public PluginManager getPluginManager() {
         return pluginManager;
     }
@@ -410,6 +418,17 @@ public final class CraftServer implements Server {
         for (WorldServer world : console.worlds) {
             world.difficulty = difficulty;
             world.setSpawnFlags(monsters, animals);
+            if (this.getTicksPerAnimalSpawns() < 0) {
+                world.ticksPerAnimalSpawns = 400;
+            } else {
+                world.ticksPerAnimalSpawns = this.getTicksPerAnimalSpawns();
+            }
+
+            if (this.getTicksPerMonsterSpawns() < 0) {
+                world.ticksPerMonsterSpawns = 1;
+            } else {
+                world.ticksPerMonsterSpawns = this.getTicksPerMonsterSpawns();
+            }
         }
 
         pluginManager.clearPlugins();
