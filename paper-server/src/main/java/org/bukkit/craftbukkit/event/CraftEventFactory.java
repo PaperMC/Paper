@@ -5,13 +5,16 @@ import java.util.List;
 import java.util.Map;
 
 import net.minecraft.server.ChunkCoordinates;
+import net.minecraft.server.DamageSource;
 import net.minecraft.server.Entity;
 import net.minecraft.server.EntityArrow;
 import net.minecraft.server.EntityBlaze;
 import net.minecraft.server.EntityCaveSpider;
 import net.minecraft.server.EntityChicken;
+import net.minecraft.server.EntityComplexPart;
 import net.minecraft.server.EntityCow;
 import net.minecraft.server.EntityCreeper;
+import net.minecraft.server.EntityEnderCrystal;
 import net.minecraft.server.EntityEnderDragon;
 import net.minecraft.server.EntityEnderman;
 import net.minecraft.server.EntityGhast;
@@ -20,7 +23,6 @@ import net.minecraft.server.EntityHuman;
 import net.minecraft.server.EntityItem;
 import net.minecraft.server.EntityMagmaCube;
 import net.minecraft.server.EntityLiving;
-import net.minecraft.server.EntityMonster;
 import net.minecraft.server.EntityMushroomCow;
 import net.minecraft.server.EntityPig;
 import net.minecraft.server.EntityPigZombie;
@@ -40,9 +42,9 @@ import net.minecraft.server.Item;
 import net.minecraft.server.ItemStack;
 import net.minecraft.server.World;
 import net.minecraft.server.WorldServer;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
-
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -58,6 +60,7 @@ import org.bukkit.entity.Arrow;
 import org.bukkit.entity.CreatureType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.*;
@@ -416,5 +419,23 @@ public class CraftEventFactory {
         PlayerExpChangeEvent event = new PlayerExpChangeEvent(player, expAmount);
         Bukkit.getPluginManager().callEvent(event);
         return event;
+    }
+
+    public static boolean handleProjectileEvent(Projectile projectile, Entity target, DamageSource damagesource, int damage) {
+        if (target instanceof EntityLiving || target instanceof EntityComplexPart) {
+            org.bukkit.entity.Entity damagee = target.getBukkitEntity();
+            
+            EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(projectile, damagee, EntityDamageEvent.DamageCause.PROJECTILE, damage);
+            Bukkit.getPluginManager().callEvent(event);
+
+            if (!event.isCancelled()) {
+                return target.damageEntity(damagesource, damage);
+            }
+        } else {
+            // Other entities have their events (if any) handled in damageEntity
+            return target.damageEntity(damagesource, damage);
+        }
+
+        return !projectile.doesBounce();
     }
 }
