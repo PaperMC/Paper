@@ -769,6 +769,90 @@ public interface World extends PluginMessageRecipient {
     public boolean canGenerateStructures();
 
     /**
+     * Gets the world's ticks per animal spawns value
+     * <p />
+     * This value determines how many ticks there are between attempts to spawn animals.
+     * <p />
+     * <b>Example Usage:</b>
+     * <ul>
+     * <li>A value of 1 will mean the server will attempt to spawn animals in this world every tick.
+     * <li>A value of 400 will mean the server will attempt to spawn animals in this world every 400th tick.
+     * <li>A value below 0 will be reset back to Minecraft's default.
+     * </ul>
+     * <p />
+     * <b>Note:</b>
+     * If set to 0, animal spawning will be disabled for this world. We recommend using {@link #setSpawnFlags(boolean, boolean)} to control this instead.
+     * <p />
+     * Minecraft default: 400.
+     *
+     * @return The world's ticks per animal spawns value
+     */
+    public long getTicksPerAnimalSpawns();
+
+    /**
+     * Sets the world's ticks per animal spawns value
+     * <p />
+     * This value determines how many ticks there are between attempts to spawn animals.
+     * <p />
+     * <b>Example Usage:</b>
+     * <ul>
+     * <li>A value of 1 will mean the server will attempt to spawn animals in this world every tick.
+     * <li>A value of 400 will mean the server will attempt to spawn animals in this world every 400th tick.
+     * <li>A value below 0 will be reset back to Minecraft's default.
+     * </ul>
+     * <p />
+     * <b>Note:</b>
+     * If set to 0, animal spawning will be disabled for this world. We recommend using {@link #setSpawnFlags(boolean, boolean)} to control this instead.
+     * <p />
+     * Minecraft default: 400.
+     *
+     * @param ticksPerAnimalSpawns the ticks per animal spawns value you want to set the world to
+     */
+    public void setTicksPerAnimalSpawns(int ticksPerAnimalSpawns);
+
+    /**
+     * Gets the world's ticks per monster spawns value
+     * <p />
+     * This value determines how many ticks there are between attempts to spawn monsters.
+     * <p />
+     * <b>Example Usage:</b>
+     * <ul>
+     * <li>A value of 1 will mean the server will attempt to spawn monsters in this world every tick.
+     * <li>A value of 400 will mean the server will attempt to spawn monsters in this world every 400th tick.
+     * <li>A value below 0 will be reset back to Minecraft's default.
+     * </ul>
+     * <p />
+     * <b>Note:</b>
+     * If set to 0, monsters spawning will be disabled for this world. We recommend using {@link #setSpawnFlags(boolean, boolean)} to control this instead.
+     * <p />
+     * Minecraft default: 1.
+     *
+     * @return The world's ticks per monster spawns value
+     */
+    public long getTicksPerMonsterSpawns();
+
+    /**
+     * Sets the world's ticks per monster spawns value
+     * <p />
+     * This value determines how many ticks there are between attempts to spawn monsters.
+     * <p />
+     * <b>Example Usage:</b>
+     * <ul>
+     * <li>A value of 1 will mean the server will attempt to spawn monsters in this world on every tick.
+     * <li>A value of 400 will mean the server will attempt to spawn monsters in this world every 400th tick.
+     * <li>A value below 0 will be reset back to Minecraft's default.
+     * </ul>
+     * <p />
+     * <b>Note:</b>
+     * If set to 0, monsters spawning will be disabled for this world. We recommend using {@link #setSpawnFlags(boolean, boolean)} to control this instead.
+     * <p />
+     * Minecraft default: 1.
+     *
+     * @param ticksPerMonsterSpawns the ticks per monster spawns value you want to set the world to
+     */
+    public void setTicksPerMonsterSpawns(int ticksPerMonsterSpawns);
+
+    /**
      * Represents various map environment types that a world may be
      */
     public enum Environment {

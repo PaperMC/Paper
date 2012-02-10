@@ -182,6 +182,44 @@ public interface Server extends PluginMessageRecipient {
     public File getUpdateFolderFile();
 
     /**
+     * Gets default ticks per animal spawns value
+     * <p />
+     * <b>Example Usage:</b>
+     * <ul>
+     * <li>A value of 1 will mean the server will attempt to spawn monsters every tick.
+     * <li>A value of 400 will mean the server will attempt to spawn monsters every 400th tick.
+     * <li>A value below 0 will be reset back to Minecraft's default.
+     * </ul>
+     * <p />
+     * <b>Note:</b>
+     * If set to 0, animal spawning will be disabled. We recommend using spawn-animals to control this instead.
+     * <p />
+     * Minecraft default: 400.
+     *
+     * @return The default ticks per animal spawns value
+     */
+    public int getTicksPerAnimalSpawns();
+
+    /**
+     * Gets the default ticks per monster spawns value
+     * <p />
+     * <b>Example Usage:</b>
+     * <ul>
+     * <li>A value of 1 will mean the server will attempt to spawn monsters every tick.
+     * <li>A value of 400 will mean the server will attempt to spawn monsters every 400th tick.
+     * <li>A value below 0 will be reset back to Minecraft's default.
+     * </ul>
+     * <p />
+     * <b>Note:</b>
+     * If set to 0, monsters spawning will be disabled. We recommend using spawn-monsters to control this instead.
+     * <p />
+     * Minecraft default: 1.
+     *
+     * @return The default ticks per monsters spawn value
+     */
+    public int getTicksPerMonsterSpawns();
+
+    /**
      * Gets a player object by the given username
      * <p />
      * This method may not return objects for offline players
