@@ -5,31 +5,20 @@ package org.bukkit.plugin;
  */
 public class InvalidPluginException extends Exception {
     private static final long serialVersionUID = -8242141640709409542L;
-    private final Throwable cause;
 
     /**
      * Constructs a new InvalidPluginException based on the given Exception
      *
-     * @param throwable Exception that triggered this Exception
+     * @param cause Exception that triggered this Exception
      */
-    public InvalidPluginException(Throwable throwable) {
-        cause = throwable;
+    public InvalidPluginException(final Throwable cause) {
+        super("Invalid plugin" + (cause != null ? ": " + cause.getMessage() : ""), cause);
     }
 
     /**
      * Constructs a new InvalidPluginException
      */
     public InvalidPluginException() {
-        cause = null;
-    }
-
-    /**
-     * If applicable, returns the Exception that triggered this Exception
-     *
-     * @return Inner exception, or null if one does not exist
-     */
-    @Override
-    public Throwable getCause() {
-        return cause;
+        this(null);
     }
 }
