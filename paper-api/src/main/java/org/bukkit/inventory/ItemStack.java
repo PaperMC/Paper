@@ -211,7 +211,7 @@ public class ItemStack implements ConfigurationSerializable {
     @Override
     public ItemStack clone() {
         ItemStack result = new ItemStack(type, amount, durability);
-        result.addEnchantments(getEnchantments());
+        result.addUnsafeEnchantments(getEnchantments());
 
         return result;
     }
