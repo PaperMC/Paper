@@ -26,8 +26,7 @@ public class BlockCrops extends BlockFlower {
                 float f = this.i(world, i, j, k);
 
                 if (random.nextInt((int) (25.0F / f) + 1) == 0) {
-                    ++l;
-                    world.setData(i, j, k, l);
+                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this.id, ++l); // CraftBukkit
                 }
             }
         }

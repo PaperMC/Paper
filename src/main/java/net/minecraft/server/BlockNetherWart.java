@@ -26,8 +26,7 @@ public class BlockNetherWart extends BlockFlower {
                 BiomeBase biomebase = worldchunkmanager.getBiome(i, k);
 
                 if (biomebase instanceof BiomeHell && random.nextInt(15) == 0) {
-                    ++l;
-                    world.setData(i, j, k, l);
+                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this.id, ++l); // CraftBukkit
                 }
             }
         }
