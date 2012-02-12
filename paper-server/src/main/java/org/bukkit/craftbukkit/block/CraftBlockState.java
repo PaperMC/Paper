@@ -80,9 +80,11 @@ public class CraftBlockState implements BlockState {
     }
 
     public boolean setTypeId(final int type) {
-        this.type = type;
+        if (this.type != type) {
+            this.type = type;
 
-        createData((byte) 0);
+            createData((byte) 0);
+        }
         return true;
     }
 
@@ -126,7 +128,7 @@ public class CraftBlockState implements BlockState {
     }
 
     private void createData(final byte data) {
-        Material mat = Material.getMaterial(type);
+        Material mat = getType();
         if (mat == null || mat.getData() == null) {
             this.data = new MaterialData(type, data);
         } else {
@@ -142,8 +144,8 @@ public class CraftBlockState implements BlockState {
         return new Location(world, x, y, z);
     }
 
-    public void setData(byte data) {
-        createData(data);
+    public void setRawData(byte data) {
+        this.data.setData(data);
     }
 
     @Override

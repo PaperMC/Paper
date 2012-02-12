@@ -52,6 +52,7 @@ import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -424,7 +425,7 @@ public class CraftEventFactory {
     public static boolean handleProjectileEvent(Projectile projectile, Entity target, DamageSource damagesource, int damage) {
         if (target instanceof EntityLiving || target instanceof EntityComplexPart || target instanceof EntityEnderCrystal) {
             org.bukkit.entity.Entity damagee = target.getBukkitEntity();
-            
+
             EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(projectile, damagee, EntityDamageEvent.DamageCause.PROJECTILE, damage);
             Bukkit.getPluginManager().callEvent(event);
 
@@ -437,5 +438,19 @@ public class CraftEventFactory {
         }
 
         return !projectile.doesBounce();
+    }
+
+    public static void handleBlockGrowEvent(World world, int x, int y, int z, int type, int data) {
+        Block block = world.getWorld().getBlockAt(x, y, z);
+        CraftBlockState state = (CraftBlockState) block.getState();
+        state.setTypeId(type);
+        state.setRawData((byte) data);
+
+        BlockGrowEvent event = new BlockGrowEvent(block, state);
+        Bukkit.getPluginManager().callEvent(event);
+
+        if (!event.isCancelled()) {
+            state.update(true);
+        }
     }
 }
