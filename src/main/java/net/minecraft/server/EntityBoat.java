@@ -308,17 +308,17 @@ public class EntityBoat extends Entity {
 
                     if (!destroyEvent.isCancelled()) {
                     // CraftBukkit end
-                    this.die();
+                        this.die();
 
-                    int k;
+                        int k;
 
-                    for (k = 0; k < 3; ++k) {
-                        this.a(Block.WOOD.id, 1, 0.0F);
-                    }
+                        for (k = 0; k < 3; ++k) {
+                            this.a(Block.WOOD.id, 1, 0.0F);
+                        }
 
-                    for (k = 0; k < 2; ++k) {
-                        this.a(Item.STICK.id, 1, 0.0F);
-                    }
+                        for (k = 0; k < 2; ++k) {
+                            this.a(Item.STICK.id, 1, 0.0F);
+                        }
                     } // CraftBukkit
                 }
             } else {

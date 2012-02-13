@@ -286,11 +286,14 @@ public class EntityPainting extends Entity {
     }
 
     public void b_(double d0, double d1, double d2) {
-        if (!this.world.isStatic && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) {
+        // CraftBukkit start - not needed for paintings
+        /* if (!this.world.isStatic && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) {
             if (dead) return; // CraftBukkit
 
             this.die();
             this.world.addEntity(new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.PAINTING)));
-        }
+        }*/
+        // CraftBukkit end
     }
+
 }

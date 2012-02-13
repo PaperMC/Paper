@@ -244,6 +244,13 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                     }
 
                     if (packet10flying.hasPos && packet10flying.y == -999.0D && packet10flying.stance == -999.0D) {
+                        // CraftBukkit start
+                        if (packet10flying.x > 1 || packet10flying.z > 1) {
+                            System.err.println(player.getName() + " was caught trying to crash the server with an invalid position.");
+                            player.kickPlayer("Nope!");
+                            return;
+                        }
+                        // CraftBukkit end
                         d5 = packet10flying.x;
                         d4 = packet10flying.z;
                     }
