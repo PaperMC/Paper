@@ -149,4 +149,9 @@ public class Rails extends MaterialData {
             break;
         }
     }
+
+    @Override
+    public Rails clone() {
+        return (Rails) super.clone();
+    }
 }

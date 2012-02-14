@@ -40,4 +40,9 @@ public class RedstoneTorch extends Torch implements Redstone {
     public String toString() {
         return super.toString() + " " + (isPowered() ? "" : "NOT ") + "POWERED";
     }
+
+    @Override
+    public RedstoneTorch clone() {
+        return (RedstoneTorch) super.clone();
+    }
 }

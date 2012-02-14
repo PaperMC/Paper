@@ -119,4 +119,9 @@ public class Lever extends SimpleAttachableMaterialData implements Redstone {
     public String toString() {
         return super.toString() + " facing " + getFacing() + " " + (isPowered() ? "" : "NOT ") + "POWERED";
     }
+
+    @Override
+    public Lever clone() {
+        return (Lever) super.clone();
+    }
 }

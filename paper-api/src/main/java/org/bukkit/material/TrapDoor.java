@@ -80,4 +80,8 @@ public class TrapDoor extends SimpleAttachableMaterialData {
         return (isOpen() ? "OPEN " : "CLOSED ") + super.toString() + " with hinges set " + getAttachedFace();
     }
 
+    @Override
+    public TrapDoor clone() {
+        return (TrapDoor) super.clone();
+    }
 }

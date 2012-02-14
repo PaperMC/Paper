@@ -32,4 +32,9 @@ public class Dispenser extends FurnaceAndDispenser {
     public Dispenser(final Material type, final byte data) {
         super(type, data);
     }
+
+    @Override
+    public Dispenser clone() {
+        return (Dispenser) super.clone();
+    }
 }

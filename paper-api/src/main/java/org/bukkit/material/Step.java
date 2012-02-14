@@ -46,4 +46,9 @@ public class Step extends TexturedMaterial {
     public List<Material> getTextures() {
         return textures;
     }
+
+    @Override
+    public Step clone() {
+        return (Step) super.clone();
+    }
 }

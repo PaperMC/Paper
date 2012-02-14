@@ -33,4 +33,9 @@ public class DetectorRail extends ExtendedRails implements PressureSensor {
     public void setPressed(boolean isPressed) {
         setData((byte) (isPressed ? (getData() | 0x8) : (getData() & ~0x8)));
     }
+
+    @Override
+    public DetectorRail clone() {
+        return (DetectorRail) super.clone();
+    }
 }

@@ -128,4 +128,9 @@ public class Door extends MaterialData implements Directional {
         }
         return null; // shouldn't happen
     }
+
+    @Override
+    public Door clone() {
+        return (Door) super.clone();
+    }
 }

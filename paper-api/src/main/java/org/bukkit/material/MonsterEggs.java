@@ -44,4 +44,9 @@ public class MonsterEggs extends TexturedMaterial {
     public List<Material> getTextures() {
         return textures;
     }
+
+    @Override
+    public MonsterEggs clone() {
+        return (MonsterEggs) super.clone();
+    }
 }

@@ -65,4 +65,8 @@ public abstract class TexturedMaterial extends MaterialData {
         return getMaterial() + " " + super.toString();
     }
 
+    @Override
+    public TexturedMaterial clone() {
+        return (TexturedMaterial) super.clone();
+    }
 }

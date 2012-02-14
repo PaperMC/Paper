@@ -54,4 +54,9 @@ public class Coal extends MaterialData {
     public String toString() {
         return getType() + " " + super.toString();
     }
+
+    @Override
+    public Coal clone() {
+        return (Coal) super.clone();
+    }
 }

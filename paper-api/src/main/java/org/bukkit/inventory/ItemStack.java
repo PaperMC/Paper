@@ -12,7 +12,7 @@ import org.bukkit.material.MaterialData;
 /**
  * Represents a stack of items
  */
-public class ItemStack implements ConfigurationSerializable {
+public class ItemStack implements Cloneable, ConfigurationSerializable {
     private int type;
     private int amount = 0;
     private MaterialData data = null;
@@ -210,10 +210,18 @@ public class ItemStack implements ConfigurationSerializable {
 
     @Override
     public ItemStack clone() {
-        ItemStack result = new ItemStack(type, amount, durability);
-        result.addUnsafeEnchantments(getEnchantments());
+        try {
+            ItemStack itemStack = (ItemStack) super.clone();
 
-        return result;
+            itemStack.enchantments = new HashMap<Enchantment, Integer>(this.enchantments);
+            if (this.data != null) {
+                itemStack.data = this.data.clone();
+            }
+
+            return itemStack;
+        } catch (CloneNotSupportedException e) {
+            throw new Error(e);
+        }
     }
 
     @Override

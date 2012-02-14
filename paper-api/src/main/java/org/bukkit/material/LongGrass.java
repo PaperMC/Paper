@@ -54,4 +54,9 @@ public class LongGrass extends MaterialData {
     public String toString() {
         return getSpecies() + " " + super.toString();
     }
+
+    @Override
+    public LongGrass clone() {
+        return (LongGrass) super.clone();
+    }
 }

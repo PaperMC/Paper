@@ -92,4 +92,9 @@ public class Stairs extends MaterialData implements Directional {
     public String toString() {
         return super.toString() + " facing " + getFacing();
     }
+
+    @Override
+    public Stairs clone() {
+        return (Stairs) super.clone();
+    }
 }

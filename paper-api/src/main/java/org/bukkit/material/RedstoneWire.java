@@ -40,4 +40,9 @@ public class RedstoneWire extends MaterialData implements Redstone {
     public String toString() {
         return super.toString() + " " + (isPowered() ? "" : "NOT ") + "POWERED";
     }
+
+    @Override
+    public RedstoneWire clone() {
+        return (RedstoneWire) super.clone();
+    }
 }

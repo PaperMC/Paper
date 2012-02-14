@@ -68,4 +68,9 @@ public class Cake extends MaterialData {
     public String toString() {
         return super.toString() + " " + getSlicesEaten() + "/" + getSlicesRemaining() + " slices eaten/remaining";
     }
+
+    @Override
+    public Cake clone() {
+        return (Cake) super.clone();
+    }
 }

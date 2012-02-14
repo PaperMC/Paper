@@ -45,4 +45,8 @@ public class SmoothBrick extends TexturedMaterial {
         return textures;
     }
 
+    @Override
+    public SmoothBrick clone() {
+        return (SmoothBrick) super.clone();
+    }
 }

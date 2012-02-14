@@ -37,4 +37,9 @@ public class Furnace extends FurnaceAndDispenser {
     public Furnace(final Material type, final byte data) {
         super(type, data);
     }
+
+    @Override
+    public Furnace clone() {
+        return (Furnace) super.clone();
+    }
 }

@@ -44,4 +44,9 @@ public class ExtendedRails extends Rails {
         super.setDirection(face, isOnSlope);
         setData((byte) (extraBitSet ? (getData() | 0x8) : (getData() & ~0x8)));
     }
+
+    @Override
+    public ExtendedRails clone() {
+        return (ExtendedRails) super.clone();
+    }
 }

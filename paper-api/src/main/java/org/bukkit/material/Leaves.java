@@ -54,4 +54,9 @@ public class Leaves extends MaterialData {
     public String toString() {
         return getSpecies() + " " + super.toString();
     }
+
+    @Override
+    public Leaves clone() {
+        return (Leaves) super.clone();
+    }
 }

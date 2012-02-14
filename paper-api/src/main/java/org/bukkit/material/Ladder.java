@@ -79,4 +79,9 @@ public class Ladder extends SimpleAttachableMaterialData {
         setData(data);
 
     }
+
+    @Override
+    public Ladder clone() {
+        return (Ladder) super.clone();
+    }
 }

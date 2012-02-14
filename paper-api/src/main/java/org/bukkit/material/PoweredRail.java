@@ -38,4 +38,9 @@ public class PoweredRail extends ExtendedRails implements Redstone {
     public void setPowered(boolean isPowered) {
         setData((byte) (isPowered ? (getData() | 0x8) : (getData() & ~0x8)));
     }
+
+    @Override
+    public PoweredRail clone() {
+        return (PoweredRail) super.clone();
+    }
 }

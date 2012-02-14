@@ -42,4 +42,9 @@ public abstract class SimpleAttachableMaterialData extends MaterialData implemen
     public String toString() {
         return super.toString() + " facing " + getFacing();
     }
+
+    @Override
+    public SimpleAttachableMaterialData clone() {
+        return (SimpleAttachableMaterialData) super.clone();
+    }
 }

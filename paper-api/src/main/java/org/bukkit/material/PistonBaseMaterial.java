@@ -88,4 +88,9 @@ public class PistonBaseMaterial extends MaterialData implements Directional, Red
     public boolean isSticky() {
         return this.getItemType() == Material.PISTON_STICKY_BASE;
     }
+
+    @Override
+    public PistonBaseMaterial clone() {
+        return (PistonBaseMaterial) super.clone();
+    }
 }

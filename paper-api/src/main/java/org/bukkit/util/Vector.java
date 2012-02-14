@@ -546,16 +546,10 @@ public class Vector implements Cloneable, ConfigurationSerializable {
     @Override
     public Vector clone() {
         try {
-            Vector v = (Vector) super.clone();
-
-            v.x = x;
-            v.y = y;
-            v.z = z;
-            return v;
+            return (Vector) super.clone();
         } catch (CloneNotSupportedException e) {
-            e.printStackTrace();
+            throw new Error(e);
         }
-        return null;
     }
 
     /**

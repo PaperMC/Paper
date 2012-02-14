@@ -88,4 +88,9 @@ public class PistonExtensionMaterial extends MaterialData implements Attachable 
     public BlockFace getAttachedFace() {
         return getFacing().getOppositeFace();
     }
+
+    @Override
+    public PistonExtensionMaterial clone() {
+        return (PistonExtensionMaterial) super.clone();
+    }
 }

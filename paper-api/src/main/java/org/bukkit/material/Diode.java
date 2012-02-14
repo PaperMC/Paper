@@ -100,4 +100,9 @@ public class Diode extends MaterialData implements Directional {
     public String toString() {
         return super.toString() + " facing " + getFacing() + " with " + getDelay() + " ticks delay";
     }
+
+    @Override
+    public Diode clone() {
+        return (Diode) super.clone();
+    }
 }
