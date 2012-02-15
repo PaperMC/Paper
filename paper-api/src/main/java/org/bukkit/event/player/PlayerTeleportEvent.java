@@ -44,6 +44,14 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
          */
         PLUGIN,
         /**
+         * Indicates the teleportation was caused by a player entering a Nether portal
+         */
+        NETHER_PORTAL,
+        /**
+         * Indicates the teleportation was caused by a player entering an End portal
+         */
+        END_PORTAL,
+        /**
          * Indicates the teleportation was caused by an event not covered by this enum
          */
         UNKNOWN;
