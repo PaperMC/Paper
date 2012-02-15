@@ -23,6 +23,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.Bukkit;
 // CraftBukkit end
 
@@ -351,8 +352,27 @@ public class ServerConfigurationManager {
             }
         }
 
+        TeleportCause cause = TeleportCause.UNKNOWN;
+        int playerEnvironmentId = entityplayer.getBukkitEntity().getWorld().getEnvironment().getId();
+        switch (dimension) {
+            case -1:
+                cause = TeleportCause.NETHER_PORTAL;
+                break;
+            case 0:
+                if (playerEnvironmentId == -1) {
+                    cause = TeleportCause.NETHER_PORTAL;
+                } else if (playerEnvironmentId == 1) {
+                    cause = TeleportCause.END_PORTAL;
+                }
+
+                break;
+            case 1:
+                cause = TeleportCause.END_PORTAL;
+                break;
+        }
+
         org.bukkit.craftbukkit.PortalTravelAgent pta = new org.bukkit.craftbukkit.PortalTravelAgent();
-        PlayerPortalEvent event = new PlayerPortalEvent((Player) entityplayer.getBukkitEntity(), fromLocation, toLocation, pta);
+        PlayerPortalEvent event = new PlayerPortalEvent((Player) entityplayer.getBukkitEntity(), fromLocation, toLocation, pta, cause);
 
         if (entityplayer.dimension == 1) {
             event.useTravelAgent(false);
