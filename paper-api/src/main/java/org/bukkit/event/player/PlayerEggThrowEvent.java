@@ -2,6 +2,7 @@ package org.bukkit.event.player;
 
 import org.bukkit.entity.CreatureType;
 import org.bukkit.entity.Egg;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 
@@ -12,15 +13,20 @@ public class PlayerEggThrowEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
     private final Egg egg;
     private boolean hatching;
-    private CreatureType hatchType;
+    private EntityType hatchType;
     private byte numHatches;
 
-    public PlayerEggThrowEvent(final Player player, final Egg egg, final boolean hatching, final byte numHatches, final CreatureType hatchType) {
+    public PlayerEggThrowEvent(final Player player, final Egg egg, final boolean hatching, final byte numHatches, final EntityType hatchingType) {
         super(player);
         this.egg = egg;
         this.hatching = hatching;
         this.numHatches = numHatches;
-        this.hatchType = hatchType;
+        this.hatchType = hatchingType;
+    }
+
+    @Deprecated
+    public PlayerEggThrowEvent(Player player, Egg egg, boolean hatching, byte numHatches, CreatureType hatchingType) {
+        this(player, egg, hatching, numHatches, hatchingType.toEntityType());
     }
 
     /**
@@ -53,12 +59,34 @@ public class PlayerEggThrowEvent extends PlayerEvent {
     }
 
     /**
-     * Get the type of the mob being hatched (CreatureType.CHICKEN by default)
+     * Get the type of the mob being hatched (EntityType.CHICKEN by default)
+     *
+     * @return The type of the mob being hatched by the egg
+     * @deprecated In favour of {@link #getHatchingType()}.
+     */
+    @Deprecated
+    public CreatureType getHatchType() {
+        return CreatureType.fromEntityType(hatchType);
+    }
+
+    /**
+     * Get the type of the mob being hatched (EntityType.CHICKEN by default)
      *
      * @return The type of the mob being hatched by the egg
      */
-    public CreatureType getHatchType() {
-        return CreatureType.fromName(hatchType.getName());
+    public EntityType getHatchingType() {
+        return hatchType;
+    }
+
+    /**
+     * Change the type of mob being hatched by the egg
+     *
+     * @param hatchType The type of the mob being hatched by the egg
+     * @deprecated In favour of {@link #setHatchingType(EntityType)}.
+     */
+    @Deprecated
+    public void setHatchType(CreatureType hatchType) {
+        this.hatchType = hatchType.toEntityType();
     }
 
     /**
@@ -66,7 +94,8 @@ public class PlayerEggThrowEvent extends PlayerEvent {
      *
      * @param hatchType The type of the mob being hatched by the egg
      */
-    public void setHatchType(CreatureType hatchType) {
+    public void setHatchingType(EntityType hatchType) {
+        if(!hatchType.isSpawnable()) throw new IllegalArgumentException("Can't spawn that entity type from an egg!");
         this.hatchType = hatchType;
     }
 

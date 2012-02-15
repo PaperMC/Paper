@@ -226,4 +226,10 @@ public interface Entity {
      * @param type Effect to play.
      */
     public void playEffect(EntityEffect type);
+
+    /**
+     * Get the type of the entity.
+     * @return The entity type.
+     */
+    public EntityType getType();
 }
