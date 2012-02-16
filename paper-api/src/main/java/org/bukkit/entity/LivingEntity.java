@@ -90,23 +90,38 @@ public interface LivingEntity extends Entity {
     /**
      * Throws an egg from the entity.
      *
+     * @deprecated Use launchProjectile(Egg.class) instead
      * @return The egg thrown.
      */
+    @Deprecated
     public Egg throwEgg();
 
     /**
      * Throws a snowball from the entity.
      *
+     * @deprecated Use launchProjectile(Snowball.class) instead
      * @return The snowball thrown.
      */
+    @Deprecated
     public Snowball throwSnowball();
 
     /**
      * Shoots an arrow from the entity.
      *
+     * @deprecated Use launchProjectile(Arrow.class) instead
      * @return The arrow shot.
      */
+    @Deprecated
     public Arrow shootArrow();
+
+    /**
+     * Launches a {@link Projectile} from the entity.
+     *
+     * @param projectile Class of the projectile to launch
+     *
+     * @return The launched projectile.
+     */
+    public <T extends Projectile> T launchProjectile(Class<? extends T> projectile);
 
     /**
      * Returns whether this entity is inside a vehicle.
