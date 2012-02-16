@@ -360,7 +360,7 @@ public class ItemStack implements ConfigurationSerializable {
         int amount = 1;
 
         if (args.containsKey("damage")) {
-            damage = (Short) args.get("damage");
+            damage = ((Number) args.get("damage")).shortValue();
         }
 
         if (args.containsKey("amount")) {
