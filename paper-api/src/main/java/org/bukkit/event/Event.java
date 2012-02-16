@@ -2,8 +2,6 @@ package org.bukkit.event;
 
 import java.io.Serializable;
 
-import org.apache.commons.lang.Validate;
-
 /**
  * Represents an event
  */
@@ -12,17 +10,18 @@ public abstract class Event implements Serializable {
     private final String name;
 
     protected Event() {
-        this.name = getClass().getName();
+        this(null);
     }
 
     protected Event(final String name) {
-        Validate.notNull(name, "name cannot be null");
-        this.name = name;
+        if (name == null) {
+            this.name = getClass().getName();
+        } else {
+            this.name = name;
+        }
     }
 
     /**
-     * Gets the event's name. Should only be used if getType() == Type.CUSTOM
-     *
      * @return Name of this event
      */
     public final String getEventName() {
@@ -30,7 +29,7 @@ public abstract class Event implements Serializable {
     }
 
     public HandlerList getHandlers() {
-        throw new IllegalStateException("Event must implement getHandlers()");
+        throw new IllegalStateException(getEventName() + " must implement getHandlers()");
     }
 
     public enum Result {
