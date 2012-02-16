@@ -135,6 +135,7 @@ public class ServerConfigurationManager {
         if ((joinMessage != null) && (joinMessage.length() > 0)) {
             this.server.serverConfigurationManager.sendAll(new Packet3Chat(joinMessage));
         }
+        this.cserver.onPlayerJoin(playerJoinEvent.getPlayer());
         // CraftBukkit end
 
         worldserver.addEntity(entityplayer);
