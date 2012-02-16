@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -8,30 +9,37 @@ import java.util.List;
 import net.minecraft.server.DamageSource;
 import net.minecraft.server.EntityArrow;
 import net.minecraft.server.EntityEgg;
+import net.minecraft.server.EntityEnderPearl;
+import net.minecraft.server.EntityFireball;
 import net.minecraft.server.EntityLiving;
+import net.minecraft.server.EntitySmallFireball;
+import net.minecraft.server.EntitySnowball;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.MobEffect;
 import net.minecraft.server.MobEffectList;
-import net.minecraft.server.EntitySnowball;
 
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
-
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Egg;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.HumanEntity;
+import org.bukkit.entity.EnderPearl;
+import org.bukkit.entity.Fireball;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
+import org.bukkit.entity.SmallFireball;
 import org.bukkit.entity.Snowball;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.BlockIterator;
+import org.bukkit.util.Vector;
 
-import java.util.Collection;
+import org.apache.commons.lang.Validate;
 
 public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public CraftLivingEntity(final CraftServer server, final EntityLiving entity) {
@@ -58,20 +66,14 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         return getHandle().getMaxHealth();
     }
 
+    @Deprecated
     public Egg throwEgg() {
-        net.minecraft.server.World world = ((CraftWorld) getWorld()).getHandle();
-        EntityEgg egg = new EntityEgg(world, getHandle());
-
-        world.addEntity(egg);
-        return (Egg) egg.getBukkitEntity();
+        return launchProjectile(Egg.class);
     }
 
+    @Deprecated
     public Snowball throwSnowball() {
-        net.minecraft.server.World world = ((CraftWorld) getWorld()).getHandle();
-        EntitySnowball snowball = new EntitySnowball(world, getHandle());
-
-        world.addEntity(snowball);
-        return (Snowball) snowball.getBukkitEntity();
+        return launchProjectile(Snowball.class);
     }
 
     public double getEyeHeight() {
@@ -121,12 +123,9 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         return getLineOfSight(transparent, maxDistance, 2);
     }
 
+    @Deprecated
     public Arrow shootArrow() {
-        net.minecraft.server.World world = ((CraftWorld) getWorld()).getHandle();
-        EntityArrow arrow = new EntityArrow(world, getHandle(), 1);
-
-        world.addEntity(arrow);
-        return (Arrow) arrow.getBukkitEntity();
+        return launchProjectile(Arrow.class);
     }
 
     public boolean isInsideVehicle() {
@@ -275,6 +274,37 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             effects.add(new PotionEffect(PotionEffectType.getById(handle.getEffectId()), handle.getDuration(), handle.getAmplifier()));
         }
         return effects;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends Projectile> T launchProjectile(Class<? extends T> projectile) {
+        net.minecraft.server.World world = ((CraftWorld) getWorld()).getHandle();
+        net.minecraft.server.Entity launch = null;
+
+        if (Snowball.class.isAssignableFrom(projectile)) {
+            launch = new EntitySnowball(world, getHandle());
+        } else if (Egg.class.isAssignableFrom(projectile)) {
+            launch = new EntityEgg(world, getHandle());
+        } else if (EnderPearl.class.isAssignableFrom(projectile)) {
+            launch = new EntityEnderPearl(world, getHandle());
+        } else if (Arrow.class.isAssignableFrom(projectile)) {
+            launch = new EntityArrow(world, getHandle(), 1);
+        } else if (Fireball.class.isAssignableFrom(projectile)) {
+            if (SmallFireball.class.isAssignableFrom(projectile)) {
+                launch = new EntitySmallFireball(world);
+            } else {
+                launch = new EntityFireball(world);
+            }
+
+            launch.setPositionRotation(getLocation().getX(), getLocation().getY(), getLocation().getZ(), getLocation().getYaw(), getLocation().getPitch());
+            Vector direction = getLocation().getDirection().multiply(10);
+            ((EntityFireball) launch).setDirection(direction.getX(), direction.getY(), direction.getZ());
+        }
+
+        Validate.notNull(launch, "Projectile not supported");
+
+        world.addEntity(launch);
+        return (T) launch.getBukkitEntity();
     }
 
     public EntityType getType() {
