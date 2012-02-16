@@ -78,6 +78,8 @@ import org.bukkit.craftbukkit.map.CraftMapView;
 import org.bukkit.craftbukkit.potion.CraftPotionBrewer;
 import org.bukkit.scheduler.BukkitWorker;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
+import org.bukkit.craftbukkit.updater.AutoUpdater;
+import org.bukkit.craftbukkit.updater.BukkitDLUpdaterService;
 import org.bukkit.craftbukkit.util.DatFileFilter;
 import org.bukkit.craftbukkit.util.Versioning;
 import org.bukkit.util.permissions.DefaultPermissions;
@@ -106,6 +108,7 @@ public final class CraftServer implements Server {
     private YamlConfiguration configuration;
     private final Yaml yaml = new Yaml(new SafeConstructor());
     private final Map<String, OfflinePlayer> offlinePlayers = new MapMaker().softValues().makeMap();
+    private AutoUpdater updater;
 
     static {
         ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
@@ -136,6 +139,12 @@ public final class CraftServer implements Server {
         configuration.setDefaults(YamlConfiguration.loadConfiguration(getClass().getClassLoader().getResourceAsStream("configurations/bukkit.yml")));
         saveConfig();
         ((SimplePluginManager) pluginManager).useTimings(configuration.getBoolean("settings.plugin-profiling", false));
+
+        updater = new AutoUpdater(new BukkitDLUpdaterService(configuration.getString("auto-updater.host")), getLogger(), configuration.getString("auto-updater.preferred-channel"));
+        updater.setEnabled(configuration.getBoolean("auto-updater.enabled"));
+        updater.getOnBroken().addAll(configuration.getStringList("auto-updater.on-broken"));
+        updater.getOnUpdate().addAll(configuration.getStringList("auto-updater.on-update"));
+        updater.check(serverVersion);
 
         loadPlugins();
         enablePlugins(PluginLoadOrder.STARTUP);
@@ -1012,5 +1021,15 @@ public final class CraftServer implements Server {
         }
 
         return result;
+    }
+
+    public void onPlayerJoin(Player player) {
+        if ((updater.isEnabled()) && (player.hasPermission(Server.BROADCAST_CHANNEL_ADMINISTRATIVE))) {
+            if ((updater.getCurrent().isBroken()) && (updater.getOnBroken().contains(updater.WARN_OPERATORS))) {
+                player.sendMessage(ChatColor.DARK_RED + "The version of CraftBukkit that this server is running is known to be broken. Please consider updating to the latest version at dl.bukkit.org.");
+            } else if ((updater.isUpdateAvailable()) && (updater.getOnUpdate().contains(updater.WARN_OPERATORS))) {
+                player.sendMessage(ChatColor.DARK_PURPLE + "The version of CraftBukkit that this server is running is out of date. Please consider updating to the latest version at dl.bukkit.org.");
+            }
+        }
     }
 }
