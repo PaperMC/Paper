@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
@@ -143,6 +144,8 @@ public class JavaPluginLoader implements PluginLoader {
             result = constructor.newInstance();
 
             result.initialize(this, server, description, dataFolder, file, loader);
+        } catch (InvocationTargetException ex) {
+            throw new InvalidPluginException(ex.getCause());
         } catch (Throwable ex) {
             throw new InvalidPluginException(ex);
         }
@@ -298,6 +301,8 @@ public class JavaPluginLoader implements PluginLoader {
                             return;
                         }
                         method.invoke(listener, event);
+                    } catch (InvocationTargetException ex) {
+                        throw new EventException(ex.getCause());
                     } catch (Throwable t) {
                         throw new EventException(t);
                     }

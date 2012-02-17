@@ -1,6 +1,7 @@
 package org.bukkit.configuration.serialization;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
@@ -68,7 +69,10 @@ public class ConfigurationSerialization {
                 return result;
             }
         } catch (Throwable ex) {
-            Logger.getLogger(ConfigurationSerialization.class.getName()).log(Level.SEVERE, "Could not call method '" + method.toString() + "' of " + clazz + " for deserialization", ex);
+            Logger.getLogger(ConfigurationSerialization.class.getName()).log(
+                    Level.SEVERE,
+                    "Could not call method '" + method.toString() + "' of " + clazz + " for deserialization",
+                    ex instanceof InvocationTargetException ? ex.getCause() : ex);
         }
 
         return null;
@@ -78,7 +82,10 @@ public class ConfigurationSerialization {
         try {
             return ctor.newInstance(args);
         } catch (Throwable ex) {
-            Logger.getLogger(ConfigurationSerialization.class.getName()).log(Level.SEVERE, "Could not call constructor '" + ctor.toString() + "' of " + clazz + " for deserialization", ex);
+            Logger.getLogger(ConfigurationSerialization.class.getName()).log(
+                    Level.SEVERE,
+                    "Could not call constructor '" + ctor.toString() + "' of " + clazz + " for deserialization",
+                    ex instanceof InvocationTargetException ? ex.getCause() : ex);
         }
 
         return null;
