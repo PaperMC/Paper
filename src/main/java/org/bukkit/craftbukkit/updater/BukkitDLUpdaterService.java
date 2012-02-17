@@ -29,9 +29,9 @@ public class BukkitDLUpdaterService {
         try {
             return fetchArtifact(slug);
         } catch (UnsupportedEncodingException ex) {
-            Logger.getLogger(BukkitDLUpdaterService.class.getName()).log(Level.WARNING, "Could not get Artifact details for the auto-updater", ex);
+            Logger.getLogger(BukkitDLUpdaterService.class.getName()).log(Level.WARNING, "Could not get Artifact details for the auto-updater: " + ex.getClass().getSimpleName());
         } catch (IOException ex) {
-            Logger.getLogger(BukkitDLUpdaterService.class.getName()).log(Level.WARNING, "Could not get Artifact details for the auto-updater", ex);
+            Logger.getLogger(BukkitDLUpdaterService.class.getName()).log(Level.WARNING, "Could not get Artifact details for the auto-updater: " + ex.getClass().getSimpleName());
         }
 
         return null;
