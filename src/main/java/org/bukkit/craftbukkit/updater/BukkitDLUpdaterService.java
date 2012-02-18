@@ -1,15 +1,11 @@
 package org.bukkit.craftbukkit.updater;
 
 import com.google.gson.*;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLEncoder;
-import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -25,13 +21,13 @@ public class BukkitDLUpdaterService {
         this.host = host;
     }
 
-    public ArtifactDetails getArtifact(String slug) {
+    public ArtifactDetails getArtifact(String slug, String name) {
         try {
             return fetchArtifact(slug);
         } catch (UnsupportedEncodingException ex) {
-            Logger.getLogger(BukkitDLUpdaterService.class.getName()).log(Level.WARNING, "Could not get Artifact details for the auto-updater: " + ex.getClass().getSimpleName());
+            Logger.getLogger(BukkitDLUpdaterService.class.getName()).log(Level.WARNING, "Could not get " + name + ": " + ex.getClass().getSimpleName());
         } catch (IOException ex) {
-            Logger.getLogger(BukkitDLUpdaterService.class.getName()).log(Level.WARNING, "Could not get Artifact details for the auto-updater: " + ex.getClass().getSimpleName());
+            Logger.getLogger(BukkitDLUpdaterService.class.getName()).log(Level.WARNING, "Could not get " + name + ": " + ex.getClass().getSimpleName());
         }
 
         return null;
