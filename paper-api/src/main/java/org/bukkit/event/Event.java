@@ -16,7 +16,7 @@ public abstract class Event implements Serializable {
     }
 
     protected Event(final String name) {
-        Validate.notNull(name, "name is cannot be null");
+        Validate.notNull(name, "name cannot be null");
         this.name = name;
     }
 
