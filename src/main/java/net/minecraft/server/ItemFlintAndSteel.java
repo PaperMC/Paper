@@ -68,7 +68,7 @@ public class ItemFlintAndSteel extends Item {
                 world.setTypeId(i, j, k, Block.FIRE.id);
 
                 // CraftBukkit start
-                BlockPlaceEvent placeEvent = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ, Block.FIRE.id);
+                BlockPlaceEvent placeEvent = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ);
 
                 if (placeEvent.isCancelled() || !placeEvent.canBuild()) {
                     placeEvent.getBlockPlaced().setTypeIdAndData(0, (byte) 0, false);

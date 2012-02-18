@@ -68,7 +68,7 @@ public class ItemReed extends Item {
                  * replace this with.
                  */
                 if (world.setRawTypeId(i, j, k, this.id)) { // <-- world.e does this to place the block
-                    BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, replacedBlockState, clickedX, clickedY, clickedZ, block);
+                    BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, replacedBlockState, clickedX, clickedY, clickedZ);
 
                     if (event.isCancelled() || !event.canBuild()) {
                         // CraftBukkit - undo; this only has reed, repeater and pie blocks

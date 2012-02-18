@@ -68,7 +68,7 @@ public class ItemBlock extends Item {
 
             world.suppressPhysics = true;
             world.setTypeIdAndData(i, j, k, id, this.filterData(itemstack.getData()));
-            BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, replacedBlockState, clickedX, clickedY, clickedZ, block);
+            BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, replacedBlockState, clickedX, clickedY, clickedZ);
             id = world.getTypeId(i, j, k);
             int data = world.getData(i, j, k);
             replacedBlockState.update(true);

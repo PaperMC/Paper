@@ -29,7 +29,7 @@ public class ItemSeeds extends Item {
                 world.setTypeId(i, j + 1, k, this.id);
 
                 // CraftBukkit start - seeds
-                BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, i, j, k, this.id);
+                BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, i, j, k);
 
                 if (event.isCancelled() || !event.canBuild()) {
                     event.getBlockPlaced().setTypeId(0);

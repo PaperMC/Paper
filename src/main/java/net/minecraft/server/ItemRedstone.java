@@ -55,7 +55,7 @@ public class ItemRedstone extends Item {
                 world.suppressPhysics = true;
                 world.setRawTypeId(i, j, k, Block.REDSTONE_WIRE.id); // We update after the event
 
-                BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ, Block.REDSTONE_WIRE);
+                BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ);
                 blockState.update(true);
 
                 if (event.isCancelled() || !event.canBuild()) {

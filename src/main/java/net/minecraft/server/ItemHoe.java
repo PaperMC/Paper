@@ -35,7 +35,7 @@ public class ItemHoe extends Item {
                     world.setTypeId(i, j, k, block.id);
 
                     // CraftBukkit start - Hoes - blockface -1 for 'SELF'
-                    BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, i, j, k, block);
+                    BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, i, j, k);
 
                     if (event.isCancelled() || !event.canBuild()) {
                         event.getBlockPlaced().setTypeId(blockState.getTypeId());

@@ -97,7 +97,7 @@ public class ItemDoor extends Item {
         world.setTypeIdAndData(i, j, k, block.id, l);
         // CraftBukkit start
         if (entityhuman != null) {
-            BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, i, j, k, block);
+            BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, i, j, k);
 
             if (event.isCancelled() || !event.canBuild()) {
                 event.getBlockPlaced().setTypeIdAndData(blockState.getTypeId(), blockState.getRawData(), false);

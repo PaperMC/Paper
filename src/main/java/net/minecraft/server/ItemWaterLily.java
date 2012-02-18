@@ -37,7 +37,7 @@ public class ItemWaterLily extends ItemColoredBlock {
                     world.setTypeId(i, j + 1, k, Block.WATER_LILY.id);
 
                     // CraftBukkit start - waterlily
-                    BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, i, j, k, Block.WATER_LILY.id);
+                    BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, i, j, k);
 
                     if (event.isCancelled() || !event.canBuild()) {
                         event.getBlockPlaced().setTypeId(0);
