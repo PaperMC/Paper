@@ -65,8 +65,8 @@ public class AutoUpdater {
         new Thread() {
             @Override
             public void run() {
-                current = service.getArtifact(currentSlug);
-                latest = service.getArtifact("latest-" + channel);
+                current = service.getArtifact(currentSlug, "current artifact information; perhaps you are running a custom version?");
+                latest = service.getArtifact("latest-" + channel, "latest artifact information");
 
                 if (isUpdateAvailable()) {
                     if ((current.isBroken()) && (onBroken.contains(WARN_CONSOLE))) {
