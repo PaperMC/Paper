@@ -43,7 +43,7 @@ public class WhitelistCommand extends VanillaCommand {
 
                 for (OfflinePlayer player : Bukkit.getWhitelistedPlayers()) {
                     if (result.length() > 0) {
-                        result.append(" ");
+                        result.append(", ");
                     }
 
                     result.append(player.getName());
