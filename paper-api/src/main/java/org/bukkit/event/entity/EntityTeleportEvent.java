@@ -18,7 +18,7 @@ public class EntityTeleportEvent extends EntityEvent implements Cancellable {
     private Location to;
 
     public EntityTeleportEvent(Entity what, Location from, Location to) {
-        super(Type.ENTITY_TELEPORT, what);
+        super(what);
         this.from = from;
         this.to = to;
         this.cancel = false;
