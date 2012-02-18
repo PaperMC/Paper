@@ -181,13 +181,7 @@ public class YamlConfiguration extends FileConfiguration {
         } catch (IOException ex) {
             Bukkit.getLogger().log(Level.SEVERE, "Cannot load " + file, ex);
         } catch (InvalidConfigurationException ex) {
-            if (ex.getCause() instanceof YAMLException) {
-                Bukkit.getLogger().severe("Config file " + file + " isn't valid! " + ex.getCause());
-            } else if ((ex.getCause() == null) || (ex.getCause() instanceof ClassCastException)) {
-                Bukkit.getLogger().severe("Config file " + file + " isn't valid!");
-            } else {
-                Bukkit.getLogger().log(Level.SEVERE, "Cannot load " + file + ": " + ex.getCause().getClass(), ex);
-            }
+            Bukkit.getLogger().log(Level.SEVERE, "Cannot load " + file , ex);
         }
 
         return config;
@@ -213,15 +207,9 @@ public class YamlConfiguration extends FileConfiguration {
         try {
             config.load(stream);
         } catch (IOException ex) {
-            Bukkit.getLogger().log(Level.SEVERE, "Cannot load configuration", ex);
+            Bukkit.getLogger().log(Level.SEVERE, "Cannot load configuration from stream", ex);
         } catch (InvalidConfigurationException ex) {
-            if (ex.getCause() instanceof YAMLException) {
-                Bukkit.getLogger().severe("Config file isn't valid! " + ex.getCause());
-            } else if ((ex.getCause() == null) || (ex.getCause() instanceof ClassCastException)) {
-                Bukkit.getLogger().severe("Config file isn't valid!");
-            } else {
-                Bukkit.getLogger().log(Level.SEVERE, "Cannot load configuration: " + ex.getCause().getClass(), ex);
-            }
+            Bukkit.getLogger().log(Level.SEVERE, "Cannot load configuration from stream", ex);
         }
 
         return config;

@@ -131,11 +131,8 @@ public final class SimplePluginManager implements PluginManager {
             PluginDescriptionFile description = null;
             try {
                 description = loader.getPluginDescription(file);
-            } catch (InvalidPluginException ex) {
-                server.getLogger().log(Level.SEVERE, "Could not load '" + file.getPath() + "' in folder '" + directory.getPath() + "': " + ex.getMessage(), ex);
-                continue;
             } catch (InvalidDescriptionException ex) {
-                server.getLogger().log(Level.SEVERE, "Could not load '" + file.getPath() + "' in folder '" + directory.getPath() + "': " + ex.getMessage(), ex);
+                server.getLogger().log(Level.SEVERE, "Could not load '" + file.getPath() + "' in folder '" + directory.getPath() + "'", ex);
                 continue;
             }
 
@@ -179,7 +176,7 @@ public final class SimplePluginManager implements PluginManager {
 
                             server.getLogger().log(
                                 Level.SEVERE,
-                                "Could not load '" + file.getPath() + "' in folder '" + directory.getPath() + "': ",
+                                "Could not load '" + file.getPath() + "' in folder '" + directory.getPath() + "'",
                                 new UnknownDependencyException(dependency));
                             break;
                         }
@@ -216,11 +213,7 @@ public final class SimplePluginManager implements PluginManager {
                         loadedPlugins.add(plugin);
                         continue;
                     } catch (InvalidPluginException ex) {
-                        server.getLogger().log(Level.SEVERE, "Could not load '" + file.getPath() + "' in folder '" + directory.getPath() + "': ", ex.getCause());
-                    } catch (InvalidDescriptionException ex) {
-                        server.getLogger().log(Level.SEVERE, "Could not load '" + file.getPath() + "' in folder '" + directory.getPath() + "': " + ex.getMessage(), ex);
-                    } catch (UnknownDependencyException ex) {
-                        server.getLogger().log(Level.SEVERE, "Could not load '" + file.getPath() + "' in folder '" + directory.getPath() + "': " + ex.getMessage(), ex);
+                        server.getLogger().log(Level.SEVERE, "Could not load '" + file.getPath() + "' in folder '" + directory.getPath() + "'", ex);
                     }
                 }
             }
@@ -245,11 +238,7 @@ public final class SimplePluginManager implements PluginManager {
                             loadedPlugins.add(plugin);
                             break;
                         } catch (InvalidPluginException ex) {
-                            server.getLogger().log(Level.SEVERE, "Could not load '" + file.getPath() + "' in folder '" + directory.getPath() + "': ", ex.getCause());
-                        } catch (InvalidDescriptionException ex) {
-                            server.getLogger().log(Level.SEVERE, "Could not load '" + file.getPath() + "' in folder '" + directory.getPath() + "': " + ex.getMessage(), ex);
-                        } catch (UnknownDependencyException ex) {
-                            server.getLogger().log(Level.SEVERE, "Could not load '" + file.getPath() + "' in folder '" + directory.getPath() + "': " + ex.getMessage(), ex);
+                            server.getLogger().log(Level.SEVERE, "Could not load '" + file.getPath() + "' in folder '" + directory.getPath() + "'", ex);
                         }
                     }
                 }
@@ -279,10 +268,9 @@ public final class SimplePluginManager implements PluginManager {
      * @param file File containing the plugin to load
      * @return The Plugin loaded, or null if it was invalid
      * @throws InvalidPluginException Thrown when the specified file is not a valid plugin
-     * @throws InvalidDescriptionException Thrown when the specified file contains an invalid description
      * @throws UnknownDependencyException If a required dependency could not be found
      */
-    public synchronized Plugin loadPlugin(File file) throws InvalidPluginException, InvalidDescriptionException, UnknownDependencyException {
+    public synchronized Plugin loadPlugin(File file) throws InvalidPluginException, UnknownDependencyException {
         Validate.notNull(file, "File cannot be null");
 
         checkUpdate(file);
@@ -375,7 +363,7 @@ public final class SimplePluginManager implements PluginManager {
             try {
                 plugin.getPluginLoader().enablePlugin(plugin);
             } catch (Throwable ex) {
-                server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while enabling " + plugin.getDescription().getFullName() + " (Is it up to date?): " + ex.getMessage(), ex);
+                server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while enabling " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
             }
 
             HandlerList.bakeAll();
@@ -393,32 +381,32 @@ public final class SimplePluginManager implements PluginManager {
             try {
                 plugin.getPluginLoader().disablePlugin(plugin);
             } catch (Throwable ex) {
-                server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while disabling " + plugin.getDescription().getFullName() + " (Is it up to date?): " + ex.getMessage(), ex);
+                server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while disabling " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
             }
 
             try {
                 server.getScheduler().cancelTasks(plugin);
             } catch (Throwable ex) {
-                server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while cancelling tasks for " + plugin.getDescription().getFullName() + " (Is it up to date?): " + ex.getMessage(), ex);
+                server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while cancelling tasks for " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
             }
 
             try {
                 server.getServicesManager().unregisterAll(plugin);
             } catch (Throwable ex) {
-                server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while unregistering services for " + plugin.getDescription().getFullName() + " (Is it up to date?): " + ex.getMessage(), ex);
+                server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while unregistering services for " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
             }
 
             try {
                 HandlerList.unregisterAll(plugin);
             } catch (Throwable ex) {
-                server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while unregistering events for " + plugin.getDescription().getFullName() + " (Is it up to date?): " + ex.getMessage(), ex);
+                server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while unregistering events for " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
             }
 
             try {
                 server.getMessenger().unregisterIncomingPluginChannel(plugin);
                 server.getMessenger().unregisterOutgoingPluginChannel(plugin);
             } catch(Throwable ex) {
-                server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while unregistering plugin channels for " + plugin.getDescription().getFullName() + " (Is it up to date?): " + ex.getMessage(), ex);
+                server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while unregistering plugin channels for " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
             }
         }
     }

@@ -21,20 +21,18 @@ public interface PluginLoader {
      * @return Plugin that was contained in the specified file, or null if
      *         unsuccessful
      * @throws InvalidPluginException Thrown when the specified file is not a plugin
-     * @throws InvalidDescriptionException If the plugin description file was invalid
      * @throws UnknownDependencyException If a required dependency could not be found
      */
-    public Plugin loadPlugin(File file) throws InvalidPluginException, InvalidDescriptionException, UnknownDependencyException;
+    public Plugin loadPlugin(File file) throws InvalidPluginException, UnknownDependencyException;
 
     /**
      * Loads a PluginDescriptionFile from the specified file
      *
      * @param file File to attempt to load from
      * @return A new PluginDescriptionFile loaded from the plugin.yml in the specified file
-     * @throws InvalidPluginException If when the specified file does not contain a plugin description file
      * @throws InvalidDescriptionException If the plugin description file could not be created
      */
-    public PluginDescriptionFile getPluginDescription(File file) throws InvalidPluginException, InvalidDescriptionException;
+    public PluginDescriptionFile getPluginDescription(File file) throws InvalidDescriptionException;
 
     /**
      * Returns a list of all filename filters expected by this PluginLoader

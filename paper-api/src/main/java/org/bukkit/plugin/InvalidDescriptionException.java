@@ -4,7 +4,7 @@ package org.bukkit.plugin;
  * Thrown when attempting to load an invalid PluginDescriptionFile
  */
 public class InvalidDescriptionException extends Exception {
-    private static final long serialVersionUID = 5721389122281775895L;
+    private static final long serialVersionUID = 5721389122281775896L;
 
     /**
      * Constructs a new InvalidDescriptionException based on the given Exception
@@ -13,16 +13,16 @@ public class InvalidDescriptionException extends Exception {
      * @param cause Exception that triggered this Exception
      */
     public InvalidDescriptionException(final Throwable cause, final String message) {
-        super(message + (cause != null ? ": " + cause.getMessage() : ""), cause);
+        super(message, cause);
     }
 
     /**
      * Constructs a new InvalidDescriptionException based on the given Exception
      *
-     * @param throwable Exception that triggered this Exception
+     * @param cause Exception that triggered this Exception
      */
     public InvalidDescriptionException(final Throwable cause) {
-        this(cause, "Invalid plugin.yml");
+        super("Invalid plugin.yml", cause);
     }
 
     /**
@@ -31,13 +31,13 @@ public class InvalidDescriptionException extends Exception {
      * @param message Brief message explaining the cause of the exception
      */
     public InvalidDescriptionException(final String message) {
-        this(null, message);
+        super(message);
     }
 
     /**
      * Constructs a new InvalidDescriptionException
      */
     public InvalidDescriptionException() {
-        this(null, "Invalid plugin.yml");
+        super("Invalid plugin.yml");
     }
 }

@@ -54,14 +54,19 @@ public class JavaPluginLoader implements PluginLoader {
     }
 
     @SuppressWarnings("unchecked")
-    public Plugin loadPlugin(File file) throws InvalidPluginException, InvalidDescriptionException, UnknownDependencyException {
+    public Plugin loadPlugin(File file) throws InvalidPluginException {
         Validate.notNull(file, "File cannot be null");
 
         if (!file.exists()) {
-            throw new InvalidPluginException(new FileNotFoundException(String.format("%s does not exist", file.getPath())));
+            throw new InvalidPluginException(new FileNotFoundException(file.getPath() + " does not exist"));
         }
 
-        PluginDescriptionFile description = getPluginDescription(file);
+        PluginDescriptionFile description;
+        try {
+            description = getPluginDescription(file);
+        } catch (InvalidDescriptionException ex) {
+            throw new InvalidPluginException(ex);
+        }
 
         File dataFolder = new File(file.getParentFile(), description.getName());
         File oldDataFolder = getDataFolder(file);
@@ -79,7 +84,7 @@ public class JavaPluginLoader implements PluginLoader {
             ));
         } else if (oldDataFolder.isDirectory() && !dataFolder.exists()) {
             if (!oldDataFolder.renameTo(dataFolder)) {
-                throw new InvalidPluginException(new Exception("Unable to rename old data folder: '" + oldDataFolder + "' to: '" + dataFolder + "'"));
+                throw new InvalidPluginException("Unable to rename old data folder: '" + oldDataFolder + "' to: '" + dataFolder + "'");
             }
             server.getLogger().log(Level.INFO, String.format(
                 "While loading %s (%s) renamed data folder: '%s' to '%s'",
@@ -91,12 +96,12 @@ public class JavaPluginLoader implements PluginLoader {
         }
 
         if (dataFolder.exists() && !dataFolder.isDirectory()) {
-            throw new InvalidPluginException(new Exception(String.format(
+            throw new InvalidPluginException(String.format(
                 "Projected datafolder: '%s' for %s (%s) exists and is not a directory",
                 dataFolder,
                 description.getName(),
                 file
-            )));
+            ));
         }
 
         ArrayList<String> depend;
@@ -155,7 +160,7 @@ public class JavaPluginLoader implements PluginLoader {
         return result;
     }
 
-    public Plugin loadPlugin(File file, boolean ignoreSoftDependencies) throws InvalidPluginException, InvalidDescriptionException, UnknownDependencyException {
+    public Plugin loadPlugin(File file, boolean ignoreSoftDependencies) throws InvalidPluginException {
         return loadPlugin(file);
     }
 
@@ -179,7 +184,7 @@ public class JavaPluginLoader implements PluginLoader {
         return dataFolder;
     }
 
-    public PluginDescriptionFile getPluginDescription(File file) throws InvalidDescriptionException, InvalidPluginException {
+    public PluginDescriptionFile getPluginDescription(File file) throws InvalidDescriptionException {
         Validate.notNull(file, "File cannot be null");
 
         JarFile jar = null;
@@ -190,7 +195,7 @@ public class JavaPluginLoader implements PluginLoader {
             JarEntry entry = jar.getJarEntry("plugin.yml");
 
             if (entry == null) {
-                throw new InvalidPluginException(new FileNotFoundException("Jar does not contain plugin.yml"));
+                throw new InvalidDescriptionException(new FileNotFoundException("Jar does not contain plugin.yml"));
             }
 
             stream = jar.getInputStream(entry);
@@ -198,7 +203,7 @@ public class JavaPluginLoader implements PluginLoader {
             return new PluginDescriptionFile(stream);
 
         } catch (IOException ex) {
-            throw new InvalidPluginException(ex);
+            throw new InvalidDescriptionException(ex);
         } catch (YAMLException ex) {
             throw new InvalidDescriptionException(ex);
         } finally {
@@ -337,7 +342,7 @@ public class JavaPluginLoader implements PluginLoader {
             try {
                 jPlugin.setEnabled(true);
             } catch (Throwable ex) {
-                server.getLogger().log(Level.SEVERE, "Error occurred while enabling " + plugin.getDescription().getFullName() + " (Is it up to date?): " + ex.getMessage(), ex);
+                server.getLogger().log(Level.SEVERE, "Error occurred while enabling " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
             }
 
             // Perhaps abort here, rather than continue going, but as it stands,
@@ -363,7 +368,7 @@ public class JavaPluginLoader implements PluginLoader {
             try {
                 jPlugin.setEnabled(false);
             } catch (Throwable ex) {
-                server.getLogger().log(Level.SEVERE, "Error occurred while disabling " + plugin.getDescription().getFullName() + " (Is it up to date?): " + ex.getMessage(), ex);
+                server.getLogger().log(Level.SEVERE, "Error occurred while disabling " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
             }
 
             loaders.remove(jPlugin.getDescription().getName());
