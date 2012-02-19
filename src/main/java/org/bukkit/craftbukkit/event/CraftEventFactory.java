@@ -422,7 +422,7 @@ public class CraftEventFactory {
     }
 
     public static boolean handleProjectileEvent(Projectile projectile, Entity target, DamageSource damagesource, int damage) {
-        if (target instanceof EntityLiving || target instanceof EntityComplexPart) {
+        if (target instanceof EntityLiving || target instanceof EntityComplexPart || target instanceof EntityEnderCrystal) {
             org.bukkit.entity.Entity damagee = target.getBukkitEntity();
             
             EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(projectile, damagee, EntityDamageEvent.DamageCause.PROJECTILE, damage);
