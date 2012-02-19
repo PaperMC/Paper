@@ -16,9 +16,7 @@ public abstract class Event {
         return name;
     }
 
-    public HandlerList getHandlers() {
-        throw new IllegalStateException(getEventName() + " must implement getHandlers()");
-    }
+    public abstract HandlerList getHandlers();
 
     public enum Result {
 
