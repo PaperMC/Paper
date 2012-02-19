@@ -7,24 +7,15 @@ import java.io.Serializable;
  */
 @SuppressWarnings("serial")
 public abstract class Event implements Serializable {
-    private final String name;
-
-    protected Event() {
-        this(null);
-    }
-
-    protected Event(final String name) {
-        if (name == null) {
-            this.name = getClass().getName();
-        } else {
-            this.name = name;
-        }
-    }
+    private String name;
 
     /**
      * @return Name of this event
      */
-    public final String getEventName() {
+    public String getEventName() {
+        if (name == null) {
+            name = getClass().getSimpleName();
+        }
         return name;
     }
 
