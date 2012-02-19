@@ -216,7 +216,11 @@ public class CraftItemStack extends ItemStack {
 
     @Override
     public CraftItemStack clone() {
-        return new CraftItemStack(this.item == null ? this.item : this.item.cloneItemStack());
+        CraftItemStack itemStack = (CraftItemStack) super.clone();
+        if (this.item != null) {
+            itemStack.item = this.item.cloneItemStack();
+        }
+        return itemStack;
     }
 
     public static net.minecraft.server.ItemStack createNMSItemStack(ItemStack original) {
