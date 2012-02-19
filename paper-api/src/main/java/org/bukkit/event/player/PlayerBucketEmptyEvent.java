@@ -10,7 +10,6 @@ import org.bukkit.inventory.ItemStack;
 /**
  * Called when a player empties a bucket
  */
-@SuppressWarnings("serial")
 public class PlayerBucketEmptyEvent extends PlayerBucketEvent {
     private static final HandlerList handlers = new HandlerList();
 

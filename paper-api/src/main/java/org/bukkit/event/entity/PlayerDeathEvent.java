@@ -8,7 +8,6 @@ import org.bukkit.inventory.ItemStack;
 /**
  * Thrown whenever a {@link Player} dies
  */
-@SuppressWarnings("serial")
 public class PlayerDeathEvent extends EntityDeathEvent {
     private int newExp = 0;
     private String deathMessage = "";

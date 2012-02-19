@@ -8,7 +8,6 @@ import org.bukkit.event.HandlerList;
 /**
  * Raised when an entity enters a vehicle.
  */
-@SuppressWarnings("serial")
 public class VehicleEnterEvent extends VehicleEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancelled;

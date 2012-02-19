@@ -12,7 +12,6 @@ import org.bukkit.inventory.ItemStack;
  * <p />
  * If a Block Place event is cancelled, the block will not be placed.
  */
-@SuppressWarnings("serial")
 public class BlockPlaceEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     protected boolean cancel;

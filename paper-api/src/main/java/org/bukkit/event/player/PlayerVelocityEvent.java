@@ -5,13 +5,8 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.util.Vector;
 
-@SuppressWarnings("serial")
 public class PlayerVelocityEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
-
-    /**
-     * Holds information for player velocity events
-     */
     private boolean cancel = false;
     private Vector velocity;
 

@@ -7,7 +7,6 @@ import org.bukkit.event.HandlerList;
 /**
  * Raised when a vehicle collides with a block.
  */
-@SuppressWarnings("serial")
 public class VehicleBlockCollisionEvent extends VehicleCollisionEvent {
     private static final HandlerList handlers = new HandlerList();
     private final Block block;

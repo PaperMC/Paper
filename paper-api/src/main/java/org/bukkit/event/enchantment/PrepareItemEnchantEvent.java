@@ -10,7 +10,6 @@ import org.bukkit.inventory.ItemStack;
 /**
  * Called when an ItemStack is inserted in an enchantment table - can be called multiple times
  */
-@SuppressWarnings("serial")
 public class PrepareItemEnchantEvent extends Event implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private final Block table;

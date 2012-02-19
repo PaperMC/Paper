@@ -9,7 +9,6 @@ import org.bukkit.event.HandlerList;
  * <p />
  * If a Leaves Decay event is cancelled, the leaves will not decay.
  */
-@SuppressWarnings("serial")
 public class LeavesDecayEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancel = false;

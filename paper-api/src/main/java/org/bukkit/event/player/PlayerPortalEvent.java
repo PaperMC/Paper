@@ -8,13 +8,9 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a player completes the portaling process by standing in a portal
  */
-@SuppressWarnings("serial")
 public class PlayerPortalEvent extends PlayerTeleportEvent {
     private static final HandlerList handlers = new HandlerList();
-
     protected boolean useTravelAgent = true;
-
-    protected Player player;
     protected TravelAgent travelAgent;
 
     public PlayerPortalEvent(final Player player, final Location from, final Location to, final TravelAgent pta) {

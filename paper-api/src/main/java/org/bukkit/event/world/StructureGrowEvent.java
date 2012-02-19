@@ -13,7 +13,6 @@ import org.bukkit.event.HandlerList;
  */
 public class StructureGrowEvent extends WorldEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
-    private static final long serialVersionUID = 1L;
     private boolean cancelled = false;
     private final Location location;
     private final TreeType species;

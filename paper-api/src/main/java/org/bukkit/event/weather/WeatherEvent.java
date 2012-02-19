@@ -6,7 +6,6 @@ import org.bukkit.event.Event;
 /**
  * Represents a Weather-related event
  */
-@SuppressWarnings("serial")
 public abstract class WeatherEvent extends Event {
     protected World world;
 

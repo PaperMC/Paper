@@ -7,10 +7,8 @@ import org.bukkit.event.HandlerList;
 /**
  * This event is fired when the player is leaving a bed.
  */
-@SuppressWarnings("serial")
 public class PlayerBedLeaveEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
-
     private final Block bed;
 
     public PlayerBedLeaveEvent(final Player who, final Block bed) {

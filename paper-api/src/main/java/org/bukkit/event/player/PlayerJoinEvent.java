@@ -6,7 +6,6 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a player joins a server
  */
-@SuppressWarnings("serial")
 public class PlayerJoinEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
     private String joinMessage;

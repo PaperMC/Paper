@@ -7,10 +7,8 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a server list ping is coming in.
  */
-@SuppressWarnings("serial")
 public class ServerListPingEvent extends ServerEvent {
     private static final HandlerList handlers = new HandlerList();
-
     private final InetAddress address;
     private String motd;
     private final int numPlayers;

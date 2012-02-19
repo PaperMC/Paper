@@ -12,14 +12,12 @@ import org.bukkit.event.block.Action;
 /**
  * Called when a player interacts with an object or air.
  */
-@SuppressWarnings("serial")
 public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     protected ItemStack item;
     protected Action action;
     protected Block blockClicked;
     protected BlockFace blockFace;
-
     private Result useClickedBlock;
     private Result useItemInHand;
 

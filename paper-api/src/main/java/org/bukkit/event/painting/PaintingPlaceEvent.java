@@ -10,12 +10,9 @@ import org.bukkit.event.HandlerList;
 /**
  * Triggered when a painting is created in the world
  */
-@SuppressWarnings("serial")
 public class PaintingPlaceEvent extends PaintingEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
-
     private boolean cancelled;
-
     private final Player player;
     private final Block block;
     private final BlockFace blockFace;

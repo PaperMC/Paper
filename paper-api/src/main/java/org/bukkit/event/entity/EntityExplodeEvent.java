@@ -11,7 +11,6 @@ import java.util.List;
 /**
  * Called when an entity explodes
  */
-@SuppressWarnings("serial")
 public class EntityExplodeEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancel;

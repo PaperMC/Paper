@@ -14,7 +14,6 @@ import org.bukkit.event.HandlerList;
  * <p />
  * If a Block Break event is cancelled, the block will not break.
  */
-@SuppressWarnings("serial")
 public class BlockBreakEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();

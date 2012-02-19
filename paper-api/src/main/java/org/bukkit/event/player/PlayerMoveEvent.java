@@ -8,7 +8,6 @@ import org.bukkit.event.HandlerList;
 /**
  * Holds information for player movement events
  */
-@SuppressWarnings("serial")
 public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancel = false;

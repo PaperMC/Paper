@@ -5,7 +5,6 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.event.Cancellable;
 
-@SuppressWarnings("serial")
 public abstract class BlockPistonEvent extends BlockEvent implements Cancellable {
     private boolean cancelled;
     private final BlockFace direction;

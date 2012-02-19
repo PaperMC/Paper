@@ -19,7 +19,6 @@ import org.bukkit.event.HandlerList;
  *
  * @see BlockSpreadEvent
  */
-@SuppressWarnings("serial")
 public class BlockFormEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancelled;

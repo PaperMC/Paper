@@ -6,7 +6,6 @@ import org.bukkit.event.HandlerList;
 /**
  * Server Command events
  */
-@SuppressWarnings("serial")
 public class ServerCommandEvent extends ServerEvent {
     private static final HandlerList handlers = new HandlerList();
     private String command;

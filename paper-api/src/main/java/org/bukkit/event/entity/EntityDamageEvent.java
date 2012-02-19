@@ -8,10 +8,8 @@ import org.bukkit.event.HandlerList;
 /**
  * Stores data for damage events
  */
-@SuppressWarnings("serial")
 public class EntityDamageEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
-
     private int damage;
     private boolean cancelled;
     private final DamageCause cause;

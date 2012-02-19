@@ -8,7 +8,6 @@ import org.bukkit.event.HandlerList;
 /**
  * Thrown when a player picks an item up from the ground
  */
-@SuppressWarnings("serial")
 public class PlayerPickupItemEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private final Item item;

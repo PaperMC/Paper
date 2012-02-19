@@ -3,7 +3,6 @@ package org.bukkit.event.world;
 import org.bukkit.World;
 import org.bukkit.event.HandlerList;
 
-@SuppressWarnings("serial")
 public class WorldSaveEvent extends WorldEvent {
     private static final HandlerList handlers = new HandlerList();
 

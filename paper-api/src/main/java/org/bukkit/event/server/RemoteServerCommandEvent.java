@@ -6,7 +6,6 @@ import org.bukkit.event.HandlerList;
 /**
  * Remote Server Command events
  */
-@SuppressWarnings("serial")
 public class RemoteServerCommandEvent extends ServerCommandEvent {
     private static final HandlerList handlers = new HandlerList();
 

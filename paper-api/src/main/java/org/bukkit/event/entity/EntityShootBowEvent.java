@@ -10,10 +10,8 @@ import org.bukkit.inventory.ItemStack;
 /**
  * Called when a LivingEntity shoots a bow firing an arrow
  */
-@SuppressWarnings("serial")
 public class EntityShootBowEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
-
     private final ItemStack bow;
     private Entity projectile;
     private final float force;

@@ -14,7 +14,6 @@ import org.bukkit.inventory.ItemStack;
 /**
  * Called when an ItemStack is successfully enchanted (currently at enchantment table)
  */
-@SuppressWarnings("serial")
 public class EnchantItemEvent extends Event implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private final Block table;

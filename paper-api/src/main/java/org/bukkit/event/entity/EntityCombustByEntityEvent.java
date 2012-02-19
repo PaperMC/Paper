@@ -2,9 +2,7 @@ package org.bukkit.event.entity;
 
 import org.bukkit.entity.Entity;
 
-@SuppressWarnings("serial")
 public class EntityCombustByEntityEvent extends EntityCombustEvent {
-
     private final Entity combuster;
 
     public EntityCombustByEntityEvent(final Entity combuster, final Entity combustee, final int duration) {

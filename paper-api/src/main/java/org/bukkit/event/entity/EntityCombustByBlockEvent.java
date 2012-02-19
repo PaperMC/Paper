@@ -3,9 +3,7 @@ package org.bukkit.event.entity;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 
-@SuppressWarnings("serial")
 public class EntityCombustByBlockEvent extends EntityCombustEvent {
-
     private final Block combuster;
 
     public EntityCombustByBlockEvent(final Block combuster, final Entity combustee, final int duration) {

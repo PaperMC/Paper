@@ -6,7 +6,6 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a players level changes
  */
-@SuppressWarnings("serial")
 public class PlayerLevelChangeEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
     private final int oldLevel;

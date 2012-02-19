@@ -5,7 +5,6 @@ import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 
-@SuppressWarnings("serial")
 /**
  * Called when a sheep's wool is dyed
  */

@@ -7,10 +7,8 @@ import org.bukkit.event.HandlerList;
 /**
  * Stores data for weather changing in a world
  */
-@SuppressWarnings("serial")
 public class WeatherChangeEvent extends WeatherEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
-
     private boolean canceled;
     private final boolean to;
 

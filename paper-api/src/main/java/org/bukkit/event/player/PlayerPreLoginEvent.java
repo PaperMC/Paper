@@ -7,7 +7,6 @@ import org.bukkit.event.HandlerList;
 /**
  * Stores details for players attempting to log in
  */
-@SuppressWarnings("serial")
 public class PlayerPreLoginEvent extends Event {
     private static final HandlerList handlers = new HandlerList();
     private Result result;

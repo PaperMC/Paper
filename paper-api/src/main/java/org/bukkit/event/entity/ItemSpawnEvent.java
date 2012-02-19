@@ -8,10 +8,8 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when an item is spawned into a world
  */
-@SuppressWarnings("serial")
 public class ItemSpawnEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
-
     private final Location location;
     private boolean canceled;
 

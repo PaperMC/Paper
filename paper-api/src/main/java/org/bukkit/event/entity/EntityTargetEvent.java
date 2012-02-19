@@ -7,7 +7,6 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a creature targets or untargets another entity
  */
-@SuppressWarnings("serial")
 public class EntityTargetEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancel;

@@ -5,7 +5,6 @@ import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 
-@SuppressWarnings("serial")
 public class ItemDespawnEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean canceled;

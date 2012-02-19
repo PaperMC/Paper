@@ -6,7 +6,6 @@ import org.bukkit.map.MapView;
 /**
  * Called when a map is initialized.
  */
-@SuppressWarnings("serial")
 public class MapInitializeEvent extends ServerEvent {
     private static final HandlerList handlers = new HandlerList();
     private final MapView mapView;

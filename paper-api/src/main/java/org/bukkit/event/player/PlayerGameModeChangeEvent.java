@@ -5,10 +5,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 
-@SuppressWarnings("serial")
 public class PlayerGameModeChangeEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
-
     private boolean cancelled;
     private final GameMode newGameMode;
 

@@ -8,7 +8,6 @@ import org.bukkit.event.HandlerList;
 /**
  * Thrown when a LivingEntity is tamed
  */
-@SuppressWarnings("serial")
 public class EntityTameEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancelled;

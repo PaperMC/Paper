@@ -7,10 +7,8 @@ import org.bukkit.event.HandlerList;
 /**
  * Represents a player animation event
  */
-@SuppressWarnings("serial")
 public class PlayerAnimationEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
-
     private final PlayerAnimationType animationType;
     private boolean isCancelled = false;
 

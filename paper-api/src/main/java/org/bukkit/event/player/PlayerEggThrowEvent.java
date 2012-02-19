@@ -8,7 +8,6 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a player throws an egg and it might hatch
  */
-@SuppressWarnings("serial")
 public class PlayerEggThrowEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
     private final Egg egg;

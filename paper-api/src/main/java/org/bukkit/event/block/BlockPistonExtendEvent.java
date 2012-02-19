@@ -8,7 +8,6 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.event.HandlerList;
 
-@SuppressWarnings("serial")
 public class BlockPistonExtendEvent extends BlockPistonEvent {
     private static final HandlerList handlers = new HandlerList();
     private final int length;

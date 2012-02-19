@@ -1,12 +1,9 @@
 package org.bukkit.event;
 
-import java.io.Serializable;
-
 /**
  * Represents an event
  */
-@SuppressWarnings("serial")
-public abstract class Event implements Serializable {
+public abstract class Event {
     private String name;
 
     /**

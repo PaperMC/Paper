@@ -8,7 +8,6 @@ import org.bukkit.event.HandlerList;
 /**
  * Raised when a vehicle receives damage.
  */
-@SuppressWarnings("serial")
 public class VehicleDamageEvent extends VehicleEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private final Entity attacker;
