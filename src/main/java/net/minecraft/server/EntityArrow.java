@@ -187,7 +187,7 @@ public class EntityArrow extends Entity {
                         damagesource = DamageSource.arrow(this, this.shooter);
                     }
 
-                    if (this.isBurning() && this.world.pvpMode) { // CraftBukkit - abide by pvp setting.
+                    if (this.isBurning() && (!(movingobjectposition.entity instanceof EntityPlayer) || this.world.pvpMode)) { // CraftBukkit - abide by pvp setting if destination is a player.
                         // CraftBukkit start
                         EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), 5);
                         Bukkit.getPluginManager().callEvent(combustEvent);
