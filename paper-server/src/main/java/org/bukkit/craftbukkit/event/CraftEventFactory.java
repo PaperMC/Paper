@@ -35,7 +35,11 @@ import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.Arrow;
+import org.bukkit.entity.Creeper;
+import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Pig;
+import org.bukkit.entity.PigZombie;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.ThrownPotion;
@@ -215,7 +219,7 @@ public class CraftEventFactory {
         org.bukkit.entity.AnimalTamer bukkitTamer = (tamer != null ? (AnimalTamer) tamer.getBukkitEntity() : null);
         CraftServer craftServer = (CraftServer) bukkitEntity.getServer();
 
-        EntityTameEvent event = new EntityTameEvent(bukkitEntity, bukkitTamer);
+        EntityTameEvent event = new EntityTameEvent((LivingEntity) bukkitEntity, bukkitTamer);
         craftServer.getPluginManager().callEvent(event);
         return event;
     }
@@ -224,7 +228,7 @@ public class CraftEventFactory {
      * ItemSpawnEvent
      */
     public static ItemSpawnEvent callItemSpawnEvent(EntityItem entityitem) {
-        org.bukkit.entity.Entity entity = entityitem.getBukkitEntity();
+        org.bukkit.entity.Item entity = (org.bukkit.entity.Item) entityitem.getBukkitEntity();
         CraftServer craftServer = (CraftServer) entity.getServer();
 
         ItemSpawnEvent event = new ItemSpawnEvent(entity, entity.getLocation());
@@ -237,7 +241,7 @@ public class CraftEventFactory {
      * ItemDespawnEvent
      */
     public static ItemDespawnEvent callItemDespawnEvent(EntityItem entityitem) {
-        org.bukkit.entity.Entity entity = entityitem.getBukkitEntity();
+        org.bukkit.entity.Item entity = (org.bukkit.entity.Item) entityitem.getBukkitEntity();
 
         ItemDespawnEvent event = new ItemDespawnEvent(entity, entity.getLocation());
 
@@ -350,7 +354,7 @@ public class CraftEventFactory {
             Bukkit.getPluginManager().callEvent(event);
 
             if (!event.isCancelled()) {
-                return target.damageEntity(damagesource, damage);
+                return target.damageEntity(damagesource, event.getDamage());
             }
         } else {
             // Other entities have their events (if any) handled in damageEntity
@@ -372,5 +376,35 @@ public class CraftEventFactory {
         if (!event.isCancelled()) {
             state.update(true);
         }
+    }
+
+    public static FoodLevelChangeEvent callFoodLevelChangeEvent(EntityHuman entity, int level) {
+        FoodLevelChangeEvent event = new FoodLevelChangeEvent((Player) entity.getBukkitEntity(), level);
+        entity.getBukkitEntity().getServer().getPluginManager().callEvent(event);
+        return event;
+    }
+
+    public static EntityChangeBlockEvent callEntityChangeBlockEvent(org.bukkit.entity.Entity entity, Block block, Material material) {
+        EntityChangeBlockEvent event = new EntityChangeBlockEvent((LivingEntity) entity, block, material);
+        entity.getServer().getPluginManager().callEvent(event);
+        return event;
+    }
+
+    public static PigZapEvent callPigZapEvent(Entity pig, Entity lightning, Entity pigzombie) {
+        PigZapEvent event = new PigZapEvent((Pig) pig.getBukkitEntity(), (LightningStrike) lightning.getBukkitEntity(), (PigZombie) pigzombie.getBukkitEntity());
+        pig.getBukkitEntity().getServer().getPluginManager().callEvent(event);
+        return event;
+    }
+
+    public static EntityChangeBlockEvent callEntityChangeBlockEvent(Entity entity, Block block, Material material) {
+        EntityChangeBlockEvent event = new EntityChangeBlockEvent((LivingEntity) entity.getBukkitEntity(), block, material);
+        entity.getBukkitEntity().getServer().getPluginManager().callEvent(event);
+        return event;
+    }
+
+    public static CreeperPowerEvent callCreeperPowerEvent(Entity creeper, Entity lightning, CreeperPowerEvent.PowerCause cause) {
+        CreeperPowerEvent event = new CreeperPowerEvent((Creeper) creeper.getBukkitEntity(), (LightningStrike) lightning.getBukkitEntity(), cause);
+        creeper.getBukkitEntity().getServer().getPluginManager().callEvent(event);
+        return event;
     }
 }
