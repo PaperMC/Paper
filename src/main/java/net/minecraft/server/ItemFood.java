@@ -1,7 +1,5 @@
 package net.minecraft.server;
 
-import org.bukkit.event.entity.FoodLevelChangeEvent; // CraftBukkit
-
 public class ItemFood extends Item {
 
     public final int a;
@@ -31,8 +29,7 @@ public class ItemFood extends Item {
         // CraftBukkit start
         int oldFoodLevel = entityhuman.getFoodData().foodLevel;
 
-        FoodLevelChangeEvent event = new FoodLevelChangeEvent(entityhuman.getBukkitEntity(), Math.min(this.getNutrition() + entityhuman.getFoodData().foodLevel, 20));
-        entityhuman.world.getServer().getPluginManager().callEvent(event);
+        org.bukkit.event.entity.FoodLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFoodLevelChangeEvent(entityhuman, Math.min(this.getNutrition() + oldFoodLevel, 20));
 
         if (!event.isCancelled()) {
             entityhuman.getFoodData().eat(event.getFoodLevel() - oldFoodLevel, this.getSaturationModifier());

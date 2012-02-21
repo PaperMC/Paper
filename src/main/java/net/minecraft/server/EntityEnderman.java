@@ -6,7 +6,6 @@ import java.util.List;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.entity.EntityTeleportEvent;
-import org.bukkit.event.entity.EntityChangeBlockEvent;
 // CraftBukkit end
 
 public class EntityEnderman extends EntityMonster {
@@ -107,10 +106,7 @@ public class EntityEnderman extends EntityMonster {
                     l = this.world.getTypeId(i, j, k);
                     if (b[l]) {
                         // CraftBukkit start - pickup event
-                        EntityChangeBlockEvent event = new EntityChangeBlockEvent(this.getBukkitEntity(), this.world.getWorld().getBlockAt(i, j, k), org.bukkit.Material.AIR);
-                        this.world.getServer().getPluginManager().callEvent(event);
-
-                        if (!event.isCancelled()) {
+                        if (!CraftEventFactory.callEntityChangeBlockEvent(this, this.world.getWorld().getBlockAt(i, j, k), org.bukkit.Material.AIR).isCancelled()) {
                             this.setCarriedId(this.world.getTypeId(i, j, k));
                             this.setCarriedData(this.world.getData(i, j, k));
                             this.world.setTypeId(i, j, k, 0);
@@ -129,10 +125,7 @@ public class EntityEnderman extends EntityMonster {
                     // CraftBukkit start - place event
                     org.bukkit.block.Block bblock = this.world.getWorld().getBlockAt(i, j, k);
 
-                    EntityChangeBlockEvent event = new EntityChangeBlockEvent(this.getBukkitEntity(), bblock, bblock.getType());
-                    this.world.getServer().getPluginManager().callEvent(event);
-
-                    if (!event.isCancelled()) {
+                    if (!CraftEventFactory.callEntityChangeBlockEvent(this, bblock, bblock.getType()).isCancelled()) {
                         this.world.setTypeIdAndData(i, j, k, this.getCarriedId(), this.getCarriedData());
                         this.setCarriedId(0);
                     }

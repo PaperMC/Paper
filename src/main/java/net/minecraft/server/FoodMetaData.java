@@ -1,9 +1,6 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.FoodLevelChangeEvent;
-// CraftBukkit end
+import org.bukkit.event.entity.EntityDamageEvent; // CraftBukkit
 
 public class FoodMetaData {
 
@@ -36,8 +33,7 @@ public class FoodMetaData {
                 this.saturationLevel = Math.max(this.saturationLevel - 1.0F, 0.0F);
             } else if (i > 0) {
                 // CraftBukkit start
-                FoodLevelChangeEvent event = new FoodLevelChangeEvent(entityhuman.getBukkitEntity(), Math.max(this.foodLevel - 1, 0));
-                entityhuman.world.getServer().getPluginManager().callEvent(event);
+                org.bukkit.event.entity.FoodLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFoodLevelChangeEvent(entityhuman, Math.min(this.foodLevel - 1, 0));
 
                 if (!event.isCancelled()) {
                     this.foodLevel = event.getFoodLevel();

@@ -19,7 +19,7 @@ public class CraftCreeper extends CraftMonster implements Creeper {
 
     public void setPowered(boolean powered) {
         CraftServer server = this.server;
-        org.bukkit.entity.Entity entity = this.getHandle().getBukkitEntity();
+        Creeper entity = (Creeper) this.getHandle().getBukkitEntity();
 
         if (powered) {
             CreeperPowerEvent event = new CreeperPowerEvent(entity, CreeperPowerEvent.PowerCause.SET_ON);

@@ -1,10 +1,6 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.event.entity.ExplosionPrimeEvent;
-import org.bukkit.event.entity.CreeperPowerEvent;
-// CraftBukkit end
+import org.bukkit.event.entity.ExplosionPrimeEvent; // CraftBukkit
 
 public class EntityCreeper extends EntityMonster {
 
@@ -115,7 +111,7 @@ public class EntityCreeper extends EntityMonster {
                     // CraftBukkit start
                     float radius = this.isPowered() ? 6.0F : 3.0F;
 
-                    ExplosionPrimeEvent event = new ExplosionPrimeEvent(CraftEntity.getEntity(this.world.getServer(), this), radius, false);
+                    ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), radius, false);
                     this.world.getServer().getPluginManager().callEvent(event);
 
                     if (!event.isCancelled()) {
@@ -152,10 +148,7 @@ public class EntityCreeper extends EntityMonster {
         super.a(entityweatherlighting);
 
         // CraftBukkit start
-        CreeperPowerEvent event = new CreeperPowerEvent(this.getBukkitEntity(), entityweatherlighting.getBukkitEntity(), CreeperPowerEvent.PowerCause.LIGHTNING);
-        this.world.getServer().getPluginManager().callEvent(event);
-
-        if (event.isCancelled()) {
+        if (org.bukkit.craftbukkit.event.CraftEventFactory.callCreeperPowerEvent(this, entityweatherlighting, org.bukkit.event.entity.CreeperPowerEvent.PowerCause.LIGHTNING).isCancelled()) {
             return;
         }
 

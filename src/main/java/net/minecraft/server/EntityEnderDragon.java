@@ -598,7 +598,7 @@ public class EntityEnderDragon extends EntityComplex {
         byte b0 = 4;
 
         // CraftBukkit start - Replace any "this.world" in the following with just "world"!
-        EntityCreatePortalEvent event = new EntityCreatePortalEvent(this.getBukkitEntity(), new ArrayList<BlockState>(), PortalType.ENDER);
+        EntityCreatePortalEvent event = new EntityCreatePortalEvent((org.bukkit.entity.LivingEntity) this.getBukkitEntity(), new ArrayList<BlockState>(), PortalType.ENDER);
         BlockStateListPopulator world = new BlockStateListPopulator(this.world.getWorld(), event.getBlocks());
 
         for (int l = k - 1; l <= k + 32; ++l) {

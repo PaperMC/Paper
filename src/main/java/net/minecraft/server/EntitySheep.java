@@ -5,7 +5,7 @@ import java.util.Random;
 // CraftBukkit start
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.event.entity.EntityChangeBlockEvent;
+import org.bukkit.entity.Sheep;
 // CraftBukkit end
 
 public class EntitySheep extends EntityAnimal {
@@ -79,13 +79,7 @@ public class EntitySheep extends EntityAnimal {
 
             if (this.world.getTypeId(i, j, k) == Block.LONG_GRASS.id) {
                 // CraftBukkit start
-                org.bukkit.World bworld = this.world.getWorld();
-                org.bukkit.block.Block bblock = bworld.getBlockAt(i, j, k);
-
-                EntityChangeBlockEvent event = new EntityChangeBlockEvent(this.getBukkitEntity(), bblock, Material.AIR);
-                this.world.getServer().getPluginManager().callEvent(event);
-
-                if (!event.isCancelled()) {
+                if (!CraftEventFactory.callEntityChangeBlockEvent(this.getBukkitEntity(), this.world.getWorld().getBlockAt(i, j, k), Material.AIR).isCancelled()) {
                     this.world.f(2001, i, j, k, Block.LONG_GRASS.id + 256);
                     this.world.setTypeId(i, j, k, 0);
                     flag = true;
@@ -93,13 +87,7 @@ public class EntitySheep extends EntityAnimal {
                 // CraftBukkit end
             } else if (this.world.getTypeId(i, j - 1, k) == Block.GRASS.id) {
                 // CraftBukkit start
-                org.bukkit.World bworld = this.world.getWorld();
-                org.bukkit.block.Block bblock = bworld.getBlockAt(i, j - 1, k);
-
-                EntityChangeBlockEvent event = new EntityChangeBlockEvent(this.getBukkitEntity(), bblock, Material.DIRT);
-                this.world.getServer().getPluginManager().callEvent(event);
-
-                if (!event.isCancelled()) {
+                if (!CraftEventFactory.callEntityChangeBlockEvent(this.getBukkitEntity(), this.world.getWorld().getBlockAt(i, j - 1, k), Material.DIRT).isCancelled()) {
                     this.world.f(2001, i, j - 1, k, Block.GRASS.id);
                     this.world.setTypeId(i, j - 1, k, Block.DIRT.id);
                     flag = true;
@@ -110,7 +98,7 @@ public class EntitySheep extends EntityAnimal {
             if (flag) {
                // CraftBukkit start
                 if (!this.isBaby()) {
-                    org.bukkit.event.entity.SheepRegrowWoolEvent event = new org.bukkit.event.entity.SheepRegrowWoolEvent(this.getBukkitEntity());
+                    org.bukkit.event.entity.SheepRegrowWoolEvent event = new org.bukkit.event.entity.SheepRegrowWoolEvent((Sheep) this.getBukkitEntity());
                     this.world.getServer().getPluginManager().callEvent(event);
 
                     if (!event.isCancelled()) {
