@@ -65,10 +65,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         perm.recalculatePermissions();
     }
 
-    public boolean isPlayer() {
-        return true;
-    }
-
     public boolean isOnline() {
         for (Object obj : server.getHandle().players) {
             EntityPlayer player = (EntityPlayer) obj;
@@ -486,20 +482,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public void setExp(float exp) {
         getHandle().exp = exp;
-
-        giveExp(0);
-    }
-
-    public int getExperience() {
-        return (int) (getExp() * 100);
-    }
-
-    public void setExperience(int exp) {
-        setExp(exp / 100);
+        getHandle().lastSentExp = -1;
     }
 
     public int getLevel() {
-        return (int) getHandle().expLevel;
+        return getHandle().expLevel;
     }
 
     public void setLevel(int level) {
@@ -513,11 +500,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public void setTotalExperience(int exp) {
         getHandle().expTotal = exp;
-        getHandle().lastSentExp = -1;
-
-        if (getTotalExperience() > getExperience()) {
-            getHandle().expTotal = getTotalExperience();
-        }
     }
 
     public float getExhaustion() {
