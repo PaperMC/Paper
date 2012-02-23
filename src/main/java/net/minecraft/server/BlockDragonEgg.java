@@ -61,6 +61,19 @@ public class BlockDragonEgg extends Block {
                     int k1 = k + world.random.nextInt(16) - world.random.nextInt(16);
 
                     if (world.getTypeId(i1, j1, k1) == 0) {
+                        // CraftBukkit start
+                        org.bukkit.block.Block from = world.getWorld().getBlockAt(i, j, k);
+                        org.bukkit.block.Block to = world.getWorld().getBlockAt(i1, j1, k1);
+                        org.bukkit.event.block.BlockFromToEvent event = new org.bukkit.event.block.BlockFromToEvent(from, to);
+                        org.bukkit.Bukkit.getPluginManager().callEvent(event);
+
+                        if (!event.isCancelled()) {
+                            i1 = event.getToBlock().getX();
+                            j1 = event.getToBlock().getY();
+                            k1 = event.getToBlock().getZ();
+                        } else return;
+                        // CraftBukkit end
+
                         world.setTypeIdAndData(i1, j1, k1, this.id, world.getData(i, j, k));
                         world.setTypeId(i, j, k, 0);
                         short short1 = 128;
