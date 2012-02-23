@@ -18,12 +18,10 @@ public class StructureGrowDelegate implements BlockChangeDelegate {
         this.world = world.getWorld();
     }
 
-    @Override
     public boolean setRawTypeId(int x, int y, int z, int type) {
         return setRawTypeIdAndData(x, y, z, type, 0);
     }
 
-    @Override
     public boolean setRawTypeIdAndData(int x, int y, int z, int type, int data) {
         BlockState state = world.getBlockAt(x, y, z).getState();
         state.setTypeId(type);
@@ -32,12 +30,10 @@ public class StructureGrowDelegate implements BlockChangeDelegate {
         return true;
     }
 
-    @Override
     public int getTypeId(int x, int y, int z) {
         return world.getBlockTypeIdAt(x, y, z);
     }
 
-    @Override
     public int getHeight() {
         return world.getMaxHeight();
     }
