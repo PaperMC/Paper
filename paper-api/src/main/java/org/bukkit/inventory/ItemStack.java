@@ -398,7 +398,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
                     Enchantment enchantment = Enchantment.getByName(entry.getKey().toString());
 
                     if ((enchantment != null) && (entry.getValue() instanceof Integer)) {
-                        result.addEnchantment(enchantment, (Integer) entry.getValue());
+                        result.addUnsafeEnchantment(enchantment, (Integer) entry.getValue());
                     }
                 }
             }
