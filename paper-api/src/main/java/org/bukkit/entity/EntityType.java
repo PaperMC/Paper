@@ -1,6 +1,5 @@
 package org.bukkit.entity;
 
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,7 +17,7 @@ public enum EntityType {
     ENDER_PEARL("ThrownEnderpearl", EnderPearl.class, 14),
     ENDER_SIGNAL("EyeOfEnderSignal", EnderSignal.class, 15),
     PRIMED_TNT("PrimedTnt", TNTPrimed.class, 20),
-    FALLING_BLOCK("FallingSand", FallingSand.class, 21, false),
+    FALLING_BLOCK("FallingBlock", FallingSand.class, 21, false),
     MINECART("Minecart", Minecart.class, 40),
     BOAT("Boat", Boat.class, 41),
     CREEPER("Creeper", Creeper.class, 50),
@@ -70,10 +69,11 @@ public enum EntityType {
     private static final Map<Short, EntityType> ID_MAP = new HashMap<Short, EntityType>();
 
     static {
-        for (EntityType type : EnumSet.allOf(EntityType.class)) {
-            NAME_MAP.put(type.name, type);
-            NAME_MAP.put(type.name(), type);
-            if (type.typeId != 0) {
+        for (EntityType type : values()) {
+            if (type.name != null) {
+                NAME_MAP.put(type.name.toLowerCase(), type);
+            }
+            if (type.typeId > 0) {
                 ID_MAP.put(type.typeId, type);
             }
         }
@@ -88,7 +88,9 @@ public enum EntityType {
         this.clazz = clazz;
         this.typeId = (short) typeId;
         this.independent = independent;
-        this.living = LivingEntity.class.isAssignableFrom(clazz);
+        if (clazz != null) {
+            this.living = LivingEntity.class.isAssignableFrom(clazz);
+        }
     }
 
     public String getName() {
@@ -104,7 +106,10 @@ public enum EntityType {
     }
 
     public static EntityType fromName(String name) {
-        return NAME_MAP.get(name);
+        if (name == null) {
+            return null;
+        }
+        return NAME_MAP.get(name.toLowerCase());
     }
 
     public static EntityType fromId(int id) {
