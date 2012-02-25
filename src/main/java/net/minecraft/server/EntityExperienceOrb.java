@@ -56,17 +56,23 @@ public class EntityExperienceOrb extends Entity {
         EntityHuman entityhuman = this.world.findNearbyPlayer(this, d0);
 
         if (entityhuman != null) {
-            double d1 = (entityhuman.locX - this.locX) / d0;
-            double d2 = (entityhuman.locY + (double) entityhuman.y() - this.locY) / d0;
-            double d3 = (entityhuman.locZ - this.locZ) / d0;
-            double d4 = Math.sqrt(d1 * d1 + d2 * d2 + d3 * d3);
-            double d5 = 1.0D - d4;
+            // CraftBukkit start
+            org.bukkit.event.entity.EntityTargetEvent event = CraftEventFactory.callEntityTargetEvent(this, entityhuman, org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_PLAYER);
+            Entity target = event.getTarget() == null ? null : ((org.bukkit.craftbukkit.entity.CraftEntity) event.getTarget()).getHandle();
 
-            if (d5 > 0.0D) {
-                d5 *= d5;
-                this.motX += d1 / d4 * d5 * 0.1D;
-                this.motY += d2 / d4 * d5 * 0.1D;
-                this.motZ += d3 / d4 * d5 * 0.1D;
+            if (!event.isCancelled() && target != null) {
+                double d1 = (target.locX - this.locX) / d0;
+                double d2 = (target.locY + (double) target.y() - this.locY) / d0;
+                double d3 = (target.locZ - this.locZ) / d0;
+                double d4 = Math.sqrt(d1 * d1 + d2 * d2 + d3 * d3);
+                double d5 = 1.0D - d4;
+                if (d5 > 0.0D) {
+                    d5 *= d5;
+                    this.motX += d1 / d4 * d5 * 0.1D;
+                    this.motY += d2 / d4 * d5 * 0.1D;
+                    this.motZ += d3 / d4 * d5 * 0.1D;
+                }
+                // CraftBukkit end
             }
         }
 

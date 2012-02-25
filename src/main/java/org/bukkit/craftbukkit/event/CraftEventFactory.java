@@ -407,4 +407,10 @@ public class CraftEventFactory {
         creeper.getBukkitEntity().getServer().getPluginManager().callEvent(event);
         return event;
     }
+
+    public static EntityTargetEvent callEntityTargetEvent(Entity entity, Entity target, EntityTargetEvent.TargetReason reason) {
+        EntityTargetEvent event = new EntityTargetEvent(entity.getBukkitEntity(), target.getBukkitEntity(), reason);
+        entity.getBukkitEntity().getServer().getPluginManager().callEvent(event);
+        return event;
+    }
 }
