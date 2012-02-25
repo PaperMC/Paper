@@ -6,26 +6,28 @@ import org.bukkit.block.Sign;
 import org.bukkit.craftbukkit.CraftWorld;
 
 public class CraftSign extends CraftBlockState implements Sign {
-    private final CraftWorld world;
     private final TileEntitySign sign;
+    private final String[] lines;
 
     public CraftSign(final Block block) {
         super(block);
 
-        world = (CraftWorld) block.getWorld();
+        CraftWorld world = (CraftWorld) block.getWorld();
         sign = (TileEntitySign) world.getTileEntityAt(getX(), getY(), getZ());
+        lines = new String[sign.lines.length];
+        System.arraycopy(sign.lines, 0, lines, 0, lines.length);
     }
 
     public String[] getLines() {
-        return sign.lines;
+        return lines;
     }
 
     public String getLine(int index) throws IndexOutOfBoundsException {
-        return sign.lines[index];
+        return lines[index];
     }
 
     public void setLine(int index, String line) throws IndexOutOfBoundsException {
-        sign.lines[index] = line;
+        lines[index] = line;
     }
 
     @Override
@@ -33,6 +35,7 @@ public class CraftSign extends CraftBlockState implements Sign {
         boolean result = super.update(force);
 
         if (result) {
+            System.arraycopy(lines, 0, sign.lines, 0, lines.length);
             sign.update();
         }
 
