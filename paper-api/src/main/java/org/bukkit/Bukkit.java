@@ -194,19 +194,19 @@ public final class Bukkit {
         return server.addRecipe(recipe);
     }
 
-    public List<Recipe> getRecipesFor(ItemStack result) {
+    public static List<Recipe> getRecipesFor(ItemStack result) {
         return server.getRecipesFor(result);
     }
 
-    public Iterator<Recipe> recipeIterator() {
+    public static Iterator<Recipe> recipeIterator() {
         return server.recipeIterator();
     }
 
-    public void clearRecipes() {
+    public static void clearRecipes() {
         server.clearRecipes();
     }
 
-    public void resetRecipes() {
+    public static void resetRecipes() {
         server.resetRecipes();
     }
 
@@ -288,5 +288,37 @@ public final class Bukkit {
 
     public static Messenger getMessenger() {
         return server.getMessenger();
+    }
+
+    public static boolean getAllowEnd() {
+        return server.getAllowEnd();
+    }
+
+    public static File getUpdateFolderFile() {
+        return server.getUpdateFolderFile();
+    }
+
+    public static int getTicksPerAnimalSpawns() {
+        return server.getTicksPerAnimalSpawns();
+    }
+
+    public static int getTicksPerMonsterSpawns() {
+        return server.getTicksPerMonsterSpawns();
+    }
+
+    public static boolean useExactLoginLocation() {
+        return server.useExactLoginLocation();
+    }
+
+    public static GameMode getDefaultGameMode() {
+        return server.getDefaultGameMode();
+    }
+
+    public static void setDefaultGameMode(GameMode mode) {
+        server.setDefaultGameMode(mode);
+    }
+
+    public static OfflinePlayer[] getOfflinePlayers() {
+        return server.getOfflinePlayers();
     }
 }
