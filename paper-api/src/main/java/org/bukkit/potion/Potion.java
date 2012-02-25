@@ -1,6 +1,7 @@
 package org.bukkit.potion;
 
 import java.util.Collection;
+import java.util.Collections;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.Material;
@@ -16,44 +17,113 @@ public class Potion {
     @Deprecated
     private Tier tier = Tier.ONE;
     private int level = 1;
-    private final PotionType type;
+    private int name = -1;
+    private PotionType type;
 
+    /**
+     * Construct a new potion of the given type. Unless the type is {@link PotionType#WATER},
+     * it will be level one, without extended duration. Don't use this constructor to create
+     * a no-effect potion other than water bottle.
+     * @param type The potion type
+     * @see #Potion(int)
+     */
     public Potion(PotionType type) {
-        Validate.notNull(type, "type cannot be null");
         this.type = type;
+        if (type != null) {
+            this.name = type.getDamageValue();
+        }
     }
 
+    /** @deprecated In favour of {@link #Potion(PotionType, int)} */
     @Deprecated
     public Potion(PotionType type, Tier tier) {
         this(type, tier == Tier.TWO ? 2 : 1);
-        Validate.notNull(tier, "tier cannot be null");
+        Validate.notNull(type, "Type cannot be null");
     }
 
+    /** @deprecated In favour of {@link #Potion(PotionType, int, boolean)} */
     @Deprecated
     public Potion(PotionType type, Tier tier, boolean splash) {
         this(type, tier == Tier.TWO ? 2 : 1, splash);
     }
 
+    /** @deprecated In favour of {@link #Potion(PotionType, int, boolean, boolean)} */
     @Deprecated
     public Potion(PotionType type, Tier tier, boolean splash, boolean extended) {
         this(type, tier, splash);
         this.extended = extended;
     }
 
+    /**
+     * Create a new potion of the given type and level.
+     * @param type The type of potion.
+     * @param level The potion's level.
+     */
     public Potion(PotionType type, int level) {
         this(type);
+        Validate.notNull(type, "Type cannot be null");
+        Validate.isTrue(type != PotionType.WATER, "Water bottles don't have a level!");
         Validate.isTrue(level > 0 && level < 3, "Level must be 1 or 2");
         this.level = level;
     }
 
+    /**
+     * Create a new potion of the given type and level.
+     * @param type The type of potion.
+     * @param level The potion's level.
+     * @param splash Whether it is a splash potion.
+     * @deprecated In favour of using {@link #Potion(PotionType)} with {@link #splash()}.
+     */
+    @Deprecated
     public Potion(PotionType type, int level, boolean splash) {
         this(type, level);
         this.splash = splash;
     }
 
+    /**
+     * Create a new potion of the given type and level.
+     * @param type The type of potion.
+     * @param level The potion's level.
+     * @param splash Whether it is a splash potion.
+     * @param extended Whether it has an extended duration.
+     * @deprecated In favour of using {@link #Potion(PotionType)} with {@link #extended}
+     * and possibly {@link #splash()}.
+     */
+    @Deprecated
     public Potion(PotionType type, int level, boolean splash, boolean extended) {
         this(type, level, splash);
         this.extended = extended;
+    }
+
+    /**
+     * Create a potion with a specific name.
+     * @param name The name index (0-63)
+     */
+    public Potion(int name) {
+        this(PotionType.getByDamageValue(name & POTION_BIT));
+        this.name = name & NAME_BIT;
+        if (name == 0) {
+            // If it's 0 it would've become PotionType.WATER, but it should actually be mundane potion
+            this.type = null;
+        }
+    }
+
+    /**
+     * Chain this to the constructor to make the potion a splash potion.
+     * @return The potion.
+     */
+    public Potion splash() {
+        setSplash(true);
+        return this;
+    }
+
+    /**
+     * Chain this to the constructor to extend the potion's duration.
+     * @return The potion.
+     */
+    public Potion extend() {
+        setHasExtendedDuration(true);
+        return this;
     }
 
     /**
@@ -65,8 +135,7 @@ public class Potion {
      */
     public void apply(ItemStack to) {
         Validate.notNull(to, "itemstack cannot be null");
-        if (to.getType() != Material.POTION)
-            throw new IllegalArgumentException("given itemstack is not a potion");
+        Validate.isTrue(to.getType() == Material.POTION, "given itemstack is not a potion");
         to.setDurability(toDamageValue());
     }
 
@@ -103,7 +172,9 @@ public class Potion {
      * @see Potion#toDamageValue()
      * @return The effects that this potion applies
      */
+    @SuppressWarnings("unchecked")
     public Collection<PotionEffect> getEffects() {
+        if(type == null) return Collections.EMPTY_SET;
         return getBrewer().getEffectsFromDamage(toDamageValue());
     }
 
@@ -171,6 +242,7 @@ public class Potion {
      *            Whether the potion should have extended duration
      */
     public void setHasExtendedDuration(boolean isExtended) {
+        Validate.isTrue(type == null || !type.isInstant(), "Instant potions cannot be extended");
         extended = isExtended;
     }
 
@@ -200,12 +272,25 @@ public class Potion {
     }
 
     /**
+     * Sets the {@link PotionType} of this potion.
+     *
+     * @param type
+     *            The new type of this potion
+     */
+    public void setType(PotionType type) {
+        this.type = type;
+    }
+
+    /**
      * Sets the level of this potion.
      *
      * @param level
      *            The new level of this potion
      */
     public void setLevel(int level) {
+        Validate.notNull(this.type, "No-effect potions don't have a level.");
+        int max = type.getMaxLevel();
+        Validate.isTrue(level > 0 && level <= max, "Level must be " + (max == 1 ? "" : "between 1 and ") + max + " for this potion");
         this.level = level;
         this.tier = level == 2 ? Tier.TWO : Tier.ONE;
     }
@@ -217,8 +302,17 @@ public class Potion {
      * @return The damage value of this potion
      */
     public short toDamageValue() {
-        short damage = type == null ? 0 : (short) type.getDamageValue();
-        damage |= level == 2 ? 0x20 : 0;
+        short damage;
+        if (type == PotionType.WATER) {
+            return 0;
+        } else if (type == null) {
+            // Without this, mundanePotion.toDamageValue() would return 0
+            damage = (short) (name == 0 ? 8192 : name);
+        } else {
+            damage = (short) level;
+            damage = (short) type.getDamageValue();
+            damage |= level << TIER_SHIFT;
+        }
         if (splash) {
             damage |= SPLASH_BIT;
         }
@@ -271,12 +365,25 @@ public class Potion {
     private static final int SPLASH_BIT = 0x4000;
     private static final int TIER_BIT = 0x20;
     private static final int TIER_SHIFT = 5;
+    private static final int NAME_BIT = 0x3F;
 
     public static Potion fromDamage(int damage) {
         PotionType type = PotionType.getByDamageValue(damage & POTION_BIT);
-        int level = 1;
-        level = (damage & TIER_BIT) >> TIER_SHIFT;
-        return new Potion(type, level, (damage & SPLASH_BIT) > 0, (damage & EXTENDED_BIT) > 0);
+        Potion potion;
+        if (type == null) {
+            potion = new Potion(damage & NAME_BIT);
+        } else {
+            int level = (damage & TIER_BIT) >> TIER_SHIFT;
+            level++;
+            potion = new Potion(type, level);
+        }
+        if ((damage & SPLASH_BIT) > 0) {
+            potion = potion.splash();
+        }
+        if ((damage & EXTENDED_BIT) > 0) {
+            potion = potion.extend();
+        }
+        return potion;
     }
 
     public static Potion fromItemStack(ItemStack item) {
