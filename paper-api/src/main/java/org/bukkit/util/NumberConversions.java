@@ -13,8 +13,8 @@ public final class NumberConversions {
             int result = 0;
 
             try {
-                result = Integer.valueOf((String) object);
-            } catch (Throwable ex) {}
+                result = Integer.parseInt(object.toString());
+            } catch (NumberFormatException ex) {}
 
             return result;
         }
@@ -27,8 +27,8 @@ public final class NumberConversions {
             float result = 0;
 
             try {
-                result = Float.valueOf((String) object);
-            } catch (Throwable ex) {}
+                result = Float.parseFloat(object.toString());
+            } catch (NumberFormatException ex) {}
 
             return result;
         }
@@ -41,8 +41,8 @@ public final class NumberConversions {
             double result = 0;
 
             try {
-                result = Double.valueOf((String) object);
-            } catch (Throwable ex) {}
+                result = Double.parseDouble(object.toString());
+            } catch (NumberFormatException ex) {}
 
             return result;
         }
@@ -55,8 +55,8 @@ public final class NumberConversions {
             long result = 0;
 
             try {
-                result = Long.valueOf((String) object);
-            } catch (Throwable ex) {}
+                result = Long.parseLong(object.toString());
+            } catch (NumberFormatException ex) {}
 
             return result;
         }
@@ -69,8 +69,8 @@ public final class NumberConversions {
             short result = 0;
 
             try {
-                result = Short.valueOf((String) object);
-            } catch (Throwable ex) {}
+                result = Short.parseShort(object.toString());
+            } catch (NumberFormatException ex) {}
 
             return result;
         }
@@ -83,8 +83,8 @@ public final class NumberConversions {
             byte result = 0;
 
             try {
-                result = Byte.valueOf((String) object);
-            } catch (Throwable ex) {}
+                result = Byte.parseByte(object.toString());
+            } catch (NumberFormatException ex) {}
 
             return result;
         }
