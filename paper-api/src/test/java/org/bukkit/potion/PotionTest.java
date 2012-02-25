@@ -6,7 +6,6 @@ import static org.hamcrest.Matchers.is;
 import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.potion.Potion.Tier;
 import org.junit.Test;
 
 public class PotionTest {
@@ -25,7 +24,7 @@ public class PotionTest {
         potion = Potion.fromDamage(PotionType.POISON.getDamageValue() | SPLASH_BIT);
         assertTrue(potion.getType() == PotionType.POISON && potion.isSplash());
         potion = Potion.fromDamage(0x25 /* Potion of Healing II */);
-        assertTrue(potion.getType() == PotionType.INSTANT_HEAL && potion.getTier() == Tier.TWO);
+        assertTrue(potion.getType() == PotionType.INSTANT_HEAL && potion.getLevel() == 2);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -45,6 +44,22 @@ public class PotionTest {
 
     @Test
     public void setExtended() {
+        PotionEffectType.registerPotionEffectType(new PotionEffectType(19){
+            @Override
+            public double getDurationModifier() {
+                return 1;
+            }
+
+            @Override
+            public String getName() {
+                return "Poison";
+            }
+
+            @Override
+            public boolean isInstant() {
+                return false;
+            }
+        });
         Potion potion = new Potion(PotionType.POISON);
         assertFalse(potion.hasExtendedDuration());
         potion.setHasExtendedDuration(true);
@@ -62,32 +77,32 @@ public class PotionTest {
     }
 
     @Test
-    public void setTier() {
+    public void setLevel() {
         Potion potion = new Potion(PotionType.POISON);
-        assertThat(potion.getTier(), is(Tier.ONE));
-        potion.setTier(Tier.TWO);
-        assertThat(potion.getTier(), is(Tier.TWO));
-        assertTrue(potion.toDamageValue() == (PotionType.POISON.getDamageValue() | potion.getTier().getDamageBit()));
+        assertEquals(1, potion.getLevel());
+        potion.setLevel(2);
+        assertEquals(2, potion.getLevel());
+        assertTrue((potion.toDamageValue() & 0x3F) == (PotionType.POISON.getDamageValue() | 0x20));
     }
 
     @Test
     public void useNulls() {
         try {
-            new Potion(null);
-            fail("cannot use null type in constructor");
+            new Potion(null, 2);
+            fail("cannot use null type in constructor with a level");
         } catch (IllegalArgumentException ex) {
         }
 
         try {
-            new Potion(PotionType.POISON, null);
-            fail("cannot use null tier in constructor");
+            new Potion(PotionType.POISON, 3);
+            fail("level must be less than 3 in constructor");
         } catch (IllegalArgumentException ex) {
         }
 
         Potion potion = new Potion(PotionType.POISON);
         try {
-            potion.setTier(null);
-            fail("cannot set a null tier");
+            potion.setLevel(3);
+            fail("level must be set less than 3");
         } catch (IllegalArgumentException ex) {
         }
 

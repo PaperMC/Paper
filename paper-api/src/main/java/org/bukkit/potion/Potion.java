@@ -14,8 +14,6 @@ import org.bukkit.inventory.ItemStack;
 public class Potion {
     private boolean extended = false;
     private boolean splash = false;
-    @Deprecated
-    private Tier tier = Tier.ONE;
     private int level = 1;
     private int name = -1;
     private PotionType type;
@@ -194,7 +192,7 @@ public class Potion {
      */
     @Deprecated
     public Tier getTier() {
-        return tier;
+        return level == 2 ? Tier.TWO : Tier.ONE;
     }
 
     /**
@@ -267,7 +265,6 @@ public class Potion {
     @Deprecated
     public void setTier(Tier tier) {
         Validate.notNull(tier, "tier cannot be null");
-        this.tier = tier;
         this.level = (tier == Tier.TWO ? 2 : 1);
     }
 
@@ -292,7 +289,6 @@ public class Potion {
         int max = type.getMaxLevel();
         Validate.isTrue(level > 0 && level <= max, "Level must be " + (max == 1 ? "" : "between 1 and ") + max + " for this potion");
         this.level = level;
-        this.tier = level == 2 ? Tier.TWO : Tier.ONE;
     }
 
     /**
@@ -309,9 +305,9 @@ public class Potion {
             // Without this, mundanePotion.toDamageValue() would return 0
             damage = (short) (name == 0 ? 8192 : name);
         } else {
-            damage = (short) level;
-            damage = (short) type.getDamageValue();
-            damage |= level << TIER_SHIFT;
+            damage = (short) (level - 1);
+            damage <<= TIER_SHIFT;
+            damage |= (short) type.getDamageValue();
         }
         if (splash) {
             damage |= SPLASH_BIT;
