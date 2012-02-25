@@ -781,7 +781,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         }
 
         try {
-            if (this.server.dispatchCommand(player, s.substring(1))) {
+            if (this.server.dispatchCommand(player, event.getMessage().substring(1))) {
                 return;
             }
         } catch (CommandException ex) {
@@ -791,7 +791,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         }
         // CraftBukkit end
 
-        /* CraftBukkit start - No longer neaded as we have already handled it in server.dispatchCommand above.
+        /* // CraftBukkit start - No longer needed as we have already handled it in server.dispatchCommand above.
         if (s.toLowerCase().startsWith("/me ")) {
             s = "* " + this.player.name + " " + s.substring(s.indexOf(" ")).trim();
             logger.info(s);
