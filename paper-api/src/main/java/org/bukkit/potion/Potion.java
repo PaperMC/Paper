@@ -13,7 +13,9 @@ import org.bukkit.inventory.ItemStack;
 public class Potion {
     private boolean extended = false;
     private boolean splash = false;
+    @Deprecated
     private Tier tier = Tier.ONE;
+    private int level = 1;
     private final PotionType type;
 
     public Potion(PotionType type) {
@@ -21,19 +23,36 @@ public class Potion {
         this.type = type;
     }
 
+    @Deprecated
     public Potion(PotionType type, Tier tier) {
-        this(type);
+        this(type, tier == Tier.TWO ? 2 : 1);
         Validate.notNull(tier, "tier cannot be null");
-        this.tier = tier;
     }
 
+    @Deprecated
     public Potion(PotionType type, Tier tier, boolean splash) {
-        this(type, tier);
+        this(type, tier == Tier.TWO ? 2 : 1, splash);
+    }
+
+    @Deprecated
+    public Potion(PotionType type, Tier tier, boolean splash, boolean extended) {
+        this(type, tier, splash);
+        this.extended = extended;
+    }
+
+    public Potion(PotionType type, int level) {
+        this(type);
+        Validate.isTrue(level > 0 && level < 3, "Level must be 1 or 2");
+        this.level = level;
+    }
+
+    public Potion(PotionType type, int level, boolean splash) {
+        this(type, level);
         this.splash = splash;
     }
 
-    public Potion(PotionType type, Tier tier, boolean splash, boolean extended) {
-        this(type, tier, splash);
+    public Potion(PotionType type, int level, boolean splash, boolean extended) {
+        this(type, level, splash);
         this.extended = extended;
     }
 
@@ -73,7 +92,7 @@ public class Potion {
             return false;
         }
         Potion other = (Potion) obj;
-        return extended == other.extended && splash == other.splash && tier == other.tier && type == other.type;
+        return extended == other.extended && splash == other.splash && level == other.level && type == other.type;
     }
 
     /**
@@ -89,10 +108,20 @@ public class Potion {
     }
 
     /**
+     * Returns the level of this potion.
+     *
+     * @return The level of this potion
+     */
+    public int getLevel() {
+        return level;
+    }
+
+    /**
      * Returns the {@link Tier} of this potion.
      *
      * @return The tier of this potion
      */
+    @Deprecated
     public Tier getTier() {
         return tier;
     }
@@ -118,9 +147,9 @@ public class Potion {
     @Override
     public int hashCode() {
         final int prime = 31;
-        int result = prime + (extended ? 1231 : 1237);
+        int result = prime + level;
+        result = prime * result + (extended ? 1231 : 1237);
         result = prime * result + (splash ? 1231 : 1237);
-        result = prime * result + ((tier == null) ? 0 : tier.hashCode());
         result = prime * result + ((type == null) ? 0 : type.hashCode());
         return result;
     }
@@ -161,10 +190,24 @@ public class Potion {
      *
      * @param tier
      *            The new tier of this potion
+     * @deprecated In favour of {@link #setLevel(int)}
      */
+    @Deprecated
     public void setTier(Tier tier) {
         Validate.notNull(tier, "tier cannot be null");
         this.tier = tier;
+        this.level = (tier == Tier.TWO ? 2 : 1);
+    }
+
+    /**
+     * Sets the level of this potion.
+     *
+     * @param level
+     *            The new level of this potion
+     */
+    public void setLevel(int level) {
+        this.level = level;
+        this.tier = level == 2 ? Tier.TWO : Tier.ONE;
     }
 
     /**
@@ -174,8 +217,8 @@ public class Potion {
      * @return The damage value of this potion
      */
     public short toDamageValue() {
-        short damage = (short) type.getDamageValue();
-        damage |= tier.damageBit;
+        short damage = type == null ? 0 : (short) type.getDamageValue();
+        damage |= level == 2 ? 0x20 : 0;
         if (splash) {
             damage |= SPLASH_BIT;
         }
@@ -197,6 +240,7 @@ public class Potion {
         return new ItemStack(Material.POTION, amount, toDamageValue());
     }
 
+    @Deprecated
     public enum Tier {
         ONE(0),
         TWO(0x20);
@@ -222,16 +266,17 @@ public class Potion {
 
     private static PotionBrewer brewer;
 
-    private static final int EXTENDED_BIT = 0x0040;
+    private static final int EXTENDED_BIT = 0x40;
     private static final int POTION_BIT = 0xF;
     private static final int SPLASH_BIT = 0x4000;
+    private static final int TIER_BIT = 0x20;
+    private static final int TIER_SHIFT = 5;
 
     public static Potion fromDamage(int damage) {
         PotionType type = PotionType.getByDamageValue(damage & POTION_BIT);
-        Validate.notNull(type, "unable to find potion type");
-        Tier tier = Tier.getByDamageBit(damage & Tier.TWO.damageBit);
-        Validate.notNull(tier, "unable to find tier");
-        return new Potion(type, tier, (damage & SPLASH_BIT) > 0, (damage & EXTENDED_BIT) > 0);
+        int level = 1;
+        level = (damage & TIER_BIT) >> TIER_SHIFT;
+        return new Potion(type, level, (damage & SPLASH_BIT) > 0, (damage & EXTENDED_BIT) > 0);
     }
 
     public static Potion fromItemStack(ItemStack item) {
