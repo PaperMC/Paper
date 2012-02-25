@@ -135,7 +135,7 @@ public class ShapedRecipes implements CraftingRecipe {
     }
 
     public ItemStack b(InventoryCrafting inventorycrafting) {
-        return new ItemStack(this.e.id, this.e.count, this.e.getData());
+        return new ItemStack(this.e.id, this.e.count, this.e.getData(), this.e.getEnchantments()); // CraftBukkit - copy enchantments
     }
 
     public int a() {
