@@ -39,6 +39,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.TreeType;
 import org.bukkit.World;
 import org.bukkit.block.Biome;
@@ -47,6 +48,7 @@ import org.bukkit.Difficulty;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.plugin.messaging.StandardMessenger;
+import org.bukkit.potion.Potion;
 
 public class CraftWorld implements World {
     private final WorldServer world;
@@ -715,6 +717,21 @@ public class CraftWorld implements World {
 
     public void playEffect(Location location, Effect effect, int data) {
         playEffect(location, effect, data, 64);
+    }
+
+    public <T> void playEffect(Location loc, Effect effect, T data) {
+        playEffect(loc, effect, data, 64);
+    }
+
+    public <T> void playEffect(Location loc, Effect effect, T data, int radius) {
+        if (data != null) {
+            Validate.isTrue(data.getClass().equals(effect.getData()), "Wrong kind of data for this effect!");
+        } else {
+            Validate.isTrue(effect.getData() == null, "Wrong kind of data for this effect!");
+        }
+
+        int datavalue = data == null ? 0 : CraftEffect.getDataValue(effect, data);
+        playEffect(loc, effect, datavalue, radius);
     }
 
     public void playEffect(Location location, Effect effect, int data, int radius) {
