@@ -11,7 +11,6 @@ import java.util.logging.Logger;
  * The API for PluginLogger is exactly the same as {@link java.util.logging.Logger}.
  */
 public class PluginLogger extends Logger {
-
     private String pluginName;
 
     /**
@@ -20,7 +19,8 @@ public class PluginLogger extends Logger {
      */
     public PluginLogger(Plugin context) {
         super(context.getClass().getCanonicalName(), null);
-        pluginName = "[" + context.getDescription().getName() + "] ";
+        String prefix = context.getDescription().getPrefix();
+        pluginName = prefix != null ? new StringBuilder().append("[").append(prefix).append("] ").toString() : "[" + context.getDescription().getName() + "] ";
         setParent(context.getServer().getLogger());
         setLevel(Level.ALL);
     }

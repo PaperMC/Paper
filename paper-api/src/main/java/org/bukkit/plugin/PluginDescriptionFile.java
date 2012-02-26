@@ -30,6 +30,7 @@ public final class PluginDescriptionFile {
     private String description = null;
     private List<String> authors = null;
     private String website = null;
+    private String prefix = null;
     private boolean database = false;
     private PluginLoadOrder order = PluginLoadOrder.POSTWORLD;
     private List<Permission> permissions = null;
@@ -158,6 +159,10 @@ public final class PluginDescriptionFile {
 
     public String getClassLoaderOf() {
         return classLoaderOf;
+    }
+    
+    public String getPrefix() {
+        return prefix;
     }
 
     private void loadMap(Map<?, ?> map) throws InvalidDescriptionException {
@@ -311,6 +316,9 @@ public final class PluginDescriptionFile {
         } else {
             permissions = ImmutableList.<Permission>of();
         }
+        if (map.containsKey("prefix")) {
+            prefix = map.get("prefix").toString();
+        }
     }
 
     private Map<String, Object> saveMap() {
@@ -347,6 +355,10 @@ public final class PluginDescriptionFile {
 
         if (classLoaderOf != null) {
             map.put("class-loader-of", classLoaderOf);
+        }
+        
+        if (prefix != null) {
+            map.put("prefix", prefix);
         }
 
         return map;
