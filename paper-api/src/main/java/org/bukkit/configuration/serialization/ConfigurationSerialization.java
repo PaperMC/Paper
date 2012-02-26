@@ -199,6 +199,7 @@ public class ConfigurationSerialization {
      *
      * @param clazz Class to register
      * @param alias Alias to register as
+     * @see SerializableAs
      */
     public static void registerClass(Class<? extends ConfigurationSerializable> clazz, String alias) {
         aliases.put(alias, clazz);

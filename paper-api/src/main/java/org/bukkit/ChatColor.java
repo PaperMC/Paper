@@ -80,6 +80,10 @@ public enum ChatColor {
      */
     MAGIC('k', 0x10);
 
+    /**
+     * The special character which prefixes all chat colour codes. Use this if you need to dynamically
+     * convert colour codes from your custom format.
+     */
     public static final char COLOR_CHAR = '\u00A7';
     private static final Pattern STRIP_COLOR_PATTERN = Pattern.compile("(?i)" + String.valueOf(COLOR_CHAR) + "[0-9A-FK]");
 

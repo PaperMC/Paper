@@ -18,7 +18,7 @@ public enum EntityType {
     ENDER_PEARL("ThrownEnderpearl", EnderPearl.class, 14),
     ENDER_SIGNAL("EyeOfEnderSignal", EnderSignal.class, 15),
     PRIMED_TNT("PrimedTnt", TNTPrimed.class, 20),
-    FALLING_BLOCK("FallingBlock", FallingSand.class, 21, false),
+    FALLING_BLOCK("FallingSand", FallingSand.class, 21, false),
     MINECART("Minecart", Minecart.class, 40),
     BOAT("Boat", Boat.class, 41),
     CREEPER("Creeper", Creeper.class, 50),

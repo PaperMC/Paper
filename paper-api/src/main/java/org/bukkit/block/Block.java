@@ -151,6 +151,12 @@ public interface Block extends Metadatable {
      */
     void setData(byte data);
 
+    /**
+     * Sets the metadata for this block
+     *
+     * @param data New block specific metadata
+     * @param applyPhysics False to cancel physics from the changed block.
+     */
     void setData(byte data, boolean applyPhysics);
 
     /**
@@ -168,8 +174,23 @@ public interface Block extends Metadatable {
      */
     boolean setTypeId(int type);
 
+    /**
+     * Sets the type-id of this block
+     *
+     * @param type Type-Id to change this block to
+     * @param applyPhysics False to cancel physics on the changed block.
+     * @return whether the block was changed
+     */
     boolean setTypeId(int type, boolean applyPhysics);
 
+    /**
+     * Sets the type-id of this block
+     *
+     * @param type Type-Id to change this block to
+     * @param data The data value to change this block to
+     * @param applyPhysics False to cancel physics on the changed block
+     * @return whether the block was changed
+     */
     boolean setTypeIdAndData(int type, byte data, boolean applyPhysics);
 
     /**

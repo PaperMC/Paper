@@ -6,8 +6,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Represents a {@link ConfigurationSerializable} that will delegate all deserialization to another
- * {@link ConfigurationSerializable}
+ * Applies to a {@link ConfigurationSerializable} that will delegate all deserialization to another
+ * {@link ConfigurationSerializable}.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)

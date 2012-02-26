@@ -146,7 +146,13 @@ public interface BlockState extends Metadatable {
      */
     boolean update(boolean force);
 
+    /**
+     * @return The data as a raw byte.
+     */
     public byte getRawData();
 
+    /**
+     * @param data The new data value for the block.
+     */
     public void setRawData(byte data);
 }

@@ -921,6 +921,11 @@ public interface World extends PluginMessageRecipient, Metadatable {
             return id;
         }
 
+        /**
+         * Get an environment by ID
+         * @param id The ID of the environment
+         * @return The environment
+         */
         public static Environment getEnvironment(int id) {
             return lookup.get(id);
         }

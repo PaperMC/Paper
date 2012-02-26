@@ -11,19 +11,61 @@ import org.bukkit.potion.Potion;
  * A list of effects that the server is able to send to players.
  */
 public enum Effect {
+    /**
+     * An alternate click sound.
+     */
     CLICK2(1000, Type.SOUND),
+    /**
+     * A click sound.
+     */
     CLICK1(1001, Type.SOUND),
+    /**
+     * Sound of a bow firing.
+     */
     BOW_FIRE(1002, Type.SOUND),
+    /**
+     * Sound of a door opening/closing.
+     */
     DOOR_TOGGLE(1003, Type.SOUND),
+    /**
+     * Sound of fire being extinguished.
+     */
     EXTINGUISH(1004, Type.SOUND),
+    /**
+     * A song from a record. Needs the record item ID as additional info
+     */
     RECORD_PLAY(1005, Type.SOUND, Material.class),
+    /**
+     * Sound of ghast shrieking.
+     */
     GHAST_SHRIEK(1007, Type.SOUND),
+    /**
+     * Sound of ghast firing.
+     */
     GHAST_SHOOT(1008, Type.SOUND),
+    /**
+     * Sound of blaze firing.
+     */
     BLAZE_SHOOT(1009, Type.SOUND),
+    /**
+     * A visual smoke effect. Needs direction as additional info.
+     */
     SMOKE(2000, Type.VISUAL, BlockFace.class),
+    /**
+     * Visual effect of a block breaking. Needs block ID as additional info.
+     */
     STEP_SOUND(2001, Type.SOUND, Material.class),
+    /**
+     * Visual effect of a splash potion breaking. Needs potion data value as additional info.
+     */
     POTION_BREAK(2002, Type.VISUAL, Potion.class),
+    /**
+     * An ender eye signal; a visual effect.
+     */
     ENDER_SIGNAL(2003, Type.VISUAL),
+    /**
+     * The flames seen on a mobspawner; a visual effect.
+     */
     MOBSPAWNER_FLAMES(2004, Type.VISUAL);
 
     private final int id;

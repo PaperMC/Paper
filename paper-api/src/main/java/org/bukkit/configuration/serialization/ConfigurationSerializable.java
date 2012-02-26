@@ -14,6 +14,10 @@ import java.util.Map;
  * and returns the class.</li>
  * <li>A constructor that accepts a single {@link Map}&lt;{@link String}, {@link Object}>.</li>
  * </ul>
+ * In addition to implementing this interface, you must register the class with
+ * {@link ConfigurationSerialization#registerClass(Class)}.
+ * @see DelegateDeserialization
+ * @see SerializableAs
  */
 public interface ConfigurationSerializable {
     /**

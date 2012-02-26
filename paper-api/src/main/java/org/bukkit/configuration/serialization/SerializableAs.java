@@ -10,8 +10,12 @@ import java.lang.annotation.Target;
  * If this is not present on a {@link ConfigurationSerializable} class, it will use the
  * fully qualified name of the class.
  * <p>
+ * This value will be stored in the configuration so that the configuration deserialization
+ * can determine what type it is.
+ * <p>
  * Using this annotation on any other class than a {@link ConfigurationSerializable} will
  * have no effect.
+ * @see ConfigurationSerialization#registerClass(Class, String)
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
