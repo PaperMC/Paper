@@ -620,7 +620,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      *
      * @param location the {@link Location} around which players must be to hear the sound
      * @param effect the {@link Effect}
-     * @param data a data bit needed for the RECORD_PLAY, SMOKE, and STEP_SOUND sounds
+     * @param data a data bit needed for some effects
      */
     public void playEffect(Location location, Effect effect, int data);
 
@@ -629,10 +629,29 @@ public interface World extends PluginMessageRecipient, Metadatable {
      *
      * @param location the {@link Location} around which players must be to hear the effect
      * @param effect the {@link Effect}
-     * @param data a data bit needed for the RECORD_PLAY, SMOKE, and STEP effects
+     * @param data a data bit needed for some effects
      * @param radius the radius around the location
      */
     public void playEffect(Location location, Effect effect, int data, int radius);
+
+    /**
+     * Plays an effect to all players within a default radius around a given location.
+     *
+     * @param location the {@link Location} around which players must be to hear the sound
+     * @param effect the {@link Effect}
+     * @param data a data bit needed for some effects
+     */
+    public <T> void playEffect(Location location, Effect effect, T data);
+
+    /**
+     * Plays an effect to all players within a given radius around a location.
+     *
+     * @param location the {@link Location} around which players must be to hear the effect
+     * @param effect the {@link Effect}
+     * @param data a data bit needed for some effects
+     * @param radius the radius around the location
+     */
+    public <T> void playEffect(Location location, Effect effect, T data, int radius);
 
     /**
      * Get empty chunk snapshot (equivalent to all air blocks), optionally including valid biome

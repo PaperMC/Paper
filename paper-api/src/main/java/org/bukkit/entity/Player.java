@@ -201,9 +201,18 @@ public interface Player extends HumanEntity, CommandSender, OfflinePlayer, Plugi
      *
      * @param loc the location to play the effect at
      * @param effect the {@link Effect}
-     * @param data a data bit needed for the RECORD_PLAY, SMOKE, and STEP_SOUND sounds
+     * @param data a data bit needed for some effects
      */
     public void playEffect(Location loc, Effect effect, int data);
+
+    /**
+     * Plays an effect to just this player.
+     *
+     * @param loc the location to play the effect at
+     * @param effect the {@link Effect}
+     * @param data a data bit needed for some effects
+     */
+    public <T> void playEffect(Location loc, Effect effect, T data);
 
     /**
      * Send a block change. This fakes a block change packet for a user at

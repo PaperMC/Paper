@@ -476,4 +476,11 @@ public enum Material {
             BY_NAME.put(material.name(), material);
         }
     }
+
+    /**
+     * @return True if this material represents a playable music disk.
+     */
+    public boolean isRecord() {
+        return id >= GOLD_RECORD.id && id <= RECORD_11.id;
+    }
 }

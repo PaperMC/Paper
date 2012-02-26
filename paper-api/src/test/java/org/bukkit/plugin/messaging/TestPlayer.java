@@ -675,4 +675,8 @@ public class TestPlayer implements Player {
     public void removeMetadata(String metadataKey, Plugin owningPlugin) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
+
+    public <T> void playEffect(Location loc, Effect effect, T data) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }
