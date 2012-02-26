@@ -127,15 +127,30 @@ public class Note {
      *
      * @param octave The octave where the note is in. Has to be 0 - 2.
      * @param tone The tone within the octave. If the octave is 2 the note has to be F#.
-     * @param sharped Set it the tone is sharped (e.g. for F#).
+     * @param sharped Set if the tone is sharped (e.g. for F#).
      */
     public Note(int octave, Tone tone, boolean sharped) {
-        Validate.isTrue(!(sharped && !tone.isSharpable()), "This tone could not be sharped.");
+        if (sharped && !tone.isSharpable()) {
+            tone = tone == Tone.F ? Tone.G : Tone.values()[tone.ordinal() + 1];
+            sharped = false;
+        }
         if (octave < 0 || octave > 2 || (octave == 2 && !(tone == Tone.F && sharped))) {
             throw new IllegalArgumentException("Tone and octave have to be between F#0 and F#2");
         }
 
         this.note = (byte) (octave * Tone.TONES_COUNT + tone.getId(sharped));
+    }
+
+    /**
+     * Creates a new note for a flat tone, such as A-flat.
+     *
+     * @param octave The octave where the note is in. Has to be 0 - 2.
+     * @param tone The tone within the octave. If the octave is 2 the note has to be F#.
+     * @return The new note.
+     */
+    public static Note flat(int octave, Tone tone) {
+        tone = tone == Tone.G ? Tone.F : Tone.values()[tone.ordinal() - 1];
+        return new Note(octave, tone, tone.isSharpable());
     }
 
     /**
