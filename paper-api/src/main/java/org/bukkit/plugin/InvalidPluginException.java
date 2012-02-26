@@ -35,7 +35,7 @@ public class InvalidPluginException extends Exception {
     /**
      * Constructs a new InvalidPluginException with the specified detail message
      *
-     * @param the detail message. The detail message is saved for later retrieval by the getMessage() method.
+     * @param message TThe detail message is saved for later retrieval by the getMessage() method.
      */
     public InvalidPluginException(final String message) {
         super(message);

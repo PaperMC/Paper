@@ -252,6 +252,7 @@ public interface LivingEntity extends Entity {
      * effect of the given {@link PotionEffectType} applied to it.
      *
      * @param type The potion type to check
+     * @return Whether the player has this potion effect active on them.
      */
     public boolean hasPotionEffect(PotionEffectType type);
 

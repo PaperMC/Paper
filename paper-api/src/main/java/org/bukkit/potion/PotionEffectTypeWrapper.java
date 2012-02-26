@@ -17,6 +17,7 @@ public class PotionEffectTypeWrapper extends PotionEffectType {
 
     /**
      * Get the potion type bound to this wrapper.
+     * @return The potion effect type
      */
     public PotionEffectType getType() {
         return PotionEffectType.getById(getId());

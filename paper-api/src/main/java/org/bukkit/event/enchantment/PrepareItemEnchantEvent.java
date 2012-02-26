@@ -33,7 +33,7 @@ public class PrepareItemEnchantEvent extends InventoryEvent implements Cancellab
     /**
      * Gets the player enchanting the item
      *
-     * @returns enchanting player
+     * @return enchanting player
      */
     public Player getEnchanter() {
         return enchanter;

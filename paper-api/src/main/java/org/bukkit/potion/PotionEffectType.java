@@ -86,7 +86,7 @@ public abstract class PotionEffectType {
     public static final PotionEffectType BLINDNESS = new PotionEffectTypeWrapper(15);
 
     /**
-     * Allows an entity to see in the dark. NOTE: Unusable due to not being 
+     * Allows an entity to see in the dark. NOTE: Unusable due to not being
      * implemented by Minecraft.
      */
     @Deprecated
@@ -180,8 +180,7 @@ public abstract class PotionEffectType {
     /**
      * Gets the effect type specified by the unique id.
      *
-     * @param id
-     *            Unique ID to fetch
+     * @param id Unique ID to fetch
      * @return Resulting type, or null if not found.
      */
     public static PotionEffectType getById(int id) {
@@ -193,8 +192,7 @@ public abstract class PotionEffectType {
     /**
      * Gets the effect type specified by the given name.
      *
-     * @param name
-     *            Name of PotionEffectType to fetch
+     * @param name Name of PotionEffectType to fetch
      * @return Resulting PotionEffectType, or null if not found.
      */
     public static PotionEffectType getByName(String name) {
@@ -207,8 +205,7 @@ public abstract class PotionEffectType {
      * <p>
      * Generally not to be used from within a plugin.
      *
-     * @param potionType
-     *            PotionType to register
+     * @param type PotionType to register
      */
     public static void registerPotionEffectType(PotionEffectType type) {
         if (byId[type.id] != null || byName.containsKey(type.getName().toLowerCase())) {

@@ -8,9 +8,11 @@ import java.util.Map;
  * These objects MUST implement one of the following, in addition to the methods
  * as defined by this interface:
  * <ul>
- * <li>A static method "deserialize" that accepts a single {@link Map<String, Object>} and returns the class.</li>
- * <li>A static method "valueOf" that accepts a single {@link Map<String, Object>} and returns the class.</li>
- * <li>A constructor that accepts a single {@link Map<String, Object>}.</li>
+ * <li>A static method "deserialize" that accepts a single {@link Map}&lt;{@link String}, {@link Object}>
+ * and returns the class.</li>
+ * <li>A static method "valueOf" that accepts a single {@link Map}&lt;{@link String}, {@link Object}>
+ * and returns the class.</li>
+ * <li>A constructor that accepts a single {@link Map}&lt;{@link String}, {@link Object}>.</li>
  * </ul>
  */
 public interface ConfigurationSerializable {

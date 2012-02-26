@@ -156,7 +156,7 @@ public class WorldCreator {
      * This may be null, in which case the "natural" generator for this environment
      * will be used.
      *
-     * @param env Chunk generator
+     * @param generator Chunk generator
      * @return This object, for chaining
      */
     public WorldCreator generator(ChunkGenerator generator) {
@@ -205,6 +205,7 @@ public class WorldCreator {
     /**
      * Sets whether or not worlds created or loaded with this creator will have structures.
      *
+     * @param generate Whether to generate structures
      * @return This object, for chaining
      */
     public WorldCreator generateStructures(boolean generate) {

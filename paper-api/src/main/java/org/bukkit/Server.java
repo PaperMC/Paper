@@ -286,7 +286,7 @@ public interface Server extends PluginMessageRecipient {
      * If the world is already loaded, it will just return the equivalent of
      * getWorld(creator.name()).
      *
-     * @param options Options to use when creating the world
+     * @param creator The options to use when creating the world.
      * @return Newly created or loaded world
      */
     public World createWorld(WorldCreator creator);

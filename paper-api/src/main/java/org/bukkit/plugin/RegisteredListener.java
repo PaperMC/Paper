@@ -51,6 +51,7 @@ public class RegisteredListener {
      * Calls the event executor
      *
      * @param event The event
+     * @throws EventException If an event handler throws an exception.
      */
     public void callEvent(final Event event) throws EventException {
         if (event instanceof Cancellable){

@@ -72,7 +72,7 @@ public class PlayerDeathEvent extends EntityDeathEvent {
      * This does not indicate how much EXP should be dropped, please see
      * {@link #setDroppedExp(int)} for that.
      *
-     * @get exp New EXP of the respawned player
+     * @param exp New EXP of the respawned player
      */
     public void setNewExp(int exp) {
         newExp = exp;
@@ -90,7 +90,7 @@ public class PlayerDeathEvent extends EntityDeathEvent {
     /**
      * Sets the Level the Player should have at respawn.
      *
-     * @get level New Level of the respawned player
+     * @param level New Level of the respawned player
      */
     public void setNewLevel(int level) {
         newLevel = level;
@@ -108,7 +108,7 @@ public class PlayerDeathEvent extends EntityDeathEvent {
     /**
      * Sets the Total EXP the Player should have at respawn.
      *
-     * @get totalExp New Total EXP of the respawned player
+     * @param totalExp New Total EXP of the respawned player
      */
     public void setNewTotalExp(int totalExp) {
         newTotalExp = totalExp;

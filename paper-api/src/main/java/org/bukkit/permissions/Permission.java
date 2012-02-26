@@ -203,6 +203,7 @@ public class Permission {
      * description: Short string containing a very small description of this description. If not specified, empty string.
      *
      * @param data Map of permissions
+     * @param error An error message to show if a permission is invalid.
      * @param def Default permission value to use if missing
      * @return Permission object
      */

@@ -3,6 +3,7 @@ package org.bukkit.entity;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.bukkit.Location;
 import org.bukkit.World;
 
 public enum EntityType {
@@ -120,7 +121,8 @@ public enum EntityType {
     }
 
     /**
-     * Some entities cannot be spawned using {@link World#spawn(org.bukkit.Location, EntityType)}, usually
+     * Some entities cannot be spawned using {@link World#spawnCreature(Location, EntityType)}
+     * or {@link World#spawn(Location, Class)}, usually
      * because they require additional information in order to spawn.
      * @return False if the entity type cannot be spawned
      */

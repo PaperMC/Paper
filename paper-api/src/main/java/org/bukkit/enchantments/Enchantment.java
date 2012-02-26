@@ -197,7 +197,6 @@ public abstract class Enchantment {
      * <p>
      * Generally not to be used from within a plugin.
      *
-     * @param id ID of the enchantment
      * @param enchantment Enchantment to register
      */
     public static void registerEnchantment(Enchantment enchantment) {

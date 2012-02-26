@@ -57,7 +57,7 @@ public interface Entity extends Metadatable {
      * Teleports this entity to the given location
      *
      * @param location New location to teleport this entity to
-     * @praram cause The cause of this teleportation
+     * @param cause The cause of this teleportation
      * @return <code>true</code> if the teleport was successful
      */
     public boolean teleport(Location location, TeleportCause cause);
@@ -74,7 +74,7 @@ public interface Entity extends Metadatable {
      * Teleports this entity to the target Entity
      *
      * @param destination Entity to teleport this entity to
-     * @praram cause The cause of this teleportation
+     * @param cause The cause of this teleportation
      * @return <code>true</code> if the teleport was successful
      */
     public boolean teleport(Entity destination, TeleportCause cause);

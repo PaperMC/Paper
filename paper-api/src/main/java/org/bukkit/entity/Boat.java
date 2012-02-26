@@ -23,7 +23,7 @@ public interface Boat extends Vehicle {
      * Gets the deceleration rate (newSpeed = curSpeed * rate) of occupied
      * boats. The default is 0.2.
      *
-     * @return
+     * @return The rate of deceleration
      */
     public double getOccupiedDeceleration();
 
@@ -32,7 +32,7 @@ public interface Boat extends Vehicle {
      * boats. Setting this to a higher value allows for quicker acceleration.
      * The default is 0.2.
      *
-     * @param speed deceleration rate
+     * @param rate deceleration rate
      */
     public void setOccupiedDeceleration(double rate);
 
@@ -41,7 +41,7 @@ public interface Boat extends Vehicle {
      * boats. The default is -1. Values below 0 indicate that no additional
      * deceleration is imposed.
      *
-     * @return
+     * @return The rate of deceleration
      */
     public double getUnoccupiedDeceleration();
 

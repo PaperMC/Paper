@@ -356,6 +356,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
     /**
      * Get a collection of all entities in this World matching the given class/interface
      *
+     * @param classes The classes representing the types of entity to match
      * @return A List of all Entities currently residing in this world that match the given class/interface
      */
     @Deprecated
@@ -364,6 +365,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
     /**
      * Get a collection of all entities in this World matching the given class/interface
      *
+     * @param cls The class representing the type of entity to match
      * @return A List of all Entities currently residing in this world that match the given class/interface
      */
     public <T extends Entity> Collection<T> getEntitiesByClass(Class<T> cls);
@@ -371,6 +373,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
     /**
      * Get a collection of all entities in this World matching any of the given classes/interfaces
      *
+     * @param classes The classes representing the types of entity to match
      * @return A List of all Entities currently residing in this world that match one or more of the given classes/interfaces
      */
     public Collection<Entity> getEntitiesByClasses(Class<?>... classes);

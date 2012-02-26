@@ -35,7 +35,7 @@ public interface CreatureSpawner extends BlockState {
      * Set the spawner creature type.
      *
      * @param creatureType The creature type.
-     * @deprecated In favour of {@link #setSpawnedType(EntityType}.
+     * @deprecated In favour of {@link #setSpawnedType(EntityType)}.
      */
     @Deprecated
     public void setCreatureType(CreatureType creatureType);

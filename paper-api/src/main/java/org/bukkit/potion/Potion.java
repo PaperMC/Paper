@@ -34,6 +34,7 @@ public class Potion {
     }
 
     /** @deprecated In favour of {@link #Potion(PotionType, int)} */
+    @SuppressWarnings("javadoc")
     @Deprecated
     public Potion(PotionType type, Tier tier) {
         this(type, tier == Tier.TWO ? 2 : 1);
@@ -41,12 +42,14 @@ public class Potion {
     }
 
     /** @deprecated In favour of {@link #Potion(PotionType, int, boolean)} */
+    @SuppressWarnings("javadoc")
     @Deprecated
     public Potion(PotionType type, Tier tier, boolean splash) {
         this(type, tier == Tier.TWO ? 2 : 1, splash);
     }
 
     /** @deprecated In favour of {@link #Potion(PotionType, int, boolean, boolean)} */
+    @SuppressWarnings("javadoc")
     @Deprecated
     public Potion(PotionType type, Tier tier, boolean splash, boolean extended) {
         this(type, tier, splash);
@@ -85,7 +88,7 @@ public class Potion {
      * @param level The potion's level.
      * @param splash Whether it is a splash potion.
      * @param extended Whether it has an extended duration.
-     * @deprecated In favour of using {@link #Potion(PotionType)} with {@link #extended}
+     * @deprecated In favour of using {@link #Potion(PotionType)} with {@link #extend()}
      * and possibly {@link #splash()}.
      */
     @Deprecated
@@ -129,8 +132,7 @@ public class Potion {
      * Applies the effects of this potion to the given {@link ItemStack}. The
      * itemstack must be a potion.
      *
-     * @param to
-     *            The itemstack to apply to
+     * @param to The itemstack to apply to
      */
     public void apply(ItemStack to) {
         Validate.notNull(to, "itemstack cannot be null");
@@ -143,8 +145,7 @@ public class Potion {
      * {@link LivingEntity}.
      *
      * @see LivingEntity#addPotionEffects(Collection)
-     * @param to
-     *            The entity to apply the effects to
+     * @param to The entity to apply the effects to
      */
     public void apply(LivingEntity to) {
         Validate.notNull(to, "entity cannot be null");
@@ -236,8 +237,7 @@ public class Potion {
      * Set whether this potion has extended duration. This will cause the potion
      * to have roughly 8/3 more duration than a regular potion.
      *
-     * @param isExtended
-     *            Whether the potion should have extended duration
+     * @param isExtended Whether the potion should have extended duration
      */
     public void setHasExtendedDuration(boolean isExtended) {
         Validate.isTrue(type == null || !type.isInstant(), "Instant potions cannot be extended");
@@ -258,8 +258,7 @@ public class Potion {
     /**
      * Sets the {@link Tier} of this potion.
      *
-     * @param tier
-     *            The new tier of this potion
+     * @param tier The new tier of this potion
      * @deprecated In favour of {@link #setLevel(int)}
      */
     @Deprecated
@@ -281,8 +280,7 @@ public class Potion {
     /**
      * Sets the level of this potion.
      *
-     * @param level
-     *            The new level of this potion
+     * @param level The new level of this potion
      */
     public void setLevel(int level) {
         Validate.notNull(this.type, "No-effect potions don't have a level.");
@@ -322,8 +320,7 @@ public class Potion {
      * Converts this potion to an {@link ItemStack} with the specified amount
      * and a correct damage value.
      *
-     * @param amount
-     *            The amount of the ItemStack
+     * @param amount The amount of the ItemStack
      * @return The created ItemStack
      */
     public ItemStack toItemStack(int amount) {
@@ -402,8 +399,7 @@ public class Potion {
      * Sets the current instance of {@link PotionBrewer}. Generally not to be
      * used from within a plugin.
      *
-     * @param other
-     *            The new PotionBrewer
+     * @param other The new PotionBrewer
      */
     public static void setPotionBrewer(PotionBrewer other) {
         if (brewer != null)

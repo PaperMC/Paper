@@ -134,6 +134,7 @@ public interface ConfigurationSection {
      * regardless of if a default has been identified in the root {@link Configuration}.
      *
      * @param path Path of the Object to get.
+     * @param def The default value to return if the path is not found.
      * @return Requested Object.
      */
     public Object get(String path, Object def);
@@ -172,6 +173,7 @@ public interface ConfigurationSection {
      * previous value was itself a {@link ConfigurationSection}, it will be orphaned.
      *
      * @param path Path to create the section at.
+     * @param map The values to used.
      * @return Newly created section
      */
     public ConfigurationSection createSection(String path, Map<?, ?> map);
@@ -196,6 +198,7 @@ public interface ConfigurationSection {
      * regardless of if a default has been identified in the root {@link Configuration}.
      *
      * @param path Path of the String to get.
+     * @param def The default value to return if the path is not found or is not a String.
      * @return Requested String.
      */
     public String getString(String path, String def);
@@ -232,6 +235,7 @@ public interface ConfigurationSection {
      * regardless of if a default has been identified in the root {@link Configuration}.
      *
      * @param path Path of the int to get.
+     * @param def The default value to return if the path is not found or is not an int.
      * @return Requested int.
      */
     public int getInt(String path, int def);
@@ -268,6 +272,7 @@ public interface ConfigurationSection {
      * regardless of if a default has been identified in the root {@link Configuration}.
      *
      * @param path Path of the boolean to get.
+     * @param def The default value to return if the path is not found or is not a boolean.
      * @return Requested boolean.
      */
     public boolean getBoolean(String path, boolean def);
@@ -304,6 +309,7 @@ public interface ConfigurationSection {
      * regardless of if a default has been identified in the root {@link Configuration}.
      *
      * @param path Path of the double to get.
+     * @param def The default value to return if the path is not found or is not a double.
      * @return Requested double.
      */
     public double getDouble(String path, double def);
@@ -340,6 +346,7 @@ public interface ConfigurationSection {
      * regardless of if a default has been identified in the root {@link Configuration}.
      *
      * @param path Path of the long to get.
+     * @param def The default value to return if the path is not found or is not a long.
      * @return Requested long.
      */
     public long getLong(String path, long def);
@@ -377,6 +384,7 @@ public interface ConfigurationSection {
      * regardless of if a default has been identified in the root {@link Configuration}.
      *
      * @param path Path of the List to get.
+     * @param def The default value to return if the path is not found or is not a List.
      * @return Requested List.
      */
     public List<?> getList(String path, List<?> def);
@@ -558,12 +566,13 @@ public interface ConfigurationSection {
     public Vector getVector(String path);
 
     /**
-     * Gets the requested Vector by path, returning a default value if not found.
+     * Gets the requested {@link Vector} by path, returning a default value if not found.
      * <p>
      * If the Vector does not exist then the specified default value will returned
      * regardless of if a default has been identified in the root {@link Configuration}.
      *
      * @param path Path of the Vector to get.
+     * @param def The default value to return if the path is not found or is not a Vector.
      * @return Requested Vector.
      */
     public Vector getVector(String path, Vector def);
@@ -594,12 +603,13 @@ public interface ConfigurationSection {
     public OfflinePlayer getOfflinePlayer(String path);
 
     /**
-     * Gets the requested OfflinePlayer by path, returning a default value if not found.
+     * Gets the requested {@link OfflinePlayer} by path, returning a default value if not found.
      * <p>
      * If the OfflinePlayer does not exist then the specified default value will returned
      * regardless of if a default has been identified in the root {@link Configuration}.
      *
      * @param path Path of the OfflinePlayer to get.
+     * @param def The default value to return if the path is not found or is not an OfflinePlayer.
      * @return Requested OfflinePlayer.
      */
     public OfflinePlayer getOfflinePlayer(String path, OfflinePlayer def);
@@ -630,12 +640,13 @@ public interface ConfigurationSection {
     public ItemStack getItemStack(String path);
 
     /**
-     * Gets the requested ItemStack by path, returning a default value if not found.
+     * Gets the requested {@link ItemStack} by path, returning a default value if not found.
      * <p>
      * If the ItemStack does not exist then the specified default value will returned
      * regardless of if a default has been identified in the root {@link Configuration}.
      *
      * @param path Path of the ItemStack to get.
+     * @param def The default value to return if the path is not found or is not an ItemStack.
      * @return Requested ItemStack.
      */
     public ItemStack getItemStack(String path, ItemStack def);

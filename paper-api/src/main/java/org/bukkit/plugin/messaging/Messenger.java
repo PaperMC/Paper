@@ -64,7 +64,7 @@ public interface Messenger {
      * @param plugin Plugin that wishes to register to this channel.
      * @param channel Channel to register.
      * @param listener Listener to receive messages on.
-     * @returns The resulting registration that was made as a result of this method.
+     * @return The resulting registration that was made as a result of this method.
      * @throws IllegalArgumentException Thrown if plugin, channel or listener is null, or the listener is already registered for this channel.
      */
     public PluginMessageListenerRegistration registerIncomingPluginChannel(Plugin plugin, String channel, PluginMessageListener listener);
