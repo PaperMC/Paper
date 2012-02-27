@@ -7,7 +7,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.lang.Validate;
+import org.bukkit.map.MapView;
 import org.bukkit.material.*;
+import org.bukkit.potion.Potion;
 import org.bukkit.util.Java15Compat;
 
 import com.google.common.collect.Maps;
@@ -115,26 +117,26 @@ public enum Material {
     TRAP_DOOR(96, TrapDoor.class),
     MONSTER_EGGS(97, MonsterEggs.class),
     SMOOTH_BRICK(98, SmoothBrick.class),
-    HUGE_MUSHROOM_1(99),
-    HUGE_MUSHROOM_2(100),
+    HUGE_MUSHROOM_1(99, Mushroom.class),
+    HUGE_MUSHROOM_2(100, Mushroom.class),
     IRON_FENCE(101),
     THIN_GLASS(102),
     MELON_BLOCK(103),
-    PUMPKIN_STEM(104),
-    MELON_STEM(105),
-    VINE(106),
-    FENCE_GATE(107),
-    BRICK_STAIRS(108),
-    SMOOTH_STAIRS(109),
+    PUMPKIN_STEM(104, MaterialData.class),
+    MELON_STEM(105, MaterialData.class),
+    VINE(106, Vine.class),
+    FENCE_GATE(107, Gate.class),
+    BRICK_STAIRS(108, Stairs.class),
+    SMOOTH_STAIRS(109, Stairs.class),
     MYCEL(110),
     WATER_LILY(111),
     NETHER_BRICK(112),
     NETHER_FENCE(113),
-    NETHER_BRICK_STAIRS(114),
-    NETHER_WARTS(115),
+    NETHER_BRICK_STAIRS(114, Stairs.class),
+    NETHER_WARTS(115, MaterialData.class),
     ENCHANTMENT_TABLE(116),
-    BREWING_STAND(117),
-    CAULDRON(118),
+    BREWING_STAND(117, MaterialData.class),
+    CAULDRON(118, Cauldron.class),
     ENDER_PORTAL(119),
     ENDER_PORTAL_FRAME(120),
     ENDER_STONE(121),
@@ -242,6 +244,9 @@ public enum Material {
     BED(355, 1),
     DIODE(356),
     COOKIE(357),
+    /**
+     * @see MapView
+     */
     MAP(358, 1, MaterialData.class),
     SHEARS(359, 1, 238),
     MELON(360),
@@ -257,7 +262,10 @@ public enum Material {
     GHAST_TEAR(370),
     GOLD_NUGGET(371),
     NETHER_STALK(372),
-    POTION(373, 1),
+    /**
+     * @see Potion
+     */
+    POTION(373, 1, MaterialData.class),
     GLASS_BOTTLE(374),
     SPIDER_EYE(375),
     FERMENTED_SPIDER_EYE(376),
@@ -267,7 +275,7 @@ public enum Material {
     CAULDRON_ITEM(380),
     EYE_OF_ENDER(381),
     SPECKLED_MELON(382),
-    MONSTER_EGG(383, 1),
+    MONSTER_EGG(383, 1, SpawnEgg.class),
     GOLD_RECORD(2256, 1),
     GREEN_RECORD(2257, 1),
     RECORD_3(2258, 1),

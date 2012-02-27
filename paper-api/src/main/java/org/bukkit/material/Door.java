@@ -6,7 +6,7 @@ import org.bukkit.block.BlockFace;
 /**
  * Represents a door.
  */
-public class Door extends MaterialData implements Directional {
+public class Door extends MaterialData implements Directional, Openable {
     public Door() {
         super(Material.WOODEN_DOOR);
     }
@@ -27,20 +27,10 @@ public class Door extends MaterialData implements Directional {
         super(type, data);
     }
 
-    /**
-     * Check to see if the door is open.
-     *
-     * @return true if the door has swung counterclockwise around its hinge.
-     */
     public boolean isOpen() {
         return ((getData() & 0x4) == 0x4);
     }
 
-    /**
-     * Configure this door to be either open or closed;
-     *
-     * @param isOpen True to open the door.
-     */
     public void setOpen(boolean isOpen) {
         setData((byte) (isOpen ? (getData() | 0x4) : (getData() & ~0x4)));
     }
