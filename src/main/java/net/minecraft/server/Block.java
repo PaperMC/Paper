@@ -606,6 +606,7 @@ public class Block {
         Item.byId[PISTON_STICKY.id] = new ItemPiston(PISTON_STICKY.id - 256);
         Item.byId[BIG_MUSHROOM_1.id] = new ItemWithAuxData(BIG_MUSHROOM_1.id - 256, BIG_MUSHROOM_1); // CraftBukkit
         Item.byId[BIG_MUSHROOM_2.id] = new ItemWithAuxData(BIG_MUSHROOM_2.id - 256, BIG_MUSHROOM_2); // CraftBukkit
+        Item.byId[MOB_SPAWNER.id] = new ItemWithAuxData(MOB_SPAWNER.id - 256, MOB_SPAWNER); // CraftBukkit
 
         for (int i = 0; i < 256; ++i) {
             if (byId[i] != null) {
