@@ -1,7 +1,7 @@
 package org.bukkit.event.entity;
 
 import org.bukkit.entity.AnimalTamer;
-import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 
@@ -13,9 +13,14 @@ public class EntityTameEvent extends EntityEvent implements Cancellable {
     private boolean cancelled;
     private final AnimalTamer owner;
 
-    public EntityTameEvent(final Entity entity, final AnimalTamer owner) {
+    public EntityTameEvent(final LivingEntity entity, final AnimalTamer owner) {
         super(entity);
         this.owner = owner;
+    }
+
+    @Override
+    public LivingEntity getEntity() {
+        return (LivingEntity) entity;
     }
 
     public boolean isCancelled() {

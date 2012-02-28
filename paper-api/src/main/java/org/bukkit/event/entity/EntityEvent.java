@@ -1,6 +1,7 @@
 package org.bukkit.event.entity;
 
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.event.Event;
 
 /**
@@ -18,7 +19,16 @@ public abstract class EntityEvent extends Event {
      *
      * @return Entity who is involved in this event
      */
-    public final Entity getEntity() {
+    public Entity getEntity() {
         return entity;
+    }
+
+    /**
+     * Gets the EntityType of the Entity involved in this event.
+     *
+     * @return EntityType of the Entity involved in this event
+     */
+    public EntityType getEntityType() {
+        return entity.getType();
     }
 }

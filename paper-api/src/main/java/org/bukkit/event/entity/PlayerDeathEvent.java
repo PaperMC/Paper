@@ -31,6 +31,11 @@ public class PlayerDeathEvent extends EntityDeathEvent {
         this.deathMessage = deathMessage;
     }
 
+    @Override
+    public Player getEntity() {
+        return (Player) entity;
+    }
+
     /**
      * Set the death message that will appear to everyone on the server.
      *

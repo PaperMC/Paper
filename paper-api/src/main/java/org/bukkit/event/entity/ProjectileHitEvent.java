@@ -14,6 +14,11 @@ public class ProjectileHitEvent extends EntityEvent {
     }
 
     @Override
+    public Projectile getEntity() {
+        return (Projectile) entity;
+    }
+
+    @Override
     public HandlerList getHandlers() {
         return handlers;
     }

@@ -24,6 +24,11 @@ public class PotionSplashEvent extends ProjectileHitEvent implements Cancellable
         this.affectedEntities = affectedEntities;
     }
 
+    @Override
+    public ThrownPotion getEntity() {
+        return (ThrownPotion) entity;
+    }
+
     /**
      * Gets the potion which caused this event
      *

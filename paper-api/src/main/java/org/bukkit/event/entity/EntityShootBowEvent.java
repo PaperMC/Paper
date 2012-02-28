@@ -24,6 +24,11 @@ public class EntityShootBowEvent extends EntityEvent implements Cancellable {
         this.force = force;
     }
 
+    @Override
+    public LivingEntity getEntity() {
+        return (LivingEntity) entity;
+    }
+
     /**
      * Gets the bow ItemStack used to fire the arrow; is null if the shooter is a skeleton
      *

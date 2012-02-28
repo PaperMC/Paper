@@ -3,7 +3,7 @@ package org.bukkit.event.entity;
 import java.util.List;
 import org.bukkit.PortalType;
 import org.bukkit.block.BlockState;
-import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 
@@ -16,11 +16,16 @@ public class EntityCreatePortalEvent extends EntityEvent implements Cancellable 
     private boolean cancelled = false;
     private PortalType type = PortalType.CUSTOM;
 
-    public EntityCreatePortalEvent(final Entity what, final List<BlockState> blocks, final PortalType type) {
+    public EntityCreatePortalEvent(final LivingEntity what, final List<BlockState> blocks, final PortalType type) {
         super(what);
 
         this.blocks = blocks;
         this.type = type;
+    }
+
+    @Override
+    public LivingEntity getEntity() {
+        return (LivingEntity) entity;
     }
 
     /**

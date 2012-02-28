@@ -1,6 +1,8 @@
 package org.bukkit.event.entity;
 
-import org.bukkit.entity.Entity;
+import org.bukkit.entity.LightningStrike;
+import org.bukkit.entity.Pig;
+import org.bukkit.entity.PigZombie;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 
@@ -10,10 +12,10 @@ import org.bukkit.event.HandlerList;
 public class PigZapEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean canceled;
-    private final Entity pigzombie;
-    private final Entity bolt;
+    private final PigZombie pigzombie;
+    private final LightningStrike bolt;
 
-    public PigZapEvent(final Entity pig, final Entity bolt, final Entity pigzombie) {
+    public PigZapEvent(final Pig pig, final LightningStrike bolt, final PigZombie pigzombie) {
         super(pig);
         this.bolt = bolt;
         this.pigzombie = pigzombie;
@@ -27,12 +29,17 @@ public class PigZapEvent extends EntityEvent implements Cancellable {
         canceled = cancel;
     }
 
+    @Override
+    public Pig getEntity() {
+        return (Pig) entity;
+    }
+
     /**
      * Gets the bolt which is striking the pig.
      *
      * @return lightning entity
      */
-    public Entity getLightning() {
+    public LightningStrike getLightning() {
         return bolt;
     }
 
@@ -42,7 +49,7 @@ public class PigZapEvent extends EntityEvent implements Cancellable {
      *
      * @return resulting entity
      */
-    public Entity getPigZombie() {
+    public PigZombie getPigZombie() {
         return pigzombie;
     }
 

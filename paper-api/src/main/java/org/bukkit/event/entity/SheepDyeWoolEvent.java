@@ -1,7 +1,7 @@
 package org.bukkit.event.entity;
 
 import org.bukkit.DyeColor;
-import org.bukkit.entity.Entity;
+import org.bukkit.entity.Sheep;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 
@@ -13,8 +13,8 @@ public class SheepDyeWoolEvent extends EntityEvent implements Cancellable {
     private boolean cancel;
     private DyeColor color;
 
-    public SheepDyeWoolEvent(final Entity what, final DyeColor color) {
-        super(what);
+    public SheepDyeWoolEvent(final Sheep sheep, final DyeColor color) {
+        super(sheep);
         this.cancel = false;
         this.color = color;
     }
@@ -25,6 +25,11 @@ public class SheepDyeWoolEvent extends EntityEvent implements Cancellable {
 
     public void setCancelled(boolean cancel) {
         this.cancel = cancel;
+    }
+
+    @Override
+    public Sheep getEntity() {
+        return (Sheep) entity;
     }
 
     /**

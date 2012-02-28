@@ -1,8 +1,7 @@
 package org.bukkit.event.entity;
 
-import org.bukkit.entity.CreatureType;
-import org.bukkit.entity.EntityType;
 import org.bukkit.Location;
+import org.bukkit.entity.CreatureType;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
@@ -37,6 +36,11 @@ public class CreatureSpawnEvent extends EntityEvent implements Cancellable {
         canceled = cancel;
     }
 
+    @Override
+    public LivingEntity getEntity() {
+        return (LivingEntity) entity;
+    }
+
     /**
      * Gets the location at which the creature is spawning.
      *
@@ -54,16 +58,7 @@ public class CreatureSpawnEvent extends EntityEvent implements Cancellable {
      */
     @Deprecated
     public CreatureType getCreatureType() {
-        return CreatureType.fromEntityType(getSpawnedType());
-    }
-
-    /**
-     * Gets the type of creature being spawned.
-     *
-     * @return A CreatureType value detailing the type of creature being spawned
-     */
-    public EntityType getSpawnedType() {
-        return getEntity().getType();
+        return CreatureType.fromEntityType(getEntityType());
     }
 
     /**
