@@ -7,14 +7,14 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 
 public class ContainerDispenser extends Container {
 
-    public TileEntityDispenser a; // CraftBukkit - Private -> Public
+    public TileEntityDispenser items; // CraftBukkit - Private -> Public
     // CraftBukkit start
     private CraftInventoryView bukkitEntity = null;
     private PlayerInventory player;
     // CraftBukkit end
 
     public ContainerDispenser(IInventory iinventory, TileEntityDispenser tileentitydispenser) {
-        this.a = tileentitydispenser;
+        this.items = tileentitydispenser;
         // CraftBukkit start - save player
         // TODO: Should we check to make sure it really is an InventoryPlayer?
         this.player = (PlayerInventory)iinventory;
@@ -42,7 +42,7 @@ public class ContainerDispenser extends Container {
 
     public boolean b(EntityHuman entityhuman) {
         if (!this.checkReachable) return true; // CraftBukkit
-        return this.a.a(entityhuman);
+        return this.items.a(entityhuman);
     }
 
     public ItemStack a(int i) {
@@ -62,7 +62,7 @@ public class ContainerDispenser extends Container {
             }
 
             if (itemstack1.count == 0) {
-                slot.c((ItemStack) null);
+                slot.set((ItemStack) null);
             } else {
                 slot.d();
             }
@@ -82,8 +82,8 @@ public class ContainerDispenser extends Container {
         if (bukkitEntity != null) {
             return bukkitEntity;
         }
-        CraftInventory inventory = new CraftInventory(this.a);
-        bukkitEntity = new CraftInventoryView(this.player.d.getBukkitEntity(), inventory, this);
+        CraftInventory inventory = new CraftInventory(this.items);
+        bukkitEntity = new CraftInventoryView(this.player.player.getBukkitEntity(), inventory, this);
         return bukkitEntity;
     }
     // CraftBukkit end

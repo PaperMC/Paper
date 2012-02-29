@@ -358,9 +358,9 @@ public abstract class Entity {
 
     public boolean d(double d0, double d1, double d2) {
         AxisAlignedBB axisalignedbb = this.boundingBox.c(d0, d1, d2);
-        List list = this.world.a(this, axisalignedbb);
+        List list = this.world.getCubes(this, axisalignedbb);
 
-        return list.size() > 0 ? false : !this.world.c(axisalignedbb);
+        return list.size() > 0 ? false : !this.world.containsLiquid(axisalignedbb);
     }
 
     public void move(double d0, double d1, double d2) {
@@ -394,7 +394,7 @@ public abstract class Entity {
             if (flag) {
                 double d8;
 
-                for (d8 = 0.05D; d0 != 0.0D && this.world.a(this, this.boundingBox.c(d0, -1.0D, 0.0D)).size() == 0; d5 = d0) {
+                for (d8 = 0.05D; d0 != 0.0D && this.world.getCubes(this, this.boundingBox.c(d0, -1.0D, 0.0D)).size() == 0; d5 = d0) {
                     if (d0 < d8 && d0 >= -d8) {
                         d0 = 0.0D;
                     } else if (d0 > 0.0D) {
@@ -404,7 +404,7 @@ public abstract class Entity {
                     }
                 }
 
-                for (; d2 != 0.0D && this.world.a(this, this.boundingBox.c(0.0D, -1.0D, d2)).size() == 0; d7 = d2) {
+                for (; d2 != 0.0D && this.world.getCubes(this, this.boundingBox.c(0.0D, -1.0D, d2)).size() == 0; d7 = d2) {
                     if (d2 < d8 && d2 >= -d8) {
                         d2 = 0.0D;
                     } else if (d2 > 0.0D) {
@@ -415,7 +415,7 @@ public abstract class Entity {
                 }
             }
 
-            List list = this.world.a(this, this.boundingBox.a(d0, d1, d2));
+            List list = this.world.getCubes(this, this.boundingBox.a(d0, d1, d2));
 
             for (int i = 0; i < list.size(); ++i) {
                 d1 = ((AxisAlignedBB) list.get(i)).b(this.boundingBox, d1);
@@ -469,7 +469,7 @@ public abstract class Entity {
                 AxisAlignedBB axisalignedbb1 = this.boundingBox.clone();
 
                 this.boundingBox.b(axisalignedbb);
-                list = this.world.a(this, this.boundingBox.a(d5, d1, d7));
+                list = this.world.getCubes(this, this.boundingBox.a(d5, d1, d7));
 
                 for (k = 0; k < list.size(); ++k) {
                     d1 = ((AxisAlignedBB) list.get(k)).b(this.boundingBox, d1);
@@ -736,7 +736,7 @@ public abstract class Entity {
     }
 
     public boolean a(Material material) {
-        double d0 = this.locY + (double) this.y();
+        double d0 = this.locY + (double) this.getHeadHeight();
         int i = MathHelper.floor(this.locX);
         int j = MathHelper.d((float) MathHelper.floor(d0));
         int k = MathHelper.floor(this.locZ);
@@ -752,7 +752,7 @@ public abstract class Entity {
         }
     }
 
-    public float y() {
+    public float getHeadHeight() {
         return 0.0F;
     }
 
@@ -1110,7 +1110,7 @@ public abstract class Entity {
             float f1 = ((float) ((i >> 1) % 2) - 0.5F) * 0.1F;
             float f2 = ((float) ((i >> 2) % 2) - 0.5F) * this.width * 0.8F;
             int j = MathHelper.floor(this.locX + (double) f);
-            int k = MathHelper.floor(this.locY + (double) this.y() + (double) f1);
+            int k = MathHelper.floor(this.locY + (double) this.getHeadHeight() + (double) f1);
             int l = MathHelper.floor(this.locZ + (double) f2);
 
             if (this.world.e(j, k, l)) {
@@ -1461,7 +1461,7 @@ public abstract class Entity {
             s = "generic";
         }
 
-        return LocaleI18n.a("entity." + s + ".name");
+        return LocaleI18n.get("entity." + s + ".name");
     }
 
     public Entity[] aR() {

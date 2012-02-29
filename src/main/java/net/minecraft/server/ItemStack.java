@@ -80,7 +80,7 @@ public final class ItemStack {
     }
 
     public boolean placeItem(EntityHuman entityhuman, World world, int i, int j, int k, int l) {
-        boolean flag = this.getItem().a(this, entityhuman, world, i, j, k, l);
+        boolean flag = this.getItem().interactWith(this, entityhuman, world, i, j, k, l);
 
         if (flag) {
             entityhuman.a(StatisticList.E[this.id], 1);
@@ -101,7 +101,7 @@ public final class ItemStack {
         return this.getItem().b(this, world, entityhuman);
     }
 
-    public NBTTagCompound b(NBTTagCompound nbttagcompound) {
+    public NBTTagCompound save(NBTTagCompound nbttagcompound) {
         nbttagcompound.setShort("id", (short) this.id);
         nbttagcompound.setByte("Count", (byte) this.count);
         nbttagcompound.setShort("Damage", (short) this.damage);
@@ -205,7 +205,7 @@ public final class ItemStack {
     }
 
     public boolean b(Block block) {
-        return Item.byId[this.id].a(block);
+        return Item.byId[this.id].canDestroySpecialBlock(block);
     }
 
     public void a(EntityHuman entityhuman) {}

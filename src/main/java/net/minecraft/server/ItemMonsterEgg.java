@@ -8,7 +8,7 @@ public class ItemMonsterEgg extends Item {
         this.a(true);
     }
 
-    public boolean a(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
+    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
         if (world.isStatic || itemstack.getData() == 48 || itemstack.getData() == 49 || itemstack.getData() == 63) { // CraftBukkit
             return true;
         } else {
@@ -18,7 +18,6 @@ public class ItemMonsterEgg extends Item {
             Entity entity = EntityTypes.a(itemstack.getData(), world);
 
             if (entity != null && entity instanceof EntityLiving) { // CraftBukkit
-
                 if (!entityhuman.abilities.canInstantlyBuild) {
                     --itemstack.count;
                 }

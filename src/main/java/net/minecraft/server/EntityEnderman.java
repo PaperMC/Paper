@@ -74,7 +74,7 @@ public class EntityEnderman extends EntityMonster {
             return false;
         } else {
             Vec3D vec3d = entityhuman.e(1.0F).b();
-            Vec3D vec3d1 = Vec3D.create(this.locX - entityhuman.locX, this.boundingBox.b + (double) (this.length / 2.0F) - (entityhuman.locY + (double) entityhuman.y()), this.locZ - entityhuman.locZ);
+            Vec3D vec3d1 = Vec3D.create(this.locX - entityhuman.locX, this.boundingBox.b + (double) (this.length / 2.0F) - (entityhuman.locY + (double) entityhuman.getHeadHeight()), this.locZ - entityhuman.locZ);
             double d0 = vec3d1.c();
 
             vec3d1 = vec3d1.b();
@@ -187,7 +187,7 @@ public class EntityEnderman extends EntityMonster {
     }
 
     protected boolean f(Entity entity) {
-        Vec3D vec3d = Vec3D.create(this.locX - entity.locX, this.boundingBox.b + (double) (this.length / 2.0F) - entity.locY + (double) entity.y(), this.locZ - entity.locZ);
+        Vec3D vec3d = Vec3D.create(this.locX - entity.locX, this.boundingBox.b + (double) (this.length / 2.0F) - entity.locY + (double) entity.getHeadHeight(), this.locZ - entity.locZ);
 
         vec3d = vec3d.b();
         double d0 = 16.0D;
@@ -229,16 +229,17 @@ public class EntityEnderman extends EntityMonster {
                 // CraftBukkit start - teleport event
                 EntityTeleportEvent teleport = new EntityTeleportEvent(this.getBukkitEntity(), new Location(this.world.getWorld(), d3, d4, d5), new Location(this.world.getWorld(), this.locX, this.locY, this.locZ));
                 this.world.getServer().getPluginManager().callEvent(teleport);
-                if (!teleport.isCancelled()) {
-                    Location to = teleport.getTo();
-                    this.setPosition(to.getX(), to.getY(), to.getZ());
-                    if (this.world.a((Entity) this, this.boundingBox).size() == 0 && !this.world.c(this.boundingBox)) {
-                        flag = true;
-                    }
-                } else {
+                if (teleport.isCancelled()) {
                     return false;
                 }
+
+                Location to = teleport.getTo();
+                this.setPosition(to.getX(), to.getY(), to.getZ());
                 // CraftBukkit end
+
+                if (this.world.getCubes(this, this.boundingBox).size() == 0 && !this.world.containsLiquid(this.boundingBox)) {
+                    flag = true;
+                }
             }
         }
 

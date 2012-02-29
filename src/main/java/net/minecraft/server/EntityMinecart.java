@@ -176,7 +176,8 @@ public class EntityMinecart extends Entity implements IInventory {
                                 }
 
                                 itemstack.count -= k;
-                                EntityItem entityitem = new EntityItem(this.world, this.locX + (double) f, this.locY + (double) f1, this.locZ + (double) f2, new ItemStack(itemstack.id, k, itemstack.getData(), itemstack.getEnchantments())); // CraftBukkit - include enchantments in the new itemstack
+                                // CraftBukkit - include enchantments in the new itemstack
+                                EntityItem entityitem = new EntityItem(this.world, this.locX + (double) f, this.locY + (double) f1, this.locZ + (double) f2, new ItemStack(itemstack.id, k, itemstack.getData(), itemstack.getEnchantments())); 
                                 float f3 = 0.05F;
 
                                 entityitem.motX = (double) ((float) this.random.nextGaussian() * f3);
@@ -220,7 +221,8 @@ public class EntityMinecart extends Entity implements IInventory {
                     }
 
                     itemstack.count -= j;
-                    EntityItem entityitem = new EntityItem(this.world, this.locX + (double) f, this.locY + (double) f1, this.locZ + (double) f2, new ItemStack(itemstack.id, j, itemstack.getData(), itemstack.getEnchantments())); // CraftBukkit - include enchantments in the new itemstack
+                    // CraftBukkit - include enchantments in the new itemstack
+                    EntityItem entityitem = new EntityItem(this.world, this.locX + (double) f, this.locY + (double) f1, this.locZ + (double) f2, new ItemStack(itemstack.id, j, itemstack.getData(), itemstack.getEnchantments()));
                     float f3 = 0.05F;
 
                     entityitem.motX = (double) ((float) this.random.nextGaussian() * f3);
@@ -702,7 +704,7 @@ public class EntityMinecart extends Entity implements IInventory {
                     NBTTagCompound nbttagcompound1 = new NBTTagCompound();
 
                     nbttagcompound1.setByte("Slot", (byte) i);
-                    this.items[i].b(nbttagcompound1);
+                    this.items[i].save(nbttagcompound1);
                     nbttaglist.add(nbttagcompound1);
                 }
             }
@@ -877,7 +879,7 @@ public class EntityMinecart extends Entity implements IInventory {
             }
         } else if (this.type == 1) {
             if (!this.world.isStatic) {
-                entityhuman.a((IInventory) this);
+                entityhuman.openContainer(this);
             }
         } else if (this.type == 2) {
             ItemStack itemstack = entityhuman.inventory.getItemInHand();

@@ -196,7 +196,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
     }
 
     public Entity getEntity(int i) {
-        return (Entity) this.entitiesById.a(i);
+        return (Entity) this.entitiesById.get(i);
     }
 
     public boolean strikeLightning(Entity entity) {
@@ -217,7 +217,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
         }
     }
 
-    public void a(Entity entity, byte b0) {
+    public void broadcastEntityEffect(Entity entity, byte b0) {
         Packet38EntityStatus packet38entitystatus = new Packet38EntityStatus(entity.id, b0);
 
         // CraftBukkit

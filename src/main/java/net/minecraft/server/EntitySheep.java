@@ -69,7 +69,7 @@ public class EntitySheep extends EntityAnimal {
             k = MathHelper.floor(this.locZ);
             if (this.world.getTypeId(i, j, k) == Block.LONG_GRASS.id && this.world.getData(i, j, k) == 1 || this.world.getTypeId(i, j - 1, k) == Block.GRASS.id) {
                 this.b = 40;
-                this.world.a(this, (byte) 10);
+                this.world.broadcastEntityEffect(this, (byte) 10);
             }
         } else if (this.b == 4) {
             i = MathHelper.floor(this.locX);
@@ -80,7 +80,7 @@ public class EntitySheep extends EntityAnimal {
             if (this.world.getTypeId(i, j, k) == Block.LONG_GRASS.id) {
                 // CraftBukkit start
                 if (!CraftEventFactory.callEntityChangeBlockEvent(this.getBukkitEntity(), this.world.getWorld().getBlockAt(i, j, k), Material.AIR).isCancelled()) {
-                    this.world.f(2001, i, j, k, Block.LONG_GRASS.id + 256);
+                    this.world.triggerEffect(2001, i, j, k, Block.LONG_GRASS.id + 256);
                     this.world.setTypeId(i, j, k, 0);
                     flag = true;
                 }
@@ -88,7 +88,7 @@ public class EntitySheep extends EntityAnimal {
             } else if (this.world.getTypeId(i, j - 1, k) == Block.GRASS.id) {
                 // CraftBukkit start
                 if (!CraftEventFactory.callEntityChangeBlockEvent(this.getBukkitEntity(), this.world.getWorld().getBlockAt(i, j - 1, k), Material.DIRT).isCancelled()) {
-                    this.world.f(2001, i, j - 1, k, Block.GRASS.id);
+                    this.world.triggerEffect(2001, i, j - 1, k, Block.GRASS.id);
                     this.world.setTypeId(i, j - 1, k, Block.DIRT.id);
                     flag = true;
                 }

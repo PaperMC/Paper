@@ -111,12 +111,12 @@ public class MobEffectList {
         }
     }
 
-    public void a(EntityLiving entityliving, EntityLiving entityliving1, int i, double d0) {
+    public void applyInstantEffect(EntityLiving entityliving, EntityLiving entityliving1, int i, double d0) {
         // CraftBukkit start - delegate; we need EntityPotion
-        a(entityliving, entityliving1, i, d0, null);
+        applyInstantEffect(entityliving, entityliving1, i, d0, null);
     }
 
-    public void a(EntityLiving entityliving, EntityLiving entityliving1, int i, double d0, EntityPotion potion) {
+    public void applyInstantEffect(EntityLiving entityliving, EntityLiving entityliving1, int i, double d0, EntityPotion potion) {
         // CraftBukkit end
         int j;
 
@@ -144,7 +144,7 @@ public class MobEffectList {
         }
     }
 
-    public boolean b() {
+    public boolean isInstant() {
         return false;
     }
 
@@ -172,7 +172,7 @@ public class MobEffectList {
         return this;
     }
 
-    public double d() {
+    public double getDurationModifier() {
         return this.L;
     }
 

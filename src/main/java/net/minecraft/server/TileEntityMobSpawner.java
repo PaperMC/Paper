@@ -57,11 +57,11 @@ public class TileEntityMobSpawner extends TileEntity {
                     }
 
                     EntityLiving entityliving = (EntityLiving) ((EntityLiving) mob);
+                    // CraftBukkit end
 
                     if (entityliving == null) {
                         return;
                     }
-                    // CraftBukkit end
 
                     int j = this.world.a(entityliving.getClass(), AxisAlignedBB.b((double) this.x, (double) this.y, (double) this.z, (double) (this.x + 1), (double) (this.y + 1), (double) (this.z + 1)).grow(8.0D, 4.0D, 8.0D)).size();
 
@@ -76,12 +76,9 @@ public class TileEntityMobSpawner extends TileEntity {
                         double d5 = (double) this.z + (this.world.random.nextDouble() - this.world.random.nextDouble()) * 4.0D;
 
                         entityliving.setPositionRotation(d3, d4, d5, this.world.random.nextFloat() * 360.0F, 0.0F);
-                        // CraftBukkit start
                         if (entityliving.canSpawn()) {
-                            this.world.addEntity(entityliving, SpawnReason.SPAWNER);
-                            // CraftBukkit end
-
-                            this.world.f(2004, this.x, this.y, this.z, 0);
+                            this.world.addEntity(entityliving, SpawnReason.SPAWNER); // CraftBukkit
+                            this.world.triggerEffect(2004, this.x, this.y, this.z, 0);
                             entityliving.ao();
                             this.e();
                         }

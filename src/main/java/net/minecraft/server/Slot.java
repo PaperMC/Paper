@@ -31,7 +31,7 @@ public class Slot {
         return this.getItem() != null;
     }
 
-    public void c(ItemStack itemstack) {
+    public void set(ItemStack itemstack) {
         this.inventory.setItem(this.index, itemstack);
         this.d();
     }

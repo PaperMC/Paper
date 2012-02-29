@@ -62,7 +62,7 @@ public class EntityBlaze extends EntityMonster {
                 this.a = 0.5F + (float) this.random.nextGaussian() * 3.0F;
             }
 
-            if (this.F() != null && this.F().locY + (double) this.F().y() > this.locY + (double) this.y() + (double) this.a) {
+            if (this.F() != null && this.F().locY + (double) this.F().getHeadHeight() > this.locY + (double) this.getHeadHeight() + (double) this.a) {
                 this.motY += (0.30000001192092896D - this.motY) * 0.30000001192092896D;
             }
         }

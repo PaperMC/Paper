@@ -16,7 +16,7 @@ public class ItemDoor extends Item {
         this.maxStackSize = 1;
     }
 
-    public boolean a(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
+    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
         if (l != 1) {
             return false;
         } else {
@@ -36,12 +36,13 @@ public class ItemDoor extends Item {
                     int i1 = MathHelper.floor((double) ((entityhuman.yaw + 180.0F) * 4.0F / 360.0F) - 0.5D) & 3;
 
                     // CraftBukkit start
-                    if (place(world, i, j, k, i1, block, entityhuman)) {
-                        --itemstack.count;
-                        return true;
+                    if (!place(world, i, j, k, i1, block, entityhuman)) {
+                        return false;
                     }
-                    return false;
                     // CraftBukkit end
+
+                    --itemstack.count;
+                    return true;
                 }
             } else {
                 return false;

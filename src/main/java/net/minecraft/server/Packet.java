@@ -14,7 +14,7 @@ public abstract class Packet {
     public static IntHashMap j = new IntHashMap();
     private static Map a = new HashMap();
     private static Set b = new HashSet();
-    private static Set action = new HashSet();
+    private static Set c = new HashSet();
     public final long timestamp = System.currentTimeMillis();
     public boolean lowPriority = false;
 
@@ -33,14 +33,14 @@ public abstract class Packet {
             }
 
             if (flag1) {
-                action.add(Integer.valueOf(i));
+                c.add(Integer.valueOf(i));
             }
         }
     }
 
     public static Packet a(int i) {
         try {
-            Class oclass = (Class) j.a(i);
+            Class oclass = (Class) j.get(i);
 
             return oclass == null ? null : (Packet) oclass.newInstance();
         } catch (Exception exception) {
@@ -67,7 +67,7 @@ public abstract class Packet {
                 return null;
             }
 
-            if (flag && !action.contains(Integer.valueOf(i)) || !flag && !b.contains(Integer.valueOf(i))) {
+            if (flag && !c.contains(Integer.valueOf(i)) || !flag && !b.contains(Integer.valueOf(i))) {
                 throw new IOException("Bad packet id " + i);
             }
 
@@ -157,7 +157,7 @@ public abstract class Packet {
     }
 
     protected void a(ItemStack itemstack, DataOutputStream dataoutputstream) throws IOException { // CraftBukkit
-        if (itemstack == null || itemstack.id <= 0) {
+        if (itemstack == null || itemstack.id <= 0) { // CraftBukkit
             dataoutputstream.writeShort(-1);
         } else {
             dataoutputstream.writeShort(itemstack.id);

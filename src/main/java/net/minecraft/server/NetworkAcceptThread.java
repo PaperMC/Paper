@@ -8,35 +8,36 @@ class NetworkAcceptThread extends Thread {
 
     final MinecraftServer a;
 
-    final NetworkListenThread b;
+    final NetworkListenThread listenThread;
 
     NetworkAcceptThread(NetworkListenThread networklistenthread, String s, MinecraftServer minecraftserver) {
         super(s);
-        this.b = networklistenthread;
+        this.listenThread = networklistenthread;
         this.a = minecraftserver;
     }
 
     public void run() {
-        while (this.b.b) {
+        while (this.listenThread.b) {
             try {
-                Socket socket = NetworkListenThread.a(this.b).accept();
+                Socket socket = NetworkListenThread.a(this.listenThread).accept();
 
                 if (socket != null) {
-                    synchronized (NetworkListenThread.b(this.b)) {
+                    synchronized (NetworkListenThread.getRecentConnectionAttempts(this.listenThread)) {
                         InetAddress inetaddress = socket.getInetAddress();
 
-                        if (NetworkListenThread.b(this.b).containsKey(inetaddress) && System.currentTimeMillis() - ((Long) NetworkListenThread.b(this.b).get(inetaddress)).longValue() < 4000L) { // CraftBukkit
-                            NetworkListenThread.b(this.b).put(inetaddress, Long.valueOf(System.currentTimeMillis()));
+                        // CraftBukkit
+                        if (NetworkListenThread.getRecentConnectionAttempts(this.listenThread).containsKey(inetaddress) && System.currentTimeMillis() - ((Long) NetworkListenThread.getRecentConnectionAttempts(this.listenThread).get(inetaddress)).longValue() < 4000L) {
+                            NetworkListenThread.getRecentConnectionAttempts(this.listenThread).put(inetaddress, Long.valueOf(System.currentTimeMillis()));
                             socket.close();
                             continue;
                         }
 
-                        NetworkListenThread.b(this.b).put(inetaddress, Long.valueOf(System.currentTimeMillis()));
+                        NetworkListenThread.getRecentConnectionAttempts(this.listenThread).put(inetaddress, Long.valueOf(System.currentTimeMillis()));
                     }
 
-                    NetLoginHandler netloginhandler = new NetLoginHandler(this.a, socket, "Connection #" + NetworkListenThread.c(this.b));
+                    NetLoginHandler netloginhandler = new NetLoginHandler(this.a, socket, "Connection #" + NetworkListenThread.c(this.listenThread));
 
-                    NetworkListenThread.a(this.b, netloginhandler);
+                    NetworkListenThread.a(this.listenThread, netloginhandler);
                 }
             } catch (IOException ioexception) {
                 ioexception.printStackTrace();

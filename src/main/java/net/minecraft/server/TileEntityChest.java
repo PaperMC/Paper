@@ -112,7 +112,7 @@ public class TileEntityChest extends TileEntity implements IInventory {
                 NBTTagCompound nbttagcompound1 = new NBTTagCompound();
 
                 nbttagcompound1.setByte("Slot", (byte) i);
-                this.items[i].b(nbttagcompound1);
+                this.items[i].save(nbttagcompound1);
                 nbttaglist.add(nbttagcompound1);
             }
         }

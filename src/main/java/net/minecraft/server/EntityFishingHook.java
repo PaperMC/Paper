@@ -151,7 +151,7 @@ public class EntityFishingHook extends Entity {
             vec3d = Vec3D.create(this.locX, this.locY, this.locZ);
             vec3d1 = Vec3D.create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
             if (movingobjectposition != null) {
-                vec3d1 = Vec3D.create(movingobjectposition.f.a, movingobjectposition.f.b, movingobjectposition.f.c);
+                vec3d1 = Vec3D.create(movingobjectposition.pos.a, movingobjectposition.pos.b, movingobjectposition.pos.c);
             }
 
             Entity entity = null;
@@ -169,7 +169,7 @@ public class EntityFishingHook extends Entity {
                     MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
 
                     if (movingobjectposition1 != null) {
-                        d5 = vec3d.c(movingobjectposition1.f); // CraftBukkit - distance efficiency
+                        d5 = vec3d.distanceSquared(movingobjectposition1.pos); // CraftBukkit - distance efficiency
                         if (d5 < d4 || d4 == 0.0D) {
                             entity = entity1;
                             d4 = d5;

@@ -31,7 +31,7 @@ public class WorldData {
         if (nbttagcompound.hasKey("generatorName")) {
             String s = nbttagcompound.getString("generatorName");
 
-            this.type = WorldType.a(s);
+            this.type = WorldType.getType(s);
             if (this.type == null) {
                 this.type = WorldType.NORMAL;
             }
@@ -236,7 +236,7 @@ public class WorldData {
         return this.gameType;
     }
 
-    public boolean o() {
+    public boolean shouldGenerateMapFeatures() {
         return this.useMapFeatures;
     }
 

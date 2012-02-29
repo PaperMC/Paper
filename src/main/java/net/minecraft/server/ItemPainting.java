@@ -12,7 +12,7 @@ public class ItemPainting extends Item {
         super(i);
     }
 
-    public boolean a(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
+    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
         if (l == 0) {
             return false;
         } else if (l == 1) {

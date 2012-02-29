@@ -549,7 +549,7 @@ public class Block {
     }
 
     public String getName() {
-        return LocaleI18n.a(this.n() + ".name");
+        return LocaleI18n.get(this.n() + ".name");
     }
 
     public String n() {

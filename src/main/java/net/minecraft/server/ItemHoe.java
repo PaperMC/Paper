@@ -14,7 +14,7 @@ public class ItemHoe extends Item {
         this.setMaxDurability(enumtoolmaterial.a());
     }
 
-    public boolean a(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
+    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
         if (!entityhuman.d(i, j, k)) {
             return false;
         } else {

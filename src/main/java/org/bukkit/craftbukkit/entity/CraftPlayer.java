@@ -576,7 +576,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void setBedSpawnLocation(Location location) {
-        getHandle().a(new ChunkCoordinates(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
+        getHandle().setRespawnPosition(new ChunkCoordinates(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
         getHandle().spawnWorld = location.getWorld().getName();
     }
 
@@ -587,9 +587,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         //remove this player from the hidden player's EntityTrackerEntry
         EntityTracker tracker = ((WorldServer) entity.world).tracker;
         EntityPlayer other = ((CraftPlayer) player).getHandle();
-        EntityTrackerEntry entry = (EntityTrackerEntry) tracker.trackedEntities.a(other.id);
+        EntityTrackerEntry entry = (EntityTrackerEntry) tracker.trackedEntities.get(other.id);
         if (entry != null) {
-            entry.c(getHandle());
+            entry.clear(getHandle());
         }
 
         //remove the hidden player from this player user list
@@ -602,9 +602,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         EntityTracker tracker = ((WorldServer) entity.world).tracker;
         EntityPlayer other = ((CraftPlayer) player).getHandle();
-        EntityTrackerEntry entry = (EntityTrackerEntry) tracker.trackedEntities.a(other.id);
+        EntityTrackerEntry entry = (EntityTrackerEntry) tracker.trackedEntities.get(other.id);
         if (entry != null && !entry.trackedPlayers.contains(getHandle())) {
-            entry.b(getHandle());
+            entry.updatePlayer(getHandle());
         }
 
         getHandle().netServerHandler.sendPacket(new Packet201PlayerInfo(player.getPlayerListName(), true, getHandle().ping));
@@ -764,7 +764,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (container.getBukkitView().getType() != prop.getType()) {
             return false;
         }
-        getHandle().a(container, prop.getId(), value);
+        getHandle().setContainerData(container, prop.getId(), value);
         return true;
     }
 }

@@ -1037,7 +1037,7 @@ public class CraftWorld implements World {
     }
 
     public boolean canGenerateStructures() {
-        return world.getWorldData().o();
+        return world.getWorldData().shouldGenerateMapFeatures();
     }
 
     public long getTicksPerAnimalSpawns() {

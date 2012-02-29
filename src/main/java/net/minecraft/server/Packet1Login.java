@@ -37,7 +37,7 @@ public class Packet1Login extends Packet {
         this.c = datainputstream.readLong();
         String s = a(datainputstream, 16);
 
-        this.d = WorldType.a(s);
+        this.d = WorldType.getType(s);
         if (this.d == null) {
             this.d = WorldType.NORMAL;
         }

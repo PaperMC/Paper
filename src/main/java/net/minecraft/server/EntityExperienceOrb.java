@@ -62,7 +62,7 @@ public class EntityExperienceOrb extends Entity {
 
             if (!event.isCancelled() && target != null) {
                 double d1 = (target.locX - this.locX) / d0;
-                double d2 = (target.locY + (double) target.y() - this.locY) / d0;
+                double d2 = (target.locY + (double) target.getHeadHeight() - this.locY) / d0;
                 double d3 = (target.locZ - this.locZ) / d0;
                 double d4 = Math.sqrt(d1 * d1 + d2 * d2 + d3 * d3);
                 double d5 = 1.0D - d4;

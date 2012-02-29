@@ -7,20 +7,30 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 
 public class ContainerFurnace extends Container {
 
-    public TileEntityFurnace a; // CraftBukkit - Private -> Public
+    public TileEntityFurnace furnace; // CraftBukkit - Private -> Public
     private int b = 0;
     private int c = 0;
     private int h = 0;
     // CraftBukkit start
     private CraftInventoryView bukkitEntity = null;
     private PlayerInventory player;
+
+    public CraftInventoryView getBukkitView() {
+        if (bukkitEntity != null) {
+            return bukkitEntity;
+        }
+
+        CraftInventoryFurnace inventory = new CraftInventoryFurnace(this.furnace);
+        bukkitEntity = new CraftInventoryView(this.player.player.getBukkitEntity(), inventory, this);
+        return bukkitEntity;
+    }
     // CraftBukkit end
 
     public ContainerFurnace(PlayerInventory playerinventory, TileEntityFurnace tileentityfurnace) {
-        this.a = tileentityfurnace;
+        this.furnace = tileentityfurnace;
         this.a(new Slot(tileentityfurnace, 0, 56, 17));
         this.a(new Slot(tileentityfurnace, 1, 56, 53));
-        this.a(new SlotResult2(playerinventory.d, tileentityfurnace, 2, 116, 35));
+        this.a(new SlotResult2(playerinventory.player, tileentityfurnace, 2, 116, 35));
         this.player = playerinventory; // CraftBukkit - save player
 
         int i;
@@ -36,11 +46,11 @@ public class ContainerFurnace extends Container {
         }
     }
 
-    public void a(ICrafting icrafting) {
-        super.a(icrafting);
-        icrafting.a(this, 0, this.a.cookTime);
-        icrafting.a(this, 1, this.a.burnTime);
-        icrafting.a(this, 2, this.a.ticksForCurrentFuel);
+    public void addSlotListener(ICrafting icrafting) {
+        super.addSlotListener(icrafting);
+        icrafting.setContainerData(this, 0, this.furnace.cookTime);
+        icrafting.setContainerData(this, 1, this.furnace.burnTime);
+        icrafting.setContainerData(this, 2, this.furnace.ticksForCurrentFuel);
     }
 
     public void a() {
@@ -49,27 +59,27 @@ public class ContainerFurnace extends Container {
         for (int i = 0; i < this.listeners.size(); ++i) {
             ICrafting icrafting = (ICrafting) this.listeners.get(i);
 
-            if (this.b != this.a.cookTime) {
-                icrafting.a(this, 0, this.a.cookTime);
+            if (this.b != this.furnace.cookTime) {
+                icrafting.setContainerData(this, 0, this.furnace.cookTime);
             }
 
-            if (this.c != this.a.burnTime) {
-                icrafting.a(this, 1, this.a.burnTime);
+            if (this.c != this.furnace.burnTime) {
+                icrafting.setContainerData(this, 1, this.furnace.burnTime);
             }
 
-            if (this.h != this.a.ticksForCurrentFuel) {
-                icrafting.a(this, 2, this.a.ticksForCurrentFuel);
+            if (this.h != this.furnace.ticksForCurrentFuel) {
+                icrafting.setContainerData(this, 2, this.furnace.ticksForCurrentFuel);
             }
         }
 
-        this.b = this.a.cookTime;
-        this.c = this.a.burnTime;
-        this.h = this.a.ticksForCurrentFuel;
+        this.b = this.furnace.cookTime;
+        this.c = this.furnace.burnTime;
+        this.h = this.furnace.ticksForCurrentFuel;
     }
 
     public boolean b(EntityHuman entityhuman) {
         if (!this.checkReachable) return true; // CraftBukkit
-        return this.a.a(entityhuman);
+        return this.furnace.a(entityhuman);
     }
 
     public ItemStack a(int i) {
@@ -97,7 +107,7 @@ public class ContainerFurnace extends Container {
             }
 
             if (itemstack1.count == 0) {
-                slot.c((ItemStack) null);
+                slot.set((ItemStack) null);
             } else {
                 slot.d();
             }
@@ -111,15 +121,4 @@ public class ContainerFurnace extends Container {
 
         return itemstack;
     }
-
-    // CraftBukkit start
-    public CraftInventoryView getBukkitView() {
-        if (bukkitEntity != null) {
-            return bukkitEntity;
-        }
-        CraftInventoryFurnace inventory = new CraftInventoryFurnace(this.a);
-        bukkitEntity = new CraftInventoryView(this.player.d.getBukkitEntity(), inventory, this);
-        return bukkitEntity;
-    }
-    // CraftBukkit end
 }

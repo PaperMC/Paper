@@ -69,7 +69,7 @@ public class BlockDispenser extends BlockContainer {
             TileEntityDispenser tileentitydispenser = (TileEntityDispenser) world.getTileEntity(i, j, k);
 
             if (tileentitydispenser != null) {
-                entityhuman.a(tileentitydispenser);
+                entityhuman.openDispenser(tileentitydispenser);
             }
 
             return true;
@@ -111,7 +111,7 @@ public class BlockDispenser extends BlockContainer {
             double d2 = (double) k + (double) b1 * 0.6D + 0.5D;
 
             if (itemstack == null) {
-                world.f(1001, i, j, k, 0);
+                world.triggerEffect(1001, i, j, k, 0);
             } else {
                 // CraftBukkit start
                 double d3 = random.nextDouble() * 0.1D + 0.2D;
@@ -148,25 +148,25 @@ public class BlockDispenser extends BlockContainer {
                     entityarrow.shoot((double) b0, 0.10000000149011612D, (double) b1, 1.1F, 6.0F);
                     entityarrow.fromPlayer = true;
                     world.addEntity(entityarrow);
-                    world.f(1002, i, j, k, 0);
+                    world.triggerEffect(1002, i, j, k, 0);
                 } else if (itemstack.id == Item.EGG.id) {
                     EntityEgg entityegg = new EntityEgg(world, d0, d1, d2);
 
                     entityegg.a((double) b0, 0.10000000149011612D, (double) b1, 1.1F, 6.0F);
                     world.addEntity(entityegg);
-                    world.f(1002, i, j, k, 0);
+                    world.triggerEffect(1002, i, j, k, 0);
                 } else if (itemstack.id == Item.SNOW_BALL.id) {
                     EntitySnowball entitysnowball = new EntitySnowball(world, d0, d1, d2);
 
                     entitysnowball.a((double) b0, 0.10000000149011612D, (double) b1, 1.1F, 6.0F);
                     world.addEntity(entitysnowball);
-                    world.f(1002, i, j, k, 0);
+                    world.triggerEffect(1002, i, j, k, 0);
                 } else if (itemstack.id == Item.POTION.id && ItemPotion.c(itemstack.getData())) {
                     EntityPotion entitypotion = new EntityPotion(world, d0, d1, d2, itemstack.getData());
 
                     entitypotion.a((double) b0, 0.10000000149011612D, (double) b1, 1.375F, 3.0F);
                     world.addEntity(entitypotion);
-                    world.f(1002, i, j, k, 0);
+                    world.triggerEffect(1002, i, j, k, 0);
                 } else {
                     EntityItem entityitem = new EntityItem(world, d0, d1 - 0.3D, d2, itemstack);
                     // CraftBukkit start
@@ -176,10 +176,10 @@ public class BlockDispenser extends BlockContainer {
                     entityitem.motZ = motZ;
                     // CraftBukkit end
                     world.addEntity(entityitem);
-                    world.f(1000, i, j, k, 0);
+                    world.triggerEffect(1000, i, j, k, 0);
                 }
 
-                world.f(2000, i, j, k, b0 + 1 + (b1 + 1) * 3);
+                world.triggerEffect(2000, i, j, k, b0 + 1 + (b1 + 1) * 3);
             }
         }
     }
@@ -244,7 +244,8 @@ public class BlockDispenser extends BlockContainer {
                         }
 
                         itemstack.count -= i1;
-                        EntityItem entityitem = new EntityItem(world, (double) ((float) i + f), (double) ((float) j + f1), (double) ((float) k + f2), new ItemStack(itemstack.id, i1, itemstack.getData(), itemstack.getEnchantments())); // CraftBukkit - make sure enchantments are copied over
+                        // CraftBukkit - make sure enchantments are copied over
+                        EntityItem entityitem = new EntityItem(world, (double) ((float) i + f), (double) ((float) j + f1), (double) ((float) k + f2), new ItemStack(itemstack.id, i1, itemstack.getData(), itemstack.getEnchantments()));
                         float f3 = 0.05F;
 
                         entityitem.motX = (double) ((float) this.a.nextGaussian() * f3);

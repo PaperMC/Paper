@@ -157,7 +157,7 @@ public class EntityWolf extends EntityAnimal {
             this.h = true;
             this.i = 0.0F;
             this.j = 0.0F;
-            this.world.a(this, (byte) 8);
+            this.world.broadcastEntityEffect(this, (byte) 8);
         }
     }
 
@@ -207,7 +207,7 @@ public class EntityWolf extends EntityAnimal {
         }
     }
 
-    public float y() {
+    public float getHeadHeight() {
         return this.length * 0.8F;
     }
 
@@ -373,10 +373,10 @@ public class EntityWolf extends EntityAnimal {
                         this.setHealth(20);
                         this.setOwnerName(entityhuman.name);
                         this.a(true);
-                        this.world.a(this, (byte) 7);
+                        this.world.broadcastEntityEffect(this, (byte) 7);
                     } else {
                         this.a(false);
-                        this.world.a(this, (byte) 6);
+                        this.world.broadcastEntityEffect(this, (byte) 6);
                     }
                 }
 

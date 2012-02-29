@@ -12,7 +12,7 @@ import org.bukkit.inventory.InventoryView;
 public class CraftingManager {
 
     private static final CraftingManager a = new CraftingManager();
-    public List b = new ArrayList(); // CraftBukkit - private -> public
+    public List recipies = new ArrayList(); // CraftBukkit - private -> public
     // CraftBukkit start
     public CraftingRecipe lastRecipe;
     public InventoryView lastCraftView;
@@ -101,12 +101,12 @@ public class CraftingManager {
         this.registerShapelessRecipe(new ItemStack(Item.EYE_OF_ENDER, 1), new Object[] { Item.ENDER_PEARL, Item.BLAZE_POWDER});
         //Collections.sort(this.b, new RecipeSorter(this)); // CraftBukkit - removed; see below
         this.sort(); // CraftBukkit - moved sort to a separate method
-        System.out.println(this.b.size() + " recipes");
+        System.out.println(this.recipies.size() + " recipes");
     }
 
     // CraftBukkit start
     public void sort() {
-        Collections.sort(this.b, new RecipeSorter(this));
+        Collections.sort(this.recipies, new RecipeSorter(this));
     }
     // CraftBukkit end
 
@@ -165,7 +165,7 @@ public class CraftingManager {
             }
         }
 
-        this.b.add(new ShapedRecipes(j, k, aitemstack, itemstack));
+        this.recipies.add(new ShapedRecipes(j, k, aitemstack, itemstack));
     }
 
     public void registerShapelessRecipe(ItemStack itemstack, Object... aobject) { // CraftBukkit - default -> public
@@ -189,7 +189,7 @@ public class CraftingManager {
             }
         }
 
-        this.b.add(new ShapelessRecipes(itemstack, arraylist));
+        this.recipies.add(new ShapelessRecipes(itemstack, arraylist));
     }
 
     public ItemStack craft(InventoryCrafting inventorycrafting) {
@@ -237,8 +237,8 @@ public class CraftingManager {
             return result;
             // CraftBukkit end
         } else {
-            for (j = 0; j < this.b.size(); ++j) {
-                CraftingRecipe craftingrecipe = (CraftingRecipe) this.b.get(j);
+            for (j = 0; j < this.recipies.size(); ++j) {
+                CraftingRecipe craftingrecipe = (CraftingRecipe) this.recipies.get(j);
 
                 if (craftingrecipe.a(inventorycrafting)) {
                     // CraftBukkit start - INVENTORY_PRE_CRAFT event
@@ -254,7 +254,7 @@ public class CraftingManager {
         }
     }
 
-    public List b() {
-        return this.b;
+    public List getRecipies() {
+        return this.recipies;
     }
 }

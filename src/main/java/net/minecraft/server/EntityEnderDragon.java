@@ -536,7 +536,7 @@ public class EntityEnderDragon extends EntityComplex {
         this.c = this.locZ - (double) (f2 * 5.0F) + (double) ((this.random.nextFloat() - 0.5F) * 2.0F);
         this.u = null;
         if (damagesource.getEntity() instanceof EntityHuman || damagesource == DamageSource.EXPLOSION) {
-            this.e(damagesource, i);
+            this.dealDamage(damagesource, i);
         }
 
         return true;

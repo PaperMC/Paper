@@ -62,7 +62,7 @@ public class BlockFurnace extends BlockContainer {
             TileEntityFurnace tileentityfurnace = (TileEntityFurnace) world.getTileEntity(i, j, k);
 
             if (tileentityfurnace != null) {
-                entityhuman.a(tileentityfurnace);
+                entityhuman.openFurnace(tileentityfurnace);
             }
 
             return true;
@@ -133,7 +133,8 @@ public class BlockFurnace extends BlockContainer {
                             }
 
                             itemstack.count -= i1;
-                            EntityItem entityitem = new EntityItem(world, (double) ((float) i + f), (double) ((float) j + f1), (double) ((float) k + f2), new ItemStack(itemstack.id, i1, itemstack.getData(), itemstack.getEnchantments())); // CraftBukkit - include enchantments in new itemstack
+                            // CraftBukkit - include enchantments in new itemstack
+                            EntityItem entityitem = new EntityItem(world, (double) ((float) i + f), (double) ((float) j + f1), (double) ((float) k + f2), new ItemStack(itemstack.id, i1, itemstack.getData(), itemstack.getEnchantments()));
                             float f3 = 0.05F;
 
                             entityitem.motX = (double) ((float) this.a.nextGaussian() * f3);

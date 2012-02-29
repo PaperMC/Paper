@@ -14,7 +14,7 @@ public class CraftPotionEffectType extends PotionEffectType {
 
     @Override
     public double getDurationModifier() {
-        return handle.d();
+        return handle.getDurationModifier();
     }
 
     public MobEffectList getHandle() {
@@ -69,6 +69,6 @@ public class CraftPotionEffectType extends PotionEffectType {
 
     @Override
     public boolean isInstant() {
-        return handle.b();
+        return handle.isInstant();
     }
 }

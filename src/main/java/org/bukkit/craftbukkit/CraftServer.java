@@ -589,7 +589,7 @@ public final class CraftServer implements Server {
         ChunkGenerator generator = creator.generator();
         File folder = new File(getWorldContainer(), name);
         World world = getWorld(name);
-        WorldType type = WorldType.a(creator.type().getName());
+        WorldType type = WorldType.getType(creator.type().getName());
         boolean generateStructures = creator.generateStructures();
 
         if (world != null) {
@@ -824,13 +824,13 @@ public final class CraftServer implements Server {
     }
 
     public void clearRecipes() {
-        CraftingManager.getInstance().b.clear();
-        FurnaceRecipes.getInstance().b().clear();
+        CraftingManager.getInstance().recipies.clear();
+        FurnaceRecipes.getInstance().recipies.clear();
     }
 
     public void resetRecipes() {
-        CraftingManager.getInstance().b = new CraftingManager().b;
-        FurnaceRecipes.getInstance().b = new FurnaceRecipes().b;
+        CraftingManager.getInstance().recipies = new CraftingManager().recipies;
+        FurnaceRecipes.getInstance().recipies = new FurnaceRecipes().recipies;
     }
 
     public Map<String, String[]> getCommandAliases() {

@@ -13,7 +13,7 @@ public class ItemSign extends Item {
         this.maxStackSize = 1;
     }
 
-    public boolean a(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
+    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
         if (l == 0) {
             return false;
         } else if (!world.getMaterial(i, j, k).isBuildable()) {

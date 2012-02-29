@@ -140,7 +140,7 @@ public abstract class EntityLiving extends Entity {
     }
 
     public boolean g(Entity entity) {
-        return this.world.a(Vec3D.create(this.locX, this.locY + (double) this.y(), this.locZ), Vec3D.create(entity.locX, entity.locY + (double) entity.y(), entity.locZ)) == null;
+        return this.world.a(Vec3D.create(this.locX, this.locY + (double) this.getHeadHeight(), this.locZ), Vec3D.create(entity.locX, entity.locY + (double) entity.getHeadHeight(), entity.locZ)) == null;
     }
 
     public boolean e_() {
@@ -151,7 +151,7 @@ public abstract class EntityLiving extends Entity {
         return !this.dead;
     }
 
-    public float y() {
+    public float getHeadHeight() {
         return this.length * 0.85F;
     }
 
@@ -520,7 +520,7 @@ public abstract class EntityLiving extends Entity {
                 }
 
                 if (flag) {
-                    this.world.a(this, (byte) 2);
+                    this.world.broadcastEntityEffect(this, (byte) 2);
                     this.aM();
                     if (entity != null) {
                         double d0 = entity.locX - this.locX;
@@ -651,7 +651,7 @@ public abstract class EntityLiving extends Entity {
             }
         }
 
-        this.world.a(this, (byte) 3);
+        this.world.broadcastEntityEffect(this, (byte) 3);
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
@@ -916,7 +916,7 @@ public abstract class EntityLiving extends Entity {
             --this.aN;
             this.setPosition(d0, d1, d2);
             this.c(this.yaw, this.pitch);
-            List list = this.world.a((Entity) this, this.boundingBox.shrink(0.03125D, 0.0D, 0.03125D));
+            List list = this.world.getCubes(this, this.boundingBox.shrink(0.03125D, 0.0D, 0.03125D));
 
             if (list.size() > 0) {
                 double d4 = 0.0D;
@@ -1114,9 +1114,9 @@ public abstract class EntityLiving extends Entity {
         if (entity instanceof EntityLiving) {
             EntityLiving entityliving = (EntityLiving) entity;
 
-            d2 = this.locY + (double) this.y() - (entityliving.locY + (double) entityliving.y());
+            d2 = this.locY + (double) this.getHeadHeight() - (entityliving.locY + (double) entityliving.getHeadHeight());
         } else {
-            d2 = (entity.boundingBox.b + entity.boundingBox.e) / 2.0D - (this.locY + (double) this.y());
+            d2 = (entity.boundingBox.b + entity.boundingBox.e) / 2.0D - (this.locY + (double) this.getHeadHeight());
         }
 
         double d3 = (double) MathHelper.sqrt(d0 * d0 + d1 * d1);
@@ -1160,7 +1160,7 @@ public abstract class EntityLiving extends Entity {
     public void ay() {}
 
     public boolean canSpawn() {
-        return this.world.containsEntity(this.boundingBox) && this.world.a((Entity) this, this.boundingBox).size() == 0 && !this.world.c(this.boundingBox);
+        return this.world.containsEntity(this.boundingBox) && this.world.getCubes(this, this.boundingBox).size() == 0 && !this.world.containsLiquid(this.boundingBox);
     }
 
     protected void az() {
@@ -1356,7 +1356,7 @@ public abstract class EntityLiving extends Entity {
 
             vec3d1.a(-this.pitch * 3.1415927F / 180.0F);
             vec3d1.b(-this.yaw * 3.1415927F / 180.0F);
-            vec3d1 = vec3d1.add(this.locX, this.locY + (double) this.y(), this.locZ);
+            vec3d1 = vec3d1.add(this.locX, this.locY + (double) this.getHeadHeight(), this.locZ);
             this.world.a("iconcrack_" + itemstack.getItem().id, vec3d1.a, vec3d1.b, vec3d1.c, vec3d.a, vec3d.b + 0.05D, vec3d.c);
         }
     }

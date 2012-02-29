@@ -17,7 +17,7 @@ public class BlockPistonExtension extends Block {
         super.remove(world, i, j, k);
         int l = world.getData(i, j, k);
         if (l > 5 || l < 0) return; // CraftBukkit - fixed a piston AIOOBE issue.
-        int i1 = Facing.a[b(l)];
+        int i1 = Facing.OPPOSITE_FACING[b(l)];
 
         i += Facing.b[i1];
         j += Facing.c[i1];
@@ -36,7 +36,7 @@ public class BlockPistonExtension extends Block {
     public int a(int i, int j) {
         int k = b(j);
 
-        return i == k ? (this.a >= 0 ? this.a : ((j & 8) != 0 ? this.textureId - 1 : this.textureId)) : (i == Facing.a[k] ? 107 : 108);
+        return i == k ? (this.a >= 0 ? this.a : ((j & 8) != 0 ? this.textureId - 1 : this.textureId)) : (i == Facing.OPPOSITE_FACING[k] ? 107 : 108);
     }
 
     public int c() {

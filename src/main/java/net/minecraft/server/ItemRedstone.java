@@ -12,7 +12,7 @@ public class ItemRedstone extends Item {
         super(i);
     }
 
-    public boolean a(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
+    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
         int clickedX = i, clickedY = j, clickedZ = k; // CraftBukkit
 
         if (world.getTypeId(i, j, k) != Block.SNOW.id) {

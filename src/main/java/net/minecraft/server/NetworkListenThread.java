@@ -93,7 +93,7 @@ public class NetworkListenThread {
         return networklistenthread.d;
     }
 
-    static HashMap b(NetworkListenThread networklistenthread) {
+    static HashMap getRecentConnectionAttempts(NetworkListenThread networklistenthread) {
         return networklistenthread.i;
     }
 

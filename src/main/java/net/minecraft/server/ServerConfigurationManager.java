@@ -121,7 +121,7 @@ public class ServerConfigurationManager {
 
         // CraftBukkit start
         if (!cserver.useExactLoginLocation()) {
-            while (worldserver.a(entityplayer, entityplayer.boundingBox).size() != 0) {
+            while (worldserver.getCubes(entityplayer, entityplayer.boundingBox).size() != 0) {
                 entityplayer.setPosition(entityplayer.locX, entityplayer.locY + 1.0D, entityplayer.locZ);
             }
         } else {
@@ -297,7 +297,7 @@ public class ServerConfigurationManager {
 
         worldserver.chunkProviderServer.getChunkAt((int) entityplayer1.locX >> 4, (int) entityplayer1.locZ >> 4);
 
-        while (worldserver.a(entityplayer1, entityplayer1.boundingBox).size() != 0) {
+        while (worldserver.getCubes(entityplayer1, entityplayer1.boundingBox).size() != 0) {
             entityplayer1.setPosition(entityplayer1.locX, entityplayer1.locY + 1.0D, entityplayer1.locZ);
         }
 

@@ -158,7 +158,7 @@ public class NetLoginHandler extends NetHandler {
         }
     }
 
-    public void a(Packet packet) {
+    public void onUnhandledPacket(Packet packet) {
         this.disconnect("Protocol error");
     }
 

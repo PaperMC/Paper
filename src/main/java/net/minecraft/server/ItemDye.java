@@ -20,7 +20,7 @@ public class ItemDye extends Item {
         return super.getName() + "." + a[i];
     }
 
-    public boolean a(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
+    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
         if (!entityhuman.d(i, j, k)) {
             return false;
         } else {
@@ -123,9 +123,10 @@ public class ItemDye extends Item {
                     return;
                 }
 
-                int iColor = new Byte(event.getColor().getData()).intValue();
-                entitysheep.setColor(iColor);
+                i = (byte) event.getColor().getData();
                 // CraftBukkit end
+
+                entitysheep.setColor(i);
                 --itemstack.count;
             }
         }

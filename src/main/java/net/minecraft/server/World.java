@@ -634,7 +634,7 @@ public class World implements IBlockAccess {
             } else {
                 Chunk chunk = this.getChunkAt(l, i1);
 
-                return chunk.a(enumskyblock, i & 15, j, k & 15);
+                return chunk.getBrightness(enumskyblock, i & 15, j, k & 15);
             }
         } else {
             return enumskyblock.c;
@@ -969,7 +969,7 @@ public class World implements IBlockAccess {
         this.z.add(iworldaccess);
     }
 
-    public List a(Entity entity, AxisAlignedBB axisalignedbb) {
+    public List getCubes(Entity entity, AxisAlignedBB axisalignedbb) {
         this.R.clear();
         int i = MathHelper.floor(axisalignedbb.a);
         int j = MathHelper.floor(axisalignedbb.d + 1.0D);
@@ -1362,7 +1362,7 @@ public class World implements IBlockAccess {
         return false;
     }
 
-    public boolean c(AxisAlignedBB axisalignedbb) {
+    public boolean containsLiquid(AxisAlignedBB axisalignedbb) {
         int i = MathHelper.floor(axisalignedbb.a);
         int j = MathHelper.floor(axisalignedbb.d + 1.0D);
         int k = MathHelper.floor(axisalignedbb.b);
@@ -1521,7 +1521,7 @@ public class World implements IBlockAccess {
         return false;
     }
 
-    public Explosion a(Entity entity, double d0, double d1, double d2, float f) {
+    public Explosion explode(Entity entity, double d0, double d1, double d2, float f) {
         return this.createExplosion(entity, d0, d1, d2, f, false);
     }
 
@@ -1994,7 +1994,7 @@ public class World implements IBlockAccess {
                 j2 = i2 & 15;
                 k2 = i2 >> 8 & 15;
                 l2 = i2 >> 16 & this.heightMinusOne;
-                int i3 = chunk.b[j2 << this.heightBitsPlusFour | k2 << this.heightBits | l2] & 255;
+                int i3 = chunk.blocks[j2 << this.heightBitsPlusFour | k2 << this.heightBits | l2] & 255;
 
                 ++j1;
                 if (Block.n[i3]) {
@@ -2692,7 +2692,7 @@ public class World implements IBlockAccess {
         return true;
     }
 
-    public void a(Entity entity, byte b0) {}
+    public void broadcastEntityEffect(Entity entity, byte b0) {}
 
     public IChunkProvider p() {
         return this.chunkProvider;
@@ -2825,7 +2825,7 @@ public class World implements IBlockAccess {
         return this.worldMaps.a(s);
     }
 
-    public void f(int i, int j, int k, int l, int i1) {
+    public void triggerEffect(int i, int j, int k, int l, int i1) {
         this.a((EntityHuman) null, i, j, k, l, i1);
     }
 

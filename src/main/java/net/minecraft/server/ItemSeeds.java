@@ -17,7 +17,7 @@ public class ItemSeeds extends Item {
         this.b = k;
     }
 
-    public boolean a(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
+    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
         if (l != 1) {
             return false;
         } else if (entityhuman.d(i, j, k) && entityhuman.d(i, j + 1, k)) {

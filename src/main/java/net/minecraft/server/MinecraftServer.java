@@ -165,7 +165,7 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
             }
         }
 
-        WorldType worldtype = WorldType.a(s2);
+        WorldType worldtype = WorldType.getType(s2);
 
         if (worldtype == null) {
             worldtype = WorldType.NORMAL;

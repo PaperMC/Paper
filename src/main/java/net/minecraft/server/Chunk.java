@@ -12,7 +12,7 @@ import org.bukkit.Bukkit; // CraftBukkit
 public class Chunk {
 
     public static boolean a;
-    public byte[] b;
+    public byte[] blocks;
     public int[] c;
     public boolean[] d;
     public boolean e;
@@ -71,7 +71,7 @@ public class Chunk {
 
     public Chunk(World world, byte[] abyte, int i, int j) {
         this(world, i, j);
-        this.b = abyte;
+        this.blocks = abyte;
         this.g = new NibbleArray(abyte.length, world.heightBits);
         this.h = new NibbleArray(abyte.length, world.heightBits);
         this.i = new NibbleArray(abyte.length, world.heightBits);
@@ -99,7 +99,7 @@ public class Chunk {
 
                 int i1;
 
-                for (i1 = j << this.world.heightBitsPlusFour | k << this.world.heightBits; l > 0 && Block.lightBlock[this.b[i1 + l - 1] & 255] == 0; --l) {
+                for (i1 = j << this.world.heightBitsPlusFour | k << this.world.heightBits; l > 0 && Block.lightBlock[this.blocks[i1 + l - 1] & 255] == 0; --l) {
                     ;
                 }
 
@@ -113,7 +113,7 @@ public class Chunk {
                     int k1 = this.world.height - 1;
 
                     do {
-                        j1 -= Block.lightBlock[this.b[i1 + k1] & 255];
+                        j1 -= Block.lightBlock[this.blocks[i1 + k1] & 255];
                         if (j1 > 0) {
                             this.h.a(j, k1, k, j1);
                         }
@@ -208,7 +208,7 @@ public class Chunk {
             i1 = j;
         }
 
-        for (int j1 = i << this.world.heightBitsPlusFour | k << this.world.heightBits; i1 > 0 && Block.lightBlock[this.b[j1 + i1 - 1] & 255] == 0; --i1) {
+        for (int j1 = i << this.world.heightBitsPlusFour | k << this.world.heightBits; i1 > 0 && Block.lightBlock[this.blocks[j1 + i1 - 1] & 255] == 0; --i1) {
             ;
         }
 
@@ -287,7 +287,7 @@ public class Chunk {
     }
 
     public int getTypeId(int i, int j, int k) {
-        return this.b[i << this.world.heightBitsPlusFour | k << this.world.heightBits | j] & 255;
+        return this.blocks[i << this.world.heightBitsPlusFour | k << this.world.heightBits | j] & 255;
     }
 
     public boolean a(int i, int j, int k, int l, int i1) {
@@ -299,7 +299,7 @@ public class Chunk {
         }
 
         int k1 = this.heightMap[k << 4 | i] & 255;
-        int l1 = this.b[i << this.world.heightBitsPlusFour | k << this.world.heightBits | j] & 255;
+        int l1 = this.blocks[i << this.world.heightBitsPlusFour | k << this.world.heightBits | j] & 255;
 
         if (l1 == l && this.g.a(i, j, k) == i1) {
             return false;
@@ -307,7 +307,7 @@ public class Chunk {
             int i2 = this.x * 16 + i;
             int j2 = this.z * 16 + k;
 
-            this.b[i << this.world.heightBitsPlusFour | k << this.world.heightBits | j] = (byte) (b0 & 255);
+            this.blocks[i << this.world.heightBitsPlusFour | k << this.world.heightBits | j] = (byte) (b0 & 255);
             if (l1 != 0) {
                 if (!this.world.isStatic) {
                     Block.byId[l1].remove(this.world, i2, j, j2);
@@ -316,7 +316,7 @@ public class Chunk {
                 }
             }
 
-            if ((this.b[i << this.world.heightBitsPlusFour | k << this.world.heightBits | j] & 255) != l) return false; // CraftBukkit
+            if ((this.blocks[i << this.world.heightBitsPlusFour | k << this.world.heightBits | j] & 255) != l) return false; // CraftBukkit
 
             this.g.a(i, j, k, i1);
             if (!this.world.worldProvider.f) {
@@ -373,7 +373,7 @@ public class Chunk {
         }
 
         int j1 = this.heightMap[i1] & 255;
-        int k1 = this.b[i << this.world.heightBitsPlusFour | k << this.world.heightBits | j] & 255;
+        int k1 = this.blocks[i << this.world.heightBitsPlusFour | k << this.world.heightBits | j] & 255;
 
         if (k1 == l) {
             return false;
@@ -381,12 +381,12 @@ public class Chunk {
             int l1 = this.x * 16 + i;
             int i2 = this.z * 16 + k;
 
-            this.b[i << this.world.heightBitsPlusFour | k << this.world.heightBits | j] = (byte) (b0 & 255);
+            this.blocks[i << this.world.heightBitsPlusFour | k << this.world.heightBits | j] = (byte) (b0 & 255);
             if (k1 != 0) {
                 Block.byId[k1].remove(this.world, l1, j, i2);
             }
 
-            if ((this.b[i << this.world.heightBitsPlusFour | k << this.world.heightBits | j] & 255) != l) return false; // CraftBukkit
+            if ((this.blocks[i << this.world.heightBitsPlusFour | k << this.world.heightBits | j] & 255) != l) return false; // CraftBukkit
 
             this.g.a(i, j, k, 0);
             if (Block.lightBlock[b0 & 255] != 0) {
@@ -457,7 +457,7 @@ public class Chunk {
         }
     }
 
-    public int a(EnumSkyBlock enumskyblock, int i, int j, int k) {
+    public int getBrightness(EnumSkyBlock enumskyblock, int i, int j, int k) {
         return enumskyblock == EnumSkyBlock.SKY ? this.h.a(i, j, k) : (enumskyblock == EnumSkyBlock.BLOCK ? this.i.a(i, j, k) : 0);
     }
 
@@ -741,9 +741,9 @@ public class Chunk {
         int i2 = i1 - j;
         int j2 = j1 - k;
 
-        if (l1 * i2 * j2 == this.b.length) {
-            System.arraycopy(this.b, 0, abyte, k1, this.b.length);
-            k1 += this.b.length;
+        if (l1 * i2 * j2 == this.blocks.length) {
+            System.arraycopy(this.blocks, 0, abyte, k1, this.blocks.length);
+            k1 += this.blocks.length;
             System.arraycopy(this.g.a, 0, abyte, k1, this.g.a.length);
             k1 += this.g.a.length;
             System.arraycopy(this.i.a, 0, abyte, k1, this.i.a.length);
@@ -761,7 +761,7 @@ public class Chunk {
                 for (l2 = k; l2 < j1; ++l2) {
                     i3 = k2 << this.world.heightBitsPlusFour | l2 << this.world.heightBits | j;
                     j3 = i1 - j;
-                    System.arraycopy(this.b, i3, abyte, k1, j3);
+                    System.arraycopy(this.blocks, i3, abyte, k1, j3);
                     k1 += j3;
                 }
             }
@@ -806,7 +806,7 @@ public class Chunk {
     }
 
     public void h() {
-        BlockRegister.a(this.b);
+        BlockRegister.a(this.blocks);
     }
 
     public void a(IChunkProvider ichunkprovider, IChunkProvider ichunkprovider1, int i, int j) {

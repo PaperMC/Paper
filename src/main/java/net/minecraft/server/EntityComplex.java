@@ -20,7 +20,7 @@ public class EntityComplex extends EntityLiving {
         return false;
     }
 
-    public boolean e(DamageSource damagesource, int i) { // CraftBukkit - protected -> public
+    public boolean dealDamage(DamageSource damagesource, int i) { // CraftBukkit - protected -> public
         return super.damageEntity(damagesource, i);
     }
 }

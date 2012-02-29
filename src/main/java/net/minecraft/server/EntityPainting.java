@@ -138,21 +138,19 @@ public class EntityPainting extends Entity {
                 PaintingBreakEvent event = new PaintingBreakEvent((Painting) this.getBukkitEntity(), cause);
                 this.world.getServer().getPluginManager().callEvent(event);
 
-                if (event.isCancelled()) {
+                if (event.isCancelled() || dead) {
                     return;
                 }
-
-                if (!dead) {
-                    this.die();
-                    this.world.addEntity(new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.PAINTING)));
-                }
                 // CraftBukkit end
+
+                this.die();
+                this.world.addEntity(new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.PAINTING)));
             }
         }
     }
 
     public boolean survives() {
-        if (this.world.a(this, this.boundingBox).size() > 0) {
+        if (this.world.getCubes(this, this.boundingBox).size() > 0) {
             return false;
         } else {
             int i = this.art.B / 16;
@@ -286,14 +284,11 @@ public class EntityPainting extends Entity {
     }
 
     public void b_(double d0, double d1, double d2) {
-        // CraftBukkit start - not needed for paintings
-        /* if (!this.world.isStatic && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) {
-            if (dead) return; // CraftBukkit
-
+        /* CraftBukkit start - not needed for paintings
+        if (!this.world.isStatic && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) {
             this.die();
             this.world.addEntity(new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.PAINTING)));
-        }*/
-        // CraftBukkit end
+        }
+        // CraftBukkit end */
     }
-
 }

@@ -7,7 +7,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 
 public class ContainerBrewingStand extends Container {
 
-    private TileEntityBrewingStand a;
+    private TileEntityBrewingStand brewingStand;
     private int b = 0;
     // CraftBukkit start
     private CraftInventoryView bukkitEntity = null;
@@ -16,10 +16,10 @@ public class ContainerBrewingStand extends Container {
 
     public ContainerBrewingStand(PlayerInventory playerinventory, TileEntityBrewingStand tileentitybrewingstand) {
         player = playerinventory; // CraftBukkit
-        this.a = tileentitybrewingstand;
-        this.a(new SlotPotionBottle(this, playerinventory.d, tileentitybrewingstand, 0, 56, 46));
-        this.a(new SlotPotionBottle(this, playerinventory.d, tileentitybrewingstand, 1, 79, 53));
-        this.a(new SlotPotionBottle(this, playerinventory.d, tileentitybrewingstand, 2, 102, 46));
+        this.brewingStand = tileentitybrewingstand;
+        this.a(new SlotPotionBottle(this, playerinventory.player, tileentitybrewingstand, 0, 56, 46));
+        this.a(new SlotPotionBottle(this, playerinventory.player, tileentitybrewingstand, 1, 79, 53));
+        this.a(new SlotPotionBottle(this, playerinventory.player, tileentitybrewingstand, 2, 102, 46));
         this.a(new SlotBrewing(this, tileentitybrewingstand, 3, 79, 17));
 
         int i;
@@ -35,9 +35,9 @@ public class ContainerBrewingStand extends Container {
         }
     }
 
-    public void a(ICrafting icrafting) {
-        super.a(icrafting);
-        icrafting.a(this, 0, this.a.h());
+    public void addSlotListener(ICrafting icrafting) {
+        super.addSlotListener(icrafting);
+        icrafting.setContainerData(this, 0, this.brewingStand.h());
     }
 
     public void a() {
@@ -46,17 +46,17 @@ public class ContainerBrewingStand extends Container {
         for (int i = 0; i < this.listeners.size(); ++i) {
             ICrafting icrafting = (ICrafting) this.listeners.get(i);
 
-            if (this.b != this.a.h()) {
-                icrafting.a(this, 0, this.a.h());
+            if (this.b != this.brewingStand.h()) {
+                icrafting.setContainerData(this, 0, this.brewingStand.h());
             }
         }
 
-        this.b = this.a.h();
+        this.b = this.brewingStand.h();
     }
 
     public boolean b(EntityHuman entityhuman) {
         if (!this.checkReachable) return true; // CraftBukkit
-        return this.a.a(entityhuman);
+        return this.brewingStand.a(entityhuman);
     }
 
     public ItemStack a(int i) {
@@ -84,7 +84,7 @@ public class ContainerBrewingStand extends Container {
             }
 
             if (itemstack1.count == 0) {
-                slot.c((ItemStack) null);
+                slot.set((ItemStack) null);
             } else {
                 slot.d();
             }
@@ -104,8 +104,8 @@ public class ContainerBrewingStand extends Container {
         if (bukkitEntity != null) {
             return bukkitEntity;
         }
-        CraftInventory inventory = new CraftInventory(this.a);
-        bukkitEntity = new CraftInventoryView(this.player.d.getBukkitEntity(), inventory, this);
+        CraftInventory inventory = new CraftInventory(this.brewingStand);
+        bukkitEntity = new CraftInventoryView(this.player.player.getBukkitEntity(), inventory, this);
         return bukkitEntity;
     }
     // CraftBukkit end

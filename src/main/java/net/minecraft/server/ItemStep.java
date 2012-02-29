@@ -22,7 +22,7 @@ public class ItemStep extends ItemBlock {
         return super.getName() + "." + BlockStep.a[i];
     }
 
-    public boolean a(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
+    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
         if (l != 1) {
             ;
         }
@@ -36,17 +36,16 @@ public class ItemStep extends ItemBlock {
             int j1 = world.getData(i, j, k);
 
             if (l == 1 && i1 == Block.STEP.id && j1 == itemstack.getData()) {
-                // CraftBukkit start - handle this in super
-                /*
+                /* CraftBukkit start - handle this in super
                 if (world.setTypeIdAndData(i, j, k, Block.DOUBLE_STEP.id, j1)) {
                     world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), Block.DOUBLE_STEP.stepSound.getName(), (Block.DOUBLE_STEP.stepSound.getVolume1() + 1.0F) / 2.0F, Block.DOUBLE_STEP.stepSound.getVolume2() * 0.8F);
                     --itemstack.count;
                 }
                 */
-                return super.a(itemstack, entityhuman, world, i, j, k, -1);
+                return super.interactWith(itemstack, entityhuman, world, i, j, k, -1);
                 // CraftBukkit end
             } else {
-                return super.a(itemstack, entityhuman, world, i, j, k, l);
+                return super.interactWith(itemstack, entityhuman, world, i, j, k, l);
             }
         }
     }

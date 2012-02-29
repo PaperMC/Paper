@@ -10,16 +10,17 @@ import org.bukkit.inventory.InventoryHolder;
 // CraftBukkit end
 
 public class ContainerEnchantTableSubcontainer implements IInventory {
+
     private String a;
     private int b;
-    private ItemStack[] c;
+    private ItemStack[] items;
     private List d;
 
     // CraftBukkit start
     public List<HumanEntity> transaction = new ArrayList<HumanEntity>();
 
     public ItemStack[] getContents() {
-        return this.c;
+        return this.items;
     }
 
     public void onOpen(CraftHumanEntity who) {
@@ -42,26 +43,26 @@ public class ContainerEnchantTableSubcontainer implements IInventory {
     public ContainerEnchantTableSubcontainer(String s, int i) {
         this.a = s;
         this.b = i;
-        this.c = new ItemStack[i];
+        this.items = new ItemStack[i];
     }
 
     public ItemStack getItem(int i) {
-        return this.c[i];
+        return this.items[i];
     }
 
     public ItemStack splitStack(int i, int j) {
-        if (this.c[i] != null) {
+        if (this.items[i] != null) {
             ItemStack itemstack;
 
-            if (this.c[i].count <= j) {
-                itemstack = this.c[i];
-                this.c[i] = null;
+            if (this.items[i].count <= j) {
+                itemstack = this.items[i];
+                this.items[i] = null;
                 this.update();
                 return itemstack;
             } else {
-                itemstack = this.c[i].a(j);
-                if (this.c[i].count == 0) {
-                    this.c[i] = null;
+                itemstack = this.items[i].a(j);
+                if (this.items[i].count == 0) {
+                    this.items[i] = null;
                 }
 
                 this.update();
@@ -73,7 +74,7 @@ public class ContainerEnchantTableSubcontainer implements IInventory {
     }
 
     public void setItem(int i, ItemStack itemstack) {
-        this.c[i] = itemstack;
+        this.items[i] = itemstack;
         if (itemstack != null && itemstack.count > this.getMaxStackSize()) {
             itemstack.count = this.getMaxStackSize();
         }

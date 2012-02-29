@@ -6,7 +6,7 @@ import java.util.Map;
 public class FurnaceRecipes {
 
     private static final FurnaceRecipes a = new FurnaceRecipes();
-    public Map b = new HashMap(); // CraftBukkit - private -> public
+    public Map recipies = new HashMap(); // CraftBukkit - private -> public
 
     public static final FurnaceRecipes getInstance() {
         return a;
@@ -31,14 +31,14 @@ public class FurnaceRecipes {
     }
 
     public void registerRecipe(int i, ItemStack itemstack) {
-        this.b.put(Integer.valueOf(i), itemstack);
+        this.recipies.put(Integer.valueOf(i), itemstack);
     }
 
-    public ItemStack a(int i) {
-        return (ItemStack) this.b.get(Integer.valueOf(i));
+    public ItemStack getResult(int i) {
+        return (ItemStack) this.recipies.get(Integer.valueOf(i));
     }
 
-    public Map b() {
-        return this.b;
+    public Map getRecipies() {
+        return this.recipies;
     }
 }
