@@ -1,13 +1,26 @@
 package org.bukkit.craftbukkit.inventory;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
+import java.util.ListIterator;
 
+import net.minecraft.server.ContainerEnchantTableInventory;
 import net.minecraft.server.IInventory;
+import net.minecraft.server.InventoryCrafting;
+import net.minecraft.server.PlayerInventory;
+import net.minecraft.server.TileEntityBrewingStand;
+import net.minecraft.server.TileEntityDispenser;
+import net.minecraft.server.TileEntityFurnace;
 
+import org.bukkit.entity.HumanEntity;
+import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.Material;
 
-public class CraftInventory implements org.bukkit.inventory.Inventory {
+public class CraftInventory implements Inventory {
     protected IInventory inventory;
 
     public CraftInventory(IInventory inventory) {
@@ -27,7 +40,8 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
     }
 
     public ItemStack getItem(int index) {
-        return new CraftItemStack(getInventory().getItem(index));
+        net.minecraft.server.ItemStack item = getInventory().getItem(index);
+        return item == null ? null : new CraftItemStack(item);
     }
 
     public ItemStack[] getContents() {
@@ -42,18 +56,17 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
     }
 
     public void setContents(ItemStack[] items) {
-        if (getInventory().getContents().length != items.length) {
-            throw new IllegalArgumentException("Invalid inventory size; expected " + getInventory().getContents().length);
+        if (getInventory().getContents().length < items.length) {
+            throw new IllegalArgumentException("Invalid inventory size; expected " + getInventory().getContents().length + " or less");
         }
 
         net.minecraft.server.ItemStack[] mcItems = getInventory().getContents();
 
-        for (int i = 0; i < items.length; i++) {
-            ItemStack item = items[i];
-            if (item == null || item.getTypeId() <= 0) {
+        for (int i = 0; i < mcItems.length; i++) {
+            if (i >= items.length) {
                 mcItems[i] = null;
             } else {
-                mcItems[i] = CraftItemStack.createNMSItemStack(item);
+                mcItems[i] = CraftItemStack.createNMSItemStack(items[i]);
             }
         }
     }
@@ -362,5 +375,41 @@ public class CraftInventory implements org.bukkit.inventory.Inventory {
         for (int i = 0; i < getSize(); i++) {
             clear(i);
         }
+    }
+
+    public ListIterator<ItemStack> iterator() {
+        return new InventoryIterator(this);
+    }
+
+    public List<HumanEntity> getViewers() {
+        return this.inventory.getViewers();
+    }
+
+    public String getTitle() {
+        return inventory.getName();
+    }
+
+    public InventoryType getType() {
+        if (inventory instanceof InventoryCrafting) {
+            return inventory.getSize() >= 9 ? InventoryType.WORKBENCH : InventoryType.CRAFTING;
+        } else if (inventory instanceof PlayerInventory) {
+            return InventoryType.PLAYER;
+        } else if (inventory instanceof TileEntityDispenser) {
+            return InventoryType.DISPENSER;
+        } else if (inventory instanceof TileEntityFurnace) {
+            return InventoryType.FURNACE;
+        } else if (inventory instanceof ContainerEnchantTableInventory) {
+            return InventoryType.ENCHANTING;
+        } else if (inventory instanceof TileEntityBrewingStand) {
+            return InventoryType.BREWING;
+        } else if (inventory instanceof CraftInventoryCustom.MinecraftInventory) {
+            return ((CraftInventoryCustom.MinecraftInventory) inventory).getType();
+        } else {
+            return InventoryType.CHEST;
+        }
+    }
+
+    public InventoryHolder getHolder() {
+        return inventory.getOwner();
     }
 }

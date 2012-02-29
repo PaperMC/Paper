@@ -4,8 +4,8 @@ import net.minecraft.server.TileEntityBrewingStand;
 import org.bukkit.block.Block;
 import org.bukkit.block.BrewingStand;
 import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.inventory.CraftInventory;
-import org.bukkit.inventory.Inventory;
+import org.bukkit.craftbukkit.inventory.CraftInventoryBrewer;
+import org.bukkit.inventory.BrewerInventory;
 
 public class CraftBrewingStand extends CraftBlockState implements BrewingStand {
     private final CraftWorld world;
@@ -18,8 +18,8 @@ public class CraftBrewingStand extends CraftBlockState implements BrewingStand {
         brewingStand = (TileEntityBrewingStand) world.getTileEntityAt(getX(), getY(), getZ());
     }
 
-    public Inventory getInventory() {
-        return new CraftInventory(brewingStand);
+    public BrewerInventory getInventory() {
+        return new CraftInventoryBrewer(brewingStand);
     }
 
     @Override

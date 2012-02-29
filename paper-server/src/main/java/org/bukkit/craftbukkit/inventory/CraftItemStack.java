@@ -87,7 +87,9 @@ public class CraftItemStack extends ItemStack {
         } else {
             if (item == null) {
                 item = new net.minecraft.server.ItemStack(type, 1, 0);
+                super.setTypeId(type);
                 super.setAmount(1);
+                super.setDurability((short) 0);
             } else {
                 item.id = type;
                 super.setTypeId(item.id);
@@ -224,6 +226,9 @@ public class CraftItemStack extends ItemStack {
     }
 
     public static net.minecraft.server.ItemStack createNMSItemStack(ItemStack original) {
+        if (original == null || original.getTypeId() <= 0) {
+            return null;
+        }
         return new CraftItemStack(original).getHandle();
     }
 }
