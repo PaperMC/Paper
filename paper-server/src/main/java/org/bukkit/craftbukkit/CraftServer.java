@@ -106,6 +106,7 @@ import com.avaje.ebean.config.DataSourceConfig;
 import com.avaje.ebean.config.ServerConfig;
 import com.avaje.ebean.config.dbplatform.SQLitePlatform;
 import com.avaje.ebeaninternal.server.lib.sql.TransactionIsolation;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MapMaker;
 
 import jline.ConsoleReader;
@@ -810,18 +811,17 @@ public final class CraftServer implements Server {
     public Iterator<Recipe> recipeIterator() {
         return new RecipeIterator();
     }
-    
+
     public void clearRecipes() {
         CraftingManager.getInstance().b.clear();
         FurnaceRecipes.getInstance().b().clear();
     }
-    
+
     public void resetRecipes() {
         CraftingManager.getInstance().b = new CraftingManager().b;
         FurnaceRecipes.getInstance().b = new FurnaceRecipes().b;
     }
 
-    @SuppressWarnings("unchecked")
     public Map<String, String[]> getCommandAliases() {
         ConfigurationSection section = configuration.getConfigurationSection("aliases");
         Map<String, String[]> result = new LinkedHashMap<String, String[]>();
@@ -831,10 +831,9 @@ public final class CraftServer implements Server {
                 List<String> commands = null;
 
                 if (section.isList(key)) {
-                    commands = section.getList(key);
+                    commands = section.getStringList(key);
                 } else {
-                    commands = new ArrayList<String>();
-                    commands.add(section.getString(key));
+                    commands = ImmutableList.<String>of(section.getString(key));
                 }
 
                 result.put(key, commands.toArray(new String[0]));
