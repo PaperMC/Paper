@@ -1,12 +1,17 @@
 package org.bukkit.inventory;
 
 import java.util.HashMap;
+import java.util.List;
+import java.util.ListIterator;
+
 import org.bukkit.Material;
+import org.bukkit.entity.HumanEntity;
+import org.bukkit.event.inventory.InventoryType;
 
 /**
  * Interface to the various inventories
  */
-public interface Inventory {
+public interface Inventory extends Iterable<ItemStack> {
 
     /**
      * Returns the size of the inventory
@@ -69,7 +74,8 @@ public interface Inventory {
     /**
      * Set the inventory's contents
      *
-     * @param items A complete replacement for the contents; the length must be equal to {@link #getSize()}.
+     * @param items A complete replacement for the contents; the length must be less than or equal to {@link #getSize()}.
+     * @throws IllegalArgumentException If the array has more items than the inventory.
      */
     public void setContents(ItemStack[] items);
 
@@ -216,4 +222,34 @@ public interface Inventory {
      * Clear out the whole index
      */
     public void clear();
+
+    /**
+     * Get a list of players viewing. Note that a player is considered to be viewing their own
+     * inventory and internal crafting screen even when said inventory is not open. They will normally
+     * be considered to be viewing their inventory even when they have a different inventory screen open,
+     * but it's possible for customized inventory screens to exclude the viewer's inventory, so this should
+     * never be assumed to be non-empty.
+     * @return A list of players.
+     */
+    public List<HumanEntity> getViewers();
+
+    /**
+     * Get the title of this inventory.
+     * @return The title.
+     */
+    public String getTitle();
+
+    /**
+     * Check what type of inventory this is.
+     * @return The type of inventory.
+     */
+    public InventoryType getType();
+
+    /**
+     * Gets the block or entity belonging to the open inventory
+     * @return The holder of the inventory; null if it has no holder.
+     */
+    public InventoryHolder getHolder();
+
+    public ListIterator<ItemStack> iterator();
 }

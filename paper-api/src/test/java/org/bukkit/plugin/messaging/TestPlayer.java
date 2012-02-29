@@ -19,6 +19,9 @@ import org.bukkit.entity.Snowball;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryView;
+import org.bukkit.inventory.InventoryView.Property;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.map.MapView;
@@ -677,6 +680,42 @@ public class TestPlayer implements Player {
     }
 
     public <T> void playEffect(Location loc, Effect effect, T data) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public InventoryView getOpenInventory() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public InventoryView openInventory(Inventory inventory) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public InventoryView openWorkbench(Location location, boolean force) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public void openInventory(InventoryView inventory) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public void closeInventory() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public InventoryView openEnchanting(Location location, boolean force) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public ItemStack getItemOnCursor() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public void setItemOnCursor(ItemStack item) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public boolean setWindowProperty(Property prop, int value) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 }

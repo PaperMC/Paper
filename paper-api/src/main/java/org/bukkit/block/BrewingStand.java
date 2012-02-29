@@ -1,5 +1,7 @@
 package org.bukkit.block;
 
+import org.bukkit.inventory.BrewerInventory;
+
 /**
  * Represents a brewing stand.
  */
@@ -18,4 +20,6 @@ public interface BrewingStand extends BlockState, ContainerBlock {
      * @param brewTime Brewing time
      */
     void setBrewingTime(int brewTime);
+
+    public BrewerInventory getInventory();
 }
