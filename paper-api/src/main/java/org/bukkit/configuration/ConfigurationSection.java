@@ -174,7 +174,7 @@ public interface ConfigurationSection {
      * @param path Path to create the section at.
      * @return Newly created section
      */
-    public ConfigurationSection createSection(String path, Map<String, Object> map);
+    public ConfigurationSection createSection(String path, Map<?, ?> map);
 
     // Primitives
     /**
@@ -368,8 +368,7 @@ public interface ConfigurationSection {
      * @param path Path of the List to get.
      * @return Requested List.
      */
-    @SuppressWarnings("rawtypes")
-    public List getList(String path);
+    public List<?> getList(String path);
 
     /**
      * Gets the requested List by path, returning a default value if not found.
@@ -380,8 +379,7 @@ public interface ConfigurationSection {
      * @param path Path of the List to get.
      * @return Requested List.
      */
-    @SuppressWarnings("rawtypes")
-    public List getList(String path, List<?> def);
+    public List<?> getList(String path, List<?> def);
 
     /**
      * Checks if the specified path is a List.
@@ -544,7 +542,7 @@ public interface ConfigurationSection {
      * @param path Path of the List to get.
      * @return Requested List of Maps.
      */
-    public List<Map<String, Object>> getMapList(String path);
+    public List<Map<?, ?>> getMapList(String path);
 
     // Bukkit
     /**

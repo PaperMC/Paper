@@ -93,7 +93,7 @@ public class YamlConfigurationTest extends FileConfigurationTest {
 
         YamlConfiguration in = new YamlConfiguration();
         in.loadFromString(yaml);
-        List<Object> raw = in.getList("composite-list.abc.def");
+        List<?> raw = in.getList("composite-list.abc.def");
 
         assertEquals(stacks.size(), raw.size());
         assertEquals(stacks.get(0), raw.get(0));

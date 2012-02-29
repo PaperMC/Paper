@@ -9,7 +9,6 @@ import java.util.Map.Entry;
 /**
  * A list of event handlers, stored per-event. Based on lahwran's fevents.
  */
-@SuppressWarnings("unchecked")
 public class HandlerList {
     /**
      * Handler array. This field being an array is the key to this system's speed.
@@ -203,6 +202,7 @@ public class HandlerList {
      *
      * @return the list of all handler lists
      */
+    @SuppressWarnings("unchecked")
     public static ArrayList<HandlerList> getHandlerLists() {
         return (ArrayList<HandlerList>) allLists.clone();
     }

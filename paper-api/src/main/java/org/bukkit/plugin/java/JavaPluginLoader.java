@@ -8,9 +8,9 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
@@ -40,6 +40,8 @@ import org.bukkit.plugin.TimedRegisteredListener;
 import org.bukkit.plugin.UnknownDependencyException;
 import org.yaml.snakeyaml.error.YAMLException;
 
+import com.google.common.collect.ImmutableList;
+
 /**
  * Represents a Java plugin loader, allowing plugins in the form of .jar
  */
@@ -53,7 +55,6 @@ public class JavaPluginLoader implements PluginLoader {
         server = instance;
     }
 
-    @SuppressWarnings("unchecked")
     public Plugin loadPlugin(File file) throws InvalidPluginException {
         Validate.notNull(file, "File cannot be null");
 
@@ -104,15 +105,9 @@ public class JavaPluginLoader implements PluginLoader {
             ));
         }
 
-        ArrayList<String> depend;
-
-        try {
-            depend = (ArrayList<String>) description.getDepend();
-            if (depend == null) {
-                depend = new ArrayList<String>();
-            }
-        } catch (ClassCastException ex) {
-            throw new InvalidPluginException(ex);
+        List<String> depend = description.getDepend();
+        if (depend == null) {
+            depend = ImmutableList.<String>of();
         }
 
         for (String pluginName : depend) {
@@ -251,8 +246,7 @@ public class JavaPluginLoader implements PluginLoader {
             classes.put(name, clazz);
 
             if (ConfigurationSerializable.class.isAssignableFrom(clazz)) {
-                @SuppressWarnings("unchecked")
-                Class<? extends ConfigurationSerializable> serializable = (Class<? extends ConfigurationSerializable>) clazz;
+                Class<? extends ConfigurationSerializable> serializable = clazz.asSubclass(ConfigurationSerializable.class);
                 ConfigurationSerialization.registerClass(serializable);
             }
         }
@@ -263,8 +257,7 @@ public class JavaPluginLoader implements PluginLoader {
 
         try {
             if ((clazz != null) && (ConfigurationSerializable.class.isAssignableFrom(clazz))) {
-                @SuppressWarnings("unchecked")
-                Class<? extends ConfigurationSerializable> serializable = (Class<? extends ConfigurationSerializable>) clazz;
+                Class<? extends ConfigurationSerializable> serializable = clazz.asSubclass(ConfigurationSerializable.class);
                 ConfigurationSerialization.unregisterClass(serializable);
             }
         } catch (NullPointerException ex) {

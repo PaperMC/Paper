@@ -391,10 +391,9 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
             Object raw = args.get("enchantments");
 
             if (raw instanceof Map) {
-                @SuppressWarnings("unchecked")
-                Map<Object, Object> map = (Map<Object, Object>) raw;
+                Map<?, ?> map = (Map<?, ?>) raw;
 
-                for (Map.Entry<Object, Object> entry : map.entrySet()) {
+                for (Map.Entry<?, ?> entry : map.entrySet()) {
                     Enchantment enchantment = Enchantment.getByName(entry.getKey().toString());
 
                     if ((enchantment != null) && (entry.getValue() instanceof Integer)) {

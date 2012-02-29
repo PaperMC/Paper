@@ -261,15 +261,14 @@ public class MemorySection implements ConfigurationSection {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public ConfigurationSection createSection(String path, Map<String, Object> map) {
+    public ConfigurationSection createSection(String path, Map<?, ?> map) {
         ConfigurationSection section = createSection(path);
 
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
             if (entry.getValue() instanceof Map) {
-                section.createSection(entry.getKey(), (Map<String, Object>) entry.getValue());
+                section.createSection(entry.getKey().toString(), (Map<?, ?>) entry.getValue());
             } else {
-                section.set(entry.getKey(), entry.getValue());
+                section.set(entry.getKey().toString(), entry.getValue());
             }
         }
 
@@ -413,24 +412,22 @@ public class MemorySection implements ConfigurationSection {
     }
 
     // Java
-    @SuppressWarnings("unchecked")
-    public List<Object> getList(String path) {
+    public List<?> getList(String path) {
         if (path == null) {
             throw new IllegalArgumentException("Path cannot be null");
         }
 
         Object def = getDefault(path);
-        return getList(path, (def instanceof List) ? (List<Object>) def : null);
+        return getList(path, (def instanceof List) ? (List<?>) def : null);
     }
 
-    @SuppressWarnings("unchecked")
-    public List<Object> getList(String path, List<?> def) {
+    public List<?> getList(String path, List<?> def) {
         if (path == null) {
             throw new IllegalArgumentException("Path cannot be null");
         }
 
         Object val = get(path, def);
-        return (List<Object>) ((val instanceof List) ? val : def);
+        return (List<?>) ((val instanceof List) ? val : def);
     }
 
     public boolean isList(String path) {
@@ -447,7 +444,7 @@ public class MemorySection implements ConfigurationSection {
             throw new IllegalArgumentException("Path cannot be null");
         }
 
-        List<Object> list = getList(path);
+        List<?> list = getList(path);
 
         if (list == null) {
             return new ArrayList<String>(0);
@@ -469,7 +466,7 @@ public class MemorySection implements ConfigurationSection {
             throw new IllegalArgumentException("Path cannot be null");
         }
 
-        List<Object> list = getList(path);
+        List<?> list = getList(path);
 
         if (list == null) {
             return new ArrayList<Integer>(0);
@@ -510,7 +507,7 @@ public class MemorySection implements ConfigurationSection {
             throw new IllegalArgumentException("Path cannot be null");
         }
 
-        List<Object> list = getList(path);
+        List<?> list = getList(path);
 
         if (list == null) {
             return new ArrayList<Boolean>(0);
@@ -538,7 +535,7 @@ public class MemorySection implements ConfigurationSection {
             throw new IllegalArgumentException("Path cannot be null");
         }
 
-        List<Object> list = getList(path);
+        List<?> list = getList(path);
 
         if (list == null) {
             return new ArrayList<Double>(0);
@@ -579,7 +576,7 @@ public class MemorySection implements ConfigurationSection {
             throw new IllegalArgumentException("Path cannot be null");
         }
 
-        List<Object> list = getList(path);
+        List<?> list = getList(path);
 
         if (list == null) {
             return new ArrayList<Float>(0);
@@ -620,7 +617,7 @@ public class MemorySection implements ConfigurationSection {
             throw new IllegalArgumentException("Path cannot be null");
         }
 
-        List<Object> list = getList(path);
+        List<?> list = getList(path);
 
         if (list == null) {
             return new ArrayList<Long>(0);
@@ -661,7 +658,7 @@ public class MemorySection implements ConfigurationSection {
             throw new IllegalArgumentException("Path cannot be null");
         }
 
-        List<Object> list = getList(path);
+        List<?> list = getList(path);
 
         if (list == null) {
             return new ArrayList<Byte>(0);
@@ -702,7 +699,7 @@ public class MemorySection implements ConfigurationSection {
             throw new IllegalArgumentException("Path cannot be null");
         }
 
-        List<Object> list = getList(path);
+        List<?> list = getList(path);
 
         if (list == null) {
             return new ArrayList<Character>(0);
@@ -744,7 +741,7 @@ public class MemorySection implements ConfigurationSection {
             throw new IllegalArgumentException("Path cannot be null");
         }
 
-        List<Object> list = getList(path);
+        List<?> list = getList(path);
 
         if (list == null) {
             return new ArrayList<Short>(0);
@@ -780,18 +777,17 @@ public class MemorySection implements ConfigurationSection {
         return result;
     }
 
-    @SuppressWarnings("unchecked")
-    public List<Map<String, Object>> getMapList(String path) {
+    public List<Map<?, ?>> getMapList(String path) {
         if (path == null) {
             throw new IllegalArgumentException("Path cannot be null");
         }
 
-        List<Object> list = getList(path);
-        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
+        List<?> list = getList(path);
+        List<Map<?, ?>> result = new ArrayList<Map<?, ?>>();
 
         for (Object object : list) {
             if (object instanceof Map) {
-                result.add((Map<String, Object>) object);
+                result.add((Map<?, ?>) object);
             }
         }
 

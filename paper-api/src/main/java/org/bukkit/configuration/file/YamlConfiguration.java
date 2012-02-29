@@ -42,16 +42,15 @@ public class YamlConfiguration extends FileConfiguration {
         return header + dump;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void loadFromString(String contents) throws InvalidConfigurationException {
         if (contents == null) {
             throw new IllegalArgumentException("Contents cannot be null");
         }
 
-        Map<Object, Object> input;
+        Map<?, ?> input;
         try {
-            input = (Map<Object, Object>) yaml.load(contents);
+            input = (Map<?, ?>) yaml.load(contents);
         } catch (YAMLException e) {
             throw new InvalidConfigurationException(e);
         } catch (ClassCastException e) {
@@ -68,14 +67,13 @@ public class YamlConfiguration extends FileConfiguration {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    protected void convertMapsToSections(Map<Object, Object> input, ConfigurationSection section) {
-        for (Map.Entry<Object, Object> entry : input.entrySet()) {
+    protected void convertMapsToSections(Map<?, ?> input, ConfigurationSection section) {
+        for (Map.Entry<?, ?> entry : input.entrySet()) {
             String key = entry.getKey().toString();
             Object value = entry.getValue();
 
-            if (value instanceof Map<?, ?>) {
-                convertMapsToSections((Map<Object, Object>) value, section.createSection(key));
+            if (value instanceof Map) {
+                convertMapsToSections((Map<?, ?>) value, section.createSection(key));
             } else {
                 section.set(key, value);
             }

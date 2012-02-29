@@ -1,12 +1,13 @@
 package org.bukkit.potion;
 
 import java.util.Collection;
-import java.util.Collections;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
+
+import com.google.common.collect.ImmutableList;
 
 /**
  * Represents a minecraft potion
@@ -170,9 +171,8 @@ public class Potion {
      * @see Potion#toDamageValue()
      * @return The effects that this potion applies
      */
-    @SuppressWarnings("unchecked")
     public Collection<PotionEffect> getEffects() {
-        if(type == null) return Collections.EMPTY_SET;
+        if (type == null) return ImmutableList.<PotionEffect>of();
         return getBrewer().getEffectsFromDamage(toDamageValue());
     }
 
