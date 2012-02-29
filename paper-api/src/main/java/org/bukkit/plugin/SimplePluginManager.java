@@ -431,38 +431,35 @@ public final class SimplePluginManager implements PluginManager {
      */
     public synchronized void callEvent(Event event) {
         HandlerList handlers = event.getHandlers();
-        handlers.bake();
-        RegisteredListener[][] listeners = handlers.getRegisteredListeners();
+        RegisteredListener[] listeners = handlers.getRegisteredListeners();
 
-        for (int i = 0; i < listeners.length; i++) {
-            for (RegisteredListener registration : listeners[i]) {
-                if (!registration.getPlugin().isEnabled()) {
-                    continue;
-                }
+        for (RegisteredListener registration : listeners) {
+            if (!registration.getPlugin().isEnabled()) {
+                continue;
+            }
 
-                try {
-                    registration.callEvent(event);
-                } catch (AuthorNagException ex) {
-                    Plugin plugin = registration.getPlugin();
+            try {
+                registration.callEvent(event);
+            } catch (AuthorNagException ex) {
+                Plugin plugin = registration.getPlugin();
 
-                    if (plugin.isNaggable()) {
-                        plugin.setNaggable(false);
+                if (plugin.isNaggable()) {
+                    plugin.setNaggable(false);
 
-                        String author = "<NoAuthorGiven>";
+                    String author = "<NoAuthorGiven>";
 
-                        if (plugin.getDescription().getAuthors().size() > 0) {
-                            author = plugin.getDescription().getAuthors().get(0);
-                        }
-                        server.getLogger().log(Level.SEVERE, String.format(
-                                "Nag author: '%s' of '%s' about the following: %s",
-                                author,
-                                plugin.getDescription().getName(),
-                                ex.getMessage()
-                        ));
+                    if (plugin.getDescription().getAuthors().size() > 0) {
+                        author = plugin.getDescription().getAuthors().get(0);
                     }
-                } catch (Throwable ex) {
-                    server.getLogger().log(Level.SEVERE, "Could not pass event " + event.getEventName() + " to " + registration.getPlugin().getDescription().getName(), ex);
+                    server.getLogger().log(Level.SEVERE, String.format(
+                            "Nag author: '%s' of '%s' about the following: %s",
+                            author,
+                            plugin.getDescription().getName(),
+                            ex.getMessage()
+                            ));
                 }
+            } catch (Throwable ex) {
+                server.getLogger().log(Level.SEVERE, "Could not pass event " + event.getEventName() + " to " + registration.getPlugin().getDescription().getName(), ex);
             }
         }
     }
