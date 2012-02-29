@@ -6,6 +6,15 @@ package org.bukkit.util;
 public final class NumberConversions {
     private NumberConversions() {}
 
+    public static int floor(double num) {
+        final int floor = (int) num;
+        return floor == num ? floor : floor - (int) (Double.doubleToRawLongBits(num) >>> 63);
+    }
+
+    public static int round(double num) {
+        return floor(num + 0.5d);
+    }
+
     public static int toInt(Object object) {
         if (object instanceof Number) {
             return ((Number) object).intValue();

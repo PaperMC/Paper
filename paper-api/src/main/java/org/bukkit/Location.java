@@ -1,6 +1,7 @@
 package org.bukkit;
 
 import org.bukkit.block.Block;
+import org.bukkit.util.NumberConversions;
 import org.bukkit.util.Vector;
 
 /**
@@ -485,6 +486,6 @@ public class Location implements Cloneable {
      * @return Block coordinate
      */
     public static int locToBlock(double loc) {
-        return (int) Math.floor(loc);
+        return NumberConversions.floor(loc);
     }
 }

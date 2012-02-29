@@ -1,5 +1,7 @@
 package org.bukkit.util;
 
+import static org.bukkit.util.NumberConversions.*;
+
 import org.bukkit.World;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -66,7 +68,7 @@ public class BlockIterator implements Iterator<Block> {
         double secondPosition = 0;
         double thirdPosition = 0;
 
-        Block startBlock = this.world.getBlockAt((int) Math.floor(startClone.getX()), (int) Math.floor(startClone.getY()), (int) Math.floor(startClone.getZ()));
+        Block startBlock = this.world.getBlockAt(floor(startClone.getX()), floor(startClone.getY()), floor(startClone.getZ()));
 
         if (getXLength(direction) > mainDirection) {
             mainFace = getXFace(direction);
@@ -117,10 +119,10 @@ public class BlockIterator implements Iterator<Block> {
         // Guarantee that the ray will pass though the start block.
         // It is possible that it would miss due to rounding
         // This should only move the ray by 1 grid position
-        secondError = (int) (Math.floor(secondd * gridSize));
-        secondStep = (int) (Math.round(secondDirection / mainDirection * gridSize));
-        thirdError = (int) (Math.floor(thirdd * gridSize));
-        thirdStep = (int) (Math.round(thirdDirection / mainDirection * gridSize));
+        secondError = floor(secondd * gridSize);
+        secondStep = round(secondDirection / mainDirection * gridSize);
+        thirdError = floor(thirdd * gridSize);
+        thirdStep = round(thirdDirection / mainDirection * gridSize);
 
         if (secondError + secondStep <= 0) {
             secondError = -secondStep + 1;
@@ -168,7 +170,7 @@ public class BlockIterator implements Iterator<Block> {
         }
 
         // Calculate the number of planes passed to give max distance
-        maxDistanceInt = (int) Math.round(maxDistance / (Math.sqrt(mainDirection * mainDirection + secondDirection * secondDirection + thirdDirection * thirdDirection) / mainDirection));
+        maxDistanceInt = round(maxDistance / (Math.sqrt(mainDirection * mainDirection + secondDirection * secondDirection + thirdDirection * thirdDirection) / mainDirection));
 
     }
 
