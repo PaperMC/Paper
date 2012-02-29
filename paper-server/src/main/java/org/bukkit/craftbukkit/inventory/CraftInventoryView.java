@@ -51,7 +51,7 @@ public class CraftInventoryView extends InventoryView {
     public void setItem(int slot, ItemStack item) {
         if (slot != -999) {
             CraftItemStack stack = new CraftItemStack(item);
-            container.b(slot).c(stack.getHandle());
+            container.getSlot(slot).set(stack.getHandle());
         }
     }
 
@@ -60,7 +60,7 @@ public class CraftInventoryView extends InventoryView {
         if (slot == -999) {
             return null;
         }
-        return new CraftItemStack(container.b(slot).getItem());
+        return new CraftItemStack(container.getSlot(slot).getItem());
     }
 
     public boolean isInTop(int rawSlot) {

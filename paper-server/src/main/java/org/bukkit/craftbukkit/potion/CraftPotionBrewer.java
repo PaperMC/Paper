@@ -20,7 +20,7 @@ public class CraftPotionBrewer implements PotionBrewer {
         if (cache.containsKey(damage))
             return cache.get(damage);
 
-        List<?> mcEffects = net.minecraft.server.PotionBrewer.a(damage, false);
+        List<?> mcEffects = net.minecraft.server.PotionBrewer.getEffects(damage, false);
         List<PotionEffect> effects = new ArrayList<PotionEffect>();
         if (mcEffects == null)
             return effects;

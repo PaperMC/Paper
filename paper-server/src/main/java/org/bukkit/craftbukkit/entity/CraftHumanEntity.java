@@ -64,14 +64,14 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     public ItemStack getItemOnCursor() {
-        return new CraftItemStack(getHandle().inventory.l());
+        return new CraftItemStack(getHandle().inventory.getCarried());
     }
 
     public void setItemOnCursor(ItemStack item) {
         CraftItemStack stack = new CraftItemStack(item.getType(), item.getAmount(), item.getDurability());
-        getHandle().inventory.b(stack.getHandle());
+        getHandle().inventory.setCarried(stack.getHandle());
         if (this instanceof CraftPlayer) {
-            ((EntityPlayer)getHandle()).D(); // Send set slot for cursor
+            ((EntityPlayer) getHandle()).broadcastCarriedItem(); // Send set slot for cursor
         }
     }
 
@@ -174,22 +174,22 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         switch(type) {
         case PLAYER:
         case CHEST:
-            getHandle().a(craftinv.getInventory());
+            getHandle().openContainer(craftinv.getInventory());
             break;
         case DISPENSER:
-            getHandle().a((TileEntityDispenser)craftinv.getInventory());
+            getHandle().openDispenser((TileEntityDispenser)craftinv.getInventory());
             break;
         case FURNACE:
-            getHandle().a((TileEntityFurnace)craftinv.getInventory());
+            getHandle().openFurnace((TileEntityFurnace)craftinv.getInventory());
             break;
         case WORKBENCH:
-            getHandle().b(getLocation().getBlockX(), getLocation().getBlockY(), getLocation().getBlockZ());
+            getHandle().startCrafting(getLocation().getBlockX(), getLocation().getBlockY(), getLocation().getBlockZ());
             break;
         case BREWING:
-            getHandle().a((TileEntityBrewingStand)craftinv.getInventory());
+            getHandle().openBrewingStand((TileEntityBrewingStand)craftinv.getInventory());
             break;
         case ENCHANTING:
-            getHandle().c(getLocation().getBlockX(), getLocation().getBlockY(), getLocation().getBlockZ());
+            getHandle().startEnchanting(getLocation().getBlockX(), getLocation().getBlockY(), getLocation().getBlockZ());
             break;
         case CREATIVE:
         case CRAFTING:
@@ -209,7 +209,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         if (location == null) {
             location = getLocation();
         }
-        getHandle().b(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        getHandle().startCrafting(location.getBlockX(), location.getBlockY(), location.getBlockZ());
         if (force) {
             getHandle().activeContainer.checkReachable = false;
         }
@@ -226,7 +226,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         if (location == null) {
             location = getLocation();
         }
-        getHandle().c(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        getHandle().startEnchanting(location.getBlockX(), location.getBlockY(), location.getBlockZ());
         if (force) {
             getHandle().activeContainer.checkReachable = false;
         }
@@ -237,14 +237,14 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         if (!(getHandle() instanceof EntityPlayer)) return; // TODO: NPC support?
         if (getHandle().activeContainer != getHandle().defaultContainer) {
             // fire INVENTORY_CLOSE if one already open
-            ((EntityPlayer)getHandle()).netServerHandler.a(new Packet101CloseWindow(getHandle().activeContainer.windowId));
+            ((EntityPlayer)getHandle()).netServerHandler.handleContainerClose(new Packet101CloseWindow(getHandle().activeContainer.windowId));
         }
         EntityPlayer player = (EntityPlayer) getHandle();
         Container container;
         if (inventory instanceof CraftInventoryView) {
             container = ((CraftInventoryView) inventory).getHandle();
         } else {
-            container = new CraftContainer(inventory, player.aS());
+            container = new CraftContainer(inventory, player.nextContainerCounter());
         }
 
         // Trigger an INVENTORY_OPEN event
@@ -259,7 +259,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         // Now open the window
         player.netServerHandler.sendPacket(new Packet100OpenWindow(container.windowId, 1, "Crafting", 9));
         player.activeContainer = container;
-        player.activeContainer.a((ICrafting) player);
+        player.activeContainer.addSlotListener((ICrafting) player);
     }
 
     public void closeInventory() {

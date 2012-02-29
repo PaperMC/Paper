@@ -13,10 +13,10 @@ public class RecipeIterator implements Iterator<Recipe> {
     private Iterator<CraftingRecipe> recipes;
     private Iterator<Integer> smelting;
     private Iterator<?> removeFrom = null;
-    
+
     public RecipeIterator() {
-        this.recipes = CraftingManager.getInstance().b().iterator();
-        this.smelting = FurnaceRecipes.getInstance().b().keySet().iterator();
+        this.recipes = CraftingManager.getInstance().getRecipies().iterator();
+        this.smelting = FurnaceRecipes.getInstance().getRecipies().keySet().iterator();
     }
 
     public boolean hasNext() {
@@ -34,7 +34,7 @@ public class RecipeIterator implements Iterator<Recipe> {
         } else {
             removeFrom = smelting;
             int id = smelting.next();
-            CraftItemStack stack = new CraftItemStack(FurnaceRecipes.getInstance().a(id));
+            CraftItemStack stack = new CraftItemStack(FurnaceRecipes.getInstance().getResult(id));
             CraftFurnaceRecipe recipe = new CraftFurnaceRecipe(stack, new ItemStack(id, 1, (short) -1));
             return recipe;
         }

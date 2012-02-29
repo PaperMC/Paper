@@ -423,7 +423,7 @@ public class CraftEventFactory {
 
     public static Container callInventoryOpenEvent(EntityPlayer player, Container container) {
         if (player.activeContainer != player.defaultContainer) { // fire INVENTORY_CLOSE if one already open
-            player.netServerHandler.a(new Packet101CloseWindow(player.activeContainer.windowId));
+            player.netServerHandler.handleContainerClose(new Packet101CloseWindow(player.activeContainer.windowId));
         }
 
         CraftServer server = ((WorldServer) player.world).getServer();

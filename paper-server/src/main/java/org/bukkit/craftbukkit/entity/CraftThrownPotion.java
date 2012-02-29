@@ -20,7 +20,7 @@ public class CraftThrownPotion extends CraftProjectile implements ThrownPotion {
 
     public Collection<PotionEffect> getEffects() {
         if (effects == null) {
-            effects = Potion.getBrewer().getEffectsFromDamage(getHandle().f());
+            effects = Potion.getBrewer().getEffectsFromDamage(getHandle().getPotionValue());
         }
 
         return effects;

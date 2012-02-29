@@ -33,7 +33,7 @@ public abstract class CraftComplexLivingEntity extends CraftLivingEntity impleme
         }
 
         if (entity instanceof EntityComplex) {
-            ((EntityComplex) entity).e(reason, amount);
+            ((EntityComplex) entity).dealDamage(reason, amount);
         } else {
             entity.damageEntity(reason, amount);
         }
