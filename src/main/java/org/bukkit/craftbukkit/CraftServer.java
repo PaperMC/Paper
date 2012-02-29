@@ -59,6 +59,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.craftbukkit.inventory.CraftFurnaceRecipe;
+import org.bukkit.craftbukkit.inventory.CraftInventoryCustom;
 import org.bukkit.craftbukkit.inventory.CraftRecipe;
 import org.bukkit.craftbukkit.inventory.CraftShapedRecipe;
 import org.bukkit.craftbukkit.inventory.CraftShapelessRecipe;
@@ -74,6 +75,7 @@ import org.bukkit.craftbukkit.updater.BukkitDLUpdaterService;
 import org.bukkit.craftbukkit.util.DatFileFilter;
 import org.bukkit.craftbukkit.util.Versioning;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.world.WorldSaveEvent;
@@ -81,6 +83,8 @@ import org.bukkit.event.world.WorldUnloadEvent;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.inventory.FurnaceRecipe;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.ShapelessRecipe;
@@ -105,6 +109,7 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.MarkedYAMLException;
 
+import org.apache.commons.lang.Validate;
 import com.avaje.ebean.config.DataSourceConfig;
 import com.avaje.ebean.config.ServerConfig;
 import com.avaje.ebean.config.dbplatform.SQLitePlatform;
@@ -1101,5 +1106,20 @@ public final class CraftServer implements Server {
                 player.sendMessage(ChatColor.DARK_PURPLE + "The version of CraftBukkit that this server is running is out of date. Please consider updating to the latest version at dl.bukkit.org.");
             }
         }
+    }
+
+    public Inventory createInventory(InventoryHolder owner, InventoryType type) {
+        // TODO: Create the appropriate type, rather than Custom?
+        return new CraftInventoryCustom(owner, type);
+    }
+
+    public Inventory createInventory(InventoryHolder owner, int size) throws IllegalArgumentException {
+        Validate.isTrue(size % 9 == 0, "Chests must have a size that is a multiple of 9!");
+        return new CraftInventoryCustom(owner, size);
+    }
+
+    public Inventory createInventory(InventoryHolder owner, int size, String title) throws IllegalArgumentException {
+        Validate.isTrue(size % 9 == 0, "Chests must have a size that is a multiple of 9!");
+        return new CraftInventoryCustom(owner, size, title);
     }
 }

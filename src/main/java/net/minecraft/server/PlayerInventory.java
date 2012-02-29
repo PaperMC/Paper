@@ -1,5 +1,14 @@
 package net.minecraft.server;
 
+// CraftBukkit start
+import java.util.ArrayList;
+import java.util.List;
+
+import org.bukkit.craftbukkit.entity.CraftHumanEntity;
+import org.bukkit.entity.HumanEntity;
+import org.bukkit.inventory.InventoryHolder;
+// CraftBukkit end
+
 public class PlayerInventory implements IInventory {
 
     public ItemStack[] items = new ItemStack[36];
@@ -10,12 +19,30 @@ public class PlayerInventory implements IInventory {
     public boolean e = false;
 
     // CraftBukkit start
+    public List<HumanEntity> transaction = new ArrayList<HumanEntity>();
+    
     public ItemStack[] getContents() {
         return this.items;
     }
 
     public ItemStack[] getArmorContents() {
         return this.armor;
+    }
+
+    public void onOpen(CraftHumanEntity who) {
+        transaction.add(who);
+    }
+
+    public void onClose(CraftHumanEntity who) {
+        transaction.remove(who);
+    }
+    
+    public List<HumanEntity> getViewers() {
+        return transaction;
+    }
+
+    public InventoryHolder getOwner() {
+        return d.getBukkitEntity();
     }
     // CraftBukkit end
 

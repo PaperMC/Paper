@@ -8,6 +8,8 @@ import java.util.Random;
 import java.util.Map;
 import java.util.HashMap;
 
+import org.bukkit.craftbukkit.inventory.CraftInventoryEnchanting;
+import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.enchantment.EnchantItemEvent;
 import org.bukkit.event.enchantment.PrepareItemEnchantEvent;
@@ -16,7 +18,9 @@ import org.bukkit.entity.Player;
 
 public class ContainerEnchantTable extends Container {
 
-    public IInventory a = new ContainerEnchantTableInventory(this, "Enchant", 1);
+    // CraftBukkit start - make type specific (changed from IInventory)
+    public ContainerEnchantTableInventory a = new ContainerEnchantTableInventory(this, "Enchant", 1);
+    // CraftBukkit end
     private World h;
     private int i;
     private int j;
@@ -24,7 +28,10 @@ public class ContainerEnchantTable extends Container {
     private Random l = new Random();
     public long b;
     public int[] c = new int[3];
-    private Player player;  // CraftBukkit
+    // CraftBukkit start
+    private CraftInventoryView bukkitEntity = null;
+    private Player player;
+    // CraftBukkit end
 
     public ContainerEnchantTable(PlayerInventory playerinventory, World world, int i, int j, int k) {
         this.h = world;
@@ -44,7 +51,7 @@ public class ContainerEnchantTable extends Container {
         for (l = 0; l < 9; ++l) {
             this.a(new Slot(playerinventory, l, 8 + l * 18, 142));
         }
-        player = (Player) playerinventory.d.bukkitEntity;    // CraftBukkit
+        player = (Player) playerinventory.d.getBukkitEntity();    // CraftBukkit
     }
 
     public void a(ICrafting icrafting) {
@@ -116,7 +123,7 @@ public class ContainerEnchantTable extends Container {
 
                     // CraftBukkit start
                     CraftItemStack item = new CraftItemStack(itemstack);
-                    PrepareItemEnchantEvent event = new PrepareItemEnchantEvent(player, h.getWorld().getBlockAt(this.i, this.j, this.k), item, this.c, i);
+                    PrepareItemEnchantEvent event = new PrepareItemEnchantEvent(player, this.getBukkitView(), h.getWorld().getBlockAt(this.i, this.j, this.k), item, this.c, i);
                     h.getServer().getPluginManager().callEvent(event);
                     if (event.isCancelled()) {
                         for (i = 0; i < 3; ++i) {
@@ -149,7 +156,7 @@ public class ContainerEnchantTable extends Container {
                     enchants.put(org.bukkit.enchantments.Enchantment.getById(e.a.id), e.b);
                 }
                 CraftItemStack item = new CraftItemStack(itemstack);
-                EnchantItemEvent event = new EnchantItemEvent((Player) entityhuman.bukkitEntity, h.getWorld().getBlockAt(this.i, this.j, this.k), item, this.c[i], enchants);
+                EnchantItemEvent event = new EnchantItemEvent((Player) entityhuman.bukkitEntity, this.getBukkitView(), h.getWorld().getBlockAt(this.i, this.j, this.k), item, this.c[i], enchants, i);
                 h.getServer().getPluginManager().callEvent(event);
 
                 int level = event.getExpLevelCost();
@@ -189,6 +196,7 @@ public class ContainerEnchantTable extends Container {
     }
 
     public boolean b(EntityHuman entityhuman) {
+        if (!this.checkReachable) return true; // CraftBukkit
         return this.h.getTypeId(this.i, this.j, this.k) != Block.ENCHANTMENT_TABLE.id ? false : entityhuman.e((double) this.i + 0.5D, (double) this.j + 0.5D, (double) this.k + 0.5D) <= 64.0D;
     }
 
@@ -223,4 +231,15 @@ public class ContainerEnchantTable extends Container {
 
         return itemstack;
     }
+
+    // CraftBukkit start
+    public CraftInventoryView getBukkitView() {
+        if (bukkitEntity != null) {
+            return bukkitEntity;
+        }
+        CraftInventoryEnchanting inventory = new CraftInventoryEnchanting(this.a);
+        bukkitEntity = new CraftInventoryView(this.player, inventory, this);
+        return bukkitEntity;
+    }
+    // CraftBukkit end
 }

@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.inventory;
 
 import net.minecraft.server.PlayerInventory;
 
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.ItemStack;
 
 public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.inventory.PlayerInventory {
@@ -9,10 +10,12 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
         super(inventory);
     }
 
+    @Override
     public PlayerInventory getInventory() {
         return (PlayerInventory) inventory;
     }
 
+    @Override
     public int getSize() {
         return super.getSize() - 4;
     }
@@ -84,5 +87,10 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
                 setItem(cnt++, item);
             }
         }
+    }
+
+    @Override
+    public HumanEntity getHolder() {
+        return (HumanEntity) inventory.getOwner();
     }
 }

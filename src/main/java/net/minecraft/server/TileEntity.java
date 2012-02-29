@@ -3,6 +3,11 @@ package net.minecraft.server;
 import java.util.HashMap;
 import java.util.Map;
 
+// CraftBukkit start
+import org.bukkit.block.BlockState;
+import org.bukkit.inventory.InventoryHolder;
+// CraftBukkit end
+
 public class TileEntity {
 
     private static Map a = new HashMap();
@@ -120,4 +125,12 @@ public class TileEntity {
         a(TileEntityEnchantTable.class, "EnchantTable");
         a(TileEntityEnderPortal.class, "Airportal");
     }
+
+    // CraftBukkit start
+    public InventoryHolder getOwner() {
+        BlockState state = world.getWorld().getBlockAt(x, y, z).getState();
+        if(state instanceof InventoryHolder) return (InventoryHolder) state;
+        return null;
+    }
+    // CraftBukkit end
 }

@@ -9,16 +9,20 @@ import java.util.logging.Logger;
 // CraftBukkit start
 import java.util.Arrays;
 import java.util.HashSet;
+
 import org.bukkit.ChatColor;
 import org.bukkit.craftbukkit.ChunkCompressionThread;
 import org.bukkit.Location;
 import org.bukkit.command.CommandException;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.inventory.CraftInventoryView;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.TextWrapper;
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.block.Action;
@@ -34,6 +38,12 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.event.player.PlayerToggleSprintEvent;
+import org.bukkit.event.Event.Result;
+import org.bukkit.event.inventory.*;
+import org.bukkit.event.inventory.InventoryType.SlotType;
+import org.bukkit.inventory.CraftingInventory;
+import org.bukkit.inventory.InventoryView;
+import org.bukkit.inventory.Recipe;
 // CraftBukkit end
 
 public class NetServerHandler extends NetHandler implements ICommandListener {
@@ -980,6 +990,12 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     public void a(Packet101CloseWindow packet101closewindow) {
         if (this.player.dead) return; // CraftBukkit
 
+        // CraftBukkit start - INVENTORY_CLOSE hook
+        InventoryCloseEvent event = new InventoryCloseEvent(this.player.activeContainer.getBukkitView());
+        server.getPluginManager().callEvent(event);
+        this.player.activeContainer.transferTo(this.player.defaultContainer, getPlayer());
+        // CraftBukkit end
+
         this.player.E();
     }
 
@@ -987,10 +1003,53 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         if (this.player.dead) return; // CraftBukkit
 
         if (this.player.activeContainer.windowId == packet102windowclick.a && this.player.activeContainer.c(this.player)) {
-            ItemStack itemstack = this.player.activeContainer.a(packet102windowclick.b, packet102windowclick.c, packet102windowclick.f, this.player);
+            // CraftBukkit start - fire InventoryClickEvent
+            InventoryView inventory = this.player.activeContainer.getBukkitView();
+            SlotType type = CraftInventoryView.getSlotType(inventory, packet102windowclick.b);
 
-            if (ItemStack.matches(packet102windowclick.e, itemstack)) {
-                this.player.netServerHandler.sendPacket(new Packet106Transaction(packet102windowclick.a, packet102windowclick.d, true));
+            InventoryClickEvent event;
+            if (inventory instanceof CraftingInventory) {
+                Recipe recipe = ((CraftingInventory)inventory.getTopInventory()).getRecipe();
+                event = new CraftItemEvent(recipe, inventory, type, packet102windowclick.b, packet102windowclick.c != 0, packet102windowclick.f);
+            } else {
+                event = new InventoryClickEvent(inventory, type, packet102windowclick.b, packet102windowclick.c != 0, packet102windowclick.f);
+            }
+            server.getPluginManager().callEvent(event);
+
+            ItemStack itemstack = null;
+            boolean defaultBehaviour = false;
+
+            switch(event.getResult()) {
+            case DEFAULT:
+                itemstack = this.player.activeContainer.a(packet102windowclick.b, packet102windowclick.c, packet102windowclick.f, this.player);
+                defaultBehaviour = true;
+                break;
+            case DENY: // Deny any change, including changes from the event
+                break;
+            case ALLOW: // Allow changes unconditionally
+                org.bukkit.inventory.ItemStack cursor = event.getCursor();
+                if (cursor == null) {
+                    this.player.inventory.b((ItemStack) null);
+                } else {
+                    this.player.inventory.b(CraftItemStack.createNMSItemStack(cursor));
+                }
+                org.bukkit.inventory.ItemStack item = event.getCurrentItem();
+                if (item != null) {
+                    itemstack = CraftItemStack.createNMSItemStack(item);
+                    if(packet102windowclick.b == -999) {
+                        this.player.b(itemstack);
+                    } else {
+                        this.player.activeContainer.b(packet102windowclick.b).c(itemstack);
+                    }
+                } else if (packet102windowclick.b != -999) {
+                    this.player.activeContainer.b(packet102windowclick.b).c((ItemStack) null);
+                }
+                break;
+            }
+            // CraftBukkit end
+
+            if (defaultBehaviour && ItemStack.matches(packet102windowclick.e, itemstack)) { // CraftBukkit - additional condition added
+                this.player.netServerHandler.sendPacket((Packet) (new Packet106Transaction(packet102windowclick.a, packet102windowclick.d, true)));
                 this.player.h = true;
                 this.player.activeContainer.a();
                 this.player.D();
@@ -1006,6 +1065,11 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 }
 
                 this.player.a(this.player.activeContainer, arraylist);
+
+                // CraftBukkit start - send a Set Slot to update the crafting result slot
+                if(type == SlotType.RESULT && itemstack != null)
+                    this.player.netServerHandler.sendPacket((Packet) (new Packet103SetSlot(this.player.activeContainer.windowId, 0, itemstack)));
+                // CraftBukkit end
             }
         }
     }
@@ -1025,17 +1089,46 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             boolean flag2 = itemstack == null || itemstack.id < Item.byId.length && itemstack.id >= 0 && Item.byId[itemstack.id] != null && !invalidItems.contains(itemstack.id); // CraftBukkit
             boolean flag3 = itemstack == null || itemstack.getData() >= 0 && itemstack.getData() >= 0 && itemstack.count <= 64 && itemstack.count > 0;
 
-            if (flag1 && flag2 && flag3) {
-                if (itemstack == null) {
-                    this.player.defaultContainer.a(packet107setcreativeslot.a, (ItemStack) null);
-                } else {
-                    this.player.defaultContainer.a(packet107setcreativeslot.a, itemstack);
-                }
-
-                this.player.defaultContainer.a(this.player, true);
-            } else if (flag && flag2 && flag3) {
-                this.player.b(itemstack);
+            // CraftBukkit start - Fire INVENTORY_CLICK event
+            HumanEntity player = this.player.getBukkitEntity();
+            InventoryView inventory = new CraftInventoryView(player, player.getInventory(), this.player.defaultContainer);
+            SlotType slot = SlotType.QUICKBAR;
+            if (packet107setcreativeslot.a == -1) {
+                slot = SlotType.OUTSIDE;
             }
+            InventoryClickEvent event = new InventoryClickEvent(inventory, slot, slot == SlotType.OUTSIDE ? -999 : packet107setcreativeslot.a, false, false);
+            server.getPluginManager().callEvent(event);
+            org.bukkit.inventory.ItemStack item = event.getCurrentItem();
+            if (event.getResult() == Result.ALLOW) {
+                if (slot == SlotType.QUICKBAR) {
+                    if (item == null) {
+                        this.player.defaultContainer.a(packet107setcreativeslot.a, (ItemStack) null);
+                    } else {
+                        this.player.defaultContainer.a(packet107setcreativeslot.a, CraftItemStack.createNMSItemStack(item));
+                    }
+                } else if (item != null) {
+                    this.player.b(CraftItemStack.createNMSItemStack(item));
+                }
+            } else if (event.getResult() == Result.DENY) {
+                // TODO: Will this actually work?
+                if (packet107setcreativeslot.a > -1) {
+                    this.player.netServerHandler.sendPacket(new Packet103SetSlot(this.player.defaultContainer.windowId, packet107setcreativeslot.a, CraftItemStack.createNMSItemStack(item)));
+                }
+                this.player.netServerHandler.sendPacket(new Packet103SetSlot(this.player.defaultContainer.windowId, -1, null));
+            } else if (event.getResult() == Result.DEFAULT) {
+                // CraftBukkit end
+                if (flag1 && flag2 && flag3) {
+                    if (itemstack == null) {
+                        this.player.defaultContainer.a(packet107setcreativeslot.a, (ItemStack) null);
+                    } else {
+                        this.player.defaultContainer.a(packet107setcreativeslot.a, itemstack);
+                    }
+
+                    this.player.defaultContainer.a(this.player, true);
+                } else if (flag && flag2 && flag3) {
+                    this.player.b(itemstack);
+                }
+            } // CraftBukkit closing brace
         }
     }
 

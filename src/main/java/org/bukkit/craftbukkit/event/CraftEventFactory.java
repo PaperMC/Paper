@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import net.minecraft.server.ChunkCoordinates;
+import net.minecraft.server.Container;
 import net.minecraft.server.DamageSource;
 import net.minecraft.server.Entity;
 import net.minecraft.server.EntityArrow;
@@ -15,8 +16,10 @@ import net.minecraft.server.EntityItem;
 import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityPotion;
+import net.minecraft.server.InventoryCrafting;
 import net.minecraft.server.Item;
 import net.minecraft.server.ItemStack;
+import net.minecraft.server.Packet101CloseWindow;
 import net.minecraft.server.World;
 import net.minecraft.server.WorldServer;
 
@@ -32,6 +35,7 @@ import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.Arrow;
@@ -47,8 +51,11 @@ import org.bukkit.event.block.*;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+import org.bukkit.event.inventory.InventoryOpenEvent;
+import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.event.server.ServerListPingEvent;
+import org.bukkit.inventory.InventoryView;
 
 public class CraftEventFactory {
     // helper methods
@@ -412,5 +419,37 @@ public class CraftEventFactory {
         EntityTargetEvent event = new EntityTargetEvent(entity.getBukkitEntity(), target.getBukkitEntity(), reason);
         entity.getBukkitEntity().getServer().getPluginManager().callEvent(event);
         return event;
+    }
+
+    public static Container callInventoryOpenEvent(EntityPlayer player, Container container) {
+        if (player.activeContainer != player.defaultContainer) { // fire INVENTORY_CLOSE if one already open
+            player.netServerHandler.a(new Packet101CloseWindow(player.activeContainer.windowId));
+        }
+
+        CraftServer server = ((WorldServer) player.world).getServer();
+        CraftPlayer craftPlayer = (CraftPlayer) player.getBukkitEntity();
+        player.activeContainer.transferTo(container, craftPlayer);
+
+        InventoryOpenEvent event = new InventoryOpenEvent(container.getBukkitView());
+        server.getPluginManager().callEvent(event);
+
+        if (event.isCancelled()) {
+            container.transferTo(player.activeContainer, craftPlayer);
+            return null;
+        }
+
+        return container;
+    }
+
+    public static ItemStack callPreCraftEvent(InventoryCrafting matrix, ItemStack result, InventoryView lastCraftView, boolean isRepair) {
+        CraftInventoryCrafting inventory = new CraftInventoryCrafting(matrix, matrix.resultInventory);
+        inventory.setResult(new CraftItemStack(result));
+        
+        PrepareItemCraftEvent event = new PrepareItemCraftEvent(inventory, lastCraftView, isRepair);
+        Bukkit.getPluginManager().callEvent(event);
+
+        org.bukkit.inventory.ItemStack bitem = event.getInventory().getResult();
+
+        return CraftItemStack.createNMSItemStack(bitem);
     }
 }

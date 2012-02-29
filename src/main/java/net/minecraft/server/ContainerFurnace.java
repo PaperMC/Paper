@@ -1,17 +1,27 @@
 package net.minecraft.server;
 
+// CraftBukkit start
+import org.bukkit.craftbukkit.inventory.CraftInventoryFurnace;
+import org.bukkit.craftbukkit.inventory.CraftInventoryView;
+// CraftBukkit end
+
 public class ContainerFurnace extends Container {
 
-    private TileEntityFurnace a;
+    public TileEntityFurnace a; // CraftBukkit - Private -> Public
     private int b = 0;
     private int c = 0;
     private int h = 0;
+    // CraftBukkit start
+    private CraftInventoryView bukkitEntity = null;
+    private PlayerInventory player;
+    // CraftBukkit end
 
     public ContainerFurnace(PlayerInventory playerinventory, TileEntityFurnace tileentityfurnace) {
         this.a = tileentityfurnace;
         this.a(new Slot(tileentityfurnace, 0, 56, 17));
         this.a(new Slot(tileentityfurnace, 1, 56, 53));
         this.a(new SlotResult2(playerinventory.d, tileentityfurnace, 2, 116, 35));
+        this.player = playerinventory; // CraftBukkit - save player
 
         int i;
 
@@ -58,6 +68,7 @@ public class ContainerFurnace extends Container {
     }
 
     public boolean b(EntityHuman entityhuman) {
+        if (!this.checkReachable) return true; // CraftBukkit
         return this.a.a(entityhuman);
     }
 
@@ -100,4 +111,15 @@ public class ContainerFurnace extends Container {
 
         return itemstack;
     }
+
+    // CraftBukkit start
+    public CraftInventoryView getBukkitView() {
+        if (bukkitEntity != null) {
+            return bukkitEntity;
+        }
+        CraftInventoryFurnace inventory = new CraftInventoryFurnace(this.a);
+        bukkitEntity = new CraftInventoryView(this.player.d.getBukkitEntity(), inventory, this);
+        return bukkitEntity;
+    }
+    // CraftBukkit end
 }

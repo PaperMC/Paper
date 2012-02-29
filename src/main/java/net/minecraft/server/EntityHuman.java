@@ -7,6 +7,7 @@ import java.util.List;
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.entity.CraftItem;
 import org.bukkit.craftbukkit.TrigMath;
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.EntityCombustByEntityEvent;
@@ -261,7 +262,8 @@ public abstract class EntityHuman extends EntityLiving {
         return this.getHealth() <= 0 || this.isSleeping();
     }
 
-    protected void closeInventory() {
+    // CraftBukkit - protected -> public
+    public void closeInventory() {
         this.activeContainer = this.defaultContainer;
     }
 
@@ -1283,4 +1285,10 @@ public abstract class EntityHuman extends EntityLiving {
         this.exp = entityhuman.exp;
         this.q = entityhuman.q;
     }
+    
+    // CraftBukkit start
+    public HumanEntity getBukkitEntity() {
+        return (HumanEntity) super.getBukkitEntity();
+    }
+    // CraftBukkit end
 }

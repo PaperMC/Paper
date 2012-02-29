@@ -1,5 +1,14 @@
 package net.minecraft.server;
 
+// CraftBukkit start
+import java.util.ArrayList;
+import java.util.List;
+
+import org.bukkit.craftbukkit.entity.CraftHumanEntity;
+import org.bukkit.entity.HumanEntity;
+import org.bukkit.inventory.InventoryHolder;
+// CraftBukkit end
+
 public class InventoryCraftResult implements IInventory {
 
     private ItemStack[] items = new ItemStack[1];
@@ -7,6 +16,16 @@ public class InventoryCraftResult implements IInventory {
     // CraftBukkit start
     public ItemStack[] getContents() {
         return this.items;
+    }
+    public InventoryHolder getOwner() {
+        return null; // Result slots don't get an owner
+    }
+
+    // Don't need a transaction; the InventoryCrafting keeps track of it for us
+    public void onOpen(CraftHumanEntity who) {}
+    public void onClose(CraftHumanEntity who) {}
+    public List<HumanEntity> getViewers() {
+        return new ArrayList<HumanEntity>();
     }
     // CraftBukkit end
 

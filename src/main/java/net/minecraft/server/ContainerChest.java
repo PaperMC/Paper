@@ -1,15 +1,30 @@
 package net.minecraft.server;
 
+// CraftBukkit start
+import org.bukkit.craftbukkit.inventory.CraftInventory;
+import org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest;
+import org.bukkit.craftbukkit.inventory.CraftInventoryPlayer;
+import org.bukkit.craftbukkit.inventory.CraftInventoryView;
+// CraftBukkit end
+
 public class ContainerChest extends Container {
 
-    private IInventory a;
+    public IInventory a; // CraftBukkit - private->public
     private int b;
+    // CraftBukkit start
+    private CraftInventoryView bukkitEntity = null;
+    private PlayerInventory player;
+    // CraftBukkit end
 
     public ContainerChest(IInventory iinventory, IInventory iinventory1) {
         this.a = iinventory1;
         this.b = iinventory1.getSize() / 9;
         iinventory1.f();
         int i = (this.b - 4) * 18;
+        // CraftBukkit start - save player
+        // TODO: Should we check to make sure it really is an InventoryPlayer?
+        this.player = (PlayerInventory)iinventory;
+        // CraftBukkit end
 
         int j;
         int k;
@@ -32,6 +47,7 @@ public class ContainerChest extends Container {
     }
 
     public boolean b(EntityHuman entityhuman) {
+        if (!this.checkReachable) return true; // CraftBukkit
         return this.a.a(entityhuman);
     }
 
@@ -60,6 +76,24 @@ public class ContainerChest extends Container {
 
         return itemstack;
     }
+
+    // CraftBukkit start
+    public CraftInventoryView getBukkitView() {
+        if (bukkitEntity != null) {
+            return bukkitEntity;
+        }
+        CraftInventory inventory;
+        if (a instanceof PlayerInventory) {
+            inventory = new CraftInventoryPlayer((PlayerInventory)a);
+        } else if (a instanceof InventoryLargeChest) {
+            inventory = new CraftInventoryDoubleChest((InventoryLargeChest)a);
+        } else {
+            inventory = new CraftInventory(this.a);
+        }
+        bukkitEntity = new CraftInventoryView(this.player.d.getBukkitEntity(), inventory, this);
+        return bukkitEntity;
+    }
+    // CraftBukkit end
 
     public void a(EntityHuman entityhuman) {
         super.a(entityhuman);

@@ -1,9 +1,11 @@
 package net.minecraft.server;
 
+// CraftBukkit start
+import java.util.ArrayList;
 import java.util.List;
 
-// CraftBukkit start
 import org.bukkit.Location;
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.event.vehicle.VehicleCreateEvent;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
@@ -13,6 +15,8 @@ import org.bukkit.event.vehicle.VehicleEntityCollisionEvent;
 import org.bukkit.event.vehicle.VehicleMoveEvent;
 import org.bukkit.event.vehicle.VehicleUpdateEvent;
 import org.bukkit.util.Vector;
+import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 // CraftBukkit end
 
 public class EntityMinecart extends Entity implements IInventory {
@@ -40,9 +44,28 @@ public class EntityMinecart extends Entity implements IInventory {
     private double flyingY = 0.95;
     private double flyingZ = 0.95;
     public double maxSpeed = 0.4D;
+    public List<HumanEntity> transaction = new ArrayList<HumanEntity>(); // CraftBukkit
 
     public ItemStack[] getContents() {
         return this.items;
+    }
+
+    public void onOpen(CraftHumanEntity who) {
+        transaction.add(who);
+    }
+
+    public void onClose(CraftHumanEntity who) {
+        transaction.remove(who);
+    }
+
+    public List<HumanEntity> getViewers() {
+        return transaction;
+    }
+
+    public InventoryHolder getOwner() {
+        org.bukkit.entity.Entity cart = getBukkitEntity();
+        if(cart instanceof InventoryHolder) return (InventoryHolder) cart;
+        return null;
     }
     // CraftBukkit end
 

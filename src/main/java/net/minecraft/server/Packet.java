@@ -157,7 +157,7 @@ public abstract class Packet {
     }
 
     protected void a(ItemStack itemstack, DataOutputStream dataoutputstream) throws IOException { // CraftBukkit
-        if (itemstack == null) {
+        if (itemstack == null || itemstack.id <= 0) {
             dataoutputstream.writeShort(-1);
         } else {
             dataoutputstream.writeShort(itemstack.id);

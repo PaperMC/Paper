@@ -2,6 +2,16 @@ package net.minecraft.server;
 
 import java.util.List;
 
+// CraftBukkit start
+import java.util.ArrayList;
+
+import org.bukkit.Bukkit;
+import org.bukkit.craftbukkit.entity.CraftHumanEntity;
+import org.bukkit.entity.HumanEntity;
+import org.bukkit.event.inventory.BrewEvent;
+import org.bukkit.inventory.BrewerInventory;
+// CraftBukkit end
+
 public class TileEntityBrewingStand extends TileEntity implements IInventory {
 
     public ItemStack[] a = new ItemStack[4]; // CraftBukkit private -> public
@@ -12,6 +22,20 @@ public class TileEntityBrewingStand extends TileEntity implements IInventory {
     public TileEntityBrewingStand() {}
 
     // CraftBukkit start
+    public List<HumanEntity> transaction = new ArrayList<HumanEntity>();
+
+    public void onOpen(CraftHumanEntity who) {
+        transaction.add(who);
+    }
+
+    public void onClose(CraftHumanEntity who) {
+        transaction.remove(who);
+    }
+
+    public List<HumanEntity> getViewers() {
+        return transaction;
+    }
+
     public ItemStack[] getContents() {
         return this.a;
     }
@@ -96,6 +120,12 @@ public class TileEntityBrewingStand extends TileEntity implements IInventory {
     private void p() {
         if (this.o()) {
             ItemStack itemstack = this.a[3];
+
+            // CraftBukkit start - fire BREW event
+            BrewEvent event = new BrewEvent(world.getWorld().getBlockAt(x, y, z), (BrewerInventory) this.getOwner().getInventory());
+            Bukkit.getPluginManager().callEvent(event);
+            if(event.isCancelled()) return;
+            // CraftBukkit end
 
             for (int i = 0; i < 3; ++i) {
                 if (this.a[i] != null && this.a[i].id == Item.POTION.id) {

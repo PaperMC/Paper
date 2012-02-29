@@ -1,5 +1,15 @@
 package net.minecraft.server;
 
+// CraftBukkit start
+import java.util.ArrayList;
+import java.util.List;
+
+import org.bukkit.craftbukkit.entity.CraftHumanEntity;
+import org.bukkit.entity.HumanEntity;
+import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.inventory.InventoryHolder;
+// CraftBukkit end
+
 public class InventoryCrafting implements IInventory {
 
     private ItemStack[] items;
@@ -7,8 +17,32 @@ public class InventoryCrafting implements IInventory {
     private Container c;
 
     // CraftBukkit start
+    public List<HumanEntity> transaction = new ArrayList<HumanEntity>();
+    public CraftingRecipe currentRecipe;
+    public IInventory resultInventory;
+    
     public ItemStack[] getContents() {
         return this.items;
+    }
+
+    public void onOpen(CraftHumanEntity who) {
+        transaction.add(who);
+    }
+    
+    public InventoryType getInvType() {
+        return items.length == 4 ? InventoryType.CRAFTING : InventoryType.WORKBENCH;
+    }
+
+    public void onClose(CraftHumanEntity who) {
+        transaction.remove(who);
+    }
+    
+    public List<HumanEntity> getViewers() {
+        return transaction;
+    }
+    
+    public InventoryHolder getOwner() {
+        return null; // TODO: Crafting grids don't really have an owner? Maybe they should?
     }
     // CraftBukkit end
 

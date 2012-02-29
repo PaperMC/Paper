@@ -5,14 +5,31 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public abstract class Container {
+// CraftBukkit start
+import org.bukkit.craftbukkit.entity.CraftHumanEntity;
+import org.bukkit.craftbukkit.inventory.CraftInventory;
+import org.bukkit.inventory.InventoryView;
+// CraftBukkit end
 
+public abstract class Container {
     public List d = new ArrayList();
     public List e = new ArrayList();
     public int windowId = 0;
     private short a = 0;
     protected List listeners = new ArrayList();
     private Set b = new HashSet();
+
+    // CraftBukkit start
+    public boolean checkReachable = true;
+    public abstract InventoryView getBukkitView();
+    public void transferTo(Container other, CraftHumanEntity player) {
+        InventoryView source = this.getBukkitView(), destination = other.getBukkitView();
+        ((CraftInventory)source.getTopInventory()).getInventory().onClose(player);
+        ((CraftInventory)source.getBottomInventory()).getInventory().onClose(player);
+        ((CraftInventory)destination.getTopInventory()).getInventory().onOpen(player);
+        ((CraftInventory)destination.getBottomInventory()).getInventory().onOpen(player);
+    }
+    // CraftBukkit end
 
     public Container() {}
 

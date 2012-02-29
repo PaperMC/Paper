@@ -1,9 +1,16 @@
 package net.minecraft.server;
 
 // CraftBukkit start
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.entity.HumanEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.FurnaceBurnEvent;
 import org.bukkit.event.inventory.FurnaceSmeltEvent;
+import org.bukkit.craftbukkit.entity.CraftHumanEntity;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 // CraftBukkit end
 
 public class TileEntityFurnace extends TileEntity implements IInventory {
@@ -15,9 +22,22 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
 
     // CraftBukkit start
     private int lastTick = (int) (System.currentTimeMillis() / 50);
+    public List<HumanEntity> transaction = new ArrayList<HumanEntity>();
 
     public ItemStack[] getContents() {
         return this.items;
+    }
+
+    public void onOpen(CraftHumanEntity who) {
+        transaction.add(who);
+    }
+
+    public void onClose(CraftHumanEntity who) {
+        transaction.remove(who);
+    }
+
+    public List<HumanEntity> getViewers() {
+        return transaction;
     }
     // CraftBukkit end
 

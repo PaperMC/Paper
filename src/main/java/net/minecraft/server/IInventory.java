@@ -1,5 +1,13 @@
 package net.minecraft.server;
 
+// CraftBukkit start
+import java.util.List;
+
+import org.bukkit.craftbukkit.entity.CraftHumanEntity;
+import org.bukkit.entity.HumanEntity;
+import org.bukkit.inventory.InventoryHolder;
+// CraftBukkit end
+
 public interface IInventory {
 
     int getSize();
@@ -22,5 +30,15 @@ public interface IInventory {
 
     void g();
 
-    public abstract ItemStack[] getContents(); // CraftBukkit
+    // CraftBukkit start
+    ItemStack[] getContents();
+    
+    void onOpen(CraftHumanEntity who);
+    
+    void onClose(CraftHumanEntity who);
+    
+    List<HumanEntity> getViewers();
+    
+    InventoryHolder getOwner();
+    //CraftBukkit end
 }

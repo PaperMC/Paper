@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 
 // CraftBukkit start
+import java.util.EnumSet;
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.ChunkCompressionThread;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -13,6 +14,7 @@ import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.inventory.InventoryType;
 // CraftBukkit end
 
 public class EntityPlayer extends EntityHuman implements ICrafting {
@@ -34,6 +36,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public boolean h;
     public int ping;
     public boolean viewingCredits = false;
+    public int i;
 
     public EntityPlayer(MinecraftServer minecraftserver, World world, String s, ItemInWorldManager iteminworldmanager) {
         super(world);
@@ -448,54 +451,85 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         super.a(d0, flag);
     }
 
-    private void aS() {
+    public int aS() { // CraftBukkit - private void -> public int
         this.cl = this.cl % 100 + 1;
+        return this.cl; // CraftBukkit
     }
 
     public void b(int i, int j, int k) {
+        // CraftBukkit start - INVENTORY_OPEN hook
+        Container container = CraftEventFactory.callInventoryOpenEvent(this, new ContainerWorkbench(this.inventory, this.world, i, j, k));
+        if(container == null) return;
+        // CraftBukkit end
+
         this.aS();
         this.netServerHandler.sendPacket(new Packet100OpenWindow(this.cl, 1, "Crafting", 9));
-        this.activeContainer = new ContainerWorkbench(this.inventory, this.world, i, j, k);
+        this.activeContainer = container; // CraftBukkit - Use container we passed to event
         this.activeContainer.windowId = this.cl;
         this.activeContainer.a((ICrafting) this);
     }
 
     public void c(int i, int j, int k) {
+        // CraftBukkit start - INVENTORY_OPEN hook
+        Container container = CraftEventFactory.callInventoryOpenEvent(this, new ContainerEnchantTable(this.inventory, this.world, i, j, k));
+        if(container == null) return;
+        // CraftBukkit end
+
         this.aS();
         this.netServerHandler.sendPacket(new Packet100OpenWindow(this.cl, 4, "Enchanting", 9));
-        this.activeContainer = new ContainerEnchantTable(this.inventory, this.world, i, j, k);
+        this.activeContainer = container;
         this.activeContainer.windowId = this.cl;
         this.activeContainer.a((ICrafting) this);
     }
 
     public void a(IInventory iinventory) {
+        // CraftBukkit start - INVENTORY_OPEN hook
+        Container container = CraftEventFactory.callInventoryOpenEvent(this, new ContainerChest(this.inventory, iinventory));
+        if(container == null) return;
+        // CraftBukkit end
+
         this.aS();
         this.netServerHandler.sendPacket(new Packet100OpenWindow(this.cl, 0, iinventory.getName(), iinventory.getSize()));
-        this.activeContainer = new ContainerChest(this.inventory, iinventory);
+        this.activeContainer = container; // CraftBukkit - Use container passed to event
         this.activeContainer.windowId = this.cl;
         this.activeContainer.a((ICrafting) this);
     }
 
     public void a(TileEntityFurnace tileentityfurnace) {
+        // CraftBukkit start - INVENTORY_OPEN hook
+        Container container = CraftEventFactory.callInventoryOpenEvent(this, new ContainerFurnace(this.inventory, tileentityfurnace));
+        if(container == null) return;
+        // CraftBukkit end
+
         this.aS();
         this.netServerHandler.sendPacket(new Packet100OpenWindow(this.cl, 2, tileentityfurnace.getName(), tileentityfurnace.getSize()));
-        this.activeContainer = new ContainerFurnace(this.inventory, tileentityfurnace);
+        this.activeContainer = container; // CraftBukkit - Use container passed to event
         this.activeContainer.windowId = this.cl;
         this.activeContainer.a((ICrafting) this);
     }
 
     public void a(TileEntityDispenser tileentitydispenser) {
+        // CraftBukkit start - INVENTORY_OPEN hook
+        Container container = CraftEventFactory.callInventoryOpenEvent(this, new ContainerDispenser(this.inventory, tileentitydispenser));
+        if(container == null) return;
+        // CraftBukkit end
+
         this.aS();
         this.netServerHandler.sendPacket(new Packet100OpenWindow(this.cl, 3, tileentitydispenser.getName(), tileentitydispenser.getSize()));
-        this.activeContainer = new ContainerDispenser(this.inventory, tileentitydispenser);
+        this.activeContainer = container; // CraftBukkit - Use container passed to event
         this.activeContainer.windowId = this.cl;
         this.activeContainer.a((ICrafting) this);
     }
 
     public void a(TileEntityBrewingStand tileentitybrewingstand) {
+        // CraftBukkit start - INVENTORY_OPEN hook
+        Container container = CraftEventFactory.callInventoryOpenEvent(this, new ContainerBrewingStand(this.inventory, tileentitybrewingstand));
+        if(container == null) return;
+        // CraftBukkit end
+
         this.aS();
         this.netServerHandler.sendPacket(new Packet100OpenWindow(this.cl, 5, tileentitybrewingstand.getName(), tileentitybrewingstand.getSize()));
-        this.activeContainer = new ContainerBrewingStand(this.inventory, tileentitybrewingstand);
+        this.activeContainer = container;
         this.activeContainer.windowId = this.cl;
         this.activeContainer.a((ICrafting) this);
     }
@@ -515,6 +549,11 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public void a(Container container, List list) {
         this.netServerHandler.sendPacket(new Packet104WindowItems(container.windowId, list));
         this.netServerHandler.sendPacket(new Packet103SetSlot(-1, -1, this.inventory.l()));
+        // CraftBukkit start - send a Set Slot to update the crafting result slot
+        if (EnumSet.of(InventoryType.CRAFTING,InventoryType.WORKBENCH).contains(container.getBukkitView().getType())) {
+            this.netServerHandler.sendPacket(new Packet103SetSlot(container.windowId, 0, container.b(0).getItem()));
+        }
+        // CraftBukkit end
     }
 
     public void a(Container container, int i, int j) {

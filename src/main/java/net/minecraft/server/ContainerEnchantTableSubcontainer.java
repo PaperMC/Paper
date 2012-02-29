@@ -1,13 +1,43 @@
 package net.minecraft.server;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class ContainerEnchantTableSubcontainer implements IInventory {
+// CraftBukkit start
+import org.bukkit.craftbukkit.entity.CraftHumanEntity;
+import org.bukkit.entity.HumanEntity;
+import org.bukkit.inventory.InventoryHolder;
+// CraftBukkit end
 
+public class ContainerEnchantTableSubcontainer implements IInventory {
     private String a;
     private int b;
     private ItemStack[] c;
     private List d;
+
+    // CraftBukkit start
+    public List<HumanEntity> transaction = new ArrayList<HumanEntity>();
+
+    public ItemStack[] getContents() {
+        return this.c;
+    }
+
+    public void onOpen(CraftHumanEntity who) {
+        transaction.add(who);
+    }
+
+    public void onClose(CraftHumanEntity who) {
+        transaction.remove(who);
+    }
+
+    public List<HumanEntity> getViewers() {
+        return transaction;
+    }
+
+    public InventoryHolder getOwner() {
+        return null; // TODO: Enchanting tables don't really have an owner? Maybe they should?
+    }
+    // CraftBukkit end
 
     public ContainerEnchantTableSubcontainer(String s, int i) {
         this.a = s;

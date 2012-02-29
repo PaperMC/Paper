@@ -2,14 +2,36 @@ package net.minecraft.server;
 
 import java.util.Random;
 
+// CraftBukkit start
+import java.util.ArrayList;
+import java.util.List;
+
+import org.bukkit.craftbukkit.entity.CraftHumanEntity;
+import org.bukkit.entity.HumanEntity;
+// CraftBukkit end
+
 public class TileEntityDispenser extends TileEntity implements IInventory {
 
     private ItemStack[] items = new ItemStack[9];
     private Random b = new Random();
 
     // CraftBukkit start
+    public List<HumanEntity> transaction = new ArrayList<HumanEntity>();
+
     public ItemStack[] getContents() {
         return this.items;
+    }
+
+    public void onOpen(CraftHumanEntity who) {
+        transaction.add(who);
+    }
+
+    public void onClose(CraftHumanEntity who) {
+        transaction.remove(who);
+    }
+
+    public List<HumanEntity> getViewers() {
+        return transaction;
     }
     // CraftBukkit end
 

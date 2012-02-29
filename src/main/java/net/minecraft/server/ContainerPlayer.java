@@ -1,18 +1,29 @@
 package net.minecraft.server;
 
+// CraftBukkit start
+import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
+import org.bukkit.craftbukkit.inventory.CraftInventoryView;
+// CraftBukkit end
+
 public class ContainerPlayer extends Container {
 
     public InventoryCrafting craftInventory;
     public IInventory resultInventory;
     public boolean c;
+    // CraftBukkit start
+    private CraftInventoryView bukkitEntity = null;
+    private PlayerInventory player;
+    // CraftBukkit end
 
     public ContainerPlayer(PlayerInventory playerinventory) {
         this(playerinventory, true);
     }
 
     public ContainerPlayer(PlayerInventory playerinventory, boolean flag) {
+        this.resultInventory = new InventoryCraftResult(); // CraftBukkit - moved to before InventoryCrafting construction
         this.craftInventory = new InventoryCrafting(this, 2, 2);
-        this.resultInventory = new InventoryCraftResult();
+        this.craftInventory.resultInventory = this.resultInventory; // CraftBukkit - let InventoryCrafting know about its result slot
+        this.player = playerinventory; // CraftBukkit - save player
         this.c = false;
         this.c = flag;
         this.a((Slot) (new SlotResult(playerinventory.d, this.craftInventory, this.resultInventory, 0, 144, 36)));
@@ -40,11 +51,12 @@ public class ContainerPlayer extends Container {
             this.a(new Slot(playerinventory, i, 8 + i * 18, 142));
         }
 
-        this.a((IInventory) this.craftInventory);
+        // this.a((IInventory) this.craftInventory); // CraftBukkit - unneeded since it just sets result slot to empty
     }
 
     public void a(IInventory iinventory) {
-        // CraftBukkit start
+        // CraftBukkit start (Note: the following line would cause an error if called during construction)
+        CraftingManager.getInstance().lastCraftView = getBukkitView();
         ItemStack craftResult = CraftingManager.getInstance().craft(this.craftInventory);
         this.resultInventory.setItem(0, craftResult);
         if (super.listeners.size() < 1) {
@@ -112,4 +124,15 @@ public class ContainerPlayer extends Container {
 
         return itemstack;
     }
+
+    // CraftBukkit start
+    public CraftInventoryView getBukkitView() {
+        if (bukkitEntity != null) {
+            return bukkitEntity;
+        }
+        CraftInventoryCrafting inventory = new CraftInventoryCrafting(this.craftInventory, this.resultInventory);
+        bukkitEntity = new CraftInventoryView(this.player.d.getBukkitEntity(), inventory, this);
+        return bukkitEntity;
+    }
+    // CraftBukkit end
 }

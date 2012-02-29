@@ -1,15 +1,30 @@
 package net.minecraft.server;
 
+// CraftBukkit start
+import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
+import org.bukkit.craftbukkit.inventory.CraftInventoryView;
+// CraftBukkit end
+
 public class ContainerWorkbench extends Container {
 
-    public InventoryCrafting craftInventory = new InventoryCrafting(this, 3, 3);
-    public IInventory resultInventory = new InventoryCraftResult();
+    public InventoryCrafting craftInventory; // CraftBukkit - move initialization into constructor
+    public IInventory resultInventory; // CraftBukkit - move initialization into constructor
     private World c;
     private int h;
     private int i;
     private int j;
+    // CraftBukkit start
+    private CraftInventoryView bukkitEntity = null;
+    private PlayerInventory player;
+    // CraftBukkit end
 
     public ContainerWorkbench(PlayerInventory playerinventory, World world, int i, int j, int k) {
+        // CraftBukkit start - switched order of IInventory construction and stored player
+        this.resultInventory = new InventoryCraftResult();
+        this.craftInventory = new InventoryCrafting(this, 3, 3);
+        this.craftInventory.resultInventory = this.resultInventory;
+        this.player = playerinventory;
+        // CraftBukkit end
         this.c = world;
         this.h = i;
         this.i = j;
@@ -40,6 +55,7 @@ public class ContainerWorkbench extends Container {
 
     public void a(IInventory iinventory) {
         // CraftBukkit start
+        CraftingManager.getInstance().lastCraftView = getBukkitView();
         ItemStack craftResult = CraftingManager.getInstance().craft(this.craftInventory);
         this.resultInventory.setItem(0, craftResult);
         if (super.listeners.size() < 1) {
@@ -65,6 +81,7 @@ public class ContainerWorkbench extends Container {
     }
 
     public boolean b(EntityHuman entityhuman) {
+        if (!this.checkReachable) return true; // CraftBukkit
         return this.c.getTypeId(this.h, this.i, this.j) != Block.WORKBENCH.id ? false : entityhuman.e((double) this.h + 0.5D, (double) this.i + 0.5D, (double) this.j + 0.5D) <= 64.0D;
     }
 
@@ -107,4 +124,15 @@ public class ContainerWorkbench extends Container {
 
         return itemstack;
     }
+
+    // CraftBukkit start
+    public CraftInventoryView getBukkitView() {
+        if (bukkitEntity != null) {
+            return bukkitEntity;
+        }
+        CraftInventoryCrafting inventory = new CraftInventoryCrafting(this.craftInventory, this.resultInventory);
+        bukkitEntity = new CraftInventoryView(this.player.d.getBukkitEntity(), inventory, this);
+        return bukkitEntity;
+    }
+    // CraftBukkit end
 }

@@ -4,8 +4,8 @@ import net.minecraft.server.TileEntityFurnace;
 import org.bukkit.block.Block;
 import org.bukkit.block.Furnace;
 import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.inventory.CraftInventory;
-import org.bukkit.inventory.Inventory;
+import org.bukkit.craftbukkit.inventory.CraftInventoryFurnace;
+import org.bukkit.inventory.FurnaceInventory;
 
 public class CraftFurnace extends CraftBlockState implements Furnace {
     private final CraftWorld world;
@@ -18,8 +18,8 @@ public class CraftFurnace extends CraftBlockState implements Furnace {
         furnace = (TileEntityFurnace) world.getTileEntityAt(getX(), getY(), getZ());
     }
 
-    public Inventory getInventory() {
-        return new CraftInventory(furnace);
+    public FurnaceInventory getInventory() {
+        return new CraftInventoryFurnace(furnace);
     }
 
     @Override

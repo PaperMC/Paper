@@ -15,7 +15,7 @@ public class CraftShapelessRecipe extends ShapelessRecipe implements CraftRecipe
     public CraftShapelessRecipe(ItemStack result) {
         super(result);
     }
-    
+
     public CraftShapelessRecipe(ItemStack result, ShapelessRecipes recipe) {
         this(result);
         this.recipe = recipe;

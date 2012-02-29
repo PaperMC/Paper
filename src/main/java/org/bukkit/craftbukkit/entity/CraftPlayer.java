@@ -17,6 +17,20 @@ import net.minecraft.server.*;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.*;
+
+import net.minecraft.server.Container;
+import net.minecraft.server.EntityPlayer;
+import net.minecraft.server.Packet131ItemData;
+import net.minecraft.server.Packet200Statistic;
+import net.minecraft.server.Packet201PlayerInfo;
+import net.minecraft.server.Packet3Chat;
+import net.minecraft.server.Packet51MapChunk;
+import net.minecraft.server.Packet53BlockChange;
+import net.minecraft.server.Packet54PlayNoteBlock;
+import net.minecraft.server.Packet61WorldEvent;
+import net.minecraft.server.Packet6SpawnPosition;
+import net.minecraft.server.Packet70Bed;
+import net.minecraft.server.WorldServer;
 import org.bukkit.Achievement;
 import org.bukkit.Material;
 import org.bukkit.Statistic;
@@ -33,6 +47,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerGameModeChangeEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.inventory.InventoryView.Property;
 import org.bukkit.map.MapView;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
@@ -741,5 +756,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public void removeMetadata(String metadataKey, Plugin owningPlugin) {
         server.getPlayerMetadata().removeMetadata(this, metadataKey, owningPlugin);
+    }
+
+    @Override
+    public boolean setWindowProperty(Property prop, int value) {
+        Container container = getHandle().activeContainer;
+        if (container.getBukkitView().getType() != prop.getType()) {
+            return false;
+        }
+        getHandle().a(container, prop.getId(), value);
+        return true;
     }
 }

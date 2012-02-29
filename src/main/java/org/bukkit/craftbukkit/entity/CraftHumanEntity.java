@@ -1,12 +1,33 @@
 package org.bukkit.craftbukkit.entity;
 
 import java.util.Set;
+
+import net.minecraft.server.Container;
 import net.minecraft.server.EntityHuman;
+import net.minecraft.server.EntityPlayer;
+import net.minecraft.server.ICrafting;
+import net.minecraft.server.Packet100OpenWindow;
+import net.minecraft.server.Packet101CloseWindow;
+import net.minecraft.server.TileEntityBrewingStand;
+import net.minecraft.server.TileEntityDispenser;
+import net.minecraft.server.TileEntityFurnace;
+
 import org.bukkit.GameMode;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
+import org.bukkit.event.inventory.InventoryOpenEvent;
+import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.inventory.CraftContainer;
+import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.craftbukkit.inventory.CraftInventoryPlayer;
+import org.bukkit.craftbukkit.inventory.CraftInventoryView;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.permissions.PermissibleBase;
 import org.bukkit.permissions.Permission;
@@ -40,6 +61,18 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     public void setItemInHand(ItemStack item) {
         getInventory().setItemInHand(item);
+    }
+
+    public ItemStack getItemOnCursor() {
+        return new CraftItemStack(getHandle().inventory.l());
+    }
+
+    public void setItemOnCursor(ItemStack item) {
+        CraftItemStack stack = new CraftItemStack(item.getType(), item.getAmount(), item.getDurability());
+        getHandle().inventory.b(stack.getHandle());
+        if (this instanceof CraftPlayer) {
+            ((EntityPlayer)getHandle()).D(); // Send set slot for cursor
+        }
     }
 
     public boolean isSleeping() {
@@ -128,5 +161,112 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     @Override
     public String toString() {
         return "CraftHumanEntity{" + "id=" + getEntityId() + "name=" + getName() + '}';
+    }
+
+    public InventoryView getOpenInventory() {
+        return getHandle().activeContainer.getBukkitView();
+    }
+
+    public InventoryView openInventory(Inventory inventory) {
+        InventoryType type = inventory.getType();
+        // TODO: Should we check that it really IS a CraftInventory first?
+        CraftInventory craftinv = (CraftInventory) inventory;
+        switch(type) {
+        case PLAYER:
+        case CHEST:
+            getHandle().a(craftinv.getInventory());
+            break;
+        case DISPENSER:
+            getHandle().a((TileEntityDispenser)craftinv.getInventory());
+            break;
+        case FURNACE:
+            getHandle().a((TileEntityFurnace)craftinv.getInventory());
+            break;
+        case WORKBENCH:
+            getHandle().b(getLocation().getBlockX(), getLocation().getBlockY(), getLocation().getBlockZ());
+            break;
+        case BREWING:
+            getHandle().a((TileEntityBrewingStand)craftinv.getInventory());
+            break;
+        case ENCHANTING:
+            getHandle().c(getLocation().getBlockX(), getLocation().getBlockY(), getLocation().getBlockZ());
+            break;
+        case CREATIVE:
+        case CRAFTING:
+            throw new IllegalArgumentException("Can't open a " + type + " inventory!");
+        }
+        getHandle().activeContainer.checkReachable = false;
+        return getHandle().activeContainer.getBukkitView();
+    }
+
+    public InventoryView openWorkbench(Location location, boolean force) {
+        if (!force) {
+            Block block = location.getBlock();
+            if (block.getType() != Material.WORKBENCH) {
+                return null;
+            }
+        }
+        if (location == null) {
+            location = getLocation();
+        }
+        getHandle().b(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        if (force) {
+            getHandle().activeContainer.checkReachable = false;
+        }
+        return getHandle().activeContainer.getBukkitView();
+    }
+
+    public InventoryView openEnchanting(Location location, boolean force) {
+        if (!force) {
+            Block block = location.getBlock();
+            if (block.getType() != Material.ENCHANTMENT_TABLE) {
+                return null;
+            }
+        }
+        if (location == null) {
+            location = getLocation();
+        }
+        getHandle().c(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        if (force) {
+            getHandle().activeContainer.checkReachable = false;
+        }
+        return getHandle().activeContainer.getBukkitView();
+    }
+
+    public void openInventory(InventoryView inventory) {
+        if (!(getHandle() instanceof EntityPlayer)) return; // TODO: NPC support?
+        if (getHandle().activeContainer != getHandle().defaultContainer) {
+            // fire INVENTORY_CLOSE if one already open
+            ((EntityPlayer)getHandle()).netServerHandler.a(new Packet101CloseWindow(getHandle().activeContainer.windowId));
+        }
+        EntityPlayer player = (EntityPlayer) getHandle();
+        Container container;
+        if (inventory instanceof CraftInventoryView) {
+            container = ((CraftInventoryView) inventory).getHandle();
+        } else {
+            container = new CraftContainer(inventory, player.aS());
+        }
+
+        // Trigger an INVENTORY_OPEN event
+        InventoryOpenEvent event = new InventoryOpenEvent(inventory);
+        player.activeContainer.transferTo(container, this);
+        server.getPluginManager().callEvent(event);
+        if (event.isCancelled()) {
+            container.transferTo(player.activeContainer, this);
+            return;
+        }
+
+        // Now open the window
+        player.netServerHandler.sendPacket(new Packet100OpenWindow(container.windowId, 1, "Crafting", 9));
+        player.activeContainer = container;
+        player.activeContainer.a((ICrafting) player);
+    }
+
+    public void closeInventory() {
+        getHandle().closeInventory();
+    }
+
+    public boolean setWindowProperty(InventoryView.Property prop, int value) {
+        return false;
     }
 }

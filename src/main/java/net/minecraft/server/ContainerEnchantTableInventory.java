@@ -1,8 +1,8 @@
 package net.minecraft.server;
 
-class ContainerEnchantTableInventory extends ContainerEnchantTableSubcontainer {
+public class ContainerEnchantTableInventory extends ContainerEnchantTableSubcontainer { // CraftBukkit -> public
 
-    final ContainerEnchantTable a;
+    public final ContainerEnchantTable a; // CraftBukkit -> public
 
     ContainerEnchantTableInventory(ContainerEnchantTable containerenchanttable, String s, int i) {
         super(s, i);
