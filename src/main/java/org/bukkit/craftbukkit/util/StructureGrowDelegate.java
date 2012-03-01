@@ -41,4 +41,8 @@ public class StructureGrowDelegate implements BlockChangeDelegate {
     public List<BlockState> getBlocks() {
         return blocks;
     }
+
+    public boolean isEmpty(int x, int y, int z) {
+        return world.getBlockAt(x, y, z).isEmpty();
+    }
 }
