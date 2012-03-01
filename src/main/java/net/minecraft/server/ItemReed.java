@@ -20,8 +20,8 @@ public class ItemReed extends Item {
         int i1 = world.getTypeId(i, j, k);
 
         if (i1 == Block.SNOW.id) {
-            l = 0;
-        } else if (i1 != Block.VINE.id) {
+            l = 1;
+        } else if (i1 != Block.VINE.id && i1 != Block.LONG_GRASS.id && i1 != Block.DEAD_BUSH.id) {
             if (l == 0) {
                 --j;
             }

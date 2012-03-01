@@ -60,6 +60,10 @@ public class BlockSign extends BlockContainer {
         return false;
     }
 
+    public boolean b(IBlockAccess iblockaccess, int i, int j, int k) {
+        return true;
+    }
+
     public boolean a() {
         return false;
     }

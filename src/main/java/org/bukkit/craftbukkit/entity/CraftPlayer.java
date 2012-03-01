@@ -31,6 +31,7 @@ import net.minecraft.server.Packet61WorldEvent;
 import net.minecraft.server.Packet6SpawnPosition;
 import net.minecraft.server.Packet70Bed;
 import net.minecraft.server.WorldServer;
+import org.apache.commons.lang.NotImplementedException;
 import org.bukkit.Achievement;
 import org.bukkit.Material;
 import org.bukkit.Statistic;
@@ -286,6 +287,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public boolean sendChunkChange(Location loc, int sx, int sy, int sz, byte[] data) {
         if (getHandle().netServerHandler == null) return false;
 
+        /*
         int x = loc.getBlockX();
         int y = loc.getBlockY();
         int z = loc.getBlockZ();
@@ -310,6 +312,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         getHandle().netServerHandler.sendPacket(packet);
 
         return true;
+        */
+
+        throw new NotImplementedException("Chunk changes do not yet work"); // TODO: Chunk changes.
     }
 
     public void sendMap(MapView map) {

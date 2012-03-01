@@ -94,6 +94,8 @@ public class ContainerFurnace extends Container {
                 if (!this.a(itemstack1, 3, 39, true)) {
                     return null;
                 }
+
+                slot.a(itemstack1, itemstack);
             } else if (i >= 3 && i < 30) {
                 if (!this.a(itemstack1, 30, 39, false)) {
                     return null;
@@ -116,7 +118,7 @@ public class ContainerFurnace extends Container {
                 return null;
             }
 
-            slot.b(itemstack1);
+            slot.c(itemstack1);
         }
 
         return itemstack;

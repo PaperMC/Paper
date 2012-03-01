@@ -38,19 +38,19 @@ public class BlockDispenser extends BlockContainer {
             int k1 = world.getTypeId(i + 1, j, k);
             byte b0 = 3;
 
-            if (Block.o[l] && !Block.o[i1]) {
+            if (Block.n[l] && !Block.n[i1]) {
                 b0 = 3;
             }
 
-            if (Block.o[i1] && !Block.o[l]) {
+            if (Block.n[i1] && !Block.n[l]) {
                 b0 = 2;
             }
 
-            if (Block.o[j1] && !Block.o[k1]) {
+            if (Block.n[j1] && !Block.n[k1]) {
                 b0 = 5;
             }
 
-            if (Block.o[k1] && !Block.o[j1]) {
+            if (Block.n[k1] && !Block.n[j1]) {
                 b0 = 4;
             }
 
@@ -167,6 +167,20 @@ public class BlockDispenser extends BlockContainer {
                     entitypotion.a((double) b0, 0.10000000149011612D, (double) b1, 1.375F, 3.0F);
                     world.addEntity(entitypotion);
                     world.triggerEffect(1002, i, j, k, 0);
+                } else if (itemstack.id == Item.EXP_BOTTLE.id) {
+                    EntityThrownExpBottle entitythrownexpbottle = new EntityThrownExpBottle(world, d0, d1, d2);
+
+                    entitythrownexpbottle.a((double) b0, 0.10000000149011612D, (double) b1, 1.375F, 3.0F);
+                    world.addEntity(entitythrownexpbottle);
+                    world.triggerEffect(1002, i, j, k, 0);
+                } else if (itemstack.id == Item.MONSTER_EGG.id) {
+                    ItemMonsterEgg.a(world, itemstack.getData(), d0 + (double) b0 * 0.3D, d1 - 0.3D, d2 + (double) b1 * 0.3D);
+                    world.triggerEffect(1002, i, j, k, 0);
+                } else if (itemstack.id == Item.FIREBALL.id) {
+                    EntitySmallFireball entitysmallfireball = new EntitySmallFireball(world, d0 + (double) b0 * 0.3D, d1, d2 + (double) b1 * 0.3D, (double) b0 + random.nextGaussian() * 0.05D, random.nextGaussian() * 0.05D, (double) b1 + random.nextGaussian() * 0.05D);
+
+                    world.addEntity(entitysmallfireball);
+                    world.triggerEffect(1009, i, j, k, 0);
                 } else {
                     EntityItem entityitem = new EntityItem(world, d0, d1 - 0.3D, d2, itemstack);
                     // CraftBukkit start

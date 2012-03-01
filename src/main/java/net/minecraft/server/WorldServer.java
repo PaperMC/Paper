@@ -35,10 +35,6 @@ public class WorldServer extends World implements BlockChangeDelegate {
         this.manager = new PlayerManager(minecraftserver, this.dimension, minecraftserver.propertyManager.getInt("view-distance", 10));
     }
 
-    public int getHeight() {
-        return height;
-    }
-
     @Override
     public TileEntity getTileEntity(int i, int j, int k) {
         TileEntity result = super.getTileEntity(i, j, k);
@@ -174,7 +170,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
     protected void c(Entity entity) {
         super.c(entity);
         this.entitiesById.a(entity.id, entity);
-        Entity[] aentity = entity.aR();
+        Entity[] aentity = entity.ba();
 
         if (aentity != null) {
             for (int i = 0; i < aentity.length; ++i) {
@@ -186,7 +182,7 @@ public class WorldServer extends World implements BlockChangeDelegate {
     protected void d(Entity entity) {
         super.d(entity);
         this.entitiesById.d(entity.id);
-        Entity[] aentity = entity.aR();
+        Entity[] aentity = entity.ba();
 
         if (aentity != null) {
             for (int i = 0; i < aentity.length; ++i) {
@@ -253,10 +249,10 @@ public class WorldServer extends World implements BlockChangeDelegate {
     }
 
     protected void i() {
-        boolean flag = this.w();
+        boolean flag = this.x();
 
         super.i();
-        if (flag != this.w()) {
+        if (flag != this.x()) {
             // CraftBukkit start - only sending weather packets to those affected
             for (int i = 0; i < this.players.size(); ++i) {
                 if (((EntityPlayer) this.players.get(i)).world == this) {

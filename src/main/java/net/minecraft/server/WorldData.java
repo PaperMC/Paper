@@ -34,6 +34,14 @@ public class WorldData {
             this.type = WorldType.getType(s);
             if (this.type == null) {
                 this.type = WorldType.NORMAL;
+            } else if (this.type.c()) {
+                int i = 0;
+
+                if (nbttagcompound.hasKey("generatorVersion")) {
+                    i = nbttagcompound.getInt("generatorVersion");
+                }
+
+                this.type = this.type.a(i);
             }
         }
 
@@ -126,6 +134,7 @@ public class WorldData {
     private void a(NBTTagCompound nbttagcompound, NBTTagCompound nbttagcompound1) {
         nbttagcompound.setLong("RandomSeed", this.seed);
         nbttagcompound.setString("generatorName", this.type.name());
+        nbttagcompound.setInt("generatorVersion", this.type.getVersion());
         nbttagcompound.setInt("GameType", this.gameType);
         nbttagcompound.setBoolean("MapFeatures", this.useMapFeatures);
         nbttagcompound.setInt("SpawnX", this.spawnX);
@@ -166,20 +175,12 @@ public class WorldData {
         return this.time;
     }
 
-    public long g() {
-        return this.sizeOnDisk;
-    }
-
-    public int h() {
+    public int g() {
         return this.dimension;
     }
 
     public void a(long i) {
         this.time = i;
-    }
-
-    public void b(long i) {
-        this.sizeOnDisk = i;
     }
 
     public void setSpawn(int i, int j, int k) {
@@ -192,7 +193,7 @@ public class WorldData {
         this.name = s;
     }
 
-    public int i() {
+    public int h() {
         return this.version;
     }
 
@@ -250,5 +251,9 @@ public class WorldData {
 
     public WorldType getType() {
         return this.type;
+    }
+
+    public void setType(WorldType worldtype) {
+        this.type = worldtype;
     }
 }

@@ -22,7 +22,7 @@ public class EntityEnderCrystal extends Entity {
         this.datawatcher.a(8, Integer.valueOf(this.b));
     }
 
-    public void y_() {
+    public void G_() {
         this.lastX = this.locX;
         this.lastY = this.locY;
         this.lastZ = this.locZ;
@@ -41,7 +41,7 @@ public class EntityEnderCrystal extends Entity {
 
     protected void a(NBTTagCompound nbttagcompound) {}
 
-    public boolean e_() {
+    public boolean o_() {
         return true;
     }
 

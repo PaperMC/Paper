@@ -13,36 +13,41 @@ public class EntitySnowman extends EntityGolem {
         super(world);
         this.texture = "/mob/snowman.png";
         this.b(0.4F, 1.8F);
+        this.ak().a(true);
+        this.goalSelector.a(1, new PathfinderGoalArrowAttack(this, 0.25F, 2, 20));
+        this.goalSelector.a(2, new PathfinderGoalRandomStroll(this, 0.2F));
+        this.goalSelector.a(3, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 6.0F));
+        this.goalSelector.a(4, new PathfinderGoalRandomLookaround(this));
+        this.targetSelector.a(1, new PathfinderGoalNearestAttackableTarget(this, EntityMonster.class, 16.0F, 0, true));
+    }
+
+    public boolean c_() {
+        return true;
     }
 
     public int getMaxHealth() {
         return 4;
     }
 
-    public void d() {
-        super.d();
-        if (this.target == null && !this.E() && this.world.random.nextInt(100) == 0) {
-            List list = this.world.a(EntityMonster.class, AxisAlignedBB.b(this.locX, this.locY, this.locZ, this.locX + 1.0D, this.locY + 1.0D, this.locZ + 1.0D).grow(16.0D, 4.0D, 16.0D));
-
-            if (!list.isEmpty()) {
-                this.setTarget((Entity) list.get(this.world.random.nextInt(list.size())));
-            }
+    public void e() {
+        super.e();
+        if (this.aS()) {
+            this.damageEntity(DamageSource.DROWN, 1);
         }
 
         int i = MathHelper.floor(this.locX);
-        int j = MathHelper.floor(this.locY);
-        int k = MathHelper.floor(this.locZ);
+        int j = MathHelper.floor(this.locZ);
 
-        if (this.world.getWorldChunkManager().a(i, j, k) > 1.0F) {
+        if (this.world.getBiome(i, j).h() > 1.0F) {
             this.damageEntity(DamageSource.BURN, 1);
         }
 
         for (i = 0; i < 4; ++i) {
             j = MathHelper.floor(this.locX + (double) ((float) (i % 2 * 2 - 1) * 0.25F));
-            k = MathHelper.floor(this.locY);
+            int k = MathHelper.floor(this.locY);
             int l = MathHelper.floor(this.locZ + (double) ((float) (i / 2 % 2 * 2 - 1) * 0.25F));
 
-            if (this.world.getTypeId(j, k, l) == 0 && this.world.getWorldChunkManager().a(j, k, l) < 0.8F && Block.SNOW.canPlace(this.world, j, k, l)) {
+            if (this.world.getTypeId(j, k, l) == 0 && this.world.getBiome(j, l).h() < 0.8F && Block.SNOW.canPlace(this.world, j, k, l)) {
                 // CraftBukkit start
                 BlockState blockState = this.world.getWorld().getBlockAt(j, k, l).getState();
                 blockState.setTypeId(Block.SNOW.id);
@@ -55,27 +60,6 @@ public class EntitySnowman extends EntityGolem {
                 }
                 // CraftBukkit end
             }
-        }
-    }
-
-    protected void a(Entity entity, float f) {
-        if (f < 10.0F) {
-            double d0 = entity.locX - this.locX;
-            double d1 = entity.locZ - this.locZ;
-
-            if (this.attackTicks == 0) {
-                EntitySnowball entitysnowball = new EntitySnowball(this.world, this);
-                double d2 = entity.locY + (double) entity.getHeadHeight() - 1.100000023841858D - entitysnowball.locY;
-                float f1 = MathHelper.sqrt(d0 * d0 + d1 * d1) * 0.2F;
-
-                this.world.makeSound(this, "random.bow", 1.0F, 1.0F / (this.random.nextFloat() * 0.4F + 0.8F));
-                this.world.addEntity(entitysnowball);
-                entitysnowball.a(d0, d2 + (double) f1, d1, 1.6F, 12.0F);
-                this.attackTicks = 10;
-            }
-
-            this.yaw = (float) (Math.atan2(d1, d0) * 180.0D / 3.1415927410125732D) - 90.0F;
-            this.e = true;
         }
     }
 

@@ -15,6 +15,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.ChunkSnapshot;
 import net.minecraft.server.BiomeBase;
 import net.minecraft.server.WorldChunkManager;
+import org.apache.commons.lang.NotImplementedException;
 
 public class CraftChunk implements Chunk {
     private WeakReference<net.minecraft.server.Chunk> weakChunk;
@@ -135,8 +136,10 @@ public class CraftChunk implements Chunk {
     public ChunkSnapshot getChunkSnapshot(boolean includeMaxblocky, boolean includeBiome, boolean includeBiomeTempRain) {
         net.minecraft.server.Chunk chunk = getHandle();
         byte[] buf = new byte[32768 + 16384 + 16384 + 16384]; // Get big enough buffer for whole chunk
-        chunk.getData(buf, 0, 0, 0, 16, 128, 16, 0); // Get whole chunk
+        //chunk.getData(buf, 0, 0, 0, 16, 128, 16, 0); // Get whole chunk
         byte[] hmap = null;
+
+        if (true) throw new NotImplementedException("Chunk snapshots do not yet work"); // TODO: Snapshots.
 
         if (includeMaxblocky) {
             hmap = new byte[256]; // Get copy of height map

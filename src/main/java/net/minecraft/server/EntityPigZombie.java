@@ -23,17 +23,17 @@ public class EntityPigZombie extends EntityZombie {
         this.fireProof = true;
     }
 
-    protected boolean as() {
+    protected boolean c_() {
         return false;
     }
 
-    public void y_() {
+    public void G_() {
         this.bb = this.target != null ? 0.95F : 0.5F;
         if (this.soundDelay > 0 && --this.soundDelay == 0) {
-            this.world.makeSound(this, "mob.zombiepig.zpigangry", this.o() * 2.0F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 1.8F);
+            this.world.makeSound(this, "mob.zombiepig.zpigangry", this.p() * 2.0F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 1.8F);
         }
 
-        super.y_();
+        super.G_();
     }
 
     public boolean canSpawn() {
@@ -54,8 +54,8 @@ public class EntityPigZombie extends EntityZombie {
         return this.angerLevel == 0 ? null : super.findTarget();
     }
 
-    public void d() {
-        super.d();
+    public void e() {
+        super.e();
     }
 
     public boolean damageEntity(DamageSource damagesource, int i) {
@@ -70,17 +70,17 @@ public class EntityPigZombie extends EntityZombie {
                 if (entity1 instanceof EntityPigZombie) {
                     EntityPigZombie entitypigzombie = (EntityPigZombie) entity1;
 
-                    entitypigzombie.f(entity);
+                    entitypigzombie.e(entity);
                 }
             }
 
-            this.f(entity);
+            this.e(entity);
         }
 
         return super.damageEntity(damagesource, i);
     }
 
-    private void f(Entity entity) {
+    private void e(Entity entity) {
         // CraftBukkit start
         org.bukkit.entity.Entity bukkitTarget = entity == null ? null : entity.getBukkitEntity();
 
@@ -103,15 +103,15 @@ public class EntityPigZombie extends EntityZombie {
         this.soundDelay = this.random.nextInt(40);
     }
 
-    protected String c_() {
+    protected String i() {
         return "mob.zombiepig.zpig";
     }
 
-    protected String m() {
+    protected String j() {
         return "mob.zombiepig.zpighurt";
     }
 
-    protected String n() {
+    protected String k() {
         return "mob.zombiepig.zpigdeath";
     }
 
@@ -133,6 +133,25 @@ public class EntityPigZombie extends EntityZombie {
         }
         CraftEventFactory.callEntityDeathEvent(this, loot);
         // CraftBukkit end
+    }
+
+    protected void b(int i) {
+        if (i > 0) {
+            ItemStack itemstack = new ItemStack(Item.GOLD_SWORD);
+
+            EnchantmentManager.a(this.random, itemstack, 5);
+            this.a(itemstack, 0.0F);
+        } else {
+            int j = this.random.nextInt(3);
+
+            if (j == 0) {
+                this.b(Item.GOLD_INGOT.id, 1);
+            } else if (j == 1) {
+                this.b(Item.GOLD_SWORD.id, 1);
+            } else if (j == 2) {
+                this.b(Item.GOLD_HELMET.id, 1);
+            }
+        }
     }
 
     protected int getLootId() {

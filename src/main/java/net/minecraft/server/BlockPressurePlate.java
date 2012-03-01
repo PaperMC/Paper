@@ -38,6 +38,10 @@ public class BlockPressurePlate extends Block {
         return false;
     }
 
+    public boolean b(IBlockAccess iblockaccess, int i, int j, int k) {
+        return true;
+    }
+
     public boolean canPlace(World world, int i, int j, int k) {
         return world.e(i, j - 1, k) || world.getTypeId(i, j - 1, k) == Block.FENCE.id;
     }
@@ -80,7 +84,7 @@ public class BlockPressurePlate extends Block {
         List list = null;
 
         if (this.a == EnumMobType.EVERYTHING) {
-            list = world.getEntities(null, AxisAlignedBB.b((double) ((float) i + f), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) j + 0.25D, (double) ((float) (k + 1) - f)));
+            list = world.getEntities((Entity) null, AxisAlignedBB.b((double) ((float) i + f), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) j + 0.25D, (double) ((float) (k + 1) - f)));
         }
 
         if (this.a == EnumMobType.MOBS) {

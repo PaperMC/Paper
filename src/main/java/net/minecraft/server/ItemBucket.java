@@ -51,7 +51,6 @@ public class ItemBucket extends Item {
                             return itemstack;
                         }
                         world.setTypeId(i, j, k, 0);
-
                         if (entityhuman.abilities.canInstantlyBuild) {
                             return itemstack;
                         }
@@ -68,7 +67,6 @@ public class ItemBucket extends Item {
                             return itemstack;
                         }
                         world.setTypeId(i, j, k, 0);
-
                         if (entityhuman.abilities.canInstantlyBuild) {
                             return itemstack;
                         }

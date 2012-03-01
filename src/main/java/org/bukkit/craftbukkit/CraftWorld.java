@@ -939,11 +939,11 @@ public class CraftWorld implements World {
     }
 
     public int getMaxHeight() {
-        return world.height;
+        return world.getHeight();
     }
 
     public int getSeaLevel() {
-        return world.seaLevel;
+        return 64;
     }
 
     public boolean getKeepSpawnInMemory() {

@@ -1,8 +1,14 @@
 package net.minecraft.server;
 
-import java.io.*;
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.IOException; // CraftBukkit
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -43,43 +49,47 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
             nbttagcompound = NBTCompressedStreamTools.a((DataInput) datainputstream);
         }
 
+        return this.a(world, i, j, nbttagcompound);
+    }
+
+    protected Chunk a(World world, int i, int j, NBTTagCompound nbttagcompound) {
         if (!nbttagcompound.hasKey("Level")) {
             System.out.println("Chunk file at " + i + "," + j + " is missing level data, skipping");
             return null;
-        } else if (!nbttagcompound.getCompound("Level").hasKey("Blocks")) {
+        } else if (!nbttagcompound.getCompound("Level").hasKey("Sections")) {
             System.out.println("Chunk file at " + i + "," + j + " is missing block data, skipping");
             return null;
         } else {
-            Chunk chunk = ChunkLoader.a(world, nbttagcompound.getCompound("Level"));
+            Chunk chunk = this.a(world, nbttagcompound.getCompound("Level"));
 
             if (!chunk.a(i, j)) {
                 System.out.println("Chunk file at " + i + "," + j + " is in the wrong location; relocating. (Expected " + i + ", " + j + ", got " + chunk.x + ", " + chunk.z + ")");
                 nbttagcompound.getCompound("Level").setInt("xPos", i); // CraftBukkit - .getCompound("Level")
                 nbttagcompound.getCompound("Level").setInt("zPos", j); // CraftBukkit - .getCompound("Level")
-                chunk = ChunkLoader.a(world, nbttagcompound.getCompound("Level"));
+                chunk = this.a(world, nbttagcompound.getCompound("Level"));
             }
 
-            chunk.h();
+            chunk.i();
             return chunk;
         }
     }
 
     public void a(World world, Chunk chunk) {
-        world.l();
+        world.m();
 
         try {
             NBTTagCompound nbttagcompound = new NBTTagCompound();
             NBTTagCompound nbttagcompound1 = new NBTTagCompound();
 
             nbttagcompound.set("Level", nbttagcompound1);
-            ChunkLoader.a(chunk, world, nbttagcompound1);
-            this.a(chunk.j(), nbttagcompound);
+            this.a(chunk, world, nbttagcompound1);
+            this.a(chunk.k(), nbttagcompound);
         } catch (Exception exception) {
             exception.printStackTrace();
         }
     }
 
-    private void a(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) {
+    protected void a(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) {
         Object object = this.c;
 
         synchronized (this.c) {
@@ -134,4 +144,169 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
     public void a() {}
 
     public void b() {}
+
+    private void a(Chunk chunk, World world, NBTTagCompound nbttagcompound) {
+        world.m();
+        nbttagcompound.setInt("xPos", chunk.x);
+        nbttagcompound.setInt("zPos", chunk.z);
+        nbttagcompound.setLong("LastUpdate", world.getTime());
+        nbttagcompound.setIntArray("HeightMap", chunk.heightMap);
+        nbttagcompound.setBoolean("TerrainPopulated", chunk.done);
+        ChunkSection[] achunksection = chunk.h();
+        NBTTagList nbttaglist = new NBTTagList("Sections");
+        ChunkSection[] achunksection1 = achunksection;
+        int i = achunksection.length;
+
+        NBTTagCompound nbttagcompound1;
+
+        for (int j = 0; j < i; ++j) {
+            ChunkSection chunksection = achunksection1[j];
+
+            if (chunksection != null && chunksection.f() != 0) {
+                nbttagcompound1 = new NBTTagCompound();
+                nbttagcompound1.setByte("Y", (byte) (chunksection.c() >> 4 & 255));
+                nbttagcompound1.setByteArray("Blocks", chunksection.g());
+                if (chunksection.h() != null) {
+                    nbttagcompound1.setByteArray("Add", chunksection.h().a);
+                }
+
+                nbttagcompound1.setByteArray("Data", chunksection.i().a);
+                nbttagcompound1.setByteArray("SkyLight", chunksection.k().a);
+                nbttagcompound1.setByteArray("BlockLight", chunksection.j().a);
+                nbttaglist.add(nbttagcompound1);
+            }
+        }
+
+        nbttagcompound.set("Sections", nbttaglist);
+        nbttagcompound.setByteArray("Biomes", chunk.l());
+        chunk.m = false;
+        NBTTagList nbttaglist1 = new NBTTagList();
+
+        Iterator iterator;
+
+        for (i = 0; i < chunk.entitySlices.length; ++i) {
+            iterator = chunk.entitySlices[i].iterator();
+
+            while (iterator.hasNext()) {
+                Entity entity = (Entity) iterator.next();
+
+                chunk.m = true;
+                nbttagcompound1 = new NBTTagCompound();
+                if (entity.c(nbttagcompound1)) {
+                    nbttaglist1.add(nbttagcompound1);
+                }
+            }
+        }
+
+        nbttagcompound.set("Entities", nbttaglist1);
+        NBTTagList nbttaglist2 = new NBTTagList();
+
+        iterator = chunk.tileEntities.values().iterator();
+
+        while (iterator.hasNext()) {
+            TileEntity tileentity = (TileEntity) iterator.next();
+
+            nbttagcompound1 = new NBTTagCompound();
+            tileentity.b(nbttagcompound1);
+            nbttaglist2.add(nbttagcompound1);
+        }
+
+        nbttagcompound.set("TileEntities", nbttaglist2);
+        List list = world.a(chunk, false);
+
+        if (list != null) {
+            long k = world.getTime();
+            NBTTagList nbttaglist3 = new NBTTagList();
+            Iterator iterator1 = list.iterator();
+
+            while (iterator1.hasNext()) {
+                NextTickListEntry nextticklistentry = (NextTickListEntry) iterator1.next();
+                NBTTagCompound nbttagcompound2 = new NBTTagCompound();
+
+                nbttagcompound2.setInt("i", nextticklistentry.d);
+                nbttagcompound2.setInt("x", nextticklistentry.a);
+                nbttagcompound2.setInt("y", nextticklistentry.b);
+                nbttagcompound2.setInt("z", nextticklistentry.c);
+                nbttagcompound2.setInt("t", (int) (nextticklistentry.e - k));
+                nbttaglist3.add(nbttagcompound2);
+            }
+
+            nbttagcompound.set("TileTicks", nbttaglist3);
+        }
+    }
+
+    private Chunk a(World world, NBTTagCompound nbttagcompound) {
+        int i = nbttagcompound.getInt("xPos");
+        int j = nbttagcompound.getInt("zPos");
+        Chunk chunk = new Chunk(world, i, j);
+
+        chunk.heightMap = nbttagcompound.getIntArray("HeightMap");
+        chunk.done = nbttagcompound.getBoolean("TerrainPopulated");
+        NBTTagList nbttaglist = nbttagcompound.getList("Sections");
+        byte b0 = 16;
+        ChunkSection[] achunksection = new ChunkSection[b0];
+
+        for (int k = 0; k < nbttaglist.size(); ++k) {
+            NBTTagCompound nbttagcompound1 = (NBTTagCompound) nbttaglist.get(k);
+            byte b1 = nbttagcompound1.getByte("Y");
+            ChunkSection chunksection = new ChunkSection(b1 << 4);
+
+            chunksection.a(nbttagcompound1.getByteArray("Blocks"));
+            if (nbttagcompound1.hasKey("Add")) {
+                chunksection.a(new NibbleArray(nbttagcompound1.getByteArray("Add"), 4));
+            }
+
+            chunksection.b(new NibbleArray(nbttagcompound1.getByteArray("Data"), 4));
+            chunksection.d(new NibbleArray(nbttagcompound1.getByteArray("SkyLight"), 4));
+            chunksection.c(new NibbleArray(nbttagcompound1.getByteArray("BlockLight"), 4));
+            chunksection.d();
+            achunksection[b1] = chunksection;
+        }
+
+        chunk.a(achunksection);
+        if (nbttagcompound.hasKey("Biomes")) {
+            chunk.a(nbttagcompound.getByteArray("Biomes"));
+        }
+
+        NBTTagList nbttaglist1 = nbttagcompound.getList("Entities");
+
+        if (nbttaglist1 != null) {
+            for (int l = 0; l < nbttaglist1.size(); ++l) {
+                NBTTagCompound nbttagcompound2 = (NBTTagCompound) nbttaglist1.get(l);
+                Entity entity = EntityTypes.a(nbttagcompound2, world);
+
+                chunk.m = true;
+                if (entity != null) {
+                    chunk.a(entity);
+                }
+            }
+        }
+
+        NBTTagList nbttaglist2 = nbttagcompound.getList("TileEntities");
+
+        if (nbttaglist2 != null) {
+            for (int i1 = 0; i1 < nbttaglist2.size(); ++i1) {
+                NBTTagCompound nbttagcompound3 = (NBTTagCompound) nbttaglist2.get(i1);
+                TileEntity tileentity = TileEntity.c(nbttagcompound3);
+
+                if (tileentity != null) {
+                    chunk.a(tileentity);
+                }
+            }
+        }
+
+        if (nbttagcompound.hasKey("TileTicks")) {
+            NBTTagList nbttaglist3 = nbttagcompound.getList("TileTicks");
+
+            if (nbttaglist3 != null) {
+                for (int j1 = 0; j1 < nbttaglist3.size(); ++j1) {
+                    NBTTagCompound nbttagcompound4 = (NBTTagCompound) nbttaglist3.get(j1);
+
+                    world.d(nbttagcompound4.getInt("x"), nbttagcompound4.getInt("y"), nbttagcompound4.getInt("z"), nbttagcompound4.getInt("i"), nbttagcompound4.getInt("t"));
+                }
+            }
+        }
+
+        return chunk;
+    }
 }

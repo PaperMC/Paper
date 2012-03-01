@@ -25,6 +25,10 @@ public class BlockTrapdoor extends Block {
         return false;
     }
 
+    public boolean b(IBlockAccess iblockaccess, int i, int j, int k) {
+        return !e(iblockaccess.getData(i, j, k));
+    }
+
     public int c() {
         return 0;
     }
@@ -115,7 +119,7 @@ public class BlockTrapdoor extends Block {
                 --j1;
             }
 
-            if (!f(world.getTypeId(j1, j, k1))) {
+            if (!h(world.getTypeId(j1, j, k1))) {
                 world.setTypeId(i, j, k, 0);
                 this.b(world, i, j, k, i1, 0);
             }
@@ -189,7 +193,7 @@ public class BlockTrapdoor extends Block {
                 --i;
             }
 
-            return f(world.getTypeId(i, j, k));
+            return h(world.getTypeId(i, j, k));
         }
     }
 
@@ -197,7 +201,7 @@ public class BlockTrapdoor extends Block {
         return (i & 4) != 0;
     }
 
-    private static boolean f(int i) {
+    private static boolean h(int i) {
         if (i <= 0) {
             return false;
         } else {

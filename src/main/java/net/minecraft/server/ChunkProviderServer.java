@@ -32,7 +32,7 @@ public class ChunkProviderServer implements IChunkProvider {
     // CraftBukkit end
 
     public ChunkProviderServer(WorldServer worldserver, IChunkLoader ichunkloader, IChunkProvider ichunkprovider) {
-        this.emptyChunk = new EmptyChunk(worldserver, new byte[256 * worldserver.height], 0, 0);
+        this.emptyChunk = new EmptyChunk(worldserver, 0, 0);
         this.world = worldserver;
         this.e = ichunkloader;
         this.chunkProvider = ichunkprovider;
@@ -135,7 +135,7 @@ public class ChunkProviderServer implements IChunkProvider {
                 Chunk chunk = this.e.a(this.world, i, j);
 
                 if (chunk != null) {
-                    chunk.t = this.world.getTime();
+                    chunk.n = this.world.getTime();
                 }
 
                 return chunk;
@@ -159,7 +159,7 @@ public class ChunkProviderServer implements IChunkProvider {
     public void saveChunk(Chunk chunk) { // CraftBukkit - private -> public
         if (this.e != null) {
             try {
-                chunk.t = this.world.getTime();
+                chunk.n = this.world.getTime();
                 this.e.a(this.world, chunk);
             } catch (Exception ioexception) { // CraftBukkit - IOException -> Exception
                 ioexception.printStackTrace();
@@ -193,7 +193,7 @@ public class ChunkProviderServer implements IChunkProvider {
                 this.world.getServer().getPluginManager().callEvent(new ChunkPopulateEvent(chunk.bukkitChunk));
                 // CraftBukkit end
 
-                chunk.f();
+                chunk.e();
             }
         }
     }
@@ -204,13 +204,13 @@ public class ChunkProviderServer implements IChunkProvider {
         for (int j = 0; j < this.chunkList.size(); ++j) {
             Chunk chunk = (Chunk) this.chunkList.get(j);
 
-            if (flag && !chunk.r) {
+            if (flag) {
                 this.saveChunkNOP(chunk);
             }
 
             if (chunk.a(flag)) {
                 this.saveChunk(chunk);
-                chunk.q = false;
+                chunk.l = false;
                 ++i;
                 if (i == 24 && !flag) {
                     return false;
@@ -266,7 +266,7 @@ public class ChunkProviderServer implements IChunkProvider {
     }
 
     public String d() {
-        return "ServerChunkCache: " + this.chunks.values().size() + " Drop: " + this.unloadQueue.size();
+        return "ServerChunkCache: " + this.chunks.values().size() + " Drop: " + this.unloadQueue.size(); // CraftBukkit
     }
 
     public List getMobsFor(EnumCreatureType enumcreaturetype, int i, int j, int k) {

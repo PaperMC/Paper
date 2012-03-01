@@ -71,7 +71,7 @@ public class ContainerDispenser extends Container {
                 return null;
             }
 
-            slot.b(itemstack1);
+            slot.c(itemstack1);
         }
 
         return itemstack;

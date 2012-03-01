@@ -33,11 +33,11 @@ public class EntityFallingBlock extends Entity {
 
     protected void b() {}
 
-    public boolean e_() {
+    public boolean o_() {
         return !this.dead;
     }
 
-    public void y_() {
+    public void G_() {
         if (this.id == 0) {
             this.die();
         } else {
@@ -71,7 +71,7 @@ public class EntityFallingBlock extends Entity {
                         this.b(this.id, 1);
                     }
                 }
-            } else if (this.b > 100 && !this.world.isStatic) {
+            } else if (this.b > 100 && !this.world.isStatic && (j < 1 || j > 256) || this.b > 600) {
                 this.b(this.id, 1);
                 this.die();
             }

@@ -12,18 +12,13 @@ class PlayerInstance {
     private short[] dirtyBlocks;
     private int dirtyCount;
     private int h;
-    private int i;
-    private int j;
-    private int k;
-    private int l;
-    private int m;
 
     final PlayerManager playerManager;
 
     public PlayerInstance(PlayerManager playermanager, int i, int j) {
         this.playerManager = playermanager;
         this.b = new ArrayList();
-        this.dirtyBlocks = new short[10];
+        this.dirtyBlocks = new short[64];
         this.dirtyCount = 0;
         this.chunkX = i;
         this.chunkZ = j;
@@ -71,36 +66,10 @@ class PlayerInstance {
     public void a(int i, int j, int k) {
         if (this.dirtyCount == 0) {
             PlayerManager.b(this.playerManager).add(this);
-            this.h = this.i = i;
-            this.j = this.k = j;
-            this.l = this.m = k;
         }
 
-        if (this.h > i) {
-            this.h = i;
-        }
-
-        if (this.i < i) {
-            this.i = i;
-        }
-
-        if (this.j > j) {
-            this.j = j;
-        }
-
-        if (this.k < j) {
-            this.k = j;
-        }
-
-        if (this.l > k) {
-            this.l = k;
-        }
-
-        if (this.m < k) {
-            this.m = k;
-        }
-
-        if (this.dirtyCount < 10) {
+        this.h |= 1 << (j >> 4);
+        if (this.dirtyCount < 64) {
             short short1 = (short) (i << 12 | k << 8 | j);
 
             for (int l = 0; l < this.dirtyCount; ++l) {
@@ -117,7 +86,7 @@ class PlayerInstance {
         for (int i = 0; i < this.b.size(); ++i) {
             EntityPlayer entityplayer = (EntityPlayer) this.b.get(i);
 
-            if (entityplayer.playerChunkCoordIntPairs.contains(this.location)) {
+            if (entityplayer.playerChunkCoordIntPairs.contains(this.location) && !entityplayer.chunkCoordIntPairQueue.contains(this.location)) {
                 entityplayer.netServerHandler.sendPacket(packet);
             }
         }
@@ -132,31 +101,30 @@ class PlayerInstance {
             int k;
 
             if (this.dirtyCount == 1) {
-                i = this.chunkX * 16 + this.h;
-                j = this.j;
-                k = this.chunkZ * 16 + this.l;
+                i = this.chunkX * 16 + (this.dirtyBlocks[0] >> 12 & 15);
+                j = this.dirtyBlocks[0] & 255;
+                k = this.chunkZ * 16 + (this.dirtyBlocks[0] >> 8 & 15);
                 this.sendAll(new Packet53BlockChange(i, j, k, worldserver));
-                if (Block.isTileEntity[worldserver.getTypeId(i, j, k)]) {
+                if (worldserver.isTileEntity(i, j, k)) {
                     this.sendTileEntity(worldserver.getTileEntity(i, j, k));
                 }
             } else {
                 int l;
 
-                if (this.dirtyCount == 10) {
-                    this.j = this.j / 2 * 2;
-                    this.k = (this.k / 2 + 1) * 2;
-                    i = this.h + this.chunkX * 16;
-                    j = this.j;
-                    k = this.l + this.chunkZ * 16;
-                    l = this.i - this.h + 1;
-                    int i1 = this.k - this.j + 2;
-                    int j1 = this.m - this.l + 1;
+                if (this.dirtyCount == 64) {
+                    i = this.chunkX * 16;
+                    j = this.chunkZ * 16;
+                    this.sendAll(new Packet51MapChunk(worldserver.getChunkAt(this.chunkX, this.chunkZ), false, this.h));
 
-                    this.sendAll(new Packet51MapChunk(i, j, k, l, i1, j1, worldserver));
-                    List list = worldserver.getTileEntities(i, j, k, i + l, j + i1, k + j1);
+                    for (k = 0; k < 16; ++k) {
+                        if ((this.h & 1 << k) != 0) {
+                            l = k << 4;
+                            List list = worldserver.getTileEntities(i, l, j, i + 16, l + 16, j + 16);
 
-                    for (int k1 = 0; k1 < list.size(); ++k1) {
-                        this.sendTileEntity((TileEntity) list.get(k1));
+                            for (int i1 = 0; i1 < list.size(); ++i1) {
+                                this.sendTileEntity((TileEntity) list.get(i1));
+                            }
+                        }
                     }
                 } else {
                     this.sendAll(new Packet52MultiBlockChange(this.chunkX, this.chunkZ, this.dirtyBlocks, this.dirtyCount, worldserver));
@@ -165,7 +133,7 @@ class PlayerInstance {
                         j = this.chunkX * 16 + (this.dirtyBlocks[i] >> 12 & 15);
                         k = this.dirtyBlocks[i] & 255;
                         l = this.chunkZ * 16 + (this.dirtyBlocks[i] >> 8 & 15);
-                        if (Block.isTileEntity[worldserver.getTypeId(j, k, l)]) {
+                        if (worldserver.isTileEntity(j, k, l)) {
                             this.sendTileEntity(worldserver.getTileEntity(j, k, l));
                         }
                     }
@@ -173,12 +141,13 @@ class PlayerInstance {
             }
 
             this.dirtyCount = 0;
+            this.h = 0;
         }
     }
 
     private void sendTileEntity(TileEntity tileentity) {
         if (tileentity != null) {
-            Packet packet = tileentity.k();
+            Packet packet = tileentity.d();
 
             if (packet != null) {
                 this.sendAll(packet);

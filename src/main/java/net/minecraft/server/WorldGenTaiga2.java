@@ -27,7 +27,7 @@ public class WorldGenTaiga2 extends WorldGenerator {
         int k1 = 2 + random.nextInt(2);
         boolean flag = true;
 
-        if (j >= 1 && j + l + 1 <= world.getHeight()) { // CraftBukkit
+        if (j >= 1 && j + l + 1 <= 128) {
             int l1;
             int i2;
             int j2;
@@ -44,7 +44,7 @@ public class WorldGenTaiga2 extends WorldGenerator {
 
                 for (i2 = i - k2; i2 <= i + k2 && flag; ++i2) {
                     for (int l2 = k - k2; l2 <= k + k2 && flag; ++l2) {
-                        if (l1 >= 0 && l1 < world.getHeight()) { // CraftBukkit
+                        if (l1 >= 0 && l1 < 128) {
                             j2 = world.getTypeId(i2, l1, l2);
                             if (j2 != 0 && j2 != Block.LEAVES.id) {
                                 flag = false;
@@ -60,7 +60,7 @@ public class WorldGenTaiga2 extends WorldGenerator {
                 return false;
             } else {
                 l1 = world.getTypeId(i, j - 1, k);
-                if ((l1 == Block.GRASS.id || l1 == Block.DIRT.id) && j < world.getHeight() - l - 1) { // CraftBukkit
+                if ((l1 == Block.GRASS.id || l1 == Block.DIRT.id) && j < 128 - l - 1) {
                     world.setRawTypeId(i, j - 1, k, Block.DIRT.id);
                     k2 = random.nextInt(2);
                     i2 = 1;
@@ -78,7 +78,7 @@ public class WorldGenTaiga2 extends WorldGenerator {
                             for (int l3 = k - k2; l3 <= k + k2; ++l3) {
                                 int i4 = l3 - k;
 
-                                if ((Math.abs(k3) != k2 || Math.abs(i4) != k2 || k2 <= 0) && !Block.o[world.getTypeId(i3, j3, l3)]) {
+                                if ((Math.abs(k3) != k2 || Math.abs(i4) != k2 || k2 <= 0) && !Block.n[world.getTypeId(i3, j3, l3)]) {
                                     this.setTypeAndData(world, i3, j3, l3, Block.LEAVES.id, 1);
                                 }
                             }

@@ -20,6 +20,11 @@ public class EntitySmallFireball extends EntityFireball {
         this.b(0.3125F, 0.3125F);
     }
 
+    public EntitySmallFireball(World world, double d0, double d1, double d2, double d3, double d4, double d5) {
+        super(world, d0, d1, d2, d3, d4, d5);
+        this.b(0.3125F, 0.3125F);
+    }
+
     protected void a(MovingObjectPosition movingobjectposition) {
         if (!this.world.isStatic) {
             // CraftBukkit start - projectile hit event
@@ -84,7 +89,7 @@ public class EntitySmallFireball extends EntityFireball {
         }
     }
 
-    public boolean e_() {
+    public boolean o_() {
         return false;
     }
 

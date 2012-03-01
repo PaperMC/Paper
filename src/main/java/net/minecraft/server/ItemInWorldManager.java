@@ -226,20 +226,20 @@ public class ItemInWorldManager {
         int l = this.world.getTypeId(i, j, k);
         int i1 = this.world.getData(i, j, k);
 
-        this.world.a(this.player, 2001, i, j, k, l + this.world.getData(i, j, k) * 256);
+        this.world.a(this.player, 2001, i, j, k, l + (this.world.getData(i, j, k) << 12));
         boolean flag = this.b(i, j, k);
 
         if (this.isCreative()) {
             ((EntityPlayer) this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
         } else {
-            ItemStack itemstack = this.player.Q();
+            ItemStack itemstack = this.player.T();
             boolean flag1 = this.player.b(Block.byId[l]);
 
             if (itemstack != null) {
                 itemstack.a(l, i, j, k, this.player);
                 if (itemstack.count == 0) {
                     itemstack.a(this.player);
-                    this.player.R();
+                    this.player.U();
                 }
             }
 

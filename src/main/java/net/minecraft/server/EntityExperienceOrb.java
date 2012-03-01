@@ -34,8 +34,8 @@ public class EntityExperienceOrb extends Entity {
 
     protected void b() {}
 
-    public void y_() {
-        super.y_();
+    public void G_() {
+        super.G_();
         if (this.c > 0) {
             --this.c;
         }
@@ -102,7 +102,7 @@ public class EntityExperienceOrb extends Entity {
         }
     }
 
-    public boolean i_() {
+    public boolean h_() {
         return this.world.a(this.boundingBox, Material.WATER, this);
     }
 
@@ -111,7 +111,7 @@ public class EntityExperienceOrb extends Entity {
     }
 
     public boolean damageEntity(DamageSource damagesource, int i) {
-        this.aM();
+        this.aV();
         this.d -= i;
         if (this.d <= 0) {
             this.die();
@@ -144,7 +144,7 @@ public class EntityExperienceOrb extends Entity {
         }
     }
 
-    public int g() {
+    public int y_() {
         return this.value;
     }
 
@@ -169,5 +169,9 @@ public class EntityExperienceOrb extends Entity {
         // CraftBukkit end
 
         return i >= 2477 ? 2477 : (i >= 1237 ? 1237 : (i >= 617 ? 617 : (i >= 307 ? 307 : (i >= 149 ? 149 : (i >= 73 ? 73 : (i >= 37 ? 37 : (i >= 17 ? 17 : (i >= 7 ? 7 : (i >= 3 ? 3 : 1)))))))));
+    }
+
+    public boolean k_() {
+        return false;
     }
 }

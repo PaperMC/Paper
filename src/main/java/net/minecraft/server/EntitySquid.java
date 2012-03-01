@@ -38,19 +38,19 @@ public class EntitySquid extends EntityWaterAnimal {
         super.a(nbttagcompound);
     }
 
-    protected String c_() {
+    protected String i() {
         return null;
     }
 
-    protected String m() {
+    protected String j() {
         return null;
     }
 
-    protected String n() {
+    protected String k() {
         return null;
     }
 
-    protected float o() {
+    protected float p() {
         return 0.4F;
     }
 
@@ -75,12 +75,12 @@ public class EntitySquid extends EntityWaterAnimal {
         return super.b(entityhuman);
     }
 
-    public boolean aK() {
+    public boolean aT() {
         return this.world.a(this.boundingBox.grow(0.0D, -0.6000000238418579D, 0.0D), Material.WATER, this);
     }
 
-    public void d() {
-        super.d();
+    public void e() {
+        super.e();
         this.b = this.a;
         this.g = this.c;
         this.i = this.h;
@@ -93,7 +93,7 @@ public class EntitySquid extends EntityWaterAnimal {
             }
         }
 
-        if (this.aK()) {
+        if (this.aT()) {
             float f;
 
             if (this.h < 3.1415927F) {
@@ -139,7 +139,7 @@ public class EntitySquid extends EntityWaterAnimal {
         this.move(this.motX, this.motY, this.motZ);
     }
 
-    protected void m_() {
+    protected void d_() {
         ++this.aV;
         if (this.aV > 100) {
             this.o = this.p = this.q = 0.0F;
@@ -151,10 +151,10 @@ public class EntitySquid extends EntityWaterAnimal {
             this.q = MathHelper.sin(f) * 0.2F;
         }
 
-        this.au();
+        this.aF();
     }
 
     public boolean canSpawn() {
-        return this.locY > 45.0D && this.locY < (double) this.world.seaLevel && super.canSpawn();
+        return this.locY > 45.0D && this.locY < 63.0D && super.canSpawn();
     }
 }

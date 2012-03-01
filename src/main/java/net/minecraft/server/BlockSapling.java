@@ -37,7 +37,7 @@ public class BlockSapling extends BlockFlower {
 
     public int a(int i, int j) {
         j &= 3;
-        return j == 1 ? 63 : (j == 2 ? 79 : super.a(i, j));
+        return j == 1 ? 63 : (j == 2 ? 79 : (j == 3 ? 30 : super.a(i, j)));
     }
 
     // CraftBukkit - added bonemeal, player and itemstack

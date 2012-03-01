@@ -177,7 +177,7 @@ public abstract class Container {
                                 slot1.set((ItemStack) null);
                             }
 
-                            slot1.b(playerinventory.getCarried());
+                            slot1.c(playerinventory.getCarried());
                         } else if (slot1.isAllowed(itemstack3)) {
                             if (itemstack2.id == itemstack3.id && (!itemstack2.usesData() || itemstack2.getData() == itemstack3.getData()) && ItemStack.equals(itemstack2, itemstack3)) {
                                 l = j == 0 ? itemstack3.count : 1;
@@ -203,12 +203,12 @@ public abstract class Container {
                             l = itemstack2.count;
                             if (l > 0 && l + itemstack3.count <= itemstack3.getMaxStackSize()) {
                                 itemstack3.count += l;
-                                itemstack2.a(l);
+                                itemstack2 = slot1.a(l);
                                 if (itemstack2.count == 0) {
                                     slot1.set((ItemStack) null);
                                 }
 
-                                slot1.b(playerinventory.getCarried());
+                                slot1.c(playerinventory.getCarried());
                             }
                         }
                     }

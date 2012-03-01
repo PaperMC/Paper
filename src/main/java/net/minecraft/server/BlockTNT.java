@@ -52,7 +52,7 @@ public class BlockTNT extends Block {
     }
 
     public void attack(World world, int i, int j, int k, EntityHuman entityhuman) {
-        if (entityhuman.Q() != null && entityhuman.Q().id == Item.FLINT_AND_STEEL.id) {
+        if (entityhuman.T() != null && entityhuman.T().id == Item.FLINT_AND_STEEL.id) {
             world.setRawData(i, j, k, 1);
         }
 

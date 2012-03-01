@@ -17,17 +17,17 @@ public abstract class EntityCreature extends EntityLiving {
         super(world);
     }
 
-    protected boolean v() {
+    protected boolean E() {
         return false;
     }
 
-    protected void m_() {
+    protected void d_() {
         // MethodProfiler.a("ai"); // CraftBukkit - not in production code
         if (this.f > 0) {
             --this.f;
         }
 
-        this.e = this.v();
+        this.e = this.E();
         float f = 16.0F;
 
         if (this.target == null) {
@@ -48,7 +48,7 @@ public abstract class EntityCreature extends EntityLiving {
             // CraftBukkit end
 
             if (this.target != null) {
-                this.pathEntity = this.world.findPath(this, this.target, f);
+                this.pathEntity = this.world.findPath(this, this.target, f, true, false, false, true);
             }
         } else if (!this.target.isAlive()) {
             // CraftBukkit start
@@ -64,9 +64,9 @@ public abstract class EntityCreature extends EntityLiving {
             }
             // CraftBukkit end
         } else {
-            float f1 = this.target.h(this);
+            float f1 = this.target.i(this);
 
-            if (this.g(this.target)) {
+            if (this.h(this.target)) {
                 this.a(this.target, f1);
             } else {
                 this.b(this.target, f1);
@@ -75,19 +75,19 @@ public abstract class EntityCreature extends EntityLiving {
 
         // MethodProfiler.a(); // CraftBukkit - not in production code
         if (!this.e && this.target != null && (this.pathEntity == null || this.random.nextInt(20) == 0)) {
-            this.pathEntity = this.world.findPath(this, this.target, f);
+            this.pathEntity = this.world.findPath(this, this.target, f, true, false, false, true);
         } else if (!this.e && (this.pathEntity == null && this.random.nextInt(180) == 0 || this.random.nextInt(120) == 0 || this.f > 0) && this.aV < 100) {
-            this.D();
+            this.F();
         }
 
         int i = MathHelper.floor(this.boundingBox.b + 0.5D);
-        boolean flag = this.aK();
-        boolean flag1 = this.aL();
+        boolean flag = this.aT();
+        boolean flag1 = this.aU();
 
         this.pitch = 0.0F;
         if (this.pathEntity != null && this.random.nextInt(100) != 0) {
             // MethodProfiler.a("followpath"); // CraftBukkit - not in production code
-            Vec3D vec3d = this.pathEntity.a(this);
+            Vec3D vec3d = this.pathEntity.a((Entity) this);
             double d0 = (double) (this.width * 2.0F);
 
             while (vec3d != null && vec3d.d(this.locX, vec3d.b, this.locZ) < d0 * d0) {
@@ -96,7 +96,7 @@ public abstract class EntityCreature extends EntityLiving {
                     vec3d = null;
                     this.pathEntity = null;
                 } else {
-                    vec3d = this.pathEntity.a(this);
+                    vec3d = this.pathEntity.a((Entity) this);
                 }
             }
 
@@ -146,7 +146,7 @@ public abstract class EntityCreature extends EntityLiving {
                 this.a(this.target, 30.0F, 30.0F);
             }
 
-            if (this.positionChanged && !this.E()) {
+            if (this.positionChanged && !this.G()) {
                 this.aZ = true;
             }
 
@@ -156,12 +156,12 @@ public abstract class EntityCreature extends EntityLiving {
 
             // MethodProfiler.a(); // CraftBukkit - not in production code
         } else {
-            super.m_();
+            super.d_();
             this.pathEntity = null;
         }
     }
 
-    protected void D() {
+    protected void F() {
         // MethodProfiler.a("stroll"); // CraftBukkit - not in production code
         boolean flag = false;
         int i = -1;
@@ -185,7 +185,7 @@ public abstract class EntityCreature extends EntityLiving {
         }
 
         if (flag) {
-            this.pathEntity = this.world.a(this, i, j, k, 10.0F);
+            this.pathEntity = this.world.a(this, i, j, k, 10.0F, true, false, false, true);
         }
 
         // MethodProfiler.a(); // CraftBukkit - not in production code
@@ -211,7 +211,7 @@ public abstract class EntityCreature extends EntityLiving {
         return super.canSpawn() && this.a(i, j, k) >= 0.0F;
     }
 
-    public boolean E() {
+    public boolean G() {
         return this.pathEntity != null;
     }
 
@@ -219,7 +219,7 @@ public abstract class EntityCreature extends EntityLiving {
         this.pathEntity = pathentity;
     }
 
-    public Entity F() {
+    public Entity H() {
         return this.target;
     }
 
@@ -227,13 +227,17 @@ public abstract class EntityCreature extends EntityLiving {
         this.target = entity;
     }
 
-    protected float G() {
-        float f = super.G();
+    protected float D_() {
+        if (this.c_()) {
+            return 1.0F;
+        } else {
+            float f = super.D_();
 
-        if (this.f > 0) {
-            f *= 2.0F;
+            if (this.f > 0) {
+                f *= 2.0F;
+            }
+
+            return f;
         }
-
-        return f;
     }
 }

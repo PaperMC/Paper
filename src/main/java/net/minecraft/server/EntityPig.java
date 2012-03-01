@@ -6,6 +6,21 @@ public class EntityPig extends EntityAnimal {
         super(world);
         this.texture = "/mob/pig.png";
         this.b(0.9F, 0.9F);
+        this.ak().a(true);
+        float f = 0.25F;
+
+        this.goalSelector.a(0, new PathfinderGoalFloat(this));
+        this.goalSelector.a(1, new PathfinderGoalPanic(this, 0.38F));
+        this.goalSelector.a(2, new PathfinderGoalBreed(this, f));
+        this.goalSelector.a(3, new PathfinderGoalTempt(this, 0.25F, Item.WHEAT.id, false));
+        this.goalSelector.a(4, new PathfinderGoalFollowParent(this, 0.28F));
+        this.goalSelector.a(5, new PathfinderGoalRandomStroll(this, f));
+        this.goalSelector.a(6, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 6.0F));
+        this.goalSelector.a(7, new PathfinderGoalRandomLookaround(this));
+    }
+
+    public boolean c_() {
+        return true;
     }
 
     public int getMaxHealth() {
@@ -27,15 +42,15 @@ public class EntityPig extends EntityAnimal {
         this.setSaddle(nbttagcompound.getBoolean("Saddle"));
     }
 
-    protected String c_() {
+    protected String i() {
         return "mob.pig";
     }
 
-    protected String m() {
+    protected String j() {
         return "mob.pig";
     }
 
-    protected String n() {
+    protected String k() {
         return "mob.pigdeath";
     }
 
@@ -83,14 +98,14 @@ public class EntityPig extends EntityAnimal {
         }
     }
 
-    protected void b(float f) {
-        super.b(f);
+    protected void a(float f) {
+        super.a(f);
         if (f > 5.0F && this.passenger instanceof EntityHuman) {
             ((EntityHuman) this.passenger).a((Statistic) AchievementList.u);
         }
     }
 
-    protected EntityAnimal createChild(EntityAnimal entityanimal) {
+    public EntityAnimal createChild(EntityAnimal entityanimal) {
         return new EntityPig(this.world);
     }
 }

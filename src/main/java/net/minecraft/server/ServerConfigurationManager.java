@@ -303,7 +303,7 @@ public class ServerConfigurationManager {
 
         // CraftBukkit start
         byte actualDimension = (byte) (worldserver.getWorld().getEnvironment().getId());
-        entityplayer1.netServerHandler.sendPacket(new Packet9Respawn(actualDimension, (byte) worldserver.difficulty, worldserver.getSeed(), worldserver.getWorldData().getType(), worldserver.height, entityplayer.itemInWorldManager.getGameMode()));
+        entityplayer1.netServerHandler.sendPacket(new Packet9Respawn(actualDimension, (byte) worldserver.difficulty, worldserver.getWorldData().getType(), worldserver.getHeight(), entityplayer.itemInWorldManager.getGameMode()));
         entityplayer1.spawnIn(worldserver);
         entityplayer1.dead = false;
         entityplayer1.netServerHandler.teleport(new Location(worldserver.getWorld(), entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch));
@@ -313,7 +313,7 @@ public class ServerConfigurationManager {
         worldserver.addEntity(entityplayer1);
         this.players.add(entityplayer1);
         this.updateClient(entityplayer1); // CraftBukkit
-        entityplayer1.B();
+        entityplayer1.E();
         // CraftBukkit start - don't fire on respawn
         if (fromWorld != location.getWorld()) {
             org.bukkit.event.player.PlayerChangedWorldEvent event = new org.bukkit.event.player.PlayerChangedWorldEvent((Player) entityplayer1.getBukkitEntity(), fromWorld);
@@ -741,14 +741,14 @@ public class ServerConfigurationManager {
 
     public void a(EntityPlayer entityplayer, WorldServer worldserver) {
         entityplayer.netServerHandler.sendPacket(new Packet4UpdateTime(worldserver.getTime()));
-        if (worldserver.w()) {
+        if (worldserver.x()) {
             entityplayer.netServerHandler.sendPacket(new Packet70Bed(1, 0));
         }
     }
 
     public void updateClient(EntityPlayer entityplayer) {
         entityplayer.updateInventory(entityplayer.defaultContainer);
-        entityplayer.t_();
+        entityplayer.J();
         entityplayer.lastSentExp = -1; // CraftBukkit
     }
 

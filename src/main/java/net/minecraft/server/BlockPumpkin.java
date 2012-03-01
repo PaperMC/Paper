@@ -2,7 +2,7 @@ package net.minecraft.server;
 
 import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
 
-public class BlockPumpkin extends Block {
+public class BlockPumpkin extends BlockDirectional {
 
     private boolean a;
 
@@ -38,17 +38,57 @@ public class BlockPumpkin extends Block {
         if (world.suppressPhysics) return; // CraftBukkit
         if (world.getTypeId(i, j - 1, k) == Block.SNOW_BLOCK.id && world.getTypeId(i, j - 2, k) == Block.SNOW_BLOCK.id) {
             if (!world.isStatic && world.getServer().getServer().spawnAnimals) { // CraftBukkit - make snowmen obey spawning rules
-                world.setTypeId(i, j, k, 0);
-                world.setTypeId(i, j - 1, k, 0);
-                world.setTypeId(i, j - 2, k, 0);
+                world.setRawTypeId(i, j, k, 0);
+                world.setRawTypeId(i, j - 1, k, 0);
+                world.setRawTypeId(i, j - 2, k, 0);
                 EntitySnowman entitysnowman = new EntitySnowman(world);
 
                 entitysnowman.setPositionRotation((double) i + 0.5D, (double) j - 1.95D, (double) k + 0.5D, 0.0F, 0.0F);
                 world.addEntity(entitysnowman, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BUILD_SNOWMAN); // CraftBukkit
+                world.update(i, j, k, 0);
+                world.update(i, j - 1, k, 0);
+                world.update(i, j - 2, k, 0);
             }
 
             for (int l = 0; l < 120; ++l) {
                 world.a("snowshovel", (double) i + world.random.nextDouble(), (double) (j - 2) + world.random.nextDouble() * 2.5D, (double) k + world.random.nextDouble(), 0.0D, 0.0D, 0.0D);
+            }
+        } else if (world.getTypeId(i, j - 1, k) == Block.IRON_BLOCK.id && world.getTypeId(i, j - 2, k) == Block.IRON_BLOCK.id) {
+            boolean flag = world.getTypeId(i - 1, j - 1, k) == Block.IRON_BLOCK.id && world.getTypeId(i + 1, j - 1, k) == Block.IRON_BLOCK.id;
+            boolean flag1 = world.getTypeId(i, j - 1, k - 1) == Block.IRON_BLOCK.id && world.getTypeId(i, j - 1, k + 1) == Block.IRON_BLOCK.id;
+
+            if (flag || flag1) {
+                world.setRawTypeId(i, j, k, 0);
+                world.setRawTypeId(i, j - 1, k, 0);
+                world.setRawTypeId(i, j - 2, k, 0);
+                if (flag) {
+                    world.setRawTypeId(i - 1, j - 1, k, 0);
+                    world.setRawTypeId(i + 1, j - 1, k, 0);
+                } else {
+                    world.setRawTypeId(i, j - 1, k - 1, 0);
+                    world.setRawTypeId(i, j - 1, k + 1, 0);
+                }
+
+                EntityIronGolem entityirongolem = new EntityIronGolem(world);
+
+                entityirongolem.b(true);
+                entityirongolem.setPositionRotation((double) i + 0.5D, (double) j - 1.95D, (double) k + 0.5D, 0.0F, 0.0F);
+                world.addEntity(entityirongolem);
+
+                for (int i1 = 0; i1 < 120; ++i1) {
+                    world.a("snowballpoof", (double) i + world.random.nextDouble(), (double) (j - 2) + world.random.nextDouble() * 3.9D, (double) k + world.random.nextDouble(), 0.0D, 0.0D, 0.0D);
+                }
+
+                world.update(i, j, k, 0);
+                world.update(i, j - 1, k, 0);
+                world.update(i, j - 2, k, 0);
+                if (flag) {
+                    world.update(i - 1, j - 1, k, 0);
+                    world.update(i + 1, j - 1, k, 0);
+                } else {
+                    world.update(i, j - 1, k - 1, 0);
+                    world.update(i, j - 1, k + 1, 0);
+                }
             }
         }
     }

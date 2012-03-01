@@ -15,7 +15,23 @@ public class Slot {
         this.e = k;
     }
 
-    public void b(ItemStack itemstack) {
+    public void a(ItemStack itemstack, ItemStack itemstack1) {
+        if (itemstack != null && itemstack1 != null) {
+            if (itemstack.id == itemstack1.id) {
+                int i = itemstack1.count - itemstack.count;
+
+                if (i > 0) {
+                    this.a(itemstack, i);
+                }
+            }
+        }
+    }
+
+    protected void a(ItemStack itemstack, int i) {}
+
+    protected void b(ItemStack itemstack) {}
+
+    public void c(ItemStack itemstack) {
         this.d();
     }
 

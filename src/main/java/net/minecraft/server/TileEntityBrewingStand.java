@@ -42,14 +42,14 @@ public class TileEntityBrewingStand extends TileEntity implements IInventory {
     // CraftBukkit end
 
     public String getName() {
-        return "Brewing Stand";
+        return "container.brewing";
     }
 
     public int getSize() {
         return this.items.length;
     }
 
-    public void l_() {
+    public void q_() {
         if (this.brewTime > 0) {
             --this.brewTime;
             if (this.brewTime == 0) {
@@ -74,10 +74,10 @@ public class TileEntityBrewingStand extends TileEntity implements IInventory {
             this.world.setData(this.x, this.y, this.z, i);
         }
 
-        super.l_();
+        super.q_();
     }
 
-    public int h() {
+    public int i() {
         return this.brewTime;
     }
 
@@ -200,6 +200,17 @@ public class TileEntityBrewingStand extends TileEntity implements IInventory {
     }
 
     public ItemStack splitStack(int i, int j) {
+        if (i >= 0 && i < this.items.length) {
+            ItemStack itemstack = this.items[i];
+
+            this.items[i] = null;
+            return itemstack;
+        } else {
+            return null;
+        }
+    }
+
+    public ItemStack splitWithoutUpdate(int i) {
         if (i >= 0 && i < this.items.length) {
             ItemStack itemstack = this.items[i];
 

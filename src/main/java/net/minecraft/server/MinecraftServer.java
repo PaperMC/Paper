@@ -40,8 +40,8 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
 
     public static Logger log = Logger.getLogger("Minecraft");
     public static HashMap trackerList = new HashMap();
-    private String t;
-    private int u;
+    private String y;
+    private int z;
     public NetworkListenThread networkListenThread;
     public PropertyManager propertyManager;
     // public WorldServer[] worldServer; // CraftBukkit - removed!
@@ -54,8 +54,8 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
     int ticks = 0;
     public String k;
     public int l;
-    private List x = new ArrayList();
-    private List y = Collections.synchronizedList(new ArrayList());
+    private List C = new ArrayList();
+    private List D = Collections.synchronizedList(new ArrayList());
     // public EntityTracker[] tracker = new EntityTracker[3]; // CraftBukkit - removed!
     public boolean onlineMode;
     public boolean spawnAnimals;
@@ -63,8 +63,17 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
     public boolean pvpMode;
     public boolean allowFlight;
     public String motd;
-    private RemoteStatusListener z;
-    private RemoteControlListener A;
+    public int t;
+    private long E;
+    private long F;
+    private long G;
+    private long H;
+    public long[] u = new long[100];
+    public long[] v = new long[100];
+    public long[] w = new long[100];
+    public long[] x = new long[100];
+    private RemoteStatusListener I;
+    private RemoteControlListener J;
 
     // CraftBukkit start
     public List<WorldServer> worlds = new ArrayList<WorldServer>();
@@ -103,7 +112,7 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
         System.setErr(new PrintStream(new LoggerOutputStream(log, Level.SEVERE), true));
         // CraftBukkit end
 
-        log.info("Starting minecraft server version 1.1");
+        log.info("Starting minecraft server version 1.2.2");
         if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
             log.warning("**** NOT ENOUGH RAM!");
             log.warning("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
@@ -111,7 +120,7 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
 
         log.info("Loading properties");
         this.propertyManager = new PropertyManager(this.options); // CraftBukkit - CLI argument support
-        this.t = this.propertyManager.getString("server-ip", "");
+        this.y = this.propertyManager.getString("server-ip", "");
         this.onlineMode = this.propertyManager.getBoolean("online-mode", true);
         this.spawnAnimals = this.propertyManager.getBoolean("spawn-animals", true);
         this.spawnNPCs = this.propertyManager.getBoolean("spawn-npcs", true);
@@ -121,15 +130,15 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
         this.motd.replace('\u00a7', '$');
         InetAddress inetaddress = null;
 
-        if (this.t.length() > 0) {
-            inetaddress = InetAddress.getByName(this.t);
+        if (this.y.length() > 0) {
+            inetaddress = InetAddress.getByName(this.y);
         }
 
-        this.u = this.propertyManager.getInt("server-port", 25565);
-        log.info("Starting Minecraft server on " + (this.t.length() == 0 ? "*" : this.t) + ":" + this.u);
+        this.z = this.propertyManager.getInt("server-port", 25565);
+        log.info("Starting Minecraft server on " + (this.y.length() == 0 ? "*" : this.y) + ":" + this.z);
 
         try {
-            this.networkListenThread = new NetworkListenThread(this, inetaddress, this.u);
+            this.networkListenThread = new NetworkListenThread(this, inetaddress, this.z);
         } catch (Throwable ioexception) { // CraftBukkit - IOException -> Throwable
             log.warning("**** FAILED TO BIND TO PORT!");
             log.log(Level.WARNING, "The exception was: " + ioexception.toString());
@@ -170,6 +179,10 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
             worldtype = WorldType.NORMAL;
         }
 
+        this.t = this.propertyManager.getInt("max-build-height", 256);
+        this.t = (this.t + 8) / 16 * 16;
+        this.t = MathHelper.a(this.t, 64, 256);
+        this.propertyManager.a("max-build-height", Integer.valueOf(this.t));
         log.info("Preparing level \"" + s + "\"");
         this.a(new WorldLoaderServer(new File(".")), s, j, worldtype);
 
@@ -181,14 +194,14 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
 
         if (this.propertyManager.getBoolean("enable-query", false)) {
             log.info("Starting GS4 status listener");
-            this.z = new RemoteStatusListener(this);
-            this.z.a();
+            this.I = new RemoteStatusListener(this);
+            this.I.a();
         }
 
         if (this.propertyManager.getBoolean("enable-rcon", false)) {
             log.info("Starting remote control listener");
-            this.A = new RemoteControlListener(this);
-            this.A.a();
+            this.J = new RemoteControlListener(this);
+            this.J.a();
             this.remoteConsole = new CraftRemoteConsoleCommandSender();
         }
 
@@ -542,8 +555,8 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
         }
         // CraftBukkit end
 
-        for (k = 0; k < this.x.size(); ++k) {
-            ((IUpdatePlayerListBox) this.x.get(k)).a();
+        for (k = 0; k < this.C.size(); ++k) {
+            ((IUpdatePlayerListBox) this.C.get(k)).a();
         }
 
         try {
@@ -553,15 +566,23 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
         }
 
         this.f[this.ticks % 100] = System.nanoTime() - i;
+        this.u[this.ticks % 100] = Packet.n - this.E;
+        this.E = Packet.n;
+        this.v[this.ticks % 100] = Packet.o - this.F;
+        this.F = Packet.o;
+        this.w[this.ticks % 100] = Packet.l - this.G;
+        this.G = Packet.l;
+        this.x[this.ticks % 100] = Packet.m - this.H;
+        this.H = Packet.m;
     }
 
     public void issueCommand(String s, ICommandListener icommandlistener) {
-        this.y.add(new ServerCommand(s, icommandlistener));
+        this.D.add(new ServerCommand(s, icommandlistener));
     }
 
     public void b() {
-        while (this.y.size() > 0) {
-            ServerCommand servercommand = (ServerCommand) this.y.remove(0);
+        while (this.D.size() > 0) {
+            ServerCommand servercommand = (ServerCommand) this.D.remove(0);
 
             // CraftBukkit start - ServerCommand for preprocessing
             ServerCommandEvent event = new ServerCommandEvent(this.console, servercommand.command);
@@ -575,7 +596,7 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
     }
 
     public void a(IUpdatePlayerListBox iupdateplayerlistbox) {
-        this.x.add(iupdateplayerlistbox);
+        this.C.add(iupdateplayerlistbox);
     }
 
     public static void main(final OptionSet options) { // CraftBukkit - replaces main(String args[])
@@ -647,11 +668,11 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
     }
 
     public String getMotd() {
-        return this.t;
+        return this.y;
     }
 
     public int getPort() {
-        return this.u;
+        return this.z;
     }
 
     public String getServerAddress() {
@@ -659,7 +680,7 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
     }
 
     public String getVersion() {
-        return "1.1";
+        return "1.2.2";
     }
 
     public int getPlayerCount() {

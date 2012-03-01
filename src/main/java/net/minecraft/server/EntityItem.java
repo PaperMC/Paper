@@ -8,10 +8,9 @@ import org.bukkit.event.player.PlayerPickupItemEvent;
 public class EntityItem extends Entity {
 
     public ItemStack itemStack;
-    private int e;
     public int age = 0;
     public int pickupDelay;
-    private int f = 5;
+    private int e = 5;
     public float d = (float) (Math.random() * 3.141592653589793D * 2.0D);
     private int lastTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit
 
@@ -47,8 +46,8 @@ public class EntityItem extends Entity {
 
     protected void b() {}
 
-    public void y_() {
-        super.y_();
+    public void G_() {
+        super.G_();
         // CraftBukkit start
         int currentTick = (int) (System.currentTimeMillis() / 50);
         this.pickupDelay -= (currentTick - this.lastTick);
@@ -86,7 +85,6 @@ public class EntityItem extends Entity {
             this.motY *= -0.5D;
         }
 
-        ++this.e;
         ++this.age;
         if (this.age >= 6000) {
             // CraftBukkit start
@@ -99,7 +97,11 @@ public class EntityItem extends Entity {
         }
     }
 
-    public boolean i_() {
+    public void k() {
+        this.age = 4800;
+    }
+
+    public boolean h_() {
         return this.world.a(this.boundingBox, Material.WATER, this);
     }
 
@@ -108,9 +110,9 @@ public class EntityItem extends Entity {
     }
 
     public boolean damageEntity(DamageSource damagesource, int i) {
-        this.aM();
-        this.f -= i;
-        if (this.f <= 0) {
+        this.aV();
+        this.e -= i;
+        if (this.e <= 0) {
             this.die();
         }
 
@@ -118,14 +120,14 @@ public class EntityItem extends Entity {
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.setShort("Health", (short) ((byte) this.f));
+        nbttagcompound.setShort("Health", (short) ((byte) this.e));
         nbttagcompound.setShort("Age", (short) this.age);
         if (this.itemStack != null) // CraftBukkit - Nullchex!
         nbttagcompound.setCompound("Item", this.itemStack.save(new NBTTagCompound()));
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        this.f = nbttagcompound.getShort("Health") & 255;
+        this.e = nbttagcompound.getShort("Health") & 255;
         this.age = nbttagcompound.getShort("Age");
         NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("Item");
 
@@ -186,5 +188,9 @@ public class EntityItem extends Entity {
     public String getLocalizedName() {
         if (this.itemStack == null) return LocaleI18n.get("item.unknown"); // CraftBukkit - nullcheck
         return LocaleI18n.get("item." + this.itemStack.k());
+    }
+
+    public boolean k_() {
+        return false;
     }
 }

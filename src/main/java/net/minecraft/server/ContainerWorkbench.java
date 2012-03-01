@@ -71,7 +71,7 @@ public class ContainerWorkbench extends Container {
         super.a(entityhuman);
         if (!this.c.isStatic) {
             for (int i = 0; i < 9; ++i) {
-                ItemStack itemstack = this.craftInventory.getItem(i);
+                ItemStack itemstack = this.craftInventory.splitWithoutUpdate(i);
 
                 if (itemstack != null) {
                     entityhuman.drop(itemstack);
@@ -97,6 +97,8 @@ public class ContainerWorkbench extends Container {
                 if (!this.a(itemstack1, 10, 46, true)) {
                     return null;
                 }
+
+                slot.a(itemstack1, itemstack);
             } else if (i >= 10 && i < 37) {
                 if (!this.a(itemstack1, 37, 46, false)) {
                     return null;
@@ -119,7 +121,7 @@ public class ContainerWorkbench extends Container {
                 return null;
             }
 
-            slot.b(itemstack1);
+            slot.c(itemstack1);
         }
 
         return itemstack;

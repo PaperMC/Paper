@@ -81,15 +81,9 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
     }
 
     public List<?> getMobsFor(EnumCreatureType type, int x, int y, int z) {
-        WorldChunkManager worldchunkmanager = world.getWorldChunkManager();
+        BiomeBase biomebase = world.getBiome(x, z);
 
-        if (worldchunkmanager == null) {
-            return null;
-        } else {
-            BiomeBase biomebase = worldchunkmanager.getBiome(new ChunkCoordIntPair(x >> 4, z >> 4));
-
-            return biomebase == null ? null : biomebase.getMobs(type);
-        }
+        return biomebase == null ? null : biomebase.getMobs(type);
     }
 
     public ChunkPosition findNearestMapFeature(World world, String type, int x, int y, int z) {

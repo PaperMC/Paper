@@ -77,14 +77,14 @@ public class BlockMushroom extends BlockFlower {
     }
 
     protected boolean d(int i) {
-        return Block.o[i];
+        return Block.n[i];
     }
 
     public boolean f(World world, int i, int j, int k) {
-        if (j >= 0 && j < world.height) {
+        if (j >= 0 && j < 256) {
             int l = world.getTypeId(i, j - 1, k);
 
-            return l == Block.MYCEL.id || world.k(i, j, k) < 13 && this.d(l);
+            return l == Block.MYCEL.id || world.m(i, j, k) < 13 && this.d(l);
         } else {
             return false;
         }

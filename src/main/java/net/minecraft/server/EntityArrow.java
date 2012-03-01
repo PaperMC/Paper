@@ -39,6 +39,30 @@ public class EntityArrow extends Entity {
         this.height = 0.0F;
     }
 
+    public EntityArrow(World world, EntityLiving entityliving, EntityLiving entityliving1, float f, float f1) {
+        super(world);
+        this.shooter = entityliving;
+        this.fromPlayer = entityliving instanceof EntityHuman;
+        this.locY = entityliving.locY + (double) entityliving.getHeadHeight() - 0.10000000149011612D;
+        double d0 = entityliving1.locX - entityliving.locX;
+        double d1 = entityliving1.locY + (double) entityliving1.getHeadHeight() - 0.699999988079071D - this.locY;
+        double d2 = entityliving1.locZ - entityliving.locZ;
+        double d3 = (double) MathHelper.sqrt(d0 * d0 + d2 * d2);
+
+        if (d3 >= 1.0E-7D) {
+            float f2 = (float) (Math.atan2(d2, d0) * 180.0D / 3.1415927410125732D) - 90.0F;
+            float f3 = (float) (-(Math.atan2(d1, d3) * 180.0D / 3.1415927410125732D));
+            double d4 = d0 / d3;
+            double d5 = d2 / d3;
+
+            this.setPositionRotation(entityliving.locX + d4, this.locY, entityliving.locZ + d5, f2, f3);
+            this.height = 0.0F;
+            float f4 = (float) d3 * 0.2F;
+
+            this.shoot(d0, d1 + (double) f4, d2, f, f1);
+        }
+    }
+
     public EntityArrow(World world, EntityLiving entityliving, float f) {
         super(world);
         this.shooter = entityliving;
@@ -80,8 +104,8 @@ public class EntityArrow extends Entity {
         this.k = 0;
     }
 
-    public void y_() {
-        super.y_();
+    public void G_() {
+        super.G_();
         if (this.lastPitch == 0.0F && this.lastYaw == 0.0F) {
             float f = MathHelper.sqrt(this.motX * this.motX + this.motZ * this.motZ);
 
@@ -143,7 +167,7 @@ public class EntityArrow extends Entity {
             for (k = 0; k < list.size(); ++k) {
                 Entity entity1 = (Entity) list.get(k);
 
-                if (entity1.e_() && (entity1 != this.shooter || this.l >= 5)) {
+                if (entity1.o_() && (entity1 != this.shooter || this.l >= 5)) {
                     f1 = 0.3F;
                     AxisAlignedBB axisalignedbb1 = entity1.boundingBox.grow((double) f1, (double) f1, (double) f1);
                     MovingObjectPosition movingobjectposition1 = axisalignedbb1.a(vec3d, vec3d1);
@@ -200,7 +224,7 @@ public class EntityArrow extends Entity {
                     // CraftBukkit - entity.damageEntity -> event function
                     if (org.bukkit.craftbukkit.event.CraftEventFactory.handleProjectileEvent(projectile, entity, damagesource, l)) {
                         if (movingobjectposition.entity instanceof EntityLiving) {
-                            ++((EntityLiving) movingobjectposition.entity).aJ;
+                            ++((EntityLiving) movingobjectposition.entity).aI;
                             if (this.n > 0) {
                                 float f3 = MathHelper.sqrt(this.motX * this.motX + this.motZ * this.motZ);
 
@@ -273,7 +297,7 @@ public class EntityArrow extends Entity {
             float f4 = 0.99F;
 
             f1 = 0.05F;
-            if (this.aK()) {
+            if (this.aT()) {
                 for (int i1 = 0; i1 < 4; ++i1) {
                     float f5 = 0.25F;
 
@@ -345,11 +369,15 @@ public class EntityArrow extends Entity {
         this.damage = d0;
     }
 
-    public double j() {
+    public double k() {
         return this.damage;
     }
 
     public void b(int i) {
         this.n = i;
+    }
+
+    public boolean k_() {
+        return false;
     }
 }

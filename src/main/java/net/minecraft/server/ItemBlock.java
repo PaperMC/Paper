@@ -25,8 +25,8 @@ public class ItemBlock extends Item {
         int i1 = world.getTypeId(i, j, k);
 
         if (i1 == Block.SNOW.id) {
-            l = 0;
-        } else if (i1 != Block.VINE.id) {
+            l = 1;
+        } else if (i1 != Block.VINE.id && i1 != Block.LONG_GRASS.id && i1 != Block.DEAD_BUSH.id) {
             if (l == 0) {
                 --j;
             }
@@ -56,7 +56,7 @@ public class ItemBlock extends Item {
             return false;
         } else if (!entityhuman.d(i, j, k)) {
             return false;
-        } else if (j == world.height - 1 && Block.byId[this.id].material.isBuildable()) {
+        } else if (j == 255 && Block.byId[this.id].material.isBuildable()) {
             return false;
         }
         // CraftBukkit start
@@ -82,8 +82,8 @@ public class ItemBlock extends Item {
                 if (Block.byId[id] != null) {
                     Block.byId[id].postPlace(world, i, j, k, l);
                     Block.byId[id].postPlace(world, i, j, k, entityhuman);
+                    // CraftBukkit end
                 }
-                // CraftBukkit end
 
                 world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), block.stepSound.getName(), (block.stepSound.getVolume1() + 1.0F) / 2.0F, block.stepSound.getVolume2() * 0.8F);
                 --itemstack.count;
@@ -96,10 +96,10 @@ public class ItemBlock extends Item {
     }
 
     public String a(ItemStack itemstack) {
-        return Block.byId[this.id].n();
+        return Block.byId[this.id].p();
     }
 
     public String getName() {
-        return Block.byId[this.id].n();
+        return Block.byId[this.id].p();
     }
 }

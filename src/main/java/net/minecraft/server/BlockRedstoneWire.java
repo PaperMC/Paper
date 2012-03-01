@@ -38,7 +38,7 @@ public class BlockRedstoneWire extends Block {
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
-        return world.e(i, j - 1, k);
+        return world.e(i, j - 1, k) || world.getTypeId(i, j - 1, k) == Block.GLOWSTONE.id;
     }
 
     private void g(World world, int i, int j, int k) {

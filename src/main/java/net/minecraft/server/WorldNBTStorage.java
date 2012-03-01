@@ -76,19 +76,7 @@ public class WorldNBTStorage implements PlayerFileData, IDataManager {
     }
 
     public IChunkLoader createChunkLoader(WorldProvider worldprovider) {
-        File file1;
-
-        if (worldprovider instanceof WorldProviderHell) {
-            file1 = new File(this.baseDir, "DIM-1");
-            file1.mkdirs();
-            return new ChunkLoader(file1, true);
-        } else if (worldprovider instanceof WorldProviderTheEnd) {
-            file1 = new File(this.baseDir, "DIM1");
-            file1.mkdirs();
-            return new ChunkLoader(file1, true);
-        } else {
-            return new ChunkLoader(this.baseDir, true);
-        }
+        throw new RuntimeException("Old Chunk Storage is no longer supported.");
     }
 
     public WorldData getWorldData() {

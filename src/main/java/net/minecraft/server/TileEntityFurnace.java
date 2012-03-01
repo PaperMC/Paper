@@ -72,6 +72,17 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         }
     }
 
+    public ItemStack splitWithoutUpdate(int i) {
+        if (this.items[i] != null) {
+            ItemStack itemstack = this.items[i];
+
+            this.items[i] = null;
+            return itemstack;
+        } else {
+            return null;
+        }
+    }
+
     public void setItem(int i, ItemStack itemstack) {
         this.items[i] = itemstack;
         if (itemstack != null && itemstack.count > this.getMaxStackSize()) {
@@ -80,7 +91,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
     }
 
     public String getName() {
-        return "Furnace";
+        return "container.furnace";
     }
 
     public void a(NBTTagCompound nbttagcompound) {
@@ -130,7 +141,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
         return this.burnTime > 0;
     }
 
-    public void l_() {
+    public void q_() {
         boolean flag = this.burnTime > 0;
         boolean flag1 = false;
 

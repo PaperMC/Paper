@@ -72,13 +72,14 @@ public class ContainerPlayer extends Container {
         super.a(entityhuman);
 
         for (int i = 0; i < 4; ++i) {
-            ItemStack itemstack = this.craftInventory.getItem(i);
+            ItemStack itemstack = this.craftInventory.splitWithoutUpdate(i);
 
             if (itemstack != null) {
                 entityhuman.drop(itemstack);
-                this.craftInventory.setItem(i, (ItemStack) null);
             }
         }
+
+        this.resultInventory.setItem(0, (ItemStack) null);
     }
 
     public boolean b(EntityHuman entityhuman) {
@@ -97,6 +98,8 @@ public class ContainerPlayer extends Container {
                 if (!this.a(itemstack1, 9, 45, true)) {
                     return null;
                 }
+
+                slot.a(itemstack1, itemstack);
             } else if (i >= 9 && i < 36) {
                 if (!this.a(itemstack1, 36, 45, false)) {
                     return null;
@@ -119,7 +122,7 @@ public class ContainerPlayer extends Container {
                 return null;
             }
 
-            slot.b(itemstack1);
+            slot.c(itemstack1);
         }
 
         return itemstack;

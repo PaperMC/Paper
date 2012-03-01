@@ -26,15 +26,15 @@ public class EntityBlaze extends EntityMonster {
         this.datawatcher.a(16, new Byte((byte) 0));
     }
 
-    protected String c_() {
+    protected String i() {
         return "mob.blaze.breathe";
     }
 
-    protected String m() {
+    protected String j() {
         return "mob.blaze.hit";
     }
 
-    protected String n() {
+    protected String k() {
         return "mob.blaze.death";
     }
 
@@ -46,13 +46,13 @@ public class EntityBlaze extends EntityMonster {
         super.die(damagesource);
     }
 
-    public float a(float f) {
+    public float b(float f) {
         return 1.0F;
     }
 
-    public void d() {
+    public void e() {
         if (!this.world.isStatic) {
-            if (this.aJ()) {
+            if (this.aS()) {
                 this.damageEntity(DamageSource.DROWN, 1);
             }
 
@@ -62,7 +62,7 @@ public class EntityBlaze extends EntityMonster {
                 this.a = 0.5F + (float) this.random.nextGaussian() * 3.0F;
             }
 
-            if (this.F() != null && this.F().locY + (double) this.F().getHeadHeight() > this.locY + (double) this.getHeadHeight() + (double) this.a) {
+            if (this.H() != null && this.H().locY + (double) this.H().getHeadHeight() > this.locY + (double) this.getHeadHeight() + (double) this.a) {
                 this.motY += (0.30000001192092896D - this.motY) * 0.30000001192092896D;
             }
         }
@@ -79,13 +79,13 @@ public class EntityBlaze extends EntityMonster {
             this.world.a("largesmoke", this.locX + (this.random.nextDouble() - 0.5D) * (double) this.width, this.locY + this.random.nextDouble() * (double) this.length, this.locZ + (this.random.nextDouble() - 0.5D) * (double) this.width, 0.0D, 0.0D, 0.0D);
         }
 
-        super.d();
+        super.e();
     }
 
     protected void a(Entity entity, float f) {
         if (this.attackTicks <= 0 && f < 2.0F && entity.boundingBox.e > this.boundingBox.b && entity.boundingBox.b < this.boundingBox.e) {
             this.attackTicks = 20;
-            this.d(entity);
+            this.a(entity);
         } else if (f < 30.0F) {
             double d0 = entity.locX - this.locX;
             double d1 = entity.boundingBox.b + (double) (entity.length / 2.0F) - (this.locY + (double) (this.length / 2.0F));
@@ -123,7 +123,7 @@ public class EntityBlaze extends EntityMonster {
         }
     }
 
-    protected void b(float f) {}
+    protected void a(float f) {}
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
@@ -138,7 +138,7 @@ public class EntityBlaze extends EntityMonster {
     }
 
     public boolean isBurning() {
-        return this.B();
+        return this.A();
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
@@ -156,7 +156,7 @@ public class EntityBlaze extends EntityMonster {
         }
     }
 
-    public boolean B() {
+    public boolean A() {
         return (this.datawatcher.getByte(16) & 1) != 0;
     }
 
@@ -172,7 +172,7 @@ public class EntityBlaze extends EntityMonster {
         this.datawatcher.watch(16, Byte.valueOf(b0));
     }
 
-    protected boolean z() {
+    protected boolean D() {
         return true;
     }
 }

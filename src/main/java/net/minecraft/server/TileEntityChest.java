@@ -74,6 +74,17 @@ public class TileEntityChest extends TileEntity implements IInventory {
         }
     }
 
+    public ItemStack splitWithoutUpdate(int i) {
+        if (this.items[i] != null) {
+            ItemStack itemstack = this.items[i];
+
+            this.items[i] = null;
+            return itemstack;
+        } else {
+            return null;
+        }
+    }
+
     public void setItem(int i, ItemStack itemstack) {
         this.items[i] = itemstack;
         if (itemstack != null && itemstack.count > this.getMaxStackSize()) {
@@ -84,7 +95,7 @@ public class TileEntityChest extends TileEntity implements IInventory {
     }
 
     public String getName() {
-        return "Chest";
+        return "container.chest";
     }
 
     public void a(NBTTagCompound nbttagcompound) {
@@ -129,12 +140,12 @@ public class TileEntityChest extends TileEntity implements IInventory {
         return this.world.getTileEntity(this.x, this.y, this.z) != this ? false : entityhuman.e((double) this.x + 0.5D, (double) this.y + 0.5D, (double) this.z + 0.5D) <= 64.0D;
     }
 
-    public void d() {
-        super.d();
+    public void h() {
+        super.h();
         this.a = false;
     }
 
-    public void h() {
+    public void i() {
         if (!this.a) {
             this.a = true;
             this.b = null;
@@ -158,19 +169,19 @@ public class TileEntityChest extends TileEntity implements IInventory {
             }
 
             if (this.b != null) {
-                this.b.d();
+                this.b.h();
             }
 
             if (this.e != null) {
-                this.e.d();
+                this.e.h();
             }
 
             if (this.c != null) {
-                this.c.d();
+                this.c.h();
             }
 
             if (this.d != null) {
-                this.d.d();
+                this.d.h();
             }
         }
     }
@@ -193,10 +204,10 @@ public class TileEntityChest extends TileEntity implements IInventory {
     }
     // CraftBukkit end
 
-    public void l_() {
-        super.l_();
+    public void q_() {
+        super.q_();
         if (this.world == null) return; // CraftBukkit
-        this.h();
+        this.i();
         if (++this.ticks % (20 * 4) == 0) { // CraftBukkit
             this.world.playNote(this.x, this.y, this.z, 1, this.h);
         }
@@ -274,9 +285,9 @@ public class TileEntityChest extends TileEntity implements IInventory {
         this.world.playNote(this.x, this.y, this.z, 1, this.h);
     }
 
-    public void i() {
-        this.d();
+    public void j() {
         this.h();
-        super.i();
+        this.i();
+        super.j();
     }
 }

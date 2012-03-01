@@ -146,9 +146,9 @@ public class ContainerEnchantTable extends Container {
     public boolean a(EntityHuman entityhuman, int i) {
         ItemStack itemstack = this.enchantSlots.getItem(0);
 
-        if (this.costs[i] > 0 && itemstack != null && entityhuman.expLevel >= this.costs[i]) {
+        if (this.costs[i] > 0 && itemstack != null && (entityhuman.expLevel >= this.costs[i] || entityhuman.abilities.canInstantlyBuild)) {
             if (!this.world.isStatic) {
-                List list = EnchantmentManager.a(this.l, itemstack, this.costs[i]);
+                List list = EnchantmentManager.b(this.l, itemstack, this.costs[i]);
 
                 // CraftBukkit start
                 Map<org.bukkit.enchantments.Enchantment, Integer> enchants = new HashMap<org.bukkit.enchantments.Enchantment, Integer>();
@@ -189,7 +189,7 @@ public class ContainerEnchantTable extends Container {
     public void a(EntityHuman entityhuman) {
         super.a(entityhuman);
         if (!this.world.isStatic) {
-            ItemStack itemstack = this.enchantSlots.getItem(0);
+            ItemStack itemstack = this.enchantSlots.splitWithoutUpdate(0);
 
             if (itemstack != null) {
                 entityhuman.drop(itemstack);
@@ -228,7 +228,7 @@ public class ContainerEnchantTable extends Container {
                 return null;
             }
 
-            slot.b(itemstack1);
+            slot.c(itemstack1);
         }
 
         return itemstack;

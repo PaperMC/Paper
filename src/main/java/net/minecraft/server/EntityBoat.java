@@ -61,15 +61,15 @@ public class EntityBoat extends Entity {
         this.datawatcher.a(19, new Integer(0));
     }
 
-    public AxisAlignedBB a_(Entity entity) {
+    public AxisAlignedBB b_(Entity entity) {
         return entity.boundingBox;
     }
 
-    public AxisAlignedBB h_() {
+    public AxisAlignedBB h() {
         return this.boundingBox;
     }
 
-    public boolean f_() {
+    public boolean e_() {
         return true;
     }
 
@@ -86,7 +86,7 @@ public class EntityBoat extends Entity {
         this.world.getServer().getPluginManager().callEvent(new VehicleCreateEvent((Vehicle) this.getBukkitEntity())); // CraftBukkit
     }
 
-    public double q() {
+    public double x_() {
         return (double) this.length * 0.0D - 0.30000001192092896D;
     }
 
@@ -105,10 +105,10 @@ public class EntityBoat extends Entity {
             // i = event.getDamage(); // TODO Why don't we do this?
             // CraftBukkit end
 
-            this.d(-this.l());
+            this.d(-this.m());
             this.c(10);
             this.setDamage(this.getDamage() + i * 10);
-            this.aM();
+            this.aV();
             if (this.getDamage() > 40) {
                 // CraftBukkit start
                 VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, attacker);
@@ -143,11 +143,11 @@ public class EntityBoat extends Entity {
         }
     }
 
-    public boolean e_() {
+    public boolean o_() {
         return !this.dead;
     }
 
-    public void y_() {
+    public void G_() {
         // CraftBukkit start
         double prevX = this.locX;
         double prevY = this.locY;
@@ -156,9 +156,9 @@ public class EntityBoat extends Entity {
         float prevPitch = this.pitch;
         // CraftBukkit end
 
-        super.y_();
-        if (this.k() > 0) {
-            this.c(this.k() - 1);
+        super.G_();
+        if (this.l() > 0) {
+            this.c(this.l() - 1);
         }
 
         if (this.getDamage() > 0) {
@@ -379,7 +379,7 @@ public class EntityBoat extends Entity {
                 for (l = 0; l < list.size(); ++l) {
                     Entity entity = (Entity) list.get(l);
 
-                    if (entity != this.passenger && entity.f_() && entity instanceof EntityBoat) {
+                    if (entity != this.passenger && entity.e_() && entity instanceof EntityBoat) {
                         entity.collide(this);
                     }
                 }
@@ -402,12 +402,12 @@ public class EntityBoat extends Entity {
         }
     }
 
-    public void i() {
+    public void i_() {
         if (this.passenger != null) {
             double d0 = Math.cos((double) this.yaw * 3.141592653589793D / 180.0D) * 0.4D;
             double d1 = Math.sin((double) this.yaw * 3.141592653589793D / 180.0D) * 0.4D;
 
-            this.passenger.setPosition(this.locX + d0, this.locY + this.q() + this.passenger.S(), this.locZ + d1);
+            this.passenger.setPosition(this.locX + d0, this.locY + this.x_() + this.passenger.V(), this.locZ + d1);
         }
     }
 
@@ -439,7 +439,7 @@ public class EntityBoat extends Entity {
         this.datawatcher.watch(17, Integer.valueOf(i));
     }
 
-    public int k() {
+    public int l() {
         return this.datawatcher.getInt(17);
     }
 
@@ -447,7 +447,7 @@ public class EntityBoat extends Entity {
         this.datawatcher.watch(18, Integer.valueOf(i));
     }
 
-    public int l() {
+    public int m() {
         return this.datawatcher.getInt(18);
     }
 }

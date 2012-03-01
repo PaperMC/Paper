@@ -20,14 +20,28 @@ public class EntityChicken extends EntityAnimal {
         this.texture = "/mob/chicken.png";
         this.b(0.3F, 0.7F);
         this.j = this.random.nextInt(6000) + 6000;
+        float f = 0.25F;
+
+        this.goalSelector.a(0, new PathfinderGoalFloat(this));
+        this.goalSelector.a(1, new PathfinderGoalPanic(this, 0.38F));
+        this.goalSelector.a(2, new PathfinderGoalBreed(this, f));
+        this.goalSelector.a(3, new PathfinderGoalTempt(this, 0.25F, Item.WHEAT.id, false));
+        this.goalSelector.a(4, new PathfinderGoalFollowParent(this, 0.28F));
+        this.goalSelector.a(5, new PathfinderGoalRandomStroll(this, f));
+        this.goalSelector.a(6, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 6.0F));
+        this.goalSelector.a(7, new PathfinderGoalRandomLookaround(this));
+    }
+
+    public boolean c_() {
+        return true;
     }
 
     public int getMaxHealth() {
         return 4;
     }
 
-    public void d() {
-        super.d();
+    public void e() {
+        super.e();
         this.h = this.b;
         this.g = this.c;
         this.c = (float) ((double) this.c + (double) (this.onGround ? -1 : 4) * 0.3D);
@@ -56,7 +70,7 @@ public class EntityChicken extends EntityAnimal {
         }
     }
 
-    protected void b(float f) {}
+    protected void a(float f) {}
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
@@ -66,15 +80,15 @@ public class EntityChicken extends EntityAnimal {
         super.a(nbttagcompound);
     }
 
-    protected String c_() {
+    protected String i() {
         return "mob.chicken";
     }
 
-    protected String m() {
+    protected String j() {
         return "mob.chickenhurt";
     }
 
-    protected String n() {
+    protected String k() {
         return "mob.chickenhurt";
     }
 
@@ -101,7 +115,7 @@ public class EntityChicken extends EntityAnimal {
         // CraftBukkit end
     }
 
-    protected EntityAnimal createChild(EntityAnimal entityanimal) {
+    public EntityAnimal createChild(EntityAnimal entityanimal) {
         return new EntityChicken(this.world);
     }
 }

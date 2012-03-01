@@ -139,14 +139,27 @@ public class BlockLeaves extends BlockTransparant {
     }
 
     public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {
-        super.dropNaturally(world, i, j, k, l, f, i1);
-        if (!world.isStatic && (l & 3) == 0 && world.random.nextInt(200) == 0) {
-            this.a(world, i, j, k, new ItemStack(Item.APPLE, 1, 0));
+        if (!world.isStatic) {
+            byte b0 = 20;
+
+            if ((l & 3) == 3) {
+                b0 = 40;
+            }
+
+            if (world.random.nextInt(b0) == 0) {
+                int j1 = this.getDropType(l, world.random, i1);
+
+                this.a(world, i, j, k, new ItemStack(j1, 1, this.getDropData(l)));
+            }
+
+            if ((l & 3) == 0 && world.random.nextInt(200) == 0) {
+                this.a(world, i, j, k, new ItemStack(Item.APPLE, 1, 0));
+            }
         }
     }
 
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
-        if (!world.isStatic && entityhuman.Q() != null && entityhuman.Q().id == Item.SHEARS.id) {
+        if (!world.isStatic && entityhuman.T() != null && entityhuman.T().id == Item.SHEARS.id) {
             entityhuman.a(StatisticList.C[this.id], 1);
             this.a(world, i, j, k, new ItemStack(Block.LEAVES.id, 1, l & 3));
         } else {
@@ -163,7 +176,7 @@ public class BlockLeaves extends BlockTransparant {
     }
 
     public int a(int i, int j) {
-        return (j & 3) == 1 ? this.textureId + 80 : this.textureId;
+        return (j & 3) == 1 ? this.textureId + 80 : ((j & 3) == 3 ? this.textureId + 144 : this.textureId);
     }
 
     public void b(World world, int i, int j, int k, Entity entity) {

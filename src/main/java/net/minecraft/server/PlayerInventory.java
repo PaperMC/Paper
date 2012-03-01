@@ -58,7 +58,7 @@ public class PlayerInventory implements IInventory {
         return 9;
     }
 
-    private int e(int i) {
+    private int f(int i) {
         for (int j = 0; j < this.items.length; ++j) {
             if (this.items[j] != null && this.items[j].id == i) {
                 return j;
@@ -166,8 +166,8 @@ public class PlayerInventory implements IInventory {
         }
     }
 
-    public boolean b(int i) {
-        int j = this.e(i);
+    public boolean c(int i) {
+        int j = this.f(i);
 
         if (j < 0) {
             return false;
@@ -180,8 +180,8 @@ public class PlayerInventory implements IInventory {
         }
     }
 
-    public boolean c(int i) {
-        int j = this.e(i);
+    public boolean d(int i) {
+        int j = this.f(i);
 
         return j >= 0;
     }
@@ -240,6 +240,24 @@ public class PlayerInventory implements IInventory {
 
                 return itemstack;
             }
+        } else {
+            return null;
+        }
+    }
+
+    public ItemStack splitWithoutUpdate(int i) {
+        ItemStack[] aitemstack = this.items;
+
+        if (i >= this.items.length) {
+            aitemstack = this.armor;
+            i -= this.items.length;
+        }
+
+        if (aitemstack[i] != null) {
+            ItemStack itemstack = aitemstack[i];
+
+            aitemstack[i] = null;
+            return itemstack;
         } else {
             return null;
         }
@@ -328,7 +346,7 @@ public class PlayerInventory implements IInventory {
     }
 
     public String getName() {
-        return "Inventory";
+        return "container.inventory";
     }
 
     public int getMaxStackSize() {
@@ -371,7 +389,7 @@ public class PlayerInventory implements IInventory {
         return i;
     }
 
-    public void d(int i) {
+    public void e(int i) {
         i /= 4;
         if (i < 1) {
             i = 1;
@@ -420,7 +438,7 @@ public class PlayerInventory implements IInventory {
     }
 
     public boolean a(EntityHuman entityhuman) {
-        return this.player.dead ? false : entityhuman.i(this.player) <= 64.0D;
+        return this.player.dead ? false : entityhuman.j(this.player) <= 64.0D;
     }
 
     public boolean c(ItemStack itemstack) {

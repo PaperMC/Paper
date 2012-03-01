@@ -70,8 +70,8 @@ public class NetLoginHandler extends NetHandler {
 
     public void a(Packet1Login packet1login) {
         this.g = packet1login.name;
-        if (packet1login.a != 23) {
-            if (packet1login.a > 23) {
+        if (packet1login.a != 28) {
+            if (packet1login.a > 28) {
                 this.disconnect("Outdated server!");
             } else {
                 this.disconnect("Outdated client!");
@@ -111,7 +111,7 @@ public class NetLoginHandler extends NetHandler {
             if (maxPlayers > 60) {
                 maxPlayers = 60;
             }
-            netserverhandler.sendPacket(new Packet1Login("", entityplayer.id, worldserver.getSeed(), worldserver.getWorldData().getType(), entityplayer.itemInWorldManager.getGameMode(), (byte) worldserver.worldProvider.dimension, (byte) worldserver.difficulty, (byte) worldserver.height, (byte) maxPlayers));
+            netserverhandler.sendPacket(new Packet1Login("", entityplayer.id, worldserver.getWorldData().getType(), entityplayer.itemInWorldManager.getGameMode(), worldserver.worldProvider.dimension, (byte) worldserver.difficulty, (byte) worldserver.getHeight(), (byte) this.server.serverConfigurationManager.getMaxPlayers()));
             entityplayer.getBukkitEntity().sendSupportedChannels();
             // CraftBukkit end
 

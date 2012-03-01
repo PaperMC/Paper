@@ -166,7 +166,7 @@ public class BlockPortal extends BlockHalfTransparant {
             world.getServer().getPluginManager().callEvent(event);
             // CraftBukkit end
 
-            entity.Y();
+            entity.ac();
         }
     }
 }

@@ -12,11 +12,41 @@ public class EntitySheep extends EntityAnimal {
 
     public static final float[][] a = new float[][] { { 1.0F, 1.0F, 1.0F}, { 0.95F, 0.7F, 0.2F}, { 0.9F, 0.5F, 0.85F}, { 0.6F, 0.7F, 0.95F}, { 0.9F, 0.9F, 0.2F}, { 0.5F, 0.8F, 0.1F}, { 0.95F, 0.7F, 0.8F}, { 0.3F, 0.3F, 0.3F}, { 0.6F, 0.6F, 0.6F}, { 0.3F, 0.6F, 0.7F}, { 0.7F, 0.4F, 0.9F}, { 0.2F, 0.4F, 0.8F}, { 0.5F, 0.4F, 0.3F}, { 0.4F, 0.5F, 0.2F}, { 0.8F, 0.3F, 0.3F}, { 0.1F, 0.1F, 0.1F}};
     private int b;
+    private PathfinderGoalEatTile c = new PathfinderGoalEatTile(this);
 
     public EntitySheep(World world) {
         super(world);
         this.texture = "/mob/sheep.png";
         this.b(0.9F, 1.3F);
+        float f = 0.23F;
+
+        this.ak().a(true);
+        this.goalSelector.a(0, new PathfinderGoalFloat(this));
+        this.goalSelector.a(1, new PathfinderGoalPanic(this, 0.38F));
+        this.goalSelector.a(2, new PathfinderGoalBreed(this, f));
+        this.goalSelector.a(3, new PathfinderGoalTempt(this, 0.25F, Item.WHEAT.id, false));
+        this.goalSelector.a(4, new PathfinderGoalFollowParent(this, 0.25F));
+        this.goalSelector.a(5, this.c);
+        this.goalSelector.a(6, new PathfinderGoalRandomStroll(this, f));
+        this.goalSelector.a(7, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 6.0F));
+        this.goalSelector.a(8, new PathfinderGoalRandomLookaround(this));
+    }
+
+    protected boolean c_() {
+        return true;
+    }
+
+    protected void z_() {
+        this.b = this.c.f();
+        super.z_();
+    }
+
+    public void e() {
+        if (this.world.isStatic) {
+            this.b = Math.max(0, this.b - 1);
+        }
+
+        super.e();
     }
 
     public int getMaxHealth() {
@@ -42,86 +72,6 @@ public class EntitySheep extends EntityAnimal {
 
     protected int getLootId() {
         return Block.WOOL.id;
-    }
-
-    public void d() {
-        super.d();
-        if (this.b > 0) {
-            --this.b;
-        }
-    }
-
-    protected void o_() {
-        if (this.b <= 0) {
-            super.o_();
-        }
-    }
-
-    protected void m_() {
-        super.m_();
-        int i;
-        int j;
-        int k;
-
-        if (!this.E() && this.b <= 0 && (this.isBaby() && this.random.nextInt(50) == 0 || this.random.nextInt(1000) == 0)) {
-            i = MathHelper.floor(this.locX);
-            j = MathHelper.floor(this.locY);
-            k = MathHelper.floor(this.locZ);
-            if (this.world.getTypeId(i, j, k) == Block.LONG_GRASS.id && this.world.getData(i, j, k) == 1 || this.world.getTypeId(i, j - 1, k) == Block.GRASS.id) {
-                this.b = 40;
-                this.world.broadcastEntityEffect(this, (byte) 10);
-            }
-        } else if (this.b == 4) {
-            i = MathHelper.floor(this.locX);
-            j = MathHelper.floor(this.locY);
-            k = MathHelper.floor(this.locZ);
-            boolean flag = false;
-
-            if (this.world.getTypeId(i, j, k) == Block.LONG_GRASS.id) {
-                // CraftBukkit start
-                if (!CraftEventFactory.callEntityChangeBlockEvent(this.getBukkitEntity(), this.world.getWorld().getBlockAt(i, j, k), Material.AIR).isCancelled()) {
-                    this.world.triggerEffect(2001, i, j, k, Block.LONG_GRASS.id + 256);
-                    this.world.setTypeId(i, j, k, 0);
-                    flag = true;
-                }
-                // CraftBukkit end
-            } else if (this.world.getTypeId(i, j - 1, k) == Block.GRASS.id) {
-                // CraftBukkit start
-                if (!CraftEventFactory.callEntityChangeBlockEvent(this.getBukkitEntity(), this.world.getWorld().getBlockAt(i, j - 1, k), Material.DIRT).isCancelled()) {
-                    this.world.triggerEffect(2001, i, j - 1, k, Block.GRASS.id);
-                    this.world.setTypeId(i, j - 1, k, Block.DIRT.id);
-                    flag = true;
-                }
-                // CraftBukkit end
-            }
-
-            if (flag) {
-               // CraftBukkit start
-                if (!this.isBaby()) {
-                    org.bukkit.event.entity.SheepRegrowWoolEvent event = new org.bukkit.event.entity.SheepRegrowWoolEvent((Sheep) this.getBukkitEntity());
-                    this.world.getServer().getPluginManager().callEvent(event);
-
-                    if (!event.isCancelled()) {
-                        this.setSheared(false);
-                    }
-                }
-                // CraftBukkit end
-
-                if (this.isBaby()) {
-                    int l = this.getAge() + 1200;
-
-                    if (l > 0) {
-                        l = 0;
-                    }
-
-                    this.setAge(l);
-                }
-            }
-        }
-    }
-
-    protected boolean v() {
-        return this.b > 0;
     }
 
     public boolean b(EntityHuman entityhuman) {
@@ -168,15 +118,15 @@ public class EntitySheep extends EntityAnimal {
         this.setColor(nbttagcompound.getByte("Color"));
     }
 
-    protected String c_() {
+    protected String i() {
         return "mob.sheep";
     }
 
-    protected String m() {
+    protected String j() {
         return "mob.sheep";
     }
 
-    protected String n() {
+    protected String k() {
         return "mob.sheep";
     }
 
@@ -210,7 +160,7 @@ public class EntitySheep extends EntityAnimal {
         return i < 5 ? 15 : (i < 10 ? 7 : (i < 15 ? 8 : (i < 18 ? 12 : (random.nextInt(500) == 0 ? 6 : 0))));
     }
 
-    protected EntityAnimal createChild(EntityAnimal entityanimal) {
+    public EntityAnimal createChild(EntityAnimal entityanimal) {
         EntitySheep entitysheep = (EntitySheep) entityanimal;
         EntitySheep entitysheep1 = new EntitySheep(this.world);
 
@@ -221,5 +171,26 @@ public class EntitySheep extends EntityAnimal {
         }
 
         return entitysheep1;
+    }
+
+    public void z() {
+        // CraftBukkit start
+        org.bukkit.event.entity.SheepRegrowWoolEvent event = new org.bukkit.event.entity.SheepRegrowWoolEvent((Sheep) this.getBukkitEntity());
+        this.world.getServer().getPluginManager().callEvent(event);
+
+        if (!event.isCancelled()) {
+            this.setSheared(false);
+        }
+        // CraftBukkit end
+
+        if (this.isBaby()) {
+            int i = this.getAge() + 1200;
+
+            if (i > 0) {
+                i = 0;
+            }
+
+            this.setAge(i);
+        }
     }
 }

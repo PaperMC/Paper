@@ -88,11 +88,6 @@ public class ItemDoor extends Item {
             flag2 = true;
         }
 
-        if (flag2) {
-            l = l - 1 & 3;
-            l += 4;
-        }
-
         CraftBlockState blockState = CraftBlockState.getBlockState(world, i, j, k); // CraftBukkit
         world.suppressPhysics = true;
         world.setTypeIdAndData(i, j, k, block.id, l);
@@ -106,7 +101,7 @@ public class ItemDoor extends Item {
             }
         }
         // CraftBukkit end
-        world.setTypeIdAndData(i, j + 1, k, block.id, l + 8);
+        world.setTypeIdAndData(i, j + 1, k, block.id, 8 | (flag2 ? 1 : 0));
         world.suppressPhysics = false;
         world.applyPhysics(i, j, k, block.id);
         world.applyPhysics(i, j + 1, k, block.id);

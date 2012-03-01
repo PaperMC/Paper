@@ -16,17 +16,18 @@ public class EntityTrackerEntry {
     public int zLoc;
     public int yRot;
     public int xRot;
-    public double i;
+    public int i;
     public double j;
     public double k;
-    public int l = 0;
-    private double o;
+    public double l;
+    public int m = 0;
     private double p;
     private double q;
-    private boolean r = false;
+    private double r;
+    private boolean s = false;
     private boolean isMoving;
-    private int t = 0;
-    public boolean m = false;
+    private int u = 0;
+    public boolean n = false;
     public Set trackedPlayers = new HashSet();
 
     public EntityTrackerEntry(Entity entity, int i, int j, boolean flag) {
@@ -39,6 +40,7 @@ public class EntityTrackerEntry {
         this.zLoc = MathHelper.floor(entity.locZ * 32.0D);
         this.yRot = MathHelper.d(entity.yaw * 256.0F / 360.0F);
         this.xRot = MathHelper.d(entity.pitch * 256.0F / 360.0F);
+        this.i = MathHelper.d(entity.aq() * 256.0F / 360.0F);
     }
 
     public boolean equals(Object object) {
@@ -50,18 +52,18 @@ public class EntityTrackerEntry {
     }
 
     public void track(List list) {
-        this.m = false;
-        if (!this.r || this.tracker.e(this.o, this.p, this.q) > 16.0D) {
-            this.o = this.tracker.locX;
-            this.p = this.tracker.locY;
-            this.q = this.tracker.locZ;
-            this.r = true;
-            this.m = true;
+        this.n = false;
+        if (!this.s || this.tracker.e(this.p, this.q, this.r) > 16.0D) {
+            this.p = this.tracker.locX;
+            this.q = this.tracker.locY;
+            this.r = this.tracker.locZ;
+            this.s = true;
+            this.n = true;
             this.scanPlayers(list);
         }
 
-        ++this.t;
-        if (++this.l % this.c == 0 || this.tracker.ce) {
+        ++this.u;
+        if (this.m++ % this.c == 0 || this.tracker.ce) {
             int i = MathHelper.floor(this.tracker.locX * 32.0D);
             int j = MathHelper.floor(this.tracker.locY * 32.0D);
             int k = MathHelper.floor(this.tracker.locZ * 32.0D);
@@ -87,7 +89,7 @@ public class EntityTrackerEntry {
             }
             // CraftBukkit end
 
-            if (j1 >= -128 && j1 < 128 && k1 >= -128 && k1 < 128 && l1 >= -128 && l1 < 128 && this.t <= 400) {
+            if (j1 >= -128 && j1 < 128 && k1 >= -128 && k1 < 128 && l1 >= -128 && l1 < 128 && this.u <= 400) {
                 if (flag && flag1) {
                     object = new Packet33RelEntityMoveLook(this.tracker.id, (byte) j1, (byte) k1, (byte) l1, (byte) l, (byte) i1);
                 } else if (flag) {
@@ -96,7 +98,7 @@ public class EntityTrackerEntry {
                     object = new Packet32EntityLook(this.tracker.id, (byte) l, (byte) i1);
                 }
             } else {
-                this.t = 0;
+                this.u = 0;
                 this.tracker.locX = (double) i / 32.0D;
                 this.tracker.locY = (double) j / 32.0D;
                 this.tracker.locZ = (double) k / 32.0D;
@@ -109,17 +111,17 @@ public class EntityTrackerEntry {
             }
 
             if (this.isMoving) {
-                double d0 = this.tracker.motX - this.i;
-                double d1 = this.tracker.motY - this.j;
-                double d2 = this.tracker.motZ - this.k;
+                double d0 = this.tracker.motX - this.j;
+                double d1 = this.tracker.motY - this.k;
+                double d2 = this.tracker.motZ - this.l;
                 double d3 = 0.02D;
                 double d4 = d0 * d0 + d1 * d1 + d2 * d2;
 
                 if (d4 > d3 * d3 || d4 > 0.0D && this.tracker.motX == 0.0D && this.tracker.motY == 0.0D && this.tracker.motZ == 0.0D) {
-                    this.i = this.tracker.motX;
-                    this.j = this.tracker.motY;
-                    this.k = this.tracker.motZ;
-                    this.broadcast(new Packet28EntityVelocity(this.tracker.id, this.i, this.j, this.k));
+                    this.j = this.tracker.motX;
+                    this.k = this.tracker.motY;
+                    this.l = this.tracker.motZ;
+                    this.broadcast(new Packet28EntityVelocity(this.tracker.id, this.j, this.k, this.l));
                 }
             }
 
@@ -132,6 +134,14 @@ public class EntityTrackerEntry {
             if (datawatcher.a()) {
                 this.broadcastIncludingSelf(new Packet40EntityMetadata(this.tracker.id, datawatcher));
             }
+
+            int i2 = MathHelper.d(this.tracker.aq() * 256.0F / 360.0F);
+
+            if (Math.abs(i2 - this.i) >= 4) {
+                this.broadcast(new Packet35EntityHeadRotation(this.tracker.id, (byte) i2));
+                this.i = i2;
+            }
+
             /* CraftBukkit start - code moved up
             if (flag) {
                 this.xLoc = i;
@@ -310,6 +320,8 @@ public class EntityTrackerEntry {
                 return new Packet23VehicleSpawn(this.tracker, 61);
             } else if (this.tracker instanceof EntityPotion) {
                 return new Packet23VehicleSpawn(this.tracker, 73, ((EntityPotion) this.tracker).getPotionValue());
+            } else if (this.tracker instanceof EntityThrownExpBottle) {
+                return new Packet23VehicleSpawn(this.tracker, 75);
             } else if (this.tracker instanceof EntityEnderPearl) {
                 return new Packet23VehicleSpawn(this.tracker, 65);
             } else if (this.tracker instanceof EntityEnderSignal) {

@@ -73,7 +73,18 @@ public class InventoryCrafting implements IInventory {
     }
 
     public String getName() {
-        return "Crafting";
+        return "container.crafting";
+    }
+
+    public ItemStack splitWithoutUpdate(int i) {
+        if (this.items[i] != null) {
+            ItemStack itemstack = this.items[i];
+
+            this.items[i] = null;
+            return itemstack;
+        } else {
+            return null;
+        }
     }
 
     public ItemStack splitStack(int i, int j) {

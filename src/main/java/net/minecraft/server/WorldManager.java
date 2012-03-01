@@ -28,6 +28,8 @@ public class WorldManager implements IWorldAccess {
         this.server.serverConfigurationManager.flagDirty(i, j, k, this.world.dimension); // CraftBukkit
     }
 
+    public void b(int i, int j, int k) {}
+
     public void a(String s, int i, int j, int k) {}
 
     public void a(int i, int j, int k, TileEntity tileentity) {

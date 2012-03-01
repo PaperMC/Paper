@@ -22,12 +22,12 @@ public class EntitySpider extends EntityMonster {
         this.datawatcher.a(16, new Byte((byte) 0));
     }
 
-    public void d() {
-        super.d();
+    public void e() {
+        super.e();
     }
 
-    public void y_() {
-        super.y_();
+    public void G_() {
+        super.G_();
         if (!this.world.isStatic) {
             this.a(this.positionChanged);
         }
@@ -37,7 +37,7 @@ public class EntitySpider extends EntityMonster {
         return 16;
     }
 
-    public double q() {
+    public double x_() {
         return (double) this.length * 0.75D - 0.5D;
     }
 
@@ -46,7 +46,7 @@ public class EntitySpider extends EntityMonster {
     }
 
     protected Entity findTarget() {
-        float f = this.a(1.0F);
+        float f = this.b(1.0F);
 
         if (f < 0.5F) {
             double d0 = 16.0D;
@@ -57,20 +57,20 @@ public class EntitySpider extends EntityMonster {
         }
     }
 
-    protected String c_() {
+    protected String i() {
         return "mob.spider";
     }
 
-    protected String m() {
+    protected String j() {
         return "mob.spider";
     }
 
-    protected String n() {
+    protected String k() {
         return "mob.spiderdeath";
     }
 
     protected void a(Entity entity, float f) {
-        float f1 = this.a(1.0F);
+        float f1 = this.b(1.0F);
 
         if (f1 > 0.5F && this.random.nextInt(100) == 0) {
             // CraftBukkit start
@@ -137,11 +137,11 @@ public class EntitySpider extends EntityMonster {
         // CraftBukkit end
     }
 
-    public boolean r() {
-        return this.u();
+    public boolean t() {
+        return this.w();
     }
 
-    public void s() {}
+    public void u() {}
 
     public MonsterType getMonsterType() {
         return MonsterType.ARTHROPOD;
@@ -151,7 +151,7 @@ public class EntitySpider extends EntityMonster {
         return mobeffect.getEffectId() == MobEffectList.POISON.id ? false : super.a(mobeffect);
     }
 
-    public boolean u() {
+    public boolean w() {
         return (this.datawatcher.getByte(16) & 1) != 0;
     }
 

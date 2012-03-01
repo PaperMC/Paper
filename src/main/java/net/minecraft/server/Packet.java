@@ -16,6 +16,10 @@ public abstract class Packet {
     private static Set b = new HashSet();
     private static Set c = new HashSet();
     public final long timestamp = System.currentTimeMillis();
+    public static long l;
+    public static long m;
+    public static long n;
+    public static long o;
     public boolean lowPriority = false;
 
     public Packet() {}
@@ -77,6 +81,8 @@ public abstract class Packet {
             }
 
             packet.a(datainputstream);
+            ++l;
+            m += (long) packet.a();
         } catch (EOFException eofexception) {
             System.out.println("Reached end of stream");
             return null;
@@ -93,6 +99,8 @@ public abstract class Packet {
         // CraftBukkit end
 
         PacketCounter.a(i, (long) packet.a());
+        ++l;
+        m += (long) packet.a();
         return packet;
     }
 
@@ -100,6 +108,8 @@ public abstract class Packet {
     public static void a(Packet packet, DataOutputStream dataoutputstream) throws IOException {
         dataoutputstream.write(packet.b());
         packet.a(dataoutputstream);
+        ++n;
+        o += (long) packet.a();
     }
 
     // CraftBukkit - throws IOException
@@ -228,6 +238,7 @@ public abstract class Packet {
         a(32, true, false, Packet32EntityLook.class);
         a(33, true, false, Packet33RelEntityMoveLook.class);
         a(34, true, false, Packet34EntityTeleport.class);
+        a(35, true, false, Packet35EntityHeadRotation.class);
         a(38, true, false, Packet38EntityStatus.class);
         a(39, true, false, Packet39AttachEntity.class);
         a(40, true, false, Packet40EntityMetadata.class);
@@ -254,6 +265,7 @@ public abstract class Packet {
         a(108, false, true, Packet108ButtonClick.class);
         a(130, true, true, Packet130UpdateSign.class);
         a(131, true, false, Packet131ItemData.class);
+        a(132, true, false, Packet132TileEntityData.class);
         a(200, true, false, Packet200Statistic.class);
         a(201, true, false, Packet201PlayerInfo.class);
         a(250, true, true, Packet250CustomPayload.class);

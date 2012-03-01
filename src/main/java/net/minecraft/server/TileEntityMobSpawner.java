@@ -21,7 +21,7 @@ public class TileEntityMobSpawner extends TileEntity {
         return this.world.findNearbyPlayer((double) this.x + 0.5D, (double) this.y + 0.5D, (double) this.z + 0.5D, 16.0D) != null;
     }
 
-    public void l_() {
+    public void q_() {
         this.c = this.b;
         if (this.c()) {
             double d0 = (double) ((float) this.x + this.world.random.nextFloat());
@@ -79,14 +79,14 @@ public class TileEntityMobSpawner extends TileEntity {
                         if (entityliving.canSpawn()) {
                             this.world.addEntity(entityliving, SpawnReason.SPAWNER); // CraftBukkit
                             this.world.triggerEffect(2004, this.x, this.y, this.z, 0);
-                            entityliving.ao();
+                            entityliving.aB();
                             this.e();
                         }
                     }
                 }
             }
 
-            super.l_();
+            super.q_();
         }
     }
 
@@ -104,5 +104,11 @@ public class TileEntityMobSpawner extends TileEntity {
         super.b(nbttagcompound);
         nbttagcompound.setString("EntityId", this.mobName);
         nbttagcompound.setShort("Delay", (short) this.spawnDelay);
+    }
+
+    public Packet d() {
+        int i = EntityTypes.a(this.mobName);
+
+        return new Packet132TileEntityData(this.x, this.y, this.z, 1, i);
     }
 }

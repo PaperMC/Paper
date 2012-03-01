@@ -25,7 +25,7 @@ public class NetworkManager {
     private List highPriorityQueue = Collections.synchronizedList(new ArrayList());
     private List lowPriorityQueue = Collections.synchronizedList(new ArrayList());
     private NetHandler packetListener;
-    private boolean synched = false;
+    private boolean q = false;
     private Thread r;
     private Thread s;
     private boolean t = false;
@@ -74,7 +74,7 @@ public class NetworkManager {
     }
 
     public void queue(Packet packet) {
-        if (!this.synched) {
+        if (!this.q) {
             Object object = this.g;
 
             synchronized (this.g) {
@@ -153,7 +153,10 @@ public class NetworkManager {
                 int i = packet.b();
 
                 aint[i] += packet.a() + 1;
-                this.m.add(packet);
+                if (!this.q) {
+                    this.m.add(packet);
+                }
+
                 flag = true;
             } else {
                 this.a("disconnect.endOfStream", new Object[0]);
@@ -223,7 +226,7 @@ public class NetworkManager {
         while (!this.m.isEmpty() && i-- >= 0) {
             Packet packet = (Packet) this.m.remove(0);
 
-            if (!this.synched) packet.handle(this.packetListener); // CraftBukkit
+            if (!this.q) packet.handle(this.packetListener); // CraftBukkit
         }
 
         this.a();
@@ -237,9 +240,9 @@ public class NetworkManager {
     }
 
     public void d() {
-        if (!this.synched) {
+        if (!this.q) {
             this.a();
-            this.synched = true;
+            this.q = true;
             this.s.interrupt();
             (new NetworkMonitorThread(this)).start();
         }
@@ -258,7 +261,7 @@ public class NetworkManager {
     }
 
     static boolean b(NetworkManager networkmanager) {
-        return networkmanager.synched;
+        return networkmanager.q;
     }
 
     static boolean c(NetworkManager networkmanager) {

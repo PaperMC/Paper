@@ -23,10 +23,6 @@ public class ItemStep extends ItemBlock {
     }
 
     public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
-        if (l != 1) {
-            ;
-        }
-
         if (itemstack.count == 0) {
             return false;
         } else if (!entityhuman.d(i, j, k)) {
@@ -34,8 +30,10 @@ public class ItemStep extends ItemBlock {
         } else {
             int i1 = world.getTypeId(i, j, k);
             int j1 = world.getData(i, j, k);
+            int k1 = j1 & 7;
+            boolean flag = (j1 & 8) != 0;
 
-            if (l == 1 && i1 == Block.STEP.id && j1 == itemstack.getData()) {
+            if ((l == 1 && !flag || l == 0 && flag) && i1 == Block.STEP.id && k1 == itemstack.getData()) {
                 /* CraftBukkit start - handle this in super
                 if (world.setTypeIdAndData(i, j, k, Block.DOUBLE_STEP.id, j1)) {
                     world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), Block.DOUBLE_STEP.stepSound.getName(), (Block.DOUBLE_STEP.stepSound.getVolume1() + 1.0F) / 2.0F, Block.DOUBLE_STEP.stepSound.getVolume2() * 0.8F);

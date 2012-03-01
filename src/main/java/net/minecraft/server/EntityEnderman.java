@@ -63,8 +63,8 @@ public class EntityEnderman extends EntityMonster {
         return null;
     }
 
-    public float a(float f) {
-        return super.a(f);
+    public float b(float f) {
+        return super.b(f);
     }
 
     private boolean c(EntityHuman entityhuman) {
@@ -73,19 +73,19 @@ public class EntityEnderman extends EntityMonster {
         if (itemstack != null && itemstack.id == Block.PUMPKIN.id) {
             return false;
         } else {
-            Vec3D vec3d = entityhuman.e(1.0F).b();
+            Vec3D vec3d = entityhuman.f(1.0F).b();
             Vec3D vec3d1 = Vec3D.create(this.locX - entityhuman.locX, this.boundingBox.b + (double) (this.length / 2.0F) - (entityhuman.locY + (double) entityhuman.getHeadHeight()), this.locZ - entityhuman.locZ);
             double d0 = vec3d1.c();
 
             vec3d1 = vec3d1.b();
             double d1 = vec3d.a(vec3d1);
 
-            return d1 > 1.0D - 0.025D / d0 ? entityhuman.g(this) : false;
+            return d1 > 1.0D - 0.025D / d0 ? entityhuman.h(this) : false;
         }
     }
 
-    public void d() {
-        if (this.aJ()) {
+    public void e() {
+        if (this.aS()) {
             this.damageEntity(DamageSource.DROWN, 1);
         }
 
@@ -139,17 +139,17 @@ public class EntityEnderman extends EntityMonster {
         }
 
         if (this.world.e() && !this.world.isStatic) {
-            float f = this.a(1.0F);
+            float f = this.b(1.0F);
 
             if (f > 0.5F && this.world.isChunkLoaded(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ)) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
                 this.target = null;
-                this.w_();
+                this.x();
             }
         }
 
-        if (this.aJ()) {
+        if (this.aS()) {
             this.target = null;
-            this.w_();
+            this.x();
         }
 
         this.aZ = false;
@@ -162,12 +162,12 @@ public class EntityEnderman extends EntityMonster {
                 if (this.target instanceof EntityHuman && this.c((EntityHuman) this.target)) {
                     this.aW = this.aX = 0.0F;
                     this.bb = 0.0F;
-                    if (this.target.i(this) < 16.0D) {
-                        this.w_();
+                    if (this.target.j(this) < 16.0D) {
+                        this.x();
                     }
 
                     this.g = 0;
-                } else if (this.target.i(this) > 256.0D && this.g++ >= 30 && this.f(this.target)) {
+                } else if (this.target.j(this) > 256.0D && this.g++ >= 30 && this.e(this.target)) {
                     this.g = 0;
                 }
             } else {
@@ -175,10 +175,10 @@ public class EntityEnderman extends EntityMonster {
             }
         }
 
-        super.d();
+        super.e();
     }
 
-    protected boolean w_() {
+    protected boolean x() {
         double d0 = this.locX + (this.random.nextDouble() - 0.5D) * 64.0D;
         double d1 = this.locY + (double) (this.random.nextInt(64) - 32);
         double d2 = this.locZ + (this.random.nextDouble() - 0.5D) * 64.0D;
@@ -186,7 +186,7 @@ public class EntityEnderman extends EntityMonster {
         return this.b(d0, d1, d2);
     }
 
-    protected boolean f(Entity entity) {
+    protected boolean e(Entity entity) {
         Vec3D vec3d = Vec3D.create(this.locX - entity.locX, this.boundingBox.b + (double) (this.length / 2.0F) - entity.locY + (double) entity.getHeadHeight(), this.locZ - entity.locZ);
 
         vec3d = vec3d.b();
@@ -267,15 +267,15 @@ public class EntityEnderman extends EntityMonster {
         }
     }
 
-    protected String c_() {
+    protected String i() {
         return "mob.endermen.idle";
     }
 
-    protected String m() {
+    protected String j() {
         return "mob.endermen.hit";
     }
 
-    protected String n() {
+    protected String k() {
         return "mob.endermen.death";
     }
 
@@ -319,7 +319,7 @@ public class EntityEnderman extends EntityMonster {
     public boolean damageEntity(DamageSource damagesource, int i) {
         if (damagesource instanceof EntityDamageSourceIndirect) {
             for (int j = 0; j < 64; ++j) {
-                if (this.w_()) {
+                if (this.x()) {
                     return true;
                 }
             }

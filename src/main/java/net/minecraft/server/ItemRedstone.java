@@ -58,16 +58,14 @@ public class ItemRedstone extends Item {
                 BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ);
                 blockState.update(true);
 
+                world.suppressPhysics = false;
                 if (event.isCancelled() || !event.canBuild()) {
                     return false;
                 }
-                world.suppressPhysics = false;
-
-                world.setTypeId(i, j, k, Block.REDSTONE_WIRE.id);
-                world.update(i, j, k, Block.REDSTONE_WIRE.id); // Must take place after BlockPlaceEvent, we need to update all other blocks.
                 // CraftBukkit end
 
-                --itemstack.count; // CraftBukkit - ORDER MATTERS
+                --itemstack.count;
+                world.setTypeId(i, j, k, Block.REDSTONE_WIRE.id);
             }
 
             return true;

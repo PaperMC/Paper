@@ -78,7 +78,7 @@ public class Explosion {
                                 f1 -= (Block.byId[k1].a(this.source) + 0.3F) * f2;
                             }
 
-                            if (f1 > 0.0F && i1 < world.height && i1 >= 0) { // CraftBukkit - Don't wrap explosions
+                            if (f1 > 0.0F && i1 < 256 && i1 >= 0) { // CraftBukkit - Don't wrap explosions
                                 this.blocks.add(new ChunkPosition(l, i1, j1));
                             }
 
@@ -256,7 +256,7 @@ public class Explosion {
                 i1 = this.world.getTypeId(j, k, l);
                 int j1 = this.world.getTypeId(j, k - 1, l);
 
-                if (i1 == 0 && Block.o[j1] && this.h.nextInt(3) == 0) {
+                if (i1 == 0 && Block.n[j1] && this.h.nextInt(3) == 0) {
                     this.world.setTypeId(j, k, l, Block.FIRE.id);
                 }
             }

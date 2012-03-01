@@ -31,19 +31,19 @@ public class BlockFurnace extends BlockContainer {
             int k1 = world.getTypeId(i + 1, j, k);
             byte b0 = 3;
 
-            if (Block.o[l] && !Block.o[i1]) {
+            if (Block.n[l] && !Block.n[i1]) {
                 b0 = 3;
             }
 
-            if (Block.o[i1] && !Block.o[l]) {
+            if (Block.n[i1] && !Block.n[l]) {
                 b0 = 2;
             }
 
-            if (Block.o[j1] && !Block.o[k1]) {
+            if (Block.n[j1] && !Block.n[k1]) {
                 b0 = 5;
             }
 
-            if (Block.o[k1] && !Block.o[j1]) {
+            if (Block.n[k1] && !Block.n[j1]) {  
                 b0 = 4;
             }
 

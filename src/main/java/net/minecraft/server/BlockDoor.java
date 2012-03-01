@@ -19,31 +19,14 @@ public class BlockDoor extends Block {
         this.a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, f1, 0.5F + f);
     }
 
-    public int a(int i, int j) {
-        if (i != 0 && i != 1) {
-            int k = this.e(j);
-
-            if ((k == 0 || k == 2) ^ i <= 3) {
-                return this.textureId;
-            } else {
-                int l = k / 2 + (i & 1 ^ k);
-
-                l += (j & 4) / 4;
-                int i1 = this.textureId - (j & 8) * 2;
-
-                if ((l & 1) != 0) {
-                    i1 = -i1;
-                }
-
-                return i1;
-            }
-        } else {
-            return this.textureId;
-        }
-    }
-
     public boolean a() {
         return false;
+    }
+
+    public boolean b(IBlockAccess iblockaccess, int i, int j, int k) {
+        int l = this.e(iblockaccess, i, j, k);
+
+        return (l & 4) != 0;
     }
 
     public boolean b() {
@@ -60,27 +43,57 @@ public class BlockDoor extends Block {
     }
 
     public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
-        this.d(this.e(iblockaccess.getData(i, j, k)));
+        this.d(this.e(iblockaccess, i, j, k));
     }
 
-    public void d(int i) {
+    public int c(IBlockAccess iblockaccess, int i, int j, int k) {
+        return this.e(iblockaccess, i, j, k) & 3;
+    }
+
+    public boolean d(IBlockAccess iblockaccess, int i, int j, int k) {
+        return (this.e(iblockaccess, i, j, k) & 4) != 0;
+    }
+
+    private void d(int i) {
         float f = 0.1875F;
 
         this.a(0.0F, 0.0F, 0.0F, 1.0F, 2.0F, 1.0F);
-        if (i == 0) {
-            this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, f);
-        }
+        int j = i & 3;
+        boolean flag = (i & 4) != 0;
+        boolean flag1 = (i & 16) != 0;
 
-        if (i == 1) {
-            this.a(1.0F - f, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
-        }
-
-        if (i == 2) {
-            this.a(0.0F, 0.0F, 1.0F - f, 1.0F, 1.0F, 1.0F);
-        }
-
-        if (i == 3) {
-            this.a(0.0F, 0.0F, 0.0F, f, 1.0F, 1.0F);
+        if (j == 0) {
+            if (!flag) {
+                this.a(0.0F, 0.0F, 0.0F, f, 1.0F, 1.0F);
+            } else if (!flag1) {
+                this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, f);
+            } else {
+                this.a(0.0F, 0.0F, 1.0F - f, 1.0F, 1.0F, 1.0F);
+            }
+        } else if (j == 1) {
+            if (!flag) {
+                this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, f);
+            } else if (!flag1) {
+                this.a(1.0F - f, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
+            } else {
+                this.a(0.0F, 0.0F, 0.0F, f, 1.0F, 1.0F);
+            }
+        } else if (j == 2) {
+            if (!flag) {
+                this.a(1.0F - f, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
+            } else if (!flag1) {
+                this.a(0.0F, 0.0F, 1.0F - f, 1.0F, 1.0F, 1.0F);
+            } else {
+                this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, f);
+            }
+        } else if (j == 3) {
+            if (!flag) {
+                this.a(0.0F, 0.0F, 1.0F - f, 1.0F, 1.0F, 1.0F);
+            } else if (!flag1) {
+                this.a(0.0F, 0.0F, 0.0F, f, 1.0F, 1.0F);
+            } else {
+                this.a(1.0F - f, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
+            }
         }
     }
 
@@ -92,46 +105,40 @@ public class BlockDoor extends Block {
         if (this.material == Material.ORE) {
             return true;
         } else {
-            int l = world.getData(i, j, k);
+            int l = this.e((IBlockAccess) world, i, j, k);
+            int i1 = l & 7;
 
+            i1 ^= 4;
             if ((l & 8) != 0) {
-                if (world.getTypeId(i, j - 1, k) == this.id) {
-                    this.interact(world, i, j - 1, k, entityhuman);
-                }
-
-                return true;
-            } else {
-                if (world.getTypeId(i, j + 1, k) == this.id) {
-                    world.setData(i, j + 1, k, (l ^ 4) + 8);
-                }
-
-                world.setData(i, j, k, l ^ 4);
+                world.setData(i, j - 1, k, i1);
                 world.b(i, j - 1, k, i, j, k);
-                world.a(entityhuman, 1003, i, j, k, 0);
-                return true;
+            } else {
+                world.setData(i, j, k, i1);
+                world.b(i, j, k, i, j, k);
             }
+
+            world.a(entityhuman, 1003, i, j, k, 0);
+            return true;
         }
     }
 
     public void setDoor(World world, int i, int j, int k, boolean flag) {
-        int l = world.getData(i, j, k);
+        int l = this.e((IBlockAccess) world, i, j, k);
+        boolean flag1 = (l & 4) != 0;
 
-        if ((l & 8) != 0) {
-            if (world.getTypeId(i, j - 1, k) == this.id) {
-                this.setDoor(world, i, j - 1, k, flag);
-            }
-        } else {
-            boolean flag1 = (world.getData(i, j, k) & 4) > 0;
+        if (flag1 != flag) {
+            int i1 = l & 7;
 
-            if (flag1 != flag) {
-                if (world.getTypeId(i, j + 1, k) == this.id) {
-                    world.setData(i, j + 1, k, (l ^ 4) + 8);
-                }
-
-                world.setData(i, j, k, l ^ 4);
+            i1 ^= 4;
+            if ((l & 8) != 0) {
+                world.setData(i, j - 1, k, i1);
                 world.b(i, j - 1, k, i, j, k);
-                world.a((EntityHuman) null, 1003, i, j, k, 0);
+            } else {
+                world.setData(i, j, k, i1);
+                world.b(i, j, k, i, j, k);
             }
+
+            world.a((EntityHuman) null, 1003, i, j, k, 0);
         }
     }
 
@@ -196,19 +203,31 @@ public class BlockDoor extends Block {
         return super.a(world, i, j, k, vec3d, vec3d1);
     }
 
-    public int e(int i) {
-        return (i & 4) == 0 ? i - 1 & 3 : i & 3;
-    }
-
     public boolean canPlace(World world, int i, int j, int k) {
-        return j >= world.height - 1 ? false : world.e(i, j - 1, k) && super.canPlace(world, i, j, k) && super.canPlace(world, i, j + 1, k);
-    }
-
-    public static boolean f(int i) {
-        return (i & 4) != 0;
+        return j >= 255 ? false : world.e(i, j - 1, k) && super.canPlace(world, i, j, k) && super.canPlace(world, i, j + 1, k);
     }
 
     public int g() {
         return 1;
+    }
+
+    public int e(IBlockAccess iblockaccess, int i, int j, int k) {
+        int l = iblockaccess.getData(i, j, k);
+        boolean flag = (l & 8) != 0;
+        int i1;
+        int j1;
+
+        if (flag) {
+            i1 = iblockaccess.getData(i, j - 1, k);
+            j1 = l;
+        } else {
+            i1 = l;
+            j1 = iblockaccess.getData(i, j + 1, k);
+        }
+
+        boolean flag1 = (j1 & 1) != 0;
+        int k1 = i1 & 7 | (flag ? 8 : 0) | (flag1 ? 16 : 0);
+
+        return k1;
     }
 }

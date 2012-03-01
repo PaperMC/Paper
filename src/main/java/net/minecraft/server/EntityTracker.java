@@ -51,6 +51,8 @@ public class EntityTracker {
             this.addEntity(entity, 64, 10, true);
         } else if (entity instanceof EntityPotion) {
             this.addEntity(entity, 64, 10, true);
+        } else if (entity instanceof EntityThrownExpBottle) {
+            this.addEntity(entity, 64, 10, true);
         } else if (entity instanceof EntityItem) {
             this.addEntity(entity, 64, 20, true);
         } else if (entity instanceof EntityMinecart) {
@@ -128,7 +130,7 @@ public class EntityTracker {
             EntityTrackerEntry entitytrackerentry = (EntityTrackerEntry) iterator.next();
 
             entitytrackerentry.track(this.world.players); // CraftBukkit
-            if (entitytrackerentry.m && entitytrackerentry.tracker instanceof EntityPlayer) {
+            if (entitytrackerentry.n && entitytrackerentry.tracker instanceof EntityPlayer) {
                 arraylist.add((EntityPlayer) entitytrackerentry.tracker);
             }
         }

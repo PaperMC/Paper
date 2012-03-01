@@ -50,7 +50,7 @@ public class TileEntity {
         }
     }
 
-    public void l_() {}
+    public void q_() {}
 
     public static TileEntity c(NBTTagCompound nbttagcompound) {
         TileEntity tileentity = null;
@@ -74,7 +74,7 @@ public class TileEntity {
         return tileentity;
     }
 
-    public int j() {
+    public int k() {
         if (this.p == -1) {
             this.p = this.world.getData(this.x, this.y, this.z);
         }
@@ -89,7 +89,7 @@ public class TileEntity {
         }
     }
 
-    public Packet k() {
+    public Packet d() {
         return null;
     }
 
@@ -97,7 +97,7 @@ public class TileEntity {
         return this.o;
     }
 
-    public void i() {
+    public void j() {
         this.o = true;
     }
 
@@ -107,7 +107,7 @@ public class TileEntity {
 
     public void b(int i, int j) {}
 
-    public void d() {
+    public void h() {
         this.q = null;
         this.p = -1;
     }

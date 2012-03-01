@@ -77,6 +77,10 @@ public class InventoryLargeChest implements IInventory {
         return i >= this.left.getSize() ? this.right.splitStack(i - this.left.getSize(), j) : this.left.splitStack(i, j);
     }
 
+    public ItemStack splitWithoutUpdate(int i) {
+        return i >= this.left.getSize() ? this.right.splitWithoutUpdate(i - this.left.getSize()) : this.left.splitWithoutUpdate(i);
+    }
+
     public void setItem(int i, ItemStack itemstack) {
         if (i >= this.left.getSize()) {
             this.right.setItem(i - this.left.getSize(), itemstack);

@@ -139,7 +139,7 @@ public class BlockPiston extends Block {
                         if (tileentitypiston.f() == i1 && tileentitypiston.e()) {
                             tileentitypiston.g();
                             i2 = tileentitypiston.c();
-                            j2 = tileentitypiston.j();
+                            j2 = tileentitypiston.k();
                             flag = true;
                         }
                     }
@@ -213,6 +213,11 @@ public class BlockPiston extends Block {
         super.a(world, i, j, k, axisalignedbb, arraylist);
     }
 
+    public AxisAlignedBB e(World world, int i, int j, int k) {
+        this.updateShape(world, i, j, k);
+        return super.e(world, i, j, k);
+    }
+
     public boolean b() {
         return false;
     }
@@ -277,7 +282,7 @@ public class BlockPiston extends Block {
 
         while (true) {
             if (l1 < 13) {
-                if (j1 <= 0 || j1 >= world.height - 1) {
+                if (j1 <= 0 || j1 >= 255) {
                     return -1; // CraftBukkit
                 }
 
@@ -316,7 +321,7 @@ public class BlockPiston extends Block {
             int i2;
 
             if (l1 < 13) {
-                if (j1 <= 0 || j1 >= world.height - 1) {
+                if (j1 <= 0 || j1 >= 255) {
                     return false;
                 }
 

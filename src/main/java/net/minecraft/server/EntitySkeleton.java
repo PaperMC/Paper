@@ -14,26 +14,52 @@ public class EntitySkeleton extends EntityMonster {
     public EntitySkeleton(World world) {
         super(world);
         this.texture = "/mob/skeleton.png";
+        this.bb = 0.25F;
+        this.goalSelector.a(1, new PathfinderGoalFloat(this));
+        this.goalSelector.a(2, new PathfinderGoalRestrictSun(this));
+        this.goalSelector.a(3, new PathfinderGoalFleeSun(this, this.bb));
+        this.goalSelector.a(4, new PathfinderGoalArrowAttack(this, this.bb, 1, 60));
+        this.goalSelector.a(5, new PathfinderGoalRandomStroll(this, this.bb));
+        this.goalSelector.a(6, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 8.0F));
+        this.goalSelector.a(6, new PathfinderGoalRandomLookaround(this));
+        this.targetSelector.a(1, new PathfinderGoalHurtByTarget(this, false));
+        this.targetSelector.a(2, new PathfinderGoalNearestAttackableTarget(this, EntityHuman.class, 16.0F, 0, false));
+    }
+
+    public boolean c_() {
+        return true;
     }
 
     public int getMaxHealth() {
         return 20;
     }
 
-    protected String c_() {
+    protected String i() {
         return "mob.skeleton";
     }
 
-    protected String m() {
+    protected String j() {
         return "mob.skeletonhurt";
     }
 
-    protected String n() {
+    protected String k() {
         return "mob.skeletonhurt";
     }
 
-    public boolean damageEntity(DamageSource damagesource, int i) {
-        return super.damageEntity(damagesource, i);
+    public MonsterType getMonsterType() {
+        return MonsterType.UNDEAD;
+    }
+
+    public void e() {
+        if (this.world.e() && !this.world.isStatic) {
+            float f = this.b(1.0F);
+
+            if (f > 0.5F && this.world.isChunkLoaded(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ)) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
+                this.setOnFire(8);
+            }
+        }
+
+        super.e();
     }
 
     public void die(DamageSource damagesource) {
@@ -47,66 +73,6 @@ public class EntitySkeleton extends EntityMonster {
                 entityhuman.a((Statistic) AchievementList.v);
             }
         }
-    }
-
-    public void d() {
-        if (this.world.e() && !this.world.isStatic) {
-            float f = this.a(1.0F);
-
-            if (f > 0.5F && this.world.isChunkLoaded(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ)) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
-                // CraftBukkit start
-                EntityCombustEvent event = new EntityCombustEvent(this.getBukkitEntity(), 8);
-                this.world.getServer().getPluginManager().callEvent(event);
-
-                if (!event.isCancelled()) {
-                    this.setOnFire(event.getDuration());
-                }
-                // CraftBukkit end
-            }
-        }
-
-        super.d();
-    }
-
-    protected void a(Entity entity, float f) {
-        if (f < 10.0F) {
-            double d0 = entity.locX - this.locX;
-            double d1 = entity.locZ - this.locZ;
-
-            if (this.attackTicks == 0) {
-                EntityArrow entityarrow = new EntityArrow(this.world, this, 1.0F);
-                double d2 = entity.locY + (double) entity.getHeadHeight() - 0.699999988079071D - entityarrow.locY;
-                float f1 = MathHelper.sqrt(d0 * d0 + d1 * d1) * 0.2F;
-
-                // this.world.makeSound(this, "random.bow", 1.0F, 1.0F / (this.random.nextFloat() * 0.4F + 0.8F)); // CraftBukkit - moved down
-                // this.world.addEntity(entityarrow); // CraftBukkit - moved down
-                entityarrow.shoot(d0, d2 + (double) f1, d1, 1.6F, 12.0F);
-                this.attackTicks = 60;
-
-                // CraftBukkit start
-                EntityShootBowEvent event = CraftEventFactory.callEntityShootBowEvent(this, null, entityarrow, 0.5F);
-                if (event.isCancelled()) {
-                    if (event.getProjectile() != null) {
-                        event.getProjectile().remove();
-                    }
-                } else if (event.getProjectile() == entityarrow.getBukkitEntity()) {
-                    world.addEntity(entityarrow);
-                }
-                this.world.makeSound(this, "random.bow", 1.0F, 1.0F / (this.random.nextFloat() * 0.4F + 0.8F));
-                // CraftBukkit end
-            }
-
-            this.yaw = (float) (Math.atan2(d1, d0) * 180.0D / 3.1415927410125732D) - 90.0F;
-            this.e = true;
-        }
-    }
-
-    public void b(NBTTagCompound nbttagcompound) {
-        super.b(nbttagcompound);
-    }
-
-    public void a(NBTTagCompound nbttagcompound) {
-        super.a(nbttagcompound);
     }
 
     protected int getLootId() {
@@ -131,7 +97,14 @@ public class EntitySkeleton extends EntityMonster {
         // CraftBukkit end
     }
 
-    public MonsterType getMonsterType() {
-        return MonsterType.UNDEAD;
+    protected void b(int i) {
+        if (i > 0) {
+            ItemStack itemstack = new ItemStack(Item.BOW);
+
+            EnchantmentManager.a(this.random, itemstack, 5);
+            this.a(itemstack, 0.0F);
+        } else {
+            this.b(Item.BOW.id, 1);
+        }
     }
 }
