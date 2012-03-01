@@ -18,11 +18,11 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
     }
 
     public IInventory getResultInventory() {
-        return inventory;
+        return resultInventory;
     }
 
     public IInventory getMatrixInventory() {
-        return resultInventory;
+        return inventory;
     }
 
     @Override
