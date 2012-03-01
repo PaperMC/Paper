@@ -111,4 +111,11 @@ public interface ChunkSnapshot {
      * @return time in ticks
      */
     long getCaptureFullTime();
+
+    /**
+     * Test if section is empty
+     * @param sy - section Y coordinate (block Y / 16)
+     * @return true if empty, false if not
+     */
+    boolean isSectionEmpty(int sy);
 }
