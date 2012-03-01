@@ -13,23 +13,27 @@ import net.minecraft.server.BiomeBase;
 public class CraftChunkSnapshot implements ChunkSnapshot {
     private final int x, z;
     private final String worldname;
-    private final byte[] buf; // Flat buffer in uncompressed chunk file format
-    private final byte[] hmap; // Height map
+    private final short[][] blockids; /* Block IDs, by section */
+    private final byte[][] blockdata;
+    private final byte[][] skylight;
+    private final byte[][] emitlight;
+    private final boolean[] empty;
+    private final int[] hmap; // Height map
     private final long captureFulltime;
     private final BiomeBase[] biome;
     private final double[] biomeTemp;
     private final double[] biomeRain;
 
-    private static final int BLOCKDATA_OFF = 32768;
-    private static final int BLOCKLIGHT_OFF = BLOCKDATA_OFF + 16384;
-    private static final int SKYLIGHT_OFF = BLOCKLIGHT_OFF + 16384;
-
-    CraftChunkSnapshot(int x, int z, String wname, long wtime, byte[] buf, byte[] hmap, BiomeBase[] biome, double[] biomeTemp, double[] biomeRain) {
+    CraftChunkSnapshot(int x, int z, String wname, long wtime, short[][] sectionBlockIDs, byte[][] sectionBlockData, byte[][] sectionSkyLights, byte[][] sectionEmitLights, boolean[] sectionEmpty, int[] hmap, BiomeBase[] biome, double[] biomeTemp, double[] biomeRain) {
         this.x = x;
         this.z = z;
         this.worldname = wname;
         this.captureFulltime = wtime;
-        this.buf = buf;
+        this.blockids = sectionBlockIDs;
+        this.blockdata = sectionBlockData;
+        this.skylight = sectionSkyLights;
+        this.emitlight = sectionEmitLights;
+        this.empty = sectionEmpty;
         this.hmap = hmap;
         this.biome = biome;
         this.biomeTemp = biomeTemp;
@@ -48,45 +52,46 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
         return worldname;
     }
 
-    public int getBlockTypeId(int x, int y, int z) {
-        return buf[x << 11 | z << 7 | y] & 255;
+    public final int getBlockTypeId(int x, int y, int z) {
+        return blockids[y >> 4][((y & 0xF) << 8) | (z << 4) | x];
     }
 
-    public int getBlockData(int x, int y, int z) {
-        int off = ((x << 10) | (z << 6) | (y >> 1)) + BLOCKDATA_OFF;
-
-        return ((y & 1) == 0) ? (buf[off] & 0xF) : ((buf[off] >> 4) & 0xF);
+    public final int getBlockData(int x, int y, int z) {
+        int off = ((y & 0xF) << 7) | (z << 3) | (x >> 1);
+        return (blockdata[y >> 4][off] >> ((x & 1) << 2)) & 0xF;
     }
 
-    public int getBlockSkyLight(int x, int y, int z) {
-        int off = ((x << 10) | (z << 6) | (y >> 1)) + SKYLIGHT_OFF;
-
-        return ((y & 1) == 0) ? (buf[off] & 0xF) : ((buf[off] >> 4) & 0xF);
+    public final int getBlockSkyLight(int x, int y, int z) {
+        int off = ((y & 0xF) << 7) | (z << 3) | (x >> 1);
+        return (skylight[y >> 4][off] >> ((x & 1) << 2)) & 0xF;
     }
 
-    public int getBlockEmittedLight(int x, int y, int z) {
-        int off = ((x << 10) | (z << 6) | (y >> 1)) + BLOCKLIGHT_OFF;
-
-        return ((y & 1) == 0) ? (buf[off] & 0xF) : ((buf[off] >> 4) & 0xF);
+    public final int getBlockEmittedLight(int x, int y, int z) {
+        int off = ((y & 0xF) << 7) | (z << 3) | (x >> 1);
+        return (emitlight[y >> 4][off] >> ((x & 1) << 2)) & 0xF;
     }
 
-    public int getHighestBlockYAt(int x, int z) {
-        return hmap[z << 4 | x] & 255;
+    public final int getHighestBlockYAt(int x, int z) {
+        return hmap[z << 4 | x];
     }
 
-    public Biome getBiome(int x, int z) {
+    public final Biome getBiome(int x, int z) {
         return CraftBlock.biomeBaseToBiome(biome[z << 4 | x]);
     }
 
-    public double getRawBiomeTemperature(int x, int z) {
+    public final double getRawBiomeTemperature(int x, int z) {
         return biomeTemp[z << 4 | x];
     }
 
-    public double getRawBiomeRainfall(int x, int z) {
+    public final double getRawBiomeRainfall(int x, int z) {
         return biomeRain[z << 4 | x];
     }
 
-    public long getCaptureFullTime() {
+    public final long getCaptureFullTime() {
         return captureFulltime;
+    }
+
+    public final boolean isSectionEmpty(int sy) {
+        return empty[sy];
     }
 }
