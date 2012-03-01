@@ -80,7 +80,7 @@ public class CraftBlock implements Block {
     }
 
     public byte getData() {
-        return (byte) chunk.getHandle().getData(this.x & 0xF, this.y & 0x7F, this.z & 0xF);
+        return (byte) chunk.getHandle().getData(this.x & 0xF, this.y & 0xFF, this.z & 0xF);
     }
 
     public void setType(final Material type) {
@@ -116,7 +116,7 @@ public class CraftBlock implements Block {
     }
 
     public int getTypeId() {
-        return chunk.getHandle().getTypeId(this.x & 0xF, this.y & 0x7F, this.z & 0xF);
+        return chunk.getHandle().getTypeId(this.x & 0xF, this.y & 0xFF, this.z & 0xF);
     }
 
     public byte getLightLevel() {
@@ -124,11 +124,11 @@ public class CraftBlock implements Block {
     }
 
     public byte getLightFromSky() {
-        return (byte) chunk.getHandle().getBrightness(EnumSkyBlock.SKY, this.x & 0xF, this.y & 0x7F, this.z & 0xF);
+        return (byte) chunk.getHandle().getBrightness(EnumSkyBlock.SKY, this.x & 0xF, this.y & 0xFF, this.z & 0xF);
     }
 
     public byte getLightFromBlocks() {
-        return (byte) chunk.getHandle().getBrightness(EnumSkyBlock.BLOCK, this.x & 0xF, this.y & 0x7F, this.z & 0xF);
+        return (byte) chunk.getHandle().getBrightness(EnumSkyBlock.BLOCK, this.x & 0xF, this.y & 0xFF, this.z & 0xF);
     }
 
 

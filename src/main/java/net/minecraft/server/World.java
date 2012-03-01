@@ -1923,7 +1923,7 @@ public class World implements IBlockAccess {
             int k = this.g >> 2;
             int l = k & 15;
             int i1 = k >> 8 & 15;
-            int j1 = k >> 16 & 127;
+            int j1 = k >> 16 & 255; // CraftBukkit - 127 -> 255
             int k1 = chunk.getTypeId(l, j1, i1);
 
             l += i;

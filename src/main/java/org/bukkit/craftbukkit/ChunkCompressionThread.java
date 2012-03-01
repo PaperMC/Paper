@@ -18,7 +18,7 @@ public final class ChunkCompressionThread implements Runnable {
     private final HashMap<EntityPlayer, Integer> queueSizePerPlayer = new HashMap<EntityPlayer, Integer>();
     private final BlockingQueue<QueuedPacket> packetQueue = new LinkedBlockingQueue<QueuedPacket>(QUEUE_CAPACITY);
 
-    private final int CHUNK_SIZE = 16 * 128 * 16 * 5 / 2;
+    private final int CHUNK_SIZE = 16 * 256 * 16 * 5 / 2;
     private final int REDUCED_DEFLATE_THRESHOLD = CHUNK_SIZE / 4;
     private final int DEFLATE_LEVEL_CHUNKS = 6;
     private final int DEFLATE_LEVEL_PARTS = 1;
