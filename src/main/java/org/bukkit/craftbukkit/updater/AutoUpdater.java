@@ -16,6 +16,7 @@ public class AutoUpdater {
     private boolean enabled;
     private ArtifactDetails current = null;
     private ArtifactDetails latest = null;
+    private boolean suggestChannels = true;
 
     public AutoUpdater(BukkitDLUpdaterService service, Logger log, String channel) {
         this.service = service;
@@ -33,6 +34,14 @@ public class AutoUpdater {
 
     public void setEnabled(boolean isEnabled) {
         this.enabled = isEnabled;
+    }
+
+    public boolean shouldSuggestChannels() {
+        return suggestChannels;
+    }
+
+    public void setSuggestChannels(boolean suggestChannels) {
+        this.suggestChannels = suggestChannels;
     }
 
     public List<String> getOnBroken() {
@@ -100,6 +109,17 @@ public class AutoUpdater {
 
                     log.severe("Unfortunately, there is not yet a newer version suitable for your server. We would advise you wait an hour or two, or try out a dev build.");
                     log.severe("----- ------------------- -----");
+                } else if ((current != null) && (shouldSuggestChannels())) {
+                    ArtifactDetails.ChannelDetails prefChan = service.getChannel(channel, "preferred channel details");
+
+                    if ((prefChan != null) && (current.getChannel().getPriority() < prefChan.getPriority())) {
+                        log.info("----- Bukkit Auto Updater -----");
+                        log.info("It appears that you're running a " + current.getChannel().getName() + ", when you've specified in bukkit.yml that you prefer to run " + prefChan.getName() + "s.");
+                        log.info("If you would like to be kept informed about new " + current.getChannel().getName() + " releases, it is recommended that you change 'preferred-channel' in your bukkit.yml to '" + current.getChannel().getSlug() + "'.");
+                        log.info("With that set, you will be told whenever a new version is available for download, so that you can always keep up to date and secure with the latest fixes.");
+                        log.info("If you would like to disable this warning, simply set 'suggest-channels' to false in bukkit.yml.");
+                        log.info("----- ------------------- -----");
+                    }
                 }
             }
         }.start();
