@@ -1,6 +1,5 @@
 package org.bukkit.util;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -42,8 +41,8 @@ public class ChatPaginator {
 
         int from = (actualPageNumber - 1) * pageHeight;
         int to = from + pageHeight <= lines.length  ? from + pageHeight : lines.length;
-        String[] selectedLines = Arrays.copyOfRange(lines, from, to);
-        
+        String[] selectedLines = Java15Compat.Arrays_copyOfRange(lines, from, to);
+
         return new ChatPage(selectedLines, actualPageNumber, totalPages);
     }
 
@@ -59,7 +58,7 @@ public class ChatPaginator {
         if (rawString == null) {
             return new String[] {""};
         }
-        
+
         // A string shorter than the lineWidth is a single line
         if (rawString.length() <= lineLength && !rawString.contains("\n")) {
             return new String[] {rawString};
@@ -92,7 +91,7 @@ public class ChatPaginator {
                     line.append(word);
                 }
                 word = new StringBuilder();
-                
+
                 if (c == '\n') { // Newline forces the line to flush
                     lines.add(line.toString());
                     line = new StringBuilder();
@@ -105,16 +104,16 @@ public class ChatPaginator {
         if(line.length() > 0) { // Only add the last line if there is anything to add
             lines.add(line.toString());
         }
-        
+
         return lines.toArray(new String[0]);
     }
-    
+
     public static class ChatPage {
-        
+
         private String[] lines;
         private int pageNumber;
         private int totalPages;
-        
+
         public ChatPage(String[] lines, int pageNumber, int totalPages) {
             this.lines = lines;
             this.pageNumber = pageNumber;
