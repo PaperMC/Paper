@@ -160,7 +160,7 @@ public final class PluginDescriptionFile {
     public String getClassLoaderOf() {
         return classLoaderOf;
     }
-    
+
     public String getPrefix() {
         return prefix;
     }
@@ -197,7 +197,7 @@ public final class PluginDescriptionFile {
             throw new InvalidDescriptionException(ex, "main is of wrong type");
         }
 
-        if (map.containsKey("commands")) {
+        if (map.get("commands") != null) {
             ImmutableMap.Builder<String, Map<String, Object>> commandsBuilder = ImmutableMap.<String, Map<String, Object>>builder();
             try {
                 for (Map.Entry<?, ?> command : ((Map<?, ?>) map.get("commands")).entrySet()) {
@@ -210,7 +210,7 @@ public final class PluginDescriptionFile {
                                 commandSubList.add(commandSubListItem);
                             }
                             commandBuilder.put(commandEntry.getKey().toString(), commandSubList.build());
-                        } else {
+                        } else if (commandEntry.getValue() != null) {
                             commandBuilder.put(commandEntry.getKey().toString(), commandEntry.getValue());
                         }
                     }
@@ -218,15 +218,17 @@ public final class PluginDescriptionFile {
                 }
             } catch (ClassCastException ex) {
                 throw new InvalidDescriptionException(ex, "commands are of wrong type");
+            } catch (NullPointerException ex) {
+                throw new InvalidDescriptionException(ex, "commands are not properly defined");
             }
             commands = commandsBuilder.build();
         }
 
-        if (map.containsKey("class-loader-of")) {
+        if (map.get("class-loader-of") != null) {
             classLoaderOf = map.get("class-loader-of").toString();
         }
 
-        if (map.containsKey("depend")) {
+        if (map.get("depend") != null) {
             ImmutableList.Builder<String> dependBuilder = ImmutableList.<String>builder();
             try {
                 for (Object dependency : (Iterable<?>) map.get("depend")) {
@@ -234,11 +236,13 @@ public final class PluginDescriptionFile {
                 }
             } catch (ClassCastException ex) {
                 throw new InvalidDescriptionException(ex, "depend is of wrong type");
+            } catch (NullPointerException e) {
+                throw new InvalidDescriptionException(e, "invalid dependency format");
             }
             depend = dependBuilder.build();
         }
 
-        if (map.containsKey("softdepend")) {
+        if (map.get("softdepend") != null) {
             ImmutableList.Builder<String> softDependBuilder = ImmutableList.<String>builder();
             try {
                 for (Object dependency : (Iterable<?>) map.get("softdepend")) {
@@ -246,11 +250,13 @@ public final class PluginDescriptionFile {
                 }
             } catch (ClassCastException ex) {
                 throw new InvalidDescriptionException(ex, "softdepend is of wrong type");
+            } catch (NullPointerException ex) {
+                throw new InvalidDescriptionException(ex, "invalid soft-dependency format");
             }
             softDepend = softDependBuilder.build();
         }
 
-        if (map.containsKey("database")) {
+        if (map.get("database") != null) {
             try {
                 database = (Boolean) map.get("database");
             } catch (ClassCastException ex) {
@@ -258,15 +264,15 @@ public final class PluginDescriptionFile {
             }
         }
 
-        if (map.containsKey("website")) {
+        if (map.get("website") != null) {
             website = map.get("website").toString();
         }
 
-        if (map.containsKey("description")) {
+        if (map.get("description") != null) {
             description = map.get("description").toString();
         }
 
-        if (map.containsKey("load")) {
+        if (map.get("load") != null) {
             try {
                 order = PluginLoadOrder.valueOf(((String) map.get("load")).toUpperCase().replaceAll("\\W", ""));
             } catch (ClassCastException ex) {
@@ -276,9 +282,9 @@ public final class PluginDescriptionFile {
             }
         }
 
-        if (map.containsKey("authors")) {
+        if (map.get("authors") != null) {
             ImmutableList.Builder<String> authorsBuilder = ImmutableList.<String>builder();
-            if (map.containsKey("author")) {
+            if (map.get("author") != null) {
                 authorsBuilder.add(map.get("author").toString());
             }
             try {
@@ -287,15 +293,17 @@ public final class PluginDescriptionFile {
                 }
             } catch (ClassCastException ex) {
                 throw new InvalidDescriptionException(ex, "authors are of wrong type");
+            } catch (NullPointerException ex) {
+                throw new InvalidDescriptionException(ex, "authors are improperly defined");
             }
             authors = authorsBuilder.build();
-        } else if (map.containsKey("author")) {
+        } else if (map.get("author") != null) {
             authors = ImmutableList.of(map.get("author").toString());
         } else {
             authors = ImmutableList.<String>of();
         }
 
-        if (map.containsKey("default-permission")) {
+        if (map.get("default-permission") != null) {
             try {
                 defaultPerm = PermissionDefault.getByName(map.get("default-permission").toString());
             } catch (ClassCastException ex) {
@@ -305,18 +313,21 @@ public final class PluginDescriptionFile {
             }
         }
 
-        if (map.containsKey("permissions")) {
+        if (map.get("permissions") != null) {
             try {
                 Map<?, ?> perms = (Map<?, ?>) map.get("permissions");
 
                 permissions = ImmutableList.copyOf(Permission.loadPermissions(perms, "Permission node '%s' in plugin description file for " + getFullName() + " is invalid", defaultPerm));
             } catch (ClassCastException ex) {
                 throw new InvalidDescriptionException(ex, "permissions are of wrong type");
+            } catch (NullPointerException ex) {
+                throw new InvalidDescriptionException(ex, "permissions are not properly defined");
             }
         } else {
             permissions = ImmutableList.<Permission>of();
         }
-        if (map.containsKey("prefix")) {
+
+        if (map.get("prefix") != null) {
             prefix = map.get("prefix").toString();
         }
     }
@@ -356,7 +367,7 @@ public final class PluginDescriptionFile {
         if (classLoaderOf != null) {
             map.put("class-loader-of", classLoaderOf);
         }
-        
+
         if (prefix != null) {
             map.put("prefix", prefix);
         }
