@@ -73,6 +73,20 @@ public class CraftInventoryCustom extends CraftInventory {
             return result;
         }
 
+        public ItemStack splitWithoutUpdate(int i) {
+            ItemStack stack = this.getItem(i);
+            ItemStack result;
+            if (stack == null) return null;
+            if (stack.count <= 1) {
+                this.setItem(i, null);
+                result = stack;
+            } else {
+                result = new ItemStack(stack.id, 1, stack.getData());
+                stack.count -= 1;
+            }
+            return result;
+        }
+
         public void setItem(int i, ItemStack itemstack) {
             items[i] = itemstack;
         }
