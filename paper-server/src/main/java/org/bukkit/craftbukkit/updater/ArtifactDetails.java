@@ -10,6 +10,23 @@ public class ArtifactDetails {
     private String version;
     private Date created;
     private FileDetails file;
+    private ChannelDetails channel;
+
+    public ChannelDetails getChannel() {
+        return channel;
+    }
+
+    public void setChannel(ChannelDetails channel) {
+        this.channel = channel;
+    }
+
+    public boolean isIsBroken() {
+        return isBroken;
+    }
+
+    public void setIsBroken(boolean isBroken) {
+        this.isBroken = isBroken;
+    }
 
     public FileDetails getFile() {
         return file;
@@ -76,6 +93,36 @@ public class ArtifactDetails {
 
         public void setUrl(String url) {
             this.url = url;
+        }
+    }
+
+    public static class ChannelDetails {
+        private String name;
+        private String slug;
+        private int priority;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public int getPriority() {
+            return priority;
+        }
+
+        public void setPriority(int priority) {
+            this.priority = priority;
+        }
+
+        public String getSlug() {
+            return slug;
+        }
+
+        public void setSlug(String slug) {
+            this.slug = slug;
         }
     }
 }

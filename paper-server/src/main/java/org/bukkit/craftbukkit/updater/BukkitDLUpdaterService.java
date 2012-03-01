@@ -13,7 +13,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class BukkitDLUpdaterService {
-    private static final String API_PREFIX = "/api/1.0/downloads/projects/craftbukkit/view/";
+    private static final String API_PREFIX_ARTIFACT = "/api/1.0/downloads/projects/craftbukkit/view/";
+    private static final String API_PREFIX_CHANNEL = "/api/1.0/downloads/channels/";
     private static final DateDeserializer dateDeserializer = new DateDeserializer();
     private final String host;
 
@@ -34,13 +35,42 @@ public class BukkitDLUpdaterService {
     }
 
     public ArtifactDetails fetchArtifact(String slug) throws UnsupportedEncodingException, IOException {
-        URL url = new URL("http", host, API_PREFIX + slug);
+        URL url = new URL("http", host, API_PREFIX_ARTIFACT + slug);
         InputStreamReader reader = null;
 
         try {
             reader = new InputStreamReader(url.openStream());
             Gson gson = new GsonBuilder().registerTypeAdapter(Date.class, dateDeserializer).setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
             ArtifactDetails fromJson = gson.fromJson(reader, ArtifactDetails.class);
+
+            return fromJson;
+        } finally {
+            if (reader != null) {
+                reader.close();
+            }
+        }
+    }
+
+    public ArtifactDetails.ChannelDetails getChannel(String slug, String name) {
+        try {
+            return fetchChannel(slug);
+        } catch (UnsupportedEncodingException ex) {
+            Logger.getLogger(BukkitDLUpdaterService.class.getName()).log(Level.WARNING, "Could not get " + name + ": " + ex.getClass().getSimpleName());
+        } catch (IOException ex) {
+            Logger.getLogger(BukkitDLUpdaterService.class.getName()).log(Level.WARNING, "Could not get " + name + ": " + ex.getClass().getSimpleName());
+        }
+
+        return null;
+    }
+
+    public ArtifactDetails.ChannelDetails fetchChannel(String slug) throws UnsupportedEncodingException, IOException {
+        URL url = new URL("http", host, API_PREFIX_CHANNEL + slug);
+        InputStreamReader reader = null;
+
+        try {
+            reader = new InputStreamReader(url.openStream());
+            Gson gson = new GsonBuilder().registerTypeAdapter(Date.class, dateDeserializer).setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
+            ArtifactDetails.ChannelDetails fromJson = gson.fromJson(reader, ArtifactDetails.ChannelDetails.class);
 
             return fromJson;
         } finally {
