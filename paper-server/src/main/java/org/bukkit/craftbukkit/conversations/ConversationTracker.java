@@ -2,14 +2,13 @@ package org.bukkit.craftbukkit.conversations;
 
 import org.bukkit.conversations.Conversation;
 
-import java.util.Deque;
 import java.util.LinkedList;
 
 /**
  */
 public class ConversationTracker {
 
-    private Deque<Conversation> conversationQueue = new LinkedList<Conversation>();
+    private LinkedList<Conversation> conversationQueue = new LinkedList<Conversation>();
 
     public synchronized boolean beginConversation(Conversation conversation) {
         if (!conversationQueue.contains(conversation)) {
@@ -39,7 +38,7 @@ public class ConversationTracker {
 
     public synchronized void abandonAllConversations() {
 
-        Deque<Conversation> oldQueue = conversationQueue;
+        LinkedList<Conversation> oldQueue = conversationQueue;
         conversationQueue = new LinkedList<Conversation>();
         for(Conversation conversation : oldQueue) {
             conversation.abandon();
