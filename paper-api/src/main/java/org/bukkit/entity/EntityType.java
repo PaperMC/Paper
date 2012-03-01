@@ -17,6 +17,7 @@ public enum EntityType {
     SMALL_FIREBALL("SmallFireball", SmallFireball.class, 13),
     ENDER_PEARL("ThrownEnderpearl", EnderPearl.class, 14),
     ENDER_SIGNAL("EyeOfEnderSignal", EnderSignal.class, 15),
+    THROWN_EXP_BOTTLE("ThrownExpBottle", ThrownExpBottle.class, 17),
     PRIMED_TNT("PrimedTnt", TNTPrimed.class, 20),
     FALLING_BLOCK("FallingSand", FallingSand.class, 21, false),
     MINECART("Minecart", Minecart.class, 40),
@@ -43,6 +44,8 @@ public enum EntityType {
     WOLF("Wolf", Wolf.class, 95),
     MUSHROOM_COW("MushroomCow", MushroomCow.class, 96),
     SNOWMAN("SnowMan", Snowman.class, 97),
+    OCELOT("Ozelot", Ocelot.class, 98),
+    IRON_GOLEM("VillagerGolem", IronGolem.class, 98),
     VILLAGER("Villager", Villager.class, 120),
     ENDER_CRYSTAL("EnderCrystal", EnderCrystal.class, 200),
     // These don't have an entity ID in nms.EntityTypes.
