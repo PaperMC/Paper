@@ -102,19 +102,19 @@ public class WorldGenTrees extends WorldGenerator {
                         if (k1 == 0 || k1 == Block.LEAVES.id) {
                             this.setTypeAndData(world, i, j + j1, k, Block.LOG.id, this.c);
                             if (this.b && j1 > 0) {
-                                if (random.nextInt(3) > 0 && ((World )world).isEmpty(i - 1, j + j1, k)) { // Craftbukkit cast to World
+                                if (random.nextInt(3) > 0 && (world).isEmpty(i - 1, j + j1, k)) {
                                     this.setTypeAndData(world, i - 1, j + j1, k, Block.VINE.id, 8);
                                 }
 
-                                if (random.nextInt(3) > 0 && ((World )world).isEmpty(i + 1, j + j1, k)) { // Craftbukkit cast to World
+                                if (random.nextInt(3) > 0 && (world).isEmpty(i + 1, j + j1, k)) {
                                     this.setTypeAndData(world, i + 1, j + j1, k, Block.VINE.id, 2);
                                 }
 
-                                if (random.nextInt(3) > 0 && ((World )world).isEmpty(i, j + j1, k - 1)) { // Craftbukkit cast to World
+                                if (random.nextInt(3) > 0 && (world).isEmpty(i, j + j1, k - 1)) {
                                     this.setTypeAndData(world, i, j + j1, k - 1, Block.VINE.id, 1);
                                 }
 
-                                if (random.nextInt(3) > 0 && ((World )world).isEmpty(i, j + j1, k + 1)) { // Craftbukkit cast to World
+                                if (random.nextInt(3) > 0 && (world).isEmpty(i, j + j1, k + 1)) {
                                     this.setTypeAndData(world, i, j + j1, k + 1, Block.VINE.id, 4);
                                 }
                             }
@@ -130,19 +130,19 @@ public class WorldGenTrees extends WorldGenerator {
                                 for (k2 = k - i2; k2 <= k + i2; ++k2) {
                                     if (world.getTypeId(j2, j1, k2) == Block.LEAVES.id) {
                                         if (random.nextInt(4) == 0 && world.getTypeId(j2 - 1, j1, k2) == 0) {
-                                            this.a((World) world, j2 - 1, j1, k2, 8); // Craftbukkit cast to World
+                                            this.a(world, j2 - 1, j1, k2, 8);
                                         }
 
                                         if (random.nextInt(4) == 0 && world.getTypeId(j2 + 1, j1, k2) == 0) {
-                                            this.a((World) world, j2 + 1, j1, k2, 2); // Craftbukkit cast to World
+                                            this.a(world, j2 + 1, j1, k2, 2);
                                         }
 
                                         if (random.nextInt(4) == 0 && world.getTypeId(j2, j1, k2 - 1) == 0) {
-                                            this.a((World) world, j2, j1, k2 - 1, 1); // Craftbukkit cast to World
+                                            this.a(world, j2, j1, k2 - 1, 1);
                                         }
 
                                         if (random.nextInt(4) == 0 && world.getTypeId(j2, j1, k2 + 1) == 0) {
-                                            this.a((World) world, j2, j1, k2 + 1, 4); // Craftbukkit cast to World
+                                            this.a(world, j2, j1, k2 + 1, 4);
                                         }
                                     }
                                 }
@@ -160,8 +160,9 @@ public class WorldGenTrees extends WorldGenerator {
         }
     }
 
-    private void a(World world, int i, int j, int k, int l) {
-        world.setTypeIdAndData(i, j, k, Block.VINE.id, l);
+    // CraftBukkit - Changed world to BlockChangeDelegate
+    private void a(BlockChangeDelegate world, int i, int j, int k, int l) {
+        world.setRawTypeIdAndData(i, j, k, Block.VINE.id, l); // CraftBukkit - "raw"
         int i1 = 4;
 
         while (true) {
@@ -170,7 +171,7 @@ public class WorldGenTrees extends WorldGenerator {
                 return;
             }
 
-            world.setTypeIdAndData(i, j, k, Block.VINE.id, l);
+            world.setRawTypeIdAndData(i, j, k, Block.VINE.id, l); // CraftBukkit - "raw"
             --i1;
         }
     }
