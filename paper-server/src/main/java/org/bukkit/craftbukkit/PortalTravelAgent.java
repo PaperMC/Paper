@@ -87,7 +87,7 @@ public class PortalTravelAgent implements TravelAgent {
             for (int k1 = i1 - this.searchRadius; k1 <= i1 + this.searchRadius; ++k1) {
                 double d3 = (double) k1 + 0.5D - location.getZ();
 
-                for (int l1 = 127; l1 >= 0; --l1) {
+                for (int l1 = 255; l1 >= 0; --l1) {
                     if (world.getTypeId(j1, l1, k1) == Block.PORTAL.id) {
                         while (world.getTypeId(j1, l1 - 1, k1) == Block.PORTAL.id) {
                             --l1;
@@ -194,7 +194,7 @@ public class PortalTravelAgent implements TravelAgent {
                 d2 = (double) j2 + 0.5D - location.getZ();
 
                 label271:
-                for (l2 = 127; l2 >= 0; --l2) {
+                for (l2 = 255; l2 >= 0; --l2) {
                     if (world.isEmpty(i2, l2, j2)) {
                         while (l2 > 0 && world.isEmpty(i2, l2 - 1, j2)) {
                             --l2;
@@ -245,7 +245,7 @@ public class PortalTravelAgent implements TravelAgent {
                     d2 = (double) j2 + 0.5D - location.getZ();
 
                     label219:
-                    for (l2 = 127; l2 >= 0; --l2) {
+                    for (l2 = 255; l2 >= 0; --l2) {
                         if (world.isEmpty(i2, l2, j2)) {
                             while (l2 > 0 && world.isEmpty(i2, l2 - 1, j2)) {
                                 --l2;

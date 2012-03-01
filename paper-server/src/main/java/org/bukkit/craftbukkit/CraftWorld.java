@@ -78,7 +78,7 @@ public class CraftWorld implements World {
     }
 
     public Block getBlockAt(int x, int y, int z) {
-        return getChunkAt(x >> 4, z >> 4).getBlock(x & 0xF, y & 0x7F, z & 0xF);
+        return getChunkAt(x >> 4, z >> 4).getBlock(x & 0xF, y & 0xFF, z & 0xF);
     }
 
     public int getBlockTypeIdAt(int x, int y, int z) {
@@ -224,7 +224,7 @@ public class CraftWorld implements World {
         for (int xx = px; xx < (px + 16); xx++) {
             world.notify(xx, 0, pz);
         }
-        world.notify(px, 127, pz + 15);
+        world.notify(px, 255, pz + 15);
 
         return true;
     }
