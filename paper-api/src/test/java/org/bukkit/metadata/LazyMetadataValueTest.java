@@ -1,6 +1,6 @@
 package org.bukkit.metadata;
 
-import org.bukkit.plugin.messaging.TestPlugin;
+import org.bukkit.plugin.TestPlugin;
 import org.junit.Test;
 
 import java.util.concurrent.Callable;

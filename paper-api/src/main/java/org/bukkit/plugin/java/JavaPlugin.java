@@ -19,7 +19,7 @@ import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.generator.ChunkGenerator;
-import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginBase;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoader;
 import org.bukkit.plugin.PluginLogger;
@@ -34,7 +34,7 @@ import com.avaje.ebeaninternal.server.ddl.DdlGenerator;
 /**
  * Represents a Java plugin
  */
-public abstract class JavaPlugin extends Plugin {
+public abstract class JavaPlugin extends PluginBase {
     private boolean isEnabled = false;
     private boolean initialized = false;
     private PluginLoader loader = null;

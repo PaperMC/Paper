@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.messaging.TestPlugin;
+import org.bukkit.plugin.TestPlugin;
 import org.junit.Test;
 
 public class MetadataStoreTest {

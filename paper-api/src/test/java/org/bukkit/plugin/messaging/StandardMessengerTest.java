@@ -1,6 +1,6 @@
 package org.bukkit.plugin.messaging;
 
-import org.bukkit.plugin.messaging.ReservedChannelException;
+import org.bukkit.plugin.TestPlugin;
 import java.util.Collection;
 import org.junit.Test;
 import static org.junit.Assert.*;

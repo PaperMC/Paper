@@ -16,7 +16,7 @@
 package org.bukkit.metadata;
 
 import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.messaging.TestPlugin;
+import org.bukkit.plugin.TestPlugin;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

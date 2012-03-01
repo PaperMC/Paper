@@ -13,22 +13,24 @@ import com.avaje.ebean.EbeanServer;
 
 /**
  * Represents a Plugin
+ * <p />
+ * The use of {@link PluginBase} is recommended for actual Implementation
  */
-public abstract class Plugin implements CommandExecutor {
+public interface Plugin extends CommandExecutor {
     /**
      * Returns the folder that the plugin data's files are located in. The
      * folder may not yet exist.
      *
      * @return The folder
      */
-    public abstract File getDataFolder();
+    public File getDataFolder();
 
     /**
      * Returns the plugin.yaml file containing the details for this plugin
      *
      * @return Contents of the plugin.yaml file
      */
-    public abstract PluginDescriptionFile getDescription();
+    public PluginDescriptionFile getDescription();
 
     /**
      * Gets a {@link FileConfiguration} for this plugin, read through "config.yml"
@@ -38,7 +40,7 @@ public abstract class Plugin implements CommandExecutor {
      *
      * @return Plugin configuration
      */
-    public abstract FileConfiguration getConfig();
+    public FileConfiguration getConfig();
 
     /**
      * Gets an embedded resource in this plugin
@@ -46,18 +48,18 @@ public abstract class Plugin implements CommandExecutor {
      * @param filename Filename of the resource
      * @return File if found, otherwise null
      */
-    public abstract InputStream getResource(String filename);
+    public InputStream getResource(String filename);
 
     /**
      * Saves the {@link FileConfiguration} retrievable by {@link #getConfig()}.
      */
-    public abstract void saveConfig();
+    public void saveConfig();
 
     /**
      * Saves the raw contents of the default config.yml file to the location retrievable by {@link #getConfig()}.
      * If there is no default config.yml embedded in the plugin, an empty config.yml file is saved.
      */
-    public abstract void saveDefaultConfig();
+    public void saveDefaultConfig();
 
     /**
      * Saves the raw contents of any resource embedded with a plugin's .jar file assuming it can be found using
@@ -68,70 +70,70 @@ public abstract class Plugin implements CommandExecutor {
      * @param replace if true, the embedded resource will overwrite the contents of an existing file.
      * @throws IllegalArgumentException if the resource path is null, empty, or points to a nonexistent resource.
      */
-    public abstract void saveResource(String resourcePath, boolean replace);
+    public void saveResource(String resourcePath, boolean replace);
 
     /**
      * Discards any data in {@link #getConfig()} and reloads from disk.
      */
-    public abstract void reloadConfig();
+    public void reloadConfig();
 
     /**
      * Gets the associated PluginLoader responsible for this plugin
      *
      * @return PluginLoader that controls this plugin
      */
-    public abstract PluginLoader getPluginLoader();
+    public PluginLoader getPluginLoader();
 
     /**
      * Returns the Server instance currently running this plugin
      *
      * @return Server running this plugin
      */
-    public abstract Server getServer();
+    public Server getServer();
 
     /**
      * Returns a value indicating whether or not this plugin is currently enabled
      *
      * @return true if this plugin is enabled, otherwise false
      */
-    public abstract boolean isEnabled();
+    public boolean isEnabled();
 
     /**
      * Called when this plugin is disabled
      */
-    public abstract void onDisable();
+    public void onDisable();
 
     /**
      * Called after a plugin is loaded but before it has been enabled.
      * When mulitple plugins are loaded, the onLoad() for all plugins is called before any onEnable() is called.
      */
-    public abstract void onLoad();
+    public void onLoad();
 
     /**
      * Called when this plugin is enabled
      */
-    public abstract void onEnable();
+    public void onEnable();
 
     /**
      * Simple boolean if we can still nag to the logs about things
      *
      * @return boolean whether we can nag
      */
-    public abstract boolean isNaggable();
+    public boolean isNaggable();
 
     /**
      * Set naggable state
      *
      * @param canNag is this plugin still naggable?
      */
-    public abstract void setNaggable(boolean canNag);
+    public void setNaggable(boolean canNag);
 
     /**
      * Gets the {@link EbeanServer} tied to this plugin
      *
      * @return Ebean server instance
      */
-    public abstract EbeanServer getDatabase();
+    public EbeanServer getDatabase();
 
     /**
      * Gets a {@link ChunkGenerator} for use in a default world, as specified in the server configuration
@@ -140,7 +142,7 @@ public abstract class Plugin implements CommandExecutor {
      * @param id Unique ID, if any, that was specified to indicate which generator was requested
      * @return ChunkGenerator for use in the default world generation
      */
-    public abstract ChunkGenerator getDefaultWorldGenerator(String worldName, String id);
+    public ChunkGenerator getDefaultWorldGenerator(String worldName, String id);
 
     /**
      * Returns the primary logger associated with this server instance. The returned logger automatically
@@ -148,7 +150,7 @@ public abstract class Plugin implements CommandExecutor {
      *
      * @return Logger associated with this server
      */
-    public abstract Logger getLogger();
+    public Logger getLogger();
 
     /**
      * Returns the name of the plugin.
@@ -157,26 +159,5 @@ public abstract class Plugin implements CommandExecutor {
      *
      * @return name of the plugin
      */
-    public String getName() {
-        return getDescription().getName();
-    }
-
-    @Override
-    public int hashCode() {
-        return getName().hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (!(obj instanceof Plugin)) {
-            return false;
-        }
-        return getName().equals(((Plugin) obj).getName());
-    }
+    public String getName();
 }

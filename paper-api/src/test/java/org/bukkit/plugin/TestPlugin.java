@@ -1,4 +1,4 @@
-package org.bukkit.plugin.messaging;
+package org.bukkit.plugin;
 
 import java.io.File;
 import java.io.InputStream;
@@ -8,14 +8,10 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.generator.ChunkGenerator;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginDescriptionFile;
-import org.bukkit.plugin.PluginLoader;
-import org.bukkit.plugin.PluginLogger;
 
 import com.avaje.ebean.EbeanServer;
 
-public class TestPlugin extends Plugin {
+public class TestPlugin extends PluginBase {
     private boolean enabled = true;
 
     final private String pluginName;
@@ -26,10 +22,6 @@ public class TestPlugin extends Plugin {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
-    }
-
-    public String getName() {
-        return pluginName;
     }
 
     public File getDataFolder() {
@@ -110,21 +102,5 @@ public class TestPlugin extends Plugin {
 
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         throw new UnsupportedOperationException("Not supported.");
-    }
-
-    @Override
-    public int hashCode() {
-        return getName().hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        return getName().equals(((TestPlugin) obj).getName());
     }
 }
