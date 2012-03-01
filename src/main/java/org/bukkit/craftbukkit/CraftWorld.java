@@ -781,6 +781,9 @@ public class CraftWorld implements World {
             } else if (Arrow.class.isAssignableFrom(clazz)) {
                 entity = new EntityArrow(world);
                 entity.setPositionRotation(x, y, z, 0, 0);
+            } else if (ThrownExpBottle.class.isAssignableFrom(clazz)) {
+                entity = new EntityThrownExpBottle(world);
+                entity.setPositionRotation(x, y, z, 0, 0);
             } else if (Fireball.class.isAssignableFrom(clazz)) {
                 if (SmallFireball.class.isAssignableFrom(clazz)) {
                     entity = new EntitySmallFireball(world);
@@ -813,8 +816,12 @@ public class CraftWorld implements World {
                 } else {
                     entity = new EntityCow(world);
                 }
-            } else if (Snowman.class.isAssignableFrom(clazz)) {
-                entity = new EntitySnowman(world);
+            } else if (Golem.class.isAssignableFrom(clazz)) {
+                if (Snowman.class.isAssignableFrom(clazz)) {
+                    entity = new EntitySnowman(world);
+                } else if (IronGolem.class.isAssignableFrom(clazz)) {
+                    entity = new EntityIronGolem(world);
+                }
             } else if (Creeper.class.isAssignableFrom(clazz)) {
                 entity = new EntityCreeper(world);
             } else if (Ghast.class.isAssignableFrom(clazz)) {
@@ -841,8 +848,12 @@ public class CraftWorld implements World {
                 }
             } else if (Squid.class.isAssignableFrom(clazz)) {
                 entity = new EntitySquid(world);
-            } else if (Wolf.class.isAssignableFrom(clazz)) {
-                entity = new EntityWolf(world);
+            } else if (Tameable.class.isAssignableFrom(clazz)) {
+                if (Wolf.class.isAssignableFrom(clazz)) {
+                    entity = new EntityWolf(world);
+                } else if (Ocelot.class.isAssignableFrom(clazz)) {
+                    entity = new EntityOcelot(world);
+                }
             } else if (PigZombie.class.isAssignableFrom(clazz)) {
                 entity = new EntityPigZombie(world);
             } else if (Zombie.class.isAssignableFrom(clazz)) {
