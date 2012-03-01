@@ -1,12 +1,23 @@
 package org.bukkit.command.defaults;
 
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.help.HelpMap;
+import org.bukkit.help.HelpTopic;
+import org.bukkit.util.ChatPaginator;
+
+import java.util.Arrays;
 
 public class HelpCommand extends VanillaCommand {
     public HelpCommand() {
         super("help");
         this.description = "Shows the help menu";
-        this.usageMessage = "/help";
+        this.usageMessage = "/help <pageNumber>\n/help <topic>\n/help <topic> <pageNumber>";
         this.setPermission("bukkit.command.help");
     }
 
@@ -14,25 +25,62 @@ public class HelpCommand extends VanillaCommand {
     public boolean execute(CommandSender sender, String currentAlias, String[] args) {
         if (!testPermission(sender)) return true;
 
-        sender.sendMessage("help  or  ?               shows this message");
-        sender.sendMessage("kick <player>             removes a player from the server");
-        sender.sendMessage("ban <player>              bans a player from the server");
-        sender.sendMessage("pardon <player>           pardons a banned player so that they can connect again");
-        sender.sendMessage("ban-ip <ip>               bans an IP address from the server");
-        sender.sendMessage("pardon-ip <ip>            pardons a banned IP address so that they can connect again");
-        sender.sendMessage("op <player>               turns a player into an op");
-        sender.sendMessage("deop <player>             removes op status from a player");
-        sender.sendMessage("tp <player1> <player2>    moves one player to the same location as another player");
-        sender.sendMessage("give <player> <id> [num]  gives a player a resource");
-        sender.sendMessage("tell <player> <message>   sends a private message to a player");
-        sender.sendMessage("stop                      gracefully stops the server");
-        sender.sendMessage("save-all                  forces a server-wide level save");
-        sender.sendMessage("save-off                  disables terrain saving (useful for backup scripts)");
-        sender.sendMessage("save-on                   re-enables terrain saving");
-        sender.sendMessage("list                      lists all currently connected players");
-        sender.sendMessage("say <message>             broadcasts a message to all players");
-        sender.sendMessage("time <add|set> <amount>   adds to or sets the world time (0-24000)");
-        sender.sendMessage("gamemode <player> <mode>  sets player\'s game mode (0 or 1)");
+        String command;
+        int pageNumber;
+        int pageHeight;
+        int pageWidth;
+
+        if (args.length == 0) {
+            command = "";
+            pageNumber = 1;
+        } else if (NumberUtils.isDigits(args[args.length - 1])) {
+            command = StringUtils.join(ArrayUtils.subarray(args, 0, args.length - 1), " ");
+            pageNumber = NumberUtils.createInteger(args[args.length - 1]);
+        } else {
+            command = StringUtils.join(args, " ");
+            pageNumber = 1;
+        }
+
+        if (sender instanceof ConsoleCommandSender) {
+            pageHeight = ChatPaginator.UNBOUNDED_PAGE_HEIGHT;
+            pageWidth = ChatPaginator.UNBOUNDED_PAGE_WIDTH;
+        } else {
+            pageHeight = ChatPaginator.CLOSED_CHAT_PAGE_HEIGHT - 1;
+            pageWidth = ChatPaginator.AVERAGE_CHAT_PAGE_WIDTH;
+        }
+        
+        HelpMap helpMap = Bukkit.getServer().getHelpMap();
+        HelpTopic topic = helpMap.getHelpTopic(command);
+
+        if (topic == null) {
+            topic = helpMap.getHelpTopic("/" + command);
+        }
+
+        if (topic == null || !topic.canSee(sender)) {
+            sender.sendMessage(ChatColor.RED + "No help for " + command);
+            return true;
+        }
+
+        ChatPaginator.ChatPage page = ChatPaginator.paginate(topic.getFullText(sender), pageNumber, pageWidth, pageHeight);
+
+        StringBuilder header = new StringBuilder();
+        header.append(ChatColor.GREEN);
+        header.append("===== Help: ");
+        header.append(topic.getName());
+        header.append(" ");
+        if (page.getTotalPages() > 1) {
+            header.append("(");
+            header.append(page.getPageNumber());
+            header.append(" of ");
+            header.append(page.getTotalPages());
+            header.append(") ");
+        }
+        for (int i = header.length(); i < ChatPaginator.GUARANTEED_NO_WRAP_CHAT_PAGE_WIDTH; i++) {
+            header.append("=");
+        }
+        sender.sendMessage(header.toString());
+
+        sender.sendMessage(page.getLines());
 
         return true;
     }

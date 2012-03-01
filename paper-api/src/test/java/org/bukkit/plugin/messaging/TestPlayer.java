@@ -556,6 +556,10 @@ public class TestPlayer implements Player {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    public void sendMessage(String[] messages) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
     public boolean isOnline() {
         throw new UnsupportedOperationException("Not supported yet.");
     }

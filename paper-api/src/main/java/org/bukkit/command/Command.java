@@ -83,7 +83,7 @@ public abstract class Command {
      * @return true if they can use it, otherwise false
      */
     public boolean testPermission(CommandSender target) {
-        if ((permission == null) || (permission.length() == 0) || (target.hasPermission(permission))) {
+        if (testPermissionSilent(target)) {
             return true;
         }
 
@@ -92,6 +92,28 @@ public abstract class Command {
         } else if (permissionMessage.length() != 0) {
             for (String line : permissionMessage.replace("<permission>", permission).split("\n")) {
                 target.sendMessage(line);
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Tests the given {@link CommandSender} to see if they can perform this command.
+     * <p />
+     * No error is sent to the sender.
+     *
+     * @param target User to test
+     * @return true if they can use it, otherwise false
+     */
+    public boolean testPermissionSilent(CommandSender target) {
+        if ((permission == null) || (permission.length() == 0)) {
+            return true;
+        }
+        
+        for (String p : permission.split(";")) {
+            if (target.hasPermission(p)) {
+                return true;
             }
         }
 

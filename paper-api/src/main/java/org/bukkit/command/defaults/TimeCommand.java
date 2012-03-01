@@ -11,6 +11,7 @@ public class TimeCommand extends VanillaCommand {
         super("time");
         this.description = "Changes the time on each world";
         this.usageMessage = "/time set <value>\n/time add <value>";
+        this.setPermission("bukkit.command.time.add;bukkit.command.time.set");
     }
 
     @Override
