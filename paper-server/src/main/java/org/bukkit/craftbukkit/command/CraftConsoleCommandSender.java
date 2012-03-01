@@ -16,6 +16,12 @@ public class CraftConsoleCommandSender extends ServerCommandSender implements Co
         System.out.println(ChatColor.stripColor(message));
     }
 
+    public void sendMessage(String[] messages) {
+        for (String message : messages) {
+            sendMessage(message);
+        }
+    }
+
     public String getName() {
         return "CONSOLE";
     }

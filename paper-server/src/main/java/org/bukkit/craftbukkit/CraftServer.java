@@ -58,6 +58,7 @@ import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
+import org.bukkit.craftbukkit.help.SimpleHelpMap;
 import org.bukkit.craftbukkit.inventory.CraftFurnaceRecipe;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCustom;
 import org.bukkit.craftbukkit.inventory.CraftRecipe;
@@ -81,6 +82,7 @@ import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.world.WorldSaveEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
 import org.bukkit.generator.ChunkGenerator;
+import org.bukkit.help.HelpMap;
 import org.bukkit.inventory.FurnaceRecipe;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Inventory;
@@ -126,6 +128,7 @@ public final class CraftServer implements Server {
     private final ServicesManager servicesManager = new SimpleServicesManager();
     private final BukkitScheduler scheduler = new CraftScheduler();
     private final SimpleCommandMap commandMap = new SimpleCommandMap(this);
+    private final SimpleHelpMap helpMap = new SimpleHelpMap();
     private final StandardMessenger messenger = new StandardMessenger();
     private final PluginManager pluginManager = new SimplePluginManager(this, commandMap);
     protected final MinecraftServer console;
@@ -215,6 +218,11 @@ public final class CraftServer implements Server {
     }
 
     public void enablePlugins(PluginLoadOrder type) {
+        if (type == PluginLoadOrder.STARTUP) {
+            helpMap.clear();
+            helpMap.initializeGeneralTopics(this);
+        }
+
         Plugin[] plugins = pluginManager.getPlugins();
 
         for (Plugin plugin : plugins) {
@@ -227,6 +235,7 @@ public final class CraftServer implements Server {
             commandMap.registerServerAliases();
             loadCustomPermissions();
             DefaultPermissions.registerCorePermissions();
+            helpMap.initializeCommands(this);
         }
     }
 
@@ -1121,5 +1130,13 @@ public final class CraftServer implements Server {
     public Inventory createInventory(InventoryHolder owner, int size, String title) throws IllegalArgumentException {
         Validate.isTrue(size % 9 == 0, "Chests must have a size that is a multiple of 9!");
         return new CraftInventoryCustom(owner, size, title);
+    }
+
+    public HelpMap getHelpMap() {
+        return helpMap;
+    }
+
+    public SimpleCommandMap getCommandMap() {
+        return commandMap;
     }
 }

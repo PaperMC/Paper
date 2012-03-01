@@ -11,6 +11,12 @@ public class CraftRemoteConsoleCommandSender extends ServerCommandSender impleme
     public void sendMessage(String message) {
         RemoteControlCommandListener.instance.sendMessage(message + "\n"); // Send a newline after each message, to preserve formatting.
     }
+    
+    public void sendMessage(String[] messages) {
+        for (String message : messages) {
+            sendMessage(message);
+        }
+    }
 
     public String getName() {
         return "Rcon";

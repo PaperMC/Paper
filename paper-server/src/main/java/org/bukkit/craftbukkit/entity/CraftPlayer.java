@@ -135,6 +135,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void sendMessage(String message) {
         this.sendRawMessage(message);
     }
+    
+    public void sendMessage(String[] messages) {
+        for (String message : messages) {
+            sendMessage(message);
+        }
+    }
 
     public String getDisplayName() {
         return getHandle().displayName;
