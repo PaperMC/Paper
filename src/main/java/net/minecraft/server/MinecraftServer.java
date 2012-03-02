@@ -184,7 +184,7 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
         this.t = MathHelper.a(this.t, 64, 256);
         this.propertyManager.a("max-build-height", Integer.valueOf(this.t));
         log.info("Preparing level \"" + s + "\"");
-        this.a(new WorldLoaderServer(new File(".")), s, j, worldtype);
+        this.a(new WorldLoaderServer(server.getWorldContainer()), s, j, worldtype); // CraftBukkit - world container
 
         // CraftBukkit start - display seconds for the completion time
         long elapsed = System.nanoTime() - i;
@@ -288,6 +288,11 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
                         log.severe("Could not create path for " + newWorld + "!");
                         log.info("---- Migration of old " + worldType + " folder failed ----");
                     }
+                }
+
+                if (convertable.isConvertable(name)) {
+                    log.info("Converting map!");
+                    convertable.convert(name, new ConvertProgressUpdater(this));
                 }
 
                 world = new SecondaryWorldServer(this, new ServerNBTManager(server.getWorldContainer(), name, true), name, dimension, settings, this.worlds.get(0), org.bukkit.World.Environment.getEnvironment(dimension), gen); // CraftBukkit
