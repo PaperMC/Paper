@@ -64,7 +64,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
         if (stack.data != null) {
             this.data = stack.data.clone();
         }
-        enchantments.putAll(stack.enchantments);
+        this.addUnsafeEnchantments(stack.getEnchantments());
     }
 
     /**
