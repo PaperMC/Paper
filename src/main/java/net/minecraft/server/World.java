@@ -1890,7 +1890,7 @@ public class World implements IBlockAccess {
 
             for (int l = -b0; l <= b0; ++l) {
                 for (int i1 = -b0; i1 <= b0; ++i1) {
-                    this.chunkTickList.add(LongHash.toLong(j + k, i1 + l)); // CraftBukkit
+                    this.chunkTickList.add(LongHash.toLong(l + j, i1 + k)); // CraftBukkit
                 }
             }
         }
