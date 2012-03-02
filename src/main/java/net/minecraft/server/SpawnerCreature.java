@@ -100,7 +100,7 @@ public final class SpawnerCreature {
                     for (EntryBase base : b) {
                         ChunkEntry entry = (SpawnerCreature.ChunkEntry) base;
                         if (!entry.spawn) {
-                            ChunkPosition chunkposition = getRandomPosition(world, entry.getX() * 16, entry.getZ() * 16);
+                            ChunkPosition chunkposition = getRandomPosition(world, entry.getX(), entry.getZ());
                             // CraftBukkit end
                             int k1 = chunkposition.x;
                             int l1 = chunkposition.y;
