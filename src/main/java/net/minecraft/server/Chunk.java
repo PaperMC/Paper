@@ -330,12 +330,14 @@ public class Chunk {
     }
 
     public int getTypeId(int i, int j, int k) {
+        if (j >> 4 >= sections.length) return 0;
         ChunkSection chunksection = this.sections[j >> 4];
 
         return chunksection != null ? chunksection.a(i, j & 15, k) : 0;
     }
 
     public int getData(int i, int j, int k) {
+        if (j >> 4 >= sections.length) return 0;
         ChunkSection chunksection = this.sections[j >> 4];
 
         return chunksection != null ? chunksection.b(i, j & 15, k) : 0;
