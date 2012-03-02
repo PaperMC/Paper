@@ -25,6 +25,10 @@ public enum TreeType {
      */
     BIRCH,
     /**
+     * Standard jungle tree; 4 blocks wide and tall
+     */
+    JUNGLE,
+    /**
      * Big red mushroom; short and fat
      */
     RED_MUSHROOM,
