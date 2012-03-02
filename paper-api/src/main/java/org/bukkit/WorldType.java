@@ -1,15 +1,15 @@
 package org.bukkit;
 
-import java.util.Map;
-
 import com.google.common.collect.Maps;
+import java.util.Map;
 
 /**
  * Represents various types of worlds that may exist
  */
 public enum WorldType {
     NORMAL("DEFAULT"),
-    FLAT("FLAT");
+    FLAT("FLAT"),
+    VERSION_1_1("DEFAULT_1_1");
 
     private final static Map<String, WorldType> BY_NAME = Maps.newHashMap();
     private final String name;
