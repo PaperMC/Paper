@@ -23,11 +23,10 @@ public class CraftChest extends CraftBlockState implements Chest {
     }
 
     public Inventory getInventory() {
+        int x = getX();
+        int y = getY();
+        int z = getZ();
         // The logic here is basically identical to the logic in BlockChest.interact
-        Location loc = getLocation();
-        int x = loc.getBlockX();
-        int y = loc.getBlockY();
-        int z = loc.getBlockZ();
         CraftInventory inventory = new CraftInventory(chest);
         if (world.getBlockTypeIdAt(x - 1, y, z) == Material.CHEST.getId()) {
             CraftInventory left = new CraftInventory((TileEntityChest)world.getHandle().getTileEntity(x - 1, y, z));
