@@ -288,7 +288,15 @@ public class CraftEventFactory {
         victim.expToDrop = event.getDroppedExp();
 
         for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
-            world.dropItemNaturally(entity.getLocation(), stack);
+            if (stack == null || stack.getType() == Material.AIR) continue;
+
+            if (stack instanceof CraftItemStack) {
+                // Use the internal item to preserve possible data.
+                victim.a(((CraftItemStack) stack).getHandle(), 0.0f);
+            }
+            else {
+                world.dropItemNaturally(entity.getLocation(), stack);
+            }
         }
 
         return event;
@@ -310,7 +318,13 @@ public class CraftEventFactory {
         for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
             if (stack == null || stack.getType() == Material.AIR) continue;
 
-            world.dropItemNaturally(entity.getLocation(), stack);
+            if (stack instanceof CraftItemStack) {
+                // Use the internal item to preserve possible data.
+                victim.a(((CraftItemStack) stack).getHandle(), 0.0f);
+            }
+            else {
+                world.dropItemNaturally(entity.getLocation(), stack);
+            }
         }
 
         return event;
