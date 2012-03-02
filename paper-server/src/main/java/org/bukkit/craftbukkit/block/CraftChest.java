@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import net.minecraft.server.TileEntityChest;
+import org.bukkit.Location;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -23,7 +24,10 @@ public class CraftChest extends CraftBlockState implements Chest {
 
     public Inventory getInventory() {
         // The logic here is basically identical to the logic in BlockChest.interact
-        int x = getLocation().getBlockX(), y = getLocation().getBlockY(), z = getLocation().hashCode();
+        Location loc = getLocation();
+        int x = loc.getBlockX();
+        int y = loc.getBlockY();
+        int z = loc.getBlockZ();
         CraftInventory inventory = new CraftInventory(chest);
         if (world.getBlockTypeIdAt(x - 1, y, z) == Material.CHEST.getId()) {
             CraftInventory left = new CraftInventory((TileEntityChest)world.getHandle().getTileEntity(x - 1, y, z));
