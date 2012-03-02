@@ -99,7 +99,9 @@ public class ItemInWorldManager {
                 return;
             }
             // CraftBukkit end
-            this.breakBlock(i, j, k);
+            if (!this.world.douseFire((EntityHuman) null, i, j, k, l)) {
+                this.breakBlock(i, j, k);
+            }
         } else {
             this.lastDigTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit
             int i1 = this.world.getTypeId(i, j, k);
