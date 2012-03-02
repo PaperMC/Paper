@@ -33,7 +33,7 @@ public class FoodMetaData {
                 this.saturationLevel = Math.max(this.saturationLevel - 1.0F, 0.0F);
             } else if (i > 0) {
                 // CraftBukkit start
-                org.bukkit.event.entity.FoodLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFoodLevelChangeEvent(entityhuman, Math.min(this.foodLevel - 1, 0));
+                org.bukkit.event.entity.FoodLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFoodLevelChangeEvent(entityhuman, Math.max(this.foodLevel - 1, 0));
 
                 if (!event.isCancelled()) {
                     this.foodLevel = event.getFoodLevel();
