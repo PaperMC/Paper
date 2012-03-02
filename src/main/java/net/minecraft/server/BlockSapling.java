@@ -44,24 +44,51 @@ public class BlockSapling extends BlockFlower {
     public void grow(World world, int i, int j, int k, Random random, boolean bonemeal, Player player, ItemStack itemstack) {
         int l = world.getData(i, j, k) & 3;
 
-        world.setRawTypeId(i, j, k, 0);
         // CraftBukkit start - records tree generation and calls StructureGrowEvent
         StructureGrowDelegate delegate = new StructureGrowDelegate(world);
         TreeType treeType;
-        boolean grownTree;
+        int i1 = 0;
+        int j1 = 0;
+        boolean grownTree = false;
+        boolean megaTree = false;
         // All of these are 'false' because we need the 'raw' calls so the block-delegate works
         if (l == 1) {
             treeType = TreeType.REDWOOD;
+            world.setRawTypeId(i, j, k, 0);
             grownTree = new WorldGenTaiga2(false).generate(delegate, random, i, j, k);
         } else if (l == 2) {
             treeType = TreeType.BIRCH;
+            world.setRawTypeId(i, j, k, 0);
             grownTree = new WorldGenForest(false).generate(delegate, random, i, j, k);
+        } else if (l == 3) {
+            treeType = TreeType.JUNGLE;
+            for (i1 = 0; i1 >= -1; --i1) {
+                for (j1 = 0; j1 >= -1; --j1) {
+                    if (world.getTypeId(i + i1, j, k + j1) == this.id && world.getTypeId(i + i1 + 1, j, k + j1) == this.id && world.getTypeId(i + i1, j, k + j1 + 1) == this.id && world.getTypeId(i + i1 + 1, j, k + j1 + 1) == this.id) {
+                        world.setRawTypeId(i + i1, j, k + j1, 0);
+                        world.setRawTypeId(i + i1 + 1, j, k + j1, 0);
+                        world.setRawTypeId(i + i1, j, k + j1 + 1, 0);
+                        world.setRawTypeId(i + i1 + 1, j, k + j1 + 1, 0);
+                        grownTree = new WorldGenMegaTree(false, 10 + random.nextInt(20), 3, 3).generate(delegate, random, i + i1, j, k + j1);
+                        megaTree = true;
+                        break;
+                    }
+                }
+            }
+            if (!grownTree) {
+                j1 = 0;
+                i1 = 0;
+                world.setRawTypeId(i, j, k, 0);
+                grownTree = new WorldGenTrees(false, 4 + random.nextInt(7), 3, 3, false).generate(delegate, random, i, j, k);
+            }
         } else {
             if (random.nextInt(10) == 0) {
                 treeType = TreeType.BIG_TREE;
+                world.setRawTypeId(i, j, k, 0);
                 grownTree = new WorldGenBigTree(false).generate(delegate, random, i, j, k);
             } else {
                 treeType = TreeType.TREE;
+                world.setRawTypeId(i, j, k, 0);
                 grownTree = new WorldGenTrees(false).generate(delegate, random, i, j, k);
             }
         }
@@ -83,8 +110,15 @@ public class BlockSapling extends BlockFlower {
         }
 
         if (!grownTree) {
-            // CraftBukkit end
-            world.setRawTypeIdAndData(i, j, k, this.id, l);
+            if (megaTree) {
+                // CraftBukkit end
+                world.setRawTypeIdAndData(i + i1, j, k + j1, this.id, l);
+                world.setRawTypeIdAndData(i + i1 + 1, j, k + j1, this.id, l);
+                world.setRawTypeIdAndData(i + i1, j, k + j1 + 1, this.id, l);
+                world.setRawTypeIdAndData(i + i1 + 1, j, k + j1 + 1, this.id, l);
+            } else {
+                world.setRawTypeIdAndData(i, j, k, this.id, l);
+            }
         }
     }
 
