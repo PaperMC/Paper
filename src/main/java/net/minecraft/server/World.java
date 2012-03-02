@@ -2284,7 +2284,7 @@ public class World implements IBlockAccess {
                                         i5 = 1;
                                     }
 
-                                    if (l2 == k2 - i5 && i1 < this.E.length) { // CraftBukkit - <= to <
+                                    if (l2 == k2 - i5 && i1 < this.E.length) {
                                         this.E[i1++] = j4 - i + 32 + (k4 - j + 32 << 6) + (l4 - k + 32 << 12) + (k2 - i5 << 18);
                                     }
                                 }

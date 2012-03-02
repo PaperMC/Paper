@@ -24,7 +24,7 @@ public class WorldGenForest extends WorldGenerator {
         int l = random.nextInt(3) + 5;
         boolean flag = true;
 
-        if (j >= 1 && j + l + 1 <= 128) {
+        if (j >= 1 && j + l + 1 <= 256) {
             int i1;
             int j1;
             int k1;
@@ -43,7 +43,7 @@ public class WorldGenForest extends WorldGenerator {
 
                 for (j1 = i - b0; j1 <= i + b0 && flag; ++j1) {
                     for (k1 = k - b0; k1 <= k + b0 && flag; ++k1) {
-                        if (i1 >= 0 && i1 < 128) {
+                        if (i1 >= 0 && i1 < 256) {
                             l1 = world.getTypeId(j1, i1, k1);
                             if (l1 != 0 && l1 != Block.LEAVES.id) {
                                 flag = false;
@@ -59,7 +59,7 @@ public class WorldGenForest extends WorldGenerator {
                 return false;
             } else {
                 i1 = world.getTypeId(i, j - 1, k);
-                if ((i1 == Block.GRASS.id || i1 == Block.DIRT.id) && j < 128 - l - 1) {
+                if ((i1 == Block.GRASS.id || i1 == Block.DIRT.id) && j < 256 - l - 1) {
                     world.setRawTypeId(i, j - 1, k, Block.DIRT.id);
 
                     int i2;
