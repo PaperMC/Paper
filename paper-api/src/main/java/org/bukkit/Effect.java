@@ -52,7 +52,7 @@ public enum Effect {
      */
     ZOMBIE_CHEW_WOODEN_DOOR(1010, Type.SOUND),
     /**
-     * Sound of zombies chewing on wooden doors.
+     * Sound of zombies chewing on iron doors.
      */
     ZOMBIE_CHEW_IRON_DOOR(1011, Type.SOUND),
     /**
