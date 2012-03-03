@@ -56,7 +56,7 @@ public interface Ocelot extends Animals, Tameable {
          * @param id ID of the cat type to get.
          * @return Resulting type, or null if not found.
          */
-        public static final Type getType(int id) {
+        public static Type getType(int id) {
             return (id >= types.length) ? null : types[id];
         }
     }
