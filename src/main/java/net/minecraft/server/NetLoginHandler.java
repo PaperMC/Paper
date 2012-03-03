@@ -22,6 +22,7 @@ public class NetLoginHandler extends NetHandler {
     private String g = null;
     private Packet1Login h = null;
     private String loginKey = Long.toString(random.nextLong(), 16); // CraftBukkit - Security fix
+    public String hostname = ""; // CraftBukkit - add field
 
     public NetLoginHandler(MinecraftServer minecraftserver, Socket socket, String s) {
         this.server = minecraftserver;
@@ -60,6 +61,12 @@ public class NetLoginHandler extends NetHandler {
     }
 
     public void a(Packet2Handshake packet2handshake) {
+        // CraftBukkit start
+        int i = packet2handshake.a.indexOf(';');
+        if (i == -1) {
+            this.hostname = "";
+        } else this.hostname = packet2handshake.a.substring(i + 1);
+        // CraftBukkit end
         if (this.server.onlineMode) {
             this.loginKey = Long.toString(random.nextLong(), 16);
             this.networkManager.queue(new Packet2Handshake(this.loginKey));
@@ -92,7 +99,7 @@ public class NetLoginHandler extends NetHandler {
     }
 
     public void b(Packet1Login packet1login) {
-        EntityPlayer entityplayer = this.server.serverConfigurationManager.attemptLogin(this, packet1login.name);
+        EntityPlayer entityplayer = this.server.serverConfigurationManager.attemptLogin(this, packet1login.name, this.hostname); // CraftBukkit - add hostname parameter
 
         if (entityplayer != null) {
             this.server.serverConfigurationManager.b(entityplayer);

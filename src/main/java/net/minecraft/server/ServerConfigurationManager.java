@@ -199,14 +199,14 @@ public class ServerConfigurationManager {
         return playerQuitEvent.getQuitMessage(); // CraftBukkit
     }
 
-    public EntityPlayer attemptLogin(NetLoginHandler netloginhandler, String s) {
+    public EntityPlayer attemptLogin(NetLoginHandler netloginhandler, String s, String hostname) { // CraftBukkit - add hostname parameter
         // CraftBukkit start - note: this entire method needs to be changed
         // Instead of kicking then returning, we need to store the kick reason
         // in the event, check with plugins to see if it's ok, and THEN kick
         // depending on the outcome. Also change any reference to this.e.c to entity.world
         EntityPlayer entity = new EntityPlayer(this.server, this.server.getWorldServer(0), s, new ItemInWorldManager(this.server.getWorldServer(0)));
-        Player player = (entity == null) ? null : (Player) entity.getBukkitEntity();
-        PlayerLoginEvent event = new PlayerLoginEvent(player);
+        Player player = (Player) entity.getBukkitEntity();
+        PlayerLoginEvent event = new PlayerLoginEvent(player, hostname);
 
         String s1 = netloginhandler.networkManager.getSocketAddress().toString();
 
