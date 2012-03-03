@@ -102,19 +102,19 @@ public class WorldGenTrees extends WorldGenerator {
                         if (k1 == 0 || k1 == Block.LEAVES.id) {
                             this.setTypeAndData(world, i, j + j1, k, Block.LOG.id, this.c);
                             if (this.b && j1 > 0) {
-                                if (random.nextInt(3) > 0 && (world).isEmpty(i - 1, j + j1, k)) {
+                                if (random.nextInt(3) > 0 && world.isEmpty(i - 1, j + j1, k)) {
                                     this.setTypeAndData(world, i - 1, j + j1, k, Block.VINE.id, 8);
                                 }
 
-                                if (random.nextInt(3) > 0 && (world).isEmpty(i + 1, j + j1, k)) {
+                                if (random.nextInt(3) > 0 && world.isEmpty(i + 1, j + j1, k)) {
                                     this.setTypeAndData(world, i + 1, j + j1, k, Block.VINE.id, 2);
                                 }
 
-                                if (random.nextInt(3) > 0 && (world).isEmpty(i, j + j1, k - 1)) {
+                                if (random.nextInt(3) > 0 && world.isEmpty(i, j + j1, k - 1)) {
                                     this.setTypeAndData(world, i, j + j1, k - 1, Block.VINE.id, 1);
                                 }
 
-                                if (random.nextInt(3) > 0 && (world).isEmpty(i, j + j1, k + 1)) {
+                                if (random.nextInt(3) > 0 && world.isEmpty(i, j + j1, k + 1)) {
                                     this.setTypeAndData(world, i, j + j1, k + 1, Block.VINE.id, 4);
                                 }
                             }
@@ -162,7 +162,7 @@ public class WorldGenTrees extends WorldGenerator {
 
     // CraftBukkit - Changed world to BlockChangeDelegate
     private void a(BlockChangeDelegate world, int i, int j, int k, int l) {
-        world.setRawTypeIdAndData(i, j, k, Block.VINE.id, l); // CraftBukkit - "raw"
+        ((World)world).setTypeIdAndData(i, j, k, Block.VINE.id, l); // CraftBukkit - Cast
         int i1 = 4;
 
         while (true) {
@@ -171,7 +171,7 @@ public class WorldGenTrees extends WorldGenerator {
                 return;
             }
 
-            world.setRawTypeIdAndData(i, j, k, Block.VINE.id, l); // CraftBukkit - "raw"
+            ((World)world).setRawTypeIdAndData(i, j, k, Block.VINE.id, l); // CraftBukkit - Cast
             --i1;
         }
     }
