@@ -242,7 +242,7 @@ public class Chunk {
     }
 
     private void h(int i, int j, int k) {
-        int l = this.heightMap[k << 4 | i];
+        int l = this.heightMap[k << 4 | i] & 0xFF; // CraftBukkit
         int i1 = l;
 
         if (j > l) {
