@@ -150,22 +150,22 @@ public class ContainerEnchantTable extends Container {
             if (!this.world.isStatic) {
                 List list = EnchantmentManager.b(this.l, itemstack, this.costs[i]);
 
-                // CraftBukkit start
-                Map<org.bukkit.enchantments.Enchantment, Integer> enchants = new HashMap<org.bukkit.enchantments.Enchantment, Integer>();
-                for (Object obj : list) {
-                    EnchantmentInstance instance = (EnchantmentInstance) obj;
-                    enchants.put(org.bukkit.enchantments.Enchantment.getById(instance.enchantment.id), instance.level);
-                }
-                CraftItemStack item = new CraftItemStack(itemstack);
+                if (list != null) {
+                    // CraftBukkit start
+                    Map<org.bukkit.enchantments.Enchantment, Integer> enchants = new HashMap<org.bukkit.enchantments.Enchantment, Integer>();
+                    for (Object obj : list) {
+                        EnchantmentInstance instance = (EnchantmentInstance) obj;
+                        enchants.put(org.bukkit.enchantments.Enchantment.getById(instance.enchantment.id), instance.level);
+                    }
+                    CraftItemStack item = new CraftItemStack(itemstack);
 
-                EnchantItemEvent event = new EnchantItemEvent((Player) entityhuman.bukkitEntity, this.getBukkitView(), this.world.getWorld().getBlockAt(this.x, this.y, this.z), item, this.costs[i], enchants, i);
-                this.world.getServer().getPluginManager().callEvent(event);
+                    EnchantItemEvent event = new EnchantItemEvent((Player) entityhuman.bukkitEntity, this.getBukkitView(), this.world.getWorld().getBlockAt(this.x, this.y, this.z), item, this.costs[i], enchants, i);
+                    this.world.getServer().getPluginManager().callEvent(event);
 
-                int level = event.getExpLevelCost();
-                if (event.isCancelled() || (level > entityhuman.expLevel)) {
-                    return false;
-                }
-                if (enchants.isEmpty() == false) {
+                    int level = event.getExpLevelCost();
+                    if (event.isCancelled() || (level > entityhuman.expLevel) || enchants.isEmpty()) {
+                        return false;
+                    }
                     entityhuman.levelDown(level);
                     for (Map.Entry<org.bukkit.enchantments.Enchantment, Integer> entry : event.getEnchantsToAdd().entrySet()) {
                         try {
