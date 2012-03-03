@@ -31,6 +31,12 @@ public interface Ocelot extends Animals, Tameable {
         private static final Type[] types = new Type[Type.values().length];
         private final int id;
 
+        static {
+            for (Type type : values()) {
+                types[type.getId()] = type;
+            }
+        }
+
         private Type(int id) {
             this.id = id;
         }
