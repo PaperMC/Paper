@@ -10,9 +10,15 @@ public class PlayerLoginEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
     private Result result = Result.ALLOWED;
     private String message = "";
+    private String hostname = "";
 
     public PlayerLoginEvent(final Player player) {
         super(player);
+    }
+
+    public PlayerLoginEvent(final Player player, final String hostname) {
+        this(player);
+        this.hostname = hostname;
     }
 
     public PlayerLoginEvent(final Player player, final Result result, final String message) {
@@ -55,6 +61,15 @@ public class PlayerLoginEvent extends PlayerEvent {
      */
     public void setKickMessage(final String message) {
         this.message = message;
+    }
+
+    /**
+     * Gets the hostname that the player used to connect to the server, or blank if unknown
+     *
+     * @return The hostname
+     */
+    public String getHostname() {
+        return hostname;
     }
 
     /**
