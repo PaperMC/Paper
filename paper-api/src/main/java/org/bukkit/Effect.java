@@ -48,6 +48,18 @@ public enum Effect {
      */
     BLAZE_SHOOT(1009, Type.SOUND),
     /**
+     * Sound of zombies chewing on wooden doors.
+     */
+    ZOMBIE_CHEW_WOODEN_DOOR(1010, Type.SOUND),
+    /**
+     * Sound of zombies chewing on wooden doors.
+     */
+    ZOMBIE_CHEW_IRON_DOOR(1011, Type.SOUND),
+    /**
+     * Sound of zombies destroying a door.
+     */
+    ZOMBIE_DESTROY_DOOR(1012, Type.SOUND),
+    /**
      * A visual smoke effect. Needs direction as additional info.
      */
     SMOKE(2000, Type.VISUAL, BlockFace.class),
