@@ -74,7 +74,7 @@ public class AutoUpdater {
         new Thread() {
             @Override
             public void run() {
-                current = service.getArtifact(currentSlug, "current artifact information; perhaps you are running a custom version?");
+                current = service.getArtifact(currentSlug, "information about this CraftBukkit version; perhaps you are running a custom one?");
                 latest = service.getArtifact("latest-" + channel, "latest artifact information");
 
                 if (isUpdateAvailable()) {
