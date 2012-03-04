@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit.conversations;
 
 import org.bukkit.conversations.Conversation;
+import org.bukkit.conversations.ConversationAbandonedEvent;
+import org.bukkit.conversations.ManuallyAbandonedConversationCanceller;
 
 import java.util.LinkedList;
 
@@ -22,10 +24,10 @@ public class ConversationTracker {
         return true;
     }
 
-    public synchronized void abandonConversation(Conversation conversation) {
+    public synchronized void abandonConversation(Conversation conversation, ConversationAbandonedEvent details) {
         if (!conversationQueue.isEmpty()) {
             if (conversationQueue.getFirst() == conversation) {
-                conversation.abandon();
+                conversation.abandon(details);
             }
             if (conversationQueue.contains(conversation)) {
                 conversationQueue.remove(conversation);
@@ -41,7 +43,7 @@ public class ConversationTracker {
         LinkedList<Conversation> oldQueue = conversationQueue;
         conversationQueue = new LinkedList<Conversation>();
         for(Conversation conversation : oldQueue) {
-            conversation.abandon();
+            conversation.abandon(new ConversationAbandonedEvent(conversation, new ManuallyAbandonedConversationCanceller()));
         }
     }
 
