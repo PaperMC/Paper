@@ -19,6 +19,7 @@ public class ConversationFactory {
 
     protected Plugin plugin;
     protected boolean isModal;
+    protected boolean localEchoEnabled;
     protected ConversationPrefix prefix;
     protected Prompt firstPrompt;
     protected Map<Object, Object> initialSessionData;
@@ -32,6 +33,7 @@ public class ConversationFactory {
     {
         this.plugin = plugin;
         isModal = true;
+        localEchoEnabled = true;
         prefix = new NullConversationPrefix();
         firstPrompt = Prompt.END_OF_CONVERSATION;
         initialSessionData = new HashMap<Object, Object>();
@@ -50,6 +52,17 @@ public class ConversationFactory {
     public ConversationFactory withModality(boolean modal)
     {
         isModal = modal;
+        return this;
+    }
+
+    /**
+     * Sets the local echo status for all {@link Conversation}s created by this factory. If local echo is enabled,
+     * any text submitted to a conversation gets echoed back into the submitter's chat window.
+     * @param localEchoEnabled The status of local echo.
+     * @return This object.
+     */
+    public ConversationFactory withLocalEcho(boolean localEchoEnabled) {
+        this.localEchoEnabled = localEchoEnabled;
         return this;
     }
 
@@ -146,6 +159,7 @@ public class ConversationFactory {
         //Build and return a conversation
         Conversation conversation = new Conversation(plugin, forWhom, firstPrompt, copiedInitialSessionData);
         conversation.setModal(isModal);
+        conversation.setLocalEchoEnabled(localEchoEnabled);
         conversation.setPrefix(prefix);
 
         //Clone the conversation cancellers

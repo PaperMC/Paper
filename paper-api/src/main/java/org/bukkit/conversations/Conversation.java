@@ -34,6 +34,7 @@ public class Conversation {
     protected Prompt currentPrompt;
     protected ConversationContext context;
     protected boolean modal;
+    protected boolean localEchoEnabled;
     protected ConversationPrefix prefix;
     protected List<ConversationCanceller> cancellers;
 
@@ -58,6 +59,7 @@ public class Conversation {
         this.firstPrompt = firstPrompt;
         this.context = new ConversationContext(plugin, forWhom, initialSessionData);
         this.modal = true;
+        this.localEchoEnabled = true;
         this.prefix = new NullConversationPrefix();
         this.cancellers = new ArrayList<ConversationCanceller>();
     }
@@ -86,6 +88,24 @@ public class Conversation {
      */
     void setModal(boolean modal) {
         this.modal = modal;
+    }
+
+    /**
+     * Gets the status of local echo for this conversation. If local echo is enabled, any text submitted to a conversation
+     * gets echoed back into the submitter's chat window.
+     * @return The status of local echo.
+     */
+    public boolean isLocalEchoEnabled() {
+        return localEchoEnabled;
+    }
+
+    /**
+     * Sets the status of local echo for this conversation. If local echo is enabled, any text submitted to a conversation
+     * gets echoed back into the submitter's chat window.
+     * @param localEchoEnabled The status of local echo.
+     */
+    public void setLocalEchoEnabled(boolean localEchoEnabled) {
+        this.localEchoEnabled = localEchoEnabled;
     }
 
     /**
@@ -163,7 +183,9 @@ public class Conversation {
         if (currentPrompt != null) {
 
             // Echo the user's input
-            context.getForWhom().sendRawMessage(prefix.getPrefix(context) + input);
+            if (localEchoEnabled) {
+                context.getForWhom().sendRawMessage(prefix.getPrefix(context) + input);
+            }
 
             // Test for conversation abandonment based on input
             for(ConversationCanceller canceller : cancellers) {
