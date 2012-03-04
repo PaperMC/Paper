@@ -214,13 +214,16 @@ public class CraftWorld implements World {
         int px = x << 4;
         int pz = z << 4;
 
-        // If there are more than 10 updates to a chunk at once, it carries out the update as a cuboid
-        // This flags 16 blocks in a line along the bottom for update and then flags a block at the opposite corner at the top
-        // The cuboid that contains these 17 blocks covers the entire chunk
+        // If there are more than 64 updates to a chunk at once, it carries out the update as a cuboid
+        // This flags 64 blocks along the bottom for update and then flags a block at the opposite corner at the top
+        // The cuboid that contains these 65 blocks covers the entire chunk
         // The server will compress the chunk and send it to all clients
 
         for (int xx = px; xx < (px + 16); xx++) {
             world.notify(xx, 0, pz);
+            world.notify(xx, 1, pz);
+            world.notify(xx, 2, pz);
+            world.notify(xx, 3, pz);
         }
         world.notify(px, 255, pz + 15);
 
