@@ -692,14 +692,21 @@ public interface World extends PluginMessageRecipient, Metadatable {
 
     /**
      * Gets the biome for the given block coordinates.
-     * <p />
-     * It is safe to run this method when the block does not exist, it will not create the block.
      *
      * @param x X coordinate of the block
      * @param z Z coordinate of the block
      * @return Biome of the requested block
      */
-    public Biome getBiome(int x, int z);
+    Biome getBiome(int x, int z);
+
+    /**
+     * Sets the biome for the given block coordinates
+     *
+     * @param x X coordinate of the block
+     * @param z Z coordinate of the block
+     * @param bio new Biome type for this block
+     */
+    void setBiome(int x, int z, Biome bio);
 
     /**
      * Gets the temperature for the given block coordinates.

@@ -232,6 +232,13 @@ public interface Block extends Metadatable {
     Biome getBiome();
 
     /**
+     * Sets the biome that this block resides in
+     *
+     * @param bio new Biome type for this block
+     */
+    void setBiome(Biome bio);
+
+    /**
      * Returns true if the block is being powered by Redstone.
      *
      * @return True if the block is powered.
