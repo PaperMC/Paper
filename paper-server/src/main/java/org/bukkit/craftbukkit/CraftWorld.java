@@ -39,7 +39,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.TreeType;
 import org.bukkit.World;
 import org.bukkit.block.Biome;
@@ -48,7 +47,6 @@ import org.bukkit.Difficulty;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.plugin.messaging.StandardMessenger;
-import org.bukkit.potion.Potion;
 
 public class CraftWorld implements World {
     private final WorldServer world;
@@ -491,9 +489,19 @@ public class CraftWorld implements World {
     }
 
     public Biome getBiome(int x, int z) {
-        BiomeBase base = getHandle().getWorldChunkManager().getBiome(x, z);
+        return CraftBlock.biomeBaseToBiome(this.world.getBiome(x, z));
+    }
 
-        return CraftBlock.biomeBaseToBiome(base);
+    public void setBiome(int x, int z, Biome bio) {
+        BiomeBase bb = CraftBlock.biomeToBiomeBase(bio);
+        if (this.world.isLoaded(x, 0, z)) {
+            net.minecraft.server.Chunk chunk = this.world.getChunkAtWorldCoords(x, z);
+
+            if (chunk != null) {
+                byte[] biomevals = chunk.l();
+                biomevals[((z & 0xF) << 4) | (x & 0xF)] = (byte)bb.id;
+            }
+        }
     }
 
     public double getTemperature(int x, int z) {

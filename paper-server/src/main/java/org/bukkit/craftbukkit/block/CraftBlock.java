@@ -31,6 +31,7 @@ public class CraftBlock implements Block {
     private final int y;
     private final int z;
     private static final Biome BIOME_MAPPING[];
+    private static final BiomeBase BIOMEBASE_MAPPING[];
 
     public CraftBlock(CraftChunk chunk, int x, int y, int z) {
         this.x = x;
@@ -248,12 +249,23 @@ public class CraftBlock implements Block {
         return getWorld().getBiome(x, z);
     }
 
+    public void setBiome(Biome bio) {
+        getWorld().setBiome(x, z, bio);
+    }
+
     public static Biome biomeBaseToBiome(BiomeBase base) {
         if (base == null) {
             return null;
         }
 
         return BIOME_MAPPING[base.id];
+    }
+
+    public static BiomeBase biomeToBiomeBase(Biome bio) {
+        if (bio == null) {
+            return null;
+        }
+        return BIOMEBASE_MAPPING[bio.ordinal()];
     }
 
     public double getTemperature() {
@@ -378,6 +390,7 @@ public class CraftBlock implements Block {
     /* Build biome index based lookup table for BiomeBase to Biome mapping */
     static {
         BIOME_MAPPING = new Biome[BiomeBase.biomes.length];
+        BIOMEBASE_MAPPING = new BiomeBase[Biome.values().length];
         BIOME_MAPPING[BiomeBase.SWAMPLAND.id] = Biome.SWAMPLAND;
         BIOME_MAPPING[BiomeBase.FOREST.id] = Biome.FOREST;
         BIOME_MAPPING[BiomeBase.TAIGA.id] = Biome.TAIGA;
@@ -406,6 +419,9 @@ public class CraftBlock implements Block {
         for (int i = 0; i < BIOME_MAPPING.length; i++) {
             if ((BiomeBase.biomes[i] != null) && (BIOME_MAPPING[i] == null)) {
                 throw new IllegalArgumentException("Missing Biome mapping for BiomeBase[" + i + "]");
+            }
+            if (BIOME_MAPPING[i] != null) {  /* Build reverse mapping for setBiome */
+                BIOMEBASE_MAPPING[BIOME_MAPPING[i].ordinal()] = BiomeBase.biomes[i];
             }
         }
     }
