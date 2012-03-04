@@ -85,38 +85,62 @@ public class PotionTest {
         assertTrue((potion.toDamageValue() & 0x3F) == (PotionType.POISON.getDamageValue() | 0x20));
     }
 
-    @Test
-    public void useNulls() {
-        try {
-            new Potion(null, 2);
-            fail("cannot use null type in constructor with a level");
-        } catch (IllegalArgumentException ex) {
-        }
+    @Test(expected=IllegalArgumentException.class)
+    public void nullType() {
+        new Potion(null, 2);
+    }
 
-        try {
-            new Potion(PotionType.POISON, 3);
-            fail("level must be less than 3 in constructor");
-        } catch (IllegalArgumentException ex) {
-        }
+    @Test(expected=IllegalArgumentException.class)
+    public void maxLevelConstruct() {
+        new Potion(PotionType.POISON, 3);
+    }
 
+    @Test(expected=IllegalArgumentException.class)
+    public void maxLevelSet() {
         Potion potion = new Potion(PotionType.POISON);
-        try {
-            potion.setLevel(3);
-            fail("level must be set less than 3");
-        } catch (IllegalArgumentException ex) {
-        }
+        potion.setLevel(3);
+    }
 
-        try {
-            potion.apply((ItemStack) null);
-            fail("cannot apply to a null itemstack");
-        } catch (IllegalArgumentException ex) {
-        }
+    @Test(expected=IllegalArgumentException.class)
+    public void nullStack() {
+        Potion potion = new Potion(PotionType.POISON);
+        potion.apply((ItemStack) null);
+    }
 
-        try {
-            potion.apply((LivingEntity) null);
-            fail("cannot apply to a null entity");
-        } catch (IllegalArgumentException ex) {
-        }
+    @Test(expected=IllegalArgumentException.class)
+    public void nullEntity() {
+        Potion potion = new Potion(PotionType.POISON);
+        potion.apply((LivingEntity) null);
+    }
+
+    @Test
+    public void water() {
+        Potion potion = new Potion(PotionType.WATER);
+        assertEquals(0, potion.getLevel());
+        assertFalse(potion.isSplash());
+        assertFalse(potion.hasExtendedDuration());
+        assertEquals(0, potion.toDamageValue());
+    }
+
+    @Test
+    public void mundane() {
+        Potion potion = new Potion(0);
+        assertFalse(potion.getType() == PotionType.WATER);
+        assertFalse(potion.toDamageValue() == 0);
+        assertEquals(8192, potion.toDamageValue());
+        Potion potion2 = Potion.fromDamage(8192);
+        assertEquals(potion, potion2);
+        assertEquals(0, potion.getLevel());
+    }
+
+    @Test
+    public void awkward() {
+        Potion potion = new Potion(16);
+        assertEquals(16, potion.getNameId());
+        assertFalse(potion.isSplash());
+        assertFalse(potion.hasExtendedDuration());
+        assertNull(potion.getType());
+        assertEquals(16, potion.toDamageValue());
     }
 
     private static final int EXTENDED_BIT = 0x40;

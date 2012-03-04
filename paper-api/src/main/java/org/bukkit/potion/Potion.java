@@ -31,6 +31,9 @@ public class Potion {
         if (type != null) {
             this.name = type.getDamageValue();
         }
+        if (type == null || type == PotionType.WATER) {
+            this.level = 0;
+        }
     }
 
     /** @deprecated In favour of {@link #Potion(PotionType, int)} */
@@ -104,7 +107,7 @@ public class Potion {
     public Potion(int name) {
         this(PotionType.getByDamageValue(name & POTION_BIT));
         this.name = name & NAME_BIT;
-        if (name == 0) {
+        if ((name & POTION_BIT) == 0) {
             // If it's 0 it would've become PotionType.WATER, but it should actually be mundane potion
             this.type = null;
         }
@@ -363,7 +366,7 @@ public class Potion {
     public static Potion fromDamage(int damage) {
         PotionType type = PotionType.getByDamageValue(damage & POTION_BIT);
         Potion potion;
-        if (type == null) {
+        if (type == null || (type == PotionType.WATER && damage != 0)) {
             potion = new Potion(damage & NAME_BIT);
         } else {
             int level = (damage & TIER_BIT) >> TIER_SHIFT;
@@ -405,5 +408,9 @@ public class Potion {
         if (brewer != null)
             throw new IllegalArgumentException("brewer can only be set internally");
         brewer = other;
+    }
+
+    public int getNameId() {
+        return name;
     }
 }
