@@ -623,7 +623,7 @@ public final class CraftServer implements Server {
             generator = getGenerator(name);
         }
 
-        Convertable converter = new WorldLoaderServer(folder);
+        Convertable converter = new WorldLoaderServer(getWorldContainer());
         if (converter.isConvertable(name)) {
             getLogger().info("Converting world '" + name + "'");
             converter.convert(name, new ConvertProgressUpdater(console));
