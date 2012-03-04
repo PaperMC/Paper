@@ -48,7 +48,7 @@ public class InactivityConversationCanceller implements ConversationCanceller {
                     startTimer();
                 } else if (conversation.getState() ==  Conversation.ConversationState.STARTED) {
                     cancelling(conversation);
-                    conversation.abandon();
+                    conversation.abandon(new ConversationAbandonedEvent(conversation, InactivityConversationCanceller.this));
                 }
             }
         }, timeoutSeconds * 20);

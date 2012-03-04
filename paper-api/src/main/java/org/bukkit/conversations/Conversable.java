@@ -34,6 +34,13 @@ public interface Conversable {
     public void abandonConversation(Conversation conversation);
 
     /**
+     * Abandons an active conversation.
+     * @param conversation The conversation to abandon
+     * @param details Details about why the conversation was abandoned
+     */
+    public void abandonConversation(Conversation conversation, ConversationAbandonedEvent details);
+
+    /**
      * Sends this sender a message raw
      *
      * @param message Message to be displayed

@@ -14,6 +14,7 @@ public class FakeConversable implements Conversable {
     public String lastSentMessage;
     public Conversation begunConversation;
     public Conversation abandonedConverstion;
+    public ConversationAbandonedEvent abandonedConversationEvent;
     
     public boolean isConversing() {
         return false;   
@@ -31,6 +32,11 @@ public class FakeConversable implements Conversable {
 
     public void abandonConversation(Conversation conversation) {
         abandonedConverstion = conversation;
+    }
+
+    public void abandonConversation(Conversation conversation, ConversationAbandonedEvent details) {
+        abandonedConverstion = conversation;
+        abandonedConversationEvent = details;
     }
 
     public void sendRawMessage(String message) {
