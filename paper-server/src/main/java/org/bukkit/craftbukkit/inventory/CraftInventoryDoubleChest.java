@@ -46,7 +46,7 @@ public class CraftInventoryDoubleChest extends CraftInventory implements DoubleC
         System.arraycopy(items, 0, leftItems, 0, Math.min(left.getSize(),items.length));
         left.setContents(leftItems);
         if (items.length >= left.getSize()) {
-            System.arraycopy(items, 0, rightItems, left.getSize(), Math.min(right.getSize(), items.length - left.getSize()));
+            System.arraycopy(items, left.getSize(), rightItems, 0, Math.min(right.getSize(), items.length - left.getSize()));
             right.setContents(rightItems);
         }
     }
