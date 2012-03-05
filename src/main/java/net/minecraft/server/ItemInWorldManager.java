@@ -1,7 +1,6 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.Event;
@@ -201,37 +200,24 @@ public class ItemInWorldManager {
     }
 
     public boolean breakBlock(int i, int j, int k) {
+        int l = this.world.getTypeId(i, j, k);
+        int i1 = this.world.getData(i, j, k);
+
         // CraftBukkit start
-        if (this.player instanceof EntityPlayer) {
-            org.bukkit.block.Block block = this.world.getWorld().getBlockAt(i, j, k);
-
-            // Tell client the block is gone immediately then process events
-            if (world.getTileEntity(i, j, k) == null) {
-                Packet53BlockChange packet = new Packet53BlockChange(i, j, k, this.world);
-
-                packet.material = 0;
-                packet.data = 0;
-                ((EntityPlayer) this.player).netServerHandler.sendPacket(packet);
-            }
-
-            BlockBreakEvent event = new BlockBreakEvent(block, (org.bukkit.entity.Player) this.player.getBukkitEntity());
-            this.world.getServer().getPluginManager().callEvent(event);
-
-            if (event.isCancelled()) {
-                // Let the client know the block still exists
-                ((EntityPlayer) this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
+        if (player instanceof EntityPlayer) {
+            if(CraftEventFactory.callBlockBreakEvent(this.world, i, j, k, l, i1, this.isCreative(), this.player)) {
                 return false;
             }
         }
         // CraftBukkit end
 
-        int l = this.world.getTypeId(i, j, k);
-        int i1 = this.world.getData(i, j, k);
-
         this.world.a(this.player, 2001, i, j, k, l + (this.world.getData(i, j, k) << 12));
         boolean flag = this.b(i, j, k);
 
         if (this.isCreative()) {
+            // CraftBukkit start - honour additions to drop list
+            Block.byId[l].doActualDrop(this.world, this.player, i, j, k, i1);
+            // CraftBukkit end
             ((EntityPlayer) this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
         } else {
             ItemStack itemstack = this.player.T();

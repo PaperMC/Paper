@@ -2,6 +2,7 @@ package net.minecraft.server;
 
 // CraftBukkit start
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.bukkit.Location;
@@ -17,6 +18,7 @@ import org.bukkit.event.vehicle.VehicleUpdateEvent;
 import org.bukkit.util.Vector;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 // CraftBukkit end
 
 public class EntityMinecart extends Entity implements IInventory {
@@ -146,22 +148,35 @@ public class EntityMinecart extends Entity implements IInventory {
             this.aV();
             this.setDamage(this.getDamage() + i * 10);
             if (this.getDamage() > 40) {
-                if (this.passenger != null) {
-                    this.passenger.mount(this);
-                }
-
                 // CraftBukkit start
-                VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, passenger);
+                List<org.bukkit.inventory.ItemStack> drops = new ArrayList<org.bukkit.inventory.ItemStack>();
+                drops.add(new CraftItemStack(Item.MINECART.id,1));
+                if (this.type == 1) {
+                    drops.add(new CraftItemStack(Block.CHEST.id,1));
+                } else if (this.type == 2) {
+                    drops.add(new org.bukkit.inventory.ItemStack(Block.FURNACE.id,1));
+                }
+                VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, passenger, drops);
                 this.world.getServer().getPluginManager().callEvent(destroyEvent);
 
                 if (destroyEvent.isCancelled()) {
                     this.setDamage(40); // Maximize damage so this doesn't get triggered again right away
                     return true;
                 }
+
                 // CraftBukkit end
 
+                if (this.passenger != null) {
+                    this.passenger.mount(this);
+                }
+
                 this.die();
-                this.a(Item.MINECART.id, 1, 0.0F);
+                // CraftBukkit start - Drop items from the event
+                for(org.bukkit.inventory.ItemStack stack : drops) {
+                    this.a(CraftItemStack.createNMSItemStack(stack), 0.0f);
+                }
+                // CraftBukkit end
+                // this.a(Item.MINECART.id, 1, 0.0F); // CraftBukkit - handled by main drop loop
                 if (this.type == 1) {
                     EntityMinecart entityminecart = this;
 
@@ -193,9 +208,9 @@ public class EntityMinecart extends Entity implements IInventory {
                         }
                     }
 
-                    this.a(Block.CHEST.id, 1, 0.0F);
+                    // this.a(Block.CHEST.id, 1, 0.0F); // CraftBukkit - handled by main drop loop
                 } else if (this.type == 2) {
-                    this.a(Block.FURNACE.id, 1, 0.0F);
+                    // this.a(Block.FURNACE.id, 1, 0.0F); // CraftBukkit - handled by main drop loop
                 }
             }
 

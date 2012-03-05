@@ -1,5 +1,12 @@
 package net.minecraft.server;
 
+// CraftBukkit start
+import java.util.ArrayList;
+import java.util.List;
+
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
+// CraftBukkit end
+
 public class EntityMushroomCow extends EntityCow {
 
     public EntityMushroomCow(World world) {
@@ -16,7 +23,11 @@ public class EntityMushroomCow extends EntityCow {
             return true;
         } else if (itemstack != null && itemstack.id == Item.SHEARS.id && this.getAge() >= 0) {
             // CraftBukkit start
-            org.bukkit.event.player.PlayerShearEntityEvent event = new org.bukkit.event.player.PlayerShearEntityEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), this.getBukkitEntity());
+            List<org.bukkit.inventory.ItemStack> drops = new ArrayList<org.bukkit.inventory.ItemStack>();
+            for (int i = 0; i < 5; ++i) {
+                drops.add(new CraftItemStack(Block.RED_MUSHROOM.id, 1));
+            }
+            org.bukkit.event.player.PlayerShearEntityEvent event = new org.bukkit.event.player.PlayerShearEntityEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), this.getBukkitEntity(), drops);
             this.world.getServer().getPluginManager().callEvent(event);
 
             if (event.isCancelled()) {
@@ -34,9 +45,15 @@ public class EntityMushroomCow extends EntityCow {
                 entitycow.V = this.V;
                 this.world.addEntity(entitycow);
 
+                /* CraftBukkit start - This logic moved up to before the event is fired ...
                 for (int i = 0; i < 5; ++i) {
                     this.world.addEntity(new EntityItem(this.world, this.locX, this.locY + (double) this.length, this.locZ, new ItemStack(Block.RED_MUSHROOM)));
                 }
+                // ... and replaced by this logic */
+                for (org.bukkit.inventory.ItemStack stack : drops) {
+                    this.world.addEntity(new EntityItem(this.world, this.locX, this.locY + this.length, this.locZ, CraftItemStack.createNMSItemStack(stack)));
+                }
+                // CraftBukkit end
             }
 
             return true;

@@ -164,6 +164,7 @@ public class Block {
     public final Material material;
     public float frictionFactor;
     private String name;
+    protected ArrayList<ItemStack> dropList; // CraftBukkit
 
     protected Block(int i, Material material) {
         this.bR = true;
@@ -358,6 +359,17 @@ public class Block {
     }
 
     protected void a(World world, int i, int j, int k, ItemStack itemstack) {
+        // CraftBukkit start - the logic of this function is moved into finishDrop
+        if (this.dropList != null) {
+            this.dropList.add(itemstack);
+        } else {
+            this.finishDrop(world, i, j, k, itemstack);
+        }
+    }
+
+    public final void finishDrop(World world, int i, int j, int k, ItemStack itemstack) {
+        this.dropList = null;
+        // CraftBukkit end
         if (!world.isStatic) {
             float f = 0.7F;
             double d0 = (double) (world.random.nextFloat() * f) + (double) (1.0F - f) * 0.5D;
@@ -529,6 +541,23 @@ public class Block {
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
         entityhuman.a(StatisticList.C[this.id], 1);
         entityhuman.c(0.025F);
+        // CraftBukkit start - A way to separate statistics from the logic of determining what to drop
+        this.doActualDrop(world, entityhuman, i, j, k, l);
+    }
+
+    public void doActualDrop(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
+        for (ItemStack stack : dropList) {
+            finishDrop(world, i, j, k, stack);
+        }
+    }
+
+    public void setDrops(ArrayList<ItemStack> drops) {
+        this.dropList = drops;
+    }
+
+    public ArrayList<ItemStack> calculateDrops(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
+        this.dropList = new ArrayList<ItemStack>();
+        // CraftBukkit end
         if (this.b() && !this.isTileEntity && EnchantmentManager.hasSilkTouchEnchantment(entityhuman.inventory)) {
             ItemStack itemstack = this.a_(l);
 
@@ -540,6 +569,7 @@ public class Block {
 
             this.b(world, i, j, k, l, i1);
         }
+        return this.dropList; // CraftBukkit
     }
 
     protected ItemStack a_(int i) {

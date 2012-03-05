@@ -129,14 +129,16 @@ public class BlockBed extends BlockDirectional {
             }
         } else if (world.getTypeId(i + a[j1][0], j, k + a[j1][1]) != this.id) {
             world.setTypeId(i, j, k, 0);
+            /* CraftBukkit - Move this to on break instead of on physics
             if (!world.isStatic) {
                 this.b(world, i, j, k, i1, 0);
             }
+            // */
         }
     }
 
     public int getDropType(int i, Random random, int j) {
-        return d(i) ? 0 : Item.BED.id;
+        return /* d(i) ? 0 CraftBukkit : */ Item.BED.id;
     }
 
     private void s() {
@@ -190,9 +192,9 @@ public class BlockBed extends BlockDirectional {
     }
 
     public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {
-        if (!d(l)) {
+        //if (!d(l)) { // CraftBukkit
             super.dropNaturally(world, i, j, k, l, f, 0);
-        }
+        // } // CraftBukkit
     }
 
     public int g() {

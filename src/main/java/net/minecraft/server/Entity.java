@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Random;
 
 // CraftBukkit start
+import java.util.ArrayList;
 import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.block.BlockFace;
@@ -17,6 +18,7 @@ import org.bukkit.event.vehicle.VehicleBlockCollisionEvent;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.event.vehicle.VehicleExitEvent;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -1337,11 +1339,17 @@ public abstract class Entity {
         final PluginManager pluginManager = Bukkit.getPluginManager();
 
         if (thisBukkitEntity instanceof Painting) {
-            PaintingBreakByEntityEvent event = new PaintingBreakByEntityEvent((Painting) thisBukkitEntity, stormBukkitEntity);
+            List<org.bukkit.inventory.ItemStack> drops = new ArrayList<org.bukkit.inventory.ItemStack>();
+            PaintingBreakByEntityEvent event = new PaintingBreakByEntityEvent((Painting) thisBukkitEntity, stormBukkitEntity, drops);
             pluginManager.callEvent(event);
 
             if (event.isCancelled()) {
                 return;
+            }
+
+            // Something might've been added to the list of drops, so drop them
+            for (org.bukkit.inventory.ItemStack stack : drops) {
+                this.a(CraftItemStack.createNMSItemStack(stack), 0.0f);
             }
         }
 
