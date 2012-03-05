@@ -100,7 +100,9 @@ public class EntityOcelot extends EntityTameableAnimal {
         return super.damageEntity(damagesource, i);
     }
 
-    protected void dropDeathLoot(boolean flag, int i) {}
+    protected void dropDeathLoot(boolean flag, int i) {
+        super.dropDeathLoot(flag, i); // CraftBukkit - Calls EntityDeathEvent
+    }
 
     public boolean b(EntityHuman entityhuman) {
         ItemStack itemstack = entityhuman.inventory.getItemInHand();
