@@ -20,7 +20,11 @@ public enum TreeSpecies {
     /**
      * Represents birches.
      */
-    BIRCH(0x2);
+    BIRCH(0x2),
+    /**
+     * Represents jungle trees.
+     */
+    JUNGLE(0x3);
 
     private final byte data;
     private final static Map<Byte, TreeSpecies> BY_DATA = Maps.newHashMap();
