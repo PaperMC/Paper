@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit.event;
 
 import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -16,10 +18,12 @@ import net.minecraft.server.EntityItem;
 import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityPotion;
+import net.minecraft.server.IInventory;
 import net.minecraft.server.InventoryCrafting;
 import net.minecraft.server.Item;
 import net.minecraft.server.ItemStack;
 import net.minecraft.server.Packet101CloseWindow;
+import net.minecraft.server.Packet53BlockChange;
 import net.minecraft.server.World;
 import net.minecraft.server.WorldServer;
 
@@ -485,6 +489,7 @@ public class CraftEventFactory {
     public static ItemStack callPreCraftEvent(InventoryCrafting matrix, ItemStack result, InventoryView lastCraftView, boolean isRepair) {
         CraftInventoryCrafting inventory = new CraftInventoryCrafting(matrix, matrix.resultInventory);
         inventory.setResult(new CraftItemStack(result));
+
         PrepareItemCraftEvent event = new PrepareItemCraftEvent(inventory, lastCraftView, isRepair);
         Bukkit.getPluginManager().callEvent(event);
 
@@ -505,5 +510,43 @@ public class CraftEventFactory {
         ExpBottleEvent event = new ExpBottleEvent(bottle, exp);
         Bukkit.getPluginManager().callEvent(event);
         return event;
+    }
+
+    public static boolean callBlockBreakEvent(World world, int x, int y, int z, int id, int data, boolean creative, EntityHuman player) {
+        net.minecraft.server.Block blockType = net.minecraft.server.Block.byId[id];
+        Block block = world.getWorld().getBlockAt(x, y, z);
+
+        // Tell client the block is gone immediately then process events
+        if (world.getTileEntity(x, y, z) == null) {
+            Packet53BlockChange packet = new Packet53BlockChange(x, y, z, world);
+
+            packet.material = 0;
+            packet.data = 0;
+            ((EntityPlayer) player).netServerHandler.sendPacket(packet);
+        }
+
+        List<org.bukkit.inventory.ItemStack> drops = new ArrayList<org.bukkit.inventory.ItemStack>();
+        if (!creative && player.b(blockType)) {
+            for (ItemStack stack : blockType.calculateDrops(world, player, x, y, z, data)) {
+                drops.add(new CraftItemStack(stack));
+            }
+        }
+
+        BlockBreakEvent event = new BlockBreakEvent(block, (org.bukkit.entity.Player) player.getBukkitEntity(), drops);
+        world.getServer().getPluginManager().callEvent(event);
+
+        if (event.isCancelled()) {
+            // Let the client know the block still exists
+            ((EntityPlayer) player).netServerHandler.sendPacket(new Packet53BlockChange(x, y, z, world));
+            return true;
+        }
+
+        ArrayList<ItemStack> toDrop = new ArrayList<ItemStack>();
+        for (org.bukkit.inventory.ItemStack stack : drops) {
+            toDrop.add(CraftItemStack.createNMSItemStack(stack));
+        }
+        blockType.setDrops(toDrop);
+
+        return false; // Event not cancelled
     }
 }
