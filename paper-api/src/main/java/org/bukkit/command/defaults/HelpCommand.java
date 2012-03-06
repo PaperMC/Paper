@@ -46,7 +46,7 @@ public class HelpCommand extends VanillaCommand {
             pageWidth = ChatPaginator.UNBOUNDED_PAGE_WIDTH;
         } else {
             pageHeight = ChatPaginator.CLOSED_CHAT_PAGE_HEIGHT - 1;
-            pageWidth = ChatPaginator.AVERAGE_CHAT_PAGE_WIDTH;
+            pageWidth = ChatPaginator.GUARANTEED_NO_WRAP_CHAT_PAGE_WIDTH;
         }
         
         HelpMap helpMap = Bukkit.getServer().getHelpMap();
