@@ -1,5 +1,7 @@
 package org.bukkit.util;
 
+import org.bukkit.ChatColor;
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -68,22 +70,35 @@ public class ChatPaginator {
         StringBuilder word = new StringBuilder();
         StringBuilder line = new StringBuilder();
         List<String> lines = new LinkedList<String>();
+        int lineColorChars = 0;
 
-        for (char c : rawChars) {
+        for (int i = 0; i < rawChars.length; i++) {
+            char c = rawChars[i];
+
+            // skip chat color modifiers
+            if (c == ChatColor.COLOR_CHAR) {
+                word.append(ChatColor.getByChar(rawChars[i + 1]));
+                lineColorChars += 2;
+                i++; // Eat the next character as we have already processed it
+                continue;
+            }
+
             if (c == ' ' || c == '\n') {
                 if (line.length() == 0 && word.length() > lineLength) { // special case: extremely long word begins a line
                     for (String partialWord : word.toString().split("(?<=\\G.{" + lineLength + "})")) {
                         lines.add(partialWord);
                     }
-                } else if (line.length() + word.length() ==  lineLength) { // Line exactly the correct length...newline
+                } else if (line.length() + word.length() - lineColorChars == lineLength) { // Line exactly the correct length...newline
                     line.append(word);
                     lines.add(line.toString());
                     line = new StringBuilder();
-                } else if (line.length() + 1 + word.length() > lineLength) { // Line too long...break the line
+                    lineColorChars = 0;
+                } else if (line.length() + 1 + word.length() - lineColorChars > lineLength) { // Line too long...break the line
                     for (String partialWord : word.toString().split("(?<=\\G.{" + lineLength + "})")) {
                         lines.add(line.toString());
                         line = new StringBuilder(partialWord);
                     }
+                    lineColorChars = 0;
                 } else {
                     if (line.length() > 0) {
                         line.append(' ');
@@ -103,6 +118,18 @@ public class ChatPaginator {
 
         if(line.length() > 0) { // Only add the last line if there is anything to add
             lines.add(line.toString());
+        }
+        
+        // Iterate over the wrapped lines, applying the last color from one line to the beginning of the next
+        if (lines.get(0).charAt(0) != ChatColor.COLOR_CHAR) {
+            lines.set(0, ChatColor.WHITE + lines.get(0));
+        }
+        for (int i = 1; i < lines.size(); i++) {
+            String pLine = lines.get(i-1);
+            char color = pLine.charAt(pLine.lastIndexOf(ChatColor.COLOR_CHAR) + 1);
+            if (lines.get(i).charAt(0) != ChatColor.COLOR_CHAR) {
+                lines.set(i, ChatColor.getByChar(color) + lines.get(i));
+            }
         }
 
         return lines.toArray(new String[0]);
