@@ -9,6 +9,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.logging.Level;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.bukkit.ChatColor;
 import org.bukkit.craftbukkit.ChunkCompressionThread;
@@ -262,7 +264,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
                     if (packet10flying.hasPos && packet10flying.y == -999.0D && packet10flying.stance == -999.0D) {
                         // CraftBukkit start
-                        if (packet10flying.x > 1 || packet10flying.z > 1) {
+                        if (Math.abs(packet10flying.x) > 1 || Math.abs(packet10flying.z) > 1) {
                             System.err.println(player.getName() + " was caught trying to crash the server with an invalid position.");
                             player.kickPlayer("Nope!");
                             return;
@@ -414,6 +416,90 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             }
         }
     }
+
+    // CraftBukkit start - temporary initial join teleport function, houses hacky entity fix.
+    public void initialJoin(double d0, double d1, double d2, float f, float f1) {
+        Location to = new Location(this.getPlayer().getWorld(), d0, d1, d2, f, f1);
+
+        this.teleport(to);
+
+        Timer timer = new Timer();
+        final ArrayList<Entity> nearby = new ArrayList<Entity>();
+        // Start inline nearby entities
+        AxisAlignedBB axisalignedbb = player.boundingBox.grow(100, 100, 100);
+        int i = MathHelper.floor((axisalignedbb.a - 2.0D) / 16.0D);
+        int j = MathHelper.floor((axisalignedbb.d + 2.0D) / 16.0D);
+        int k = MathHelper.floor((axisalignedbb.c - 2.0D) / 16.0D);
+        int l = MathHelper.floor((axisalignedbb.f + 2.0D) / 16.0D);
+
+        for (int i1 = i; i1 <= j; ++i1) {
+            for (int j1 = k; j1 <= l; ++j1) {
+                if (player.world.chunkProvider.isChunkLoaded(i1, j1)) {
+                    player.world.getChunkAt(i1, j1).a(player, axisalignedbb, nearby);
+                }
+            }
+        }
+        // End inline nearby entities
+        for (Object entity : nearby) {
+            if (entity instanceof EntityLiving || entity instanceof EntityMinecart || entity instanceof EntityBoat || entity instanceof IAnimal || entity instanceof EntityPainting) {
+                player.netServerHandler.sendPacket(new Packet29DestroyEntity(((Entity) entity).id));
+           }
+        }
+
+        timer.schedule(new TimerTask(){
+            public void run() {
+                // Start inline nearby entities
+                nearby.clear();
+                AxisAlignedBB axisalignedbb = player.boundingBox.grow(100, 100, 100);
+                int i = MathHelper.floor((axisalignedbb.a - 2.0D) / 16.0D);
+                int j = MathHelper.floor((axisalignedbb.d + 2.0D) / 16.0D);
+                int k = MathHelper.floor((axisalignedbb.c - 2.0D) / 16.0D);
+                int l = MathHelper.floor((axisalignedbb.f + 2.0D) / 16.0D);
+
+                for (int i1 = i; i1 <= j; ++i1) {
+                    for (int j1 = k; j1 <= l; ++j1) {
+                        if (player.world.chunkProvider.isChunkLoaded(i1, j1)) {
+                            player.world.getChunkAt(i1, j1).a(player, axisalignedbb, nearby);
+                        }
+                    }
+                }
+                // End inline nearby entities
+                for (Object entityObject2 : nearby) {
+                    try {
+                        Entity entity = (Entity) entityObject2;
+
+                        if (entity instanceof EntityPlayer) {
+                            player.netServerHandler.sendPacket(new Packet20NamedEntitySpawn((EntityHuman) entity));
+                        } else if (entity instanceof EntityMinecart) {
+                            EntityMinecart entityminecart = (EntityMinecart) entity;
+
+                            if (entityminecart.type == 0) {
+                                player.netServerHandler.sendPacket(new Packet23VehicleSpawn(entity, 10));
+                            }
+
+                            if (entityminecart.type == 1) {
+                                player.netServerHandler.sendPacket(new Packet23VehicleSpawn(entity, 11));
+                            }
+
+                            if (entityminecart.type == 2) {
+                                player.netServerHandler.sendPacket(new Packet23VehicleSpawn(entity, 12));
+                            }
+                        } else if (entity instanceof EntityBoat) {
+                            player.netServerHandler.sendPacket(new Packet23VehicleSpawn(entity, 1));
+                        } else if (entity instanceof IAnimal) {
+                            player.netServerHandler.sendPacket(new Packet24MobSpawn((EntityLiving) entity));
+                        } else if (entity instanceof EntityEnderDragon) {
+                            player.netServerHandler.sendPacket(new Packet24MobSpawn((EntityLiving) entity));
+                        } else if (entity instanceof EntityPainting) {
+                            player.netServerHandler.sendPacket(new Packet25EntityPainting((EntityPainting) entity));
+                        }
+                    } catch (ClassCastException e) {
+                    }
+                }
+            }
+        }, 5000);
+    }
+    // CraftBukkit end
 
     public void a(double d0, double d1, double d2, float f, float f1) {
         // CraftBukkit start - Delegate to teleport(Location)

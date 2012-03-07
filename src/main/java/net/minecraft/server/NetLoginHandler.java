@@ -119,7 +119,8 @@ public class NetLoginHandler extends NetHandler {
             this.server.serverConfigurationManager.a(entityplayer, worldserver);
             // this.server.serverConfigurationManager.sendAll(new Packet3Chat("\u00A7e" + entityplayer.name + " joined the game.")); // CraftBukkit - message moved to join event
             this.server.serverConfigurationManager.c(entityplayer);
-            netserverhandler.a(entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
+            // CraftBukkit - temporary initial join teleport function, houses hacky entity fix.
+            netserverhandler.initialJoin(entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
             this.server.networkListenThread.a(netserverhandler);
             netserverhandler.sendPacket(new Packet4UpdateTime(entityplayer.getPlayerTime())); // CraftBukkit - add support for player specific time
             Iterator iterator = entityplayer.getEffects().iterator();
