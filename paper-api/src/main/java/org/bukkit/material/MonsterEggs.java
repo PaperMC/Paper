@@ -18,7 +18,7 @@ public class MonsterEggs extends TexturedMaterial {
     }
 
     public MonsterEggs() {
-        super(Material.SMOOTH_BRICK);
+        super(Material.MONSTER_EGGS);
     }
 
     public MonsterEggs(final int type) {

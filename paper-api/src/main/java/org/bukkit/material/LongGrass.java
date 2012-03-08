@@ -8,7 +8,7 @@ import org.bukkit.Material;
  */
 public class LongGrass extends MaterialData {
     public LongGrass() {
-        super(Material.LOG);
+        super(Material.LONG_GRASS);
     }
 
     public LongGrass(GrassSpecies species) {
