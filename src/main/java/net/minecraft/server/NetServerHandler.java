@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.craftbukkit.ChunkCompressionThread;
 import org.bukkit.Location;
@@ -41,6 +42,7 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.event.player.PlayerToggleSprintEvent;
+import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.Event.Result;
 import org.bukkit.event.inventory.*;
 import org.bukkit.event.inventory.InventoryType.SlotType;
@@ -1093,8 +1095,14 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             // CraftBukkit start
             CraftWorld cworld = (CraftWorld) this.server.getWorlds().get(0);
             ChunkCoordinates chunkcoordinates = cworld.getHandle().getSpawn();
-            Location location = new Location(cworld, chunkcoordinates.x + 0.5, chunkcoordinates.y, chunkcoordinates.z + 0.5);
-            this.player = this.minecraftServer.serverConfigurationManager.moveToWorld(this.player, 0, true, location);
+            Location toLocation = new Location(cworld, chunkcoordinates.x + 0.5, chunkcoordinates.y, chunkcoordinates.z + 0.5);
+
+            org.bukkit.craftbukkit.PortalTravelAgent pta = new org.bukkit.craftbukkit.PortalTravelAgent();
+            PlayerPortalEvent event = new PlayerPortalEvent(this.player.getBukkitEntity(), this.player.getBukkitEntity().getLocation(), toLocation, pta, PlayerPortalEvent.TeleportCause.END_PORTAL);
+            event.useTravelAgent(false);
+
+            Bukkit.getServer().getPluginManager().callEvent(event);
+            this.player = this.minecraftServer.serverConfigurationManager.moveToWorld(this.player, 0, true, event.getTo());
             // CraftBukkit end
         } else {
             if (this.player.getHealth() > 0) {
