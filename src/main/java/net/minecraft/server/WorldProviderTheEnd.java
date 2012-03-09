@@ -7,7 +7,7 @@ public class WorldProviderTheEnd extends WorldProvider {
     public void a() {
         this.c = new WorldChunkManagerHell(BiomeBase.SKY, 0.5F, 0.0F);
         this.dimension = 1;
-        this.e = true;
+        this.e = false; // CraftBukkit
     }
 
     public IChunkProvider getChunkProvider() {
