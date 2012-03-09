@@ -129,6 +129,10 @@ public class CreatureSpawnEvent extends EntityEvent implements Cancellable {
          */
         VILLAGE_DEFENSE,
         /**
+         * When a zombie is spawned to invade a village
+         */
+        VILLAGE_INVASION,
+        /**
          * When a creature is manually spawned
          */
         CUSTOM
