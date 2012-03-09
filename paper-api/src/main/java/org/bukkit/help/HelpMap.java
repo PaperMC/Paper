@@ -34,11 +34,13 @@ public interface HelpMap {
      * Associates a {@link HelpTopicFactory} object with given command base class. Plugins typically
      * call this method during {@code onLoad()}. Once registered, the custom HelpTopicFactory will
      * be used to create a custom {@link HelpTopic} for all commands deriving from the {@code commandClass}
-     * base class.
+     * base class, or all commands deriving from {@link org.bukkit.command.PluginCommand} who's executor
+     * derives from {@code commandClass} base class.
      *
-     * @param commandClass The class for which the custom HelpTopicFactory applies. Must derive from {@link org.bukkit.command.Command}.
+     * @param commandClass The class for which the custom HelpTopicFactory applies. Must derive from
+     * either {@link org.bukkit.command.Command} or {@link org.bukkit.command.CommandExecutor}.
      * @param factory The {@link HelpTopicFactory} implementation to associate with the {@code commandClass}.
-     * @throws IllegalArgumentException Thrown if {@code commandClass} does not derive from Command.
+     * @throws IllegalArgumentException Thrown if {@code commandClass} does not derive from a legal base class.
      */
     public void registerHelpTopicFactory(Class commandClass, HelpTopicFactory factory);
 }
