@@ -9,14 +9,13 @@ import org.bukkit.event.HandlerList;
  */
 public class EntityTargetEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
-    private boolean cancel;
+    private boolean cancel = false;
     private Entity target;
     private final TargetReason reason;
 
     public EntityTargetEvent(final Entity entity, final Entity target, final TargetReason reason) {
         super(entity);
         this.target = target;
-        this.cancel = false;
         this.reason = reason;
     }
 
@@ -112,6 +111,10 @@ public class EntityTargetEvent extends EntityEvent implements Cancellable {
          * When the entity has no target, so the entity randomly chooses one.
          */
         RANDOM_TARGET,
+        /**
+         * When an entity selects a target while defending a village.
+         */
+        DEFEND_VILLAGE,
         /**
          * For custom calls to the event
          */
