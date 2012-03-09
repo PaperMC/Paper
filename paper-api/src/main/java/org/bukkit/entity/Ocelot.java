@@ -20,6 +20,21 @@ public interface Ocelot extends Animals, Tameable {
     public void setCatType(Type type);
 
     /**
+     * Checks if this ocelot is sitting
+     *
+     * @return true if sitting
+     */
+    public boolean isSitting();
+
+    /**
+     * Sets if this ocelot is sitting
+     * Will remove any path that the ocelot was following beforehand.
+     *
+     * @param sitting true if sitting
+     */
+    public void setSitting(boolean sitting);
+
+    /**
      * Represents the various different cat types there are.
      */
     public enum Type {
