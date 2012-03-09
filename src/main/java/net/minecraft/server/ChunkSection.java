@@ -19,6 +19,20 @@ public class ChunkSection {
         this.g = new NibbleArray(this.d.length, 4);
     }
 
+    // CraftBukkit start
+    public ChunkSection(int y, byte[] blkData, byte[] extBlkData) {
+        this.a = y;
+        this.d = blkData;
+        if (extBlkData != null) {
+            this.e = new NibbleArray(extBlkData, 4);
+        }
+        this.f = new NibbleArray(this.d.length, 4);
+        this.h = new NibbleArray(this.d.length, 4);
+        this.g = new NibbleArray(this.d.length, 4);
+        this.d();
+    }
+    // CraftBukkit end
+
     public int a(int i, int j, int k) {
         int l = this.d[j << 8 | k << 4 | i] & 255;
 
