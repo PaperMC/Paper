@@ -1,5 +1,10 @@
 package net.minecraft.server;
 
+// CraftBukkit start
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.Material;
+// CraftBukkit end
+
 public class PathfinderGoalEatTile extends PathfinderGoal {
 
     private EntityLiving b;
@@ -50,13 +55,21 @@ public class PathfinderGoalEatTile extends PathfinderGoal {
             int k = MathHelper.floor(this.b.locZ);
 
             if (this.c.getTypeId(i, j, k) == Block.LONG_GRASS.id) {
-                this.c.triggerEffect(2001, i, j, k, Block.LONG_GRASS.id + 4096);
-                this.c.setTypeId(i, j, k, 0);
-                this.b.z();
+                // CraftBukkit start
+                if (!CraftEventFactory.callEntityChangeBlockEvent(this.b.getBukkitEntity(), this.b.world.getWorld().getBlockAt(i, j, k), Material.AIR).isCancelled()) {
+                    this.c.triggerEffect(2001, i, j, k, Block.LONG_GRASS.id + 4096);
+                    this.c.setTypeId(i, j, k, 0);
+                    this.b.z();
+                }
+                // CraftBukkit end
             } else if (this.c.getTypeId(i, j - 1, k) == Block.GRASS.id) {
-                this.c.triggerEffect(2001, i, j - 1, k, Block.GRASS.id);
-                this.c.setTypeId(i, j - 1, k, Block.DIRT.id);
-                this.b.z();
+                // CraftBukkit start
+                if (!CraftEventFactory.callEntityChangeBlockEvent(this.b.getBukkitEntity(), this.b.world.getWorld().getBlockAt(i, j - 1, k), Material.DIRT).isCancelled()) {
+                    this.c.triggerEffect(2001, i, j - 1, k, Block.GRASS.id);
+                    this.c.setTypeId(i, j - 1, k, Block.DIRT.id);
+                    this.b.z();
+                }
+                // CraftBukkit end
             }
         }
     }
