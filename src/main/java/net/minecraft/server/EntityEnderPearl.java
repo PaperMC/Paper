@@ -36,7 +36,7 @@ public class EntityEnderPearl extends EntityProjectile {
             if (this.shooter != null) {
                 if (this.shooter instanceof EntityPlayer) {
                     CraftPlayer player = (CraftPlayer) this.shooter.bukkitEntity;
-                    teleport = player.isOnline();
+                    teleport = player.isOnline() && player.getWorld() == getBukkitEntity().getWorld();
 
                     if (teleport) {
                         teleEvent = new PlayerTeleportEvent(player, player.getLocation(), getBukkitEntity().getLocation(), PlayerTeleportEvent.TeleportCause.ENDER_PEARL);
