@@ -1,7 +1,9 @@
 package org.bukkit.craftbukkit.help;
 
 import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.MultipleCommandAlias;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.command.defaults.VanillaCommand;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.help.HelpMap;
@@ -71,12 +73,18 @@ public class SimpleHelpMap implements HelpMap {
         // ** Load topics from highest to lowest priority order **
 
         // Initialize help topics from the server's command map
-        for (Command command : server.getCommandMap().getCommands()) {
-            if (topicFactoryMap.containsKey(command.getClass())) {
-                addTopic(topicFactoryMap.get(command.getClass()).createTopic(command));
-            } else {
-                addTopic(new GenericCommandHelpTopic(command));
+        outer: for (Command command : server.getCommandMap().getCommands()) {
+            for (Class c : topicFactoryMap.keySet()) {
+                if (c.isAssignableFrom(command.getClass())) {
+                    addTopic(topicFactoryMap.get(c).createTopic(command));
+                    continue outer;
+                }
+                if (command instanceof PluginCommand && c.isAssignableFrom(((PluginCommand)command).getExecutor().getClass())) {
+                    addTopic(topicFactoryMap.get(c).createTopic(command));
+                    continue outer;
+                }
             }
+            addTopic(new GenericCommandHelpTopic(command));
         }
 
         // Initialize help topics from the server's fallback commands
@@ -94,8 +102,8 @@ public class SimpleHelpMap implements HelpMap {
     }
 
     public void registerHelpTopicFactory(Class commandClass, HelpTopicFactory factory) {
-        if (!Command.class.isAssignableFrom(commandClass)) {
-            throw new IllegalArgumentException("commandClass must implement Command");
+        if (!Command.class.isAssignableFrom(commandClass) && !CommandExecutor.class.isAssignableFrom(commandClass)) {
+            throw new IllegalArgumentException("commandClass must implement either Command or CommandExecutor!");
         }
         topicFactoryMap.put(commandClass, factory);
     }
