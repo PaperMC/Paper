@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import org.bukkit.event.entity.EntityTargetEvent; // CraftBukkit
+
 public class PathfinderGoalArrowAttack extends PathfinderGoal {
 
     World a;
@@ -36,6 +38,10 @@ public class PathfinderGoalArrowAttack extends PathfinderGoal {
     }
 
     public void d() {
+        // CraftBukkit start
+        EntityTargetEvent.TargetReason reason = this.c.isAlive() ? EntityTargetEvent.TargetReason.FORGOT_TARGET : EntityTargetEvent.TargetReason.TARGET_DIED;
+        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetEvent(b, null, reason);
+        // CraftBukkit end
         this.c = null;
     }
 

@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import org.bukkit.event.entity.EntityTargetEvent; // CraftBukkit
+
 public abstract class PathfinderGoalTarget extends PathfinderGoal {
 
     protected EntityLiving c;
@@ -99,6 +101,31 @@ public abstract class PathfinderGoalTarget extends PathfinderGoal {
                             return false;
                         }
                     }
+
+                    // CraftBukkit start - Check all the different target goals for the reason, default to RANDOM_TARGET
+                    EntityTargetEvent.TargetReason reason = EntityTargetEvent.TargetReason.RANDOM_TARGET;
+
+                    if (this instanceof PathfinderGoalDefendVillage) {
+                        reason = EntityTargetEvent.TargetReason.DEFEND_VILLAGE;
+                    } else if (this instanceof PathfinderGoalHurtByTarget) {
+                        reason = EntityTargetEvent.TargetReason.TARGET_ATTACKED_ENTITY;
+                    } else if (this instanceof PathfinderGoalNearestAttackableTarget) {
+                        if (entityliving instanceof EntityHuman) {
+                            reason = EntityTargetEvent.TargetReason.CLOSEST_PLAYER;
+                        }
+                    } else if (this instanceof PathfinderGoalOwnerHurtByTarget) {
+                        reason = EntityTargetEvent.TargetReason.TARGET_ATTACKED_OWNER;
+                    } else if (this instanceof PathfinderGoalOwnerHurtTarget) {
+                        reason = EntityTargetEvent.TargetReason.OWNER_ATTACKED_TARGET;
+                    }
+
+                    org.bukkit.event.entity.EntityTargetLivingEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetLivingEvent(c, entityliving, reason);
+                    if (event.isCancelled() || event.getTarget() == null) {
+                        return false;
+                    } else if (entityliving.getBukkitEntity() != event.getTarget()) {
+                        this.c.b((EntityLiving) ((org.bukkit.craftbukkit.entity.CraftEntity) event.getTarget()).getHandle());
+                    }
+                    // CraftBukkit end
 
                     return true;
                 }

@@ -2,7 +2,6 @@ package net.minecraft.server;
 
 // CraftBukkit start
 import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityTargetEvent;
@@ -46,20 +45,19 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
 
             if (this.passenger != entity && this.vehicle != entity) {
                 if (entity != this) {
-                    // CraftBukkit start
-                    org.bukkit.entity.Entity bukkitTarget = entity == null ? null : entity.getBukkitEntity();
+                    // CraftBukkit start - We still need to call events for entities without goals
+                    if (entity != this.target && (this instanceof EntityBlaze || this instanceof EntityEnderman || this instanceof EntitySpider || this instanceof EntityGiantZombie || this instanceof EntitySilverfish)) {
+                        EntityTargetEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetEvent(this, entity, EntityTargetEvent.TargetReason.TARGET_ATTACKED_ENTITY);
 
-                    EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), bukkitTarget, EntityTargetEvent.TargetReason.TARGET_ATTACKED_ENTITY);
-                    Bukkit.getPluginManager().callEvent(event);
-
-                    if (!event.isCancelled()) {
-                        if (event.getTarget() == null) {
-                            this.target = null;
-                            this.lastDamager = null;
-                        } else {
-                            this.target = ((CraftEntity) event.getTarget()).getHandle();
-                            this.lastDamager = this.target instanceof EntityLiving ? (EntityLiving) this.target : null;
+                        if (!event.isCancelled()) {
+                            if (event.getTarget() == null) {
+                                this.target = null;
+                            } else {
+                                this.target = ((org.bukkit.craftbukkit.entity.CraftEntity) event.getTarget()).getHandle();
+                            }
                         }
+                    } else {
+                        this.target = entity;
                     }
                     // CraftBukkit end
                 }

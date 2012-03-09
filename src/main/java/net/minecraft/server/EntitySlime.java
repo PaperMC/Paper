@@ -1,7 +1,5 @@
 package net.minecraft.server;
 
-import org.bukkit.entity.Slime;
-
 public class EntitySlime extends EntityLiving implements IMonster {
 
     public float a;
@@ -94,7 +92,7 @@ public class EntitySlime extends EntityLiving implements IMonster {
 
     protected void d_() {
         this.aF();
-        EntityHuman entityhuman = this.world.findNearbyVulnerablePlayer(this, 16.0D);
+        EntityHuman entityhuman = this.world.findNearbyVulnerablePlayer(this, 16.0D); // CraftBukkit TODO: EntityTargetEvent
 
         if (entityhuman != null) {
             this.a(entityhuman, 10.0F, 20.0F);
@@ -141,7 +139,7 @@ public class EntitySlime extends EntityLiving implements IMonster {
             int j = 2 + this.random.nextInt(3);
 
             // CraftBukkit start
-            org.bukkit.event.entity.SlimeSplitEvent event = new org.bukkit.event.entity.SlimeSplitEvent((Slime) this.getBukkitEntity(), j);
+            org.bukkit.event.entity.SlimeSplitEvent event = new org.bukkit.event.entity.SlimeSplitEvent((org.bukkit.entity.Slime) this.getBukkitEntity(), j);
             this.world.getServer().getPluginManager().callEvent(event);
 
             if (!event.isCancelled() && event.getCount() > 0) {

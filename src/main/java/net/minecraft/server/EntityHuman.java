@@ -671,22 +671,6 @@ public abstract class EntityHuman extends EntityLiving {
                     EntityWolf entitywolf1 = (EntityWolf) entity;
 
                     if (entitywolf1.isTamed() && entitywolf1.H() == null && this.name.equals(entitywolf1.getOwnerName()) && (!flag || !entitywolf1.isSitting())) {
-                        // CraftBukkit start
-                        org.bukkit.entity.Entity bukkitTarget = entity == null ? null : entityliving.getBukkitEntity();
-
-                        EntityTargetEvent event;
-                        if (flag) {
-                            event = new EntityTargetEvent(entitywolf1.getBukkitEntity(), bukkitTarget, EntityTargetEvent.TargetReason.OWNER_ATTACKED_TARGET);
-                        } else {
-                            event = new EntityTargetEvent(entitywolf1.getBukkitEntity(), bukkitTarget, EntityTargetEvent.TargetReason.TARGET_ATTACKED_OWNER);
-                        }
-                        this.world.getServer().getPluginManager().callEvent(event);
-
-                        if (event.isCancelled()) {
-                            continue;
-                        }
-                        // CraftBukkit end
-
                         entitywolf1.setSitting(false);
                         entitywolf1.setTarget(entityliving);
                     }
