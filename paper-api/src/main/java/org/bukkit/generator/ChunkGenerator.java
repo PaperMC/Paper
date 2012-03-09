@@ -6,6 +6,7 @@ import java.util.Random;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 
 /**
@@ -13,6 +14,29 @@ import org.bukkit.block.Block;
  * For example, the nether chunk generator should shape netherrack and soulsand
  */
 public abstract class ChunkGenerator {
+    /**
+     * Interface to biome data for chunk to be generated: initialized with default values for world type and seed.
+     *
+     * Custom generator is free to access and tailor values during generateBlockSections() or generateExtBlockSections().
+     */
+    public interface BiomeGrid {
+        /**
+         * Get biome at x, z within chunk being generated
+         * @param x - 0-15
+         * @param z - 0-15
+         * @return Biome value
+         */
+        Biome getBiome(int x, int z);
+        /**
+         * Set biome at x, z within chunk being generated
+         *
+         * @param x - 0-15
+         * @param z - 0-15
+         * @param bio - Biome value
+         */
+        void setBiome(int x, int z, Biome bio);
+    }
+    @Deprecated
     /**
      * Shapes the chunk for the given coordinates.<br />
      * <br />
@@ -31,13 +55,90 @@ public abstract class ChunkGenerator {
      * Note that this method should <b>never</b> attempt to get the Chunk at
      * the passed coordinates, as doing so may cause an infinite loop
      *
+     * Note this deprecated method will only be called when both generateExtBlockSections()
+     * and generateBlockSections() are unimplemented and return null.
+
      * @param world The world this chunk will be used for
      * @param random The random generator to use
      * @param x The X-coordinate of the chunk
      * @param z The Z-coordinate of the chunk
      * @return byte[] containing the types for each block created by this generator
      */
-    public abstract byte[] generate(World world, Random random, int x, int z);
+    public byte[] generate(World world, Random random, int x, int z) {
+        throw new UnsupportedOperationException("Custom generator is missing required methods: generate(), generateBlockSections() and generateExtBlockSections()");
+    }
+
+    /**
+     * Shapes the chunk for the given coordinates.<br />
+     * <br />
+     * This method should return a short[][] array in the following format:
+     *
+     * <pre>
+     * result[y >> 4] = null IF the 16x16x16 section from y to y+15 is empty
+     * result[y >> 4] = new short[4096] if the section has any non-empty blocks
+     *
+     * within the section:
+     *
+     * for (int x = 0; x &lt; 16; x++) {
+     *     for (int z = 0; z &lt; 16; z++) {
+     *         for (int yy = y & 0xF; yy &lt; 16; yy++) {
+     *             result[(yy << 8) | (z << 4) | x] = ??;
+     *         }
+     *     }
+     * }
+     * </pre>
+     *
+     * Note that this method should <b>never</b> attempt to get the Chunk at
+     * the passed coordinates, as doing so may cause an infinite loop
+     *
+     * Note generators that do not return block IDs above 255 should not implement
+     * this method, or should have it return null (which will result in the
+     * generateBlockSections() method being called).
+     *
+     * @param world The world this chunk will be used for
+     * @param random The random generator to use
+     * @param x The X-coordinate of the chunk
+     * @param z The Z-coordinate of the chunk
+     * @param biomes Proposed biome values for chunk - can be updated by generator
+     * @return short[][] containing the types for each block created by this generator
+     */
+    public short[][] generateExtBlockSections(World world, Random random, int x, int z, BiomeGrid biomes) {
+        return null; // Default - returns null, which drives call to generateBlockSections()
+    }
+
+    /**
+     * Shapes the chunk for the given coordinates.<br />
+     * <br />
+     * This method should return a byte[][] array in the following format:
+     *
+     * <pre>
+     * result[y >> 4] = null IF the 16x16x16 section from y to y+15 is empty
+     * result[y >> 4] = new byte[4096] if the section has any non-empty blocks
+     *
+     * within the section:
+     *
+     * for (int x = 0; x &lt; 16; x++) {
+     *     for (int z = 0; z &lt; 16; z++) {
+     *         for (int yy = y & 0xF; yy &lt; 16; yy++) {
+     *             result[(yy << 8) | (z << 4) | x] = ??;
+     *         }
+     *     }
+     * }
+     * </pre>
+     *
+     * Note that this method should <b>never</b> attempt to get the Chunk at
+     * the passed coordinates, as doing so may cause an infinite loop
+     *
+     * @param world The world this chunk will be used for
+     * @param random The random generator to use
+     * @param x The X-coordinate of the chunk
+     * @param z The Z-coordinate of the chunk
+     * @param biomes Proposed biome values for chunk - can be updated by generator
+     * @return short[][] containing the types for each block created by this generator
+     */
+    public byte[][] generateBlockSections(World world, Random random, int x, int z, BiomeGrid biomes) {
+        return null; // Default - returns null, which drives call to generate()
+    }
 
     /**
      * Tests if the specified location is valid for a natural spawn position
