@@ -42,7 +42,7 @@ public class Village {
                 EntityIronGolem entityirongolem = new EntityIronGolem(this.world);
 
                 entityirongolem.setPosition(vec3d.a, vec3d.b, vec3d.c);
-                this.world.addEntity(entityirongolem);
+                this.world.addEntity(entityirongolem, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_DEFENSE); // CraftBukkit
                 ++this.j;
             }
         }

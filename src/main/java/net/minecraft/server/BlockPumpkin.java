@@ -1,6 +1,9 @@
 package net.minecraft.server;
 
-import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
+// CraftBukkit start
+import org.bukkit.event.block.BlockRedstoneEvent;
+import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
+// CraftBukkit end
 
 public class BlockPumpkin extends BlockDirectional {
 
@@ -44,7 +47,7 @@ public class BlockPumpkin extends BlockDirectional {
                 EntitySnowman entitysnowman = new EntitySnowman(world);
 
                 entitysnowman.setPositionRotation((double) i + 0.5D, (double) j - 1.95D, (double) k + 0.5D, 0.0F, 0.0F);
-                world.addEntity(entitysnowman, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BUILD_SNOWMAN); // CraftBukkit
+                world.addEntity(entitysnowman, SpawnReason.BUILD_SNOWMAN); // CraftBukkit
                 world.update(i, j, k, 0);
                 world.update(i, j - 1, k, 0);
                 world.update(i, j - 2, k, 0);
@@ -73,7 +76,7 @@ public class BlockPumpkin extends BlockDirectional {
 
                 entityirongolem.b(true);
                 entityirongolem.setPositionRotation((double) i + 0.5D, (double) j - 1.95D, (double) k + 0.5D, 0.0F, 0.0F);
-                world.addEntity(entityirongolem);
+                world.addEntity(entityirongolem, SpawnReason.BUILD_IRONGOLEM);
 
                 for (int i1 = 0; i1 < 120; ++i1) {
                     world.a("snowballpoof", (double) i + world.random.nextDouble(), (double) (j - 2) + world.random.nextDouble() * 3.9D, (double) k + world.random.nextDouble(), 0.0D, 0.0D, 0.0D);
