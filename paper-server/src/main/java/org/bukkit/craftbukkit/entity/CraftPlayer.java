@@ -599,6 +599,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void hidePlayer(Player player) {
+        Validate.notNull(player, "hidden player cannot be null");
+        if (equals(player)) return;
         if (hiddenPlayers.containsKey(player.getName())) return;
         hiddenPlayers.put(player.getName(), player);
 
@@ -615,6 +617,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void showPlayer(Player player) {
+        Validate.notNull(player, "shown player cannot be null");
+        if (equals(player)) return;
         if (!hiddenPlayers.containsKey(player.getName())) return;
         hiddenPlayers.remove(player.getName());
 
