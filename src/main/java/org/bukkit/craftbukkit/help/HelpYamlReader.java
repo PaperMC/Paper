@@ -64,7 +64,8 @@ public class HelpYamlReader {
                 ConfigurationSection section = commandTopics.getConfigurationSection(topicName);
                 String description = section.getString("shortText");
                 String usage = section.getString("fullText");
-                amendments.add(new HelpTopicAmendment(topicName, description, usage));
+                String permission = section.getString("permission");
+                amendments.add(new HelpTopicAmendment(topicName, description, usage, permission));
             }
         }
         return amendments;
