@@ -372,7 +372,6 @@ public class Chunk {
                 flag = j >= k1;
             }
 
-            if (chunksection.a(i, j & 15, k) != l) return false; // CraftBukkit - remove next update
             chunksection.a(i, j & 15, k, l);
             int i2 = this.x * 16 + i;
             int j2 = this.z * 16 + k;
@@ -385,6 +384,7 @@ public class Chunk {
                 }
             }
 
+            if (chunksection.a(i, j & 15, k) != l) return false; // CraftBukkit - remove next update
             chunksection.b(i, j & 15, k, i1);
             if (flag) {
                 this.initLighting();
