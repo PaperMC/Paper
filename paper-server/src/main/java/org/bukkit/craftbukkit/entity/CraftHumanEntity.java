@@ -69,7 +69,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     public void setItemOnCursor(ItemStack item) {
         CraftItemStack stack = new CraftItemStack(item.getType(), item.getAmount(), item.getDurability());
-        getHandle().inventory.setCarried(stack.getHandle());
+        getHandle().inventory.setCarried(stack.getType() == Material.AIR ? null : stack.getHandle());
         if (this instanceof CraftPlayer) {
             ((EntityPlayer) getHandle()).broadcastCarriedItem(); // Send set slot for cursor
         }
