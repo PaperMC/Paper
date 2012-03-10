@@ -33,13 +33,18 @@ public class Explosion {
     public Explosion(World world, Entity entity, double d0, double d1, double d2, float f) {
         this.world = world;
         this.source = entity;
-        this.size = f;
+        this.size = (float) Math.max(f, 0.0); // CraftBukkit - clamp bad values
         this.posX = d0;
         this.posY = d1;
         this.posZ = d2;
     }
 
     public void a() {
+        // CraftBukkit start
+        if (this.size < 0.1F) {
+            return;
+        }
+        // CraftBukkit end
         float f = this.size;
         byte b0 = 16;
 
