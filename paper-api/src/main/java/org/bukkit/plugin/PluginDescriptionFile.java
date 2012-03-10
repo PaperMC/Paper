@@ -34,6 +34,7 @@ public final class PluginDescriptionFile {
     private boolean database = false;
     private PluginLoadOrder order = PluginLoadOrder.POSTWORLD;
     private List<Permission> permissions = null;
+    private Map<?, ?> lazyPermissions = null;
     private PermissionDefault defaultPerm = PermissionDefault.OP;
 
     public PluginDescriptionFile(final InputStream stream) throws InvalidDescriptionException {
@@ -150,6 +151,14 @@ public final class PluginDescriptionFile {
     }
 
     public List<Permission> getPermissions() {
+        if (permissions == null) {
+            if (lazyPermissions == null) {
+                permissions = ImmutableList.<Permission>of();
+            } else {
+                permissions = ImmutableList.copyOf(Permission.loadPermissions(lazyPermissions, "Permission node '%s' in plugin description file for " + getFullName() + " is invalid", defaultPerm));
+                lazyPermissions = null;
+            }
+        }
         return permissions;
     }
 
@@ -315,18 +324,10 @@ public final class PluginDescriptionFile {
             }
         }
 
-        if (map.get("permissions") != null) {
-            try {
-                Map<?, ?> perms = (Map<?, ?>) map.get("permissions");
-
-                permissions = ImmutableList.copyOf(Permission.loadPermissions(perms, "Permission node '%s' in plugin description file for " + getFullName() + " is invalid", defaultPerm));
-            } catch (ClassCastException ex) {
-                throw new InvalidDescriptionException(ex, "permissions are of wrong type");
-            } catch (NullPointerException ex) {
-                throw new InvalidDescriptionException(ex, "permissions are not properly defined");
-            }
-        } else {
-            permissions = ImmutableList.<Permission>of();
+        try {
+            lazyPermissions = (Map<?, ?>) map.get("permissions");
+        } catch (ClassCastException ex) {
+            throw new InvalidDescriptionException(ex, "permissions are of the wrong type");
         }
 
         if (map.get("prefix") != null) {
