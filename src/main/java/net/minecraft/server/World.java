@@ -883,7 +883,7 @@ public class World implements IBlockAccess {
             boolean isAnimal = entity instanceof EntityAnimal || entity instanceof EntityWaterAnimal;
             boolean isMonster = entity instanceof EntityMonster || entity instanceof EntityGhast || entity instanceof EntitySlime;
 
-            if (spawnReason == SpawnReason.NATURAL || spawnReason == SpawnReason.CHUNK_GEN || spawnReason == SpawnReason.JOCKEY || spawnReason == SpawnReason.SPAWNER || spawnReason == SpawnReason.BED || spawnReason == SpawnReason.EGG || spawnReason == SpawnReason.VILLAGE_INVASION) {
+            if (spawnReason == SpawnReason.NATURAL || spawnReason == SpawnReason.CHUNK_GEN || spawnReason == SpawnReason.JOCKEY || spawnReason == SpawnReason.SPAWNER || spawnReason == SpawnReason.BED || spawnReason == SpawnReason.EGG || spawnReason == SpawnReason.VILLAGE_INVASION || spawnReason == SpawnReason.VILLAGE_DEFENSE) {
                 if (isAnimal && !allowAnimals || isMonster && !allowMonsters) return false;
             }
 
