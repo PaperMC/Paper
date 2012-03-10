@@ -42,5 +42,5 @@ public interface HelpMap {
      * @param factory The {@link HelpTopicFactory} implementation to associate with the {@code commandClass}.
      * @throws IllegalArgumentException Thrown if {@code commandClass} does not derive from a legal base class.
      */
-    public void registerHelpTopicFactory(Class commandClass, HelpTopicFactory factory);
+    public void registerHelpTopicFactory(Class<?> commandClass, HelpTopicFactory<?> factory);
 }
