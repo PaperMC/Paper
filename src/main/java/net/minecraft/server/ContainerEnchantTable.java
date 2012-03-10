@@ -18,9 +18,8 @@ import org.bukkit.entity.Player;
 
 public class ContainerEnchantTable extends Container {
 
-    // CraftBukkit start - make type specific (changed from IInventory)
+    // CraftBukkit - make type specific (changed from IInventory)
     public ContainerEnchantTableInventory enchantSlots = new ContainerEnchantTableInventory(this, "Enchant", 1);
-    // CraftBukkit end
     private World world;
     private int x;
     private int y;
@@ -163,7 +162,7 @@ public class ContainerEnchantTable extends Container {
                     this.world.getServer().getPluginManager().callEvent(event);
 
                     int level = event.getExpLevelCost();
-                    if (event.isCancelled() || (level > entityhuman.expLevel) || enchants.isEmpty()) {
+                    if (event.isCancelled() || (level > entityhuman.expLevel && !entityhuman.abilities.canInstantlyBuild) || enchants.isEmpty()) {
                         return false;
                     }
                     entityhuman.levelDown(level);
