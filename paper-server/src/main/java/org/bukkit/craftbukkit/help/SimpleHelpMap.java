@@ -1,5 +1,7 @@
 package org.bukkit.craftbukkit.help;
 
+import com.google.common.base.Predicates;
+import com.google.common.collect.Collections2;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.MultipleCommandAlias;
@@ -21,7 +23,7 @@ public class SimpleHelpMap implements HelpMap {
 
     public SimpleHelpMap() {
         helpTopics = new TreeMap<String, HelpTopic>(new HelpTopicComparator()); // Using a TreeMap for its explicit sorting on key
-        defaultTopic = new IndexHelpTopic(helpTopics.values());
+        defaultTopic = new IndexHelpTopic(null, null, null, Collections2.filter(helpTopics.values(), Predicates.not(Predicates.instanceOf(CommandAliasHelpTopic.class))));
         topicFactoryMap = new HashMap<Class, HelpTopicFactory>();
 
         registerHelpTopicFactory(MultipleCommandAlias.class, new MultipleCommandAliasHelpTopicFactory());
@@ -84,6 +86,13 @@ public class SimpleHelpMap implements HelpMap {
             }
             addTopic(new GenericCommandHelpTopic(command));
         }
+        
+        // Initialize command alias help topics
+        for (Command command : server.getCommandMap().getCommands()) {
+            for (String alias : command.getAliases()) {
+                addTopic(new CommandAliasHelpTopic(alias, command.getLabel(), command, this));
+            }
+        }
 
         // Initialize help topics from the server's fallback commands
         for (VanillaCommand command : server.getCommandMap().getFallbackCommands()) {
@@ -97,6 +106,9 @@ public class SimpleHelpMap implements HelpMap {
                 helpTopics.get(amendment.getTopicName()).amendTopic(amendment.getShortText(), amendment.getFullText());
             }
         }
+
+        // Add alias sub-index
+        addTopic(new IndexHelpTopic("Aliases", "Lists command aliases", null, Collections2.filter(helpTopics.values(), Predicates.instanceOf(CommandAliasHelpTopic.class))));
     }
 
     public void registerHelpTopicFactory(Class commandClass, HelpTopicFactory factory) {
