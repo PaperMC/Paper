@@ -1093,11 +1093,19 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     public void a(Packet9Respawn packet9respawn) {
         if (this.player.viewingCredits) {
             // CraftBukkit start
-            CraftWorld cworld = (CraftWorld) this.server.getWorlds().get(0);
-            ChunkCoordinates chunkcoordinates = cworld.getHandle().getSpawn();
-            Location toLocation = new Location(cworld, chunkcoordinates.x + 0.5, chunkcoordinates.y, chunkcoordinates.z + 0.5);
-
             org.bukkit.craftbukkit.PortalTravelAgent pta = new org.bukkit.craftbukkit.PortalTravelAgent();
+            Location toLocation;
+
+            if (this.player.getBukkitEntity().getBedSpawnLocation() == null) {
+                CraftWorld cworld = (CraftWorld) this.server.getWorlds().get(0);
+                ChunkCoordinates chunkcoordinates = cworld.getHandle().getSpawn();
+                toLocation = new Location(cworld, chunkcoordinates.x + 0.5, chunkcoordinates.y, chunkcoordinates.z + 0.5);
+                this.player.netServerHandler.sendPacket(new Packet70Bed(0, 0));
+            } else {
+                toLocation = this.player.getBukkitEntity().getBedSpawnLocation();
+                toLocation = new Location(toLocation.getWorld(), toLocation.getX() + 0.5, toLocation.getY(), toLocation.getZ() + 0.5);
+            }
+
             PlayerPortalEvent event = new PlayerPortalEvent(this.player.getBukkitEntity(), this.player.getBukkitEntity().getLocation(), toLocation, pta, PlayerPortalEvent.TeleportCause.END_PORTAL);
             event.useTravelAgent(false);
 
