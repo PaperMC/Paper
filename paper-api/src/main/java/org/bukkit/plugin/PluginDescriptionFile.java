@@ -202,24 +202,26 @@ public final class PluginDescriptionFile {
             try {
                 for (Map.Entry<?, ?> command : ((Map<?, ?>) map.get("commands")).entrySet()) {
                     ImmutableMap.Builder<String, Object> commandBuilder = ImmutableMap.<String, Object>builder();
-                    for (Map.Entry<?, ?> commandEntry : ((Map<?, ?>) command.getValue()).entrySet()) {
-                        if (commandEntry.getValue() instanceof Iterable) {
-                            // This prevents internal alias list changes
-                            ImmutableList.Builder<Object> commandSubList = ImmutableList.<Object>builder();
-                            for (Object commandSubListItem : (Iterable<?>) commandEntry.getValue()) {
-                                commandSubList.add(commandSubListItem);
+                    if (command.getValue() != null) {
+                        for (Map.Entry<?, ?> commandEntry : ((Map<?, ?>) command.getValue()).entrySet()) {
+                            if (commandEntry.getValue() instanceof Iterable) {
+                                // This prevents internal alias list changes
+                                ImmutableList.Builder<Object> commandSubList = ImmutableList.<Object>builder();
+                                for (Object commandSubListItem : (Iterable<?>) commandEntry.getValue()) {
+                                    if (commandSubListItem != null) {
+                                        commandSubList.add(commandSubListItem);
+                                    }
+                                }
+                                commandBuilder.put(commandEntry.getKey().toString(), commandSubList.build());
+                            } else if (commandEntry.getValue() != null) {
+                                commandBuilder.put(commandEntry.getKey().toString(), commandEntry.getValue());
                             }
-                            commandBuilder.put(commandEntry.getKey().toString(), commandSubList.build());
-                        } else if (commandEntry.getValue() != null) {
-                            commandBuilder.put(commandEntry.getKey().toString(), commandEntry.getValue());
                         }
                     }
                     commandsBuilder.put(command.getKey().toString(), commandBuilder.build());
                 }
             } catch (ClassCastException ex) {
                 throw new InvalidDescriptionException(ex, "commands are of wrong type");
-            } catch (NullPointerException ex) {
-                throw new InvalidDescriptionException(ex, "commands are not properly defined");
             }
             commands = commandsBuilder.build();
         }
