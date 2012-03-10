@@ -35,16 +35,20 @@ public class MultipleCommandAliasHelpTopic extends HelpTopic {
     }
 
     public boolean canSee(CommandSender sender) {
-        if (sender instanceof ConsoleCommandSender) {
-            return true;
-        }
-
-        for (Command command : alias.getCommands()) {
-            if (!command.testPermissionSilent(sender)) {
-                return false;
+        if (amendedPermission == null) {
+            if (sender instanceof ConsoleCommandSender) {
+                return true;
             }
-        }
 
-        return true;
+            for (Command command : alias.getCommands()) {
+                if (!command.testPermissionSilent(sender)) {
+                    return false;
+                }
+            }
+
+            return true;
+        } else {
+            return sender.hasPermission(amendedPermission);
+        }
     }
 }

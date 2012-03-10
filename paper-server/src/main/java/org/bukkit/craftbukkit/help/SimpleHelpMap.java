@@ -69,6 +69,7 @@ public class SimpleHelpMap implements HelpMap {
      * Processes all the commands registered in the server and creates help topics for them.
      * @param server A reference to the server.
      */
+    @SuppressWarnings("unchecked")
     public synchronized void initializeCommands(CraftServer server) {
         // ** Load topics from highest to lowest priority order **
 
@@ -90,7 +91,7 @@ public class SimpleHelpMap implements HelpMap {
         // Initialize command alias help topics
         for (Command command : server.getCommandMap().getCommands()) {
             for (String alias : command.getAliases()) {
-                addTopic(new CommandAliasHelpTopic(alias, command.getLabel(), command, this));
+                addTopic(new CommandAliasHelpTopic(alias, command.getLabel(), this));
             }
         }
 
@@ -99,16 +100,19 @@ public class SimpleHelpMap implements HelpMap {
             addTopic(new GenericCommandHelpTopic(command));
         }
 
+        // Add alias sub-index
+        addTopic(new IndexHelpTopic("Aliases", "Lists command aliases", null, Collections2.filter(helpTopics.values(), Predicates.instanceOf(CommandAliasHelpTopic.class))));
+
         // Amend help topics from the help.yml file
         HelpYamlReader reader = new HelpYamlReader(server);
         for (HelpTopicAmendment amendment : reader.getTopicAmendments()) {
             if (helpTopics.containsKey(amendment.getTopicName())) {
                 helpTopics.get(amendment.getTopicName()).amendTopic(amendment.getShortText(), amendment.getFullText());
+                if (amendment.getPermission() != null) {
+                    helpTopics.get(amendment.getTopicName()).amendCanSee(amendment.getPermission());
+                }
             }
         }
-
-        // Add alias sub-index
-        addTopic(new IndexHelpTopic("Aliases", "Lists command aliases", null, Collections2.filter(helpTopics.values(), Predicates.instanceOf(CommandAliasHelpTopic.class))));
     }
 
     public void registerHelpTopicFactory(Class commandClass, HelpTopicFactory factory) {

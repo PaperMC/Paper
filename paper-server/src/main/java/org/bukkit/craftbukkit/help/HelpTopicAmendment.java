@@ -7,11 +7,13 @@ public class HelpTopicAmendment {
     private String topicName;
     private String shortText;
     private String fullText;
+    private String permission;
 
-    public HelpTopicAmendment(String topicName, String shortText, String fullText) {
+    public HelpTopicAmendment(String topicName, String shortText, String fullText, String permission) {
         this.fullText = fullText;
         this.shortText = shortText;
         this.topicName = topicName;
+        this.permission = permission;
     }
 
     /**
@@ -36,5 +38,13 @@ public class HelpTopicAmendment {
      */
     public String getTopicName() {
         return topicName;
+    }
+
+    /**
+     * Gets the amended permission
+     * @return the permission
+     */
+    public String getPermission() {
+        return permission;
     }
 }
