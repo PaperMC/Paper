@@ -118,6 +118,20 @@ public interface Server extends PluginMessageRecipient {
     public String getServerId();
 
     /**
+     * Get world type (level-type setting) for default world
+     *
+     * @return The value of level-type (e.g. DEFAULT, FLAT, DEFAULT_1_1)
+     */
+    public String getWorldType();
+
+    /**
+     * Get generate-structures setting
+     * 
+     * @return true if structure generation is enabled, false if not
+     */
+    public boolean getGenerateStructures();
+
+    /**
      * Gets whether this server allows the End or not.
      *
      * @return Whether this server allows the End or not.

@@ -102,6 +102,14 @@ public final class Bukkit {
         return server.getServerId();
     }
 
+    public static String getWorldType() {
+        return server.getWorldType();
+    }
+
+    public static boolean getGenerateStructures() {
+        return server.getGenerateStructures();
+    }
+
     public static boolean getAllowNether() {
         return server.getAllowNether();
     }
