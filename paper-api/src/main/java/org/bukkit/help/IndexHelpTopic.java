@@ -2,6 +2,7 @@ package org.bukkit.help;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.help.HelpTopic;
 import org.bukkit.util.ChatPaginator;
@@ -10,35 +11,44 @@ import java.util.Collection;
 
 /**
  * This help topic generates a list of other help topics. This class is useful for adding your own
- * index help topics.
+ * index help topics. To enforce a particular order, use a sorted collection.
  */
 public class IndexHelpTopic extends HelpTopic {
 
+    private String permission;
+    private String preamble;
     private Collection<HelpTopic> allTopics;
 
-    /**
-     * Creates an index help topic from a collection of help topics. The index is displayed in the order of the
-     * topic collection's iterator. To enforce a particular order, use a sorted collection.
-     * @param topics The collection of topics to use display in an index.
-     */
-    public IndexHelpTopic(Collection<HelpTopic> topics) {
+    public IndexHelpTopic(String name, String shortText, String permission, Collection<HelpTopic> topics) {
+        this(name, shortText, permission, topics, null);
+    }
+    
+    public IndexHelpTopic(String name, String shortText, String permission, Collection<HelpTopic> topics, String preamble) {
+        this.name = name;
+        this.shortText = shortText;
+        this.permission = permission;
         this.allTopics = topics;
+        this.preamble = preamble;
     }
 
     public boolean canSee(CommandSender sender) {
-        return true;
-    }
-
-    public String getName() {
-        return "Overall";
-    }
-
-    public String getShortText() {
-        return "";
+        if (sender instanceof ConsoleCommandSender) {
+            return true;
+        }
+        if (permission == null) {
+            return true;
+        }
+        return sender.hasPermission(permission);
     }
 
     public String getFullText(CommandSender sender) {
         StringBuilder sb = new StringBuilder();
+
+        if (preamble != null) {
+            sb.append(preamble);
+            sb.append("\n");
+        }
+
         for (HelpTopic topic : allTopics) {
             if (topic.canSee(sender)) {
                 StringBuilder line = new StringBuilder();

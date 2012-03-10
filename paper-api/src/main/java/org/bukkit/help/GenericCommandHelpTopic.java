@@ -16,7 +16,7 @@ import org.bukkit.help.HelpTopic;
  */
 public class GenericCommandHelpTopic extends HelpTopic {
 
-    private Command command;
+    protected Command command;
 
     public GenericCommandHelpTopic(Command command) {
         this.command = command;
