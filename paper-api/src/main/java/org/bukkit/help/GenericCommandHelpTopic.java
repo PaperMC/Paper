@@ -70,6 +70,10 @@ public class GenericCommandHelpTopic extends HelpTopic {
             return true;
         }
 
-        return command.testPermissionSilent(sender);
+        if (amendedPermission != null) {
+            return sender.hasPermission(amendedPermission);
+        } else {
+            return command.testPermissionSilent(sender);
+        }
     }
 }

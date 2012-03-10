@@ -41,6 +41,11 @@ public class IndexHelpTopic extends HelpTopic {
         return sender.hasPermission(permission);
     }
 
+    @Override
+    public void amendCanSee(String amendedPermission) {
+        permission = amendedPermission;
+    }
+
     public String getFullText(CommandSender sender) {
         StringBuilder sb = new StringBuilder();
 

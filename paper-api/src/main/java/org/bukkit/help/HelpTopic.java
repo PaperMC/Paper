@@ -17,14 +17,26 @@ public abstract class HelpTopic {
     protected String name;
     protected String shortText;
     protected String fullText;
+    protected String amendedPermission;
     
     /**
-     * Determines if a {@link Player} is allowed to see this help topic.
+     * Determines if a {@link Player} is allowed to see this help topic. HelpTopic implementations should take
+     * server administrator wishes into account as set by the {@link HelpTopic#amendCanSee(String)} function.
      *
      * @param player The Player in question.
      * @return True of the Player can see this help topic, false otherwise.
      */
     public abstract boolean canSee(CommandSender player);
+
+    /**
+     * Allows the server administrator to override the permission required to see a help topic. HelpTopic
+     * implementations should take this into account when determining topic visibility on the
+     * {@link HelpTopic#canSee(org.bukkit.command.CommandSender)} function.
+     * @param amendedPermission The permission node the server administrator wishes to apply to this topic.
+     */
+    public void amendCanSee(String amendedPermission) {
+        this.amendedPermission = amendedPermission;
+    }
 
     /**
      * Returns the name of this help topic.
