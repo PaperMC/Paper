@@ -373,6 +373,14 @@ public final class CraftServer implements Server {
         return this.getConfigString("server-id", "unnamed");
     }
 
+    public String getWorldType() {
+        return this.getConfigString("level-type", "DEFAULT");
+    }
+
+    public boolean getGenerateStructures() {
+        return this.getConfigBoolean("generate-structures", true);
+    }
+
     public boolean getAllowEnd() {
         return this.configuration.getBoolean("settings.allow-end");
     }
