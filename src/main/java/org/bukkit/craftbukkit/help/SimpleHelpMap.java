@@ -6,9 +6,7 @@ import org.bukkit.command.MultipleCommandAlias;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.defaults.VanillaCommand;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.help.HelpMap;
-import org.bukkit.help.HelpTopic;
-import org.bukkit.help.HelpTopicFactory;
+import org.bukkit.help.*;
 
 import java.util.*;
 
@@ -23,7 +21,7 @@ public class SimpleHelpMap implements HelpMap {
 
     public SimpleHelpMap() {
         helpTopics = new TreeMap<String, HelpTopic>(new HelpTopicComparator()); // Using a TreeMap for its explicit sorting on key
-        defaultTopic = new DefaultHelpTopic(helpTopics.values());
+        defaultTopic = new IndexHelpTopic(helpTopics.values());
         topicFactoryMap = new HashMap<Class, HelpTopicFactory>();
 
         registerHelpTopicFactory(MultipleCommandAlias.class, new MultipleCommandAliasHelpTopicFactory());
