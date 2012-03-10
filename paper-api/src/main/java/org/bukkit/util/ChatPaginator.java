@@ -119,20 +119,22 @@ public class ChatPaginator {
         if(line.length() > 0) { // Only add the last line if there is anything to add
             lines.add(line.toString());
         }
-        
+
         // Iterate over the wrapped lines, applying the last color from one line to the beginning of the next
-        if (lines.get(0).charAt(0) != ChatColor.COLOR_CHAR) {
+        if (lines.get(0).length() == 0 || lines.get(0).charAt(0) != ChatColor.COLOR_CHAR) {
             lines.set(0, ChatColor.WHITE + lines.get(0));
         }
         for (int i = 1; i < lines.size(); i++) {
-            String pLine = lines.get(i-1);
+            final String pLine = lines.get(i-1);
+            final String subLine = lines.get(i);
+
             char color = pLine.charAt(pLine.lastIndexOf(ChatColor.COLOR_CHAR) + 1);
-            if (lines.get(i).charAt(0) != ChatColor.COLOR_CHAR) {
-                lines.set(i, ChatColor.getByChar(color) + lines.get(i));
+            if (subLine.length() == 0 || subLine.charAt(0) != ChatColor.COLOR_CHAR) {
+                lines.set(i, ChatColor.getByChar(color) + subLine);
             }
         }
 
-        return lines.toArray(new String[0]);
+        return lines.toArray(new String[lines.size()]);
     }
 
     public static class ChatPage {
