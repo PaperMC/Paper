@@ -23,7 +23,7 @@ public class SimpleHelpMap implements HelpMap {
 
     public SimpleHelpMap() {
         helpTopics = new TreeMap<String, HelpTopic>(new HelpTopicComparator()); // Using a TreeMap for its explicit sorting on key
-        defaultTopic = new IndexHelpTopic(null, null, null, Collections2.filter(helpTopics.values(), Predicates.not(Predicates.instanceOf(CommandAliasHelpTopic.class))));
+        defaultTopic = new IndexHelpTopic("Index", null, null, Collections2.filter(helpTopics.values(), Predicates.not(Predicates.instanceOf(CommandAliasHelpTopic.class))));
         topicFactoryMap = new HashMap<Class, HelpTopicFactory>();
 
         registerHelpTopicFactory(MultipleCommandAlias.class, new MultipleCommandAliasHelpTopicFactory());
