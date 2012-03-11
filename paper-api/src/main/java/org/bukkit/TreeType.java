@@ -29,11 +29,23 @@ public enum TreeType {
      */
     JUNGLE,
     /**
+     * Smaller jungle tree; 1 block wide
+     */
+    SMALL_JUNGLE,
+    /**
+     * Small bush that grows in the jungle
+     */
+    JUNGLE_BUSH,
+    /**
      * Big red mushroom; short and fat
      */
     RED_MUSHROOM,
     /**
      * Big brown mushroom; tall and umbrella-like
      */
-    BROWN_MUSHROOM
+    BROWN_MUSHROOM,
+    /**
+     * Swamp tree (regular with vines on the side)
+     */
+    SWAMP,
 }
