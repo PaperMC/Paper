@@ -30,6 +30,12 @@ public class PathfinderGoalBreakDoor extends PathfinderGoalDoorInteract {
         }
 
         if (--this.i == 0 && this.a.world.difficulty == 3) {
+            // CraftBukkit start
+            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityBreakDoorEvent(this.a, this.b, this.c, this.d).isCancelled()) {
+                this.c();
+                return;
+            }
+            // CraftBukkit end
             this.a.world.setTypeId(this.b, this.c, this.d, 0);
             this.a.world.triggerEffect(1012, this.b, this.c, this.d, 0);
             this.a.world.triggerEffect(2001, this.b, this.c, this.d, this.e.id);
