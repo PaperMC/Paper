@@ -41,7 +41,7 @@ public class BlockPumpkin extends BlockDirectional {
         super.onPlace(world, i, j, k);
         if (world.suppressPhysics) return; // CraftBukkit
         if (world.getTypeId(i, j - 1, k) == Block.SNOW_BLOCK.id && world.getTypeId(i, j - 2, k) == Block.SNOW_BLOCK.id) {
-            if (!world.isStatic && world.getServer().getServer().spawnAnimals) { // CraftBukkit - make snowmen obey spawning rules
+            if (!world.isStatic) {
                 // CraftBukkit start - Use BlockStateListPopulator
                 BlockStateListPopulator blockList = new BlockStateListPopulator(world.getWorld());
 
