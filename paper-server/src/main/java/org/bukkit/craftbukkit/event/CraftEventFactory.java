@@ -441,6 +441,16 @@ public class CraftEventFactory {
         return event;
     }
 
+    public static EntityBreakDoorEvent callEntityBreakDoorEvent(Entity entity, int x, int y, int z) {
+        org.bukkit.entity.Entity entity1 = entity.getBukkitEntity();
+        Block block = entity1.getWorld().getBlockAt(x, y, z);
+
+        EntityBreakDoorEvent event = new EntityBreakDoorEvent((LivingEntity) entity1, block);
+        entity1.getServer().getPluginManager().callEvent(event);
+
+        return event;
+    }
+
     public static Container callInventoryOpenEvent(EntityPlayer player, Container container) {
         if (player.activeContainer != player.defaultContainer) { // fire INVENTORY_CLOSE if one already open
             player.netServerHandler.handleContainerClose(new Packet101CloseWindow(player.activeContainer.windowId));
