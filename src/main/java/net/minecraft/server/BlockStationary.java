@@ -56,12 +56,8 @@ public class BlockStationary extends BlockFluids {
                     if (this.j(world, i - 1, j, k) || this.j(world, i + 1, j, k) || this.j(world, i, j, k - 1) || this.j(world, i, j, k + 1) || this.j(world, i, j - 1, k) || this.j(world, i, j + 1, k)) {
                         // CraftBukkit start - prevent lava putting something on fire.
                         org.bukkit.block.Block block = bworld.getBlockAt(i, j, k);
-
                         if (block.getTypeId() != Block.FIRE.id) {
-                            BlockIgniteEvent event = new BlockIgniteEvent(block, igniteCause, null);
-                            world.getServer().getPluginManager().callEvent(event);
-
-                            if (event.isCancelled()) {
+                            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEvent(new BlockIgniteEvent(block, igniteCause, null)).isCancelled()) {
                                 continue;
                             }
                         }
@@ -83,6 +79,15 @@ public class BlockStationary extends BlockFluids {
                     i = i1 + random.nextInt(3) - 1;
                     k = j1 + random.nextInt(3) - 1;
                     if (world.isEmpty(i, j + 1, k) && this.j(world, i, j, k)) {
+                        // CraftBukkit start - prevent lava putting something on fire.
+                        org.bukkit.block.Block block = bworld.getBlockAt(i, j + 1, k);
+                        if (block.getTypeId() != Block.FIRE.id) {
+                            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEvent(new BlockIgniteEvent(block, igniteCause, null)).isCancelled()) {
+                                continue;
+                            }
+                        }
+                        // CraftBukkit end
+
                         world.setTypeId(i, j + 1, k, Block.FIRE.id);
                     }
                 }
