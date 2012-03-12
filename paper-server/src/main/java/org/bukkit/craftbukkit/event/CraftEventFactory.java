@@ -9,8 +9,8 @@ import net.minecraft.server.Container;
 import net.minecraft.server.DamageSource;
 import net.minecraft.server.Entity;
 import net.minecraft.server.EntityArrow;
-import net.minecraft.server.EntityComplexPart;
-import net.minecraft.server.EntityEnderCrystal;
+import net.minecraft.server.EntityDamageSource;
+import net.minecraft.server.EntityDamageSourceIndirect;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.EntityItem;
 import net.minecraft.server.EntityLiving;
@@ -348,7 +348,7 @@ public class CraftEventFactory {
     /**
      * EntityDamage(ByEntityEvent)
      */
-    public static EntityDamageEvent callEntityDamageEvent(Entity damager, EntityLiving damagee, DamageCause cause, int damage) {
+    public static EntityDamageEvent callEntityDamageEvent(Entity damager, Entity damagee, DamageCause cause, int damage) {
         EntityDamageEvent event;
         if (damager != null) {
             event = new EntityDamageByEntityEvent(damager.getBukkitEntity(), damagee.getBukkitEntity(), cause, damage);
@@ -358,6 +358,28 @@ public class CraftEventFactory {
         Bukkit.getPluginManager().callEvent(event);
 
         return event;
+    }
+
+    public static EntityDamageEvent handleEntityDamageEvent(Entity entity, DamageSource source, int damage) {
+        Entity damager = source.getEntity();
+        EntityDamageEvent.DamageCause cause = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
+
+        if (source instanceof EntityDamageSourceIndirect) {
+            damager = ((EntityDamageSourceIndirect) source).getProximateDamageSource();
+            if (damager.getBukkitEntity() instanceof Projectile) {
+                cause = EntityDamageEvent.DamageCause.PROJECTILE;
+            } // Else, magic..?
+        }
+        return callEntityDamageEvent(damager, entity, cause, damage);
+    }
+
+    // Non-Living Entities such as EntityEnderCrystal need to call this
+    public static boolean handleNonLivingEntityDamageEvent(Entity entity, DamageSource source, int damage) {
+        if (!(source instanceof EntityDamageSource)) {
+            return false;
+        }
+        EntityDamageEvent event = handleEntityDamageEvent(entity, source, damage);
+        return event.isCancelled() || event.getDamage() == 0;
     }
 
     public static PlayerLevelChangeEvent callPlayerLevelChangeEvent(Player player, int oldLevel, int newLevel) {
@@ -371,24 +393,6 @@ public class CraftEventFactory {
         PlayerExpChangeEvent event = new PlayerExpChangeEvent(player, expAmount);
         Bukkit.getPluginManager().callEvent(event);
         return event;
-    }
-
-    public static boolean handleProjectileEvent(Projectile projectile, Entity target, DamageSource damagesource, int damage) {
-        if (target instanceof EntityLiving || target instanceof EntityComplexPart || target instanceof EntityEnderCrystal) {
-            org.bukkit.entity.Entity damagee = target.getBukkitEntity();
-
-            EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(projectile, damagee, EntityDamageEvent.DamageCause.PROJECTILE, damage);
-            Bukkit.getPluginManager().callEvent(event);
-
-            if (!event.isCancelled()) {
-                return target.damageEntity(damagesource, event.getDamage());
-            }
-        } else {
-            // Other entities have their events (if any) handled in damageEntity
-            return target.damageEntity(damagesource, damage);
-        }
-
-        return !projectile.doesBounce();
     }
 
     public static void handleBlockGrowEvent(World world, int x, int y, int z, int type, int data) {
