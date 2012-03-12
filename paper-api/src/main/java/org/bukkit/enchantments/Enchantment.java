@@ -160,7 +160,16 @@ public abstract class Enchantment {
     public abstract EnchantmentTarget getItemTarget();
 
     /**
-     * Checks if this Enchantment may be applied to the given {@link ItemStack}
+     * Check if this enchantment conflicts with another enchantment.
+     *
+     * @param other The enchantment to check against
+     * @return True if there is a conflict.
+     */
+    public abstract boolean conflictsWith(Enchantment other);
+
+    /**
+     * Checks if this Enchantment may be applied to the given {@link ItemStack}.
+     * This does not check if it conflicts with any enchantmentds already applied to the item.
      *
      * @param item Item to test
      * @return True if the enchantment may be applied, otherwise False

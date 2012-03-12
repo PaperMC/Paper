@@ -47,4 +47,9 @@ public class TestEnchantment extends Enchantment {
         return true;
     }
 
+    @Override
+    public boolean conflictsWith(Enchantment other) {
+        return false;
+    }
+
 }
