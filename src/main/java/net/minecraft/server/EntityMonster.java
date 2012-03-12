@@ -1,11 +1,6 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import org.bukkit.Bukkit;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityTargetEvent;
-// CraftBukkit end
+import org.bukkit.event.entity.EntityTargetEvent; // CraftBukkit
 
 public abstract class EntityMonster extends EntityCreature implements IMonster {
 
@@ -81,24 +76,6 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
         if (this.hasEffect(MobEffectList.WEAKNESS)) {
             i -= 2 << this.getEffect(MobEffectList.WEAKNESS).getAmplifier();
         }
-
-        // CraftBukkit start - this is still duplicated here and EntityHuman because it's possible for lastDamage EntityMonster
-        // to damage another EntityMonster, and we want to catch those events.
-        // This does not fire events for slime attacks, av they're not lastDamage EntityMonster.
-        if (entity instanceof EntityLiving && !(entity instanceof EntityHuman)) {
-            org.bukkit.entity.Entity damagee = (entity == null) ? null : entity.getBukkitEntity();
-
-            EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(this.getBukkitEntity(), damagee, EntityDamageEvent.DamageCause.ENTITY_ATTACK, this.damage);
-            Bukkit.getPluginManager().callEvent(event);
-            i = event.getDamage();
-
-            if (!event.isCancelled()) {
-                return entity.damageEntity(DamageSource.mobAttack(this), i);
-            }
-
-            return false;
-        }
-        // CraftBukkit end
 
         return entity.damageEntity(DamageSource.mobAttack(this), i);
     }

@@ -184,8 +184,7 @@ public class EntityFishingHook extends Entity {
 
             if (movingobjectposition != null) {
                 if (movingobjectposition.entity != null) {
-                    // CraftBukkit - entity.damageEntity -> event function
-                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleProjectileEvent((org.bukkit.entity.Projectile) this.getBukkitEntity(), entity, DamageSource.projectile(this, this.owner), 0)) {
+                    if (movingobjectposition.entity.damageEntity(DamageSource.projectile(this, this.owner), 0)) {
                         this.hooked = movingobjectposition.entity;
                     }
                 } else {

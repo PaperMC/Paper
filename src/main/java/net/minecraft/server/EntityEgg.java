@@ -23,13 +23,11 @@ public class EntityEgg extends EntityProjectile {
     }
 
     protected void a(MovingObjectPosition movingobjectposition) {
-        // CraftBukkit start
-        if (movingobjectposition.entity != null) {
-            if (org.bukkit.craftbukkit.event.CraftEventFactory.handleProjectileEvent((org.bukkit.entity.Projectile) this.getBukkitEntity(), movingobjectposition.entity, DamageSource.projectile(this, this.shooter), 0)) {
-                ; // Original code does nothing *yet*
-            }
+        if (movingobjectposition.entity != null && movingobjectposition.entity.damageEntity(DamageSource.projectile(this, this.shooter), 0)) {
+            ;
         }
 
+        // CraftBukkit start
         boolean hatching = !this.world.isStatic && this.random.nextInt(8) == 0;
         int numHatching = (this.random.nextInt(32) == 0) ? 4 : 1;
         if (!hatching) {

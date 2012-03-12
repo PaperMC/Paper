@@ -5,7 +5,6 @@ import java.util.List;
 // CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.entity.Explosive;
-import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.ExplosionPrimeEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 // CraftBukkit end
@@ -137,6 +136,12 @@ public class EntityFireball extends Entity {
 
             if (movingobjectposition != null) {
                 this.a(movingobjectposition);
+                // CraftBukkit start
+                if (this.dead) {
+                    ProjectileHitEvent phe = new ProjectileHitEvent((org.bukkit.entity.Projectile) this.getBukkitEntity());
+                    this.world.getServer().getPluginManager().callEvent(phe);
+                }
+                // CraftBukkit end
             }
 
             this.locX += this.motX;
@@ -189,30 +194,18 @@ public class EntityFireball extends Entity {
 
     protected void a(MovingObjectPosition movingobjectposition) {
         if (!this.world.isStatic) {
-            // CraftBukkit start
-            Projectile projectile = (Projectile) this.getBukkitEntity();
-            ProjectileHitEvent phe = new ProjectileHitEvent(projectile);
-            this.world.getServer().getPluginManager().callEvent(phe);
-            // CraftBukkit end
-            if (!this.world.isStatic) {
-                // CraftBukkit start
-                if (movingobjectposition.entity != null) {
-                    if (org.bukkit.craftbukkit.event.CraftEventFactory.handleProjectileEvent(projectile, movingobjectposition.entity, DamageSource.projectile(this, this.shooter), 0)) {
-                        ;
-                    }
-                }
-
-                ExplosionPrimeEvent event = new ExplosionPrimeEvent((Explosive) CraftEntity.getEntity(this.world.getServer(), this));
-                this.world.getServer().getPluginManager().callEvent(event);
-
-                if (!event.isCancelled()) {
-                    // give 'this' instead of (Entity) null so we know what causes the damage
-                    this.world.createExplosion(this, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire());
-                }
-                // CraftBukkit end
+            if (movingobjectposition.entity != null && movingobjectposition.entity.damageEntity(DamageSource.fireball(this, this.shooter), 4)) {
+                ;
             }
+            // CraftBukkit start
+            ExplosionPrimeEvent event = new ExplosionPrimeEvent((Explosive) CraftEntity.getEntity(this.world.getServer(), this));
+            this.world.getServer().getPluginManager().callEvent(event);
 
-            // this.world.createExplosion((Entity) null, this.locX, this.locY, this.locZ, 1.0F, true); // CraftBukkit
+            if (!event.isCancelled()) {
+                // give 'this' instead of (Entity) null so we know what causes the damage
+                this.world.createExplosion(this, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire());
+            }
+            // CraftBukkit end
             this.die();
         }
     }

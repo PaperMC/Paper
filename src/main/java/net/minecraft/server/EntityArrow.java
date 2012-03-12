@@ -221,8 +221,8 @@ public class EntityArrow extends Entity {
                         }
                         // CraftBukkit end
                     }
-                    // CraftBukkit - entity.damageEntity -> event function
-                    if (org.bukkit.craftbukkit.event.CraftEventFactory.handleProjectileEvent(projectile, entity, damagesource, l)) {
+
+                    if (movingobjectposition.entity.damageEntity(damagesource, l)) {
                         if (movingobjectposition.entity instanceof EntityLiving) {
                             ++((EntityLiving) movingobjectposition.entity).aI;
                             if (this.n > 0) {

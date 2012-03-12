@@ -1,12 +1,6 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Projectile;
-import org.bukkit.event.entity.EntityCombustByEntityEvent;
-import org.bukkit.event.entity.ProjectileHitEvent;
-import org.bukkit.plugin.PluginManager;
-// CraftBukkit end
+import org.bukkit.event.entity.EntityCombustByEntityEvent; // CraftBukkit
 
 public class EntitySmallFireball extends EntityFireball {
 
@@ -27,26 +21,14 @@ public class EntitySmallFireball extends EntityFireball {
 
     protected void a(MovingObjectPosition movingobjectposition) {
         if (!this.world.isStatic) {
-            // CraftBukkit start - projectile hit event
-            Projectile projectile = (Projectile) this.getBukkitEntity();
-            ProjectileHitEvent phe = new ProjectileHitEvent(projectile);
-            final PluginManager pluginManager = Bukkit.getPluginManager();
-            pluginManager.callEvent(phe);
-            // CraftBukkit end
-            final Entity movingEntity = movingobjectposition.entity;
-            if (movingEntity != null) {
-                // CraftBukkit start - entity damage by entity event + combust event
-                if (!movingEntity.isFireproof()) { // check if not fireproof
-                    org.bukkit.entity.Entity damagee = movingEntity.getBukkitEntity();
+            if (movingobjectposition.entity != null) {
+                if (!movingobjectposition.entity.isFireproof() && movingobjectposition.entity.damageEntity(DamageSource.fireball(this, this.shooter), 5)) {
+                    // CraftBukkit start - entity damage by entity event + combust event
+                    EntityCombustByEntityEvent event = new EntityCombustByEntityEvent((org.bukkit.entity.Projectile) this.getBukkitEntity(), movingobjectposition.entity.getBukkitEntity(), 5);
+                    movingobjectposition.entity.world.getServer().getPluginManager().callEvent(event);
 
-                    if (org.bukkit.craftbukkit.event.CraftEventFactory.handleProjectileEvent(projectile, movingobjectposition.entity, DamageSource.projectile(this, this.shooter), 0)) {
-                        // if the fireball 'sticks', ignite the target
-                        EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(projectile, damagee, 5);
-                        pluginManager.callEvent(combustEvent);
-
-                        if (!combustEvent.isCancelled()) {
-                            movingEntity.setOnFire(combustEvent.getDuration());
-                        }
+                    if (!event.isCancelled()) {
+                        movingobjectposition.entity.setOnFire(event.getDuration());
                     }
                     // CraftBukkit end
                 }

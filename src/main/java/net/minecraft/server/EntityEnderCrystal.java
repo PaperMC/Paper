@@ -50,6 +50,11 @@ public class EntityEnderCrystal extends Entity {
             this.b = 0;
             if (this.b <= 0) {
                 if (!this.world.isStatic) {
+                    // CraftBukkit start - All non-living entities need this
+                    if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, i)) {
+                        return false;
+                    }
+                    // CraftBukkit end
                     this.die();
                     this.world.explode(this, this.locX, this.locY, this.locZ, 6.0F); // CraftBukkit - (Entity) null -> this.
                 } else {

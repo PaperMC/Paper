@@ -602,6 +602,16 @@ public abstract class EntityLiving extends Entity {
                 this.aE = 1.5F;
                 boolean flag = true;
 
+                // CraftBukkit start
+                if (damagesource instanceof EntityDamageSource) {
+                    org.bukkit.event.entity.EntityDamageEvent event = CraftEventFactory.handleEntityDamageEvent(this, damagesource, i);
+                    if (event.isCancelled()) {
+                        return false;
+                    }
+                    i = event.getDamage();
+                }
+                // CraftBukkit end
+
                 if ((float) this.noDamageTicks > (float) this.maxNoDamageTicks / 2.0F) {
                     if (i <= this.lastDamage) {
                         return false;
@@ -829,7 +839,6 @@ public abstract class EntityLiving extends Entity {
 
                 this.damageEntity(DamageSource.FALL, i);
             }
-
             // CraftBukkit end
             int j = this.world.getTypeId(MathHelper.floor(this.locX), MathHelper.floor(this.locY - 0.20000000298023224D - (double) this.height), MathHelper.floor(this.locZ));
 

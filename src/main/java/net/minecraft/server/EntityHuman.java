@@ -9,15 +9,10 @@ import org.bukkit.craftbukkit.entity.CraftItem;
 import org.bukkit.craftbukkit.TrigMath;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.EntityCombustByEntityEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.player.PlayerBedEnterEvent;
 import org.bukkit.event.player.PlayerBedLeaveEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
-import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason;
 // CraftBukkit end
 
 public abstract class EntityHuman extends EntityLiving {
@@ -309,7 +304,7 @@ public abstract class EntityHuman extends EntityLiving {
 
         if (this.world.difficulty == 0 && this.getHealth() < this.getMaxHealth() && this.ticksLived % 20 * 12 == 0) {
             // CraftBukkit - added regain reason of "REGEN" for filtering purposes.
-            this.heal(1, RegainReason.REGEN);
+            this.heal(1, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.REGEN);
         }
 
         this.inventory.i();
@@ -593,27 +588,6 @@ public abstract class EntityHuman extends EntityLiving {
                     }
 
                     if (entity1 instanceof EntityLiving) {
-                        // CraftBukkit start - this is here instead of EntityMonster because EntityLiving(s) that aren't monsters
-                        // also damage the player in this way. For example, EntitySlime.
-
-                        // We handle projectiles in their individual classes!
-                        boolean isProjectile = damagesource instanceof EntityDamageSourceIndirect && ((EntityDamageSourceIndirect) damagesource).getProximateDamageSource().getBukkitEntity() instanceof Projectile;
-
-                        if (!isProjectile) {
-                            org.bukkit.entity.Entity damager = ((Entity) entity1).getBukkitEntity();
-                            org.bukkit.entity.Entity damagee = this.getBukkitEntity();
-
-                            EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(damager, damagee, EntityDamageEvent.DamageCause.ENTITY_ATTACK, i);
-                            Bukkit.getPluginManager().callEvent(event);
-
-                            if (event.isCancelled() || event.getDamage() == 0) {
-                                return false;
-                            }
-
-                            i = event.getDamage();
-                        }
-                        // CraftBukkit end
-
                         this.a((EntityLiving) entity1, false);
                     }
 
@@ -770,22 +744,6 @@ public abstract class EntityHuman extends EntityLiving {
                 if (flag) {
                     i += this.random.nextInt(i / 2 + 2);
                 }
-
-                // CraftBukkit start - Don't call the event when the entity is human since it will be called with damageEntity
-                if ((entity instanceof EntityLiving || entity instanceof EntityComplexPart || entity instanceof EntityEnderCrystal) && !(entity instanceof EntityHuman)) {
-                    org.bukkit.entity.Entity damager = this.getBukkitEntity();
-                    org.bukkit.entity.Entity damagee = (entity == null) ? null : entity.getBukkitEntity();
-
-                    EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(damager, damagee, EntityDamageEvent.DamageCause.ENTITY_ATTACK, i);
-                    Bukkit.getPluginManager().callEvent(event);
-
-                    if (event.isCancelled() || event.getDamage() == 0) {
-                        return;
-                    }
-
-                    i = event.getDamage();
-                }
-                // CraftBukkit end
 
                 i += k;
                 boolean flag1 = entity.damageEntity(DamageSource.playerAttack(this), i);
