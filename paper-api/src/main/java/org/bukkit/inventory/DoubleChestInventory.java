@@ -1,5 +1,7 @@
 package org.bukkit.inventory;
 
+import org.bukkit.block.DoubleChest;
+
 public interface DoubleChestInventory extends Inventory {
     /**
      * Get the left half of this double chest.
@@ -12,4 +14,6 @@ public interface DoubleChestInventory extends Inventory {
      * @return The right side inventory
      */
     Inventory getRightSide();
+
+    DoubleChest getHolder();
 }
