@@ -491,4 +491,11 @@ public class CraftEventFactory {
 
         return CraftItemStack.createNMSItemStack(bitem);
     }
+
+    public static ProjectileLaunchEvent callProjectileLaunchEvent(Entity entity) {
+        Projectile bukkitEntity = (Projectile) entity.getBukkitEntity();
+        ProjectileLaunchEvent event = new ProjectileLaunchEvent(bukkitEntity);
+        Bukkit.getPluginManager().callEvent(event);
+        return event;
+    }
 }
