@@ -139,4 +139,11 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, Permissible, Inv
      * @param mode New game mode
      */
     public void setGameMode(GameMode mode);
+
+    /**
+     * Check if the player is currently blocking (ie with a sword).
+     *
+     * @return Whether they are blocking.
+     */
+    public boolean isBlocking();
 }
