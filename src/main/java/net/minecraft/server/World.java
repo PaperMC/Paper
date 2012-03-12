@@ -897,6 +897,11 @@ public class World implements IBlockAccess {
             if (event.isCancelled()) {
                 return false;
             }
+        } else if (entity.getBukkitEntity() instanceof org.bukkit.entity.Projectile) {
+            // Not all projectiles extend EntityProjectile, so check for Bukkit interface instead
+            if (CraftEventFactory.callProjectileLaunchEvent(entity).isCancelled()) {
+                return false;
+            }
         }
         // CraftBukkit end
 
