@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
+import org.bukkit.block.DoubleChest;
 import org.bukkit.inventory.DoubleChestInventory;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -49,5 +50,10 @@ public class CraftInventoryDoubleChest extends CraftInventory implements DoubleC
             System.arraycopy(items, left.getSize(), rightItems, 0, Math.min(right.getSize(), items.length - left.getSize()));
             right.setContents(rightItems);
         }
+    }
+
+    @Override
+    public DoubleChest getHolder() {
+        return new DoubleChest(this);
     }
 }
