@@ -30,11 +30,11 @@ public class CraftItemStack extends ItemStack {
 
     /* 'Overwritten' constructors from ItemStack, yay for Java sucking */
     public CraftItemStack(final int type) {
-        this(type, 0);
+        this(type, 1);
     }
 
     public CraftItemStack(final Material type) {
-        this(type, 0);
+        this(type, 1);
     }
 
     public CraftItemStack(final int type, final int amount) {
