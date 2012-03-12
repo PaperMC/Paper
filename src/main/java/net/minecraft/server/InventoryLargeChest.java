@@ -43,7 +43,7 @@ public class InventoryLargeChest implements IInventory {
     }
 
     public InventoryHolder getOwner() {
-        return null; // Double chests technically have multiple owners, so there's no sensible way to pick one
+        return null; // This method won't be called since CraftInventoryDoubleChest doesn't defer to here
     }
     // CraftBukkit end
 
