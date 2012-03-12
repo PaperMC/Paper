@@ -20,11 +20,11 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
     private Map<Enchantment, Integer> enchantments = new HashMap<Enchantment, Integer>();
 
     public ItemStack(final int type) {
-        this(type, 0);
+        this(type, 1);
     }
 
     public ItemStack(final Material type) {
-        this(type, 0);
+        this(type, 1);
     }
 
     public ItemStack(final int type, final int amount) {
