@@ -116,4 +116,16 @@ public class CraftEnchantment extends Enchantment {
 
         return null;
     }
+
+    @Override
+    public boolean conflictsWith(Enchantment other) {
+        if (other instanceof EnchantmentWrapper) {
+            other = ((EnchantmentWrapper) other).getEnchantment();
+        }
+        if (!(other instanceof CraftEnchantment)) {
+            return false;
+        }
+        CraftEnchantment ench = (CraftEnchantment) other;
+        return !target.a(ench.target);
+    }
 }
