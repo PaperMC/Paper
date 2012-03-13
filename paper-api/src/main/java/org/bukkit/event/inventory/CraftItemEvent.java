@@ -1,6 +1,7 @@
 package org.bukkit.event.inventory;
 
 import org.bukkit.event.inventory.InventoryType.SlotType;
+import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.Recipe;
 
@@ -17,5 +18,10 @@ public class CraftItemEvent extends InventoryClickEvent {
      */
     public Recipe getRecipe() {
         return recipe;
+    }
+
+    @Override
+    public CraftingInventory getInventory() {
+        return (CraftingInventory) super.getInventory();
     }
 }
