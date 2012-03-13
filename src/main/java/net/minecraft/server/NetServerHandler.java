@@ -618,6 +618,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             if (packet14blockdig.e == 0) {
                 // CraftBukkit
                 if (i1 < this.server.getSpawnRadius() && !flag) {
+                    CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, i, j, k, l, this.player.inventory.getItemInHand());
                     this.player.netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, worldserver));
                 } else {
                     this.player.itemInWorldManager.dig(i, j, k, packet14blockdig.face);
