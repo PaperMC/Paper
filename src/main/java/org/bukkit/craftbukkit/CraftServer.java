@@ -120,7 +120,7 @@ import com.avaje.ebeaninternal.server.lib.sql.TransactionIsolation;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MapMaker;
 
-import jline.ConsoleReader;
+import jline.console.ConsoleReader;
 
 public final class CraftServer implements Server {
     private final String serverName = "CraftBukkit";

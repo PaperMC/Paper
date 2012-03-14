@@ -21,7 +21,7 @@ public class ThreadCommandReader extends Thread {
         }
         // CraftBukkit end
 
-        jline.ConsoleReader bufferedreader = this.server.reader; // CraftBukkit
+        jline.console.ConsoleReader bufferedreader = this.server.reader; // CraftBukkit
         String s = null;
 
         try {
