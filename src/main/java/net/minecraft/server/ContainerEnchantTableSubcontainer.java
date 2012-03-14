@@ -38,7 +38,7 @@ public class ContainerEnchantTableSubcontainer implements IInventory {
     }
 
     public InventoryHolder getOwner() {
-        return null; // TODO: Enchanting tables don't really have an owner? Maybe they should?
+        return this.player;
     }
 
     public void setMaxStackSize(int size) {

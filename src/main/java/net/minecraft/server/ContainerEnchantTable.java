@@ -50,7 +50,10 @@ public class ContainerEnchantTable extends Container {
         for (l = 0; l < 9; ++l) {
             this.a(new Slot(playerinventory, l, 8 + l * 18, 142));
         }
-        player = (Player) playerinventory.player.bukkitEntity; // CraftBukkit
+        // CraftBukkit start
+        player = (Player) playerinventory.player.bukkitEntity;
+        enchantSlots.player = player;
+        // CraftBukkit end
     }
 
     public void addSlotListener(ICrafting icrafting) {

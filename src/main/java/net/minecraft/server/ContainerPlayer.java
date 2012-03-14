@@ -21,7 +21,7 @@ public class ContainerPlayer extends Container {
 
     public ContainerPlayer(PlayerInventory playerinventory, boolean flag) {
         this.resultInventory = new InventoryCraftResult(); // CraftBukkit - moved to before InventoryCrafting construction
-        this.craftInventory = new InventoryCrafting(this, 2, 2);
+        this.craftInventory = new InventoryCrafting(this, 2, 2, playerinventory.player); // CraftBukkit - pass player
         this.craftInventory.resultInventory = this.resultInventory; // CraftBukkit - let InventoryCrafting know about its result slot
         this.player = playerinventory; // CraftBukkit - save player
         this.c = false;
