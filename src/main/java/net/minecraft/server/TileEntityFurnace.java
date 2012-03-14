@@ -22,6 +22,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
 
     // CraftBukkit start
     private int lastTick = (int) (System.currentTimeMillis() / 50);
+    private int maxStack = MAX_STACK;
     public List<HumanEntity> transaction = new ArrayList<HumanEntity>();
 
     public ItemStack[] getContents() {
@@ -38,6 +39,10 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
 
     public List<HumanEntity> getViewers() {
         return transaction;
+    }
+
+    public void setMaxStackSize(int size) {
+        maxStack = size;
     }
     // CraftBukkit end
 
@@ -134,7 +139,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
     }
 
     public int getMaxStackSize() {
-        return 64;
+        return maxStack; // CraftBukkit
     }
 
     public boolean isBurning() {

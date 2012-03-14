@@ -17,6 +17,7 @@ public class TileEntityDispenser extends TileEntity implements IInventory {
 
     // CraftBukkit start
     public List<HumanEntity> transaction = new ArrayList<HumanEntity>();
+    private int maxStack = MAX_STACK;
 
     public ItemStack[] getContents() {
         return this.items;
@@ -32,6 +33,10 @@ public class TileEntityDispenser extends TileEntity implements IInventory {
 
     public List<HumanEntity> getViewers() {
         return transaction;
+    }
+
+    public void setMaxStackSize(int size) {
+        maxStack = size;
     }
     // CraftBukkit end
 
@@ -151,7 +156,7 @@ public class TileEntityDispenser extends TileEntity implements IInventory {
     }
 
     public int getMaxStackSize() {
-        return 64;
+        return maxStack; // CraftBukkit
     }
 
     public boolean a(EntityHuman entityhuman) {

@@ -20,6 +20,7 @@ public class PlayerInventory implements IInventory {
 
     // CraftBukkit start
     public List<HumanEntity> transaction = new ArrayList<HumanEntity>();
+    private int maxStack = MAX_STACK;
 
     public ItemStack[] getContents() {
         return this.items;
@@ -43,6 +44,10 @@ public class PlayerInventory implements IInventory {
 
     public InventoryHolder getOwner() {
         return this.player.getBukkitEntity();
+    }
+
+    public void setMaxStackSize(int size) {
+        maxStack = size;
     }
     // CraftBukkit end
 
@@ -350,7 +355,7 @@ public class PlayerInventory implements IInventory {
     }
 
     public int getMaxStackSize() {
-        return 64;
+        return maxStack; // CraftBukkit
     }
 
     public int a(Entity entity) {

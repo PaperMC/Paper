@@ -44,7 +44,8 @@ public class EntityMinecart extends Entity implements IInventory {
     private double flyingY = 0.95;
     private double flyingZ = 0.95;
     public double maxSpeed = 0.4D;
-    public List<HumanEntity> transaction = new ArrayList<HumanEntity>(); // CraftBukkit
+    public List<HumanEntity> transaction = new ArrayList<HumanEntity>();
+    private int maxStack = MAX_STACK;
 
     public ItemStack[] getContents() {
         return this.items;
@@ -66,6 +67,10 @@ public class EntityMinecart extends Entity implements IInventory {
         org.bukkit.entity.Entity cart = getBukkitEntity();
         if(cart instanceof InventoryHolder) return (InventoryHolder) cart;
         return null;
+    }
+
+    public void setMaxStackSize(int size) {
+        maxStack = size;
     }
     // CraftBukkit end
 
@@ -177,7 +182,7 @@ public class EntityMinecart extends Entity implements IInventory {
 
                                 itemstack.count -= k;
                                 // CraftBukkit - include enchantments in the new itemstack
-                                EntityItem entityitem = new EntityItem(this.world, this.locX + (double) f, this.locY + (double) f1, this.locZ + (double) f2, new ItemStack(itemstack.id, k, itemstack.getData(), itemstack.getEnchantments())); 
+                                EntityItem entityitem = new EntityItem(this.world, this.locX + (double) f, this.locY + (double) f1, this.locZ + (double) f2, new ItemStack(itemstack.id, k, itemstack.getData(), itemstack.getEnchantments()));
                                 float f3 = 0.05F;
 
                                 entityitem.motX = (double) ((float) this.random.nextGaussian() * f3);
@@ -874,7 +879,7 @@ public class EntityMinecart extends Entity implements IInventory {
     }
 
     public int getMaxStackSize() {
-        return 64;
+        return maxStack; // CraftBukkit
     }
 
     public void update() {}

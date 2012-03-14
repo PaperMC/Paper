@@ -7,10 +7,11 @@ public class ContainerEnchantTableInventory extends ContainerEnchantTableSubcont
     ContainerEnchantTableInventory(ContainerEnchantTable containerenchanttable, String s, int i) {
         super(s, i);
         this.enchantTable = containerenchanttable;
+        super.setMaxStackSize(1); // CraftBukkit
     }
 
     public int getMaxStackSize() {
-        return 1;
+        return super.getMaxStackSize(); // CraftBukkit
     }
 
     public void update() {

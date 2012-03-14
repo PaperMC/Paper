@@ -34,13 +34,17 @@ public interface IInventory {
 
     // CraftBukkit start
     ItemStack[] getContents();
-    
+
     void onOpen(CraftHumanEntity who);
-    
+
     void onClose(CraftHumanEntity who);
-    
+
     List<HumanEntity> getViewers();
-    
+
     InventoryHolder getOwner();
+
+    void setMaxStackSize(int size);
+
+    int MAX_STACK = 64;
     //CraftBukkit end
 }

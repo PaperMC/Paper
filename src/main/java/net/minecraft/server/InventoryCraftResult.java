@@ -14,6 +14,8 @@ public class InventoryCraftResult implements IInventory {
     private ItemStack[] items = new ItemStack[1];
 
     // CraftBukkit start
+    private int maxStack = MAX_STACK;
+
     public ItemStack[] getContents() {
         return this.items;
     }
@@ -26,6 +28,10 @@ public class InventoryCraftResult implements IInventory {
     public void onClose(CraftHumanEntity who) {}
     public List<HumanEntity> getViewers() {
         return new ArrayList<HumanEntity>();
+    }
+
+    public void setMaxStackSize(int size) {
+        maxStack = size;
     }
     // CraftBukkit end
 
@@ -70,7 +76,7 @@ public class InventoryCraftResult implements IInventory {
     }
 
     public int getMaxStackSize() {
-        return 64;
+        return maxStack; // CraftBukkit
     }
 
     public void update() {}
