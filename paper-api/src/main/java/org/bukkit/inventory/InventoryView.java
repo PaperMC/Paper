@@ -88,6 +88,9 @@ public abstract class InventoryView {
 
     /**
      * Sets one item in this inventory view by its raw slot ID.
+     * <p>
+     * Note: If slot ID -999 is chosen, it may be expected that the item is
+     * dropped on the ground. This is not required behaviour, however.
      * @param slot The ID as returned by InventoryClickEvent.getRawSlot()
      * @param item The new item to put in the slot, or null to clear it.
      */
@@ -98,6 +101,8 @@ public abstract class InventoryView {
             } else {
                 getBottomInventory().setItem(convertSlot(slot),item);
             }
+        } else {
+            getPlayer().getWorld().dropItemNaturally(getPlayer().getLocation(), item);
         }
     }
 
