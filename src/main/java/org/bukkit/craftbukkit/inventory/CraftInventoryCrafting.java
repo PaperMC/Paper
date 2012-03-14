@@ -114,7 +114,7 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
                 if (item == null || item.getTypeId() <= 0) {
                     mcItems[i] = null;
                 } else {
-                    mcItems[i] = new net.minecraft.server.ItemStack( item.getTypeId(), item.getAmount(), item.getDurability());
+                    mcItems[i] = CraftItemStack.createNMSItemStack(item);
                 }
             } else {
                 mcItems[i] = null;

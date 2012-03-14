@@ -266,7 +266,7 @@ public class CraftInventory implements Inventory {
                     } else {
                         // More than a single stack!
                         if (item.getAmount() > getMaxItemStack()) {
-                            CraftItemStack stack = new CraftItemStack(item.getTypeId(), getMaxItemStack(), item.getDurability());
+                            CraftItemStack stack = new CraftItemStack(item);
                             stack.addUnsafeEnchantments(item.getEnchantments());
                             setItem(firstFree, stack);
                             item.setAmount(item.getAmount() - getMaxItemStack());
