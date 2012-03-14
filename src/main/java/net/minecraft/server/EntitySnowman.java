@@ -5,6 +5,7 @@ import java.util.List;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.block.EntityBlockFormEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 // CraftBukkit end
 
 public class EntitySnowman extends EntityGolem {
@@ -39,7 +40,12 @@ public class EntitySnowman extends EntityGolem {
         int j = MathHelper.floor(this.locZ);
 
         if (this.world.getBiome(i, j).h() > 1.0F) {
-            this.damageEntity(DamageSource.BURN, 1);
+            EntityDamageEvent event = new EntityDamageEvent(this.getBukkitEntity(), EntityDamageEvent.DamageCause.FIRE_TICK, 1);
+            this.world.getServer().getPluginManager().callEvent(event);
+
+            if (!event.isCancelled()) {
+                this.damageEntity(DamageSource.BURN, event.getDamage());
+            }
         }
 
         for (i = 0; i < 4; ++i) {
