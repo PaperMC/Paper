@@ -21,6 +21,26 @@ public interface Inventory extends Iterable<ItemStack> {
     public int getSize();
 
     /**
+     * @return The maximum stack size for items in this inventory.
+     */
+    public int getMaxStackSize();
+
+    /**
+     * This method allows you to change the maximum stack size for an inventory.
+     * <p><b>Caveats:</b>
+     * <ul>
+     * <li>Not all inventories respect this value.
+     * <li>Stacks larger than 127 may be clipped when the world is saved.
+     * <li>This value is not guaranteed to be preserved; be sure to set it before every time
+     * you want to set a slot over the max stack size.
+     * <li>Stacks larger than the default max size for this type of inventory may not display
+     * correctly in the client.
+     * </ul>
+     * @param size The new maximum stack size for items in this inventory.
+     */
+    public void setMaxStackSize(int size);
+
+    /**
      * Return the name of the inventory
      *
      * @return The inventory name
