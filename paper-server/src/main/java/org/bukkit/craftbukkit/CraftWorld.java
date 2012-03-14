@@ -369,19 +369,45 @@ public class CraftWorld implements World {
     }
 
     public boolean generateTree(Location loc, TreeType type, BlockChangeDelegate delegate) {
+        BlockSapling.TreeGenerator gen;
         switch (type) {
         case BIG_TREE:
-            return new WorldGenBigTree(false).generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+            gen = new WorldGenBigTree(true);
+            break;
         case BIRCH:
-            return new WorldGenForest(false).generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+            gen = new WorldGenForest(true);
+            break;
         case REDWOOD:
-            return new WorldGenTaiga2(false).generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+            gen = new WorldGenTaiga2(true);
+            break;
         case TALL_REDWOOD:
-            return new WorldGenTaiga1().generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+            gen = new WorldGenTaiga1();
+            break;
+        case JUNGLE:
+            gen = new WorldGenMegaTree(true, 10 + rand.nextInt(20), 3, 3);
+            break;
+        case SMALL_JUNGLE:
+            gen = new WorldGenTrees(true, 4 + rand.nextInt(7), 3, 3, false);
+            break;
+        case JUNGLE_BUSH:
+            gen = new WorldGenGroundBush(3, 0);
+            break;
+        case RED_MUSHROOM:
+            gen = new WorldGenHugeMushroom(1);
+            break;
+        case BROWN_MUSHROOM:
+            gen = new WorldGenHugeMushroom(0);
+            break;
+        case SWAMP:
+            gen = new WorldGenSwampTree();
+            break;
         case TREE:
         default:
-            return new WorldGenTrees(false).generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+            gen = new WorldGenTrees(true);
+            break;
         }
+
+        return gen.generate(delegate, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
     }
 
     public TileEntity getTileEntityAt(final int x, final int y, final int z) {
