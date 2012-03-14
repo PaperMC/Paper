@@ -4,7 +4,7 @@ import java.util.Random;
 
 import org.bukkit.BlockChangeDelegate; // CraftBukkit
 
-public class WorldGenGroundBush extends WorldGenerator {
+public class WorldGenGroundBush extends WorldGenerator implements BlockSapling.TreeGenerator { // CraftBukkit - add interface
 
     private int a;
     private int b;
@@ -49,8 +49,11 @@ public class WorldGenGroundBush extends WorldGenerator {
                     }
                 }
             }
+        // CraftBukkit start - return false if gen was unsuccessful
+        } else {
+            return false;
         }
-
+        // CraftBukkit end
         return true;
     }
 }

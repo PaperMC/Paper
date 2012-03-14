@@ -30,6 +30,14 @@ public class StructureGrowDelegate implements BlockChangeDelegate {
         return true;
     }
 
+    public boolean setTypeId(int x, int y, int z, int typeId) {
+        return setRawTypeId(x, y, z, typeId);
+    }
+
+    public boolean setTypeIdAndData(int x, int y, int z, int typeId, int data) {
+        return setRawTypeIdAndData(x, y, z, typeId, data);
+    }
+
     public int getTypeId(int x, int y, int z) {
         return world.getBlockTypeIdAt(x, y, z);
     }

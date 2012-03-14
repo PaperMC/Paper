@@ -78,7 +78,7 @@ public class BlockSapling extends BlockFlower {
             if (gen == null) {
                 j1 = 0;
                 i1 = 0;
-                treeType = TreeType.TREE;
+                treeType = TreeType.SMALL_JUNGLE;
                 gen = new WorldGenTrees(false, 4 + random.nextInt(7), 3, 3, false);
             }
         } else {
@@ -132,7 +132,7 @@ public class BlockSapling extends BlockFlower {
     }
 
     // CraftBukkit start
-    interface TreeGenerator {
+    public interface TreeGenerator {
 
         public boolean a(World world, Random random, int i, int j, int k);
 

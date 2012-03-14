@@ -2,6 +2,7 @@ package net.minecraft.server;
 
 import java.util.Random;
 // CraftBukkit start
+import org.bukkit.BlockChangeDelegate;
 import org.bukkit.Bukkit;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -9,7 +10,7 @@ import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.material.MaterialData;
 // CraftBukkit end
 
-public class WorldGenHugeMushroom extends WorldGenerator {
+public class WorldGenHugeMushroom extends WorldGenerator implements BlockSapling.TreeGenerator { // CraftBukkit - add interface
 
     private int a = -1;
 
@@ -22,12 +23,16 @@ public class WorldGenHugeMushroom extends WorldGenerator {
         super(false);
     }
 
-    // CraftBukkit start - delegate to grow()
+    // CraftBukkit start - delegate to generate() and use BlockChangeDelegate
     public boolean a(World world, Random random, int i, int j, int k) {
+        return grow((BlockChangeDelegate) world, random, i, j, k, null, null, null);
+    }
+
+    public boolean generate(BlockChangeDelegate world, Random random, int i, int j, int k) {
         return grow(world, random, i, j, k, null, null, null);
     }
 
-    public boolean grow(World world, Random random, int i, int j, int k, StructureGrowEvent event, ItemStack itemstack, CraftWorld bukkitWorld) {
+    public boolean grow(BlockChangeDelegate world, Random random, int i, int j, int k, StructureGrowEvent event, ItemStack itemstack, CraftWorld bukkitWorld) {
         // CraftBukkit end
         int l = random.nextInt(2);
 
@@ -71,12 +76,13 @@ public class WorldGenHugeMushroom extends WorldGenerator {
                 j1 = world.getTypeId(i, j - 1, k);
                 if (j1 != Block.DIRT.id && j1 != Block.GRASS.id && j1 != Block.MYCEL.id) {
                     return false;
-                } else if (!Block.BROWN_MUSHROOM.canPlace(world, i, j, k)) {
+                // CraftBukkit - Adjust canPlace check to handle non-World BlockChangeDelegates (orig check was: !Block.BROWN_MUSHROOM.canPlace(world, i, j, k))
+                } else if ((world.getTypeId(i, j, k) != 0 && !Block.byId[world.getTypeId(i, j, k)].material.isReplacable()) || (world instanceof World && !Block.BROWN_MUSHROOM.canPlace((World) world, i, j, k))) {
                     return false;
                 } else {
                     // CraftBukkit start
                     if (event == null) {
-                        world.setRawTypeIdAndData(i, j - 1, k, Block.DIRT.id, 0);
+                        this.setTypeAndData(world, i, j - 1, k, Block.DIRT.id, 0);
                     } else {
                         BlockState dirtState = bukkitWorld.getBlockAt(i, j - 1, k).getState();
                         dirtState.setTypeId(Block.DIRT.id);
@@ -164,7 +170,7 @@ public class WorldGenHugeMushroom extends WorldGenerator {
                                 if ((l2 != 0 || j >= j + i1 - 1) && !Block.n[world.getTypeId(i2, k1, k2)]) {
                                     // CraftBukkit start
                                     if (event == null) {
-                                        world.setRawTypeIdAndData(i2, k1, k2, Block.BIG_MUSHROOM_1.id + l, l2);
+                                       this.setTypeAndData(world, i2, k1, k2, Block.BIG_MUSHROOM_1.id + l, l2);
                                     } else {
                                         BlockState state = bukkitWorld.getBlockAt(i2, k1, k2).getState();
                                         state.setTypeId(Block.BIG_MUSHROOM_1.id + l);
@@ -182,7 +188,7 @@ public class WorldGenHugeMushroom extends WorldGenerator {
                         if (!Block.n[l1]) {
                             // CraftBukkit start
                             if (event == null) {
-                                world.setRawTypeIdAndData(i, j + k1, k, Block.BIG_MUSHROOM_1.id + l, 10);
+                                this.setTypeAndData(world, i, j + k1, k, Block.BIG_MUSHROOM_1.id + l, 10);
                             } else {
                                 BlockState state = bukkitWorld.getBlockAt(i, j + k1, k).getState();
                                 state.setTypeId(Block.BIG_MUSHROOM_1.id + l);
