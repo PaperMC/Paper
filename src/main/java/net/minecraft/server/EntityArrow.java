@@ -211,8 +211,9 @@ public class EntityArrow extends Entity {
                         damagesource = DamageSource.arrow(this, this.shooter);
                     }
 
+                    // CraftBukkit start - moved damage call
+                    if (movingobjectposition.entity.damageEntity(damagesource, l)) {
                     if (this.isBurning() && (!(movingobjectposition.entity instanceof EntityPlayer) || this.world.pvpMode)) { // CraftBukkit - abide by pvp setting if destination is a player.
-                        // CraftBukkit start
                         EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), 5);
                         Bukkit.getPluginManager().callEvent(combustEvent);
 
@@ -222,7 +223,7 @@ public class EntityArrow extends Entity {
                         // CraftBukkit end
                     }
 
-                    if (movingobjectposition.entity.damageEntity(damagesource, l)) {
+                    //if (movingobjectposition.entity.damageEntity(damagesource, l)) { // CraftBukkit
                         if (movingobjectposition.entity instanceof EntityLiving) {
                             ++((EntityLiving) movingobjectposition.entity).aI;
                             if (this.n > 0) {
