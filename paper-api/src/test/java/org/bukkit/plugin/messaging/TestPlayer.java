@@ -744,4 +744,8 @@ public class TestPlayer implements Player {
     public void abandonConversation(Conversation conversation, ConversationAbandonedEvent details) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
+
+    public boolean isBlocking() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }
