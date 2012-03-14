@@ -49,9 +49,11 @@ public class CraftInventoryView extends InventoryView {
 
     @Override
     public void setItem(int slot, ItemStack item) {
+        net.minecraft.server.ItemStack stack = CraftItemStack.createNMSItemStack(item);
         if (slot != -999) {
-            CraftItemStack stack = new CraftItemStack(item);
-            container.getSlot(slot).set(stack.getHandle());
+            container.getSlot(slot).set(stack);
+        } else {
+            player.getHandle().drop(stack);
         }
     }
 
