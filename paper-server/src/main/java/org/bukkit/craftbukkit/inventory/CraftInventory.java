@@ -412,4 +412,12 @@ public class CraftInventory implements Inventory {
     public InventoryHolder getHolder() {
         return inventory.getOwner();
     }
+
+    public int getMaxStackSize() {
+        return inventory.getMaxStackSize();
+    }
+
+    public void setMaxStackSize(int size) {
+        inventory.setMaxStackSize(size);
+    }
 }
