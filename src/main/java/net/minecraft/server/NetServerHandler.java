@@ -1147,8 +1147,8 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             SlotType type = CraftInventoryView.getSlotType(inventory, packet102windowclick.slot);
 
             InventoryClickEvent event;
-            if (inventory instanceof CraftingInventory) {
-                Recipe recipe = ((CraftingInventory)inventory.getTopInventory()).getRecipe();
+            if (packet102windowclick.slot == 0 && inventory.getTopInventory() instanceof CraftingInventory) {
+                Recipe recipe = ((CraftingInventory) inventory.getTopInventory()).getRecipe();
                 event = new CraftItemEvent(recipe, inventory, type, packet102windowclick.slot, packet102windowclick.button != 0, packet102windowclick.shift);
             } else {
                 event = new InventoryClickEvent(inventory, type, packet102windowclick.slot, packet102windowclick.button != 0, packet102windowclick.shift);
