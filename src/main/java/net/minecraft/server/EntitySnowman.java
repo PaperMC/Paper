@@ -33,7 +33,12 @@ public class EntitySnowman extends EntityGolem {
     public void e() {
         super.e();
         if (this.aS()) {
-            this.damageEntity(DamageSource.DROWN, 1);
+            EntityDamageEvent event = new EntityDamageEvent(this.getBukkitEntity(), EntityDamageEvent.DamageCause.DROWNING, 1);
+            this.world.getServer().getPluginManager().callEvent(event);
+
+            if (!event.isCancelled()) {
+                this.damageEntity(DamageSource.DROWN, event.getDamage());
+            }
         }
 
         int i = MathHelper.floor(this.locX);
