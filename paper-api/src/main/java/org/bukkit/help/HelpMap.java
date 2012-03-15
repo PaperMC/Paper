@@ -1,5 +1,6 @@
 package org.bukkit.help;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -20,6 +21,13 @@ public interface HelpMap {
      */
     public HelpTopic getHelpTopic(String topicName);
 
+    /**
+     * Returns a collection of all the registered help topics.
+     *
+     * @return All the registered help topics.
+     */
+    public Collection<HelpTopic> getHelpTopics();
+    
     /**
      * Adds a topic to the server's help index.
      *

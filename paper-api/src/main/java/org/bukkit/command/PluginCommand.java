@@ -5,7 +5,7 @@ import org.bukkit.plugin.Plugin;
 /**
  * Represents a {@link Command} belonging to a plugin
  */
-public final class PluginCommand extends Command {
+public final class PluginCommand extends Command implements PluginIdentifiableCommand {
     private final Plugin owningPlugin;
     private CommandExecutor executor;
 
