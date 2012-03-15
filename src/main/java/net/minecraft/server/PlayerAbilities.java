@@ -24,7 +24,7 @@ public class PlayerAbilities {
             NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("abilities");
 
             this.isInvulnerable = nbttagcompound1.getBoolean("invulnerable");
-            this.isFlying = nbttagcompound1.getBoolean("flying");
+            //this.isFlying = nbttagcompound1.getBoolean("flying"); // CraftBukkit - not fully implemented.
             this.canFly = nbttagcompound1.getBoolean("mayfly");
             this.canInstantlyBuild = nbttagcompound1.getBoolean("instabuild");
         }
