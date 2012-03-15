@@ -129,7 +129,7 @@ public final class CraftServer implements Server {
     private final ServicesManager servicesManager = new SimpleServicesManager();
     private final BukkitScheduler scheduler = new CraftScheduler();
     private final SimpleCommandMap commandMap = new SimpleCommandMap(this);
-    private final SimpleHelpMap helpMap = new SimpleHelpMap();
+    private final SimpleHelpMap helpMap = new SimpleHelpMap(this);
     private final StandardMessenger messenger = new StandardMessenger();
     private final PluginManager pluginManager = new SimplePluginManager(this, commandMap);
     protected final MinecraftServer console;
@@ -222,7 +222,7 @@ public final class CraftServer implements Server {
     public void enablePlugins(PluginLoadOrder type) {
         if (type == PluginLoadOrder.STARTUP) {
             helpMap.clear();
-            helpMap.initializeGeneralTopics(this);
+            helpMap.initializeGeneralTopics();
         }
 
         Plugin[] plugins = pluginManager.getPlugins();
@@ -237,7 +237,7 @@ public final class CraftServer implements Server {
             commandMap.registerServerAliases();
             loadCustomPermissions();
             DefaultPermissions.registerCorePermissions();
-            helpMap.initializeCommands(this);
+            helpMap.initializeCommands();
         }
     }
 
