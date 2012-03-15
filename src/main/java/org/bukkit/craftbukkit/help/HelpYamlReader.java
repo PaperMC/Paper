@@ -70,4 +70,8 @@ public class HelpYamlReader {
         }
         return amendments;
     }
+    
+    public List<String> getIgnoredPlugins() {
+        return helpYaml.getStringList("ignore-plugins");
+    }
 }
