@@ -2,11 +2,9 @@ package org.bukkit.craftbukkit.help;
 
 import com.google.common.base.Predicates;
 import com.google.common.collect.Collections2;
+import org.bukkit.ChatColor;
 import org.bukkit.Server;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.MultipleCommandAlias;
-import org.bukkit.command.PluginCommand;
+import org.bukkit.command.*;
 import org.bukkit.command.defaults.BukkitCommand;
 import org.bukkit.command.defaults.VanillaCommand;
 import org.bukkit.craftbukkit.CraftServer;
@@ -21,11 +19,13 @@ public class SimpleHelpMap implements HelpMap {
     
     private HelpTopic defaultTopic;
     private Map<String, HelpTopic> helpTopics;
+    private Set<HelpTopic> pluginIndexes; 
     private Map<Class, HelpTopicFactory<Command>> topicFactoryMap;
     private CraftServer server;
 
     public SimpleHelpMap(CraftServer server) {
-        helpTopics = new TreeMap<String, HelpTopic>(new HelpTopicComparator()); // Using a TreeMap for its explicit sorting on key
+        helpTopics = new TreeMap<String, HelpTopic>(new HelpTopicComparator.TopicNameComparator()); // Using a TreeMap for its explicit sorting on key
+        pluginIndexes = new TreeSet<HelpTopic>(new HelpTopicComparator());
         defaultTopic = new IndexHelpTopic("Index", null, null, Collections2.filter(helpTopics.values(), Predicates.not(Predicates.instanceOf(CommandAliasHelpTopic.class))));
         topicFactoryMap = new HashMap<Class, HelpTopicFactory<Command>>();
         this.server = server;
@@ -43,6 +43,10 @@ public class SimpleHelpMap implements HelpMap {
         }
 
         return null;
+    }
+
+    public Collection<HelpTopic> getHelpTopics() {
+        return helpTopics.values();
     }
 
     public synchronized void addTopic(HelpTopic topic) {
@@ -89,11 +93,13 @@ public class SimpleHelpMap implements HelpMap {
             // Register a topic
             for (Class c : topicFactoryMap.keySet()) {
                 if (c.isAssignableFrom(command.getClass())) {
-                    addTopic(topicFactoryMap.get(c).createTopic(command));
+                    HelpTopic t = topicFactoryMap.get(c).createTopic(command);
+                    if (t != null) addTopic(t);
                     continue outer;
                 }
                 if (command instanceof PluginCommand && c.isAssignableFrom(((PluginCommand)command).getExecutor().getClass())) {
-                    addTopic(topicFactoryMap.get(c).createTopic(command));
+                    HelpTopic t = topicFactoryMap.get(c).createTopic(command);
+                    if (t != null) addTopic(t);
                     continue outer;
                 }
             }
@@ -119,6 +125,15 @@ public class SimpleHelpMap implements HelpMap {
 
         // Add alias sub-index
         addTopic(new IndexHelpTopic("Aliases", "Lists command aliases", null, Collections2.filter(helpTopics.values(), Predicates.instanceOf(CommandAliasHelpTopic.class))));
+        
+        // Initialize plugin-level sub-topics
+        Map<String, Set<HelpTopic>> pluginIndexes = new HashMap<String, Set<HelpTopic>>();
+        fillPluginIndexes(pluginIndexes, server.getCommandMap().getCommands());
+        fillPluginIndexes(pluginIndexes, server.getCommandMap().getFallbackCommands());
+
+        for (Map.Entry<String, Set<HelpTopic>> entry : pluginIndexes.entrySet()) {
+            addTopic(new IndexHelpTopic(entry.getKey(), "All commands for " + entry.getKey(), null, entry.getValue(), ChatColor.GRAY + "Below is a list of all " + entry.getKey() + " commands:"));
+        }
 
         // Amend help topics from the help.yml file
         for (HelpTopicAmendment amendment : helpYamlReader.getTopicAmendments()) {
@@ -131,14 +146,36 @@ public class SimpleHelpMap implements HelpMap {
         }
     }
     
+    private void fillPluginIndexes(Map<String, Set<HelpTopic>> pluginIndexes, Collection<? extends Command> commands) {
+        for (Command command : commands) {
+            String pluginName = getCommandPluginName(command);
+            if (pluginName != null) {
+                HelpTopic topic = getHelpTopic("/" + command.getLabel());
+                if (topic != null) {
+                    if (!pluginIndexes.containsKey(pluginName)) {
+                        pluginIndexes.put(pluginName, new TreeSet<HelpTopic>(new HelpTopicComparator())); //keep things in topic order
+                    }
+                    pluginIndexes.get(pluginName).add(topic);
+                }
+            }
+        }
+    }
+    
+    private String getCommandPluginName(Command command) {
+        if (command instanceof BukkitCommand || command instanceof VanillaCommand) {
+            return "Bukkit";
+        }
+        if (command instanceof PluginIdentifiableCommand) {
+            return ((PluginIdentifiableCommand)command).getPlugin().getName();
+        }
+        return null;
+    }
+    
     private boolean commandInIgnoredPlugin(Command command, List<String> ignoredPlugins) {
-        if (command instanceof BukkitCommand && ignoredPlugins.contains("Bukkit")) {
+        if ((command instanceof BukkitCommand || command instanceof VanillaCommand) && ignoredPlugins.contains("Bukkit")) {
             return true;
         }
-        if (command instanceof VanillaCommand && ignoredPlugins.contains("Bukkit")) {
-            return true;
-        }
-        if (command instanceof PluginCommand && ignoredPlugins.contains(((PluginCommand)command).getPlugin().getName())) {
+        if (command instanceof PluginIdentifiableCommand && ignoredPlugins.contains(((PluginIdentifiableCommand)command).getPlugin().getName())) {
             return true;
         }
         return false;
