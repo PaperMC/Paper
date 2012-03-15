@@ -64,8 +64,8 @@ public class IndexHelpTopic extends HelpTopic {
                 line.append(topic.getShortText());
 
                 String lineStr = line.toString().replace("\n", ". ");
-                if (sender instanceof Player && lineStr.length() > ChatPaginator.AVERAGE_CHAT_PAGE_WIDTH) {
-                    sb.append(lineStr.substring(0, ChatPaginator.AVERAGE_CHAT_PAGE_WIDTH - 3));
+                if (sender instanceof Player && lineStr.length() > ChatPaginator.GUARANTEED_NO_WRAP_CHAT_PAGE_WIDTH) {
+                    sb.append(lineStr.substring(0, ChatPaginator.GUARANTEED_NO_WRAP_CHAT_PAGE_WIDTH - 3));
                     sb.append("...");
                 } else {
                     sb.append(lineStr);

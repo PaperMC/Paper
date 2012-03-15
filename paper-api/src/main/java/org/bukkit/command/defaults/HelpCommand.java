@@ -64,19 +64,22 @@ public class HelpCommand extends VanillaCommand {
         ChatPaginator.ChatPage page = ChatPaginator.paginate(topic.getFullText(sender), pageNumber, pageWidth, pageHeight);
 
         StringBuilder header = new StringBuilder();
-        header.append(ChatColor.GREEN);
-        header.append("===== Help: ");
+        header.append(ChatColor.YELLOW);
+        header.append("--------- ");
+        header.append(ChatColor.WHITE);
+        header.append("Help: ");
         header.append(topic.getName());
         header.append(" ");
         if (page.getTotalPages() > 1) {
             header.append("(");
             header.append(page.getPageNumber());
-            header.append(" of ");
+            header.append("/");
             header.append(page.getTotalPages());
             header.append(") ");
         }
+        header.append(ChatColor.YELLOW);
         for (int i = header.length(); i < ChatPaginator.GUARANTEED_NO_WRAP_CHAT_PAGE_WIDTH; i++) {
-            header.append("=");
+            header.append("-");
         }
         sender.sendMessage(header.toString());
 
