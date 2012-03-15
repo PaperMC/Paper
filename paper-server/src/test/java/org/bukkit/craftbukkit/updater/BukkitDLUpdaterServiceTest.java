@@ -4,8 +4,11 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import static org.junit.Assert.assertNotNull;
+
+import org.junit.Ignore;
 import org.junit.Test;
 
+@Ignore ("useful tests, but not necessary to run on each compile")
 public class BukkitDLUpdaterServiceTest {
     @Test(expected=IOException.class)
     public void testHostNotFound() throws UnsupportedEncodingException, IOException {
