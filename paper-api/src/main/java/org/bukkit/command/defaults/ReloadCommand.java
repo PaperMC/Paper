@@ -6,7 +6,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 
-public class ReloadCommand extends Command {
+public class ReloadCommand extends BukkitCommand {
     public ReloadCommand(String name) {
         super(name);
         this.description = "Reloads the server configuration and plugins";

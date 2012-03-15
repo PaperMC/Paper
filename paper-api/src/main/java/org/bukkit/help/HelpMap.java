@@ -1,9 +1,11 @@
 package org.bukkit.help;
 
+import java.util.List;
+
 /**
  * The HelpMap tracks all help topics registered in a Bukkit server. When the server starts up or is reloaded,
  * help is processed and topics are added in the following order:
- *
+ * <p/>
  * 1. General topics are loaded from the help.yml
  * 2. Plugins load and optionally call {@code addTopic()}
  * 3. Registered plugin commands are processed by {@link HelpTopicFactory} objects to create topics
@@ -38,9 +40,19 @@ public interface HelpMap {
      * derives from {@code commandClass} base class.
      *
      * @param commandClass The class for which the custom HelpTopicFactory applies. Must derive from
-     * either {@link org.bukkit.command.Command} or {@link org.bukkit.command.CommandExecutor}.
-     * @param factory The {@link HelpTopicFactory} implementation to associate with the {@code commandClass}.
+     *                     either {@link org.bukkit.command.Command} or {@link org.bukkit.command.CommandExecutor}.
+     * @param factory      The {@link HelpTopicFactory} implementation to associate with the {@code commandClass}.
      * @throws IllegalArgumentException Thrown if {@code commandClass} does not derive from a legal base class.
      */
     public void registerHelpTopicFactory(Class<?> commandClass, HelpTopicFactory<?> factory);
+
+    /**
+     * Gets the list of plugins the server administrator has chosen to exclude from the help index. Plugin authors
+     * who choose to directly extend {@link org.bukkit.command.Command} instead of {@link org.bukkit.command.PluginCommand}
+     * will need to check this collection in their {@link HelpTopicFactory} implementations to ensure they meet the
+     * server administrator's expectations.
+     *
+     * @return A list of plugins that should be excluded from the help index.
+     */
+    public List<String> getIgnoredPlugins();
 }

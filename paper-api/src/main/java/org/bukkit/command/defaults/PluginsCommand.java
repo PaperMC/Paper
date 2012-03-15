@@ -7,7 +7,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 
-public class PluginsCommand extends Command {
+public class PluginsCommand extends BukkitCommand {
     public PluginsCommand(String name) {
         super(name);
         this.description = "Gets a list of plugins running on the server";

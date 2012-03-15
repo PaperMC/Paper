@@ -14,7 +14,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredListener;
 import org.bukkit.plugin.TimedRegisteredListener;
 
-public class TimingsCommand extends Command {
+public class TimingsCommand extends BukkitCommand {
     public TimingsCommand(String name) {
         super(name);
         this.description = "Records timings for all plugin events";
