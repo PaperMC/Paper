@@ -753,11 +753,11 @@ public class EntityMinecart extends Entity implements IInventory {
                 if (collisionEvent.isCancelled()) {
                     return;
                 }
+                // CraftBukkit end
 
-                if (entity instanceof EntityLiving && !(entity instanceof EntityHuman) && this.type == 0 && this.motX * this.motX + this.motZ * this.motZ > 0.01D && this.passenger == null && entity.vehicle == null) {
+                if (entity instanceof EntityLiving && !(entity instanceof EntityHuman) && !(entity instanceof EntityIronGolem) && this.type == 0 && this.motX * this.motX + this.motZ * this.motZ > 0.01D && this.passenger == null && entity.vehicle == null) {
                     entity.mount(this);
                 }
-                // CraftBukkit end
 
                 double d0 = entity.locX - this.locX;
                 double d1 = entity.locZ - this.locZ;
