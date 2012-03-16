@@ -10,7 +10,6 @@ import org.bukkit.command.defaults.VanillaCommand;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.help.*;
 
-import javax.annotation.Nullable;
 import java.util.*;
 
 /**
@@ -18,16 +17,16 @@ import java.util.*;
  */
 public class SimpleHelpMap implements HelpMap {
     
-    private HelpTopic defaultTopic;
-    private Map<String, HelpTopic> helpTopics;
-    private Set<HelpTopic> pluginIndexes; 
-    private Map<Class, HelpTopicFactory<Command>> topicFactoryMap;
-    private CraftServer server;
+    private final HelpTopic defaultTopic;
+    private final Map<String, HelpTopic> helpTopics;
+    private final Set<HelpTopic> pluginIndexes; 
+    private final Map<Class, HelpTopicFactory<Command>> topicFactoryMap;
+    private final CraftServer server;
     private HelpYamlReader yaml;
 
     public SimpleHelpMap(CraftServer server) {
-        this.helpTopics = new TreeMap<String, HelpTopic>(new HelpTopicComparator.TopicNameComparator()); // Using a TreeMap for its explicit sorting on key
-        this.pluginIndexes = new TreeSet<HelpTopic>(new HelpTopicComparator());
+        this.helpTopics = new TreeMap<String, HelpTopic>(HelpTopicComparator.topicNameComparatorInstance()); // Using a TreeMap for its explicit sorting on key
+        this.pluginIndexes = new TreeSet<HelpTopic>(HelpTopicComparator.helpTopicComparatorInstance());
         this.topicFactoryMap = new HashMap<Class, HelpTopicFactory<Command>>();
         this.server = server;
         this.yaml = new HelpYamlReader(server);
@@ -77,6 +76,8 @@ public class SimpleHelpMap implements HelpMap {
      * Reads the general topics from help.yml and adds them to the help index.
      */
     public synchronized void initializeGeneralTopics() {
+        yaml = new HelpYamlReader(server);
+
         // Initialize general help topics from the help.yml file
         for (HelpTopic topic : yaml.getGeneralTopics()) {
             addTopic(topic);
@@ -88,7 +89,7 @@ public class SimpleHelpMap implements HelpMap {
      */
     public synchronized void initializeCommands() {
         // ** Load topics from highest to lowest priority order **
-        List<String> ignoredPlugins = yaml.getIgnoredPlugins();
+        Set<String> ignoredPlugins = new HashSet<String>(yaml.getIgnoredPlugins());
 
         // Initialize help topics from the server's command map
         outer: for (Command command : server.getCommandMap().getCommands()) {
@@ -159,7 +160,7 @@ public class SimpleHelpMap implements HelpMap {
                 HelpTopic topic = getHelpTopic("/" + command.getLabel());
                 if (topic != null) {
                     if (!pluginIndexes.containsKey(pluginName)) {
-                        pluginIndexes.put(pluginName, new TreeSet<HelpTopic>(new HelpTopicComparator())); //keep things in topic order
+                        pluginIndexes.put(pluginName, new TreeSet<HelpTopic>(HelpTopicComparator.helpTopicComparatorInstance())); //keep things in topic order
                     }
                     pluginIndexes.get(pluginName).add(topic);
                 }
@@ -177,7 +178,7 @@ public class SimpleHelpMap implements HelpMap {
         return null;
     }
     
-    private boolean commandInIgnoredPlugin(Command command, List<String> ignoredPlugins) {
+    private boolean commandInIgnoredPlugin(Command command, Set<String> ignoredPlugins) {
         if ((command instanceof BukkitCommand || command instanceof VanillaCommand) && ignoredPlugins.contains("Bukkit")) {
             return true;
         }
@@ -196,7 +197,7 @@ public class SimpleHelpMap implements HelpMap {
 
     private class IsCommandTopicPredicate implements Predicate<HelpTopic> {
 
-        public boolean apply(@Nullable HelpTopic topic) {
+        public boolean apply(HelpTopic topic) {
             return topic.getName().charAt(0) == '/';
         }
     }
