@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.help;
 
+import org.bukkit.ChatColor;
 import org.bukkit.Server;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -16,7 +17,8 @@ import java.util.logging.Level;
  */
 public class HelpYamlReader {
 
-    private YamlConfiguration helpYaml;
+    private final YamlConfiguration helpYaml;
+    private final char ALT_COLOR_CODE = '&';
 
     public HelpYamlReader(Server server) {
         File helpYamlFile = new File("help.yml");
@@ -43,8 +45,8 @@ public class HelpYamlReader {
         if (generalTopics != null) {
             for (String topicName : generalTopics.getKeys(false)) {
                 ConfigurationSection section = generalTopics.getConfigurationSection(topicName);
-                String shortText = section.getString("shortText");
-                String fullText = section.getString("fullText");
+                String shortText = ChatColor.translateAlternateColorCodes(ALT_COLOR_CODE, section.getString("shortText"));
+                String fullText = ChatColor.translateAlternateColorCodes(ALT_COLOR_CODE, section.getString("fullText"));
                 String permission = section.getString("permission");
                 topics.add(new CustomHelpTopic(topicName, shortText, fullText, permission));
             }
@@ -62,8 +64,8 @@ public class HelpYamlReader {
         if (commandTopics != null) {
             for (String topicName : commandTopics.getKeys(false)) {
                 ConfigurationSection section = commandTopics.getConfigurationSection(topicName);
-                String description = section.getString("shortText");
-                String usage = section.getString("fullText");
+                String description = ChatColor.translateAlternateColorCodes(ALT_COLOR_CODE, section.getString("shortText"));
+                String usage = ChatColor.translateAlternateColorCodes(ALT_COLOR_CODE, section.getString("fullText"));
                 String permission = section.getString("permission");
                 amendments.add(new HelpTopicAmendment(topicName, description, usage, permission));
             }
