@@ -4,7 +4,7 @@ import java.util.Random;
 
 import org.bukkit.BlockChangeDelegate; // CraftBukkit
 
-public class WorldGenMegaTree extends WorldGenerator {
+public class WorldGenMegaTree extends WorldGenerator implements BlockSapling.TreeGenerator { // CraftBukkit add interface
 
     private final int a;
     private final int b;
