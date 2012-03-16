@@ -150,6 +150,26 @@ public enum ChatColor {
         return STRIP_COLOR_PATTERN.matcher(input).replaceAll("");
     }
 
+    /**
+     * Translates a string using an alternate color code character into a string that uses the internal
+     * ChatColor.COLOR_CODE color code character. The alternate color code character will only be replaced
+     * if it is immediately followed by 0-9, A-F, or a-f.
+     * 
+     * @param altColorChar The alternate color code character to replace. Ex: &
+     * @param textToTranslate Text containing the alternate color code character. 
+     * @return Text containing the ChatColor.COLOR_CODE color code character.
+     */
+    public static String translateAlternateColorCodes(char altColorChar, String textToTranslate) {
+        char[] b = textToTranslate.toCharArray();
+        for (int i = 0; i < b.length - 1; i++) {
+            if (b[i] == altColorChar && "0123456789AaBbCcDdEeFfKk".indexOf(b[i+1]) > -1) {
+                b[i] = ChatColor.COLOR_CHAR;
+                b[i+1] = Character.toLowerCase(b[i+1]);
+            }
+        }
+        return new String(b);
+    }
+
     static {
         for (ChatColor color : values()) {
             BY_ID.put(color.intCode, color);
