@@ -1,15 +1,16 @@
 package org.bukkit.craftbukkit.help;
 
+import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Collections2;
 import org.bukkit.ChatColor;
-import org.bukkit.Server;
 import org.bukkit.command.*;
 import org.bukkit.command.defaults.BukkitCommand;
 import org.bukkit.command.defaults.VanillaCommand;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.help.*;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 /**
@@ -22,13 +23,21 @@ public class SimpleHelpMap implements HelpMap {
     private Set<HelpTopic> pluginIndexes; 
     private Map<Class, HelpTopicFactory<Command>> topicFactoryMap;
     private CraftServer server;
+    private HelpYamlReader yaml;
 
     public SimpleHelpMap(CraftServer server) {
-        helpTopics = new TreeMap<String, HelpTopic>(new HelpTopicComparator.TopicNameComparator()); // Using a TreeMap for its explicit sorting on key
-        pluginIndexes = new TreeSet<HelpTopic>(new HelpTopicComparator());
-        defaultTopic = new IndexHelpTopic("Index", null, null, Collections2.filter(helpTopics.values(), Predicates.not(Predicates.instanceOf(CommandAliasHelpTopic.class))));
-        topicFactoryMap = new HashMap<Class, HelpTopicFactory<Command>>();
+        this.helpTopics = new TreeMap<String, HelpTopic>(new HelpTopicComparator.TopicNameComparator()); // Using a TreeMap for its explicit sorting on key
+        this.pluginIndexes = new TreeSet<HelpTopic>(new HelpTopicComparator());
+        this.topicFactoryMap = new HashMap<Class, HelpTopicFactory<Command>>();
         this.server = server;
+        this.yaml = new HelpYamlReader(server);
+
+        Predicate indexFilter = Predicates.not(Predicates.instanceOf(CommandAliasHelpTopic.class));
+        if (!yaml.commandTopicsInMasterIndex()) {
+            indexFilter = Predicates.and(indexFilter, Predicates.not(new IsCommandTopicPredicate()));
+        }
+
+        this.defaultTopic = new IndexHelpTopic("Index", null, null, Collections2.filter(helpTopics.values(), indexFilter));
 
         registerHelpTopicFactory(MultipleCommandAlias.class, new MultipleCommandAliasHelpTopicFactory());
     }
@@ -61,17 +70,15 @@ public class SimpleHelpMap implements HelpMap {
     }
 
     public List<String> getIgnoredPlugins() {
-        return new HelpYamlReader(server).getIgnoredPlugins();
+        return yaml.getIgnoredPlugins();
     }
 
     /**
      * Reads the general topics from help.yml and adds them to the help index.
      */
     public synchronized void initializeGeneralTopics() {
-        HelpYamlReader reader = new HelpYamlReader(server);
-
         // Initialize general help topics from the help.yml file
-        for (HelpTopic topic : reader.getGeneralTopics()) {
+        for (HelpTopic topic : yaml.getGeneralTopics()) {
             addTopic(topic);
         }
     }
@@ -81,8 +88,7 @@ public class SimpleHelpMap implements HelpMap {
      */
     public synchronized void initializeCommands() {
         // ** Load topics from highest to lowest priority order **
-        HelpYamlReader helpYamlReader = new HelpYamlReader(server);
-        List<String> ignoredPlugins = helpYamlReader.getIgnoredPlugins();
+        List<String> ignoredPlugins = yaml.getIgnoredPlugins();
 
         // Initialize help topics from the server's command map
         outer: for (Command command : server.getCommandMap().getCommands()) {
@@ -136,7 +142,7 @@ public class SimpleHelpMap implements HelpMap {
         }
 
         // Amend help topics from the help.yml file
-        for (HelpTopicAmendment amendment : helpYamlReader.getTopicAmendments()) {
+        for (HelpTopicAmendment amendment : yaml.getTopicAmendments()) {
             if (helpTopics.containsKey(amendment.getTopicName())) {
                 helpTopics.get(amendment.getTopicName()).amendTopic(amendment.getShortText(), amendment.getFullText());
                 if (amendment.getPermission() != null) {
@@ -186,5 +192,12 @@ public class SimpleHelpMap implements HelpMap {
             throw new IllegalArgumentException("commandClass must implement either Command or CommandExecutor!");
         }
         topicFactoryMap.put(commandClass, factory);
+    }
+
+    private class IsCommandTopicPredicate implements Predicate<HelpTopic> {
+
+        public boolean apply(@Nullable HelpTopic topic) {
+            return topic.getName().charAt(0) == '/';
+        }
     }
 }

@@ -74,4 +74,8 @@ public class HelpYamlReader {
     public List<String> getIgnoredPlugins() {
         return helpYaml.getStringList("ignore-plugins");
     }
+
+    public boolean commandTopicsInMasterIndex() {
+        return helpYaml.getBoolean("command-topics-in-master-index", true);
+    }
 }
