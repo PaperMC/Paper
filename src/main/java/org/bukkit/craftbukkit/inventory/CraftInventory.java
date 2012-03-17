@@ -381,6 +381,13 @@ public class CraftInventory implements Inventory {
         return new InventoryIterator(this);
     }
 
+    public ListIterator<ItemStack> iterator(int index) {
+        if (index < 0) {
+            index += getSize() + 1; // ie, with -1, previous() will return the last element
+        }
+        return new InventoryIterator(this, index);
+    }
+
     public List<HumanEntity> getViewers() {
         return this.inventory.getViewers();
     }

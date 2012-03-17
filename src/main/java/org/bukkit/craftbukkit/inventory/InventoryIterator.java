@@ -8,11 +8,16 @@ import org.bukkit.inventory.ItemStack;
 public class InventoryIterator implements ListIterator<ItemStack> {
     private final Inventory inventory;
     private int nextIndex;
-    private boolean lastDirection; // true = forward, false = backward
+    private Boolean lastDirection; // true = forward, false = backward, null = haven't moved yet
 
     InventoryIterator(Inventory craftInventory) {
         this.inventory = craftInventory;
         this.nextIndex = 0;
+    }
+
+    InventoryIterator(Inventory craftInventory, int index) {
+        this.inventory = craftInventory;
+        this.nextIndex = index;
     }
 
     public boolean hasNext() {
@@ -42,6 +47,9 @@ public class InventoryIterator implements ListIterator<ItemStack> {
     }
 
     public void set(ItemStack item) {
+        if (lastDirection == null) {
+            throw new IllegalStateException("No current item!");
+        }
         int i = lastDirection ? nextIndex - 1 : nextIndex;
         inventory.setItem(i, item);
     }
