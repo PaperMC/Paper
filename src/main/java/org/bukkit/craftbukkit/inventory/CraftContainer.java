@@ -1,7 +1,9 @@
 package org.bukkit.craftbukkit.inventory;
 
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 
 import net.minecraft.server.Container;
@@ -28,6 +30,30 @@ public class CraftContainer extends Container {
         setupSlots(top, bottom);
     }
 
+    public CraftContainer(final Inventory inventory, final HumanEntity player, int id) {
+        this(new InventoryView() {
+            @Override
+            public Inventory getTopInventory() {
+                return inventory;
+            }
+
+            @Override
+            public Inventory getBottomInventory() {
+                return player.getInventory();
+            }
+
+            @Override
+            public HumanEntity getPlayer() {
+                return player;
+            }
+
+            @Override
+            public InventoryType getType() {
+                return inventory.getType();
+            }
+        }, id);
+    }
+
     @Override
     public InventoryView getBukkitView() {
         return view;
@@ -50,27 +76,7 @@ public class CraftContainer extends Container {
         cachedTitle = view.getTitle();
         if (view.getPlayer() instanceof CraftPlayer) {
             CraftPlayer player = (CraftPlayer) view.getPlayer();
-            int type;
-            switch(cachedType) {
-            case WORKBENCH:
-                type = 1;
-                break;
-            case FURNACE:
-                type = 2;
-                break;
-            case DISPENSER:
-                type = 3;
-                break;
-            case ENCHANTING:
-                type = 4;
-                break;
-            case BREWING:
-                type = 5;
-                break;
-            default:
-                type = 0;
-                break;
-            }
+            int type = getNotchInventoryType(cachedType);
             IInventory top = ((CraftInventory)view.getTopInventory()).getInventory();
             IInventory bottom = ((CraftInventory)view.getBottomInventory()).getInventory();
             this.d.clear();
@@ -83,6 +89,31 @@ public class CraftContainer extends Container {
             player.updateInventory();
         }
         return true;
+    }
+
+    public static int getNotchInventoryType(InventoryType type) {
+        int typeID;
+        switch(type) {
+        case WORKBENCH:
+            typeID = 1;
+            break;
+        case FURNACE:
+            typeID = 2;
+            break;
+        case DISPENSER:
+            typeID = 3;
+            break;
+        case ENCHANTING:
+            typeID = 4;
+            break;
+        case BREWING:
+            typeID = 5;
+            break;
+        default:
+            typeID = 0;
+            break;
+        }
+        return typeID;
     }
 
     private void setupSlots(IInventory top, IInventory bottom) {
