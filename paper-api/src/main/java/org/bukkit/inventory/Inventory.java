@@ -272,4 +272,13 @@ public interface Inventory extends Iterable<ItemStack> {
     public InventoryHolder getHolder();
 
     public ListIterator<ItemStack> iterator();
+
+    /**
+     * Returns an iterator starting at the given index. If the index is positive, then the first
+     * call to next() will return the item at that index; if it is negative, the first call to
+     * previous will return the item at index (getSize() + index).
+     * @param index The index.
+     * @return An iterator.
+     */
+    public ListIterator<ItemStack> iterator(int index);
 }
