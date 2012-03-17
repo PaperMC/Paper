@@ -64,9 +64,9 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
         setItem(getSize() + 0, boots);
     }
 
-    public CraftItemStack[] getArmorContents() {
+    public ItemStack[] getArmorContents() {
         net.minecraft.server.ItemStack[] mcItems = getInventory().getArmorContents();
-        CraftItemStack[] ret = new CraftItemStack[mcItems.length];
+        ItemStack[] ret = new ItemStack[mcItems.length];
 
         for (int i = 0; i < mcItems.length; i++) {
             ret[i] = new CraftItemStack(mcItems[i]);
