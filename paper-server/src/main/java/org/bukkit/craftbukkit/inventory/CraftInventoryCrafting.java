@@ -41,8 +41,8 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
     }
 
     @Override
-    public CraftItemStack[] getContents() {
-        CraftItemStack[] items = new CraftItemStack[getSize()];
+    public ItemStack[] getContents() {
+        ItemStack[] items = new ItemStack[getSize()];
         net.minecraft.server.ItemStack[] mcResultItems = getResultInventory().getContents();
 
         int i = 0;
@@ -85,7 +85,7 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
     }
 
     public ItemStack[] getMatrix() {
-        CraftItemStack[] items = new CraftItemStack[getSize()];
+        ItemStack[] items = new ItemStack[getSize()];
         net.minecraft.server.ItemStack[] matrix = getMatrixInventory().getContents();
 
         for (int i = 0; i < matrix.length; i++ ) {
