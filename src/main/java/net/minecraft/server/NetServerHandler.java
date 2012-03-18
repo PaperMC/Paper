@@ -19,6 +19,7 @@ import org.bukkit.Location;
 import org.bukkit.command.CommandException;
 import org.bukkit.conversations.Conversable;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.inventory.CraftInventoryCustom;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.block.CraftBlock;
@@ -47,6 +48,7 @@ import org.bukkit.event.Event.Result;
 import org.bukkit.event.inventory.*;
 import org.bukkit.event.inventory.InventoryType.SlotType;
 import org.bukkit.inventory.CraftingInventory;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.Recipe;
 // CraftBukkit end
@@ -1146,12 +1148,13 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             InventoryView inventory = this.player.activeContainer.getBukkitView();
             SlotType type = CraftInventoryView.getSlotType(inventory, packet102windowclick.slot);
 
-            InventoryClickEvent event;
-            if (packet102windowclick.slot == 0 && inventory.getTopInventory() instanceof CraftingInventory) {
-                Recipe recipe = ((CraftingInventory) inventory.getTopInventory()).getRecipe();
-                event = new CraftItemEvent(recipe, inventory, type, packet102windowclick.slot, packet102windowclick.button != 0, packet102windowclick.shift);
-            } else {
-                event = new InventoryClickEvent(inventory, type, packet102windowclick.slot, packet102windowclick.button != 0, packet102windowclick.shift);
+            InventoryClickEvent event = new InventoryClickEvent(inventory, type, packet102windowclick.slot, packet102windowclick.button != 0, packet102windowclick.shift);
+            Inventory top = inventory.getTopInventory();
+            if (packet102windowclick.slot == 0 && top instanceof CraftingInventory) {
+                Recipe recipe = ((CraftingInventory) top).getRecipe();
+                if (recipe != null) {
+                    event = new CraftItemEvent(recipe, inventory, type, packet102windowclick.slot, packet102windowclick.button != 0, packet102windowclick.shift);
+                }
             }
             server.getPluginManager().callEvent(event);
 
