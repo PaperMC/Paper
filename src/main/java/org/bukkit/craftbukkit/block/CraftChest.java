@@ -22,6 +22,10 @@ public class CraftChest extends CraftBlockState implements Chest {
         chest = (TileEntityChest) world.getTileEntityAt(getX(), getY(), getZ());
     }
 
+    public Inventory getBlockInventory() {
+        return new CraftInventory(chest);
+    }
+
     public Inventory getInventory() {
         int x = getX();
         int y = getY();
