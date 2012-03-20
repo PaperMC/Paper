@@ -25,6 +25,7 @@ public final class PluginDescriptionFile {
     private String classLoaderOf = null;
     private List<String> depend = null;
     private List<String> softDepend = null;
+    private List<String> loadBefore = null;
     private String version = null;
     private Map<String, Map<String, Object>> commands = null;
     private String description = null;
@@ -118,6 +119,14 @@ public final class PluginDescriptionFile {
     }
 
     public List<String> getSoftDepend() {
+        return softDepend;
+    }
+
+    /**
+     * Gets the list of plugins that should consider this plugin a soft-dependency
+     * @return immutable list of plugins that should consider this plugin a soft-dependency
+     */
+    public List<String> getLoadBefore() {
         return softDepend;
     }
 
@@ -265,6 +274,20 @@ public final class PluginDescriptionFile {
                 throw new InvalidDescriptionException(ex, "invalid soft-dependency format");
             }
             softDepend = softDependBuilder.build();
+        }
+
+        if (map.get("loadbefore") != null) {
+            ImmutableList.Builder<String> loadBeforeBuilder = ImmutableList.<String>builder();
+            try {
+                for (Object predependency : (Iterable<?>) map.get("loadbefore")) {
+                    loadBeforeBuilder.add(predependency.toString());
+                }
+            } catch (ClassCastException ex) {
+                throw new InvalidDescriptionException(ex, "loadbefore is of wrong type");
+            } catch (NullPointerException ex) {
+                throw new InvalidDescriptionException(ex, "invalid load-before format");
+            }
+            loadBefore = loadBeforeBuilder.build();
         }
 
         if (map.get("database") != null) {
