@@ -334,7 +334,6 @@ public abstract class JavaPlugin extends PluginBase {
     public void onEnable() {}
 
     public ChunkGenerator getDefaultWorldGenerator(String worldName, String id) {
-        getServer().getLogger().severe("Plugin " + description.getFullName() + " does not contain any generators that may be used in the default world!");
         return null;
     }
 
