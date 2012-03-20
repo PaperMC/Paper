@@ -46,6 +46,7 @@ import org.bukkit.entity.Pig;
 import org.bukkit.entity.PigZombie;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
+import org.bukkit.entity.ThrownExpBottle;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.event.Event;
 import org.bukkit.event.block.*;
@@ -495,6 +496,13 @@ public class CraftEventFactory {
     public static ProjectileLaunchEvent callProjectileLaunchEvent(Entity entity) {
         Projectile bukkitEntity = (Projectile) entity.getBukkitEntity();
         ProjectileLaunchEvent event = new ProjectileLaunchEvent(bukkitEntity);
+        Bukkit.getPluginManager().callEvent(event);
+        return event;
+    }
+
+    public static ExpBottleEvent callExpBottleEvent(Entity entity, int exp) {
+        ThrownExpBottle bottle = (ThrownExpBottle) entity.getBukkitEntity();
+        ExpBottleEvent event = new ExpBottleEvent(bottle, exp);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
