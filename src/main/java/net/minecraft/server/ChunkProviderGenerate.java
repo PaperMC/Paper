@@ -192,6 +192,12 @@ public class ChunkProviderGenerate implements IChunkProvider {
         }
 
         Chunk chunk = new Chunk(this.p, abyte, i, j);
+        // CraftBukkit start - prime biome data to prevent uninitialized values racing to client
+        byte[] biomes = chunk.l();
+        for(int idx = 0; idx < biomes.length; idx++) {
+            biomes[idx] = (byte) this.y[idx].id;
+        }
+        // CraftBukkit end
 
         chunk.initLighting();
         return chunk;
