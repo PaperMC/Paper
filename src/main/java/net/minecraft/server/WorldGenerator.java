@@ -24,6 +24,13 @@ public abstract class WorldGenerator {
     protected void setTypeAndData(BlockChangeDelegate world, int i, int j, int k, int l, int i1) {
         if (this.a) {
             world.setTypeIdAndData(i, j, k, l, i1);
+        // CraftBukkit start - do equiv of setTypeIdAndData, but skip doing physics to prevent fades
+        }
+        else if ((world instanceof World) && ((World) world).getChunkAt(i >> 4, k >> 4).sentToClient) {
+            if (world.setRawTypeIdAndData(i, j, k, l, i1)) {
+                ((World) world).notify(i, j, k);
+            }
+        // CraftBukkt end
         } else {
             world.setRawTypeIdAndData(i, j, k, l, i1);
         }

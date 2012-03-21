@@ -51,6 +51,13 @@ public class ChunkProviderFlat implements IChunkProvider {
         if (this.c) {
             this.d.a(this, this.a, i, j, abyte);
         }
+        // CraftBukkit start - prime biome data to prevent uninitialized values racing to client
+        BiomeBase[] bb = this.a.getWorldChunkManager().getBiomeBlock(null, i * 16, j * 16, 16, 16);
+        byte[] biomes = chunk.l();
+        for(int idx = 0; idx < biomes.length; idx++) {
+            biomes[idx] = (byte) bb[idx].id;
+        }
+        // CraftBukkit end
 
         chunk.initLighting();
         return chunk;

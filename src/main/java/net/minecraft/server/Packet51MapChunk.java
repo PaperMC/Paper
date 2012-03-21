@@ -31,6 +31,7 @@ public class Packet51MapChunk extends Packet {
         this.f = flag;
         if (flag) {
             i = '\uffff';
+            chunk.sentToClient = true; // CraftBukkit - flag as seen
         }
 
         ChunkSection[] achunksection = chunk.h();

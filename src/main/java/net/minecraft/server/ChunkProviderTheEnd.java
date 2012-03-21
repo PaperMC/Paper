@@ -142,6 +142,13 @@ public class ChunkProviderTheEnd implements IChunkProvider {
         this.b(i, j, abyte, this.o);
         Chunk chunk = new Chunk(this.m, abyte, i, j);
 
+        // CraftBukkit start - prime biome data to prevent uninitialized values racing to client
+        byte[] biomes = chunk.l();
+        for(int idx = 0; idx < biomes.length; idx++) {
+            biomes[idx] = (byte) this.o[idx].id;
+        }
+        // CraftBukkit end
+
         chunk.initLighting();
         return chunk;
     }

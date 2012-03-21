@@ -72,7 +72,7 @@ public class WorldGenTrees extends WorldGenerator implements BlockSapling.TreeGe
             } else {
                 i1 = world.getTypeId(i, j - 1, k);
                 if ((i1 == Block.GRASS.id || i1 == Block.DIRT.id) && j < 256 - l - 1) {
-                    world.setRawTypeId(i, j - 1, k, Block.DIRT.id);
+                    this.setTypeAndData(world, i, j - 1, k, Block.DIRT.id, 0); // CraftBukkit
                     b0 = 3;
                     byte b1 = 0;
 
@@ -162,7 +162,7 @@ public class WorldGenTrees extends WorldGenerator implements BlockSapling.TreeGe
 
     // CraftBukkit - Changed world to BlockChangeDelegate
     private void a(BlockChangeDelegate world, int i, int j, int k, int l) {
-        world.setTypeIdAndData(i, j, k, Block.VINE.id, l);
+        this.setTypeAndData(world, i, j, k, Block.VINE.id, l); // CraftBukkit
         int i1 = 4;
 
         while (true) {
@@ -171,7 +171,7 @@ public class WorldGenTrees extends WorldGenerator implements BlockSapling.TreeGe
                 return;
             }
 
-            world.setTypeIdAndData(i, j, k, Block.VINE.id, l);
+            this.setTypeAndData(world, i, j, k, Block.VINE.id, l); // CraftBukkit
             --i1;
         }
     }

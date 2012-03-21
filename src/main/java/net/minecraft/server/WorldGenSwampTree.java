@@ -59,7 +59,7 @@ public class WorldGenSwampTree extends WorldGenerator  implements BlockSapling.T
             } else {
                 i1 = world.getTypeId(i, j - 1, k);
                 if ((i1 == Block.GRASS.id || i1 == Block.DIRT.id) && j < 128 - l - 1) {
-                    world.setRawTypeId(i, j - 1, k, Block.DIRT.id);
+                    this.setTypeAndData(world, i, j - 1, k, Block.DIRT.id, 0); // CraftBukkit
 
                     int i2;
                     int j2;
@@ -75,7 +75,7 @@ public class WorldGenSwampTree extends WorldGenerator  implements BlockSapling.T
                                 int l2 = k2 - k;
 
                                 if ((Math.abs(i2) != k1 || Math.abs(l2) != k1 || random.nextInt(2) != 0 && j1 != 0) && !Block.n[world.getTypeId(l1, j2, k2)]) {
-                                    world.setRawTypeId(l1, j2, k2, Block.LEAVES.id);
+                                    this.setTypeAndData(world, l1, j2, k2, Block.LEAVES.id, 0); // CraftBukkit
                                 }
                             }
                         }
@@ -84,7 +84,7 @@ public class WorldGenSwampTree extends WorldGenerator  implements BlockSapling.T
                     for (j2 = 0; j2 < l; ++j2) {
                         j1 = world.getTypeId(i, j + j2, k);
                         if (j1 == 0 || j1 == Block.LEAVES.id || j1 == Block.WATER.id || j1 == Block.STATIONARY_WATER.id) {
-                            world.setRawTypeId(i, j + j2, k, Block.LOG.id);
+                            this.setTypeAndData(world, i, j + j2, k, Block.LOG.id, 0); // CraftBukkit
                         }
                     }
 
@@ -126,7 +126,7 @@ public class WorldGenSwampTree extends WorldGenerator  implements BlockSapling.T
     }
 
     private void a(org.bukkit.BlockChangeDelegate world, int i, int j, int k, int l) { // CraftBukkit - change signature
-        world.setTypeIdAndData(i, j, k, Block.VINE.id, l);
+        this.setTypeAndData(world, i, j, k, Block.VINE.id, l); // CraftBukkit
         int i1 = 4;
 
         while (true) {
@@ -135,7 +135,7 @@ public class WorldGenSwampTree extends WorldGenerator  implements BlockSapling.T
                 return;
             }
 
-            world.setTypeIdAndData(i, j, k, Block.VINE.id, l);
+            this.setTypeAndData(world, i, j, k, Block.VINE.id, l); // CraftBukkit
             --i1;
         }
     }

@@ -30,6 +30,7 @@ public class Chunk {
     public long n;
     private int s;
     boolean o;
+    public boolean sentToClient; // CraftBukkit - flag if chunk has been seen
 
     public Chunk(World world, int i, int j) {
         this.sections = new ChunkSection[16];

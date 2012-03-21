@@ -192,6 +192,13 @@ public class ChunkProviderHell implements IChunkProvider {
         this.t.a(this, this.o, i, j, abyte);
         this.c.a(this, this.o, i, j, abyte);
         Chunk chunk = new Chunk(this.o, abyte, i, j);
+        // CraftBukkit start - prime biome data to prevent uninitialized values racing to client
+        BiomeBase[] bb = this.o.getWorldChunkManager().getBiomeBlock(null, i * 16, j * 16, 16, 16);
+        byte[] biomes = chunk.l();
+        for(int idx = 0; idx < biomes.length; idx++) {
+            biomes[idx] = (byte) bb[idx].id;
+        }
+        // CraftBukkit end
 
         chunk.m();
         return chunk;
