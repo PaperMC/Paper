@@ -9,6 +9,7 @@ import java.util.Random;
 // CraftBukkit start
 import org.bukkit.craftbukkit.TrigMath;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityRegainHealthEvent;
@@ -778,20 +779,18 @@ public abstract class EntityLiving extends Entity {
 
             if (!this.isBaby()) {
                 this.dropDeathLoot(this.lastDamageByPlayerTime > 0, i);
-                if (this.lastDamageByPlayerTime > 0) {
-                    int j = this.random.nextInt(200) - i;
-
-                    if (j < 5) {
-                        this.b(j <= 0 ? 1 : 0);
-                    }
-                }
+                // CraftBukkit - move rare item drop call to dropDeathLoot
             }
         }
 
         this.world.broadcastEntityEffect(this, (byte) 3);
     }
 
-    protected void b(int i) {}
+    // CraftBukkit start - change return type to ItemStack
+    protected ItemStack b(int i) {
+        return null;
+    }
+    // CraftBukkit end
 
     protected void dropDeathLoot(boolean flag, int i) {
         int j = this.getLootId();
@@ -808,6 +807,18 @@ public abstract class EntityLiving extends Entity {
 
             if (k > 0) {
                 loot.add(new org.bukkit.inventory.ItemStack(j, k));
+            }
+        }
+
+        // Determine rare item drops and add them to the loot
+        if (this.lastDamageByPlayerTime > 0) {
+            int k = this.random.nextInt(200) - i;
+
+            if (k < 5) {
+                ItemStack itemstack = this.b(k <= 0 ? 1 : 0);
+                if (itemstack != null) {
+                    loot.add(new CraftItemStack(itemstack));
+                }
             }
         }
 

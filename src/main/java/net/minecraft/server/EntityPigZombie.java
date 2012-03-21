@@ -120,8 +120,6 @@ public class EntityPigZombie extends EntityZombie {
         List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
         int j = this.random.nextInt(2 + i);
 
-        int k;
-
         if (j > 0) {
             loot.add(new CraftItemStack(Item.ROTTEN_FLESH.id, j));
         }
@@ -131,28 +129,45 @@ public class EntityPigZombie extends EntityZombie {
         if (j > 0) {
             loot.add(new CraftItemStack(Item.GOLD_NUGGET.id, j));
         }
+
+        // Determine rare item drops and add them to the loot
+        if (this.lastDamageByPlayerTime > 0) {
+            int k = this.random.nextInt(200) - i;
+
+            if (k < 5) {
+                ItemStack itemstack = this.b(k <= 0 ? 1 : 0);
+                if (itemstack != null) {
+                    loot.add(new CraftItemStack(itemstack));
+                }
+            }
+        }
+
         CraftEventFactory.callEntityDeathEvent(this, loot);
         // CraftBukkit end
     }
 
-    protected void b(int i) {
+    // CraftBukkit start - return rare dropped item instead of dropping it
+    protected ItemStack b(int i) {
         if (i > 0) {
             ItemStack itemstack = new ItemStack(Item.GOLD_SWORD);
 
             EnchantmentManager.a(this.random, itemstack, 5);
-            this.a(itemstack, 0.0F);
+            return itemstack;
         } else {
             int j = this.random.nextInt(3);
 
             if (j == 0) {
-                this.b(Item.GOLD_INGOT.id, 1);
+                return new ItemStack(Item.GOLD_INGOT.id, 1, 0);
             } else if (j == 1) {
-                this.b(Item.GOLD_SWORD.id, 1);
+                return new ItemStack(Item.GOLD_SWORD.id, 1, 0);
             } else if (j == 2) {
-                this.b(Item.GOLD_HELMET.id, 1);
+                return new ItemStack(Item.GOLD_HELMET.id, 1, 0);
+            } else {
+                return null;
             }
         }
     }
+    // CraftBukkit end
 
     protected int getLootId() {
         return Item.ROTTEN_FLESH.id;

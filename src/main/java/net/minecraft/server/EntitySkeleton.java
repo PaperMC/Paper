@@ -1,5 +1,10 @@
 package net.minecraft.server;
 
+// CraftBukkit start
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
+// CraftBukkit end
+
 public class EntitySkeleton extends EntityMonster {
 
     private static final ItemStack a = new ItemStack(Item.BOW, 1);
@@ -93,18 +98,32 @@ public class EntitySkeleton extends EntityMonster {
             loot.add(new org.bukkit.inventory.ItemStack(org.bukkit.Material.BONE, count));
         }
 
-        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, loot);
+        // Determine rare item drops and add them to the loot
+        if (this.lastDamageByPlayerTime > 0) {
+            int k = this.random.nextInt(200) - i;
+
+            if (k < 5) {
+                ItemStack itemstack = this.b(k <= 0 ? 1 : 0);
+                if (itemstack != null) {
+                    loot.add(new CraftItemStack(itemstack));
+                }
+            }
+        }
+
+        CraftEventFactory.callEntityDeathEvent(this, loot);
         // CraftBukkit end
     }
 
-    protected void b(int i) {
+    // CraftBukkit start - return rare dropped item instead of dropping it
+    protected ItemStack b(int i) {
         if (i > 0) {
             ItemStack itemstack = new ItemStack(Item.BOW);
 
             EnchantmentManager.a(this.random, itemstack, 5);
-            this.a(itemstack, 0.0F);
+            return itemstack;
         } else {
-            this.b(Item.BOW.id, 1);
+            return new ItemStack(Item.BOW.id, 1, 0);
         }
     }
+    // CraftBukkit end
 }
