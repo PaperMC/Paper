@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.help;
 
+import org.apache.commons.lang.Validate;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.help.HelpMap;
@@ -14,6 +15,7 @@ public class CommandAliasHelpTopic extends HelpTopic {
         this.aliasFor = aliasFor.startsWith("/") ? aliasFor : "/" + aliasFor;
         this.helpMap = helpMap;
         this.name = alias.startsWith("/") ? alias : "/" + alias;
+        Validate.isTrue(!this.name.equals(this.aliasFor), "Command " + this.name + " cannot be alias for itself");
         this.shortText = ChatColor.YELLOW + "Alias for " + ChatColor.WHITE + this.aliasFor;
     }
 
