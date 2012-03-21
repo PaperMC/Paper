@@ -756,4 +756,8 @@ public class TestPlayer implements Player {
     public boolean isBlocking() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
+
+    public boolean hasLineOfSight(Entity other) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }

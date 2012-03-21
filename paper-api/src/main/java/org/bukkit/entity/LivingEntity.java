@@ -269,4 +269,13 @@ public interface LivingEntity extends Entity {
      * @return A collection of {@link PotionEffect}s
      */
     public Collection<PotionEffect> getActivePotionEffects();
+
+    /**
+     * Checks whether the entity has block line of sight to another.<br />
+     * This uses the same algorithm that hostile mobs use to find the closest player.
+     *
+     * @param other The entity to determine line of sight to.
+     * @return true if there is a line of sight, false if not.
+     */
+    public boolean hasLineOfSight(Entity other);
 }
