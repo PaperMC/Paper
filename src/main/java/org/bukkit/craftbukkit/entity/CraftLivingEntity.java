@@ -25,6 +25,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Egg;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.EnderPearl;
@@ -291,5 +292,9 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     public EntityType getType() {
         return EntityType.UNKNOWN;
+    }
+
+    public boolean hasLineOfSight(Entity other) {
+        return getHandle().am().canSee(((CraftEntity) other).getHandle()); // am should be getEntitySenses
     }
 }
