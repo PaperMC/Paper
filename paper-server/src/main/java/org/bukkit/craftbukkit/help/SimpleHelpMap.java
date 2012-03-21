@@ -16,10 +16,10 @@ import java.util.*;
  * Standard implementation of {@link HelpMap} for CraftBukkit servers.
  */
 public class SimpleHelpMap implements HelpMap {
-    
+
     private final HelpTopic defaultTopic;
     private final Map<String, HelpTopic> helpTopics;
-    private final Set<HelpTopic> pluginIndexes; 
+    private final Set<HelpTopic> pluginIndexes;
     private final Map<Class, HelpTopicFactory<Command>> topicFactoryMap;
     private final CraftServer server;
     private HelpYamlReader yaml;
@@ -40,7 +40,7 @@ public class SimpleHelpMap implements HelpMap {
 
         registerHelpTopicFactory(MultipleCommandAlias.class, new MultipleCommandAliasHelpTopicFactory());
     }
-    
+
     public synchronized HelpTopic getHelpTopic(String topicName) {
         if (topicName.equals("")) {
             return defaultTopic;
@@ -112,14 +112,16 @@ public class SimpleHelpMap implements HelpMap {
             }
             addTopic(new GenericCommandHelpTopic(command));
         }
-        
+
         // Initialize command alias help topics
         for (Command command : server.getCommandMap().getCommands()) {
             if (commandInIgnoredPlugin(command, ignoredPlugins)) {
                 continue;
             }
             for (String alias : command.getAliases()) {
-                addTopic(new CommandAliasHelpTopic(alias, command.getLabel(), this));
+                if (!helpTopics.containsKey("/" + alias)) {
+                    addTopic(new CommandAliasHelpTopic("/" + alias, "/" + command.getLabel(), this));
+                }
             }
         }
 
@@ -132,7 +134,7 @@ public class SimpleHelpMap implements HelpMap {
 
         // Add alias sub-index
         addTopic(new IndexHelpTopic("Aliases", "Lists command aliases", null, Collections2.filter(helpTopics.values(), Predicates.instanceOf(CommandAliasHelpTopic.class))));
-        
+
         // Initialize plugin-level sub-topics
         Map<String, Set<HelpTopic>> pluginIndexes = new HashMap<String, Set<HelpTopic>>();
         fillPluginIndexes(pluginIndexes, server.getCommandMap().getCommands());
@@ -152,7 +154,7 @@ public class SimpleHelpMap implements HelpMap {
             }
         }
     }
-    
+
     private void fillPluginIndexes(Map<String, Set<HelpTopic>> pluginIndexes, Collection<? extends Command> commands) {
         for (Command command : commands) {
             String pluginName = getCommandPluginName(command);
@@ -167,7 +169,7 @@ public class SimpleHelpMap implements HelpMap {
             }
         }
     }
-    
+
     private String getCommandPluginName(Command command) {
         if (command instanceof BukkitCommand || command instanceof VanillaCommand) {
             return "Bukkit";
@@ -177,7 +179,7 @@ public class SimpleHelpMap implements HelpMap {
         }
         return null;
     }
-    
+
     private boolean commandInIgnoredPlugin(Command command, Set<String> ignoredPlugins) {
         if ((command instanceof BukkitCommand || command instanceof VanillaCommand) && ignoredPlugins.contains("Bukkit")) {
             return true;
