@@ -17,16 +17,13 @@ import org.bukkit.ChatColor;
 import org.bukkit.craftbukkit.ChunkCompressionThread;
 import org.bukkit.Location;
 import org.bukkit.command.CommandException;
-import org.bukkit.conversations.Conversable;
 import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.inventory.CraftInventoryCustom;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.TextWrapper;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
@@ -804,7 +801,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             this.player.compassTarget = new Location(this.getPlayer().getWorld(), packet6.x, packet6.y, packet6.z);
         } else if (packet instanceof Packet3Chat) {
             String message = ((Packet3Chat) packet).message;
-            for (final String line : TextWrapper.wrapText(message)) {
+            for (final String line : message.split("\n")) {
                 this.networkManager.queue(new Packet3Chat(line));
             }
             packet = null;
