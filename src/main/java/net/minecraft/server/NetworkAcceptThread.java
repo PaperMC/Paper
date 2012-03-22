@@ -26,7 +26,13 @@ class NetworkAcceptThread extends Thread {
                 if (socket != null) {
                     synchronized (NetworkListenThread.getRecentConnectionAttempts(this.listenThread)) {
                         InetAddress inetaddress = socket.getInetAddress();
-                        connectionThrottle = this.a.server.getConnectionThrottle(); // CraftBukkit
+                        // CraftBukkit start
+                        if (this.a.server == null) {
+                            socket.close();
+                            continue;
+                        }
+                        connectionThrottle = this.a.server.getConnectionThrottle();
+                        // CraftBukkit end
 
                         // CraftBukkit
                         if (NetworkListenThread.getRecentConnectionAttempts(this.listenThread).containsKey(inetaddress) && System.currentTimeMillis() - ((Long) NetworkListenThread.getRecentConnectionAttempts(this.listenThread).get(inetaddress)).longValue() < connectionThrottle) {
