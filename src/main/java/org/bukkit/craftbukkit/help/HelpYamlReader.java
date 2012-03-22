@@ -17,21 +17,28 @@ import java.util.logging.Level;
  */
 public class HelpYamlReader {
 
-    private final YamlConfiguration helpYaml;
+    private YamlConfiguration helpYaml;
     private final char ALT_COLOR_CODE = '&';
 
     public HelpYamlReader(Server server) {
         File helpYamlFile = new File("help.yml");
+        YamlConfiguration defaultConfig = YamlConfiguration.loadConfiguration(getClass().getClassLoader().getResourceAsStream("configurations/help.yml"));
         
-        helpYaml = YamlConfiguration.loadConfiguration(helpYamlFile);
-        helpYaml.options().copyDefaults(true);
-        helpYaml.setDefaults(YamlConfiguration.loadConfiguration(getClass().getClassLoader().getResourceAsStream("configurations/help.yml")));
         try {
-            if (!helpYamlFile.exists()) {
-                helpYaml.save(helpYamlFile);
+            helpYaml = YamlConfiguration.loadConfiguration(helpYamlFile);
+            helpYaml.options().copyDefaults(true);
+            helpYaml.setDefaults(defaultConfig);
+            
+            try {
+                if (!helpYamlFile.exists()) {
+                    helpYaml.save(helpYamlFile);
+                }
+            } catch (IOException ex) {
+                server.getLogger().log(Level.SEVERE, "Could not save " + helpYamlFile, ex);
             }
-        } catch (IOException ex) {
-            server.getLogger().log(Level.SEVERE, "Could not save " + helpYamlFile, ex);
+        } catch (Exception ex) {
+            server.getLogger().severe("Failed to load help.yml. Verify the yaml indentation is correct. Reverting to default help.yml.");
+            helpYaml = defaultConfig;
         }
     }
 
