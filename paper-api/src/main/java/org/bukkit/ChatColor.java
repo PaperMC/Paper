@@ -78,23 +78,23 @@ public enum ChatColor {
     /**
      * Represents magical characters that change around randomly
      */
-    MAGIC('k', 0x10),
+    MAGIC('k', 0x10, true),
     /**
      * Makes the text bold.
      */
-    BOLD('l', 0x11),
+    BOLD('l', 0x11, true),
     /**
      * Makes a line appear through the text.
      */
-    STRIKETHROUGH('m', 0x12),
+    STRIKETHROUGH('m', 0x12, true),
     /**
      * Makes the text appear underlined.
      */
-    UNDERLINE('n', 0x13),
+    UNDERLINE('n', 0x13, true),
     /**
      * Makes the text italic.
      */
-    ITALIC('o', 0x14),
+    ITALIC('o', 0x14, true),
     /**
      * Resets all previous chat colors or formats.
      */
@@ -109,13 +109,19 @@ public enum ChatColor {
 
     private final int intCode;
     private final char code;
+    private final boolean isFormat;
     private final String toString;
     private final static Map<Integer, ChatColor> BY_ID = Maps.newHashMap();
     private final static Map<Character, ChatColor> BY_CHAR = Maps.newHashMap();
 
     private ChatColor(char code, int intCode) {
+        this(code, intCode, false);
+    }
+
+    private ChatColor(char code, int intCode, boolean isFormat) {
         this.code = code;
         this.intCode = intCode;
+        this.isFormat = isFormat;
         this.toString = new String(new char[] {COLOR_CHAR, code});
     }
 
@@ -131,6 +137,20 @@ public enum ChatColor {
     @Override
     public String toString() {
         return toString;
+    }
+
+    /**
+     * Checks if this code is a format code as opposed to a color code.
+     */
+    public boolean isFormat() {
+        return isFormat;
+    }
+
+    /**
+     * Checks if this code is a color code as opposed to a format code.
+     */
+    public boolean isColor() {
+        return !isFormat && this != RESET;
     }
 
     /**
@@ -188,6 +208,35 @@ public enum ChatColor {
             }
         }
         return new String(b);
+    }
+
+    /**
+     * Gets the ChatColors used at the end of the given input string.
+     *
+     * @param input Input string to retrieve the colors from.
+     * @return Any remaining ChatColors to pass onto the next line.
+     */
+    public static String getLastColors(String input) {
+        String result = "";
+        int lastIndex = -1;
+        int length = input.length();
+
+        while ((lastIndex = input.indexOf(COLOR_CHAR, lastIndex + 1)) != -1) {
+            if (lastIndex != length) {
+                char c = input.charAt(lastIndex + 1);
+                ChatColor col = getByChar(c);
+
+                if (col != null) {
+                    if (col.isColor()) {
+                        result = col.toString();
+                    } else if (col.isFormat()) {
+                        result += col.toString();
+                    }
+                }
+            }
+        }
+
+        return result;
     }
 
     static {
