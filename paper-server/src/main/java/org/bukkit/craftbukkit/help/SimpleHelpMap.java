@@ -90,6 +90,11 @@ public class SimpleHelpMap implements HelpMap {
     public synchronized void initializeCommands() {
         // ** Load topics from highest to lowest priority order **
         Set<String> ignoredPlugins = new HashSet<String>(yaml.getIgnoredPlugins());
+        
+        // Don't load any automatic help topics if All is ignored
+        if (ignoredPlugins.contains("All")) {
+            return;
+        }
 
         // Initialize help topics from the server's command map
         outer: for (Command command : server.getCommandMap().getCommands()) {
