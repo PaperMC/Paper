@@ -45,7 +45,7 @@ public class EntitySnowman extends EntityGolem {
         int j = MathHelper.floor(this.locZ);
 
         if (this.world.getBiome(i, j).i() > 1.0F) {
-            EntityDamageEvent event = new EntityDamageEvent(this.getBukkitEntity(), EntityDamageEvent.DamageCause.FIRE_TICK, 1);
+            EntityDamageEvent event = new EntityDamageEvent(this.getBukkitEntity(), EntityDamageEvent.DamageCause.MELTING, 1);
             this.world.getServer().getPluginManager().callEvent(event);
 
             if (!event.isCancelled()) {
