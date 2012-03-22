@@ -17,16 +17,15 @@ import java.util.*;
  */
 public class SimpleHelpMap implements HelpMap {
 
-    private final HelpTopic defaultTopic;
+    private HelpTopic defaultTopic;
     private final Map<String, HelpTopic> helpTopics;
-    private final Set<HelpTopic> pluginIndexes;
     private final Map<Class, HelpTopicFactory<Command>> topicFactoryMap;
     private final CraftServer server;
     private HelpYamlReader yaml;
 
+    @SuppressWarnings("unchecked")
     public SimpleHelpMap(CraftServer server) {
         this.helpTopics = new TreeMap<String, HelpTopic>(HelpTopicComparator.topicNameComparatorInstance()); // Using a TreeMap for its explicit sorting on key
-        this.pluginIndexes = new TreeSet<HelpTopic>(HelpTopicComparator.helpTopicComparatorInstance());
         this.topicFactoryMap = new HashMap<Class, HelpTopicFactory<Command>>();
         this.server = server;
         this.yaml = new HelpYamlReader(server);
@@ -36,7 +35,7 @@ public class SimpleHelpMap implements HelpMap {
             indexFilter = Predicates.and(indexFilter, Predicates.not(new IsCommandTopicPredicate()));
         }
 
-        this.defaultTopic = new IndexHelpTopic("Index", null, null, Collections2.filter(helpTopics.values(), indexFilter));
+        this.defaultTopic = new IndexHelpTopic("Index", null, null, Collections2.filter(helpTopics.values(), indexFilter), "Use /help [n] to get page n of help.");
 
         registerHelpTopicFactory(MultipleCommandAlias.class, new MultipleCommandAliasHelpTopicFactory());
     }
@@ -81,6 +80,15 @@ public class SimpleHelpMap implements HelpMap {
         // Initialize general help topics from the help.yml file
         for (HelpTopic topic : yaml.getGeneralTopics()) {
             addTopic(topic);
+        }
+        
+        // Initialize index help topics from the help.yml file
+        for (HelpTopic topic : yaml.getIndexTopics()) {
+            if (topic.getName().equals("Default")) {
+                defaultTopic = topic;
+            } else {
+                addTopic(topic);
+            }
         }
     }
 
@@ -146,7 +154,7 @@ public class SimpleHelpMap implements HelpMap {
         fillPluginIndexes(pluginIndexes, server.getCommandMap().getFallbackCommands());
 
         for (Map.Entry<String, Set<HelpTopic>> entry : pluginIndexes.entrySet()) {
-            addTopic(new IndexHelpTopic(entry.getKey(), "All commands for " + entry.getKey(), null, entry.getValue(), ChatColor.GRAY + "Below is a list of all " + entry.getKey() + " commands:"));
+            addTopic(new IndexHelpTopic(entry.getKey(), "All commands for " + entry.getKey(), null, entry.getValue(), "Below is a list of all " + entry.getKey() + " commands:"));
         }
 
         // Amend help topics from the help.yml file

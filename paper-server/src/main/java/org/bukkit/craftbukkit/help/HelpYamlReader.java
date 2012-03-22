@@ -19,16 +19,19 @@ public class HelpYamlReader {
 
     private YamlConfiguration helpYaml;
     private final char ALT_COLOR_CODE = '&';
+    private final Server server;
 
     public HelpYamlReader(Server server) {
+        this.server = server;
+        
         File helpYamlFile = new File("help.yml");
         YamlConfiguration defaultConfig = YamlConfiguration.loadConfiguration(getClass().getClassLoader().getResourceAsStream("configurations/help.yml"));
-        
+
         try {
             helpYaml = YamlConfiguration.loadConfiguration(helpYamlFile);
             helpYaml.options().copyDefaults(true);
             helpYaml.setDefaults(defaultConfig);
-            
+
             try {
                 if (!helpYamlFile.exists()) {
                     helpYaml.save(helpYamlFile);
@@ -44,6 +47,7 @@ public class HelpYamlReader {
 
     /**
      * Extracts a list of all general help topics from help.yml
+     *
      * @return A list of general topics.
      */
     public List<HelpTopic> getGeneralTopics() {
@@ -62,8 +66,30 @@ public class HelpYamlReader {
     }
 
     /**
+     * Extracts a list of all index topics from help.yml
+     *
+     * @return A list of index topics.
+     */
+    public List<HelpTopic> getIndexTopics() {
+        List<HelpTopic> topics = new LinkedList<HelpTopic>();
+        ConfigurationSection indexTopics = helpYaml.getConfigurationSection("index-topics");
+        if (indexTopics != null) {
+            for (String topicName : indexTopics.getKeys(false)) {
+                ConfigurationSection section = indexTopics.getConfigurationSection(topicName);
+                String shortText = ChatColor.translateAlternateColorCodes(ALT_COLOR_CODE, section.getString("shortText"));
+                String preamble = ChatColor.translateAlternateColorCodes(ALT_COLOR_CODE, section.getString("preamble"));
+                String permission = ChatColor.translateAlternateColorCodes(ALT_COLOR_CODE, section.getString("permission"));
+                List<String> commands = section.getStringList("commands");
+                topics.add(new CustomIndexHelpTopic(server.getHelpMap(), topicName, shortText, permission, commands, preamble));
+            }
+        }
+        return topics;
+    }
+
+    /**
      * Extracts a list of topic amendments from help.yml
-     * @return A list of amendments
+     *
+     * @return A list of amendments.
      */
     public List<HelpTopicAmendment> getTopicAmendments() {
         List<HelpTopicAmendment> amendments = new LinkedList<HelpTopicAmendment>();
@@ -79,7 +105,7 @@ public class HelpYamlReader {
         }
         return amendments;
     }
-    
+
     public List<String> getIgnoredPlugins() {
         return helpYaml.getStringList("ignore-plugins");
     }
