@@ -344,7 +344,6 @@ public class EntityBoat extends Entity {
                         drops.add(new CraftItemStack(Item.STICK.id,1));
                     }
                     // CraftBukkit start
-                    drops.add(new CraftItemStack(Item.MINECART.id,1));
                     Vehicle vehicle = (Vehicle) this.getBukkitEntity();
                     VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, null, drops);
                     this.world.getServer().getPluginManager().callEvent(destroyEvent);
