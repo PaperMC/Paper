@@ -40,7 +40,7 @@ public class EntityTrackerEntry {
         this.zLoc = MathHelper.floor(entity.locZ * 32.0D);
         this.yRot = MathHelper.d(entity.yaw * 256.0F / 360.0F);
         this.xRot = MathHelper.d(entity.pitch * 256.0F / 360.0F);
-        this.i = MathHelper.d(entity.aq() * 256.0F / 360.0F);
+        this.i = MathHelper.d(entity.ar() * 256.0F / 360.0F);
     }
 
     public boolean equals(Object object) {
@@ -135,7 +135,7 @@ public class EntityTrackerEntry {
                 this.broadcastIncludingSelf(new Packet40EntityMetadata(this.tracker.id, datawatcher));
             }
 
-            int i2 = MathHelper.d(this.tracker.aq() * 256.0F / 360.0F);
+            int i2 = MathHelper.d(this.tracker.ar() * 256.0F / 360.0F);
 
             if (Math.abs(i2 - this.i) >= 4) {
                 this.broadcast(new Packet35EntityHeadRotation(this.tracker.id, (byte) i2));

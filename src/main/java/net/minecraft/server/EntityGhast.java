@@ -46,8 +46,8 @@ public class EntityGhast extends EntityFlying implements IMonster {
         return 10;
     }
 
-    public void G_() {
-        super.G_();
+    public void F_() {
+        super.F_();
         byte b0 = this.datawatcher.getByte(16);
 
         this.texture = b0 == 1 ? "/mob/ghast_fire.png" : "/mob/ghast.png";
@@ -58,7 +58,7 @@ public class EntityGhast extends EntityFlying implements IMonster {
             this.die();
         }
 
-        this.aF();
+        this.aG();
         this.e = this.f;
         double d0 = this.b - this.locX;
         double d1 = this.c - this.locY;

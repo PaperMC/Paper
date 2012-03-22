@@ -48,17 +48,17 @@ public class ChunkSection {
 
         if (i1 == 0 && l != 0) {
             ++this.b;
-            if (Block.byId[l] != null && Block.byId[l].m()) {
+            if (Block.byId[l] != null && Block.byId[l].n()) {
                 ++this.c;
             }
         } else if (i1 != 0 && l == 0) {
             --this.b;
-            if (Block.byId[i1] != null && Block.byId[i1].m()) {
+            if (Block.byId[i1] != null && Block.byId[i1].n()) {
                 --this.c;
             }
-        } else if (Block.byId[i1] != null && Block.byId[i1].m() && (Block.byId[l] == null || !Block.byId[l].m())) {
+        } else if (Block.byId[i1] != null && Block.byId[i1].n() && (Block.byId[l] == null || !Block.byId[l].n())) {
             --this.c;
-        } else if ((Block.byId[i1] == null || !Block.byId[i1].m()) && Block.byId[l] != null && Block.byId[l].m()) {
+        } else if ((Block.byId[i1] == null || !Block.byId[i1].n()) && Block.byId[l] != null && Block.byId[l].n()) {
             ++this.c;
         }
 
@@ -127,7 +127,7 @@ public class ChunkSection {
                             }
                         } else {
                             ++this.b;
-                            if (Block.byId[l].m()) {
+                            if (Block.byId[l].n()) {
                                 ++this.c;
                             }
                         }

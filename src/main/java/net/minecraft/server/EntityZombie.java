@@ -9,7 +9,7 @@ public class EntityZombie extends EntityMonster {
         this.texture = "/mob/zombie.png";
         this.bb = 0.23F;
         this.damage = 4;
-        this.ak().b(true);
+        this.al().b(true);
         this.goalSelector.a(0, new PathfinderGoalFloat(this));
         this.goalSelector.a(1, new PathfinderGoalBreakDoor(this));
         this.goalSelector.a(2, new PathfinderGoalMeleeAttack(this, EntityHuman.class, this.bb, false));
@@ -28,7 +28,7 @@ public class EntityZombie extends EntityMonster {
         return 20;
     }
 
-    public int S() {
+    public int T() {
         return 2;
     }
 

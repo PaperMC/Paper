@@ -46,8 +46,8 @@ public class EntityItem extends Entity {
 
     protected void b() {}
 
-    public void G_() {
-        super.G_();
+    public void F_() {
+        super.F_();
         // CraftBukkit start
         int currentTick = (int) (System.currentTimeMillis() / 50);
         this.pickupDelay -= (currentTick - this.lastTick);
@@ -110,7 +110,7 @@ public class EntityItem extends Entity {
     }
 
     public boolean damageEntity(DamageSource damagesource, int i) {
-        this.aV();
+        this.aW();
         this.e -= i;
         if (this.e <= 0) {
             this.die();

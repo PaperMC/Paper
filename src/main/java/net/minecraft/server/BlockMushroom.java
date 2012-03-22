@@ -77,6 +77,10 @@ public class BlockMushroom extends BlockFlower {
         }
     }
 
+    public boolean canPlace(World world, int i, int j, int k) {
+        return super.canPlace(world, i, j, k) && this.f(world, i, j, k);
+    }
+
     protected boolean d(int i) {
         return Block.n[i];
     }

@@ -45,7 +45,7 @@ public class EntityTNTPrimed extends Entity {
         return !this.dead;
     }
 
-    public void G_() {
+    public void F_() {
         this.lastX = this.locX;
         this.lastY = this.locY;
         this.lastZ = this.locZ;

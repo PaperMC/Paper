@@ -39,7 +39,7 @@ public class ItemMonsterEgg extends Item {
             if (entity != null && entity instanceof EntityLiving) { // CraftBukkit
                 entity.setPositionRotation(d0, d1, d2, world.random.nextFloat() * 360.0F, 0.0F);
                 world.addEntity(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // CraftBukkit
-                ((EntityLiving) entity).ay();
+                ((EntityLiving) entity).az();
             }
 
             return entity != null;

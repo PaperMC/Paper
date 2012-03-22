@@ -22,7 +22,7 @@ public class EntityEnderCrystal extends Entity {
         this.datawatcher.a(8, Integer.valueOf(this.b));
     }
 
-    public void G_() {
+    public void F_() {
         this.lastX = this.locX;
         this.lastY = this.locY;
         this.lastZ = this.locZ;

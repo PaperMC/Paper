@@ -279,7 +279,7 @@ public class World implements IBlockAccess {
     public boolean isTileEntity(int i, int j, int k) {
         int l = this.getTypeId(i, j, k);
 
-        return Block.byId[l] != null && Block.byId[l].n();
+        return Block.byId[l] != null && Block.byId[l].o();
     }
 
     public boolean isLoaded(int i, int j, int k) {
@@ -1111,7 +1111,7 @@ public class World implements IBlockAccess {
                 continue;
             }
             // CraftBukkit end
-            entity.G_();
+            entity.F_();
             if (entity.dead) {
                 this.e.remove(i--);
             }
@@ -1260,9 +1260,9 @@ public class World implements IBlockAccess {
             entity.lastPitch = entity.pitch;
             if (flag && entity.bZ) {
                 if (entity.vehicle != null) {
-                    entity.Q();
+                    entity.R();
                 } else {
-                    entity.G_();
+                    entity.F_();
                 }
             }
 
@@ -2038,7 +2038,7 @@ public class World implements IBlockAccess {
                         ++j;
                         Block block = Block.byId[j3];
 
-                        if (block != null && block.m()) {
+                        if (block != null && block.n()) {
                             ++i;
                             block.a(this, k2 + k, i3 + chunksection.c(), l2 + l, this.random);
                         }
@@ -2060,7 +2060,7 @@ public class World implements IBlockAccess {
 
     public boolean c(int i, int j, int k, boolean flag) {
         BiomeBase biomebase = this.getBiome(i, k);
-        float f = biomebase.h();
+        float f = biomebase.i();
 
         if (f > 0.15F) {
             return false;
@@ -2103,7 +2103,7 @@ public class World implements IBlockAccess {
 
     public boolean u(int i, int j, int k) {
         BiomeBase biomebase = this.getBiome(i, k);
-        float f = biomebase.h();
+        float f = biomebase.i();
 
         if (f > 0.15F) {
             return false;
@@ -2870,14 +2870,14 @@ public class World implements IBlockAccess {
         } else {
             BiomeBase biomebase = this.getBiome(i, k);
 
-            return biomebase.b() ? false : biomebase.c();
+            return biomebase.c() ? false : biomebase.d();
         }
     }
 
     public boolean z(int i, int j, int k) {
         BiomeBase biomebase = this.getBiome(i, k);
 
-        return biomebase.d();
+        return biomebase.e();
     }
 
     public void a(String s, WorldMapBase worldmapbase) {

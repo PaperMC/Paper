@@ -14,7 +14,7 @@ public class EntitySnowman extends EntityGolem {
         super(world);
         this.texture = "/mob/snowman.png";
         this.b(0.4F, 1.8F);
-        this.ak().a(true);
+        this.al().a(true);
         this.goalSelector.a(1, new PathfinderGoalArrowAttack(this, 0.25F, 2, 20));
         this.goalSelector.a(2, new PathfinderGoalRandomStroll(this, 0.2F));
         this.goalSelector.a(3, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 6.0F));
@@ -32,7 +32,7 @@ public class EntitySnowman extends EntityGolem {
 
     public void e() {
         super.e();
-        if (this.aS()) {
+        if (this.aT()) {
             EntityDamageEvent event = new EntityDamageEvent(this.getBukkitEntity(), EntityDamageEvent.DamageCause.DROWNING, 1);
             this.world.getServer().getPluginManager().callEvent(event);
 
@@ -44,7 +44,7 @@ public class EntitySnowman extends EntityGolem {
         int i = MathHelper.floor(this.locX);
         int j = MathHelper.floor(this.locZ);
 
-        if (this.world.getBiome(i, j).h() > 1.0F) {
+        if (this.world.getBiome(i, j).i() > 1.0F) {
             EntityDamageEvent event = new EntityDamageEvent(this.getBukkitEntity(), EntityDamageEvent.DamageCause.FIRE_TICK, 1);
             this.world.getServer().getPluginManager().callEvent(event);
 
@@ -58,7 +58,7 @@ public class EntitySnowman extends EntityGolem {
             int k = MathHelper.floor(this.locY);
             int l = MathHelper.floor(this.locZ + (double) ((float) (i / 2 % 2 * 2 - 1) * 0.25F));
 
-            if (this.world.getTypeId(j, k, l) == 0 && this.world.getBiome(j, l).h() < 0.8F && Block.SNOW.canPlace(this.world, j, k, l)) {
+            if (this.world.getTypeId(j, k, l) == 0 && this.world.getBiome(j, l).i() < 0.8F && Block.SNOW.canPlace(this.world, j, k, l)) {
                 // CraftBukkit start
                 BlockState blockState = this.world.getWorld().getBlockAt(j, k, l).getState();
                 blockState.setTypeId(Block.SNOW.id);

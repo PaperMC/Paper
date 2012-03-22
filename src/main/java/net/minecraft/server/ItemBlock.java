@@ -96,10 +96,10 @@ public class ItemBlock extends Item {
     }
 
     public String a(ItemStack itemstack) {
-        return Block.byId[this.id].p();
+        return Block.byId[this.id].q();
     }
 
     public String getName() {
-        return Block.byId[this.id].p();
+        return Block.byId[this.id].q();
     }
 }

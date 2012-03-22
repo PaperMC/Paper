@@ -9,7 +9,7 @@ public class BlockBed extends BlockDirectional {
 
     public BlockBed(int i) {
         super(i, 134, Material.CLOTH);
-        this.s();
+        this.t();
     }
 
     public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman) {
@@ -116,7 +116,7 @@ public class BlockBed extends BlockDirectional {
     }
 
     public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
-        this.s();
+        this.t();
     }
 
     public void doPhysics(World world, int i, int j, int k, int l) {
@@ -141,7 +141,7 @@ public class BlockBed extends BlockDirectional {
         return /* d(i) ? 0 CraftBukkit : */ Item.BED.id;
     }
 
-    private void s() {
+    private void t() {
         this.a(0.0F, 0.0F, 0.0F, 1.0F, 0.5625F, 1.0F);
     }
 

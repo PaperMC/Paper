@@ -85,7 +85,7 @@ public class EntityEnderman extends EntityMonster {
     }
 
     public void e() {
-        if (this.aS()) {
+        if (this.aT()) {
             this.damageEntity(DamageSource.DROWN, 1);
         }
 
@@ -147,7 +147,7 @@ public class EntityEnderman extends EntityMonster {
             }
         }
 
-        if (this.aS()) {
+        if (this.aT()) {
             this.target = null;
             this.x();
         }

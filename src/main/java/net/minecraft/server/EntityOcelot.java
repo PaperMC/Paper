@@ -8,17 +8,18 @@ public class EntityOcelot extends EntityTameableAnimal {
         super(world);
         this.texture = "/mob/ozelot.png";
         this.b(0.6F, 0.8F);
-        this.ak().a(true);
+        this.al().a(true);
         this.goalSelector.a(1, new PathfinderGoalFloat(this));
         this.goalSelector.a(2, this.a);
         this.goalSelector.a(3, this.b = new PathfinderGoalTempt(this, 0.18F, Item.RAW_FISH.id, true));
         this.goalSelector.a(4, new PathfinderGoalAvoidPlayer(this, EntityHuman.class, 16.0F, 0.23F, 0.4F));
-        this.goalSelector.a(5, new PathfinderGoalFollowOwner(this, 0.3F, 10.0F, 5.0F));
-        this.goalSelector.a(6, new PathfinderGoalLeapAtTarget(this, 0.3F));
-        this.goalSelector.a(7, new PathfinderGoalOzelotAttack(this));
-        this.goalSelector.a(8, new PathfinderGoalBreed(this, 0.23F));
-        this.goalSelector.a(9, new PathfinderGoalRandomStroll(this, 0.23F));
-        this.goalSelector.a(10, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 10.0F));
+        this.goalSelector.a(5, new PathfinderGoalJumpOnBlock(this, 0.4F));
+        this.goalSelector.a(6, new PathfinderGoalFollowOwner(this, 0.3F, 10.0F, 5.0F));
+        this.goalSelector.a(7, new PathfinderGoalLeapAtTarget(this, 0.3F));
+        this.goalSelector.a(8, new PathfinderGoalOzelotAttack(this));
+        this.goalSelector.a(9, new PathfinderGoalBreed(this, 0.23F));
+        this.goalSelector.a(10, new PathfinderGoalRandomStroll(this, 0.23F));
+        this.goalSelector.a(11, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 10.0F));
         this.targetSelector.a(1, new PathfinderGoalRandomTargetNonTamed(this, EntityChicken.class, 14.0F, 750, false));
     }
 

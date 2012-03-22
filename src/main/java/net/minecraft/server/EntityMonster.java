@@ -21,8 +21,8 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
         super.e();
     }
 
-    public void G_() {
-        super.G_();
+    public void F_() {
+        super.F_();
         if (!this.world.isStatic && this.world.difficulty == 0) {
             this.die();
         }
@@ -99,7 +99,7 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
         super.a(nbttagcompound);
     }
 
-    protected boolean D() {
+    protected boolean C() {
         int i = MathHelper.floor(this.locX);
         int j = MathHelper.floor(this.boundingBox.b);
         int k = MathHelper.floor(this.locZ);
@@ -122,6 +122,6 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
     }
 
     public boolean canSpawn() {
-        return this.D() && super.canSpawn();
+        return this.C() && super.canSpawn();
     }
 }

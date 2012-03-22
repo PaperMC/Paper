@@ -44,7 +44,6 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.event.player.PlayerToggleSprintEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
-import org.bukkit.event.Event.Result;
 import org.bukkit.event.inventory.*;
 import org.bukkit.event.inventory.InventoryType.SlotType;
 import org.bukkit.inventory.CraftingInventory;
@@ -575,9 +574,9 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 }
             }
             // CraftBukkit end
-            this.player.R();
+            this.player.S();
         } else if (packet14blockdig.e == 5) {
-            this.player.M();
+            this.player.N();
         } else {
             boolean flag = worldserver.weirdIsOpCache = worldserver.dimension != 0 || this.minecraftServer.serverConfigurationManager.isOp(this.player.name); // CraftBukkit
             boolean flag1 = false;
@@ -985,7 +984,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             if (event.isCancelled()) return;
             // CraftBukkit end
 
-            this.player.D();
+            this.player.C_();
         }
     }
 
@@ -1377,6 +1376,10 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
     public boolean c() {
         return true;
+    }
+
+    public void a(Packet202Abilities packet202abilities) {
+        this.player.abilities.isFlying = packet202abilities.b && this.player.abilities.canFly;
     }
 
     // CraftBukkit start

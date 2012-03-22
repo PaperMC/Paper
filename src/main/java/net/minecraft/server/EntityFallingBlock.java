@@ -37,7 +37,7 @@ public class EntityFallingBlock extends Entity {
         return !this.dead;
     }
 
-    public void G_() {
+    public void F_() {
         if (this.id == 0) {
             this.die();
         } else {

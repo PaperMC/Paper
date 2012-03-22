@@ -74,8 +74,8 @@ public class EntityFishingHook extends Entity {
         this.i = 0;
     }
 
-    public void G_() {
-        super.G_();
+    public void F_() {
+        super.F_();
         if (this.l > 0) {
             double d0 = this.locX + (this.m - this.locX) / (double) this.l;
             double d1 = this.locY + (this.n - this.locY) / (double) this.l;
@@ -98,7 +98,7 @@ public class EntityFishingHook extends Entity {
             this.c(this.yaw, this.pitch);
         } else {
             if (!this.world.isStatic) {
-                ItemStack itemstack = this.owner.T();
+                ItemStack itemstack = this.owner.U();
 
                 if (this.owner.dead || !this.owner.isAlive() || itemstack == null || itemstack.getItem() != Item.FISHING_ROD || this.j(this.owner) > 1024.0D) {
                     this.die();

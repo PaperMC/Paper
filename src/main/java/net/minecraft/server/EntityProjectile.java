@@ -82,11 +82,11 @@ public abstract class EntityProjectile extends Entity {
         this.h = 0;
     }
 
-    public void G_() {
+    public void F_() {
         this.bL = this.locX;
         this.bM = this.locY;
         this.bN = this.locZ;
-        super.G_();
+        super.F_();
         if (this.shake > 0) {
             --this.shake;
         }
@@ -190,7 +190,7 @@ public abstract class EntityProjectile extends Entity {
         float f2 = 0.99F;
         float f3 = this.e();
 
-        if (this.aT()) {
+        if (this.aU()) {
             for (int k = 0; k < 4; ++k) {
                 float f4 = 0.25F;
 

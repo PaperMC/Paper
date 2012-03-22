@@ -60,7 +60,7 @@ public class WorldGenTaiga1 extends WorldGenerator implements BlockSapling.TreeG
             } else {
                 l1 = world.getTypeId(i, j - 1, k);
                 if ((l1 == Block.GRASS.id || l1 == Block.DIRT.id) && j < 128 - l - 1) {
-                    this.setTypeAndData(world, i, j - 1, k, Block.DIRT.id, 0); // CraftBukkit
+                    this.setType(world, i, j - 1, k, Block.DIRT.id);
                     l2 = 0;
 
                     for (i2 = j + l; i2 >= j + i1; --i2) {
@@ -71,7 +71,7 @@ public class WorldGenTaiga1 extends WorldGenerator implements BlockSapling.TreeG
                                 int j3 = i3 - k;
 
                                 if ((Math.abs(k2) != l2 || Math.abs(j3) != l2 || l2 <= 0) && !Block.n[world.getTypeId(j2, i2, i3)]) {
-                                    this.setTypeAndData(world, j2, i2, i3, Block.LEAVES.id, 1); // CraftBukkit
+                                    this.setTypeAndData(world, j2, i2, i3, Block.LEAVES.id, 1);
                                 }
                             }
                         }
@@ -86,7 +86,7 @@ public class WorldGenTaiga1 extends WorldGenerator implements BlockSapling.TreeG
                     for (i2 = 0; i2 < l - 1; ++i2) {
                         j2 = world.getTypeId(i, j + i2, k);
                         if (j2 == 0 || j2 == Block.LEAVES.id) {
-                            this.setTypeAndData(world, i, j + i2, k, Block.LOG.id, 1); // CraftBukkit
+                            this.setTypeAndData(world, i, j + i2, k, Block.LOG.id, 1);
                         }
                     }
 

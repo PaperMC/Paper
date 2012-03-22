@@ -268,6 +268,7 @@ public abstract class Packet {
         a(132, true, false, Packet132TileEntityData.class);
         a(200, true, false, Packet200Statistic.class);
         a(201, true, false, Packet201PlayerInfo.class);
+        a(202, true, true, Packet202Abilities.class);
         a(250, true, true, Packet250CustomPayload.class);
         a(254, false, true, Packet254GetInfo.class);
         a(255, true, true, Packet255KickDisconnect.class);

@@ -222,7 +222,7 @@ public final class SpawnerCreature {
         List list = biomebase.getMobs(EnumCreatureType.CREATURE);
 
         if (!list.isEmpty()) {
-            while (random.nextFloat() < biomebase.e()) {
+            while (random.nextFloat() < biomebase.f()) {
                 BiomeMeta biomemeta = (BiomeMeta) WeightedRandom.a(world.random, (Collection) list);
                 int i1 = biomemeta.b + random.nextInt(1 + biomemeta.c - biomemeta.b);
                 int j1 = i + random.nextInt(k);

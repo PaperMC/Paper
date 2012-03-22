@@ -15,7 +15,7 @@ public class EntityWolf extends EntityTameableAnimal {
         this.texture = "/mob/wolf.png";
         this.b(0.6F, 0.8F);
         this.bb = 0.3F;
-        this.ak().a(true);
+        this.al().a(true);
         this.goalSelector.a(1, new PathfinderGoalFloat(this));
         this.goalSelector.a(2, this.a);
         this.goalSelector.a(3, new PathfinderGoalLeapAtTarget(this, 0.4F));
@@ -96,7 +96,7 @@ public class EntityWolf extends EntityTameableAnimal {
 
     public void e() {
         super.e();
-        if (!this.world.isStatic && this.h && !this.i && !this.G() && this.onGround) {
+        if (!this.world.isStatic && this.h && !this.i && !this.H() && this.onGround) {
             this.i = true;
             this.j = 0.0F;
             this.k = 0.0F;
@@ -104,8 +104,8 @@ public class EntityWolf extends EntityTameableAnimal {
         }
     }
 
-    public void G_() {
-        super.G_();
+    public void F_() {
+        super.F_();
         this.g = this.c;
         if (this.b) {
             this.c += (1.0F - this.c) * 0.4F;
@@ -117,7 +117,7 @@ public class EntityWolf extends EntityTameableAnimal {
             this.bc = 10;
         }
 
-        if (this.aS()) {
+        if (this.aT()) {
             this.h = true;
             this.i = false;
             this.j = 0.0F;
@@ -154,8 +154,8 @@ public class EntityWolf extends EntityTameableAnimal {
         return this.length * 0.8F;
     }
 
-    public int C() {
-        return this.isSitting() ? 20 : super.C();
+    public int D() {
+        return this.isSitting() ? 20 : super.D();
     }
 
     public boolean damageEntity(DamageSource damagesource, int i) {

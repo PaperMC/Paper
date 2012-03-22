@@ -26,8 +26,8 @@ public class EntitySpider extends EntityMonster {
         super.e();
     }
 
-    public void G_() {
-        super.G_();
+    public void F_() {
+        super.F_();
         if (!this.world.isStatic) {
             this.a(this.positionChanged);
         }

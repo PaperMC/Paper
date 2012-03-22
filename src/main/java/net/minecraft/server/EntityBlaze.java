@@ -52,7 +52,7 @@ public class EntityBlaze extends EntityMonster {
 
     public void e() {
         if (!this.world.isStatic) {
-            if (this.aS()) {
+            if (this.aT()) {
                 this.damageEntity(DamageSource.DROWN, 1);
             }
 
@@ -62,7 +62,7 @@ public class EntityBlaze extends EntityMonster {
                 this.a = 0.5F + (float) this.random.nextGaussian() * 3.0F;
             }
 
-            if (this.H() != null && this.H().locY + (double) this.H().getHeadHeight() > this.locY + (double) this.getHeadHeight() + (double) this.a) {
+            if (this.I() != null && this.I().locY + (double) this.I().getHeadHeight() > this.locY + (double) this.getHeadHeight() + (double) this.a) {
                 this.motY += (0.30000001192092896D - this.motY) * 0.30000001192092896D;
             }
         }
@@ -172,7 +172,7 @@ public class EntityBlaze extends EntityMonster {
         this.datawatcher.watch(16, Byte.valueOf(b0));
     }
 
-    protected boolean D() {
+    protected boolean C() {
         return true;
     }
 }

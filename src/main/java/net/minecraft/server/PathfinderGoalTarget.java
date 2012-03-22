@@ -27,7 +27,7 @@ public abstract class PathfinderGoalTarget extends PathfinderGoal {
     }
 
     public boolean b() {
-        EntityLiving entityliving = this.c.as();
+        EntityLiving entityliving = this.c.at();
 
         if (entityliving == null) {
             return false;
@@ -37,7 +37,7 @@ public abstract class PathfinderGoalTarget extends PathfinderGoal {
             return false;
         } else {
             if (this.e) {
-                if (!this.c.al().canSee(entityliving)) {
+                if (!this.c.am().canSee(entityliving)) {
                     if (++this.g > 60) {
                         return false;
                     }
@@ -85,7 +85,7 @@ public abstract class PathfinderGoalTarget extends PathfinderGoal {
 
                 if (!this.c.e(MathHelper.floor(entityliving.locX), MathHelper.floor(entityliving.locY), MathHelper.floor(entityliving.locZ))) {
                     return false;
-                } else if (this.e && !this.c.al().canSee(entityliving)) {
+                } else if (this.e && !this.c.am().canSee(entityliving)) {
                     return false;
                 } else {
                     if (this.a) {
@@ -136,8 +136,8 @@ public abstract class PathfinderGoalTarget extends PathfinderGoal {
     }
 
     private boolean a(EntityLiving entityliving) {
-        this.f = 10 + this.c.am().nextInt(5);
-        PathEntity pathentity = this.c.ak().a(entityliving);
+        this.f = 10 + this.c.an().nextInt(5);
+        PathEntity pathentity = this.c.al().a(entityliving);
 
         if (pathentity == null) {
             return false;

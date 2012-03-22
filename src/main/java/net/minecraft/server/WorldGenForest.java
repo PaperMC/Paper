@@ -60,7 +60,7 @@ public class WorldGenForest extends WorldGenerator implements BlockSapling.TreeG
             } else {
                 i1 = world.getTypeId(i, j - 1, k);
                 if ((i1 == Block.GRASS.id || i1 == Block.DIRT.id) && j < 256 - l - 1) {
-                    this.setTypeAndData(world, i, j - 1, k, Block.DIRT.id, 0); // CraftBukkit
+                    this.setType(world, i, j - 1, k, Block.DIRT.id);
 
                     int i2;
 

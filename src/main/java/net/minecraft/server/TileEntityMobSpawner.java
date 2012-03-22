@@ -79,7 +79,7 @@ public class TileEntityMobSpawner extends TileEntity {
                         if (entityliving.canSpawn()) {
                             this.world.addEntity(entityliving, SpawnReason.SPAWNER); // CraftBukkit
                             this.world.triggerEffect(2004, this.x, this.y, this.z, 0);
-                            entityliving.aB();
+                            entityliving.aC();
                             this.e();
                         }
                     }

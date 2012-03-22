@@ -17,7 +17,7 @@ public abstract class EntityCreature extends EntityLiving {
         super(world);
     }
 
-    protected boolean E() {
+    protected boolean F() {
         return false;
     }
 
@@ -27,7 +27,7 @@ public abstract class EntityCreature extends EntityLiving {
             --this.f;
         }
 
-        this.e = this.E();
+        this.e = this.F();
         float f = 16.0F;
 
         if (this.target == null) {
@@ -77,12 +77,12 @@ public abstract class EntityCreature extends EntityLiving {
         if (!this.e && this.target != null && (this.pathEntity == null || this.random.nextInt(20) == 0)) {
             this.pathEntity = this.world.findPath(this, this.target, f, true, false, false, true);
         } else if (!this.e && (this.pathEntity == null && this.random.nextInt(180) == 0 || this.random.nextInt(120) == 0 || this.f > 0) && this.aV < 100) {
-            this.F();
+            this.G();
         }
 
         int i = MathHelper.floor(this.boundingBox.b + 0.5D);
-        boolean flag = this.aT();
-        boolean flag1 = this.aU();
+        boolean flag = this.aU();
+        boolean flag1 = this.aV();
 
         this.pitch = 0.0F;
         if (this.pathEntity != null && this.random.nextInt(100) != 0) {
@@ -146,7 +146,7 @@ public abstract class EntityCreature extends EntityLiving {
                 this.a(this.target, 30.0F, 30.0F);
             }
 
-            if (this.positionChanged && !this.G()) {
+            if (this.positionChanged && !this.H()) {
                 this.aZ = true;
             }
 
@@ -161,7 +161,7 @@ public abstract class EntityCreature extends EntityLiving {
         }
     }
 
-    protected void F() {
+    protected void G() {
         // MethodProfiler.a("stroll"); // CraftBukkit - not in production code
         boolean flag = false;
         int i = -1;
@@ -211,7 +211,7 @@ public abstract class EntityCreature extends EntityLiving {
         return super.canSpawn() && this.a(i, j, k) >= 0.0F;
     }
 
-    public boolean G() {
+    public boolean H() {
         return this.pathEntity != null;
     }
 
@@ -219,7 +219,7 @@ public abstract class EntityCreature extends EntityLiving {
         this.pathEntity = pathentity;
     }
 
-    public Entity H() {
+    public Entity I() {
         return this.target;
     }
 
@@ -227,11 +227,11 @@ public abstract class EntityCreature extends EntityLiving {
         this.target = entity;
     }
 
-    protected float D_() {
+    protected float J() {
         if (this.c_()) {
             return 1.0F;
         } else {
-            float f = super.D_();
+            float f = super.J();
 
             if (this.f > 0) {
                 f *= 2.0F;

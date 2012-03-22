@@ -69,11 +69,11 @@ public class EntityFireball extends Entity {
         this.dirZ = d2 / d3 * 0.1D;
     }
 
-    public void G_() {
+    public void F_() {
         if (!this.world.isStatic && (this.shooter != null && this.shooter.dead || !this.world.isLoaded((int) this.locX, (int) this.locY, (int) this.locZ))) {
             this.die();
         } else {
-            super.G_();
+            super.F_();
             this.setOnFire(1);
             if (this.i) {
                 int i = this.world.getTypeId(this.e, this.f, this.g);
@@ -171,7 +171,7 @@ public class EntityFireball extends Entity {
             this.yaw = this.lastYaw + (this.yaw - this.lastYaw) * 0.2F;
             float f2 = 0.95F;
 
-            if (this.aT()) {
+            if (this.aU()) {
                 for (int k = 0; k < 4; ++k) {
                     float f3 = 0.25F;
 
@@ -235,9 +235,9 @@ public class EntityFireball extends Entity {
     }
 
     public boolean damageEntity(DamageSource damagesource, int i) {
-        this.aV();
+        this.aW();
         if (damagesource.getEntity() != null) {
-            Vec3D vec3d = damagesource.getEntity().aI();
+            Vec3D vec3d = damagesource.getEntity().aJ();
 
             if (vec3d != null) {
                 this.motX = vec3d.a;

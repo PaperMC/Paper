@@ -61,7 +61,7 @@ public class WorldGenTaiga2 extends WorldGenerator implements BlockSapling.TreeG
             } else {
                 l1 = world.getTypeId(i, j - 1, k);
                 if ((l1 == Block.GRASS.id || l1 == Block.DIRT.id) && j < 256 - l - 1) {
-                    this.setTypeAndData(world, i, j - 1, k, Block.DIRT.id, 0); // CraftBukkit
+                    this.setType(world, i, j - 1, k, Block.DIRT.id);
                     k2 = random.nextInt(2);
                     i2 = 1;
                     byte b0 = 0;

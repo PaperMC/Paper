@@ -18,7 +18,7 @@ public class PathfinderGoalEatTile extends PathfinderGoal {
     }
 
     public boolean a() {
-        if (this.b.am().nextInt(this.b.isBaby() ? 50 : 1000) != 0) {
+        if (this.b.an().nextInt(this.b.isBaby() ? 50 : 1000) != 0) {
             return false;
         } else {
             int i = MathHelper.floor(this.b.locX);
@@ -32,7 +32,7 @@ public class PathfinderGoalEatTile extends PathfinderGoal {
     public void c() {
         this.a = 40;
         this.c.broadcastEntityEffect(this.b, (byte) 10);
-        this.b.ak().f();
+        this.b.al().f();
     }
 
     public void d() {

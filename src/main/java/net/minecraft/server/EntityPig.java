@@ -6,7 +6,7 @@ public class EntityPig extends EntityAnimal {
         super(world);
         this.texture = "/mob/pig.png";
         this.b(0.9F, 0.9F);
-        this.ak().a(true);
+        this.al().a(true);
         float f = 0.25F;
 
         this.goalSelector.a(0, new PathfinderGoalFloat(this));

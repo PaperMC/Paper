@@ -13,7 +13,7 @@ public class EntityIronGolem extends EntityGolem {
         super(world);
         this.texture = "/mob/villager_golem.png";
         this.b(1.4F, 2.9F);
-        this.ak().a(true);
+        this.al().a(true);
         this.goalSelector.a(1, new PathfinderGoalMeleeAttack(this, 0.25F, true));
         this.goalSelector.a(2, new PathfinderGoalMoveTowardsTarget(this, 0.22F, 32.0F));
         this.goalSelector.a(3, new PathfinderGoalMoveThroughVillage(this, 0.16F, true));
@@ -41,7 +41,7 @@ public class EntityIronGolem extends EntityGolem {
             this.b = 70 + this.random.nextInt(50);
             this.a = this.world.villages.getClosestVillage(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ), 32);
             if (this.a == null) {
-                this.aw();
+                this.ax();
             } else {
                 ChunkCoordinates chunkcoordinates = this.a.getCenter();
 

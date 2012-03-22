@@ -25,7 +25,7 @@ public class BlockLongGrass extends BlockFlower {
     }
 
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
-        if (!world.isStatic && entityhuman.T() != null && entityhuman.T().id == Item.SHEARS.id) {
+        if (!world.isStatic && entityhuman.U() != null && entityhuman.U().id == Item.SHEARS.id) {
             entityhuman.a(StatisticList.C[this.id], 1);
             /* CraftBukkit start - moved this line into calculateDrops
             this.a(world, i, j, k, new ItemStack(Block.LONG_GRASS, 1, l));
@@ -39,7 +39,7 @@ public class BlockLongGrass extends BlockFlower {
 
     // CraftBukkit start - Calculate drops
     public ArrayList<ItemStack> calculateDrops(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
-        if (!world.isStatic && entityhuman.T() != null && entityhuman.T().id == Item.SHEARS.id) {
+        if (!world.isStatic && entityhuman.U() != null && entityhuman.U().id == Item.SHEARS.id) {
             super.dropList = new ArrayList<ItemStack>();
             this.a(world, i, j, k, new ItemStack(Block.LONG_GRASS, 1, l));
             return super.dropList;

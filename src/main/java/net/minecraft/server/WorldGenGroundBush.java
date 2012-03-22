@@ -31,7 +31,7 @@ public class WorldGenGroundBush extends WorldGenerator implements BlockSapling.T
 
         if (i1 == Block.DIRT.id || i1 == Block.GRASS.id) {
             ++j;
-            this.setTypeAndData(world, i, j, k, Block.LOG.id, this.b); // CraftBukkit
+            this.setTypeAndData(world, i, j, k, Block.LOG.id, this.b);
 
             for (int j1 = j; j1 <= j + 2; ++j1) {
                 int k1 = j1 - j;
@@ -54,6 +54,7 @@ public class WorldGenGroundBush extends WorldGenerator implements BlockSapling.T
             return false;
         }
         // CraftBukkit end
+
         return true;
     }
 }

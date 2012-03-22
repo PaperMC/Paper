@@ -110,7 +110,7 @@ public class EntityBoat extends Entity {
             this.d(-this.m());
             this.c(10);
             this.setDamage(this.getDamage() + i * 10);
-            this.aV();
+            this.aW();
             if (this.getDamage() > 40) {
                 // CraftBukkit start
                 List<org.bukkit.inventory.ItemStack> drops = new ArrayList<org.bukkit.inventory.ItemStack>();
@@ -168,7 +168,7 @@ public class EntityBoat extends Entity {
         return !this.dead;
     }
 
-    public void G_() {
+    public void F_() {
         // CraftBukkit start
         double prevX = this.locX;
         double prevY = this.locY;
@@ -177,7 +177,7 @@ public class EntityBoat extends Entity {
         float prevPitch = this.pitch;
         // CraftBukkit end
 
-        super.G_();
+        super.F_();
         if (this.l() > 0) {
             this.c(this.l() - 1);
         }
@@ -443,7 +443,7 @@ public class EntityBoat extends Entity {
             double d0 = Math.cos((double) this.yaw * 3.141592653589793D / 180.0D) * 0.4D;
             double d1 = Math.sin((double) this.yaw * 3.141592653589793D / 180.0D) * 0.4D;
 
-            this.passenger.setPosition(this.locX + d0, this.locY + this.x_() + this.passenger.V(), this.locZ + d1);
+            this.passenger.setPosition(this.locX + d0, this.locY + this.x_() + this.passenger.W(), this.locZ + d1);
         }
     }
 

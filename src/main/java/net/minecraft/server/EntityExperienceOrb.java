@@ -34,8 +34,8 @@ public class EntityExperienceOrb extends Entity {
 
     protected void b() {}
 
-    public void G_() {
-        super.G_();
+    public void F_() {
+        super.F_();
         if (this.c > 0) {
             --this.c;
         }
@@ -111,7 +111,7 @@ public class EntityExperienceOrb extends Entity {
     }
 
     public boolean damageEntity(DamageSource damagesource, int i) {
-        this.aV();
+        this.aW();
         this.d -= i;
         if (this.d <= 0) {
             this.die();

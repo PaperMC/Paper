@@ -254,7 +254,7 @@ public class BlockPiston extends Block {
             return false;
         } else {
             if (i != Block.PISTON.id && i != Block.PISTON_STICKY.id) {
-                if (Block.byId[i].l() == -1.0F) {
+                if (Block.byId[i].m() == -1.0F) {
                     return false;
                 }
 

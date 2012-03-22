@@ -104,8 +104,8 @@ public class EntityArrow extends Entity {
         this.k = 0;
     }
 
-    public void G_() {
-        super.G_();
+    public void F_() {
+        super.F_();
         if (this.lastPitch == 0.0F && this.lastYaw == 0.0F) {
             float f = MathHelper.sqrt(this.motX * this.motX + this.motZ * this.motZ);
 
@@ -298,7 +298,7 @@ public class EntityArrow extends Entity {
             float f4 = 0.99F;
 
             f1 = 0.05F;
-            if (this.aT()) {
+            if (this.aU()) {
                 for (int i1 = 0; i1 < 4; ++i1) {
                     float f5 = 0.25F;
 

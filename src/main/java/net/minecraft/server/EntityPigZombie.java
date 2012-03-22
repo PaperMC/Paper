@@ -27,13 +27,13 @@ public class EntityPigZombie extends EntityZombie {
         return false;
     }
 
-    public void G_() {
+    public void F_() {
         this.bb = this.target != null ? 0.95F : 0.5F;
         if (this.soundDelay > 0 && --this.soundDelay == 0) {
             this.world.makeSound(this, "mob.zombiepig.zpigangry", this.p() * 2.0F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 1.8F);
         }
 
-        super.G_();
+        super.F_();
     }
 
     public boolean canSpawn() {

@@ -15,7 +15,7 @@ public class EntityCow extends EntityAnimal {
         super(world);
         this.texture = "/mob/cow.png";
         this.b(0.9F, 1.3F);
-        this.ak().a(true);
+        this.al().a(true);
         this.goalSelector.a(0, new PathfinderGoalFloat(this));
         this.goalSelector.a(1, new PathfinderGoalPanic(this, 0.38F));
         this.goalSelector.a(2, new PathfinderGoalBreed(this, 0.2F));

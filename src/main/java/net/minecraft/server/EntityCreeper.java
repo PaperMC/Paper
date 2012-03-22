@@ -23,7 +23,7 @@ public class EntityCreeper extends EntityMonster {
         this.goalSelector.a(5, new PathfinderGoalRandomStroll(this, 0.2F));
         this.goalSelector.a(6, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 8.0F));
         this.goalSelector.a(6, new PathfinderGoalRandomLookaround(this));
-        this.targetSelector.a(1, new PathfinderGoalNearestAttackableTarget(this, EntityHuman.class, 16.0F, 0, false));
+        this.targetSelector.a(1, new PathfinderGoalNearestAttackableTarget(this, EntityHuman.class, 16.0F, 0, true));
         this.targetSelector.a(2, new PathfinderGoalHurtByTarget(this, false));
     }
 
@@ -53,7 +53,7 @@ public class EntityCreeper extends EntityMonster {
         this.datawatcher.watch(17, Byte.valueOf((byte) (nbttagcompound.getBoolean("powered") ? 1 : 0)));
     }
 
-    public void G_() {
+    public void F_() {
         if (this.isAlive()) {
             this.b = this.fuseTicks;
             int i = this.A();
@@ -85,7 +85,7 @@ public class EntityCreeper extends EntityMonster {
             }
         }
 
-        super.G_();
+        super.F_();
     }
 
     protected String j() {

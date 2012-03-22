@@ -121,10 +121,10 @@ public class EntityPainting extends Entity {
         return i == 32 ? 0.5F : (i == 64 ? 0.5F : 0.0F);
     }
 
-    public void G_() {
+    public void F_() {
         if (this.f++ == 100 && !this.world.isStatic) {
             this.f = 0;
-            if (!this.survives()) {
+            if (!this.dead && !this.survives()) {
                 // CraftBukkit start
                 List<org.bukkit.inventory.ItemStack> drops = new ArrayList<org.bukkit.inventory.ItemStack>();
                 drops.add(new CraftItemStack(Item.PAINTING.id, 1));
@@ -245,7 +245,7 @@ public class EntityPainting extends Entity {
             // CraftBukkit end
 
             this.die();
-            this.aV();
+            this.aW();
             // CraftBukkit start - replace following line with the loop
             //this.world.addEntity(new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.PAINTING)));
             for (org.bukkit.inventory.ItemStack stack : drops) {
@@ -290,7 +290,7 @@ public class EntityPainting extends Entity {
     }
 
     public void move(double d0, double d1, double d2) {
-        if (!this.world.isStatic && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) {
+        if (!this.world.isStatic && !this.dead && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) {
             if (dead) return; // CraftBukkit
 
             this.die();
