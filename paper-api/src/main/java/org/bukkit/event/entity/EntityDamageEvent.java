@@ -118,6 +118,12 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          */
         FIRE_TICK,
         /**
+         * Damage caused due to a snowman melting
+         * <p />
+         * Damage: 1
+         */
+        MELTING,
+        /**
          * Damage caused by direct exposure to lava
          * <p />
          * Damage: 4
