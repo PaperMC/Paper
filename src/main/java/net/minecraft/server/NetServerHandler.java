@@ -15,9 +15,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.craftbukkit.ChunkCompressionThread;
 import org.bukkit.Location;
 import org.bukkit.command.CommandException;
-import org.bukkit.conversations.Conversable;
 import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.inventory.CraftInventoryCustom;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.block.CraftBlock;
@@ -718,10 +716,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             this.player.compassTarget = new Location(this.getPlayer().getWorld(), packet6.x, packet6.y, packet6.z);
         } else if (packet instanceof Packet3Chat) {
             String message = ((Packet3Chat) packet).message;
-            boolean first = true;
-            for (String line : TextWrapper.wrapText(message)) {
-                if (!first) line = " " + line;
-                first = false;
+            for (final String line : TextWrapper.wrapText(message)) {
                 this.networkManager.queue(new Packet3Chat(line));
             }
             packet = null;
