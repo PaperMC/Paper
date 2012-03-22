@@ -10,6 +10,8 @@ class NetworkAcceptThread extends Thread {
 
     final NetworkListenThread listenThread;
 
+    long connectionThrottle; // CraftBukkit
+
     NetworkAcceptThread(NetworkListenThread networklistenthread, String s, MinecraftServer minecraftserver) {
         super(s);
         this.listenThread = networklistenthread;
@@ -24,9 +26,10 @@ class NetworkAcceptThread extends Thread {
                 if (socket != null) {
                     synchronized (NetworkListenThread.getRecentConnectionAttempts(this.listenThread)) {
                         InetAddress inetaddress = socket.getInetAddress();
+                        connectionThrottle = this.a.server.getConnectionThrottle(); // CraftBukkit
 
                         // CraftBukkit
-                        if (NetworkListenThread.getRecentConnectionAttempts(this.listenThread).containsKey(inetaddress) && System.currentTimeMillis() - ((Long) NetworkListenThread.getRecentConnectionAttempts(this.listenThread).get(inetaddress)).longValue() < 4000L) {
+                        if (NetworkListenThread.getRecentConnectionAttempts(this.listenThread).containsKey(inetaddress) && System.currentTimeMillis() - ((Long) NetworkListenThread.getRecentConnectionAttempts(this.listenThread).get(inetaddress)).longValue() < connectionThrottle) {
                             NetworkListenThread.getRecentConnectionAttempts(this.listenThread).put(inetaddress, Long.valueOf(System.currentTimeMillis()));
                             socket.close();
                             continue;

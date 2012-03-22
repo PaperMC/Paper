@@ -424,6 +424,10 @@ public final class CraftServer implements Server {
         return this.configuration.getInt("settings.ping-packet-limit", 100);
     }
 
+    public long getConnectionThrottle() {
+        return this.configuration.getInt("settings.connection-throttle");
+    }
+
     public int getTicksPerAnimalSpawns() {
         return this.configuration.getInt("ticks-per.animal-spawns");
     }
