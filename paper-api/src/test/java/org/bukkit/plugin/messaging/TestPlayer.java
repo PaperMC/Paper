@@ -637,6 +637,14 @@ public class TestPlayer implements Player {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    public boolean isFlying() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public void setFlying(boolean value) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
     public boolean addPotionEffect(PotionEffect effect) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
