@@ -577,14 +577,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         getHandle().getFoodData().foodLevel = value;
     }
 
-    public boolean getAllowFlight() {
-        return getHandle().itemInWorldManager.player.abilities.canFly;
-    }
-
-    public void setAllowFlight(boolean flight) {
-        getHandle().itemInWorldManager.player.abilities.canFly = flight;
-    }
-
     public Location getBedSpawnLocation() {
         World world = getServer().getWorld(getHandle().spawnWorld);
         if ((world != null) && (getHandle().getBed() != null)) {
@@ -812,5 +804,31 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public void disconnect(String reason) {
         conversationTracker.abandonAllConversations();
+    }
+
+    public boolean isFlying() {
+        return getHandle().abilities.isFlying;
+    }
+
+    public void setFlying(boolean value) {
+        if (!getAllowFlight() && value) {
+            throw new IllegalArgumentException("Cannot make player fly if getAllowFlight() is false");
+        }
+
+        getHandle().abilities.isFlying = value;
+        getHandle().updateAbilities();
+    }
+
+    public boolean getAllowFlight() {
+        return getHandle().abilities.canFly;
+    }
+
+    public void setAllowFlight(boolean value) {
+        if (isFlying() && !value) {
+            getHandle().abilities.canFly = false;
+        }
+
+        getHandle().abilities.canFly = value;
+        getHandle().updateAbilities();
     }
 }
