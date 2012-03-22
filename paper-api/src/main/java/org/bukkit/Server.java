@@ -126,7 +126,7 @@ public interface Server extends PluginMessageRecipient {
 
     /**
      * Get generate-structures setting
-     * 
+     *
      * @return true if structure generation is enabled, false if not
      */
     public boolean getGenerateStructures();
@@ -198,6 +198,13 @@ public interface Server extends PluginMessageRecipient {
      * @return The name of the update folder
      */
     public File getUpdateFolderFile();
+
+    /**
+     * Gets the value of the connection throttle setting
+     *
+     * @return the value of the connection throttle setting
+     */
+    public long getConnectionThrottle();
 
     /**
      * Gets default ticks per animal spawns value
