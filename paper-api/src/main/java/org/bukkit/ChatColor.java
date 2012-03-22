@@ -222,7 +222,7 @@ public enum ChatColor {
         int length = input.length();
 
         while ((lastIndex = input.indexOf(COLOR_CHAR, lastIndex + 1)) != -1) {
-            if (lastIndex != length) {
+            if (lastIndex < length - 1) {
                 char c = input.charAt(lastIndex + 1);
                 ChatColor col = getByChar(c);
 
