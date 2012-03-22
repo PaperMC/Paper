@@ -127,7 +127,7 @@ public final class PluginDescriptionFile {
      * @return immutable list of plugins that should consider this plugin a soft-dependency
      */
     public List<String> getLoadBefore() {
-        return softDepend;
+        return loadBefore;
     }
 
     public PluginLoadOrder getLoad() {
