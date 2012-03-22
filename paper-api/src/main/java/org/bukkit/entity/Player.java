@@ -501,4 +501,17 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      */
     public boolean canSee(Player player);
 
+    /**
+     * Checks to see if this player is currently flying or not.
+     *
+     * @return True if the player is flying, else false.
+     */
+    public boolean isFlying();
+
+    /**
+     * Makes this player start or stop flying.
+     *
+     * @param value True to fly.
+     */
+    public void setFlying(boolean value);
 }
