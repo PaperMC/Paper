@@ -18,6 +18,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.craftbukkit.CraftChunk;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
@@ -349,7 +350,7 @@ public class CraftBlock implements Block {
         if (block != null) {
             block.dropNaturally(chunk.getHandle().world, x, y, z, data, 1.0F, 0);
             for (ItemStack item : getDrops()) {
-                breakNaturally(item);
+                block.finishDrop(chunk.getHandle().world, x, y, z, CraftItemStack.createNMSItemStack(item));
             }
             return true;
         }
