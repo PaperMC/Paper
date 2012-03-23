@@ -539,6 +539,7 @@ public class CraftEventFactory {
         world.getServer().getPluginManager().callEvent(event);
 
         if (event.isCancelled()) {
+            blockType.setDrops(new ArrayList<ItemStack>());
             // Let the client know the block still exists
             ((EntityPlayer) player).netServerHandler.sendPacket(new Packet53BlockChange(x, y, z, world));
             return true;
