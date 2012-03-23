@@ -514,6 +514,9 @@ public class CraftEventFactory {
 
     public static boolean callBlockBreakEvent(World world, int x, int y, int z, int id, int data, boolean creative, EntityHuman player) {
         net.minecraft.server.Block blockType = net.minecraft.server.Block.byId[id];
+        if (blockType == null) { // Illegal block ID
+            return true;
+        }
         Block block = world.getWorld().getBlockAt(x, y, z);
 
         // Tell client the block is gone immediately then process events
