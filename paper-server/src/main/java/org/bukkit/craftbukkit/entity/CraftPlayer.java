@@ -825,7 +825,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public void setAllowFlight(boolean value) {
         if (isFlying() && !value) {
-            getHandle().abilities.canFly = false;
+            getHandle().abilities.isFlying = false;
         }
 
         getHandle().abilities.canFly = value;
