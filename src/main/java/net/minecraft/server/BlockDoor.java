@@ -157,7 +157,7 @@ public class BlockDoor extends Block {
 
             if (world.getTypeId(i, j + 1, k) != this.id) {
                 world.setTypeId(i, j, k, 0);
-                flag = true;
+                //flag = true; // CraftBukkit
             }
 
             if (!world.e(i, j - 1, k)) {
@@ -169,11 +169,9 @@ public class BlockDoor extends Block {
             }
 
             if (flag) {
-            /* CraftBukkit start - Move the drop to on break instead of on physics
                 if (!world.isStatic) {
                     this.b(world, i, j, k, i1, 0);
                 }
-                // */
             } else if (l > 0 && Block.byId[l].isPowerSource()) {
                 org.bukkit.World bworld = world.getWorld();
                 org.bukkit.block.Block block = bworld.getBlockAt(i, j, k);
