@@ -290,7 +290,7 @@ public class BlockVine extends Block {
             /* CraftBukkit start - moved this line into calculateDrops
             this.a(world, i, j, k, new ItemStack(Block.VINE, 1, 0));
             */
-            this.doActualDrop(world, entityhuman, i, j, k, l);
+            this.doActualDrop(world, i, j, k);
             // CraftBukkit end
         } else {
             super.a(world, entityhuman, i, j, k, l);

@@ -243,10 +243,11 @@ public class Explosion {
                 this.world.a("smoke", d0, d1, d2, d3, d4, d5);
             }
 
-            // CraftBukkit - stop explosions from putting out fire
+            // CraftBukkit start - stop explosions from putting out fire
             if (i1 > 0 && i1 != Block.FIRE.id) {
-                // CraftBukkit
                 Block.byId[i1].dropNaturally(this.world, j, k, l, this.world.getData(j, k, l), event.getYield(), 0);
+                Block.byId[i1].doActualDrop(this.world, j, k, l);
+                // CraftBukkit end
                 this.world.setTypeId(j, k, l, 0);
                 Block.byId[i1].wasExploded(this.world, j, k, l);
             }

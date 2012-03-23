@@ -218,7 +218,7 @@ public class ItemInWorldManager {
 
         if (this.isCreative()) {
             // CraftBukkit start - honour additions to drop list
-            Block.byId[l].doActualDrop(this.world, this.player, i, j, k, i1);
+            Block.byId[l].doActualDrop(this.world, i, j, k);
             // CraftBukkit end
             ((EntityPlayer) this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
         } else {

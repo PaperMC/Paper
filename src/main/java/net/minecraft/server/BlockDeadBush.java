@@ -30,7 +30,7 @@ public class BlockDeadBush extends BlockFlower {
             /* CraftBukkit start - moved this line into calculateDrops
             this.a(world, i, j, k, new ItemStack(Block.DEAD_BUSH, 1, l));
             */
-            this.doActualDrop(world, entityhuman, i, j, k, l);
+            this.doActualDrop(world, i, j, k);
             // CraftBukkit end
         } else {
             super.a(world, entityhuman, i, j, k, l);
@@ -40,9 +40,8 @@ public class BlockDeadBush extends BlockFlower {
     // CraftBukkit start - Calculate drops
     public ArrayList<ItemStack> calculateDrops(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
         if (!world.isStatic && entityhuman.U() != null && entityhuman.U().id == Item.SHEARS.id) {
-            super.dropList = new ArrayList<ItemStack>();
             this.a(world, i, j, k, new ItemStack(Block.DEAD_BUSH, 1, l));
-            return super.dropList;
+            return this.dropList;
         } else {
             return super.calculateDrops(world, entityhuman, i, j, k, l);
         }

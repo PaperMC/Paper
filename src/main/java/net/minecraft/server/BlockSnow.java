@@ -66,8 +66,8 @@ public class BlockSnow extends Block {
 
         entityitem.pickupDelay = 10;
         world.addEntity(entityitem);
-        // */
-        super.doActualDrop(world, entityhuman, i, j, k, l);
+        */
+        this.doActualDrop(world, i, j, k);
         // CraftBukkit end
         world.setTypeId(i, j, k, 0);
         entityhuman.a(StatisticList.C[this.id], 1);
@@ -75,9 +75,8 @@ public class BlockSnow extends Block {
 
     // CraftBukkit start - Calculate drops
     public ArrayList<ItemStack> calculateDrops(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
-        super.dropList = new ArrayList<ItemStack>();
         this.a(world, i, j, k, new ItemStack(Item.SNOW_BALL.id, 1, 1));
-        return super.dropList;
+        return this.dropList;
     }
     // CraftBukkit end
 
