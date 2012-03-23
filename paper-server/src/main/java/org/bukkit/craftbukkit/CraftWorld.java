@@ -1056,6 +1056,7 @@ public class CraftWorld implements World {
         int blockZ = block.getZ();
         // following code is lifted from Explosion.a(boolean), and modified
         net.minecraft.server.Block.byId[blockId].dropNaturally(this.world, blockX, blockY, blockZ, block.getData(), yield, 0);
+        net.minecraft.server.Block.byId[blockId].doActualDrop(this.world, blockX, blockY, blockZ);
         block.setType(org.bukkit.Material.AIR);
         // not sure what this does, seems to have something to do with the 'base' material of a block.
         // For example, WOODEN_STAIRS does something with WOOD in this method

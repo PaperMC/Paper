@@ -348,10 +348,7 @@ public class CraftBlock implements Block {
 
         setTypeId(Material.AIR.getId());
         if (block != null) {
-            block.dropNaturally(chunk.getHandle().world, x, y, z, data, 1.0F, 0);
-            for (ItemStack item : getDrops()) {
-                block.finishDrop(chunk.getHandle().world, x, y, z, CraftItemStack.createNMSItemStack(item));
-            }
+            block.b(chunk.getHandle().world, x, y, z, data, 0);
             return true;
         }
         return false;
