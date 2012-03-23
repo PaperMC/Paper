@@ -564,7 +564,7 @@ public class Block {
         } else {
             int i1 = EnchantmentManager.getBonusBlockLootEnchantmentLevel(entityhuman.inventory);
 
-            this.b(world, i, j, k, l, i1);
+            this.dropNaturally(world, i, j, k, l, 1.0F, i1); // CraftBukkit
         }
         return this.dropList; // CraftBukkit
     }
