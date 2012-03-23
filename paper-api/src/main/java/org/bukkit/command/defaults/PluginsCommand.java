@@ -20,13 +20,14 @@ public class PluginsCommand extends BukkitCommand {
     public boolean execute(CommandSender sender, String currentAlias, String[] args) {
         if (!testPermission(sender)) return true;
 
-        sender.sendMessage("Plugins: " + getPluginList());
+        sender.sendMessage("Plugins " + getPluginList());
         return true;
     }
 
     private String getPluginList() {
         StringBuilder pluginList = new StringBuilder();
         Plugin[] plugins = Bukkit.getPluginManager().getPlugins();
+        int pluginCount = 0;
 
         for (Plugin plugin : plugins) {
             if (pluginList.length() > 0) {
@@ -36,8 +37,9 @@ public class PluginsCommand extends BukkitCommand {
 
             pluginList.append(plugin.isEnabled() ? ChatColor.GREEN : ChatColor.RED);
             pluginList.append(plugin.getDescription().getName());
+            pluginCount++;
         }
 
-        return pluginList.toString();
+        return "(" + pluginCount + "): " + pluginList.toString();
     }
 }
