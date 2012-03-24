@@ -395,7 +395,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
                 AxisAlignedBB axisalignedbb = this.player.boundingBox.clone().grow((double) f4, (double) f4, (double) f4).a(0.0D, -0.55D, 0.0D);
 
-                if (!this.minecraftServer.allowFlight && !this.player.itemInWorldManager.isCreative() && !worldserver.b(axisalignedbb)) {
+                if (!this.minecraftServer.allowFlight && !this.player.abilities.canFly && !worldserver.b(axisalignedbb)) { // CraftBukkit - check abilities instead of creative mode
                     if (d9 >= -0.03125D) {
                         ++this.g;
                         if (this.g > 80) {
