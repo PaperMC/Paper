@@ -89,7 +89,7 @@ public class EntityOcelot extends EntityTameableAnimal {
     }
 
     protected int getLootId() {
-        return Item.LEATHER.id;
+        return 0; // CraftBukkit - Item.LEATHER.id -> 0
     }
 
     public boolean a(Entity entity) {
