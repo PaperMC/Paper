@@ -1,6 +1,5 @@
 package net.minecraft.server;
 
-import java.util.ArrayList; // CraftBukkit
 import java.util.Random;
 
 public class BlockVine extends Block {
@@ -298,13 +297,13 @@ public class BlockVine extends Block {
     }
 
     // CraftBukkit start - Calculate drops
-    public ArrayList<ItemStack> calculateDrops(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
+    public java.util.ArrayList<ItemStack> calculateDrops(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
         if (!world.isStatic && entityhuman.U() != null && entityhuman.U().id == Item.SHEARS.id) {
             this.a(world, i, j, k, new ItemStack(Block.VINE, 1, 0));
-            return this.dropList;
         } else {
             return super.calculateDrops(world, entityhuman, i, j, k, l);
         }
+        return this.dropList;
     }
     // CraftBukkit end
 }

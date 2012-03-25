@@ -14,7 +14,7 @@ public class BlockPistonExtension extends Block {
     }
 
     // CraftBukkit start - Support getDrops() in BlockBreakEvent
-    public ArrayList<ItemStack> calculateDrops(World world, EntityHuman entityhuman, int i, int j, int k, int d) {
+    public java.util.ArrayList<ItemStack> calculateDrops(World world, EntityHuman entityhuman, int i, int j, int k, int d) {
         super.calculateDrops(world, entityhuman, i, j, k, d);
         int l = world.getData(i, j, k) & 0x7;
         if (l > 5 || l < 0) return this.dropList;

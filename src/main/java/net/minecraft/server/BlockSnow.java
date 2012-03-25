@@ -1,6 +1,5 @@
 package net.minecraft.server;
 
-import java.util.ArrayList; // CraftBukkit
 import java.util.Random;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 
@@ -74,7 +73,7 @@ public class BlockSnow extends Block {
     }
 
     // CraftBukkit start - Calculate drops
-    public ArrayList<ItemStack> calculateDrops(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
+    public java.util.ArrayList<ItemStack> calculateDrops(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
         this.a(world, i, j, k, new ItemStack(Item.SNOW_BALL.id, 1, 1));
         return this.dropList;
     }

@@ -1,6 +1,5 @@
 package net.minecraft.server;
 
-import java.util.ArrayList; // CraftBukkit
 import java.util.Random;
 
 public class BlockTNT extends Block {
@@ -57,7 +56,7 @@ public class BlockTNT extends Block {
     }
 
     // CraftBukkit start - Calculate drops
-    public ArrayList<ItemStack> calculateDrops(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
+    public java.util.ArrayList<ItemStack> calculateDrops(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
         if ((l & 1) == 0) {
             this.a(world, i, j, k, new ItemStack(Block.TNT.id, 1, 0));
         }

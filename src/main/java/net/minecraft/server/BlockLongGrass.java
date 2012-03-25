@@ -1,6 +1,5 @@
 package net.minecraft.server;
 
-import java.util.ArrayList; // CraftBukkit
 import java.util.Random;
 
 public class BlockLongGrass extends BlockFlower {
@@ -38,13 +37,13 @@ public class BlockLongGrass extends BlockFlower {
     }
 
     // CraftBukkit start - Calculate drops
-    public ArrayList<ItemStack> calculateDrops(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
+    public java.util.ArrayList<ItemStack> calculateDrops(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
         if (!world.isStatic && entityhuman.U() != null && entityhuman.U().id == Item.SHEARS.id) {
             this.a(world, i, j, k, new ItemStack(Block.LONG_GRASS, 1, l));
-            return this.dropList;
         } else {
             return super.calculateDrops(world, entityhuman, i, j, k, l);
         }
+        return this.dropList;
     }
     // CraftBukkit end
 }
