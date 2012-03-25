@@ -46,7 +46,7 @@ public class BlockTNT extends Block {
             if ((l & 1) == 0) {
                 /* CraftBukkit - Move this earlier so the block break event can see it
                 this.a(world, i, j, k, new ItemStack(Block.TNT.id, 1, 0));
-                // */
+                */
             } else {
                 EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F));
 
@@ -58,9 +58,10 @@ public class BlockTNT extends Block {
 
     // CraftBukkit start - Calculate drops
     public ArrayList<ItemStack> calculateDrops(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
-        super.dropList = new ArrayList<ItemStack>();
-        this.a(world, i, j, k, new ItemStack(Block.TNT.id, 1, 0));
-        return super.dropList;
+        if ((l & 1) == 0) {
+            this.a(world, i, j, k, new ItemStack(Block.TNT.id, 1, 0));
+        }
+        return this.dropList;
     }
     // CraftBukkit end
 
