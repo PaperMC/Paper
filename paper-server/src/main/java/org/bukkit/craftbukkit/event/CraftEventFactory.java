@@ -528,9 +528,10 @@ public class CraftEventFactory {
             ((EntityPlayer) player).netServerHandler.sendPacket(packet);
         }
 
-        List<org.bukkit.inventory.ItemStack> drops = new ArrayList<org.bukkit.inventory.ItemStack>();
+        List<ItemStack> calculatedDrops = blockType.calculateDrops(world, player, x, y, z, data);
+        List<org.bukkit.inventory.ItemStack> drops = new ArrayList<org.bukkit.inventory.ItemStack>(calculatedDrops.size());
         if (!creative && player.b(blockType)) {
-            for (ItemStack stack : blockType.calculateDrops(world, player, x, y, z, data)) {
+            for (ItemStack stack : calculatedDrops) {
                 drops.add(new CraftItemStack(stack));
             }
         }
@@ -539,17 +540,17 @@ public class CraftEventFactory {
         world.getServer().getPluginManager().callEvent(event);
 
         if (event.isCancelled()) {
-            blockType.setDrops(new ArrayList<ItemStack>());
+            blockType.dropList.clear();
             // Let the client know the block still exists
             ((EntityPlayer) player).netServerHandler.sendPacket(new Packet53BlockChange(x, y, z, world));
             return true;
         }
 
-        ArrayList<ItemStack> toDrop = new ArrayList<ItemStack>();
+        ArrayList<ItemStack> toDrop = new ArrayList<ItemStack>(drops.size());
         for (org.bukkit.inventory.ItemStack stack : drops) {
             toDrop.add(CraftItemStack.createNMSItemStack(stack));
         }
-        blockType.setDrops(toDrop);
+        blockType.dropList = toDrop;
 
         return false; // Event not cancelled
     }
