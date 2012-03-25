@@ -364,14 +364,17 @@ public class CraftEventFactory {
 
     public static EntityDamageEvent handleEntityDamageEvent(Entity entity, DamageSource source, int damage) {
         Entity damager = source.getEntity();
-        EntityDamageEvent.DamageCause cause = EntityDamageEvent.DamageCause.ENTITY_ATTACK;
+        DamageCause cause = DamageCause.ENTITY_ATTACK;
 
         if (source instanceof EntityDamageSourceIndirect) {
             damager = ((EntityDamageSourceIndirect) source).getProximateDamageSource();
-            if (damager.getBukkitEntity() instanceof Projectile) {
-                cause = EntityDamageEvent.DamageCause.PROJECTILE;
-            } // Else, magic..?
+            if (damager.getBukkitEntity() instanceof ThrownPotion) {
+                cause = DamageCause.MAGIC;
+            } else if (damager.getBukkitEntity() instanceof Projectile) {
+                cause = DamageCause.PROJECTILE;
+            }
         }
+
         return callEntityDamageEvent(damager, entity, cause, damage);
     }
 
