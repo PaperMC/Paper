@@ -48,7 +48,9 @@ public class EntityMagmaCube extends EntitySlime {
                 k += this.random.nextInt(i + 1);
             }
 
-            loot.add(new org.bukkit.inventory.ItemStack(j, k));
+            if (k > 0) {
+                loot.add(new org.bukkit.inventory.ItemStack(j, k));
+            }
         }
 
         CraftEventFactory.callEntityDeathEvent(this, loot);
