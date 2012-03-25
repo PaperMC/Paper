@@ -74,7 +74,7 @@ public class BlockSnow extends Block {
 
     // CraftBukkit start - Calculate drops
     public java.util.ArrayList<ItemStack> calculateDrops(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
-        this.a(world, i, j, k, new ItemStack(Item.SNOW_BALL.id, 1, 1));
+        this.a(world, i, j, k, new ItemStack(Item.SNOW_BALL.id, 1, 0));
         return this.dropList;
     }
     // CraftBukkit end
