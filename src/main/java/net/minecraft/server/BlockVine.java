@@ -300,9 +300,8 @@ public class BlockVine extends Block {
     // CraftBukkit start - Calculate drops
     public ArrayList<ItemStack> calculateDrops(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
         if (!world.isStatic && entityhuman.U() != null && entityhuman.U().id == Item.SHEARS.id) {
-            super.dropList = new ArrayList<ItemStack>();
             this.a(world, i, j, k, new ItemStack(Block.VINE, 1, 0));
-            return super.dropList;
+            return this.dropList;
         } else {
             return super.calculateDrops(world, entityhuman, i, j, k, l);
         }

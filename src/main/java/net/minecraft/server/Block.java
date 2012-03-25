@@ -164,7 +164,7 @@ public class Block {
     public final Material material;
     public float frictionFactor;
     private String name;
-    protected ArrayList<ItemStack> dropList = new ArrayList<ItemStack>(); // CraftBukkit
+    public ArrayList<ItemStack> dropList = new ArrayList<ItemStack>(1); // CraftBukkit
 
     protected Block(int i, Material material) {
         this.bR = true;
@@ -338,6 +338,7 @@ public class Block {
     }
 
     public final void b(World world, int i, int j, int k, int l, int i1) {
+        this.dropList.clear(); // CraftBukkit
         this.dropNaturally(world, i, j, k, l, 1.0F, i1);
         this.doActualDrop(world, i, j, k); // CraftBukkit
     }
@@ -547,10 +548,6 @@ public class Block {
             finishDrop(world, i, j, k, stack);
         }
         this.dropList.clear();
-    }
-
-    public void setDrops(ArrayList<ItemStack> drops) {
-        this.dropList = drops;
     }
 
     public ArrayList<ItemStack> calculateDrops(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
