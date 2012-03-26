@@ -566,7 +566,7 @@ public abstract class EntityHuman extends EntityLiving {
 
                 if (entity instanceof EntityMonster || entity instanceof EntityArrow) {
                     if (this.world.difficulty == 0) {
-                        i = 0;
+                        return false; // CraftBukkit - i = 0 -> return false
                     }
 
                     if (this.world.difficulty == 1) {
@@ -577,10 +577,10 @@ public abstract class EntityHuman extends EntityLiving {
                         i = i * 3 / 2;
                     }
                 }
-
+                /* CraftBukkit start - Don't filter out 0 damage
                 if (i == 0) {
                     return false;
-                } else {
+                } else { CraftBukkit end */
                     Entity entity1 = entity;
 
                     if (entity instanceof EntityArrow && ((EntityArrow) entity).shooter != null) {
@@ -593,7 +593,7 @@ public abstract class EntityHuman extends EntityLiving {
 
                     this.a(StatisticList.x, i);
                     return super.damageEntity(damagesource, i);
-                }
+                //} // CraftBukkit
             }
         }
     }
