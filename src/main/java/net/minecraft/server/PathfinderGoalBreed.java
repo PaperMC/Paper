@@ -76,7 +76,7 @@ public class PathfinderGoalBreed extends PathfinderGoal {
             this.e.s_();
             entityanimal.setAge(-24000);
             entityanimal.setPositionRotation(this.d.locX, this.d.locY, this.d.locZ, 0.0F, 0.0F);
-            this.a.addEntity(entityanimal);
+            this.a.addEntity(entityanimal, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING); // CraftBukkit - Added SpawnReason
             Random random = this.d.an();
 
             for (int i = 0; i < 7; ++i) {
