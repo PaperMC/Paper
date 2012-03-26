@@ -114,7 +114,10 @@ public class CreatureSpawnEvent extends EntityEvent implements Cancellable {
         LIGHTNING,
         /**
          * When a creature is spawned by a player that is sleeping
+         *
+         * @deprecated No longer used
          */
+        @Deprecated
         BED,
         /**
          * When a snowman is spawned by being built
@@ -132,6 +135,10 @@ public class CreatureSpawnEvent extends EntityEvent implements Cancellable {
          * When a zombie is spawned to invade a village
          */
         VILLAGE_INVASION,
+        /**
+         * When an animal breeds to create a child
+         */
+        BREEDING,
         /**
          * When a creature is manually spawned
          */
