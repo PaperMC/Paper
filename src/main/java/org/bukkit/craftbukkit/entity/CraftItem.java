@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import net.minecraft.server.Entity;
 import net.minecraft.server.EntityItem;
 
 import org.bukkit.entity.EntityType;
@@ -11,9 +12,13 @@ import org.bukkit.craftbukkit.CraftServer;
 public class CraftItem extends CraftEntity implements Item {
     private EntityItem item;
 
-    public CraftItem(CraftServer server, EntityItem entity) {
+    public CraftItem(CraftServer server, Entity entity, EntityItem item) {
         super(server, entity);
-        this.item = entity;
+        this.item = item;
+    }
+
+    public CraftItem(CraftServer server, EntityItem entity) {
+        this(server, entity, entity);
     }
 
     public ItemStack getItemStack() {
@@ -30,11 +35,6 @@ public class CraftItem extends CraftEntity implements Item {
 
     public void setPickupDelay(int delay) {
         item.pickupDelay = delay;
-    }
-
-    @Override
-    public EntityItem getHandle() {
-        return (EntityItem) entity;
     }
 
     @Override
