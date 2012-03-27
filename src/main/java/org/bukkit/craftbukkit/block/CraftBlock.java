@@ -18,7 +18,6 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.craftbukkit.CraftChunk;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
@@ -348,7 +347,7 @@ public class CraftBlock implements Block {
 
         setTypeId(Material.AIR.getId());
         if (block != null) {
-            block.b(chunk.getHandle().world, x, y, z, data, 0);
+            block.dropNaturally(chunk.getHandle().world, x, y, z, data, 1.0F, 0);
             return true;
         }
         return false;

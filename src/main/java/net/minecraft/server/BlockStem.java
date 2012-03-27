@@ -158,7 +158,6 @@ public class BlockStem extends BlockFlower {
 
             for (int j1 = 0; j1 < 3; ++j1) {
                 if (world.random.nextInt(15) <= l) {
-                    /* CraftBukkit - Identical logic to superclass method; defer there
                     float f1 = 0.7F;
                     float f2 = world.random.nextFloat() * f1 + (1.0F - f1) * 0.5F;
                     float f3 = world.random.nextFloat() * f1 + (1.0F - f1) * 0.5F;
@@ -167,8 +166,6 @@ public class BlockStem extends BlockFlower {
 
                     entityitem.pickupDelay = 10;
                     world.addEntity(entityitem);
-                    // */
-                    this.a(world, i, j, k, new ItemStack(item));
                 }
             }
         }

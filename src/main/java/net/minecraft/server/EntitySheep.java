@@ -3,12 +3,8 @@ package net.minecraft.server;
 import java.util.Random;
 
 // CraftBukkit start
-import java.util.ArrayList;
-import java.util.List;
-
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Sheep;
 // CraftBukkit end
 
@@ -84,12 +80,7 @@ public class EntitySheep extends EntityAnimal {
         if (itemstack != null && itemstack.id == Item.SHEARS.id && !this.isSheared() && !this.isBaby()) {
             if (!this.world.isStatic) {
                 // CraftBukkit start
-                int i = 1 + this.random.nextInt(3);
-                List<org.bukkit.inventory.ItemStack> drops = new ArrayList<org.bukkit.inventory.ItemStack>();
-                for (int j = 0; j < i; ++j) {
-                    drops.add(new CraftItemStack(Block.WOOL.id, 1, (short) this.getColor()));
-                }
-                org.bukkit.event.player.PlayerShearEntityEvent event = new org.bukkit.event.player.PlayerShearEntityEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), this.getBukkitEntity(), drops);
+                org.bukkit.event.player.PlayerShearEntityEvent event = new org.bukkit.event.player.PlayerShearEntityEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), this.getBukkitEntity());
                 this.world.getServer().getPluginManager().callEvent(event);
 
                 if (event.isCancelled()) {
@@ -98,15 +89,10 @@ public class EntitySheep extends EntityAnimal {
                 // CraftBukkit end
 
                 this.setSheared(true);
-                /* CraftBukkit start - Moved this line to before the event is fired
                 int i = 1 + this.random.nextInt(3);
-                // And this logic is changed to use the drop list from the event
+
                 for (int j = 0; j < i; ++j) {
                     EntityItem entityitem = this.a(new ItemStack(Block.WOOL.id, 1, this.getColor()), 1.0F);
-                    // */
-                for (org.bukkit.inventory.ItemStack stack : drops) {
-                    EntityItem entityitem = this.a(CraftItemStack.createNMSItemStack(stack), 1.0f);
-                    // CraftBukkit end
                     entityitem.motY += (double) (this.random.nextFloat() * 0.05F);
                     entityitem.motX += (double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.1F);
                     entityitem.motZ += (double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.1F);

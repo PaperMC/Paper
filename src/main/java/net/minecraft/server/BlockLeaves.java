@@ -161,26 +161,11 @@ public class BlockLeaves extends BlockTransparant {
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
         if (!world.isStatic && entityhuman.U() != null && entityhuman.U().id == Item.SHEARS.id) {
             entityhuman.a(StatisticList.C[this.id], 1);
-            /* CraftBukkit start - moved this line into calculateDrops
             this.a(world, i, j, k, new ItemStack(Block.LEAVES.id, 1, l & 3));
-            */
-            this.doActualDrop(world, i, j, k);
-            // CraftBukkit end
         } else {
             super.a(world, entityhuman, i, j, k, l);
         }
     }
-
-    // CraftBukkit start - Calculate drops
-    public java.util.ArrayList<ItemStack> calculateDrops(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
-        if (!world.isStatic && entityhuman.U() != null && entityhuman.U().id == Item.SHEARS.id) {
-            this.a(world, i, j, k, new ItemStack(Block.LEAVES.id, 1, l & 3));
-        } else {
-            return super.calculateDrops(world, entityhuman, i, j, k, l);
-        }
-        return this.dropList;
-    }
-    // CraftBukkit end
 
     protected int getDropData(int i) {
         return i & 3;

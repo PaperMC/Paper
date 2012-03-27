@@ -13,28 +13,9 @@ public class BlockPistonExtension extends Block {
         this.c(0.5F);
     }
 
-    // CraftBukkit start - Support getDrops() in BlockBreakEvent
-    public java.util.ArrayList<ItemStack> calculateDrops(World world, EntityHuman entityhuman, int i, int j, int k, int d) {
-        super.calculateDrops(world, entityhuman, i, j, k, d);
-        int l = world.getData(i, j, k) & 0x7;
-        if (l > 5 || l < 0) return this.dropList;
-        int i1 = Facing.OPPOSITE_FACING[b(l)];
-
-        i += Facing.b[i1];
-        j += Facing.c[i1];
-        k += Facing.d[i1];
-        int j1 = world.getTypeId(i, j, k);
-
-        if (j1 == Block.PISTON.id || j1 == Block.PISTON_STICKY.id) {
-            this.dropList.add(new ItemStack(Block.byId[j1], 1));
-        }
-        return this.dropList;
-    }
-    // CraftBukkit end
-
     public void remove(World world, int i, int j, int k) {
         super.remove(world, i, j, k);
-        int l = world.getData(i, j, k) & 0x7;
+        int l = world.getData(i, j, k);
         if (l > 5 || l < 0) return; // CraftBukkit - fixed a piston AIOOBE issue.
         int i1 = Facing.OPPOSITE_FACING[b(l)];
 
@@ -46,7 +27,7 @@ public class BlockPistonExtension extends Block {
         if (j1 == Block.PISTON.id || j1 == Block.PISTON_STICKY.id) {
             l = world.getData(i, j, k);
             if (BlockPiston.e(l)) {
-                //Block.byId[j1].b(world, i, j, k, l, 0); // CraftBukkit - drop moved into drop list
+                Block.byId[j1].b(world, i, j, k, l, 0);
                 world.setTypeId(i, j, k, 0);
             }
         }
