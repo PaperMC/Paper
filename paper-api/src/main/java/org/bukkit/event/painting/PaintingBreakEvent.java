@@ -1,11 +1,8 @@
 package org.bukkit.event.painting;
 
-import java.util.List;
-
 import org.bukkit.entity.Painting;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.inventory.ItemStack;
 
 /**
  * Triggered when a painting is removed
@@ -14,12 +11,10 @@ public class PaintingBreakEvent extends PaintingEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancelled;
     private final RemoveCause cause;
-    private List<ItemStack> drops;
 
-    public PaintingBreakEvent(final Painting painting, final RemoveCause cause, List<ItemStack> drops) {
+    public PaintingBreakEvent(final Painting painting, final RemoveCause cause) {
         super(painting);
         this.cause = cause;
-        this.drops = drops;
     }
 
     /**
@@ -37,14 +32,6 @@ public class PaintingBreakEvent extends PaintingEvent implements Cancellable {
 
     public void setCancelled(boolean cancel) {
         this.cancelled = cancel;
-    }
-
-    /**
-     * Gets the list of items to be dropped. Modifying this list will modify what's actually dropped.
-     * @return A list of drops
-     */
-    public List<ItemStack> getDrops() {
-        return drops;
     }
 
     /**

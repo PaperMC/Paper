@@ -53,8 +53,7 @@ public class EntityDeathEvent extends EntityEvent {
     }
 
     /**
-     * Gets all the items which will drop when the entity dies. Modifying this list will
-     * modify what's actually dropped.
+     * Gets all the items which will drop when the entity dies
      *
      * @return Items to drop when the entity dies
      */
