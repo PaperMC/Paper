@@ -86,6 +86,9 @@ public abstract class MetadataStoreBase<T> {
         for (int i = 0; i < metadataList.size(); i++) {
             if (metadataList.get(i).getOwningPlugin().equals(owningPlugin)) {
                 metadataList.remove(i);
+                if (metadataList.isEmpty()) {
+                    metadataMap.remove(key);
+                }
             }
         }
     }

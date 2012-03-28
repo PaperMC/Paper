@@ -97,6 +97,15 @@ public class MetadataStoreTest {
     }
 
     @Test
+    public void testMetadataRemoveLast() {
+        subject.setMetadata("subject", "key", new FixedMetadataValue(pluginX, 10));
+        subject.removeMetadata("subject", "key", pluginX);
+
+        assertFalse(subject.hasMetadata("subject", "key"));
+        assertEquals(0, subject.getMetadata("subject", "key").size());
+    }
+
+    @Test
     public void testMetadataRemoveForNonExistingPlugin() {
         subject.setMetadata("subject", "key", new FixedMetadataValue(pluginX, 10));
         subject.removeMetadata("subject", "key", pluginY);
