@@ -105,6 +105,13 @@ public class MetadataStoreTest {
         assertEquals(1, subject.getMetadata("subject", "key").size());
         assertEquals(10, subject.getMetadata("subject", "key").get(0).value());
     }
+    
+    @Test
+    public void testHasMetadata() {
+        subject.setMetadata("subject", "key", new FixedMetadataValue(pluginX, 10));
+        assertTrue(subject.hasMetadata("subject", "key"));
+        assertFalse(subject.hasMetadata("subject", "otherKey"));
+    }
 
     private class StringMetadataStore extends MetadataStoreBase<String> implements MetadataStore<String> {
         @Override
