@@ -18,7 +18,15 @@ public class OldChunkLoader {
         oldchunk.h = nbttagcompound.getList("Entities");
         oldchunk.i = nbttagcompound.getList("TileEntities");
         oldchunk.j = nbttagcompound.getList("TileTicks");
-        oldchunk.a = nbttagcompound.getLong("LastUpdate");
+
+        // CraftBukkit start
+        try {
+            oldchunk.a = nbttagcompound.getLong("LastUpdate");
+        } catch (ClassCastException ex) {
+            oldchunk.a = nbttagcompound.getInt("LastUpdate");
+        }
+        // CraftBukkit end
+
         return oldchunk;
     }
 
