@@ -43,6 +43,6 @@ public class ExpCommand extends VanillaCommand {
 
     @Override
     public boolean matches(String input) {
-        return input.startsWith("xp ") || input.equalsIgnoreCase("xp");
+        return input.equalsIgnoreCase("xp");
     }
 }

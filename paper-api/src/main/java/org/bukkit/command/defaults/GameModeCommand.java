@@ -58,6 +58,6 @@ public class GameModeCommand extends VanillaCommand {
 
     @Override
     public boolean matches(String input) {
-        return input.startsWith("gamemode ") || input.equalsIgnoreCase("gamemode");
+        return input.equalsIgnoreCase("gamemode");
     }
 }

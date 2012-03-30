@@ -42,6 +42,6 @@ public class ToggleDownfallCommand extends VanillaCommand {
 
     @Override
     public boolean matches(String input) {
-        return input.startsWith("toggledownfall");
+        return input.equalsIgnoreCase("toggledownfall");
     }
 }

@@ -60,6 +60,6 @@ public class TimeCommand extends VanillaCommand {
 
     @Override
     public boolean matches(String input) {
-        return input.startsWith("time ") || input.equalsIgnoreCase("time");
+        return input.equalsIgnoreCase("time");
     }
 }

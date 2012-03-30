@@ -24,6 +24,6 @@ public class StopCommand extends VanillaCommand {
 
     @Override
     public boolean matches(String input) {
-        return input.startsWith("stop");
+        return input.equalsIgnoreCase("stop");
     }
 }

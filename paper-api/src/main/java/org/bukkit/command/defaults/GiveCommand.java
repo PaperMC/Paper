@@ -62,6 +62,6 @@ public class GiveCommand extends VanillaCommand {
 
     @Override
     public boolean matches(String input) {
-        return input.startsWith("give ") || input.equalsIgnoreCase("give");
+        return input.equalsIgnoreCase("give");
     }
 }
