@@ -213,7 +213,7 @@ public final class SpawnerCreature {
 
                 entityocelot.setPositionRotation((double) f, (double) f1, (double) f2, entityliving.yaw, 0.0F);
                 entityocelot.setAge(-24000);
-                world.addEntity(entityocelot);
+                world.addEntity(entityocelot, SpawnReason.NATURAL); // CraftBukkit - SpawnReason
             }
         }
     }
