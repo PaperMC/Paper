@@ -7,14 +7,15 @@ import java.io.IOException; // CraftBukkit
 
 public class Packet3Chat extends Packet {
 
+    public static int b = 119;
     public String message;
 
     public Packet3Chat() {}
 
     public Packet3Chat(String s) {
         /* CraftBukkit start - handle this later
-        if (s.length() > 119) {
-            s = s.substring(0, 119);
+        if (s.length() > b) {
+            s = s.substring(0, b);
         }
         // CraftBukkit end */
 
@@ -22,7 +23,7 @@ public class Packet3Chat extends Packet {
     }
 
     public void a(DataInputStream datainputstream) throws IOException { // CraftBukkit
-        this.message = a(datainputstream, 119);
+        this.message = a(datainputstream, b);
     }
 
     public void a(DataOutputStream dataoutputstream) throws IOException { // CraftBukkit

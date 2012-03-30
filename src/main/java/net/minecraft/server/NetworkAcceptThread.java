@@ -35,7 +35,7 @@ class NetworkAcceptThread extends Thread {
                         // CraftBukkit end
 
                         // CraftBukkit
-                        if (NetworkListenThread.getRecentConnectionAttempts(this.listenThread).containsKey(inetaddress) && System.currentTimeMillis() - ((Long) NetworkListenThread.getRecentConnectionAttempts(this.listenThread).get(inetaddress)).longValue() < connectionThrottle) {
+                        if (NetworkListenThread.getRecentConnectionAttempts(this.listenThread).containsKey(inetaddress) && !"127.0.0.1".equals(inetaddress.getHostAddress()) && System.currentTimeMillis() - ((Long) NetworkListenThread.getRecentConnectionAttempts(this.listenThread).get(inetaddress)).longValue() < connectionThrottle) {
                             NetworkListenThread.getRecentConnectionAttempts(this.listenThread).put(inetaddress, Long.valueOf(System.currentTimeMillis()));
                             socket.close();
                             continue;

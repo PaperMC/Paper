@@ -293,7 +293,7 @@ public class Village {
                 villagedoor = (VillageDoor) iterator.next();
             }
 
-            this.size = Math.max(32, (int) Math.sqrt((double) j));
+            this.size = Math.max(32, (int) Math.sqrt((double) j) + 1);
         }
     }
 }

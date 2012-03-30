@@ -219,6 +219,10 @@ public class WorldNBTStorage implements PlayerFileData, IDataManager {
         return this;
     }
 
+    public String[] getSeenPlayers() {
+        return this.playerDir.list();
+    }
+
     public void e() {}
 
     public File getDataFile(String s) {

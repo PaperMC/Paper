@@ -96,12 +96,20 @@ public class ContainerFurnace extends Container {
                 }
 
                 slot.a(itemstack1, itemstack);
-            } else if (i >= 3 && i < 30) {
-                if (!this.a(itemstack1, 30, 39, false)) {
-                    return null;
-                }
-            } else if (i >= 30 && i < 39) {
-                if (!this.a(itemstack1, 3, 30, false)) {
+            } else if (i != 1 && i != 0) {
+                if (FurnaceRecipes.getInstance().getResult(itemstack1.getItem().id) != null) {
+                    if (!this.a(itemstack1, 0, 1, false)) {
+                        return null;
+                    }
+                } else if (TileEntityFurnace.isFuel(itemstack1)) {
+                    if (!this.a(itemstack1, 1, 2, false)) {
+                        return null;
+                    }
+                } else if (i >= 3 && i < 30) {
+                    if (!this.a(itemstack1, 30, 39, false)) {
+                        return null;
+                    }
+                } else if (i >= 30 && i < 39 && !this.a(itemstack1, 3, 30, false)) {
                     return null;
                 }
             } else if (!this.a(itemstack1, 3, 39, false)) {

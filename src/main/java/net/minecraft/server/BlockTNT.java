@@ -54,15 +54,17 @@ public class BlockTNT extends Block {
     }
 
     public void attack(World world, int i, int j, int k, EntityHuman entityhuman) {
-        if (entityhuman.U() != null && entityhuman.U().id == Item.FLINT_AND_STEEL.id) {
-            world.setRawData(i, j, k, 1);
-        }
-
         super.attack(world, i, j, k, entityhuman);
     }
 
     public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman) {
-        return super.interact(world, i, j, k, entityhuman);
+        if (entityhuman.U() != null && entityhuman.U().id == Item.FLINT_AND_STEEL.id) {
+            this.postBreak(world, i, j, k, 1);
+            world.setTypeId(i, j, k, 0);
+            return true;
+        } else {
+            return super.interact(world, i, j, k, entityhuman);
+        }
     }
 
     protected ItemStack a_(int i) {

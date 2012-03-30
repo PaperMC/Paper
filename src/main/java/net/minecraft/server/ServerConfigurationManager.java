@@ -141,6 +141,7 @@ public class ServerConfigurationManager {
 
         worldserver.addEntity(entityplayer);
         this.getPlayerManager(entityplayer.dimension).addPlayer(entityplayer);
+        this.u();
 
         // CraftBukkit start - sendAll above replaced with this loop
         Packet201PlayerInfo packet = new Packet201PlayerInfo(entityplayer.listName, true, 1000);
@@ -761,5 +762,29 @@ public class ServerConfigurationManager {
 
     public int getMaxPlayers() {
         return this.maxPlayers;
+    }
+
+    public String[] getSeenPlayers() {
+        return this.server.worlds.get(0).getDataManager().getPlayerFileData().getSeenPlayers(); // CraftBukkit
+    }
+
+    private void u() {
+        MojangStatisticsGenerator mojangstatisticsgenerator = new MojangStatisticsGenerator("server");
+
+        mojangstatisticsgenerator.a("version", this.server.getVersion());
+        mojangstatisticsgenerator.a("os_name", System.getProperty("os.name"));
+        mojangstatisticsgenerator.a("os_version", System.getProperty("os.version"));
+        mojangstatisticsgenerator.a("os_architecture", System.getProperty("os.arch"));
+        mojangstatisticsgenerator.a("memory_total", Long.valueOf(Runtime.getRuntime().totalMemory()));
+        mojangstatisticsgenerator.a("memory_max", Long.valueOf(Runtime.getRuntime().maxMemory()));
+        mojangstatisticsgenerator.a("memory_free", Long.valueOf(Runtime.getRuntime().freeMemory()));
+        mojangstatisticsgenerator.a("java_version", System.getProperty("java.version"));
+        mojangstatisticsgenerator.a("cpu_cores", Integer.valueOf(Runtime.getRuntime().availableProcessors()));
+        mojangstatisticsgenerator.a("players_current", Integer.valueOf(this.getPlayerCount()));
+        mojangstatisticsgenerator.a("players_max", Integer.valueOf(this.getMaxPlayers()));
+        mojangstatisticsgenerator.a("players_seen", Integer.valueOf(this.getSeenPlayers().length));
+        mojangstatisticsgenerator.a("uses_auth", Boolean.valueOf(this.server.onlineMode));
+        mojangstatisticsgenerator.a("server_brand", this.server.getServerModName());
+        mojangstatisticsgenerator.a();
     }
 }
