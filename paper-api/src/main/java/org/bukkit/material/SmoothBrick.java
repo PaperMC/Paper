@@ -15,6 +15,7 @@ public class SmoothBrick extends TexturedMaterial {
         textures.add(Material.STONE);
         textures.add(Material.MOSSY_COBBLESTONE);
         textures.add(Material.COBBLESTONE);
+        textures.add(Material.SMOOTH_BRICK);
     }
 
     public SmoothBrick() {
