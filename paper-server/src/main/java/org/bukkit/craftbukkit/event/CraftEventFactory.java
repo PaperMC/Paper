@@ -155,7 +155,7 @@ public class CraftEventFactory {
         Block blockClicked = craftWorld.getBlockAt(clickedX, clickedY, clickedZ);
         BlockFace blockFace = CraftBlock.notchToBlockFace(clickedFace);
 
-        if (clickedY == 255) {
+        if (clickedY > 255) {
             blockClicked = null;
             switch (action) {
             case LEFT_CLICK_BLOCK:
