@@ -142,7 +142,7 @@ public class CraftEventFactory {
         if (action != Action.LEFT_CLICK_AIR && action != Action.RIGHT_CLICK_AIR) {
             throw new IllegalArgumentException();
         }
-        return callPlayerInteractEvent(who, action, 0, 255, 0, 0, itemstack);
+        return callPlayerInteractEvent(who, action, 0, 256, 0, 0, itemstack);
     }
 
     public static PlayerInteractEvent callPlayerInteractEvent(EntityHuman who, Action action, int clickedX, int clickedY, int clickedZ, int clickedFace, ItemStack itemstack) {
