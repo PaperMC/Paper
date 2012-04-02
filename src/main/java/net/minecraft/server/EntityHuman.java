@@ -685,9 +685,10 @@ public abstract class EntityHuman extends EntityLiving {
             ItemStack itemstack = this.U();
 
             if (itemstack != null && entity instanceof EntityLiving) {
+                if (this.abilities.canInstantlyBuild) itemstack = itemstack.cloneItemStack(); // CraftBukkit - if the player can instantly build, don't decrement the stack.
                 itemstack.a((EntityLiving) entity);
-                // CraftBukkit - bypass infinite items; <= 0 -> == 0
-                if (itemstack.count == 0) {
+                // CraftBukkit - bypass infinite items; <= 0 -> == 0, only remove items if not able to instantly build
+                if (itemstack.count == 0 && !this.abilities.canInstantlyBuild) {
                     itemstack.a(this);
                     this.V();
                 }
