@@ -65,6 +65,7 @@ public class CraftEventFactory {
         WorldServer worldServer = world.getHandle();
         int spawnSize = Bukkit.getServer().getSpawnRadius();
 
+        if (world.getHandle().dimension != 0) return true;
         if (spawnSize <= 0) return true;
         if (player.isOp()) return true;
 
