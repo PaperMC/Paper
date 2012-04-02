@@ -617,6 +617,16 @@ public class EntityEnderDragon extends EntityComplex {
             for (BlockState state : event.getBlocks()) {
                 state.update(true);
             }
+        } else {
+            for (BlockState state : event.getBlocks()) {
+                Packet53BlockChange packet = new Packet53BlockChange(state.getX(), state.getY(), state.getZ(), this.world);
+                for (Iterator it = this.world.players.iterator(); it.hasNext();) {
+                    EntityHuman entity = (EntityHuman) it.next();
+                    if (entity instanceof EntityPlayer) {
+                        ((EntityPlayer) entity).netServerHandler.sendPacket(packet);
+                    }
+                }
+            }
         }
         // CraftBukkit end
 
