@@ -152,6 +152,9 @@ public final class SpawnerCreature {
                                                                 return i;
                                                             }
 
+                                                            // CraftBukkit - made slimes spawn less often in FLAT worlds.
+                                                            if (entityliving instanceof EntitySlime && world.worldData.getType() == WorldType.FLAT && world.random.nextInt(200) == 0) return 0;
+
                                                             entityliving.setPositionRotation((double) f, (double) f1, (double) f2, world.random.nextFloat() * 360.0F, 0.0F);
                                                             if (entityliving.canSpawn()) {
                                                                 ++j2;
