@@ -27,7 +27,6 @@ public class PluginsCommand extends BukkitCommand {
     private String getPluginList() {
         StringBuilder pluginList = new StringBuilder();
         Plugin[] plugins = Bukkit.getPluginManager().getPlugins();
-        int pluginCount = 0;
 
         for (Plugin plugin : plugins) {
             if (pluginList.length() > 0) {
@@ -37,9 +36,8 @@ public class PluginsCommand extends BukkitCommand {
 
             pluginList.append(plugin.isEnabled() ? ChatColor.GREEN : ChatColor.RED);
             pluginList.append(plugin.getDescription().getName());
-            pluginCount++;
         }
 
-        return "(" + pluginCount + "): " + pluginList.toString();
+        return "(" + plugins.length + "): " + pluginList.toString();
     }
 }
