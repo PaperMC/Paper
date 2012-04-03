@@ -110,7 +110,7 @@ public class EntityOcelot extends EntityTameableAnimal {
 
         if (!this.isTamed()) {
             if (this.b.f() && itemstack != null && itemstack.id == Item.RAW_FISH.id && entityhuman.j(this) < 9.0D) {
-                --itemstack.count;
+                if (!entityhuman.abilities.canInstantlyBuild) --itemstack.count; // CraftBukkit - if the player can instantly build, don't decrement the item stack
                 if (itemstack.count <= 0) {
                     entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, (ItemStack) null);
                 }
