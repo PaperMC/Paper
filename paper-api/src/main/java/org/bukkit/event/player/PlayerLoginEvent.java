@@ -1,5 +1,7 @@
 package org.bukkit.event.player;
 
+import java.net.InetAddress;
+
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 
@@ -8,21 +10,59 @@ import org.bukkit.event.HandlerList;
  */
 public class PlayerLoginEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
+    private final InetAddress address;
+    private final String hostname;
     private Result result = Result.ALLOWED;
     private String message = "";
-    private String hostname = "";
 
+    /**
+     * @deprecated Address should be provided in other constructor
+     */
+    @Deprecated
     public PlayerLoginEvent(final Player player) {
-        super(player);
+        this(player, "", null);
     }
 
+    /**
+     * @deprecated Address should be provided in other constructor
+     */
+    @Deprecated
     public PlayerLoginEvent(final Player player, final String hostname) {
-        this(player);
-        this.hostname = hostname;
+        this(player, hostname, null);
     }
 
+    /**
+     * This constructor defaults message to an empty string, and result to ALLOWED
+     *
+     * @param player The {@link Player} for this event
+     * @param hostname The hostname that was used to connect to the server
+     * @param address The address the player used to connect, provided for timing issues
+     */
+    public PlayerLoginEvent(final Player player, final String hostname, final InetAddress address) {
+        super(player);
+        this.hostname = hostname;
+        this.address = address;
+    }
+
+    /**
+     * @deprecated Address and hostname should be provided in other constructor
+     */
+    @Deprecated
     public PlayerLoginEvent(final Player player, final Result result, final String message) {
-        this(player);
+        this(player, "", null, result, message);
+    }
+
+    /**
+     * This constructor pre-configures the event with a result and message
+     *
+     * @param player The {@link Player} for this event
+     * @param hostname The hostname that was used to connect to the server
+     * @param address The address the player used to connect, provided for timing issues
+     * @param result The result status for this event
+     * @param message The message to be displayed if result denies login
+     */
+    public PlayerLoginEvent(final Player player, String hostname, final InetAddress address, final Result result, final String message) {
+        this(player, hostname, address);
         this.result = result;
         this.message = message;
     }
@@ -89,6 +129,18 @@ public class PlayerLoginEvent extends PlayerEvent {
     public void disallow(final Result result, final String message) {
         this.result = result;
         this.message = message;
+    }
+
+    /**
+     * Gets the {@link InetAddress} for the Player associated
+     * with this event. This method is provided as a workaround for
+     * player.getAddress() returning null during PlayerLoginEvent.
+     *
+     * @return The address for this player. For legacy compatibility,
+     * this may be null.
+     */
+    public InetAddress getAddress() {
+        return address;
     }
 
     @Override
