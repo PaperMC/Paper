@@ -203,8 +203,8 @@ public class ServerConfigurationManager {
         // in the event, check with plugins to see if it's ok, and THEN kick
         // depending on the outcome. Also change any reference to this.e.c to entity.world
         EntityPlayer entity = new EntityPlayer(this.server, this.server.getWorldServer(0), s, new ItemInWorldManager(this.server.getWorldServer(0)));
-        Player player = (Player) entity.getBukkitEntity();
-        PlayerLoginEvent event = new PlayerLoginEvent(player, hostname);
+        Player player = entity.getBukkitEntity();
+        PlayerLoginEvent event = new PlayerLoginEvent(player, hostname, netloginhandler.getSocket().getInetAddress());
 
         String s1 = netloginhandler.networkManager.getSocketAddress().toString();
 
