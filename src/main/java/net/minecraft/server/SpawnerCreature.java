@@ -201,6 +201,7 @@ public final class SpawnerCreature {
     }
 
     private static void a(EntityLiving entityliving, World world, float f, float f1, float f2) {
+        if (entityliving.dead) return; // CraftBukkit
         if (entityliving instanceof EntitySpider && world.random.nextInt(100) == 0) {
             EntitySkeleton entityskeleton = new EntitySkeleton(world);
 
