@@ -23,9 +23,7 @@ import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.block.BlockCanBuildEvent;
 import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.block.BlockFormEvent;
-import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
-import org.bukkit.event.entity.ItemSpawnEvent;
 import org.bukkit.event.weather.WeatherChangeEvent;
 import org.bukkit.event.weather.ThunderChangeEvent;
 import org.bukkit.block.BlockState;
@@ -879,33 +877,34 @@ public class World implements IBlockAccess {
         }
 
         // CraftBukkit start
+        org.bukkit.event.Cancellable event = null;
         if (entity instanceof EntityLiving && !(entity instanceof EntityPlayer)) {
             boolean isAnimal = entity instanceof EntityAnimal || entity instanceof EntityWaterAnimal || entity instanceof EntityGolem;
             boolean isMonster = entity instanceof EntityMonster || entity instanceof EntityGhast || entity instanceof EntitySlime;
 
             if (spawnReason == SpawnReason.NATURAL || spawnReason == SpawnReason.CHUNK_GEN || spawnReason == SpawnReason.JOCKEY || spawnReason == SpawnReason.SPAWNER || spawnReason == SpawnReason.BED || spawnReason == SpawnReason.EGG || spawnReason == SpawnReason.VILLAGE_INVASION || spawnReason == SpawnReason.VILLAGE_DEFENSE || spawnReason == SpawnReason.BUILD_SNOWMAN || spawnReason == SpawnReason.BUILD_IRONGOLEM) {
-                if (isAnimal && !allowAnimals || isMonster && !allowMonsters) return false;
+                if (isAnimal && !allowAnimals || isMonster && !allowMonsters)  {
+                    entity.dead = true;
+                    return false;
+                }
             }
 
-            CreatureSpawnEvent event = CraftEventFactory.callCreatureSpawnEvent((EntityLiving) entity, spawnReason);
-
-            if (event.isCancelled()) {
-                return false;
-            }
+            event = CraftEventFactory.callCreatureSpawnEvent((EntityLiving) entity, spawnReason);
         } else if (entity instanceof EntityItem) {
-            ItemSpawnEvent event = CraftEventFactory.callItemSpawnEvent((EntityItem) entity);
-            if (event.isCancelled()) {
-                return false;
-            }
+            event = CraftEventFactory.callItemSpawnEvent((EntityItem) entity);
         } else if (entity.getBukkitEntity() instanceof org.bukkit.entity.Projectile) {
             // Not all projectiles extend EntityProjectile, so check for Bukkit interface instead
-            if (CraftEventFactory.callProjectileLaunchEvent(entity).isCancelled()) {
-                return false;
-            }
+            event = CraftEventFactory.callProjectileLaunchEvent(entity);
+        }
+
+        if (event != null && (event.isCancelled() || entity.dead)) {
+            entity.dead = true;
+            return false;
         }
         // CraftBukkit end
 
         if (!flag && !this.isChunkLoaded(i, j)) {
+            entity.dead = true; // CraftBukkit
             return false;
         } else {
             if (entity instanceof EntityHuman) {
