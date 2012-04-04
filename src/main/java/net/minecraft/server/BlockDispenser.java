@@ -132,8 +132,10 @@ public class BlockDispenser extends BlockContainer {
                     return;
                 }
 
-                // Actually remove the item
-                tileentitydispenser.splitStack(dispenseSlot, 1);
+                if (event.getItem().equals(bukkitItem)) {
+                    // Actually remove the item
+                    tileentitydispenser.splitStack(dispenseSlot, 1);
+                }
 
                 motX = event.getVelocity().getX();
                 motY = event.getVelocity().getY();
