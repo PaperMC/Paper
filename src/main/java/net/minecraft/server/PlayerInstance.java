@@ -114,7 +114,7 @@ class PlayerInstance {
                 if (this.dirtyCount == 64) {
                     i = this.chunkX * 16;
                     j = this.chunkZ * 16;
-                    this.sendAll(new Packet51MapChunk(worldserver.getChunkAt(this.chunkX, this.chunkZ), false, this.h));
+                    this.sendAll(new Packet51MapChunk(worldserver.getChunkAt(this.chunkX, this.chunkZ), (this.h == 0xFFFF), this.h)); // CraftBukkit - send everything (including biome) if all sections flagged
 
                     for (k = 0; k < 16; ++k) {
                         if ((this.h & 1 << k) != 0) {

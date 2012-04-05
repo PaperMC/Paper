@@ -203,18 +203,14 @@ public class CraftWorld implements World {
         int px = x << 4;
         int pz = z << 4;
 
-        // If there are more than 64 updates to a chunk at once, it carries out the update as a cuboid
-        // This flags 64 blocks along the bottom for update and then flags a block at the opposite corner at the top
-        // The cuboid that contains these 65 blocks covers the entire chunk
-        // The server will compress the chunk and send it to all clients
-
-        for (int xx = px; xx < (px + 16); xx++) {
-            world.notify(xx, 0, pz);
-            world.notify(xx, 1, pz);
-            world.notify(xx, 2, pz);
-            world.notify(xx, 3, pz);
+        // If there are more than 64 updates to a chunk at once, it will update all 'touched' sections within the chunk
+        // And will include biome data if all sections have been 'touched'
+        // This flags 65 blocks distributed across all the sections of the chunk, so that everything is sent, including biomes
+        int height = getMaxHeight() / 16;
+        for (int idx = 0; idx < 64; idx++) {
+            world.notify(px + (idx / height), ((idx % height) * 16), pz);
         }
-        world.notify(px, 255, pz + 15);
+        world.notify(px + 15, (height * 16) - 1, pz + 15);
 
         return true;
     }
