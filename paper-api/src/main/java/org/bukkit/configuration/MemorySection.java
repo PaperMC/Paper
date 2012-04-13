@@ -243,7 +243,7 @@ public class MemorySection implements ConfigurationSection {
         for (int i = 0; i < split.length - 1; i++) {
             ConfigurationSection last = section;
 
-            section = getConfigurationSection(split[i]);
+            section = last.getConfigurationSection(split[i]);
 
             if (section == null) {
                 section = last.createSection(split[i]);

@@ -3,7 +3,9 @@ package org.bukkit.configuration;
 import java.util.LinkedHashMap;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import org.bukkit.util.Vector;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -118,6 +120,25 @@ public abstract class ConfigurationTest {
             assertFalse(config.isSet(path));
             assertTrue(config.getDefaults().isSet(path));
         }
+    }
+
+    /**
+     * Test creation of ConfigurationSection
+     */
+    @Test
+    public void testCreateSection() {
+        Configuration config = getConfig();
+
+        Set<String> set = new HashSet<String>();
+        set.add("this");
+        set.add("this.test.sub");
+        set.add("this.test");
+        set.add("this.test.other");
+
+        config.createSection("this.test.sub");
+        config.createSection("this.test.other");
+
+        assertEquals(set, config.getKeys(true));
     }
 
     /**
