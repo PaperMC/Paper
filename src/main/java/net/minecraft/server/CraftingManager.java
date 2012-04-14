@@ -254,7 +254,7 @@ public class CraftingManager {
                     // CraftBukkit end
                 }
             }
-
+            inventorycrafting.currentRecipe = null; // CraftBukkit
             return null;
         }
     }
