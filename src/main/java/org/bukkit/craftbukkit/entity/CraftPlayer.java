@@ -687,6 +687,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
                 firstPlayed = data.getLong("firstPlayed");
                 lastPlayed = data.getLong("lastPlayed");
             }
+
+            if (data.hasKey("newExp")) {
+                EntityPlayer handle = getHandle();
+                handle.newExp = data.getInt("newExp");
+                handle.newTotalExp = data.getInt("newTotalExp");
+                handle.newLevel = data.getInt("newLevel");
+                handle.expToDrop = data.getInt("expToDrop");
+                handle.keepLevel = data.getBoolean("keepLevel");
+            }
         }
     }
 
@@ -696,6 +705,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
 
         NBTTagCompound data = nbttagcompound.getCompound("bukkit");
+        EntityPlayer handle = getHandle();
+        data.setInt("newExp", handle.newExp);
+        data.setInt("newTotalExp", handle.newTotalExp);
+        data.setInt("newLevel", handle.newLevel);
+        data.setInt("expToDrop", handle.expToDrop);
+        data.setBoolean("keepLevel", handle.keepLevel);
         data.setLong("firstPlayed", getFirstPlayed());
         data.setLong("lastPlayed", System.currentTimeMillis());
     }

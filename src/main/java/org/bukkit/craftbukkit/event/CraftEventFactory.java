@@ -316,7 +316,6 @@ public class CraftEventFactory {
         org.bukkit.World world = entity.getWorld();
         Bukkit.getServer().getPluginManager().callEvent(event);
 
-        // TODO: Possibly a way to persist this incase of disconnect
         victim.keepLevel = event.getKeepLevel();
         victim.newLevel = event.getNewLevel();
         victim.newTotalExp = event.getNewTotalExp();
@@ -329,8 +328,7 @@ public class CraftEventFactory {
             if (stack instanceof CraftItemStack) {
                 // Use the internal item to preserve possible data.
                 victim.a(((CraftItemStack) stack).getHandle(), 0.0f);
-            }
-            else {
+            } else {
                 world.dropItemNaturally(entity.getLocation(), stack);
             }
         }
