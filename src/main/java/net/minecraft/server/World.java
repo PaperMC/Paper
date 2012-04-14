@@ -861,7 +861,7 @@ public class World implements IBlockAccess {
 
     // CraftBukkit start - used for entities other than creatures
     public boolean addEntity(Entity entity) {
-        return this.addEntity(entity, SpawnReason.CUSTOM); // Set reason as Custom by default
+        return this.addEntity(entity, SpawnReason.DEFAULT); // Set reason as DEFAULT
     }
 
     public boolean addEntity(Entity entity, SpawnReason spawnReason) { // Changed signature, added SpawnReason
