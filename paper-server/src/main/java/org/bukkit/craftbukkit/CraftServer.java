@@ -579,13 +579,13 @@ public final class CraftServer implements Server {
             return;
         }
 
-        Set<String> keys = perms.keySet();
+        List<Permission> permsList = Permission.loadPermissions(perms, "Permission node '%s' in " + file + " is invalid", Permission.DEFAULT_PERMISSION);
 
-        for (String name : keys) {
+        for (Permission perm : permsList) {
             try {
-                pluginManager.addPermission(Permission.loadPermission(name, perms.get(name)));
-            } catch (Throwable ex) {
-                Bukkit.getServer().getLogger().log(Level.SEVERE, "Permission node '" + name + "' in server config is invalid", ex);
+                pluginManager.addPermission(perm);
+            } catch (IllegalArgumentException ex) {
+                getLogger().log(Level.SEVERE, "Permission in " + file + " was already defined", ex);
             }
         }
     }
