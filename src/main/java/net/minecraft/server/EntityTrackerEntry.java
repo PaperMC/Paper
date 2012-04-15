@@ -6,6 +6,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.bukkit.util.NumberConversions; // Craftbukkit
+
 public class EntityTrackerEntry {
 
     public Entity tracker;
@@ -29,11 +31,6 @@ public class EntityTrackerEntry {
     private int u = 0;
     public boolean n = false;
     public Set trackedPlayers = new HashSet();
-    // CraftBukkit start
-    public static ArrayList<AxisAlignedBB> collisions = new ArrayList<AxisAlignedBB>();
-    public static ArrayList<AxisAlignedBB> bigCollisions = new ArrayList<AxisAlignedBB>();
-    public static AxisAlignedBB entityBB = AxisAlignedBB.a(0, 0, 0, 0, 0, 0);
-    // CraftBukkit end
 
     public EntityTrackerEntry(Entity entity, int i, int j, boolean flag) {
         this.tracker = entity;
@@ -56,75 +53,6 @@ public class EntityTrackerEntry {
         return this.tracker.id;
     }
 
-    // CraftBukkit start
-    private int[] fixCoords(int bigX, int bigY, int bigZ) {
-        final float halfWidth = this.tracker.width / 2.0F;
-        this.collisions.clear();
-        this.getCollisions(this.tracker.boundingBox, this.collisions);
-
-        // loop through all combinations of adding 0 or 1 to x, y, and z
-        outerloop:
-        for (int i = 0; i < 8; i++) {
-            int x = bigX + (i & 0x1);
-            int y = bigY + (i >> 2 & 0x1);
-            int z = bigZ + (i >> 1 & 0x1);
-
-            // create a bounding box for our possible match
-            double minXd = (x / 32.0D) - halfWidth;
-            double maxXd = (x / 32.0D) + halfWidth;
-            double minYd = (y / 32.0D) - this.tracker.height + this.tracker.bO;
-            double maxYd = (y / 32.0D) - this.tracker.height + this.tracker.bO + this.tracker.length;
-            double minZd = (z / 32.0D) - halfWidth;
-            double maxZd = (z / 32.0D) + halfWidth;
-            this.entityBB = this.entityBB.c(minXd, minYd, minZd, maxXd, maxYd, maxZd);
-
-            this.bigCollisions.clear();
-            this.getCollisions(entityBB, this.bigCollisions);
-
-            if (this.collisions.size() == this.bigCollisions.size()) {
-                for (int j = 0; j < this.collisions.size(); j++) {
-                    AxisAlignedBB collision = this.collisions.get(j);
-                    AxisAlignedBB bigCollision = this.bigCollisions.get(j);
-                    if (!(collision.a == bigCollision.a && collision.b == bigCollision.b && collision.c == bigCollision.c && collision.d == bigCollision.d && collision.e == bigCollision.e && collision.f == bigCollision.f)) {
-                        continue outerloop;
-                    }
-                }
-                // if we make it here we got a match
-                return new int[] { x, y, z };
-            }            
-        }
-
-        return new int[] { bigX, bigY, bigZ };
-    }
-
-    private void getCollisions(AxisAlignedBB bb, ArrayList collisions) {
-        int minX = MathHelper.floor(bb.a);
-        int maxX = MathHelper.floor(bb.d) + 1;
-        int minY = MathHelper.floor(bb.b);
-        int maxY = MathHelper.floor(bb.e) + 1;
-        int minZ = MathHelper.floor(bb.c);
-        int maxZ = MathHelper.floor(bb.f) + 1;
-
-        for (int curX = minX; curX <= maxX; curX++) {
-            for (int curZ = minZ; curZ <= maxZ; curZ++) {
-                if (!this.tracker.world.isLoaded(curX, 64, curZ)) {
-                    continue;
-                }
-
-                for (int curY = minY; curY <= maxY; curY++) {
-                    Block block = Block.byId[this.tracker.world.getTypeId(curX, curY, curZ)];
-                    if (block == null) {
-                        continue;
-                    }
-
-                    // get all bounding boxes for this block that intersect the entity
-                    block.a(this.tracker.world, curX, curY, curZ, bb, collisions);
-                }
-            }
-        }
-    }
-    // CraftBukkit end
-
     public void track(List list) {
         this.n = false;
         if (!this.s || this.tracker.e(this.p, this.q, this.r) > 16.0D) {
@@ -138,16 +66,30 @@ public class EntityTrackerEntry {
 
         ++this.u;
         if (this.m++ % this.c == 0 || this.tracker.ce) {
-            int i = MathHelper.floor(this.tracker.locX * 32.0D);
-            int j = MathHelper.floor(this.tracker.locY * 32.0D);
-            int k = MathHelper.floor(this.tracker.locZ * 32.0D);
+            // CraftBukkit start - Add logic for clipping;
+            boolean xFlag = NumberConversions.floor(this.tracker.locX) - this.tracker.locX > -.5d;
+            boolean zFlag = NumberConversions.floor(this.tracker.locZ) - this.tracker.locZ > -.5d;
+            if ((this.tracker.width % 2f) >= 1f) {
+                xFlag = !xFlag;
+                zFlag = !zFlag;
+            }
 
-            // CraftBukkit start - fix up coordinates to prevent entities clipping through blocks
-            int[] fixedCoords = this.fixCoords(i, j, k);
-            i = fixedCoords[0];
-            j = fixedCoords[1];
-            k = fixedCoords[2];
-            // CraftBukkit end
+            int i;
+            int j = NumberConversions.ceil(this.tracker.locY * 32.0D);;
+            int k;
+
+            if (xFlag) {
+                i = NumberConversions.ceil(this.tracker.locX * 32.0D);
+            } else {
+                i = NumberConversions.floor(this.tracker.locX * 32.0D);
+            }
+
+            if (zFlag) {
+                k = NumberConversions.ceil(this.tracker.locZ * 32.0D);
+            } else {
+                k = NumberConversions.floor(this.tracker.locZ * 32.0D);
+            }
+            // CraftBukkit end - logic for clipping
 
             int l = MathHelper.d(this.tracker.yaw * 256.0F / 360.0F);
             int i1 = MathHelper.d(this.tracker.pitch * 256.0F / 360.0F);
@@ -191,7 +133,7 @@ public class EntityTrackerEntry {
                 if (this.tracker instanceof EntityPlayer) {
                     this.scanPlayers(new ArrayList(this.trackedPlayers));
                 }
-                object = new Packet34EntityTeleport(this.tracker.id, i, j - 1, k, (byte) l, (byte) i1); // move entities down 1 client side so they don't clip up out of boxes
+                object = new Packet34EntityTeleport(this.tracker.id, i, j, k, (byte) l, (byte) i1); // move entities down 1 client side so they don't clip up out of boxes
                 // CraftBukkit end
             }
 
