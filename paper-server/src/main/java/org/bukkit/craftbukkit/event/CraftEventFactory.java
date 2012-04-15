@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.event;
 
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -285,6 +286,10 @@ public class CraftEventFactory {
         BlockFadeEvent event = new BlockFadeEvent(block, state);
         Bukkit.getPluginManager().callEvent(event);
         return event;
+    }
+
+    public static EntityDeathEvent callEntityDeathEvent(EntityLiving victim) {
+        return callEntityDeathEvent(victim, new ArrayList<org.bukkit.inventory.ItemStack>(0));
     }
 
     public static EntityDeathEvent callEntityDeathEvent(EntityLiving victim, List<org.bukkit.inventory.ItemStack> drops) {
