@@ -779,7 +779,18 @@ public abstract class EntityLiving extends Entity {
 
             if (!this.isBaby()) {
                 this.dropDeathLoot(this.lastDamageByPlayerTime > 0, i);
-                // CraftBukkit - move rare item drop call to dropDeathLoot
+                /* CraftBukkit start - move rare item drop call to dropDeathLoot
+                if (this.lastDamageByPlayerTime > 0) {
+                    int j = this.random.nextInt(200) - i;
+
+                    if (j < 5) {
+                        this.b(j <= 0 ? 1 : 0);
+                    }
+                }
+                // */
+            } else {
+                CraftEventFactory.callEntityDeathEvent(this);
+                // CraftBukkit end
             }
         }
 

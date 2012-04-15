@@ -89,7 +89,7 @@ public class EntityOcelot extends EntityTameableAnimal {
     }
 
     protected int getLootId() {
-        return 0; // CraftBukkit - Item.LEATHER.id -> 0
+        return Item.LEATHER.id;
     }
 
     public boolean a(Entity entity) {
@@ -102,7 +102,7 @@ public class EntityOcelot extends EntityTameableAnimal {
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
-        super.dropDeathLoot(flag, i); // CraftBukkit - Calls EntityDeathEvent
+        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this); // CraftBukkit - Call EntityDeathEvent
     }
 
     public boolean b(EntityHuman entityhuman) {
