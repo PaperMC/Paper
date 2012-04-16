@@ -276,8 +276,10 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
                 launch = new EntityFireball(world);
             }
 
-            launch.setPositionRotation(getLocation().getX(), getLocation().getY(), getLocation().getZ(), getLocation().getYaw(), getLocation().getPitch());
-            Vector direction = getLocation().getDirection().multiply(10);
+            Location location = getEyeLocation();
+            Vector direction = location.getDirection().multiply(10);
+
+            launch.setPositionRotation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
             ((EntityFireball) launch).setDirection(direction.getX(), direction.getY(), direction.getZ());
         }
 
