@@ -102,7 +102,7 @@ public class NetLoginHandler extends NetHandler {
         EntityPlayer entityplayer = this.server.serverConfigurationManager.attemptLogin(this, packet1login.name, this.hostname); // CraftBukkit - add hostname parameter
 
         if (entityplayer != null) {
-            this.server.serverConfigurationManager.b(entityplayer);
+            //this.server.serverConfigurationManager.b(entityplayer); // CraftBukkit - Moved to attemptLogin
             // entityplayer.a((World) this.server.a(entityplayer.dimension)); // CraftBukkit - set by Entity
             entityplayer.itemInWorldManager.a((WorldServer) entityplayer.world);
             // CraftBukkit - add world and location to 'logged in' message.

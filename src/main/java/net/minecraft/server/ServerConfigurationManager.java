@@ -213,7 +213,6 @@ public class ServerConfigurationManager {
 
         if (this.banByName.contains(s.trim().toLowerCase())) {
             event.disallow(PlayerLoginEvent.Result.KICK_BANNED, "You are banned from this server!");
-            // return null // CraftBukkit
         } else if (!this.isWhitelisted(s)) {
             event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, "You are not white-listed on this server!");
         } else if (this.banByIP.contains(s1)) {
@@ -224,6 +223,7 @@ public class ServerConfigurationManager {
             event.disallow(PlayerLoginEvent.Result.ALLOWED, s1);
         }
 
+        this.b(entity);
         this.cserver.getPluginManager().callEvent(event);
         if (event.getResult() != PlayerLoginEvent.Result.ALLOWED) {
             netloginhandler.disconnect(event.getKickMessage());
@@ -235,6 +235,7 @@ public class ServerConfigurationManager {
 
             if (entityplayer.name.equalsIgnoreCase(s)) {
                 entityplayer.netServerHandler.disconnect("You logged in from another location");
+                this.b(entity);
             }
         }
 
