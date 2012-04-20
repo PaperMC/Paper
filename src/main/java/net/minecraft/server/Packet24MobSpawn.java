@@ -24,9 +24,11 @@ public class Packet24MobSpawn extends Packet {
     public Packet24MobSpawn(EntityLiving entityliving) {
         this.a = entityliving.id;
         this.b = (byte) EntityTypes.a((Entity) entityliving);
-        this.c = MathHelper.floor(entityliving.locX * 32.0D);
-        this.d = MathHelper.floor(entityliving.locY * 32.0D);
-        this.e = MathHelper.floor(entityliving.locZ * 32.0D);
+        // CraftBukkit start - floors to new intelligence
+        this.c = entityliving.size.getXZCoord(entityliving.locX);
+        this.d = org.bukkit.util.NumberConversions.floor(entityliving.locY * 32.0D);
+        this.e = entityliving.size.getXZCoord(entityliving.locZ);
+        // CraftBukkit end
         this.f = (byte) ((int) (entityliving.yaw * 256.0F / 360.0F));
         this.g = (byte) ((int) (entityliving.pitch * 256.0F / 360.0F));
         this.h = (byte) ((int) (entityliving.X * 256.0F / 360.0F));

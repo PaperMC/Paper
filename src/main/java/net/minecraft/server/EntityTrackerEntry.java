@@ -6,8 +6,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.bukkit.util.NumberConversions; // Craftbukkit
-
 public class EntityTrackerEntry {
 
     public Entity tracker;
@@ -66,29 +64,10 @@ public class EntityTrackerEntry {
 
         ++this.u;
         if (this.m++ % this.c == 0 || this.tracker.ce) {
-            // CraftBukkit start - Add logic for clipping;
-            boolean xFlag = NumberConversions.floor(this.tracker.locX) - this.tracker.locX > -.5d;
-            boolean zFlag = NumberConversions.floor(this.tracker.locZ) - this.tracker.locZ > -.5d;
-            if ((this.tracker.width % 2f) >= 1f) {
-                xFlag = !xFlag;
-                zFlag = !zFlag;
-            }
-
-            int i;
-            int j = NumberConversions.ceil(this.tracker.locY * 32.0D);;
-            int k;
-
-            if (xFlag) {
-                i = NumberConversions.ceil(this.tracker.locX * 32.0D);
-            } else {
-                i = NumberConversions.floor(this.tracker.locX * 32.0D);
-            }
-
-            if (zFlag) {
-                k = NumberConversions.ceil(this.tracker.locZ * 32.0D);
-            } else {
-                k = NumberConversions.floor(this.tracker.locZ * 32.0D);
-            }
+            // CraftBukkit start - add logic for clipping
+            int i = this.tracker.size.getXZCoord(this.tracker.locX);
+            int j = org.bukkit.util.NumberConversions.floor(this.tracker.locY * 32.0D);
+            int k = this.tracker.size.getXZCoord(this.tracker.locZ);
             // CraftBukkit end - logic for clipping
 
             int l = MathHelper.d(this.tracker.yaw * 256.0F / 360.0F);
@@ -124,7 +103,7 @@ public class EntityTrackerEntry {
             } else {
                 this.u = 0;
                 // CraftBukkit start
-                // remove (redundant?) setting of entity location to avoid clipping through blocks
+                // remove setting of entity location to avoid clipping through blocks
                 //this.tracker.locX = (double) i / 32.0D;
                 //this.tracker.locY = (double) j / 32.0D;
                 //this.tracker.locZ = (double) k / 32.0D;
@@ -133,7 +112,7 @@ public class EntityTrackerEntry {
                 if (this.tracker instanceof EntityPlayer) {
                     this.scanPlayers(new ArrayList(this.trackedPlayers));
                 }
-                object = new Packet34EntityTeleport(this.tracker.id, i, j, k, (byte) l, (byte) i1); // move entities down 1 client side so they don't clip up out of boxes
+                object = new Packet34EntityTeleport(this.tracker.id, i, j, k, (byte) l, (byte) i1);
                 // CraftBukkit end
             }
 

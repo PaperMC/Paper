@@ -22,9 +22,65 @@ import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.plugin.PluginManager;
+import org.bukkit.util.NumberConversions;
 // CraftBukkit end
 
 public abstract class Entity {
+    // CraftBukkit start -  size of entity for clipping calculations
+    public enum EntitySize {
+        SIZE_1,
+        SIZE_2,
+        SIZE_3,
+        SIZE_4,
+        SIZE_5,
+        SIZE_6;
+
+        public int getXZCoord(double loc) {
+            double diff = loc - (NumberConversions.floor(loc) + 0.5D);
+
+            switch (this) {
+            case SIZE_1:
+                if (diff < 0.0D ? diff < -0.3125D : diff < 0.3125D) {
+                    return NumberConversions.ceil(loc * 32.0D);
+                }
+
+                return NumberConversions.floor(loc * 32.0D);
+            case SIZE_2:
+                if (diff < 0.0D ? diff < -0.3125D : diff < 0.3125D) {
+                    return NumberConversions.floor(loc * 32.0D);
+                }
+
+                return NumberConversions.ceil(loc * 32.0D);
+            case SIZE_3:
+                if (diff > 0.0D) {
+                    return NumberConversions.floor(loc * 32.0D);
+                }
+
+                return NumberConversions.ceil(loc * 32.0D);
+            case SIZE_4:
+                if (diff < 0.0D ? diff < -0.1875D : diff < 0.1875D) {
+                    return NumberConversions.ceil(loc * 32.0D);
+                }
+
+                return NumberConversions.floor(loc * 32.0D);
+            case SIZE_5:
+                if (diff < 0.0D ? diff < -0.1875D : diff < 0.1875D) {
+                    return NumberConversions.floor(loc * 32.0D);
+                }
+
+                return NumberConversions.ceil(loc * 32.0D);
+            case SIZE_6:
+            default:
+                if (diff > 0.0D) {
+                    return NumberConversions.ceil(loc * 32.0D);
+                }
+
+                return NumberConversions.floor(loc * 32.0D);
+            }
+        }
+    }
+    public EntitySize size;
+    // CraftBukkit end
 
     private static int entityCount = 0;
     public int id;
@@ -100,6 +156,7 @@ public abstract class Entity {
         this.dead = false;
         this.height = 0.0F;
         this.width = 0.6F;
+        this.size = EntitySize.SIZE_2; // CraftBukkit
         this.length = 1.8F;
         this.bI = 0.0F;
         this.bJ = 0.0F;
@@ -147,6 +204,22 @@ public abstract class Entity {
     protected void b(float f, float f1) {
         this.width = f;
         this.length = f1;
+        // CraftBukkit start - figure out entity size for clipping calculations
+        float mod = f % 2f;
+        if (mod < 0.375) {
+            this.size = EntitySize.SIZE_1;
+        } else if (mod < 0.75) {
+            this.size = EntitySize.SIZE_2;
+        } else if (mod < 1.0) {
+            this.size = EntitySize.SIZE_3;
+        } else if (mod < 1.375) {
+            this.size = EntitySize.SIZE_4;
+        } else if (mod < 1.75) {
+            this.size = EntitySize.SIZE_5;
+        } else {
+            this.size = EntitySize.SIZE_6;
+        }
+        // CraftBukkit end
     }
 
     protected void c(float f, float f1) {
