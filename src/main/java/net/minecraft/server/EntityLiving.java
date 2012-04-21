@@ -1090,22 +1090,28 @@ public abstract class EntityLiving extends Entity {
             --this.aN;
             this.setPosition(d0, d1, d2);
             this.c(this.yaw, this.pitch);
-            List list = this.world.getCubes(this, this.boundingBox.shrink(0.03125D, 0.0D, 0.03125D));
-
-            if (list.size() > 0) {
-                double d4 = 0.0D;
-
-                for (int i = 0; i < list.size(); ++i) {
-                    AxisAlignedBB axisalignedbb = (AxisAlignedBB) list.get(i);
-
-                    if (axisalignedbb.e > d4) {
-                        d4 = axisalignedbb.e;
-                    }
-                }
-
-                d1 += d4 - this.boundingBox.b;
+            // CraftBukkit start - getCubes is expensive, use an approximation
+            if (this.world.getTypeId(MathHelper.floor(d0), MathHelper.floor(d1), MathHelper.floor(d2)) != 0) {
+                d1 += 1.0D;
                 this.setPosition(d0, d1, d2);
             }
+            //List list = this.world.getCubes(this, this.boundingBox.shrink(0.03125D, 0.0D, 0.03125D));
+
+            //if (list.size() > 0) {
+            //    double d4 = 0.0D;
+
+            //    for (int i = 0; i < list.size(); ++i) {
+            //        AxisAlignedBB axisalignedbb = (AxisAlignedBB) list.get(i);
+
+            //        if (axisalignedbb.e > d4) {
+            //            d4 = axisalignedbb.e;
+            //        }
+            //    }
+
+            //    d1 += d4 - this.boundingBox.b;
+            //    this.setPosition(d0, d1, d2);
+            //}
+            // CraftBukkit end
         }
 
         // MethodProfiler.a("ai"); // CraftBukkit - not in production code
@@ -1116,13 +1122,13 @@ public abstract class EntityLiving extends Entity {
             this.aY = 0.0F;
         } else if (this.aF()) {
             if (this.c_()) {
-                MethodProfiler.a("newAi");
+                // MethodProfiler.a("newAi"); // CraftBukkit - not in production code
                 this.z_();
-                MethodProfiler.a();
+                // MethodProfiler.a(); // CraftBukkit - not in production code
             } else {
-                MethodProfiler.a("oldAi");
+                // MethodProfiler.a("oldAi"); // CraftBukkit - not in production code
                 this.d_();
-                MethodProfiler.a();
+                // MethodProfiler.a(); // CraftBukkit - not in production code
                 this.X = this.yaw;
             }
         }
@@ -1234,10 +1240,14 @@ public abstract class EntityLiving extends Entity {
         this.m.a();
         //MethodProfiler.a(); // CraftBukkit - not in production code
         //MethodProfiler.a("targetSelector"); // CraftBukkit - not in production code
-        this.targetSelector.a();
+        // CraftBukkit start - run goal selectors every other tick
+        if ((this.aV & 1) == 0) {
+            this.targetSelector.a();
         //MethodProfiler.a(); // CraftBukkit - not in production code
         //MethodProfiler.a("goalSelector"); // CraftBukkit - not in production code
-        this.goalSelector.a();
+            this.goalSelector.a();
+        }
+        // CraftBukkit end
         //MethodProfiler.a(); // CraftBukkit - not in production code
         //MethodProfiler.a("navigation"); // CraftBukkit - not in production code
         this.navigation.d();

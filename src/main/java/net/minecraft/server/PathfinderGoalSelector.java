@@ -7,6 +7,7 @@ public class PathfinderGoalSelector {
 
     private ArrayList a = new ArrayList();
     private ArrayList b = new ArrayList();
+    private ArrayList arraylist = new ArrayList(); // CraftBukkit - create list for object reuse
 
     public PathfinderGoalSelector() {}
 
@@ -15,11 +16,12 @@ public class PathfinderGoalSelector {
     }
 
     public void a() {
-        ArrayList arraylist = new ArrayList();
-        Iterator iterator = this.a.iterator();
+        //ArrayList arraylist = new ArrayList(); // CraftBukkit
+        arraylist.clear(); // CraftBukkit - prepare reused list
 
-        while (iterator.hasNext()) {
-            PathfinderGoalSelectorItem pathfindergoalselectoritem = (PathfinderGoalSelectorItem) iterator.next();
+        // CraftBukkit start - don't use iterators for private fields
+        for (int i = 0; i < this.a.size(); i++) {
+            PathfinderGoalSelectorItem pathfindergoalselectoritem = (PathfinderGoalSelectorItem) this.a.get(i);
             boolean flag = this.b.contains(pathfindergoalselectoritem);
 
             if (flag) {
@@ -36,6 +38,7 @@ public class PathfinderGoalSelector {
                 this.b.add(pathfindergoalselectoritem);
             }
         }
+        // CraftBukkit end
 
         boolean flag1 = false;
 
@@ -46,8 +49,10 @@ public class PathfinderGoalSelector {
         Iterator iterator1;
         PathfinderGoalSelectorItem pathfindergoalselectoritem1;
 
-        for (iterator1 = arraylist.iterator(); iterator1.hasNext(); pathfindergoalselectoritem1.a.c()) {
-            pathfindergoalselectoritem1 = (PathfinderGoalSelectorItem) iterator1.next();
+        //CraftBukkit start - don't use iterators for private fields
+        for (int i = 0; i < arraylist.size(); i++) {
+            pathfindergoalselectoritem1 = (PathfinderGoalSelectorItem) arraylist.get(i);
+            pathfindergoalselectoritem1.a.c();
             if (flag1) {
                 System.out.println(pathfindergoalselectoritem1.a.toString() + ", ");
             }
@@ -57,19 +62,20 @@ public class PathfinderGoalSelector {
             System.out.println("Running: ");
         }
 
-        for (iterator1 = this.b.iterator(); iterator1.hasNext(); pathfindergoalselectoritem1.a.e()) {
-            pathfindergoalselectoritem1 = (PathfinderGoalSelectorItem) iterator1.next();
+        for (int i = 0; i < this.b.size(); i++) {
+            pathfindergoalselectoritem1 = (PathfinderGoalSelectorItem) this.b.get(i);
+            pathfindergoalselectoritem1.a.e();
             if (flag1) {
                 System.out.println(pathfindergoalselectoritem1.a.toString());
             }
         }
+        // CraftBukkit end
     }
 
     private boolean a(PathfinderGoalSelectorItem pathfindergoalselectoritem) {
-        Iterator iterator = this.a.iterator();
-
-        while (iterator.hasNext()) {
-            PathfinderGoalSelectorItem pathfindergoalselectoritem1 = (PathfinderGoalSelectorItem) iterator.next();
+        // CraftBukkit start - don't use iterators for private fields
+        for (int i = 0; i < this.a.size(); i++) {
+            PathfinderGoalSelectorItem pathfindergoalselectoritem1 = (PathfinderGoalSelectorItem) this.a.get(i);
 
             if (pathfindergoalselectoritem1 != pathfindergoalselectoritem) {
                 if (pathfindergoalselectoritem.b >= pathfindergoalselectoritem1.b) {
@@ -81,6 +87,7 @@ public class PathfinderGoalSelector {
                 }
             }
         }
+        // CraftBukkit end
 
         return true;
     }
