@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.entity;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.MapMaker;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -13,30 +14,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import net.minecraft.server.*;
 
 import org.apache.commons.lang.Validate;
-import org.bukkit.*;
-
-import net.minecraft.server.Container;
-import net.minecraft.server.EntityPlayer;
-import net.minecraft.server.Packet131ItemData;
-import net.minecraft.server.Packet200Statistic;
-import net.minecraft.server.Packet201PlayerInfo;
-import net.minecraft.server.Packet3Chat;
-import net.minecraft.server.Packet51MapChunk;
-import net.minecraft.server.Packet53BlockChange;
-import net.minecraft.server.Packet54PlayNoteBlock;
-import net.minecraft.server.Packet61WorldEvent;
-import net.minecraft.server.Packet6SpawnPosition;
-import net.minecraft.server.Packet70Bed;
-import net.minecraft.server.WorldServer;
 import org.apache.commons.lang.NotImplementedException;
+
+import org.bukkit.*;
 import org.bukkit.Achievement;
 import org.bukkit.Material;
 import org.bukkit.Statistic;
 import org.bukkit.World;
-import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.conversations.Conversation;
 import org.bukkit.conversations.ConversationAbandonedEvent;
@@ -57,7 +45,6 @@ import org.bukkit.map.MapView;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.messaging.StandardMessenger;
-import org.bukkit.potion.Potion;
 
 @DelegateDeserialization(CraftOfflinePlayer.class)
 public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -211,7 +198,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if ((this.getName() == null) || (other.getName() == null)) {
             return false;
         }
-        return this.getName().equalsIgnoreCase(other.getName());
+
+        boolean nameEquals = this.getName().equalsIgnoreCase(other.getName());
+        boolean idEquals = true;
+
+        if (other instanceof CraftPlayer) {
+            idEquals = this.getEntityId() == ((CraftPlayer) other).getEntityId();
+        }
+
+        return nameEquals && idEquals;
     }
 
     public void kickPlayer(String message) {
@@ -827,6 +822,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public void disconnect(String reason) {
         conversationTracker.abandonAllConversations();
+        perm.clearPermissions();
     }
 
     public boolean isFlying() {
