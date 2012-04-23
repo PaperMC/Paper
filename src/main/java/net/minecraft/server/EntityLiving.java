@@ -1095,22 +1095,22 @@ public abstract class EntityLiving extends Entity {
                 d1 += 1.0D;
                 this.setPosition(d0, d1, d2);
             }
-            //List list = this.world.getCubes(this, this.boundingBox.shrink(0.03125D, 0.0D, 0.03125D));
+            /*List list = this.world.getCubes(this, this.boundingBox.shrink(0.03125D, 0.0D, 0.03125D));
 
-            //if (list.size() > 0) {
-            //    double d4 = 0.0D;
+            if (list.size() > 0) {
+                double d4 = 0.0D;
 
-            //    for (int i = 0; i < list.size(); ++i) {
-            //        AxisAlignedBB axisalignedbb = (AxisAlignedBB) list.get(i);
+                for (int i = 0; i < list.size(); ++i) {
+                    AxisAlignedBB axisalignedbb = (AxisAlignedBB) list.get(i);
 
-            //        if (axisalignedbb.e > d4) {
-            //            d4 = axisalignedbb.e;
-            //        }
-            //    }
+                    if (axisalignedbb.e > d4) {
+                        d4 = axisalignedbb.e;
+                    }
+                }
 
-            //    d1 += d4 - this.boundingBox.b;
-            //    this.setPosition(d0, d1, d2);
-            //}
+                d1 += d4 - this.boundingBox.b;
+                this.setPosition(d0, d1, d2);
+            }*/
             // CraftBukkit end
         }
 
@@ -1240,14 +1240,10 @@ public abstract class EntityLiving extends Entity {
         this.m.a();
         //MethodProfiler.a(); // CraftBukkit - not in production code
         //MethodProfiler.a("targetSelector"); // CraftBukkit - not in production code
-        // CraftBukkit start - run goal selectors every other tick
-        if ((this.aV & 1) == 0) {
-            this.targetSelector.a();
+        this.targetSelector.a();
         //MethodProfiler.a(); // CraftBukkit - not in production code
         //MethodProfiler.a("goalSelector"); // CraftBukkit - not in production code
-            this.goalSelector.a();
-        }
-        // CraftBukkit end
+        this.goalSelector.a();
         //MethodProfiler.a(); // CraftBukkit - not in production code
         //MethodProfiler.a("navigation"); // CraftBukkit - not in production code
         this.navigation.d();

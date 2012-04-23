@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import org.bukkit.Bukkit; // CraftBukkit
+import org.bukkit.craftbukkit.util.UnsafeList; // CraftBukkit
 
 public class Chunk {
 
@@ -53,7 +54,7 @@ public class Chunk {
         this.heightMap = new int[256];
 
         for (int k = 0; k < this.entitySlices.length; ++k) {
-            this.entitySlices[k] = new ArrayList();
+            this.entitySlices[k] = new UnsafeList(); // CraftBukkit - use UnsafeList
         }
 
         Arrays.fill(this.b, -999);
@@ -697,10 +698,10 @@ public class Chunk {
         }
 
         for (int k = i; k <= j; ++k) {
-            List list1 = this.entitySlices[k];
+            UnsafeList list1 = (UnsafeList) this.entitySlices[k]; // CraftBukkit - use UnsafeList
 
             for (int l = 0; l < list1.size(); ++l) {
-                Entity entity1 = (Entity) list1.get(l);
+                Entity entity1 = (Entity) list1.unsafeGet(l); // CraftBukkit - use unsafeGet
 
                 if (entity1 != entity && entity1.boundingBox.a(axisalignedbb)) {
                     list.add(entity1);
@@ -736,10 +737,10 @@ public class Chunk {
         }
 
         for (int k = i; k <= j; ++k) {
-            List list1 = this.entitySlices[k];
+            UnsafeList list1 = (UnsafeList) this.entitySlices[k]; // CraftBukkit - use UnsafeList
 
             for (int l = 0; l < list1.size(); ++l) {
-                Entity entity = (Entity) list1.get(l);
+                Entity entity = (Entity) list1.unsafeGet(l); // CraftBukkit - use unsafeGet
 
                 if (oclass.isAssignableFrom(entity.getClass()) && entity.boundingBox.a(axisalignedbb)) {
                     list.add(entity);

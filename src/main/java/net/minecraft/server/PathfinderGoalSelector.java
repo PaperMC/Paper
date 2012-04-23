@@ -2,12 +2,15 @@ package net.minecraft.server;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import org.bukkit.craftbukkit.util.UnsafeList; // CraftBukkit
 
 public class PathfinderGoalSelector {
 
-    private ArrayList a = new ArrayList();
-    private ArrayList b = new ArrayList();
-    private ArrayList arraylist = new ArrayList(); // CraftBukkit - create list for object reuse
+    // CraftBukkit start - use UnsafeList, add boolean for picking goals
+    private UnsafeList a = new UnsafeList(16);
+    private UnsafeList b = new UnsafeList(16);
+    boolean oddCall = true;
+    // CraftBukkit end
 
     public PathfinderGoalSelector() {}
 
@@ -16,12 +19,12 @@ public class PathfinderGoalSelector {
     }
 
     public void a() {
-        //ArrayList arraylist = new ArrayList(); // CraftBukkit
-        arraylist.clear(); // CraftBukkit - prepare reused list
+        //ArrayList arraylist = new ArrayList(); // CraftBukkit - removed usage
 
-        // CraftBukkit start - don't use iterators for private fields
+        // CraftBukkit start - don't use iterators for private fields, only run every other call
+        if (oddCall) {
         for (int i = 0; i < this.a.size(); i++) {
-            PathfinderGoalSelectorItem pathfindergoalselectoritem = (PathfinderGoalSelectorItem) this.a.get(i);
+            PathfinderGoalSelectorItem pathfindergoalselectoritem = (PathfinderGoalSelectorItem) this.a.unsafeGet(i); // CraftBukkit - use unsafeGet
             boolean flag = this.b.contains(pathfindergoalselectoritem);
 
             if (flag) {
@@ -34,36 +37,44 @@ public class PathfinderGoalSelector {
             }
 
             if (this.a(pathfindergoalselectoritem) && pathfindergoalselectoritem.a.a()) {
-                arraylist.add(pathfindergoalselectoritem);
+                // CraftBukkit start - call method now
+                // arraylist.add(pathfindergoalselectoritem);
+                pathfindergoalselectoritem.a.c();
+                // CraftBukkit end
                 this.b.add(pathfindergoalselectoritem);
             }
         }
+        }
+        oddCall = !oddCall;
         // CraftBukkit end
 
         boolean flag1 = false;
 
-        if (flag1 && arraylist.size() > 0) {
+        // CraftBukkit start - removed usage of arraylist
+        /*if (flag1 && arraylist.size() > 0) {
             System.out.println("Starting: ");
-        }
+        }*/
+        // CraftBukkit end
 
         Iterator iterator1;
         PathfinderGoalSelectorItem pathfindergoalselectoritem1;
 
-        //CraftBukkit start - don't use iterators for private fields
-        for (int i = 0; i < arraylist.size(); i++) {
-            pathfindergoalselectoritem1 = (PathfinderGoalSelectorItem) arraylist.get(i);
-            pathfindergoalselectoritem1.a.c();
+        // CraftBukkit start - removed usage of arraylist
+        /*for (iterator1 = arraylist.iterator(); iterator1.hasNext(); pathfindergoalselectoritem1.a.c()) {
+            pathfindergoalselectoritem1 = (PathfinderGoalSelectorItem) iterator1.next();
             if (flag1) {
                 System.out.println(pathfindergoalselectoritem1.a.toString() + ", ");
             }
-        }
+        }*/
+        // CraftBukkit end
 
         if (flag1 && this.b.size() > 0) {
             System.out.println("Running: ");
         }
 
+        // CraftBukkit start - don't use iterators for private fields
         for (int i = 0; i < this.b.size(); i++) {
-            pathfindergoalselectoritem1 = (PathfinderGoalSelectorItem) this.b.get(i);
+            pathfindergoalselectoritem1 = (PathfinderGoalSelectorItem) this.b.unsafeGet(i); // CraftBukkit - use unsafeGet
             pathfindergoalselectoritem1.a.e();
             if (flag1) {
                 System.out.println(pathfindergoalselectoritem1.a.toString());
@@ -75,14 +86,14 @@ public class PathfinderGoalSelector {
     private boolean a(PathfinderGoalSelectorItem pathfindergoalselectoritem) {
         // CraftBukkit start - don't use iterators for private fields
         for (int i = 0; i < this.a.size(); i++) {
-            PathfinderGoalSelectorItem pathfindergoalselectoritem1 = (PathfinderGoalSelectorItem) this.a.get(i);
+            PathfinderGoalSelectorItem pathfindergoalselectoritem1 = (PathfinderGoalSelectorItem) this.a.unsafeGet(i); // CraftBukkit - use unsafeGet
 
             if (pathfindergoalselectoritem1 != pathfindergoalselectoritem) {
                 if (pathfindergoalselectoritem.b >= pathfindergoalselectoritem1.b) {
-                    if (this.b.contains(pathfindergoalselectoritem1) && !this.a(pathfindergoalselectoritem, pathfindergoalselectoritem1)) {
+                    if (!this.a(pathfindergoalselectoritem, pathfindergoalselectoritem1) && this.b.contains(pathfindergoalselectoritem1)) { // CraftBukkit - switch order
                         return false;
                     }
-                } else if (this.b.contains(pathfindergoalselectoritem1) && !pathfindergoalselectoritem1.a.g()) {
+                } else if (!pathfindergoalselectoritem1.a.g() && this.b.contains(pathfindergoalselectoritem1)) { // CraftBukkit - switch order
                     return false;
                 }
             }

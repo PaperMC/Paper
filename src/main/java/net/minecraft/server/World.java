@@ -20,6 +20,7 @@ import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.craftbukkit.util.UnsafeList;
 import org.bukkit.event.block.BlockCanBuildEvent;
 import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.block.BlockFormEvent;
@@ -40,7 +41,7 @@ public class World implements IBlockAccess {
     private List J = new ArrayList();
     private List K = new ArrayList();
     public List players = new ArrayList();
-    public List e = new ArrayList();
+    public UnsafeList e = new UnsafeList(); // CraftBukkit - use UnsafeList
     private long L = 16777215L;
     public int f = 0;
     protected int g = (new Random()).nextInt();
@@ -1104,7 +1105,7 @@ public class World implements IBlockAccess {
         Entity entity;
 
         for (i = 0; i < this.e.size(); ++i) {
-            entity = (Entity) this.e.get(i);
+            entity = (Entity) this.e.unsafeGet(i); // CraftBukkit - use unsafeGet
             // CraftBukkit start - fixed an NPE
             if (entity == null) {
                 continue;
