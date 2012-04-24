@@ -621,4 +621,22 @@ public interface Server extends PluginMessageRecipient {
      * @throws IllegalArgumentException If the size is not a multiple of 9.
      */
     Inventory createInventory(InventoryHolder owner, int size, String title);
+
+    /**
+     * Gets user-specified limit for number of monsters that can spawn in a chunk
+     * @returns The monster spawn limit
+     */
+    int getMonsterSpawnLimit();
+
+    /**
+     * Gets user-specified limit for number of animals that can spawn in a chunk
+     * @returns The animal spawn limit
+     */
+    int getAnimalSpawnLimit();
+
+    /**
+     * Gets user-specified limit for number of water animals that can spawn in a chunk
+     * @returns The water animal spawn limit
+     */
+    int getWaterAnimalSpawnLimit();
 }

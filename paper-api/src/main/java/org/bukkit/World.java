@@ -896,6 +896,48 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public void setTicksPerMonsterSpawns(int ticksPerMonsterSpawns);
 
     /**
+     * Gets limit for number of monsters that can spawn in a chunk in this world
+     * @returns The monster spawn limit
+     */
+    int getMonsterSpawnLimit();
+
+    /**
+     * Sets the limit for number of monsters that can spawn in a chunk in this world
+     * <p />
+     * <b>Note:</b>
+     * If set to a negative number the world will use the server-wide spawn limit instead.
+     */
+    void setMonsterSpawnLimit(int limit);
+
+    /**
+     * Gets the limit for number of animals that can spawn in a chunk in this world
+     * @returns The animal spawn limit
+     */
+    int getAnimalSpawnLimit();
+
+    /**
+     * Sets the limit for number of animals that can spawn in a chunk in this world
+     * <p />
+     * <b>Note:</b>
+     * If set to a negative number the world will use the server-wide spawn limit instead.
+     */
+    void setAnimalSpawnLimit(int limit);
+
+    /**
+     * Gets the limit for number of water animals that can spawn in a chunk in this world
+     * @returns The water animal spawn limit
+     */
+    int getWaterAnimalSpawnLimit();
+
+    /**
+     * Sets the limit for number of water animals that can spawn in a chunk in this world
+     * <p />
+     * <b>Note:</b>
+     * If set to a negative number the world will use the server-wide spawn limit instead.
+     */
+    void setWaterAnimalSpawnLimit(int limit);
+
+    /**
      * Represents various map environment types that a world may be
      */
     public enum Environment {

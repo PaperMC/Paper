@@ -353,4 +353,16 @@ public final class Bukkit {
     public static HelpMap getHelpMap() {
         return server.getHelpMap();
     }
+
+    public static int getMonsterSpawnLimit() {
+        return server.getMonsterSpawnLimit();
+    }
+
+    public static int getAnimalSpawnLimit() {
+        return server.getAnimalSpawnLimit();
+    }
+
+    public static int getWaterAnimalSpawnLimit() {
+        return server.getWaterAnimalSpawnLimit();
+    }
 }
