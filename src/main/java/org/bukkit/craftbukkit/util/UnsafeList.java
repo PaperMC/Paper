@@ -107,7 +107,7 @@ public class UnsafeList<E> extends AbstractList<E> implements List<E>, RandomAcc
         int old = data.length;
         int rounded = Integer.highestOneBit(size - 1) << 1;
         if (rounded < old) {
-            data = Arrays.copyOf(data, rounded);
+            data = Java15Compat.Arrays_copyOf(data, rounded);
         }
     }
 
