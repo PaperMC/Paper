@@ -93,7 +93,23 @@ public final class SpawnerCreature {
             for (int j1 = 0; j1 < j; ++j1) {
                 EnumCreatureType enumcreaturetype = aenumcreaturetype[j1];
 
-                if ((!enumcreaturetype.d() || flag1) && (enumcreaturetype.d() || flag) && world.a(enumcreaturetype.a()) <= enumcreaturetype.b() * b.size() / 256) {
+                // CraftBukkit start - use per-world spawn limits
+                int limit = 0;
+                switch(enumcreaturetype) {
+                case MONSTER:
+                    limit = world.getWorld().getMonsterSpawnLimit();
+                case CREATURE:
+                    limit = world.getWorld().getAnimalSpawnLimit();
+                case WATER_CREATURE:
+                    limit = world.getWorld().getWaterAnimalSpawnLimit();
+                }
+
+                if (limit == 0) {
+                    return 0;
+                }
+                // CraftBukkit end
+
+                if ((!enumcreaturetype.d() || flag1) && (enumcreaturetype.d() || flag) && world.a(enumcreaturetype.a()) <= limit * b.size() / 256) { // CraftBukkit - use per-world limits
 
                     // CraftBukkit start
                     label108:

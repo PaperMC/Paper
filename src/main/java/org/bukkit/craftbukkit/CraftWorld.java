@@ -56,6 +56,9 @@ public class CraftWorld implements World {
     private final ChunkGenerator generator;
     private final List<BlockPopulator> populators = new ArrayList<BlockPopulator>();
     private final BlockMetadataStore blockMetadata = new BlockMetadataStore(this);
+    private int monsterSpawn = -1;
+    private int animalSpawn = -1;
+    private int waterAnimalSpawn = -1;
 
     private static final Random rand = new Random();
 
@@ -1118,5 +1121,41 @@ public class CraftWorld implements World {
 
     public void removeMetadata(String metadataKey, Plugin owningPlugin) {
         server.getWorldMetadata().removeMetadata(this, metadataKey, owningPlugin);
+    }
+
+    public int getMonsterSpawnLimit() {
+        if (monsterSpawn < 0) {
+            return server.getMonsterSpawnLimit();
+        }
+
+        return monsterSpawn;
+    }
+
+    public void setMonsterSpawnLimit(int limit) {
+        monsterSpawn = limit;
+    }
+
+    public int getAnimalSpawnLimit() {
+        if (animalSpawn < 0) {
+            return server.getAnimalSpawnLimit();
+        }
+
+        return animalSpawn;
+    }
+
+    public void setAnimalSpawnLimit(int limit) {
+        animalSpawn = limit;
+    }
+
+    public int getWaterAnimalSpawnLimit() {
+        if (waterAnimalSpawn < 0) {
+            return server.getWaterAnimalSpawnLimit();
+        }
+
+        return waterAnimalSpawn;
+    }
+
+    public void setWaterAnimalSpawnLimit(int limit) {
+        waterAnimalSpawn = limit;
     }
 }
