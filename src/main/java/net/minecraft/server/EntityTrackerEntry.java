@@ -279,8 +279,10 @@ public class EntityTrackerEntry {
 
     private Packet b() {
         if (this.tracker.dead) {
-            // CraftBukkit - add some information
-            System.out.println("Fetching addPacket for removed entity: " + this.tracker.getBukkitEntity().toString());
+            // CraftBukkit start - remove useless error spam, just return
+            // System.out.println("Fetching addPacket for removed entity");
+            return null;
+            // CraftBukkit end
         }
 
         if (this.tracker instanceof EntityItem) {
