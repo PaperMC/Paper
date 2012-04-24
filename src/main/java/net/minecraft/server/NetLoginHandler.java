@@ -157,9 +157,10 @@ public class NetLoginHandler extends NetHandler {
             String s = pingEvent.getMotd() + "\u00A7" + this.server.serverConfigurationManager.getPlayerCount() + "\u00A7" + pingEvent.getMaxPlayers();
             // CraftBukkit end
 
+            this.server.networkListenThread.a(this.networkManager.getSocket()); // CraftBukkit - cleanup before killing connection
             this.networkManager.queue(new Packet255KickDisconnect(s));
             this.networkManager.d();
-            this.server.networkListenThread.a(this.networkManager.getSocket());
+            // this.server.networkListenThread.a(this.networkManager.getSocket()); // CraftBukkit - moved up
             this.c = true;
         } catch (Exception exception) {
             exception.printStackTrace();
