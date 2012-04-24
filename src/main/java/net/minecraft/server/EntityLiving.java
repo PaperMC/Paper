@@ -67,7 +67,7 @@ public abstract class EntityLiving extends Entity {
     public int aI = 0;
     public int aJ = 0;
     public HashMap effects = new HashMap(); // CraftBukkit - protected -> public
-    private boolean e = true;
+    public boolean e = true; // CraftBukkit - private -> public
     private int f;
     private ControllerLook lookController;
     private ControllerMove moveController;

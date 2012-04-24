@@ -17,6 +17,7 @@ import net.minecraft.server.EntitySnowball;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.MobEffect;
 import net.minecraft.server.MobEffectList;
+import net.minecraft.server.Packet42RemoveMobEffect;
 
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -237,6 +238,10 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     public void removePotionEffect(PotionEffectType type) {
         getHandle().effects.remove(type.getId());
+        getHandle().e = true; // Should be called updateEffects
+        if (getHandle() instanceof EntityPlayer) {
+            ((EntityPlayer)getHandle()).netServerHandler.sendPacket(new Packet42RemoveMobEffect(getHandle().id, new MobEffect(type.getId(), 0, 0)));
+        }
     }
 
     public Collection<PotionEffect> getActivePotionEffects() {
