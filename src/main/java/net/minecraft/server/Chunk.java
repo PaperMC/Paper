@@ -7,8 +7,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import org.bukkit.Bukkit; // CraftBukkit
-import org.bukkit.craftbukkit.util.UnsafeList; // CraftBukkit
+
+// CraftBukkit start
+import org.bukkit.Bukkit;
+import org.bukkit.craftbukkit.util.UnsafeList;
+// CraftBukkit end
 
 public class Chunk {
 
@@ -62,11 +65,7 @@ public class Chunk {
 
         // CraftBukkit start
         if (!(this instanceof EmptyChunk)) {
-            org.bukkit.craftbukkit.CraftWorld cworld = this.world.getWorld();
-            this.bukkitChunk = (cworld == null) ? null : cworld.popPreservedChunk(i, j);
-            if (this.bukkitChunk == null) {
-                this.bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
-            }
+            this.bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
         }
     }
 

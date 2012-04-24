@@ -241,8 +241,6 @@ public class ChunkProviderServer implements IChunkProvider {
                 ChunkUnloadEvent event = new ChunkUnloadEvent(chunk.bukkitChunk);
                 server.getPluginManager().callEvent(event);
                 if (!event.isCancelled()) {
-                    this.world.getWorld().preserveChunk((CraftChunk) chunk.bukkitChunk);
-
                     chunk.removeEntities();
                     this.saveChunk(chunk);
                     this.saveChunkNOP(chunk);
