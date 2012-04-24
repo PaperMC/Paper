@@ -6,10 +6,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 // CraftBukkit start
+import java.io.File;
 import java.util.logging.Handler;
 import org.bukkit.craftbukkit.util.ShortConsoleLogFormatter;
 import org.bukkit.craftbukkit.util.TerminalConsoleHandler;
-
 // CraftBukkit end
 
 public class ConsoleLogManager {
@@ -41,6 +41,56 @@ public class ConsoleLogManager {
         try {
             // CraftBukkit start
             String pattern = (String) server.options.valueOf("log-pattern");
+
+            // We have to parse the pattern ourself so we can create directories as needed (java #6244047)
+            String tmpDir = System.getProperty("java.io.tmpdir");
+            String homeDir = System.getProperty("user.home");
+            if (tmpDir == null) {
+                tmpDir = homeDir;
+            }
+
+            // We only care about parsing for directories, FileHandler can do file names by itself
+            File parent = new File(pattern).getParentFile();
+            String parentPath = parent.getPath();
+            StringBuilder fixedPattern = new StringBuilder();
+
+            int i = 0;
+            while (i < parentPath.length()) {
+                char ch = parentPath.charAt(i);
+                char ch2 = 0;
+                if (i + 1 < parentPath.length()) {
+                    ch2 = Character.toLowerCase(pattern.charAt(i + 1));
+                }
+
+                if (ch == '%') {
+                    if (ch2 == 'h') {
+                        i += 2;
+                        fixedPattern.append(homeDir);
+                        continue;
+                    } else if (ch2 == 't') {
+                        i += 2;
+                        fixedPattern.append(tmpDir);
+                        continue;
+                    } else if (ch2 == '%') {
+                        // Even though we don't care about this we have to skip it to avoid matching %%t
+                        i += 2;
+                        fixedPattern.append("%%");
+                        continue;
+                    } else if (ch2 != 0) {
+                        throw new java.io.IOException("log-pattern can only use %t and %h for directories, got %" + ch2);
+                    }
+                }
+
+                fixedPattern.append(ch);
+                i++;
+            }
+
+            // Try to create needed parent directories
+            parent = new File(fixedPattern.toString());
+            if (parent != null) {
+                parent.mkdirs();
+            }
+
             int limit = ((Integer) server.options.valueOf("log-limit")).intValue();
             int count = ((Integer) server.options.valueOf("log-count")).intValue();
             boolean append = ((Boolean) server.options.valueOf("log-append")).booleanValue();
