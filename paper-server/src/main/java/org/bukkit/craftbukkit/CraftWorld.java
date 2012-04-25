@@ -331,14 +331,14 @@ public class CraftWorld implements World {
         return spawnCreature(loc, creatureType.toEntityType());
     }
 
+    @Deprecated
     public LivingEntity spawnCreature(Location loc, EntityType creatureType) {
-        Entity result = spawn(loc, creatureType.getEntityClass());
+        Validate.isTrue(!creatureType.isAlive(), "EntityType not instance of LivingEntity");
+        return (LivingEntity) spawnEntity(loc, creatureType);
+    }
 
-        if (result == null) {
-            return null;
-        }
-
-        return (LivingEntity) result;
+    public Entity spawnEntity(Location loc, EntityType entityType) {
+        return spawn(loc, entityType.getEntityClass());
     }
 
     public LightningStrike strikeLightning(Location loc) {
