@@ -70,6 +70,10 @@ public class BlockIgniteEvent extends BlockEvent implements Cancellable {
          * Block ignition caused by lightning.
          */
         LIGHTNING,
+        /**
+         * Block ignition caused by a player using a fireball.
+         */
+        FIREBALL,
     }
 
     @Override
