@@ -720,7 +720,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 this.networkManager.queue(new Packet3Chat(line));
             }
             packet = null;
-        } else if (packet.lowPriority == true) {
+        } else if (packet != null && packet.lowPriority == true) {
             // Reroute all low-priority packets through to compression thread.
             ChunkCompressionThread.sendPacket(this.player, packet);
             packet = null;
