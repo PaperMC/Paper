@@ -6,10 +6,9 @@ import org.bukkit.craftbukkit.util.UnsafeList; // CraftBukkit
 
 public class PathfinderGoalSelector {
 
-    // CraftBukkit start - use UnsafeList, add boolean for picking goals
+    // CraftBukkit start - use UnsafeList
     private UnsafeList a = new UnsafeList(16);
     private UnsafeList b = new UnsafeList(16);
-    boolean oddCall = true;
     // CraftBukkit end
 
     public PathfinderGoalSelector() {}
@@ -21,8 +20,7 @@ public class PathfinderGoalSelector {
     public void a() {
         //ArrayList arraylist = new ArrayList(); // CraftBukkit - removed usage
 
-        // CraftBukkit start - don't use iterators for private fields, only run every other call
-        if (oddCall) {
+        // CraftBukkit start - don't use iterators for private fields
         for (int i = 0; i < this.a.size(); i++) {
             PathfinderGoalSelectorItem pathfindergoalselectoritem = (PathfinderGoalSelectorItem) this.a.unsafeGet(i); // CraftBukkit - use unsafeGet
             boolean flag = this.b.contains(pathfindergoalselectoritem);
@@ -44,8 +42,6 @@ public class PathfinderGoalSelector {
                 this.b.add(pathfindergoalselectoritem);
             }
         }
-        }
-        oddCall = !oddCall;
         // CraftBukkit end
 
         boolean flag1 = false;
