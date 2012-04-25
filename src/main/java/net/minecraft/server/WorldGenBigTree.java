@@ -8,7 +8,7 @@ public class WorldGenBigTree extends WorldGenerator implements BlockSapling.Tree
 
     static final byte[] a = new byte[] { (byte) 2, (byte) 0, (byte) 0, (byte) 1, (byte) 2, (byte) 1};
     Random b = new Random();
-    BlockChangeDelegate world;  // CraftBukkit
+    BlockChangeDelegate world; // CraftBukkit
     int[] d = new int[] { 0, 0, 0};
     int e = 0;
     int f;
@@ -296,7 +296,7 @@ public class WorldGenBigTree extends WorldGenerator implements BlockSapling.Tree
                 aint3[b3] = MathHelper.floor((double) aint[b3] + (double) i * d1);
                 int k = this.world.getTypeId(aint3[0], aint3[1], aint3[2]);
 
-                if (k != 0 && k != 18) {
+                if ((k != 0 && k != 18) || aint3[1] >= 256) { // CraftBukkit - fix trees wrapping around
                     break;
                 }
             }
