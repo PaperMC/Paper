@@ -127,9 +127,13 @@ public class TileEntityBrewingStand extends TileEntity implements IInventory {
             ItemStack itemstack = this.items[3];
 
             // CraftBukkit start - fire BREW event
-            BrewEvent event = new BrewEvent(world.getWorld().getBlockAt(x, y, z), (BrewerInventory) this.getOwner().getInventory());
-            Bukkit.getPluginManager().callEvent(event);
-            if(event.isCancelled()) return;
+            if (getOwner() != null) {
+                BrewEvent event = new BrewEvent(world.getWorld().getBlockAt(x, y, z), (BrewerInventory) this.getOwner().getInventory());
+                Bukkit.getPluginManager().callEvent(event);
+                if(event.isCancelled()) {
+                    return;
+                }
+            }
             // CraftBukkit end
 
             for (int i = 0; i < 3; ++i) {
