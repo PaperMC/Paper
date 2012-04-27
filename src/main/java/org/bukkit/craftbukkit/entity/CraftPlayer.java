@@ -591,10 +591,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (hiddenPlayers.containsKey(player.getName())) return;
         hiddenPlayers.put(player.getName(), player);
 
-        if (getHandle().netServerHandler == null) {
-            return;
-        }
-
         //remove this player from the hidden player's EntityTrackerEntry
         EntityTracker tracker = ((WorldServer) entity.world).tracker;
         EntityPlayer other = ((CraftPlayer) player).getHandle();
@@ -612,10 +608,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (equals(player)) return;
         if (!hiddenPlayers.containsKey(player.getName())) return;
         hiddenPlayers.remove(player.getName());
-
-        if (getHandle().netServerHandler == null) {
-            return;
-        }
 
         EntityTracker tracker = ((WorldServer) entity.world).tracker;
         EntityPlayer other = ((CraftPlayer) player).getHandle();
