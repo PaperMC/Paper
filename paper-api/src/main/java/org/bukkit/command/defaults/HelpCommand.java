@@ -37,7 +37,14 @@ public class HelpCommand extends VanillaCommand {
             pageNumber = 1;
         } else if (NumberUtils.isDigits(args[args.length - 1])) {
             command = StringUtils.join(ArrayUtils.subarray(args, 0, args.length - 1), " ");
-            pageNumber = NumberUtils.createInteger(args[args.length - 1]);
+            try {
+                pageNumber = NumberUtils.createInteger(args[args.length - 1]);
+            } catch (NumberFormatException exception) {
+                pageNumber = 1;
+            }
+            if (pageNumber <= 0) {
+                pageNumber = 1;
+            }
         } else {
             command = StringUtils.join(args, " ");
             pageNumber = 1;
@@ -57,7 +64,7 @@ public class HelpCommand extends VanillaCommand {
         if (topic == null) {
             topic = helpMap.getHelpTopic("/" + command);
         }
-        
+
         if (topic == null) {
             topic = findPossibleMatches(command);
         }
@@ -102,46 +109,53 @@ public class HelpCommand extends VanillaCommand {
     protected HelpTopic findPossibleMatches(String searchString) {
         int maxDistance = (searchString.length() / 5) + 3;
         Set<HelpTopic> possibleMatches = new TreeSet<HelpTopic>(HelpTopicComparator.helpTopicComparatorInstance());
-        
+
         if (searchString.startsWith("/")) {
             searchString = searchString.substring(1);
         }
-        
+
         for (HelpTopic topic : Bukkit.getServer().getHelpMap().getHelpTopics()) {
             String trimmedTopic = topic.getName().startsWith("/") ? topic.getName().substring(1) : topic.getName();
-            
+
             if (trimmedTopic.length() < searchString.length()) {
                 continue;
             }
-            
+
             if (Character.toLowerCase(trimmedTopic.charAt(0)) != Character.toLowerCase(searchString.charAt(0))) {
                 continue;
             }
-            
+
             if (damerauLevenshteinDistance(searchString, trimmedTopic.substring(0, searchString.length())) < maxDistance) {
                 possibleMatches.add(topic);
             }
         }
-        
+
         if (possibleMatches.size() > 0) {
             return new IndexHelpTopic("Search", null, null, possibleMatches, "Search for: " + searchString);
         } else {
             return null;
         }
-    }    
-    
+    }
+
     /**
-     * Computes the Dameraur-Levenshtein Distance between two strings. Adapted from the algorithm at
-     * http://en.wikipedia.org/wiki/Damerau–Levenshtein_distance
+     * Computes the Dameraur-Levenshtein Distance between two strings. Adapted
+     * from the algorithm at <a href="http://en.wikipedia.org/wiki/Damerau–Levenshtein_distance">Wikipedia: Damerau–Levenshtein distance</a>
      *
      * @param s1 The first string being compared.
      * @param s2 The second string being compared.
-     * @return The number of substitutions, deletions, insertions, and transpositions required to get from s1 to s2.
+     * @return The number of substitutions, deletions, insertions, and
+     * transpositions required to get from s1 to s2.
      */
     protected static int damerauLevenshteinDistance(String s1, String s2) {
-        if (s1 == null && s2 == null) return 0;
-        if (s1 != null && s2 == null) return s1.length();
-        if (s1 == null && s2 != null) return s2.length();
+        if (s1 == null && s2 == null) {
+            return 0;
+        }
+        if (s1 != null && s2 == null) {
+            return s1.length();
+        }
+        if (s1 == null && s2 != null) {
+            return s2.length();
+        }
 
         int s1Len = s1.length();
         int s2Len = s2.length();
@@ -160,7 +174,9 @@ public class HelpCommand extends VanillaCommand {
 
         Map<Character, Integer> sd = new HashMap<Character, Integer>();
         for (char Letter : (s1 + s2).toCharArray()) {
-            if (!sd.containsKey(Letter)) sd.put(Letter, 0);
+            if (!sd.containsKey(Letter)) {
+                sd.put(Letter, 0);
+            }
         }
 
         for (int i = 1; i <= s1Len; i++) {
