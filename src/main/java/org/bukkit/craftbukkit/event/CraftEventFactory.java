@@ -441,6 +441,13 @@ public class CraftEventFactory {
         return event;
     }
 
+    public static EntityChangeBlockEvent callEntityChangeBlockEvent(Entity entity, int x, int y, int z, int type) {
+        Block block = entity.world.getWorld().getBlockAt(x, y, z);
+        Material material = Material.getMaterial(type);
+
+        return callEntityChangeBlockEvent(entity, block, material);
+    }
+
     public static CreeperPowerEvent callCreeperPowerEvent(Entity creeper, Entity lightning, CreeperPowerEvent.PowerCause cause) {
         CreeperPowerEvent event = new CreeperPowerEvent((Creeper) creeper.getBukkitEntity(), (LightningStrike) lightning.getBukkitEntity(), cause);
         creeper.getBukkitEntity().getServer().getPluginManager().callEvent(event);
