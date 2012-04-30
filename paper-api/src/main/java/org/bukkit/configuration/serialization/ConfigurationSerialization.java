@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.lang.Validate;
 import org.bukkit.configuration.Configuration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.BlockVector;
@@ -94,9 +95,7 @@ public class ConfigurationSerialization {
     }
 
     public ConfigurationSerializable deserialize(Map<String, Object> args) {
-        if (args == null) {
-            throw new IllegalArgumentException("Args must not be null");
-        }
+        Validate.notNull(args, "Args must not be null");
 
         ConfigurationSerializable result = null;
         Method method = null;

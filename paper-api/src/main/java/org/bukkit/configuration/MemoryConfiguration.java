@@ -2,6 +2,8 @@ package org.bukkit.configuration;
 
 import java.util.Map;
 
+import org.apache.commons.lang.Validate;
+
 /**
  * This is a {@link Configuration} implementation that does not save or load
  * from any source, and stores all values in memory only.
@@ -29,9 +31,7 @@ public class MemoryConfiguration extends MemorySection implements Configuration 
 
     @Override
     public void addDefault(String path, Object value) {
-        if (path == null) {
-            throw new IllegalArgumentException("Path may not be null");
-        }
+        Validate.notNull(path, "Path may not be null");
 
         if (defaults == null) {
             defaults = new MemoryConfiguration();
@@ -41,9 +41,7 @@ public class MemoryConfiguration extends MemorySection implements Configuration 
     }
 
     public void addDefaults(Map<String, Object> defaults) {
-        if (defaults == null) {
-            throw new IllegalArgumentException("Defaults may not be null");
-        }
+        Validate.notNull(defaults, "Defaults may not be null");
 
         for (Map.Entry<String, Object> entry : defaults.entrySet()) {
             addDefault(entry.getKey(), entry.getValue());
@@ -51,17 +49,13 @@ public class MemoryConfiguration extends MemorySection implements Configuration 
     }
 
     public void addDefaults(Configuration defaults) {
-        if (defaults == null) {
-            throw new IllegalArgumentException("Defaults may not be null");
-        }
+        Validate.notNull(defaults, "Defaults may not be null");
 
         addDefaults(defaults.getValues(true));
     }
 
     public void setDefaults(Configuration defaults) {
-        if (defaults == null) {
-            throw new IllegalArgumentException("Defaults may not be null");
-        }
+        Validate.notNull(defaults, "Defaults may not be null");
 
         this.defaults = defaults;
     }

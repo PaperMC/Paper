@@ -1,6 +1,8 @@
 package org.bukkit.configuration.file;
 
 import com.google.common.io.Files;
+
+import org.apache.commons.lang.Validate;
 import org.bukkit.configuration.InvalidConfigurationException;
 import java.io.BufferedReader;
 import java.io.File;
@@ -45,9 +47,7 @@ public abstract class FileConfiguration extends MemoryConfiguration {
      * @throws IllegalArgumentException Thrown when file is null.
      */
     public void save(File file) throws IOException {
-        if (file == null) {
-            throw new IllegalArgumentException("File cannot be null");
-        }
+        Validate.notNull(file, "File cannot be null");
 
         Files.createParentDirs(file);
 
@@ -73,9 +73,7 @@ public abstract class FileConfiguration extends MemoryConfiguration {
      * @throws IllegalArgumentException Thrown when file is null.
      */
     public void save(String file) throws IOException {
-        if (file == null) {
-            throw new IllegalArgumentException("File cannot be null");
-        }
+        Validate.notNull(file, "File cannot be null");
 
         save(new File(file));
     }
@@ -102,9 +100,7 @@ public abstract class FileConfiguration extends MemoryConfiguration {
      * @throws IllegalArgumentException Thrown when file is null.
      */
     public void load(File file) throws FileNotFoundException, IOException, InvalidConfigurationException {
-        if (file == null) {
-            throw new IllegalArgumentException("File cannot be null");
-        }
+        Validate.notNull(file, "File cannot be null");
 
         load(new FileInputStream(file));
     }
@@ -121,13 +117,12 @@ public abstract class FileConfiguration extends MemoryConfiguration {
      * @throws IllegalArgumentException Thrown when stream is null.
      */
     public void load(InputStream stream) throws IOException, InvalidConfigurationException {
-        if (stream == null) {
-            throw new IllegalArgumentException("Stream cannot be null");
-        }
+        Validate.notNull(stream, "Stream cannot be null");
 
         InputStreamReader reader = new InputStreamReader(stream);
         StringBuilder builder = new StringBuilder();
         BufferedReader input = new BufferedReader(reader);
+
 
         try {
             String line;
@@ -158,9 +153,7 @@ public abstract class FileConfiguration extends MemoryConfiguration {
      * @throws IllegalArgumentException Thrown when file is null.
      */
     public void load(String file) throws FileNotFoundException, IOException, InvalidConfigurationException {
-        if (file == null) {
-            throw new IllegalArgumentException("File cannot be null");
-        }
+        Validate.notNull(file, "File cannot be null");
 
         load(new File(file));
     }
