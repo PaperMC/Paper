@@ -173,7 +173,7 @@ public class WorldNBTStorage implements PlayerFileData, IDataManager {
             NBTTagCompound nbttagcompound = new NBTTagCompound();
 
             entityhuman.d(nbttagcompound);
-            File file1 = new File(this.playerDir, "_tmp_.dat");
+            File file1 = new File(this.playerDir, entityhuman.name + ".dat~"); // CraftBukkit - don't save every player to the same file
             File file2 = new File(this.playerDir, entityhuman.name + ".dat");
 
             NBTCompressedStreamTools.a(nbttagcompound, (OutputStream) (new FileOutputStream(file1)));
