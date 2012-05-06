@@ -189,9 +189,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
         if (!(obj instanceof OfflinePlayer)) {
             return false;
         }
@@ -655,7 +652,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public int hashCode() {
         if (hash == 0 || hash == 485) {
-            hash = 97 * 5 + (this.getName() != null ? this.getName().hashCode() : 0);
+            hash = 97 * 5 + (this.getName() != null ? this.getName().toLowerCase().hashCode() : 0);
         }
         return hash;
     }
