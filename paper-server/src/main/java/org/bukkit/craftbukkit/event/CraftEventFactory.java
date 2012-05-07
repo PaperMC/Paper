@@ -526,4 +526,10 @@ public class CraftEventFactory {
         world.getServer().getPluginManager().callEvent(event);
         return event;
     }
+
+    public static void callPlayerItemBreakEvent(EntityHuman human, ItemStack brokenItem) {
+        CraftItemStack item = new CraftItemStack(brokenItem);
+        PlayerItemBreakEvent event = new PlayerItemBreakEvent((Player) human.getBukkitEntity(), item);
+        Bukkit.getPluginManager().callEvent(event);
+    }
 }
