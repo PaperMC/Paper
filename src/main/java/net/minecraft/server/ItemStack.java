@@ -179,6 +179,12 @@ public final class ItemStack {
                     this.count = 0;
                 }
 
+                // CraftBukkit start - Check for item breaking
+                if (this.count == 0 && entityliving instanceof EntityHuman) {
+                    org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemBreakEvent((EntityHuman) entityliving, this);
+                }
+                // CraftBukkit end
+
                 this.damage = 0;
             }
         }
