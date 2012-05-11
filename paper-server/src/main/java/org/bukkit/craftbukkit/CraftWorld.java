@@ -523,11 +523,11 @@ public class CraftWorld implements World {
     }
 
     public double getTemperature(int x, int z) {
-        throw new UnsupportedOperationException("Not compatible with 1.8");
+        return this.world.getBiome(x, z).F;
     }
 
     public double getHumidity(int x, int z) {
-        throw new UnsupportedOperationException("Not compatible with 1.8");
+        return this.world.getBiome(x, z).G;
     }
 
     public List<Entity> getEntities() {
