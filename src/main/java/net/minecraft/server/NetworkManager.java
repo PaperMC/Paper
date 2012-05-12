@@ -173,7 +173,7 @@ public class NetworkManager {
     }
 
     private void a(Exception exception) {
-        exception.printStackTrace();
+        // exception.printStackTrace(); // CraftBukkit - Remove console spam
         this.a("disconnect.genericReason", new Object[] { "Internal exception: " + exception.toString()});
     }
 

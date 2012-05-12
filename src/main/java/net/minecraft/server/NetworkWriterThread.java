@@ -41,7 +41,7 @@ class NetworkWriterThread extends Thread {
                         NetworkManager.a(this.a, (Exception) ioexception);
                     }
 
-                    ioexception.printStackTrace();
+                    // ioexception.printStackTrace(); // CraftBukkit - Don't spam console on unexpected disconnect
                 }
 
                 try {
