@@ -253,6 +253,11 @@ public class EntityTrackerEntry {
                         }
                     }
 
+                    // CraftBukkit start - Fix for nonsensical head yaw
+                    this.i = MathHelper.d(this.tracker.ar() * 256.0F / 360.0F);
+                    this.broadcast(new Packet35EntityHeadRotation(this.tracker.id, (byte) i));
+                    // CraftBukkit end
+
                     if (this.tracker instanceof EntityLiving) {
                         EntityLiving entityliving = (EntityLiving) this.tracker;
                         Iterator iterator = entityliving.getEffects().iterator();
