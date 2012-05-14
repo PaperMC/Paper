@@ -1,6 +1,9 @@
 package net.minecraft.server;
 
-import org.bukkit.event.entity.EntityCombustByEntityEvent; // CraftBukkit
+// CraftBukkit start
+import org.bukkit.event.block.BlockIgniteEvent;
+import org.bukkit.event.entity.EntityCombustByEntityEvent;
+// CraftBukkit end
 
 public class EntitySmallFireball extends EntityFireball {
 
@@ -63,7 +66,15 @@ public class EntitySmallFireball extends EntityFireball {
                 }
 
                 if (this.world.isEmpty(i, j, k)) {
-                    this.world.setTypeId(i, j, k, Block.FIRE.id);
+                    // CraftBukkit start
+                    org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
+                    BlockIgniteEvent event = new BlockIgniteEvent(block, BlockIgniteEvent.IgniteCause.FIREBALL, null);
+                    world.getServer().getPluginManager().callEvent(event);
+
+                    if (!event.isCancelled()) {
+                        this.world.setTypeId(i, j, k, Block.FIRE.id);
+                    }
+                    // CraftBukkit end
                 }
             }
 
