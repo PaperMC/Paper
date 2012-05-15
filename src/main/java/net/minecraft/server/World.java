@@ -440,15 +440,12 @@ public class World implements IBlockAccess {
     }
 
     public boolean setTypeIdAndData(int i, int j, int k, int l, int i1) {
-        // CraftBukkit start
-        int old = this.getTypeId(i, j, k);
         if (this.setRawTypeIdAndData(i, j, k, l, i1)) {
-            this.update(i, j, k, l == 0 ? old : l);
+            this.update(i, j, k, l);
             return true;
         } else {
             return false;
         }
-        // CraftBukkit end
     }
 
     public void notify(int i, int j, int k) {
