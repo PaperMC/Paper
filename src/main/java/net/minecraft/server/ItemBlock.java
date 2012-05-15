@@ -79,7 +79,7 @@ public class ItemBlock extends Item {
             }
 
             if (world.setTypeIdAndData(i, j, k, id, data)) {
-                if (Block.byId[id] != null) {
+                if (world.getTypeId(i, j, k) == id && Block.byId[id] != null) {
                     Block.byId[id].postPlace(world, i, j, k, l);
                     Block.byId[id].postPlace(world, i, j, k, entityhuman);
                     // CraftBukkit end
