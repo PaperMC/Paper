@@ -70,4 +70,14 @@ public class ChatColorTest {
         String u = ChatColor.BLACK.toString() + ChatColor.DARK_BLUE + ChatColor.DARK_GREEN + ChatColor.DARK_AQUA + ChatColor.DARK_RED + ChatColor.DARK_PURPLE + ChatColor.GOLD + ChatColor.GRAY + ChatColor.DARK_GRAY + ChatColor.BLUE + ChatColor.GREEN + ChatColor.GREEN + ChatColor.AQUA + ChatColor.AQUA + ChatColor.RED + ChatColor.RED + ChatColor.LIGHT_PURPLE + ChatColor.LIGHT_PURPLE + ChatColor.YELLOW + ChatColor.YELLOW + ChatColor.WHITE + ChatColor.WHITE + ChatColor.MAGIC + ChatColor.MAGIC + " & more";
         assertThat(t, is(u));
     }
+
+    @Test
+    public void getChatColors() {
+        String s = String.format("%c%ctest%c%ctest%c", ChatColor.COLOR_CHAR, ChatColor.RED.getChar(), ChatColor.COLOR_CHAR, ChatColor.ITALIC.getChar(), ChatColor.COLOR_CHAR);
+        String expected = ChatColor.RED.toString() + ChatColor.ITALIC;
+        assertThat(ChatColor.getLastColors(s), is(expected));
+
+        s = String.format("%c%ctest%c%ctest", ChatColor.COLOR_CHAR, ChatColor.RED.getChar(), ChatColor.COLOR_CHAR, ChatColor.BLUE.getChar());
+        assertThat(ChatColor.getLastColors(s), is(ChatColor.BLUE.toString()));
+    }
 }

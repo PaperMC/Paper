@@ -218,19 +218,21 @@ public enum ChatColor {
      */
     public static String getLastColors(String input) {
         String result = "";
-        int lastIndex = -1;
         int length = input.length();
 
-        while ((lastIndex = input.indexOf(COLOR_CHAR, lastIndex + 1)) != -1) {
-            if (lastIndex < length - 1) {
-                char c = input.charAt(lastIndex + 1);
-                ChatColor col = getByChar(c);
+        // Search backwards from the end as it is faster
+        for (int index = length - 1; index > -1; index--) {
+            char section = input.charAt(index);
+            if (section == COLOR_CHAR && index < length - 1) {
+                char c = input.charAt(index + 1);
+                ChatColor color = getByChar(c);
 
-                if (col != null) {
-                    if (col.isColor()) {
-                        result = col.toString();
-                    } else if (col.isFormat()) {
-                        result += col.toString();
+                if (color != null) {
+                    result = color.toString() + result;
+
+                    // Once we find a color or reset we can stop searching
+                    if (color.isColor() || color.equals(RESET)) {
+                        break;
                     }
                 }
             }
