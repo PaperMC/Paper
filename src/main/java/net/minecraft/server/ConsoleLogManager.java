@@ -22,7 +22,7 @@ public class ConsoleLogManager {
 
     // CraftBukkit - change of method signature!
     public static void init(MinecraftServer server) {
-        ConsoleLogFormatter consolelogformatter = new ConsoleLogFormatter();
+        ConsoleLogFormatter consolelogformatter = new ConsoleLogFormatter(server.options.has("log-strip-color")); // CraftBukkit - pass strip color option
 
         a.setUseParentHandlers(false);
         // CraftBukkit start

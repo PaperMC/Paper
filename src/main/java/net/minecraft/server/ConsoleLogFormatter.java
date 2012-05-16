@@ -10,8 +10,14 @@ import java.util.logging.LogRecord;
 final class ConsoleLogFormatter extends Formatter {
 
     private SimpleDateFormat a = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    // CraftBukkit start - add color stripping, change constructor to take it
+    private java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\x1B\\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]");
+    private boolean strip = false;
 
-    ConsoleLogFormatter() {}
+    ConsoleLogFormatter(boolean strip) {
+        this.strip = strip;
+    }
+    // CraftBukkit end
 
     public String format(LogRecord logrecord) {
         StringBuilder stringbuilder = new StringBuilder();
@@ -46,6 +52,12 @@ final class ConsoleLogFormatter extends Formatter {
             stringbuilder.append(stringwriter.toString());
         }
 
-        return stringbuilder.toString();
+        // CraftBukkit start - handle stripping color
+        if (this.strip) {
+            return this.pattern.matcher(stringbuilder.toString()).replaceAll("");
+        } else {
+            return stringbuilder.toString();
+        }
+        // CraftBukkit end
     }
 }
