@@ -29,13 +29,14 @@ public class ItemFood extends Item {
         // CraftBukkit start
         int oldFoodLevel = entityhuman.getFoodData().foodLevel;
 
-        org.bukkit.event.entity.FoodLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFoodLevelChangeEvent(entityhuman, Math.min(this.getNutrition() + oldFoodLevel, 20));
+        org.bukkit.event.entity.FoodLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFoodLevelChangeEvent(entityhuman, this.getNutrition() + oldFoodLevel);
 
         if (!event.isCancelled()) {
             entityhuman.getFoodData().eat(event.getFoodLevel() - oldFoodLevel, this.getSaturationModifier());
         }
         // CraftBukkit end
 
+        world.makeSound(entityhuman, "random.burp", 0.5F, world.random.nextFloat() * 0.1F + 0.9F);
         if (!world.isStatic && this.bX > 0 && world.random.nextFloat() < this.ca) {
             entityhuman.addEffect(new MobEffect(this.bX, this.bY * 20, this.bZ));
         }
