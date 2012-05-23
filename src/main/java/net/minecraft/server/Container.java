@@ -119,7 +119,11 @@ public abstract class Container {
                         }
 
                         if (j == 1) {
-                            entityhuman.drop(playerinventory.getCarried().a(1));
+                            // CraftBukkit start
+                            if (playerinventory.getCarried().count > 0) {
+                                entityhuman.drop(playerinventory.getCarried().a(1));
+                            }
+                            // CraftBukkit end
                             if (playerinventory.getCarried().count == 0) {
                                 playerinventory.setCarried((ItemStack) null);
                             }
@@ -162,8 +166,11 @@ public abstract class Container {
                                 if (l > slot1.a()) {
                                     l = slot1.a();
                                 }
-
-                                slot1.set(itemstack3.a(l));
+                                // CraftBukkit start
+                                if (itemstack3.count >= l) {
+                                    slot1.set(itemstack3.a(l));
+                                }
+                                // CraftBukkit end
                                 if (itemstack3.count == 0) {
                                     playerinventory.setCarried((ItemStack) null);
                                 }
