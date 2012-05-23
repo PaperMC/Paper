@@ -64,6 +64,7 @@ public class AnsiWindowsTerminal
     }
 
     private static boolean detectAnsiSupport() {
+        AnsiConsole.systemInstall(); // CraftBukkit - install Windows JNI library
         OutputStream out = AnsiConsole.wrapOutputStream(new ByteArrayOutputStream());
         try {
             out.close();
