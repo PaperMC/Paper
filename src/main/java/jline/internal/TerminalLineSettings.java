@@ -83,17 +83,25 @@ public final class TerminalLineSettings
      */
     public int getProperty(String name) {
         assert name != null;
+        // CraftBukkit start
+        long currentTime = System.currentTimeMillis();
+
         try {
             // tty properties are cached so we don't have to worry too much about getting term widht/height
-            if (config == null || System.currentTimeMillis() - configLastFetched > 1000 ) {
+            if (config == null || currentTime - configLastFetched > 1000) {
                 config = get("-a");
-                configLastFetched = System.currentTimeMillis();
             }
-            return this.getProperty(name, config);
         } catch (Exception e) {
-            Log.warn("Failed to query stty ", name, e);            
-            return -1;
+            Log.debug("Failed to query stty ", name, "\n", e);
         }
+
+        // always update the last fetched time and try to parse the output
+        if (currentTime - configLastFetched > 1000) {
+            configLastFetched = currentTime;
+        }
+
+        return this.getProperty(name, config);
+        // CraftBukkit end
     }
 
     /**
