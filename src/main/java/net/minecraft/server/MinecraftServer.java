@@ -93,8 +93,17 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
         try {
             this.reader = new ConsoleReader(System.in, System.out);
             this.reader.setExpandEvents(false); // Avoid parsing exceptions for uncommonly used event designators
-        } catch (IOException ex) {
-            Logger.getLogger(MinecraftServer.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (Exception e) {
+            try {
+                // Try again with jline disabled for Windows users without C++ 2008 Redistributable
+                System.setProperty("jline.terminal", "jline.UnsupportedTerminal");
+                System.setProperty("user.language", "en");
+                org.bukkit.craftbukkit.Main.useJline = false;
+                this.reader = new ConsoleReader(System.in, System.out);
+                this.reader.setExpandEvents(false);
+            } catch (IOException ex) {
+                Logger.getLogger(MinecraftServer.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
         Runtime.getRuntime().addShutdownHook(new ServerShutdownThread(this));
         // CraftBukkit end

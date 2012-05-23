@@ -932,6 +932,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         } else if (packet19entityaction.animation == 5) {
             this.player.setSprinting(false);
         } else if (packet19entityaction.animation == 3) {
+            if (this.player.fauxSleeping && !this.player.sleeping) return; // CraftBukkit - Can't leave bed if not in one!
             this.player.a(false, true, true);
             this.checkMovement = false;
         }
