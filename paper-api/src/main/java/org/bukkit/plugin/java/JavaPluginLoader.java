@@ -10,6 +10,7 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,7 +50,7 @@ public class JavaPluginLoader implements PluginLoader {
     private final Server server;
     protected final Pattern[] fileFilters = new Pattern[] { Pattern.compile("\\.jar$"), };
     protected final Map<String, Class<?>> classes = new HashMap<String, Class<?>>();
-    protected final Map<String, PluginClassLoader> loaders = new HashMap<String, PluginClassLoader>();
+    protected final Map<String, PluginClassLoader> loaders = new LinkedHashMap<String, PluginClassLoader>();
 
     public JavaPluginLoader(Server instance) {
         server = instance;
