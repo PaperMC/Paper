@@ -4,12 +4,9 @@ import net.minecraft.server.EntityTameableAnimal;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.Creature;
-import org.bukkit.entity.Player;
 import org.bukkit.entity.Tameable;
 
 public class CraftTameableAnimal extends CraftAnimals implements Tameable, Creature {
-    private AnimalTamer owner;
-
     public CraftTameableAnimal(CraftServer server, EntityTameableAnimal entity) {
         super(server, entity);
     }
@@ -20,12 +17,11 @@ public class CraftTameableAnimal extends CraftAnimals implements Tameable, Creat
     }
 
     public AnimalTamer getOwner() {
-        if (owner == null && !("").equals(getOwnerName())) {
-            owner = getServer().getPlayer(getOwnerName());
+        if (("").equals(getOwnerName())) return null;
 
-            if (owner == null) {
-                owner = getServer().getOfflinePlayer(getOwnerName());
-            }
+        AnimalTamer owner = getServer().getPlayerExact(getOwnerName());
+        if (owner == null) {
+            owner = getServer().getOfflinePlayer(getOwnerName());
         }
 
         return owner;
@@ -40,17 +36,10 @@ public class CraftTameableAnimal extends CraftAnimals implements Tameable, Creat
     }
 
     public void setOwner(AnimalTamer tamer) {
-        owner = tamer;
-
-        if (owner != null) {
+        if (tamer != null) {
             setTamed(true);
             getHandle().setPathEntity(null);
-
-            if (owner instanceof Player) {
-                setOwnerName(((Player) owner).getName());
-            } else {
-                setOwnerName("");
-            }
+            setOwnerName(tamer.getName());
         } else {
             setTamed(false);
             setOwnerName("");
@@ -58,7 +47,7 @@ public class CraftTameableAnimal extends CraftAnimals implements Tameable, Creat
     }
 
     public void setOwnerName(String ownerName) {
-        getHandle().setOwnerName(ownerName);
+        getHandle().setOwnerName(ownerName == null ? "" : ownerName);
     }
 
     public void setTamed(boolean tame) {
