@@ -240,7 +240,8 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         getHandle().effects.remove(type.getId());
         getHandle().e = true; // Should be called updateEffects
         if (getHandle() instanceof EntityPlayer) {
-            ((EntityPlayer)getHandle()).netServerHandler.sendPacket(new Packet42RemoveMobEffect(getHandle().id, new MobEffect(type.getId(), 0, 0)));
+            if (((EntityPlayer) getHandle()).netServerHandler == null) return;
+            ((EntityPlayer) getHandle()).netServerHandler.sendPacket(new Packet42RemoveMobEffect(getHandle().id, new MobEffect(type.getId(), 0, 0)));
         }
     }
 

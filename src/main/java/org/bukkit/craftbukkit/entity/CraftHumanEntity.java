@@ -221,6 +221,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     private void openCustomInventory(Inventory inventory, EntityPlayer player, int windowType) {
+        if (player.netServerHandler == null) return;
         Container container = new CraftContainer(inventory, this, player.nextContainerCounter());
 
         container = CraftEventFactory.callInventoryOpenEvent(player, container);
@@ -270,6 +271,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     public void openInventory(InventoryView inventory) {
         if (!(getHandle() instanceof EntityPlayer)) return; // TODO: NPC support?
+        if (((EntityPlayer) getHandle()).netServerHandler == null) return;
         if (getHandle().activeContainer != getHandle().defaultContainer) {
             // fire INVENTORY_CLOSE if one already open
             ((EntityPlayer)getHandle()).netServerHandler.handleContainerClose(new Packet101CloseWindow(getHandle().activeContainer.windowId));
