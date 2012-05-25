@@ -178,6 +178,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         Packet201PlayerInfo packet = new Packet201PlayerInfo(name, true, getHandle().ping);
         for (int i = 0; i < server.getHandle().players.size(); ++i) {
             EntityPlayer entityplayer = (EntityPlayer) server.getHandle().players.get(i);
+            if (entityplayer.netServerHandler == null) continue;
 
             if (entityplayer.getBukkitEntity().canSee(this)) {
                 entityplayer.netServerHandler.sendPacket(oldpacket);
@@ -587,6 +588,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public void hidePlayer(Player player) {
         Validate.notNull(player, "hidden player cannot be null");
+        if (getHandle().netServerHandler == null) return;
         if (equals(player)) return;
         if (hiddenPlayers.containsKey(player.getName())) return;
         hiddenPlayers.put(player.getName(), player);
@@ -605,6 +607,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public void showPlayer(Player player) {
         Validate.notNull(player, "shown player cannot be null");
+        if (getHandle().netServerHandler == null) return;
         if (equals(player)) return;
         if (!hiddenPlayers.containsKey(player.getName())) return;
         hiddenPlayers.remove(player.getName());
@@ -732,6 +735,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public void sendPluginMessage(Plugin source, String channel, byte[] message) {
         StandardMessenger.validatePluginMessage(server.getMessenger(), source, channel, message);
+        if (getHandle().netServerHandler == null) return;
 
         if (channels.contains(channel)) {
             Packet250CustomPayload packet = new Packet250CustomPayload();
@@ -755,6 +759,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void sendSupportedChannels() {
+        if (getHandle().netServerHandler == null) return;
         Set<String> listening = server.getMessenger().getIncomingChannels();
 
         if (!listening.isEmpty()) {
