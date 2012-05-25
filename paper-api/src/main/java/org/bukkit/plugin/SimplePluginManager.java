@@ -388,8 +388,9 @@ public final class SimplePluginManager implements PluginManager {
     }
 
     public void disablePlugins() {
-        for (Plugin plugin : getPlugins()) {
-            disablePlugin(plugin);
+        Plugin[] plugins = getPlugins();
+        for (int i = plugins.length - 1; i >= 0; i--) {
+            disablePlugin(plugins[i]);
         }
     }
 
