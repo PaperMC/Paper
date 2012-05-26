@@ -128,7 +128,7 @@ public abstract class JavaPlugin extends PluginBase {
         try {
             getConfig().save(configFile);
         } catch (IOException ex) {
-            Logger.getLogger(JavaPlugin.class.getName()).log(Level.SEVERE, "Could not save config to " + configFile, ex);
+            getLogger().log(Level.SEVERE, "Could not save config to " + configFile, ex);
         }
     }
 
@@ -166,10 +166,10 @@ public abstract class JavaPlugin extends PluginBase {
                 out.close();
                 in.close();
             } else {
-                Logger.getLogger(JavaPlugin.class.getName()).log(Level.WARNING, "Could not save " + outFile.getName() + " to " + outFile + " because " + outFile.getName() + " already exists.");
+                getLogger().log(Level.WARNING, "Could not save " + outFile.getName() + " to " + outFile + " because " + outFile.getName() + " already exists.");
             }
         } catch (IOException ex) {
-            Logger.getLogger(JavaPlugin.class.getName()).log(Level.SEVERE, "Could not save " + outFile.getName() + " to " + outFile, ex);
+            getLogger().log(Level.SEVERE, "Could not save " + outFile.getName() + " to " + outFile, ex);
         }
     }
 
