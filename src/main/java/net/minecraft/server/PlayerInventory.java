@@ -439,6 +439,11 @@ public class PlayerInventory implements IInventory {
     }
 
     public ItemStack getCarried() {
+        // CraftBukkit start
+        if (this.f != null && this.f.count == 0) {
+            this.setCarried(null);
+        }
+        // CraftBukkit end
         return this.f;
     }
 
