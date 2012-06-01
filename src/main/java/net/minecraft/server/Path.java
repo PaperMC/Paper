@@ -2,7 +2,7 @@ package net.minecraft.server;
 
 public class Path {
 
-    private PathPoint[] a = new PathPoint[1024];
+    private PathPoint[] a = new PathPoint[128]; // CraftBukkit - reduce default size
     private int b = 0;
 
     public Path() {}
