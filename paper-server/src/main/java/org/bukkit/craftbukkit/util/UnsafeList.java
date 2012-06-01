@@ -5,21 +5,22 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.AbstractList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.RandomAccess;
 
 // implementation of an ArrayList that offers a getter without range checks
 public class UnsafeList<E> extends AbstractList<E> implements List<E>, RandomAccess, Cloneable, Serializable {
-    private static final long serialVersionUID = 8683452581112892189L;
+    private static final long serialVersionUID = 8683452581112892190L;
     private transient Object[] data;
     private int size;
+    private int initialCapacity;
 
     public UnsafeList(int capacity) {
         super();
         if (capacity < 0) capacity = 128;
         int rounded = Integer.highestOneBit(capacity - 1) << 1;
         data = new Object[rounded];
+        initialCapacity = rounded;
     }
 
     public UnsafeList() {
@@ -95,11 +96,9 @@ public class UnsafeList<E> extends AbstractList<E> implements List<E>, RandomAcc
     }
 
     public void clear() {
-        for (int i = 0; i < size; i++) {
-            data[i] = null;
-        }
-
+        // Create new array to reset memory usage to initial capacity
         size = 0;
+        data = new Object[initialCapacity];
     }
 
     // actually rounds up to nearest power of two
@@ -137,6 +136,7 @@ public class UnsafeList<E> extends AbstractList<E> implements List<E>, RandomAcc
         os.defaultWriteObject();
 
         os.writeInt(size);
+        os.writeInt(initialCapacity);
         for (int i = 0; i < size; i++) {
             os.writeObject(data[i]);
         }
@@ -146,9 +146,23 @@ public class UnsafeList<E> extends AbstractList<E> implements List<E>, RandomAcc
         is.defaultReadObject();
 
         size = is.readInt();
+        initialCapacity = is.readInt();
         data = new Object[Integer.highestOneBit(size - 1) << 1];
         for (int i = 0; i < size; i++) {
             data[i] = is.readObject();
+        }
+    }
+
+    public UnsafeList<E> clone() {
+        try {
+            UnsafeList<E> copy = (UnsafeList<E>) super.clone();
+            copy.data = Java15Compat.Arrays_copyOf(data, size);
+            copy.size = size;
+            copy.initialCapacity = initialCapacity;
+            return copy;
+        } catch (CloneNotSupportedException ex) {
+            // This should never happen
+            return null;
         }
     }
 }
