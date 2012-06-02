@@ -87,11 +87,7 @@ public class Main {
                         .defaultsTo(true)
                         .describedAs("Log append");
 
-                acceptsAll(asList("log-strip-color"), "Whether to strip color codes from log file")
-                        .withRequiredArg()
-                        .ofType(Boolean.class)
-                        .defaultsTo(false)
-                        .describedAs("Log stripping");
+                acceptsAll(asList("log-strip-color"), "Strips color codes from log file");
 
                 acceptsAll(asList("b", "bukkit-settings"), "File for bukkit settings")
                         .withRequiredArg()
