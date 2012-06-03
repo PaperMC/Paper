@@ -140,7 +140,7 @@ public class WorldCreator {
 
     /**
      * Gets the generator that will be used to create or load the world.
-     * <p>
+     * <p />
      * This may be null, in which case the "natural" generator for this environment
      * will be used.
      *
@@ -152,7 +152,7 @@ public class WorldCreator {
 
     /**
      * Sets the generator that will be used to create or load the world.
-     * <p>
+     * <p />
      * This may be null, in which case the "natural" generator for this environment
      * will be used.
      *
@@ -167,10 +167,10 @@ public class WorldCreator {
 
     /**
      * Sets the generator that will be used to create or load the world.
-     * <p>
+     * <p />
      * This may be null, in which case the "natural" generator for this environment
      * will be used.
-     * <p>
+     * <p />
      * If the generator cannot be found for the given name, the natural environment generator
      * will be used instead and a warning will be printed to the console.
      *
@@ -185,10 +185,10 @@ public class WorldCreator {
 
     /**
      * Sets the generator that will be used to create or load the world.
-     * <p>
+     * <p />
      * This may be null, in which case the "natural" generator for this environment
      * will be used.
-     * <p>
+     * <p />
      * If the generator cannot be found for the given name, the natural environment generator
      * will be used instead and a warning will be printed to the specified output
      *
@@ -225,7 +225,7 @@ public class WorldCreator {
 
     /**
      * Creates a world with the specified options.
-     * <p>
+     * <p />
      * If the world already exists, it will be loaded from disk and some options
      * may be ignored.
      *
@@ -247,10 +247,10 @@ public class WorldCreator {
 
     /**
      * Attempts to get the {@link ChunkGenerator} with the given name.
-     * <p>
+     * <p />
      * If the generator is not found, null will be returned and a message will be
      * printed to the specified {@link CommandSender} explaining why.
-     * <p>
+     * <p />
      * The name must be in the "plugin:id" notation, or optionally just "plugin",
      * where "plugin" is the safe-name of a plugin and "id" is an optional unique
      * identifier for the generator you wish to request from the plugin.

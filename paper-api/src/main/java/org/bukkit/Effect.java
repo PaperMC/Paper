@@ -64,7 +64,7 @@ public enum Effect {
      */
     SMOKE(2000, Type.VISUAL, BlockFace.class),
     /**
-     * Visual effect of a block breaking. Needs block ID as additional info.
+     * Sound of a block breaking. Needs block ID as additional info.
      */
     STEP_SOUND(2001, Type.SOUND, Material.class),
     /**

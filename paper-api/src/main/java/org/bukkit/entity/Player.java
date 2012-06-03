@@ -49,11 +49,11 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
 
     /**
      * Sets the name that is shown on the in-game player list.
-     * <p>
+     * <p />
      * The name cannot be longer than 16 characters, but {@link ChatColor} is supported.
-     * <p>
+     * <p />
      * If the value is null, the name will be identical to {@link #getName()}.
-     * <p>
+     * <p />
      * This name is case sensitive and unique, two names with different casing will
      * appear as two different people. If a player joins afterwards with
      * a name that conflicts with a player's custom list name, the
@@ -358,7 +358,7 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
 
     /**
      * Gets the players current experience points towards the next level.
-     * <p>
+     * <p />
      * This is a percentage value. 0 is "no progress" and 1 is "next level".
      *
      * @return Current experience points
@@ -367,7 +367,7 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
 
     /**
      * Sets the players current experience points towards the next level
-     * <p>
+     * <p />
      * This is a percentage value. 0 is "no progress" and 1 is "next level".
      *
      * @param exp New experience points
@@ -404,7 +404,7 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
 
     /**
      * Gets the players current exhaustion level.
-     * <p>
+     * <p />
      * Exhaustion controls how fast the food level drops. While you have a certain
      * amount of exhaustion, your saturation will drop to zero, and then your food
      * will drop to zero.
@@ -422,7 +422,7 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
 
     /**
      * Gets the players current saturation level.
-     * <p>
+     * <p />
      * Saturation is a buffer for food level. Your food level will not drop if you
      * are saturated > 0.
      *

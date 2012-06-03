@@ -8,7 +8,7 @@ import org.bukkit.entity.Player;
  */
 public interface PluginMessageListener {
     /**
-     * A method that will be thrown when a {@link PluginMessageSource} sends a plugin
+     * A method that will be thrown when a PluginMessageSource sends a plugin
      * message on a registered channel.
      *
      * @param channel Channel that the message was sent through.

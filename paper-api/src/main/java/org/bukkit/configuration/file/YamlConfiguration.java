@@ -19,6 +19,7 @@ import org.yaml.snakeyaml.representer.Representer;
 
 /**
  * An implementation of {@link Configuration} which saves all files in Yaml.
+ * Note that this implementation is not synchronized.
  */
 public class YamlConfiguration extends FileConfiguration {
     protected static final String COMMENT_PREFIX = "# ";
@@ -157,13 +158,13 @@ public class YamlConfiguration extends FileConfiguration {
 
     /**
      * Creates a new {@link YamlConfiguration}, loading from the given file.
-     * <p>
+     * <p />
      * Any errors loading the Configuration will be logged and then ignored.
      * If the specified input is not a valid config, a blank config will be returned.
      *
      * @param file Input file
      * @return Resulting configuration
-     * @throws IllegalArgumentException Thrown is file is null
+     * @throws IllegalArgumentException Thrown if file is null
      */
     public static YamlConfiguration loadConfiguration(File file) {
         Validate.notNull(file, "File cannot be null");
@@ -184,13 +185,13 @@ public class YamlConfiguration extends FileConfiguration {
 
     /**
      * Creates a new {@link YamlConfiguration}, loading from the given stream.
-     * <p>
+     * <p />
      * Any errors loading the Configuration will be logged and then ignored.
      * If the specified input is not a valid config, a blank config will be returned.
      *
      * @param stream Input stream
      * @return Resulting configuration
-     * @throws IllegalArgumentException Thrown is stream is null
+     * @throws IllegalArgumentException Thrown if stream is null
      */
     public static YamlConfiguration loadConfiguration(InputStream stream) {
         Validate.notNull(stream, "Stream cannot be null");

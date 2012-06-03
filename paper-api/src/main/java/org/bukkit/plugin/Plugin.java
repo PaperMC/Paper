@@ -34,7 +34,7 @@ public interface Plugin extends CommandExecutor {
 
     /**
      * Gets a {@link FileConfiguration} for this plugin, read through "config.yml"
-     * <p>
+     * <p />
      * If there is a default config.yml embedded in this plugin, it will be provided
      * as a default for this Configuration.
      *

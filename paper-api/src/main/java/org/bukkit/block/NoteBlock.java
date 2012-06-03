@@ -37,8 +37,8 @@ public interface NoteBlock extends BlockState {
     public void setRawNote(byte note);
 
     /**
-     * Attempts to play the note at block<br />
-     * <br />
+     * Attempts to play the note at block
+     * <p />
      * If the block is no longer a note block, this will return false
      *
      * @return true if successful, otherwise false

@@ -4,7 +4,7 @@ import java.util.Map;
 
 /**
  * Represents an object that may be serialized.
- * <p>
+ * <p />
  * These objects MUST implement one of the following, in addition to the methods
  * as defined by this interface:
  * <ul>
@@ -22,7 +22,7 @@ import java.util.Map;
 public interface ConfigurationSerializable {
     /**
      * Creates a Map representation of this class.
-     * <p>
+     * <p />
      * This class must provide a method to restore this class, as defined in the
      * {@link ConfigurationSerializable} interface javadocs.
      *

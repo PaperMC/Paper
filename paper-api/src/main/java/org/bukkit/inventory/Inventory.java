@@ -27,7 +27,7 @@ public interface Inventory extends Iterable<ItemStack> {
 
     /**
      * This method allows you to change the maximum stack size for an inventory.
-     * <p><b>Caveats:</b>
+     * <p /><b>Caveats:</b>
      * <ul>
      * <li>Not all inventories respect this value.
      * <li>Stacks larger than 127 may be clipped when the world is saved.
@@ -205,7 +205,7 @@ public interface Inventory extends Iterable<ItemStack> {
     /**
      * Find the first empty Slot.
      *
-     * @return The first empty Slot found.
+     * @return The first empty Slot found, or -1 if no empty slots.
      */
     public int firstEmpty();
 

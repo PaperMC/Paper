@@ -9,7 +9,7 @@ import org.bukkit.plugin.Plugin;
 public interface PluginMessageRecipient {
     /**
      * Sends this recipient a Plugin Message on the specified outgoing channel.
-     * <p>
+     * <p />
      * The message may not be larger than {@link Messenger#MAX_MESSAGE_SIZE} bytes, and the plugin must be registered to send
      * messages on the specified channel.
      *

@@ -54,7 +54,7 @@ public class CreatureSpawnEvent extends EntityEvent implements Cancellable {
      * Gets the type of creature being spawned.
      *
      * @return A CreatureType value detailing the type of creature being spawned
-     * @deprecated In favour of {@link #getSpawnedType()}.
+     * @deprecated In favour of {@link #getEntityType()}.
      */
     @Deprecated
     public CreatureType getCreatureType() {

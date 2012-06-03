@@ -50,7 +50,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
 
     /**
      * Gets a {@link Player} object that this represents, if there is one
-     * <p>
+     * <p />
      * If the player is online, this will return that player. Otherwise,
      * it will return null.
      *
@@ -60,7 +60,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
 
     /**
      * Gets the first date and time that this player was witnessed on this server.
-     * <p>
+     * <p />
      * If the player has never played before, this will return 0. Otherwise, it will be
      * the amount of milliseconds since midnight, January 1, 1970 UTC.
      *
@@ -70,7 +70,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
 
     /**
      * Gets the last date and time that this player was witnessed on this server.
-     * <p>
+     * <p />
      * If the player has never played before, this will return 0. Otherwise, it will be
      * the amount of milliseconds since midnight, January 1, 1970 UTC.
      *

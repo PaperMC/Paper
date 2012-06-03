@@ -12,7 +12,7 @@ public abstract class MessagePrompt implements Prompt{
     /**
      * Message prompts never wait for user input before continuing.
      * @param context Context information about the conversation.
-     * @return
+     * @return Always false.
      */
     public boolean blocksForInput(ConversationContext context) {
         return false;

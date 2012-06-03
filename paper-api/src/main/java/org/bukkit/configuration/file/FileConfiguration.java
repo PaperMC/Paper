@@ -38,7 +38,7 @@ public abstract class FileConfiguration extends MemoryConfiguration {
 
     /**
      * Saves this {@link FileConfiguration} to the specified location.
-     * <p>
+     * <p />
      * If the file does not exist, it will be created. If already exists, it will
      * be overwritten. If it cannot be overwritten or created, an exception will be thrown.
      *
@@ -64,7 +64,7 @@ public abstract class FileConfiguration extends MemoryConfiguration {
 
     /**
      * Saves this {@link FileConfiguration} to the specified location.
-     * <p>
+     * <p />
      * If the file does not exist, it will be created. If already exists, it will
      * be overwritten. If it cannot be overwritten or created, an exception will be thrown.
      *
@@ -87,10 +87,10 @@ public abstract class FileConfiguration extends MemoryConfiguration {
 
     /**
      * Loads this {@link FileConfiguration} from the specified location.
-     * <p>
+     * <p />
      * All the values contained within this configuration will be removed, leaving
      * only settings and defaults, and the new values will be loaded from the given file.
-     * <p>
+     * <p />
      * If the file cannot be loaded for any reason, an exception will be thrown.
      *
      * @param file File to load from.
@@ -107,7 +107,7 @@ public abstract class FileConfiguration extends MemoryConfiguration {
 
     /**
      * Loads this {@link FileConfiguration} from the specified stream.
-     * <p>
+     * <p />
      * All the values contained within this configuration will be removed, leaving
      * only settings and defaults, and the new values will be loaded from the given stream.
      *
@@ -140,10 +140,10 @@ public abstract class FileConfiguration extends MemoryConfiguration {
 
     /**
      * Loads this {@link FileConfiguration} from the specified location.
-     * <p>
+     * <p />
      * All the values contained within this configuration will be removed, leaving
      * only settings and defaults, and the new values will be loaded from the given file.
-     * <p>
+     * <p />
      * If the file cannot be loaded for any reason, an exception will be thrown.
      *
      * @param file File to load from.
@@ -160,10 +160,10 @@ public abstract class FileConfiguration extends MemoryConfiguration {
 
     /**
      * Loads this {@link FileConfiguration} from the specified string, as opposed to from file.
-     * <p>
+     * <p />
      * All the values contained within this configuration will be removed, leaving
      * only settings and defaults, and the new values will be loaded from the given string.
-     * <p>
+     * <p />
      * If the string is invalid in any way, an exception will be thrown.
      *
      * @param contents Contents of a Configuration to load.
@@ -174,7 +174,7 @@ public abstract class FileConfiguration extends MemoryConfiguration {
 
     /**
      * Compiles the header for this {@link FileConfiguration} and returns the result.
-     * <p>
+     * <p />
      * This will use the header from {@link #options()} -> {@link FileConfigurationOptions#header()},
      * respecting the rules of {@link FileConfigurationOptions#copyHeader()} if set.
      *

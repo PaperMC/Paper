@@ -202,7 +202,7 @@ public abstract class PotionEffectType {
 
     /**
      * Registers an effect type with the given object.
-     * <p>
+     * <p />
      * Generally not to be used from within a plugin.
      *
      * @param type PotionType to register

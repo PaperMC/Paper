@@ -35,8 +35,8 @@ public interface Block extends Metadatable {
     Block getRelative(int modX, int modY, int modZ);
 
     /**
-     * Gets the block at the given face<br />
-     * <br />
+     * Gets the block at the given face
+     * <p />
      * This method is equal to getRelative(face, 1)
      *
      * @param face Face of this block to return
@@ -46,14 +46,14 @@ public interface Block extends Metadatable {
     Block getRelative(BlockFace face);
 
     /**
-     * Gets the block at the given distance of the given face<br />
-     * <br />
+     * Gets the block at the given distance of the given face
+     * <p />
      * For example, the following method places water at 100,102,100; two blocks
      * above 100,100,100.
      *
      * <pre>
      * Block block = world.getBlockAt(100, 100, 100);
-     * Block shower = block.getFace(BlockFace.UP, 2);
+     * Block shower = block.getRelative(BlockFace.UP, 2);
      * shower.setType(Material.WATER);
      * </pre>
      *
@@ -86,7 +86,7 @@ public interface Block extends Metadatable {
 
     /**
      * Get the amount of light at this block from the sky.
-     * <p>
+     * <p />
      * Any light given from other sources (such as blocks like torches) will be ignored.
      *
      * @return Sky light level
@@ -95,7 +95,7 @@ public interface Block extends Metadatable {
 
     /**
      * Get the amount of light at this block from nearby blocks.
-     * <p>
+     * <p />
      * Any light given from other sources (such as the sun) will be ignored.
      *
      * @return Block light level
@@ -194,17 +194,15 @@ public interface Block extends Metadatable {
     boolean setTypeIdAndData(int type, byte data, boolean applyPhysics);
 
     /**
-     * Gets the face relation of this block compared to the given block<br />
-     * <br />
+     * Gets the face relation of this block compared to the given block
+     * <p />
      * For example:
-     *
      * <pre>
      * Block current = world.getBlockAt(100, 100, 100);
      * Block target = world.getBlockAt(100, 101, 100);
      *
      * current.getFace(target) == BlockFace.Up;
      * </pre>
-     *
      * <br />
      * If the given block is not connected to this block, null may be returned
      *

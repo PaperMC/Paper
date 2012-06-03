@@ -29,6 +29,7 @@ public class ConversationFactory {
 
     /**
      * Constructs a ConversationFactory.
+     * @param plugin The plugin that owns the factory.
      */
     public ConversationFactory(Plugin plugin)
     {
@@ -178,7 +179,7 @@ public class ConversationFactory {
         for (ConversationCanceller canceller : cancellers) {
             conversation.addConversationCanceller(canceller.clone());
         }
-        
+
         //Add the ConversationAbandonedListeners
         for (ConversationAbandonedListener listener : abandonedListeners) {
             conversation.addConversationAbandonedListener(listener);

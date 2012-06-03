@@ -15,6 +15,7 @@ public class ConversationContext {
     private Plugin plugin;
 
     /**
+     * @param plugin The owning plugin.
      * @param forWhom The subject of the conversation.
      * @param initialSessionData Any initial values to put in the sessionData map.
      */

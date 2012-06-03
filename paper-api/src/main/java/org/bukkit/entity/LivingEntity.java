@@ -213,7 +213,7 @@ public interface LivingEntity extends Entity {
 
     /**
      * Gets the player identified as the killer of this entity.
-     * <p>
+     * <p />
      * May be null.
      *
      * @return Killer player, or null if none found.
