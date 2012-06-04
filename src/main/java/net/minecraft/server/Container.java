@@ -119,12 +119,14 @@ public abstract class Container {
                         }
 
                         if (j == 1) {
-                            // CraftBukkit start
-                            if (playerinventory.getCarried().count > 0) {
-                                entityhuman.drop(playerinventory.getCarried().a(1));
+                            // CraftBukkit start - Store a reference
+                            ItemStack itemstack1 = playerinventory.getCarried();
+                            if (itemstack1.count > 0) {
+                                entityhuman.drop(itemstack1.a(1));
                             }
-                            // CraftBukkit end
-                            if (playerinventory.getCarried().count == 0) {
+
+                            if (itemstack1.count == 0) {
+                                // CraftBukkit end
                                 playerinventory.setCarried((ItemStack) null);
                             }
                         }
