@@ -51,8 +51,11 @@ public class ConsoleLogManager {
 
             // We only care about parsing for directories, FileHandler can do file names by itself
             File parent = new File(pattern).getParentFile();
-            String parentPath = parent.getPath();
             StringBuilder fixedPattern = new StringBuilder();
+            String parentPath = "";
+            if (parent != null) {
+                parentPath = parent.getPath();
+            }
 
             int i = 0;
             while (i < parentPath.length()) {
