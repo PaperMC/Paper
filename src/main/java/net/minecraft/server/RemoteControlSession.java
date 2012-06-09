@@ -84,12 +84,12 @@ public class RemoteControlSession extends RemoteConnectionThread {
                         }
                     }
                 } catch (SocketTimeoutException sockettimeoutexception) {
-                    continue;
+                    return; // CraftBukkit - shut down the thread after hitting an exception.
                 } catch (IOException ioexception) {
                     if (this.running) {
                         this.info("IO: " + ioexception.getMessage());
                     }
-                    continue;
+                    return; // CraftBukkit - shut down the thread after hitting an exception.
                 }
                 } // CraftBukkit - Loop shift
             } catch (Exception exception1) {
