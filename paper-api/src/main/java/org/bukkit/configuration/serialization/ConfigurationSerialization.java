@@ -164,9 +164,11 @@ public class ConfigurationSerialization {
                 String alias = (String) args.get(SERIALIZED_TYPE_KEY);
 
                 if (alias == null) {
-                    throw new IllegalArgumentException("Specified class does not exist ('" + alias + ")'");
-                } else {
-                    clazz = getClassByAlias(alias);
+                    throw new IllegalArgumentException("Cannot have null alias");
+                }
+                clazz = getClassByAlias(alias);
+                if (clazz == null) {
+                    throw new IllegalArgumentException("Specified class does not exist ('" + alias + "')");
                 }
             } catch (ClassCastException ex) {
                 ex.fillInStackTrace();
