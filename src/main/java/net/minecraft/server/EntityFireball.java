@@ -216,6 +216,8 @@ public class EntityFireball extends Entity {
         nbttagcompound.setShort("zTile", (short) this.g);
         nbttagcompound.setByte("inTile", (byte) this.h);
         nbttagcompound.setByte("inGround", (byte) (this.i ? 1 : 0));
+        // CraftBukkit
+        nbttagcompound.set("Direction", this.a(new double[] { this.dirX, this.dirY, this.dirZ}));
     }
 
     public void a(NBTTagCompound nbttagcompound) {
@@ -224,6 +226,14 @@ public class EntityFireball extends Entity {
         this.g = nbttagcompound.getShort("zTile");
         this.h = nbttagcompound.getByte("inTile") & 255;
         this.i = nbttagcompound.getByte("inGround") == 1;
+        // CraftBukkit start
+        if (nbttagcompound.hasKey("Direction")) {
+            NBTTagList nbttaglist1 = nbttagcompound.getList("Direction");
+            this.dirX = ((NBTTagDouble) nbttaglist1.get(0)).data;
+            this.dirY = ((NBTTagDouble) nbttaglist1.get(1)).data;
+            this.dirZ = ((NBTTagDouble) nbttaglist1.get(2)).data;
+        }
+        // CraftBukkit end
     }
 
     public boolean o_() {
