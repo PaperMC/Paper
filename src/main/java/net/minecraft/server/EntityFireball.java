@@ -232,6 +232,8 @@ public class EntityFireball extends Entity {
             this.dirX = ((NBTTagDouble) nbttaglist1.get(0)).data;
             this.dirY = ((NBTTagDouble) nbttaglist1.get(1)).data;
             this.dirZ = ((NBTTagDouble) nbttaglist1.get(2)).data;
+        } else {
+            this.die();
         }
         // CraftBukkit end
     }
