@@ -399,6 +399,10 @@ public final class CraftServer implements Server {
     public boolean getWarnOnOverload() {
         return this.configuration.getBoolean("settings.warn-on-overload");
     }
+    
+    public boolean getQueryPlugins() {
+        return this.configuration.getBoolean("settings.query-plugins");
+    }    
 
     public boolean hasWhitelist() {
         return this.getConfigBoolean("white-list", false);
