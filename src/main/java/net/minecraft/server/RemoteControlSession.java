@@ -22,8 +22,9 @@ public class RemoteControlSession extends RemoteConnectionThread {
     }
 
     public void run() {
-        while (true) {
+        // while (true) { // CraftBukkit - moved down
             try {
+                while (true) { // CraftBukkit - moved from above
                 if (!this.running) {
                     return;
                 }
@@ -90,18 +91,17 @@ public class RemoteControlSession extends RemoteConnectionThread {
                     }
                     continue;
                 }
+                } // CraftBukkit - Loop shift
             } catch (Exception exception1) {
                 System.out.println(exception1);
                 return;
             } finally {
                 this.f();
             }
-
-            return;
-        }
+        // CraftBukkit - Loop shift
     }
 
-    private void a(int i, int j, String s) {
+    private void a(int i, int j, String s) throws IOException { // CraftBukkit - throws IOException
         ByteArrayOutputStream bytearrayoutputstream = new ByteArrayOutputStream(1248);
         DataOutputStream dataoutputstream = new DataOutputStream(bytearrayoutputstream);
 
@@ -114,11 +114,11 @@ public class RemoteControlSession extends RemoteConnectionThread {
         this.h.getOutputStream().write(bytearrayoutputstream.toByteArray());
     }
 
-    private void e() {
+    private void e() throws IOException { // CraftBukkit - throws IOException
         this.a(-1, 2, "");
     }
 
-    private void a(int i, String s) {
+    private void a(int i, String s) throws IOException { // CraftBukkit - throws IOException
         int j = s.length();
 
         do {
