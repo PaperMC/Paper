@@ -728,7 +728,7 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
         result.append(" on Bukkit ");
         result.append(server.getBukkitVersion());
 
-        if (plugins.length > 0) {
+        if (plugins.length > 0 && this.server.getQueryPlugins()) {
             result.append(": ");
 
             for (int i = 0; i < plugins.length; i++) {
