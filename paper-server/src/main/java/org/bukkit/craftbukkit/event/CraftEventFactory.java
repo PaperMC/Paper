@@ -520,4 +520,10 @@ public class CraftEventFactory {
         world.getServer().getPluginManager().callEvent(event);
         return event;
     }
+
+    public static NotePlayEvent callNotePlayEvent(World world, int x, int y, int z, byte instrument, byte note) {
+        NotePlayEvent event = new NotePlayEvent(world.getWorld().getBlockAt(x, y, z), org.bukkit.Instrument.getByType(instrument), new org.bukkit.Note(note));
+        world.getServer().getPluginManager().callEvent(event);
+        return event;
+    }
 }
