@@ -17,6 +17,13 @@ public class RemoteControlSession extends RemoteConnectionThread {
     RemoteControlSession(IMinecraftServer iminecraftserver, Socket socket) {
         super(iminecraftserver);
         this.h = socket;
+        // CraftBukkit start - set infinite timeout so we sleep until there is data available
+        try {
+            this.h.setSoTimeout(0);
+        } catch (Exception ex) {
+            this.running = false;
+        }
+        // CraftBukkit end
         this.j = iminecraftserver.a("rcon.password", "");
         this.info("Rcon connection from: " + socket.getInetAddress());
     }
@@ -83,8 +90,9 @@ public class RemoteControlSession extends RemoteConnectionThread {
                             continue;
                         }
                     }
+                    return; // CraftBukkit - return if we don't get enough data
                 } catch (SocketTimeoutException sockettimeoutexception) {
-                    return; // CraftBukkit - shut down the thread after hitting an exception.
+                    continue;
                 } catch (IOException ioexception) {
                     if (this.running) {
                         this.info("IO: " + ioexception.getMessage());
@@ -135,6 +143,7 @@ public class RemoteControlSession extends RemoteConnectionThread {
         if (null != this.h) {
             try {
                 this.h.close();
+                this.info("Rcon connection closed."); // CraftBukkit
             } catch (IOException ioexception) {
                 this.warning("IO: " + ioexception.getMessage());
             }
