@@ -7,7 +7,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.IOException; // CraftBukkit
+
+// CraftBukkit start
+import java.io.IOException;
+import java.util.List;
+import java.util.Collections;
+// CraftBukkit end
 
 public class NetworkListenThread {
 
@@ -16,8 +21,8 @@ public class NetworkListenThread {
     private Thread e;
     public volatile boolean b = false;
     private int f = 0;
-    private ArrayList g = new ArrayList();
-    private ArrayList h = new ArrayList();
+    private List g = Collections.synchronizedList(new ArrayList()); // CraftBukkit - Synchronized
+    private List h = Collections.synchronizedList(new ArrayList()); // CraftBukkit - Synchronized
     public MinecraftServer c;
     private HashMap i = new HashMap();
 
