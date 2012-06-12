@@ -282,7 +282,7 @@ public class EntityEnderDragon extends EntityComplex {
                 this.C();
             }
 
-            if (!this.world.isStatic && this.at == 0) {
+            if (!this.world.isStatic && this.hurtTicks == 0) { // CraftBukkit
                 this.a(this.world.getEntities(this, this.l.boundingBox.grow(4.0D, 2.0D, 4.0D).d(0.0D, -2.0D, 0.0D)));
                 this.a(this.world.getEntities(this, this.m.boundingBox.grow(4.0D, 2.0D, 4.0D).d(0.0D, -2.0D, 0.0D)));
                 this.b(this.world.getEntities(this, this.g.boundingBox.grow(1.0D, 1.0D, 1.0D)));
