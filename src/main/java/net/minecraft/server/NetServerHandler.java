@@ -150,7 +150,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
             // CraftBukkit start
             leaveMessage = event.getLeaveMessage();
-            if (leaveMessage != null) {
+            if (leaveMessage != null && leaveMessage.length() > 0) {
                 this.minecraftServer.serverConfigurationManager.sendAll(new Packet3Chat(leaveMessage));
             }
             getPlayer().disconnect(s);
