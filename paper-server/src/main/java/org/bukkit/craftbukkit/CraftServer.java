@@ -1182,4 +1182,8 @@ public final class CraftServer implements Server {
     public int getWaterAnimalSpawnLimit() {
         return waterAnimalSpawn;
     }
+
+    public boolean isPrimaryThread() {
+        return Thread.currentThread().equals(console.primaryThread);
+    }
 }
