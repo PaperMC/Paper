@@ -639,4 +639,9 @@ public interface Server extends PluginMessageRecipient {
      * @returns The water animal spawn limit
      */
     int getWaterAnimalSpawnLimit();
+
+    /**
+     * Returns true if the current {@link Thread} is the server's primary thread
+     */
+    boolean isPrimaryThread();
 }

@@ -92,8 +92,11 @@ public interface PluginManager {
      * Calls an event with the given details
      *
      * @param event Event details
+     * @throws IllegalStateException Thrown when an asynchronous event is fired from synchronous code.<br>
+     *          <i>Note: This is best-effort basis, and should not be used to test synchronized state. This
+     *          is an indicator for flawed flow logic.</i>
      */
-    public void callEvent(Event event);
+    public void callEvent(Event event) throws IllegalStateException;
 
     /**
      * Registers all the events in the given listener class

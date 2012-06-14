@@ -18,7 +18,12 @@ public class TimedRegisteredListener extends RegisteredListener {
         super(pluginListener, eventExecutor, eventPriority, registeredPlugin, listenCancelled);
     }
 
+    @Override
     public void callEvent(Event event) throws EventException {
+        if (event.isAsynchronous()) {
+            super.callEvent(event);
+            return;
+        }
         count++;
         if (this.event == null) {
             this.event = event;

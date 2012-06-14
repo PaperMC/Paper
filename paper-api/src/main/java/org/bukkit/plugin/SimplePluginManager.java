@@ -443,11 +443,28 @@ public final class SimplePluginManager implements PluginManager {
     }
 
     /**
-     * Calls an event with the given details
+     * Calls an event with the given details.<br>
+     * This method only synchronizes when the event is not asynchronous.
      *
      * @param event Event details
      */
-    public synchronized void callEvent(Event event) {
+    public void callEvent(Event event) {
+        if (event.isAsynchronous()) {
+            if (Thread.holdsLock(this)) {
+                throw new IllegalStateException(event.getEventName() + " cannot be triggered asynchronously from inside synchronized code.");
+            }
+            if (server.isPrimaryThread()) {
+                throw new IllegalStateException(event.getEventName() + " cannot be triggered asynchronously from primary server thread.");
+            }
+            fireEvent(event);
+        } else {
+            synchronized (this) {
+                fireEvent(event);
+            }
+        }
+    }
+
+    private void fireEvent(Event event) {
         HandlerList handlers = event.getHandlers();
         RegisteredListener[] listeners = handlers.getRegisteredListeners();
 

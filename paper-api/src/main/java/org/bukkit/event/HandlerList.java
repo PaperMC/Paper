@@ -13,7 +13,7 @@ public class HandlerList {
     /**
      * Handler array. This field being an array is the key to this system's speed.
      */
-    private RegisteredListener[] handlers = null;
+    private volatile RegisteredListener[] handlers = null;
 
     /**
      * Dynamic handler lists. These are changed using register() and
@@ -33,8 +33,10 @@ public class HandlerList {
      * you're using fevents in a plugin system.
      */
     public static void bakeAll() {
-        for (HandlerList h : allLists) {
-            h.bake();
+        synchronized (allLists) {
+            for (HandlerList h : allLists) {
+                h.bake();
+            }
         }
     }
 
@@ -42,11 +44,15 @@ public class HandlerList {
      * Unregister all listeners from all handler lists.
      */
     public static void unregisterAll() {
-        for (HandlerList h : allLists) {
-            for (List<RegisteredListener> list : h.handlerslots.values()) {
-                list.clear();
+        synchronized (allLists) {
+            for (HandlerList h : allLists) {
+                synchronized (h) {
+                    for (List<RegisteredListener> list : h.handlerslots.values()) {
+                        list.clear();
+                    }
+                    h.handlers = null;
+                }
             }
-            h.handlers = null;
         }
     }
 
@@ -56,8 +62,10 @@ public class HandlerList {
      * @param plugin plugin to unregister
      */
     public static void unregisterAll(Plugin plugin) {
-        for (HandlerList h : allLists) {
-            h.unregister(plugin);
+        synchronized (allLists) {
+            for (HandlerList h : allLists) {
+                h.unregister(plugin);
+            }
         }
     }
 
@@ -67,8 +75,10 @@ public class HandlerList {
      * @param listener listener to unregister
      */
     public static void unregisterAll(Listener listener) {
-        for (HandlerList h : allLists) {
-            h.unregister(listener);
+        synchronized (allLists) {
+            for (HandlerList h : allLists) {
+                h.unregister(listener);
+            }
         }
     }
 
@@ -81,7 +91,9 @@ public class HandlerList {
         for (EventPriority o : EventPriority.values()) {
             handlerslots.put(o, new ArrayList<RegisteredListener>());
         }
-        allLists.add(this);
+        synchronized (allLists) {
+            allLists.add(this);
+        }
     }
 
     /**
@@ -89,7 +101,7 @@ public class HandlerList {
      *
      * @param listener listener to register
      */
-    public void register(RegisteredListener listener) {
+    public synchronized void register(RegisteredListener listener) {
         if (handlerslots.get(listener.getPriority()).contains(listener))
             throw new IllegalStateException("This listener is already registered to priority " + listener.getPriority().toString());
         handlers = null;
@@ -112,7 +124,7 @@ public class HandlerList {
      *
      * @param listener listener to remove
      */
-    public void unregister(RegisteredListener listener) {
+    public synchronized void unregister(RegisteredListener listener) {
         if (handlerslots.get(listener.getPriority()).remove(listener)) {
             handlers = null;
         }
@@ -123,7 +135,7 @@ public class HandlerList {
      *
      * @param plugin plugin to remove
      */
-    public void unregister(Plugin plugin) {
+    public synchronized void unregister(Plugin plugin) {
         boolean changed = false;
         for (List<RegisteredListener> list : handlerslots.values()) {
             for (ListIterator<RegisteredListener> i = list.listIterator(); i.hasNext();) {
@@ -141,7 +153,7 @@ public class HandlerList {
      *
      * @param listener listener to remove
      */
-    public void unregister(Listener listener) {
+    public synchronized void unregister(Listener listener) {
         boolean changed = false;
         for (List<RegisteredListener> list : handlerslots.values()) {
             for (ListIterator<RegisteredListener> i = list.listIterator(); i.hasNext();) {
@@ -157,7 +169,7 @@ public class HandlerList {
     /**
      * Bake HashMap and ArrayLists to 2d array - does nothing if not necessary
      */
-    public void bake() {
+    public synchronized void bake() {
         if (handlers != null) return; // don't re-bake when still valid
         List<RegisteredListener> entries = new ArrayList<RegisteredListener>();
         for (Entry<EventPriority, ArrayList<RegisteredListener>> entry : handlerslots.entrySet()) {
@@ -172,7 +184,8 @@ public class HandlerList {
      * @return the array of registered listeners
      */
     public RegisteredListener[] getRegisteredListeners() {
-        bake();
+        RegisteredListener[] handlers;
+        while ((handlers = this.handlers) == null) bake(); // This prevents fringe cases of returning null
         return handlers;
     }
 
@@ -185,11 +198,15 @@ public class HandlerList {
      */
     public static ArrayList<RegisteredListener> getRegisteredListeners(Plugin plugin) {
         ArrayList<RegisteredListener> listeners = new ArrayList<RegisteredListener>();
-        for (HandlerList h : allLists) {
-            for (List<RegisteredListener> list : h.handlerslots.values()) {
-                for (RegisteredListener listener : list) {
-                    if (listener.getPlugin().equals(plugin)) {
-                        listeners.add(listener);
+        synchronized (allLists) {
+            for (HandlerList h : allLists) {
+                synchronized (h) {
+                    for (List<RegisteredListener> list : h.handlerslots.values()) {
+                        for (RegisteredListener listener : list) {
+                            if (listener.getPlugin().equals(plugin)) {
+                                listeners.add(listener);
+                            }
+                        }
                     }
                 }
             }
@@ -204,6 +221,8 @@ public class HandlerList {
      */
     @SuppressWarnings("unchecked")
     public static ArrayList<HandlerList> getHandlerLists() {
-        return (ArrayList<HandlerList>) allLists.clone();
+        synchronized (allLists) {
+            return (ArrayList<HandlerList>) allLists.clone();
+        }
     }
 }
