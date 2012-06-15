@@ -1029,6 +1029,9 @@ public final class CraftServer implements Server {
         Set<OfflinePlayer> result = new LinkedHashSet<OfflinePlayer>();
 
         for (Object name : server.getWhitelisted()) {
+            if (((String)name).length() == 0 || ((String)name).startsWith("#")) {
+                continue;
+            }
             result.add(getOfflinePlayer((String) name));
         }
 
