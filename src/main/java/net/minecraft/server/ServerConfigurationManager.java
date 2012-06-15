@@ -13,6 +13,8 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 // CraftBukkit start
+import java.util.LinkedHashSet;
+
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -37,7 +39,7 @@ public class ServerConfigurationManager {
     public Set banByName = new HashSet(); // CraftBukkit - private -> public
     public Set banByIP = new HashSet(); // CraftBukkit - private -> public
     public Set operators = new HashSet(); // CraftBukkit - private -> public
-    private Set whitelist = new HashSet();
+    private Set whitelist = new LinkedHashSet(); // CraftBukkit - HashSet() -> LinkedHashSet();
     private File j;
     private File k;
     private File l;
