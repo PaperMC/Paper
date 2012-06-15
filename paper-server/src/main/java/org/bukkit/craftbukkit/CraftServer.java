@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1025,7 +1026,7 @@ public final class CraftServer implements Server {
     }
 
     public Set<OfflinePlayer> getWhitelistedPlayers() {
-        Set<OfflinePlayer> result = new HashSet<OfflinePlayer>();
+        Set<OfflinePlayer> result = new LinkedHashSet<OfflinePlayer>();
 
         for (Object name : server.getWhitelisted()) {
             result.add(getOfflinePlayer((String) name));
