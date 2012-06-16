@@ -49,12 +49,7 @@ public abstract class JavaPlugin extends PluginBase {
     private File configFile = null;
     private PluginLogger logger = null;
 
-    public JavaPlugin() {
-        ClassLoader classLoader = this.getClass().getClassLoader();
-        if (classLoader instanceof PluginClassLoader) {
-            ((PluginClassLoader) classLoader).initialize(this);
-        }
-    }
+    public JavaPlugin() {}
 
     /**
      * Returns the folder that the plugin data's files are located in. The

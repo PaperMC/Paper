@@ -134,7 +134,7 @@ public class JavaPluginLoader implements PluginLoader {
                 loader = loaders.get(description.getClassLoaderOf());
                 loader.addURL(urls[0]);
             } else {
-                loader = new PluginClassLoader(this, urls, getClass().getClassLoader(), server, description, dataFolder, file);
+                loader = new PluginClassLoader(this, urls, getClass().getClassLoader());
             }
 
             Class<?> jarClass = Class.forName(description.getMain(), true, loader);
@@ -143,6 +143,8 @@ public class JavaPluginLoader implements PluginLoader {
             Constructor<? extends JavaPlugin> constructor = plugin.getConstructor();
 
             result = constructor.newInstance();
+
+            result.initialize(this, server, description, dataFolder, file, loader);
         } catch (InvocationTargetException ex) {
             throw new InvalidPluginException(ex.getCause());
         } catch (Throwable ex) {
