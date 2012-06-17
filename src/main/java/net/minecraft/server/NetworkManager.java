@@ -21,7 +21,7 @@ public class NetworkManager {
     private DataInputStream input;
     private DataOutputStream output;
     private boolean l = true;
-    private List m = Collections.synchronizedList(new ArrayList());
+    private java.util.Queue m = new java.util.concurrent.ConcurrentLinkedQueue(); // CraftBukkit - Concurrent linked queue
     private List highPriorityQueue = Collections.synchronizedList(new ArrayList());
     private List lowPriorityQueue = Collections.synchronizedList(new ArrayList());
     private NetHandler packetListener;
@@ -224,7 +224,7 @@ public class NetworkManager {
         int i = 1000;
 
         while (!this.m.isEmpty() && i-- >= 0) {
-            Packet packet = (Packet) this.m.remove(0);
+            Packet packet = (Packet) this.m.poll(); // CraftBukkit - remove -> poll
 
             if (!this.q) packet.handle(this.packetListener); // CraftBukkit
         }
