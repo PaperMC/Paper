@@ -52,6 +52,9 @@ public class CraftTameableAnimal extends CraftAnimals implements Tameable, Creat
 
     public void setTamed(boolean tame) {
         getHandle().setTamed(tame);
+        if (!tame) {
+            setOwnerName("");
+        }
     }
 
     public boolean isSitting() {
