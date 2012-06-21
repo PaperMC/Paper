@@ -39,7 +39,9 @@ import org.bukkit.craftbukkit.map.RenderData;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerGameModeChangeEvent;
+import org.bukkit.event.player.PlayerRegisterChannelEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.event.player.PlayerUnregisterChannelEvent;
 import org.bukkit.inventory.InventoryView.Property;
 import org.bukkit.map.MapView;
 import org.bukkit.metadata.MetadataValue;
@@ -744,11 +746,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void addChannel(String channel) {
-        channels.add(channel);
+        if (channels.add(channel)) {
+            server.getPluginManager().callEvent(new PlayerRegisterChannelEvent(this, channel));
+        }
     }
 
     public void removeChannel(String channel) {
-        channels.remove(channel);
+        if (channels.remove(channel)) {
+            server.getPluginManager().callEvent(new PlayerUnregisterChannelEvent(this, channel));
+        }
     }
 
     public Set<String> getListeningPluginChannels() {
