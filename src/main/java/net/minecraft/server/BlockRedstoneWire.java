@@ -10,7 +10,7 @@ import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
 public class BlockRedstoneWire extends Block {
 
     private boolean a = true;
-    private Set b = new HashSet();
+    private Set b = new java.util.LinkedHashSet(); // CraftBukkit - HashSet -> LinkedHashSet
 
     public BlockRedstoneWire(int i, int j) {
         super(i, j, Material.ORIENTABLE);
