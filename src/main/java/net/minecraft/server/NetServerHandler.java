@@ -1175,8 +1175,6 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
                 if (packet107setcreativeslot.slot > -1) {
                     this.player.netServerHandler.sendPacket(new Packet103SetSlot(this.player.defaultContainer.windowId, packet107setcreativeslot.slot, CraftItemStack.createNMSItemStack(item)));
                 }
-                this.player.netServerHandler.sendPacket(new Packet103SetSlot(this.player.defaultContainer.windowId, -1, null));
-
                 return;
             case DEFAULT:
                 // We do the stuff below
