@@ -133,7 +133,9 @@ public abstract class JavaPlugin extends PluginBase {
     }
 
     public void saveDefaultConfig() {
-        saveResource("config.yml", false);
+        if (!new File(getDataFolder(), "config.yml").exists()) {
+            saveResource("config.yml", false);
+        }
     }
 
     public void saveResource(String resourcePath, boolean replace) {
