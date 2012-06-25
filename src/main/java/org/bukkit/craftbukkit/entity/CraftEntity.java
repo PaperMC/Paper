@@ -212,6 +212,10 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         return !entity.isAlive();
     }
 
+    public boolean isValid() {
+        return entity.isAlive() && entity.valid;
+    }
+
     public Server getServer() {
         return server;
     }

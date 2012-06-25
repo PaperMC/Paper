@@ -143,6 +143,7 @@ public abstract class Entity {
     public boolean cd;
     public boolean ce;
     public UUID uniqueId = UUID.randomUUID(); // CraftBukkit
+    public boolean valid = true; // CraftBukkit
 
     public Entity(World world) {
         this.id = entityCount++;
