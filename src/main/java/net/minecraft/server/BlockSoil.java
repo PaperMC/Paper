@@ -2,7 +2,10 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-import org.bukkit.event.entity.EntityInteractEvent; // CraftBukkit
+// CraftBukkit start
+import org.bukkit.event.entity.EntityInteractEvent;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+// CraftBukkit end
 
 public class BlockSoil extends Block {
 
@@ -37,6 +40,13 @@ public class BlockSoil extends Block {
             if (l > 0) {
                 world.setData(i, j, k, l - 1);
             } else if (!this.l(world, i, j, k)) {
+                // CraftBukkit start
+                org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
+                if (CraftEventFactory.callBlockFadeEvent(block, Block.DIRT.id).isCancelled()) {
+                    return;
+                }
+                // CraftBukkit end
+
                 world.setTypeId(i, j, k, Block.DIRT.id);
             }
         } else {
@@ -49,7 +59,7 @@ public class BlockSoil extends Block {
             // CraftBukkit start - interact soil
             org.bukkit.event.Cancellable cancellable;
             if (entity instanceof EntityHuman) {
-                cancellable = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, org.bukkit.event.block.Action.PHYSICAL, i, j, k, -1, null);
+                cancellable = CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, org.bukkit.event.block.Action.PHYSICAL, i, j, k, -1, null);
             } else {
                 cancellable = new EntityInteractEvent(entity.getBukkitEntity(), world.getWorld().getBlockAt(i, j, k));
                 world.getServer().getPluginManager().callEvent((EntityInteractEvent) cancellable);
