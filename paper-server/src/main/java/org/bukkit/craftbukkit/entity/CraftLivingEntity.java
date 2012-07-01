@@ -8,6 +8,7 @@ import java.util.List;
 
 import net.minecraft.server.DamageSource;
 import net.minecraft.server.EntityArrow;
+import net.minecraft.server.EntityComplex;
 import net.minecraft.server.EntityEgg;
 import net.minecraft.server.EntityEnderPearl;
 import net.minecraft.server.EntityFireball;
@@ -147,7 +148,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public void damage(int amount) {
-        entity.damageEntity(DamageSource.GENERIC, amount);
+        damage(amount, null);
     }
 
     public void damage(int amount, org.bukkit.entity.Entity source) {
@@ -159,7 +160,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             reason = DamageSource.mobAttack(((CraftLivingEntity) source).getHandle());
         }
 
-        entity.damageEntity(reason, amount);
+        if (entity instanceof EntityComplex) {
+            ((EntityComplex) entity).dealDamage(reason, amount);
+        } else {
+            entity.damageEntity(reason, amount);
+        }
     }
 
     public Location getEyeLocation() {
