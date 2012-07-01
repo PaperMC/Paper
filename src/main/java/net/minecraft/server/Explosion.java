@@ -144,6 +144,7 @@ public class Explosion {
                     Bukkit.getPluginManager().callEvent(event);
 
                     if (!event.isCancelled()) {
+                        damagee.setLastDamageCause(event);
                         entity.damageEntity(DamageSource.EXPLOSION, event.getDamage());
                         entity.motX += d0 * d10;
                         entity.motY += d1 * d10;

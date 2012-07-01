@@ -360,7 +360,12 @@ public class CraftEventFactory {
         } else {
             event = new EntityDamageEvent(damagee.getBukkitEntity(), cause, damage);
         }
-        Bukkit.getPluginManager().callEvent(event);
+
+        callEvent(event);
+
+        if (!event.isCancelled()) {
+            event.getEntity().setLastDamageCause(event);
+        }
 
         return event;
     }

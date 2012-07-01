@@ -58,6 +58,7 @@ public class FoodMetaData {
                     entityhuman.world.getServer().getPluginManager().callEvent(event);
 
                     if (!event.isCancelled()) {
+                        event.getEntity().setLastDamageCause(event);
                         entityhuman.damageEntity(DamageSource.STARVE, event.getDamage());
                     }
                     // CraftBukkit end

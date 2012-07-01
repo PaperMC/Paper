@@ -346,6 +346,7 @@ public abstract class Entity {
                         this.world.getServer().getPluginManager().callEvent(event);
 
                         if (!event.isCancelled()) {
+                            event.getEntity().setLastDamageCause(event);
                             this.damageEntity(DamageSource.BURN, event.getDamage());
                         }
                     } else {
@@ -390,6 +391,7 @@ public abstract class Entity {
                 server.getPluginManager().callEvent(event);
 
                 if (!event.isCancelled()) {
+                    damagee.setLastDamageCause(event);
                     this.damageEntity(DamageSource.LAVA, event.getDamage());
                 }
 

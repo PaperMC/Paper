@@ -94,6 +94,7 @@ public class BlockCactus extends Block {
             world.getServer().getPluginManager().callEvent(event);
 
             if (!event.isCancelled()) {
+                damagee.setLastDamageCause(event);
                 entity.damageEntity(DamageSource.CACTUS, event.getDamage());
             }
             return;

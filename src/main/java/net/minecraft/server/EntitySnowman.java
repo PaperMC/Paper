@@ -33,24 +33,30 @@ public class EntitySnowman extends EntityGolem {
     public void e() {
         super.e();
         if (this.aT()) {
+            // CraftBukkit start
             EntityDamageEvent event = new EntityDamageEvent(this.getBukkitEntity(), EntityDamageEvent.DamageCause.DROWNING, 1);
             this.world.getServer().getPluginManager().callEvent(event);
 
             if (!event.isCancelled()) {
+                event.getEntity().setLastDamageCause(event);
                 this.damageEntity(DamageSource.DROWN, event.getDamage());
             }
+            // CraftBukkit end
         }
 
         int i = MathHelper.floor(this.locX);
         int j = MathHelper.floor(this.locZ);
 
         if (this.world.getBiome(i, j).i() > 1.0F) {
+            // CraftBukkit start
             EntityDamageEvent event = new EntityDamageEvent(this.getBukkitEntity(), EntityDamageEvent.DamageCause.MELTING, 1);
             this.world.getServer().getPluginManager().callEvent(event);
 
             if (!event.isCancelled()) {
+                event.getEntity().setLastDamageCause(event);
                 this.damageEntity(DamageSource.BURN, event.getDamage());
             }
+            // CraftBukkit end
         }
 
         for (i = 0; i < 4; ++i) {

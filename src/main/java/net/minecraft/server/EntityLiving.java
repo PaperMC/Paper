@@ -274,6 +274,7 @@ public abstract class EntityLiving extends Entity {
             this.world.getServer().getPluginManager().callEvent(event);
 
             if (!event.isCancelled()) {
+                event.getEntity().setLastDamageCause(event);
                 this.damageEntity(DamageSource.STUCK, event.getDamage());
             }
             // CraftBukkit end
@@ -301,6 +302,7 @@ public abstract class EntityLiving extends Entity {
                 this.world.getServer().getPluginManager().callEvent(event);
 
                 if (!event.isCancelled() && event.getDamage() != 0) {
+                    event.getEntity().setLastDamageCause(event);
                     this.damageEntity(DamageSource.DROWN, event.getDamage());
                 }
                 // CraftBukkit end
@@ -1362,6 +1364,7 @@ public abstract class EntityLiving extends Entity {
             return;
         }
 
+        event.getEntity().setLastDamageCause(event);
         this.damageEntity(DamageSource.OUT_OF_WORLD, event.getDamage());
         // CraftBukkit end
     }
