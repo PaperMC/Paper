@@ -333,7 +333,7 @@ public class CraftWorld implements World {
 
     @Deprecated
     public LivingEntity spawnCreature(Location loc, EntityType creatureType) {
-        Validate.isTrue(!creatureType.isAlive(), "EntityType not instance of LivingEntity");
+        Validate.isTrue(creatureType.isAlive(), "EntityType not instance of LivingEntity");
         return (LivingEntity) spawnEntity(loc, creatureType);
     }
 
