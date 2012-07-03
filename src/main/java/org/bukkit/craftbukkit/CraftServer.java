@@ -399,10 +399,10 @@ public final class CraftServer implements Server {
     public boolean getWarnOnOverload() {
         return this.configuration.getBoolean("settings.warn-on-overload");
     }
-    
+
     public boolean getQueryPlugins() {
         return this.configuration.getBoolean("settings.query-plugins");
-    }    
+    }
 
     public boolean hasWhitelist() {
         return this.getConfigBoolean("white-list", false);
@@ -504,6 +504,7 @@ public final class CraftServer implements Server {
         console.spawnAnimals = config.getBoolean("spawn-animals", console.spawnAnimals);
         console.pvpMode = config.getBoolean("pvp", console.pvpMode);
         console.allowFlight = config.getBoolean("allow-flight", console.allowFlight);
+        console.motd = config.getString("motd", console.motd);
         monsterSpawn = configuration.getInt("spawn-limits.monsters");
         animalSpawn = configuration.getInt("spawn-limits.animals");
         waterAnimalSpawn = configuration.getInt("spawn-limits.water-animals");
@@ -1193,5 +1194,9 @@ public final class CraftServer implements Server {
 
     public boolean isPrimaryThread() {
         return Thread.currentThread().equals(console.primaryThread);
+    }
+
+    public String getMotd() {
+        return console.motd;
     }
 }
