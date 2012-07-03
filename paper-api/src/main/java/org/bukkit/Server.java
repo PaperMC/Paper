@@ -644,4 +644,11 @@ public interface Server extends PluginMessageRecipient {
      * Returns true if the current {@link Thread} is the server's primary thread
      */
     boolean isPrimaryThread();
+
+    /**
+     * Gets the message that is displayed on the server list
+     *
+     * @returns the servers MOTD
+     */
+    String getMotd();
 }

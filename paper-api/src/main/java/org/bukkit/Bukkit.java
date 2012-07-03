@@ -369,4 +369,8 @@ public final class Bukkit {
     public static boolean isPrimaryThread() {
         return server.isPrimaryThread();
     }
+
+    public static String getMotd() {
+        return server.getMotd();
+    }
 }
