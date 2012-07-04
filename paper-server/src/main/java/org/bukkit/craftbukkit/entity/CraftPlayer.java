@@ -850,4 +850,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         getHandle().abilities.canFly = value;
         getHandle().updateAbilities();
     }
+
+    @Override
+    public int getNoDamageTicks() {
+        if (getHandle().invulnerableTicks > 0) {
+            return Math.max(getHandle().invulnerableTicks, getHandle().noDamageTicks);
+        } else {
+            return getHandle().noDamageTicks;
+        }
+    }
 }
