@@ -146,4 +146,11 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, Permissible, Inv
      * @return Whether they are blocking.
      */
     public boolean isBlocking();
+
+    /**
+     * Get the total amount of experience required for the player to level
+     *
+     * @return Experience required to level up
+     */
+    public int getExpToLevel();
 }
