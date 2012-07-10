@@ -3,11 +3,8 @@ package org.bukkit.craftbukkit.entity;
 import java.util.Set;
 
 import net.minecraft.server.Container;
-import net.minecraft.server.ContainerBrewingStand;
-import net.minecraft.server.ContainerWorkbench;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.EntityPlayer;
-import net.minecraft.server.ICrafting;
 import net.minecraft.server.Packet100OpenWindow;
 import net.minecraft.server.Packet101CloseWindow;
 import net.minecraft.server.TileEntityBrewingStand;
@@ -18,7 +15,6 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
-import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
@@ -310,5 +306,9 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     public boolean setWindowProperty(InventoryView.Property prop, int value) {
         return false;
+    }
+
+    public int getExpToLevel() {
+        return getHandle().getExpToLevel();
     }
 }
