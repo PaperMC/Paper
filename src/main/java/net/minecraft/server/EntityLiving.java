@@ -860,7 +860,7 @@ public abstract class EntityLiving extends Entity {
                 } else {
                     this.world.makeSound(this, "damage.fallsmall", 1.0F, 1.0F);
                 }
-
+                this.getBukkitEntity().setLastDamageCause(event);
                 this.damageEntity(DamageSource.FALL, i);
             }
             // CraftBukkit end
