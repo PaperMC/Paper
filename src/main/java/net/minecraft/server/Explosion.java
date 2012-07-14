@@ -137,9 +137,7 @@ public class Explosion {
 
                 if (damagee == null) {
                     // nothing was hurt
-                } else if (this.source == null) { // Block explosion
-                    // TODO: get the x/y/z of the tnt block?
-                    // does this even get called ever? @see EntityTNTPrimed - not BlockTNT or whatever
+                } else if (this.source == null) { // Block explosion (without an entity source; bed etc.)
                     EntityDamageByBlockEvent event = new EntityDamageByBlockEvent(null, damagee, EntityDamageEvent.DamageCause.BLOCK_EXPLOSION, damageDone);
                     Bukkit.getPluginManager().callEvent(event);
 
@@ -162,6 +160,7 @@ public class Explosion {
                     Bukkit.getPluginManager().callEvent(event);
 
                     if (!event.isCancelled()) {
+                        entity.getBukkitEntity().setLastDamageCause(event);
                         entity.damageEntity(DamageSource.EXPLOSION, event.getDamage());
 
                         entity.motX += d0 * d10;

@@ -402,6 +402,7 @@ public class EntityEnderDragon extends EntityComplex {
                     Bukkit.getPluginManager().callEvent(damageEvent);
 
                     if (!damageEvent.isCancelled()) {
+                        entity.getBukkitEntity().setLastDamageCause(damageEvent);
                         entity.damageEntity(DamageSource.mobAttack(this), damageEvent.getDamage());
                     }
                 } else {

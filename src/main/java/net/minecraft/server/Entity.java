@@ -804,6 +804,7 @@ public abstract class Entity {
                 }
 
                 i = event.getDamage();
+                event.getEntity().setLastDamageCause(event);
             }
             // CraftBukkit end
             this.damageEntity(DamageSource.FIRE, i);
@@ -1449,6 +1450,7 @@ public abstract class Entity {
             return;
         }
 
+        thisBukkitEntity.setLastDamageCause(event);
         this.burn(event.getDamage());
         // CraftBukkit end
 

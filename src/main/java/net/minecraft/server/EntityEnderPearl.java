@@ -67,6 +67,7 @@ public class EntityEnderPearl extends EntityProjectile {
                 if (!damageEvent.isCancelled()) {
                     org.bukkit.entity.Player bPlayer = Bukkit.getPlayerExact(((EntityPlayer) this.shooter).name);
                     ((CraftPlayer) bPlayer).getHandle().invulnerableTicks = -1; // Remove spawning invulnerability.
+                    bPlayer.setLastDamageCause(damageEvent);
                     ((CraftPlayer) bPlayer).getHandle().damageEntity(DamageSource.FALL, damageEvent.getDamage()); // Damage the new player instead of the old
                 }
             }
