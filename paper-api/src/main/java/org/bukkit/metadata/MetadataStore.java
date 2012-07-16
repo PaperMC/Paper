@@ -11,6 +11,7 @@ public interface MetadataStore<T> {
      * @param subject The object receiving the metadata.
      * @param metadataKey A unique key to identify this metadata.
      * @param newMetadataValue The metadata value to apply.
+     * @throws IllegalArgumentException If value is null, or the owning plugin is null
      */
     public void setMetadata(T subject, String metadataKey, MetadataValue newMetadataValue);
 
@@ -39,6 +40,7 @@ public interface MetadataStore<T> {
      * @param subject the object to remove the metadata from.
      * @param metadataKey the unique metadata key identifying the metadata to remove.
      * @param owningPlugin the plugin attempting to remove a metadata item.
+     * @throws IllegalArgumentException If plugin is null
      */
     public void removeMetadata(T subject, String metadataKey, Plugin owningPlugin);
 
@@ -47,6 +49,7 @@ public interface MetadataStore<T> {
      * each invalidated metadata item to be recalculated the next time it is accessed.
      *
      * @param owningPlugin the plugin requesting the invalidation.
+     * @throws IllegalArgumentException If plugin is null
      */
     public void invalidateAll(Plugin owningPlugin);
 }

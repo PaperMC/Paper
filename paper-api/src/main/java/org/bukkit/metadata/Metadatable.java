@@ -13,6 +13,7 @@ public interface Metadatable {
      *
      * @param metadataKey A unique key to identify this metadata.
      * @param newMetadataValue The metadata value to apply.
+     * @throws IllegalArgumentException If value is null, or the owning plugin is null
      */
     public void setMetadata(String metadataKey, MetadataValue newMetadataValue);
 
@@ -37,6 +38,7 @@ public interface Metadatable {
      *
      * @param metadataKey the unique metadata key identifying the metadata to remove.
      * @param owningPlugin This plugin's metadata value will be removed. All other values will be left untouched.
+     * @throws IllegalArgumentException If plugin is null
      */
     public void removeMetadata(String metadataKey, Plugin owningPlugin);
 }

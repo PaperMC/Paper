@@ -1,5 +1,6 @@
 package org.bukkit.metadata;
 
+import org.apache.commons.lang.Validate;
 import org.bukkit.plugin.Plugin;
 
 import java.util.*;
@@ -22,8 +23,11 @@ public abstract class MetadataStoreBase<T> {
      * @param metadataKey      A unique key to identify this metadata.
      * @param newMetadataValue The metadata value to apply.
      * @see MetadataStore#setMetadata(Object, String, MetadataValue)
+     * @throws IllegalArgumentException If value is null, or the owning plugin is null
      */
     public synchronized void setMetadata(T subject, String metadataKey, MetadataValue newMetadataValue) {
+        Validate.notNull(newMetadataValue, "Value cannot be null");
+        Validate.notNull(newMetadataValue.getOwningPlugin(), "Plugin cannot be null");
         String key = cachedDisambiguate(subject, metadataKey);
         if (!metadataMap.containsKey(key)) {
             metadataMap.put(key, new ArrayList<MetadataValue>());
@@ -78,8 +82,10 @@ public abstract class MetadataStoreBase<T> {
      * @param metadataKey  the unique metadata key identifying the metadata to remove.
      * @param owningPlugin the plugin attempting to remove a metadata item.
      * @see MetadataStore#removeMetadata(Object, String, org.bukkit.plugin.Plugin)
+     * @throws IllegalArgumentException If plugin is null
      */
     public synchronized void removeMetadata(T subject, String metadataKey, Plugin owningPlugin) {
+        Validate.notNull(owningPlugin, "Plugin cannot be null");
         String key = cachedDisambiguate(subject, metadataKey);
         List<MetadataValue> metadataList = metadataMap.get(key);
         if (metadataList == null) return;
@@ -99,12 +105,10 @@ public abstract class MetadataStoreBase<T> {
      *
      * @param owningPlugin the plugin requesting the invalidation.
      * @see MetadataStore#invalidateAll(org.bukkit.plugin.Plugin)
+     * @throws IllegalArgumentException If plugin is null
      */
     public synchronized void invalidateAll(Plugin owningPlugin) {
-        if (owningPlugin == null) {
-            throw new IllegalArgumentException("owningPlugin cannot be null");
-        }
-
+        Validate.notNull(owningPlugin, "Plugin cannot be null");
         for (List<MetadataValue> values : metadataMap.values()) {
             for (MetadataValue value : values) {
                 if (value.getOwningPlugin().equals(owningPlugin)) {
