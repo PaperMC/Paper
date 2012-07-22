@@ -9,7 +9,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 // CraftBukkit start
-import java.io.IOException;
 import java.util.List;
 import java.util.Collections;
 // CraftBukkit end
@@ -26,7 +25,7 @@ public class NetworkListenThread {
     public MinecraftServer c;
     private HashMap i = new HashMap();
 
-    public NetworkListenThread(MinecraftServer minecraftserver, InetAddress inetaddress, int i) throws IOException { // CraftBukkit
+    public NetworkListenThread(MinecraftServer minecraftserver, InetAddress inetaddress, int i) throws java.io.IOException { // CraftBukkit
         this.c = minecraftserver;
         this.d = new ServerSocket(i, 0, inetaddress);
         this.d.setPerformancePreferences(0, 2, 1);

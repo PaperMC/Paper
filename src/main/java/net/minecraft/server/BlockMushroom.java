@@ -1,13 +1,13 @@
 package net.minecraft.server;
 
-import java.util.ArrayList;
 import java.util.Random;
+
 // CraftBukkit start
-import org.bukkit.BlockChangeDelegate;
+import java.util.ArrayList;
+
 import org.bukkit.Location;
 import org.bukkit.TreeType;
 import org.bukkit.block.BlockState;
-import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockSpreadEvent;
 import org.bukkit.event.world.StructureGrowEvent;
 // CraftBukkit end
@@ -63,7 +63,7 @@ public class BlockMushroom extends BlockFlower {
             if (world.isEmpty(i1, j1, k1) && this.f(world, i1, j1, k1)) {
                 // CraftBukkit start
                 org.bukkit.World bworld = world.getWorld();
-                org.bukkit.block.BlockState blockState = bworld.getBlockAt(i1, j1, k1).getState();
+                BlockState blockState = bworld.getBlockAt(i1, j1, k1).getState();
                 blockState.setTypeId(this.id);
 
                 BlockSpreadEvent event = new BlockSpreadEvent(blockState.getBlock(), bworld.getBlockAt(i, j, k), blockState);
@@ -96,7 +96,7 @@ public class BlockMushroom extends BlockFlower {
     }
 
     // CraftBukkit - added bonemeal, player and itemstack
-    public boolean grow(World world, int i, int j, int k, Random random, boolean bonemeal, Player player, ItemStack itemstack) {
+    public boolean grow(World world, int i, int j, int k, Random random, boolean bonemeal, org.bukkit.entity.Player player, ItemStack itemstack) {
         int l = world.getData(i, j, k);
 
         world.setRawTypeId(i, j, k, 0);
@@ -114,7 +114,7 @@ public class BlockMushroom extends BlockFlower {
             worldgenhugemushroom = new WorldGenHugeMushroom(1);
         }
         if (worldgenhugemushroom != null && event != null) {
-            grown = worldgenhugemushroom.grow((BlockChangeDelegate)world, random, i, j, k, event, itemstack, world.getWorld());
+            grown = worldgenhugemushroom.grow((org.bukkit.BlockChangeDelegate)world, random, i, j, k, event, itemstack, world.getWorld());
             if (event.isFromBonemeal() && itemstack != null) {
                 --itemstack.count;
             }

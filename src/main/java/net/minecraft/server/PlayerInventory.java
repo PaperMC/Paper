@@ -1,12 +1,10 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import java.util.ArrayList;
 import java.util.List;
 
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.entity.HumanEntity;
-import org.bukkit.inventory.InventoryHolder;
 // CraftBukkit end
 
 public class PlayerInventory implements IInventory {
@@ -19,7 +17,7 @@ public class PlayerInventory implements IInventory {
     public boolean e = false;
 
     // CraftBukkit start
-    public List<HumanEntity> transaction = new ArrayList<HumanEntity>();
+    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
     private int maxStack = MAX_STACK;
 
     public ItemStack[] getContents() {
@@ -42,7 +40,7 @@ public class PlayerInventory implements IInventory {
         return transaction;
     }
 
-    public InventoryHolder getOwner() {
+    public org.bukkit.inventory.InventoryHolder getOwner() {
         return this.player.getBukkitEntity();
     }
 

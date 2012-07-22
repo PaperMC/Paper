@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import org.bukkit.event.player.PlayerShearEntityEvent; // CraftBukkit
+
 public class EntityMushroomCow extends EntityCow {
 
     public EntityMushroomCow(World world) {
@@ -22,10 +24,10 @@ public class EntityMushroomCow extends EntityCow {
                 return true;
             }
         }
-        
+
         if (itemstack != null && itemstack.id == Item.SHEARS.id && this.getAge() >= 0) {
             // CraftBukkit start
-            org.bukkit.event.player.PlayerShearEntityEvent event = new org.bukkit.event.player.PlayerShearEntityEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), this.getBukkitEntity());
+            PlayerShearEntityEvent event = new PlayerShearEntityEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), this.getBukkitEntity());
             this.world.getServer().getPluginManager().callEvent(event);
 
             if (event.isCancelled()) {

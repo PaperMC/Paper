@@ -1,6 +1,5 @@
 package net.minecraft.server;
 
-import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
 
 public class EntitySquid extends EntityWaterAnimal {
 
@@ -67,7 +66,7 @@ public class EntitySquid extends EntityWaterAnimal {
             loot.add(new org.bukkit.inventory.ItemStack(org.bukkit.Material.INK_SACK, count));
         }
 
-        CraftEventFactory.callEntityDeathEvent(this, loot);
+        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, loot);
         // CraftBukkit end
     }
 

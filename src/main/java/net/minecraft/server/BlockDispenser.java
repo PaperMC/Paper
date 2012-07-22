@@ -5,7 +5,6 @@ import java.util.Random;
 // CraftBukkit start
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.block.BlockDispenseEvent;
-import org.bukkit.util.Vector;
 // CraftBukkit end
 
 public class BlockDispenser extends BlockContainer {
@@ -125,7 +124,7 @@ public class BlockDispenser extends BlockContainer {
                 org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
                 org.bukkit.inventory.ItemStack bukkitItem = new CraftItemStack(itemstack).clone();
 
-                BlockDispenseEvent event = new BlockDispenseEvent(block, bukkitItem, new Vector(motX, motY, motZ));
+                BlockDispenseEvent event = new BlockDispenseEvent(block, bukkitItem, new org.bukkit.util.Vector(motX, motY, motZ));
                 world.getServer().getPluginManager().callEvent(event);
 
                 if (event.isCancelled()) {

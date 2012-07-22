@@ -2,7 +2,6 @@ package net.minecraft.server;
 
 // CraftBukkit start
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.Event;
 import org.bukkit.event.block.Action;
@@ -138,7 +137,7 @@ public class ItemInWorldManager {
                 }
                 return;
             }
-            BlockDamageEvent blockEvent = CraftEventFactory.callBlockDamageEvent(this.player, i, j, k, this.player.inventory.getItemInHand(), toolDamage >= 1.0f);
+            org.bukkit.event.block.BlockDamageEvent blockEvent = CraftEventFactory.callBlockDamageEvent(this.player, i, j, k, this.player.inventory.getItemInHand(), toolDamage >= 1.0f);
 
             if (blockEvent.isCancelled()) {
                 // Let the client know the block still exists
@@ -277,7 +276,7 @@ public class ItemInWorldManager {
         }
     }
 
-    // TODO: Review this code, it changed in 1.8 but I'm not sure if we need to update or not
+    // CraftBukkit - TODO: Review this code, it changed in 1.8 but I'm not sure if we need to update or not
     public boolean interact(EntityHuman entityhuman, World world, ItemStack itemstack, int i, int j, int k, int l) {
         int i1 = world.getTypeId(i, j, k);
 

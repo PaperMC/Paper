@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 // CraftBukkit start
-import org.bukkit.block.BlockState;
 import org.bukkit.inventory.InventoryHolder;
 // CraftBukkit end
 
@@ -128,7 +127,7 @@ public class TileEntity {
 
     // CraftBukkit start
     public InventoryHolder getOwner() {
-        BlockState state = world.getWorld().getBlockAt(x, y, z).getState();
+        org.bukkit.block.BlockState state = world.getWorld().getBlockAt(x, y, z).getState();
         if(state instanceof InventoryHolder) return (InventoryHolder) state;
         return null;
     }

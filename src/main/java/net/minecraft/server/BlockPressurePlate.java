@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Random;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.event.entity.EntityInteractEvent;
 // CraftBukkit end
@@ -110,7 +109,7 @@ public class BlockPressurePlate extends Block {
                         org.bukkit.event.Cancellable cancellable;
 
                         if (object instanceof EntityHuman) {
-                            cancellable = CraftEventFactory.callPlayerInteractEvent((EntityHuman) object, org.bukkit.event.block.Action.PHYSICAL, i, j, k, -1, null);
+                            cancellable = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent((EntityHuman) object, org.bukkit.event.block.Action.PHYSICAL, i, j, k, -1, null);
                         } else if (object instanceof Entity) {
                             cancellable = new EntityInteractEvent(((Entity) object).getBukkitEntity(), bworld.getBlockAt(i, j, k));
                             manager.callEvent((EntityInteractEvent) cancellable);

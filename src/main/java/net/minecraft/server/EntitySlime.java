@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import org.bukkit.event.entity.SlimeSplitEvent; // CraftBukkit
+
 public class EntitySlime extends EntityLiving implements IMonster {
 
     public float a;
@@ -139,7 +141,7 @@ public class EntitySlime extends EntityLiving implements IMonster {
             int j = 2 + this.random.nextInt(3);
 
             // CraftBukkit start
-            org.bukkit.event.entity.SlimeSplitEvent event = new org.bukkit.event.entity.SlimeSplitEvent((org.bukkit.entity.Slime) this.getBukkitEntity(), j);
+            SlimeSplitEvent event = new SlimeSplitEvent((org.bukkit.entity.Slime) this.getBukkitEntity(), j);
             this.world.getServer().getPluginManager().callEvent(event);
 
             if (!event.isCancelled() && event.getCount() > 0) {

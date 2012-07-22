@@ -2,6 +2,8 @@ package net.minecraft.server;
 
 import java.util.Random;
 
+import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
+
 public class BlockStem extends BlockFlower {
 
     private Block blockFruit;
@@ -29,7 +31,7 @@ public class BlockStem extends BlockFlower {
 
                 if (l < 7) {
                     ++l;
-                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this.id, l); // CraftBukkit
+                    CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this.id, l); // CraftBukkit
                 } else {
                     if (world.getTypeId(i - 1, j, k) == this.blockFruit.id) {
                         return;
@@ -70,7 +72,7 @@ public class BlockStem extends BlockFlower {
                     int l1 = world.getTypeId(j1, j - 1, k1);
 
                     if (world.getTypeId(j1, j, k1) == 0 && (l1 == Block.SOIL.id || l1 == Block.DIRT.id || l1 == Block.GRASS.id)) {
-                        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, j1, j, k1, this.blockFruit.id, 0); // CraftBukkit
+                        CraftEventFactory.handleBlockGrowEvent(world, j1, j, k1, this.blockFruit.id, 0); // CraftBukkit
                     }
                 }
             }

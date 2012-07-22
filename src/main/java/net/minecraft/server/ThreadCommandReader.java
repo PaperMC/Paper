@@ -4,7 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-import static org.bukkit.craftbukkit.Main.*;
+import static org.bukkit.craftbukkit.Main.*; // CraftBukkit
 
 public class ThreadCommandReader extends Thread {
 

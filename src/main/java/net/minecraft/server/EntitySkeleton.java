@@ -1,9 +1,6 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
-// CraftBukkit end
+import org.bukkit.event.entity.EntityCombustEvent; // CraftBukkit
 
 public class EntitySkeleton extends EntityMonster {
 
@@ -54,7 +51,7 @@ public class EntitySkeleton extends EntityMonster {
 
             if (f > 0.5F && this.world.isChunkLoaded(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ)) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
                 // CraftBukkit start
-                org.bukkit.event.entity.EntityCombustEvent event = new org.bukkit.event.entity.EntityCombustEvent(this.getBukkitEntity(), 8);
+                EntityCombustEvent event = new EntityCombustEvent(this.getBukkitEntity(), 8);
                 this.world.getServer().getPluginManager().callEvent(event);
 
                 if (!event.isCancelled()) {
@@ -105,12 +102,12 @@ public class EntitySkeleton extends EntityMonster {
             if (k < 5) {
                 ItemStack itemstack = this.b(k <= 0 ? 1 : 0);
                 if (itemstack != null) {
-                    loot.add(new CraftItemStack(itemstack));
+                    loot.add(new org.bukkit.craftbukkit.inventory.CraftItemStack(itemstack));
                 }
             }
         }
 
-        CraftEventFactory.callEntityDeathEvent(this, loot);
+        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, loot);
         // CraftBukkit end
     }
 

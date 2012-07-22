@@ -2,10 +2,8 @@ package net.minecraft.server;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.block.CraftBlockState;
-import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockIgniteEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
 // CraftBukkit end
 
 public class ItemFlintAndSteel extends Item {
@@ -68,7 +66,7 @@ public class ItemFlintAndSteel extends Item {
                 world.setTypeId(i, j, k, Block.FIRE.id);
 
                 // CraftBukkit start
-                BlockPlaceEvent placeEvent = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ);
+                org.bukkit.event.block.BlockPlaceEvent placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ);
 
                 if (placeEvent.isCancelled() || !placeEvent.canBuild()) {
                     placeEvent.getBlockPlaced().setTypeIdAndData(0, (byte) 0, false);

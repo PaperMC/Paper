@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Set;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.inventory.InventoryView;
 // CraftBukkit end
@@ -23,7 +22,7 @@ public abstract class Container {
     // CraftBukkit start
     public boolean checkReachable = true;
     public abstract InventoryView getBukkitView();
-    public void transferTo(Container other, CraftHumanEntity player) {
+    public void transferTo(Container other, org.bukkit.craftbukkit.entity.CraftHumanEntity player) {
         InventoryView source = this.getBukkitView(), destination = other.getBukkitView();
         ((CraftInventory) source.getTopInventory()).getInventory().onClose(player);
         ((CraftInventory) source.getBottomInventory()).getInventory().onClose(player);

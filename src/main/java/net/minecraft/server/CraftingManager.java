@@ -4,10 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-// CraftBukkit start
-import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.inventory.InventoryView;
-// CraftBukkit end
+
+import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
 
 public class CraftingManager {
 
@@ -15,7 +13,7 @@ public class CraftingManager {
     public List recipies = new ArrayList(); // CraftBukkit - private -> public
     // CraftBukkit start
     public CraftingRecipe lastRecipe;
-    public InventoryView lastCraftView;
+    public org.bukkit.inventory.InventoryView lastCraftView;
     // CraftBukkit end
 
     public static final CraftingManager getInstance() {

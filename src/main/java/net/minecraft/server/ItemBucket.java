@@ -1,7 +1,6 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import org.bukkit.Location;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
@@ -147,7 +146,7 @@ public class ItemBucket extends Item {
                 }
             } else if (this.a == 0 && movingobjectposition.entity instanceof EntityCow) {
                 // CraftBukkit start - This codepath seems to be *NEVER* called
-                Location loc = movingobjectposition.entity.getBukkitEntity().getLocation();
+                org.bukkit.Location loc = movingobjectposition.entity.getBukkitEntity().getLocation();
                 PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), -1, itemstack, Item.MILK_BUCKET);
 
                 if (event.isCancelled()) {

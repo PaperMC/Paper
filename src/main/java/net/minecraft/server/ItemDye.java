@@ -1,7 +1,9 @@
 package net.minecraft.server;
 
-import org.bukkit.entity.Player; // CraftBukkit
-import org.bukkit.entity.Sheep;
+// CraftBukkit start
+import org.bukkit.entity.Player;
+import org.bukkit.event.entity.SheepDyeWoolEvent;
+// CraftBukkit end
 
 public class ItemDye extends Item {
 
@@ -116,7 +118,7 @@ public class ItemDye extends Item {
             if (!entitysheep.isSheared() && entitysheep.getColor() != i) {
                 // CraftBukkit start
                 byte bColor = new Integer(i).byteValue();
-                org.bukkit.event.entity.SheepDyeWoolEvent event = new org.bukkit.event.entity.SheepDyeWoolEvent((Sheep) entitysheep.getBukkitEntity(), org.bukkit.DyeColor.getByData(bColor));
+                SheepDyeWoolEvent event = new SheepDyeWoolEvent((org.bukkit.entity.Sheep) entitysheep.getBukkitEntity(), org.bukkit.DyeColor.getByData(bColor));
                 entitysheep.world.getServer().getPluginManager().callEvent(event);
 
                 if (event.isCancelled()) {

@@ -23,8 +23,7 @@ public class Packet20NamedEntitySpawn extends Packet {
         // CraftBukkit start - limit name length to 16 characters
         if (entityhuman.name.length() > 16) {
             this.b = entityhuman.name.substring(0, 16);
-        }
-        else {
+        } else {
             this.b = entityhuman.name;
         }
         // CraftBukkit end

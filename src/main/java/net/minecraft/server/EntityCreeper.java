@@ -1,8 +1,6 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import java.util.List;
-
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.entity.ExplosionPrimeEvent;
 // CraftBukkit end
@@ -110,7 +108,7 @@ public class EntityCreeper extends EntityMonster {
     protected void dropDeathLoot(boolean flag, int i) {
         int j = this.getLootId();
 
-        List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
+        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
 
         if (j > 0) {
             int k = this.random.nextInt(3);
@@ -158,7 +156,7 @@ public class EntityCreeper extends EntityMonster {
         super.a(entityweatherlighting);
 
         // CraftBukkit start
-        if (org.bukkit.craftbukkit.event.CraftEventFactory.callCreeperPowerEvent(this, entityweatherlighting, org.bukkit.event.entity.CreeperPowerEvent.PowerCause.LIGHTNING).isCancelled()) {
+        if (CraftEventFactory.callCreeperPowerEvent(this, entityweatherlighting, org.bukkit.event.entity.CreeperPowerEvent.PowerCause.LIGHTNING).isCancelled()) {
             return;
         }
 

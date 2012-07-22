@@ -2,8 +2,6 @@ package net.minecraft.server;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.inventory.CraftInventory;
-import org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest;
-import org.bukkit.craftbukkit.inventory.CraftInventoryPlayer;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 // CraftBukkit end
 
@@ -21,9 +19,9 @@ public class ContainerChest extends Container {
         }
         CraftInventory inventory;
         if (this.container instanceof PlayerInventory) {
-            inventory = new CraftInventoryPlayer((PlayerInventory) this.container);
+            inventory = new org.bukkit.craftbukkit.inventory.CraftInventoryPlayer((PlayerInventory) this.container);
         } else if (this.container instanceof InventoryLargeChest) {
-            inventory = new CraftInventoryDoubleChest((InventoryLargeChest) this.container);
+            inventory = new org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest((InventoryLargeChest) this.container);
         } else {
             inventory = new CraftInventory(this.container);
         }

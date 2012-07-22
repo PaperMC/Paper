@@ -1,13 +1,6 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import java.util.List;
-
-import org.bukkit.Location;
-import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.event.player.PlayerBucketFillEvent;
-// CraftBukkit end
+import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
 
 public class EntityCow extends EntityAnimal {
 
@@ -64,7 +57,7 @@ public class EntityCow extends EntityAnimal {
 
     protected void dropDeathLoot(boolean flag, int i) {
         // CraftBukkit start - whole method
-        List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
+        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
         int j = this.random.nextInt(3) + this.random.nextInt(1 + i);
 
         if (j > 0) {
@@ -86,14 +79,14 @@ public class EntityCow extends EntityAnimal {
 
         if (itemstack != null && itemstack.id == Item.BUCKET.id) {
             // CraftBukkit start - got milk?
-            Location loc = this.getBukkitEntity().getLocation();
-            PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), -1, itemstack, Item.MILK_BUCKET);
+            org.bukkit.Location loc = this.getBukkitEntity().getLocation();
+            org.bukkit.event.player.PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), -1, itemstack, Item.MILK_BUCKET);
 
             if (event.isCancelled()) {
                 return false;
             }
 
-            entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, CraftItemStack.createNMSItemStack(event.getItemStack()));
+            entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, org.bukkit.craftbukkit.inventory.CraftItemStack.createNMSItemStack(event.getItemStack()));
             // CraftBukkit end
 
             return true;

@@ -1,12 +1,11 @@
 package net.minecraft.server;
 
-import java.util.Iterator;
+// import java.util.Iterator; // CraftBukkit
 import java.util.List;
 import java.util.Random;
 
 // CraftBukkit start
 import java.util.Map;
-import java.util.HashMap;
 
 import org.bukkit.craftbukkit.inventory.CraftInventoryEnchanting;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
@@ -154,7 +153,7 @@ public class ContainerEnchantTable extends Container {
 
                 if (list != null) {
                     // CraftBukkit start
-                    Map<org.bukkit.enchantments.Enchantment, Integer> enchants = new HashMap<org.bukkit.enchantments.Enchantment, Integer>();
+                    Map<org.bukkit.enchantments.Enchantment, Integer> enchants = new java.util.HashMap<org.bukkit.enchantments.Enchantment, Integer>();
                     for (Object obj : list) {
                         EnchantmentInstance instance = (EnchantmentInstance) obj;
                         enchants.put(org.bukkit.enchantments.Enchantment.getById(instance.enchantment.id), instance.level);

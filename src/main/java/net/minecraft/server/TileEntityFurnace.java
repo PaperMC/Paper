@@ -1,7 +1,6 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import java.util.ArrayList;
 import java.util.List;
 
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -21,7 +20,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
     // CraftBukkit start
     private int lastTick = (int) (System.currentTimeMillis() / 50);
     private int maxStack = MAX_STACK;
-    public List<HumanEntity> transaction = new ArrayList<HumanEntity>();
+    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
 
     public ItemStack[] getContents() {
         return this.items;

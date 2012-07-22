@@ -1,7 +1,6 @@
 package net.minecraft.server;
 
 import java.util.Random;
-import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
 
 public class BlockIce extends BlockHalfTransparant {
 
@@ -27,7 +26,7 @@ public class BlockIce extends BlockHalfTransparant {
     public void a(World world, int i, int j, int k, Random random) {
         if (world.a(EnumSkyBlock.BLOCK, i, j, k) > 11 - Block.lightBlock[this.id]) {
             // CraftBukkit start
-            if (CraftEventFactory.callBlockFadeEvent(world.getWorld().getBlockAt(i, j, k), Block.STATIONARY_WATER.id).isCancelled()) {
+            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(world.getWorld().getBlockAt(i, j, k), Block.STATIONARY_WATER.id).isCancelled()) {
                 return;
             }
             // CraftBukkit end

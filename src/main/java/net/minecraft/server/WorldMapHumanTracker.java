@@ -1,11 +1,5 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import org.bukkit.map.MapCursor;
-import org.bukkit.craftbukkit.entity.CraftPlayer;
-import org.bukkit.craftbukkit.map.RenderData;
-// CraftBukkit end
-
 public class WorldMapHumanTracker {
 
     public final EntityHuman trackee;
@@ -35,7 +29,7 @@ public class WorldMapHumanTracker {
         int i;
         int j;
 
-        RenderData render = this.worldMap.mapView.render((CraftPlayer) trackee.getBukkitEntity()); // CraftBukkit
+        org.bukkit.craftbukkit.map.RenderData render = this.worldMap.mapView.render((org.bukkit.craftbukkit.entity.CraftPlayer) trackee.getBukkitEntity()); // CraftBukkit
 
         if (--this.f < 0) {
             this.f = 4;
@@ -45,7 +39,7 @@ public class WorldMapHumanTracker {
 
             // CraftBukkit start
             for (i = 0; i < render.cursors.size(); ++i) {
-                MapCursor cursor = render.cursors.get(i);
+                org.bukkit.map.MapCursor cursor = render.cursors.get(i);
                 if (!cursor.isVisible()) continue;
 
                 byte value = (byte) (((cursor.getRawType() == 0 || cursor.getDirection() < 8 ? cursor.getDirection() : cursor.getDirection() - 1) & 15) * 16);

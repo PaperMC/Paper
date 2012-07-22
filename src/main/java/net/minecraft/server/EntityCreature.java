@@ -2,7 +2,6 @@ package net.minecraft.server;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.craftbukkit.TrigMath;
 import org.bukkit.event.entity.EntityTargetEvent;
 // CraftBukkit end
 
@@ -106,7 +105,7 @@ public abstract class EntityCreature extends EntityLiving {
                 double d2 = vec3d.c - this.locZ;
                 double d3 = vec3d.b - (double) i;
                 // CraftBukkit - Math -> TrigMath
-                float f2 = (float) (TrigMath.atan2(d2, d1) * 180.0D / 3.1415927410125732D) - 90.0F;
+                float f2 = (float) (org.bukkit.craftbukkit.TrigMath.atan2(d2, d1) * 180.0D / 3.1415927410125732D) - 90.0F;
                 float f3 = f2 - this.yaw;
 
                 for (this.aX = this.bb; f3 < -180.0F; f3 += 360.0F) {

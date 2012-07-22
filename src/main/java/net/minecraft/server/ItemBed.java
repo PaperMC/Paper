@@ -1,10 +1,6 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.block.CraftBlockState;
-import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.event.block.BlockPlaceEvent;
-// CraftBukkit end
+import org.bukkit.craftbukkit.block.CraftBlockState; // CraftBukkit
 
 public class ItemBed extends Item {
 
@@ -47,7 +43,7 @@ public class ItemBed extends Item {
                     world.setTypeIdAndData(i, j, k, blockbed.id, i1);
 
                     // CraftBukkit start - bed
-                    BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ);
+                    org.bukkit.event.block.BlockPlaceEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ);
 
                     if (event.isCancelled() || !event.canBuild()) {
                         event.getBlockPlaced().setTypeIdAndData(blockState.getTypeId(), blockState.getRawData(), false);

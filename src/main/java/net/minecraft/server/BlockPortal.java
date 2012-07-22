@@ -78,7 +78,7 @@ public class BlockPortal extends BlockHalfTransparant {
                         if (flag) {
                             if (j1 != Block.OBSIDIAN.id) {
                                 return false;
-                            } else {
+                            } else { // CraftBukkit
                                 blocks.add(bworld.getBlockAt(i + b0 * l, j + i1, k + b1 * l)); // CraftBukkit
                             }
                         } else if (j1 != 0 && j1 != Block.FIRE.id) {

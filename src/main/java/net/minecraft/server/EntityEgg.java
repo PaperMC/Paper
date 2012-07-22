@@ -1,9 +1,9 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import org.bukkit.Location;
 import org.bukkit.entity.Ageable;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.player.PlayerEggThrowEvent;
 // CraftBukkit end
@@ -37,7 +37,7 @@ public class EntityEgg extends EntityProjectile {
         EntityType hatchingType = EntityType.CHICKEN;
 
         if (this.shooter instanceof EntityPlayer) {
-            org.bukkit.entity.Player player = (this.shooter == null) ? null : (org.bukkit.entity.Player) this.shooter.getBukkitEntity();
+            Player player = (this.shooter == null) ? null : (Player) this.shooter.getBukkitEntity();
 
             PlayerEggThrowEvent event = new PlayerEggThrowEvent(player, (org.bukkit.entity.Egg) this.getBukkitEntity(), hatching, (byte) numHatching, hatchingType);
             this.world.getServer().getPluginManager().callEvent(event);
@@ -49,7 +49,7 @@ public class EntityEgg extends EntityProjectile {
 
         if (hatching) {
             for (int k = 0; k < numHatching; k++) {
-                org.bukkit.entity.Entity entity = world.getWorld().spawn(new Location(world.getWorld(), this.locX, this.locY, this.locZ, this.yaw, 0.0F), hatchingType.getEntityClass(), SpawnReason.EGG);
+                org.bukkit.entity.Entity entity = world.getWorld().spawn(new org.bukkit.Location(world.getWorld(), this.locX, this.locY, this.locZ, this.yaw, 0.0F), hatchingType.getEntityClass(), SpawnReason.EGG);
 
                 if (entity instanceof Ageable) {
                     ((Ageable) entity).setBaby();

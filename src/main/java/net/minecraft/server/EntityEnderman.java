@@ -1,8 +1,6 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import java.util.List;
-
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.entity.EntityTeleportEvent;
@@ -288,7 +286,7 @@ public class EntityEnderman extends EntityMonster {
 
         if (j > 0) {
             // CraftBukkit start - whole method
-            List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
+            java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
             int count = this.random.nextInt(2 + i);
 
             if ((j > 0) && (count > 0)) {

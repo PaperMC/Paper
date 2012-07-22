@@ -2,11 +2,8 @@ package net.minecraft.server;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason;
-import org.bukkit.potion.PotionEffectType;
 // CraftBukkit end
 
 public class MobEffectList {
@@ -64,7 +61,7 @@ public class MobEffectList {
 
         this.N = j;
 
-        PotionEffectType.registerPotionEffectType(new CraftPotionEffectType(this)); // CraftBukkit
+        org.bukkit.potion.PotionEffectType.registerPotionEffectType(new org.bukkit.craftbukkit.potion.CraftPotionEffectType(this)); // CraftBukkit
     }
 
     protected MobEffectList a(int i, int j) {
@@ -84,7 +81,7 @@ public class MobEffectList {
         } else if (this.id == POISON.id) {
             if (entityliving.getHealth() > 1) {
                 // CraftBukkit start
-                EntityDamageEvent event = CraftEventFactory.callEntityDamageEvent(null, entityliving, DamageCause.POISON, 1);
+                EntityDamageEvent event = CraftEventFactory.callEntityDamageEvent(null, entityliving, EntityDamageEvent.DamageCause.POISON, 1);
 
                 if (!event.isCancelled() && event.getDamage() > 0) {
                     entityliving.damageEntity(DamageSource.MAGIC, event.getDamage());
@@ -96,7 +93,7 @@ public class MobEffectList {
         } else if ((this.id != HEAL.id || entityliving.aN()) && (this.id != HARM.id || !entityliving.aN())) {
             if (this.id == HARM.id && !entityliving.aN() || this.id == HEAL.id && entityliving.aN()) {
                 // CraftBukkit start
-                EntityDamageEvent event = CraftEventFactory.callEntityDamageEvent(null, entityliving, DamageCause.MAGIC, 6 << i);
+                EntityDamageEvent event = CraftEventFactory.callEntityDamageEvent(null, entityliving, EntityDamageEvent.DamageCause.MAGIC, 6 << i);
 
                 if (!event.isCancelled() && event.getDamage() > 0) {
                     entityliving.damageEntity(DamageSource.MAGIC, event.getDamage());

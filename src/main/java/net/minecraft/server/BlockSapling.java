@@ -1,14 +1,11 @@
 package net.minecraft.server;
 
 import java.util.Random;
+
 // CraftBukkit start
-import org.bukkit.BlockChangeDelegate;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.TreeType;
-import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.util.StructureGrowDelegate;
-import org.bukkit.entity.Player;
 import org.bukkit.event.world.StructureGrowEvent;
 // CraftBukkit end
 
@@ -42,7 +39,7 @@ public class BlockSapling extends BlockFlower {
     }
 
     // CraftBukkit - added bonemeal, player and itemstack
-    public void grow(World world, int i, int j, int k, Random random, boolean bonemeal, Player player, ItemStack itemstack) {
+    public void grow(World world, int i, int j, int k, Random random, boolean bonemeal, org.bukkit.entity.Player player, ItemStack itemstack) {
         int l = world.getData(i, j, k) & 3;
         int i1 = 0;
         int j1 = 0;
@@ -102,11 +99,11 @@ public class BlockSapling extends BlockFlower {
         if (grownTree) {
             Location location = new Location(world.getWorld(), i, j, k);
             StructureGrowEvent event = new StructureGrowEvent(location, treeType, bonemeal, player, delegate.getBlocks());
-            Bukkit.getPluginManager().callEvent(event);
+            org.bukkit.Bukkit.getPluginManager().callEvent(event);
             if (event.isCancelled()) {
                 grownTree = false;
             } else {
-                for (BlockState state : event.getBlocks()) {
+                for (org.bukkit.block.BlockState state : event.getBlocks()) {
                     state.update(true);
                 }
                 if (event.isFromBonemeal() && itemstack != null) {
@@ -140,7 +137,7 @@ public class BlockSapling extends BlockFlower {
 
         public boolean a(World world, Random random, int i, int j, int k);
 
-        public boolean generate(BlockChangeDelegate world, Random random, int i, int j, int k);
+        public boolean generate(org.bukkit.BlockChangeDelegate world, Random random, int i, int j, int k);
     }
     // CraftBukkit end
 }

@@ -1,10 +1,5 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import java.util.List;
-import org.bukkit.craftbukkit.event.CraftEventFactory;
-// CraftBukkit end
-
 public class EntityChicken extends EntityAnimal {
 
     public boolean a = false;
@@ -98,7 +93,7 @@ public class EntityChicken extends EntityAnimal {
 
     protected void dropDeathLoot(boolean flag, int i) {
         // CraftBukkit start - whole method
-        List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
+        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
         int j = this.random.nextInt(3) + this.random.nextInt(1 + i);
 
         if (j > 0) {
@@ -111,7 +106,7 @@ public class EntityChicken extends EntityAnimal {
             loot.add(new org.bukkit.inventory.ItemStack(Item.RAW_CHICKEN.id, 1));
         }
 
-        CraftEventFactory.callEntityDeathEvent(this, loot);
+        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, loot);
         // CraftBukkit end
     }
 

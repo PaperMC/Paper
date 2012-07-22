@@ -4,7 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.zip.DataFormatException;
-import java.util.zip.Deflater;
+// import java.util.zip.Deflater; // CraftBukkit
 import java.util.zip.Inflater;
 
 public class Packet51MapChunk extends Packet {
@@ -23,7 +23,6 @@ public class Packet51MapChunk extends Packet {
         this.lowPriority = true;
     }
 
-    // CraftBukkit start
     public Packet51MapChunk(Chunk chunk, boolean flag, int i) {
         this.lowPriority = true;
         this.a = chunk.x;

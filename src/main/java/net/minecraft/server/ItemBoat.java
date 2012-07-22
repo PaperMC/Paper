@@ -2,12 +2,6 @@ package net.minecraft.server;
 
 import java.util.List;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.player.PlayerInteractEvent;
-// CraftBukkit end
-
 public class ItemBoat extends Item {
 
     public ItemBoat(int i) {
@@ -64,7 +58,7 @@ public class ItemBoat extends Item {
 
                     if (!world.isStatic) {
                         // CraftBukkit start - Boat placement
-                        PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(entityhuman, Action.RIGHT_CLICK_BLOCK, j, k, l, movingobjectposition.face, itemstack);
+                        org.bukkit.event.player.PlayerInteractEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent(entityhuman, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, j, k, l, movingobjectposition.face, itemstack);
 
                         if (event.isCancelled()) {
                             return itemstack;

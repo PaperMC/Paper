@@ -4,7 +4,6 @@ import java.util.Random;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.event.block.BlockRedstoneEvent;
 // CraftBukkit end
 
 public class BlockRedstoneLamp extends Block {

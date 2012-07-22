@@ -5,7 +5,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
-import org.bukkit.Location;
 // CraftBukkit end
 
 public class EntityEnderPearl extends EntityProjectile {
@@ -40,7 +39,7 @@ public class EntityEnderPearl extends EntityProjectile {
                 if (this.shooter instanceof EntityPlayer) {
                     CraftPlayer player = (CraftPlayer) this.shooter.bukkitEntity;
                     teleport = player.isOnline() && player.getWorld() == getBukkitEntity().getWorld();
-                    Location location = getBukkitEntity().getLocation();
+                    org.bukkit.Location location = getBukkitEntity().getLocation();
                     location.setPitch(player.getLocation().getPitch());
                     location.setYaw(player.getLocation().getYaw());
 

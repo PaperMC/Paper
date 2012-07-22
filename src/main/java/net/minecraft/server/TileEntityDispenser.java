@@ -3,7 +3,6 @@ package net.minecraft.server;
 import java.util.Random;
 
 // CraftBukkit start
-import java.util.ArrayList;
 import java.util.List;
 
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
@@ -16,7 +15,7 @@ public class TileEntityDispenser extends TileEntity implements IInventory {
     private Random b = new Random();
 
     // CraftBukkit start
-    public List<HumanEntity> transaction = new ArrayList<HumanEntity>();
+    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
     private int maxStack = MAX_STACK;
 
     public ItemStack[] getContents() {

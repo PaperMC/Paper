@@ -3,10 +3,7 @@ package net.minecraft.server;
 import java.util.Random;
 // CraftBukkit start
 import org.bukkit.BlockChangeDelegate;
-import org.bukkit.Bukkit;
 import org.bukkit.block.BlockState;
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.material.MaterialData;
 // CraftBukkit end
 
@@ -32,7 +29,7 @@ public class WorldGenHugeMushroom extends WorldGenerator implements BlockSapling
         return grow(world, random, i, j, k, null, null, null);
     }
 
-    public boolean grow(BlockChangeDelegate world, Random random, int i, int j, int k, StructureGrowEvent event, ItemStack itemstack, CraftWorld bukkitWorld) {
+    public boolean grow(BlockChangeDelegate world, Random random, int i, int j, int k, org.bukkit.event.world.StructureGrowEvent event, ItemStack itemstack, org.bukkit.craftbukkit.CraftWorld bukkitWorld) {
         // CraftBukkit end
         int l = random.nextInt(2);
 
@@ -200,7 +197,7 @@ public class WorldGenHugeMushroom extends WorldGenerator implements BlockSapling
                     }
                     // CraftBukkit start
                     if (event != null) {
-                        Bukkit.getPluginManager().callEvent(event);
+                        org.bukkit.Bukkit.getPluginManager().callEvent(event);
                         if (!event.isCancelled()) {
                             for (BlockState state : event.getBlocks()) {
                                 state.update(true);

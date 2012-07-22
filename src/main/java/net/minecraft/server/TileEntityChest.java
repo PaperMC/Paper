@@ -1,7 +1,6 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import java.util.ArrayList;
 import java.util.List;
 
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
@@ -22,7 +21,7 @@ public class TileEntityChest extends TileEntity implements IInventory {
     private int ticks;
 
     // CraftBukkit start
-    public List<HumanEntity> transaction = new ArrayList<HumanEntity>();
+    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
     private int maxStack = MAX_STACK;
 
     public ItemStack[] getContents() {

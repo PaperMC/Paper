@@ -7,6 +7,8 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import joptsimple.OptionSet; // CraftBukkit
+
 public class PropertyManager {
 
     public static Logger a = Logger.getLogger("Minecraft");
@@ -29,9 +31,9 @@ public class PropertyManager {
     }
 
     // CraftBukkit start
-    private joptsimple.OptionSet options = null;
+    private OptionSet options = null;
 
-    public PropertyManager(final joptsimple.OptionSet options) {
+    public PropertyManager(final OptionSet options) {
         this((File) options.valueOf("config"));
 
         this.options = options;

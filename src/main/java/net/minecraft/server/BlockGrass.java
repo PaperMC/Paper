@@ -3,6 +3,7 @@ package net.minecraft.server;
 import java.util.Random;
 
 // CraftBukkit start
+import org.bukkit.block.BlockState;
 import org.bukkit.event.block.BlockSpreadEvent;
 import org.bukkit.event.block.BlockFadeEvent;
 // CraftBukkit end
@@ -24,7 +25,7 @@ public class BlockGrass extends Block {
             if (world.getLightLevel(i, j + 1, k) < 4 && Block.lightBlock[world.getTypeId(i, j + 1, k)] > 2) {
                 // CraftBukkit start - reuse getLightLevel
                 org.bukkit.World bworld = world.getWorld();
-                org.bukkit.block.BlockState blockState = bworld.getBlockAt(i, j, k).getState();
+                BlockState blockState = bworld.getBlockAt(i, j, k).getState();
                 blockState.setTypeId(Block.DIRT.id);
 
                 BlockFadeEvent event = new BlockFadeEvent(blockState.getBlock(), blockState);
@@ -44,7 +45,7 @@ public class BlockGrass extends Block {
                     if (world.getTypeId(i1, j1, k1) == Block.DIRT.id && world.getLightLevel(i1, j1 + 1, k1) >= 4 && Block.lightBlock[l1] <= 2) {
                         // CraftBukkit start
                         org.bukkit.World bworld = world.getWorld();
-                        org.bukkit.block.BlockState blockState = bworld.getBlockAt(i1, j1, k1).getState();
+                        BlockState blockState = bworld.getBlockAt(i1, j1, k1).getState();
                         blockState.setTypeId(this.id);
 
                         BlockSpreadEvent event = new BlockSpreadEvent(blockState.getBlock(), bworld.getBlockAt(i, j, k), blockState);

@@ -2,6 +2,8 @@ package net.minecraft.server;
 
 import java.util.Random;
 
+import org.bukkit.event.entity.EntityInteractEvent; // CraftBukkit
+
 public class BlockRedstoneOre extends Block {
 
     private boolean a;
@@ -33,7 +35,7 @@ public class BlockRedstoneOre extends Block {
                 super.b(world, i, j, k, entity);
             }
         } else {
-            org.bukkit.event.entity.EntityInteractEvent event = new org.bukkit.event.entity.EntityInteractEvent(entity.getBukkitEntity(), world.getWorld().getBlockAt(i, j, k));
+            EntityInteractEvent event = new EntityInteractEvent(entity.getBukkitEntity(), world.getWorld().getBlockAt(i, j, k));
             world.getServer().getPluginManager().callEvent(event);
             if (!event.isCancelled()) {
                 this.g(world, i, j, k);

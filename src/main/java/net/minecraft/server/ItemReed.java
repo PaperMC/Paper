@@ -1,10 +1,6 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.block.CraftBlockState;
-import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.event.block.BlockPlaceEvent;
-// CraftBukkit end
+import org.bukkit.craftbukkit.block.CraftBlockState; // CraftBukkit
 
 public class ItemReed extends Item {
 
@@ -68,7 +64,7 @@ public class ItemReed extends Item {
                  * replace this with.
                  */
                 if (world.setRawTypeId(i, j, k, this.id)) { // <-- world.e does this to place the block
-                    BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, replacedBlockState, clickedX, clickedY, clickedZ);
+                    org.bukkit.event.block.BlockPlaceEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(world, entityhuman, replacedBlockState, clickedX, clickedY, clickedZ);
 
                     if (event.isCancelled() || !event.canBuild()) {
                         // CraftBukkit - undo; this only has reed, repeater and pie blocks

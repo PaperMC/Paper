@@ -1,10 +1,6 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.block.CraftBlockState;
-import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.event.block.BlockPlaceEvent;
-// CraftBukkit end
+import org.bukkit.craftbukkit.block.CraftBlockState; // CraftBukkit
 
 public class ItemWaterLily extends ItemColoredBlock {
 
@@ -37,7 +33,7 @@ public class ItemWaterLily extends ItemColoredBlock {
                     world.setTypeId(i, j + 1, k, Block.WATER_LILY.id);
 
                     // CraftBukkit start - waterlily
-                    BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, i, j, k);
+                    org.bukkit.event.block.BlockPlaceEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, i, j, k);
 
                     if (event.isCancelled() || !event.canBuild()) {
                         event.getBlockPlaced().setTypeId(0);

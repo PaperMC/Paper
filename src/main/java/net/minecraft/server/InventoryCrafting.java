@@ -1,13 +1,11 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import java.util.ArrayList;
 import java.util.List;
 
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryType;
-import org.bukkit.inventory.InventoryHolder;
 // CraftBukkit end
 
 public class InventoryCrafting implements IInventory {
@@ -17,7 +15,7 @@ public class InventoryCrafting implements IInventory {
     private Container c;
 
     // CraftBukkit start
-    public List<HumanEntity> transaction = new ArrayList<HumanEntity>();
+    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
     public CraftingRecipe currentRecipe;
     public IInventory resultInventory;
     private EntityHuman owner;
@@ -43,7 +41,7 @@ public class InventoryCrafting implements IInventory {
         return transaction;
     }
 
-    public InventoryHolder getOwner() {
+    public org.bukkit.inventory.InventoryHolder getOwner() {
         return owner.getBukkitEntity();
     }
 

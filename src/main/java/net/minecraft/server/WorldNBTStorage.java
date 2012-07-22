@@ -11,8 +11,11 @@ import java.io.OutputStream;
 import java.util.List;
 import java.util.logging.Logger;
 
-import java.util.UUID; // CraftBukkit
-import org.bukkit.craftbukkit.entity.CraftPlayer; // CraftBukkit
+// CraftBukkit start
+import java.util.UUID;
+
+import org.bukkit.craftbukkit.entity.CraftPlayer;
+// CraftBukkit end
 
 public class WorldNBTStorage implements PlayerFileData, IDataManager {
 

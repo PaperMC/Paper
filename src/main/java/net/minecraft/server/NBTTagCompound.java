@@ -2,13 +2,10 @@ package net.minecraft.server;
 
 import java.io.DataInput;
 import java.io.DataOutput;
-import java.io.IOException; // CraftBukkit
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.logging.Level; // CraftBukkit
-import java.util.logging.Logger; // CraftBukkit
 
 public class NBTTagCompound extends NBTBase {
 
@@ -34,8 +31,8 @@ public class NBTTagCompound extends NBTBase {
         // CraftBukkit start
         try {
             dataoutput.writeByte(0);
-        } catch (IOException ex) {
-            Logger.getLogger(NBTTagCompound.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (java.io.IOException ex) {
+            java.util.logging.Logger.getLogger(NBTTagCompound.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
     }
 

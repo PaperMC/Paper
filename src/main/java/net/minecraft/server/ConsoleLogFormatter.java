@@ -7,11 +7,13 @@ import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
+import java.util.regex.Pattern; // CraftBukkit
+
 final class ConsoleLogFormatter extends Formatter {
 
     private SimpleDateFormat a = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     // CraftBukkit start - add color stripping, change constructor to take it
-    private java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\x1B\\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]");
+    private Pattern pattern = Pattern.compile("\\x1B\\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]");
     private boolean strip = false;
 
     ConsoleLogFormatter(boolean strip) {

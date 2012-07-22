@@ -1,6 +1,6 @@
 package net.minecraft.server;
 
-import java.util.ArrayList;
+// import java.util.ArrayList; // CraftBukkit
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -10,6 +10,7 @@ import java.util.Random;
 
 // CraftBukkit start
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.craftbukkit.util.UnsafeList;
 // CraftBukkit end
 
@@ -665,8 +666,8 @@ public class Chunk {
             java.util.Iterator<Object> iter = this.entitySlices[i].iterator();
             while (iter.hasNext()) {
                 Entity entity = (Entity) iter.next();
-                int cx = org.bukkit.Location.locToBlock(entity.locX) >> 4;
-                int cz = org.bukkit.Location.locToBlock(entity.locZ) >> 4;
+                int cx = Location.locToBlock(entity.locX) >> 4;
+                int cz = Location.locToBlock(entity.locZ) >> 4;
 
                 // Do not pass along players, as doing so can get them stuck outside of time.
                 // (which for example disables inventory icon updates and prevents block breaking)

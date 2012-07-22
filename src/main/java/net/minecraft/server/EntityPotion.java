@@ -4,13 +4,10 @@ import java.util.Iterator;
 import java.util.List;
 
 // CraftBukkit start
-import java.util.Collection;
 import java.util.HashMap;
 
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
-import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.event.entity.PotionSplashEvent;
 // CraftBukkit end
 
 public class EntityPotion extends EntityProjectile {
@@ -77,7 +74,7 @@ public class EntityPotion extends EntityProjectile {
                         }
                     }
 
-                    PotionSplashEvent event = CraftEventFactory.callPotionSplashEvent(this, affected);
+                    org.bukkit.event.entity.PotionSplashEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPotionSplashEvent(this, affected);
                     if (!event.isCancelled()) {
                         for (LivingEntity victim : event.getAffectedEntities()) {
                             if (!(victim instanceof CraftLivingEntity)) {

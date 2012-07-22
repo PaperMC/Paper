@@ -3,8 +3,6 @@ package net.minecraft.server;
 import java.util.List;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.entity.Explosive;
 import org.bukkit.event.entity.ExplosionPrimeEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 // CraftBukkit end
@@ -198,7 +196,7 @@ public class EntityFireball extends Entity {
                 ;
             }
             // CraftBukkit start
-            ExplosionPrimeEvent event = new ExplosionPrimeEvent((Explosive) CraftEntity.getEntity(this.world.getServer(), this));
+            ExplosionPrimeEvent event = new ExplosionPrimeEvent((org.bukkit.entity.Explosive) org.bukkit.craftbukkit.entity.CraftEntity.getEntity(this.world.getServer(), this));
             this.world.getServer().getPluginManager().callEvent(event);
 
             if (!event.isCancelled()) {

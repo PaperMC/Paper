@@ -1,12 +1,10 @@
 package net.minecraft.server;
 
 // CraftBukkit start
-import java.util.ArrayList;
 import java.util.List;
 
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.entity.HumanEntity;
-import org.bukkit.inventory.InventoryHolder;
 // CraftBukkit end
 
 public class InventoryLargeChest implements IInventory {
@@ -16,7 +14,7 @@ public class InventoryLargeChest implements IInventory {
     public IInventory right; // CraftBukkit - private -> public
 
     // CraftBukkit start
-    public List<HumanEntity> transaction = new ArrayList<HumanEntity>();
+    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
 
     public ItemStack[] getContents() {
         ItemStack[] result = new ItemStack[this.getSize()];
@@ -42,7 +40,7 @@ public class InventoryLargeChest implements IInventory {
         return transaction;
     }
 
-    public InventoryHolder getOwner() {
+    public org.bukkit.inventory.InventoryHolder getOwner() {
         return null; // This method won't be called since CraftInventoryDoubleChest doesn't defer to here
     }
 

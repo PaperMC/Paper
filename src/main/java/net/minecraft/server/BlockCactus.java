@@ -1,11 +1,8 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import org.bukkit.event.entity.EntityDamageByBlockEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-// CraftBukkit end
-
 import java.util.Random;
+
+import org.bukkit.event.entity.EntityDamageByBlockEvent; // CraftBukkit
 
 public class BlockCactus extends Block {
 
@@ -90,7 +87,7 @@ public class BlockCactus extends Block {
             org.bukkit.block.Block damager = world.getWorld().getBlockAt(i, j, k);
             org.bukkit.entity.Entity damagee = (entity == null) ? null : entity.getBukkitEntity();
 
-            EntityDamageByBlockEvent event = new EntityDamageByBlockEvent(damager, damagee, EntityDamageEvent.DamageCause.CONTACT, 1);
+            EntityDamageByBlockEvent event = new EntityDamageByBlockEvent(damager, damagee, org.bukkit.event.entity.EntityDamageEvent.DamageCause.CONTACT, 1);
             world.getServer().getPluginManager().callEvent(event);
 
             if (!event.isCancelled()) {

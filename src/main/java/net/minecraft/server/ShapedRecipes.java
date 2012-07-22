@@ -3,7 +3,6 @@ package net.minecraft.server;
 // CraftBukkit start
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftShapedRecipe;
-import org.bukkit.inventory.ShapedRecipe;
 // CraftBukkit end
 
 public class ShapedRecipes implements CraftingRecipe {
@@ -23,7 +22,7 @@ public class ShapedRecipes implements CraftingRecipe {
     }
 
     // CraftBukkit start
-    public ShapedRecipe toBukkitRecipe() {
+    public org.bukkit.inventory.ShapedRecipe toBukkitRecipe() {
         CraftItemStack result = new CraftItemStack(this.result);
         CraftShapedRecipe recipe = new CraftShapedRecipe(result, this);
         switch (this.width) {

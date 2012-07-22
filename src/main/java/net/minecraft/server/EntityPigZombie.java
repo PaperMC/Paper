@@ -3,8 +3,6 @@ package net.minecraft.server;
 import java.util.List;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.entity.EntityTargetEvent;
 // CraftBukkit end
@@ -95,7 +93,7 @@ public class EntityPigZombie extends EntityZombie {
             this.target = null;
             return;
         }
-        entity = ((CraftEntity) event.getTarget()).getHandle();
+        entity = ((org.bukkit.craftbukkit.entity.CraftEntity) event.getTarget()).getHandle();
         // CraftBukkit end
 
         this.target = entity;
@@ -142,7 +140,7 @@ public class EntityPigZombie extends EntityZombie {
             }
         }
 
-        CraftEventFactory.callEntityDeathEvent(this, loot);
+        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, loot);
         // CraftBukkit end
     }
 

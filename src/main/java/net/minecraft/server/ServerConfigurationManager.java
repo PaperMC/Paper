@@ -18,8 +18,8 @@ import java.util.LinkedHashSet;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.command.ColouredConsoleSender;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -53,7 +53,7 @@ public class ServerConfigurationManager {
 
     public ServerConfigurationManager(MinecraftServer minecraftserver) {
         minecraftserver.server = new CraftServer(minecraftserver, this);
-        minecraftserver.console = ColouredConsoleSender.getInstance();
+        minecraftserver.console = org.bukkit.craftbukkit.command.ColouredConsoleSender.getInstance();
         this.cserver = minecraftserver.server;
         // CraftBukkit end
 
@@ -322,7 +322,7 @@ public class ServerConfigurationManager {
         entityplayer1.E();
         // CraftBukkit start - don't fire on respawn
         if (fromWorld != location.getWorld()) {
-            org.bukkit.event.player.PlayerChangedWorldEvent event = new org.bukkit.event.player.PlayerChangedWorldEvent((Player) entityplayer1.getBukkitEntity(), fromWorld);
+            PlayerChangedWorldEvent event = new PlayerChangedWorldEvent((Player) entityplayer1.getBukkitEntity(), fromWorld);
             Bukkit.getServer().getPluginManager().callEvent(event);
         }
         // CraftBukkit end

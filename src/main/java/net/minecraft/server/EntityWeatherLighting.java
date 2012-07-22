@@ -2,11 +2,7 @@ package net.minecraft.server;
 
 import java.util.List;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.event.block.BlockIgniteEvent;
-import org.bukkit.event.block.BlockIgniteEvent.IgniteCause;
-// CraftBukkit end
+import org.bukkit.event.block.BlockIgniteEvent; // CraftBukkit
 
 public class EntityWeatherLighting extends EntityWeather {
 
@@ -15,7 +11,7 @@ public class EntityWeatherLighting extends EntityWeather {
     private int c;
 
     // CraftBukkit start
-    private CraftWorld cworld;
+    private org.bukkit.craftbukkit.CraftWorld cworld;
     public boolean isEffect = false;
 
     public EntityWeatherLighting(World world, double d0, double d1, double d2) {
@@ -45,7 +41,7 @@ public class EntityWeatherLighting extends EntityWeather {
 
             if (world.getTypeId(i, j, k) == 0 && Block.FIRE.canPlace(world, i, j, k)) {
                 // CraftBukkit start
-                BlockIgniteEvent event = new BlockIgniteEvent(this.cworld.getBlockAt(i, j, k), IgniteCause.LIGHTNING, null);
+                BlockIgniteEvent event = new BlockIgniteEvent(this.cworld.getBlockAt(i, j, k), BlockIgniteEvent.IgniteCause.LIGHTNING, null);
                 world.getServer().getPluginManager().callEvent(event);
 
                 if (!event.isCancelled()) {
@@ -61,7 +57,7 @@ public class EntityWeatherLighting extends EntityWeather {
 
                 if (world.getTypeId(j, k, l) == 0 && Block.FIRE.canPlace(world, j, k, l)) {
                     // CraftBukkit start
-                    BlockIgniteEvent event = new BlockIgniteEvent(this.cworld.getBlockAt(j, k, l), IgniteCause.LIGHTNING, null);
+                    BlockIgniteEvent event = new BlockIgniteEvent(this.cworld.getBlockAt(j, k, l), BlockIgniteEvent.IgniteCause.LIGHTNING, null);
                     world.getServer().getPluginManager().callEvent(event);
 
                     if (!event.isCancelled()) {
@@ -96,7 +92,7 @@ public class EntityWeatherLighting extends EntityWeather {
 
                     if (this.world.getTypeId(i, j, k) == 0 && Block.FIRE.canPlace(this.world, i, j, k)) {
                         // CraftBukkit start
-                        BlockIgniteEvent event = new BlockIgniteEvent(this.cworld.getBlockAt(i, j, k), IgniteCause.LIGHTNING, null);
+                        BlockIgniteEvent event = new BlockIgniteEvent(this.cworld.getBlockAt(i, j, k), BlockIgniteEvent.IgniteCause.LIGHTNING, null);
                         this.world.getServer().getPluginManager().callEvent(event);
 
                         if (!event.isCancelled()) {

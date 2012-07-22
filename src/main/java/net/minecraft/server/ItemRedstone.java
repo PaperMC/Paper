@@ -1,10 +1,6 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.block.CraftBlockState;
-import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.event.block.BlockPlaceEvent;
-// CraftBukkit end
+import org.bukkit.craftbukkit.block.CraftBlockState; // CraftBukkit
 
 public class ItemRedstone extends Item {
 
@@ -55,7 +51,7 @@ public class ItemRedstone extends Item {
                 world.suppressPhysics = true;
                 world.setRawTypeId(i, j, k, Block.REDSTONE_WIRE.id); // We update after the event
 
-                BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ);
+                org.bukkit.event.block.BlockPlaceEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, clickedX, clickedY, clickedZ);
                 blockState.update(true);
 
                 world.suppressPhysics = false;

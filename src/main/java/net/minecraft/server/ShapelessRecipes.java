@@ -7,7 +7,6 @@ import java.util.List;
 // CraftBukkit start
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftShapelessRecipe;
-import org.bukkit.inventory.ShapelessRecipe;
 // CraftBukkit end
 
 public class ShapelessRecipes implements CraftingRecipe {
@@ -22,7 +21,7 @@ public class ShapelessRecipes implements CraftingRecipe {
 
     // CraftBukkit start
     @SuppressWarnings("unchecked")
-    public ShapelessRecipe toBukkitRecipe() {
+    public org.bukkit.inventory.ShapelessRecipe toBukkitRecipe() {
         CraftItemStack result = new CraftItemStack(this.result);
         CraftShapelessRecipe recipe = new CraftShapelessRecipe(result, this);
         for (ItemStack stack : (List<ItemStack>) this.ingredients) {

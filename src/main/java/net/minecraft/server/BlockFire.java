@@ -3,12 +3,9 @@ package net.minecraft.server;
 import java.util.Random;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.block.BlockIgniteEvent;
-import org.bukkit.event.block.BlockIgniteEvent.IgniteCause;
 import org.bukkit.event.block.BlockBurnEvent;
 import org.bukkit.event.block.BlockSpreadEvent;
-import org.bukkit.material.MaterialData;
 // CraftBukkit end
 
 public class BlockFire extends Block {
@@ -109,7 +106,7 @@ public class BlockFire extends Block {
                 org.bukkit.Server server = world.getServer();
                 org.bukkit.World bworld = world.getWorld();
 
-                IgniteCause igniteCause = BlockIgniteEvent.IgniteCause.SPREAD;
+                BlockIgniteEvent.IgniteCause igniteCause = BlockIgniteEvent.IgniteCause.SPREAD;
                 org.bukkit.block.Block fromBlock = bworld.getBlockAt(i, j, k);
                 // CraftBukkit end
 
@@ -151,7 +148,7 @@ public class BlockFire extends Block {
 
                                             org.bukkit.block.BlockState blockState = bworld.getBlockAt(i1, k1, j1).getState();
                                             blockState.setTypeId(this.id);
-                                            blockState.setData(new MaterialData(this.id, (byte) k2));
+                                            blockState.setData(new org.bukkit.material.MaterialData(this.id, (byte) k2));
 
                                             BlockSpreadEvent spreadEvent = new BlockSpreadEvent(blockState.getBlock(), fromBlock, blockState);
                                             server.getPluginManager().callEvent(spreadEvent);
@@ -261,7 +258,7 @@ public class BlockFire extends Block {
     }
     // CraftBukkit start
     private void fireExtinguished(World world, int x, int y, int z) {
-        if (CraftEventFactory.callBlockFadeEvent(world.getWorld().getBlockAt(x, y, z), 0).isCancelled() == false) {
+        if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(world.getWorld().getBlockAt(x, y, z), 0).isCancelled() == false) {
             world.setTypeId(x, y, z, 0);
         }
     }

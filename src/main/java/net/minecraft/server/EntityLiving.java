@@ -7,13 +7,10 @@ import java.util.List;
 import java.util.Random;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.TrigMath;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityRegainHealthEvent;
-import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason;
 // CraftBukkit end
 
 public abstract class EntityLiving extends Entity {
@@ -460,7 +457,7 @@ public abstract class EntityLiving extends Entity {
             f3 = 1.0F;
             f2 = f * 3.0F;
             // CraftBukkit - Math -> TrigMath
-            f1 = (float) TrigMath.atan2(d1, d0) * 180.0F / 3.1415927F - 90.0F;
+            f1 = (float) org.bukkit.craftbukkit.TrigMath.atan2(d1, d0) * 180.0F / 3.1415927F - 90.0F;
         }
 
         if (this.ao > 0.0F) {
@@ -558,10 +555,10 @@ public abstract class EntityLiving extends Entity {
 
     // CraftBukkit start - delegate so we can handle providing a reason for health being regained
     public void heal(int i) {
-        heal(i, RegainReason.CUSTOM);
+        heal(i, EntityRegainHealthEvent.RegainReason.CUSTOM);
     }
 
-    public void heal(int i, RegainReason regainReason) {
+    public void heal(int i, EntityRegainHealthEvent.RegainReason regainReason) {
         if (this.health > 0) {
             EntityRegainHealthEvent event = new EntityRegainHealthEvent(this.getBukkitEntity(), i, regainReason);
             this.world.getServer().getPluginManager().callEvent(event);
@@ -607,7 +604,7 @@ public abstract class EntityLiving extends Entity {
 
                 // CraftBukkit start
                 if (damagesource instanceof EntityDamageSource) {
-                    org.bukkit.event.entity.EntityDamageEvent event = CraftEventFactory.handleEntityDamageEvent(this, damagesource, i);
+                    EntityDamageEvent event = CraftEventFactory.handleEntityDamageEvent(this, damagesource, i);
                     if (event.isCancelled()) {
                         return false;
                     }
@@ -781,18 +778,15 @@ public abstract class EntityLiving extends Entity {
 
             if (!this.isBaby()) {
                 this.dropDeathLoot(this.lastDamageByPlayerTime > 0, i);
-                /* CraftBukkit start - move rare item drop call to dropDeathLoot
-                if (this.lastDamageByPlayerTime > 0) {
+                if (false && this.lastDamageByPlayerTime > 0) { // CraftBukkit - move rare item drop call to dropDeathLoot
                     int j = this.random.nextInt(200) - i;
 
                     if (j < 5) {
                         this.b(j <= 0 ? 1 : 0);
                     }
                 }
-                // */
-            } else {
-                CraftEventFactory.callEntityDeathEvent(this);
-                // CraftBukkit end
+            } else { // CraftBukkit
+                CraftEventFactory.callEntityDeathEvent(this); // CraftBukkit
             }
         }
 
@@ -830,7 +824,7 @@ public abstract class EntityLiving extends Entity {
             if (k < 5) {
                 ItemStack itemstack = this.b(k <= 0 ? 1 : 0);
                 if (itemstack != null) {
-                    loot.add(new CraftItemStack(itemstack));
+                    loot.add(new org.bukkit.craftbukkit.inventory.CraftItemStack(itemstack));
                 }
             }
         }

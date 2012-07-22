@@ -9,13 +9,11 @@ import java.util.Set;
 
 // CraftBukkit start
 import java.util.Random;
-import org.bukkit.craftbukkit.CraftChunk;
+
+import org.bukkit.Server;
 import org.bukkit.craftbukkit.util.LongHashset;
 import org.bukkit.craftbukkit.util.LongHashtable;
-import org.bukkit.event.world.ChunkLoadEvent;
-import org.bukkit.event.world.ChunkPopulateEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
-import org.bukkit.generator.BlockPopulator;
 // CraftBukkit end
 
 public class ChunkProviderServer implements IChunkProvider {
@@ -93,14 +91,14 @@ public class ChunkProviderServer implements IChunkProvider {
             }
 
             // CraftBukkit start
-            org.bukkit.Server server = this.world.getServer();
+            Server server = this.world.getServer();
             if (server != null) {
                 /*
                  * If it's a new world, the first few chunks are generated inside
                  * the World constructor. We can't reliably alter that, so we have
                  * no way of creating a CraftWorld/CraftServer at that point.
                  */
-                server.getPluginManager().callEvent(new ChunkLoadEvent(chunk.bukkitChunk, newChunk));
+                server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkLoadEvent(chunk.bukkitChunk, newChunk));
             }
             // CraftBukkit end
 
@@ -185,12 +183,12 @@ public class ChunkProviderServer implements IChunkProvider {
 
                 org.bukkit.World world = this.world.getWorld();
                 if (world != null) {
-                    for (BlockPopulator populator : world.getPopulators()) {
+                    for (org.bukkit.generator.BlockPopulator populator : world.getPopulators()) {
                         populator.populate(world, random, chunk.bukkitChunk);
                     }
                 }
                 BlockSand.instaFall = false;
-                this.world.getServer().getPluginManager().callEvent(new ChunkPopulateEvent(chunk.bukkitChunk));
+                this.world.getServer().getPluginManager().callEvent(new org.bukkit.event.world.ChunkPopulateEvent(chunk.bukkitChunk));
                 // CraftBukkit end
 
                 chunk.e();
@@ -232,7 +230,7 @@ public class ChunkProviderServer implements IChunkProvider {
     public boolean unloadChunks() {
         if (!this.world.savingDisabled) {
             // CraftBukkit start
-            org.bukkit.Server server = this.world.getServer();
+            Server server = this.world.getServer();
             for (int i = 0; i < 50 && !this.unloadQueue.isEmpty(); i++) {
                 long chunkcoordinates = this.unloadQueue.popFirst();
                 Chunk chunk = this.chunks.get(chunkcoordinates);

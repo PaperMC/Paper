@@ -1,9 +1,8 @@
 package net.minecraft.server;
 
 import java.util.List;
+
 // CraftBukkit start
-import org.bukkit.block.BlockState;
-import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.block.EntityBlockFormEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 // CraftBukkit end
@@ -66,7 +65,7 @@ public class EntitySnowman extends EntityGolem {
 
             if (this.world.getTypeId(j, k, l) == 0 && this.world.getBiome(j, l).i() < 0.8F && Block.SNOW.canPlace(this.world, j, k, l)) {
                 // CraftBukkit start
-                BlockState blockState = this.world.getWorld().getBlockAt(j, k, l).getState();
+                org.bukkit.block.BlockState blockState = this.world.getWorld().getBlockAt(j, k, l).getState();
                 blockState.setTypeId(Block.SNOW.id);
 
                 EntityBlockFormEvent event = new EntityBlockFormEvent(this.getBukkitEntity(), blockState.getBlock(), blockState);
@@ -101,7 +100,7 @@ public class EntitySnowman extends EntityGolem {
             loot.add(new org.bukkit.inventory.ItemStack(Item.SNOW_BALL.id, j));
         }
 
-        CraftEventFactory.callEntityDeathEvent(this, loot);
+        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, loot);
         // CraftBukkit end
     }
 }

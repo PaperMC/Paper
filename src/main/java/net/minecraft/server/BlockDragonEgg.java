@@ -2,6 +2,8 @@ package net.minecraft.server;
 
 import java.util.Random;
 
+import org.bukkit.event.block.BlockFromToEvent; // CraftBukkit
+
 public class BlockDragonEgg extends Block {
 
     public BlockDragonEgg(int i, int j) {
@@ -64,14 +66,15 @@ public class BlockDragonEgg extends Block {
                         // CraftBukkit start
                         org.bukkit.block.Block from = world.getWorld().getBlockAt(i, j, k);
                         org.bukkit.block.Block to = world.getWorld().getBlockAt(i1, j1, k1);
-                        org.bukkit.event.block.BlockFromToEvent event = new org.bukkit.event.block.BlockFromToEvent(from, to);
+                        BlockFromToEvent event = new BlockFromToEvent(from, to);
                         org.bukkit.Bukkit.getPluginManager().callEvent(event);
 
-                        if (!event.isCancelled()) {
-                            i1 = event.getToBlock().getX();
-                            j1 = event.getToBlock().getY();
-                            k1 = event.getToBlock().getZ();
-                        } else return;
+                        if (event.isCancelled()) {
+                            return;
+                        }
+                        i1 = event.getToBlock().getX();
+                        j1 = event.getToBlock().getY();
+                        k1 = event.getToBlock().getZ();
                         // CraftBukkit end
 
                         world.setTypeIdAndData(i1, j1, k1, this.id, world.getData(i, j, k));

@@ -2,15 +2,19 @@ package net.minecraft.server;
 
 import java.util.Random;
 
+import org.bukkit.BlockChangeDelegate; // CraftBukkit
+
 public class WorldGenSwampTree extends WorldGenerator  implements BlockSapling.TreeGenerator { // CraftBukkit - add interface
 
     public WorldGenSwampTree() {}
 
     public boolean a(World world, Random random, int i, int j, int k) {
-        return generate((org.bukkit.BlockChangeDelegate) world, random, i, j, k);
+        // CraftBukkit start
+        return generate((BlockChangeDelegate) world, random, i, j, k);
     }
 
-    public boolean generate(org.bukkit.BlockChangeDelegate world, Random random, int i, int j, int k) {
+    public boolean generate(BlockChangeDelegate world, Random random, int i, int j, int k) {
+        // CraftBukkit end
         int l;
 
         for (l = random.nextInt(4) + 5; world.getTypeId(i, j - 1, k) != 0 && Block.byId[world.getTypeId(i, j - 1, k)].material == Material.WATER; --j) { // CraftBukkit - bypass World.getMaterial
@@ -126,7 +130,7 @@ public class WorldGenSwampTree extends WorldGenerator  implements BlockSapling.T
     }
 
     // CraftBukkit - change signature
-    private void b(org.bukkit.BlockChangeDelegate world, int i, int j, int k, int l) {
+    private void b(BlockChangeDelegate world, int i, int j, int k, int l) {
         this.setTypeAndData(world, i, j, k, Block.VINE.id, l);
         int i1 = 4;
 

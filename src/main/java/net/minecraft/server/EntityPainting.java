@@ -5,7 +5,6 @@ import java.util.List;
 
 // CraftBukkit start
 import org.bukkit.entity.Painting;
-import org.bukkit.event.painting.PaintingBreakByEntityEvent;
 import org.bukkit.event.painting.PaintingBreakEvent.RemoveCause;
 import org.bukkit.event.painting.PaintingBreakEvent;
 // CraftBukkit end
@@ -216,7 +215,7 @@ public class EntityPainting extends Entity {
             // CraftBukkit start
             PaintingBreakEvent event = null;
             if (damagesource.getEntity() != null) {
-                event = new PaintingBreakByEntityEvent((Painting) this.getBukkitEntity(), damagesource.getEntity() == null ? null : damagesource.getEntity().getBukkitEntity());
+                event = new org.bukkit.event.painting.PaintingBreakByEntityEvent((Painting) this.getBukkitEntity(), damagesource.getEntity() == null ? null : damagesource.getEntity().getBukkitEntity());
             } else {
                 if (damagesource == DamageSource.FIRE) {
                     event = new PaintingBreakEvent((Painting) this.getBukkitEntity(), RemoveCause.FIRE);
@@ -284,11 +283,9 @@ public class EntityPainting extends Entity {
     }
 
     public void b_(double d0, double d1, double d2) {
-        /* CraftBukkit start - not needed for paintings
-        if (!this.world.isStatic && !this.dead && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) {
+        if (false && !this.world.isStatic && !this.dead && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) { // CraftBukkit start - not needed for paintings
             this.die();
             this.world.addEntity(new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.PAINTING)));
         }
-        // CraftBukkit end */
     }
 }

@@ -4,9 +4,7 @@ import java.util.Iterator;
 import java.util.List;
 
 // CraftBukkit start
-import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.entity.CraftItem;
-import org.bukkit.craftbukkit.TrigMath;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityCombustByEntityEvent;
@@ -319,7 +317,7 @@ public abstract class EntityHuman extends EntityLiving {
 
         float f = MathHelper.sqrt(this.motX * this.motX + this.motZ * this.motZ);
         // CraftBukkit - Math -> TrigMath
-        float f1 = (float) TrigMath.atan(-this.motY * 0.20000000298023224D) * 15.0F;
+        float f1 = (float) org.bukkit.craftbukkit.TrigMath.atan(-this.motY * 0.20000000298023224D) * 15.0F;
 
         if (f > 0.1F) {
             f = 0.1F;
@@ -577,10 +575,9 @@ public abstract class EntityHuman extends EntityLiving {
                         i = i * 3 / 2;
                     }
                 }
-                /* CraftBukkit start - Don't filter out 0 damage
-                if (i == 0) {
+                if (false && i == 0) { // CraftBukkit - Don't filter out 0 damage
                     return false;
-                } else { CraftBukkit end */
+                } else {
                     Entity entity1 = entity;
 
                     if (entity instanceof EntityArrow && ((EntityArrow) entity).shooter != null) {
@@ -593,7 +590,7 @@ public abstract class EntityHuman extends EntityLiving {
 
                     this.a(StatisticList.x, i);
                     return super.damageEntity(damagesource, i);
-                //} // CraftBukkit
+                }
             }
         }
     }
@@ -800,7 +797,7 @@ public abstract class EntityHuman extends EntityLiving {
                     if (l > 0) {
                         // CraftBukkit start - raise a combust event when somebody hits with a fire enchanted item
                         EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), l * 4);
-                        Bukkit.getPluginManager().callEvent(combustEvent);
+                        org.bukkit.Bukkit.getPluginManager().callEvent(combustEvent);
 
                         if (!combustEvent.isCancelled()) {
                             entity.setOnFire(combustEvent.getDuration());

@@ -1,11 +1,5 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.player.PlayerInteractEvent;
-// CraftBukkit end
-
 public class ItemMinecart extends Item {
 
     public int a;
@@ -22,7 +16,7 @@ public class ItemMinecart extends Item {
         if (BlockMinecartTrack.d(i1)) {
             if (!world.isStatic) {
                 // CraftBukkit start - Minecarts
-                PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(entityhuman, Action.RIGHT_CLICK_BLOCK, i, j, k, l, itemstack);
+                org.bukkit.event.player.PlayerInteractEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent(entityhuman, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, i, j, k, l, itemstack);
 
                 if (event.isCancelled()) {
                     return false;

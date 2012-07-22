@@ -8,7 +8,6 @@ import java.util.Map;
 // CraftBukkit start
 import java.util.UUID;
 
-import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.map.CraftMapView;
@@ -36,7 +35,7 @@ public class WorldMap extends WorldMapBase {
         super(s);
         // CraftBukkit start
         mapView = new CraftMapView(this);
-        server = (CraftServer) Bukkit.getServer();
+        server = (CraftServer) org.bukkit.Bukkit.getServer();
         // CraftBukkit end
     }
 

@@ -1,10 +1,6 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.block.CraftBlockState;
-import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.event.block.BlockPlaceEvent;
-// CraftBukkit end
+import org.bukkit.craftbukkit.block.CraftBlockState; // CraftBukkit
 
 public class ItemDoor extends Item {
 
@@ -93,7 +89,7 @@ public class ItemDoor extends Item {
         world.setTypeIdAndData(i, j, k, block.id, l);
         // CraftBukkit start
         if (entityhuman != null) {
-            BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, i, j, k);
+            org.bukkit.event.block.BlockPlaceEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, i, j, k);
 
             if (event.isCancelled() || !event.canBuild()) {
                 event.getBlockPlaced().setTypeIdAndData(blockState.getTypeId(), blockState.getRawData(), false);

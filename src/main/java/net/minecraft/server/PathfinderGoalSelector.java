@@ -1,7 +1,8 @@
 package net.minecraft.server;
 
-import java.util.ArrayList;
+//import java.util.ArrayList; // CraftBukkit
 import java.util.Iterator;
+
 import org.bukkit.craftbukkit.util.UnsafeList; // CraftBukkit
 
 public class PathfinderGoalSelector {
@@ -22,7 +23,8 @@ public class PathfinderGoalSelector {
 
         // CraftBukkit start - don't use iterators for private fields
         for (int i = 0; i < this.a.size(); i++) {
-            PathfinderGoalSelectorItem pathfindergoalselectoritem = (PathfinderGoalSelectorItem) this.a.unsafeGet(i); // CraftBukkit - use unsafeGet
+            PathfinderGoalSelectorItem pathfindergoalselectoritem = (PathfinderGoalSelectorItem) this.a.unsafeGet(i);
+            // CraftBukkit end
             boolean flag = this.b.contains(pathfindergoalselectoritem);
 
             if (flag) {
@@ -42,27 +44,26 @@ public class PathfinderGoalSelector {
                 this.b.add(pathfindergoalselectoritem);
             }
         }
-        // CraftBukkit end
 
         boolean flag1 = false;
 
-        // CraftBukkit start - removed usage of arraylist
-        /*if (flag1 && arraylist.size() > 0) {
+        /* CraftBukkit start - removed usage of arraylist
+        if (flag1 && arraylist.size() > 0) {
             System.out.println("Starting: ");
-        }*/
-        // CraftBukkit end
+        }
+        // CraftBukkit end */
 
         Iterator iterator1;
         PathfinderGoalSelectorItem pathfindergoalselectoritem1;
 
-        // CraftBukkit start - removed usage of arraylist
-        /*for (iterator1 = arraylist.iterator(); iterator1.hasNext(); pathfindergoalselectoritem1.a.c()) {
+        /* CraftBukkit start - removed usage of arraylist
+        for (iterator1 = arraylist.iterator(); iterator1.hasNext(); pathfindergoalselectoritem1.a.c()) {
             pathfindergoalselectoritem1 = (PathfinderGoalSelectorItem) iterator1.next();
             if (flag1) {
                 System.out.println(pathfindergoalselectoritem1.a.toString() + ", ");
             }
-        }*/
-        // CraftBukkit end
+        }
+        // CraftBukkit end */
 
         if (flag1 && this.b.size() > 0) {
             System.out.println("Running: ");

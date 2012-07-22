@@ -1,6 +1,9 @@
 package net.minecraft.server;
 
-import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
+// CraftBukkit start
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.entity.EntityTargetEvent;
+// CraftBukkit end
 
 public class EntityExperienceOrb extends Entity {
 
@@ -57,7 +60,7 @@ public class EntityExperienceOrb extends Entity {
 
         if (entityhuman != null) {
             // CraftBukkit start
-            org.bukkit.event.entity.EntityTargetEvent event = CraftEventFactory.callEntityTargetEvent(this, entityhuman, org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_PLAYER);
+            EntityTargetEvent event = CraftEventFactory.callEntityTargetEvent(this, entityhuman, EntityTargetEvent.TargetReason.CLOSEST_PLAYER);
             Entity target = event.getTarget() == null ? null : ((org.bukkit.craftbukkit.entity.CraftEntity) event.getTarget()).getHandle();
 
             if (!event.isCancelled() && target != null) {

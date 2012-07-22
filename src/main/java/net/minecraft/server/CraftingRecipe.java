@@ -1,7 +1,5 @@
 package net.minecraft.server;
 
-import org.bukkit.inventory.Recipe; // CraftBukkit
-
 public interface CraftingRecipe {
 
     boolean a(InventoryCrafting inventorycrafting);
@@ -11,6 +9,6 @@ public interface CraftingRecipe {
     int a();
 
     ItemStack b();
-    
-    Recipe toBukkitRecipe(); // CraftBukkit
+
+    org.bukkit.inventory.Recipe toBukkitRecipe(); // CraftBukkit
 }

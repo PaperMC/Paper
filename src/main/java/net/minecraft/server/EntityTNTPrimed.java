@@ -1,11 +1,6 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.entity.Explosive;
-import org.bukkit.event.entity.ExplosionPrimeEvent;
-// CraftBukkit end
+import org.bukkit.event.entity.ExplosionPrimeEvent; // CraftBukkit
 
 public class EntityTNTPrimed extends Entity {
 
@@ -78,9 +73,9 @@ public class EntityTNTPrimed extends Entity {
         // CraftBukkit start
         // float f = 4.0F;
 
-        CraftServer server = this.world.getServer();
+        org.bukkit.craftbukkit.CraftServer server = this.world.getServer();
 
-        ExplosionPrimeEvent event = new ExplosionPrimeEvent((Explosive) CraftEntity.getEntity(server, this));
+        ExplosionPrimeEvent event = new ExplosionPrimeEvent((org.bukkit.entity.Explosive) org.bukkit.craftbukkit.entity.CraftEntity.getEntity(server, this));
         server.getPluginManager().callEvent(event);
 
         if (!event.isCancelled()) {

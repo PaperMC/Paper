@@ -5,12 +5,6 @@ import java.util.Iterator;
 import java.util.Random;
 import java.util.logging.Logger;
 
-// CraftBukkit start
-import org.bukkit.ChatColor;
-import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.event.server.ServerListPingEvent;
-// CraftBukkit end
-
 public class NetLoginHandler extends NetHandler {
 
     public static Logger logger = Logger.getLogger("Minecraft");
@@ -86,7 +80,7 @@ public class NetLoginHandler extends NetHandler {
         } else {
             if (!this.server.onlineMode) {
                 // CraftBukkit start - disallow colour in names
-                if (!packet1login.name.equals(ChatColor.stripColor(packet1login.name))) {
+                if (!packet1login.name.equals(org.bukkit.ChatColor.stripColor(packet1login.name))) {
                     this.disconnect("Colourful names are not permitted!");
                     return;
                 }
@@ -153,7 +147,7 @@ public class NetLoginHandler extends NetHandler {
         if (this.networkManager.getSocket() == null) return; // CraftBukkit - fix NPE when a client queries a server that is unable to handle it.
         try {
             // CraftBukkit start
-            ServerListPingEvent pingEvent = CraftEventFactory.callServerListPingEvent(this.server.server, getSocket().getInetAddress(), this.server.motd, this.server.serverConfigurationManager.getPlayerCount(), this.server.serverConfigurationManager.getMaxPlayers());
+            org.bukkit.event.server.ServerListPingEvent pingEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callServerListPingEvent(this.server.server, getSocket().getInetAddress(), this.server.motd, this.server.serverConfigurationManager.getPlayerCount(), this.server.serverConfigurationManager.getMaxPlayers());
             String s = pingEvent.getMotd() + "\u00A7" + this.server.serverConfigurationManager.getPlayerCount() + "\u00A7" + pingEvent.getMaxPlayers();
             // CraftBukkit end
 

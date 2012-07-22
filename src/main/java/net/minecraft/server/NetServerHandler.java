@@ -7,23 +7,14 @@ import java.util.logging.Logger;
 // CraftBukkit start
 import java.io.UnsupportedEncodingException;
 import java.util.logging.Level;
-import java.util.Arrays;
 import java.util.HashSet;
 
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.craftbukkit.ChunkCompressionThread;
 import org.bukkit.Location;
-import org.bukkit.command.CommandException;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.TextWrapper;
-import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.block.Action;
@@ -32,7 +23,6 @@ import org.bukkit.event.player.PlayerAnimationEvent;
 import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -44,9 +34,7 @@ import org.bukkit.event.inventory.*;
 import org.bukkit.event.inventory.InventoryType.SlotType;
 import org.bukkit.event.player.PlayerToggleFlightEvent;
 import org.bukkit.inventory.CraftingInventory;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
-import org.bukkit.inventory.Recipe;
 // CraftBukkit end
 
 public class NetServerHandler extends NetHandler implements ICommandListener {
@@ -82,7 +70,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
         this.server = minecraftserver.server;
     }
 
-    private final CraftServer server;
+    private final org.bukkit.craftbukkit.CraftServer server;
     private int lastTick = MinecraftServer.currentTick;
     private int lastDropTick = MinecraftServer.currentTick;
     private int dropCount = 0;
@@ -105,7 +93,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
     public CraftPlayer getPlayer() {
         return (this.player == null) ? null : (CraftPlayer) this.player.getBukkitEntity();
     }
-    private final static HashSet<Integer> invalidItems = new HashSet<Integer>(Arrays.asList(8, 9, 10, 11, 26, 34, 36, 51, 52, 55, 59, 60, 63, 64, 68, 71, 75, 78, 83, 90, 92, 93, 94, 95));
+    private final static HashSet<Integer> invalidItems = new HashSet<Integer>(java.util.Arrays.asList(8, 9, 10, 11, 26, 34, 36, 51, 52, 55, 59, 60, 63, 64, 68, 71, 75, 78, 83, 90, 92, 93, 94, 95));
     // CraftBukkit end
 
     public void a() {
@@ -530,9 +518,10 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             }
 
             if (packet14blockdig.e == 0) {
-                // CraftBukkit
+                // CraftBukkit start
                 if (i1 < this.server.getSpawnRadius() && !flag) {
                     CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, i, j, k, l, this.player.inventory.getItemInHand());
+                    // CraftBukkit end
                     this.player.netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, worldserver));
                 } else {
                     this.player.itemInWorldManager.dig(i, j, k, packet14blockdig.face);
@@ -603,7 +592,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
             // CraftBukkit start
             int itemstackAmount = itemstack.count;
-            PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.RIGHT_CLICK_AIR, itemstack);
+            org.bukkit.event.player.PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.RIGHT_CLICK_AIR, itemstack);
             if (event.useItemInHand() != Event.Result.DENY) {
                 this.player.itemInWorldManager.useItem(this.player, this.player.world, itemstack);
             }
@@ -717,13 +706,13 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             this.player.compassTarget = new Location(this.getPlayer().getWorld(), packet6.x, packet6.y, packet6.z);
         } else if (packet instanceof Packet3Chat) {
             String message = ((Packet3Chat) packet).message;
-            for (final String line : TextWrapper.wrapText(message)) {
+            for (final String line : org.bukkit.craftbukkit.TextWrapper.wrapText(message)) {
                 this.networkManager.queue(new Packet3Chat(line));
             }
             packet = null;
         } else if (packet != null && packet.lowPriority == true) {
             // Reroute all low-priority packets through to compression thread.
-            ChunkCompressionThread.sendPacket(this.player, packet);
+            org.bukkit.craftbukkit.ChunkCompressionThread.sendPacket(this.player, packet);
             packet = null;
         }
         if (packet != null) this.networkManager.queue(packet);
@@ -822,14 +811,14 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             if (this.server.dispatchCommand(player, event.getMessage().substring(1))) {
                 return;
             }
-        } catch (CommandException ex) {
-            player.sendMessage(ChatColor.RED + "An internal error occurred while attempting to perform this command");
-            Logger.getLogger(NetServerHandler.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (org.bukkit.command.CommandException ex) {
+            player.sendMessage(org.bukkit.ChatColor.RED + "An internal error occurred while attempting to perform this command");
+            Logger.getLogger(NetServerHandler.class.getName()).log(Level.SEVERE, null, ex);
             return;
         }
         // CraftBukkit end
 
-        /* // CraftBukkit start - No longer needed as we have already handled it in server.dispatchServerCommand above.
+        /* CraftBukkit start - No longer needed as we have already handled it in server.dispatchServerCommand above.
         if (s.toLowerCase().startsWith("/me ")) {
             s = "* " + this.player.name + " " + s.substring(s.indexOf(" ")).trim();
             logger.info(s);
@@ -1026,7 +1015,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             PlayerPortalEvent event = new PlayerPortalEvent(this.player.getBukkitEntity(), this.player.getBukkitEntity().getLocation(), toLocation, pta, PlayerPortalEvent.TeleportCause.END_PORTAL);
             event.useTravelAgent(false);
 
-            Bukkit.getServer().getPluginManager().callEvent(event);
+            org.bukkit.Bukkit.getServer().getPluginManager().callEvent(event);
             this.player = this.minecraftServer.serverConfigurationManager.moveToWorld(this.player, 0, true, event.getTo());
             // CraftBukkit end
         } else {
@@ -1063,9 +1052,9 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             SlotType type = CraftInventoryView.getSlotType(inventory, packet102windowclick.slot);
 
             InventoryClickEvent event = new InventoryClickEvent(inventory, type, packet102windowclick.slot, packet102windowclick.button != 0, packet102windowclick.shift);
-            Inventory top = inventory.getTopInventory();
+            org.bukkit.inventory.Inventory top = inventory.getTopInventory();
             if (packet102windowclick.slot == 0 && top instanceof CraftingInventory) {
-                Recipe recipe = ((CraftingInventory) top).getRecipe();
+                org.bukkit.inventory.Recipe recipe = ((CraftingInventory) top).getRecipe();
                 if (recipe != null) {
                     event = new CraftItemEvent(recipe, inventory, type, packet102windowclick.slot, packet102windowclick.button != 0, packet102windowclick.shift);
                 }
@@ -1147,7 +1136,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
             boolean flag3 = itemstack == null || itemstack.getData() >= 0 && itemstack.getData() >= 0 && itemstack.count <= 64 && itemstack.count > 0;
 
             // CraftBukkit start - Fire INVENTORY_CLICK event
-            HumanEntity player = this.player.getBukkitEntity();
+            org.bukkit.entity.HumanEntity player = this.player.getBukkitEntity();
             InventoryView inventory = new CraftInventoryView(player, player.getInventory(), this.player.defaultContainer);
             SlotType slot = SlotType.QUICKBAR;
             if (packet107setcreativeslot.slot == -1) {
@@ -1225,8 +1214,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
                 if (!tileentitysign.c()) {
                     this.minecraftServer.warning("Player " + this.player.name + " just tried to change non-editable sign");
-                    // CraftBukkit
-                    this.sendPacket(new Packet130UpdateSign(packet130updatesign.x, packet130updatesign.y, packet130updatesign.z, tileentitysign.lines));
+                    this.sendPacket(new Packet130UpdateSign(packet130updatesign.x, packet130updatesign.y, packet130updatesign.z, tileentitysign.lines)); // CraftBukkit
                     return;
                 }
             }
@@ -1261,7 +1249,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 
                 // CraftBukkit start
                 Player player = this.server.getPlayer(this.player);
-                SignChangeEvent event = new SignChangeEvent((CraftBlock) player.getWorld().getBlockAt(j, k, i), this.server.getPlayer(this.player), packet130updatesign.lines);
+                SignChangeEvent event = new SignChangeEvent((org.bukkit.craftbukkit.block.CraftBlock) player.getWorld().getBlockAt(j, k, i), this.server.getPlayer(this.player), packet130updatesign.lines);
                 this.server.getPluginManager().callEvent(event);
 
                 if (!event.isCancelled()) {

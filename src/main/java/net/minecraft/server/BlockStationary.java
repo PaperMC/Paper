@@ -2,7 +2,10 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-import org.bukkit.event.block.BlockIgniteEvent; // CraftBukkit
+// CraftBukkit start
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.block.BlockIgniteEvent;
+// CraftBukkit end
 
 public class BlockStationary extends BlockFluids {
 
@@ -57,7 +60,7 @@ public class BlockStationary extends BlockFluids {
                         // CraftBukkit start - prevent lava putting something on fire.
                         org.bukkit.block.Block block = bworld.getBlockAt(i, j, k);
                         if (block.getTypeId() != Block.FIRE.id) {
-                            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEvent(new BlockIgniteEvent(block, igniteCause, null)).isCancelled()) {
+                            if (CraftEventFactory.callEvent(new BlockIgniteEvent(block, igniteCause, null)).isCancelled()) {
                                 continue;
                             }
                         }
@@ -82,7 +85,7 @@ public class BlockStationary extends BlockFluids {
                         // CraftBukkit start - prevent lava putting something on fire.
                         org.bukkit.block.Block block = bworld.getBlockAt(i, j + 1, k);
                         if (block.getTypeId() != Block.FIRE.id) {
-                            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEvent(new BlockIgniteEvent(block, igniteCause, null)).isCancelled()) {
+                            if (CraftEventFactory.callEvent(new BlockIgniteEvent(block, igniteCause, null)).isCancelled()) {
                                 continue;
                             }
                         }

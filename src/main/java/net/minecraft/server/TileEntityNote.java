@@ -1,7 +1,5 @@
 package net.minecraft.server;
 
-import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
-
 public class TileEntityNote extends TileEntity {
 
     public byte note = 0;
@@ -53,7 +51,7 @@ public class TileEntityNote extends TileEntity {
             }
 
             // CraftBukkit start
-            org.bukkit.event.block.NotePlayEvent event = CraftEventFactory.callNotePlayEvent(this.world, i, j, k, b0, this.note);
+            org.bukkit.event.block.NotePlayEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callNotePlayEvent(this.world, i, j, k, b0, this.note);
             if (!event.isCancelled()) {
                 this.world.playNote(i, j, k, event.getInstrument().getType(), event.getNote().getId());
             }

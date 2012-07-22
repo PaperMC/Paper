@@ -3,7 +3,6 @@ package net.minecraft.server;
 // CraftBukkit start
 import org.bukkit.entity.Player;
 import org.bukkit.event.painting.PaintingPlaceEvent;
-import org.bukkit.craftbukkit.block.CraftBlock;
 // CraftBukkit end
 
 public class ItemPainting extends Item {
@@ -43,7 +42,7 @@ public class ItemPainting extends Item {
                         Player who = (entityhuman == null) ? null : (Player) entityhuman.getBukkitEntity();
 
                         org.bukkit.block.Block blockClicked = world.getWorld().getBlockAt(i, j, k);
-                        org.bukkit.block.BlockFace blockFace = CraftBlock.notchToBlockFace(l);
+                        org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(l);
 
                         PaintingPlaceEvent event = new PaintingPlaceEvent((org.bukkit.entity.Painting) entitypainting.getBukkitEntity(), who, blockClicked, blockFace);
                         world.getServer().getPluginManager().callEvent(event);

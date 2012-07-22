@@ -1,8 +1,5 @@
 package net.minecraft.server;
 
-import java.util.List; // CraftBukkit
-import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
-
 public class EntityMagmaCube extends EntitySlime {
 
     public EntityMagmaCube(World world) {
@@ -38,7 +35,7 @@ public class EntityMagmaCube extends EntitySlime {
 
     protected void dropDeathLoot(boolean flag, int i) {
         // CraftBukkit start - whole method
-        List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
+        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
         int j = this.getLootId();
 
         if (j > 0 && this.getSize() > 1) {
@@ -53,7 +50,7 @@ public class EntityMagmaCube extends EntitySlime {
             }
         }
 
-        CraftEventFactory.callEntityDeathEvent(this, loot);
+        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, loot);
         // CraftBukkit end
     }
 

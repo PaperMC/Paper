@@ -1,9 +1,8 @@
 package net.minecraft.server;
 
 import java.util.List;
+
 // CraftBukkit start
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.ProjectileHitEvent;
 // CraftBukkit end
 
@@ -156,8 +155,8 @@ public abstract class EntityProjectile extends Entity {
             this.a(movingobjectposition);
             // CraftBukkit start
             if (this.dead) {
-                ProjectileHitEvent hitEvent = new ProjectileHitEvent((Projectile) this.getBukkitEntity());
-                Bukkit.getPluginManager().callEvent(hitEvent);
+                ProjectileHitEvent hitEvent = new ProjectileHitEvent((org.bukkit.entity.Projectile) this.getBukkitEntity());
+                org.bukkit.Bukkit.getPluginManager().callEvent(hitEvent);
             }
             // CraftBukkit end
         }

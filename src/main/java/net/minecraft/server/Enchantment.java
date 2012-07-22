@@ -1,7 +1,5 @@
 package net.minecraft.server;
 
-import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
-
 public abstract class Enchantment {
     // CraftBukkit - update CraftEnchant.getName(i) if this changes.
     public static final Enchantment[] byId = new Enchantment[256];
@@ -41,7 +39,7 @@ public abstract class Enchantment {
             byId[i] = this;
         }
 
-        org.bukkit.enchantments.Enchantment.registerEnchantment(new CraftEnchantment(this)); // CraftBukkit
+        org.bukkit.enchantments.Enchantment.registerEnchantment(new org.bukkit.craftbukkit.enchantments.CraftEnchantment(this)); // CraftBukkit
     }
 
     public int getRandomWeight() {

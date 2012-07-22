@@ -5,13 +5,10 @@ import java.util.List;
 // CraftBukkit start
 import org.bukkit.Location;
 import org.bukkit.entity.Vehicle;
-import org.bukkit.event.vehicle.VehicleCreateEvent;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
 import org.bukkit.event.vehicle.VehicleDestroyEvent;
-import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.event.vehicle.VehicleEntityCollisionEvent;
 import org.bukkit.event.vehicle.VehicleMoveEvent;
-import org.bukkit.event.vehicle.VehicleUpdateEvent;
 // CraftBukkit end
 
 public class EntityBoat extends Entity {
@@ -83,7 +80,7 @@ public class EntityBoat extends Entity {
         this.lastY = d1;
         this.lastZ = d2;
 
-        this.world.getServer().getPluginManager().callEvent(new VehicleCreateEvent((Vehicle) this.getBukkitEntity())); // CraftBukkit
+        this.world.getServer().getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleCreateEvent((Vehicle) this.getBukkitEntity())); // CraftBukkit
     }
 
     public double x_() {
@@ -307,7 +304,6 @@ public class EntityBoat extends Entity {
                     this.world.getServer().getPluginManager().callEvent(destroyEvent);
 
                     if (!destroyEvent.isCancelled()) {
-                    // CraftBukkit end
                         this.die();
 
                         int k;
@@ -319,7 +315,8 @@ public class EntityBoat extends Entity {
                         for (k = 0; k < 2; ++k) {
                             this.a(Item.STICK.id, 1, 0.0F);
                         }
-                    } // CraftBukkit
+                    }
+                    // CraftBukkit end
                 }
             } else {
                 this.motX *= 0.9900000095367432D;
@@ -364,7 +361,7 @@ public class EntityBoat extends Entity {
             Location to = new Location(bworld, this.locX, this.locY, this.locZ, this.yaw, this.pitch);
             Vehicle vehicle = (Vehicle) this.getBukkitEntity();
 
-            server.getPluginManager().callEvent(new VehicleUpdateEvent(vehicle));
+            server.getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleUpdateEvent(vehicle));
 
             if (!from.equals(to)) {
                 VehicleMoveEvent event = new VehicleMoveEvent(vehicle, from, to);
