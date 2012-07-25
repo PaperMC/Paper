@@ -198,6 +198,8 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
 
     public Location getBedSpawnLocation() {
         NBTTagCompound data = getData();
+        if (data == null) return null;
+
         if (data.hasKey("SpawnX") && data.hasKey("SpawnY") && data.hasKey("SpawnZ")) {
             String spawnWorld = data.getString("SpawnWorld");
             if (spawnWorld.equals("")) {
