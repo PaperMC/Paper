@@ -55,6 +55,12 @@ public class NetLoginHandler extends NetHandler {
     }
 
     public void a(Packet2Handshake packet2handshake) {
+        // CraftBukkit start - 1.3 detection
+        if (packet2handshake.a == null) {
+                disconnect("Outdated server!");
+                return;
+        }
+        // CraftBukkit end
         // CraftBukkit start
         int i = packet2handshake.a.indexOf(';');
         if (i == -1) {

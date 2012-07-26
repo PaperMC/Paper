@@ -52,7 +52,7 @@ public class NetworkManager {
         try {
             // CraftBukkit start - cant compile these outside the try
             socket.setSoTimeout(30000);
-            this.input = new DataInputStream(socket.getInputStream());
+            this.input = new DataInputStream(new java.io.BufferedInputStream(socket.getInputStream(), 2)); // Remove buffered input after 1.3
             this.output = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream(), 5120));
         } catch (java.io.IOException socketexception) {
             // CraftBukkit end
@@ -146,6 +146,23 @@ public class NetworkManager {
         boolean flag = false;
 
         try {
+            // CraftBukkit start - 1.3 detection
+            this.input.mark(2);
+            if (this.input.read() == 2 && this.input.read() != 0) {
+                Packet.a(this.input, 16);
+                Packet.a(this.input, 255);
+                this.input.readInt();
+
+                if (this.q) {
+                    return true;
+                }
+
+                this.m.clear();
+                this.m.add(new Packet2Handshake(null));
+                return true;
+            }
+            this.input.reset();
+            // CraftBukkit end
             Packet packet = Packet.a(this.input, this.packetListener.c());
 
             if (packet != null) {
