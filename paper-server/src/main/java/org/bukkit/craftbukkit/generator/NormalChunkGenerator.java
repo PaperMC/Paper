@@ -68,4 +68,12 @@ public class NormalChunkGenerator extends InternalChunkGenerator {
     public ChunkPosition findNearestMapFeature(World world, String string, int i, int i1, int i2) {
         return provider.findNearestMapFeature(world, string, i, i1, i2);
     }
+
+    public int getLoadedChunks() {
+        return 0;
+    }
+
+    public String getName() {
+        return "NormalWorldGenerator";
+    }
 }

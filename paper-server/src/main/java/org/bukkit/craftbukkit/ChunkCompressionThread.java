@@ -8,6 +8,7 @@ import java.util.zip.Deflater;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.Packet;
 import net.minecraft.server.Packet51MapChunk;
+import net.minecraft.server.Packet56MapChunkBulk;
 
 public final class ChunkCompressionThread implements Runnable {
 
@@ -46,29 +47,56 @@ public final class ChunkCompressionThread implements Runnable {
 
     private void handleQueuedPacket(QueuedPacket queuedPacket) {
         addToPlayerQueueSize(queuedPacket.player, -1);
-        // Compress the packet if necessary.
-        if (queuedPacket.compress) {
-            handleMapChunk(queuedPacket);
+
+        // Compress the packet if necessary
+        if (queuedPacket.compress == 1) {
+            handleMapChunk((Packet51MapChunk) queuedPacket.packet);
+        } else if (queuedPacket.compress == 2) {
+            handleMapChunkBulk((Packet56MapChunkBulk) queuedPacket.packet);
         }
+
         sendToNetworkQueue(queuedPacket);
     }
 
-    private void handleMapChunk(QueuedPacket queuedPacket) {
-        Packet51MapChunk packet = (Packet51MapChunk) queuedPacket.packet;
-
-        // If 'packet.g' is set then this packet has already been compressed.
+    private void handleMapChunkBulk(Packet56MapChunkBulk packet) {
         if (packet.buffer != null) {
             return;
         }
 
-        int dataSize = packet.rawData.length;
+        int dataSize = packet.buildBuffer.length;
         if (deflateBuffer.length < dataSize + 100) {
             deflateBuffer = new byte[dataSize + 100];
         }
 
         deflater.reset();
         deflater.setLevel(dataSize < REDUCED_DEFLATE_THRESHOLD ? DEFLATE_LEVEL_PARTS : DEFLATE_LEVEL_CHUNKS);
-        deflater.setInput(packet.rawData);
+        deflater.setInput(packet.buildBuffer);
+        deflater.finish();
+        int size = deflater.deflate(deflateBuffer);
+        if (size == 0) {
+            size = deflater.deflate(deflateBuffer);
+        }
+
+        // copy compressed data to packet
+        packet.buffer = new byte[size];
+        packet.size = size;
+        System.arraycopy(deflateBuffer, 0, packet.buffer, 0, size);
+    }
+
+    private void handleMapChunk(Packet51MapChunk packet) {
+        // If 'packet.buffer' is set then this packet has already been compressed.
+        if (packet.buffer != null) {
+            return;
+        }
+
+        int dataSize = packet.inflatedBuffer.length;
+        if (deflateBuffer.length < dataSize + 100) {
+            deflateBuffer = new byte[dataSize + 100];
+        }
+
+        deflater.reset();
+        deflater.setLevel(dataSize < REDUCED_DEFLATE_THRESHOLD ? DEFLATE_LEVEL_PARTS : DEFLATE_LEVEL_CHUNKS);
+        deflater.setInput(packet.inflatedBuffer);
         deflater.finish();
         int size = deflater.deflate(deflateBuffer);
         if (size == 0) {
@@ -86,13 +114,15 @@ public final class ChunkCompressionThread implements Runnable {
     }
 
     public static void sendPacket(EntityPlayer player, Packet packet) {
+        int compressType = 0;
+
         if (packet instanceof Packet51MapChunk) {
-            // MapChunk Packets need compressing.
-            instance.addQueuedPacket(new QueuedPacket(player, packet, true));
-        } else {
-            // Other Packets don't.
-            instance.addQueuedPacket(new QueuedPacket(player, packet, false));
+            compressType = 1;
+        } else if (packet instanceof Packet56MapChunkBulk) {
+            compressType = 2;
         }
+
+        instance.addQueuedPacket(new QueuedPacket(player, packet, compressType));
     }
 
     private void addToPlayerQueueSize(EntityPlayer player, int amount) {
@@ -129,9 +159,9 @@ public final class ChunkCompressionThread implements Runnable {
     private static class QueuedPacket {
         final EntityPlayer player;
         final Packet packet;
-        final boolean compress;
+        final int compress;
 
-        QueuedPacket(EntityPlayer player, Packet packet, boolean compress) {
+        QueuedPacket(EntityPlayer player, Packet packet, int compress) {
             this.player = player;
             this.packet = packet;
             this.compress = compress;
