@@ -10,9 +10,10 @@ public class ItemDoor extends Item {
         super(i);
         this.a = material;
         this.maxStackSize = 1;
+        this.a(CreativeModeTab.d);
     }
 
-    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
+    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l, float f, float f1, float f2) {
         if (l != 1) {
             return false;
         } else {
@@ -25,7 +26,7 @@ public class ItemDoor extends Item {
                 block = Block.IRON_DOOR_BLOCK;
             }
 
-            if (entityhuman.d(i, j, k) && entityhuman.d(i, j + 1, k)) {
+            if (entityhuman.e(i, j, k) && entityhuman.e(i, j + 1, k)) {
                 if (!block.canPlace(world, i, j, k)) {
                     return false;
                 } else {
@@ -72,8 +73,8 @@ public class ItemDoor extends Item {
             b0 = 1;
         }
 
-        int i1 = (world.e(i - b0, j, k - b1) ? 1 : 0) + (world.e(i - b0, j + 1, k - b1) ? 1 : 0);
-        int j1 = (world.e(i + b0, j, k + b1) ? 1 : 0) + (world.e(i + b0, j + 1, k + b1) ? 1 : 0);
+        int i1 = (world.s(i - b0, j, k - b1) ? 1 : 0) + (world.s(i - b0, j + 1, k - b1) ? 1 : 0);
+        int j1 = (world.s(i + b0, j, k + b1) ? 1 : 0) + (world.s(i + b0, j + 1, k + b1) ? 1 : 0);
         boolean flag = world.getTypeId(i - b0, j, k - b1) == block.id || world.getTypeId(i - b0, j + 1, k - b1) == block.id;
         boolean flag1 = world.getTypeId(i + b0, j, k + b1) == block.id || world.getTypeId(i + b0, j + 1, k + b1) == block.id;
         boolean flag2 = false;

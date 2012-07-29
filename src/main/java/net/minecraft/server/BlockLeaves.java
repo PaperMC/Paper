@@ -6,29 +6,31 @@ import org.bukkit.event.block.LeavesDecayEvent; // CraftBukkit
 
 public class BlockLeaves extends BlockTransparant {
 
-    private int c;
-    int[] a;
+    private int cr;
+    public static final String[] a = new String[] { "oak", "spruce", "birch", "jungle"};
+    int[] b;
 
     protected BlockLeaves(int i, int j) {
         super(i, j, Material.LEAVES, false);
-        this.c = j;
-        this.a(true);
+        this.cr = j;
+        this.b(true);
+        this.a(CreativeModeTab.c);
     }
 
-    public void remove(World world, int i, int j, int k) {
+    public void remove(World world, int i, int j, int k, int l, int i1) {
         byte b0 = 1;
-        int l = b0 + 1;
+        int j1 = b0 + 1;
 
-        if (world.a(i - l, j - l, k - l, i + l, j + l, k + l)) {
-            for (int i1 = -b0; i1 <= b0; ++i1) {
-                for (int j1 = -b0; j1 <= b0; ++j1) {
-                    for (int k1 = -b0; k1 <= b0; ++k1) {
-                        int l1 = world.getTypeId(i + i1, j + j1, k + k1);
+        if (world.c(i - j1, j - j1, k - j1, i + j1, j + j1, k + j1)) {
+            for (int k1 = -b0; k1 <= b0; ++k1) {
+                for (int l1 = -b0; l1 <= b0; ++l1) {
+                    for (int i2 = -b0; i2 <= b0; ++i2) {
+                        int j2 = world.getTypeId(i + k1, j + l1, k + i2);
 
-                        if (l1 == Block.LEAVES.id) {
-                            int i2 = world.getData(i + i1, j + j1, k + k1);
+                        if (j2 == Block.LEAVES.id) {
+                            int k2 = world.getData(i + k1, j + l1, k + i2);
 
-                            world.setRawData(i + i1, j + j1, k + k1, i2 | 8);
+                            world.setRawData(i + k1, j + l1, k + i2, k2 | 8);
                         }
                     }
                 }
@@ -36,7 +38,7 @@ public class BlockLeaves extends BlockTransparant {
         }
     }
 
-    public void a(World world, int i, int j, int k, Random random) {
+    public void b(World world, int i, int j, int k, Random random) {
         if (!world.isStatic) {
             int l = world.getData(i, j, k);
 
@@ -47,13 +49,13 @@ public class BlockLeaves extends BlockTransparant {
                 int j1 = b1 * b1;
                 int k1 = b1 / 2;
 
-                if (this.a == null) {
-                    this.a = new int[b1 * b1 * b1];
+                if (this.b == null) {
+                    this.b = new int[b1 * b1 * b1];
                 }
 
                 int l1;
 
-                if (world.a(i - i1, j - i1, k - i1, i + i1, j + i1, k + i1)) {
+                if (world.c(i - i1, j - i1, k - i1, i + i1, j + i1, k + i1)) {
                     int i2;
                     int j2;
                     int k2;
@@ -63,11 +65,11 @@ public class BlockLeaves extends BlockTransparant {
                             for (j2 = -b0; j2 <= b0; ++j2) {
                                 k2 = world.getTypeId(i + l1, j + i2, k + j2);
                                 if (k2 == Block.LOG.id) {
-                                    this.a[(l1 + k1) * j1 + (i2 + k1) * b1 + j2 + k1] = 0;
+                                    this.b[(l1 + k1) * j1 + (i2 + k1) * b1 + j2 + k1] = 0;
                                 } else if (k2 == Block.LEAVES.id) {
-                                    this.a[(l1 + k1) * j1 + (i2 + k1) * b1 + j2 + k1] = -2;
+                                    this.b[(l1 + k1) * j1 + (i2 + k1) * b1 + j2 + k1] = -2;
                                 } else {
-                                    this.a[(l1 + k1) * j1 + (i2 + k1) * b1 + j2 + k1] = -1;
+                                    this.b[(l1 + k1) * j1 + (i2 + k1) * b1 + j2 + k1] = -1;
                                 }
                             }
                         }
@@ -77,29 +79,29 @@ public class BlockLeaves extends BlockTransparant {
                         for (i2 = -b0; i2 <= b0; ++i2) {
                             for (j2 = -b0; j2 <= b0; ++j2) {
                                 for (k2 = -b0; k2 <= b0; ++k2) {
-                                    if (this.a[(i2 + k1) * j1 + (j2 + k1) * b1 + k2 + k1] == l1 - 1) {
-                                        if (this.a[(i2 + k1 - 1) * j1 + (j2 + k1) * b1 + k2 + k1] == -2) {
-                                            this.a[(i2 + k1 - 1) * j1 + (j2 + k1) * b1 + k2 + k1] = l1;
+                                    if (this.b[(i2 + k1) * j1 + (j2 + k1) * b1 + k2 + k1] == l1 - 1) {
+                                        if (this.b[(i2 + k1 - 1) * j1 + (j2 + k1) * b1 + k2 + k1] == -2) {
+                                            this.b[(i2 + k1 - 1) * j1 + (j2 + k1) * b1 + k2 + k1] = l1;
                                         }
 
-                                        if (this.a[(i2 + k1 + 1) * j1 + (j2 + k1) * b1 + k2 + k1] == -2) {
-                                            this.a[(i2 + k1 + 1) * j1 + (j2 + k1) * b1 + k2 + k1] = l1;
+                                        if (this.b[(i2 + k1 + 1) * j1 + (j2 + k1) * b1 + k2 + k1] == -2) {
+                                            this.b[(i2 + k1 + 1) * j1 + (j2 + k1) * b1 + k2 + k1] = l1;
                                         }
 
-                                        if (this.a[(i2 + k1) * j1 + (j2 + k1 - 1) * b1 + k2 + k1] == -2) {
-                                            this.a[(i2 + k1) * j1 + (j2 + k1 - 1) * b1 + k2 + k1] = l1;
+                                        if (this.b[(i2 + k1) * j1 + (j2 + k1 - 1) * b1 + k2 + k1] == -2) {
+                                            this.b[(i2 + k1) * j1 + (j2 + k1 - 1) * b1 + k2 + k1] = l1;
                                         }
 
-                                        if (this.a[(i2 + k1) * j1 + (j2 + k1 + 1) * b1 + k2 + k1] == -2) {
-                                            this.a[(i2 + k1) * j1 + (j2 + k1 + 1) * b1 + k2 + k1] = l1;
+                                        if (this.b[(i2 + k1) * j1 + (j2 + k1 + 1) * b1 + k2 + k1] == -2) {
+                                            this.b[(i2 + k1) * j1 + (j2 + k1 + 1) * b1 + k2 + k1] = l1;
                                         }
 
-                                        if (this.a[(i2 + k1) * j1 + (j2 + k1) * b1 + (k2 + k1 - 1)] == -2) {
-                                            this.a[(i2 + k1) * j1 + (j2 + k1) * b1 + (k2 + k1 - 1)] = l1;
+                                        if (this.b[(i2 + k1) * j1 + (j2 + k1) * b1 + (k2 + k1 - 1)] == -2) {
+                                            this.b[(i2 + k1) * j1 + (j2 + k1) * b1 + (k2 + k1 - 1)] = l1;
                                         }
 
-                                        if (this.a[(i2 + k1) * j1 + (j2 + k1) * b1 + k2 + k1 + 1] == -2) {
-                                            this.a[(i2 + k1) * j1 + (j2 + k1) * b1 + k2 + k1 + 1] = l1;
+                                        if (this.b[(i2 + k1) * j1 + (j2 + k1) * b1 + k2 + k1 + 1] == -2) {
+                                            this.b[(i2 + k1) * j1 + (j2 + k1) * b1 + k2 + k1 + 1] = l1;
                                         }
                                     }
                                 }
@@ -108,25 +110,27 @@ public class BlockLeaves extends BlockTransparant {
                     }
                 }
 
-                l1 = this.a[k1 * j1 + k1 * b1 + k1];
+                l1 = this.b[k1 * j1 + k1 * b1 + k1];
                 if (l1 >= 0) {
                     world.setRawData(i, j, k, l & -9);
                 } else {
-                    this.g(world, i, j, k);
+                    this.l(world, i, j, k);
                 }
             }
         }
     }
 
-    private void g(World world, int i, int j, int k) {
+    private void l(World world, int i, int j, int k) {
         // CraftBukkit start
         LeavesDecayEvent event = new LeavesDecayEvent(world.getWorld().getBlockAt(i, j, k));
         world.getServer().getPluginManager().callEvent(event);
 
-        if (event.isCancelled()) return;
+        if (event.isCancelled()) {
+            return;
+        }
         // CraftBukkit end
 
-        this.b(world, i, j, k, world.getData(i, j, k), 0);
+        this.c(world, i, j, k, world.getData(i, j, k), 0);
         world.setTypeId(i, j, k, 0);
     }
 
@@ -159,7 +163,7 @@ public class BlockLeaves extends BlockTransparant {
     }
 
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
-        if (!world.isStatic && entityhuman.U() != null && entityhuman.U().id == Item.SHEARS.id) {
+        if (!world.isStatic && entityhuman.bC() != null && entityhuman.bC().id == Item.SHEARS.id) {
             entityhuman.a(StatisticList.C[this.id], 1);
             this.a(world, i, j, k, new ItemStack(Block.LEAVES.id, 1, l & 3));
         } else {
@@ -171,15 +175,11 @@ public class BlockLeaves extends BlockTransparant {
         return i & 3;
     }
 
-    public boolean a() {
-        return !this.b;
+    public boolean d() {
+        return !this.c;
     }
 
     public int a(int i, int j) {
         return (j & 3) == 1 ? this.textureId + 80 : ((j & 3) == 3 ? this.textureId + 144 : this.textureId);
-    }
-
-    public void b(World world, int i, int j, int k, Entity entity) {
-        super.b(world, i, j, k, entity);
     }
 }

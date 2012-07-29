@@ -9,20 +9,20 @@ public class BlockSoil extends Block {
     protected BlockSoil(int i) {
         super(i, Material.EARTH);
         this.textureId = 87;
-        this.a(true);
+        this.b(true);
         this.a(0.0F, 0.0F, 0.0F, 1.0F, 0.9375F, 1.0F);
-        this.f(255);
+        this.h(255);
     }
 
     public AxisAlignedBB e(World world, int i, int j, int k) {
-        return AxisAlignedBB.b((double) (i + 0), (double) (j + 0), (double) (k + 0), (double) (i + 1), (double) (j + 1), (double) (k + 1));
+        return AxisAlignedBB.a().a((double) (i + 0), (double) (j + 0), (double) (k + 0), (double) (i + 1), (double) (j + 1), (double) (k + 1));
     }
 
-    public boolean a() {
+    public boolean d() {
         return false;
     }
 
-    public boolean b() {
+    public boolean c() {
         return false;
     }
 
@@ -30,13 +30,13 @@ public class BlockSoil extends Block {
         return i == 1 && j > 0 ? this.textureId - 1 : (i == 1 ? this.textureId : 2);
     }
 
-    public void a(World world, int i, int j, int k, Random random) {
-        if (!this.h(world, i, j, k) && !world.y(i, j + 1, k)) {
+    public void b(World world, int i, int j, int k, Random random) {
+        if (!this.n(world, i, j, k) && !world.B(i, j + 1, k)) {
             int l = world.getData(i, j, k);
 
             if (l > 0) {
                 world.setData(i, j, k, l - 1);
-            } else if (!this.g(world, i, j, k)) {
+            } else if (!this.l(world, i, j, k)) {
                 world.setTypeId(i, j, k, Block.DIRT.id);
             }
         } else {
@@ -45,8 +45,8 @@ public class BlockSoil extends Block {
     }
 
     public void a(World world, int i, int j, int k, Entity entity, float f) {
-        if (world.random.nextFloat() < f - 0.5F) {
-            // CraftBukkit start - Interact Soil
+        if (!world.isStatic && world.random.nextFloat() < f - 0.5F) {
+            // CraftBukkit start - interact soil
             org.bukkit.event.Cancellable cancellable;
             if (entity instanceof EntityHuman) {
                 cancellable = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, org.bukkit.event.block.Action.PHYSICAL, i, j, k, -1, null);
@@ -64,7 +64,7 @@ public class BlockSoil extends Block {
         }
     }
 
-    private boolean g(World world, int i, int j, int k) {
+    private boolean l(World world, int i, int j, int k) {
         byte b0 = 0;
 
         for (int l = i - b0; l <= i + b0; ++l) {
@@ -80,7 +80,7 @@ public class BlockSoil extends Block {
         return false;
     }
 
-    private boolean h(World world, int i, int j, int k) {
+    private boolean n(World world, int i, int j, int k) {
         for (int l = i - 4; l <= i + 4; ++l) {
             for (int i1 = j; i1 <= j + 1; ++i1) {
                 for (int j1 = k - 4; j1 <= k + 4; ++j1) {

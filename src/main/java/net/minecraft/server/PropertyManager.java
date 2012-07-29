@@ -3,6 +3,7 @@ package net.minecraft.server;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -12,17 +13,28 @@ import joptsimple.OptionSet; // CraftBukkit
 public class PropertyManager {
 
     public static Logger a = Logger.getLogger("Minecraft");
-    public Properties properties = new Properties(); // CraftBukkit - priv to pub
+    public Properties properties = new Properties(); // CraftBukkit - private -> public
     private File c;
 
     public PropertyManager(File file1) {
         this.c = file1;
         if (file1.exists()) {
+            FileInputStream fileinputstream = null;
+
             try {
-                this.properties.load(new FileInputStream(file1));
+                fileinputstream = new FileInputStream(file1);
+                this.properties.load(fileinputstream);
             } catch (Exception exception) {
                 a.log(Level.WARNING, "Failed to load " + file1, exception);
                 this.a();
+            } finally {
+                if (fileinputstream != null) {
+                    try {
+                        fileinputstream.close();
+                    } catch (IOException ioexception) {
+                        ;
+                    }
+                }
             }
         } else {
             a.log(Level.WARNING, file1 + " does not exist");
@@ -54,11 +66,22 @@ public class PropertyManager {
     }
 
     public void savePropertiesFile() {
+        FileOutputStream fileoutputstream = null;
+
         try {
-            this.properties.store(new FileOutputStream(this.c), "Minecraft server properties");
+            fileoutputstream = new FileOutputStream(this.c);
+            this.properties.store(fileoutputstream, "Minecraft server properties");
         } catch (Exception exception) {
             a.log(Level.WARNING, "Failed to save " + this.c, exception);
             this.a();
+        } finally {
+            if (fileoutputstream != null) {
+                try {
+                    fileoutputstream.close();
+                } catch (IOException ioexception) {
+                    ;
+                }
+            }
         }
     }
 
@@ -98,10 +121,5 @@ public class PropertyManager {
 
     public void a(String s, Object object) {
         this.properties.setProperty(s, "" + object);
-    }
-
-    public void setBoolean(String s, boolean flag) {
-        this.properties.setProperty(s, "" + flag);
-        this.savePropertiesFile();
     }
 }

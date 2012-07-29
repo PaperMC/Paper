@@ -24,11 +24,7 @@ public class WorldGenTrees extends WorldGenerator implements BlockSapling.TreeGe
     }
 
     public boolean a(World world, Random random, int i, int j, int k) {
-        // CraftBukkit start
-        // sk: The idea is to have (our) WorldServer implement
-        // BlockChangeDelegate and then we can implicitly cast World to
-        // WorldServer (a safe cast, AFAIK) and no code will be broken. This
-        // then allows plugins to catch manually-invoked generation events
+        // CraftBukkit start - moved to generate
         return this.generate((BlockChangeDelegate) world, random, i, j, k);
     }
 
@@ -144,6 +140,17 @@ public class WorldGenTrees extends WorldGenerator implements BlockSapling.TreeGe
                                         if (random.nextInt(4) == 0 && world.getTypeId(j2, j1, k2 + 1) == 0) {
                                             this.b(world, j2, j1, k2 + 1, 4);
                                         }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (random.nextInt(5) == 0 && l > 5) {
+                            for (j1 = 0; j1 < 2; ++j1) {
+                                for (k1 = 0; k1 < 4; ++k1) {
+                                    if (random.nextInt(4 - j1) == 0) {
+                                        i2 = random.nextInt(3);
+                                        this.setTypeAndData(world, i + Direction.a[Direction.e[k1]], j + l - 5 + j1, k + Direction.b[Direction.e[k1]], Block.COCOA.id, i2 << 2 | k1);
                                     }
                                 }
                             }

@@ -8,10 +8,11 @@ public class BlockCactus extends Block {
 
     protected BlockCactus(int i, int j) {
         super(i, j, Material.CACTUS);
-        this.a(true);
+        this.b(true);
+        this.a(CreativeModeTab.c);
     }
 
-    public void a(World world, int i, int j, int k, Random random) {
+    public void b(World world, int i, int j, int k, Random random) {
         if (world.isEmpty(i, j + 1, k)) {
             int l;
 
@@ -35,37 +36,37 @@ public class BlockCactus extends Block {
     public AxisAlignedBB e(World world, int i, int j, int k) {
         float f = 0.0625F;
 
-        return AxisAlignedBB.b((double) ((float) i + f), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) ((float) (j + 1) - f), (double) ((float) (k + 1) - f));
+        return AxisAlignedBB.a().a((double) ((float) i + f), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) ((float) (j + 1) - f), (double) ((float) (k + 1) - f));
     }
 
     public int a(int i) {
         return i == 1 ? this.textureId - 1 : (i == 0 ? this.textureId + 1 : this.textureId);
     }
 
-    public boolean b() {
+    public boolean c() {
         return false;
     }
 
-    public boolean a() {
+    public boolean d() {
         return false;
     }
 
-    public int c() {
+    public int b() {
         return 13;
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
-        return !super.canPlace(world, i, j, k) ? false : this.f(world, i, j, k);
+        return !super.canPlace(world, i, j, k) ? false : this.d(world, i, j, k);
     }
 
     public void doPhysics(World world, int i, int j, int k, int l) {
-        if (!this.f(world, i, j, k)) {
-            this.b(world, i, j, k, world.getData(i, j, k), 0);
+        if (!this.d(world, i, j, k)) {
+            this.c(world, i, j, k, world.getData(i, j, k), 0);
             world.setTypeId(i, j, k, 0);
         }
     }
 
-    public boolean f(World world, int i, int j, int k) {
+    public boolean d(World world, int i, int j, int k) {
         if (world.getMaterial(i - 1, j, k).isBuildable()) {
             return false;
         } else if (world.getMaterial(i + 1, j, k).isBuildable()) {

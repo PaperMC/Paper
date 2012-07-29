@@ -15,6 +15,7 @@ public class ItemBucket extends Item {
         super(i);
         this.maxStackSize = 1;
         this.a = j;
+        this.a(CreativeModeTab.f);
     }
 
     public ItemStack a(ItemStack itemstack, World world, EntityHuman entityhuman) {
@@ -38,7 +39,7 @@ public class ItemBucket extends Item {
                 }
 
                 if (this.a == 0) {
-                    if (!entityhuman.d(i, j, k)) {
+                    if (!entityhuman.e(i, j, k)) {
                         return itemstack;
                     }
 
@@ -49,13 +50,22 @@ public class ItemBucket extends Item {
                         if (event.isCancelled()) {
                             return itemstack;
                         }
+                        // CraftBukkit end
                         world.setTypeId(i, j, k, 0);
                         if (entityhuman.abilities.canInstantlyBuild) {
                             return itemstack;
                         }
-                        // CraftBukkit end
 
-                        return CraftItemStack.createNMSItemStack(event.getItemStack()); // CraftBukkit
+                        ItemStack result = CraftItemStack.createNMSItemStack(event.getItemStack()); // CraftBukkit - TODO: Check this stuff later... Not sure how this behavior should work
+                        if (--itemstack.count <= 0) {
+                            return result; // CraftBukkit
+                        }
+
+                        if (!entityhuman.inventory.pickup(result)) { // CraftBukkit
+                            entityhuman.drop(CraftItemStack.createNMSItemStack(event.getItemStack())); // CraftBukkit
+                        }
+
+                        return itemstack;
                     }
 
                     if (world.getMaterial(i, j, k) == Material.LAVA && world.getData(i, j, k) == 0) {
@@ -65,13 +75,22 @@ public class ItemBucket extends Item {
                         if (event.isCancelled()) {
                             return itemstack;
                         }
+                        // CraftBukkit end
                         world.setTypeId(i, j, k, 0);
                         if (entityhuman.abilities.canInstantlyBuild) {
                             return itemstack;
                         }
-                        // CraftBukkit end
 
-                        return CraftItemStack.createNMSItemStack(event.getItemStack()); // CraftBukkit
+                        ItemStack result = CraftItemStack.createNMSItemStack(event.getItemStack()); // CraftBukkit - TODO: Check this stuff later... Not sure how this behavior should work
+                        if (--itemstack.count <= 0) {
+                            return result; // CraftBukkit
+                        }
+
+                        if (!entityhuman.inventory.pickup(result)) { // CraftBukkit
+                            entityhuman.drop(CraftItemStack.createNMSItemStack(event.getItemStack())); // CraftBukkit
+                        }
+
+                        return itemstack;
                     }
                 } else {
                     if (this.a < 0) {
@@ -112,11 +131,11 @@ public class ItemBucket extends Item {
                         ++i;
                     }
 
-                    if (!entityhuman.d(i, j, k)) {
+                    if (!entityhuman.e(i, j, k)) {
                         return itemstack;
                     }
 
-                    if (world.isEmpty(i, j, k) || !world.getMaterial(i, j, k).isBuildable()) {
+                    if (this.a(world, d0, d1, d2, i, j, k) && !entityhuman.abilities.canInstantlyBuild) {
                         // CraftBukkit start
                         PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(entityhuman, clickedX, clickedY, clickedZ, movingobjectposition.face, itemstack);
 
@@ -124,21 +143,7 @@ public class ItemBucket extends Item {
                             return itemstack;
                         }
                         // CraftBukkit end
-
-                        if (world.worldProvider.d && this.a == Block.WATER.id) {
-                            world.makeSound(d0 + 0.5D, d1 + 0.5D, d2 + 0.5D, "random.fizz", 0.5F, 2.6F + (world.random.nextFloat() - world.random.nextFloat()) * 0.8F);
-
-                            for (int l = 0; l < 8; ++l) {
-                                world.a("largesmoke", (double) i + Math.random(), (double) j + Math.random(), (double) k + Math.random(), 0.0D, 0.0D, 0.0D);
-                            }
-                        } else {
-                            world.setTypeIdAndData(i, j, k, this.a, 0);
-                        }
-
-                        if (entityhuman.abilities.canInstantlyBuild) {
-                            return itemstack;
-                        }
-
+                        // CraftBukkit TODO: look for all the stuff that disappeared here, and make sure this is still where it should be
                         // CraftBukkit start
                         return CraftItemStack.createNMSItemStack(event.getItemStack());
                         // CraftBukkit end
@@ -158,6 +163,26 @@ public class ItemBucket extends Item {
             }
 
             return itemstack;
+        }
+    }
+
+    public boolean a(World world, double d0, double d1, double d2, int i, int j, int k) {
+        if (this.a <= 0) {
+            return false;
+        } else if (!world.isEmpty(i, j, k) && world.getMaterial(i, j, k).isBuildable()) {
+            return false;
+        } else {
+            if (world.worldProvider.d && this.a == Block.WATER.id) {
+                world.makeSound(d0 + 0.5D, d1 + 0.5D, d2 + 0.5D, "random.fizz", 0.5F, 2.6F + (world.random.nextFloat() - world.random.nextFloat()) * 0.8F);
+
+                for (int l = 0; l < 8; ++l) {
+                    world.a("largesmoke", (double) i + Math.random(), (double) j + Math.random(), (double) k + Math.random(), 0.0D, 0.0D, 0.0D);
+                }
+            } else {
+                world.setTypeIdAndData(i, j, k, this.a, 0);
+            }
+
+            return true;
         }
     }
 }

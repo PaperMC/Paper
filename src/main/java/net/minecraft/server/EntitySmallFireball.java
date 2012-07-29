@@ -9,17 +9,17 @@ public class EntitySmallFireball extends EntityFireball {
 
     public EntitySmallFireball(World world) {
         super(world);
-        this.b(0.3125F, 0.3125F);
+        this.a(0.3125F, 0.3125F);
     }
 
     public EntitySmallFireball(World world, EntityLiving entityliving, double d0, double d1, double d2) {
         super(world, entityliving, d0, d1, d2);
-        this.b(0.3125F, 0.3125F);
+        this.a(0.3125F, 0.3125F);
     }
 
     public EntitySmallFireball(World world, double d0, double d1, double d2, double d3, double d4, double d5) {
         super(world, d0, d1, d2, d3, d4, d5);
-        this.b(0.3125F, 0.3125F);
+        this.a(0.3125F, 0.3125F);
     }
 
     protected void a(MovingObjectPosition movingobjectposition) {
@@ -82,7 +82,7 @@ public class EntitySmallFireball extends EntityFireball {
         }
     }
 
-    public boolean o_() {
+    public boolean L() {
         return false;
     }
 

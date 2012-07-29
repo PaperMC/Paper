@@ -1,6 +1,7 @@
 package net.minecraft.server;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 // CraftBukkit - We import this because the compiler hates package-private methods in an external jar
@@ -83,35 +84,43 @@ class MinecartTrackLogic {
     }
 
     private boolean a(int i, int j, int k) {
-        return BlockMinecartTrack.g(this.b, i, j, k) ? true : (BlockMinecartTrack.g(this.b, i, j + 1, k) ? true : BlockMinecartTrack.g(this.b, i, j - 1, k));
+        return BlockMinecartTrack.d_(this.b, i, j, k) ? true : (BlockMinecartTrack.d_(this.b, i, j + 1, k) ? true : BlockMinecartTrack.d_(this.b, i, j - 1, k));
     }
 
     private MinecartTrackLogic a(ChunkPosition chunkposition) {
-        return BlockMinecartTrack.g(this.b, chunkposition.x, chunkposition.y, chunkposition.z) ? new MinecartTrackLogic(this.a, this.b, chunkposition.x, chunkposition.y, chunkposition.z) : (BlockMinecartTrack.g(this.b, chunkposition.x, chunkposition.y + 1, chunkposition.z) ? new MinecartTrackLogic(this.a, this.b, chunkposition.x, chunkposition.y + 1, chunkposition.z) : (BlockMinecartTrack.g(this.b, chunkposition.x, chunkposition.y - 1, chunkposition.z) ? new MinecartTrackLogic(this.a, this.b, chunkposition.x, chunkposition.y - 1, chunkposition.z) : null));
+        return BlockMinecartTrack.d_(this.b, chunkposition.x, chunkposition.y, chunkposition.z) ? new MinecartTrackLogic(this.a, this.b, chunkposition.x, chunkposition.y, chunkposition.z) : (BlockMinecartTrack.d_(this.b, chunkposition.x, chunkposition.y + 1, chunkposition.z) ? new MinecartTrackLogic(this.a, this.b, chunkposition.x, chunkposition.y + 1, chunkposition.z) : (BlockMinecartTrack.d_(this.b, chunkposition.x, chunkposition.y - 1, chunkposition.z) ? new MinecartTrackLogic(this.a, this.b, chunkposition.x, chunkposition.y - 1, chunkposition.z) : null));
     }
 
     private boolean b(MinecartTrackLogic minecarttracklogic) {
-        for (int i = 0; i < this.g.size(); ++i) {
-            ChunkPosition chunkposition = (ChunkPosition) this.g.get(i);
+        Iterator iterator = this.g.iterator();
 
-            if (chunkposition.x == minecarttracklogic.c && chunkposition.z == minecarttracklogic.e) {
-                return true;
+        ChunkPosition chunkposition;
+
+        do {
+            if (!iterator.hasNext()) {
+                return false;
             }
-        }
 
-        return false;
+            chunkposition = (ChunkPosition) iterator.next();
+        } while (chunkposition.x != minecarttracklogic.c || chunkposition.z != minecarttracklogic.e);
+
+        return true;
     }
 
     private boolean b(int i, int j, int k) {
-        for (int l = 0; l < this.g.size(); ++l) {
-            ChunkPosition chunkposition = (ChunkPosition) this.g.get(l);
+        Iterator iterator = this.g.iterator();
 
-            if (chunkposition.x == i && chunkposition.z == k) {
-                return true;
+        ChunkPosition chunkposition;
+
+        do {
+            if (!iterator.hasNext()) {
+                return false;
             }
-        }
 
-        return false;
+            chunkposition = (ChunkPosition) iterator.next();
+        } while (chunkposition.x != i || chunkposition.z != k);
+
+        return true;
     }
 
     private int b() {
@@ -141,12 +150,12 @@ class MinecartTrackLogic {
             return true;
         } else if (this.g.size() == 2) {
             return false;
-        } else if (this.g.size() == 0) {
+        } else if (this.g.isEmpty()) {
             return true;
         } else {
             ChunkPosition chunkposition = (ChunkPosition) this.g.get(0);
 
-            return minecarttracklogic.d == this.d && chunkposition.y == this.d ? true : true;
+            return true;
         }
     }
 
@@ -185,21 +194,21 @@ class MinecartTrackLogic {
         }
 
         if (b0 == 0) {
-            if (BlockMinecartTrack.g(this.b, this.c, this.d + 1, this.e - 1)) {
+            if (BlockMinecartTrack.d_(this.b, this.c, this.d + 1, this.e - 1)) {
                 b0 = 4;
             }
 
-            if (BlockMinecartTrack.g(this.b, this.c, this.d + 1, this.e + 1)) {
+            if (BlockMinecartTrack.d_(this.b, this.c, this.d + 1, this.e + 1)) {
                 b0 = 5;
             }
         }
 
         if (b0 == 1) {
-            if (BlockMinecartTrack.g(this.b, this.c + 1, this.d + 1, this.e)) {
+            if (BlockMinecartTrack.d_(this.b, this.c + 1, this.d + 1, this.e)) {
                 b0 = 2;
             }
 
-            if (BlockMinecartTrack.g(this.b, this.c - 1, this.d + 1, this.e)) {
+            if (BlockMinecartTrack.d_(this.b, this.c - 1, this.d + 1, this.e)) {
                 b0 = 3;
             }
         }
@@ -308,21 +317,21 @@ class MinecartTrackLogic {
         }
 
         if (b0 == 0) {
-            if (BlockMinecartTrack.g(this.b, this.c, this.d + 1, this.e - 1)) {
+            if (BlockMinecartTrack.d_(this.b, this.c, this.d + 1, this.e - 1)) {
                 b0 = 4;
             }
 
-            if (BlockMinecartTrack.g(this.b, this.c, this.d + 1, this.e + 1)) {
+            if (BlockMinecartTrack.d_(this.b, this.c, this.d + 1, this.e + 1)) {
                 b0 = 5;
             }
         }
 
         if (b0 == 1) {
-            if (BlockMinecartTrack.g(this.b, this.c + 1, this.d + 1, this.e)) {
+            if (BlockMinecartTrack.d_(this.b, this.c + 1, this.d + 1, this.e)) {
                 b0 = 2;
             }
 
-            if (BlockMinecartTrack.g(this.b, this.c - 1, this.d + 1, this.e)) {
+            if (BlockMinecartTrack.d_(this.b, this.c - 1, this.d + 1, this.e)) {
                 b0 = 3;
             }
         }
@@ -340,9 +349,11 @@ class MinecartTrackLogic {
 
         if (flag1 || this.b.getData(this.c, this.d, this.e) != i) {
             this.b.setData(this.c, this.d, this.e, i);
+            Iterator iterator = this.g.iterator();
 
-            for (int j = 0; j < this.g.size(); ++j) {
-                MinecartTrackLogic minecarttracklogic = this.a((ChunkPosition) this.g.get(j));
+            while (iterator.hasNext()) {
+                ChunkPosition chunkposition = (ChunkPosition) iterator.next();
+                MinecartTrackLogic minecarttracklogic = this.a(chunkposition);
 
                 if (minecarttracklogic != null) {
                     minecarttracklogic.a();

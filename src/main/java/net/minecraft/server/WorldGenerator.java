@@ -29,10 +29,6 @@ public abstract class WorldGenerator {
     protected void setTypeAndData(BlockChangeDelegate world, int i, int j, int k, int l, int i1) {
         if (this.a) {
             world.setTypeIdAndData(i, j, k, l, i1);
-        } else if (world instanceof World && ((World)world).getChunkAtWorldCoords(i, k).seenByPlayer) { // CraftBukkit
-            if (world.setRawTypeIdAndData(i, j, k, l, i1)) {
-                ((World)world).notify(i, j, k); // CraftBukkit - casty
-            }
         } else {
             world.setRawTypeIdAndData(i, j, k, l, i1);
         }

@@ -7,8 +7,8 @@ public abstract class EntityAgeable extends EntityCreature {
         super(world);
     }
 
-    protected void b() {
-        super.b();
+    protected void a() {
+        super.a();
         this.datawatcher.a(12, new Integer(0));
     }
 
@@ -32,8 +32,8 @@ public abstract class EntityAgeable extends EntityCreature {
         this.ageLocked = nbttagcompound.getBoolean("AgeLocked"); // CraftBukkit
     }
 
-    public void e() {
-        super.e();
+    public void d() {
+        super.d();
         int i = this.getAge();
 
         if (ageLocked) return; // CraftBukkit

@@ -28,15 +28,15 @@ public class EntityPotion extends EntityProjectile {
         this.d = i;
     }
 
-    protected float e() {
+    protected float h() {
         return 0.05F;
     }
 
-    protected float c() {
+    protected float d() {
         return 0.5F;
     }
 
-    protected float d() {
+    protected float g() {
         return -20.0F;
     }
 
@@ -46,7 +46,7 @@ public class EntityPotion extends EntityProjectile {
 
     protected void a(MovingObjectPosition movingobjectposition) {
         if (!this.world.isStatic) {
-            List list = Item.POTION.b(this.d);
+            List list = Item.POTION.f(this.d);
 
             if (list != null && !list.isEmpty()) {
                 AxisAlignedBB axisalignedbb = this.boundingBox.grow(4.0D, 2.0D, 4.0D);
@@ -59,18 +59,18 @@ public class EntityPotion extends EntityProjectile {
                     HashMap<LivingEntity, Double> affected = new HashMap<LivingEntity, Double>();
 
                     while (iterator.hasNext()) {
-                        Entity entity = (Entity) iterator.next();
-                        double d0 = this.j(entity);
+                        EntityLiving entityliving = (EntityLiving) iterator.next();
+                        double d0 = this.e(entityliving);
 
                         if (d0 < 16.0D) {
                             double d1 = 1.0D - Math.sqrt(d0) / 4.0D;
 
-                            if (entity == movingobjectposition.entity) {
+                            if (entityliving == movingobjectposition.entity) {
                                 d1 = 1.0D;
                             }
 
                             // CraftBukkit start
-                            affected.put((LivingEntity) entity.getBukkitEntity(), d1);
+                            affected.put((LivingEntity) entityliving.getBukkitEntity(), d1);
                         }
                     }
 
@@ -80,7 +80,8 @@ public class EntityPotion extends EntityProjectile {
                             if (!(victim instanceof CraftLivingEntity)) {
                                 continue;
                             }
-                            EntityLiving entity = ((CraftLivingEntity) victim).getHandle();
+
+                            EntityLiving entityliving = ((CraftLivingEntity) victim).getHandle();
                             double d1 = event.getIntensity(victim);
                             // CraftBukkit end
 
@@ -91,7 +92,7 @@ public class EntityPotion extends EntityProjectile {
                                 int i = mobeffect.getEffectId();
 
                                 // CraftBukkit start - abide by PVP settings
-                                if (!this.world.pvpMode && entity instanceof EntityPlayer && entity != this.shooter) {
+                                if (!this.world.pvpMode && entityliving instanceof EntityPlayer && entityliving != this.shooter) {
                                     // Block SLOWER_MOVEMENT, SLOWER_DIG, HARM, BLINDNESS, HUNGER, WEAKNESS and POISON potions
                                     if (i == 2 || i == 4 || i == 7 || i == 15 || i == 17 || i == 18 || i == 19) continue;
                                 }
@@ -99,12 +100,12 @@ public class EntityPotion extends EntityProjectile {
 
                                 if (MobEffectList.byId[i].isInstant()) {
                                     // CraftBukkit - added 'this'
-                                    MobEffectList.byId[i].applyInstantEffect(this.shooter, (EntityLiving) entity, mobeffect.getAmplifier(), d1, this);
+                                    MobEffectList.byId[i].applyInstantEffect(this.shooter, entityliving, mobeffect.getAmplifier(), d1, this);
                                 } else {
                                     int j = (int) (d1 * (double) mobeffect.getDuration() + 0.5D);
 
                                     if (j > 20) {
-                                        ((EntityLiving) entity).addEffect(new MobEffect(i, j, mobeffect.getAmplifier()));
+                                        entityliving.addEffect(new MobEffect(i, j, mobeffect.getAmplifier()));
                                     }
                                 }
                             }
@@ -116,5 +117,15 @@ public class EntityPotion extends EntityProjectile {
             this.world.triggerEffect(2002, (int) Math.round(this.locX), (int) Math.round(this.locY), (int) Math.round(this.locZ), this.d);
             this.die();
         }
+    }
+
+    public void a(NBTTagCompound nbttagcompound) {
+        super.a(nbttagcompound);
+        this.d = nbttagcompound.getInt("potionValue");
+    }
+
+    public void b(NBTTagCompound nbttagcompound) {
+        super.b(nbttagcompound);
+        nbttagcompound.setInt("potionValue", this.d);
     }
 }

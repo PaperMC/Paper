@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
-import net.minecraft.server.CraftingRecipe;
+import net.minecraft.server.IRecipe;
 import net.minecraft.server.IInventory;
 import net.minecraft.server.InventoryCrafting;
 
@@ -132,7 +132,7 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
     }
 
     public Recipe getRecipe() {
-        CraftingRecipe recipe = ((InventoryCrafting)getInventory()).currentRecipe;
+        IRecipe recipe = ((InventoryCrafting)getInventory()).currentRecipe;
         return recipe == null ? null : recipe.toBukkitRecipe();
     }
 }

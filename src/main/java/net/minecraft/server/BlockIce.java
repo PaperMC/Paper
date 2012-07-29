@@ -7,15 +7,33 @@ public class BlockIce extends BlockHalfTransparant {
     public BlockIce(int i, int j) {
         super(i, j, Material.ICE, false);
         this.frictionFactor = 0.98F;
-        this.a(true);
+        this.b(true);
+        this.a(CreativeModeTab.b);
     }
 
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
-        super.a(world, entityhuman, i, j, k, l);
-        Material material = world.getMaterial(i, j - 1, k);
+        entityhuman.a(StatisticList.C[this.id], 1);
+        entityhuman.j(0.025F);
+        if (this.q_() && EnchantmentManager.hasSilkTouchEnchantment(entityhuman.inventory)) {
+            ItemStack itemstack = this.c_(l);
 
-        if (material.isSolid() || material.isLiquid()) {
-            world.setTypeId(i, j, k, Block.WATER.id);
+            if (itemstack != null) {
+                this.a(world, i, j, k, itemstack);
+            }
+        } else {
+            if (world.worldProvider.d) {
+                world.setTypeId(i, j, k, 0);
+                return;
+            }
+
+            int i1 = EnchantmentManager.getBonusBlockLootEnchantmentLevel(entityhuman.inventory);
+
+            this.c(world, i, j, k, l, i1);
+            Material material = world.getMaterial(i, j - 1, k);
+
+            if (material.isSolid() || material.isLiquid()) {
+                world.setTypeId(i, j, k, Block.WATER.id);
+            }
         }
     }
 
@@ -23,24 +41,25 @@ public class BlockIce extends BlockHalfTransparant {
         return 0;
     }
 
-    public void a(World world, int i, int j, int k, Random random) {
-        if (world.a(EnumSkyBlock.BLOCK, i, j, k) > 11 - Block.lightBlock[this.id]) {
+    public void b(World world, int i, int j, int k, Random random) {
+        if (world.b(EnumSkyBlock.BLOCK, i, j, k) > 11 - Block.lightBlock[this.id]) {
             // CraftBukkit start
             if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(world.getWorld().getBlockAt(i, j, k), Block.STATIONARY_WATER.id).isCancelled()) {
                 return;
             }
             // CraftBukkit end
 
-            this.b(world, i, j, k, world.getData(i, j, k), 0);
+            if (world.worldProvider.d) {
+                world.setTypeId(i, j, k, 0);
+                return;
+            }
+
+            this.c(world, i, j, k, world.getData(i, j, k), 0);
             world.setTypeId(i, j, k, Block.STATIONARY_WATER.id);
         }
     }
 
-    public int g() {
+    public int e() {
         return 0;
-    }
-
-    protected ItemStack a_(int i) {
-        return null;
     }
 }

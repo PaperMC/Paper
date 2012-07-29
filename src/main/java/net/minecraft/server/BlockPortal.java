@@ -11,6 +11,22 @@ public class BlockPortal extends BlockHalfTransparant {
 
     public BlockPortal(int i, int j) {
         super(i, j, Material.PORTAL, false);
+        this.b(true);
+    }
+
+    public void b(World world, int i, int j, int k, Random random) {
+        super.b(world, i, j, k, random);
+        if (world.worldProvider.d() && random.nextInt(2000) < world.difficulty) {
+            int l;
+
+            for (l = j; !world.t(i, l, k) && l > 0; --l) {
+                ;
+            }
+
+            if (l > 0 && !world.s(i, l + 1, k)) {
+                ItemMonsterEgg.a(world, 57, (double) i + 0.5D, (double) l + 1.1D, (double) k + 0.5D);
+            }
+        }
     }
 
     public AxisAlignedBB e(World world, int i, int j, int k) {
@@ -32,15 +48,15 @@ public class BlockPortal extends BlockHalfTransparant {
         }
     }
 
-    public boolean a() {
+    public boolean d() {
         return false;
     }
 
-    public boolean b() {
+    public boolean c() {
         return false;
     }
 
-    public boolean b_(World world, int i, int j, int k) {
+    public boolean i_(World world, int i, int j, int k) {
         byte b0 = 0;
         byte b1 = 0;
 
@@ -146,8 +162,10 @@ public class BlockPortal extends BlockHalfTransparant {
 
                 if (flag && flag1) {
                     world.setTypeId(i, j, k, 0);
-                } else if ((world.getTypeId(i + b0, j, k + b1) != Block.OBSIDIAN.id || world.getTypeId(i - b0, j, k - b1) != this.id) && (world.getTypeId(i - b0, j, k - b1) != Block.OBSIDIAN.id || world.getTypeId(i + b0, j, k + b1) != this.id)) {
-                    world.setTypeId(i, j, k, 0);
+                } else {
+                    if ((world.getTypeId(i + b0, j, k + b1) != Block.OBSIDIAN.id || world.getTypeId(i - b0, j, k - b1) != this.id) && (world.getTypeId(i - b0, j, k - b1) != Block.OBSIDIAN.id || world.getTypeId(i + b0, j, k + b1) != this.id)) {
+                        world.setTypeId(i, j, k, 0);
+                    }
                 }
             } else {
                 world.setTypeId(i, j, k, 0);
@@ -166,7 +184,7 @@ public class BlockPortal extends BlockHalfTransparant {
             world.getServer().getPluginManager().callEvent(event);
             // CraftBukkit end
 
-            entity.ad();
+            entity.aa();
         }
     }
 }

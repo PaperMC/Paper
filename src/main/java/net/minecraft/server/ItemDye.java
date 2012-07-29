@@ -14,21 +14,24 @@ public class ItemDye extends Item {
         super(i);
         this.a(true);
         this.setMaxDurability(0);
+        this.a(CreativeModeTab.l);
     }
 
-    public String a(ItemStack itemstack) {
+    public String c(ItemStack itemstack) {
         int i = MathHelper.a(itemstack.getData(), 0, 15);
 
         return super.getName() + "." + a[i];
     }
 
-    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
-        if (!entityhuman.d(i, j, k)) {
+    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l, float f, float f1, float f2) {
+        if (!entityhuman.e(i, j, k)) {
             return false;
         } else {
-            if (itemstack.getData() == 15) {
-                int i1 = world.getTypeId(i, j, k);
+            int i1;
+            int j1;
 
+            if (itemstack.getData() == 15) {
+                i1 = world.getTypeId(i, j, k);
                 if (i1 == Block.SAPLING.id) {
                     if (!world.isStatic) {
                         // CraftBukkit start
@@ -54,8 +57,12 @@ public class ItemDye extends Item {
                 }
 
                 if (i1 == Block.MELON_STEM.id || i1 == Block.PUMPKIN_STEM.id) {
+                    if (world.getData(i, j, k) == 7) {
+                        return false;
+                    }
+
                     if (!world.isStatic) {
-                        ((BlockStem) Block.byId[i1]).g(world, i, j, k);
+                        ((BlockStem) Block.byId[i1]).l(world, i, j, k);
                         --itemstack.count;
                     }
 
@@ -63,8 +70,21 @@ public class ItemDye extends Item {
                 }
 
                 if (i1 == Block.CROPS.id) {
+                    if (world.getData(i, j, k) == 7) {
+                        return false;
+                    }
+
                     if (!world.isStatic) {
-                        ((BlockCrops) Block.CROPS).g(world, i, j, k);
+                        ((BlockCrops) Block.CROPS).c_(world, i, j, k);
+                        --itemstack.count;
+                    }
+
+                    return true;
+                }
+
+                if (i1 == Block.COCOA.id) {
+                    if (!world.isStatic) {
+                        world.setData(i, j, k, 8 | BlockDirectional.d(world.getData(i, j, k)));
                         --itemstack.count;
                     }
 
@@ -75,30 +95,75 @@ public class ItemDye extends Item {
                     if (!world.isStatic) {
                         --itemstack.count;
 
-                        label73:
-                        for (int j1 = 0; j1 < 128; ++j1) {
+                        label135:
+                        for (j1 = 0; j1 < 128; ++j1) {
                             int k1 = i;
                             int l1 = j + 1;
                             int i2 = k;
 
                             for (int j2 = 0; j2 < j1 / 16; ++j2) {
-                                k1 += c.nextInt(3) - 1;
-                                l1 += (c.nextInt(3) - 1) * c.nextInt(3) / 2;
-                                i2 += c.nextInt(3) - 1;
-                                if (world.getTypeId(k1, l1 - 1, i2) != Block.GRASS.id || world.e(k1, l1, i2)) {
-                                    continue label73;
+                                k1 += d.nextInt(3) - 1;
+                                l1 += (d.nextInt(3) - 1) * d.nextInt(3) / 2;
+                                i2 += d.nextInt(3) - 1;
+                                if (world.getTypeId(k1, l1 - 1, i2) != Block.GRASS.id || world.s(k1, l1, i2)) {
+                                    continue label135;
                                 }
                             }
 
                             if (world.getTypeId(k1, l1, i2) == 0) {
-                                if (c.nextInt(10) != 0) {
-                                    world.setTypeIdAndData(k1, l1, i2, Block.LONG_GRASS.id, 1);
-                                } else if (c.nextInt(3) != 0) {
-                                    world.setTypeId(k1, l1, i2, Block.YELLOW_FLOWER.id);
-                                } else {
+                                if (d.nextInt(10) != 0) {
+                                    if (Block.LONG_GRASS.d(world, k1, l1, i2)) {
+                                        world.setTypeIdAndData(k1, l1, i2, Block.LONG_GRASS.id, 1);
+                                    }
+                                } else if (d.nextInt(3) != 0) {
+                                    if (Block.YELLOW_FLOWER.d(world, k1, l1, i2)) {
+                                        world.setTypeId(k1, l1, i2, Block.YELLOW_FLOWER.id);
+                                    }
+                                } else if (Block.RED_ROSE.d(world, k1, l1, i2)) {
                                     world.setTypeId(k1, l1, i2, Block.RED_ROSE.id);
                                 }
                             }
+                        }
+                    }
+
+                    return true;
+                }
+            } else if (itemstack.getData() == 3) {
+                i1 = world.getTypeId(i, j, k);
+                j1 = world.getData(i, j, k);
+                if (i1 == Block.LOG.id && BlockLog.e(j1) == 3) {
+                    if (l == 0) {
+                        return false;
+                    }
+
+                    if (l == 1) {
+                        return false;
+                    }
+
+                    if (l == 2) {
+                        --k;
+                    }
+
+                    if (l == 3) {
+                        ++k;
+                    }
+
+                    if (l == 4) {
+                        --i;
+                    }
+
+                    if (l == 5) {
+                        ++i;
+                    }
+
+                    if (world.isEmpty(i, j, k)) {
+                        world.setTypeId(i, j, k, Block.COCOA.id);
+                        if (world.getTypeId(i, j, k) == Block.COCOA.id) {
+                            Block.byId[Block.COCOA.id].postPlace(world, i, j, k, l, f, f1, f2);
+                        }
+
+                        if (!entityhuman.abilities.canInstantlyBuild) {
+                            --itemstack.count;
                         }
                     }
 
@@ -110,19 +175,19 @@ public class ItemDye extends Item {
         }
     }
 
-    public void a(ItemStack itemstack, EntityLiving entityliving) {
+    public boolean a(ItemStack itemstack, EntityLiving entityliving) {
         if (entityliving instanceof EntitySheep) {
             EntitySheep entitysheep = (EntitySheep) entityliving;
-            int i = BlockCloth.d(itemstack.getData());
+            int i = BlockCloth.e_(itemstack.getData());
 
             if (!entitysheep.isSheared() && entitysheep.getColor() != i) {
                 // CraftBukkit start
-                byte bColor = new Integer(i).byteValue();
+                byte bColor = (byte) i;
                 SheepDyeWoolEvent event = new SheepDyeWoolEvent((org.bukkit.entity.Sheep) entitysheep.getBukkitEntity(), org.bukkit.DyeColor.getByData(bColor));
                 entitysheep.world.getServer().getPluginManager().callEvent(event);
 
                 if (event.isCancelled()) {
-                    return;
+                    return false;
                 }
 
                 i = (byte) event.getColor().getData();
@@ -131,6 +196,10 @@ public class ItemDye extends Item {
                 entitysheep.setColor(i);
                 --itemstack.count;
             }
+
+            return true;
+        } else {
+            return false;
         }
     }
 }

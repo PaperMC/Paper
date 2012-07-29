@@ -1,14 +1,17 @@
 package net.minecraft.server;
 
-import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
+// CraftBukkit start
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
+// CraftBukkit end
 
 public class EntityCow extends EntityAnimal {
 
     public EntityCow(World world) {
         super(world);
         this.texture = "/mob/cow.png";
-        this.b(0.9F, 1.3F);
-        this.al().a(true);
+        this.a(0.9F, 1.3F);
+        this.getNavigation().a(true);
         this.goalSelector.a(0, new PathfinderGoalFloat(this));
         this.goalSelector.a(1, new PathfinderGoalPanic(this, 0.38F));
         this.goalSelector.a(2, new PathfinderGoalBreed(this, 0.2F));
@@ -19,7 +22,7 @@ public class EntityCow extends EntityAnimal {
         this.goalSelector.a(7, new PathfinderGoalRandomLookaround(this));
     }
 
-    public boolean c_() {
+    public boolean aV() {
         return true;
     }
 
@@ -27,27 +30,19 @@ public class EntityCow extends EntityAnimal {
         return 10;
     }
 
-    public void b(NBTTagCompound nbttagcompound) {
-        super.b(nbttagcompound);
-    }
-
-    public void a(NBTTagCompound nbttagcompound) {
-        super.a(nbttagcompound);
-    }
-
-    protected String i() {
+    protected String aQ() {
         return "mob.cow";
     }
 
-    protected String j() {
+    protected String aR() {
         return "mob.cowhurt";
     }
 
-    protected String k() {
+    protected String aS() {
         return "mob.cowhurt";
     }
 
-    protected float p() {
+    protected float aP() {
         return 0.4F;
     }
 
@@ -59,6 +54,8 @@ public class EntityCow extends EntityAnimal {
         // CraftBukkit start - whole method
         java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
         int j = this.random.nextInt(3) + this.random.nextInt(1 + i);
+
+        int k;
 
         if (j > 0) {
             loot.add(new org.bukkit.inventory.ItemStack(Item.LEATHER.id, j));
@@ -74,7 +71,7 @@ public class EntityCow extends EntityAnimal {
         // CraftBukkit end
     }
 
-    public boolean b(EntityHuman entityhuman) {
+    public boolean c(EntityHuman entityhuman) {
         ItemStack itemstack = entityhuman.inventory.getItemInHand();
 
         if (itemstack != null && itemstack.id == Item.BUCKET.id) {
@@ -86,12 +83,16 @@ public class EntityCow extends EntityAnimal {
                 return false;
             }
 
-            entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, org.bukkit.craftbukkit.inventory.CraftItemStack.createNMSItemStack(event.getItemStack()));
+            if (--itemstack.count <= 0) {
+                entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, CraftItemStack.createNMSItemStack(event.getItemStack()));
+            } else if (!entityhuman.inventory.pickup(new ItemStack(Item.MILK_BUCKET))) {
+                entityhuman.drop(CraftItemStack.createNMSItemStack(event.getItemStack()));
+            }
             // CraftBukkit end
 
             return true;
         } else {
-            return super.b(entityhuman);
+            return super.c(entityhuman);
         }
     }
 

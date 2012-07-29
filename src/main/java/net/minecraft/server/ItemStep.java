@@ -2,8 +2,15 @@ package net.minecraft.server;
 
 public class ItemStep extends ItemBlock {
 
-    public ItemStep(int i) {
+    private final boolean a;
+    private final BlockStepAbstract b;
+    private final BlockStepAbstract c;
+
+    public ItemStep(int i, BlockStepAbstract blockstepabstract, BlockStepAbstract blockstepabstract1, boolean flag) {
         super(i);
+        this.b = blockstepabstract;
+        this.c = blockstepabstract1;
+        this.a = flag;
         this.setMaxDurability(0);
         this.a(true);
     }
@@ -12,20 +19,16 @@ public class ItemStep extends ItemBlock {
         return i;
     }
 
-    public String a(ItemStack itemstack) {
-        int i = itemstack.getData();
-
-        if (i < 0 || i >= BlockStep.a.length) {
-            i = 0;
-        }
-
-        return super.getName() + "." + BlockStep.a[i];
+    public String c(ItemStack itemstack) {
+        return this.b.d(itemstack.getData());
     }
 
-    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
-        if (itemstack.count == 0) {
+    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l, float f, float f1, float f2) {
+        if (this.a) {
+            return super.interactWith(itemstack, entityhuman, world, i, j, k, l, f, f1, f2);
+        } else if (itemstack.count == 0) {
             return false;
-        } else if (!entityhuman.d(i, j, k)) {
+        } else if (!entityhuman.e(i, j, k)) {
             return false;
         } else {
             int i1 = world.getTypeId(i, j, k);
@@ -33,15 +36,15 @@ public class ItemStep extends ItemBlock {
             int k1 = j1 & 7;
             boolean flag = (j1 & 8) != 0;
 
-            if ((l == 1 && !flag || l == 0 && flag) && i1 == Block.STEP.id && k1 == itemstack.getData()) {
-                return super.interactWith(itemstack, entityhuman, world, i, j, k, -1); // CraftBukkit - handle this in super
+            if ((l == 1 && !flag || l == 0 && flag) && i1 == this.b.id && k1 == itemstack.getData()) {
+                return super.interactWith(itemstack, entityhuman, world, i, j, k, -1, f, f1, f2); // CraftBukkit - handle this in super
             } else {
-                return b(itemstack, entityhuman, world, i, j, k, l) ? true : super.interactWith(itemstack, entityhuman, world, i, j, k, l);
+                return this.a(itemstack, entityhuman, world, i, j, k, l) ? true : super.interactWith(itemstack, entityhuman, world, i, j, k, l, f, f1, f2);
             }
         }
     }
 
-    private static boolean b(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
+    private boolean a(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
         if (l == 0) {
             --j;
         }
@@ -70,9 +73,9 @@ public class ItemStep extends ItemBlock {
         int j1 = world.getData(i, j, k);
         int k1 = j1 & 7;
 
-        if (i1 == Block.STEP.id && k1 == itemstack.getData()) {
-            if (world.containsEntity(Block.DOUBLE_STEP.e(world, i, j, k)) && world.setTypeIdAndData(i, j, k, Block.DOUBLE_STEP.id, k1)) {
-                world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), Block.DOUBLE_STEP.stepSound.getName(), (Block.DOUBLE_STEP.stepSound.getVolume1() + 1.0F) / 2.0F, Block.DOUBLE_STEP.stepSound.getVolume2() * 0.8F);
+        if (i1 == this.b.id && k1 == itemstack.getData()) {
+            if (world.b(this.c.e(world, i, j, k)) && world.setTypeIdAndData(i, j, k, this.c.id, k1)) {
+                world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), this.c.stepSound.getName(), (this.c.stepSound.getVolume1() + 1.0F) / 2.0F, this.c.stepSound.getVolume2() * 0.8F);
                 --itemstack.count;
             }
 

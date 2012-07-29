@@ -29,7 +29,7 @@ public class PathfinderGoalMeleeAttack extends PathfinderGoal {
     }
 
     public boolean a() {
-        EntityLiving entityliving = this.b.at();
+        EntityLiving entityliving = this.b.az();
 
         if (entityliving == null) {
             return false;
@@ -37,36 +37,37 @@ public class PathfinderGoalMeleeAttack extends PathfinderGoal {
             return false;
         } else {
             this.c = entityliving;
-            this.g = this.b.al().a(this.c);
+            this.g = this.b.getNavigation().a(this.c);
             return this.g != null;
         }
     }
 
     public boolean b() {
-        EntityLiving entityliving = this.b.at();
+        EntityLiving entityliving = this.b.az();
 
-        return entityliving == null ? false : (!this.c.isAlive() ? false : (!this.f ? !this.b.al().e() : this.b.e(MathHelper.floor(this.c.locX), MathHelper.floor(this.c.locY), MathHelper.floor(this.c.locZ))));
+        return entityliving == null ? false : (!this.c.isAlive() ? false : (!this.f ? !this.b.getNavigation().f() : this.b.d(MathHelper.floor(this.c.locX), MathHelper.floor(this.c.locY), MathHelper.floor(this.c.locZ))));
     }
 
-    public void c() {
-        this.b.al().a(this.g, this.e);
+    public void e() {
+        this.b.getNavigation().a(this.g, this.e);
         this.i = 0;
     }
 
-    public void d() {
+    public void c() {
         // CraftBukkit start
         EntityTargetEvent.TargetReason reason = this.c.isAlive() ? EntityTargetEvent.TargetReason.FORGOT_TARGET : EntityTargetEvent.TargetReason.TARGET_DIED;
         org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetEvent(b, null, reason);
         // CraftBukkit end
+
         this.c = null;
-        this.b.al().f();
+        this.b.getNavigation().g();
     }
 
-    public void e() {
+    public void d() {
         this.b.getControllerLook().a(this.c, 30.0F, 30.0F);
-        if ((this.f || this.b.am().canSee(this.c)) && --this.i <= 0) {
-            this.i = 4 + this.b.an().nextInt(7);
-            this.b.al().a(this.c, this.e);
+        if ((this.f || this.b.at().canSee(this.c)) && --this.i <= 0) {
+            this.i = 4 + this.b.au().nextInt(7);
+            this.b.getNavigation().a(this.c, this.e);
         }
 
         this.d = Math.max(this.d - 1, 0);
@@ -75,7 +76,7 @@ public class PathfinderGoalMeleeAttack extends PathfinderGoal {
         if (this.b.e(this.c.locX, this.c.boundingBox.b, this.c.locZ) <= d0) {
             if (this.d <= 0) {
                 this.d = 20;
-                this.b.a((Entity) this.c);
+                this.b.k(this.c);
             }
         }
     }

@@ -10,10 +10,10 @@ public class BlockReed extends Block {
         float f = 0.375F;
 
         this.a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, 1.0F, 0.5F + f);
-        this.a(true);
+        this.b(true);
     }
 
-    public void a(World world, int i, int j, int k, Random random) {
+    public void b(World world, int i, int j, int k, Random random) {
         if (world.isEmpty(i, j + 1, k)) {
             int l;
 
@@ -41,17 +41,17 @@ public class BlockReed extends Block {
     }
 
     public void doPhysics(World world, int i, int j, int k, int l) {
-        this.g(world, i, j, k);
+        this.k_(world, i, j, k);
     }
 
-    protected final void g(World world, int i, int j, int k) {
-        if (!this.f(world, i, j, k)) {
-            this.b(world, i, j, k, world.getData(i, j, k), 0);
+    protected final void k_(World world, int i, int j, int k) {
+        if (!this.d(world, i, j, k)) {
+            this.c(world, i, j, k, world.getData(i, j, k), 0);
             world.setTypeId(i, j, k, 0);
         }
     }
 
-    public boolean f(World world, int i, int j, int k) {
+    public boolean d(World world, int i, int j, int k) {
         return this.canPlace(world, i, j, k);
     }
 
@@ -63,15 +63,15 @@ public class BlockReed extends Block {
         return Item.SUGAR_CANE.id;
     }
 
-    public boolean a() {
+    public boolean d() {
         return false;
     }
 
-    public boolean b() {
+    public boolean c() {
         return false;
     }
 
-    public int c() {
+    public int b() {
         return 1;
     }
 }

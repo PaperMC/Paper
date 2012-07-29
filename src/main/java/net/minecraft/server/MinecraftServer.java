@@ -1,68 +1,73 @@
 package net.minecraft.server;
 
-// import java.awt.GraphicsEnvironment; // CraftBukkit
+import java.awt.GraphicsEnvironment;
 import java.io.File;
-import java.io.IOException;
-import java.net.InetAddress;
+import java.security.KeyPair;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 // CraftBukkit start
-import java.io.PrintStream;
 import jline.console.ConsoleReader;
 import joptsimple.OptionSet;
 
 import org.bukkit.World.Environment;
-import org.bukkit.craftbukkit.LoggerOutputStream;
-import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.event.server.RemoteServerCommandEvent;
 import org.bukkit.event.world.WorldSaveEvent;
 // CraftBukkit end
 
-public class MinecraftServer implements Runnable, ICommandListener, IMinecraftServer {
+public abstract class MinecraftServer implements Runnable, IMojangStatistics, ICommandListener {
 
     public static Logger log = Logger.getLogger("Minecraft");
-    public static HashMap trackerList = new HashMap();
-    private String y;
-    private int z;
-    public NetworkListenThread networkListenThread;
-    public PropertyManager propertyManager;
+    private static MinecraftServer l = null;
+    public Convertable convertable; // CraftBukkit - private final -> public
+    private final MojangStatisticsGenerator n = new MojangStatisticsGenerator("server", this);
+    public File universe; // CraftBukkit - private final -> public
+    private final List p = new ArrayList();
+    private final ICommandHandler q;
+    public final MethodProfiler methodProfiler = new MethodProfiler();
+    private String serverIp;
+    private int s = -1;
     // public WorldServer[] worldServer; // CraftBukkit - removed!
-    public long[] f = new long[100];
-    public long[][] g;
-    public ServerConfigurationManager serverConfigurationManager;
-    public ConsoleCommandHandler consoleCommandHandler; // CraftBukkit - made public
+    private ServerConfigurationManagerAbstract t;
     private boolean isRunning = true;
-    public boolean isStopped = false;
-    int ticks = 0;
-    public String k;
-    public int l;
-    private List C = new ArrayList();
-    private List D = Collections.synchronizedList(new ArrayList());
-    // public EntityTracker[] tracker = new EntityTracker[3]; // CraftBukkit - removed!
-    public boolean onlineMode;
-    public boolean spawnAnimals;
-    public boolean spawnNPCs;
-    public boolean pvpMode;
-    public boolean allowFlight;
-    public String motd;
-    public int t;
+    private boolean isStopped = false;
+    private int ticks = 0;
+    public String d;
+    public int e;
+    private boolean onlineMode;
+    private boolean spawnAnimals;
+    private boolean spawnNPCs;
+    private boolean pvpMode;
+    private boolean allowFlight;
+    private String motd;
+    private int D;
     private long E;
     private long F;
     private long G;
     private long H;
-    public long[] u = new long[100];
-    public long[] v = new long[100];
-    public long[] w = new long[100];
-    public long[] x = new long[100];
-    private RemoteStatusListener I;
-    private RemoteControlListener J;
+    public final long[] f = new long[100];
+    public final long[] g = new long[100];
+    public final long[] h = new long[100];
+    public final long[] i = new long[100];
+    public final long[] j = new long[100];
+    public long[][] k;
+    private KeyPair I;
+    private String J;
+    private String K;
+    private boolean demoMode;
+    private boolean N;
+    private boolean O;
+    private String P = "";
+    private boolean Q = false;
+    private long R;
+    private String S;
+    private boolean T;
 
     // CraftBukkit start
     public List<WorldServer> worlds = new ArrayList<WorldServer>();
@@ -75,8 +80,11 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
     public final Thread primaryThread;
     // CraftBukkit end
 
-    public MinecraftServer(OptionSet options) { // CraftBukkit - adds argument OptionSet
-        new ThreadSleepForever(this);
+    public MinecraftServer(OptionSet options) { // CraftBukkit - signature file -> OptionSet
+        l = this;
+        // this.universe = file1; // CraftBukkit
+        this.q = new CommandDispatcher();
+        // this.convertable = new WorldLoaderServer(server.getWorldContainer()); // CraftBukkit - moved to DedicatedServer.init
 
         // CraftBukkit start
         this.options = options;
@@ -91,160 +99,55 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
                 org.bukkit.craftbukkit.Main.useJline = false;
                 this.reader = new ConsoleReader(System.in, System.out);
                 this.reader.setExpandEvents(false);
-            } catch (IOException ex) {
+            } catch (java.io.IOException ex) {
                 Logger.getLogger(MinecraftServer.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         Runtime.getRuntime().addShutdownHook(new org.bukkit.craftbukkit.util.ServerShutdownThread(this));
 
-        primaryThread = new ThreadServerApplication("Server thread", this); // Moved from main
-        // CraftBukkit end
+        primaryThread = new ThreadServerApplication(this, "Server thread"); // Moved from main
     }
 
-    private boolean init() throws java.net.UnknownHostException { // CraftBukkit - added throws UnknownHostException
-        this.consoleCommandHandler = new ConsoleCommandHandler(this);
-        ThreadCommandReader threadcommandreader = new ThreadCommandReader(this);
+    public abstract PropertyManager getPropertyManager(); // protected -> public
+    // CraftBukkit end
 
-        threadcommandreader.setDaemon(true);
-        threadcommandreader.start();
-        ConsoleLogManager.init(this); // CraftBukkit
+    protected abstract boolean init() throws java.net.UnknownHostException; // CraftBukkit - throws UnknownHostException
 
-        // CraftBukkit start
-        System.setOut(new PrintStream(new LoggerOutputStream(log, Level.INFO), true));
-        System.setErr(new PrintStream(new LoggerOutputStream(log, Level.SEVERE), true));
-        // CraftBukkit end
-
-        log.info("Starting minecraft server version 1.2.5");
-        if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
-            log.warning("**** NOT ENOUGH RAM!");
-            log.warning("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
-        }
-
-        log.info("Loading properties");
-        this.propertyManager = new PropertyManager(this.options); // CraftBukkit - CLI argument support
-        this.y = this.propertyManager.getString("server-ip", "");
-        this.onlineMode = this.propertyManager.getBoolean("online-mode", true);
-        this.spawnAnimals = this.propertyManager.getBoolean("spawn-animals", true);
-        this.spawnNPCs = this.propertyManager.getBoolean("spawn-npcs", true);
-        this.pvpMode = this.propertyManager.getBoolean("pvp", true);
-        this.allowFlight = this.propertyManager.getBoolean("allow-flight", false);
-        this.motd = this.propertyManager.getString("motd", "A Minecraft Server");
-        this.motd.replace('\u00a7', '$');
-        InetAddress inetaddress = null;
-
-        if (this.y.length() > 0) {
-            inetaddress = InetAddress.getByName(this.y);
-        }
-
-        this.z = this.propertyManager.getInt("server-port", 25565);
-        log.info("Starting Minecraft server on " + (this.y.length() == 0 ? "*" : this.y) + ":" + this.z);
-
-        try {
-            this.networkListenThread = new NetworkListenThread(this, inetaddress, this.z);
-        } catch (Throwable ioexception) { // CraftBukkit - IOException -> Throwable
-            log.warning("**** FAILED TO BIND TO PORT!");
-            log.log(Level.WARNING, "The exception was: " + ioexception.toString());
-            log.warning("Perhaps a server is already running on that port?");
-            return false;
-        }
-
-        if (!this.onlineMode) {
-            log.warning("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
-            log.warning("The server will make no attempt to authenticate usernames. Beware.");
-            log.warning("While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.");
-            log.warning("To change this, set \"online-mode\" to \"true\" in the server.properties file."); // CraftBukkit - type. Seriously. :D
-        }
-
-        this.serverConfigurationManager = new ServerConfigurationManager(this);
-        // CraftBukkit - removed trackers
-        long i = System.nanoTime();
-        String s = this.propertyManager.getString("level-name", "world");
-        String s1 = this.propertyManager.getString("level-seed", "");
-        String s2 = this.propertyManager.getString("level-type", "DEFAULT");
-        long j = (new Random()).nextLong();
-
-        if (s1.length() > 0) {
-            try {
-                long k = Long.parseLong(s1);
-
-                if (k != 0L) {
-                    j = k;
-                }
-            } catch (NumberFormatException numberformatexception) {
-                j = (long) s1.hashCode();
-            }
-        }
-
-        WorldType worldtype = WorldType.getType(s2);
-
-        if (worldtype == null) {
-            worldtype = WorldType.NORMAL;
-        }
-
-        this.t = this.propertyManager.getInt("max-build-height", 256);
-        this.t = (this.t + 8) / 16 * 16;
-        this.t = MathHelper.a(this.t, 64, 256);
-        this.propertyManager.a("max-build-height", Integer.valueOf(this.t));
-        log.info("Preparing level \"" + s + "\"");
-        this.a(new WorldLoaderServer(server.getWorldContainer()), s, j, worldtype); // CraftBukkit - world container
-        long l = System.nanoTime() - i;
-        String s3 = String.format("%.3fs", new Object[] { Double.valueOf((double) l / 1.0E9D)});
-
-        log.info("Done (" + s3 + ")! For help, type \"help\" or \"?\"");
-        if (this.propertyManager.getBoolean("enable-query", false)) {
-            log.info("Starting GS4 status listener");
-            this.I = new RemoteStatusListener(this);
-            this.I.a();
-        }
-
-        if (this.propertyManager.getBoolean("enable-rcon", false)) {
-            log.info("Starting remote control listener");
-            this.J = new RemoteControlListener(this);
-            this.J.a();
-            this.remoteConsole = new org.bukkit.craftbukkit.command.CraftRemoteConsoleCommandSender(); // CraftBukkit
-        }
-
-        // CraftBukkit start
-        if (this.propertyManager.properties.containsKey("spawn-protection")) {
-            log.info("'spawn-protection' in server.properties has been moved to 'settings.spawn-radius' in bukkit.yml. I will move your config for you.");
-            this.server.setSpawnRadius(this.propertyManager.getInt("spawn-protection", 16));
-            this.propertyManager.properties.remove("spawn-protection");
-            this.propertyManager.savePropertiesFile();
-        }
-        // CraftBukkit end
-
-        return true;
-    }
-
-    private void a(Convertable convertable, String s, long i, WorldType worldtype) {
-        if (convertable.isConvertable(s)) {
+    protected void c(String s) {
+        if (this.getConvertable().isConvertable(s)) {
             log.info("Converting map!");
-            convertable.convert(s, new ConvertProgressUpdater(this));
+            this.d("menu.convertingLevel");
+            this.getConvertable().convert(s, new ConvertProgressUpdater(this));
         }
+    }
 
+    protected synchronized void d(String s) {
+        this.S = s;
+    }
+
+    protected void a(String s, String s1, long i, WorldType worldtype) {
+        this.c(s);
+        this.d("menu.loadingLevel");
         // CraftBukkit - removed world and ticktime arrays
-        int j = this.propertyManager.getInt("gamemode", 0);
-
-        j = WorldSettings.a(j);
-        log.info("Default game type: " + j);
-        // CraftBukkit start (+ removed worldsettings and servernbtmanager)
-        boolean generateStructures = this.propertyManager.getBoolean("generate-structures", true);
+        IDataManager idatamanager = this.convertable.a(s, true);
+        WorldData worlddata = idatamanager.getWorldData();
+        // CraftBukkit start - removed worldsettings
         int worldCount = 3;
 
-        for (int k = 0; k < worldCount; ++k) {
+        for (int j = 0; j < worldCount; ++j) {
             WorldServer world;
             int dimension = 0;
 
-            if (k == 1) {
-                if (this.propertyManager.getBoolean("allow-nether", true)) {
+            if (j == 1) {
+                if (this.getAllowNether()) {
                     dimension = -1;
                 } else {
                     continue;
                 }
             }
 
-            if (k == 2) {
-                // CraftBukkit - (+ don't do this in server.properties, do it in bukkit.yml)
+            if (j == 2) {
+                // don't do this in server.properties, do it in bukkit.yml
                 if (this.server.getAllowEnd()) {
                     dimension = 1;
                 } else {
@@ -256,10 +159,16 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
             String name = (dimension == 0) ? s : s + "_" + worldType;
 
             org.bukkit.generator.ChunkGenerator gen = this.server.getGenerator(name);
-            WorldSettings settings = new WorldSettings(i, j, generateStructures, false, worldtype);
+            WorldSettings worldsettings = new WorldSettings(i, this.getGamemode(), this.getGenerateStructures(), false, worldtype);
 
-            if (k == 0) {
-                world = new WorldServer(this, new ServerNBTManager(server.getWorldContainer(), s, true), s, dimension, settings, org.bukkit.World.Environment.getEnvironment(dimension), gen); // CraftBukkit
+            if (j == 0) {
+                if (this.L()) { // Strip out DEMO?
+                    // CraftBukkit
+                    world = new DemoWorldServer(this, new ServerNBTManager(server.getWorldContainer(), s1, true), s1, dimension, this.methodProfiler);
+                } else {
+                    // CraftBukkit
+                    world = new WorldServer(this, new ServerNBTManager(server.getWorldContainer(), s1, true), s1, dimension, worldsettings, this.methodProfiler, org.bukkit.World.Environment.getEnvironment(dimension), gen);
+                }
             } else {
                 String dim = "DIM" + dimension;
 
@@ -289,62 +198,64 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
                     }
                 }
 
-                if (convertable.isConvertable(name)) {
-                    log.info("Converting map!");
-                    convertable.convert(name, new ConvertProgressUpdater(this));
-                }
+                this.c(name);
 
-                world = new SecondaryWorldServer(this, new ServerNBTManager(server.getWorldContainer(), name, true), name, dimension, settings, this.worlds.get(0), org.bukkit.World.Environment.getEnvironment(dimension), gen); // CraftBukkit
+                // CraftBukkit
+                world = new SecondaryWorldServer(this, new ServerNBTManager(server.getWorldContainer(), name, true), name, dimension, worldsettings, this.worlds.get(0), this.methodProfiler, org.bukkit.World.Environment.getEnvironment(dimension), gen);
             }
 
             if (gen != null) {
                 world.getWorld().getPopulators().addAll(gen.getDefaultPopulators(world.getWorld()));
             }
 
-            this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldInitEvent(world.getWorld()));
-
-            world.tracker = new EntityTracker(this, world); // CraftBukkit
             world.addIWorldAccess(new WorldManager(this, world));
-            world.difficulty = this.propertyManager.getInt("difficulty", 1);
-            world.setSpawnFlags(this.propertyManager.getBoolean("spawn-monsters", true), this.spawnAnimals);
-            world.getWorldData().setGameType(j);
+            if (!this.H()) {
+                world.getWorldData().setGameType(this.getGamemode());
+            }
             this.worlds.add(world);
-            this.serverConfigurationManager.setPlayerFileData(this.worlds.toArray(new WorldServer[0]));
+            this.t.setPlayerFileData(this.worlds.toArray(new WorldServer[this.worlds.size()]));
+            // CraftBukkit end
         }
-        // CraftBukkit end
 
+        this.c(this.getDifficulty());
+        this.d();
+    }
+
+    protected void d() {
         short short1 = 196;
-        long l = System.currentTimeMillis();
+        long i = System.currentTimeMillis();
+
+        this.d("menu.generatingTerrain");
 
         // CraftBukkit start
-        for (int i1 = 0; i1 < this.worlds.size(); ++i1) {
-            WorldServer worldserver = this.worlds.get(i1);
-            log.info("Preparing start region for level " + i1 + " (Seed: " + worldserver.getSeed() + ")");
+        for (int j = 0; j < this.worlds.size(); ++j) {
+            WorldServer worldserver = this.worlds.get(j);
+            log.info("Preparing start region for level " + j + " (Seed: " + worldserver.getSeed() + ")");
             if (!worldserver.getWorld().getKeepSpawnInMemory()) {
                 continue;
             }
             // CraftBukkit end
             ChunkCoordinates chunkcoordinates = worldserver.getSpawn();
 
-            for (int j1 = -short1; j1 <= short1 && this.isRunning; j1 += 16) {
-                for (int k1 = -short1; k1 <= short1 && this.isRunning; k1 += 16) {
-                    long l1 = System.currentTimeMillis();
+            for (int k = -short1; k <= short1 && this.isRunning(); k += 16) {
+                for (int l = -short1; l <= short1 && this.isRunning(); l += 16) {
+                    long i1 = System.currentTimeMillis();
 
-                    if (l1 < l) {
-                        l = l1;
+                    if (i1 < i) {
+                        i = i1;
                     }
 
-                    if (l1 > l + 1000L) {
-                        int i2 = (short1 * 2 + 1) * (short1 * 2 + 1);
-                        int j2 = (j1 + short1) * (short1 * 2 + 1) + k1 + 1;
+                    if (i1 > i + 1000L) {
+                        int j1 = (short1 * 2 + 1) * (short1 * 2 + 1);
+                        int k1 = (k + short1) * (short1 * 2 + 1) + l + 1;
 
-                        this.b("Preparing spawn area", j2 * 100 / i2);
-                        l = l1;
+                        this.a_("Preparing spawn area", k1 * 100 / j1);
+                        i = i1;
                     }
 
-                    worldserver.chunkProviderServer.getChunkAt(chunkcoordinates.x + j1 >> 4, chunkcoordinates.z + k1 >> 4);
+                    worldserver.chunkProviderServer.getChunkAt(chunkcoordinates.x + k >> 4, chunkcoordinates.z + l >> 4);
 
-                    while (worldserver.updateLights() && this.isRunning) {
+                    while (worldserver.updateLights() && this.isRunning()) {
                         ;
                     }
                 }
@@ -357,62 +268,103 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
         }
         // CraftBukkit end
 
-        this.t();
+        this.i();
     }
 
-    private void b(String s, int i) {
-        this.k = s;
-        this.l = i;
+    public abstract boolean getGenerateStructures();
+
+    public abstract EnumGamemode getGamemode();
+
+    public abstract int getDifficulty();
+
+    public abstract boolean isHardcore();
+
+    protected void a_(String s, int i) {
+        this.d = s;
+        this.e = i;
         log.info(s + ": " + i + "%");
     }
 
-    private void t() {
-        this.k = null;
-        this.l = 0;
+    protected void i() {
+        this.d = null;
+        this.e = 0;
 
         this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD); // CraftBukkit
     }
 
-    void saveChunks() { // CraftBukkit - private -> default
-        log.info("Saving chunks");
+    protected void saveChunks(boolean flag) throws ExceptionWorldConflict { // CraftBukkit - added throws
+        if (!this.O) {
+            // CraftBukkit start
+            for (int j = 0; j < this.worlds.size(); ++j) {
+                WorldServer worldserver = this.worlds.get(j);
 
-        // CraftBukkit start
-        for (int i = 0; i < this.worlds.size(); ++i) {
-            WorldServer worldserver = this.worlds.get(i);
+                if (worldserver != null) {
+                    if (!flag) {
+                        log.info("Saving chunks for level \'" + worldserver.getWorldData().getName() + "\'/" + worldserver.worldProvider);
+                    }
 
-            worldserver.save(true, (IProgressUpdate) null);
-            worldserver.saveLevel();
+                    worldserver.save(true, (IProgressUpdate) null);
+                    worldserver.saveLevel();
 
-            WorldSaveEvent event = new WorldSaveEvent(worldserver.getWorld());
-            this.server.getPluginManager().callEvent(event);
+                    WorldSaveEvent event = new WorldSaveEvent(worldserver.getWorld());
+                    this.server.getPluginManager().callEvent(event);
+                }
+            }
+
+            if (!this.worlds.get(0).savingDisabled) {
+                this.getServerConfigurationManager().savePlayers();
+            }
+            // CraftBukkit end
         }
-
-        WorldServer world = this.worlds.get(0);
-        if (!world.savingDisabled) {
-            this.serverConfigurationManager.savePlayers();
-        }
-        // CraftBukkit end
     }
 
-    public void stop() { // CraftBukkit - private -> public
-        log.info("Stopping server");
-        // CraftBukkit start
-        if (this.server != null) {
-            this.server.disablePlugins();
-        }
-        // CraftBukkit end
-
-        if (this.serverConfigurationManager != null) {
-            this.serverConfigurationManager.savePlayers();
-        }
-
-        // for (int i = 0; i < this.worldServer.length; ++i) { // CraftBukkit - multiworld is handled in saveChunks() already.
-            WorldServer worldserver = this.worlds.get(0); // CraftBukkit
-
-            if (worldserver != null) {
-                this.saveChunks();
+    public void stop() throws ExceptionWorldConflict { // CraftBukkit - added throws
+        if (!this.O) {
+            log.info("Stopping server");
+            // CraftBukkit start
+            if (this.server != null) {
+                this.server.disablePlugins();
             }
-        // } // CraftBukkit
+            // CraftBukkit end
+
+            if (this.ac() != null) {
+                this.ac().a();
+            }
+
+            if (this.t != null) {
+                log.info("Saving players");
+                this.t.savePlayers();
+                this.t.r();
+            }
+
+            log.info("Saving worlds");
+            this.saveChunks(false);
+            /* CraftBukkit start - handled in saveChunks
+            WorldServer[] aworldserver = this.worldServer;
+            int i = aworldserver.length;
+
+            for (int j = 0; j < i; ++j) {
+                WorldServer worldserver = aworldserver[j];
+
+                worldserver.saveLevel();
+            }
+            // CraftBukkit end */
+            if (this.n != null && this.n.d()) {
+                this.n.e();
+            }
+        }
+    }
+
+    public String getServerIp() {
+        return this.serverIp;
+    }
+
+    public void e(String s) {
+        this.serverIp = s;
+    }
+
+    public boolean isRunning() {
+        return this.isRunning;
     }
 
     public void safeShutdown() {
@@ -424,14 +376,15 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
             if (this.init()) {
                 long i = System.currentTimeMillis();
 
-                for (long j = 0L; this.isRunning; Thread.sleep(1L)) {
+                for (long j = 0L; this.isRunning; this.Q = true) {
                     long k = System.currentTimeMillis();
                     long l = k - i;
 
-                    if (l > 2000L) {
-                        if (this.server.getWarnOnOverload()) // CraftBukkit - Adding an option to suppress these warning messages
+                    if (l > 2000L && i - this.R >= 15000L) {
+                        if (this.server.getWarnOnOverload()) // CraftBukkit - Added option to suppress warning messages
                         log.warning("Can\'t keep up! Did the system time change, or is the server overloaded?");
                         l = 2000L;
+                        this.R = i;
                     }
 
                     if (l < 0L) {
@@ -442,201 +395,304 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
                     j += l;
                     i = k;
                     if (this.worlds.get(0).everyoneDeeplySleeping()) { // CraftBukkit
-                        this.w();
+                        this.p();
                         j = 0L;
                     } else {
                         while (j > 50L) {
                             MinecraftServer.currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit
                             j -= 50L;
-                            this.w();
+                            this.p();
                         }
                     }
+
+                    Thread.sleep(1L);
                 }
             } else {
-                while (this.isRunning) {
-                    this.b();
-
-                    try {
-                        Thread.sleep(10L);
-                    } catch (InterruptedException interruptedexception) {
-                        interruptedexception.printStackTrace();
-                    }
-                }
+                this.a((CrashReport) null);
             }
         } catch (Throwable throwable) {
             throwable.printStackTrace();
-            log.log(Level.SEVERE, "Unexpected exception", throwable);
+            log.log(Level.SEVERE, "Encountered an unexpected exception " + throwable.getClass().getSimpleName(), throwable);
+            CrashReport crashreport = null;
 
-            while (this.isRunning) {
-                this.b();
-
-                try {
-                    Thread.sleep(10L);
-                } catch (InterruptedException interruptedexception1) {
-                    interruptedexception1.printStackTrace();
-                }
+            if (throwable instanceof ReportedException) {
+                crashreport = this.b(((ReportedException) throwable).a());
+            } else {
+                crashreport = this.b(new CrashReport("Exception in server tick loop", throwable));
             }
+
+            File file1 = new File(new File(this.n(), "crash-reports"), "crash-" + (new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss")).format(new Date()) + "-server.txt");
+
+            if (crashreport.a(file1)) {
+                log.severe("This crash report has been saved to: " + file1.getAbsolutePath());
+            } else {
+                log.severe("We were unable to save this crash report to disk.");
+            }
+
+            this.a(crashreport);
         } finally {
             try {
                 this.stop();
                 this.isStopped = true;
+            } catch (Throwable throwable1) {
+                throwable1.printStackTrace();
+            } finally {
                 // CraftBukkit start - restore terminal to original settings
                 try {
                     this.reader.getTerminal().restore();
                 } catch (Exception e) {
                 }
                 // CraftBukkit end
-            } catch (Throwable throwable1) {
-                throwable1.printStackTrace();
-            } finally {
-                System.exit(0);
+                this.o();
             }
         }
     }
 
-    private void w() {
+    protected File n() {
+        return new File(".");
+    }
+
+    protected void a(CrashReport crashreport) {}
+
+    protected void o() {}
+
+    protected void p() throws ExceptionWorldConflict { // CraftBukkit - added throws
         long i = System.nanoTime();
-        ArrayList arraylist = new ArrayList();
-        Iterator iterator = trackerList.keySet().iterator();
 
-        while (iterator.hasNext()) {
-            String s = (String) iterator.next();
-            int j = ((Integer) trackerList.get(s)).intValue();
-
-            if (j > 0) {
-                trackerList.put(s, Integer.valueOf(j - 1));
-            } else {
-                arraylist.add(s);
-            }
-        }
-
-        int k;
-
-        for (k = 0; k < arraylist.size(); ++k) {
-            trackerList.remove(arraylist.get(k));
-        }
-
-        AxisAlignedBB.a();
-        Vec3D.a();
+        AxisAlignedBB.a().a();
+        Vec3D.a().a();
         ++this.ticks;
+        if (this.T) {
+            this.T = false;
+            // this.methodProfiler.a = true; // CraftBukkit - not in production code
+            // this.methodProfiler.a(); // CraftBukkit - not in production code
+        }
+
+        // this.methodProfiler.a("root"); // CraftBukkit - not in production code
+        this.q();
+        if (this.ticks % 900 == 0) {
+            // this.methodProfiler.a("save"); // CraftBukkit - not in production code
+            this.t.savePlayers();
+            this.saveChunks(true);
+            // this.methodProfiler.b(); // CraftBukkit - not in production code
+        }
+
+        // this.methodProfiler.a("tallying"); // CraftBukkit - not in production code
+        this.j[this.ticks % 100] = System.nanoTime() - i;
+        this.f[this.ticks % 100] = Packet.p - this.E;
+        this.E = Packet.p;
+        this.g[this.ticks % 100] = Packet.q - this.F;
+        this.F = Packet.q;
+        this.h[this.ticks % 100] = Packet.n - this.G;
+        this.G = Packet.n;
+        this.i[this.ticks % 100] = Packet.o - this.H;
+        this.H = Packet.o;
+        // this.methodProfiler.b(); // CraftBukkit - not in production code
+        // this.methodProfiler.a("snooper"); // CraftBukkit - not in production code
+        if (!this.n.d() && this.ticks > 100) {
+            this.n.a();
+        }
+
+        if (this.ticks % 6000 == 0) {
+            this.n.b();
+        }
+
+        // this.methodProfiler.b(); // CraftBukkit - not in production code
+        // this.methodProfiler.b(); // CraftBukkit - not in production code
+    }
+
+    public void q() {
+        // this.methodProfiler.a("levels"); // CraftBukkit - not in production code
 
         // CraftBukkit start - only send timeupdates to the people in that world
-
-        ((org.bukkit.craftbukkit.scheduler.CraftScheduler) this.server.getScheduler()).mainThreadHeartbeat(this.ticks);
+        this.server.getScheduler().mainThreadHeartbeat(this.ticks);
 
         // Send timeupdates to everyone, it will get the right time from the world the player is in.
         if (this.ticks % 20 == 0) {
-            for (k = 0; k < this.serverConfigurationManager.players.size(); ++k) {
-                EntityPlayer entityplayer = (EntityPlayer) this.serverConfigurationManager.players.get(k);
+            for (int i = 0; i < this.getServerConfigurationManager().players.size(); ++i) {
+                EntityPlayer entityplayer = (EntityPlayer) this.getServerConfigurationManager().players.get(i);
                 entityplayer.netServerHandler.sendPacket(new Packet4UpdateTime(entityplayer.getPlayerTime())); // Add support for per player time
             }
         }
 
-        for (k = 0; k < this.worlds.size(); ++k) {
-            long l = System.nanoTime();
-            // if (k == 0 || this.propertyManager.getBoolean("allow-nether", true)) {
-                WorldServer worldserver = this.worlds.get(k);
+        for (int i = 0; i < this.worlds.size(); ++i) {
+            long j = System.nanoTime();
+
+            // if (i == 0 || this.getAllowNether()) {
+                WorldServer worldserver = this.worlds.get(i);
 
                 /* Drop global timeupdates
+                this.b.a(worldserver.getWorldData().j());
                 if (this.ticks % 20 == 0) {
-                    this.serverConfigurationManager.a(new Packet4UpdateTime(worldserver.getTime()), worldserver.worldProvider.dimension);
+                    this.b.a("timeSync");
+                    this.t.a(new Packet4UpdateTime(worldserver.getTime()), worldserver.worldProvider.dimension);
+                    this.b.b();
                 }
                 // CraftBukkit end */
 
+                // this.methodProfiler.a("tick"); // CraftBukkit - not in production code
                 worldserver.doTick();
+                // this.methodProfiler.c("lights"); // CraftBukkit - not in production code
 
                 while (true) {
                     if (!worldserver.updateLights()) {
-                        worldserver.tickEntities();
+                        // this.methodProfiler.b(); // CraftBukkit - not in production code
+                        if (!worldserver.players.isEmpty()) {
+                            worldserver.tickEntities();
+                        }
+
+                        // this.methodProfiler.a("tracker"); // CraftBukkit - not in production code
+                        worldserver.getTracker().updatePlayers();
+                        // this.methodProfiler.b(); // CraftBukkit - not in production code
+                        // this.methodProfiler.b(); // CraftBukkit - not in production code
                         break;
                     }
                 }
-            }
+            // } // CraftBukkit
 
-            // this.g[k][this.ticks % 100] = System.nanoTime() - l; // CraftBukkit
-        // } // CraftBukkit
-
-        this.networkListenThread.a();
-        this.serverConfigurationManager.tick();
-
-        // CraftBukkit start
-        for (k = 0; k < this.worlds.size(); ++k) {
-            this.worlds.get(k).tracker.updatePlayers();
-        }
-        // CraftBukkit end
-
-        for (k = 0; k < this.C.size(); ++k) {
-            ((IUpdatePlayerListBox) this.C.get(k)).a();
+            // this.k[i][this.ticks % 100] = System.nanoTime() - j; // CraftBukkit
         }
 
-        try {
-            this.b();
-        } catch (Exception exception) {
-            log.log(Level.WARNING, "Unexpected exception while parsing console command", exception);
+        // this.methodProfiler.c("connection"); // CraftBukkit - not in production code
+        this.ac().b();
+        // this.methodProfiler.c("players"); // CraftBukkit - not in production code
+        this.t.tick();
+        // this.methodProfiler.c("tickables"); // CraftBukkit - not in production code
+        Iterator iterator = this.p.iterator();
+
+        while (iterator.hasNext()) {
+            IUpdatePlayerListBox iupdateplayerlistbox = (IUpdatePlayerListBox) iterator.next();
+
+            iupdateplayerlistbox.a();
         }
 
-        this.f[this.ticks % 100] = System.nanoTime() - i;
-        this.u[this.ticks % 100] = Packet.n - this.E;
-        this.E = Packet.n;
-        this.v[this.ticks % 100] = Packet.o - this.F;
-        this.F = Packet.o;
-        this.w[this.ticks % 100] = Packet.l - this.G;
-        this.G = Packet.l;
-        this.x[this.ticks % 100] = Packet.m - this.H;
-        this.H = Packet.m;
+        // this.methodProfiler.b(); // CraftBukkit - not in production code
     }
 
-    public void issueCommand(String s, ICommandListener icommandlistener) {
-        this.D.add(new ServerCommand(s, icommandlistener));
-    }
-
-    public void b() {
-        while (this.D.size() > 0) {
-            ServerCommand servercommand = (ServerCommand) this.D.remove(0);
-
-            // CraftBukkit start - ServerCommand for preprocessing
-            ServerCommandEvent event = new ServerCommandEvent(this.console, servercommand.command);
-            this.server.getPluginManager().callEvent(event);
-            servercommand = new ServerCommand(event.getCommand(), servercommand.source);
-            // CraftBukkit end
-
-            // this.consoleCommandHandler.handle(servercommand); // CraftBukkit - Removed its now called in server.dispatchServerCommand
-            this.server.dispatchServerCommand(this.console, servercommand); // CraftBukkit
-        }
+    public boolean getAllowNether() {
+        return true;
     }
 
     public void a(IUpdatePlayerListBox iupdateplayerlistbox) {
-        this.C.add(iupdateplayerlistbox);
+        this.p.add(iupdateplayerlistbox);
     }
 
-    public static void main(final OptionSet options) { // CraftBukkit - replaces main(String args[])
+    public static void main(final OptionSet options) { // CraftBukkit - replaces main(String[] astring)
         StatisticList.a();
 
         try {
-            MinecraftServer minecraftserver = new MinecraftServer(options); // CraftBukkit - pass in the options
+            /* CraftBukkit start - replace everything
+            boolean flag = false;
+            String s = null;
+            String s1 = ".";
+            String s2 = null;
+            boolean flag1 = false;
+            boolean flag2 = false;
+            int i = -1;
 
-            // CraftBukkit - remove gui
+            for (int j = 0; j < astring.length; ++j) {
+                String s3 = astring[j];
+                String s4 = j == astring.length - 1 ? null : astring[j + 1];
+                boolean flag3 = false;
 
-            minecraftserver.primaryThread.start(); // CraftBukkit - let MinecraftServer construct the thread
+                if (!s3.equals("nogui") && !s3.equals("--nogui")) {
+                    if (s3.equals("--port") && s4 != null) {
+                        flag3 = true;
+
+                        try {
+                            i = Integer.parseInt(s4);
+                        } catch (NumberFormatException numberformatexception) {
+                            ;
+                        }
+                    } else if (s3.equals("--singleplayer") && s4 != null) {
+                        flag3 = true;
+                        s = s4;
+                    } else if (s3.equals("--universe") && s4 != null) {
+                        flag3 = true;
+                        s1 = s4;
+                    } else if (s3.equals("--world") && s4 != null) {
+                        flag3 = true;
+                        s2 = s4;
+                    } else if (s3.equals("--demo")) {
+                        flag1 = true;
+                    } else if (s3.equals("--bonusChest")) {
+                        flag2 = true;
+                    }
+                } else {
+                    flag = false;
+                }
+
+                if (flag3) {
+                    ++j;
+                }
+            }
+            // */
+
+            DedicatedServer dedicatedserver = new DedicatedServer(options);
+
+            if (options.has("port")) {
+                int port = (Integer) options.valueOf("port");
+                if (port > 0) {
+                    dedicatedserver.setPort(port);
+                }
+            }
+
+            if (options.has("universe")) {
+                dedicatedserver.universe = (File) options.valueOf("universe");
+            }
+
+            if (options.has("world")) {
+                dedicatedserver.m((String) options.valueOf("world"));
+            }
+
+            /*
+            if (s != null) {
+                dedicatedserver.l(s);
+            }
+
+            if (s2 != null) {
+                dedicatedserver.m(s2);
+            }
+
+            if (i >= 0) {
+                dedicatedserver.setPort(i);
+            }
+
+            if (flag1) {
+                dedicatedserver.b(true);
+            }
+
+            if (flag2) {
+                dedicatedserver.c(true);
+            }
+
+            if (flag) {
+                dedicatedserver.aj();
+            }
+            */
+
+            dedicatedserver.primaryThread.start();
+            // Runtime.getRuntime().addShutdownHook(new ThreadShutdown(dedicatedserver));
+            // CraftBukkit end
         } catch (Exception exception) {
             log.log(Level.SEVERE, "Failed to start the minecraft server", exception);
         }
     }
 
-    public File a(String s) {
-        return new File(s);
+    public void s() {
+        // (new ThreadServerApplication(this, "Server thread")).start(); // CraftBukkit - prevent abuse
     }
 
-    public void sendMessage(String s) {
+    public File f(String s) {
+        return new File(this.n(), s);
+    }
+
+    public void info(String s) {
         log.info(s);
     }
 
     public void warning(String s) {
         log.warning(s);
-    }
-
-    public String getName() {
-        return "CONSOLE";
     }
 
     public WorldServer getWorldServer(int i) {
@@ -651,62 +707,32 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
         // CraftBukkit end
     }
 
-    public EntityTracker getTracker(int i) {
-        return this.getWorldServer(i).tracker; // CraftBukkit
+    public String t() {
+        return this.serverIp;
     }
 
-    public int getProperty(String s, int i) {
-        return this.propertyManager.getInt(s, i);
+    public int u() {
+        return this.s;
     }
 
-    public String a(String s, String s1) {
-        return this.propertyManager.getString(s, s1);
-    }
-
-    public void a(String s, Object object) {
-        this.propertyManager.a(s, object);
-    }
-
-    public void c() {
-        this.propertyManager.savePropertiesFile();
-    }
-
-    public String getPropertiesFile() {
-        File file1 = this.propertyManager.c();
-
-        return file1 != null ? file1.getAbsolutePath() : "No settings file";
-    }
-
-    public String getMotd() {
-        return this.y;
-    }
-
-    public int getPort() {
-        return this.z;
-    }
-
-    public String getServerAddress() {
+    public String v() {
         return this.motd;
     }
 
     public String getVersion() {
-        return "1.2.5";
+        return "1.3.1";
     }
 
-    public int getPlayerCount() {
-        return this.serverConfigurationManager.getPlayerCount();
+    public int x() {
+        return this.t.getPlayerCount();
     }
 
-    public int getMaxPlayers() {
-        return this.serverConfigurationManager.getMaxPlayers();
+    public int y() {
+        return this.t.getMaxPlayers();
     }
 
     public String[] getPlayers() {
-        return this.serverConfigurationManager.d();
-    }
-
-    public String getWorldName() {
-        return this.propertyManager.getString("level-name", "world");
+        return this.t.d();
     }
 
     public String getPlugins() {
@@ -736,47 +762,373 @@ public class MinecraftServer implements Runnable, ICommandListener, IMinecraftSe
         // CraftBukkit end
     }
 
-    public void o() {}
-
-    public String d(String s) {
-        RemoteControlCommandListener.instance.a();
+    public String i(String s) {
+        RemoteControlCommandListener.instance.b();
         // CraftBukkit start
         RemoteServerCommandEvent event = new RemoteServerCommandEvent(this.remoteConsole, s);
         this.server.getPluginManager().callEvent(event);
         ServerCommand servercommand = new ServerCommand(event.getCommand(), RemoteControlCommandListener.instance);
-        // this.consoleCommandHandler.handle(new ServerCommand(s, RemoteControlCommandListener.instance)); // CraftBukkit - removed
+        // this.q.a(RemoteControlCommandListener.instance, s);
         this.server.dispatchServerCommand(this.remoteConsole, servercommand); // CraftBukkit
         // CraftBukkit end
-        return RemoteControlCommandListener.instance.b();
+        return RemoteControlCommandListener.instance.c();
     }
 
     public boolean isDebugging() {
-        return this.propertyManager.getBoolean("debug", false); // CraftBukkit - don't hardcode
+        return this.getPropertyManager().getBoolean("debug", false); // CraftBukkit - don't hardcode
     }
 
-    public void severe(String s) {
+    public void j(String s) {
         log.log(Level.SEVERE, s);
     }
 
-    public void debug(String s) {
+    public void k(String s) {
         if (this.isDebugging()) {
             log.log(Level.INFO, s);
         }
-    }
-
-    public String[] q() {
-        return (String[]) this.serverConfigurationManager.getBannedAddresses().toArray(new String[0]);
-    }
-
-    public String[] r() {
-        return (String[]) this.serverConfigurationManager.getBannedPlayers().toArray(new String[0]);
     }
 
     public String getServerModName() {
         return "craftbukkit"; // CraftBukkit - cb > vanilla!
     }
 
-    public static boolean isRunning(MinecraftServer minecraftserver) {
-        return minecraftserver.isRunning;
+    public CrashReport b(CrashReport crashreport) {
+        crashreport.a("Is Modded", (Callable) (new CrashReportModded(this)));
+        crashreport.a("Profiler Position", (Callable) (new CrashReportProfilerPosition(this)));
+        if (this.t != null) {
+            crashreport.a("Player Count", (Callable) (new CrashReportPlayerCount(this)));
+        }
+
+        // CraftBukkit start
+        if (this.worlds != null) {
+            for (int j = 0; j < this.worlds.size(); ++j) {
+                WorldServer worldserver = this.worlds.get(j);
+                // CraftBukkit end
+
+                if (worldserver != null) {
+                    worldserver.a(crashreport);
+                }
+            }
+        }
+
+        return crashreport;
+    }
+
+    public List a(ICommandListener icommandlistener, String s) {
+        ArrayList arraylist = new ArrayList();
+
+        if (s.startsWith("/")) {
+            s = s.substring(1);
+            boolean flag = !s.contains(" ");
+            List list = this.q.b(icommandlistener, s);
+
+            if (list != null) {
+                Iterator iterator = list.iterator();
+
+                while (iterator.hasNext()) {
+                    String s1 = (String) iterator.next();
+
+                    if (flag) {
+                        arraylist.add("/" + s1);
+                    } else {
+                        arraylist.add(s1);
+                    }
+                }
+            }
+
+            return arraylist;
+        } else {
+            String[] astring = s.split(" ", -1);
+            String s2 = astring[astring.length - 1];
+            String[] astring1 = this.t.d();
+            int i = astring1.length;
+
+            for (int j = 0; j < i; ++j) {
+                String s3 = astring1[j];
+
+                if (CommandAbstract.a(s2, s3)) {
+                    arraylist.add(s3);
+                }
+            }
+
+            return arraylist;
+        }
+    }
+
+    public static MinecraftServer getServer() {
+        return l;
+    }
+
+    public String getName() {
+        return "Server";
+    }
+
+    public void sendMessage(String s) {
+        log.info(StripColor.a(s));
+    }
+
+    public boolean b(String s) {
+        return true;
+    }
+
+    public String a(String s, Object... aobject) {
+        return LocaleLanguage.a().a(s, aobject);
+    }
+
+    public ICommandHandler getCommandHandler() {
+        return this.q;
+    }
+
+    public KeyPair E() {
+        return this.I;
+    }
+
+    public int F() {
+        return this.s;
+    }
+
+    public void setPort(int i) {
+        this.s = i;
+    }
+
+    public String G() {
+        return this.J;
+    }
+
+    public void l(String s) {
+        this.J = s;
+    }
+
+    public boolean H() {
+        return this.J != null;
+    }
+
+    public String I() {
+        return this.K;
+    }
+
+    public void m(String s) {
+        this.K = s;
+    }
+
+    public void a(KeyPair keypair) {
+        this.I = keypair;
+    }
+
+    public void c(int i) {
+        // CraftBukkit start
+        for (int j = 0; j < this.worlds.size(); ++j) {
+            WorldServer worldserver = this.worlds.get(j);
+            // CraftBukkit end
+
+            if (worldserver != null) {
+                if (worldserver.getWorldData().isHardcore()) {
+                    worldserver.difficulty = 3;
+                    worldserver.setSpawnFlags(true, true);
+                } else if (this.H()) {
+                    worldserver.difficulty = i;
+                    worldserver.setSpawnFlags(worldserver.difficulty > 0, true);
+                } else {
+                    worldserver.difficulty = i;
+                    worldserver.setSpawnFlags(this.getSpawnMonsters(), this.spawnAnimals);
+                }
+            }
+        }
+    }
+
+    protected boolean getSpawnMonsters() {
+        return true;
+    }
+
+    public boolean L() {
+        return this.demoMode;
+    }
+
+    public void b(boolean flag) {
+        this.demoMode = flag;
+    }
+
+    public void c(boolean flag) {
+        this.N = flag;
+    }
+
+    public Convertable getConvertable() {
+        return this.convertable;
+    }
+
+    public void O() {
+        this.O = true;
+        this.getConvertable().d();
+
+        // CraftBukkit start - This needs review, what does it do? (it's new)
+        for (int i = 0; i < this.worlds.size(); ++i) {
+            WorldServer worldserver = this.worlds.get(i);
+            // CraftBukkit end
+
+            if (worldserver != null) {
+                worldserver.saveLevel();
+            }
+        }
+
+        this.getConvertable().e(this.worlds.get(0).getDataManager().g());
+        this.safeShutdown();
+    }
+
+    public String getTexturePack() {
+        return this.P;
+    }
+
+    public void setTexturePack(String s) {
+        this.P = s;
+    }
+
+    public void a(MojangStatisticsGenerator mojangstatisticsgenerator) {
+        mojangstatisticsgenerator.a("whitelist_enabled", Boolean.valueOf(false));
+        mojangstatisticsgenerator.a("whitelist_count", Integer.valueOf(0));
+        mojangstatisticsgenerator.a("players_current", Integer.valueOf(this.x()));
+        mojangstatisticsgenerator.a("players_max", Integer.valueOf(this.y()));
+        mojangstatisticsgenerator.a("players_seen", Integer.valueOf(this.t.getSeenPlayers().length));
+        mojangstatisticsgenerator.a("uses_auth", Boolean.valueOf(this.onlineMode));
+        mojangstatisticsgenerator.a("gui_state", this.ae() ? "enabled" : "disabled");
+        mojangstatisticsgenerator.a("avg_tick_ms", Integer.valueOf((int) (MathHelper.a(this.j) * 1.0E-6D)));
+        mojangstatisticsgenerator.a("avg_sent_packet_count", Integer.valueOf((int) MathHelper.a(this.f)));
+        mojangstatisticsgenerator.a("avg_sent_packet_size", Integer.valueOf((int) MathHelper.a(this.g)));
+        mojangstatisticsgenerator.a("avg_rec_packet_count", Integer.valueOf((int) MathHelper.a(this.h)));
+        mojangstatisticsgenerator.a("avg_rec_packet_size", Integer.valueOf((int) MathHelper.a(this.i)));
+        int i = 0;
+
+        // CraftBukkit start
+        for (int j = 0; j < this.worlds.size(); ++j) {
+            // if (this.worldServer[j] != null) {
+                WorldServer worldserver = this.worlds.get(j);
+                // CraftBukkit end
+                WorldData worlddata = worldserver.getWorldData();
+
+                mojangstatisticsgenerator.a("world[" + i + "][dimension]", Integer.valueOf(worldserver.worldProvider.dimension));
+                mojangstatisticsgenerator.a("world[" + i + "][mode]", worlddata.getGameType());
+                mojangstatisticsgenerator.a("world[" + i + "][difficulty]", Integer.valueOf(worldserver.difficulty));
+                mojangstatisticsgenerator.a("world[" + i + "][hardcore]", Boolean.valueOf(worlddata.isHardcore()));
+                mojangstatisticsgenerator.a("world[" + i + "][generator_name]", worlddata.getType().name());
+                mojangstatisticsgenerator.a("world[" + i + "][generator_version]", Integer.valueOf(worlddata.getType().getVersion()));
+                mojangstatisticsgenerator.a("world[" + i + "][height]", Integer.valueOf(this.D));
+                mojangstatisticsgenerator.a("world[" + i + "][chunks_loaded]", Integer.valueOf(worldserver.F().getLoadedChunks()));
+                ++i;
+            // } // CraftBukkit
+        }
+
+        mojangstatisticsgenerator.a("worlds", Integer.valueOf(i));
+    }
+
+    public void b(MojangStatisticsGenerator mojangstatisticsgenerator) {
+        mojangstatisticsgenerator.a("singleplayer", Boolean.valueOf(this.H()));
+        mojangstatisticsgenerator.a("server_brand", this.getServerModName());
+        mojangstatisticsgenerator.a("gui_supported", GraphicsEnvironment.isHeadless() ? "headless" : "supported");
+        mojangstatisticsgenerator.a("dedicated", Boolean.valueOf(this.S()));
+    }
+
+    public boolean getSnooperEnabled() {
+        return true;
+    }
+
+    public int R() {
+        return 16;
+    }
+
+    public abstract boolean S();
+
+    public boolean getOnlineMode() {
+        return this.onlineMode;
+    }
+
+    public void setOnlineMode(boolean flag) {
+        this.onlineMode = flag;
+    }
+
+    public boolean getSpawnAnimals() {
+        return this.spawnAnimals;
+    }
+
+    public void setSpawnAnimals(boolean flag) {
+        this.spawnAnimals = flag;
+    }
+
+    public boolean getSpawnNPCs() {
+        return this.spawnNPCs;
+    }
+
+    public void setSpawnNPCs(boolean flag) {
+        this.spawnNPCs = flag;
+    }
+
+    public boolean getPvP() {
+        return this.pvpMode;
+    }
+
+    public void setPvP(boolean flag) {
+        this.pvpMode = flag;
+    }
+
+    public boolean getAllowFlight() {
+        return this.allowFlight;
+    }
+
+    public void setAllowFlight(boolean flag) {
+        this.allowFlight = flag;
+    }
+
+    public String getMotd() {
+        return this.motd;
+    }
+
+    public void setMotd(String s) {
+        this.motd = s;
+    }
+
+    public int getMaxBuildHeight() {
+        return this.D;
+    }
+
+    public void d(int i) {
+        this.D = i;
+    }
+
+    public boolean isStopped() {
+        return this.isStopped;
+    }
+
+    public ServerConfigurationManagerAbstract getServerConfigurationManager() {
+        return this.t;
+    }
+
+    public void a(ServerConfigurationManagerAbstract serverconfigurationmanagerabstract) {
+        this.t = serverconfigurationmanagerabstract;
+    }
+
+    public void a(EnumGamemode enumgamemode) {
+        // CraftBukkit start
+        for (int i = 0; i < this.worlds.size(); ++i) {
+            getServer().worlds.get(i).getWorldData().setGameType(enumgamemode);
+            // CraftBukkit end
+        }
+    }
+
+    public abstract ServerConnection ac();
+
+    public boolean ae() {
+        return false;
+    }
+
+    public abstract String a(EnumGamemode enumgamemode, boolean flag);
+
+    public int af() {
+        return this.ticks;
+    }
+
+    public void ag() {
+        this.T = true;
+    }
+
+    public static ServerConfigurationManagerAbstract a(MinecraftServer minecraftserver) {
+        return minecraftserver.t;
     }
 }

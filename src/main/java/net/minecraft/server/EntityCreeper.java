@@ -8,7 +8,7 @@ import org.bukkit.event.entity.ExplosionPrimeEvent;
 public class EntityCreeper extends EntityMonster {
 
     int fuseTicks;
-    int b;
+    int e;
     private int record = -1; // CraftBukkit
 
     public EntityCreeper(World world) {
@@ -25,7 +25,7 @@ public class EntityCreeper extends EntityMonster {
         this.targetSelector.a(2, new PathfinderGoalHurtByTarget(this, false));
     }
 
-    public boolean c_() {
+    public boolean aV() {
         return true;
     }
 
@@ -33,8 +33,8 @@ public class EntityCreeper extends EntityMonster {
         return 20;
     }
 
-    protected void b() {
-        super.b();
+    protected void a() {
+        super.a();
         this.datawatcher.a(16, Byte.valueOf((byte) -1));
         this.datawatcher.a(17, Byte.valueOf((byte) 0));
     }
@@ -51,10 +51,10 @@ public class EntityCreeper extends EntityMonster {
         this.datawatcher.watch(17, Byte.valueOf((byte) (nbttagcompound.getBoolean("powered") ? 1 : 0)));
     }
 
-    public void F_() {
+    public void h_() {
         if (this.isAlive()) {
-            this.b = this.fuseTicks;
-            int i = this.A();
+            this.e = this.fuseTicks;
+            int i = this.p();
 
             if (i > 0 && this.fuseTicks == 0) {
                 this.world.makeSound(this, "random.fuse", 1.0F, 0.5F);
@@ -67,30 +67,31 @@ public class EntityCreeper extends EntityMonster {
 
             if (this.fuseTicks >= 30) {
                 this.fuseTicks = 30;
-                // CraftBukkit start
-                float radius = this.isPowered() ? 6.0F : 3.0F;
+                if (!this.world.isStatic) {
+                    // CraftBukkit start
+                    float radius = this.isPowered() ? 6.0F : 3.0F;
 
-                ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), radius, false);
-                this.world.getServer().getPluginManager().callEvent(event);
-
-                if (!event.isCancelled()) {
-                    this.world.createExplosion(this, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire());
-                    this.die();
-                } else {
-                    this.fuseTicks = 0;
+                    ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), radius, false);
+                    this.world.getServer().getPluginManager().callEvent(event);
+                    if (!event.isCancelled()) {
+                        this.world.createExplosion(this, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire());
+                        this.die();
+                    } else {
+                        this.fuseTicks = 0;
+                    }
+                    // CraftBukkit end
                 }
-                // CraftBukkit end
             }
         }
 
-        super.F_();
+        super.h_();
     }
 
-    protected String j() {
+    protected String aR() {
         return "mob.creeper";
     }
 
-    protected String k() {
+    protected String aS() {
         return "mob.creeperdeath";
     }
 
@@ -100,6 +101,7 @@ public class EntityCreeper extends EntityMonster {
             // this.b(Item.RECORD_1.id + this.random.nextInt(10), 1); // CraftBukkit
             this.record = Item.RECORD_1.id + this.random.nextInt(10);
         }
+
         super.die(damagesource);
         // CraftBukkit end
     }
@@ -132,7 +134,7 @@ public class EntityCreeper extends EntityMonster {
     }
     // CraftBukkit end
 
-    public boolean a(Entity entity) {
+    public boolean k(Entity entity) {
         return true;
     }
 
@@ -144,19 +146,18 @@ public class EntityCreeper extends EntityMonster {
         return Item.SULPHUR.id;
     }
 
-    public int A() {
+    public int p() {
         return this.datawatcher.getByte(16);
     }
 
-    public void c(int i) {
+    public void a(int i) {
         this.datawatcher.watch(16, Byte.valueOf((byte) i));
     }
 
-    public void a(EntityWeatherLighting entityweatherlighting) {
-        super.a(entityweatherlighting);
-
+    public void a(EntityLightning entitylightning) {
+        super.a(entitylightning);
         // CraftBukkit start
-        if (CraftEventFactory.callCreeperPowerEvent(this, entityweatherlighting, org.bukkit.event.entity.CreeperPowerEvent.PowerCause.LIGHTNING).isCancelled()) {
+        if (CraftEventFactory.callCreeperPowerEvent(this, entitylightning, org.bukkit.event.entity.CreeperPowerEvent.PowerCause.LIGHTNING).isCancelled()) {
             return;
         }
 

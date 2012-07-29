@@ -4,16 +4,16 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack; // CraftBukkit
 
 public class EntityIronGolem extends EntityGolem {
 
-    private int b = 0;
-    Village a = null;
-    private int c;
+    private int e = 0;
+    Village d = null;
+    private int f;
     private int g;
 
     public EntityIronGolem(World world) {
         super(world);
         this.texture = "/mob/villager_golem.png";
-        this.b(1.4F, 2.9F);
-        this.al().a(true);
+        this.a(1.4F, 2.9F);
+        this.getNavigation().a(true);
         this.goalSelector.a(1, new PathfinderGoalMeleeAttack(this, 0.25F, true));
         this.goalSelector.a(2, new PathfinderGoalMoveTowardsTarget(this, 0.22F, 32.0F));
         this.goalSelector.a(3, new PathfinderGoalMoveThroughVillage(this, 0.16F, true));
@@ -27,43 +27,43 @@ public class EntityIronGolem extends EntityGolem {
         this.targetSelector.a(3, new PathfinderGoalNearestAttackableTarget(this, EntityMonster.class, 16.0F, 0, false, true));
     }
 
-    protected void b() {
-        super.b();
+    protected void a() {
+        super.a();
         this.datawatcher.a(16, Byte.valueOf((byte) 0));
     }
 
-    public boolean c_() {
+    public boolean aV() {
         return true;
     }
 
-    protected void g() {
-        if (--this.b <= 0) {
-            this.b = 70 + this.random.nextInt(50);
-            this.a = this.world.villages.getClosestVillage(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ), 32);
-            if (this.a == null) {
-                this.ax();
+    protected void bd() {
+        if (--this.e <= 0) {
+            this.e = 70 + this.random.nextInt(50);
+            this.d = this.world.villages.getClosestVillage(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ), 32);
+            if (this.d == null) {
+                this.aE();
             } else {
-                ChunkCoordinates chunkcoordinates = this.a.getCenter();
+                ChunkCoordinates chunkcoordinates = this.d.getCenter();
 
-                this.b(chunkcoordinates.x, chunkcoordinates.y, chunkcoordinates.z, this.a.getSize());
+                this.b(chunkcoordinates.x, chunkcoordinates.y, chunkcoordinates.z, this.d.getSize());
             }
         }
 
-        super.g();
+        super.bd();
     }
 
     public int getMaxHealth() {
         return 100;
     }
 
-    protected int b_(int i) {
+    protected int h(int i) {
         return i;
     }
 
-    public void e() {
-        super.e();
-        if (this.c > 0) {
-            --this.c;
+    public void d() {
+        super.d();
+        if (this.f > 0) {
+            --this.f;
         }
 
         if (this.g > 0) {
@@ -83,21 +83,11 @@ public class EntityIronGolem extends EntityGolem {
     }
 
     public boolean a(Class oclass) {
-        return this.n_() && EntityHuman.class.isAssignableFrom(oclass) ? false : super.a(oclass);
+        return this.q() && EntityHuman.class.isAssignableFrom(oclass) ? false : super.a(oclass);
     }
 
-    public void b(NBTTagCompound nbttagcompound) {
-        super.b(nbttagcompound);
-        nbttagcompound.setBoolean("PlayerCreated", this.n_());
-    }
-
-    public void a(NBTTagCompound nbttagcompound) {
-        super.a(nbttagcompound);
-        this.b(nbttagcompound.getBoolean("PlayerCreated"));
-    }
-
-    public boolean a(Entity entity) {
-        this.c = 10;
+    public boolean k(Entity entity) {
+        this.f = 10;
         this.world.broadcastEntityEffect(this, (byte) 4);
         boolean flag = entity.damageEntity(DamageSource.mobAttack(this), 7 + this.random.nextInt(15));
 
@@ -109,24 +99,24 @@ public class EntityIronGolem extends EntityGolem {
         return flag;
     }
 
-    public Village l_() {
-        return this.a;
+    public Village n() {
+        return this.d;
     }
 
-    public void a(boolean flag) {
+    public void e(boolean flag) {
         this.g = flag ? 400 : 0;
         this.world.broadcastEntityEffect(this, (byte) 11);
     }
 
-    protected String i() {
+    protected String aQ() {
         return "none";
     }
 
-    protected String j() {
+    protected String aR() {
         return "mob.irongolem.hit";
     }
 
-    protected String k() {
+    protected String aS() {
         return "mob.irongolem.death";
     }
 
@@ -141,29 +131,29 @@ public class EntityIronGolem extends EntityGolem {
 
         int k;
 
-        for (k = 0; k < j; ++k) {
-            loot.add(new CraftItemStack(Block.RED_ROSE.id, 1));
+        if (j > 0) {
+            loot.add(new CraftItemStack(Block.RED_ROSE.id, j));
         }
 
         k = 3 + this.random.nextInt(3);
 
-        for (int l = 0; l < k; ++l) {
-            loot.add(new CraftItemStack(Item.IRON_INGOT.id, 1));
+        if (k > 0) {
+            loot.add(new CraftItemStack(Item.IRON_INGOT.id, k));
         }
 
         org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, loot);
         // CraftBukkit end
     }
 
-    public int m_() {
+    public int p() {
         return this.g;
     }
 
-    public boolean n_() {
+    public boolean q() {
         return (this.datawatcher.getByte(16) & 1) != 0;
     }
 
-    public void b(boolean flag) {
+    public void f(boolean flag) {
         byte b0 = this.datawatcher.getByte(16);
 
         if (flag) {

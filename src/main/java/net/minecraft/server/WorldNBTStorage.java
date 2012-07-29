@@ -8,7 +8,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.List;
 import java.util.logging.Logger;
 
 // CraftBukkit start
@@ -17,7 +16,7 @@ import java.util.UUID;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 // CraftBukkit end
 
-public class WorldNBTStorage implements PlayerFileData, IDataManager {
+public class WorldNBTStorage implements IDataManager, PlayerFileData {
 
     private static final Logger log = Logger.getLogger("Minecraft");
     private final File baseDir;
@@ -38,10 +37,10 @@ public class WorldNBTStorage implements PlayerFileData, IDataManager {
             this.playerDir.mkdirs();
         }
 
-        this.f();
+        this.h();
     }
 
-    private void f() {
+    private void h() {
         try {
             File file1 = new File(this.baseDir, "session.lock");
             DataOutputStream dataoutputstream = new DataOutputStream(new FileOutputStream(file1));
@@ -57,24 +56,24 @@ public class WorldNBTStorage implements PlayerFileData, IDataManager {
         }
     }
 
-    public File getDirectory() { // CraftBukkit - prot to public.
+    public File getDirectory() { // CraftBukkit - protected to public
         return this.baseDir;
     }
 
-    public void checkSession() {
+    public void checkSession() throws ExceptionWorldConflict { // CraftBukkit - throws ExceptionWorldConflict
         try {
             File file1 = new File(this.baseDir, "session.lock");
             DataInputStream datainputstream = new DataInputStream(new FileInputStream(file1));
 
             try {
                 if (datainputstream.readLong() != this.sessionId) {
-                    throw new WorldConlictException("The save is being accessed from another location, aborting");
+                    throw new ExceptionWorldConflict("The save is being accessed from another location, aborting");
                 }
             } finally {
                 datainputstream.close();
             }
         } catch (IOException ioexception) {
-            throw new WorldConlictException("Failed to check session lock, aborting");
+            throw new ExceptionWorldConflict("Failed to check session lock, aborting");
         }
     }
 
@@ -111,18 +110,18 @@ public class WorldNBTStorage implements PlayerFileData, IDataManager {
         return null;
     }
 
-    public void saveWorldData(WorldData worlddata, List list) {
-        NBTTagCompound nbttagcompound = worlddata.a(list);
-        NBTTagCompound nbttagcompound1 = new NBTTagCompound();
+    public void saveWorldData(WorldData worlddata, NBTTagCompound nbttagcompound) {
+        NBTTagCompound nbttagcompound1 = worlddata.a(nbttagcompound);
+        NBTTagCompound nbttagcompound2 = new NBTTagCompound();
 
-        nbttagcompound1.set("Data", nbttagcompound);
+        nbttagcompound2.set("Data", nbttagcompound1);
 
         try {
             File file1 = new File(this.baseDir, "level.dat_new");
             File file2 = new File(this.baseDir, "level.dat_old");
             File file3 = new File(this.baseDir, "level.dat");
 
-            NBTCompressedStreamTools.a(nbttagcompound1, (OutputStream) (new FileOutputStream(file1)));
+            NBTCompressedStreamTools.a(nbttagcompound2, (OutputStream) (new FileOutputStream(file1)));
             if (file2.exists()) {
                 file2.delete();
             }
@@ -176,7 +175,7 @@ public class WorldNBTStorage implements PlayerFileData, IDataManager {
             NBTTagCompound nbttagcompound = new NBTTagCompound();
 
             entityhuman.d(nbttagcompound);
-            File file1 = new File(this.playerDir, entityhuman.name + ".dat~"); // CraftBukkit - don't save every player to the same file
+            File file1 = new File(this.playerDir, entityhuman.name + ".dat.tmp");
             File file2 = new File(this.playerDir, entityhuman.name + ".dat");
 
             NBTCompressedStreamTools.a(nbttagcompound, (OutputStream) (new FileOutputStream(file1)));
@@ -223,13 +222,25 @@ public class WorldNBTStorage implements PlayerFileData, IDataManager {
     }
 
     public String[] getSeenPlayers() {
-        return this.playerDir.list();
+        String[] astring = this.playerDir.list();
+
+        for (int i = 0; i < astring.length; ++i) {
+            if (astring[i].endsWith(".dat")) {
+                astring[i] = astring[i].substring(0, astring[i].length() - 4);
+            }
+        }
+
+        return astring;
     }
 
-    public void e() {}
+    public void a() {}
 
     public File getDataFile(String s) {
         return new File(this.dataDir, s + ".dat");
+    }
+
+    public String g() {
+        return this.f;
     }
 
     // CraftBukkit start

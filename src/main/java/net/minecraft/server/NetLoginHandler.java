@@ -1,42 +1,47 @@
 package net.minecraft.server;
 
+import java.net.InetAddress;
 import java.net.Socket;
-import java.util.Iterator;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.logging.Logger;
+import javax.crypto.SecretKey;
 
 public class NetLoginHandler extends NetHandler {
 
+    private byte[] d;
     public static Logger logger = Logger.getLogger("Minecraft");
     private static Random random = new Random();
     public NetworkManager networkManager;
     public boolean c = false;
     private MinecraftServer server;
-    private int f = 0;
-    private String g = null;
-    private Packet1Login h = null;
+    private int g = 0;
+    private String h = null;
+    private volatile boolean i = false;
     private String loginKey = Long.toString(random.nextLong(), 16); // CraftBukkit - Security fix
+    private SecretKey k = null;
     public String hostname = ""; // CraftBukkit - add field
 
     public NetLoginHandler(MinecraftServer minecraftserver, Socket socket, String s) {
         this.server = minecraftserver;
-        this.networkManager = new NetworkManager(socket, s, this);
-        this.networkManager.f = 0;
+        this.networkManager = new NetworkManager(socket, s, this, minecraftserver.E().getPrivate());
+        this.networkManager.e = 0;
     }
 
     // CraftBukkit start
     public Socket getSocket() {
-        return this.networkManager.socket;
+        return this.networkManager.getSocket();
     }
     // CraftBukkit end
 
-    public void a() {
-        if (this.h != null) {
-            this.b(this.h);
-            this.h = null;
+    public void c() {
+        if (this.i) {
+            this.d();
         }
 
-        if (this.f++ == 600) {
+        if (this.g++ == 600) {
             this.disconnect("Took too long to log in");
         } else {
             this.networkManager.b();
@@ -55,90 +60,66 @@ public class NetLoginHandler extends NetHandler {
     }
 
     public void a(Packet2Handshake packet2handshake) {
-        // CraftBukkit start - 1.3 detection
-        if (packet2handshake.a == null) {
-                disconnect("Outdated server!");
-                return;
-        }
-        // CraftBukkit end
         // CraftBukkit start
-        int i = packet2handshake.a.indexOf(';');
-        if (i == -1) {
-            this.hostname = "";
-        } else this.hostname = packet2handshake.a.substring(i + 1);
+        this.hostname = packet2handshake.c == null ? "" : packet2handshake.c;
         // CraftBukkit end
-        if (this.server.onlineMode) {
-            this.loginKey = Long.toString(random.nextLong(), 16);
-            this.networkManager.queue(new Packet2Handshake(this.loginKey));
+        this.h = packet2handshake.f();
+        if (!this.h.equals(StripColor.a(this.h))) {
+            this.disconnect("Invalid username!");
         } else {
-            this.networkManager.queue(new Packet2Handshake("-"));
-        }
-    }
+            PublicKey publickey = this.server.E().getPublic();
 
-    public void a(Packet1Login packet1login) {
-        this.g = packet1login.name;
-        if (packet1login.a != 29) {
-            if (packet1login.a > 29) {
-                this.disconnect("Outdated server!");
-            } else {
-                this.disconnect("Outdated client!");
-            }
-        } else {
-            if (!this.server.onlineMode) {
-                // CraftBukkit start - disallow colour in names
-                if (!packet1login.name.equals(org.bukkit.ChatColor.stripColor(packet1login.name))) {
-                    this.disconnect("Colourful names are not permitted!");
-                    return;
+            if (packet2handshake.d() != 39) {
+                if (packet2handshake.d() > 39) {
+                    this.disconnect("Outdated server!");
+                } else {
+                    this.disconnect("Outdated client!");
                 }
-                // CraftBukkit end
-                this.b(packet1login);
             } else {
-                (new ThreadLoginVerifier(this, packet1login, this.server.server)).start(); // CraftBukkit
+                this.loginKey = this.server.getOnlineMode() ? Long.toString(random.nextLong(), 16) : "-";
+                this.d = new byte[4];
+                random.nextBytes(this.d);
+                this.networkManager.queue(new Packet253KeyRequest(this.loginKey, publickey, this.d));
             }
         }
     }
 
-    public void b(Packet1Login packet1login) {
-        EntityPlayer entityplayer = this.server.serverConfigurationManager.attemptLogin(this, packet1login.name, this.hostname); // CraftBukkit - add hostname parameter
+    public void a(Packet252KeyResponse packet252keyresponse) {
+        PrivateKey privatekey = this.server.E().getPrivate();
 
-        if (entityplayer != null) {
-            //this.server.serverConfigurationManager.b(entityplayer); // CraftBukkit - Moved to attemptLogin
-            // entityplayer.a((World) this.server.a(entityplayer.dimension)); // CraftBukkit - set by Entity
-            entityplayer.itemInWorldManager.a((WorldServer) entityplayer.world);
-            // CraftBukkit - add world and location to 'logged in' message.
-            logger.info(this.getName() + " logged in with entity id " + entityplayer.id + " at ([" + entityplayer.world.worldData.name + "] " + entityplayer.locX + ", " + entityplayer.locY + ", " + entityplayer.locZ + ")");
-            WorldServer worldserver = (WorldServer) entityplayer.world; // CraftBukkit
-            ChunkCoordinates chunkcoordinates = worldserver.getSpawn();
+        this.k = packet252keyresponse.a(privatekey);
+        if (!Arrays.equals(this.d, packet252keyresponse.b(privatekey))) {
+            this.disconnect("Invalid client reply");
+        }
 
-            entityplayer.itemInWorldManager.b(worldserver.getWorldData().getGameType());
-            NetServerHandler netserverhandler = new NetServerHandler(this.server, this.networkManager, entityplayer);
+        this.networkManager.queue(new Packet252KeyResponse());
+    }
 
-            // CraftBukkit start -- Don't send a higher than 60 MaxPlayer size, otherwise the PlayerInfo window won't render correctly.
-            int maxPlayers = this.server.serverConfigurationManager.getMaxPlayers();
-            if (maxPlayers > 60) {
-                maxPlayers = 60;
+    public void a(Packet205ClientCommand packet205clientcommand) {
+        if (packet205clientcommand.a == 0) {
+            if (this.server.getOnlineMode()) {
+                (new ThreadLoginVerifier(this, server.server)).start(); // CraftBukkit - add CraftServer
+            } else {
+                this.i = true;
             }
-            netserverhandler.sendPacket(new Packet1Login("", entityplayer.id, worldserver.getWorldData().getType(), entityplayer.itemInWorldManager.getGameMode(), worldserver.worldProvider.dimension, (byte) worldserver.difficulty, (byte) worldserver.getHeight(), (byte) maxPlayers));
-            entityplayer.getBukkitEntity().sendSupportedChannels();
+        }
+    }
+
+    public void a(Packet1Login packet1login) {}
+
+    public void d() {
+        // CraftBukkit start
+        EntityPlayer s = this.server.getServerConfigurationManager().attemptLogin(this, this.h, this.hostname);
+
+        if (s == null) {
+            return;
             // CraftBukkit end
+        } else {
+            EntityPlayer entityplayer = this.server.getServerConfigurationManager().processLogin(s); // CraftBukkit - this.h -> s
 
-            netserverhandler.sendPacket(new Packet6SpawnPosition(chunkcoordinates.x, chunkcoordinates.y, chunkcoordinates.z));
-            netserverhandler.sendPacket(new Packet202Abilities(entityplayer.abilities));
-            this.server.serverConfigurationManager.a(entityplayer, worldserver);
-            // this.server.serverConfigurationManager.sendAll(new Packet3Chat("\u00A7e" + entityplayer.name + " joined the game.")); // CraftBukkit - message moved to join event
-            this.server.serverConfigurationManager.c(entityplayer);
-            netserverhandler.a(entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
-            this.server.networkListenThread.a(netserverhandler);
-            netserverhandler.sendPacket(new Packet4UpdateTime(entityplayer.getPlayerTime())); // CraftBukkit - add support for player specific time
-            Iterator iterator = entityplayer.getEffects().iterator();
-
-            while (iterator.hasNext()) {
-                MobEffect mobeffect = (MobEffect) iterator.next();
-
-                netserverhandler.sendPacket(new Packet41MobEffect(entityplayer.id, mobeffect));
+            if (entityplayer != null) {
+                this.server.getServerConfigurationManager().a((INetworkManager) this.networkManager, entityplayer);
             }
-
-            entityplayer.syncInventory();
         }
 
         this.c = true;
@@ -153,14 +134,22 @@ public class NetLoginHandler extends NetHandler {
         if (this.networkManager.getSocket() == null) return; // CraftBukkit - fix NPE when a client queries a server that is unable to handle it.
         try {
             // CraftBukkit start
-            org.bukkit.event.server.ServerListPingEvent pingEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callServerListPingEvent(this.server.server, getSocket().getInetAddress(), this.server.motd, this.server.serverConfigurationManager.getPlayerCount(), this.server.serverConfigurationManager.getMaxPlayers());
-            String s = pingEvent.getMotd() + "\u00A7" + this.server.serverConfigurationManager.getPlayerCount() + "\u00A7" + pingEvent.getMaxPlayers();
+            org.bukkit.event.server.ServerListPingEvent pingEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callServerListPingEvent(this.server.server, getSocket().getInetAddress(), this.server.getMotd(), this.server.getServerConfigurationManager().getPlayerCount(), this.server.getServerConfigurationManager().getMaxPlayers());
+            String s = pingEvent.getMotd() + "\u00A7" + this.server.getServerConfigurationManager().getPlayerCount() + "\u00A7" + pingEvent.getMaxPlayers();
             // CraftBukkit end
 
-            this.server.networkListenThread.a(this.networkManager.getSocket()); // CraftBukkit - cleanup before killing connection
+            InetAddress inetaddress = null;
+
+            if (this.networkManager.getSocket() != null) {
+                inetaddress = this.networkManager.getSocket().getInetAddress();
+            }
+
             this.networkManager.queue(new Packet255KickDisconnect(s));
             this.networkManager.d();
-            // this.server.networkListenThread.a(this.networkManager.getSocket()); // CraftBukkit - moved up
+            if (inetaddress != null && this.server.ac() instanceof DedicatedServerConnection) {
+                ((DedicatedServerConnection) this.server.ac()).a(inetaddress);
+            }
+
             this.c = true;
         } catch (Exception exception) {
             exception.printStackTrace();
@@ -172,10 +161,10 @@ public class NetLoginHandler extends NetHandler {
     }
 
     public String getName() {
-        return this.g != null ? this.g + " [" + this.networkManager.getSocketAddress().toString() + "]" : this.networkManager.getSocketAddress().toString();
+        return this.h != null ? this.h + " [" + this.networkManager.getSocketAddress().toString() + "]" : this.networkManager.getSocketAddress().toString();
     }
 
-    public boolean c() {
+    public boolean a() {
         return true;
     }
 
@@ -183,7 +172,19 @@ public class NetLoginHandler extends NetHandler {
         return netloginhandler.loginKey;
     }
 
-    static Packet1Login a(NetLoginHandler netloginhandler, Packet1Login packet1login) {
-        return netloginhandler.h = packet1login;
+    static MinecraftServer b(NetLoginHandler netloginhandler) {
+        return netloginhandler.server;
+    }
+
+    static SecretKey c(NetLoginHandler netloginhandler) {
+        return netloginhandler.k;
+    }
+
+    static String d(NetLoginHandler netloginhandler) {
+        return netloginhandler.h;
+    }
+
+    static boolean a(NetLoginHandler netloginhandler, boolean flag) {
+        return netloginhandler.i = flag;
     }
 }

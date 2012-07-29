@@ -6,6 +6,7 @@ public class BlockTNT extends Block {
 
     public BlockTNT(int i, int j) {
         super(i, j, Material.TNT);
+        this.a(CreativeModeTab.d);
     }
 
     public int a(int i) {
@@ -28,7 +29,7 @@ public class BlockTNT extends Block {
     }
 
     public int a(Random random) {
-        return 0;
+        return 1;
     }
 
     public void wasExploded(World world, int i, int j, int k) {
@@ -42,9 +43,7 @@ public class BlockTNT extends Block {
 
     public void postBreak(World world, int i, int j, int k, int l) {
         if (!world.isStatic) {
-            if ((l & 1) == 0) {
-                this.a(world, i, j, k, new ItemStack(Block.TNT.id, 1, 0));
-            } else {
+            if ((l & 1) == 1) {
                 EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F));
 
                 world.addEntity(entitytntprimed);
@@ -53,21 +52,17 @@ public class BlockTNT extends Block {
         }
     }
 
-    public void attack(World world, int i, int j, int k, EntityHuman entityhuman) {
-        super.attack(world, i, j, k, entityhuman);
-    }
-
-    public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman) {
-        if (entityhuman.U() != null && entityhuman.U().id == Item.FLINT_AND_STEEL.id) {
+    public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman, int l, float f, float f1, float f2) {
+        if (entityhuman.bC() != null && entityhuman.bC().id == Item.FLINT_AND_STEEL.id) {
             this.postBreak(world, i, j, k, 1);
             world.setTypeId(i, j, k, 0);
             return true;
         } else {
-            return super.interact(world, i, j, k, entityhuman);
+            return super.interact(world, i, j, k, entityhuman, l, f, f1, f2);
         }
     }
 
-    protected ItemStack a_(int i) {
+    protected ItemStack c_(int i) {
         return null;
     }
 }

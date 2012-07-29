@@ -11,8 +11,8 @@ public class EntityTNTPrimed extends Entity {
     public EntityTNTPrimed(World world) {
         super(world);
         this.fuseTicks = 0;
-        this.bf = true;
-        this.b(0.98F, 0.98F);
+        this.m = true;
+        this.a(0.98F, 0.98F);
         this.height = this.length / 2.0F;
     }
 
@@ -30,17 +30,17 @@ public class EntityTNTPrimed extends Entity {
         this.lastZ = d2;
     }
 
-    protected void b() {}
+    protected void a() {}
 
-    protected boolean g_() {
+    protected boolean e_() {
         return false;
     }
 
-    public boolean o_() {
+    public boolean L() {
         return !this.dead;
     }
 
-    public void F_() {
+    public void h_() {
         this.lastX = this.locX;
         this.lastY = this.locY;
         this.lastZ = this.locZ;
@@ -56,14 +56,12 @@ public class EntityTNTPrimed extends Entity {
         }
 
         if (this.fuseTicks-- <= 0) {
+            // CraftBukkit start - Need to reverse the order of the explosion and the entity death so we have a location for the event
             if (!this.world.isStatic) {
-                // CraftBukkit start - Need to reverse the order of the explosion and the entity death so we have a location for the event.
                 this.explode();
-                this.die();
-                // CraftBukkit end
-            } else {
-                this.die();
             }
+            this.die();
+            // CraftBukkit end
         } else {
             this.world.a("smoke", this.locX, this.locY + 0.5D, this.locZ, 0.0D, 0.0D, 0.0D);
         }

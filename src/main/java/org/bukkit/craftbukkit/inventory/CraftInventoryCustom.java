@@ -139,5 +139,7 @@ public class CraftInventoryCustom extends CraftInventory {
         public InventoryHolder getOwner() {
             return owner;
         }
+
+        public void startOpen() {}
     }
 }

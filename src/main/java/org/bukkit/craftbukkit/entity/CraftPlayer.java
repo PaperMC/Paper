@@ -239,13 +239,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void playNote(Location loc, byte instrument, byte note) {
         if (getHandle().netServerHandler == null) return;
 
-        getHandle().netServerHandler.sendPacket(new Packet54PlayNoteBlock(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), instrument, note));
+        int id = getHandle().world.getTypeId(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+        getHandle().netServerHandler.sendPacket(new Packet54PlayNoteBlock(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), id, instrument, note));
     }
 
     public void playNote(Location loc, Instrument instrument, Note note) {
         if (getHandle().netServerHandler == null) return;
 
-        getHandle().netServerHandler.sendPacket(new Packet54PlayNoteBlock(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), instrument.getType(), note.getId()));
+        int id = getHandle().world.getTypeId(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+        getHandle().netServerHandler.sendPacket(new Packet54PlayNoteBlock(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), id, instrument.getType(), note.getId()));
     }
 
     public void playEffect(Location loc, Effect effect, int data) {
@@ -368,7 +370,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void setSneaking(boolean sneak) {
-        getHandle().setSneak(sneak);
+        getHandle().setSneaking(sneak);
     }
 
     public boolean isSneaking() {
@@ -470,15 +472,18 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public boolean isBanned() {
-        return server.getHandle().banByName.contains(getName().toLowerCase());
+        return server.getHandle().getNameBans().isBanned(getName().toLowerCase());
     }
 
     public void setBanned(boolean value) {
         if (value) {
-            server.getHandle().addUserBan(getName().toLowerCase());
+            BanEntry entry = new BanEntry(getName().toLowerCase());
+            server.getHandle().getNameBans().add(entry);
         } else {
-            server.getHandle().removeUserBan(getName().toLowerCase());
+            server.getHandle().getNameBans().remove(getName().toLowerCase());
         }
+
+        server.getHandle().getNameBans().save();
     }
 
     public boolean isWhitelisted() {
@@ -508,14 +513,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
                 return;
             }
 
-            getHandle().itemInWorldManager.setGameMode(mode.getValue());
+            getHandle().itemInWorldManager.setGameMode(EnumGamemode.a(mode.getValue()));
             getHandle().netServerHandler.sendPacket(new Packet70Bed(3, mode.getValue()));
         }
     }
 
     @Override
     public GameMode getGameMode() {
-        return GameMode.getByValue(getHandle().itemInWorldManager.getGameMode());
+        return GameMode.getByValue(getHandle().itemInWorldManager.getGameMode().a());
     }
 
     public void giveExp(int exp) {

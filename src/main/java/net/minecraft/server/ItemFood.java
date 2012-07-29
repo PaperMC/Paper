@@ -4,20 +4,21 @@ public class ItemFood extends Item {
 
     public final int a;
     private final int b;
-    private final float bU;
-    private final boolean bV;
-    private boolean bW;
-    private int bX;
-    private int bY;
-    private int bZ;
-    private float ca;
+    private final float c;
+    private final boolean bY;
+    private boolean bZ;
+    private int ca;
+    private int cb;
+    private int cc;
+    private float cd;
 
     public ItemFood(int i, int j, float f, boolean flag) {
         super(i);
         this.a = 32;
         this.b = j;
-        this.bV = flag;
-        this.bU = f;
+        this.bY = flag;
+        this.c = f;
+        this.a(CreativeModeTab.h);
     }
 
     public ItemFood(int i, int j, boolean flag) {
@@ -37,24 +38,27 @@ public class ItemFood extends Item {
         // CraftBukkit end
 
         world.makeSound(entityhuman, "random.burp", 0.5F, world.random.nextFloat() * 0.1F + 0.9F);
-        if (!world.isStatic && this.bX > 0 && world.random.nextFloat() < this.ca) {
-            entityhuman.addEffect(new MobEffect(this.bX, this.bY * 20, this.bZ));
-        }
-
+        this.c(itemstack, world, entityhuman);
         return itemstack;
     }
 
-    public int c(ItemStack itemstack) {
+    protected void c(ItemStack itemstack, World world, EntityHuman entityhuman) {
+        if (!world.isStatic && this.ca > 0 && world.random.nextFloat() < this.cd) {
+            entityhuman.addEffect(new MobEffect(this.ca, this.cb * 20, this.cc));
+        }
+    }
+
+    public int a(ItemStack itemstack) {
         return 32;
     }
 
-    public EnumAnimation d(ItemStack itemstack) {
+    public EnumAnimation b(ItemStack itemstack) {
         return EnumAnimation.b;
     }
 
     public ItemStack a(ItemStack itemstack, World world, EntityHuman entityhuman) {
-        if (entityhuman.b(this.bW)) {
-            entityhuman.a(itemstack, this.c(itemstack));
+        if (entityhuman.e(this.bZ)) {
+            entityhuman.a(itemstack, this.a(itemstack));
         }
 
         return itemstack;
@@ -65,27 +69,23 @@ public class ItemFood extends Item {
     }
 
     public float getSaturationModifier() {
-        return this.bU;
+        return this.c;
     }
 
-    public boolean q() {
-        return this.bV;
+    public boolean h() {
+        return this.bY;
     }
 
     public ItemFood a(int i, int j, int k, float f) {
-        this.bX = i;
-        this.bY = j;
-        this.bZ = k;
-        this.ca = f;
+        this.ca = i;
+        this.cb = j;
+        this.cc = k;
+        this.cd = f;
         return this;
     }
 
-    public ItemFood r() {
-        this.bW = true;
+    public ItemFood i() {
+        this.bZ = true;
         return this;
-    }
-
-    public Item a(String s) {
-        return super.a(s);
     }
 }

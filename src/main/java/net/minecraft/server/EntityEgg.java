@@ -23,8 +23,8 @@ public class EntityEgg extends EntityProjectile {
     }
 
     protected void a(MovingObjectPosition movingobjectposition) {
-        if (movingobjectposition.entity != null && movingobjectposition.entity.damageEntity(DamageSource.projectile(this, this.shooter), 0)) {
-            ;
+        if (movingobjectposition.entity != null) {
+            movingobjectposition.entity.damageEntity(DamageSource.projectile(this, this.shooter), 0);
         }
 
         // CraftBukkit start
@@ -50,7 +50,6 @@ public class EntityEgg extends EntityProjectile {
         if (hatching) {
             for (int k = 0; k < numHatching; k++) {
                 org.bukkit.entity.Entity entity = world.getWorld().spawn(new org.bukkit.Location(world.getWorld(), this.locX, this.locY, this.locZ, this.yaw, 0.0F), hatchingType.getEntityClass(), SpawnReason.EGG);
-
                 if (entity instanceof Ageable) {
                     ((Ageable) entity).setBaby();
                 }

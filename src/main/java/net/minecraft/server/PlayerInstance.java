@@ -1,17 +1,16 @@
 package net.minecraft.server;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 class PlayerInstance {
 
-    private List b;
-    private int chunkX;
-    private int chunkZ;
-    private ChunkCoordIntPair location;
+    private final List b;
+    private final ChunkCoordIntPair location;
     private short[] dirtyBlocks;
     private int dirtyCount;
-    private int h;
+    private int f;
 
     final PlayerManager playerManager;
 
@@ -20,22 +19,14 @@ class PlayerInstance {
         this.b = new ArrayList();
         this.dirtyBlocks = new short[64];
         this.dirtyCount = 0;
-        this.chunkX = i;
-        this.chunkZ = j;
         this.location = new ChunkCoordIntPair(i, j);
         playermanager.a().chunkProviderServer.getChunkAt(i, j);
     }
 
     public void a(EntityPlayer entityplayer) {
         if (this.b.contains(entityplayer)) {
-            throw new IllegalStateException("Failed to add player. " + entityplayer + " already is in chunk " + this.chunkX + ", " + this.chunkZ);
+            throw new IllegalStateException("Failed to add player. " + entityplayer + " already is in chunk " + this.location.x + ", " + this.location.z);
         } else {
-            // CraftBukkit start
-            if (entityplayer.playerChunkCoordIntPairs.add(this.location)) {
-                entityplayer.netServerHandler.sendPacket(new Packet50PreChunk(this.location.x, this.location.z, true));
-            }
-            // CraftBukkit end
-
             this.b.add(entityplayer);
             entityplayer.chunkCoordIntPairQueue.add(this.location);
         }
@@ -43,32 +34,28 @@ class PlayerInstance {
 
     public void b(EntityPlayer entityplayer) {
         if (this.b.contains(entityplayer)) {
+            entityplayer.netServerHandler.sendPacket(new Packet51MapChunk(PlayerManager.a(this.playerManager).getChunkAt(this.location.x, this.location.z), true, 0));
             this.b.remove(entityplayer);
-            if (this.b.size() == 0) {
-                long i = (long) this.chunkX + 2147483647L | (long) this.chunkZ + 2147483647L << 32;
+            entityplayer.chunkCoordIntPairQueue.remove(this.location);
+            if (this.b.isEmpty()) {
+                long i = (long) this.location.x + 2147483647L | (long) this.location.z + 2147483647L << 32;
 
-                PlayerManager.a(this.playerManager).remove(i);
+                PlayerManager.b(this.playerManager).remove(i);
                 if (this.dirtyCount > 0) {
-                    PlayerManager.b(this.playerManager).remove(this);
+                    PlayerManager.c(this.playerManager).remove(this);
                 }
 
-                this.playerManager.a().chunkProviderServer.queueUnload(this.chunkX, this.chunkZ);
-            }
-
-            entityplayer.chunkCoordIntPairQueue.remove(this.location);
-            // CraftBukkit - contains -> remove -- TODO VERIFY!!!!
-            if (entityplayer.playerChunkCoordIntPairs.remove(this.location)) {
-                entityplayer.netServerHandler.sendPacket(new Packet50PreChunk(this.chunkX, this.chunkZ, false));
+                this.playerManager.a().chunkProviderServer.queueUnload(this.location.x, this.location.z);
             }
         }
     }
 
     public void a(int i, int j, int k) {
         if (this.dirtyCount == 0) {
-            PlayerManager.b(this.playerManager).add(this);
+            PlayerManager.c(this.playerManager).add(this);
         }
 
-        this.h |= 1 << (j >> 4);
+        this.f |= 1 << (j >> 4);
         if (this.dirtyCount < 64) {
             short short1 = (short) (i << 12 | k << 8 | j);
 
@@ -83,75 +70,86 @@ class PlayerInstance {
     }
 
     public void sendAll(Packet packet) {
-        for (int i = 0; i < this.b.size(); ++i) {
-            EntityPlayer entityplayer = (EntityPlayer) this.b.get(i);
+        Iterator iterator = this.b.iterator();
 
-            if (entityplayer.playerChunkCoordIntPairs.contains(this.location) && !entityplayer.chunkCoordIntPairQueue.contains(this.location)) {
+        while (iterator.hasNext()) {
+            EntityPlayer entityplayer = (EntityPlayer) iterator.next();
+
+            if (!entityplayer.chunkCoordIntPairQueue.contains(this.location)) {
                 entityplayer.netServerHandler.sendPacket(packet);
             }
         }
     }
 
     public void a() {
-        WorldServer worldserver = this.playerManager.a();
-
         if (this.dirtyCount != 0) {
             int i;
             int j;
             int k;
 
             if (this.dirtyCount == 1) {
-                i = this.chunkX * 16 + (this.dirtyBlocks[0] >> 12 & 15);
+                i = this.location.x * 16 + (this.dirtyBlocks[0] >> 12 & 15);
                 j = this.dirtyBlocks[0] & 255;
-                k = this.chunkZ * 16 + (this.dirtyBlocks[0] >> 8 & 15);
-                this.sendAll(new Packet53BlockChange(i, j, k, worldserver));
-                if (worldserver.isTileEntity(i, j, k)) {
-                    this.sendTileEntity(worldserver.getTileEntity(i, j, k));
+                k = this.location.z * 16 + (this.dirtyBlocks[0] >> 8 & 15);
+                this.sendAll(new Packet53BlockChange(i, j, k, PlayerManager.a(this.playerManager)));
+                if (PlayerManager.a(this.playerManager).isTileEntity(i, j, k)) {
+                    this.sendTileEntity(PlayerManager.a(this.playerManager).getTileEntity(i, j, k));
                 }
             } else {
                 int l;
 
                 if (this.dirtyCount == 64) {
-                    i = this.chunkX * 16;
-                    j = this.chunkZ * 16;
-                    this.sendAll(new Packet51MapChunk(worldserver.getChunkAt(this.chunkX, this.chunkZ), (this.h == 0xFFFF), this.h)); // CraftBukkit - send everything (including biome) if all sections flagged
+                    i = this.location.x * 16;
+                    j = this.location.z * 16;
+                    this.sendAll(new Packet51MapChunk(PlayerManager.a(this.playerManager).getChunkAt(this.location.x, this.location.z), (this.f == 0xFFFF), this.f)); // CraftBukkit - send everything (including biome) if all sections flagged
 
                     for (k = 0; k < 16; ++k) {
-                        if ((this.h & 1 << k) != 0) {
+                        if ((this.f & 1 << k) != 0) {
                             l = k << 4;
-                            List list = worldserver.getTileEntities(i, l, j, i + 16, l + 16, j + 16);
+                            List list = PlayerManager.a(this.playerManager).getTileEntities(i, l, j, i + 16, l + 16, j + 16);
+                            Iterator iterator = list.iterator();
 
-                            for (int i1 = 0; i1 < list.size(); ++i1) {
-                                this.sendTileEntity((TileEntity) list.get(i1));
+                            while (iterator.hasNext()) {
+                                TileEntity tileentity = (TileEntity) iterator.next();
+
+                                this.sendTileEntity(tileentity);
                             }
                         }
                     }
                 } else {
-                    this.sendAll(new Packet52MultiBlockChange(this.chunkX, this.chunkZ, this.dirtyBlocks, this.dirtyCount, worldserver));
+                    this.sendAll(new Packet52MultiBlockChange(this.location.x, this.location.z, this.dirtyBlocks, this.dirtyCount, PlayerManager.a(this.playerManager)));
 
                     for (i = 0; i < this.dirtyCount; ++i) {
-                        j = this.chunkX * 16 + (this.dirtyBlocks[i] >> 12 & 15);
+                        j = this.location.x * 16 + (this.dirtyBlocks[i] >> 12 & 15);
                         k = this.dirtyBlocks[i] & 255;
-                        l = this.chunkZ * 16 + (this.dirtyBlocks[i] >> 8 & 15);
-                        if (worldserver.isTileEntity(j, k, l)) {
-                            this.sendTileEntity(worldserver.getTileEntity(j, k, l));
+                        l = this.location.z * 16 + (this.dirtyBlocks[i] >> 8 & 15);
+                        if (PlayerManager.a(this.playerManager).isTileEntity(j, k, l)) {
+                            this.sendTileEntity(PlayerManager.a(this.playerManager).getTileEntity(j, k, l));
                         }
                     }
                 }
             }
 
             this.dirtyCount = 0;
-            this.h = 0;
+            this.f = 0;
         }
     }
 
     private void sendTileEntity(TileEntity tileentity) {
         if (tileentity != null) {
-            Packet packet = tileentity.d();
+            Packet packet = tileentity.e();
 
             if (packet != null) {
                 this.sendAll(packet);
             }
         }
+    }
+
+    static ChunkCoordIntPair a(PlayerInstance playerinstance) {
+        return playerinstance.location;
+    }
+
+    static List b(PlayerInstance playerinstance) {
+        return playerinstance.b;
     }
 }

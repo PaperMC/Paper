@@ -8,21 +8,21 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
 
     public EntityMonster(World world) {
         super(world);
-        this.aA = 5;
+        this.aV = 5;
     }
 
-    public void e() {
-        float f = this.b(1.0F);
+    public void d() {
+        float f = this.c(1.0F);
 
         if (f > 0.5F) {
-            this.aV += 2;
+            this.bq += 2;
         }
 
-        super.e();
+        super.d();
     }
 
-    public void F_() {
-        super.F_();
+    public void h_() {
+        super.h_();
         if (!this.world.isStatic && this.world.difficulty == 0) {
             this.die();
         }
@@ -31,7 +31,7 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
     protected Entity findTarget() {
         EntityHuman entityhuman = this.world.findNearbyVulnerablePlayer(this, 16.0D);
 
-        return entityhuman != null && this.h(entityhuman) ? entityhuman : null;
+        return entityhuman != null && this.l(entityhuman) ? entityhuman : null;
     }
 
     public boolean damageEntity(DamageSource damagesource, int i) {
@@ -40,7 +40,7 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
 
             if (this.passenger != entity && this.vehicle != entity) {
                 if (entity != this) {
-                    // CraftBukkit start - We still need to call events for entities without goals
+                    // CraftBukkit start - we still need to call events for entities without goals
                     if (entity != this.target && (this instanceof EntityBlaze || this instanceof EntityEnderman || this instanceof EntitySpider || this instanceof EntityGiantZombie || this instanceof EntitySilverfish)) {
                         EntityTargetEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetEvent(this, entity, EntityTargetEvent.TargetReason.TARGET_ATTACKED_ENTITY);
 
@@ -66,7 +66,7 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
         }
     }
 
-    public boolean a(Entity entity) {
+    public boolean k(Entity entity) {
         int i = this.damage;
 
         if (this.hasEffect(MobEffectList.INCREASE_DAMAGE)) {
@@ -83,38 +83,30 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
     protected void a(Entity entity, float f) {
         if (this.attackTicks <= 0 && f < 2.0F && entity.boundingBox.e > this.boundingBox.b && entity.boundingBox.b < this.boundingBox.e) {
             this.attackTicks = 20;
-            this.a(entity);
+            this.k(entity);
         }
     }
 
     public float a(int i, int j, int k) {
-        return 0.5F - this.world.p(i, j, k);
+        return 0.5F - this.world.o(i, j, k);
     }
 
-    public void b(NBTTagCompound nbttagcompound) {
-        super.b(nbttagcompound);
-    }
-
-    public void a(NBTTagCompound nbttagcompound) {
-        super.a(nbttagcompound);
-    }
-
-    protected boolean C() {
+    protected boolean o() {
         int i = MathHelper.floor(this.locX);
         int j = MathHelper.floor(this.boundingBox.b);
         int k = MathHelper.floor(this.locZ);
 
-        if (this.world.a(EnumSkyBlock.SKY, i, j, k) > this.random.nextInt(32)) {
+        if (this.world.b(EnumSkyBlock.SKY, i, j, k) > this.random.nextInt(32)) {
             return false;
         } else {
             int l = this.world.getLightLevel(i, j, k);
 
-            if (this.world.w()) {
-                int i1 = this.world.f;
+            if (this.world.I()) {
+                int i1 = this.world.k;
 
-                this.world.f = 10;
+                this.world.k = 10;
                 l = this.world.getLightLevel(i, j, k);
-                this.world.f = i1;
+                this.world.k = i1;
             }
 
             return l <= this.random.nextInt(8);
@@ -122,6 +114,6 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
     }
 
     public boolean canSpawn() {
-        return this.C() && super.canSpawn();
+        return this.o() && super.canSpawn();
     }
 }

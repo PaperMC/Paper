@@ -12,28 +12,18 @@ class NetworkWriterThread extends Thread {
     }
 
     public void run() {
-        Object object = NetworkManager.a;
+        NetworkManager.b.getAndIncrement();
 
-        synchronized (NetworkManager.a) {
-            ++NetworkManager.c;
-        }
+        try {
+            while (NetworkManager.a(this.a)) {
+                boolean flag;
 
-        while (true) {
-            boolean flag = false;
-
-            try {
-                flag = true;
-                if (!NetworkManager.a(this.a)) {
-                    flag = false;
-                    break;
-                }
-
-                while (NetworkManager.d(this.a)) {
+                for (flag = false; NetworkManager.d(this.a); flag = true) {
                     ;
                 }
 
                 try {
-                    if (NetworkManager.e(this.a) != null) {
+                    if (flag && NetworkManager.e(this.a) != null) {
                         NetworkManager.e(this.a).flush();
                     }
                 } catch (IOException ioexception) {
@@ -49,20 +39,9 @@ class NetworkWriterThread extends Thread {
                 } catch (InterruptedException interruptedexception) {
                     ;
                 }
-            } finally {
-                if (flag) {
-                    Object object1 = NetworkManager.a;
-
-                    synchronized (NetworkManager.a) {
-                        --NetworkManager.c;
-                    }
-                }
             }
-        }
-
-        object = NetworkManager.a;
-        synchronized (NetworkManager.a) {
-            --NetworkManager.c;
+        } finally {
+            NetworkManager.b.getAndDecrement();
         }
     }
 }

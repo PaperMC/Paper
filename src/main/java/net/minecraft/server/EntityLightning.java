@@ -1,10 +1,11 @@
 package net.minecraft.server;
 
+import java.util.Iterator;
 import java.util.List;
 
 import org.bukkit.event.block.BlockIgniteEvent; // CraftBukkit
 
-public class EntityWeatherLighting extends EntityWeather {
+public class EntityLightning extends EntityWeather {
 
     private int lifeTicks;
     public long a = 0L;
@@ -14,11 +15,11 @@ public class EntityWeatherLighting extends EntityWeather {
     private org.bukkit.craftbukkit.CraftWorld cworld;
     public boolean isEffect = false;
 
-    public EntityWeatherLighting(World world, double d0, double d1, double d2) {
+    public EntityLightning(World world, double d0, double d1, double d2) {
         this(world, d0, d1, d2, false);
     }
 
-    public EntityWeatherLighting(World world, double d0, double d1, double d2, boolean isEffect) {
+    public EntityLightning(World world, double d0, double d1, double d2, boolean isEffect) {
         // CraftBukkit end
 
         super(world);
@@ -69,8 +70,8 @@ public class EntityWeatherLighting extends EntityWeather {
         }
     }
 
-    public void F_() {
-        super.F_();
+    public void h_() {
+        super.h_();
         if (this.lifeTicks == 2) {
             this.world.makeSound(this.locX, this.locY, this.locZ, "ambient.weather.thunder", 10000.0F, 0.8F + this.random.nextFloat() * 0.2F);
             this.world.makeSound(this.locX, this.locY, this.locZ, "random.explode", 2.0F, 0.5F + this.random.nextFloat() * 0.2F);
@@ -106,19 +107,20 @@ public class EntityWeatherLighting extends EntityWeather {
 
         if (this.lifeTicks >= 0 && !this.isEffect) { // CraftBukkit
             double d0 = 3.0D;
-            List list = this.world.getEntities(this, AxisAlignedBB.b(this.locX - d0, this.locY - d0, this.locZ - d0, this.locX + d0, this.locY + 6.0D + d0, this.locZ + d0));
+            List list = this.world.getEntities(this, AxisAlignedBB.a().a(this.locX - d0, this.locY - d0, this.locZ - d0, this.locX + d0, this.locY + 6.0D + d0, this.locZ + d0));
+            Iterator iterator = list.iterator();
 
-            for (int l = 0; l < list.size(); ++l) {
-                Entity entity = (Entity) list.get(l);
+            while (iterator.hasNext()) {
+                Entity entity = (Entity) iterator.next();
 
                 entity.a(this);
             }
 
-            this.world.n = 2;
+            this.world.s = 2;
         }
     }
 
-    protected void b() {}
+    protected void a() {}
 
     protected void a(NBTTagCompound nbttagcompound) {}
 

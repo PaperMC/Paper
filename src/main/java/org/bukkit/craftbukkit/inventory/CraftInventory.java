@@ -1,6 +1,5 @@
 package org.bukkit.craftbukkit.inventory;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -8,6 +7,8 @@ import java.util.ListIterator;
 import net.minecraft.server.ContainerEnchantTableInventory;
 import net.minecraft.server.IInventory;
 import net.minecraft.server.InventoryCrafting;
+import net.minecraft.server.InventoryEnderChest;
+import net.minecraft.server.InventoryMerchant;
 import net.minecraft.server.PlayerInventory;
 import net.minecraft.server.TileEntityBrewingStand;
 import net.minecraft.server.TileEntityDispenser;
@@ -411,6 +412,10 @@ public class CraftInventory implements Inventory {
             return InventoryType.BREWING;
         } else if (inventory instanceof CraftInventoryCustom.MinecraftInventory) {
             return ((CraftInventoryCustom.MinecraftInventory) inventory).getType();
+        } else if (inventory instanceof InventoryEnderChest) {
+            return InventoryType.ENDER_CHEST;
+        } else if (inventory instanceof InventoryMerchant) {
+            return InventoryType.MERCHANT;
         } else {
             return InventoryType.CHEST;
         }

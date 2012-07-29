@@ -4,14 +4,18 @@ import org.bukkit.craftbukkit.block.CraftBlockState; // CraftBukkit
 
 public class ItemHoe extends Item {
 
+    protected EnumToolMaterial a;
+
     public ItemHoe(int i, EnumToolMaterial enumtoolmaterial) {
         super(i);
+        this.a = enumtoolmaterial;
         this.maxStackSize = 1;
         this.setMaxDurability(enumtoolmaterial.a());
+        this.a(CreativeModeTab.i);
     }
 
-    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
-        if (!entityhuman.d(i, j, k)) {
+    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l, float f, float f1, float f2) {
+        if (!entityhuman.e(i, j, k)) {
             return false;
         } else {
             int i1 = world.getTypeId(i, j, k);
@@ -44,5 +48,9 @@ public class ItemHoe extends Item {
                 }
             }
         }
+    }
+
+    public String f() {
+        return this.a.toString();
     }
 }

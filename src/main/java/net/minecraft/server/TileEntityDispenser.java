@@ -83,8 +83,7 @@ public class TileEntityDispenser extends TileEntity implements IInventory {
         }
     }
 
-    // CraftBukkit start - move code out from p_
-    public int findDispenseSlot() {
+    public int i() {
         int i = -1;
         int j = 1;
 
@@ -94,18 +93,8 @@ public class TileEntityDispenser extends TileEntity implements IInventory {
                 i = k;
             }
         }
+
         return i;
-    }
-
-    public ItemStack p_() {
-        int i = this.findDispenseSlot();
-        // CraftBukkit end
-
-        if (i >= 0) {
-            return this.splitStack(i, 1);
-        } else {
-            return null;
-        }
     }
 
     public void setItem(int i, ItemStack itemstack) {
@@ -115,6 +104,17 @@ public class TileEntityDispenser extends TileEntity implements IInventory {
         }
 
         this.update();
+    }
+
+    public int a(ItemStack itemstack) {
+        for (int i = 0; i < this.items.length; ++i) {
+            if (this.items[i] == null || this.items[i].id == 0) {
+                this.items[i] = itemstack;
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     public String getName() {
@@ -162,7 +162,7 @@ public class TileEntityDispenser extends TileEntity implements IInventory {
         return this.world.getTileEntity(this.x, this.y, this.z) != this ? false : entityhuman.e((double) this.x + 0.5D, (double) this.y + 0.5D, (double) this.z + 0.5D) <= 64.0D;
     }
 
-    public void f() {}
+    public void startOpen() {}
 
-    public void g() {}
+    public void f() {}
 }

@@ -32,14 +32,13 @@ public class NBTTagCompound extends NBTBase {
         try {
             dataoutput.writeByte(0);
         } catch (java.io.IOException ex) {
-            java.util.logging.Logger.getLogger(NBTTagCompound.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            ex.printStackTrace();
         }
     }
 
     public void remove(String name) {
         map.remove(name);
     }
-
     // CraftBukkit end
 
     void load(DataInput datainput) {
@@ -52,7 +51,7 @@ public class NBTTagCompound extends NBTBase {
         }
     }
 
-    public Collection d() {
+    public Collection c() {
         return this.map.values();
     }
 

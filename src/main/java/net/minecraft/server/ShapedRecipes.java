@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftShapedRecipe;
 // CraftBukkit end
 
-public class ShapedRecipes implements CraftingRecipe {
+public class ShapedRecipes implements IRecipe {
 
     private int width;
     private int height;

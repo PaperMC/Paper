@@ -13,8 +13,9 @@ public class BlockPumpkin extends BlockDirectional {
     protected BlockPumpkin(int i, int j, boolean flag) {
         super(i, Material.PUMPKIN);
         this.textureId = j;
-        this.a(true);
+        this.b(true);
         this.a = flag;
+        this.a(CreativeModeTab.b);
     }
 
     public int a(int i, int j) {
@@ -42,7 +43,7 @@ public class BlockPumpkin extends BlockDirectional {
         if (world.suppressPhysics) return; // CraftBukkit
         if (world.getTypeId(i, j - 1, k) == Block.SNOW_BLOCK.id && world.getTypeId(i, j - 2, k) == Block.SNOW_BLOCK.id) {
             if (!world.isStatic) {
-                // CraftBukkit start - Use BlockStateListPopulator
+                // CraftBukkit start - use BlockStateListPopulator
                 BlockStateListPopulator blockList = new BlockStateListPopulator(world.getWorld());
 
                 blockList.setTypeId(i, j, k, 0);
@@ -66,12 +67,13 @@ public class BlockPumpkin extends BlockDirectional {
             boolean flag1 = world.getTypeId(i, j - 1, k - 1) == Block.IRON_BLOCK.id && world.getTypeId(i, j - 1, k + 1) == Block.IRON_BLOCK.id;
 
             if (flag || flag1) {
-                // CraftBukkit start - Use BlockStateListPopulator
+                // CraftBukkit start - use BlockStateListPopulator
                 BlockStateListPopulator blockList = new BlockStateListPopulator(world.getWorld());
 
                 blockList.setTypeId(i, j, k, 0);
                 blockList.setTypeId(i, j - 1, k, 0);
                 blockList.setTypeId(i, j - 2, k, 0);
+
                 if (flag) {
                     blockList.setTypeId(i - 1, j - 1, k, 0);
                     blockList.setTypeId(i + 1, j - 1, k, 0);
@@ -82,7 +84,7 @@ public class BlockPumpkin extends BlockDirectional {
 
                 EntityIronGolem entityirongolem = new EntityIronGolem(world);
 
-                entityirongolem.b(true);
+                entityirongolem.f(true);
                 entityirongolem.setPositionRotation((double) i + 0.5D, (double) j - 1.95D, (double) k + 0.5D, 0.0F, 0.0F);
                 if (world.addEntity(entityirongolem, SpawnReason.BUILD_IRONGOLEM)) {
                     for (int i1 = 0; i1 < 120; ++i1) {
@@ -99,7 +101,7 @@ public class BlockPumpkin extends BlockDirectional {
     public boolean canPlace(World world, int i, int j, int k) {
         int l = world.getTypeId(i, j, k);
 
-        return (l == 0 || Block.byId[l].material.isReplacable()) && world.e(i, j - 1, k);
+        return (l == 0 || Block.byId[l].material.isReplaceable()) && world.t(i, j - 1, k);
     }
 
     public void postPlace(World world, int i, int j, int k, EntityLiving entityliving) {

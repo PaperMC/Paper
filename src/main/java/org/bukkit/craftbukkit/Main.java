@@ -38,10 +38,15 @@ public class Main {
                         .ofType(String.class)
                         .describedAs("Hostname or IP");
 
-                acceptsAll(asList("w", "world", "level-name"), "World directory")
+                acceptsAll(asList("W", "world-dir", "universe", "world-container"), "World container")
+                        .withRequiredArg()
+                        .ofType(File.class)
+                        .describedAs("Directory containing worlds");
+
+                acceptsAll(asList("w", "world", "level-name"), "World name")
                         .withRequiredArg()
                         .ofType(String.class)
-                        .describedAs("World dir");
+                        .describedAs("World name");
 
                 acceptsAll(asList("p", "port", "server-port"), "Port to listen on")
                         .withRequiredArg()
@@ -100,6 +105,8 @@ public class Main {
                 acceptsAll(asList("noconsole"), "Disables the console");
 
                 acceptsAll(asList("v", "version"), "Show the CraftBukkit Version");
+
+                acceptsAll(asList("demo"), "Demo mode");
             }
         };
 

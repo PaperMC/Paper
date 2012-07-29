@@ -1,10 +1,9 @@
 package net.minecraft.server;
 
+import java.util.Iterator;
 import java.util.List;
 
-// CraftBukkit start
-import org.bukkit.event.entity.ProjectileHitEvent;
-// CraftBukkit end
+import org.bukkit.event.entity.ProjectileHitEvent; // CraftBukkit
 
 public abstract class EntityProjectile extends Entity {
 
@@ -14,21 +13,21 @@ public abstract class EntityProjectile extends Entity {
     private int inBlockId = 0;
     protected boolean inGround = false;
     public int shake = 0;
-    public EntityLiving shooter; // CraftBukkit - prot to public
+    public EntityLiving shooter; // CraftBukkit - protected -> public
     private int h;
     private int i = 0;
 
     public EntityProjectile(World world) {
         super(world);
-        this.b(0.25F, 0.25F);
+        this.a(0.25F, 0.25F);
     }
 
-    protected void b() {}
+    protected void a() {}
 
     public EntityProjectile(World world, EntityLiving entityliving) {
         super(world);
         this.shooter = entityliving;
-        this.b(0.25F, 0.25F);
+        this.a(0.25F, 0.25F);
         this.setPositionRotation(entityliving.locX, entityliving.locY + (double) entityliving.getHeadHeight(), entityliving.locZ, entityliving.yaw, entityliving.pitch);
         this.locX -= (double) (MathHelper.cos(this.yaw / 180.0F * 3.1415927F) * 0.16F);
         this.locY -= 0.10000000149011612D;
@@ -39,27 +38,27 @@ public abstract class EntityProjectile extends Entity {
 
         this.motX = (double) (-MathHelper.sin(this.yaw / 180.0F * 3.1415927F) * MathHelper.cos(this.pitch / 180.0F * 3.1415927F) * f);
         this.motZ = (double) (MathHelper.cos(this.yaw / 180.0F * 3.1415927F) * MathHelper.cos(this.pitch / 180.0F * 3.1415927F) * f);
-        this.motY = (double) (-MathHelper.sin((this.pitch + this.d()) / 180.0F * 3.1415927F) * f);
-        this.a(this.motX, this.motY, this.motZ, this.c(), 1.0F);
+        this.motY = (double) (-MathHelper.sin((this.pitch + this.g()) / 180.0F * 3.1415927F) * f);
+        this.c(this.motX, this.motY, this.motZ, this.d(), 1.0F);
     }
 
     public EntityProjectile(World world, double d0, double d1, double d2) {
         super(world);
         this.h = 0;
-        this.b(0.25F, 0.25F);
+        this.a(0.25F, 0.25F);
         this.setPosition(d0, d1, d2);
         this.height = 0.0F;
     }
 
-    protected float c() {
+    protected float d() {
         return 1.5F;
     }
 
-    protected float d() {
+    protected float g() {
         return 0.0F;
     }
 
-    public void a(double d0, double d1, double d2, float f, float f1) {
+    public void c(double d0, double d1, double d2, float f, float f1) {
         float f2 = MathHelper.sqrt(d0 * d0 + d1 * d1 + d2 * d2);
 
         d0 /= (double) f2;
@@ -81,11 +80,11 @@ public abstract class EntityProjectile extends Entity {
         this.h = 0;
     }
 
-    public void F_() {
-        this.bL = this.locX;
-        this.bM = this.locY;
-        this.bN = this.locZ;
-        super.F_();
+    public void h_() {
+        this.S = this.locX;
+        this.T = this.locY;
+        this.U = this.locZ;
+        super.h_();
         if (this.shake > 0) {
             --this.shake;
         }
@@ -112,25 +111,26 @@ public abstract class EntityProjectile extends Entity {
             ++this.i;
         }
 
-        Vec3D vec3d = Vec3D.create(this.locX, this.locY, this.locZ);
-        Vec3D vec3d1 = Vec3D.create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
+        Vec3D vec3d = Vec3D.a().create(this.locX, this.locY, this.locZ);
+        Vec3D vec3d1 = Vec3D.a().create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
         MovingObjectPosition movingobjectposition = this.world.a(vec3d, vec3d1);
 
-        vec3d = Vec3D.create(this.locX, this.locY, this.locZ);
-        vec3d1 = Vec3D.create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
+        vec3d = Vec3D.a().create(this.locX, this.locY, this.locZ);
+        vec3d1 = Vec3D.a().create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
         if (movingobjectposition != null) {
-            vec3d1 = Vec3D.create(movingobjectposition.pos.a, movingobjectposition.pos.b, movingobjectposition.pos.c);
+            vec3d1 = Vec3D.a().create(movingobjectposition.pos.a, movingobjectposition.pos.b, movingobjectposition.pos.c);
         }
 
         if (!this.world.isStatic) {
             Entity entity = null;
             List list = this.world.getEntities(this, this.boundingBox.a(this.motX, this.motY, this.motZ).grow(1.0D, 1.0D, 1.0D));
             double d0 = 0.0D;
+            Iterator iterator = list.iterator();
 
-            for (int j = 0; j < list.size(); ++j) {
-                Entity entity1 = (Entity) list.get(j);
+            while (iterator.hasNext()) {
+                Entity entity1 = (Entity) iterator.next();
 
-                if (entity1.o_() && (entity1 != this.shooter || this.i >= 5)) {
+                if (entity1.L() && (entity1 != this.shooter || this.i >= 5)) {
                     float f = 0.3F;
                     AxisAlignedBB axisalignedbb = entity1.boundingBox.grow((double) f, (double) f, (double) f);
                     MovingObjectPosition movingobjectposition1 = axisalignedbb.a(vec3d, vec3d1);
@@ -187,10 +187,10 @@ public abstract class EntityProjectile extends Entity {
         this.pitch = this.lastPitch + (this.pitch - this.lastPitch) * 0.2F;
         this.yaw = this.lastYaw + (this.yaw - this.lastYaw) * 0.2F;
         float f2 = 0.99F;
-        float f3 = this.e();
+        float f3 = this.h();
 
-        if (this.aU()) {
-            for (int k = 0; k < 4; ++k) {
+        if (this.H()) {
+            for (int j = 0; j < 4; ++j) {
                 float f4 = 0.25F;
 
                 this.world.a("bubble", this.locX - this.motX * (double) f4, this.locY - this.motY * (double) f4, this.locZ - this.motZ * (double) f4, this.motX, this.motY, this.motZ);
@@ -206,7 +206,7 @@ public abstract class EntityProjectile extends Entity {
         this.setPosition(this.locX, this.locY, this.locZ);
     }
 
-    protected float e() {
+    protected float h() {
         return 0.03F;
     }
 
@@ -229,6 +229,4 @@ public abstract class EntityProjectile extends Entity {
         this.shake = nbttagcompound.getByte("shake") & 255;
         this.inGround = nbttagcompound.getByte("inGround") == 1;
     }
-
-    public void a_(EntityHuman entityhuman) {}
 }

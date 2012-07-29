@@ -14,22 +14,22 @@ public class EntityThrownExpBottle extends EntityProjectile {
         super(world, d0, d1, d2);
     }
 
-    protected float e() {
+    protected float h() {
         return 0.07F;
     }
 
-    protected float c() {
+    protected float d() {
         return 0.7F;
     }
 
-    protected float d() {
+    protected float g() {
         return -20.0F;
     }
 
     protected void a(MovingObjectPosition movingobjectposition) {
         if (!this.world.isStatic) {
             // CraftBukkit moved after event
-            //this.world.triggerEffect(2002, (int) Math.round(this.locX), (int) Math.round(this.locY), (int) Math.round(this.locZ), 0);
+            // this.world.triggerEffect(2002, (int) Math.round(this.locX), (int) Math.round(this.locY), (int) Math.round(this.locZ), 0);
             int i = 3 + this.world.random.nextInt(5) + this.world.random.nextInt(5);
 
             // CraftBukkit start

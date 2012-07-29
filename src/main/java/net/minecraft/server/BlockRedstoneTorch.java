@@ -1,7 +1,10 @@
 package net.minecraft.server;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
@@ -9,21 +12,26 @@ import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
 public class BlockRedstoneTorch extends BlockTorch {
 
     private boolean isOn = false;
-    private static List b = new ArrayList();
+    private static Map b = new HashMap();
 
     public int a(int i, int j) {
         return i == 1 ? Block.REDSTONE_WIRE.a(i, j) : super.a(i, j);
     }
 
     private boolean a(World world, int i, int j, int k, boolean flag) {
+        if (!b.containsKey(world)) {
+            b.put(world, new ArrayList());
+        }
+
         if (flag) {
-            b.add(new RedstoneUpdateInfo(i, j, k, world.getTime()));
+            ((List) b.get(world)).add(new RedstoneUpdateInfo(i, j, k, world.getTime()));
         }
 
         int l = 0;
+        Iterator iterator = ((List) b.get(world)).iterator();
 
-        for (int i1 = 0; i1 < b.size(); ++i1) {
-            RedstoneUpdateInfo redstoneupdateinfo = (RedstoneUpdateInfo) b.get(i1);
+        while (iterator.hasNext()) {
+            RedstoneUpdateInfo redstoneupdateinfo = (RedstoneUpdateInfo) iterator.next();
 
             if (redstoneupdateinfo.a == i && redstoneupdateinfo.b == j && redstoneupdateinfo.c == k) {
                 ++l;
@@ -39,10 +47,11 @@ public class BlockRedstoneTorch extends BlockTorch {
     protected BlockRedstoneTorch(int i, int j, boolean flag) {
         super(i, j);
         this.isOn = flag;
-        this.a(true);
+        this.b(true);
+        this.a((CreativeModeTab) null);
     }
 
-    public int d() {
+    public int p_() {
         return 2;
     }
 
@@ -61,7 +70,7 @@ public class BlockRedstoneTorch extends BlockTorch {
         }
     }
 
-    public void remove(World world, int i, int j, int k) {
+    public void remove(World world, int i, int j, int k, int l, int i1) {
         if (this.isOn) {
             world.applyPhysics(i, j - 1, k, this.id);
             world.applyPhysics(i, j + 1, k, this.id);
@@ -82,17 +91,18 @@ public class BlockRedstoneTorch extends BlockTorch {
         }
     }
 
-    private boolean g(World world, int i, int j, int k) {
+    private boolean l(World world, int i, int j, int k) {
         int l = world.getData(i, j, k);
 
         return l == 5 && world.isBlockFaceIndirectlyPowered(i, j - 1, k, 0) ? true : (l == 3 && world.isBlockFaceIndirectlyPowered(i, j, k - 1, 2) ? true : (l == 4 && world.isBlockFaceIndirectlyPowered(i, j, k + 1, 3) ? true : (l == 1 && world.isBlockFaceIndirectlyPowered(i - 1, j, k, 4) ? true : l == 2 && world.isBlockFaceIndirectlyPowered(i + 1, j, k, 5))));
     }
 
-    public void a(World world, int i, int j, int k, Random random) {
-        boolean flag = this.g(world, i, j, k);
+    public void b(World world, int i, int j, int k, Random random) {
+        boolean flag = this.l(world, i, j, k);
+        List list = (List) b.get(world);
 
-        while (b.size() > 0 && world.getTime() - ((RedstoneUpdateInfo) b.get(0)).d > 60L) {
-            b.remove(0);
+        while (list != null && !list.isEmpty() && world.getTime() - ((RedstoneUpdateInfo) list.get(0)).d > 60L) {
+            list.remove(0);
         }
 
         // CraftBukkit start
@@ -145,10 +155,10 @@ public class BlockRedstoneTorch extends BlockTorch {
 
     public void doPhysics(World world, int i, int j, int k, int l) {
         super.doPhysics(world, i, j, k, l);
-        world.c(i, j, k, this.id, this.d());
+        world.a(i, j, k, this.id, this.p_());
     }
 
-    public boolean d(World world, int i, int j, int k, int l) {
+    public boolean c(World world, int i, int j, int k, int l) {
         return l == 0 ? this.a(world, i, j, k, l) : false;
     }
 
@@ -158,5 +168,16 @@ public class BlockRedstoneTorch extends BlockTorch {
 
     public boolean isPowerSource() {
         return true;
+    }
+
+    public void a(World world, long i, long j) {
+        List list = (List) b.get(world);
+        RedstoneUpdateInfo redstoneupdateinfo;
+
+        if (list != null) {
+            for (Iterator iterator = list.iterator(); iterator.hasNext(); redstoneupdateinfo.d += i) {
+                redstoneupdateinfo = (RedstoneUpdateInfo) iterator.next();
+            }
+        }
     }
 }

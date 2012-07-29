@@ -9,51 +9,51 @@ import org.bukkit.event.player.PlayerShearEntityEvent;
 
 public class EntitySheep extends EntityAnimal {
 
-    public static final float[][] a = new float[][] { { 1.0F, 1.0F, 1.0F}, { 0.95F, 0.7F, 0.2F}, { 0.9F, 0.5F, 0.85F}, { 0.6F, 0.7F, 0.95F}, { 0.9F, 0.9F, 0.2F}, { 0.5F, 0.8F, 0.1F}, { 0.95F, 0.7F, 0.8F}, { 0.3F, 0.3F, 0.3F}, { 0.6F, 0.6F, 0.6F}, { 0.3F, 0.6F, 0.7F}, { 0.7F, 0.4F, 0.9F}, { 0.2F, 0.4F, 0.8F}, { 0.5F, 0.4F, 0.3F}, { 0.4F, 0.5F, 0.2F}, { 0.8F, 0.3F, 0.3F}, { 0.1F, 0.1F, 0.1F}};
-    private int b;
-    private PathfinderGoalEatTile c = new PathfinderGoalEatTile(this);
+    public static final float[][] d = new float[][] { { 1.0F, 1.0F, 1.0F}, { 0.95F, 0.7F, 0.2F}, { 0.9F, 0.5F, 0.85F}, { 0.6F, 0.7F, 0.95F}, { 0.9F, 0.9F, 0.2F}, { 0.5F, 0.8F, 0.1F}, { 0.95F, 0.7F, 0.8F}, { 0.3F, 0.3F, 0.3F}, { 0.6F, 0.6F, 0.6F}, { 0.3F, 0.6F, 0.7F}, { 0.7F, 0.4F, 0.9F}, { 0.2F, 0.4F, 0.8F}, { 0.5F, 0.4F, 0.3F}, { 0.4F, 0.5F, 0.2F}, { 0.8F, 0.3F, 0.3F}, { 0.1F, 0.1F, 0.1F}};
+    private int e;
+    private PathfinderGoalEatTile f = new PathfinderGoalEatTile(this);
 
     public EntitySheep(World world) {
         super(world);
         this.texture = "/mob/sheep.png";
-        this.b(0.9F, 1.3F);
+        this.a(0.9F, 1.3F);
         float f = 0.23F;
 
-        this.al().a(true);
+        this.getNavigation().a(true);
         this.goalSelector.a(0, new PathfinderGoalFloat(this));
         this.goalSelector.a(1, new PathfinderGoalPanic(this, 0.38F));
         this.goalSelector.a(2, new PathfinderGoalBreed(this, f));
         this.goalSelector.a(3, new PathfinderGoalTempt(this, 0.25F, Item.WHEAT.id, false));
         this.goalSelector.a(4, new PathfinderGoalFollowParent(this, 0.25F));
-        this.goalSelector.a(5, this.c);
+        this.goalSelector.a(5, this.f);
         this.goalSelector.a(6, new PathfinderGoalRandomStroll(this, f));
         this.goalSelector.a(7, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 6.0F));
         this.goalSelector.a(8, new PathfinderGoalRandomLookaround(this));
     }
 
-    protected boolean c_() {
+    protected boolean aV() {
         return true;
     }
 
-    protected void z_() {
-        this.b = this.c.f();
-        super.z_();
+    protected void bc() {
+        this.e = this.f.f();
+        super.bc();
     }
 
-    public void e() {
+    public void d() {
         if (this.world.isStatic) {
-            this.b = Math.max(0, this.b - 1);
+            this.e = Math.max(0, this.e - 1);
         }
 
-        super.e();
+        super.d();
     }
 
     public int getMaxHealth() {
         return 8;
     }
 
-    protected void b() {
-        super.b();
+    protected void a() {
+        super.a();
         this.datawatcher.a(16, new Byte((byte) 0));
     }
 
@@ -73,7 +73,7 @@ public class EntitySheep extends EntityAnimal {
         return Block.WOOL.id;
     }
 
-    public boolean b(EntityHuman entityhuman) {
+    public boolean c(EntityHuman entityhuman) {
         ItemStack itemstack = entityhuman.inventory.getItemInHand();
 
         if (itemstack != null && itemstack.id == Item.SHEARS.id && !this.isSheared() && !this.isBaby()) {
@@ -92,6 +92,7 @@ public class EntitySheep extends EntityAnimal {
 
                 for (int j = 0; j < i; ++j) {
                     EntityItem entityitem = this.a(new ItemStack(Block.WOOL.id, 1, this.getColor()), 1.0F);
+
                     entityitem.motY += (double) (this.random.nextFloat() * 0.05F);
                     entityitem.motX += (double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.1F);
                     entityitem.motZ += (double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.1F);
@@ -101,7 +102,7 @@ public class EntitySheep extends EntityAnimal {
             itemstack.damage(1, entityhuman);
         }
 
-        return super.b(entityhuman);
+        return super.c(entityhuman);
     }
 
     public void b(NBTTagCompound nbttagcompound) {
@@ -116,15 +117,15 @@ public class EntitySheep extends EntityAnimal {
         this.setColor(nbttagcompound.getByte("Color"));
     }
 
-    protected String i() {
+    protected String aQ() {
         return "mob.sheep";
     }
 
-    protected String j() {
+    protected String aR() {
         return "mob.sheep";
     }
 
-    protected String k() {
+    protected String aS() {
         return "mob.sheep";
     }
 
@@ -171,7 +172,7 @@ public class EntitySheep extends EntityAnimal {
         return entitysheep1;
     }
 
-    public void z() {
+    public void aA() {
         // CraftBukkit start
         SheepRegrowWoolEvent event = new SheepRegrowWoolEvent((org.bukkit.entity.Sheep) this.getBukkitEntity());
         this.world.getServer().getPluginManager().callEvent(event);

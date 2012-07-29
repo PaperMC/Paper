@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.command;
 import java.lang.reflect.Method;
 
 import net.minecraft.server.ICommandListener;
+import net.minecraft.server.LocaleLanguage;
 
 import org.bukkit.command.CommandSender;
 
@@ -32,5 +33,13 @@ public class ServerCommandListener implements ICommandListener {
         } catch (Exception e) {}
 
         return this.prefix;
+    }
+
+    public String a(String s, Object... aobject) {
+        return LocaleLanguage.a().a(s, aobject);
+    }
+
+    public boolean b(String s) {
+        return true;
     }
 }

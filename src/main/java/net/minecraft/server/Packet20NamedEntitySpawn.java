@@ -2,6 +2,8 @@ package net.minecraft.server;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.util.List;
+
 import java.io.IOException; // CraftBukkit
 
 public class Packet20NamedEntitySpawn extends Packet {
@@ -14,6 +16,8 @@ public class Packet20NamedEntitySpawn extends Packet {
     public byte f;
     public byte g;
     public int h;
+    private DataWatcher i;
+    private List j;
 
     public Packet20NamedEntitySpawn() {}
 
@@ -36,6 +40,7 @@ public class Packet20NamedEntitySpawn extends Packet {
         ItemStack itemstack = entityhuman.inventory.getItemInHand();
 
         this.h = itemstack == null ? 0 : itemstack.id;
+        this.i = entityhuman.getDataWatcher();
     }
 
     public void a(DataInputStream datainputstream) throws IOException { // CraftBukkit
@@ -47,6 +52,7 @@ public class Packet20NamedEntitySpawn extends Packet {
         this.f = datainputstream.readByte();
         this.g = datainputstream.readByte();
         this.h = datainputstream.readShort();
+        this.j = DataWatcher.a(datainputstream);
     }
 
     public void a(DataOutputStream dataoutputstream) throws IOException { // CraftBukkit
@@ -58,6 +64,7 @@ public class Packet20NamedEntitySpawn extends Packet {
         dataoutputstream.writeByte(this.f);
         dataoutputstream.writeByte(this.g);
         dataoutputstream.writeShort(this.h);
+        this.i.a(dataoutputstream);
     }
 
     public void handle(NetHandler nethandler) {

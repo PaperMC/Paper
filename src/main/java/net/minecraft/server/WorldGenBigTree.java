@@ -110,9 +110,9 @@ public class WorldGenBigTree extends WorldGenerator implements BlockSapling.Tree
             k1 = -i1;
 
             while (k1 <= i1) {
-                double d0 = Math.sqrt(Math.pow((double) Math.abs(j1) + 0.5D, 2.0D) + Math.pow((double) Math.abs(k1) + 0.5D, 2.0D));
+                double d0 = Math.pow((double) Math.abs(j1) + 0.5D, 2.0D) + Math.pow((double) Math.abs(k1) + 0.5D, 2.0D);
 
-                if (d0 > (double) f) {
+                if (d0 > (double) (f * f)) {
                     ++k1;
                 } else {
                     aint1[b2] = aint[b2] + k1;
@@ -337,7 +337,7 @@ public class WorldGenBigTree extends WorldGenerator implements BlockSapling.Tree
     }
 
     public boolean a(World world, Random random, int i, int j, int k) {
-        // CraftBukkit start
+        // CraftBukkit start - moved to generate
         // sk: The idea is to have (our) WorldServer implement
         // BlockChangeDelegate and then we can implicitly cast World to
         // WorldServer (a safe cast, AFAIK) and no code will be broken. This

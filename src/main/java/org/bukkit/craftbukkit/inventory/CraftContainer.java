@@ -79,8 +79,8 @@ public class CraftContainer extends Container {
             int type = getNotchInventoryType(cachedType);
             IInventory top = ((CraftInventory)view.getTopInventory()).getInventory();
             IInventory bottom = ((CraftInventory)view.getBottomInventory()).getInventory();
-            this.d.clear();
-            this.e.clear();
+            this.a.clear();
+            this.b.clear();
             if (typeChanged) {
                 setupSlots(top, bottom);
             }
@@ -275,4 +275,7 @@ public class CraftContainer extends Container {
         // End copy from ContainerBrewingStand
     }
 
+    public boolean c(EntityHuman entity) {
+        return true;
+    }
 }

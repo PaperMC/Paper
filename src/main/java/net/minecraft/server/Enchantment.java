@@ -1,7 +1,8 @@
 package net.minecraft.server;
 
 public abstract class Enchantment {
-    // CraftBukkit - update CraftEnchant.getName(i) if this changes.
+
+    // CraftBukkit - update CraftEnchant.getName(i) if this changes
     public static final Enchantment[] byId = new Enchantment[256];
     public static final Enchantment PROTECTION_ENVIRONMENTAL = new EnchantmentProtection(0, 10, 0);
     public static final Enchantment PROTECTION_FIRE = new EnchantmentProtection(1, 5, 1);
@@ -74,7 +75,7 @@ public abstract class Enchantment {
         return this != enchantment;
     }
 
-    public Enchantment a(String s) {
+    public Enchantment b(String s) {
         this.name = s;
         return this;
     }

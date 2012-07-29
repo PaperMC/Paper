@@ -16,7 +16,7 @@ public class InventoryCrafting implements IInventory {
 
     // CraftBukkit start
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
-    public CraftingRecipe currentRecipe;
+    public IRecipe currentRecipe;
     public IInventory resultInventory;
     private EntityHuman owner;
     private int maxStack = MAX_STACK;
@@ -135,7 +135,7 @@ public class InventoryCrafting implements IInventory {
         return true;
     }
 
-    public void f() {}
+    public void startOpen() {}
 
-    public void g() {}
+    public void f() {}
 }

@@ -10,25 +10,25 @@ public class MobEffectList {
 
     public static final MobEffectList[] byId = new MobEffectList[32];
     public static final MobEffectList b = null;
-    public static final MobEffectList FASTER_MOVEMENT = (new MobEffectList(1, false, 8171462)).a("potion.moveSpeed").a(0, 0);
-    public static final MobEffectList SLOWER_MOVEMENT = (new MobEffectList(2, true, 5926017)).a("potion.moveSlowdown").a(1, 0);
-    public static final MobEffectList FASTER_DIG = (new MobEffectList(3, false, 14270531)).a("potion.digSpeed").a(2, 0).a(1.5D);
-    public static final MobEffectList SLOWER_DIG = (new MobEffectList(4, true, 4866583)).a("potion.digSlowDown").a(3, 0);
-    public static final MobEffectList INCREASE_DAMAGE = (new MobEffectList(5, false, 9643043)).a("potion.damageBoost").a(4, 0);
-    public static final MobEffectList HEAL = (new InstantMobEffect(6, false, 16262179)).a("potion.heal");
-    public static final MobEffectList HARM = (new InstantMobEffect(7, true, 4393481)).a("potion.harm");
-    public static final MobEffectList JUMP = (new MobEffectList(8, false, 7889559)).a("potion.jump").a(2, 1);
-    public static final MobEffectList CONFUSION = (new MobEffectList(9, true, 5578058)).a("potion.confusion").a(3, 1).a(0.25D);
-    public static final MobEffectList REGENERATION = (new MobEffectList(10, false, 13458603)).a("potion.regeneration").a(7, 0).a(0.25D);
-    public static final MobEffectList RESISTANCE = (new MobEffectList(11, false, 10044730)).a("potion.resistance").a(6, 1);
-    public static final MobEffectList FIRE_RESISTANCE = (new MobEffectList(12, false, 14981690)).a("potion.fireResistance").a(7, 1);
-    public static final MobEffectList WATER_BREATHING = (new MobEffectList(13, false, 3035801)).a("potion.waterBreathing").a(0, 2);
-    public static final MobEffectList INVISIBILITY = (new MobEffectList(14, false, 8356754)).a("potion.invisibility").a(0, 1).e();
-    public static final MobEffectList BLINDNESS = (new MobEffectList(15, true, 2039587)).a("potion.blindness").a(5, 1).a(0.25D);
-    public static final MobEffectList NIGHT_VISION = (new MobEffectList(16, false, 2039713)).a("potion.nightVision").a(4, 1).e();
-    public static final MobEffectList HUNGER = (new MobEffectList(17, true, 5797459)).a("potion.hunger").a(1, 1);
-    public static final MobEffectList WEAKNESS = (new MobEffectList(18, true, 4738376)).a("potion.weakness").a(5, 0);
-    public static final MobEffectList POISON = (new MobEffectList(19, true, 5149489)).a("potion.poison").a(6, 0).a(0.25D);
+    public static final MobEffectList FASTER_MOVEMENT = (new MobEffectList(1, false, 8171462)).b("potion.moveSpeed").b(0, 0);
+    public static final MobEffectList SLOWER_MOVEMENT = (new MobEffectList(2, true, 5926017)).b("potion.moveSlowdown").b(1, 0);
+    public static final MobEffectList FASTER_DIG = (new MobEffectList(3, false, 14270531)).b("potion.digSpeed").b(2, 0).a(1.5D);
+    public static final MobEffectList SLOWER_DIG = (new MobEffectList(4, true, 4866583)).b("potion.digSlowDown").b(3, 0);
+    public static final MobEffectList INCREASE_DAMAGE = (new MobEffectList(5, false, 9643043)).b("potion.damageBoost").b(4, 0);
+    public static final MobEffectList HEAL = (new InstantMobEffect(6, false, 16262179)).b("potion.heal");
+    public static final MobEffectList HARM = (new InstantMobEffect(7, true, 4393481)).b("potion.harm");
+    public static final MobEffectList JUMP = (new MobEffectList(8, false, 7889559)).b("potion.jump").b(2, 1);
+    public static final MobEffectList CONFUSION = (new MobEffectList(9, true, 5578058)).b("potion.confusion").b(3, 1).a(0.25D);
+    public static final MobEffectList REGENERATION = (new MobEffectList(10, false, 13458603)).b("potion.regeneration").b(7, 0).a(0.25D);
+    public static final MobEffectList RESISTANCE = (new MobEffectList(11, false, 10044730)).b("potion.resistance").b(6, 1);
+    public static final MobEffectList FIRE_RESISTANCE = (new MobEffectList(12, false, 14981690)).b("potion.fireResistance").b(7, 1);
+    public static final MobEffectList WATER_BREATHING = (new MobEffectList(13, false, 3035801)).b("potion.waterBreathing").b(0, 2);
+    public static final MobEffectList INVISIBILITY = (new MobEffectList(14, false, 8356754)).b("potion.invisibility").b(0, 1).h();
+    public static final MobEffectList BLINDNESS = (new MobEffectList(15, true, 2039587)).b("potion.blindness").b(5, 1).a(0.25D);
+    public static final MobEffectList NIGHT_VISION = (new MobEffectList(16, false, 2039713)).b("potion.nightVision").b(4, 1).h();
+    public static final MobEffectList HUNGER = (new MobEffectList(17, true, 5797459)).b("potion.hunger").b(1, 1);
+    public static final MobEffectList WEAKNESS = (new MobEffectList(18, true, 4738376)).b("potion.weakness").b(5, 0);
+    public static final MobEffectList POISON = (new MobEffectList(19, true, 5149489)).b("potion.poison").b(6, 0).a(0.25D);
     public static final MobEffectList v = null;
     public static final MobEffectList w = null;
     public static final MobEffectList x = null;
@@ -64,7 +64,7 @@ public class MobEffectList {
         org.bukkit.potion.PotionEffectType.registerPotionEffectType(new org.bukkit.craftbukkit.potion.CraftPotionEffectType(this)); // CraftBukkit
     }
 
-    protected MobEffectList a(int i, int j) {
+    protected MobEffectList b(int i, int j) {
         this.J = i + j * 8;
         return this;
     }
@@ -89,9 +89,9 @@ public class MobEffectList {
                 // CraftBukkit end
             }
         } else if (this.id == HUNGER.id && entityliving instanceof EntityHuman) {
-            ((EntityHuman) entityliving).c(0.025F * (float) (i + 1));
-        } else if ((this.id != HEAL.id || entityliving.aN()) && (this.id != HARM.id || !entityliving.aN())) {
-            if (this.id == HARM.id && !entityliving.aN() || this.id == HEAL.id && entityliving.aN()) {
+            ((EntityHuman) entityliving).j(0.025F * (float) (i + 1));
+        } else if ((this.id != HEAL.id || entityliving.br()) && (this.id != HARM.id || !entityliving.br())) {
+            if (this.id == HARM.id && !entityliving.br() || this.id == HEAL.id && entityliving.br()) {
                 // CraftBukkit start
                 EntityDamageEvent event = CraftEventFactory.callEntityDamageEvent(null, entityliving, EntityDamageEvent.DamageCause.MAGIC, 6 << i);
 
@@ -114,10 +114,9 @@ public class MobEffectList {
         // CraftBukkit end
         int j;
 
-        if ((this.id != HEAL.id || entityliving1.aN()) && (this.id != HARM.id || !entityliving1.aN())) {
-            if (this.id == HARM.id && !entityliving1.aN() || this.id == HEAL.id && entityliving1.aN()) {
+        if ((this.id != HEAL.id || entityliving1.br()) && (this.id != HARM.id || !entityliving1.br())) {
+            if (this.id == HARM.id && !entityliving1.br() || this.id == HEAL.id && entityliving1.br()) {
                 j = (int) (d0 * (double) (6 << i) + 0.5D);
-
                 if (entityliving == null) {
                     entityliving1.damageEntity(DamageSource.MAGIC, j);
                 } else {
@@ -135,7 +134,7 @@ public class MobEffectList {
         return false;
     }
 
-    public boolean b(int i, int j) {
+    public boolean a(int i, int j) {
         if (this.id != REGENERATION.id && this.id != POISON.id) {
             return this.id == HUNGER.id;
         } else {
@@ -145,12 +144,12 @@ public class MobEffectList {
         }
     }
 
-    public MobEffectList a(String s) {
+    public MobEffectList b(String s) {
         this.I = s;
         return this;
     }
 
-    public String c() {
+    public String a() {
         return this.I;
     }
 
@@ -163,16 +162,16 @@ public class MobEffectList {
         return this.L;
     }
 
-    public MobEffectList e() {
+    public MobEffectList h() {
         this.M = true;
         return this;
     }
 
-    public boolean f() {
+    public boolean i() {
         return this.M;
     }
 
-    public int g() {
+    public int j() {
         return this.N;
     }
 }

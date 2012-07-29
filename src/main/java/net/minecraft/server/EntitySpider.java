@@ -7,23 +7,19 @@ public class EntitySpider extends EntityMonster {
     public EntitySpider(World world) {
         super(world);
         this.texture = "/mob/spider.png";
-        this.b(1.4F, 0.9F);
-        this.bb = 0.8F;
+        this.a(1.4F, 0.9F);
+        this.bw = 0.8F;
     }
 
-    protected void b() {
-        super.b();
+    protected void a() {
+        super.a();
         this.datawatcher.a(16, new Byte((byte) 0));
     }
 
-    public void e() {
-        super.e();
-    }
-
-    public void F_() {
-        super.F_();
+    public void h_() {
+        super.h_();
         if (!this.world.isStatic) {
-            this.a(this.positionChanged);
+            this.e(this.positionChanged);
         }
     }
 
@@ -31,16 +27,16 @@ public class EntitySpider extends EntityMonster {
         return 16;
     }
 
-    public double x_() {
+    public double X() {
         return (double) this.length * 0.75D - 0.5D;
     }
 
-    protected boolean g_() {
+    protected boolean e_() {
         return false;
     }
 
     protected Entity findTarget() {
-        float f = this.b(1.0F);
+        float f = this.c(1.0F);
 
         if (f < 0.5F) {
             double d0 = 16.0D;
@@ -51,20 +47,20 @@ public class EntitySpider extends EntityMonster {
         }
     }
 
-    protected String i() {
+    protected String aQ() {
         return "mob.spider";
     }
 
-    protected String j() {
+    protected String aR() {
         return "mob.spider";
     }
 
-    protected String k() {
+    protected String aS() {
         return "mob.spiderdeath";
     }
 
     protected void a(Entity entity, float f) {
-        float f1 = this.b(1.0F);
+        float f1 = this.c(1.0F);
 
         if (f1 > 0.5F && this.random.nextInt(100) == 0) {
             // CraftBukkit start
@@ -97,14 +93,6 @@ public class EntitySpider extends EntityMonster {
         }
     }
 
-    public void b(NBTTagCompound nbttagcompound) {
-        super.b(nbttagcompound);
-    }
-
-    public void a(NBTTagCompound nbttagcompound) {
-        super.a(nbttagcompound);
-    }
-
     protected int getLootId() {
         return Item.STRING.id;
     }
@@ -131,25 +119,25 @@ public class EntitySpider extends EntityMonster {
         // CraftBukkit end
     }
 
-    public boolean t() {
-        return this.w();
+    public boolean f_() {
+        return this.p();
     }
 
-    public void u() {}
+    public void aj() {}
 
-    public MonsterType getMonsterType() {
-        return MonsterType.ARTHROPOD;
+    public EnumMonsterType getMonsterType() {
+        return EnumMonsterType.ARTHROPOD;
     }
 
-    public boolean a(MobEffect mobeffect) {
-        return mobeffect.getEffectId() == MobEffectList.POISON.id ? false : super.a(mobeffect);
+    public boolean e(MobEffect mobeffect) {
+        return mobeffect.getEffectId() == MobEffectList.POISON.id ? false : super.e(mobeffect);
     }
 
-    public boolean w() {
+    public boolean p() {
         return (this.datawatcher.getByte(16) & 1) != 0;
     }
 
-    public void a(boolean flag) {
+    public void e(boolean flag) {
         byte b0 = this.datawatcher.getByte(16);
 
         if (flag) {

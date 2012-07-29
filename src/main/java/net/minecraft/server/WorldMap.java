@@ -20,8 +20,8 @@ public class WorldMap extends WorldMapBase {
     public byte map;
     public byte scale;
     public byte[] colors = new byte[16384];
-    public int g;
-    public List h = new ArrayList();
+    public int f;
+    public List g = new ArrayList();
     private Map j = new HashMap();
     public List decorations = new ArrayList();
 
@@ -137,13 +137,13 @@ public class WorldMap extends WorldMapBase {
             WorldMapHumanTracker worldmaphumantracker = new WorldMapHumanTracker(this, entityhuman);
 
             this.j.put(entityhuman, worldmaphumantracker);
-            this.h.add(worldmaphumantracker);
+            this.g.add(worldmaphumantracker);
         }
 
         this.decorations.clear();
 
-        for (int i = 0; i < this.h.size(); ++i) {
-            WorldMapHumanTracker worldmaphumantracker1 = (WorldMapHumanTracker) this.h.get(i);
+        for (int i = 0; i < this.g.size(); ++i) {
+            WorldMapHumanTracker worldmaphumantracker1 = (WorldMapHumanTracker) this.g.get(i);
 
             if (!worldmaphumantracker1.trackee.dead && worldmaphumantracker1.trackee.inventory.c(itemstack)) {
                 float f = (float) (worldmaphumantracker1.trackee.locX - (double) this.centerX) / (float) (1 << this.scale);
@@ -155,11 +155,10 @@ public class WorldMap extends WorldMapBase {
                     byte b2 = 0;
                     byte b3 = (byte) ((int) ((double) (f * 2.0F) + 0.5D));
                     byte b4 = (byte) ((int) ((double) (f1 * 2.0F) + 0.5D));
-                    // CraftBukkit
-                    byte b5 = (byte) ((int) ((double) (worldmaphumantracker1.trackee.yaw * 16.0F / 360.0F) + 0.5D));
+                    byte b5 = (byte) ((int) ((double) worldmaphumantracker1.trackee.yaw * 16.0D / 360.0D));
 
                     if (this.map < 0) {
-                        int j = this.g / 10;
+                        int j = this.f / 10;
 
                         b5 = (byte) (j * j * 34187121 + j * 121 >> 15 & 15);
                     }
@@ -170,7 +169,7 @@ public class WorldMap extends WorldMapBase {
                 }
             } else {
                 this.j.remove(worldmaphumantracker1.trackee);
-                this.h.remove(worldmaphumantracker1);
+                this.g.remove(worldmaphumantracker1);
             }
         }
     }
@@ -178,20 +177,14 @@ public class WorldMap extends WorldMapBase {
     public byte[] getUpdatePacket(ItemStack itemstack, World world, EntityHuman entityhuman) {
         WorldMapHumanTracker worldmaphumantracker = (WorldMapHumanTracker) this.j.get(entityhuman);
 
-        if (worldmaphumantracker == null) {
-            return null;
-        } else {
-            byte[] abyte = worldmaphumantracker.a(itemstack);
-
-            return abyte;
-        }
+        return worldmaphumantracker == null ? null : worldmaphumantracker.a(itemstack);
     }
 
     public void flagDirty(int i, int j, int k) {
         super.a();
 
-        for (int l = 0; l < this.h.size(); ++l) {
-            WorldMapHumanTracker worldmaphumantracker = (WorldMapHumanTracker) this.h.get(l);
+        for (int l = 0; l < this.g.size(); ++l) {
+            WorldMapHumanTracker worldmaphumantracker = (WorldMapHumanTracker) this.g.get(l);
 
             if (worldmaphumantracker.b[i] < 0 || worldmaphumantracker.b[i] > j) {
                 worldmaphumantracker.b[i] = j;

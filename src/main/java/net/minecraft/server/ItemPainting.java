@@ -9,9 +9,10 @@ public class ItemPainting extends Item {
 
     public ItemPainting(int i) {
         super(i);
+        this.a(CreativeModeTab.c);
     }
 
-    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
+    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l, float f, float f1, float f2) {
         if (l == 0) {
             return false;
         } else if (l == 1) {
@@ -31,7 +32,7 @@ public class ItemPainting extends Item {
                 b0 = 3;
             }
 
-            if (!entityhuman.d(i, j, k)) {
+            if (!entityhuman.e(i, j, k)) {
                 return false;
             } else {
                 EntityPainting entitypainting = new EntityPainting(world, i, j, k, b0);

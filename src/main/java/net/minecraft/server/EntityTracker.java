@@ -7,16 +7,14 @@ import java.util.Set;
 
 public class EntityTracker {
 
-    private Set a = new HashSet();
+    private final WorldServer world;
+    private Set b = new HashSet();
     public IntHashMap trackedEntities = new IntHashMap(); // CraftBukkit - private -> public
-    private MinecraftServer c;
     private int d;
-    private World world; // CraftBukkit - change type
 
-    public EntityTracker(MinecraftServer minecraftserver, World i) { // CraftBukkit - change method signature
-        this.c = minecraftserver;
-        this.world = i;
-        this.d = minecraftserver.serverConfigurationManager.a();
+    public EntityTracker(WorldServer worldserver) {
+        this.world = worldserver;
+        this.d = worldserver.getMinecraftServer().getServerConfigurationManager().a();
     }
 
     // CraftBukkit - synchronized
@@ -24,7 +22,7 @@ public class EntityTracker {
         if (entity instanceof EntityPlayer) {
             this.addEntity(entity, 512, 2);
             EntityPlayer entityplayer = (EntityPlayer) entity;
-            Iterator iterator = this.a.iterator();
+            Iterator iterator = this.b.iterator();
 
             while (iterator.hasNext()) {
                 EntityTrackerEntry entitytrackerentry = (EntityTrackerEntry) iterator.next();
@@ -46,7 +44,7 @@ public class EntityTracker {
         } else if (entity instanceof EntityEnderPearl) {
             this.addEntity(entity, 64, 10, true);
         } else if (entity instanceof EntityEnderSignal) {
-            this.addEntity(entity, 64, 10, true);
+            this.addEntity(entity, 64, 4, true);
         } else if (entity instanceof EntityEgg) {
             this.addEntity(entity, 64, 10, true);
         } else if (entity instanceof EntityPotion) {
@@ -94,9 +92,9 @@ public class EntityTracker {
         } else {
             EntityTrackerEntry entitytrackerentry = new EntityTrackerEntry(entity, i, j, flag);
 
-            this.a.add(entitytrackerentry);
+            this.b.add(entitytrackerentry);
             this.trackedEntities.a(entity.id, entitytrackerentry);
-            entitytrackerentry.scanPlayers(this.world.players); // CraftBukkit
+            entitytrackerentry.scanPlayers(this.world.players);
         }
     }
 
@@ -104,7 +102,7 @@ public class EntityTracker {
     public synchronized void untrackEntity(Entity entity) {
         if (entity instanceof EntityPlayer) {
             EntityPlayer entityplayer = (EntityPlayer) entity;
-            Iterator iterator = this.a.iterator();
+            Iterator iterator = this.b.iterator();
 
             while (iterator.hasNext()) {
                 EntityTrackerEntry entitytrackerentry = (EntityTrackerEntry) iterator.next();
@@ -116,7 +114,7 @@ public class EntityTracker {
         EntityTrackerEntry entitytrackerentry1 = (EntityTrackerEntry) this.trackedEntities.d(entity.id);
 
         if (entitytrackerentry1 != null) {
-            this.a.remove(entitytrackerentry1);
+            this.b.remove(entitytrackerentry1);
             entitytrackerentry1.a();
         }
     }
@@ -124,26 +122,29 @@ public class EntityTracker {
     // CraftBukkit - synchronized
     public synchronized void updatePlayers() {
         ArrayList arraylist = new ArrayList();
-        Iterator iterator = this.a.iterator();
+        Iterator iterator = this.b.iterator();
 
         while (iterator.hasNext()) {
             EntityTrackerEntry entitytrackerentry = (EntityTrackerEntry) iterator.next();
 
-            entitytrackerentry.track(this.world.players); // CraftBukkit
+            entitytrackerentry.track(this.world.players);
             if (entitytrackerentry.n && entitytrackerentry.tracker instanceof EntityPlayer) {
                 arraylist.add((EntityPlayer) entitytrackerentry.tracker);
             }
         }
 
-        for (int i = 0; i < arraylist.size(); ++i) {
-            EntityPlayer entityplayer = (EntityPlayer) arraylist.get(i);
-            Iterator iterator1 = this.a.iterator();
+        iterator = arraylist.iterator();
+
+        while (iterator.hasNext()) {
+            EntityPlayer entityplayer = (EntityPlayer) iterator.next();
+            EntityPlayer entityplayer1 = entityplayer;
+            Iterator iterator1 = this.b.iterator();
 
             while (iterator1.hasNext()) {
                 EntityTrackerEntry entitytrackerentry1 = (EntityTrackerEntry) iterator1.next();
 
-                if (entitytrackerentry1.tracker != entityplayer) {
-                    entitytrackerentry1.updatePlayer(entityplayer);
+                if (entitytrackerentry1.tracker != entityplayer1) {
+                    entitytrackerentry1.updatePlayer(entityplayer1);
                 }
             }
         }
@@ -169,7 +170,7 @@ public class EntityTracker {
 
     // CraftBukkit - synchronized
     public synchronized void untrackPlayer(EntityPlayer entityplayer) {
-        Iterator iterator = this.a.iterator();
+        Iterator iterator = this.b.iterator();
 
         while (iterator.hasNext()) {
             EntityTrackerEntry entitytrackerentry = (EntityTrackerEntry) iterator.next();

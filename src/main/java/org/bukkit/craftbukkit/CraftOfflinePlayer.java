@@ -4,9 +4,12 @@ import java.io.File;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import net.minecraft.server.BanEntry;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.WorldNBTStorage;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
@@ -56,15 +59,18 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     }
 
     public boolean isBanned() {
-        return server.getHandle().banByName.contains(name.toLowerCase());
+        return server.getHandle().getNameBans().isBanned(name.toLowerCase());
     }
 
     public void setBanned(boolean value) {
         if (value) {
-            server.getHandle().addUserBan(name.toLowerCase());
+            BanEntry entry = new BanEntry(name.toLowerCase());
+            server.getHandle().getNameBans().add(entry);
         } else {
-            server.getHandle().removeUserBan(name.toLowerCase());
+            server.getHandle().getNameBans().remove(name.toLowerCase());
         }
+
+        server.getHandle().getNameBans().save();
     }
 
     public boolean isWhitelisted() {

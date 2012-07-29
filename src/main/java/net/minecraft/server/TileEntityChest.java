@@ -9,7 +9,7 @@ import org.bukkit.entity.HumanEntity;
 
 public class TileEntityChest extends TileEntity implements IInventory {
 
-    private ItemStack[] items = new ItemStack[27]; // CraftBukkit
+    private ItemStack[] items = new ItemStack[27]; // CraftBukkit - 36 -> 27
     public boolean a = false;
     public TileEntityChest b;
     public TileEntityChest c;
@@ -19,6 +19,8 @@ public class TileEntityChest extends TileEntity implements IInventory {
     public float g;
     public int h;
     private int ticks;
+
+    public TileEntityChest() {}
 
     // CraftBukkit start
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
@@ -44,8 +46,6 @@ public class TileEntityChest extends TileEntity implements IInventory {
         maxStack = size;
     }
     // CraftBukkit end
-
-    public TileEntityChest() {}
 
     public int getSize() {
         return 27;
@@ -190,30 +190,12 @@ public class TileEntityChest extends TileEntity implements IInventory {
         }
     }
 
-    // CraftBukkit start
-    private TileEntityChest getTileEntity(int x, int y, int z) {
-        if (this.world == null) return null; // CraftBukkit
-        TileEntity entity = this.world.getTileEntity(x, y, z);
-
-        if (entity instanceof TileEntityChest) {
-            return (TileEntityChest) entity;
-        } else {
-            String name = "null";
-            if (entity != null) {
-                name = entity.toString();
-            }
-            world.getServer().getLogger().severe("Block at " + x + "," + y + "," + z + " is a chest but has a " + name);
-            return null;
-        }
-    }
-    // CraftBukkit end
-
-    public void q_() {
-        super.q_();
+    public void g() {
+        super.g();
         if (this.world == null) return; // CraftBukkit
         this.i();
         if (++this.ticks % (20 * 4) == 0) { // CraftBukkit
-            this.world.playNote(this.x, this.y, this.z, 1, this.h);
+            ;
         }
 
         this.g = this.f;
@@ -277,16 +259,16 @@ public class TileEntityChest extends TileEntity implements IInventory {
         }
     }
 
-    public void f() {
+    public void startOpen() {
         ++this.h;
         if (this.world == null) return; // CraftBukkit
-        this.world.playNote(this.x, this.y, this.z, 1, this.h);
+        this.world.playNote(this.x, this.y, this.z, Block.CHEST.id, 1, this.h);
     }
 
-    public void g() {
+    public void f() {
         --this.h;
         if (this.world == null) return; // CraftBukkit
-        this.world.playNote(this.x, this.y, this.z, 1, this.h);
+        this.world.playNote(this.x, this.y, this.z, Block.CHEST.id, 1, this.h);
     }
 
     public void j() {

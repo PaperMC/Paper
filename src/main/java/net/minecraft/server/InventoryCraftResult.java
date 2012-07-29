@@ -15,6 +15,7 @@ public class InventoryCraftResult implements IInventory {
     public ItemStack[] getContents() {
         return this.items;
     }
+
     public org.bukkit.inventory.InventoryHolder getOwner() {
         return null; // Result slots don't get an owner
     }
@@ -81,7 +82,7 @@ public class InventoryCraftResult implements IInventory {
         return true;
     }
 
-    public void f() {}
+    public void startOpen() {}
 
-    public void g() {}
+    public void f() {}
 }

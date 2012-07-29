@@ -15,21 +15,22 @@ public class BlockTrapdoor extends Block {
         float f1 = 1.0F;
 
         this.a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, f1, 0.5F + f);
+        this.a(CreativeModeTab.d);
     }
 
-    public boolean a() {
+    public boolean d() {
         return false;
     }
 
-    public boolean b() {
+    public boolean c() {
         return false;
     }
 
-    public boolean b(IBlockAccess iblockaccess, int i, int j, int k) {
-        return !e(iblockaccess.getData(i, j, k));
+    public boolean c(IBlockAccess iblockaccess, int i, int j, int k) {
+        return !g(iblockaccess.getData(i, j, k));
     }
 
-    public int c() {
+    public int b() {
         return 0;
     }
 
@@ -39,7 +40,7 @@ public class BlockTrapdoor extends Block {
     }
 
     public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
-        this.d(iblockaccess.getData(i, j, k));
+        this.e(iblockaccess.getData(i, j, k));
     }
 
     public void f() {
@@ -48,11 +49,11 @@ public class BlockTrapdoor extends Block {
         this.a(0.0F, 0.5F - f / 2.0F, 0.0F, 1.0F, 0.5F + f / 2.0F, 1.0F);
     }
 
-    public void d(int i) {
+    public void e(int i) {
         float f = 0.1875F;
 
         this.a(0.0F, 0.0F, 0.0F, 1.0F, f, 1.0F);
-        if (e(i)) {
+        if (g(i)) {
             if ((i & 3) == 0) {
                 this.a(0.0F, 0.0F, 1.0F - f, 1.0F, 1.0F, 1.0F);
             }
@@ -72,16 +73,16 @@ public class BlockTrapdoor extends Block {
     }
 
     public void attack(World world, int i, int j, int k, EntityHuman entityhuman) {
-        this.interact(world, i, j, k, entityhuman);
+        this.interact(world, i, j, k, entityhuman, 0, 0.0F, 0.0F, 0.0F);
     }
 
-    public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman) {
+    public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman, int l, float f, float f1, float f2) {
         if (this.material == Material.ORE) {
             return true;
         } else {
-            int l = world.getData(i, j, k);
+            int i1 = world.getData(i, j, k);
 
-            world.setData(i, j, k, l ^ 4);
+            world.setData(i, j, k, i1 ^ 4);
             world.a(entityhuman, 1003, i, j, k, 0);
             return true;
         }
@@ -119,9 +120,9 @@ public class BlockTrapdoor extends Block {
                 --j1;
             }
 
-            if (!h(world.getTypeId(j1, j, k1))) {
+            if (!j(world.getTypeId(j1, j, k1))) {
                 world.setTypeId(i, j, k, 0);
-                this.b(world, i, j, k, i1, 0);
+                this.c(world, i, j, k, i1, 0);
             }
 
             // CraftBukkit start
@@ -148,7 +149,7 @@ public class BlockTrapdoor extends Block {
         return super.a(world, i, j, k, vec3d, vec3d1);
     }
 
-    public void postPlace(World world, int i, int j, int k, int l) {
+    public void postPlace(World world, int i, int j, int k, int l, float f, float f1, float f2) {
         byte b0 = 0;
 
         if (l == 2) {
@@ -193,21 +194,21 @@ public class BlockTrapdoor extends Block {
                 --i;
             }
 
-            return h(world.getTypeId(i, j, k));
+            return j(world.getTypeId(i, j, k));
         }
     }
 
-    public static boolean e(int i) {
+    public static boolean g(int i) {
         return (i & 4) != 0;
     }
 
-    private static boolean h(int i) {
+    private static boolean j(int i) {
         if (i <= 0) {
             return false;
         } else {
             Block block = Block.byId[i];
 
-            return block != null && block.material.j() && block.b() || block == Block.GLOWSTONE;
+            return block != null && block.material.k() && block.c() || block == Block.GLOWSTONE;
         }
     }
 }

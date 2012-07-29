@@ -19,21 +19,21 @@ public class BlockDoor extends Block {
         this.a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, f1, 0.5F + f);
     }
 
-    public boolean a() {
+    public boolean d() {
         return false;
     }
 
-    public boolean b(IBlockAccess iblockaccess, int i, int j, int k) {
-        int l = this.e(iblockaccess, i, j, k);
+    public boolean c(IBlockAccess iblockaccess, int i, int j, int k) {
+        int l = this.b_(iblockaccess, i, j, k);
 
         return (l & 4) != 0;
     }
 
-    public boolean b() {
+    public boolean c() {
         return false;
     }
 
-    public int c() {
+    public int b() {
         return 7;
     }
 
@@ -43,18 +43,18 @@ public class BlockDoor extends Block {
     }
 
     public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
-        this.d(this.e(iblockaccess, i, j, k));
+        this.e(this.b_(iblockaccess, i, j, k));
     }
 
-    public int c(IBlockAccess iblockaccess, int i, int j, int k) {
-        return this.e(iblockaccess, i, j, k) & 3;
+    public int d(IBlockAccess iblockaccess, int i, int j, int k) {
+        return this.b_(iblockaccess, i, j, k) & 3;
     }
 
-    public boolean d(IBlockAccess iblockaccess, int i, int j, int k) {
-        return (this.e(iblockaccess, i, j, k) & 4) != 0;
+    public boolean a_(IBlockAccess iblockaccess, int i, int j, int k) {
+        return (this.b_(iblockaccess, i, j, k) & 4) != 0;
     }
 
-    private void d(int i) {
+    private void e(int i) {
         float f = 0.1875F;
 
         this.a(0.0F, 0.0F, 0.0F, 1.0F, 2.0F, 1.0F);
@@ -63,58 +63,66 @@ public class BlockDoor extends Block {
         boolean flag1 = (i & 16) != 0;
 
         if (j == 0) {
-            if (!flag) {
-                this.a(0.0F, 0.0F, 0.0F, f, 1.0F, 1.0F);
-            } else if (!flag1) {
-                this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, f);
+            if (flag) {
+                if (!flag1) {
+                    this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, f);
+                } else {
+                    this.a(0.0F, 0.0F, 1.0F - f, 1.0F, 1.0F, 1.0F);
+                }
             } else {
-                this.a(0.0F, 0.0F, 1.0F - f, 1.0F, 1.0F, 1.0F);
+                this.a(0.0F, 0.0F, 0.0F, f, 1.0F, 1.0F);
             }
         } else if (j == 1) {
-            if (!flag) {
-                this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, f);
-            } else if (!flag1) {
-                this.a(1.0F - f, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
+            if (flag) {
+                if (!flag1) {
+                    this.a(1.0F - f, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
+                } else {
+                    this.a(0.0F, 0.0F, 0.0F, f, 1.0F, 1.0F);
+                }
             } else {
-                this.a(0.0F, 0.0F, 0.0F, f, 1.0F, 1.0F);
+                this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, f);
             }
         } else if (j == 2) {
-            if (!flag) {
-                this.a(1.0F - f, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
-            } else if (!flag1) {
-                this.a(0.0F, 0.0F, 1.0F - f, 1.0F, 1.0F, 1.0F);
+            if (flag) {
+                if (!flag1) {
+                    this.a(0.0F, 0.0F, 1.0F - f, 1.0F, 1.0F, 1.0F);
+                } else {
+                    this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, f);
+                }
             } else {
-                this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, f);
+                this.a(1.0F - f, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
             }
         } else if (j == 3) {
-            if (!flag) {
-                this.a(0.0F, 0.0F, 1.0F - f, 1.0F, 1.0F, 1.0F);
-            } else if (!flag1) {
-                this.a(0.0F, 0.0F, 0.0F, f, 1.0F, 1.0F);
+            if (flag) {
+                if (!flag1) {
+                    this.a(0.0F, 0.0F, 0.0F, f, 1.0F, 1.0F);
+                } else {
+                    this.a(1.0F - f, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
+                }
             } else {
-                this.a(1.0F - f, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
+                this.a(0.0F, 0.0F, 1.0F - f, 1.0F, 1.0F, 1.0F);
             }
         }
     }
 
     public void attack(World world, int i, int j, int k, EntityHuman entityhuman) {
-        this.interact(world, i, j, k, entityhuman);
+        this.interact(world, i, j, k, entityhuman, 0, 0.0F, 0.0F, 0.0F);
     }
 
-    public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman) {
+    public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman, int l, float f, float f1, float f2) {
         if (this.material == Material.ORE) {
             return true;
         } else {
-            int l = this.e((IBlockAccess) world, i, j, k);
-            int i1 = l & 7;
+            int i1 = this.b_(world, i, j, k);
+            int j1 = i1 & 7;
 
-            i1 ^= 4;
-            if ((l & 8) != 0) {
-                world.setData(i, j - 1, k, i1);
-                world.b(i, j - 1, k, i, j, k);
+            j1 ^= 4;
+            if ((i1 & 8) == 0) {
+                world.setData(i, j, k, j1);
+                world.d(i, j, k, i, j, k);
             } else {
-                world.setData(i, j, k, i1);
-                world.b(i, j, k, i, j, k);
+                world.setData(i, j - 1, k, j1);
+                world.d(i, j - 1, k, i, j, k);
             }
 
             world.a(entityhuman, 1003, i, j, k, 0);
@@ -123,19 +131,19 @@ public class BlockDoor extends Block {
     }
 
     public void setDoor(World world, int i, int j, int k, boolean flag) {
-        int l = this.e((IBlockAccess) world, i, j, k);
+        int l = this.b_(world, i, j, k);
         boolean flag1 = (l & 4) != 0;
 
         if (flag1 != flag) {
             int i1 = l & 7;
 
             i1 ^= 4;
-            if ((l & 8) != 0) {
-                world.setData(i, j - 1, k, i1);
-                world.b(i, j - 1, k, i, j, k);
-            } else {
+            if ((l & 8) == 0) {
                 world.setData(i, j, k, i1);
-                world.b(i, j, k, i, j, k);
+                world.d(i, j, k, i, j, k);
+            } else {
+                world.setData(i, j - 1, k, i1);
+                world.d(i, j - 1, k, i, j, k);
             }
 
             world.a((EntityHuman) null, 1003, i, j, k, 0);
@@ -145,14 +153,7 @@ public class BlockDoor extends Block {
     public void doPhysics(World world, int i, int j, int k, int l) {
         int i1 = world.getData(i, j, k);
 
-        if ((i1 & 8) != 0) {
-            if (world.getTypeId(i, j - 1, k) != this.id) {
-                world.setTypeId(i, j, k, 0);
-            }
-            else if (l > 0 && l != this.id) { // CraftBukkit
-                this.doPhysics(world, i, j - 1, k, l);
-            }
-        } else {
+        if ((i1 & 8) == 0) {
             boolean flag = false;
 
             if (world.getTypeId(i, j + 1, k) != this.id) {
@@ -160,7 +161,7 @@ public class BlockDoor extends Block {
                 flag = true;
             }
 
-            if (!world.e(i, j - 1, k)) {
+            if (!world.t(i, j - 1, k)) {
                 world.setTypeId(i, j, k, 0);
                 flag = true;
                 if (world.getTypeId(i, j + 1, k) == this.id) {
@@ -170,7 +171,7 @@ public class BlockDoor extends Block {
 
             if (flag) {
                 if (!world.isStatic) {
-                    this.b(world, i, j, k, i1, 0);
+                    this.c(world, i, j, k, i1, 0);
                 }
             // CraftBukkit start
             } else if (l > 0 && Block.byId[l].isPowerSource()) {
@@ -191,6 +192,13 @@ public class BlockDoor extends Block {
                 }
                 // CraftBukkit end
             }
+        } else {
+            if (world.getTypeId(i, j - 1, k) != this.id) {
+                world.setTypeId(i, j, k, 0);
+            }
+            else if (l > 0 && l != this.id) { // CraftBukkit
+                this.doPhysics(world, i, j - 1, k, l);
+            }
         }
     }
 
@@ -204,14 +212,14 @@ public class BlockDoor extends Block {
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
-        return j >= 255 ? false : world.e(i, j - 1, k) && super.canPlace(world, i, j, k) && super.canPlace(world, i, j + 1, k);
+        return j >= 255 ? false : world.t(i, j - 1, k) && super.canPlace(world, i, j, k) && super.canPlace(world, i, j + 1, k);
     }
 
-    public int g() {
+    public int e() {
         return 1;
     }
 
-    public int e(IBlockAccess iblockaccess, int i, int j, int k) {
+    public int b_(IBlockAccess iblockaccess, int i, int j, int k) {
         int l = iblockaccess.getData(i, j, k);
         boolean flag = (l & 8) != 0;
         int i1;
@@ -226,8 +234,7 @@ public class BlockDoor extends Block {
         }
 
         boolean flag1 = (j1 & 1) != 0;
-        int k1 = i1 & 7 | (flag ? 8 : 0) | (flag1 ? 16 : 0);
 
-        return k1;
+        return i1 & 7 | (flag ? 8 : 0) | (flag1 ? 16 : 0);
     }
 }

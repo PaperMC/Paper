@@ -66,7 +66,7 @@ public class PortalTravelAgent {
             for (int k1 = i1 - short1; k1 <= i1 + short1; ++k1) {
                 double d3 = (double) k1 + 0.5D - entity.locZ;
 
-                for (int l1 = 127; l1 >= 0; --l1) {
+                for (int l1 = world.L() - 1; l1 >= 0; --l1) {
                     if (world.getTypeId(j1, l1, k1) == Block.PORTAL.id) {
                         while (world.getTypeId(j1, l1 - 1, k1) == Block.PORTAL.id) {
                             --l1;
@@ -150,7 +150,7 @@ public class PortalTravelAgent {
                 d2 = (double) j2 + 0.5D - entity.locZ;
 
                 label274:
-                for (l2 = 127; l2 >= 0; --l2) {
+                for (l2 = world.L() - 1; l2 >= 0; --l2) {
                     if (world.isEmpty(i2, l2, j2)) {
                         while (l2 > 0 && world.isEmpty(i2, l2 - 1, j2)) {
                             --l2;
@@ -201,7 +201,7 @@ public class PortalTravelAgent {
                     d2 = (double) j2 + 0.5D - entity.locZ;
 
                     label222:
-                    for (l2 = 127; l2 >= 0; --l2) {
+                    for (l2 = world.L() - 1; l2 >= 0; --l2) {
                         if (world.isEmpty(i2, l2, j2)) {
                             while (l2 > 0 && world.isEmpty(i2, l2 - 1, j2)) {
                                 --l2;
@@ -257,8 +257,8 @@ public class PortalTravelAgent {
                 i1 = 70;
             }
 
-            if (i1 > 118) {
-                i1 = 118;
+            if (i1 > world.L() - 10) {
+                i1 = world.L() - 10;
             }
 
             j5 = i1;

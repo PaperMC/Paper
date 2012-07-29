@@ -244,7 +244,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     public void removePotionEffect(PotionEffectType type) {
         getHandle().effects.remove(type.getId());
-        getHandle().e = true; // Should be called updateEffects
+        getHandle().updateEffects = true;
         if (getHandle() instanceof EntityPlayer) {
             if (((EntityPlayer) getHandle()).netServerHandler == null) return;
             ((EntityPlayer) getHandle()).netServerHandler.sendPacket(new Packet42RemoveMobEffect(getHandle().id, new MobEffect(type.getId(), 0, 0)));
@@ -300,6 +300,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public boolean hasLineOfSight(Entity other) {
-        return getHandle().am().canSee(((CraftEntity) other).getHandle()); // am should be getEntitySenses
+        return getHandle().at().canSee(((CraftEntity) other).getHandle()); // am should be getEntitySenses
     }
 }

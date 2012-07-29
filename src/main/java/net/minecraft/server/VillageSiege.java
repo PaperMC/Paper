@@ -28,7 +28,7 @@ public class VillageSiege {
                 return;
             }
         } else {
-            if (this.world.e()) {
+            if (this.world.r()) {
                 this.c = 0;
                 return;
             }
@@ -38,7 +38,7 @@ public class VillageSiege {
             }
 
             if (this.c == 0) {
-                float f = this.world.b(0.0F);
+                float f = this.world.c(0.0F);
 
                 if ((double) f < 0.5D || (double) f > 0.501D) {
                     return;
@@ -160,7 +160,7 @@ public class VillageSiege {
             int k1 = k + this.world.random.nextInt(16) - 8;
 
             if (this.f.a(i1, j1, k1) && SpawnerCreature.a(EnumCreatureType.MONSTER, this.world, i1, j1, k1)) {
-                return Vec3D.create((double) i1, (double) j1, (double) k1);
+                return Vec3D.a().create((double) i1, (double) j1, (double) k1);
             }
         }
 

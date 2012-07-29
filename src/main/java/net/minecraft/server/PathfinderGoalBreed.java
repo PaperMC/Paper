@@ -20,7 +20,7 @@ public class PathfinderGoalBreed extends PathfinderGoal {
     }
 
     public boolean a() {
-        if (!this.d.r_()) {
+        if (!this.d.s()) {
             return false;
         } else {
             this.e = this.f();
@@ -29,17 +29,17 @@ public class PathfinderGoalBreed extends PathfinderGoal {
     }
 
     public boolean b() {
-        return this.e.isAlive() && this.e.r_() && this.b < 60;
+        return this.e.isAlive() && this.e.s() && this.b < 60;
     }
 
-    public void d() {
+    public void c() {
         this.e = null;
         this.b = 0;
     }
 
-    public void e() {
-        this.d.getControllerLook().a(this.e, 10.0F, (float) this.d.D());
-        this.d.al().a((EntityLiving) this.e, this.c);
+    public void d() {
+        this.d.getControllerLook().a(this.e, 10.0F, (float) this.d.bf());
+        this.d.getNavigation().a((EntityLiving) this.e, this.c);
         ++this.b;
         if (this.b == 60) {
             this.i();
@@ -58,9 +58,7 @@ public class PathfinderGoalBreed extends PathfinderGoal {
                 return null;
             }
 
-            Entity entity = (Entity) iterator.next();
-
-            entityanimal = (EntityAnimal) entity;
+            entityanimal = (EntityAnimal) iterator.next();
         } while (!this.d.mate(entityanimal));
 
         return entityanimal;
@@ -72,12 +70,12 @@ public class PathfinderGoalBreed extends PathfinderGoal {
         if (entityanimal != null) {
             this.d.setAge(6000);
             this.e.setAge(6000);
-            this.d.s_();
-            this.e.s_();
+            this.d.t();
+            this.e.t();
             entityanimal.setAge(-24000);
             entityanimal.setPositionRotation(this.d.locX, this.d.locY, this.d.locZ, 0.0F, 0.0F);
-            this.a.addEntity(entityanimal, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING); // CraftBukkit - Added SpawnReason
-            Random random = this.d.an();
+            this.a.addEntity(entityanimal, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING); // CraftBukkit - added SpawnReason
+            Random random = this.d.au();
 
             for (int i = 0; i < 7; ++i) {
                 double d0 = random.nextGaussian() * 0.02D;

@@ -6,10 +6,11 @@ public class ItemSign extends Item {
 
     public ItemSign(int i) {
         super(i);
-        this.maxStackSize = 1;
+        this.maxStackSize = 16;
+        this.a(CreativeModeTab.c);
     }
 
-    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
+    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l, float f, float f1, float f2) {
         if (l == 0) {
             return false;
         } else if (!world.getMaterial(i, j, k).isBuildable()) {
@@ -37,7 +38,7 @@ public class ItemSign extends Item {
                 ++i;
             }
 
-            if (!entityhuman.d(i, j, k)) {
+            if (!entityhuman.e(i, j, k)) {
                 return false;
             } else if (!Block.SIGN_POST.canPlace(world, i, j, k)) {
                 return false;

@@ -15,13 +15,14 @@ public class BlockPressurePlate extends Block {
     protected BlockPressurePlate(int i, int j, EnumMobType enummobtype, Material material) {
         super(i, j, material);
         this.a = enummobtype;
-        this.a(true);
+        this.a(CreativeModeTab.d);
+        this.b(true);
         float f = 0.0625F;
 
         this.a(f, 0.0F, f, 1.0F - f, 0.03125F, 1.0F - f);
     }
 
-    public int d() {
+    public int p_() {
         return 20;
     }
 
@@ -29,41 +30,39 @@ public class BlockPressurePlate extends Block {
         return null;
     }
 
-    public boolean a() {
+    public boolean d() {
         return false;
     }
 
-    public boolean b() {
+    public boolean c() {
         return false;
     }
 
-    public boolean b(IBlockAccess iblockaccess, int i, int j, int k) {
+    public boolean c(IBlockAccess iblockaccess, int i, int j, int k) {
         return true;
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
-        return world.e(i, j - 1, k) || world.getTypeId(i, j - 1, k) == Block.FENCE.id;
+        return world.t(i, j - 1, k) || BlockFence.c(world.getTypeId(i, j - 1, k));
     }
-
-    public void onPlace(World world, int i, int j, int k) {}
 
     public void doPhysics(World world, int i, int j, int k, int l) {
         boolean flag = false;
 
-        if (!world.e(i, j - 1, k) && world.getTypeId(i, j - 1, k) != Block.FENCE.id) {
+        if (!world.t(i, j - 1, k) && !BlockFence.c(world.getTypeId(i, j - 1, k))) {
             flag = true;
         }
 
         if (flag) {
-            this.b(world, i, j, k, world.getData(i, j, k), 0);
+            this.c(world, i, j, k, world.getData(i, j, k), 0);
             world.setTypeId(i, j, k, 0);
         }
     }
 
-    public void a(World world, int i, int j, int k, Random random) {
+    public void b(World world, int i, int j, int k, Random random) {
         if (!world.isStatic) {
             if (world.getData(i, j, k) != 0) {
-                this.g(world, i, j, k);
+                this.l(world, i, j, k);
             }
         }
     }
@@ -71,30 +70,30 @@ public class BlockPressurePlate extends Block {
     public void a(World world, int i, int j, int k, Entity entity) {
         if (!world.isStatic) {
             if (world.getData(i, j, k) != 1) {
-                this.g(world, i, j, k);
+                this.l(world, i, j, k);
             }
         }
     }
 
-    private void g(World world, int i, int j, int k) {
+    private void l(World world, int i, int j, int k) {
         boolean flag = world.getData(i, j, k) == 1;
         boolean flag1 = false;
         float f = 0.125F;
         List list = null;
 
         if (this.a == EnumMobType.EVERYTHING) {
-            list = world.getEntities((Entity) null, AxisAlignedBB.b((double) ((float) i + f), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) j + 0.25D, (double) ((float) (k + 1) - f)));
+            list = world.getEntities((Entity) null, AxisAlignedBB.a().a((double) ((float) i + f), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) j + 0.25D, (double) ((float) (k + 1) - f)));
         }
 
         if (this.a == EnumMobType.MOBS) {
-            list = world.a(EntityLiving.class, AxisAlignedBB.b((double) ((float) i + f), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) j + 0.25D, (double) ((float) (k + 1) - f)));
+            list = world.a(EntityLiving.class, AxisAlignedBB.a().a((double) ((float) i + f), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) j + 0.25D, (double) ((float) (k + 1) - f)));
         }
 
         if (this.a == EnumMobType.PLAYERS) {
-            list = world.a(EntityHuman.class, AxisAlignedBB.b((double) ((float) i + f), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) j + 0.25D, (double) ((float) (k + 1) - f)));
+            list = world.a(EntityHuman.class, AxisAlignedBB.a().a((double) ((float) i + f), (double) j, (double) ((float) k + f), (double) ((float) (i + 1) - f), (double) j + 0.25D, (double) ((float) (k + 1) - f)));
         }
 
-        if (list.size() > 0) {
+        if (!list.isEmpty()) {
             flag1 = true;
         }
 
@@ -116,6 +115,7 @@ public class BlockPressurePlate extends Block {
                         } else {
                             continue;
                         }
+
                         if (cancellable.isCancelled()) {
                             return;
                         }
@@ -134,7 +134,7 @@ public class BlockPressurePlate extends Block {
             world.setData(i, j, k, 1);
             world.applyPhysics(i, j, k, this.id);
             world.applyPhysics(i, j - 1, k, this.id);
-            world.b(i, j, k, i, j, k);
+            world.d(i, j, k, i, j, k);
             world.makeSound((double) i + 0.5D, (double) j + 0.1D, (double) k + 0.5D, "random.click", 0.3F, 0.6F);
         }
 
@@ -142,24 +142,22 @@ public class BlockPressurePlate extends Block {
             world.setData(i, j, k, 0);
             world.applyPhysics(i, j, k, this.id);
             world.applyPhysics(i, j - 1, k, this.id);
-            world.b(i, j, k, i, j, k);
+            world.d(i, j, k, i, j, k);
             world.makeSound((double) i + 0.5D, (double) j + 0.1D, (double) k + 0.5D, "random.click", 0.3F, 0.5F);
         }
 
         if (flag1) {
-            world.c(i, j, k, this.id, this.d());
+            world.a(i, j, k, this.id, this.p_());
         }
     }
 
-    public void remove(World world, int i, int j, int k) {
-        int l = world.getData(i, j, k);
-
-        if (l > 0) {
+    public void remove(World world, int i, int j, int k, int l, int i1) {
+        if (i1 > 0) {
             world.applyPhysics(i, j, k, this.id);
             world.applyPhysics(i, j - 1, k, this.id);
         }
 
-        super.remove(world, i, j, k);
+        super.remove(world, i, j, k, l, i1);
     }
 
     public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
@@ -177,7 +175,7 @@ public class BlockPressurePlate extends Block {
         return iblockaccess.getData(i, j, k) > 0;
     }
 
-    public boolean d(World world, int i, int j, int k, int l) {
+    public boolean c(World world, int i, int j, int k, int l) {
         return world.getData(i, j, k) == 0 ? false : l == 1;
     }
 
@@ -193,7 +191,7 @@ public class BlockPressurePlate extends Block {
         this.a(0.5F - f, 0.5F - f1, 0.5F - f2, 0.5F + f, 0.5F + f1, 0.5F + f2);
     }
 
-    public int g() {
+    public int e() {
         return 1;
     }
 }

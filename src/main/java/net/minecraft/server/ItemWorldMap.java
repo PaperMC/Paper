@@ -9,7 +9,8 @@ public class ItemWorldMap extends ItemWorldMapBase {
 
     protected ItemWorldMap(int i) {
         super(i);
-        this.e(1);
+        this.d(1);
+        this.a(CreativeModeTab.f);
     }
 
     public WorldMap getSavedMap(ItemStack itemstack, World world) {
@@ -52,10 +53,10 @@ public class ItemWorldMap extends ItemWorldMapBase {
                 j1 /= 2;
             }
 
-            ++worldmap.g;
+            ++worldmap.f;
 
             for (int k1 = l - j1 + 1; k1 < l + j1; ++k1) {
-                if ((k1 & 15) == (worldmap.g & 15)) {
+                if ((k1 & 15) == (worldmap.f & 15)) {
                     int l1 = 255;
                     int i2 = 0;
                     double d0 = 0.0D;
@@ -72,130 +73,135 @@ public class ItemWorldMap extends ItemWorldMapBase {
                             byte b2 = 0;
                             int[] aint = new int[256];
                             Chunk chunk = world.getChunkAtWorldCoords(i3, j3);
-                            if (chunk.isEmpty()) continue; // CraftBukkit - fixes maps erasing themselves on low chunk visibility.
-                            int k3 = i3 & 15;
-                            int l3 = j3 & 15;
-                            int i4 = 0;
-                            double d1 = 0.0D;
-                            int j4;
-                            int k4;
-                            int l4;
-                            int i5;
 
-                            if (world.worldProvider.e) {
-                                l4 = i3 + j3 * 231871;
-                                l4 = l4 * l4 * 31287121 + l4 * 11;
-                                if ((l4 >> 20 & 1) == 0) {
-                                    aint[Block.DIRT.id] += 10;
+                            if (!chunk.isEmpty()) {
+                                int k3 = i3 & 15;
+                                int l3 = j3 & 15;
+                                int i4 = 0;
+                                double d1 = 0.0D;
+                                int j4;
+                                int k4;
+                                int l4;
+                                int i5;
+
+                                if (world.worldProvider.e) {
+                                    l4 = i3 + j3 * 231871;
+                                    l4 = l4 * l4 * 31287121 + l4 * 11;
+                                    if ((l4 >> 20 & 1) == 0) {
+                                        aint[Block.DIRT.id] += 10;
+                                    } else {
+                                        aint[Block.STONE.id] += 10;
+                                    }
+
+                                    d1 = 100.0D;
                                 } else {
-                                    aint[Block.STONE.id] += 10;
-                                }
+                                    for (l4 = 0; l4 < i; ++l4) {
+                                        for (j4 = 0; j4 < i; ++j4) {
+                                            k4 = chunk.b(l4 + k3, j4 + l3) + 1;
+                                            int j5 = 0;
 
-                                d1 = 100.0D;
-                            } else {
-                                for (l4 = 0; l4 < i; ++l4) {
-                                    for (j4 = 0; j4 < i; ++j4) {
-                                        k4 = chunk.b(l4 + k3, j4 + l3) + 1;
-                                        int j5 = 0;
-
-                                        if (k4 > 1) {
-                                            boolean flag1 = false;
-
-                                            do {
-                                                flag1 = true;
-                                                j5 = chunk.getTypeId(l4 + k3, k4 - 1, j4 + l3);
-                                                if (j5 == 0) {
-                                                    flag1 = false;
-                                                } else if (k4 > 0 && j5 > 0 && Block.byId[j5].material.F == MaterialMapColor.b) {
-                                                    flag1 = false;
-                                                }
-
-                                                if (!flag1) {
-                                                    --k4;
-                                                    if (k4 <= 0) break; // CraftBukkit
-                                                    j5 = chunk.getTypeId(l4 + k3, k4 - 1, j4 + l3);
-                                                }
-                                            } while (k4 > 0 && !flag1);
-
-                                            if (k4 > 0 && j5 != 0 && Block.byId[j5].material.isLiquid()) {
-                                                i5 = k4 - 1;
-                                                boolean flag2 = false;
-
-                                                int k5;
+                                            if (k4 > 1) {
+                                                boolean flag1 = false;
 
                                                 do {
-                                                    k5 = chunk.getTypeId(l4 + k3, i5--, j4 + l3);
-                                                    ++i4;
-                                                } while (i5 > 0 && k5 != 0 && Block.byId[k5].material.isLiquid());
+                                                    flag1 = true;
+                                                    j5 = chunk.getTypeId(l4 + k3, k4 - 1, j4 + l3);
+                                                    if (j5 == 0) {
+                                                        flag1 = false;
+                                                    } else if (k4 > 0 && j5 > 0 && Block.byId[j5].material.F == MaterialMapColor.b) {
+                                                        flag1 = false;
+                                                    }
+
+                                                    if (!flag1) {
+                                                        --k4;
+                                                        if (k4 <= 0) {
+                                                            break;
+                                                        }
+
+                                                        j5 = chunk.getTypeId(l4 + k3, k4 - 1, j4 + l3);
+                                                    }
+                                                } while (k4 > 0 && !flag1);
+
+                                                if (k4 > 0 && j5 != 0 && Block.byId[j5].material.isLiquid()) {
+                                                    i5 = k4 - 1;
+                                                    boolean flag2 = false;
+
+                                                    int k5;
+
+                                                    do {
+                                                        k5 = chunk.getTypeId(l4 + k3, i5--, j4 + l3);
+                                                        ++i4;
+                                                    } while (i5 > 0 && k5 != 0 && Block.byId[k5].material.isLiquid());
+                                                }
                                             }
+
+                                            d1 += (double) k4 / (double) (i * i);
+                                            ++aint[j5];
+                                        }
+                                    }
+                                }
+
+                                i4 /= i * i;
+                                int l5 = b0 / (i * i);
+
+                                l5 = b1 / (i * i);
+                                l5 = b2 / (i * i);
+                                l4 = 0;
+                                j4 = 0;
+
+                                for (k4 = 0; k4 < 256; ++k4) {
+                                    if (aint[k4] > l4) {
+                                        j4 = k4;
+                                        l4 = aint[k4];
+                                    }
+                                }
+
+                                double d2 = (d1 - d0) * 4.0D / (double) (i + 4) + ((double) (k1 + j2 & 1) - 0.5D) * 0.4D;
+                                byte b3 = 1;
+
+                                if (d2 > 0.6D) {
+                                    b3 = 2;
+                                }
+
+                                if (d2 < -0.6D) {
+                                    b3 = 0;
+                                }
+
+                                i5 = 0;
+                                if (j4 > 0) {
+                                    MaterialMapColor materialmapcolor = Block.byId[j4].material.F;
+
+                                    if (materialmapcolor == MaterialMapColor.n) {
+                                        d2 = (double) i4 * 0.1D + (double) (k1 + j2 & 1) * 0.2D;
+                                        b3 = 1;
+                                        if (d2 < 0.5D) {
+                                            b3 = 2;
                                         }
 
-                                        d1 += (double) k4 / (double) (i * i);
-                                        ++aint[j5];
-                                    }
-                                }
-                            }
-
-                            i4 /= i * i;
-                            int l5 = b0 / (i * i);
-
-                            l5 = b1 / (i * i);
-                            l5 = b2 / (i * i);
-                            l4 = 0;
-                            j4 = 0;
-
-                            for (k4 = 0; k4 < 256; ++k4) {
-                                if (aint[k4] > l4) {
-                                    j4 = k4;
-                                    l4 = aint[k4];
-                                }
-                            }
-
-                            double d2 = (d1 - d0) * 4.0D / (double) (i + 4) + ((double) (k1 + j2 & 1) - 0.5D) * 0.4D;
-                            byte b3 = 1;
-
-                            if (d2 > 0.6D) {
-                                b3 = 2;
-                            }
-
-                            if (d2 < -0.6D) {
-                                b3 = 0;
-                            }
-
-                            i5 = 0;
-                            if (j4 > 0) {
-                                MaterialMapColor materialmapcolor = Block.byId[j4].material.F;
-
-                                if (materialmapcolor == MaterialMapColor.n) {
-                                    d2 = (double) i4 * 0.1D + (double) (k1 + j2 & 1) * 0.2D;
-                                    b3 = 1;
-                                    if (d2 < 0.5D) {
-                                        b3 = 2;
+                                        if (d2 > 0.9D) {
+                                            b3 = 0;
+                                        }
                                     }
 
-                                    if (d2 > 0.9D) {
-                                        b3 = 0;
-                                    }
+                                    i5 = materialmapcolor.q;
                                 }
 
-                                i5 = materialmapcolor.q;
-                            }
+                                d0 = d1;
+                                if (j2 >= 0 && k2 * k2 + l2 * l2 < j1 * j1 && (!flag || (k1 + j2 & 1) != 0)) {
+                                    byte b4 = worldmap.colors[k1 + j2 * short1];
+                                    byte b5 = (byte) (i5 * 4 + b3);
 
-                            d0 = d1;
-                            if (j2 >= 0 && k2 * k2 + l2 * l2 < j1 * j1 && (!flag || (k1 + j2 & 1) != 0)) {
-                                byte b4 = worldmap.colors[k1 + j2 * short1];
-                                byte b5 = (byte) (i5 * 4 + b3);
+                                    if (b4 != b5) {
+                                        if (l1 > j2) {
+                                            l1 = j2;
+                                        }
 
-                                if (b4 != b5) {
-                                    if (l1 > j2) {
-                                        l1 = j2;
+                                        if (i2 < j2) {
+                                            i2 = j2;
+                                        }
+
+                                        worldmap.colors[k1 + j2 * short1] = b5;
                                     }
-
-                                    if (i2 < j2) {
-                                        i2 = j2;
-                                    }
-
-                                    worldmap.colors[k1 + j2 * short1] = b5;
                                 }
                             }
                         }

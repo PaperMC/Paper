@@ -228,6 +228,8 @@ public class CraftItemStack extends ItemStack {
     public static net.minecraft.server.ItemStack createNMSItemStack(ItemStack original) {
         if (original == null || original.getTypeId() <= 0) {
             return null;
+        } else if (original instanceof CraftItemStack) {
+            return ((CraftItemStack) original).getHandle();
         }
         return new CraftItemStack(original).getHandle();
     }

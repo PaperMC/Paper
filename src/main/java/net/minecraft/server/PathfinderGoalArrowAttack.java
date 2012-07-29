@@ -23,7 +23,7 @@ public class PathfinderGoalArrowAttack extends PathfinderGoal {
     }
 
     public boolean a() {
-        EntityLiving entityliving = this.b.at();
+        EntityLiving entityliving = this.b.az();
 
         if (entityliving == null) {
             return false;
@@ -34,10 +34,10 @@ public class PathfinderGoalArrowAttack extends PathfinderGoal {
     }
 
     public boolean b() {
-        return this.a() || !this.b.al().e();
+        return this.a() || !this.b.getNavigation().f();
     }
 
-    public void d() {
+    public void c() {
         // CraftBukkit start
         EntityTargetEvent.TargetReason reason = this.c.isAlive() ? EntityTargetEvent.TargetReason.FORGOT_TARGET : EntityTargetEvent.TargetReason.TARGET_DIED;
         org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetEvent(b, null, reason);
@@ -45,10 +45,10 @@ public class PathfinderGoalArrowAttack extends PathfinderGoal {
         this.c = null;
     }
 
-    public void e() {
+    public void d() {
         double d0 = 100.0D;
         double d1 = this.b.e(this.c.locX, this.c.boundingBox.b, this.c.locZ);
-        boolean flag = this.b.am().canSee(this.c);
+        boolean flag = this.b.at().canSee(this.c);
 
         if (flag) {
             ++this.f;
@@ -57,9 +57,9 @@ public class PathfinderGoalArrowAttack extends PathfinderGoal {
         }
 
         if (d1 <= d0 && this.f >= 20) {
-            this.b.al().f();
+            this.b.getNavigation().g();
         } else {
-            this.b.al().a(this.c, this.e);
+            this.b.getNavigation().a(this.c, this.e);
         }
 
         this.b.getControllerLook().a(this.c, 30.0F, 30.0F);
@@ -76,7 +76,7 @@ public class PathfinderGoalArrowAttack extends PathfinderGoal {
         if (this.g == 1) {
             EntityArrow entityarrow = new EntityArrow(this.a, this.b, this.c, 1.6F, 12.0F);
 
-            this.a.makeSound(this.b, "random.bow", 1.0F, 1.0F / (this.b.an().nextFloat() * 0.4F + 0.8F));
+            this.a.makeSound(this.b, "random.bow", 1.0F, 1.0F / (this.b.au().nextFloat() * 0.4F + 0.8F));
             this.a.addEntity(entityarrow);
         } else if (this.g == 2) {
             EntitySnowball entitysnowball = new EntitySnowball(this.a, this.b);
@@ -85,8 +85,8 @@ public class PathfinderGoalArrowAttack extends PathfinderGoal {
             double d2 = this.c.locZ - this.b.locZ;
             float f = MathHelper.sqrt(d0 * d0 + d2 * d2) * 0.2F;
 
-            entitysnowball.a(d0, d1 + (double) f, d2, 1.6F, 12.0F);
-            this.a.makeSound(this.b, "random.bow", 1.0F, 1.0F / (this.b.an().nextFloat() * 0.4F + 0.8F));
+            entitysnowball.c(d0, d1 + (double) f, d2, 1.6F, 12.0F);
+            this.a.makeSound(this.b, "random.bow", 1.0F, 1.0F / (this.b.au().nextFloat() * 0.4F + 0.8F));
             this.a.addEntity(entitysnowball);
         }
     }

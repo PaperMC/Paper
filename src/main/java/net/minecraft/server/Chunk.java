@@ -1,6 +1,6 @@
 package net.minecraft.server;
 
-// import java.util.ArrayList; // CraftBukkit
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -11,7 +11,6 @@ import java.util.Random;
 // CraftBukkit start
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.util.UnsafeList;
 // CraftBukkit end
 
 public class Chunk {
@@ -58,7 +57,7 @@ public class Chunk {
         this.heightMap = new int[256];
 
         for (int k = 0; k < this.entitySlices.length; ++k) {
-            this.entitySlices[k] = new UnsafeList(); // CraftBukkit - use UnsafeList
+            this.entitySlices[k] = new ArrayList();
         }
 
         Arrays.fill(this.b, -999);
@@ -104,22 +103,22 @@ public class Chunk {
         return this.heightMap[j << 4 | i];
     }
 
-    public int g() {
+    public int h() {
         for (int i = this.sections.length - 1; i >= 0; --i) {
             if (this.sections[i] != null) {
-                return this.sections[i].c();
+                return this.sections[i].d();
             }
         }
 
         return 0;
     }
 
-    public ChunkSection[] h() {
+    public ChunkSection[] i() {
         return this.sections;
     }
 
     public void initLighting() {
-        int i = this.g();
+        int i = this.h();
 
         int j;
         int k;
@@ -152,7 +151,7 @@ public class Chunk {
 
                                 if (chunksection != null) {
                                     chunksection.c(j, i1 & 15, k, l);
-                                    this.world.o((this.x << 4) + j, i1, (this.z << 4) + k);
+                                    this.world.n((this.x << 4) + j, i1, (this.z << 4) + k);
                                 }
                             }
 
@@ -175,15 +174,13 @@ public class Chunk {
         }
     }
 
-    public void loadNOP() {}
-
     private void e(int i, int j) {
         this.c[i + j * 16] = true;
         this.s = true;
     }
 
-    private void o() {
-        MethodProfiler.a("recheckGaps");
+    private void q() {
+        this.world.methodProfiler.a("recheckGaps");
         if (this.world.areChunksLoaded(this.x * 16 + 8, 0, this.z * 16 + 8, 16)) {
             for (int i = 0; i < 16; ++i) {
                 for (int j = 0; j < 16; ++j) {
@@ -221,7 +218,7 @@ public class Chunk {
             this.s = false;
         }
 
-        MethodProfiler.a();
+        this.world.methodProfiler.b();
     }
 
     private void g(int i, int j, int k) {
@@ -237,7 +234,7 @@ public class Chunk {
     private void d(int i, int j, int k, int l) {
         if (l > k && this.world.areChunksLoaded(i, 0, j, 16)) {
             for (int i1 = k; i1 < l; ++i1) {
-                this.world.b(EnumSkyBlock.SKY, i, i1, j);
+                this.world.c(EnumSkyBlock.SKY, i, i1, j);
             }
 
             this.l = true;
@@ -272,7 +269,7 @@ public class Chunk {
                         chunksection = this.sections[l1 >> 4];
                         if (chunksection != null) {
                             chunksection.c(i, l1 & 15, k, 15);
-                            this.world.o((this.x << 4) + i, l1, (this.z << 4) + k);
+                            this.world.n((this.x << 4) + i, l1, (this.z << 4) + k);
                         }
                     }
                 } else {
@@ -280,7 +277,7 @@ public class Chunk {
                         chunksection = this.sections[l1 >> 4];
                         if (chunksection != null) {
                             chunksection.c(i, l1 & 15, k, 0);
-                            this.world.o((this.x << 4) + i, l1, (this.z << 4) + k);
+                            this.world.n((this.x << 4) + i, l1, (this.z << 4) + k);
                         }
                     }
                 }
@@ -365,8 +362,9 @@ public class Chunk {
 
         int k1 = this.heightMap[j1];
         int l1 = this.getTypeId(i, j, k);
+        int i2 = this.getData(i, j, k);
 
-        if (l1 == l && this.getData(i, j, k) == i1) {
+        if (l1 == l && i2 == i1) {
             return false;
         } else {
             ChunkSection chunksection = this.sections[j >> 4];
@@ -381,15 +379,19 @@ public class Chunk {
                 flag = j >= k1;
             }
 
-            chunksection.a(i, j & 15, k, l);
-            int i2 = this.x * 16 + i;
-            int j2 = this.z * 16 + k;
+            int j2 = this.x * 16 + i;
+            int k2 = this.z * 16 + k;
 
+            if (l1 != 0 && !this.world.isStatic) {
+                Block.byId[l1].h(this.world, j2, j, k2, i2);
+            }
+
+            chunksection.a(i, j & 15, k, l);
             if (l1 != 0) {
                 if (!this.world.isStatic) {
-                    Block.byId[l1].remove(this.world, i2, j, j2);
+                    Block.byId[l1].remove(this.world, j2, j, k2, l1, i2);
                 } else if (Block.byId[l1] instanceof BlockContainer && l1 != l) {
-                    this.world.q(i2, j, j2);
+                    this.world.q(j2, j, k2);
                 }
             }
 
@@ -415,14 +417,14 @@ public class Chunk {
 
                 if (l != 0) {
                     if (!this.world.isStatic) {
-                        Block.byId[l].onPlace(this.world, i2, j, j2);
+                        Block.byId[l].onPlace(this.world, j2, j, k2);
                     }
 
                     if (Block.byId[l] instanceof BlockContainer) {
                         tileentity = this.e(i, j, k);
                         if (tileentity == null) {
-                            tileentity = ((BlockContainer) Block.byId[l]).a_();
-                            this.world.setTileEntity(i2, j, j2, tileentity);
+                            tileentity = ((BlockContainer) Block.byId[l]).a(this.world);
+                            this.world.setTileEntity(j2, j, k2, tileentity);
                         }
 
                         if (tileentity != null) {
@@ -474,7 +476,7 @@ public class Chunk {
     public int getBrightness(EnumSkyBlock enumskyblock, int i, int j, int k) {
         ChunkSection chunksection = this.sections[j >> 4];
 
-        return chunksection == null ? enumskyblock.c : (enumskyblock == EnumSkyBlock.SKY ? chunksection.c(i, j & 15, k) : (enumskyblock == EnumSkyBlock.BLOCK ? chunksection.d(i, j & 15, k) : enumskyblock.c));
+        return chunksection == null ? (this.d(i, j, k) ? enumskyblock.c : 0) : (enumskyblock == EnumSkyBlock.SKY ? chunksection.c(i, j & 15, k) : (enumskyblock == EnumSkyBlock.BLOCK ? chunksection.d(i, j & 15, k) : enumskyblock.c));
     }
 
     public void a(EnumSkyBlock enumskyblock, int i, int j, int k, int l) {
@@ -490,11 +492,7 @@ public class Chunk {
             if (!this.world.worldProvider.e) {
                 chunksection.c(i, j & 15, k, l);
             }
-        } else {
-            if (enumskyblock != EnumSkyBlock.BLOCK) {
-                return;
-            }
-
+        } else if (enumskyblock == EnumSkyBlock.BLOCK) {
             chunksection.d(i, j & 15, k, l);
         }
     }
@@ -545,15 +543,15 @@ public class Chunk {
             k = this.entitySlices.length - 1;
         }
 
-        entity.bZ = true;
-        entity.ca = this.x;
-        entity.cb = k;
-        entity.cc = this.z;
+        entity.ag = true;
+        entity.ah = this.x;
+        entity.ai = k;
+        entity.aj = this.z;
         this.entitySlices[k].add(entity);
     }
 
     public void b(Entity entity) {
-        this.a(entity, entity.cb);
+        this.a(entity, entity.ai);
     }
 
     public void a(Entity entity, int i) {
@@ -579,19 +577,19 @@ public class Chunk {
         if (tileentity == null) {
             int l = this.getTypeId(i, j, k);
 
-            if (l <= 0 || !Block.byId[l].o()) {
+            if (l <= 0 || !Block.byId[l].s()) {
                 return null;
             }
 
             if (tileentity == null) {
-                tileentity = ((BlockContainer) Block.byId[l]).a_();
+                tileentity = ((BlockContainer) Block.byId[l]).a(this.world);
                 this.world.setTileEntity(this.x * 16 + i, j, this.z * 16 + k, tileentity);
             }
 
             tileentity = (TileEntity) this.tileEntities.get(chunkposition);
         }
 
-        if (tileentity != null && tileentity.l()) {
+        if (tileentity != null && tileentity.p()) {
             this.tileEntities.remove(chunkposition);
             return null;
         } else {
@@ -613,12 +611,12 @@ public class Chunk {
     public void a(int i, int j, int k, TileEntity tileentity) {
         ChunkPosition chunkposition = new ChunkPosition(i, j, k);
 
-        tileentity.world = this.world;
+        tileentity.a(this.world);
         tileentity.x = this.x * 16 + i;
         tileentity.y = j;
         tileentity.z = this.z * 16 + k;
         if (this.getTypeId(i, j, k) != 0 && Block.byId[this.getTypeId(i, j, k)] instanceof BlockContainer) {
-            tileentity.m();
+            tileentity.q();
             this.tileEntities.put(chunkposition, tileentity);
         // CraftBukkit start
         } else {
@@ -645,9 +643,13 @@ public class Chunk {
     public void addEntities() {
         this.d = true;
         this.world.a(this.tileEntities.values());
+        List[] alist = this.entitySlices;
+        int i = alist.length;
 
-        for (int i = 0; i < this.entitySlices.length; ++i) {
-            this.world.a(this.entitySlices[i]);
+        for (int j = 0; j < i; ++j) {
+            List list = alist[j];
+
+            this.world.a(list);
         }
     }
 
@@ -661,9 +663,12 @@ public class Chunk {
             this.world.a(tileentity);
         }
 
-        for (int i = 0; i < this.entitySlices.length; ++i) {
+        List[] alist = this.entitySlices;
+        int i = alist.length;
+
+        for (int j = 0; j < i; ++j) {
             // CraftBukkit start
-            java.util.Iterator<Object> iter = this.entitySlices[i].iterator();
+            java.util.Iterator<Object> iter = this.entitySlices[j].iterator();
             while (iter.hasNext()) {
                 Entity entity = (Entity) iter.next();
                 int cx = Location.locToBlock(entity.locX) >> 4;
@@ -677,7 +682,9 @@ public class Chunk {
             }
             // CraftBukkit end
 
-            this.world.b(this.entitySlices[i]);
+            List list = alist[j];
+
+            this.world.b(list);
         }
     }
 
@@ -698,18 +705,19 @@ public class Chunk {
         }
 
         for (int k = i; k <= j; ++k) {
-            UnsafeList list1 = (UnsafeList) this.entitySlices[k]; // CraftBukkit - use UnsafeList
+            List list1 = this.entitySlices[k];
+            Iterator iterator = list1.iterator();
 
-            for (int l = 0; l < list1.size(); ++l) {
-                Entity entity1 = (Entity) list1.unsafeGet(l); // CraftBukkit - use unsafeGet
+            while (iterator.hasNext()) {
+                Entity entity1 = (Entity) iterator.next();
 
                 if (entity1 != entity && entity1.boundingBox.a(axisalignedbb)) {
                     list.add(entity1);
-                    Entity[] aentity = entity1.bb();
+                    Entity[] aentity = entity1.al();
 
                     if (aentity != null) {
-                        for (int i1 = 0; i1 < aentity.length; ++i1) {
-                            entity1 = aentity[i1];
+                        for (int l = 0; l < aentity.length; ++l) {
+                            entity1 = aentity[l];
                             if (entity1 != entity && entity1.boundingBox.a(axisalignedbb)) {
                                 list.add(entity1);
                             }
@@ -737,10 +745,11 @@ public class Chunk {
         }
 
         for (int k = i; k <= j; ++k) {
-            UnsafeList list1 = (UnsafeList) this.entitySlices[k]; // CraftBukkit - use UnsafeList
+            List list1 = this.entitySlices[k];
+            Iterator iterator = list1.iterator();
 
-            for (int l = 0; l < list1.size(); ++l) {
-                Entity entity = (Entity) list1.unsafeGet(l); // CraftBukkit - use unsafeGet
+            while (iterator.hasNext()) {
+                Entity entity = (Entity) iterator.next();
 
                 if (oclass.isAssignableFrom(entity.getClass()) && entity.boundingBox.a(axisalignedbb)) {
                     list.add(entity);
@@ -769,19 +778,6 @@ public class Chunk {
         return false;
     }
 
-    public void i() {
-        ChunkSection[] achunksection = this.sections;
-        int i = achunksection.length;
-
-        for (int j = 0; j < i; ++j) {
-            ChunkSection chunksection = achunksection[j];
-
-            if (chunksection != null) {
-                chunksection.e();
-            }
-        }
-    }
-
     public void a(IChunkProvider ichunkprovider, IChunkProvider ichunkprovider1, int i, int j) {
         if (!this.done && ichunkprovider.isChunkLoaded(i + 1, j + 1) && ichunkprovider.isChunkLoaded(i, j + 1) && ichunkprovider.isChunkLoaded(i + 1, j)) {
             ichunkprovider.getChunkAt(ichunkprovider1, i, j);
@@ -805,7 +801,7 @@ public class Chunk {
         int l = this.b[k];
 
         if (l == -999) {
-            int i1 = this.g() + 15;
+            int i1 = this.h() + 15;
 
             l = -1;
 
@@ -826,13 +822,13 @@ public class Chunk {
         return l;
     }
 
-    public void j() {
+    public void k() {
         if (this.s && !this.world.worldProvider.e) {
-            this.o();
+            this.q();
         }
     }
 
-    public ChunkCoordIntPair k() {
+    public ChunkCoordIntPair l() {
         return new ChunkCoordIntPair(this.x, this.z);
     }
 
@@ -873,7 +869,7 @@ public class Chunk {
         return BiomeBase.biomes[k] == null ? BiomeBase.PLAINS : BiomeBase.biomes[k];
     }
 
-    public byte[] l() {
+    public byte[] m() {
         return this.r;
     }
 
@@ -881,11 +877,11 @@ public class Chunk {
         this.r = abyte;
     }
 
-    public void m() {
+    public void n() {
         this.t = 0;
     }
 
-    public void n() {
+    public void o() {
         for (int i = 0; i < 8; ++i) {
             if (this.t >= 4096) {
                 return;
@@ -904,30 +900,30 @@ public class Chunk {
 
                 if (this.sections[j] == null && (k1 == 0 || k1 == 15 || k == 0 || k == 15 || l == 0 || l == 15) || this.sections[j] != null && this.sections[j].a(k, k1, l) == 0) {
                     if (Block.lightEmission[this.world.getTypeId(i1, l1 - 1, j1)] > 0) {
-                        this.world.v(i1, l1 - 1, j1);
+                        this.world.x(i1, l1 - 1, j1);
                     }
 
                     if (Block.lightEmission[this.world.getTypeId(i1, l1 + 1, j1)] > 0) {
-                        this.world.v(i1, l1 + 1, j1);
+                        this.world.x(i1, l1 + 1, j1);
                     }
 
                     if (Block.lightEmission[this.world.getTypeId(i1 - 1, l1, j1)] > 0) {
-                        this.world.v(i1 - 1, l1, j1);
+                        this.world.x(i1 - 1, l1, j1);
                     }
 
                     if (Block.lightEmission[this.world.getTypeId(i1 + 1, l1, j1)] > 0) {
-                        this.world.v(i1 + 1, l1, j1);
+                        this.world.x(i1 + 1, l1, j1);
                     }
 
                     if (Block.lightEmission[this.world.getTypeId(i1, l1, j1 - 1)] > 0) {
-                        this.world.v(i1, l1, j1 - 1);
+                        this.world.x(i1, l1, j1 - 1);
                     }
 
                     if (Block.lightEmission[this.world.getTypeId(i1, l1, j1 + 1)] > 0) {
-                        this.world.v(i1, l1, j1 + 1);
+                        this.world.x(i1, l1, j1 + 1);
                     }
 
-                    this.world.v(i1, l1, j1);
+                    this.world.x(i1, l1, j1);
                 }
             }
         }

@@ -2,14 +2,14 @@ package net.minecraft.server;
 
 public class EntityComplex extends EntityLiving {
 
-    protected int t = 100;
+    protected int a = 100;
 
     public EntityComplex(World world) {
         super(world);
     }
 
     public int getMaxHealth() {
-        return this.t;
+        return this.a;
     }
 
     public boolean a(EntityComplexPart entitycomplexpart, DamageSource damagesource, int i) {

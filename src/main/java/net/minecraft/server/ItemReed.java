@@ -11,7 +11,7 @@ public class ItemReed extends Item {
         this.id = block.id;
     }
 
-    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
+    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l, float f, float f1, float f2) {
         int clickedX = i, clickedY = j, clickedZ = k; // CraftBukkit
         int i1 = world.getTypeId(i, j, k);
 
@@ -43,17 +43,17 @@ public class ItemReed extends Item {
             }
         }
 
-        if (!entityhuman.d(i, j, k)) {
+        if (!entityhuman.e(i, j, k)) {
             return false;
         } else if (itemstack.count == 0) {
             return false;
         } else {
-            if (world.mayPlace(this.id, i, j, k, false, l)) {
+            if (world.mayPlace(this.id, i, j, k, false, l, (Entity) null)) {
                 Block block = Block.byId[this.id];
 
                 // CraftBukkit start - This executes the placement of the block
                 CraftBlockState replacedBlockState = CraftBlockState.getBlockState(world, i, j, k); // CraftBukkit
-                /**
+                /*
                  * @see net.minecraft.server.World#setTypeId(int i, int j, int k, int l)
                  *
                  * This replaces world.setTypeId(IIII), we're doing this because we need to
@@ -77,7 +77,7 @@ public class ItemReed extends Item {
                     // CraftBukkit end
 
                     if (world.getTypeId(i, j, k) == this.id) {
-                        Block.byId[this.id].postPlace(world, i, j, k, l);
+                        Block.byId[this.id].postPlace(world, i, j, k, l, f, f1, f2);
                         Block.byId[this.id].postPlace(world, i, j, k, entityhuman);
                     }
 

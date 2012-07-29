@@ -3,15 +3,13 @@ package net.minecraft.server;
 import java.util.HashMap;
 import java.util.Map;
 
-// CraftBukkit start
-import org.bukkit.inventory.InventoryHolder;
-// CraftBukkit end
+import org.bukkit.inventory.InventoryHolder; // CraftBukkit
 
 public class TileEntity {
 
     private static Map a = new HashMap();
     private static Map b = new HashMap();
-    public World world;
+    protected World world;
     public int x;
     public int y;
     public int z;
@@ -22,12 +20,20 @@ public class TileEntity {
     public TileEntity() {}
 
     private static void a(Class oclass, String s) {
-        if (b.containsKey(s)) {
+        if (a.containsKey(s)) {
             throw new IllegalArgumentException("Duplicate id: " + s);
         } else {
             a.put(s, oclass);
             b.put(oclass, s);
         }
+    }
+
+    public void a(World world) {
+        this.world = world;
+    }
+
+    public boolean m() {
+        return this.world != null;
     }
 
     public void a(NBTTagCompound nbttagcompound) {
@@ -49,7 +55,7 @@ public class TileEntity {
         }
     }
 
-    public void q_() {}
+    public void g() {}
 
     public static TileEntity c(NBTTagCompound nbttagcompound) {
         TileEntity tileentity = null;
@@ -73,7 +79,7 @@ public class TileEntity {
         return tileentity;
     }
 
-    public int k() {
+    public int n() {
         if (this.p == -1) {
             this.p = this.world.getData(this.x, this.y, this.z);
         }
@@ -88,11 +94,11 @@ public class TileEntity {
         }
     }
 
-    public Packet d() {
+    public Packet e() {
         return null;
     }
 
-    public boolean l() {
+    public boolean p() {
         return this.o;
     }
 
@@ -100,7 +106,7 @@ public class TileEntity {
         this.o = true;
     }
 
-    public void m() {
+    public void q() {
         this.o = false;
     }
 
@@ -114,6 +120,7 @@ public class TileEntity {
     static {
         a(TileEntityFurnace.class, "Furnace");
         a(TileEntityChest.class, "Chest");
+        a(TileEntityEnderChest.class, "EnderChest");
         a(TileEntityRecordPlayer.class, "RecordPlayer");
         a(TileEntityDispenser.class, "Trap");
         a(TileEntitySign.class, "Sign");
@@ -128,7 +135,7 @@ public class TileEntity {
     // CraftBukkit start
     public InventoryHolder getOwner() {
         org.bukkit.block.BlockState state = world.getWorld().getBlockAt(x, y, z).getState();
-        if(state instanceof InventoryHolder) return (InventoryHolder) state;
+        if (state instanceof InventoryHolder) return (InventoryHolder) state;
         return null;
     }
     // CraftBukkit end

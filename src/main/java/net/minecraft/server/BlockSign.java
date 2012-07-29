@@ -52,23 +52,23 @@ public class BlockSign extends BlockContainer {
         }
     }
 
-    public int c() {
+    public int b() {
         return -1;
     }
 
-    public boolean b() {
+    public boolean c() {
         return false;
     }
 
-    public boolean b(IBlockAccess iblockaccess, int i, int j, int k) {
+    public boolean c(IBlockAccess iblockaccess, int i, int j, int k) {
         return true;
     }
 
-    public boolean a() {
+    public boolean d() {
         return false;
     }
 
-    public TileEntity a_() {
+    public TileEntity a(World world) {
         try {
             return (TileEntity) this.a.newInstance();
         } catch (Exception exception) {
@@ -109,7 +109,7 @@ public class BlockSign extends BlockContainer {
         }
 
         if (flag) {
-            this.b(world, i, j, k, world.getData(i, j, k), 0);
+            this.c(world, i, j, k, world.getData(i, j, k), 0);
             world.setTypeId(i, j, k, 0);
         }
 

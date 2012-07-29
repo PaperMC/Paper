@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import java.util.Iterator;
 import java.util.List;
 
 // CraftBukkit start
@@ -16,26 +17,26 @@ public class EntityPigZombie extends EntityZombie {
     public EntityPigZombie(World world) {
         super(world);
         this.texture = "/mob/pigzombie.png";
-        this.bb = 0.5F;
+        this.bw = 0.5F;
         this.damage = 5;
         this.fireProof = true;
     }
 
-    protected boolean c_() {
+    protected boolean aV() {
         return false;
     }
 
-    public void F_() {
-        this.bb = this.target != null ? 0.95F : 0.5F;
+    public void h_() {
+        this.bw = this.target != null ? 0.95F : 0.5F;
         if (this.soundDelay > 0 && --this.soundDelay == 0) {
-            this.world.makeSound(this, "mob.zombiepig.zpigangry", this.p() * 2.0F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 1.8F);
+            this.world.makeSound(this, "mob.zombiepig.zpigangry", this.aP() * 2.0F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 1.8F);
         }
 
-        super.F_();
+        super.h_();
     }
 
     public boolean canSpawn() {
-        return this.world.difficulty > 0 && this.world.containsEntity(this.boundingBox) && this.world.getCubes(this, this.boundingBox).size() == 0 && !this.world.containsLiquid(this.boundingBox);
+        return this.world.difficulty > 0 && this.world.b(this.boundingBox) && this.world.getCubes(this, this.boundingBox).isEmpty() && !this.world.containsLiquid(this.boundingBox);
     }
 
     public void b(NBTTagCompound nbttagcompound) {
@@ -52,33 +53,30 @@ public class EntityPigZombie extends EntityZombie {
         return this.angerLevel == 0 ? null : super.findTarget();
     }
 
-    public void e() {
-        super.e();
-    }
-
     public boolean damageEntity(DamageSource damagesource, int i) {
         Entity entity = damagesource.getEntity();
 
         if (entity instanceof EntityHuman) {
             List list = this.world.getEntities(this, this.boundingBox.grow(32.0D, 32.0D, 32.0D));
+            Iterator iterator = list.iterator();
 
-            for (int j = 0; j < list.size(); ++j) {
-                Entity entity1 = (Entity) list.get(j);
+            while (iterator.hasNext()) {
+                Entity entity1 = (Entity) iterator.next();
 
                 if (entity1 instanceof EntityPigZombie) {
                     EntityPigZombie entitypigzombie = (EntityPigZombie) entity1;
 
-                    entitypigzombie.e(entity);
+                    entitypigzombie.c(entity);
                 }
             }
 
-            this.e(entity);
+            this.c(entity);
         }
 
         return super.damageEntity(damagesource, i);
     }
 
-    private void e(Entity entity) {
+    private void c(Entity entity) {
         // CraftBukkit start
         org.bukkit.entity.Entity bukkitTarget = entity == null ? null : entity.getBukkitEntity();
 
@@ -101,15 +99,15 @@ public class EntityPigZombie extends EntityZombie {
         this.soundDelay = this.random.nextInt(40);
     }
 
-    protected String i() {
+    protected String aQ() {
         return "mob.zombiepig.zpig";
     }
 
-    protected String j() {
+    protected String aR() {
         return "mob.zombiepig.zpighurt";
     }
 
-    protected String k() {
+    protected String aS() {
         return "mob.zombiepig.zpigdeath";
     }
 
@@ -133,7 +131,7 @@ public class EntityPigZombie extends EntityZombie {
             int k = this.random.nextInt(200) - i;
 
             if (k < 5) {
-                ItemStack itemstack = this.b(k <= 0 ? 1 : 0);
+                ItemStack itemstack = this.l(k <= 0 ? 1 : 0);
                 if (itemstack != null) {
                     loot.add(new CraftItemStack(itemstack));
                 }
@@ -145,7 +143,7 @@ public class EntityPigZombie extends EntityZombie {
     }
 
     // CraftBukkit start - return rare dropped item instead of dropping it
-    protected ItemStack b(int i) {
+    protected ItemStack l(int i) {
         if (i > 0) {
             ItemStack itemstack = new ItemStack(Item.GOLD_SWORD);
 

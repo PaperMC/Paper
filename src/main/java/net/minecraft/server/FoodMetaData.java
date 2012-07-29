@@ -42,10 +42,10 @@ public class FoodMetaData {
             }
         }
 
-        if (this.foodLevel >= 18 && entityhuman.ag()) {
+        if (this.foodLevel >= 18 && entityhuman.bM()) {
             ++this.foodTickTimer;
             if (this.foodTickTimer >= 80) {
-                // CraftBukkit - added RegainReason.
+                // CraftBukkit - added RegainReason
                 entityhuman.heal(1, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.SATIATED);
                 this.foodTickTimer = 0;
             }
@@ -91,7 +91,7 @@ public class FoodMetaData {
         return this.foodLevel;
     }
 
-    public boolean b() {
+    public boolean c() {
         return this.foodLevel < 20;
     }
 
@@ -99,7 +99,7 @@ public class FoodMetaData {
         this.exhaustionLevel = Math.min(this.exhaustionLevel + f, 40.0F);
     }
 
-    public float c() {
+    public float e() {
         return this.saturationLevel;
     }
 }

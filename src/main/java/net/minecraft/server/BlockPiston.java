@@ -1,6 +1,6 @@
 package net.minecraft.server;
 
-import java.util.ArrayList;
+import java.util.List;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.block.CraftBlock;
@@ -11,63 +11,64 @@ import org.bukkit.event.block.BlockPistonExtendEvent;
 public class BlockPiston extends Block {
 
     private boolean a;
-    private static boolean b;
 
     public BlockPiston(int i, int j, boolean flag) {
         super(i, j, Material.PISTON);
         this.a = flag;
         this.a(h);
         this.c(0.5F);
+        this.a(CreativeModeTab.d);
     }
 
     public int a(int i, int j) {
-        int k = d(j);
+        int k = e(j);
 
-        return k > 5 ? this.textureId : (i == k ? (!e(j) && this.minX <= 0.0D && this.minY <= 0.0D && this.minZ <= 0.0D && this.maxX >= 1.0D && this.maxY >= 1.0D && this.maxZ >= 1.0D ? this.textureId : 110) : (i == Facing.OPPOSITE_FACING[k] ? 109 : 108));
+        return k > 5 ? this.textureId : (i == k ? (!f(j) && this.minX <= 0.0D && this.minY <= 0.0D && this.minZ <= 0.0D && this.maxX >= 1.0D && this.maxY >= 1.0D && this.maxZ >= 1.0D ? this.textureId : 110) : (i == Facing.OPPOSITE_FACING[k] ? 109 : 108));
     }
 
-    public int c() {
+    public int b() {
         return 16;
     }
 
-    public boolean a() {
+    public boolean d() {
         return false;
     }
 
-    public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman) {
+    public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman, int l, float f, float f1, float f2) {
         return false;
     }
 
     public void postPlace(World world, int i, int j, int k, EntityLiving entityliving) {
-        int l = c(world, i, j, k, (EntityHuman) entityliving);
+        int l = b(world, i, j, k, (EntityHuman) entityliving);
 
         world.setData(i, j, k, l);
-        if (!world.isStatic && !b) {
-            this.g(world, i, j, k);
+        if (!world.isStatic) {
+            this.l(world, i, j, k);
         }
     }
 
     public void doPhysics(World world, int i, int j, int k, int l) {
-        if (!world.isStatic && !b) {
-            this.g(world, i, j, k);
+        if (!world.isStatic) {
+            this.l(world, i, j, k);
         }
     }
 
     public void onPlace(World world, int i, int j, int k) {
-        if (!world.isStatic && world.getTileEntity(i, j, k) == null && !b) {
-            this.g(world, i, j, k);
+        if (!world.isStatic && world.getTileEntity(i, j, k) == null) {
+            this.l(world, i, j, k);
         }
     }
 
-    private void g(World world, int i, int j, int k) {
+    private void l(World world, int i, int j, int k) {
         int l = world.getData(i, j, k);
-        int i1 = d(l);
-        boolean flag = this.f(world, i, j, k, i1);
+        int i1 = e(l);
 
-        if (l != 7) {
-            if (flag && !e(l)) {
+        if (i1 != 7) {
+            boolean flag = this.e(world, i, j, k, i1);
+
+            if (flag && !f(l)) {
                 // CraftBukkit start
-                int length = g(world, i, j, k, i1);
+                int length = i(world, i, j, k, i1);
                 if (length >= 0) {
                     org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
 
@@ -79,10 +80,9 @@ public class BlockPiston extends Block {
                     }
                     // CraftBukkit end
 
-                    world.setRawData(i, j, k, i1 | 8);
-                    world.playNote(i, j, k, 0, i1);
+                    world.playNote(i, j, k, this.id, 0, i1);
                 }
-            } else if (!flag && e(l)) {
+            } else if (!flag && f(l)) {
                 // CraftBukkit start
                 org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
 
@@ -94,20 +94,24 @@ public class BlockPiston extends Block {
                 }
                 // CraftBukkit end
 
-                world.setRawData(i, j, k, i1);
-                world.playNote(i, j, k, 1, i1);
+                world.playNote(i, j, k, this.id, 1, i1);
             }
         }
     }
 
-    private boolean f(World world, int i, int j, int k, int l) {
+    private boolean e(World world, int i, int j, int k, int l) {
         return l != 0 && world.isBlockFaceIndirectlyPowered(i, j - 1, k, 0) ? true : (l != 1 && world.isBlockFaceIndirectlyPowered(i, j + 1, k, 1) ? true : (l != 2 && world.isBlockFaceIndirectlyPowered(i, j, k - 1, 2) ? true : (l != 3 && world.isBlockFaceIndirectlyPowered(i, j, k + 1, 3) ? true : (l != 5 && world.isBlockFaceIndirectlyPowered(i + 1, j, k, 5) ? true : (l != 4 && world.isBlockFaceIndirectlyPowered(i - 1, j, k, 4) ? true : (world.isBlockFaceIndirectlyPowered(i, j, k, 0) ? true : (world.isBlockFaceIndirectlyPowered(i, j + 2, k, 1) ? true : (world.isBlockFaceIndirectlyPowered(i, j + 1, k - 1, 2) ? true : (world.isBlockFaceIndirectlyPowered(i, j + 1, k + 1, 3) ? true : (world.isBlockFaceIndirectlyPowered(i - 1, j + 1, k, 4) ? true : world.isBlockFaceIndirectlyPowered(i + 1, j + 1, k, 5)))))))))));
     }
 
-    public void a(World world, int i, int j, int k, int l, int i1) {
-        b = true;
+    public void b(World world, int i, int j, int k, int l, int i1) {
         if (l == 0) {
-            if (this.h(world, i, j, k, i1)) {
+            world.setRawData(i, j, k, i1 | 8);
+        } else {
+            world.setRawData(i, j, k, i1);
+        }
+
+        if (l == 0) {
+            if (this.j(world, i, j, k, i1)) {
                 world.setData(i, j, k, i1 | 8);
                 world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "tile.piston.out", 0.5F, world.random.nextFloat() * 0.25F + 0.6F);
             } else {
@@ -116,8 +120,8 @@ public class BlockPiston extends Block {
         } else if (l == 1) {
             TileEntity tileentity = world.getTileEntity(i + Facing.b[i1], j + Facing.c[i1], k + Facing.d[i1]);
 
-            if (tileentity != null && tileentity instanceof TileEntityPiston) {
-                ((TileEntityPiston) tileentity).g();
+            if (tileentity instanceof TileEntityPiston) {
+                ((TileEntityPiston) tileentity).i();
             }
 
             world.setRawTypeIdAndData(i, j, k, Block.PISTON_MOVING.id, i1);
@@ -133,49 +137,41 @@ public class BlockPiston extends Block {
                 if (i2 == Block.PISTON_MOVING.id) {
                     TileEntity tileentity1 = world.getTileEntity(j1, k1, l1);
 
-                    if (tileentity1 != null && tileentity1 instanceof TileEntityPiston) {
+                    if (tileentity1 instanceof TileEntityPiston) {
                         TileEntityPiston tileentitypiston = (TileEntityPiston) tileentity1;
 
-                        if (tileentitypiston.f() == i1 && tileentitypiston.e()) {
-                            tileentitypiston.g();
-                            i2 = tileentitypiston.c();
-                            j2 = tileentitypiston.k();
+                        if (tileentitypiston.c() == i1 && tileentitypiston.b()) {
+                            tileentitypiston.i();
+                            i2 = tileentitypiston.a();
+                            j2 = tileentitypiston.n();
                             flag = true;
                         }
                     }
                 }
 
-                if (!flag && i2 > 0 && a(i2, world, j1, k1, l1, false) && (Block.byId[i2].g() == 0 || i2 == Block.PISTON.id || i2 == Block.PISTON_STICKY.id)) {
+                if (!flag && i2 > 0 && a(i2, world, j1, k1, l1, false) && (Block.byId[i2].e() == 0 || i2 == Block.PISTON.id || i2 == Block.PISTON_STICKY.id)) {
                     i += Facing.b[i1];
                     j += Facing.c[i1];
                     k += Facing.d[i1];
                     world.setRawTypeIdAndData(i, j, k, Block.PISTON_MOVING.id, j2);
                     world.setTileEntity(i, j, k, BlockPistonMoving.a(i2, j2, i1, false, false));
-                    b = false;
                     world.setTypeId(j1, k1, l1, 0);
-                    b = true;
                 } else if (!flag) {
-                    b = false;
                     world.setTypeId(i + Facing.b[i1], j + Facing.c[i1], k + Facing.d[i1], 0);
-                    b = true;
                 }
             } else {
-                b = false;
                 world.setTypeId(i + Facing.b[i1], j + Facing.c[i1], k + Facing.d[i1], 0);
-                b = true;
             }
 
             world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "tile.piston.in", 0.5F, world.random.nextFloat() * 0.15F + 0.6F);
         }
-
-        b = false;
     }
 
     public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
         int l = iblockaccess.getData(i, j, k);
 
-        if (e(l)) {
-            switch (d(l)) {
+        if (f(l)) {
+            switch (e(l)) {
             case 0:
                 this.a(0.0F, 0.25F, 0.0F, 1.0F, 1.0F, 1.0F);
                 break;
@@ -208,9 +204,9 @@ public class BlockPiston extends Block {
         this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
     }
 
-    public void a(World world, int i, int j, int k, AxisAlignedBB axisalignedbb, ArrayList arraylist) {
+    public void a(World world, int i, int j, int k, AxisAlignedBB axisalignedbb, List list, Entity entity) {
         this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
-        super.a(world, i, j, k, axisalignedbb, arraylist);
+        super.a(world, i, j, k, axisalignedbb, list, entity);
     }
 
     public AxisAlignedBB e(World world, int i, int j, int k) {
@@ -218,20 +214,20 @@ public class BlockPiston extends Block {
         return super.e(world, i, j, k);
     }
 
-    public boolean b() {
+    public boolean c() {
         return false;
     }
 
-    public static int d(int i) {
+    public static int e(int i) {
         if ((i & 7) >= Facing.OPPOSITE_FACING.length) return 0; // CraftBukkit - check for AIOOB on piston data
         return i & 7;
     }
 
-    public static boolean e(int i) {
+    public static boolean f(int i) {
         return (i & 8) != 0;
     }
 
-    private static int c(World world, int i, int j, int k, EntityHuman entityhuman) {
+    public static int b(World world, int i, int j, int k, EntityHuman entityhuman) {
         if (MathHelper.abs((float) entityhuman.locX - (float) i) < 2.0F && MathHelper.abs((float) entityhuman.locZ - (float) k) < 2.0F) {
             double d0 = entityhuman.locY + 1.82D - (double) entityhuman.height;
 
@@ -254,18 +250,18 @@ public class BlockPiston extends Block {
             return false;
         } else {
             if (i != Block.PISTON.id && i != Block.PISTON_STICKY.id) {
-                if (Block.byId[i].m() == -1.0F) {
+                if (Block.byId[i].m(world, j, k, l) == -1.0F) {
                     return false;
                 }
 
-                if (Block.byId[i].g() == 2) {
+                if (Block.byId[i].e() == 2) {
                     return false;
                 }
 
-                if (!flag && Block.byId[i].g() == 1) {
+                if (!flag && Block.byId[i].e() == 1) {
                     return false;
                 }
-            } else if (e(world.getData(j, k, l))) {
+            } else if (f(world.getData(j, k, l))) {
                 return false;
             }
 
@@ -273,8 +269,8 @@ public class BlockPiston extends Block {
         }
     }
 
-    // CraftBukkit - boolean -> int
-    private static int g(World world, int i, int j, int k, int l) {
+    // CraftBukkit - change return from boolean to int
+    private static int i(World world, int i, int j, int k, int l) {
         int i1 = i + Facing.b[l];
         int j1 = j + Facing.c[l];
         int k1 = k + Facing.d[l];
@@ -293,7 +289,7 @@ public class BlockPiston extends Block {
                         return -1; // CraftBukkit
                     }
 
-                    if (Block.byId[i2].g() != 1) {
+                    if (Block.byId[i2].e() != 1) {
                         if (l1 == 12) {
                             return -1; // CraftBukkit
                         }
@@ -311,7 +307,7 @@ public class BlockPiston extends Block {
         }
     }
 
-    private boolean h(World world, int i, int j, int k, int l) {
+    private boolean j(World world, int i, int j, int k, int l) {
         int i1 = i + Facing.b[l];
         int j1 = j + Facing.c[l];
         int k1 = k + Facing.d[l];
@@ -331,7 +327,7 @@ public class BlockPiston extends Block {
                         return false;
                     }
 
-                    if (Block.byId[i2].g() != 1) {
+                    if (Block.byId[i2].e() != 1) {
                         if (l1 == 12) {
                             return false;
                         }
@@ -343,7 +339,7 @@ public class BlockPiston extends Block {
                         continue;
                     }
 
-                    Block.byId[i2].b(world, i1, j1, k1, world.getData(i1, j1, k1), 0);
+                    Block.byId[i2].c(world, i1, j1, k1, world.getData(i1, j1, k1), 0);
                     world.setTypeId(i1, j1, k1, 0);
                 }
             }
@@ -356,10 +352,10 @@ public class BlockPiston extends Block {
                 int l2 = world.getData(l1, i2, j2);
 
                 if (k2 == this.id && l1 == i && i2 == j && j2 == k) {
-                    world.setRawTypeIdAndData(i1, j1, k1, Block.PISTON_MOVING.id, l | (this.a ? 8 : 0));
+                    world.setRawTypeIdAndData(i1, j1, k1, Block.PISTON_MOVING.id, l | (this.a ? 8 : 0), false);
                     world.setTileEntity(i1, j1, k1, BlockPistonMoving.a(Block.PISTON_EXTENSION.id, l | (this.a ? 8 : 0), l, true, false));
                 } else {
-                    world.setRawTypeIdAndData(i1, j1, k1, Block.PISTON_MOVING.id, l2);
+                    world.setRawTypeIdAndData(i1, j1, k1, Block.PISTON_MOVING.id, l2, false);
                     world.setTileEntity(i1, j1, k1, BlockPistonMoving.a(k2, l2, l, true, false));
                 }
 

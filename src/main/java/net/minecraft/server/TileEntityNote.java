@@ -24,7 +24,7 @@ public class TileEntityNote extends TileEntity {
         }
     }
 
-    public void c() {
+    public void a() {
         this.note = (byte) ((this.note + 1) % 25);
         this.update();
     }
@@ -53,7 +53,7 @@ public class TileEntityNote extends TileEntity {
             // CraftBukkit start
             org.bukkit.event.block.NotePlayEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callNotePlayEvent(this.world, i, j, k, b0, this.note);
             if (!event.isCancelled()) {
-                this.world.playNote(i, j, k, event.getInstrument().getType(), event.getNote().getId());
+                this.world.playNote(i, j, k, Block.NOTE_BLOCK.id, event.getInstrument().getType(), event.getNote().getId());
             }
             // CraftBukkit end
         }

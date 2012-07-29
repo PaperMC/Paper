@@ -29,7 +29,7 @@ public class Path {
         this.b = 0;
     }
 
-    public PathPoint b() {
+    public PathPoint c() {
         PathPoint pathpoint = this.a[0];
 
         this.a[0] = this.a[--this.b];
@@ -122,7 +122,7 @@ public class Path {
         pathpoint.d = i;
     }
 
-    public boolean c() {
+    public boolean e() {
         return this.b == 0;
     }
 }

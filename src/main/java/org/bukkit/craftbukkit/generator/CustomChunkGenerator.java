@@ -63,7 +63,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
         if (xbtypes != null) {
             chunk = new Chunk(this.world, x, z);
 
-            ChunkSection[] csect = chunk.h();
+            ChunkSection[] csect = chunk.i();
             int scnt = Math.min(csect.length, xbtypes.length);
 
             // Loop through returned sections
@@ -100,7 +100,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
             if (btypes != null) {
                 chunk = new Chunk(this.world, x, z);
 
-                ChunkSection[] csect = chunk.h();
+                ChunkSection[] csect = chunk.i();
                 int scnt = Math.min(csect.length, btypes.length);
 
                 for (int sec = 0; sec < scnt; sec++) {
@@ -118,7 +118,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
 
                 chunk = new Chunk(this.world, x, z); // Create empty chunk
 
-                ChunkSection[] csect = chunk.h();
+                ChunkSection[] csect = chunk.i();
 
                 scnt = Math.min(scnt, csect.length);
                 // Loop through sections
@@ -153,7 +153,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
             }
         }
         // Set biome grid
-        byte[] biomeIndex = chunk.l();
+        byte[] biomeIndex = chunk.m();
         for (int i = 0; i < biomeIndex.length; i++) {
             biomeIndex[i] = (byte) (biomegrid.biome[i].id & 0xFF);
         }
@@ -214,5 +214,13 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
 
     public ChunkPosition findNearestMapFeature(World world, String type, int x, int y, int z) {
         return "Stronghold".equals(type) && this.strongholdGen != null ? this.strongholdGen.getNearestGeneratedFeature(world, x, y, z) : null;
+    }
+
+    public int getLoadedChunks() {
+        return 0;
+    }
+
+    public String getName() {
+        return "CustomChunkGenerator";
     }
 }

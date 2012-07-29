@@ -4,7 +4,7 @@ import java.util.Random;
 
 import org.bukkit.BlockChangeDelegate; // CraftBukkit
 
-public class WorldGenGroundBush extends WorldGenerator implements BlockSapling.TreeGenerator { // CraftBukkit - add interface
+public class WorldGenGroundBush extends WorldGenerator implements BlockSapling.TreeGenerator { // CraftBukkit add interface
 
     private int a;
     private int b;
@@ -15,7 +15,7 @@ public class WorldGenGroundBush extends WorldGenerator implements BlockSapling.T
     }
 
     public boolean a(World world, Random random, int i, int j, int k) {
-        // CraftBukkit start
+        // CraftBukkit start - moved to generate
         return this.generate((BlockChangeDelegate) world, random, i, j, k);
     }
 

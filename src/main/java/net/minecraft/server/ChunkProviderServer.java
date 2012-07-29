@@ -23,7 +23,7 @@ public class ChunkProviderServer implements IChunkProvider {
     public Chunk emptyChunk;
     public IChunkProvider chunkProvider; // CraftBukkit
     private IChunkLoader e;
-    public boolean forceChunkLoad = false;
+    public boolean forceChunkLoad = true;
     public LongHashtable<Chunk> chunks = new LongHashtable<Chunk>();
     public List chunkList = new ArrayList();
     public WorldServer world;
@@ -41,7 +41,7 @@ public class ChunkProviderServer implements IChunkProvider {
     }
 
     public void queueUnload(int i, int j) {
-        if (this.world.worldProvider.c()) {
+        if (this.world.worldProvider.e()) {
             ChunkCoordinates chunkcoordinates = this.world.getSpawn();
             int k = i * 16 + 8 - chunkcoordinates.x;
             int l = j * 16 + 8 - chunkcoordinates.z;
@@ -55,7 +55,7 @@ public class ChunkProviderServer implements IChunkProvider {
         }
     }
 
-    public void c() {
+    public void a() {
         Iterator iterator = this.chunkList.iterator();
 
         while (iterator.hasNext()) {
@@ -86,7 +86,6 @@ public class ChunkProviderServer implements IChunkProvider {
             this.chunks.put(i, j, chunk); // CraftBukkit
             this.chunkList.add(chunk);
             if (chunk != null) {
-                chunk.loadNOP();
                 chunk.addEntities();
             }
 
@@ -161,7 +160,12 @@ public class ChunkProviderServer implements IChunkProvider {
                 this.e.a(this.world, chunk);
             } catch (Exception ioexception) { // CraftBukkit - IOException -> Exception
                 ioexception.printStackTrace();
+            // CraftBukkit start - remove extra exception
             }
+            // } catch (ExceptionWorldConflict exceptionworldconflict) {
+            //     exceptionworldconflict.printStackTrace();
+            // }
+            // CraftBukkit end
         }
     }
 
@@ -198,9 +202,10 @@ public class ChunkProviderServer implements IChunkProvider {
 
     public boolean saveChunks(boolean flag, IProgressUpdate iprogressupdate) {
         int i = 0;
+        Iterator iterator = this.chunkList.iterator();
 
-        for (int j = 0; j < this.chunkList.size(); ++j) {
-            Chunk chunk = (Chunk) this.chunkList.get(j);
+        while (iterator.hasNext()) {
+            Chunk chunk = (Chunk) iterator.next();
 
             if (flag) {
                 this.saveChunkNOP(chunk);
@@ -261,7 +266,7 @@ public class ChunkProviderServer implements IChunkProvider {
         return !this.world.savingDisabled;
     }
 
-    public String d() {
+    public String getName() {
         return "ServerChunkCache: " + this.chunks.values().size() + " Drop: " + this.unloadQueue.size(); // CraftBukkit
     }
 
@@ -271,5 +276,9 @@ public class ChunkProviderServer implements IChunkProvider {
 
     public ChunkPosition findNearestMapFeature(World world, String s, int i, int j, int k) {
         return this.chunkProvider.findNearestMapFeature(world, s, i, j, k);
+    }
+
+    public int getLoadedChunks() {
+        return this.chunks.values().size(); // CraftBukkit
     }
 }

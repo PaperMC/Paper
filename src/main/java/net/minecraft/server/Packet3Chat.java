@@ -7,12 +7,21 @@ import java.io.IOException; // CraftBukkit
 
 public class Packet3Chat extends Packet {
 
-    public static int b = 119;
+    public static int a = 119;
     public String message;
+    private boolean c;
 
-    public Packet3Chat() {}
+    public Packet3Chat() {
+        this.c = true;
+    }
 
     public Packet3Chat(String s) {
+        this(s, true);
+    }
+
+    public Packet3Chat(String s, boolean flag) {
+        this.c = true;
+
         /* CraftBukkit start - handle this later
         if (s.length() > b) {
             s = s.substring(0, b);
@@ -20,10 +29,11 @@ public class Packet3Chat extends Packet {
         // CraftBukkit end */
 
         this.message = s;
+        this.c = flag;
     }
 
     public void a(DataInputStream datainputstream) throws IOException { // CraftBukkit
-        this.message = a(datainputstream, b);
+        this.message = a(datainputstream, a);
     }
 
     public void a(DataOutputStream dataoutputstream) throws IOException { // CraftBukkit
@@ -36,5 +46,13 @@ public class Packet3Chat extends Packet {
 
     public int a() {
         return 2 + this.message.length() * 2;
+    }
+
+    public boolean isServer() {
+        return this.c;
+    }
+
+    public boolean a_() {
+        return !this.message.startsWith("/");
     }
 }

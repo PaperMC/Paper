@@ -6,7 +6,7 @@ public class BlockMinecartTrack extends Block {
 
     private final boolean a;
 
-    public static final boolean g(World world, int i, int j, int k) {
+    public static final boolean d_(World world, int i, int j, int k) {
         int l = world.getTypeId(i, j, k);
 
         return l == Block.RAILS.id || l == Block.GOLDEN_RAIL.id || l == Block.DETECTOR_RAIL.id;
@@ -20,9 +20,10 @@ public class BlockMinecartTrack extends Block {
         super(i, j, Material.ORIENTABLE);
         this.a = flag;
         this.a(0.0F, 0.0F, 0.0F, 1.0F, 0.125F, 1.0F);
+        this.a(CreativeModeTab.e);
     }
 
-    public boolean i() {
+    public boolean n() {
         return this.a;
     }
 
@@ -30,7 +31,7 @@ public class BlockMinecartTrack extends Block {
         return null;
     }
 
-    public boolean a() {
+    public boolean d() {
         return false;
     }
 
@@ -61,11 +62,11 @@ public class BlockMinecartTrack extends Block {
         return this.textureId;
     }
 
-    public boolean b() {
+    public boolean c() {
         return false;
     }
 
-    public int c() {
+    public int b() {
         return 9;
     }
 
@@ -74,14 +75,14 @@ public class BlockMinecartTrack extends Block {
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
-        return world.e(i, j - 1, k);
+        return world.t(i, j - 1, k);
     }
 
     public void onPlace(World world, int i, int j, int k) {
         if (!world.isStatic) {
             this.a(world, i, j, k, true);
             if (this.id == Block.GOLDEN_RAIL.id) {
-                // this.doPhysics(world, i, j, k, this.id); // CraftBukkit - Fix issues with rails
+                // this.doPhysics(world, i, j, k, this.id); // CraftBukkit - fix issues with rails
             }
         }
     }
@@ -97,28 +98,28 @@ public class BlockMinecartTrack extends Block {
 
             boolean flag = false;
 
-            if (!world.e(i, j - 1, k)) {
+            if (!world.t(i, j - 1, k)) {
                 flag = true;
             }
 
-            if (j1 == 2 && !world.e(i + 1, j, k)) {
+            if (j1 == 2 && !world.t(i + 1, j, k)) {
                 flag = true;
             }
 
-            if (j1 == 3 && !world.e(i - 1, j, k)) {
+            if (j1 == 3 && !world.t(i - 1, j, k)) {
                 flag = true;
             }
 
-            if (j1 == 4 && !world.e(i, j, k - 1)) {
+            if (j1 == 4 && !world.t(i, j, k - 1)) {
                 flag = true;
             }
 
-            if (j1 == 5 && !world.e(i, j, k + 1)) {
+            if (j1 == 5 && !world.t(i, j, k + 1)) {
                 flag = true;
             }
 
             if (flag) {
-                this.b(world, i, j, k, world.getData(i, j, k), 0);
+                this.c(world, i, j, k, world.getData(i, j, k), 0);
                 world.setTypeId(i, j, k, 0);
             } else if (this.id == Block.GOLDEN_RAIL.id) {
                 boolean flag1 = world.isBlockIndirectlyPowered(i, j, k);
@@ -255,7 +256,7 @@ public class BlockMinecartTrack extends Block {
         return false;
     }
 
-    public int g() {
+    public int e() {
         return 0;
     }
 

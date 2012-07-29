@@ -1,6 +1,7 @@
 package net.minecraft.server;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 // CraftBukkit start
@@ -23,7 +24,7 @@ public class EntityPainting extends Entity {
         this.f = 0;
         this.direction = 0;
         this.height = 0.0F;
-        this.b(0.5F, 0.5F);
+        this.a(0.5F, 0.5F);
         this.art = EnumArt.values()[this.random.nextInt(EnumArt.values().length)]; // CraftBukkit - generate a non-null painting
     }
 
@@ -46,14 +47,14 @@ public class EntityPainting extends Entity {
             }
         }
 
-        if (arraylist.size() > 0) {
+        if (!arraylist.isEmpty()) {
             this.art = (EnumArt) arraylist.get(this.random.nextInt(arraylist.size()));
         }
 
         this.setDirection(l);
     }
 
-    protected void b() {}
+    protected void a() {}
 
     public void setDirection(int i) {
         this.direction = i;
@@ -93,39 +94,40 @@ public class EntityPainting extends Entity {
         }
 
         if (i == 0) {
-            f3 -= this.c(this.art.B);
+            f3 -= this.b(this.art.B);
         }
 
         if (i == 1) {
-            f5 += this.c(this.art.B);
+            f5 += this.b(this.art.B);
         }
 
         if (i == 2) {
-            f3 += this.c(this.art.B);
+            f3 += this.b(this.art.B);
         }
 
         if (i == 3) {
-            f5 -= this.c(this.art.B);
+            f5 -= this.b(this.art.B);
         }
 
-        f4 += this.c(this.art.C);
+        f4 += this.b(this.art.C);
         this.setPosition((double) f3, (double) f4, (double) f5);
         float f7 = -0.00625F;
 
-        this.boundingBox.c((double) (f3 - f - f7), (double) (f4 - f1 - f7), (double) (f5 - f2 - f7), (double) (f3 + f + f7), (double) (f4 + f1 + f7), (double) (f5 + f2 + f7));
+        this.boundingBox.b((double) (f3 - f - f7), (double) (f4 - f1 - f7), (double) (f5 - f2 - f7), (double) (f3 + f + f7), (double) (f4 + f1 + f7), (double) (f5 + f2 + f7));
     }
 
-    private float c(int i) {
+    private float b(int i) {
         return i == 32 ? 0.5F : (i == 64 ? 0.5F : 0.0F);
     }
 
-    public void F_() {
+    public void h_() {
         if (this.f++ == 100 && !this.world.isStatic) {
             this.f = 0;
             if (!this.dead && !this.survives()) {
                 // CraftBukkit start
                 Material material = this.world.getMaterial((int) this.locX, (int) this.locY, (int) this.locZ);
                 RemoveCause cause;
+
                 if (material.equals(Material.WATER)) {
                     cause = RemoveCause.WATER;
                 } else if (!material.equals(Material.AIR)) {
@@ -134,6 +136,7 @@ public class EntityPainting extends Entity {
                 } else {
                     cause = RemoveCause.PHYSICS;
                 }
+
                 PaintingBreakEvent event = new PaintingBreakEvent((Painting) this.getBukkitEntity(), cause);
                 this.world.getServer().getPluginManager().callEvent(event);
 
@@ -149,7 +152,7 @@ public class EntityPainting extends Entity {
     }
 
     public boolean survives() {
-        if (this.world.getCubes(this, this.boundingBox).size() > 0) {
+        if (!this.world.getCubes(this, this.boundingBox).isEmpty()) {
             return false;
         } else {
             int i = this.art.B / 16;
@@ -176,16 +179,14 @@ public class EntityPainting extends Entity {
 
             l = MathHelper.floor(this.locY - (double) ((float) this.art.C / 32.0F));
 
-            int j1;
-
-            for (int k1 = 0; k1 < i; ++k1) {
-                for (j1 = 0; j1 < j; ++j1) {
+            for (int j1 = 0; j1 < i; ++j1) {
+                for (int k1 = 0; k1 < j; ++k1) {
                     Material material;
 
                     if (this.direction != 0 && this.direction != 2) {
-                        material = this.world.getMaterial(this.x, l + j1, i1 + k1);
+                        material = this.world.getMaterial(this.x, l + k1, i1 + j1);
                     } else {
-                        material = this.world.getMaterial(k + k1, l + j1, this.z);
+                        material = this.world.getMaterial(k + j1, l + k1, this.z);
                     }
 
                     if (!material.isBuildable()) {
@@ -195,18 +196,23 @@ public class EntityPainting extends Entity {
             }
 
             List list = this.world.getEntities(this, this.boundingBox);
+            Iterator iterator = list.iterator();
 
-            for (j1 = 0; j1 < list.size(); ++j1) {
-                if (list.get(j1) instanceof EntityPainting) {
-                    return false;
+            Entity entity;
+
+            do {
+                if (!iterator.hasNext()) {
+                    return true;
                 }
-            }
 
-            return true;
+                entity = (Entity) iterator.next();
+            } while (!(entity instanceof EntityPainting));
+
+            return false;
         }
     }
 
-    public boolean o_() {
+    public boolean L() {
         return true;
     }
 
@@ -222,6 +228,7 @@ public class EntityPainting extends Entity {
                 }
                 // TODO: Could put other stuff here?
             }
+
             if (event != null) {
                 this.world.getServer().getPluginManager().callEvent(event);
 
@@ -230,11 +237,23 @@ public class EntityPainting extends Entity {
                 }
             }
 
-            if (dead) return true;
+            if (this.dead) {
+                return true;
+            }
             // CraftBukkit end
 
             this.die();
-            this.aW();
+            this.K();
+            EntityHuman entityhuman = null;
+
+            if (damagesource.getEntity() instanceof EntityHuman) {
+                entityhuman = (EntityHuman) damagesource.getEntity();
+            }
+
+            if (entityhuman != null && entityhuman.abilities.canInstantlyBuild) {
+                return true;
+            }
+
             this.world.addEntity(new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.PAINTING)));
         }
 
@@ -282,8 +301,8 @@ public class EntityPainting extends Entity {
         }
     }
 
-    public void b_(double d0, double d1, double d2) {
-        if (false && !this.world.isStatic && !this.dead && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) { // CraftBukkit start - not needed for paintings
+    public void g(double d0, double d1, double d2) {
+        if (false && !this.world.isStatic && !this.dead && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) { // CraftBukkit - not needed for paintings
             this.die();
             this.world.addEntity(new EntityItem(this.world, this.locX, this.locY, this.locZ, new ItemStack(Item.PAINTING)));
         }

@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import java.util.Iterator;
+
 // CraftBukkit start
 import org.bukkit.craftbukkit.inventory.CraftInventoryFurnace;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
@@ -7,10 +9,11 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 
 public class ContainerFurnace extends Container {
 
-    public TileEntityFurnace furnace; // CraftBukkit - Private -> Public
-    private int b = 0;
-    private int c = 0;
+    private TileEntityFurnace furnace;
+    private int f = 0;
+    private int g = 0;
     private int h = 0;
+
     // CraftBukkit start
     private CraftInventoryView bukkitEntity = null;
     private PlayerInventory player;
@@ -30,7 +33,7 @@ public class ContainerFurnace extends Container {
         this.furnace = tileentityfurnace;
         this.a(new Slot(tileentityfurnace, 0, 56, 17));
         this.a(new Slot(tileentityfurnace, 1, 56, 53));
-        this.a(new SlotResult2(playerinventory.player, tileentityfurnace, 2, 116, 35));
+        this.a(new SlotFurnaceResult(playerinventory.player, tileentityfurnace, 2, 116, 35));
         this.player = playerinventory; // CraftBukkit - save player
 
         int i;
@@ -53,17 +56,18 @@ public class ContainerFurnace extends Container {
         icrafting.setContainerData(this, 2, this.furnace.ticksForCurrentFuel);
     }
 
-    public void a() {
-        super.a();
+    public void b() {
+        super.b();
+        Iterator iterator = this.listeners.iterator();
 
-        for (int i = 0; i < this.listeners.size(); ++i) {
-            ICrafting icrafting = (ICrafting) this.listeners.get(i);
+        while (iterator.hasNext()) {
+            ICrafting icrafting = (ICrafting) iterator.next();
 
-            if (this.b != this.furnace.cookTime) {
+            if (this.f != this.furnace.cookTime) {
                 icrafting.setContainerData(this, 0, this.furnace.cookTime);
             }
 
-            if (this.c != this.furnace.burnTime) {
+            if (this.g != this.furnace.burnTime) {
                 icrafting.setContainerData(this, 1, this.furnace.burnTime);
             }
 
@@ -72,21 +76,21 @@ public class ContainerFurnace extends Container {
             }
         }
 
-        this.b = this.furnace.cookTime;
-        this.c = this.furnace.burnTime;
+        this.f = this.furnace.cookTime;
+        this.g = this.furnace.burnTime;
         this.h = this.furnace.ticksForCurrentFuel;
     }
 
-    public boolean b(EntityHuman entityhuman) {
+    public boolean c(EntityHuman entityhuman) {
         if (!this.checkReachable) return true; // CraftBukkit
         return this.furnace.a(entityhuman);
     }
 
-    public ItemStack a(int i) {
+    public ItemStack b(int i) {
         ItemStack itemstack = null;
-        Slot slot = (Slot) this.e.get(i);
+        Slot slot = (Slot) this.b.get(i);
 
-        if (slot != null && slot.c()) {
+        if (slot != null && slot.d()) {
             ItemStack itemstack1 = slot.getItem();
 
             itemstack = itemstack1.cloneItemStack();
@@ -97,7 +101,7 @@ public class ContainerFurnace extends Container {
 
                 slot.a(itemstack1, itemstack);
             } else if (i != 1 && i != 0) {
-                if (FurnaceRecipes.getInstance().getResult(itemstack1.getItem().id) != null) {
+                if (RecipesFurnace.getInstance().getResult(itemstack1.getItem().id) != null) {
                     if (!this.a(itemstack1, 0, 1, false)) {
                         return null;
                     }
@@ -119,14 +123,14 @@ public class ContainerFurnace extends Container {
             if (itemstack1.count == 0) {
                 slot.set((ItemStack) null);
             } else {
-                slot.d();
+                slot.e();
             }
 
             if (itemstack1.count == itemstack.count) {
                 return null;
             }
 
-            slot.c(itemstack1);
+            slot.b(itemstack1);
         }
 
         return itemstack;

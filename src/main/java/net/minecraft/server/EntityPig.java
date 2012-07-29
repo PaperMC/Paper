@@ -5,8 +5,8 @@ public class EntityPig extends EntityAnimal {
     public EntityPig(World world) {
         super(world);
         this.texture = "/mob/pig.png";
-        this.b(0.9F, 0.9F);
-        this.al().a(true);
+        this.a(0.9F, 0.9F);
+        this.getNavigation().a(true);
         float f = 0.25F;
 
         this.goalSelector.a(0, new PathfinderGoalFloat(this));
@@ -19,7 +19,7 @@ public class EntityPig extends EntityAnimal {
         this.goalSelector.a(7, new PathfinderGoalRandomLookaround(this));
     }
 
-    public boolean c_() {
+    public boolean aV() {
         return true;
     }
 
@@ -27,8 +27,8 @@ public class EntityPig extends EntityAnimal {
         return 10;
     }
 
-    protected void b() {
-        super.b();
+    protected void a() {
+        super.a();
         this.datawatcher.a(16, Byte.valueOf((byte) 0));
     }
 
@@ -42,20 +42,20 @@ public class EntityPig extends EntityAnimal {
         this.setSaddle(nbttagcompound.getBoolean("Saddle"));
     }
 
-    protected String i() {
+    protected String aQ() {
         return "mob.pig";
     }
 
-    protected String j() {
+    protected String aR() {
         return "mob.pig";
     }
 
-    protected String k() {
+    protected String aS() {
         return "mob.pigdeath";
     }
 
-    public boolean b(EntityHuman entityhuman) {
-        if (super.b(entityhuman)) {
+    public boolean c(EntityHuman entityhuman) {
+        if (super.c(entityhuman)) {
             return true;
         } else if (this.hasSaddle() && !this.world.isStatic && (this.passenger == null || this.passenger == entityhuman)) {
             entityhuman.mount(this);
@@ -67,6 +67,18 @@ public class EntityPig extends EntityAnimal {
 
     protected int getLootId() {
         return this.isBurning() ? Item.GRILLED_PORK.id : Item.PORK.id;
+    }
+
+    protected void dropDeathLoot(boolean flag, int i) {
+        int j = this.random.nextInt(3) + 1 + this.random.nextInt(1 + i);
+
+        for (int k = 0; k < j; ++k) {
+            if (this.isBurning()) {
+                this.b(Item.GRILLED_PORK.id, 1);
+            } else {
+                this.b(Item.PORK.id, 1);
+            }
+        }
     }
 
     public boolean hasSaddle() {
@@ -81,12 +93,12 @@ public class EntityPig extends EntityAnimal {
         }
     }
 
-    public void a(EntityWeatherLighting entityweatherlighting) {
+    public void a(EntityLightning entitylightning) {
         if (!this.world.isStatic) {
             EntityPigZombie entitypigzombie = new EntityPigZombie(this.world);
 
             // CraftBukkit start
-            if (org.bukkit.craftbukkit.event.CraftEventFactory.callPigZapEvent(this, entityweatherlighting, entitypigzombie).isCancelled()) {
+            if (org.bukkit.craftbukkit.event.CraftEventFactory.callPigZapEvent(this, entitylightning, entitypigzombie).isCancelled()) {
                 return;
             }
             // CraftBukkit end

@@ -29,7 +29,7 @@ public class ChunkSection {
         this.f = new NibbleArray(this.d.length, 4);
         this.h = new NibbleArray(this.d.length, 4);
         this.g = new NibbleArray(this.d.length, 4);
-        this.d();
+        this.e();
     }
     // CraftBukkit end
 
@@ -48,17 +48,17 @@ public class ChunkSection {
 
         if (i1 == 0 && l != 0) {
             ++this.b;
-            if (Block.byId[l] != null && Block.byId[l].n()) {
+            if (Block.byId[l] != null && Block.byId[l].r()) {
                 ++this.c;
             }
         } else if (i1 != 0 && l == 0) {
             --this.b;
-            if (Block.byId[i1] != null && Block.byId[i1].n()) {
+            if (Block.byId[i1] != null && Block.byId[i1].r()) {
                 --this.c;
             }
-        } else if (Block.byId[i1] != null && Block.byId[i1].n() && (Block.byId[l] == null || !Block.byId[l].n())) {
+        } else if (Block.byId[i1] != null && Block.byId[i1].r() && (Block.byId[l] == null || !Block.byId[l].r())) {
             --this.c;
-        } else if ((Block.byId[i1] == null || !Block.byId[i1].n()) && Block.byId[l] != null && Block.byId[l].n()) {
+        } else if ((Block.byId[i1] == null || !Block.byId[i1].r()) && Block.byId[l] != null && Block.byId[l].r()) {
             ++this.c;
         }
 
@@ -90,7 +90,7 @@ public class ChunkSection {
         return this.c > 0;
     }
 
-    public int c() {
+    public int d() {
         return this.a;
     }
 
@@ -110,7 +110,7 @@ public class ChunkSection {
         return this.g.a(i, j, k);
     }
 
-    public void d() {
+    public void e() {
         this.b = 0;
         this.c = 0;
 
@@ -127,7 +127,7 @@ public class ChunkSection {
                             }
                         } else {
                             ++this.b;
-                            if (Block.byId[l].n()) {
+                            if (Block.byId[l].r()) {
                                 ++this.c;
                             }
                         }
@@ -137,29 +137,23 @@ public class ChunkSection {
         }
     }
 
-    public void e() {}
-
-    public int f() {
-        return this.b;
-    }
-
     public byte[] g() {
         return this.d;
     }
 
-    public NibbleArray h() {
+    public NibbleArray i() {
         return this.e;
     }
 
-    public NibbleArray i() {
+    public NibbleArray j() {
         return this.f;
     }
 
-    public NibbleArray j() {
+    public NibbleArray k() {
         return this.g;
     }
 
-    public NibbleArray k() {
+    public NibbleArray l() {
         return this.h;
     }
 

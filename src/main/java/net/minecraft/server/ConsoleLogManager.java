@@ -12,8 +12,6 @@ public class ConsoleLogManager {
     public static Logger a = Logger.getLogger("Minecraft");
     public static Logger global = Logger.getLogger(""); // CraftBukkit
 
-    public ConsoleLogManager() {}
-
     // CraftBukkit - change of method signature!
     public static void init(MinecraftServer server) {
         ConsoleLogFormatter consolelogformatter = new ConsoleLogFormatter(server.options.has("log-strip-color")); // CraftBukkit - pass strip color option

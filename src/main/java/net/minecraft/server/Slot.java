@@ -4,15 +4,15 @@ public class Slot {
 
     public final int index; // CraftBukkit - private -> public
     public final IInventory inventory;
-    public int c;
     public int d;
     public int e;
+    public int f;
 
     public Slot(IInventory iinventory, int i, int j, int k) {
         this.inventory = iinventory;
         this.index = i;
-        this.d = j;
-        this.e = k;
+        this.e = j;
+        this.f = k;
     }
 
     public void a(ItemStack itemstack, ItemStack itemstack1) {
@@ -29,10 +29,10 @@ public class Slot {
 
     protected void a(ItemStack itemstack, int i) {}
 
-    protected void b(ItemStack itemstack) {}
+    protected void c(ItemStack itemstack) {}
 
-    public void c(ItemStack itemstack) {
-        this.d();
+    public void b(ItemStack itemstack) {
+        this.e();
     }
 
     public boolean isAllowed(ItemStack itemstack) {
@@ -43,16 +43,16 @@ public class Slot {
         return this.inventory.getItem(this.index);
     }
 
-    public boolean c() {
+    public boolean d() {
         return this.getItem() != null;
     }
 
     public void set(ItemStack itemstack) {
         this.inventory.setItem(this.index, itemstack);
-        this.d();
+        this.e();
     }
 
-    public void d() {
+    public void e() {
         this.inventory.update();
     }
 

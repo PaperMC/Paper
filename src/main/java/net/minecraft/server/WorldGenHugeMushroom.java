@@ -1,6 +1,7 @@
 package net.minecraft.server;
 
 import java.util.Random;
+
 // CraftBukkit start
 import org.bukkit.BlockChangeDelegate;
 import org.bukkit.block.BlockState;
@@ -20,8 +21,8 @@ public class WorldGenHugeMushroom extends WorldGenerator implements BlockSapling
         super(false);
     }
 
-    // CraftBukkit start - delegate to generate() and use BlockChangeDelegate
     public boolean a(World world, Random random, int i, int j, int k) {
+        // CraftBukkit start - moved to generate
         return grow((BlockChangeDelegate) world, random, i, j, k, null, null, null);
     }
 
@@ -49,7 +50,7 @@ public class WorldGenHugeMushroom extends WorldGenerator implements BlockSapling
             for (j1 = j; j1 <= j + 1 + i1; ++j1) {
                 byte b0 = 3;
 
-                if (j1 == j) {
+                if (j1 <= j + 3) {
                     b0 = 0;
                 }
 
@@ -72,9 +73,6 @@ public class WorldGenHugeMushroom extends WorldGenerator implements BlockSapling
             } else {
                 j1 = world.getTypeId(i, j - 1, k);
                 if (j1 != Block.DIRT.id && j1 != Block.GRASS.id && j1 != Block.MYCEL.id) {
-                    return false;
-                // CraftBukkit - Adjust canPlace check to handle non-World BlockChangeDelegates (orig check was: !Block.BROWN_MUSHROOM.canPlace(world, i, j, k))
-                } else if ((world.getTypeId(i, j, k) != 0 && !Block.byId[world.getTypeId(i, j, k)].material.isReplacable()) || (world instanceof World && !Block.BROWN_MUSHROOM.canPlace((World) world, i, j, k))) {
                     return false;
                 } else {
                     // CraftBukkit start

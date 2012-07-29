@@ -6,12 +6,12 @@ import java.io.InputStreamReader;
 
 import static org.bukkit.craftbukkit.Main.*; // CraftBukkit
 
-public class ThreadCommandReader extends Thread {
+class ThreadCommandReader extends Thread {
 
-    final MinecraftServer server;
+    final DedicatedServer server;
 
-    public ThreadCommandReader(MinecraftServer minecraftserver) {
-        this.server = minecraftserver;
+    ThreadCommandReader(DedicatedServer dedicatedserver) {
+        this.server = dedicatedserver;
     }
 
     public void run() {
@@ -22,11 +22,11 @@ public class ThreadCommandReader extends Thread {
         // CraftBukkit end
 
         jline.console.ConsoleReader bufferedreader = this.server.reader; // CraftBukkit
-        String s = null;
+        String s;
 
         try {
             // CraftBukkit start - JLine disabling compatibility
-            while (!this.server.isStopped && MinecraftServer.isRunning(this.server)) {
+            while (!this.server.isStopped() && this.server.isRunning()) {
                 if (useJline) {
                     s = bufferedreader.readLine(">", null);
                 } else {
@@ -39,7 +39,7 @@ public class ThreadCommandReader extends Thread {
             }
         } catch (IOException ioexception) {
             // CraftBukkit
-            java.util.logging.Logger.getLogger(ThreadCommandReader.class.getName()).log(java.util.logging.Level.SEVERE, null, ioexception);
+            MinecraftServer.log.log(java.util.logging.Level.SEVERE, null, ioexception);
         }
     }
 }

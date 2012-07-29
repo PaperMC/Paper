@@ -6,26 +6,26 @@ public class EntityMagmaCube extends EntitySlime {
         super(world);
         this.texture = "/mob/lava.png";
         this.fireProof = true;
-        this.al = 0.2F;
+        this.aG = 0.2F;
     }
 
     public boolean canSpawn() {
-        return this.world.difficulty > 0 && this.world.containsEntity(this.boundingBox) && this.world.getCubes(this, this.boundingBox).size() == 0 && !this.world.containsLiquid(this.boundingBox);
+        return this.world.difficulty > 0 && this.world.b(this.boundingBox) && this.world.getCubes(this, this.boundingBox).isEmpty() && !this.world.containsLiquid(this.boundingBox);
     }
 
-    public int T() {
+    public int aO() {
         return this.getSize() * 3;
     }
 
-    public float b(float f) {
+    public float c(float f) {
         return 1.0F;
     }
 
-    protected String A() {
+    protected String i() {
         return "flame";
     }
 
-    protected EntitySlime C() {
+    protected EntitySlime j() {
         return new EntityMagmaCube(this.world);
     }
 
@@ -58,46 +58,46 @@ public class EntityMagmaCube extends EntitySlime {
         return false;
     }
 
-    protected int E() {
-        return super.E() * 4;
+    protected int k() {
+        return super.k() * 4;
     }
 
-    protected void F() {
+    protected void l() {
         this.a *= 0.9F;
     }
 
-    protected void ac() {
+    protected void aZ() {
         this.motY = (double) (0.42F + (float) this.getSize() * 0.1F);
-        this.ce = true;
+        this.al = true;
     }
 
     protected void a(float f) {}
 
-    protected boolean G() {
+    protected boolean m() {
         return true;
     }
 
-    protected int H() {
-        return super.H() + 2;
+    protected int n() {
+        return super.n() + 2;
     }
 
-    protected String j() {
+    protected String aR() {
         return "mob.slime";
     }
 
-    protected String k() {
+    protected String aS() {
         return "mob.slime";
     }
 
-    protected String I() {
+    protected String o() {
         return this.getSize() > 1 ? "mob.magmacube.big" : "mob.magmacube.small";
     }
 
-    public boolean aV() {
+    public boolean J() {
         return false;
     }
 
-    protected boolean K() {
+    protected boolean p() {
         return true;
     }
 }

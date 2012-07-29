@@ -7,23 +7,24 @@ public class BlockCrops extends BlockFlower {
     protected BlockCrops(int i, int j) {
         super(i, j);
         this.textureId = j;
-        this.a(true);
+        this.b(true);
         float f = 0.5F;
 
         this.a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, 0.25F, 0.5F + f);
+        this.a((CreativeModeTab) null);
     }
 
-    protected boolean d(int i) {
+    protected boolean d_(int i) {
         return i == Block.SOIL.id;
     }
 
-    public void a(World world, int i, int j, int k, Random random) {
-        super.a(world, i, j, k, random);
+    public void b(World world, int i, int j, int k, Random random) {
+        super.b(world, i, j, k, random);
         if (world.getLightLevel(i, j + 1, k) >= 9) {
             int l = world.getData(i, j, k);
 
             if (l < 7) {
-                float f = this.i(world, i, j, k);
+                float f = this.l(world, i, j, k);
 
                 if (random.nextInt((int) (25.0F / f) + 1) == 0) {
                     org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this.id, ++l); // CraftBukkit
@@ -32,11 +33,11 @@ public class BlockCrops extends BlockFlower {
         }
     }
 
-    public void g(World world, int i, int j, int k) {
+    public void c_(World world, int i, int j, int k) {
         world.setData(i, j, k, 7);
     }
 
-    private float i(World world, int i, int j, int k) {
+    private float l(World world, int i, int j, int k) {
         float f = 1.0F;
         int l = world.getTypeId(i, j, k - 1);
         int i1 = world.getTypeId(i, j, k + 1);
@@ -85,7 +86,7 @@ public class BlockCrops extends BlockFlower {
         return this.textureId + j;
     }
 
-    public int c() {
+    public int b() {
         return 6;
     }
 

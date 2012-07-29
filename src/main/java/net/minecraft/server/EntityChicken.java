@@ -2,9 +2,9 @@ package net.minecraft.server;
 
 public class EntityChicken extends EntityAnimal {
 
-    public boolean a = false;
-    public float b = 0.0F;
-    public float c = 0.0F;
+    public boolean d = false;
+    public float e = 0.0F;
+    public float f = 0.0F;
     public float g;
     public float h;
     public float i = 1.0F;
@@ -13,7 +13,7 @@ public class EntityChicken extends EntityAnimal {
     public EntityChicken(World world) {
         super(world);
         this.texture = "/mob/chicken.png";
-        this.b(0.3F, 0.7F);
+        this.a(0.3F, 0.7F);
         this.j = this.random.nextInt(6000) + 6000;
         float f = 0.25F;
 
@@ -27,7 +27,7 @@ public class EntityChicken extends EntityAnimal {
         this.goalSelector.a(7, new PathfinderGoalRandomLookaround(this));
     }
 
-    public boolean c_() {
+    public boolean aV() {
         return true;
     }
 
@@ -35,17 +35,17 @@ public class EntityChicken extends EntityAnimal {
         return 4;
     }
 
-    public void e() {
-        super.e();
-        this.h = this.b;
-        this.g = this.c;
-        this.c = (float) ((double) this.c + (double) (this.onGround ? -1 : 4) * 0.3D);
-        if (this.c < 0.0F) {
-            this.c = 0.0F;
+    public void d() {
+        super.d();
+        this.h = this.e;
+        this.g = this.f;
+        this.f = (float) ((double) this.f + (double) (this.onGround ? -1 : 4) * 0.3D);
+        if (this.f < 0.0F) {
+            this.f = 0.0F;
         }
 
-        if (this.c > 1.0F) {
-            this.c = 1.0F;
+        if (this.f > 1.0F) {
+            this.f = 1.0F;
         }
 
         if (!this.onGround && this.i < 1.0F) {
@@ -57,7 +57,7 @@ public class EntityChicken extends EntityAnimal {
             this.motY *= 0.6D;
         }
 
-        this.b += this.i * 2.0F;
+        this.e += this.i * 2.0F;
         if (!this.isBaby() && !this.world.isStatic && --this.j <= 0) {
             this.world.makeSound(this, "mob.chickenplop", 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
             this.b(Item.EGG.id, 1);
@@ -67,23 +67,15 @@ public class EntityChicken extends EntityAnimal {
 
     protected void a(float f) {}
 
-    public void b(NBTTagCompound nbttagcompound) {
-        super.b(nbttagcompound);
-    }
-
-    public void a(NBTTagCompound nbttagcompound) {
-        super.a(nbttagcompound);
-    }
-
-    protected String i() {
+    protected String aQ() {
         return "mob.chicken";
     }
 
-    protected String j() {
+    protected String aR() {
         return "mob.chickenhurt";
     }
 
-    protected String k() {
+    protected String aS() {
         return "mob.chickenhurt";
     }
 

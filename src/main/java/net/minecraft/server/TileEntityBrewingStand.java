@@ -50,43 +50,43 @@ public class TileEntityBrewingStand extends TileEntity implements IInventory {
         return this.items.length;
     }
 
-    public void q_() {
+    public void g() {
         if (this.brewTime > 0) {
             --this.brewTime;
             if (this.brewTime == 0) {
-                this.p();
+                this.r();
                 this.update();
-            } else if (!this.o()) {
+            } else if (!this.k()) {
                 this.brewTime = 0;
                 this.update();
             } else if (this.d != this.items[3].id) {
                 this.brewTime = 0;
                 this.update();
             }
-        } else if (this.o()) {
+        } else if (this.k()) {
             this.brewTime = 400;
             this.d = this.items[3].id;
         }
 
-        int i = this.n();
+        int i = this.i();
 
         if (i != this.c) {
             this.c = i;
             this.world.setData(this.x, this.y, this.z, i);
         }
 
-        super.q_();
+        super.g();
     }
 
-    public int i() {
+    public int t_() {
         return this.brewTime;
     }
 
-    private boolean o() {
+    private boolean k() {
         if (this.items[3] != null && this.items[3].count > 0) {
             ItemStack itemstack = this.items[3];
 
-            if (!Item.byId[itemstack.id].n()) {
+            if (!Item.byId[itemstack.id].u()) {
                 return false;
             } else {
                 boolean flag = false;
@@ -96,13 +96,13 @@ public class TileEntityBrewingStand extends TileEntity implements IInventory {
                         int j = this.items[i].getData();
                         int k = this.b(j, itemstack);
 
-                        if (!ItemPotion.c(j) && ItemPotion.c(k)) {
+                        if (!ItemPotion.g(j) && ItemPotion.g(k)) {
                             flag = true;
                             break;
                         }
 
-                        List list = Item.POTION.b(j);
-                        List list1 = Item.POTION.b(k);
+                        List list = Item.POTION.f(j);
+                        List list1 = Item.POTION.f(k);
 
                         if ((j <= 0 || list != list1) && (list == null || !list.equals(list1) && list1 != null) && j != k) {
                             flag = true;
@@ -118,8 +118,8 @@ public class TileEntityBrewingStand extends TileEntity implements IInventory {
         }
     }
 
-    private void p() {
-        if (this.o()) {
+    private void r() {
+        if (this.k()) {
             ItemStack itemstack = this.items[3];
 
             // CraftBukkit start - fire BREW event
@@ -136,21 +136,21 @@ public class TileEntityBrewingStand extends TileEntity implements IInventory {
                 if (this.items[i] != null && this.items[i].id == Item.POTION.id) {
                     int j = this.items[i].getData();
                     int k = this.b(j, itemstack);
-                    List list = Item.POTION.b(j);
-                    List list1 = Item.POTION.b(k);
+                    List list = Item.POTION.f(j);
+                    List list1 = Item.POTION.f(k);
 
                     if ((j <= 0 || list != list1) && (list == null || !list.equals(list1) && list1 != null)) {
                         if (j != k) {
                             this.items[i].setData(k);
                         }
-                    } else if (!ItemPotion.c(j) && ItemPotion.c(k)) {
+                    } else if (!ItemPotion.g(j) && ItemPotion.g(k)) {
                         this.items[i].setData(k);
                     }
                 }
             }
 
-            if (Item.byId[itemstack.id].k()) {
-                this.items[3] = new ItemStack(Item.byId[itemstack.id].j());
+            if (Item.byId[itemstack.id].r()) {
+                this.items[3] = new ItemStack(Item.byId[itemstack.id].q());
             } else {
                 --this.items[3].count;
                 if (this.items[3].count <= 0) {
@@ -161,7 +161,7 @@ public class TileEntityBrewingStand extends TileEntity implements IInventory {
     }
 
     private int b(int i, ItemStack itemstack) {
-        return itemstack == null ? i : (Item.byId[itemstack.id].n() ? PotionBrewer.a(i, Item.byId[itemstack.id].m()) : i);
+        return itemstack == null ? i : (Item.byId[itemstack.id].u() ? PotionBrewer.a(i, Item.byId[itemstack.id].t()) : i);
     }
 
     public void a(NBTTagCompound nbttagcompound) {
@@ -233,18 +233,18 @@ public class TileEntityBrewingStand extends TileEntity implements IInventory {
     }
 
     public int getMaxStackSize() {
-        return maxStack; // CraftBukkit
+        return this.maxStack; // CraftBukkit
     }
 
     public boolean a(EntityHuman entityhuman) {
         return this.world.getTileEntity(this.x, this.y, this.z) != this ? false : entityhuman.e((double) this.x + 0.5D, (double) this.y + 0.5D, (double) this.z + 0.5D) <= 64.0D;
     }
 
+    public void startOpen() {}
+
     public void f() {}
 
-    public void g() {}
-
-    public int n() {
+    public int i() {
         int i = 0;
 
         for (int j = 0; j < 3; ++j) {

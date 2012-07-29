@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import java.util.Iterator;
 import java.util.List;
 
 // CraftBukkit start
@@ -11,29 +12,28 @@ import org.bukkit.event.player.PlayerPickupItemEvent;
 
 public class EntityArrow extends Entity {
 
+    private int d = -1;
     private int e = -1;
     private int f = -1;
-    private int g = -1;
+    private int g = 0;
     private int h = 0;
-    private int i = 0;
     private boolean inGround = false;
-    public boolean fromPlayer = false;
+    public int fromPlayer = 0;
     public int shake = 0;
     public Entity shooter;
-    private int k;
-    private int l = 0;
+    private int j;
+    private int an = 0;
     private double damage = 2.0D;
-    private int n;
-    public boolean d = false;
+    private int ap;
 
     public EntityArrow(World world) {
         super(world);
-        this.b(0.5F, 0.5F);
+        this.a(0.5F, 0.5F);
     }
 
     public EntityArrow(World world, double d0, double d1, double d2) {
         super(world);
-        this.b(0.5F, 0.5F);
+        this.a(0.5F, 0.5F);
         this.setPosition(d0, d1, d2);
         this.height = 0.0F;
     }
@@ -41,7 +41,10 @@ public class EntityArrow extends Entity {
     public EntityArrow(World world, EntityLiving entityliving, EntityLiving entityliving1, float f, float f1) {
         super(world);
         this.shooter = entityliving;
-        this.fromPlayer = entityliving instanceof EntityHuman;
+        if (entityliving instanceof EntityHuman) {
+            this.fromPlayer = 1;
+        }
+
         this.locY = entityliving.locY + (double) entityliving.getHeadHeight() - 0.10000000149011612D;
         double d0 = entityliving1.locX - entityliving.locX;
         double d1 = entityliving1.locY + (double) entityliving1.getHeadHeight() - 0.699999988079071D - this.locY;
@@ -65,8 +68,11 @@ public class EntityArrow extends Entity {
     public EntityArrow(World world, EntityLiving entityliving, float f) {
         super(world);
         this.shooter = entityliving;
-        this.fromPlayer = entityliving instanceof EntityHuman;
-        this.b(0.5F, 0.5F);
+        if (entityliving instanceof EntityHuman) {
+            this.fromPlayer = 1;
+        }
+
+        this.a(0.5F, 0.5F);
         this.setPositionRotation(entityliving.locX, entityliving.locY + (double) entityliving.getHeadHeight(), entityliving.locZ, entityliving.yaw, entityliving.pitch);
         this.locX -= (double) (MathHelper.cos(this.yaw / 180.0F * 3.1415927F) * 0.16F);
         this.locY -= 0.10000000149011612D;
@@ -79,7 +85,9 @@ public class EntityArrow extends Entity {
         this.shoot(this.motX, this.motY, this.motZ, f * 1.5F, 1.0F);
     }
 
-    protected void b() {}
+    protected void a() {
+        this.datawatcher.a(16, Byte.valueOf((byte) 0));
+    }
 
     public void shoot(double d0, double d1, double d2, float f, float f1) {
         float f2 = MathHelper.sqrt(d0 * d0 + d1 * d1 + d2 * d2);
@@ -100,11 +108,11 @@ public class EntityArrow extends Entity {
 
         this.lastYaw = this.yaw = (float) (Math.atan2(d0, d2) * 180.0D / 3.1415927410125732D);
         this.lastPitch = this.pitch = (float) (Math.atan2(d1, (double) f3) * 180.0D / 3.1415927410125732D);
-        this.k = 0;
+        this.j = 0;
     }
 
-    public void F_() {
-        super.F_();
+    public void h_() {
+        super.h_();
         if (this.lastPitch == 0.0F && this.lastYaw == 0.0F) {
             float f = MathHelper.sqrt(this.motX * this.motX + this.motZ * this.motZ);
 
@@ -112,13 +120,13 @@ public class EntityArrow extends Entity {
             this.lastPitch = this.pitch = (float) (Math.atan2(this.motY, (double) f) * 180.0D / 3.1415927410125732D);
         }
 
-        int i = this.world.getTypeId(this.e, this.f, this.g);
+        int i = this.world.getTypeId(this.d, this.e, this.f);
 
         if (i > 0) {
-            Block.byId[i].updateShape(this.world, this.e, this.f, this.g);
-            AxisAlignedBB axisalignedbb = Block.byId[i].e(this.world, this.e, this.f, this.g);
+            Block.byId[i].updateShape(this.world, this.d, this.e, this.f);
+            AxisAlignedBB axisalignedbb = Block.byId[i].e(this.world, this.d, this.e, this.f);
 
-            if (axisalignedbb != null && axisalignedbb.a(Vec3D.create(this.locX, this.locY, this.locZ))) {
+            if (axisalignedbb != null && axisalignedbb.a(Vec3D.a().create(this.locX, this.locY, this.locZ))) {
                 this.inGround = true;
             }
         }
@@ -128,12 +136,12 @@ public class EntityArrow extends Entity {
         }
 
         if (this.inGround) {
-            i = this.world.getTypeId(this.e, this.f, this.g);
-            int j = this.world.getData(this.e, this.f, this.g);
+            int j = this.world.getTypeId(this.d, this.e, this.f);
+            int k = this.world.getData(this.d, this.e, this.f);
 
-            if (i == this.h && j == this.i) {
-                ++this.k;
-                if (this.k == 1200) {
+            if (j == this.g && k == this.h) {
+                ++this.j;
+                if (this.j == 1200) {
                     this.die();
                 }
             } else {
@@ -141,32 +149,32 @@ public class EntityArrow extends Entity {
                 this.motX *= (double) (this.random.nextFloat() * 0.2F);
                 this.motY *= (double) (this.random.nextFloat() * 0.2F);
                 this.motZ *= (double) (this.random.nextFloat() * 0.2F);
-                this.k = 0;
-                this.l = 0;
+                this.j = 0;
+                this.an = 0;
             }
         } else {
-            ++this.l;
-            Vec3D vec3d = Vec3D.create(this.locX, this.locY, this.locZ);
-            Vec3D vec3d1 = Vec3D.create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
+            ++this.an;
+            Vec3D vec3d = Vec3D.a().create(this.locX, this.locY, this.locZ);
+            Vec3D vec3d1 = Vec3D.a().create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
             MovingObjectPosition movingobjectposition = this.world.rayTrace(vec3d, vec3d1, false, true);
 
-            vec3d = Vec3D.create(this.locX, this.locY, this.locZ);
-            vec3d1 = Vec3D.create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
+            vec3d = Vec3D.a().create(this.locX, this.locY, this.locZ);
+            vec3d1 = Vec3D.a().create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
             if (movingobjectposition != null) {
-                vec3d1 = Vec3D.create(movingobjectposition.pos.a, movingobjectposition.pos.b, movingobjectposition.pos.c);
+                vec3d1 = Vec3D.a().create(movingobjectposition.pos.a, movingobjectposition.pos.b, movingobjectposition.pos.c);
             }
 
             Entity entity = null;
             List list = this.world.getEntities(this, this.boundingBox.a(this.motX, this.motY, this.motZ).grow(1.0D, 1.0D, 1.0D));
             double d0 = 0.0D;
+            Iterator iterator = list.iterator();
 
-            int k;
             float f1;
 
-            for (k = 0; k < list.size(); ++k) {
-                Entity entity1 = (Entity) list.get(k);
+            while (iterator.hasNext()) {
+                Entity entity1 = (Entity) iterator.next();
 
-                if (entity1.o_() && (entity1 != this.shooter || this.l >= 5)) {
+                if (entity1.L() && (entity1 != this.shooter || this.an >= 5)) {
                     f1 = 0.3F;
                     AxisAlignedBB axisalignedbb1 = entity1.boundingBox.grow((double) f1, (double) f1, (double) f1);
                     MovingObjectPosition movingobjectposition1 = axisalignedbb1.a(vec3d, vec3d1);
@@ -196,9 +204,9 @@ public class EntityArrow extends Entity {
                 // CraftBukkit end
                 if (movingobjectposition.entity != null) {
                     f2 = MathHelper.sqrt(this.motX * this.motX + this.motY * this.motY + this.motZ * this.motZ);
-                    int l = (int) Math.ceil((double) f2 * this.damage);
+                    int l = MathHelper.f((double) f2 * this.damage);
 
-                    if (this.d) {
+                    if (this.g()) {
                         l += this.random.nextInt(l / 2 + 2);
                     }
 
@@ -222,14 +230,14 @@ public class EntityArrow extends Entity {
                         // CraftBukkit end
                     }
 
-                    //if (movingobjectposition.entity.damageEntity(damagesource, l)) { // CraftBukkit
+                    // if (movingobjectposition.entity.damageEntity(damagesource, l)) { // CraftBukkit - moved up
                         if (movingobjectposition.entity instanceof EntityLiving) {
-                            ++((EntityLiving) movingobjectposition.entity).aI;
-                            if (this.n > 0) {
+                            ++((EntityLiving) movingobjectposition.entity).bd;
+                            if (this.ap > 0) {
                                 float f3 = MathHelper.sqrt(this.motX * this.motX + this.motZ * this.motZ);
 
                                 if (f3 > 0.0F) {
-                                    movingobjectposition.entity.b_(this.motX * (double) this.n * 0.6000000238418579D / (double) f3, 0.1D, this.motZ * (double) this.n * 0.6000000238418579D / (double) f3);
+                                    movingobjectposition.entity.g(this.motX * (double) this.ap * 0.6000000238418579D / (double) f3, 0.1D, this.motZ * (double) this.ap * 0.6000000238418579D / (double) f3);
                                 }
                             }
                         }
@@ -242,14 +250,14 @@ public class EntityArrow extends Entity {
                         this.motZ *= -0.10000000149011612D;
                         this.yaw += 180.0F;
                         this.lastYaw += 180.0F;
-                        this.l = 0;
+                        this.an = 0;
                     }
                 } else {
-                    this.e = movingobjectposition.b;
-                    this.f = movingobjectposition.c;
-                    this.g = movingobjectposition.d;
-                    this.h = this.world.getTypeId(this.e, this.f, this.g);
-                    this.i = this.world.getData(this.e, this.f, this.g);
+                    this.d = movingobjectposition.b;
+                    this.e = movingobjectposition.c;
+                    this.f = movingobjectposition.d;
+                    this.g = this.world.getTypeId(this.d, this.e, this.f);
+                    this.h = this.world.getData(this.d, this.e, this.f);
                     this.motX = (double) ((float) (movingobjectposition.pos.a - this.locX));
                     this.motY = (double) ((float) (movingobjectposition.pos.b - this.locY));
                     this.motZ = (double) ((float) (movingobjectposition.pos.c - this.locZ));
@@ -260,13 +268,13 @@ public class EntityArrow extends Entity {
                     this.world.makeSound(this, "random.bowhit", 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
                     this.inGround = true;
                     this.shake = 7;
-                    this.d = false;
+                    this.d(false);
                 }
             }
 
-            if (this.d) {
-                for (k = 0; k < 4; ++k) {
-                    this.world.a("crit", this.locX + this.motX * (double) k / 4.0D, this.locY + this.motY * (double) k / 4.0D, this.locZ + this.motZ * (double) k / 4.0D, -this.motX, -this.motY + 0.2D, -this.motZ);
+            if (this.g()) {
+                for (int i1 = 0; i1 < 4; ++i1) {
+                    this.world.a("crit", this.locX + this.motX * (double) i1 / 4.0D, this.locY + this.motY * (double) i1 / 4.0D, this.locZ + this.motZ * (double) i1 / 4.0D, -this.motX, -this.motY + 0.2D, -this.motZ);
                 }
             }
 
@@ -297,8 +305,8 @@ public class EntityArrow extends Entity {
             float f4 = 0.99F;
 
             f1 = 0.05F;
-            if (this.aU()) {
-                for (int i1 = 0; i1 < 4; ++i1) {
+            if (this.H()) {
+                for (int j1 = 0; j1 < 4; ++j1) {
                     float f5 = 0.25F;
 
                     this.world.a("bubble", this.locX - this.motX * (double) f5, this.locY - this.motY * (double) f5, this.locZ - this.motZ * (double) f5, this.motX, this.motY, this.motZ);
@@ -312,40 +320,46 @@ public class EntityArrow extends Entity {
             this.motZ *= (double) f4;
             this.motY -= (double) f1;
             this.setPosition(this.locX, this.locY, this.locZ);
+            this.D();
         }
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.setShort("xTile", (short) this.e);
-        nbttagcompound.setShort("yTile", (short) this.f);
-        nbttagcompound.setShort("zTile", (short) this.g);
-        nbttagcompound.setByte("inTile", (byte) this.h);
-        nbttagcompound.setByte("inData", (byte) this.i);
+        nbttagcompound.setShort("xTile", (short) this.d);
+        nbttagcompound.setShort("yTile", (short) this.e);
+        nbttagcompound.setShort("zTile", (short) this.f);
+        nbttagcompound.setByte("inTile", (byte) this.g);
+        nbttagcompound.setByte("inData", (byte) this.h);
         nbttagcompound.setByte("shake", (byte) this.shake);
         nbttagcompound.setByte("inGround", (byte) (this.inGround ? 1 : 0));
-        nbttagcompound.setBoolean("player", this.fromPlayer);
+        nbttagcompound.setByte("pickup", (byte) this.fromPlayer);
         nbttagcompound.setDouble("damage", this.damage);
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        this.e = nbttagcompound.getShort("xTile");
-        this.f = nbttagcompound.getShort("yTile");
-        this.g = nbttagcompound.getShort("zTile");
-        this.h = nbttagcompound.getByte("inTile") & 255;
-        this.i = nbttagcompound.getByte("inData") & 255;
+        this.d = nbttagcompound.getShort("xTile");
+        this.e = nbttagcompound.getShort("yTile");
+        this.f = nbttagcompound.getShort("zTile");
+        this.g = nbttagcompound.getByte("inTile") & 255;
+        this.h = nbttagcompound.getByte("inData") & 255;
         this.shake = nbttagcompound.getByte("shake") & 255;
         this.inGround = nbttagcompound.getByte("inGround") == 1;
-        this.fromPlayer = nbttagcompound.getBoolean("player");
         if (nbttagcompound.hasKey("damage")) {
             this.damage = nbttagcompound.getDouble("damage");
         }
+
+        if (nbttagcompound.hasKey("pickup")) {
+            this.fromPlayer = nbttagcompound.getByte("pickup");
+        } else if (nbttagcompound.hasKey("player")) {
+            this.fromPlayer = nbttagcompound.getBoolean("player") ? 1 : 0;
+        }
     }
 
-    public void a_(EntityHuman entityhuman) {
-        if (!this.world.isStatic) {
+    public void b_(EntityHuman entityhuman) {
+        if (!this.world.isStatic && this.inGround && this.shake <= 0) {
             // CraftBukkit start
             ItemStack itemstack = new ItemStack(Item.ARROW);
-            if (this.inGround && this.fromPlayer && this.shake <= 0 && entityhuman.inventory.canHold(itemstack) > 0) {
+            if (this.inGround && this.fromPlayer == 1 && this.shake <= 0 && entityhuman.inventory.canHold(itemstack) > 0) {
                 EntityItem item = new EntityItem(this.world, this.locX, this.locY, this.locZ, itemstack);
 
                 PlayerPickupItemEvent event = new PlayerPickupItemEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), new org.bukkit.craftbukkit.entity.CraftItem(this.world.getServer(), this, item), 0);
@@ -357,7 +371,13 @@ public class EntityArrow extends Entity {
             }
             // CraftBukkit end
 
-            if (this.inGround && this.fromPlayer && this.shake <= 0 && entityhuman.inventory.pickup(new ItemStack(Item.ARROW, 1))) {
+            boolean flag = this.fromPlayer == 1 || this.fromPlayer == 2 && entityhuman.abilities.canInstantlyBuild;
+
+            if (this.fromPlayer == 1 && !entityhuman.inventory.pickup(new ItemStack(Item.ARROW, 1))) {
+                flag = false;
+            }
+
+            if (flag) {
                 this.world.makeSound(this, "random.pop", 0.2F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
                 entityhuman.receive(this, 1);
                 this.die();
@@ -365,19 +385,35 @@ public class EntityArrow extends Entity {
         }
     }
 
-    public void a(double d0) {
+    public void b(double d0) {
         this.damage = d0;
     }
 
-    public double k() {
+    public double d() {
         return this.damage;
     }
 
-    public void b(int i) {
-        this.n = i;
+    public void a(int i) {
+        this.ap = i;
     }
 
-    public boolean k_() {
+    public boolean an() {
         return false;
+    }
+
+    public void d(boolean flag) {
+        byte b0 = this.datawatcher.getByte(16);
+
+        if (flag) {
+            this.datawatcher.watch(16, Byte.valueOf((byte) (b0 | 1)));
+        } else {
+            this.datawatcher.watch(16, Byte.valueOf((byte) (b0 & -2)));
+        }
+    }
+
+    public boolean g() {
+        byte b0 = this.datawatcher.getByte(16);
+
+        return (b0 & 1) != 0;
     }
 }

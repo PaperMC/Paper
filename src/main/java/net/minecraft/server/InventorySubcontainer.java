@@ -1,50 +1,16 @@
 package net.minecraft.server;
 
+import java.util.Iterator;
 import java.util.List;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.entity.CraftHumanEntity;
-import org.bukkit.entity.HumanEntity;
-// CraftBukkit end
-
-public class ContainerEnchantTableSubcontainer implements IInventory {
+public abstract class InventorySubcontainer implements IInventory { // CraftBukkit - abstract
 
     private String a;
     private int b;
-    private ItemStack[] items;
+    protected ItemStack[] items; // CraftBukkit - protected
     private List d;
 
-    // CraftBukkit start
-    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
-    public org.bukkit.entity.Player player;
-    private int maxStack = MAX_STACK;
-
-    public ItemStack[] getContents() {
-        return this.items;
-    }
-
-    public void onOpen(CraftHumanEntity who) {
-        transaction.add(who);
-    }
-
-    public void onClose(CraftHumanEntity who) {
-        transaction.remove(who);
-    }
-
-    public List<HumanEntity> getViewers() {
-        return transaction;
-    }
-
-    public org.bukkit.inventory.InventoryHolder getOwner() {
-        return this.player;
-    }
-
-    public void setMaxStackSize(int size) {
-        maxStack = size;
-    }
-    // CraftBukkit end
-
-    public ContainerEnchantTableSubcontainer(String s, int i) {
+    public InventorySubcontainer(String s, int i) {
         this.a = s;
         this.b = i;
         this.items = new ItemStack[i];
@@ -106,13 +72,17 @@ public class ContainerEnchantTableSubcontainer implements IInventory {
     }
 
     public int getMaxStackSize() {
-        return maxStack; // CraftBukkit
+        return 64;
     }
 
     public void update() {
         if (this.d != null) {
-            for (int i = 0; i < this.d.size(); ++i) {
-                ((IInventoryListener) this.d.get(i)).a(this);
+            Iterator iterator = this.d.iterator();
+
+            while (iterator.hasNext()) {
+                IInventoryListener iinventorylistener = (IInventoryListener) iterator.next();
+
+                iinventorylistener.a(this);
             }
         }
     }
@@ -121,7 +91,7 @@ public class ContainerEnchantTableSubcontainer implements IInventory {
         return true;
     }
 
-    public void f() {}
+    public void startOpen() {}
 
-    public void g() {}
+    public void f() {}
 }

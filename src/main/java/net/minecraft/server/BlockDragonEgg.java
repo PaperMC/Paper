@@ -11,22 +11,22 @@ public class BlockDragonEgg extends Block {
     }
 
     public void onPlace(World world, int i, int j, int k) {
-        world.c(i, j, k, this.id, this.d());
+        world.a(i, j, k, this.id, this.p_());
     }
 
     public void doPhysics(World world, int i, int j, int k, int l) {
-        world.c(i, j, k, this.id, this.d());
+        world.a(i, j, k, this.id, this.p_());
     }
 
-    public void a(World world, int i, int j, int k, Random random) {
-        this.g(world, i, j, k);
+    public void b(World world, int i, int j, int k, Random random) {
+        this.l(world, i, j, k);
     }
 
-    private void g(World world, int i, int j, int k) {
+    private void l(World world, int i, int j, int k) {
         if (BlockSand.canFall(world, i, j - 1, k) && j >= 0) {
             byte b0 = 32;
 
-            if (!BlockSand.instaFall && world.a(i - b0, j - b0, k - b0, i + b0, j + b0, k + b0)) {
+            if (!BlockSand.instaFall && world.c(i - b0, j - b0, k - b0, i + b0, j + b0, k + b0)) {
                 // CraftBukkit - added data
                 EntityFallingBlock entityfallingblock = new EntityFallingBlock(world, (double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), this.id, world.getData(i, j, k));
 
@@ -45,16 +45,16 @@ public class BlockDragonEgg extends Block {
         }
     }
 
-    public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman) {
-        this.h(world, i, j, k);
+    public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman, int l, float f, float f1, float f2) {
+        this.n(world, i, j, k);
         return true;
     }
 
     public void attack(World world, int i, int j, int k, EntityHuman entityhuman) {
-        this.h(world, i, j, k);
+        this.n(world, i, j, k);
     }
 
-    private void h(World world, int i, int j, int k) {
+    private void n(World world, int i, int j, int k) {
         if (world.getTypeId(i, j, k) == this.id) {
             if (!world.isStatic) {
                 for (int l = 0; l < 1000; ++l) {
@@ -72,6 +72,7 @@ public class BlockDragonEgg extends Block {
                         if (event.isCancelled()) {
                             return;
                         }
+
                         i1 = event.getToBlock().getX();
                         j1 = event.getToBlock().getY();
                         k1 = event.getToBlock().getZ();
@@ -100,23 +101,19 @@ public class BlockDragonEgg extends Block {
         }
     }
 
-    public int d() {
+    public int p_() {
         return 3;
     }
 
-    public boolean canPlace(World world, int i, int j, int k) {
-        return super.canPlace(world, i, j, k);
-    }
-
-    public boolean a() {
+    public boolean d() {
         return false;
     }
 
-    public boolean b() {
+    public boolean c() {
         return false;
     }
 
-    public int c() {
+    public int b() {
         return 27;
     }
 }

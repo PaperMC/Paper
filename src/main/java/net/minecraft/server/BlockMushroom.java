@@ -19,10 +19,10 @@ public class BlockMushroom extends BlockFlower {
         float f = 0.2F;
 
         this.a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, f * 2.0F, 0.5F + f);
-        this.a(true);
+        this.b(true);
     }
 
-    public void a(World world, int i, int j, int k, Random random) {
+    public void b(World world, int i, int j, int k, Random random) {
         if (random.nextInt(25) == 0) {
             byte b0 = 4;
             int l = 5;
@@ -49,7 +49,7 @@ public class BlockMushroom extends BlockFlower {
             k1 = k + random.nextInt(3) - 1;
 
             for (int l1 = 0; l1 < 4; ++l1) {
-                if (world.isEmpty(i1, j1, k1) && this.f(world, i1, j1, k1)) {
+                if (world.isEmpty(i1, j1, k1) && this.d(world, i1, j1, k1)) {
                     i = i1;
                     j = j1;
                     k = k1;
@@ -60,7 +60,7 @@ public class BlockMushroom extends BlockFlower {
                 k1 = k + random.nextInt(3) - 1;
             }
 
-            if (world.isEmpty(i1, j1, k1) && this.f(world, i1, j1, k1)) {
+            if (world.isEmpty(i1, j1, k1) && this.d(world, i1, j1, k1)) {
                 // CraftBukkit start
                 org.bukkit.World bworld = world.getWorld();
                 BlockState blockState = bworld.getBlockAt(i1, j1, k1).getState();
@@ -78,18 +78,18 @@ public class BlockMushroom extends BlockFlower {
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
-        return super.canPlace(world, i, j, k) && this.f(world, i, j, k);
+        return super.canPlace(world, i, j, k) && this.d(world, i, j, k);
     }
 
-    protected boolean d(int i) {
+    protected boolean d_(int i) {
         return Block.n[i];
     }
 
-    public boolean f(World world, int i, int j, int k) {
+    public boolean d(World world, int i, int j, int k) {
         if (j >= 0 && j < 256) {
             int l = world.getTypeId(i, j - 1, k);
 
-            return l == Block.MYCEL.id || world.m(i, j, k) < 13 && this.d(l);
+            return l == Block.MYCEL.id || world.k(i, j, k) < 13 && this.d_(l);
         } else {
             return false;
         }
@@ -113,6 +113,7 @@ public class BlockMushroom extends BlockFlower {
             event = new StructureGrowEvent(location, TreeType.RED_MUSHROOM, bonemeal, player, new ArrayList<BlockState>());
             worldgenhugemushroom = new WorldGenHugeMushroom(1);
         }
+
         if (worldgenhugemushroom != null && event != null) {
             grown = worldgenhugemushroom.grow((org.bukkit.BlockChangeDelegate)world, random, i, j, k, event, itemstack, world.getWorld());
             if (event.isFromBonemeal() && itemstack != null) {

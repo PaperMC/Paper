@@ -13,7 +13,7 @@ public class TileEntityPiston extends TileEntity {
     private boolean e;
     private float f;
     private float g;
-    private static List h = new ArrayList();
+    private List h = new ArrayList();
 
     public TileEntityPiston() {}
 
@@ -25,19 +25,19 @@ public class TileEntityPiston extends TileEntity {
         this.e = flag1;
     }
 
-    public int c() {
+    public int a() {
         return this.a;
     }
 
-    public int k() {
+    public int n() {
         return this.b;
     }
 
-    public boolean e() {
+    public boolean b() {
         return this.d;
     }
 
-    public int f() {
+    public int c() {
         return this.c;
     }
 
@@ -50,10 +50,10 @@ public class TileEntityPiston extends TileEntity {
     }
 
     private void a(float f, float f1) {
-        if (!this.d) {
-            --f;
-        } else {
+        if (this.d) {
             f = 1.0F - f;
+        } else {
+            --f;
         }
 
         AxisAlignedBB axisalignedbb = Block.PISTON_MOVING.b(this.world, this.x, this.y, this.z, this.a, f, this.c);
@@ -62,8 +62,8 @@ public class TileEntityPiston extends TileEntity {
             List list = this.world.getEntities((Entity) null, axisalignedbb);
 
             if (!list.isEmpty()) {
-                h.addAll(list);
-                Iterator iterator = h.iterator();
+                this.h.addAll(list);
+                Iterator iterator = this.h.iterator();
 
                 while (iterator.hasNext()) {
                     Entity entity = (Entity) iterator.next();
@@ -71,12 +71,12 @@ public class TileEntityPiston extends TileEntity {
                     entity.move((double) (f1 * (float) Facing.b[this.c]), (double) (f1 * (float) Facing.c[this.c]), (double) (f1 * (float) Facing.d[this.c]));
                 }
 
-                h.clear();
+                this.h.clear();
             }
         }
     }
 
-    public void g() {
+    public void i() {
         if (this.g < 1.0F && this.world != null) {
             this.g = this.f = 1.0F;
             this.world.q(this.x, this.y, this.z);
@@ -87,7 +87,7 @@ public class TileEntityPiston extends TileEntity {
         }
     }
 
-    public void q_() {
+    public void g() {
         if (this.world == null) return; // CraftBukkit
 
         this.g = this.f;
