@@ -2,7 +2,6 @@ package org.bukkit.command.defaults;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 
 public class PardonIpCommand extends VanillaCommand {
@@ -21,8 +20,12 @@ public class PardonIpCommand extends VanillaCommand {
             return false;
         }
 
-        Bukkit.unbanIP(args[0]);
-        Command.broadcastCommandMessage(sender, "Pardoning ip " + args[0]);
+        if (BanIpCommand.ipValidity.matcher(args[0]).matches()) {
+            Bukkit.unbanIP(args[0]);
+            sender.sendMessage("Pardoned ip " + args[0]);
+        } else {
+            sender.sendMessage("Invalid ip");
+        }
 
         return true;
     }

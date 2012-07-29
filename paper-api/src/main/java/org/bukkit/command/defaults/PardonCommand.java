@@ -2,7 +2,6 @@ package org.bukkit.command.defaults;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 
 public class PardonCommand extends VanillaCommand {
@@ -22,8 +21,7 @@ public class PardonCommand extends VanillaCommand {
         }
 
         Bukkit.getOfflinePlayer(args[0]).setBanned(false);
-        Command.broadcastCommandMessage(sender, "Pardoning " + args[0]);
-
+        sender.sendMessage("Pardoned " + args[0]);
         return true;
     }
 

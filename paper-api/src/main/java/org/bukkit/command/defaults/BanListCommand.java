@@ -1,7 +1,7 @@
 package org.bukkit.command.defaults;
 
+import java.util.List;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 
@@ -9,7 +9,7 @@ public class BanListCommand extends VanillaCommand {
     public BanListCommand() {
         super("banlist");
         this.description = "View all players banned from this server";
-        this.usageMessage = "/banlist";
+        this.usageMessage = "/banlist [ips|players]";
         this.setPermission("bukkit.command.ban.list");
     }
 
@@ -17,17 +17,29 @@ public class BanListCommand extends VanillaCommand {
     public boolean execute(CommandSender sender, String currentAlias, String[] args) {
         if (!testPermission(sender)) return true;
 
-        StringBuilder message = new StringBuilder().append(ChatColor.GRAY).append("Ban list: ");
+        // TODO: ips support
+        StringBuilder message = new StringBuilder();
+        OfflinePlayer[] banlist = Bukkit.getServer().getBannedPlayers().toArray(new OfflinePlayer[0]);
 
-        int count = 0;
-        for (OfflinePlayer p : Bukkit.getServer().getBannedPlayers()) {
-            if (count++ > 0) {
-                message.append(", ");
+        for (int x = 0; x < banlist.length; x++) {
+            if (x != 0) {
+                if (x == banlist.length - 1) {
+                    message.append(" and ");
+                } else {
+                    message.append(", ");
+                }
             }
-            message.append(p.getName());
+            message.append(banlist[x].getName());
         }
+
+        sender.sendMessage("There are " + banlist.length + " total banned players:");
         sender.sendMessage(message.toString());
         return true;
+    }
+
+    @Override
+    public List<String> tabComplete(CommandSender sender, String[] args) {
+        return args.length >= 1 ? null : EMPTY_LIST;
     }
 
     @Override

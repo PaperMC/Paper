@@ -211,9 +211,9 @@ public enum Material {
     GRILLED_PORK(320),
     PAINTING(321),
     GOLDEN_APPLE(322),
-    SIGN(323, 1),
+    SIGN(323, 16),
     WOOD_DOOR(324, 1),
-    BUCKET(325, 1),
+    BUCKET(325, 16),
     WATER_BUCKET(326, 1),
     LAVA_BUCKET(327, 1),
     MINECART(328, 1),
@@ -290,7 +290,23 @@ public enum Material {
     RECORD_8(2263, 1),
     RECORD_9(2264, 1),
     RECORD_10(2265, 1),
-    RECORD_11(2266, 1);
+    RECORD_11(2266, 1),
+    WOOD_DOUBLE_STEP(125, Step.class),
+    WOOD_STEP(126, Step.class),
+    COCOA(127),
+    SANDSTONE_STAIRS(128, Stairs.class),
+    EMERALD_ORE(129),
+    ENDER_CHEST(130),
+    TRIPWIRE_HOOK(131, Button.class),
+    TRIPWIRE(132),
+    EMERALD_BLOCK(133),
+    SPRUCE_WOOD_STAIRS(134),
+    BIRCH_WOOD_STAIRS(135),
+    JUNGLE_WOOD_STAIRS(136),
+    BOOK_AND_QUILL(386, 1),
+    WRITTEN_BOOK(387, 1),
+    EMERALD(388, 64);
+    
 
     private final int id;
     private final Class<? extends MaterialData> data;

@@ -17,12 +17,12 @@ public class SaveOffCommand extends VanillaCommand {
     public boolean execute(CommandSender sender, String currentAlias, String[] args) {
         if (!testPermission(sender)) return true;
 
-        Command.broadcastCommandMessage(sender, "Disabling level saving..");
-
         for (World world : Bukkit.getWorlds()) {
             world.setAutoSave(false);
         }
 
+
+        Command.broadcastCommandMessage(sender, "Disabled level saving..");
         return true;
     }
 

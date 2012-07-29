@@ -39,7 +39,16 @@ public enum InventoryType {
      * The creative mode inventory, with only 9 QUICKBAR slots and nothing else. (The actual
      * creative interface with the items is client-side and cannot be altered by the server.)
      */
-    CREATIVE(9,"Creative");
+    CREATIVE(9,"Creative"),
+    /**
+     * The merchant inventory, with 2 TRADE-IN slots, and 1 RESULT slot.
+     */
+    MERCHANT(3,"Villager"),
+    /**
+     * The ender chest inventory, with 27 slots.
+     */
+    ENDER_CHEST(27,"Ender Chest");
+
     private final int size;
     private final String title;
 

@@ -11,14 +11,19 @@ import com.google.common.collect.Maps;
  */
 public enum GameMode {
     /**
-     * Creative mode may fly, build instantly, become invulnerable and create free items
+     * Creative mode may fly, build instantly, become invulnerable and create free items.
      */
     CREATIVE(1),
 
     /**
      * Survival mode is the "normal" gameplay type, with no special features.
      */
-    SURVIVAL(0);
+    SURVIVAL(0),
+
+    /**
+     * Adventure mode cannot break blocks, use chat, use buckets, etc.
+     */
+    ADVENTURE(2);
 
     private final int value;
     private final static Map<Integer, GameMode> BY_ID = Maps.newHashMap();

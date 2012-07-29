@@ -39,6 +39,8 @@ public class SimpleCommandMap implements CommandMap {
         fallbackCommands.add(new ExpCommand());
         fallbackCommands.add(new ToggleDownfallCommand());
         fallbackCommands.add(new BanListCommand());
+        fallbackCommands.add(new DefaultGameModeCommand());
+        fallbackCommands.add(new SeedCommand());
     }
 
     public SimpleCommandMap(final Server server) {
@@ -139,7 +141,7 @@ public class SimpleCommandMap implements CommandMap {
 
         return null;
     }
-    
+
     public Set<VanillaCommand> getFallbackCommands() {
         return Collections.unmodifiableSet(fallbackCommands);
     }

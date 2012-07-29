@@ -3,7 +3,6 @@ package org.bukkit.command.defaults;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -19,7 +18,7 @@ public class GiveCommand extends VanillaCommand {
     @Override
     public boolean execute(CommandSender sender, String currentAlias, String[] args) {
         if (!testPermission(sender)) return true;
-        if ((args.length < 2) || (args.length > 4)) {
+        if ((args.length < 2)) {
             sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
             return false;
         }
@@ -30,18 +29,12 @@ public class GiveCommand extends VanillaCommand {
             Material material = Material.matchMaterial(args[1]);
 
             if (material != null) {
-                Command.broadcastCommandMessage(sender, "Giving " + player.getName() + " some " + material.getId() + " (" + material + ")");
-
                 int amount = 1;
                 short data = 0;
 
                 if (args.length >= 3) {
-                    try {
-                        amount = Integer.parseInt(args[2]);
-                    } catch (NumberFormatException ex) {}
+                    amount = this.getInteger(sender, args[2], 1, 64);
 
-                    if (amount < 1) amount = 1;
-                    if (amount > 64) amount = 64;
                     if (args.length >= 4) {
                         try {
                             data = Short.parseShort(args[3]);
@@ -50,6 +43,8 @@ public class GiveCommand extends VanillaCommand {
                 }
 
                 player.getInventory().addItem(new ItemStack(material, amount, data));
+
+                sender.sendMessage("Gave " + player.getName() + " some " + material.getId() + " (" + material + ")");
             } else {
                 sender.sendMessage("There's no item called " + args[1]);
             }

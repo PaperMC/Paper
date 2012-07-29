@@ -4,6 +4,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.entity.Player;
 
 public class SayCommand extends VanillaCommand {
     public SayCommand() {
@@ -30,7 +31,7 @@ public class SayCommand extends VanillaCommand {
             }
         }
 
-        if (!(sender instanceof ConsoleCommandSender)) {
+        if (sender instanceof Player) {
             Bukkit.getLogger().info("[" + sender.getName() + "] " + message);
         }
 

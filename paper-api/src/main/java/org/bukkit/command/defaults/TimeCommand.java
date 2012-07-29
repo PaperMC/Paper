@@ -16,43 +16,49 @@ public class TimeCommand extends VanillaCommand {
 
     @Override
     public boolean execute(CommandSender sender, String currentAlias, String[] args) {
-        if (args.length != 2) {
+        if (args.length < 2) {
             sender.sendMessage(ChatColor.RED + "Incorrect usage. Correct usage:\n" + usageMessage);
             return false;
         }
 
-        int value = 0;
+        int value;
 
-        try {
-            value = Integer.parseInt(args[1]);
-        } catch (NumberFormatException ex) {
-            sender.sendMessage("Unable to convert time value, " + args[1]);
-            return true;
-        }
-
-        if (args[0].equalsIgnoreCase("add")) {
-            if (!sender.hasPermission("bukkit.command.time.add")) {
-                sender.sendMessage(ChatColor.RED + "You don't have permission to add to the time");
-            } else {
-                for (World world : Bukkit.getWorlds()) {
-                    world.setFullTime(world.getFullTime() + value);
-                }
-
-                Command.broadcastCommandMessage(sender, "Added " + value + " to time");
-            }
-        } else if (args[0].equalsIgnoreCase("set")) {
+        if (args[0].equals("set")) {
             if (!sender.hasPermission("bukkit.command.time.set")) {
                 sender.sendMessage(ChatColor.RED + "You don't have permission to set the time");
-            } else {
-                for (World world : Bukkit.getWorlds()) {
-                    world.setTime(value);
-                }
-
-                Command.broadcastCommandMessage(sender, "Set time to " + value);
+                return true;
             }
+
+            if (args[1].equals("day")) {
+                value = 0;
+            } else if (args[1].equals("night")) {
+                value = 12500;
+            } else {
+                value = getInteger(sender, args[1], 0);
+            }
+
+            for (World world : Bukkit.getWorlds()) {
+                world.setTime(value);
+            }
+
+            Command.broadcastCommandMessage(sender, "Set time to " + value);
+            sender.sendMessage("Set time to " + value);
+        } else if (args[0].equals("add")) {
+            if (!sender.hasPermission("bukkit.command.time.add")) {
+                sender.sendMessage(ChatColor.RED + "You don't have permission to set the time");
+                return true;
+            }
+
+            value = getInteger(sender, args[1], 0);
+
+            for (World world : Bukkit.getWorlds()) {
+                world.setFullTime(world.getFullTime() + value);
+            }
+
+            Command.broadcastCommandMessage(sender, "Added " + value + " to time");
+            sender.sendMessage("Added " + value + " to time");
         } else {
-            sender.sendMessage("Unknown method, use either \"add\" or \"set\"");
-            return true;
+            sender.sendMessage("Unknown method. Usage: " + usageMessage);
         }
 
         return true;

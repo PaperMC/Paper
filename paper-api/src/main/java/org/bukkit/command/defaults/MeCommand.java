@@ -22,11 +22,10 @@ public class MeCommand extends VanillaCommand {
 
         StringBuilder message = new StringBuilder();
         message.append(sender.getName());
-        if (args.length > 0) {
-            for (String arg : args) {
-                message.append(" ");
-                message.append(arg);
-            }
+
+        for (String arg : args) {
+            message.append(" ");
+            message.append(arg);
         }
 
         Bukkit.broadcastMessage("* " + message.toString());
