@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.net.URL;
+import java.net.URLConnection;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -34,12 +35,18 @@ public class BukkitDLUpdaterService {
         return null;
     }
 
+    private String getUserAgent() {
+         return "CraftBukkit/" + BukkitDLUpdaterService.class.getPackage().getImplementationVersion() + "/" + System.getProperty("java.version");
+    }
+
     public ArtifactDetails fetchArtifact(String slug) throws UnsupportedEncodingException, IOException {
-        URL url = new URL("http", host, API_PREFIX_ARTIFACT + slug);
+        URL url = new URL("http", host, API_PREFIX_ARTIFACT + slug + "/");
         InputStreamReader reader = null;
 
         try {
-            reader = new InputStreamReader(url.openStream());
+            URLConnection connection = url.openConnection();
+            connection.setRequestProperty("User-Agent", getUserAgent());
+            reader = new InputStreamReader(connection.getInputStream());
             Gson gson = new GsonBuilder().registerTypeAdapter(Date.class, dateDeserializer).setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
             ArtifactDetails fromJson = gson.fromJson(reader, ArtifactDetails.class);
 
@@ -64,11 +71,13 @@ public class BukkitDLUpdaterService {
     }
 
     public ArtifactDetails.ChannelDetails fetchChannel(String slug) throws UnsupportedEncodingException, IOException {
-        URL url = new URL("http", host, API_PREFIX_CHANNEL + slug);
+        URL url = new URL("http", host, API_PREFIX_CHANNEL + slug + "/");
         InputStreamReader reader = null;
 
         try {
-            reader = new InputStreamReader(url.openStream());
+            URLConnection connection = url.openConnection();
+            connection.setRequestProperty("User-Agent", getUserAgent());
+            reader = new InputStreamReader(connection.getInputStream());
             Gson gson = new GsonBuilder().registerTypeAdapter(Date.class, dateDeserializer).setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
             ArtifactDetails.ChannelDetails fromJson = gson.fromJson(reader, ArtifactDetails.ChannelDetails.class);
 
