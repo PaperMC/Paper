@@ -104,45 +104,72 @@ public class BlockDispenser extends BlockContainer {
                 double d1 = (double) j + 0.5D;
                 double d2 = (double) k + (double) b1 * 0.6D + 0.5D;
                 ItemStack itemstack = tileentitydispenser.getItem(i1);
+
+                // CraftBukkit start
+                // Copy item stack, because we want it to have 1 item
+                itemstack = new ItemStack(itemstack.id, 1, itemstack.getData(), itemstack.getEnchantments());
+
+                double d3 = random.nextDouble() * 0.1D + 0.2D;
+                double motX = (double) b0 * d3;
+                double motY = 0.20000000298023224D;
+                double motZ = (double) b1 * d3;
+                motX += random.nextGaussian() * 0.007499999832361937D * 6.0D;
+                motY += random.nextGaussian() * 0.007499999832361937D * 6.0D;
+                motZ += random.nextGaussian() * 0.007499999832361937D * 6.0D;
+
+                org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
+                org.bukkit.inventory.ItemStack bukkitItem = new CraftItemStack(itemstack).clone();
+
+                BlockDispenseEvent event = new BlockDispenseEvent(block, bukkitItem, new org.bukkit.util.Vector(motX, motY, motZ));
+                world.getServer().getPluginManager().callEvent(event);
+
+                if (event.isCancelled()) {
+                    return;
+                }
+
+                itemstack = CraftItemStack.createNMSItemStack(event.getItem());
+                // CraftBukkit end
+
                 int j1 = a(tileentitydispenser, world, itemstack, random, i, j, k, b0, b1, d0, d1, d2);
 
                 if (j1 == 1) {
-                    tileentitydispenser.splitStack(i1, 1);
+                    // CraftBukkit start
+                    if (event.getItem().equals(bukkitItem)) {
+                        // Actually remove the item
+                        tileentitydispenser.splitStack(i1, 1);
+                    }
+                    // CraftBukkit end
                 } else if (j1 == 0) {
                     // CraftBukkit start
-                    double d3 = random.nextDouble() * 0.1D + 0.2D;
-                    double motX = (double) b0 * d3;
-                    double motY = 0.20000000298023224D;
-                    double motZ = (double) b1 * d3;
-                    motX += random.nextGaussian() * 0.007499999832361937D * 6.0D;
-                    motY += random.nextGaussian() * 0.007499999832361937D * 6.0D;
-                    motZ += random.nextGaussian() * 0.007499999832361937D * 6.0D;
-
-                    org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
-                    org.bukkit.inventory.ItemStack bukkitItem = new CraftItemStack(itemstack).clone();
-
-                    BlockDispenseEvent event = new BlockDispenseEvent(block, bukkitItem, new org.bukkit.util.Vector(motX, motY, motZ));
-                    world.getServer().getPluginManager().callEvent(event);
-
-                    if (event.isCancelled()) {
-                        return;
-                    }
+                    motX = event.getVelocity().getX();
+                    motY = event.getVelocity().getY();
+                    motZ = event.getVelocity().getZ();
 
                     if (event.getItem().equals(bukkitItem)) {
                         // Actually remove the item
                         tileentitydispenser.splitStack(i1, 1);
                     }
 
-                    motX = event.getVelocity().getX();
-                    motY = event.getVelocity().getY();
-                    motZ = event.getVelocity().getZ();
-
-                    itemstack = CraftItemStack.createNMSItemStack(event.getItem());
-
-                    a(world, itemstack, random, motX, motY, motZ, d0, d1, d2);
+                    EntityItem entityitem = new EntityItem(world, d0, d1 - 0.3D, d2, itemstack);
+                    entityitem.motX = event.getVelocity().getX();
+                    entityitem.motY = event.getVelocity().getY();
+                    entityitem.motZ = event.getVelocity().getZ();
+                    world.addEntity(entityitem);
                     // CraftBukkit end
 
                     world.triggerEffect(1000, i, j, k, 0);
+                // CraftBukkit start - new condition
+                } else if (j1 == 2) {
+                    ItemStack old = tileentitydispenser.getItem(i1);
+                    if (old.id == Item.BUCKET.id && old.count > 1) {
+                        old.count--;
+                        if (tileentitydispenser.a(itemstack) < 0) {
+                            a(world, itemstack, random, 6, l, i1, d0, d1, d2);
+                        }
+                    } else {
+                        tileentitydispenser.setItem(i1, itemstack);
+                    }
+                    // CraftBukkit end
                 }
 
                 world.triggerEffect(2000, i, j, k, b0 + 1 + (b1 + 1) * 3);
@@ -230,17 +257,18 @@ public class BlockDispenser extends BlockContainer {
         super.remove(world, i, j, k, l, i1);
     }
 
-    // CraftBukkit start - change of method signature!
-    private static void a(World world, ItemStack itemstack, Random random, double motX, double motY, double motZ, double d0, double d1, double d2) {
+    private static void a(World world, ItemStack itemstack, Random random, int i, int j, int k, double d0, double d1, double d2) {
         EntityItem entityitem = new EntityItem(world, d0, d1 - 0.3D, d2, itemstack);
-        // double d3 = random.nextDouble() * 0.1D + 0.2D; // Moved up
+        double d3 = random.nextDouble() * 0.1D + 0.2D;
 
-        entityitem.motX = motX;
-        entityitem.motY = motY;
-        entityitem.motZ = motZ;
+        entityitem.motX = (double) j * d3;
+        entityitem.motY = 0.20000000298023224D;
+        entityitem.motZ = (double) k * d3;
+        entityitem.motX += random.nextGaussian() * 0.007499999832361937D * (double) i;
+        entityitem.motY += random.nextGaussian() * 0.007499999832361937D * (double) i;
+        entityitem.motZ += random.nextGaussian() * 0.007499999832361937D * (double) i;
         world.addEntity(entityitem);
     }
-    // CraftBukkit end
 
     private static int a(TileEntityDispenser tileentitydispenser, World world, ItemStack itemstack, Random random, int i, int j, int k, int l, int i1, double d0, double d1, double d2) {
         float f = 1.1F;
