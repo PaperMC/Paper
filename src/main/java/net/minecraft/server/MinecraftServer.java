@@ -208,6 +208,8 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
                 world.getWorld().getPopulators().addAll(gen.getDefaultPopulators(world.getWorld()));
             }
 
+            this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldInitEvent(world.getWorld()));
+
             world.addIWorldAccess(new WorldManager(this, world));
             if (!this.H()) {
                 world.getWorldData().setGameType(this.getGamemode());
