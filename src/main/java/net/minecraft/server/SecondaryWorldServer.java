@@ -6,7 +6,7 @@ public class SecondaryWorldServer extends WorldServer {
         super(minecraftserver, idatamanager, s, i, worldsettings, methodprofiler, env, gen);
         // CraftBukkit end
         this.worldMaps = worldserver.worldMaps;
-        this.worldData = new SecondaryWorldData(worldserver.getWorldData());
+        // this.worldData = new SecondaryWorldData(worldserver.getWorldData()); // CraftBukkit - use unique worlddata
     }
 
     protected void a() {}
