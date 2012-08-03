@@ -539,7 +539,7 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
                 while (true) {
                     if (!worldserver.updateLights()) {
                         // this.methodProfiler.b(); // CraftBukkit - not in production code
-                        if (!worldserver.players.isEmpty()) {
+                        if (true || !worldserver.players.isEmpty()) { // CraftBukkit - this prevents entity cleanup, other issue on servers with no players
                             worldserver.tickEntities();
                         }
 
