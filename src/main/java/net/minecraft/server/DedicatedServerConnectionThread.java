@@ -22,7 +22,9 @@ public class DedicatedServerConnectionThread extends Thread {
     private final InetAddress g;
     private final int h;
 
-    public DedicatedServerConnectionThread(ServerConnection serverconnection, InetAddress inetaddress, int i) {
+    long connectionThrottle; // CraftBukkit
+
+    public DedicatedServerConnectionThread(ServerConnection serverconnection, InetAddress inetaddress, int i) throws IOException { // CraftBukkit - added throws
         super("Listen thread");
         this.f = serverconnection;
         this.g = inetaddress;
@@ -62,8 +64,17 @@ public class DedicatedServerConnectionThread extends Thread {
                 long i = System.currentTimeMillis();
                 HashMap hashmap = this.c;
 
+                // CraftBukkit start
+                if (((MinecraftServer) this.f.d()).server == null) {
+                    socket.close();
+                    continue;
+                }
+
+                connectionThrottle = ((MinecraftServer) this.f.d()).server.getConnectionThrottle();
+                // CraftBukkit end
+
                 synchronized (this.c) {
-                    if (this.c.containsKey(inetaddress) && !b(inetaddress) && i - ((Long) this.c.get(inetaddress)).longValue() < 4000L) {
+                    if (this.c.containsKey(inetaddress) && !b(inetaddress) && i - ((Long) this.c.get(inetaddress)).longValue() < connectionThrottle) {
                         this.c.put(inetaddress, Long.valueOf(i));
                         socket.close();
                         continue;
