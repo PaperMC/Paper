@@ -229,7 +229,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void chat(String msg) {
         if (getHandle().netServerHandler == null) return;
 
-        getHandle().netServerHandler.chat(msg);
+        getHandle().netServerHandler.chat(msg, false);
     }
 
     public boolean performCommand(String command) {

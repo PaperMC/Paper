@@ -16,12 +16,14 @@ import java.util.HashSet;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.util.LazyPlayerSet;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.SignChangeEvent;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerAnimationEvent;
 import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
@@ -801,12 +803,12 @@ public class NetServerHandler extends NetHandler {
                     return;
                 }
 
-                this.chat(s);
+                this.chat(s, packet3chat.a_());
             }
         }
     }
 
-    public boolean chat(String s) {
+    public boolean chat(String s, boolean async) {
         if (!this.player.dead) {
             if (s.length() == 0) {
                 logger.warning(this.player.name + " tried to send an empty message");
@@ -823,17 +825,26 @@ public class NetServerHandler extends NetHandler {
                 return true;
             } else {
                 Player player = this.getPlayer();
-                PlayerChatEvent event = new PlayerChatEvent(player, s);
+                AsyncPlayerChatEvent event = new AsyncPlayerChatEvent(async, player, s, new LazyPlayerSet());
                 this.server.getPluginManager().callEvent(event);
 
-                if (event.isCancelled()) {
-                    return true;
-                }
-
-                s = String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage());
-                minecraftServer.console.sendMessage(s);
-                for (Player recipient : event.getRecipients()) {
-                    recipient.sendMessage(s);
+                if (PlayerChatEvent.getHandlerList().getRegisteredListeners().length != 0) {
+                    // Evil plugins still listening to deprecated event
+                    PlayerChatEvent queueEvent = new PlayerChatEvent(player, event.getMessage(), event.getFormat(), event.getRecipients());
+                    queueEvent.setCancelled(event.isCancelled());
+                    minecraftServer.chatQueue.add(queueEvent);
+                } else {
+                    s = String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage());
+                    minecraftServer.console.sendMessage(s);
+                    if (((LazyPlayerSet) event.getRecipients()).isLazy()) {
+                        for (Object recipient : minecraftServer.getServerConfigurationManager().players) {
+                            ((EntityPlayer) recipient).sendMessage(s);
+                        }
+                    } else {
+                        for (org.bukkit.entity.Player recipient : event.getRecipients()) {
+                            recipient.sendMessage(s);
+                        }
+                    }
                 }
             }
 
@@ -851,7 +862,7 @@ public class NetServerHandler extends NetHandler {
         // CraftBukkit start
         CraftPlayer player = this.getPlayer();
 
-        PlayerCommandPreprocessEvent event = new PlayerCommandPreprocessEvent(player, s);
+        PlayerCommandPreprocessEvent event = new PlayerCommandPreprocessEvent(player, s, new LazyPlayerSet());
         this.server.getPluginManager().callEvent(event);
 
         if (event.isCancelled()) {
@@ -859,7 +870,7 @@ public class NetServerHandler extends NetHandler {
         }
 
         try {
-            if (this.server.dispatchCommand(player, event.getMessage().substring(1))) {
+            if (this.server.dispatchCommand(event.getPlayer(), event.getMessage().substring(1))) {
                 return;
             }
         } catch (org.bukkit.command.CommandException ex) {

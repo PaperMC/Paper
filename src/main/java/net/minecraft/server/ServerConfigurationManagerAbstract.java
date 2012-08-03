@@ -30,7 +30,7 @@ public abstract class ServerConfigurationManagerAbstract {
     private static final SimpleDateFormat e = new SimpleDateFormat("yyyy-MM-dd \'at\' HH:mm:ss z");
     public static final Logger a = Logger.getLogger("Minecraft");
     private final MinecraftServer server;
-    public final List players = new ArrayList();
+    public final List players = new java.util.concurrent.CopyOnWriteArrayList(); // CraftBukkit - ArrayList -> CopyOnWriteArrayList: Iterator safety
     private final BanList banByName = new BanList(new File("banned-players.txt"));
     private final BanList banByIP = new BanList(new File("banned-ips.txt"));
     private Set operators = new HashSet();
