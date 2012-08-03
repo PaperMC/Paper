@@ -9,5 +9,5 @@ public class SecondaryWorldServer extends WorldServer {
         // this.worldData = new SecondaryWorldData(worldserver.getWorldData()); // CraftBukkit - use unique worlddata
     }
 
-    protected void a() {}
+    // protected void a() {} // CraftBukkit - save world data!
 }
