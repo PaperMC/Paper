@@ -19,6 +19,7 @@ public class DefaultGameModeCommand extends VanillaCommand {
 
     @Override
     public boolean execute(CommandSender sender, String commandLabel, String[] args) {
+        if (!testPermission(sender)) return true;
         if (args.length == 0) {
             sender.sendMessage("Useage: " + usageMessage);
             return false;
