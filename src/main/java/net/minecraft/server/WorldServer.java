@@ -39,7 +39,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
     public final int dimension;
 
     public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, String s, int i, WorldSettings worldsettings, MethodProfiler methodprofiler, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
-        super(idatamanager, s, worldsettings, WorldProvider.byDimension(i), methodprofiler, gen, env);
+        super(idatamanager, s, worldsettings, WorldProvider.byDimension(env.getId()), methodprofiler, gen, env);
         this.dimension = i;
         this.pvpMode = minecraftserver.getPvP();
         // CraftBukkit end
