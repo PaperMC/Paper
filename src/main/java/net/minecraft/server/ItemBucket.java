@@ -135,18 +135,16 @@ public class ItemBucket extends Item {
                         return itemstack;
                     }
 
-                    if (this.a(world, d0, d1, d2, i, j, k) && !entityhuman.abilities.canInstantlyBuild) {
-                        // CraftBukkit start
-                        PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(entityhuman, clickedX, clickedY, clickedZ, movingobjectposition.face, itemstack);
+                    // CraftBukkit start
+                    PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(entityhuman, clickedX, clickedY, clickedZ, movingobjectposition.face, itemstack);
 
-                        if (event.isCancelled()) {
-                            return itemstack;
-                        }
-                        // CraftBukkit end
-                        // CraftBukkit TODO: look for all the stuff that disappeared here, and make sure this is still where it should be
-                        // CraftBukkit start
-                        return CraftItemStack.createNMSItemStack(event.getItemStack());
-                        // CraftBukkit end
+                    if (event.isCancelled()) {
+                        return itemstack;
+                    }
+                    // CraftBukkit end
+
+                    if (this.a(world, d0, d1, d2, i, j, k) && !entityhuman.abilities.canInstantlyBuild) {
+                        return CraftItemStack.createNMSItemStack(event.getItemStack()); // CraftBukkit
                     }
                 }
             } else if (this.a == 0 && movingobjectposition.entity instanceof EntityCow) {
