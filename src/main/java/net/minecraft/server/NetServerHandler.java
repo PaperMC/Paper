@@ -1044,6 +1044,14 @@ public class NetServerHandler extends NetHandler {
     public void a(Packet9Respawn packet9respawn) {}
 
     public void handleContainerClose(Packet101CloseWindow packet101closewindow) {
+        if (this.player.dead) return; // CraftBukkit
+
+        // CraftBukkit start - INVENTORY_CLOSE hook
+        InventoryCloseEvent event = new InventoryCloseEvent(this.player.activeContainer.getBukkitView());
+        server.getPluginManager().callEvent(event);
+        this.player.activeContainer.transferTo(this.player.defaultContainer, getPlayer());
+        // CraftBukkit end
+
         this.player.l();
     }
 
