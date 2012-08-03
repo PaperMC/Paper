@@ -87,7 +87,7 @@ public class DedicatedServerConnectionThread extends Thread {
 
                 this.a(netloginhandler);
             } catch (IOException ioexception) {
-                ioexception.printStackTrace();
+                a.warning("DSCT: " + ioexception.getMessage()); // CraftBukkit
             }
         }
 
