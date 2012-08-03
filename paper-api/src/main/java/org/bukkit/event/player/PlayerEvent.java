@@ -13,6 +13,12 @@ public abstract class PlayerEvent extends Event {
         player = who;
     }
 
+    PlayerEvent(final Player who, boolean async) {
+        super(async);
+        player = who;
+
+    }
+
     /**
      * Returns the player involved in this event
      *
