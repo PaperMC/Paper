@@ -122,6 +122,10 @@ public class EntityItem extends Entity {
                 return entityitem.a(this);
             } else if (entityitem.itemStack.count + this.itemStack.count > entityitem.itemStack.getMaxStackSize()) {
                 return false;
+            // CraftBukkit start - don't merge items with enchantments
+            } else if (entityitem.itemStack.hasEnchantments() || this.itemStack.hasEnchantments()) {
+                return false;
+                // CraftBukkit end
             } else {
                 entityitem.itemStack.count += this.itemStack.count;
                 entityitem.pickupDelay = Math.max(entityitem.pickupDelay, this.pickupDelay);
