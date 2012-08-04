@@ -810,21 +810,21 @@ public class NetServerHandler extends NetHandler {
         }
     }
 
-    public boolean chat(String s, boolean async) {
+    public void chat(String s, boolean async) {
         if (!this.player.dead) {
             if (s.length() == 0) {
                 logger.warning(this.player.name + " tried to send an empty message");
-                return false;
+                return;
             }
 
             if (getPlayer().isConversing()) {
                 getPlayer().acceptConversationInput(s);
-                return true;
+                return;
             }
 
             if (s.startsWith("/")) {
                 this.handleCommand(s);
-                return true;
+                return;
             } else {
                 Player player = this.getPlayer();
                 AsyncPlayerChatEvent event = new AsyncPlayerChatEvent(async, player, s, new LazyPlayerSet());
@@ -836,6 +836,10 @@ public class NetServerHandler extends NetHandler {
                     queueEvent.setCancelled(event.isCancelled());
                     minecraftServer.chatQueue.add(queueEvent);
                 } else {
+                    if (event.isCancelled()) {
+                        return;
+                    }
+
                     s = String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage());
                     minecraftServer.console.sendMessage(s);
                     if (((LazyPlayerSet) event.getRecipients()).isLazy()) {
@@ -856,7 +860,7 @@ public class NetServerHandler extends NetHandler {
             }
         }
 
-        return false;
+        return;
     }
     // CraftBukkit end
 
