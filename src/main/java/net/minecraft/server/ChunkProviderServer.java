@@ -23,7 +23,7 @@ public class ChunkProviderServer implements IChunkProvider {
     public Chunk emptyChunk;
     public IChunkProvider chunkProvider; // CraftBukkit
     private IChunkLoader e;
-    public boolean forceChunkLoad = true;
+    public boolean forceChunkLoad = false; // true -> false
     public LongHashtable<Chunk> chunks = new LongHashtable<Chunk>();
     public List chunkList = new ArrayList();
     public WorldServer world;
