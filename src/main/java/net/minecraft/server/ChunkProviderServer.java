@@ -23,7 +23,7 @@ public class ChunkProviderServer implements IChunkProvider {
     public Chunk emptyChunk;
     public IChunkProvider chunkProvider; // CraftBukkit
     private IChunkLoader e;
-    public boolean forceChunkLoad = false; // true -> false
+    public boolean forceChunkLoad = true;
     public LongHashtable<Chunk> chunks = new LongHashtable<Chunk>();
     public List chunkList = new ArrayList();
     public WorldServer world;
@@ -37,7 +37,7 @@ public class ChunkProviderServer implements IChunkProvider {
     }
 
     public boolean isChunkLoaded(int i, int j) {
-        return this.chunks.containsKey(i, j); // CraftBukkit
+        return !this.unloadQueue.containsKey(i, j) && this.chunks.containsKey(i, j); // CraftBukkit
     }
 
     public void queueUnload(int i, int j) {

@@ -1053,7 +1053,12 @@ public abstract class World implements IBlockAccess {
 
         for (i = 0; i < this.j.size(); ++i) {
             entity = (Entity) this.j.get(i);
-            // CraftBukkit start - fixed an NPE
+            // CraftBukkit start - fixed an NPE, don't process entities in chunks queued for unload
+            ChunkProviderServer chunkProviderServer = ((WorldServer) entity.world).chunkProviderServer;
+            if (chunkProviderServer.unloadQueue.containsKey(MathHelper.floor(entity.locX) >> 4, MathHelper.floor(entity.locZ) >> 4)) {
+                continue;
+            }
+
             if (entity == null) {
                 continue;
             }
@@ -1092,6 +1097,14 @@ public abstract class World implements IBlockAccess {
 
         for (i = 0; i < this.entityList.size(); ++i) {
             entity = (Entity) this.entityList.get(i);
+
+            // CraftBukkit start - don't tick entities in chunks queued for unload
+            ChunkProviderServer chunkProviderServer = ((WorldServer) entity.world).chunkProviderServer;
+            if (chunkProviderServer.unloadQueue.containsKey(MathHelper.floor(entity.locX) >> 4, MathHelper.floor(entity.locZ) >> 4)) {
+                continue;
+            }
+            // CraftBukkit end
+
             if (entity.vehicle != null) {
                 if (!entity.vehicle.dead && entity.vehicle.passenger == entity) {
                     continue;
@@ -1128,6 +1141,13 @@ public abstract class World implements IBlockAccess {
 
         while (iterator.hasNext()) {
             TileEntity tileentity = (TileEntity) iterator.next();
+
+            // CraftBukkit start - don't tick entities in chunks queued for unload
+            ChunkProviderServer chunkProviderServer = ((WorldServer) tileentity.world).chunkProviderServer;
+            if (chunkProviderServer.unloadQueue.containsKey(tileentity.x >> 4, tileentity.z >> 4)) {
+                continue;
+            }
+            // CraftBukkit end
 
             if (!tileentity.p() && tileentity.m() && this.isLoaded(tileentity.x, tileentity.y, tileentity.z)) {
                 tileentity.g();
@@ -1791,6 +1811,13 @@ public abstract class World implements IBlockAccess {
 
             for (int l = -b0; l <= b0; ++l) {
                 for (int i1 = -b0; i1 <= b0; ++i1) {
+                    // CraftBukkit start - don't tick chunks queued for unload
+                    ChunkProviderServer chunkProviderServer = ((WorldServer) entityhuman.world).chunkProviderServer;
+                    if (chunkProviderServer.unloadQueue.containsKey(l + j, i1 + k)) {
+                        continue;
+                    }
+                    // CraftBukkit end
+
                     this.chunkTickList.add(org.bukkit.craftbukkit.util.LongHash.toLong(l + j, i1 + k)); // CraftBukkit
                 }
             }
