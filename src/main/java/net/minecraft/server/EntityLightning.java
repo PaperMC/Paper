@@ -107,8 +107,10 @@ public class EntityLightning extends EntityWeather {
 
         if (this.lifeTicks >= 0 && !this.isEffect) { // CraftBukkit
             double d0 = 3.0D;
-            List list = this.world.getEntities(this, AxisAlignedBB.a().a(this.locX - d0, this.locY - d0, this.locZ - d0, this.locX + d0, this.locY + 6.0D + d0, this.locZ + d0));
-            Iterator iterator = list.iterator();
+            // CraftBukkit start - switch to array copy of list to avoid CMEs
+            Object[] array = this.world.getEntities(this, AxisAlignedBB.a().a(this.locX - d0, this.locY - d0, this.locZ - d0, this.locX + d0, this.locY + 6.0D + d0, this.locZ + d0)).toArray();
+            Iterator iterator = com.google.common.collect.Iterators.forArray(array);
+            // CraftBukkit end
 
             while (iterator.hasNext()) {
                 Entity entity = (Entity) iterator.next();
