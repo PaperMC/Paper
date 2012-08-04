@@ -14,6 +14,7 @@ import java.util.logging.Level;
 import java.util.HashSet;
 
 import org.bukkit.Location;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.LazyPlayerSet;
@@ -36,6 +37,7 @@ import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.event.player.PlayerToggleSprintEvent;
 import org.bukkit.event.inventory.*;
 import org.bukkit.event.inventory.InventoryType.SlotType;
+import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerToggleFlightEvent;
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.InventoryView;
@@ -1026,7 +1028,26 @@ public class NetServerHandler extends NetHandler {
     public void a(Packet205ClientCommand packet205clientcommand) {
         if (packet205clientcommand.a == 1) {
             if (this.player.viewingCredits) {
-                this.player = this.minecraftServer.getServerConfigurationManager().moveToWorld(this.player, 0, true);
+                // CraftBukkit start
+                org.bukkit.craftbukkit.PortalTravelAgent pta = new org.bukkit.craftbukkit.PortalTravelAgent();
+                Location toLocation;
+
+                if (this.player.getBukkitEntity().getBedSpawnLocation() == null) {
+                    CraftWorld cworld = (CraftWorld) this.server.getWorlds().get(0);
+                    ChunkCoordinates chunkcoordinates = cworld.getHandle().getSpawn();
+                    toLocation = new Location(cworld, chunkcoordinates.x + 0.5, chunkcoordinates.y, chunkcoordinates.z + 0.5);
+                    this.player.netServerHandler.sendPacket(new Packet70Bed(0, 0));
+                } else {
+                    toLocation = this.player.getBukkitEntity().getBedSpawnLocation();
+                    toLocation = new Location(toLocation.getWorld(), toLocation.getX() + 0.5, toLocation.getY(), toLocation.getZ() + 0.5);
+                }
+
+                PlayerPortalEvent event = new PlayerPortalEvent(this.player.getBukkitEntity(), this.player.getBukkitEntity().getLocation(), toLocation, pta, PlayerPortalEvent.TeleportCause.END_PORTAL);
+                event.useTravelAgent(false);
+
+                org.bukkit.Bukkit.getServer().getPluginManager().callEvent(event);
+                this.player = this.minecraftServer.getServerConfigurationManager().moveToWorld(this.player, 0, true, event.getTo());
+                // CraftBukkit end
             } else if (this.player.q().getWorldData().isHardcore()) {
                 if (this.minecraftServer.H() && this.player.name.equals(this.minecraftServer.G())) {
                     this.player.netServerHandler.disconnect("You have died. Game over, man, it\'s game over!");
