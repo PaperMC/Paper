@@ -47,8 +47,43 @@ public class Step extends TexturedMaterial {
         return textures;
     }
 
+    /**
+     * Test if step is inverted
+     * @return true if inverted (top half), false if normal (bottom half)
+     */
+    public boolean isInverted() {
+        return ((getData() & 0x8) != 0);
+    }
+    
+    /**
+     * Set step inverted state
+     * @param inv - true if step is inverted (top half), false if step is normal (bottom half)
+     */
+    public void setInverted(boolean inv) {
+        int dat = getData() & 0x7;
+        if (inv) {
+            dat |= 0x8;
+        }
+        setData((byte) dat);
+    }
+    
+    @Override
+    protected int getTextureIndex() {
+        return getData() & 0x7;
+    }
+
+    @Override
+    protected void setTextureIndex(int idx) {
+        setData((byte) ((getData() & 0x8) | idx));
+    }
+
     @Override
     public Step clone() {
         return (Step) super.clone();
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + (isInverted()?"inverted":"");
     }
 }

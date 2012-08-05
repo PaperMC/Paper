@@ -38,7 +38,7 @@ public abstract class TexturedMaterial extends MaterialData {
      * @return Material of this block
      */
     public Material getMaterial() {
-        int n = (int) getData();
+        int n = getTextureIndex();
         if (n > getTextures().size() - 1) {
             n = 0;
         }
@@ -54,10 +54,26 @@ public abstract class TexturedMaterial extends MaterialData {
      */
     public void setMaterial(Material material) {
         if (getTextures().contains(material)) {
-            setData((byte) getTextures().indexOf(material));
+            setTextureIndex(getTextures().indexOf(material));
         } else {
-            setData((byte) 0x0);
+            setTextureIndex(0x0);
         }
+    }
+
+    /**
+     * Get material index from data
+     * @return index of data in textures list
+     */
+    protected int getTextureIndex() {
+        return getData(); // Default to using all bits - override for other mappings
+    }
+
+    /**
+     * Set material index
+     * @param idx - index of data in textures list
+     */
+    protected void setTextureIndex(int idx) {
+        setData((byte) idx); // Defult to using all bits - override for other mappings
     }
 
     @Override
