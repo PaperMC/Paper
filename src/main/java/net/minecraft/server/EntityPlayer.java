@@ -167,7 +167,13 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             }
 
             if (!arraylist.isEmpty()) {
-                this.netServerHandler.sendPacket(new Packet56MapChunkBulk(arraylist));
+                // CraftBukkit start - don't use map chunk bulk for now TODO: fix this
+                for (Object object : arraylist) {
+                    this.netServerHandler.sendPacket(new Packet51MapChunk((Chunk) object, true, 0xffff));
+                }
+                // this.netServerHandler.sendPacket(new Packet56MapChunkBulk(arraylist));
+                // CraftBukkit end
+
                 Iterator iterator1 = arraylist1.iterator();
 
                 while (iterator1.hasNext()) {
