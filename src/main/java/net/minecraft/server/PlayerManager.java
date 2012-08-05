@@ -4,12 +4,14 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import java.util.Queue; // CraftBukkit
+
 public class PlayerManager {
 
     private final WorldServer world;
     private final List managedPlayers = new ArrayList();
     private final LongHashMap c = new LongHashMap();
-    private final List d = new ArrayList();
+    private final Queue d = new java.util.concurrent.ConcurrentLinkedQueue(); // CraftBukkit ArrayList -> ConcurrentLinkedQueue
     private final int e;
     private final int[][] f = new int[][] { { 1, 0}, { 0, 1}, { -1, 0}, { 0, -1}};
     private boolean wasNotEmpty; // CraftBukkit
@@ -36,9 +38,11 @@ public class PlayerManager {
             PlayerInstance playerinstance = (PlayerInstance) iterator.next();
 
             playerinstance.a();
+
+            iterator.remove(); // CraftBukkit - remove to insure we are the consumer
         }
 
-        this.d.clear();
+        // this.d.clear(); // CraftBukkit - removals are already covered
         if (this.managedPlayers.isEmpty()) {
             if (!wasNotEmpty) return; // CraftBukkit - only do unload when we go from non-empty to empty
             WorldProvider worldprovider = this.world.worldProvider;
@@ -231,7 +235,7 @@ public class PlayerManager {
         return playermanager.c;
     }
 
-    static List c(PlayerManager playermanager) {
+    static Queue c(PlayerManager playermanager) { // CraftBukkit List -> Queue
         return playermanager.d;
     }
 }
