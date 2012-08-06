@@ -2,6 +2,8 @@ package net.minecraft.server;
 
 import java.util.Random;
 
+import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
+
 public class BlockTripwireHook extends Block {
 
     public BlockTripwireHook(int i) {
@@ -152,6 +154,17 @@ public class BlockTripwireHook extends Block {
             this.e(world, l2, j, k3, j3);
             this.a(world, l2, j, k3, flag3, flag4, flag1, flag2);
         }
+
+        // CraftBukkit start
+        org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
+
+        BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, 1, 0);
+        world.getServer().getPluginManager().callEvent(eventRedstone);
+
+        if (eventRedstone.getNewCurrent() > 0) {
+            return;
+        }
+        // CraftBukkit end
 
         this.a(world, i, j, k, flag3, flag4, flag1, flag2);
         if (l > 0) {
