@@ -106,8 +106,9 @@ public class BlockDispenser extends BlockContainer {
                 ItemStack itemstack = tileentitydispenser.getItem(i1);
 
                 // CraftBukkit start
-                // Copy item stack, because we want it to have 1 item
-                itemstack = new ItemStack(itemstack.id, 1, itemstack.getData(), itemstack.getEnchantments());
+                // Clone item stack, then set the count to 1
+                itemstack = itemstack.cloneItemStack();
+                itemstack.count = 1;
 
                 double d3 = random.nextDouble() * 0.1D + 0.2D;
                 double motX = (double) b0 * d3;
