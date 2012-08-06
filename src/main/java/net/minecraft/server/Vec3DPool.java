@@ -18,6 +18,7 @@ public class Vec3DPool {
     }
 
     public Vec3D create(double d0, double d1, double d2) {
+        if (this.f == 0) return new Vec3D(d0, d1, d2); // CraftBukkit - don't pool objects indefinitely if thread doesn't adhere to contract
         Vec3D vec3d;
 
         if (this.d >= this.c.size()) {
@@ -37,16 +38,19 @@ public class Vec3DPool {
             this.e = this.d;
         }
 
-        if (this.f++ == this.a) {
-            int i = Math.max(this.e, this.c.size() - this.b);
-
-            while (this.c.size() > i) {
-                this.c.remove(i);
+        // CraftBukkit start - intelligent cache
+        if ((this.f++ & 0xff) == 0) {
+            int newSize = this.c.size() - (this.c.size() >> 3);
+            if (newSize > this.e) { // newSize will be 87.5%, but if we were not in that range, we clear some of the cache
+                for (int i = this.c.size() - 1; i > newSize; i--) { // Work down from size() to prevent insane array copies
+                    this.c.remove(i);
+                }
             }
 
             this.e = 0;
-            this.f = 0;
+            // this.f = 0; // We do not reset to zero; it doubles for a flag
         }
+        // CraftBukkit end
 
         this.d = 0;
     }
