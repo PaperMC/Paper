@@ -62,8 +62,6 @@ public class GameModeCommand extends VanillaCommand {
                     } else {
                         Command.broadcastCommandMessage(sender, "Set " + player.getName() + "'s game mode to" + mode.toString() + " mode", false);
                     }
-
-                    player.sendMessage("Your game mode has been changed");
                 }
             } else {
                 sender.sendMessage(player.getName() + " already has game mode " + mode.getValue());

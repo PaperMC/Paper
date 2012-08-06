@@ -42,7 +42,6 @@ public class TimeCommand extends VanillaCommand {
             }
 
             Command.broadcastCommandMessage(sender, "Set time to " + value);
-            sender.sendMessage("Set time to " + value);
         } else if (args[0].equals("add")) {
             if (!sender.hasPermission("bukkit.command.time.add")) {
                 sender.sendMessage(ChatColor.RED + "You don't have permission to set the time");
@@ -56,7 +55,6 @@ public class TimeCommand extends VanillaCommand {
             }
 
             Command.broadcastCommandMessage(sender, "Added " + value + " to time");
-            sender.sendMessage("Added " + value + " to time");
         } else {
             sender.sendMessage("Unknown method. Usage: " + usageMessage);
         }
