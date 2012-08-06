@@ -26,11 +26,11 @@ public abstract class VanillaCommand extends Command {
 
     protected int getInteger(CommandSender sender, String value, int min, int max) {
         int i = min;
+
         try {
             i = Integer.valueOf(value);
-        } catch (NumberFormatException ex) {
-            sender.sendMessage("Invalid exp count: " + value);
-        }
+        } catch (NumberFormatException ex) {}
+
         if (i < min) {
             i = min;
         } else if (i > max) {
