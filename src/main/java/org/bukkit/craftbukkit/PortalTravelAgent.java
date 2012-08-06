@@ -24,7 +24,10 @@ public class PortalTravelAgent implements TravelAgent {
 
     public Location findOrCreate(Location location) {
         WorldServer worldServer = ((CraftWorld) location.getWorld()).getHandle();
-        worldServer.chunkProviderServer.forceChunkLoad = true;
+        boolean wasEnabled = worldServer.chunkProviderServer.forceChunkLoad;
+        if (!wasEnabled) {
+            worldServer.chunkProviderServer.forceChunkLoad = true;
+        }
         // Attempt to find a Portal.
         Location resultLocation = this.findPortal(location);
         // If a Portal cannot be found we will attempt to create one.
@@ -38,7 +41,10 @@ public class PortalTravelAgent implements TravelAgent {
                 resultLocation = location;
             }
         }
-        worldServer.chunkProviderServer.forceChunkLoad = false;
+
+        if (!wasEnabled) {
+            worldServer.chunkProviderServer.forceChunkLoad = false;
+        }
         // Return our resulting portal location.
         return resultLocation;
     }
