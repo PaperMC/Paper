@@ -6,7 +6,7 @@ import org.bukkit.block.BlockFace;
 /**
  * Represents an ender chest
  */
-public class EnderChest extends FurnaceAndDispenser {
+public class EnderChest extends DirectionalContainer {
 
     public EnderChest() {
         super(Material.ENDER_CHEST);
