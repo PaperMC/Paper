@@ -363,12 +363,6 @@ public class PlayerInventory implements IInventory {
     }
 
     public boolean b(Block block) {
-        // CraftBukkit start - fixed NPE
-        if (block == null) {
-            return false;
-        }
-        // CraftBukkit end
-
         if (block.material.isAlwaysDestroyable()) {
             return true;
         } else {

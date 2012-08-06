@@ -271,6 +271,7 @@ public class ItemInWorldManager {
             return false;
         } else {
             int l = this.world.getTypeId(i, j, k);
+            if (Block.byId[l] == null) return false; // CraftBukkit - a plugin set block to air without cancelling
             int i1 = this.world.getData(i, j, k);
 
             this.world.a(this.player, 2001, i, j, k, l + (this.world.getData(i, j, k) << 12));
