@@ -950,14 +950,6 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
     }
 
     public void a(boolean flag, boolean flag1, boolean flag2) {
-        if (this.fauxSleeping && !this.sleeping) return; // CraftBukkit - Can't leave bed if not in one!
-
-        // CraftBukkit start - moved check from packet19 handler TODO: make sure this works before turning on
-        // if (this instanceof EntityPlayer) {
-        //     ((EntityPlayer) this).netServerHandler.checkMovement = false;
-        // }
-        // CraftBukkit end
-
         this.a(0.6F, 1.8F);
         this.d_();
         ChunkCoordinates chunkcoordinates = this.bT;

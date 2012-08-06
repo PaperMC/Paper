@@ -353,17 +353,16 @@ public class NetServerHandler extends NetHandler {
                 d4 = d1 - this.player.locX;
                 double d6 = d2 - this.player.locY;
                 double d7 = d3 - this.player.locZ;
-                double d8 = Math.min(Math.abs(d4), Math.abs(this.player.motX));
-                double d9 = Math.min(Math.abs(d6), Math.abs(this.player.motY));
-                double d10 = Math.min(Math.abs(d7), Math.abs(this.player.motZ));
+                // CraftBukkit start - min to max
+                double d8 = Math.max(Math.abs(d4), Math.abs(this.player.motX));
+                double d9 = Math.max(Math.abs(d6), Math.abs(this.player.motY));
+                double d10 = Math.max(Math.abs(d7), Math.abs(this.player.motZ));
+                // CraftBukkit end
                 double d11 = d8 * d8 + d9 * d9 + d10 * d10;
 
                 if (d11 > 100.0D && this.checkMovement && (!this.minecraftServer.H() || !this.minecraftServer.G().equals(this.player.name))) { // CraftBukkit - Added this.checkMovement condition to solve this check being triggered by teleports
                     logger.warning(this.player.name + " moved too quickly! " + d4 + "," + d6 + "," + d7 + " (" + d8 + ", " + d9 + ", " + d10 + ")");
-                    // CraftBukkit start - temporarily switch back to kicking
-                    // this.a(this.y, this.z, this.q, this.player.yaw, this.player.pitch);
-                    this.disconnect("You moved too quickly :( (Hacking?)");
-                    // CraftBukkit end
+                    this.a(this.y, this.z, this.q, this.player.yaw, this.player.pitch);
                     return;
                 }
 
@@ -965,7 +964,7 @@ public class NetServerHandler extends NetHandler {
             this.player.setSprinting(false);
         } else if (packet19entityaction.animation == 3) {
             this.player.a(false, true, true);
-            this.checkMovement = false;
+            // this.checkMovement = false; // CraftBukkit - this is handled in teleport
         }
     }
 
