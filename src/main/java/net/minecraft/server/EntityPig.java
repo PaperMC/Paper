@@ -70,15 +70,20 @@ public class EntityPig extends EntityAnimal {
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
+        // CraftBukkit start
+        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
         int j = this.random.nextInt(3) + 1 + this.random.nextInt(1 + i);
 
-        for (int k = 0; k < j; ++k) {
+        if (j > 0) {
             if (this.isBurning()) {
-                this.b(Item.GRILLED_PORK.id, 1);
+                loot.add(new org.bukkit.inventory.ItemStack(Item.GRILLED_PORK.id, j));
             } else {
-                this.b(Item.PORK.id, 1);
+                loot.add(new org.bukkit.inventory.ItemStack(Item.PORK.id, j));
             }
         }
+
+        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, loot);
+        // CraftBukkit end
     }
 
     public boolean hasSaddle() {
