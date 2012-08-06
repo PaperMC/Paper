@@ -292,11 +292,15 @@ public abstract class Command {
     }
 
     public static void broadcastCommandMessage(CommandSender source, String message) {
+        broadcastCommandMessage(source, message, true);
+    }
+
+    public static void broadcastCommandMessage(CommandSender source, String message, boolean sendToSource) {
         Set<Permissible> users = Bukkit.getPluginManager().getPermissionSubscriptions(Server.BROADCAST_CHANNEL_ADMINISTRATIVE);
         String result = source.getName() + ": " + message;
-        String colored = ChatColor.GRAY + "(" + result + ")";
+        String colored = ChatColor.GRAY + "" + ChatColor.ITALIC + "[" + result + "]";
 
-        if (!(source instanceof ConsoleCommandSender)) {
+        if (sendToSource && !(source instanceof ConsoleCommandSender)) {
             source.sendMessage(message);
         }
 

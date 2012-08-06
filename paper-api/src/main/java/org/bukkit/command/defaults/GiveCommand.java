@@ -3,6 +3,7 @@ package org.bukkit.command.defaults;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -44,7 +45,7 @@ public class GiveCommand extends VanillaCommand {
 
                 player.getInventory().addItem(new ItemStack(material, amount, data));
 
-                sender.sendMessage("Gave " + player.getName() + " some " + material.getId() + " (" + material + ")");
+                Command.broadcastCommandMessage(sender, "Gave " + player.getName() + " some " + material.getId() + " (" + material + ")");
             } else {
                 sender.sendMessage("There's no item called " + args[1]);
             }

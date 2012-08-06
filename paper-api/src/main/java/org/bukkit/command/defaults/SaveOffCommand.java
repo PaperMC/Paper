@@ -21,7 +21,6 @@ public class SaveOffCommand extends VanillaCommand {
             world.setAutoSave(false);
         }
 
-
         Command.broadcastCommandMessage(sender, "Disabled level saving..");
         return true;
     }

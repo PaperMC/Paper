@@ -2,6 +2,7 @@ package org.bukkit.command.defaults;
 
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 
 public class DefaultGameModeCommand extends VanillaCommand {
@@ -21,7 +22,7 @@ public class DefaultGameModeCommand extends VanillaCommand {
     public boolean execute(CommandSender sender, String commandLabel, String[] args) {
         if (!testPermission(sender)) return true;
         if (args.length == 0) {
-            sender.sendMessage("Useage: " + usageMessage);
+            sender.sendMessage("Usage: " + usageMessage);
             return false;
         }
 
@@ -45,7 +46,7 @@ public class DefaultGameModeCommand extends VanillaCommand {
         }
 
         Bukkit.getServer().setDefaultGameMode(mode);
-        sender.sendMessage("Default game mode set to " + mode.toString().toLowerCase());
+        Command.broadcastCommandMessage(sender, "Default game mode set to " + mode.toString().toLowerCase());
 
         return true;
     }

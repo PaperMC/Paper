@@ -3,6 +3,7 @@ package org.bukkit.command.defaults;
 import java.util.List;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -30,7 +31,7 @@ public class BanCommand extends VanillaCommand {
             player.kickPlayer("Banned by admin.");
         }
 
-        sender.sendMessage("Banned player " + args[0]);
+        Command.broadcastCommandMessage(sender, "Banned player " + args[0]);
         return true;
     }
 

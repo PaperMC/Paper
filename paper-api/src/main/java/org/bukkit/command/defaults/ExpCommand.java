@@ -2,6 +2,7 @@ package org.bukkit.command.defaults;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -31,7 +32,7 @@ public class ExpCommand extends VanillaCommand {
 
         if (player != null) {
             player.giveExp(exp);
-            sender.sendMessage("Giving " + exp + " exp to " + player.getName());
+            Command.broadcastCommandMessage(sender, "Given " + exp + " exp to " + player.getName());
         } else {
             sender.sendMessage("Can't find user, was one provided?\n" + ChatColor.RED + "Usage: " + usageMessage);
         }

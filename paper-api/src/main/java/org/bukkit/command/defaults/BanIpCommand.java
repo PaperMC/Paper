@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -35,6 +36,7 @@ public class BanIpCommand extends VanillaCommand {
                 sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
                 return false;
             }
+
             processIPBan(player.getAddress().getAddress().getHostAddress(), sender);
         }
 
@@ -50,7 +52,7 @@ public class BanIpCommand extends VanillaCommand {
         // TODO: Kick on ban
         Bukkit.banIP(ip);
 
-        sender.sendMessage("Banned IP Address " + ip);
+        Command.broadcastCommandMessage(sender, "Banned IP Address " + ip);
     }
 
     @Override

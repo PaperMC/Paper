@@ -5,6 +5,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.GameMode;
+import org.bukkit.command.Command;
 
 public class GameModeCommand extends VanillaCommand {
     public GameModeCommand() {
@@ -56,7 +57,13 @@ public class GameModeCommand extends VanillaCommand {
                 if (mode != player.getGameMode()) {
                     sender.sendMessage("Game mode change for " + player.getName() + " failed!");
                 } else {
-                    sender.sendMessage("Game mode set to " + mode.toString() + " for " + player.getName());
+                    if (player == sender) {
+                        Command.broadcastCommandMessage(sender, "Set own game mode to" + mode.toString() + " mode", false);
+                    } else {
+                        Command.broadcastCommandMessage(sender, "Set " + player.getName() + "'s game mode to" + mode.toString() + " mode", false);
+                    }
+
+                    player.sendMessage("Your game mode has been changed");
                 }
             } else {
                 sender.sendMessage(player.getName() + " already has game mode " + mode.getValue());

@@ -3,6 +3,7 @@ package org.bukkit.command.defaults;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 
 public class OpCommand extends VanillaCommand {
@@ -24,7 +25,7 @@ public class OpCommand extends VanillaCommand {
         OfflinePlayer player = Bukkit.getOfflinePlayer(args[0]);
         player.setOp(true);
 
-        sender.sendMessage("Opped " + args[0]);
+        Command.broadcastCommandMessage(sender, "Opped " + args[0]);
         return true;
     }
 
