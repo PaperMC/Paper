@@ -165,11 +165,6 @@ public class BlockTripwire extends Block {
                     }
                 }
             }
-
-            BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(bworld.getBlockAt(i, j, k), flag ? 1 : 0, flag1 ? 1 : 0);
-            manager.callEvent(eventRedstone);
-
-            flag1 = eventRedstone.getNewCurrent() > 0;
         }
         // CraftBukkit end
 
