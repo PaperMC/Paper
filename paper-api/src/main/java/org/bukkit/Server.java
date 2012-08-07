@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+import org.bukkit.Warning.WarningState;
 import org.bukkit.command.CommandException;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
@@ -651,4 +652,11 @@ public interface Server extends PluginMessageRecipient {
      * @returns the servers MOTD
      */
     String getMotd();
+
+    /**
+     * Gets the current warning state for the server
+     *
+     * @return The configured WarningState
+     */
+    public WarningState getWarningState();
 }

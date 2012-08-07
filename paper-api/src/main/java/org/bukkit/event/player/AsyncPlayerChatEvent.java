@@ -10,7 +10,10 @@ import org.bukkit.event.HandlerList;
 /**
  * This event will sometimes fire synchronously, depending on how it was triggered.
  * The constructor provides a boolean to indicate if the event was fired synchronously or asynchronously.
- * If a plugin causes a Player to chat with {@link Player#chat(String)} or by other general means, this event will be synchronous.<br>
+ * When asynchronous, this event can be called from any thread, but the main thread, and has limited access to the API.<br>
+ * <br>
+ * If a player is the direct cause of this event by incoming packet, this event will be asynchronous.
+ * If a plugin triggers this event by compelling a player to chat, this event will be synchronous.<br>
  * <br>
  * <b>Care should be taken to check {@link #isAsynchronous()} and treat the event appropriately.</b>
  */

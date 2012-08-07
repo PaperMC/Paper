@@ -23,6 +23,8 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
+import org.bukkit.Warning;
+import org.bukkit.Warning.WarningState;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.event.Event;
@@ -299,16 +301,22 @@ public class JavaPluginLoader implements PluginLoader {
             for (Class<?> clazz = eventClass; Event.class.isAssignableFrom(clazz); clazz = clazz.getSuperclass()) {
                 // This loop checks for extending deprecated events
                 if (clazz.getAnnotation(Deprecated.class) != null) {
+                    Warning warning = clazz.getAnnotation(Warning.class);
+                    WarningState warningState = server.getWarningState();
+                    if (!warningState.printFor(warning)) {
+                        break;
+                    }
                     plugin.getLogger().log(
                             Level.WARNING,
                             String.format(
                                     "\"%s\" has registered a listener for %s on method \"%s\", but the event is Deprecated." +
-                                    " Server performance will be affected; please notify the authors %s.",
+                                    " \"%s\"; please notify the authors %s.",
                                     plugin.getDescription().getFullName(),
                                     clazz.getName(),
                                     method.toGenericString(),
+                                    (warning != null && warning.reason().length() != 0) ? warning.reason() : "Server performance will be affected",
                                     Arrays.toString(plugin.getDescription().getAuthors().toArray())),
-                            new AuthorNagException(null));
+                            warningState == WarningState.ON ? new AuthorNagException(null) : null);
                     break;
                 }
             }

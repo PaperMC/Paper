@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+import org.bukkit.Warning.WarningState;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.command.PluginCommand;
@@ -372,5 +373,9 @@ public final class Bukkit {
 
     public static String getMotd() {
         return server.getMotd();
+    }
+
+    public static WarningState getWarningState() {
+        return server.getWarningState();
     }
 }

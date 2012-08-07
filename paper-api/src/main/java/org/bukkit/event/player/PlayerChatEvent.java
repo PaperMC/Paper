@@ -5,17 +5,20 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.lang.Validate;
+import org.bukkit.Warning;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 
 /**
  * Holds information for player chat and commands
- * @deprecated This event was broken in 1.3, where chat should be asynchronous.
- * It is deprecated because listening for it is detrimental to server performance.
- * {@link AsyncPlayerChatEvent} is the encouraged alternative.
+ * @deprecated This event will fire from the main thread and allows the use of all of the Bukkit API, unlike the {@link AsyncPlayerChatEvent}.<br>
+ *  <br>
+ *  Listening to this event forces chat to wait for the main thread which causes delays for chat.<br>
+ *  {@link AsyncPlayerChatEvent} is the encouraged alternative for thread safe implementations.
  */
 @Deprecated
+@Warning(reason="Listening to this event forces chat to wait for the main thread, delaying chat messages.")
 public class PlayerChatEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancel = false;
