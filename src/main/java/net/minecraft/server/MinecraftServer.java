@@ -307,16 +307,12 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
                         log.info("Saving chunks for level \'" + worldserver.getWorldData().getName() + "\'/" + worldserver.worldProvider);
                     }
 
-                    worldserver.save(true, (IProgressUpdate) null);
+                    worldserver.save(false, (IProgressUpdate) null); // Queue chunk saving
                     worldserver.saveLevel();
 
                     WorldSaveEvent event = new WorldSaveEvent(worldserver.getWorld());
                     this.server.getPluginManager().callEvent(event);
                 }
-            }
-
-            if (!this.worlds.get(0).savingDisabled) {
-                this.getServerConfigurationManager().savePlayers();
             }
             // CraftBukkit end
         }
