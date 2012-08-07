@@ -53,6 +53,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Server;
+import org.bukkit.Warning.WarningState;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.WorldCreator;
@@ -110,7 +111,6 @@ import org.bukkit.plugin.messaging.Messenger;
 import org.bukkit.potion.Potion;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.plugin.messaging.StandardMessenger;
-import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.scheduler.BukkitWorker;
 import org.bukkit.util.permissions.DefaultPermissions;
 
@@ -152,6 +152,7 @@ public final class CraftServer implements Server {
     private int animalSpawn = -1;
     private int waterAnimalSpawn = -1;
     private File container;
+    private WarningState warningState = WarningState.DEFAULT;
 
     static {
         ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
@@ -185,6 +186,7 @@ public final class CraftServer implements Server {
         monsterSpawn = configuration.getInt("spawn-limits.monsters");
         animalSpawn = configuration.getInt("spawn-limits.animals");
         waterAnimalSpawn = configuration.getInt("spawn-limits.water-animals");
+        warningState = WarningState.value(configuration.getString("settings.deprecated-verbose"));
 
         updater = new AutoUpdater(new BukkitDLUpdaterService(configuration.getString("auto-updater.host")), getLogger(), configuration.getString("auto-updater.preferred-channel"));
         updater.setEnabled(configuration.getBoolean("auto-updater.enabled"));
@@ -514,6 +516,7 @@ public final class CraftServer implements Server {
         monsterSpawn = configuration.getInt("spawn-limits.monsters");
         animalSpawn = configuration.getInt("spawn-limits.animals");
         waterAnimalSpawn = configuration.getInt("spawn-limits.water-animals");
+        warningState = WarningState.value(configuration.getString("settings.deprecated-verbose"));
 
         for (WorldServer world : console.worlds) {
             world.difficulty = difficulty;
@@ -1219,5 +1222,9 @@ public final class CraftServer implements Server {
 
     public String getMotd() {
         return console.getMotd();
+    }
+
+    public WarningState getWarningState() {
+        return warningState;
     }
 }
