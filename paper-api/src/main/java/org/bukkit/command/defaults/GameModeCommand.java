@@ -58,9 +58,9 @@ public class GameModeCommand extends VanillaCommand {
                     sender.sendMessage("Game mode change for " + player.getName() + " failed!");
                 } else {
                     if (player == sender) {
-                        Command.broadcastCommandMessage(sender, "Set own game mode to" + mode.toString() + " mode", false);
+                        Command.broadcastCommandMessage(sender, "Set own game mode to " + mode.toString() + " mode", false);
                     } else {
-                        Command.broadcastCommandMessage(sender, "Set " + player.getName() + "'s game mode to" + mode.toString() + " mode", false);
+                        Command.broadcastCommandMessage(sender, "Set " + player.getName() + "'s game mode to " + mode.toString() + " mode", false);
                     }
                 }
             } else {
