@@ -10,7 +10,7 @@ public class Packet2Handshake extends Packet {
     private int a;
     private String b;
     public String c; // CraftBukkit private -> public
-    private int d;
+    public int d; // CraftBukkit private -> public
 
     public Packet2Handshake() {}
 
