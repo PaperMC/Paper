@@ -5,6 +5,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.security.PrivateKey;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,7 +47,7 @@ public class NetworkManager implements INetworkManager {
     private PrivateKey A = null;
     private int lowPriorityQueueDelay = 50;
 
-    public NetworkManager(Socket socket, String s, NetHandler nethandler, PrivateKey privatekey) {
+    public NetworkManager(Socket socket, String s, NetHandler nethandler, PrivateKey privatekey) throws IOException { // CraftBukkit - throws IOException
         this.A = privatekey;
         this.socket = socket;
         this.j = socket.getRemoteSocketAddress();
@@ -55,18 +56,12 @@ public class NetworkManager implements INetworkManager {
         try {
             socket.setSoTimeout(30000);
             socket.setTrafficClass(24);
-            // CraftBukkit start - initialize these in try-catch
-            this.input = new DataInputStream(socket.getInputStream());
-            this.output = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream(), 5120));
-        } catch (IOException socketexception) {
-            // CraftBukkit end
+        } catch (SocketException socketexception) {
             System.err.println(socketexception.getMessage());
         }
 
-        /* CraftBukkit start - moved up
         this.input = new DataInputStream(socket.getInputStream());
         this.output = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream(), 5120));
-        // CraftBukkit end */
         this.u = new NetworkReaderThread(this, s + " read thread");
         this.t = new NetworkWriterThread(this, s + " write thread");
         this.u.start();

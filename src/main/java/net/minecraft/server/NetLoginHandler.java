@@ -24,7 +24,7 @@ public class NetLoginHandler extends NetHandler {
     private SecretKey k = null;
     public String hostname = ""; // CraftBukkit - add field
 
-    public NetLoginHandler(MinecraftServer minecraftserver, Socket socket, String s) {
+    public NetLoginHandler(MinecraftServer minecraftserver, Socket socket, String s) throws java.io.IOException { // CraftBukkit - throws IOException
         this.server = minecraftserver;
         this.networkManager = new NetworkManager(socket, s, this, minecraftserver.E().getPrivate());
         this.networkManager.e = 0;
