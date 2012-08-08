@@ -55,7 +55,7 @@ public class BlockPiston extends Block {
 
     public void onPlace(World world, int i, int j, int k) {
         if (!world.isStatic && world.getTileEntity(i, j, k) == null) {
-            // this.l(world, i, j, k); // CraftBukkit - don't extend arm of piston that doesn't exist
+            this.l(world, i, j, k);
         }
     }
 
