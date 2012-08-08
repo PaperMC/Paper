@@ -77,11 +77,23 @@ public class BlockRedstoneOre extends Block {
 
     public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {
         super.dropNaturally(world, i, j, k, l, f, i1);
+        /* CraftBukkit start - delegate to getExpDrop
         if (this.getDropType(l, world.random, i1) != this.id) {
             int j1 = 1 + world.random.nextInt(5);
 
             this.g(world, i, j, k, j1);
+        } */
+    }
+
+    public int getExpDrop(World world, int l, int i1) {
+        if (this.getDropType(l, world.random, i1) != this.id) {
+            int j1 = 1 + world.random.nextInt(5);
+
+            return j1;
         }
+
+        return 0;
+        // CraftBukkit end
     }
 
     private void n(World world, int i, int j, int k) {

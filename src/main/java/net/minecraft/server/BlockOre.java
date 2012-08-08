@@ -33,6 +33,7 @@ public class BlockOre extends Block {
 
     public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {
         super.dropNaturally(world, i, j, k, l, f, i1);
+        /* CraftBukkit start - delegated getExpDrop
         if (this.getDropType(l, world.random, i1) != this.id) {
             int j1 = 0;
 
@@ -47,7 +48,28 @@ public class BlockOre extends Block {
             }
 
             this.g(world, i, j, k, j1);
+        } */
+    }
+
+    public int getExpDrop(World world, int l, int i1) {
+        if (this.getDropType(l, world.random, i1) != this.id) {
+            int j1 = 0;
+
+            if (this.id == Block.COAL_ORE.id) {
+                j1 = MathHelper.a(world.random, 0, 2);
+            } else if (this.id == Block.DIAMOND_ORE.id) {
+                j1 = MathHelper.a(world.random, 3, 7);
+            } else if (this.id == Block.EMERALD_ORE.id) {
+                j1 = MathHelper.a(world.random, 3, 7);
+            } else if (this.id == Block.LAPIS_ORE.id) {
+                j1 = MathHelper.a(world.random, 2, 5);
+            }
+
+            return j1;
         }
+
+        return 0;
+        // CraftBukkit end
     }
 
     protected int getDropData(int i) {

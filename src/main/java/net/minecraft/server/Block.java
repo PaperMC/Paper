@@ -698,5 +698,9 @@ public class Block {
     public static int getDropData(Block block, int data) {
         return block.getDropData(data);
     }
+
+    public int getExpDrop(World world, int data, int enchantmentLevel) {
+        return 0;
+    }
     // CraftBukkit end
 }

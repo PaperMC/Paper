@@ -22,9 +22,17 @@ public class BlockMobSpawner extends BlockContainer {
 
     public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {
         super.dropNaturally(world, i, j, k, l, f, i1);
+        /* CraftBukkit start - delegate to getExpDrop
         int j1 = 15 + world.random.nextInt(15) + world.random.nextInt(15);
 
-        this.g(world, i, j, k, j1);
+        this.g(world, i, j, k, j1); */
+    }
+
+    public int getExpDrop(World world, int data, int enchantmentLevel) {
+        int j1 = 15 + world.random.nextInt(15) + world.random.nextInt(15);
+
+        return j1;
+        // CraftBukkit end
     }
 
     public boolean d() {

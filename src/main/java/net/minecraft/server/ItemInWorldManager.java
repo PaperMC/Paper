@@ -243,6 +243,8 @@ public class ItemInWorldManager {
 
     public boolean breakBlock(int i, int j, int k) {
         // CraftBukkit start
+        BlockBreakEvent event = null;
+
         if (this.player instanceof EntityPlayer) {
             org.bukkit.block.Block block = this.world.getWorld().getBlockAt(i, j, k);
 
@@ -255,8 +257,24 @@ public class ItemInWorldManager {
                 ((EntityPlayer) this.player).netServerHandler.sendPacket(packet);
             }
 
-            BlockBreakEvent event = new BlockBreakEvent(block, (org.bukkit.entity.Player) this.player.getBukkitEntity());
-            event.setCancelled(this.gamemode.isAdventure()); // Adventure mode pre-cancel
+            event = new BlockBreakEvent(block, this.player.getBukkitEntity());
+
+            // Adventure mode pre-cancel
+            event.setCancelled(this.gamemode.isAdventure());
+
+            // Calculate default block experience
+            Block nmsBlock = Block.byId[block.getTypeId()];
+
+            if (nmsBlock != null && !event.isCancelled() && !this.isCreative() && this.player.b(nmsBlock)) {
+                // Copied from Block.a(world, entityhuman, int, int, int, int)
+                if (!(nmsBlock.q_() && EnchantmentManager.hasSilkTouchEnchantment(this.player.inventory))) {
+                    int data = block.getData();
+                    int bonusLevel = EnchantmentManager.getBonusBlockLootEnchantmentLevel(this.player.inventory);
+
+                    event.setExpToDrop(nmsBlock.getExpDrop(this.world, data, bonusLevel));
+                }
+            }
+
             this.world.getServer().getPluginManager().callEvent(event);
 
             if (event.isCancelled()) {
@@ -294,6 +312,12 @@ public class ItemInWorldManager {
                     Block.byId[l].a(this.world, this.player, i, j, k, i1);
                 }
             }
+
+            // CraftBukkit start - drop event experience
+            if (flag && event != null) {
+                Block.byId[l].g(this.world, i, j, k, event.getExpToDrop());
+            }
+            // CraftBukkit end
 
             return flag;
         }
