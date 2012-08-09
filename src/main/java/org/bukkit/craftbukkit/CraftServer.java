@@ -1019,6 +1019,10 @@ public final class CraftServer implements Server {
     }
 
     public OfflinePlayer getOfflinePlayer(String name) {
+        return getOfflinePlayer(name, true);
+    }
+
+    public OfflinePlayer getOfflinePlayer(String name, boolean search) {
         OfflinePlayer result = getPlayerExact(name);
         String lname = name.toLowerCase();
 
@@ -1026,6 +1030,17 @@ public final class CraftServer implements Server {
             result = offlinePlayers.get(lname);
 
             if (result == null) {
+                if (search) {
+                    WorldNBTStorage storage = (WorldNBTStorage) console.worlds.get(0).getDataManager();
+                    for (String dat : storage.getPlayerDir().list(new DatFileFilter())) {
+                        String datName = dat.substring(0, dat.length() - 4);
+                        if (datName.equalsIgnoreCase(name)) {
+                            name = datName;
+                            break;
+                        }
+                    }
+                }
+
                 result = new CraftOfflinePlayer(this, name);
                 offlinePlayers.put(lname, result);
             }
