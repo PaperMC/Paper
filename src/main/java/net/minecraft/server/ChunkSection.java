@@ -111,6 +111,63 @@ public class ChunkSection {
     }
 
     public void e() {
+        // CraftBukkit start - optimize for speed
+        byte[] dd = this.d;
+        int cntb = 0;
+        int cntc = 0;
+        if (this.e == null) { // No extended block IDs?  Don't waste time messing with them
+            for (int off = 0; off < dd.length; off++) {
+                int l = dd[off] & 0xFF;
+                if (l > 0) {
+                    if (Block.byId[l] == null) {
+                        dd[off] = 0;
+                    } else {
+                        ++cntb;
+                        if (Block.byId[l].r()) {
+                            ++cntc;
+                        }
+                    }
+                }
+            }
+        } else {
+            byte[] ext = this.e.a;
+            for (int off = 0, off2 = 0; off < dd.length;) {
+                byte extid = ext[off2];
+                int l = (dd[off] & 0xFF) | ((extid & 0xF) << 8); // Even data
+                if (l > 0) {
+                    if (Block.byId[l] == null) {
+                        dd[off] = 0;
+                        ext[off2] &= 0xF0;
+                    } else {
+                        ++cntb;
+                        if (Block.byId[l].r()) {
+                            ++cntc;
+                        }
+                    }
+                }
+                off++;
+                l = (dd[off] & 0xFF) | ((extid & 0xF0) << 4); // Odd data
+                if (l > 0) {
+                    if (Block.byId[l] == null) {
+                        dd[off] = 0;
+                        ext[off2] &= 0x0F;
+                    } else {
+                        ++cntb;
+                        if (Block.byId[l].r()) {
+                            ++cntc;
+                        }
+                    }
+                }
+                off++;
+                off2++;
+            }
+        }
+        this.b = cntb;
+        this.c = cntc;
+    }
+    
+    private void old_e() {
+        // CraftBukkit end
         this.b = 0;
         this.c = 0;
 
