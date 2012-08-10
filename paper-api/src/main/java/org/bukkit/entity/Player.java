@@ -514,4 +514,30 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      * @param value True to fly.
      */
     public void setFlying(boolean value);
+
+    /**
+     * Sets the speed at which a client will fly. Negative values indicate reverse directions.
+     * @param value The new speed, from -1 to 1.
+     * @throws IllegalArgumentException If new speed is less than -1 or greater than 1
+     */
+    public void setFlySpeed(float value) throws IllegalArgumentException;
+
+    /**
+     * Sets the speed at which a client will walk. Negative values indicate reverse directions.
+     * @param value The new speed, from -1 to 1.
+     * @throws IllegalArgumentException If new speed is less than -1 or greater than 1
+     */
+    public void setWalkSpeed(float value) throws IllegalArgumentException;
+
+    /**
+     * Gets the current allowed speed that a client can fly.
+     * @return The current allowed speed, from -1 to 1
+     */
+    public float getFlySpeed();
+
+    /**
+     * Gets the current allowed speed that a client can walk.
+     * @return The current allowed speed, from -1 to 1
+     */
+    public float getWalkSpeed();
 }
