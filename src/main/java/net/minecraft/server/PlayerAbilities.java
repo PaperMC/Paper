@@ -7,8 +7,8 @@ public class PlayerAbilities {
     public boolean canFly = false;
     public boolean canInstantlyBuild = false;
     public boolean mayBuild = true;
-    private float flySpeed = 0.05F;
-    private float walkSpeed = 0.1F;
+    public float flySpeed = 0.05F; // CraftBukkit private -> public
+    public float walkSpeed = 0.1F; // CraftBukkit private -> public
 
     public PlayerAbilities() {}
 

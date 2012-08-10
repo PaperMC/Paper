@@ -864,4 +864,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             return getHandle().noDamageTicks;
         }
     }
+
+    public void setFlySpeed(float value) {
+        validateSpeed(value);
+        EntityPlayer player = getHandle();
+        player.abilities.flySpeed = value / 2f;
+        player.updateAbilities();
+
+    }
+
+    public void setWalkSpeed(float value) {
+        validateSpeed(value);
+        EntityPlayer player = getHandle();
+        player.abilities.walkSpeed = value / 2f;
+        player.updateAbilities();
+    }
+
+    public float getFlySpeed() {
+        return getHandle().abilities.flySpeed * 2f;
+    }
+
+    public float getWalkSpeed() {
+        return getHandle().abilities.walkSpeed * 2f;
+    }
+
+    private void validateSpeed(float value) {
+        if (value < 0) {
+            if (value < -1f) {
+                throw new IllegalArgumentException(value + " is too low");
+            }
+        } else {
+            if (value > 1f) {
+                throw new IllegalArgumentException(value + " is too high");
+            }
+        }
+    }
 }
