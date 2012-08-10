@@ -1,5 +1,6 @@
 package org.bukkit.plugin.messaging;
 
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.TestPlugin;
 import java.util.Collection;
 import org.junit.Test;
@@ -70,7 +71,7 @@ public class StandardMessengerTest {
         Messenger messenger = getMessenger();
         TestPlugin plugin = getPlugin();
         TestMessageListener listener = new TestMessageListener("foo", "bar".getBytes());
-        TestPlayer player = new TestPlayer();
+        Player player = TestPlayer.getInstance();
         PluginMessageListenerRegistration registration = messenger.registerIncomingPluginChannel(plugin, "foo", listener);
 
         assertTrue(registration.isValid());
@@ -111,7 +112,7 @@ public class StandardMessengerTest {
         TestPlugin plugin = getPlugin();
         TestMessageListener listener1 = new TestMessageListener("foo", "bar".getBytes());
         TestMessageListener listener2 = new TestMessageListener("baz", "qux".getBytes());
-        TestPlayer player = new TestPlayer();
+        Player player = TestPlayer.getInstance();
         PluginMessageListenerRegistration registration1 = messenger.registerIncomingPluginChannel(plugin, "foo", listener1);
         PluginMessageListenerRegistration registration2 = messenger.registerIncomingPluginChannel(plugin, "baz", listener2);
 
@@ -140,7 +141,7 @@ public class StandardMessengerTest {
         TestPlugin plugin = getPlugin();
         TestMessageListener listener1 = new TestMessageListener("foo", "bar".getBytes());
         TestMessageListener listener2 = new TestMessageListener("baz", "qux".getBytes());
-        TestPlayer player = new TestPlayer();
+        Player player = TestPlayer.getInstance();
         PluginMessageListenerRegistration registration1 = messenger.registerIncomingPluginChannel(plugin, "foo", listener1);
         PluginMessageListenerRegistration registration2 = messenger.registerIncomingPluginChannel(plugin, "baz", listener2);
 
