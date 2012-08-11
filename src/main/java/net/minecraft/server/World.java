@@ -742,9 +742,11 @@ public abstract class World implements IBlockAccess {
                         MovingObjectPosition movingobjectposition1 = block1.a(this, l, i1, j1, vec3d, vec3d1);
 
                         if (movingobjectposition1 != null) {
+                            Vec3D.a().release(vec3d2); // CraftBukkit
                             return movingobjectposition1;
                         }
                     }
+                    Vec3D.a().release(vec3d2); // CraftBukkit
                 }
 
                 return null;
@@ -1446,6 +1448,7 @@ public abstract class World implements IBlockAccess {
                 entity.motY += vec3d.b * d1;
                 entity.motZ += vec3d.c * d1;
             }
+            Vec3D.a().release(vec3d); // CraftBukkit - pop it - we're done
 
             return flag;
         }
@@ -1526,6 +1529,7 @@ public abstract class World implements IBlockAccess {
         int i = 0;
         int j = 0;
 
+        Vec3D vec3d2 = Vec3D.a().create(0, 0, 0); // CraftBukkit
         for (float f = 0.0F; f <= 1.0F; f = (float) ((double) f + d0)) {
             for (float f1 = 0.0F; f1 <= 1.0F; f1 = (float) ((double) f1 + d1)) {
                 for (float f2 = 0.0F; f2 <= 1.0F; f2 = (float) ((double) f2 + d2)) {
@@ -1533,7 +1537,7 @@ public abstract class World implements IBlockAccess {
                     double d4 = axisalignedbb.b + (axisalignedbb.e - axisalignedbb.b) * (double) f1;
                     double d5 = axisalignedbb.c + (axisalignedbb.f - axisalignedbb.c) * (double) f2;
 
-                    if (this.a(Vec3D.a().create(d3, d4, d5), vec3d) == null) {
+                    if (this.a(vec3d2.b(d3, d4, d5), vec3d) == null) { // CraftBukkit
                         ++i;
                     }
 
@@ -1541,6 +1545,7 @@ public abstract class World implements IBlockAccess {
                 }
             }
         }
+        Vec3D.a().release(vec3d2); // CraftBukkit
 
         return (float) i / (float) j;
     }
