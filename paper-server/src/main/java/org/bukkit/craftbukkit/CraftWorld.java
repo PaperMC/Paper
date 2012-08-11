@@ -164,7 +164,9 @@ public class CraftWorld implements World {
         if (chunk.mustSave) {   // If chunk had previously been queued to save, must do save to avoid loss of that data
             save = true;
         }
+
         chunk.removeEntities(); // Always remove entities - even if discarding, need to get them out of world table
+
         if (save && !(chunk instanceof EmptyChunk)) {
             world.chunkProviderServer.saveChunk(chunk);
             world.chunkProviderServer.saveChunkNOP(chunk);
@@ -172,7 +174,6 @@ public class CraftWorld implements World {
 
         world.chunkProviderServer.unloadQueue.remove(x, z);
         world.chunkProviderServer.chunks.remove(x, z);
-        world.chunkProviderServer.chunkList.remove(chunk);
 
         return true;
     }
@@ -242,7 +243,6 @@ public class CraftWorld implements World {
     private void chunkLoadPostProcess(net.minecraft.server.Chunk chunk, int x, int z) {
         if (chunk != null) {
             world.chunkProviderServer.chunks.put(x, z, chunk);
-            world.chunkProviderServer.chunkList.add(chunk);
 
             chunk.addEntities();
 
