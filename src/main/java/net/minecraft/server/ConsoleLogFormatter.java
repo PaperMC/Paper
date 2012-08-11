@@ -39,11 +39,11 @@ final class ConsoleLogFormatter extends Formatter {
             stringbuilder.append(" [WARNING] ");
         } else if (level == Level.SEVERE) {
             stringbuilder.append(" [SEVERE] ");
-        } else if (level == Level.SEVERE) {
+        } else { // CraftBukkit
             stringbuilder.append(" [").append(level.getLocalizedName()).append("] ");
         }
 
-        stringbuilder.append(logrecord.getMessage());
+        stringbuilder.append(formatMessage(logrecord)); // CraftBukkit
         stringbuilder.append('\n');
         Throwable throwable = logrecord.getThrown();
 
