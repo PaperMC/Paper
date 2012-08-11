@@ -25,7 +25,6 @@ public class ChunkProviderServer implements IChunkProvider {
     private IChunkLoader e;
     public boolean forceChunkLoad = false; // true -> false
     public LongObjectHashMap<Chunk> chunks = new LongObjectHashMap<Chunk>();
-    public List chunkList = new ArrayList();
     public WorldServer world;
     // CraftBukkit end
 
@@ -70,7 +69,7 @@ public class ChunkProviderServer implements IChunkProvider {
     }
 
     public void a() {
-        Iterator iterator = this.chunkList.iterator();
+        Iterator iterator = this.chunks.values().iterator(); // CraftBukkit
 
         while (iterator.hasNext()) {
             Chunk chunk = (Chunk) iterator.next();
@@ -98,7 +97,6 @@ public class ChunkProviderServer implements IChunkProvider {
             }
 
             this.chunks.put(i, j, chunk); // CraftBukkit
-            this.chunkList.add(chunk);
             if (chunk != null) {
                 chunk.addEntities();
             }
@@ -216,7 +214,7 @@ public class ChunkProviderServer implements IChunkProvider {
 
     public boolean saveChunks(boolean flag, IProgressUpdate iprogressupdate) {
         int i = 0;
-        Iterator iterator = this.chunkList.iterator();
+        Iterator iterator = this.chunks.values().iterator(); // CraftBukkit
 
         while (iterator.hasNext()) {
             Chunk chunk = (Chunk) iterator.next();
@@ -263,7 +261,6 @@ public class ChunkProviderServer implements IChunkProvider {
                     this.saveChunkNOP(chunk);
                     // this.unloadQueue.remove(integer);
                     this.chunks.remove(chunkcoordinates); // CraftBukkit
-                    this.chunkList.remove(chunk);
                 }
             }
             // CraftBukkit end
