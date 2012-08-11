@@ -46,7 +46,7 @@ public class ShortConsoleLogFormatter extends Formatter {
         builder.append(" [");
         builder.append(record.getLevel().getLocalizedName().toUpperCase());
         builder.append("] ");
-        builder.append(record.getMessage());
+        builder.append(formatMessage(record));
         builder.append('\n');
 
         if (ex != null) {
