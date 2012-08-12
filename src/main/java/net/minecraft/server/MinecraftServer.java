@@ -161,7 +161,7 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
             String name = (dimension == 0) ? s : s + "_" + worldType;
 
             org.bukkit.generator.ChunkGenerator gen = this.server.getGenerator(name);
-            WorldSettings worldsettings = new WorldSettings(i, this.getGamemode(), this.getGenerateStructures(), false, worldtype);
+            WorldSettings worldsettings = new WorldSettings(i, this.getGamemode(), this.getGenerateStructures(), this.isHardcore(), worldtype);
 
             if (j == 0) {
                 if (this.L()) { // Strip out DEMO?
