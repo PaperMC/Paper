@@ -21,8 +21,12 @@ public abstract class Packet {
     public static long p;
     public static long q;
     public boolean lowPriority = false;
-
-    public Packet() {}
+    // CraftBukkit start - calculate packet ID once - used a bunch of times
+    private int packetID;
+    
+    public Packet() {
+        packetID = ((Integer) a.get(this.getClass())).intValue();
+    } // CraftBukkit end
 
     static void a(int i, boolean flag, boolean flag1, Class oclass) {
         if (l.b(i)) {
@@ -73,7 +77,7 @@ public abstract class Packet {
     }
 
     public final int k() {
-        return ((Integer) a.get(this.getClass())).intValue();
+        return packetID; // ((Integer) a.get(this.getClass())).intValue(); // CraftBukkit
     }
 
     public static Packet a(DataInputStream datainputstream, boolean flag) throws IOException { // CraftBukkit - throws IOException
