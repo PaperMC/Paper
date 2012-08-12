@@ -70,6 +70,7 @@ public class Chunk {
     }
 
     public org.bukkit.Chunk bukkitChunk;
+    public boolean mustSave;
     // CraftBukkit end
 
     public Chunk(World world, byte[] abyte, int i, int j) {

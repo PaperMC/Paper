@@ -69,6 +69,15 @@ public class PlayerManager {
 
         return playerinstance;
     }
+    // CraftBukkit start
+    public final boolean isChunkInUse(int x, int z) {
+        PlayerInstance pi = a(x, z, false);
+        if (pi != null) {
+            return (PlayerInstance.b(pi).size() > 0);
+        }
+        return false;
+    }
+    // CraftBukkit end
 
     public void flagDirty(int i, int j, int k) {
         int l = i >> 4;

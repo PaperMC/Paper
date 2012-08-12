@@ -37,7 +37,7 @@ public class ChunkProviderServer implements IChunkProvider {
     }
 
     public boolean isChunkLoaded(int i, int j) {
-        return !this.unloadQueue.containsKey(i, j) && this.chunks.containsKey(i, j); // CraftBukkit
+        return this.chunks.containsKey(i, j); // CraftBukkit
     }
 
     public void queueUnload(int i, int j) {
@@ -47,11 +47,25 @@ public class ChunkProviderServer implements IChunkProvider {
             int l = j * 16 + 8 - chunkcoordinates.z;
             short short1 = 128;
 
-            if (k < -short1 || k > short1 || l < -short1 || l > short1 || !(this.world.keepSpawnInMemory)) { // CraftBukkit - added 'this.world.keepSpawnInMemory'
-                this.unloadQueue.add(i, j); // CraftBukkit
+            // CraftBukkit start
+            if (k < -short1 || k > short1 || l < -short1 || l > short1 || !(this.world.keepSpawnInMemory)) { // Added 'this.world.keepSpawnInMemory'
+                this.unloadQueue.add(i, j);
+
+                Chunk c = this.chunks.get(i, j);
+                if (c != null) {
+                    c.mustSave = true;
+                }
             }
+            // CraftBukkit end
         } else {
-            this.unloadQueue.add(i, j); // CraftBukkit
+            // CraftBukkit start
+            this.unloadQueue.add(i, j);
+
+            Chunk c = this.chunks.get(i, j);
+            if (c != null) {
+                c.mustSave = true;
+            }
+            // CraftBukkit end
         }
     }
 

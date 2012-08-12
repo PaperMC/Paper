@@ -161,9 +161,11 @@ public class CraftWorld implements World {
         }
 
         net.minecraft.server.Chunk chunk = world.chunkProviderServer.getOrCreateChunk(x, z);
-
+        if (chunk.mustSave) {   // If chunk had previously been queued to save, must do save to avoid loss of that data
+            save = true;
+        }
+        chunk.removeEntities(); // Always remove entities - even if discarding, need to get them out of world table
         if (save && !(chunk instanceof EmptyChunk)) {
-            chunk.removeEntities();
             world.chunkProviderServer.saveChunk(chunk);
             world.chunkProviderServer.saveChunkNOP(chunk);
         }
@@ -216,22 +218,7 @@ public class CraftWorld implements World {
     }
 
     public boolean isChunkInUse(int x, int z) {
-        Player[] players = server.getOnlinePlayers();
-
-        for (Player player : players) {
-            Location loc = player.getLocation();
-            if (loc.getWorld() != world.chunkProviderServer.world.getWorld()) {
-                continue;
-            }
-
-            // If the chunk is within 256 blocks of a player, refuse to accept the unload request
-            // This is larger than the distance of loaded chunks that actually surround a player
-            // The player is the center of a 21x21 chunk grid, so the edge is 10 chunks (160 blocks) away from the player
-            if (Math.abs(loc.getBlockX() - (x << 4)) <= 256 && Math.abs(loc.getBlockZ() - (z << 4)) <= 256) {
-                return true;
-            }
-        }
-        return false;
+        return world.getPlayerManager().isChunkInUse(x, z);
     }
 
     public boolean loadChunk(int x, int z, boolean generate) {
