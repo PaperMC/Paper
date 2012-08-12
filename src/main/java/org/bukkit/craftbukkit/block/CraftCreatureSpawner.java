@@ -33,14 +33,15 @@ public class CraftCreatureSpawner extends CraftBlockState implements CreatureSpa
         spawner.mobName = creatureType.getName();
     }
 
-    public void setSpawnedType(EntityType creatureType) {
-        if (!creatureType.isAlive() || !creatureType.isSpawnable()) {
-            throw new IllegalArgumentException("Can't spawn non-living entities from mob spawners!");
+    public void setSpawnedType(EntityType entityType) {
+        if (entityType == null || entityType.getName() == null) {
+            throw new IllegalArgumentException("Can't spawn EntityType " + entityType + " from mobspawners!");
         }
 
-        spawner.mobName = creatureType.getName();
+        spawner.mobName = entityType.getName();
     }
 
+    @Deprecated
     public String getCreatureTypeId() {
         return spawner.mobName;
     }
