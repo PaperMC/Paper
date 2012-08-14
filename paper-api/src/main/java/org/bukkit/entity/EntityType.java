@@ -19,7 +19,7 @@ public enum EntityType {
     ENDER_SIGNAL("EyeOfEnderSignal", EnderSignal.class, 15),
     THROWN_EXP_BOTTLE("ThrownExpBottle", ThrownExpBottle.class, 17),
     PRIMED_TNT("PrimedTnt", TNTPrimed.class, 20),
-    FALLING_BLOCK("FallingSand", FallingSand.class, 21, false),
+    FALLING_BLOCK("FallingSand", FallingBlock.class, 21, false),
     MINECART("Minecart", Minecart.class, 40),
     BOAT("Boat", Boat.class, 41),
     CREEPER("Creeper", Creeper.class, 50),
