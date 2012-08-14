@@ -2,8 +2,8 @@ package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntityFallingBlock;
 
+import org.bukkit.Material;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.FallingSand;
 
@@ -25,5 +25,25 @@ public class CraftFallingSand extends CraftEntity implements FallingSand {
 
     public EntityType getType() {
         return EntityType.FALLING_BLOCK;
+    }
+
+    public Material getMaterial() {
+        return Material.getMaterial(getBlockId());
+    }
+
+    public int getBlockId() {
+        return getHandle().id;
+    }
+
+    public byte getBlockData() {
+        return (byte) getHandle().data;
+    }
+
+    public boolean getDropItem() {
+        return getHandle().dropItem;
+    }
+
+    public void setDropItem(boolean drop) {
+        getHandle().dropItem = drop;
     }
 }
