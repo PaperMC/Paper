@@ -7,100 +7,88 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class CraftFuture<T> implements Runnable, Future<T> {
+import org.bukkit.plugin.Plugin;
 
-    private final CraftScheduler craftScheduler;
+class CraftFuture<T> extends CraftTask implements Future<T> {
+
     private final Callable<T> callable;
-    private final ObjectContainer<T> returnStore = new ObjectContainer<T>();
-    private boolean done = false;
-    private boolean running = false;
-    private boolean cancelled = false;
-    private Exception e = null;
-    private int taskId = -1;
+    private T value;
+    private Exception exception = null;
 
-    CraftFuture(CraftScheduler craftScheduler, Callable<T> callable) {
+    CraftFuture(final Callable<T> callable, final Plugin plugin, final int id) {
+        super(plugin, null, id, -1l);
         this.callable = callable;
-        this.craftScheduler = craftScheduler;
     }
 
-    public void run() {
-        synchronized (this) {
-            if (cancelled) {
-                return;
-            }
-            running = true;
+    public synchronized boolean cancel(final boolean mayInterruptIfRunning) {
+        if (getPeriod() != -1l) {
+            return false;
         }
-        try {
-            returnStore.setObject(callable.call());
-        } catch (Exception e) {
-            this.e = e;
-        }
-        synchronized (this) {
-            running = false;
-            done = true;
-            this.notify();
-        }
-    }
-
-    public T get() throws InterruptedException, ExecutionException {
-        try {
-            return get(0L, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException te) {}
-        return null;
-    }
-
-    public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        synchronized (this) {
-            if (isDone()) {
-                return getResult();
-            }
-            this.wait(TimeUnit.MILLISECONDS.convert(timeout, unit));
-            return getResult();
-        }
-    }
-
-    public T getResult() throws ExecutionException {
-        if (cancelled) {
-            throw new CancellationException();
-        }
-        if (e != null) {
-            throw new ExecutionException(e);
-        }
-        return returnStore.getObject();
-    }
-
-    public boolean isDone() {
-        synchronized (this) {
-            return done;
-        }
+        setPeriod(-2l);
+        return true;
     }
 
     public boolean isCancelled() {
-        synchronized (this) {
-            return cancelled;
+        return getPeriod() == -2l;
+    }
+
+    public boolean isDone() {
+        final long period = this.getPeriod();
+        return period != -1l && period != -3l;
+    }
+
+    public T get() throws CancellationException, InterruptedException, ExecutionException {
+        try {
+            return get(0, TimeUnit.MILLISECONDS);
+        } catch (final TimeoutException e) {
+            throw new Error(e);
         }
     }
 
-    public boolean cancel(boolean mayInterruptIfRunning) {
-        synchronized (this) {
-            if (cancelled) {
-                return false;
+    public synchronized T get(long timeout, final TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        timeout = unit.toMillis(timeout);
+        long period = this.getPeriod();
+        while (true) {
+            if (period == -1l || period == -3l) {
+                this.wait(unit.toMillis(timeout));
+                period = this.getPeriod();
+                if (period == -1l || period == -3l) {
+                    if (timeout == 0l) {
+                        continue;
+                    }
+                    throw new TimeoutException();
+                }
             }
-            cancelled = true;
-            if (taskId != -1) {
-                craftScheduler.cancelTask(taskId);
+            if (period == -2l) {
+                throw new CancellationException();
             }
-            if (!running && !done) {
-                return true;
-            } else {
-                return false;
+            if (period == -4l) {
+                if (exception == null) {
+                    return value;
+                }
+                throw new ExecutionException(exception);
             }
+            throw new IllegalStateException("Expected " + -1l + " to " + -4l + ", got " + period);
         }
     }
 
-    public void setTaskId(int taskId) {
+    @Override
+    public void run() {
         synchronized (this) {
-            this.taskId = taskId;
+            if (getPeriod() == -2l) {
+                return;
+            }
+            setPeriod(-3l);
+        }
+        try {
+            value = callable.call();
+        } catch (final Exception e) {
+            exception = e;
+        } finally {
+            synchronized (this) {
+                setPeriod(-4l);
+                this.notifyAll();
+            }
         }
     }
 }
