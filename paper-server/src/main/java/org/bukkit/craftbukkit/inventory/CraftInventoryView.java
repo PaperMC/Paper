@@ -102,6 +102,13 @@ public class CraftInventoryView extends InventoryView {
                     type = SlotType.CRAFTING;
                 }
                 break;
+            case MERCHANT:
+                if (slot == 2) {
+                    type = SlotType.RESULT;
+                } else {
+                    type = SlotType.CRAFTING;
+                }
+                break;
             default:
                 // Nothing to do, it's a CONTAINER slot
             }
