@@ -785,6 +785,26 @@ public class CraftWorld implements World {
         return spawn(location, clazz, SpawnReason.CUSTOM);
     }
 
+    public FallingBlock spawnFallingBlock(Location location, org.bukkit.Material material, byte data) throws IllegalArgumentException {
+        Validate.notNull(location, "Location cannot be null");
+        Validate.notNull(material, "Material cannot be null");
+        Validate.isTrue(material.isBlock(), "Material must be a block");
+
+        double x = location.getBlockX() + 0.5;
+        double y = location.getBlockY() + 0.5;
+        double z = location.getBlockZ() + 0.5;
+
+        EntityFallingBlock entity = new EntityFallingBlock(world, x, y, z, material.getId(), data);
+        entity.c = 1; // ticksLived
+
+        world.addEntity(entity, SpawnReason.CUSTOM);
+        return (FallingBlock) entity.getBukkitEntity();
+    }
+
+    public FallingBlock spawnFallingBlock(Location location, int blockId, byte blockData) throws IllegalArgumentException {
+        return spawnFallingBlock(location, org.bukkit.Material.getMaterial(blockId), blockData);
+    }
+
     @SuppressWarnings("unchecked")
     public <T extends Entity> T spawn(Location location, Class<T> clazz, SpawnReason reason) throws IllegalArgumentException {
         if (location == null || clazz == null) {
@@ -802,8 +822,14 @@ public class CraftWorld implements World {
         // order is important for some of these
         if (Boat.class.isAssignableFrom(clazz)) {
             entity = new EntityBoat(world, x, y, z);
-        } else if (FallingSand.class.isAssignableFrom(clazz)) {
-            entity = new EntityFallingBlock(world, x, y, z, 0, 0);
+        } else if (FallingBlock.class.isAssignableFrom(clazz)) {
+            x = location.getBlockX();
+            y = location.getBlockY();
+            z = location.getBlockZ();
+            int type = world.getTypeId((int) x, (int) y, (int) z);
+            int data = world.getData((int) x, (int) y, (int) z);
+
+            entity = new EntityFallingBlock(world, x + 0.5, y + 0.5, z + 0.5, type, data);
         } else if (Projectile.class.isAssignableFrom(clazz)) {
             if (Snowball.class.isAssignableFrom(clazz)) {
                 entity = new EntitySnowball(world, x, y, z);
@@ -934,7 +960,6 @@ public class CraftWorld implements World {
                 break;
             case SOUTH:
                 dir = 3;
-                ;
                 break;
             }
             entity = new EntityPainting(world, (int) x, (int) y, (int) z, dir);
