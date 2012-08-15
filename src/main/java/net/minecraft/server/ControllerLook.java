@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import org.bukkit.craftbukkit.TrigMath; // CraftBukkit
+
 public class ControllerLook {
 
     private EntityLiving a;
@@ -45,8 +47,10 @@ public class ControllerLook {
             double d1 = this.f - (this.a.locY + (double) this.a.getHeadHeight());
             double d2 = this.g - this.a.locZ;
             double d3 = (double) MathHelper.sqrt(d0 * d0 + d2 * d2);
-            float f = (float) (Math.atan2(d2, d0) * 180.0D / 3.1415927410125732D) - 90.0F;
-            float f1 = (float) (-(Math.atan2(d1, d3) * 180.0D / 3.1415927410125732D));
+            // CraftBukkit start - Math -> TrigMath
+            float f = (float) (TrigMath.atan2(d2, d0) * 180.0D / 3.1415927410125732D) - 90.0F;
+            float f1 = (float) (-(TrigMath.atan2(d1, d3) * 180.0D / 3.1415927410125732D));
+            // CraftBukkit end
 
             this.a.pitch = this.a(this.a.pitch, f1, this.c);
             this.a.as = this.a(this.a.as, f, this.b);

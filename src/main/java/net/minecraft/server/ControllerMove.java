@@ -43,7 +43,8 @@ public class ControllerMove {
             double d3 = d0 * d0 + d2 * d2 + d1 * d1;
 
             if (d3 >= 2.500000277905201E-7D) {
-                float f = (float) (Math.atan2(d1, d0) * 180.0D / 3.1415927410125732D) - 90.0F;
+                // CraftBukkit - Math -> TrigMath
+                float f = (float) (org.bukkit.craftbukkit.TrigMath.atan2(d1, d0) * 180.0D / 3.1415927410125732D) - 90.0F;
 
                 this.a.yaw = this.a(this.a.yaw, f, 30.0F);
                 this.a.e(this.e);

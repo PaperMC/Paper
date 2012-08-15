@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import org.bukkit.craftbukkit.TrigMath; // CraftBukkit
+
 public class EntitySquid extends EntityWaterAnimal {
 
     public float d = 0.0F;
@@ -104,10 +106,12 @@ public class EntitySquid extends EntityWaterAnimal {
             }
 
             f = MathHelper.sqrt(this.motX * this.motX + this.motZ * this.motZ);
-            this.aq += (-((float) Math.atan2(this.motX, this.motZ)) * 180.0F / 3.1415927F - this.aq) * 0.1F;
+            // CraftBukkit - Math -> TrigMath
+            this.aq += (-((float) TrigMath.atan2(this.motX, this.motZ)) * 180.0F / 3.1415927F - this.aq) * 0.1F;
             this.yaw = this.aq;
             this.f += 3.1415927F * this.bB * 1.5F;
-            this.d += (-((float) Math.atan2((double) f, this.motY)) * 180.0F / 3.1415927F - this.d) * 0.1F;
+            // CraftBukkit - Math -> TrigMath
+            this.d += (-((float) TrigMath.atan2((double) f, this.motY)) * 180.0F / 3.1415927F - this.d) * 0.1F;
         } else {
             this.j = MathHelper.abs(MathHelper.sin(this.h)) * 3.1415927F * 0.25F;
             if (!this.world.isStatic) {
