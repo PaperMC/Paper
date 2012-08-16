@@ -10,7 +10,7 @@ public class IntHashMap {
     private int c = 12;
     private final float d = 0.75F;
     private transient volatile int e;
-    private Set f = new HashSet();
+    // private Set f = new HashSet(); // CraftBukkit - expensive and unused
 
     public IntHashMap() {}
 
@@ -52,7 +52,7 @@ public class IntHashMap {
     }
 
     public void a(int i, Object object) {
-        this.f.add(Integer.valueOf(i));
+        // this.f.add(Integer.valueOf(i)); // CraftBukkit
         int j = g(i);
         int k = a(j, this.a.length);
 
@@ -107,7 +107,7 @@ public class IntHashMap {
     }
 
     public Object d(int i) {
-        this.f.remove(Integer.valueOf(i));
+        // this.f.remove(Integer.valueOf(i)); // CraftBukkit
         IntHashMapEntry inthashmapentry = this.e(i);
 
         return inthashmapentry == null ? null : inthashmapentry.b;
