@@ -7,33 +7,14 @@ import java.util.List;
 import java.util.Random;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.util.LongBaseHashtable;
-import org.bukkit.craftbukkit.util.EntryBase;
+import org.bukkit.craftbukkit.util.LongObjectHashMap;
 import org.bukkit.craftbukkit.util.LongHash;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 // CraftBukkit end
 
 public final class SpawnerCreature {
-    // CraftBukkit start
-    // private static HashMap b = new HashMap(); // Moved local to spawnEntities
-    static private class ChunkEntry extends EntryBase {
-        public boolean spawn;
 
-        public ChunkEntry(int x, int z, boolean spawn) {
-            super(LongHash.toLong(x, z));
-            this.spawn = spawn;
-        }
-
-        int getX() {
-            return LongHash.msw(key);
-        }
-
-        int getZ() {
-            return LongHash.lsw(key);
-        }
-    }
-    // CraftBukkit end
-
+    private static LongObjectHashMap b = new LongObjectHashMap(); // CraftBukkit - HashMap -> LongObjectHashMap
     protected static final Class[] a = new Class[] { EntitySpider.class, EntityZombie.class, EntitySkeleton.class};
 
     protected static ChunkPosition getRandomPosition(World world, int i, int j) {
@@ -49,10 +30,7 @@ public final class SpawnerCreature {
         if (!flag && !flag1) {
             return 0;
         } else {
-            // CraftBukkit start
-            // b.clear();
-            LongBaseHashtable chunkCoords = new LongBaseHashtable();
-            // CraftBukkit end
+            b.clear();
 
             int i;
             int j;
@@ -67,13 +45,14 @@ public final class SpawnerCreature {
                 for (int l = -b0; l <= b0; ++l) {
                     for (int i1 = -b0; i1 <= b0; ++i1) {
                         boolean flag2 = l == -b0 || l == b0 || i1 == -b0 || i1 == b0;
+
                         // CraftBukkit start
-                        long chunkCoord = LongHash.toLong(l + k, i1 + j);
+                        long chunkCoords = LongHash.toLong(l + k, i1 + j);
 
                         if (!flag2) {
-                            chunkCoords.put(new ChunkEntry(l + k, i1 + j, false));
-                        } else if (!chunkCoords.containsKey(chunkCoord)) {
-                            chunkCoords.put(new ChunkEntry(l + k, i1 + j, true));
+                            b.put(chunkCoords, false);
+                        } else if (!b.containsKey(chunkCoords)) {
+                            b.put(chunkCoords, true);
                         }
                         // CraftBukkit end
                     }
@@ -82,7 +61,6 @@ public final class SpawnerCreature {
 
             i = 0;
             ChunkCoordinates chunkcoordinates = worldserver.getSpawn();
-            java.util.ArrayList<EntryBase> b = chunkCoords.entries(); // CraftBukkit
             EnumCreatureType[] aenumcreaturetype = EnumCreatureType.values();
 
             j = aenumcreaturetype.length;
@@ -110,13 +88,15 @@ public final class SpawnerCreature {
                 // CraftBukkit end
 
                 if ((!enumcreaturetype.d() || flag1) && (enumcreaturetype.d() || flag) && worldserver.a(enumcreaturetype.a()) <= limit * b.size() / 256) { // CraftBukkit - use per-world limits
+                    Iterator iterator = b.keySet().iterator();
 
-                    // CraftBukkit start
                     label108:
-                    for (EntryBase base : b) {
-                        ChunkEntry entry = (SpawnerCreature.ChunkEntry) base;
-                        if (!entry.spawn) {
-                            ChunkPosition chunkposition = getRandomPosition(worldserver, entry.getX(), entry.getZ());
+                    while (iterator.hasNext()) {
+                        // CraftBukkit start
+                        long key = ((Long) iterator.next()).longValue();
+
+                        if (!((Boolean) b.get(key)).booleanValue()) {
+                            ChunkPosition chunkposition = getRandomPosition(worldserver, LongHash.msw(key), LongHash.lsw(key));
                             // CraftBukkit end
                             int k1 = chunkposition.x;
                             int l1 = chunkposition.y;

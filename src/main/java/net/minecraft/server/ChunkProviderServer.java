@@ -11,20 +11,20 @@ import java.util.Set;
 import java.util.Random;
 
 import org.bukkit.Server;
-import org.bukkit.craftbukkit.util.LongHashset;
-import org.bukkit.craftbukkit.util.LongHashtable;
+import org.bukkit.craftbukkit.util.LongHashSet;
+import org.bukkit.craftbukkit.util.LongObjectHashMap;
 import org.bukkit.event.world.ChunkUnloadEvent;
 // CraftBukkit end
 
 public class ChunkProviderServer implements IChunkProvider {
 
     // CraftBukkit start
-    public LongHashset unloadQueue = new LongHashset();
+    public LongHashSet unloadQueue = new LongHashSet();
     public Chunk emptyChunk;
     public IChunkProvider chunkProvider; // CraftBukkit
     private IChunkLoader e;
     public boolean forceChunkLoad = false; // true -> false
-    public LongHashtable<Chunk> chunks = new LongHashtable<Chunk>();
+    public LongObjectHashMap<Chunk> chunks = new LongObjectHashMap<Chunk>();
     public List chunkList = new ArrayList();
     public WorldServer world;
     // CraftBukkit end

@@ -9,7 +9,7 @@ import java.util.concurrent.Callable;
 
 // CraftBukkit start
 import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.util.LongHashset;
+import org.bukkit.craftbukkit.util.LongHashSet;
 import org.bukkit.craftbukkit.util.UnsafeList;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.craftbukkit.CraftServer;
@@ -60,7 +60,7 @@ public abstract class World implements IBlockAccess {
     // CraftBukkit start - public, longhashset
     public boolean allowMonsters = true;
     public boolean allowAnimals = true;
-    protected LongHashset chunkTickList = new LongHashset();
+    protected LongHashSet chunkTickList = new LongHashSet();
     public long ticksPerAnimalSpawns;
     public long ticksPerMonsterSpawns;
     // CraftBukkit end
@@ -1057,12 +1057,12 @@ public abstract class World implements IBlockAccess {
         for (i = 0; i < this.j.size(); ++i) {
             entity = (Entity) this.j.get(i);
             // CraftBukkit start - fixed an NPE, don't process entities in chunks queued for unload
-            ChunkProviderServer chunkProviderServer = ((WorldServer) entity.world).chunkProviderServer;
-            if (chunkProviderServer.unloadQueue.containsKey(MathHelper.floor(entity.locX) >> 4, MathHelper.floor(entity.locZ) >> 4)) {
+            if (entity == null) {
                 continue;
             }
 
-            if (entity == null) {
+            ChunkProviderServer chunkProviderServer = ((WorldServer) entity.world).chunkProviderServer;
+            if (chunkProviderServer.unloadQueue.contains(MathHelper.floor(entity.locX) >> 4, MathHelper.floor(entity.locZ) >> 4)) {
                 continue;
             }
             // CraftBukkit end
@@ -1103,7 +1103,7 @@ public abstract class World implements IBlockAccess {
 
             // CraftBukkit start - don't tick entities in chunks queued for unload
             ChunkProviderServer chunkProviderServer = ((WorldServer) entity.world).chunkProviderServer;
-            if (chunkProviderServer.unloadQueue.containsKey(MathHelper.floor(entity.locX) >> 4, MathHelper.floor(entity.locZ) >> 4)) {
+            if (chunkProviderServer.unloadQueue.contains(MathHelper.floor(entity.locX) >> 4, MathHelper.floor(entity.locZ) >> 4)) {
                 continue;
             }
             // CraftBukkit end
@@ -1147,7 +1147,7 @@ public abstract class World implements IBlockAccess {
 
             // CraftBukkit start - don't tick entities in chunks queued for unload
             ChunkProviderServer chunkProviderServer = ((WorldServer) tileentity.world).chunkProviderServer;
-            if (chunkProviderServer.unloadQueue.containsKey(tileentity.x >> 4, tileentity.z >> 4)) {
+            if (chunkProviderServer.unloadQueue.contains(tileentity.x >> 4, tileentity.z >> 4)) {
                 continue;
             }
             // CraftBukkit end
@@ -1819,7 +1819,7 @@ public abstract class World implements IBlockAccess {
                 for (int i1 = -b0; i1 <= b0; ++i1) {
                     // CraftBukkit start - don't tick chunks queued for unload
                     ChunkProviderServer chunkProviderServer = ((WorldServer) entityhuman.world).chunkProviderServer;
-                    if (chunkProviderServer.unloadQueue.containsKey(l + j, i1 + k)) {
+                    if (chunkProviderServer.unloadQueue.contains(l + j, i1 + k)) {
                         continue;
                     }
                     // CraftBukkit end
