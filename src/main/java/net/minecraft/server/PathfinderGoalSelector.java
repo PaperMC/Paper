@@ -4,10 +4,14 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.bukkit.craftbukkit.util.UnsafeList; // CraftBukkit
+
 public class PathfinderGoalSelector {
 
-    private List a = new ArrayList();
-    private List b = new ArrayList();
+    // CraftBukkit start - ArrayList -> UnsafeList
+    private List a = new UnsafeList();
+    private List b = new UnsafeList();
+    // CraftBukkit end
     private final MethodProfiler c;
     private int d = 0;
     private int e = 3;
@@ -21,7 +25,7 @@ public class PathfinderGoalSelector {
     }
 
     public void a() {
-        ArrayList arraylist = new ArrayList();
+        UnsafeList arraylist = new UnsafeList(); // CraftBukkit - ArrayList -> UnsafeList
         Iterator iterator;
         PathfinderGoalSelectorItem pathfindergoalselectoritem;
 

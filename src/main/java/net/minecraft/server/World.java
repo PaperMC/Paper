@@ -10,6 +10,7 @@ import java.util.concurrent.Callable;
 // CraftBukkit start
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.util.LongHashset;
+import org.bukkit.craftbukkit.util.UnsafeList;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -54,7 +55,7 @@ public abstract class World implements IBlockAccess {
     public final VillageCollection villages = new VillageCollection(this);
     protected final VillageSiege siegeManager = new VillageSiege(this);
     public final MethodProfiler methodProfiler;
-    private ArrayList d = new ArrayList();
+    private UnsafeList d = new UnsafeList(); // CraftBukkit - ArrayList -> UnsafeList
     private boolean L;
     // CraftBukkit start - public, longhashset
     public boolean allowMonsters = true;
@@ -112,7 +113,7 @@ public abstract class World implements IBlockAccess {
 
         this.M = this.random.nextInt(12000);
         this.J = new int['\u8000'];
-        this.N = new ArrayList();
+        this.N = new UnsafeList(); // CraftBukkit - ArrayList -> UnsafeList
         this.isStatic = false;
         this.dataManager = idatamanager;
         this.methodProfiler = methodprofiler;

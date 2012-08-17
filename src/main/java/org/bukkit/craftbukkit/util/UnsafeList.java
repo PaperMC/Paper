@@ -5,26 +5,38 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.AbstractList;
+import java.util.ConcurrentModificationException;
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.RandomAccess;
 
 // implementation of an ArrayList that offers a getter without range checks
+@SuppressWarnings("unchecked")
 public class UnsafeList<E> extends AbstractList<E> implements List<E>, RandomAccess, Cloneable, Serializable {
     private static final long serialVersionUID = 8683452581112892190L;
+
     private transient Object[] data;
     private int size;
     private int initialCapacity;
 
+    private Iterator[] iterPool = new Iterator[3];
+    private int poolCounter;
+
     public UnsafeList(int capacity) {
         super();
-        if (capacity < 0) capacity = 128;
+        if (capacity < 0) capacity = 32;
         int rounded = Integer.highestOneBit(capacity - 1) << 1;
         data = new Object[rounded];
         initialCapacity = rounded;
+
+        for (int i = 0; i < iterPool.length; i++) {
+            iterPool[i] = new Itr();
+        }
     }
 
     public UnsafeList() {
-        this(128);
+        this(32);
     }
 
     public E get(int index) {
@@ -98,7 +110,15 @@ public class UnsafeList<E> extends AbstractList<E> implements List<E>, RandomAcc
     public void clear() {
         // Create new array to reset memory usage to initial capacity
         size = 0;
-        data = new Object[initialCapacity];
+
+        // If array has grown too large create new one, otherwise just clear it
+        if (data.length > initialCapacity << 3) {
+            data = new Object[initialCapacity];
+        } else {
+            for (int i = 0; i < data.length; i++) {
+                data[i] = null;
+            }
+        }
     }
 
     // actually rounds up to nearest power of two
@@ -115,7 +135,39 @@ public class UnsafeList<E> extends AbstractList<E> implements List<E>, RandomAcc
     }
 
     public boolean isEmpty() {
-        return size != 0;
+        return size == 0;
+    }
+
+    public Object clone() throws CloneNotSupportedException {
+        UnsafeList<E> copy = (UnsafeList<E>) super.clone();
+        copy.data = Java15Compat.Arrays_copyOf(data, size);
+        copy.size = size;
+        copy.initialCapacity = initialCapacity;
+        copy.iterPool = new Iterator[iterPool.length];
+        return copy;
+    }
+
+    public Iterator<E> iterator() {
+        Itr iterator = null;
+        poolCounter = poolCounter++ % iterPool.length;
+
+        // Try to find an iterator that isn't in use
+        for (Iterator iter : iterPool) {
+            if (!((Itr) iter).valid) {
+                iterator = (Itr) iter;
+                break;
+            }
+        }
+
+        // Couldn't find a free one, round robin replace one with a new iterator
+        // This is done in the hope that the new one finishes so can be reused
+        if (iterator == null) {
+            iterPool[poolCounter] = new Itr();
+            iterator = (Itr) iterPool[poolCounter];
+        }
+
+        iterator.reset();
+        return iterator;
     }
 
     private void rangeCheck(int index) {
@@ -153,16 +205,59 @@ public class UnsafeList<E> extends AbstractList<E> implements List<E>, RandomAcc
         }
     }
 
-    public UnsafeList<E> clone() {
-        try {
-            UnsafeList<E> copy = (UnsafeList<E>) super.clone();
-            copy.data = Java15Compat.Arrays_copyOf(data, size);
-            copy.size = size;
-            copy.initialCapacity = initialCapacity;
-            return copy;
-        } catch (CloneNotSupportedException ex) {
-            // This should never happen
-            return null;
+    private class Itr implements Iterator<E> {
+        int index;
+        int lastRet = -1;
+        int expectedModCount = modCount;
+        boolean valid = true;
+
+        public void reset() {
+            index = 0;
+            lastRet = -1;
+            expectedModCount = modCount;
+            valid = true;
+        }
+
+        public boolean hasNext() {
+            valid = index != size;
+            return valid;
+        }
+
+        public E next() {
+            if (modCount != expectedModCount) {
+                throw new ConcurrentModificationException();
+            }
+
+            int i = index;
+            if (i >= size) {
+                throw new NoSuchElementException();
+            }
+
+            if (i >= data.length) {
+                throw new ConcurrentModificationException();
+            }
+
+            index = i + 1;
+            return (E) data[lastRet = i];
+        }
+
+        public void remove() {
+            if (lastRet < 0) {
+                throw new IllegalStateException();
+            }
+
+            if (modCount != expectedModCount) {
+                throw new ConcurrentModificationException();
+            }
+
+            try {
+                UnsafeList.this.remove(lastRet);
+                index = lastRet;
+                lastRet = -1;
+                expectedModCount = modCount;
+            } catch (IndexOutOfBoundsException ex) {
+                throw new ConcurrentModificationException();
+            }
         }
     }
 }
