@@ -470,7 +470,7 @@ public abstract class EntityLiving extends Entity {
         }
 
         this.av += (f3 - this.av) * 0.3F;
-        this.world.methodProfiler.a("headTurn");
+        // this.world.methodProfiler.a("headTurn"); // CraftBukkit - not in production code
         if (this.aV()) {
             this.senses.a();
         } else {
@@ -498,8 +498,8 @@ public abstract class EntityLiving extends Entity {
             }
         }
 
-        this.world.methodProfiler.b();
-        this.world.methodProfiler.a("rangeChecks");
+        // this.world.methodProfiler.b(); // CraftBukkit - not in production code
+        // this.world.methodProfiler.a("rangeChecks"); // CraftBukkit - not in production code
 
         while (this.yaw - this.lastYaw < -180.0F) {
             this.lastYaw -= 360.0F;
@@ -533,7 +533,7 @@ public abstract class EntityLiving extends Entity {
             this.at += 360.0F;
         }
 
-        this.world.methodProfiler.b();
+        // this.world.methodProfiler.b(); // CraftBukkit - not in production code
         this.aw += f2;
     }
 
