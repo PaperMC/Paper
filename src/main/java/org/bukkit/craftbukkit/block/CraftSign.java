@@ -35,7 +35,13 @@ public class CraftSign extends CraftBlockState implements Sign {
         boolean result = super.update(force);
 
         if (result) {
-            System.arraycopy(lines, 0, sign.lines, 0, lines.length);
+            for(int i = 0; i < 4; i++) {
+                if(lines[i] != null) {
+                    sign.lines[i] = lines[i];
+                } else {
+                    sign.lines[i] = "";
+                }
+            }
             sign.update();
         }
 

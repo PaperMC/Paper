@@ -1302,6 +1302,9 @@ public class NetServerHandler extends NetHandler {
                 if (!event.isCancelled()) {
                     for (int l = 0; l < 4; ++l) {
                         tileentitysign1.lines[l] = event.getLine(l);
+                        if(tileentitysign1.lines[l] == null) {
+                            tileentitysign1.lines[l] = "";
+                        }
                     }
                     tileentitysign1.isEditable = false;
                 }
