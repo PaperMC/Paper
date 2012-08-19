@@ -197,7 +197,8 @@ public abstract class World implements IBlockAccess {
 
             for (int k1 = i; k1 <= l; ++k1) {
                 for (int l1 = k; l1 <= j1; ++l1) {
-                    if (!this.isChunkLoaded(k1, l1)) {
+                    // CraftBukkit - check unload queue too so we don't leak a chunk
+                    if (!this.isChunkLoaded(k1, l1) || ((WorldServer) this).chunkProviderServer.unloadQueue.contains(k1, l1)) {
                         return false;
                     }
                 }
