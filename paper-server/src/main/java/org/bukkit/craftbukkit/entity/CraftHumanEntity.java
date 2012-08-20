@@ -36,6 +36,7 @@ import org.bukkit.plugin.Plugin;
 
 public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     private CraftInventoryPlayer inventory;
+    private CraftInventory enderChest;
     protected final PermissibleBase perm = new PermissibleBase(this);
     private boolean op;
     private GameMode mode;
@@ -44,6 +45,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         super(server, entity);
         mode = server.getDefaultGameMode();
         this.inventory = new CraftInventoryPlayer(entity.inventory);
+        enderChest = new CraftInventory(entity.getEnderChest());
     }
 
     public String getName() {
@@ -52,6 +54,10 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     public PlayerInventory getInventory() {
         return inventory;
+    }
+
+    public Inventory getEnderChest() {
+        return enderChest;
     }
 
     public ItemStack getItemInHand() {
@@ -176,6 +182,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         switch(type) {
         case PLAYER:
         case CHEST:
+        case ENDER_CHEST:
             getHandle().openContainer(craftinv.getInventory());
             break;
         case DISPENSER:
