@@ -111,11 +111,13 @@ public class PathfinderGoalSelector {
                     // CraftBukkit - switch order
                     if (!this.a(pathfindergoalselectoritem, pathfindergoalselectoritem1) && this.b.contains(pathfindergoalselectoritem1)) {
                         // this.c.b(); // CraftBukkit - not in production code
+                        ((UnsafeList.Itr) iterator).valid = false; // CraftBukkit - mark iterator for reuse
                         return false;
                     }
                 // CraftBukkit - switch order
                 } else if (!pathfindergoalselectoritem1.a.g() && this.b.contains(pathfindergoalselectoritem1)) {
                     // this.c.b(); // CraftBukkit - not in production code
+                    ((UnsafeList.Itr) iterator).valid = false; // CraftBukkit - mark iterator for reuse
                     return false;
                 }
             }

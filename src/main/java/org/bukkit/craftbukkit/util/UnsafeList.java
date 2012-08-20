@@ -14,25 +14,28 @@ import java.util.RandomAccess;
 // implementation of an ArrayList that offers a getter without range checks
 @SuppressWarnings("unchecked")
 public class UnsafeList<E> extends AbstractList<E> implements List<E>, RandomAccess, Cloneable, Serializable {
-    private static final long serialVersionUID = 8683452581112892190L;
+    private static final long serialVersionUID = 8683452581112892191L;
 
     private transient Object[] data;
     private int size;
     private int initialCapacity;
 
-    private Iterator[] iterPool = new Iterator[3];
+    private Iterator[] iterPool = new Iterator[1];
+    private int maxPool;
     private int poolCounter;
 
-    public UnsafeList(int capacity) {
+    public UnsafeList(int capacity, int maxIterPool) {
         super();
         if (capacity < 0) capacity = 32;
         int rounded = Integer.highestOneBit(capacity - 1) << 1;
         data = new Object[rounded];
         initialCapacity = rounded;
+        maxPool = maxIterPool;
+        iterPool[0] = new Itr();
+    }
 
-        for (int i = 0; i < iterPool.length; i++) {
-            iterPool[i] = new Itr();
-        }
+    public UnsafeList(int capacity) {
+        this(capacity, 5);
     }
 
     public UnsafeList() {
@@ -143,31 +146,38 @@ public class UnsafeList<E> extends AbstractList<E> implements List<E>, RandomAcc
         copy.data = Java15Compat.Arrays_copyOf(data, size);
         copy.size = size;
         copy.initialCapacity = initialCapacity;
-        copy.iterPool = new Iterator[iterPool.length];
+        copy.iterPool = new Iterator[1];
+        copy.iterPool[0] = new Itr();
+        copy.maxPool = maxPool;
+        copy.poolCounter = 0;
         return copy;
     }
 
     public Iterator<E> iterator() {
-        Itr iterator = null;
-        poolCounter = poolCounter++ % iterPool.length;
-
         // Try to find an iterator that isn't in use
         for (Iterator iter : iterPool) {
             if (!((Itr) iter).valid) {
-                iterator = (Itr) iter;
-                break;
+                Itr iterator = (Itr) iter;
+                iterator.reset();
+                return iterator;
             }
         }
 
-        // Couldn't find a free one, round robin replace one with a new iterator
-        // This is done in the hope that the new one finishes so can be reused
-        if (iterator == null) {
-            iterPool[poolCounter] = new Itr();
-            iterator = (Itr) iterPool[poolCounter];
+        // Couldn't find one, see if we can grow our pool size
+        if (iterPool.length < maxPool) {
+            Iterator[] newPool = new Iterator[iterPool.length + 1];
+            System.arraycopy(iterPool, 0, newPool, 0, iterPool.length);
+            iterPool = newPool;
+
+            iterPool[iterPool.length - 1] = new Itr();
+            return iterPool[iterPool.length - 1];
         }
 
-        iterator.reset();
-        return iterator;
+        // Still couldn't find a free one, round robin replace one with a new iterator
+        // This is done in the hope that the new one finishes so can be reused
+        poolCounter = ++poolCounter % iterPool.length;
+        iterPool[poolCounter] = new Itr();
+        return iterPool[poolCounter];
     }
 
     private void rangeCheck(int index) {
@@ -192,6 +202,7 @@ public class UnsafeList<E> extends AbstractList<E> implements List<E>, RandomAcc
         for (int i = 0; i < size; i++) {
             os.writeObject(data[i]);
         }
+        os.writeInt(maxPool);
     }
 
     private void readObject(ObjectInputStream is) throws IOException, ClassNotFoundException {
@@ -203,13 +214,16 @@ public class UnsafeList<E> extends AbstractList<E> implements List<E>, RandomAcc
         for (int i = 0; i < size; i++) {
             data[i] = is.readObject();
         }
+        maxPool = is.readInt();
+        iterPool = new Iterator[1];
+        iterPool[0] = new Itr();
     }
 
-    private class Itr implements Iterator<E> {
+    public class Itr implements Iterator<E> {
         int index;
         int lastRet = -1;
         int expectedModCount = modCount;
-        boolean valid = true;
+        public boolean valid = true;
 
         public void reset() {
             index = 0;
