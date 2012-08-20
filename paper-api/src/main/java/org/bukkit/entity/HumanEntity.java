@@ -29,6 +29,13 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, Permissible, Inv
     public PlayerInventory getInventory();
 
     /**
+     * Get the player's EnderChest inventory
+     *
+     * @return The EnderChest of the player
+     */
+    public Inventory getEnderChest();
+
+    /**
      * If the player currently has an inventory window open, this method will set a
      * property of that window, such as the state of a progress bar.
      * @param prop The property.
