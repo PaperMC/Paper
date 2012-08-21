@@ -250,6 +250,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         getHandle().netServerHandler.sendPacket(new Packet54PlayNoteBlock(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), id, instrument.getType(), note.getId()));
     }
 
+    public void playSound(Location loc, Sound sound, float volume, float pitch) {
+        if (loc == null || sound == null || getHandle().netServerHandler == null) return;
+
+        double x = loc.getBlockX() + 0.5;
+        double y = loc.getBlockY() + 0.5;
+        double z = loc.getBlockZ() + 0.5;
+
+        Packet62NamedSoundEffect packet = new Packet62NamedSoundEffect(sound.getSound(), x, y, z, volume, pitch);
+        getHandle().netServerHandler.sendPacket(packet);
+    }
+
     public void playEffect(Location loc, Effect effect, int data) {
         if (getHandle().netServerHandler == null) return;
 

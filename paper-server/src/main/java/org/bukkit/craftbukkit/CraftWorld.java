@@ -41,6 +41,7 @@ import org.bukkit.World;
 import org.bukkit.block.Biome;
 import org.bukkit.generator.BlockPopulator;
 import org.bukkit.Difficulty;
+import org.bukkit.Sound;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.plugin.messaging.StandardMessenger;
@@ -1160,5 +1161,15 @@ public class CraftWorld implements World {
 
     public void setWaterAnimalSpawnLimit(int limit) {
         waterAnimalSpawn = limit;
+    }
+
+    public void playSound(Location loc, Sound sound, float volume, float pitch) {
+        if (loc == null || sound == null) return;
+
+        double x = loc.getX();
+        double y = loc.getY();
+        double z = loc.getZ();
+
+        getHandle().makeSound(x, y, z, sound.getSound(), volume, pitch);
     }
 }
