@@ -10,6 +10,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Note;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.Sound;
 import org.bukkit.Statistic;
 import org.bukkit.command.CommandSender;
 import org.bukkit.conversations.Conversable;
@@ -196,6 +197,19 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      * @param note The note
      */
     public void playNote(Location loc, Instrument instrument, Note note);
+
+
+    /**
+     * Play a sound for a player at the location.
+     * <p />
+     * This function will fail silently if Location or Sound are null.
+     *
+     * @param location The location to play the sound
+     * @param sound The sound to play
+     * @param volume The volume of the sound
+     * @param pitch The pitch of the sound
+     */
+    public void playSound(Location location, Sound sound, float volume, float pitch);
 
     /**
      * Plays an effect to just this player.
