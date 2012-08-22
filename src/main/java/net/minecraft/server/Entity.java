@@ -91,7 +91,7 @@ public abstract class Entity {
     public boolean al;
     public EnumEntitySize am;
     public UUID uniqueId = UUID.randomUUID(); // CraftBukkit
-    public boolean valid = true; // CraftBukkit
+    public boolean valid = false; // CraftBukkit
 
     public Entity(World world) {
         this.id = entityCount++;

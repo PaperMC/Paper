@@ -878,6 +878,8 @@ public abstract class World implements IBlockAccess {
 
             iworldaccess.a(entity);
         }
+
+        entity.valid = true; // CraftBukkit
     }
 
     protected void b(Entity entity) {
