@@ -32,25 +32,25 @@ public class EntityEnderPearl extends EntityProjectile {
 
                 if (!entityplayer.netServerHandler.disconnected && entityplayer.world == this.world) {
                     // CraftBukkit start
-                    CraftPlayer player = (CraftPlayer) this.shooter.bukkitEntity;
+                    CraftPlayer player = entityplayer.getBukkitEntity();
                     org.bukkit.Location location = getBukkitEntity().getLocation();
                     location.setPitch(player.getLocation().getPitch());
                     location.setYaw(player.getLocation().getYaw());
 
                     PlayerTeleportEvent teleEvent = new PlayerTeleportEvent(player, player.getLocation(), location, PlayerTeleportEvent.TeleportCause.ENDER_PEARL);
                     Bukkit.getPluginManager().callEvent(teleEvent);
-                    if (!teleEvent.isCancelled()) {
-                        ((EntityPlayer) this.shooter).netServerHandler.teleport(teleEvent.getTo());
+
+                    if (!teleEvent.isCancelled() && !entityplayer.netServerHandler.disconnected) {
+                        entityplayer.netServerHandler.teleport(teleEvent.getTo());
                         this.shooter.fallDistance = 0.0F;
 
-                        EntityDamageByEntityEvent damageEvent = new EntityDamageByEntityEvent(this.getBukkitEntity(), this.shooter.getBukkitEntity(), EntityDamageByEntityEvent.DamageCause.FALL, 5);
+                        EntityDamageByEntityEvent damageEvent = new EntityDamageByEntityEvent(this.getBukkitEntity(), player, EntityDamageByEntityEvent.DamageCause.FALL, 5);
                         Bukkit.getPluginManager().callEvent(damageEvent);
 
-                        if (!damageEvent.isCancelled()) {
-                            org.bukkit.entity.Player bPlayer = Bukkit.getPlayerExact(((EntityPlayer) this.shooter).name);
-                            ((CraftPlayer) bPlayer).getHandle().invulnerableTicks = -1; // Remove spawning invulnerability
-                            bPlayer.setLastDamageCause(damageEvent);
-                            ((CraftPlayer) bPlayer).getHandle().damageEntity(DamageSource.FALL, damageEvent.getDamage()); // Damage the new player instead of the old
+                        if (!damageEvent.isCancelled() && !entityplayer.netServerHandler.disconnected) {
+                            entityplayer.invulnerableTicks = -1; // Remove spawning invulnerability
+                            player.setLastDamageCause(damageEvent);
+                            entityplayer.damageEntity(DamageSource.FALL, damageEvent.getDamage());
                         }
                     }
                     // CraftBukkit end
