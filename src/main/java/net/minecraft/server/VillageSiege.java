@@ -28,7 +28,7 @@ public class VillageSiege {
                 return;
             }
         } else {
-            if (this.world.r()) {
+            if (this.world.s()) {
                 this.c = 0;
                 return;
             }

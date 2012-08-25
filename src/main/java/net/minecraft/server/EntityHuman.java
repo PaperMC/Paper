@@ -144,7 +144,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
             if (!this.world.isStatic) {
                 if (!this.l()) {
                     this.a(true, true, false);
-                } else if (this.world.r()) {
+                } else if (this.world.s()) {
                     this.a(false, true, true);
                 }
             }
@@ -855,7 +855,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
                 return EnumBedResult.NOT_POSSIBLE_HERE;
             }
 
-            if (this.world.r()) {
+            if (this.world.s()) {
                 return EnumBedResult.NOT_POSSIBLE_NOW;
             }
 

@@ -721,7 +721,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     }
 
     public boolean b(String s) {
-        return "seed".equals(s) && !this.server.S() ? true : this.server.getServerConfigurationManager().isOp(this.name);
+        return "seed".equals(s) && !this.server.S() ? true : (!"tell".equals(s) && !"help".equals(s) && !"me".equals(s) ? this.server.getServerConfigurationManager().isOp(this.name) : true);
     }
 
     public String r() {

@@ -126,6 +126,9 @@ public class NetServerHandler extends NetHandler {
         // this.minecraftServer.methodProfiler.c("playerTick"); // CraftBukkit - not in production code
         if (!this.h && !this.player.viewingCredits) {
             this.player.g();
+            if (this.player.vehicle == null) {
+                this.player.setPositionRotation(this.y, this.z, this.q, this.player.yaw, this.player.pitch);
+            }
         }
 
         // this.minecraftServer.methodProfiler.b(); // CraftBukkit - not in production code
@@ -266,13 +269,11 @@ public class NetServerHandler extends NetHandler {
                     }
 
                     if (packet10flying.hasPos && packet10flying.y == -999.0D && packet10flying.stance == -999.0D) {
-                        // CraftBukkit start
-                        if (Math.abs(packet10flying.x) > 1 || Math.abs(packet10flying.z) > 1) {
+                        if (Math.abs(packet10flying.x) > 1.0D || Math.abs(packet10flying.z) > 1.0D) {
                             System.err.println(player.getName() + " was caught trying to crash the server with an invalid position.");
                             player.kickPlayer("Nope!");
                             return;
                         }
-                        // CraftBukkit end
 
                         d5 = packet10flying.x;
                         d4 = packet10flying.z;
@@ -875,6 +876,7 @@ public class NetServerHandler extends NetHandler {
         }
 
         try {
+            logger.info(event.getPlayer().getName() + " issued server command: " + event.getMessage()); // CraftBukkit
             if (this.server.dispatchCommand(event.getPlayer(), event.getMessage().substring(1))) {
                 return;
             }
@@ -886,10 +888,7 @@ public class NetServerHandler extends NetHandler {
         // CraftBukkit end
 
         /* CraftBukkit start - No longer needed as we have already handled it in server.dispatchServerCommand above.
-        if (this.minecraftServer.getServerConfigurationManager().isOp(this.player.name) || "/seed".equals(s)) {
-            logger.info(this.player.name + " issued server command: " + s);
-            this.minecraftServer.getCommandHandler().a(this.player, s);
-        }
+        this.minecraftServer.getCommandHandler().a(this.player, s);
         // CraftBukkit end */
     }
 

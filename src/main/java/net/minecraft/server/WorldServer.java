@@ -30,9 +30,10 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
     public boolean weirdIsOpCache = false;
     public boolean savingDisabled;
     private boolean P;
-    private NoteDataList[] Q = new NoteDataList[] { new NoteDataList((EmptyClass2) null), new NoteDataList((EmptyClass2) null)};
-    private int R = 0;
-    private static final StructurePieceTreasure[] S = new StructurePieceTreasure[] { new StructurePieceTreasure(Item.STICK.id, 0, 1, 3, 10), new StructurePieceTreasure(Block.WOOD.id, 0, 1, 3, 10), new StructurePieceTreasure(Block.LOG.id, 0, 1, 3, 10), new StructurePieceTreasure(Item.STONE_AXE.id, 0, 1, 1, 3), new StructurePieceTreasure(Item.WOOD_AXE.id, 0, 1, 1, 5), new StructurePieceTreasure(Item.STONE_PICKAXE.id, 0, 1, 1, 3), new StructurePieceTreasure(Item.WOOD_PICKAXE.id, 0, 1, 1, 5), new StructurePieceTreasure(Item.APPLE.id, 0, 2, 3, 5), new StructurePieceTreasure(Item.BREAD.id, 0, 2, 3, 3)};
+    private int emptyTime = 0;
+    private NoteDataList[] R = new NoteDataList[] { new NoteDataList((EmptyClass2) null), new NoteDataList((EmptyClass2) null)};
+    private int S = 0;
+    private static final StructurePieceTreasure[] T = new StructurePieceTreasure[] { new StructurePieceTreasure(Item.STICK.id, 0, 1, 3, 10), new StructurePieceTreasure(Block.WOOD.id, 0, 1, 3, 10), new StructurePieceTreasure(Block.LOG.id, 0, 1, 3, 10), new StructurePieceTreasure(Item.STONE_AXE.id, 0, 1, 1, 3), new StructurePieceTreasure(Item.WOOD_AXE.id, 0, 1, 1, 5), new StructurePieceTreasure(Item.STONE_PICKAXE.id, 0, 1, 1, 3), new StructurePieceTreasure(Item.WOOD_PICKAXE.id, 0, 1, 1, 5), new StructurePieceTreasure(Item.APPLE.id, 0, 2, 3, 5), new StructurePieceTreasure(Item.BREAD.id, 0, 2, 3, 3)};
     private IntHashMap entitiesById;
 
     // CraftBukkit start
@@ -415,6 +416,18 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
         }
     }
 
+    public void tickEntities() {
+        if (false && this.players.isEmpty()) { // CraftBukkit - this prevents entity cleanup, other issues on servers with no players
+            if (this.emptyTime++ >= 60) {
+                return;
+            }
+        } else {
+            this.emptyTime = 0;
+        }
+
+        super.tickEntities();
+    }
+
     public boolean a(boolean flag) {
         int i = this.O.size();
 
@@ -503,7 +516,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
         super.entityJoinedWorld(entity, flag);
     }
 
-    protected IChunkProvider h() {
+    protected IChunkProvider i() {
         IChunkLoader ichunkloader = this.dataManager.createChunkLoader(this.worldProvider);
 
         // CraftBukkit start
@@ -621,13 +634,13 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
             this.worldData.setSpawn(i, j, k);
             this.isLoading = false;
             if (worldsettings.c()) {
-                this.i();
+                this.j();
             }
         }
     }
 
-    protected void i() {
-        WorldGenBonusChest worldgenbonuschest = new WorldGenBonusChest(S, 10);
+    protected void j() {
+        WorldGenBonusChest worldgenbonuschest = new WorldGenBonusChest(T, 10);
 
         for (int i = 0; i < 10; ++i) {
             int j = this.worldData.c() + this.random.nextInt(6) - this.random.nextInt(6);
@@ -756,13 +769,13 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
 
     public void playNote(int i, int j, int k, int l, int i1, int j1) {
         NoteBlockData noteblockdata = new NoteBlockData(i, j, k, l, i1, j1);
-        Iterator iterator = this.Q[this.R].iterator();
+        Iterator iterator = this.R[this.S].iterator();
 
         NoteBlockData noteblockdata1;
 
         do {
             if (!iterator.hasNext()) {
-                this.Q[this.R].add(noteblockdata);
+                this.R[this.S].add(noteblockdata);
                 return;
             }
 
@@ -772,11 +785,11 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
     }
 
     private void Q() {
-        while (!this.Q[this.R].isEmpty()) {
-            int i = this.R;
+        while (!this.R[this.S].isEmpty()) {
+            int i = this.S;
 
-            this.R ^= 1;
-            Iterator iterator = this.Q[i].iterator();
+            this.S ^= 1;
+            Iterator iterator = this.R[i].iterator();
 
             while (iterator.hasNext()) {
                 NoteBlockData noteblockdata = (NoteBlockData) iterator.next();
@@ -787,7 +800,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
                 }
             }
 
-            this.Q[i].clear();
+            this.R[i].clear();
         }
     }
 
@@ -806,10 +819,10 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
         this.dataManager.a();
     }
 
-    protected void l() {
+    protected void m() {
         boolean flag = this.J();
 
-        super.l();
+        super.m();
         if (flag != this.J()) {
             // CraftBukkit start - only sending weather packets to those affected
             for (int i = 0; i < this.players.size(); ++i) {

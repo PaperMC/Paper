@@ -304,7 +304,7 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
 
                 if (worldserver != null) {
                     if (!flag) {
-                        log.info("Saving chunks for level \'" + worldserver.getWorldData().getName() + "\'/" + worldserver.worldProvider);
+                        log.info("Saving chunks for level \'" + worldserver.getWorldData().getName() + "\'/" + worldserver.worldProvider.getName());
                         worldserver.save(true, (IProgressUpdate) null); // Perform a full save
                     } else {
                         worldserver.save(false, (IProgressUpdate) null); // Queue chunk saving
@@ -561,10 +561,7 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
                 while (true) {
                     if (!worldserver.updateLights()) {
                         // this.methodProfiler.b(); // CraftBukkit - not in production code
-                        if (true || !worldserver.players.isEmpty()) { // CraftBukkit - this prevents entity cleanup, other issue on servers with no players
-                            worldserver.tickEntities();
-                        }
-
+                        worldserver.tickEntities();
                         // this.methodProfiler.a("tracker"); // CraftBukkit - not in production code
                         worldserver.getTracker().updatePlayers();
                         // this.methodProfiler.b(); // CraftBukkit - not in production code
@@ -691,7 +688,7 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
             }
 
             if (flag) {
-                dedicatedserver.aj();
+                dedicatedserver.ak();
             }
             */
 
@@ -744,7 +741,7 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
     }
 
     public String getVersion() {
-        return "1.3.1";
+        return "1.3.2";
     }
 
     public int x() {

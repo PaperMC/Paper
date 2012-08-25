@@ -118,7 +118,7 @@ public class WorldGenBigTree extends WorldGenerator implements BlockSapling.Tree
                     aint1[b2] = aint[b2] + k1;
                     int l1 = this.world.getTypeId(aint1[0], aint1[1], aint1[2]);
 
-                    if (l1 != 0 && l1 != 18) {
+                    if (l1 != 0 && l1 != Block.LEAVES.id) {
                         ++k1;
                     } else {
                         this.setTypeAndData(this.world, aint1[0], aint1[1], aint1[2], l, 0);
@@ -160,7 +160,7 @@ public class WorldGenBigTree extends WorldGenerator implements BlockSapling.Tree
         for (int i1 = j + this.n; l < i1; ++l) {
             float f = this.b(l - j);
 
-            this.a(i, l, k, f, (byte) 1, 18);
+            this.a(i, l, k, f, (byte) 1, Block.LEAVES.id);
         }
     }
 
@@ -197,7 +197,20 @@ public class WorldGenBigTree extends WorldGenerator implements BlockSapling.Tree
                 aint3[b1] = MathHelper.floor((double) (aint[b1] + j) + 0.5D);
                 aint3[b2] = MathHelper.floor((double) aint[b2] + (double) j * d0 + 0.5D);
                 aint3[b3] = MathHelper.floor((double) aint[b3] + (double) j * d1 + 0.5D);
-                this.setTypeAndData(this.world, aint3[0], aint3[1], aint3[2], i, 0);
+                byte b5 = 0;
+                int l = Math.abs(aint3[0] - aint[0]);
+                int i1 = Math.abs(aint3[2] - aint[2]);
+                int j1 = Math.max(l, i1);
+
+                if (j1 > 0) {
+                    if (l == j1) {
+                        b5 = 4;
+                    } else if (i1 == j1) {
+                        b5 = 8;
+                    }
+                }
+
+                this.setTypeAndData(this.world, aint3[0], aint3[1], aint3[2], i, b5);
             }
         }
     }
@@ -226,17 +239,17 @@ public class WorldGenBigTree extends WorldGenerator implements BlockSapling.Tree
         int[] aint = new int[] { i, j, l};
         int[] aint1 = new int[] { i, k, l};
 
-        this.a(aint, aint1, 17);
+        this.a(aint, aint1, Block.LOG.id);
         if (this.l == 2) {
             ++aint[0];
             ++aint1[0];
-            this.a(aint, aint1, 17);
+            this.a(aint, aint1, Block.LOG.id);
             ++aint[2];
             ++aint1[2];
-            this.a(aint, aint1, 17);
+            this.a(aint, aint1, Block.LOG.id);
             aint[0] += -1;
             aint1[0] += -1;
-            this.a(aint, aint1, 17);
+            this.a(aint, aint1, Block.LOG.id);
         }
     }
 
@@ -252,7 +265,7 @@ public class WorldGenBigTree extends WorldGenerator implements BlockSapling.Tree
             int k = aint[1] - this.d[1];
 
             if (this.c(k)) {
-                this.a(aint, aint2, 17);
+                this.a(aint, aint2, (byte) Block.LOG.id);
             }
         }
     }
@@ -296,7 +309,7 @@ public class WorldGenBigTree extends WorldGenerator implements BlockSapling.Tree
                 aint3[b3] = MathHelper.floor((double) aint[b3] + (double) i * d1);
                 int k = this.world.getTypeId(aint3[0], aint3[1], aint3[2]);
 
-                if ((k != 0 && k != 18) || aint3[1] >= 256) { // CraftBukkit - fix trees wrapping around
+                if ((k != 0 && k != Block.LEAVES.id) || aint3[1] >= 256) { // CraftBukkit - fix trees wrapping around
                     break;
                 }
             }

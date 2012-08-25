@@ -229,7 +229,7 @@ public class PlayerManager {
     public boolean a(EntityPlayer entityplayer, int i, int j) {
         PlayerInstance playerinstance = this.a(i, j, false);
 
-        return playerinstance == null ? false : PlayerInstance.b(playerinstance).contains(entityplayer);
+        return playerinstance == null ? false : PlayerInstance.b(playerinstance).contains(entityplayer) && !entityplayer.chunkCoordIntPairQueue.contains(PlayerInstance.a(playerinstance));
     }
 
     public static int getFurthestViewableBlock(int i) {
