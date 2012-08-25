@@ -21,7 +21,6 @@ import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.Validate;
-import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.Warning;
 import org.bukkit.Warning.WarningState;
@@ -272,22 +271,26 @@ public class JavaPluginLoader implements PluginLoader {
     }
 
     public Map<Class<? extends Event>, Set<RegisteredListener>> createRegisteredListeners(Listener listener, final Plugin plugin) {
+        Validate.notNull(plugin, "Plugin can not be null");
+        Validate.notNull(listener, "Listener can not be null");
+
         boolean useTimings = server.getPluginManager().useTimings();
         Map<Class<? extends Event>, Set<RegisteredListener>> ret = new HashMap<Class<? extends Event>, Set<RegisteredListener>>();
         Method[] methods;
         try {
             methods = listener.getClass().getDeclaredMethods();
         } catch (NoClassDefFoundError e) {
-            Bukkit.getServer().getLogger().severe("Plugin " + plugin.getDescription().getName() + " is attempting to register event " + e.getMessage() + ", which does not exist. Ignoring events registered in " + listener.getClass());
+            plugin.getLogger().severe("Plugin " + plugin.getDescription().getFullName() + " has failed to register events for " + listener.getClass() + " because " + e.getMessage() + " does not exist.");
             return ret;
         }
+
         for (int i = 0; i < methods.length; i++) {
             final Method method = methods[i];
             final EventHandler eh = method.getAnnotation(EventHandler.class);
             if (eh == null) continue;
             final Class<?> checkClass = method.getParameterTypes()[0];
             if (!Event.class.isAssignableFrom(checkClass) || method.getParameterTypes().length != 1) {
-                plugin.getServer().getLogger().severe("Wrong method arguments used for event type registered");
+                plugin.getLogger().severe(plugin.getDescription().getFullName() + " attempted to register an invalid EventHandler method signature \"" + method.toGenericString() + "\" in " + listener.getClass());
                 continue;
             }
             final Class<? extends Event> eventClass = checkClass.asSubclass(Event.class);
