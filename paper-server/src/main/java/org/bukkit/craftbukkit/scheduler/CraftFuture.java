@@ -48,12 +48,17 @@ class CraftFuture<T> extends CraftTask implements Future<T> {
     public synchronized T get(long timeout, final TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         timeout = unit.toMillis(timeout);
         long period = this.getPeriod();
+        long timestamp = timeout > 0 ? System.currentTimeMillis() : 0l;
         while (true) {
             if (period == -1l || period == -3l) {
-                this.wait(unit.toMillis(timeout));
+                this.wait(timeout);
                 period = this.getPeriod();
                 if (period == -1l || period == -3l) {
                     if (timeout == 0l) {
+                        continue;
+                    }
+                    timeout += timestamp - (timestamp = System.currentTimeMillis());
+                    if (timeout > 0) {
                         continue;
                     }
                     throw new TimeoutException();
