@@ -276,16 +276,22 @@ public class JavaPluginLoader implements PluginLoader {
 
         boolean useTimings = server.getPluginManager().useTimings();
         Map<Class<? extends Event>, Set<RegisteredListener>> ret = new HashMap<Class<? extends Event>, Set<RegisteredListener>>();
-        Method[] methods;
+        Set<Method> methods;
         try {
-            methods = listener.getClass().getDeclaredMethods();
+            Method[] publicMethods = listener.getClass().getMethods();
+            methods = new HashSet<Method>(publicMethods.length, Float.MAX_VALUE);
+            for (Method method : publicMethods) {
+                methods.add(method);
+            }
+            for (Method method : listener.getClass().getDeclaredMethods()) {
+                methods.add(method);
+            }
         } catch (NoClassDefFoundError e) {
             plugin.getLogger().severe("Plugin " + plugin.getDescription().getFullName() + " has failed to register events for " + listener.getClass() + " because " + e.getMessage() + " does not exist.");
             return ret;
         }
 
-        for (int i = 0; i < methods.length; i++) {
-            final Method method = methods[i];
+        for (final Method method : methods) {
             final EventHandler eh = method.getAnnotation(EventHandler.class);
             if (eh == null) continue;
             final Class<?> checkClass = method.getParameterTypes()[0];
