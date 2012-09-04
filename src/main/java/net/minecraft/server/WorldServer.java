@@ -151,7 +151,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
         this.methodProfiler.a("mobSpawner");
         // CraftBukkit start - Only call spawner if we have players online and the world allows for mobs or animals
         long time = this.worldData.getTime();
-        if ((this.allowMonsters || this.allowAnimals) && (this instanceof WorldServer && this.getServer().getHandle().players.size() > 0)) {
+        if ((this.allowMonsters || this.allowAnimals) && (this instanceof WorldServer && this.players.size() > 0)) {
             SpawnerCreature.spawnEntities(this, this.allowMonsters && (this.ticksPerMonsterSpawns != 0 && time % this.ticksPerMonsterSpawns == 0L), this.allowAnimals && (this.ticksPerAnimalSpawns != 0 && time % this.ticksPerAnimalSpawns == 0L));
         }
         // CraftBukkit end
