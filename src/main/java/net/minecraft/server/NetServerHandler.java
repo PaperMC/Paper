@@ -106,7 +106,14 @@ public class NetServerHandler extends NetHandler {
         this.h = false;
         ++this.f;
         // this.minecraftServer.methodProfiler.a("packetflow"); // CraftBukkit - not in production code
-        this.networkManager.b();
+        // CraftBukkit start
+        try {
+            this.networkManager.b();
+        } catch (Exception ex) {
+            logger.log(Level.WARNING, "Exception from " + this.player.name, ex);
+            this.disconnect(ex.getClass().getName());
+        }
+        // CraftBukkit end
         // this.minecraftServer.methodProfiler.c("keepAlive"); // CraftBukkit - not in production code
         if ((long) this.f - this.l > 20L) {
             this.l = (long) this.f;
