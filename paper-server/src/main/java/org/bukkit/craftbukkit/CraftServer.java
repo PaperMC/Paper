@@ -485,7 +485,12 @@ public final class CraftServer implements Server {
                 return true;
             }
         }
-        return dispatchCommand(sender, serverCommand.command);
+        try {
+            return dispatchCommand(sender, serverCommand.command);
+        } catch (Exception ex) {
+            getLogger().log(Level.WARNING, "Unexpected exception while parsing console command \"" + serverCommand.command + '"', ex);
+            return false;
+        }
     }
 
     public boolean dispatchCommand(CommandSender sender, String commandLine) {
