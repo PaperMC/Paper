@@ -75,4 +75,8 @@ class CraftTask implements BukkitTask, Runnable {
     void setNext(CraftTask next) {
         this.next = next;
     }
+
+    Class<? extends Runnable> getTaskClass() {
+        return task.getClass();
+    }
 }

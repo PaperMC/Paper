@@ -28,7 +28,7 @@ public class CraftCrashReport implements Callable {
             for (Map.Entry<Thread, ? extends Object[]> entry : Thread.getAllStackTraces().entrySet()) {
                 value.append(' ').append(entry.getKey().getState().name()).append(' ').append(entry.getKey().getName()).append(": ").append(Arrays.toString(entry.getValue())).append(',');
             }
-            value.append('}');
+            value.append("}\n   ").append(Bukkit.getScheduler().toString());
         } catch (Throwable t) {
             value.append("\n   Failed to handle CraftCrashReport:\n");
             PrintWriter writer = new PrintWriter(value);
