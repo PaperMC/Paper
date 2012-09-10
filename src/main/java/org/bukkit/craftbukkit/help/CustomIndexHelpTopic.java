@@ -13,7 +13,7 @@ import java.util.List;
  */
 public class CustomIndexHelpTopic extends IndexHelpTopic {
     private List<String> futureTopics;
-    private HelpMap helpMap;
+    private final HelpMap helpMap;
     
     public CustomIndexHelpTopic(HelpMap helpMap, String name, String shortText, String permission, List<String> futureTopics, String preamble) {
         super(name, shortText, permission, new HashSet<HelpTopic>(), preamble);

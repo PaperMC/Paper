@@ -16,8 +16,7 @@ public class CraftCreature extends CraftLivingEntity implements Creature {
         if (target == null) {
             entity.target = null;
         } else if (target instanceof CraftLivingEntity) {
-            EntityLiving victim = ((CraftLivingEntity) target).getHandle();
-            entity.target = victim;
+            entity.target = ((CraftLivingEntity) target).getHandle();
             entity.pathEntity = entity.world.findPath(entity, entity.target, 16.0F, true, false, false, true);
         }
     }

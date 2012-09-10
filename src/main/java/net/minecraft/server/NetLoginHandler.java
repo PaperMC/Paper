@@ -23,6 +23,7 @@ public class NetLoginHandler extends NetHandler {
     private String loginKey = Long.toString(random.nextLong(), 16); // CraftBukkit - Security fix
     private SecretKey k = null;
     public String hostname = ""; // CraftBukkit - add field
+    private boolean login = false; // CraftBukkit
 
     public NetLoginHandler(MinecraftServer minecraftserver, Socket socket, String s) throws java.io.IOException { // CraftBukkit - throws IOException
         this.server = minecraftserver;
@@ -98,6 +99,13 @@ public class NetLoginHandler extends NetHandler {
     public void a(Packet205ClientCommand packet205clientcommand) {
         if (packet205clientcommand.a == 0) {
             if (this.server.getOnlineMode()) {
+                // CraftBukkit start
+                if (this.login) {
+                    this.disconnect("Duplicate login");
+                    return;
+                }
+                this.login = true;
+                // CraftBukkit end
                 (new ThreadLoginVerifier(this, server.server)).start(); // CraftBukkit - add CraftServer
             } else {
                 this.i = true;

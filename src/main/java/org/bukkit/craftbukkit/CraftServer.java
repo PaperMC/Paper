@@ -144,7 +144,7 @@ public final class CraftServer implements Server {
     private YamlConfiguration configuration;
     private final Yaml yaml = new Yaml(new SafeConstructor());
     private final Map<String, OfflinePlayer> offlinePlayers = new MapMaker().softValues().makeMap();
-    private AutoUpdater updater;
+    private final AutoUpdater updater;
     private final EntityMetadataStore entityMetadata = new EntityMetadataStore();
     private final PlayerMetadataStore playerMetadata = new PlayerMetadataStore();
     private final WorldMetadataStore worldMetadata = new WorldMetadataStore();
@@ -353,7 +353,7 @@ public final class CraftServer implements Server {
                 matchedPlayers.add(iterPlayer);
                 break;
             }
-            if (iterPlayerName.toLowerCase().indexOf(partialName.toLowerCase()) != -1) {
+            if (iterPlayerName.toLowerCase().contains(partialName.toLowerCase())) {
                 // Partial match
                 matchedPlayers.add(iterPlayer);
             }
@@ -911,7 +911,7 @@ public final class CraftServer implements Server {
                     commands = ImmutableList.<String>of(section.getString(key));
                 }
 
-                result.put(key, commands.toArray(new String[0]));
+                result.put(key, commands.toArray(new String[commands.size()]));
             }
         }
 
@@ -1146,8 +1146,8 @@ public final class CraftServer implements Server {
         String[] files = storage.getPlayerDir().list(new DatFileFilter());
         Set<OfflinePlayer> players = new HashSet<OfflinePlayer>();
 
-        for (int i = 0; i < files.length; i++) {
-            players.add(getOfflinePlayer(files[i].substring(0, files[i].length() - 4)));
+        for (String file : files) {
+            players.add(getOfflinePlayer(file.substring(0, file.length() - 4)));
         }
         players.addAll(Arrays.asList(getOnlinePlayers()));
 

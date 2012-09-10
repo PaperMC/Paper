@@ -13,10 +13,10 @@ import net.minecraft.server.Packet100OpenWindow;
 import net.minecraft.server.Slot;
 
 public class CraftContainer extends Container {
-    private InventoryView view;
+    private final InventoryView view;
     private InventoryType cachedType;
     private String cachedTitle;
-    private int cachedSize;
+    private final int cachedSize;
 
     public CraftContainer(InventoryView view, int id) {
         this.view = view;

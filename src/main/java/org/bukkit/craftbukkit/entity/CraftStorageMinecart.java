@@ -8,7 +8,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.StorageMinecart;
 
 public class CraftStorageMinecart extends CraftMinecart implements StorageMinecart {
-    private CraftInventory inventory;
+    private final CraftInventory inventory;
 
     public CraftStorageMinecart(CraftServer server, EntityMinecart entity) {
         super(server, entity);

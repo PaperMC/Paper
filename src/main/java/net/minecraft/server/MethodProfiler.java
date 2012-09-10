@@ -9,6 +9,8 @@ import java.util.Map;
 
 // CraftBukkit start - strip down to empty
 public class MethodProfiler {
+    public boolean a = false;
+
     public final void a() { }
     public final void a(String s) { }
     public final void b() { }

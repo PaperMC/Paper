@@ -273,6 +273,12 @@ public class NetworkManager implements INetworkManager {
         while (!this.inboundQueue.isEmpty() && i-- >= 0) {
             Packet packet = (Packet) this.inboundQueue.poll(); // CraftBukkit - remove -> poll
 
+            // CraftBukkit start
+            if (this.packetListener instanceof NetLoginHandler ? ((NetLoginHandler) this.packetListener).c : ((NetServerHandler) this.packetListener).disconnected) {
+                continue;
+            }
+            // CraftBukkit end
+
             packet.handle(this.packetListener);
         }
 

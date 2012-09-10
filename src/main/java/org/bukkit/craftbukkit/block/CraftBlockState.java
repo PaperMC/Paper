@@ -22,7 +22,7 @@ public class CraftBlockState implements BlockState {
     private final int z;
     protected int type;
     protected MaterialData data;
-    protected byte light;
+    protected final byte light;
 
     public CraftBlockState(final Block block) {
         this.world = (CraftWorld) block.getWorld();

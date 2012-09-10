@@ -31,8 +31,7 @@ public class CraftPainting extends CraftEntity implements Painting {
     public boolean setArt(Art art, boolean force) {
         EntityPainting painting = this.getHandle();
         EnumArt oldArt = painting.art;
-        EnumArt newArt = CraftArt.BukkitToNotch(art);
-        painting.art = newArt;
+        painting.art = CraftArt.BukkitToNotch(art);
         painting.setDirection(painting.direction);
         if (!force && !painting.survives()) {
             // Revert painting since it doesn't fit

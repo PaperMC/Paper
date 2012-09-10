@@ -247,9 +247,9 @@ public abstract class World implements IBlockAccess {
                 Chunk chunk = this.getChunkAt(i >> 4, k >> 4);
                 boolean flag1 = chunk.a(i & 15, j, k & 15, l, i1);
 
-                // this.methodProfiler.a("checkLight"); // CraftBukkit - not in production code
+                this.methodProfiler.a("checkLight");
                 this.x(i, j, k);
-                // this.methodProfiler.b(); // CraftBukkit - not in production code
+                this.methodProfiler.b();
                 if (flag && flag1 && (this.isStatic || chunk.seenByPlayer)) {
                     this.notify(i, j, k);
                 }
@@ -271,9 +271,9 @@ public abstract class World implements IBlockAccess {
                 Chunk chunk = this.getChunkAt(i >> 4, k >> 4);
                 boolean flag = chunk.a(i & 15, j, k & 15, l);
 
-                // this.methodProfiler.a("checkLight"); // CraftBukkit - not in production code
+                this.methodProfiler.a("checkLight");
                 this.x(i, j, k);
-                // this.methodProfiler.b(); // CraftBukkit - not in production code
+                this.methodProfiler.b();
                 if (flag && (this.isStatic || chunk.seenByPlayer)) {
                     this.notify(i, j, k);
                 }
@@ -1051,8 +1051,8 @@ public abstract class World implements IBlockAccess {
     public void b(int i, int j, int k, int l, int i1) {}
 
     public void tickEntities() {
-        // this.methodProfiler.a("entities"); // CraftBukkit - not in production code
-        // this.methodProfiler.a("global"); // CraftBukkit - not in production code
+        this.methodProfiler.a("entities");
+        this.methodProfiler.a("global");
 
         int i;
         Entity entity;
@@ -1075,7 +1075,7 @@ public abstract class World implements IBlockAccess {
             }
         }
 
-        // this.methodProfiler.c("remove"); // CraftBukkit - not in production code
+        this.methodProfiler.c("remove");
         this.entityList.removeAll(this.g);
         Iterator iterator = this.g.iterator();
 
@@ -1099,7 +1099,7 @@ public abstract class World implements IBlockAccess {
         }
 
         this.g.clear();
-        // this.methodProfiler.c("regular"); // CraftBukkit - not in production code
+        this.methodProfiler.c("regular");
 
         for (i = 0; i < this.entityList.size(); ++i) {
             entity = (Entity) this.entityList.get(i);
@@ -1120,13 +1120,13 @@ public abstract class World implements IBlockAccess {
                 entity.vehicle = null;
             }
 
-            // this.methodProfiler.a("tick"); // CraftBukkit - not in production code
+            this.methodProfiler.a("tick");
             if (!entity.dead) {
                 this.playerJoinedWorld(entity);
             }
 
-            // this.methodProfiler.b(); // CraftBukkit - not in production code
-            // this.methodProfiler.a("remove"); // CraftBukkit - not in production code
+            this.methodProfiler.b();
+            this.methodProfiler.a("remove");
             if (entity.dead) {
                 j = entity.ah;
                 k = entity.aj;
@@ -1138,10 +1138,10 @@ public abstract class World implements IBlockAccess {
                 this.b(entity);
             }
 
-            // this.methodProfiler.b(); // CraftBukkit - not in production code
+            this.methodProfiler.b();
         }
 
-        // this.methodProfiler.c("tileEntities"); // CraftBukkit - not in production code
+        this.methodProfiler.c("tileEntities");
         this.L = true;
         iterator = this.tileEntityList.iterator();
 
@@ -1177,7 +1177,7 @@ public abstract class World implements IBlockAccess {
             this.b.clear();
         }
 
-        // this.methodProfiler.c("pendingTileEntities"); // CraftBukkit - not in production code
+        this.methodProfiler.c("pendingTileEntities");
         if (!this.a.isEmpty()) {
             Iterator iterator1 = this.a.iterator();
 
@@ -1211,8 +1211,8 @@ public abstract class World implements IBlockAccess {
             this.a.clear();
         }
 
-        // this.methodProfiler.b(); // CraftBukkit - not in production code
-        // this.methodProfiler.b(); // CraftBukkit - not in production code
+        this.methodProfiler.b();
+        this.methodProfiler.b();
     }
 
     public void a(Collection collection) {
@@ -1246,7 +1246,7 @@ public abstract class World implements IBlockAccess {
                 }
             }
 
-            // this.methodProfiler.a("chunkCheck"); // CraftBukkit - not in production code
+            this.methodProfiler.a("chunkCheck");
             if (Double.isNaN(entity.locX) || Double.isInfinite(entity.locX)) {
                 entity.locX = entity.S;
             }
@@ -1284,7 +1284,7 @@ public abstract class World implements IBlockAccess {
                 }
             }
 
-            // this.methodProfiler.b(); // CraftBukkit - not in production code
+            this.methodProfiler.b();
             if (flag && entity.ag && entity.passenger != null) {
                 if (!entity.passenger.dead && entity.passenger.vehicle == entity) {
                     this.playerJoinedWorld(entity.passenger);
@@ -1805,7 +1805,7 @@ public abstract class World implements IBlockAccess {
 
     protected void x() {
         // this.chunkTickList.clear(); // CraftBukkit - removed
-        // this.methodProfiler.a("buildList"); // CraftBukkit - not in production code
+        this.methodProfiler.a("buildList");
 
         int i;
         EntityHuman entityhuman;
@@ -1832,12 +1832,12 @@ public abstract class World implements IBlockAccess {
             }
         }
 
-        // this.methodProfiler.b(); // CraftBukkit - not in production code
+        this.methodProfiler.b();
         if (this.M > 0) {
             --this.M;
         }
 
-        // this.methodProfiler.a("playerCheckLight"); // CraftBukkit - not in production code
+        this.methodProfiler.a("playerCheckLight");
         if (!this.players.isEmpty()) {
             i = this.random.nextInt(this.players.size());
             entityhuman = (EntityHuman) this.players.get(i);
@@ -1848,11 +1848,11 @@ public abstract class World implements IBlockAccess {
             this.x(j, k, j1);
         }
 
-        // this.methodProfiler.b(); // CraftBukkit - not in production code
+        this.methodProfiler.b();
     }
 
     protected void a(int i, int j, Chunk chunk) {
-        // this.methodProfiler.c("moodSound"); // CraftBukkit - not in production code
+        this.methodProfiler.c("moodSound");
         if (this.M == 0) {
             this.l = this.l * 3 + 1013904223;
             int k = this.l >> 2;
@@ -1873,7 +1873,7 @@ public abstract class World implements IBlockAccess {
             }
         }
 
-        // this.methodProfiler.c("checkLight"); // CraftBukkit - not in production code
+        this.methodProfiler.c("checkLight");
         chunk.o();
     }
 
@@ -2046,7 +2046,7 @@ public abstract class World implements IBlockAccess {
             int l = 0;
             int i1 = 0;
 
-            // this.methodProfiler.a("getBrightness"); // CraftBukkit - not in production code
+            this.methodProfiler.a("getBrightness");
             int j1 = this.b(enumskyblock, i, j, k);
             boolean flag = false;
             int k1 = this.getTypeId(i, j, k);
@@ -2134,8 +2134,8 @@ public abstract class World implements IBlockAccess {
                 l = 0;
             }
 
-            // this.methodProfiler.b(); // CraftBukkit - not in production code
-            // this.methodProfiler.a("tcp < tcc"); // CraftBukkit - not in production code
+            this.methodProfiler.b();
+            this.methodProfiler.a("tcp < tcc");
 
             while (l < i1) {
                 k1 = this.J[l++];
@@ -2204,7 +2204,7 @@ public abstract class World implements IBlockAccess {
                 }
             }
 
-            // this.methodProfiler.b(); // CraftBukkit - not in production code
+            this.methodProfiler.b();
         }
     }
 
@@ -2343,7 +2343,7 @@ public abstract class World implements IBlockAccess {
     }
 
     public PathEntity findPath(Entity entity, Entity entity1, float f, boolean flag, boolean flag1, boolean flag2, boolean flag3) {
-        // this.methodProfiler.a("pathfind"); // CraftBukkit - not in production code
+        this.methodProfiler.a("pathfind");
         int i = MathHelper.floor(entity.locX);
         int j = MathHelper.floor(entity.locY + 1.0D);
         int k = MathHelper.floor(entity.locZ);
@@ -2357,12 +2357,12 @@ public abstract class World implements IBlockAccess {
         ChunkCache chunkcache = new ChunkCache(this, i1, j1, k1, l1, i2, j2);
         PathEntity pathentity = (new Pathfinder(chunkcache, flag, flag1, flag2, flag3)).a(entity, entity1, f);
 
-        // this.methodProfiler.b(); // CraftBukkit - not in production code
+        this.methodProfiler.b();
         return pathentity;
     }
 
     public PathEntity a(Entity entity, int i, int j, int k, float f, boolean flag, boolean flag1, boolean flag2, boolean flag3) {
-        // this.methodProfiler.a("pathfind"); // CraftBukkit - not in production code
+        this.methodProfiler.a("pathfind");
         int l = MathHelper.floor(entity.locX);
         int i1 = MathHelper.floor(entity.locY);
         int j1 = MathHelper.floor(entity.locZ);
@@ -2376,7 +2376,7 @@ public abstract class World implements IBlockAccess {
         ChunkCache chunkcache = new ChunkCache(this, l1, i2, j2, k2, l2, i3);
         PathEntity pathentity = (new Pathfinder(chunkcache, flag, flag1, flag2, flag3)).a(entity, i, j, k, f);
 
-        // this.methodProfiler.b(); // CraftBukkit - not in production code
+        this.methodProfiler.b();
         return pathentity;
     }
 

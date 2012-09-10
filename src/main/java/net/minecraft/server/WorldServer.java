@@ -148,14 +148,14 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
             }
         }
 
-        // this.methodProfiler.a("mobSpawner"); // CraftBukkit - not in production code
+        this.methodProfiler.a("mobSpawner");
         // CraftBukkit start - Only call spawner if we have players online and the world allows for mobs or animals
         long time = this.worldData.getTime();
         if ((this.allowMonsters || this.allowAnimals) && (this instanceof WorldServer && this.getServer().getHandle().players.size() > 0)) {
             SpawnerCreature.spawnEntities(this, this.allowMonsters && (this.ticksPerMonsterSpawns != 0 && time % this.ticksPerMonsterSpawns == 0L), this.allowAnimals && (this.ticksPerAnimalSpawns != 0 && time % this.ticksPerAnimalSpawns == 0L));
         }
         // CraftBukkit end
-        // this.methodProfiler.c("chunkSource"); // CraftBukkit - not in production code
+        this.methodProfiler.c("chunkSource");
         this.chunkProvider.unloadChunks();
         int j = this.a(1.0F);
 
@@ -165,16 +165,16 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
 
         this.Q();
         this.worldData.b(this.worldData.getTime() + 1L);
-        // this.methodProfiler.c("tickPending"); // CraftBukkit - not in production code
+        this.methodProfiler.c("tickPending");
         this.a(false);
-        // this.methodProfiler.c("tickTiles"); // CraftBukkit - not in production code
+        this.methodProfiler.c("tickTiles");
         this.g();
-        // this.methodProfiler.c("chunkMap"); // CraftBukkit - not in production code
+        this.methodProfiler.c("chunkMap");
         this.manager.flush();
-        // this.methodProfiler.c("village"); // CraftBukkit - not in production code
+        this.methodProfiler.c("village");
         this.villages.tick();
         this.siegeManager.a();
-        // this.methodProfiler.b(); // CraftBukkit - not in production code
+        this.methodProfiler.b();
         this.Q();
     }
 
@@ -273,14 +273,14 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
             int k = chunkX * 16;
             int l = chunkZ * 16;
 
-            // this.methodProfiler.a("getChunk"); // CraftBukkit - not in production code
+            this.methodProfiler.a("getChunk");
             Chunk chunk = this.getChunkAt(chunkX, chunkZ);
             // CraftBukkit end
 
             this.a(k, l, chunk);
-            // this.methodProfiler.c("tickChunk"); // CraftBukkit - not in production code
+            this.methodProfiler.c("tickChunk");
             chunk.k();
-            // this.methodProfiler.c("thunder"); // CraftBukkit - not in production code
+            this.methodProfiler.c("thunder");
             int i1;
             int j1;
             int k1;
@@ -298,7 +298,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
                 }
             }
 
-            // this.methodProfiler.c("iceandsnow"); // CraftBukkit - not in production code
+            this.methodProfiler.c("iceandsnow");
             int i2;
 
             if (this.random.nextInt(16) == 0) {
@@ -345,7 +345,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
                 }
             }
 
-            // this.methodProfiler.c("tickTiles"); // CraftBukkit - not in production code
+            this.methodProfiler.c("tickTiles");
             ChunkSection[] achunksection = chunk.i();
 
             j1 = achunksection.length;
@@ -373,7 +373,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
                 }
             }
 
-            // this.methodProfiler.b(); // CraftBukkit - not in production code
+            this.methodProfiler.b();
         }
     }
 

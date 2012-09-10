@@ -10,7 +10,7 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.CraftServer;
 
 public class CraftItem extends CraftEntity implements Item {
-    private EntityItem item;
+    private final EntityItem item;
 
     public CraftItem(CraftServer server, Entity entity, EntityItem item) {
         super(server, entity);

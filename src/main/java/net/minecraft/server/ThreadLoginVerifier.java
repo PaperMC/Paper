@@ -59,9 +59,13 @@ class ThreadLoginVerifier extends Thread {
             // CraftBukkit end
 
             NetLoginHandler.a(this.netLoginHandler, true);
+            // CraftBukkit start
+        } catch (java.io.IOException exception) {
+            this.netLoginHandler.disconnect("Failed to verify username, session authentication server unavailable!");
         } catch (Exception exception) {
-            this.netLoginHandler.disconnect("Failed to verify username! [internal error " + exception + "]");
-            exception.printStackTrace();
+            this.netLoginHandler.disconnect("Failed to verify username!");
+            server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + NetLoginHandler.d(this.netLoginHandler), exception);
+            // CraftBukkit end
         }
     }
 }

@@ -261,7 +261,7 @@ public abstract class EntityLiving extends Entity {
     public void z() {
         this.aI = this.aJ;
         super.z();
-        // this.world.methodProfiler.a("mobBaseTick"); // CraftBukkit - not in production code
+        this.world.methodProfiler.a("mobBaseTick");
         if (this.isAlive() && this.random.nextInt(1000) < this.a++) {
             this.a = -this.aG();
             this.aH();
@@ -359,7 +359,7 @@ public abstract class EntityLiving extends Entity {
         this.at = this.as;
         this.lastYaw = this.yaw;
         this.lastPitch = this.pitch;
-        // this.world.methodProfiler.b(); // CraftBukkit - not in production code
+        this.world.methodProfiler.b();
     }
 
     // CraftBukkit start
@@ -470,7 +470,7 @@ public abstract class EntityLiving extends Entity {
         }
 
         this.av += (f3 - this.av) * 0.3F;
-        // this.world.methodProfiler.a("headTurn"); // CraftBukkit - not in production code
+        this.world.methodProfiler.a("headTurn");
         if (this.aV()) {
             this.senses.a();
         } else {
@@ -498,8 +498,8 @@ public abstract class EntityLiving extends Entity {
             }
         }
 
-        // this.world.methodProfiler.b(); // CraftBukkit - not in production code
-        // this.world.methodProfiler.a("rangeChecks"); // CraftBukkit - not in production code
+        this.world.methodProfiler.b();
+        this.world.methodProfiler.a("rangeChecks");
 
         while (this.yaw - this.lastYaw < -180.0F) {
             this.lastYaw -= 360.0F;
@@ -533,7 +533,7 @@ public abstract class EntityLiving extends Entity {
             this.at += 360.0F;
         }
 
-        // this.world.methodProfiler.b(); // CraftBukkit - not in production code
+        this.world.methodProfiler.b();
         this.aw += f2;
     }
 
@@ -1079,7 +1079,7 @@ public abstract class EntityLiving extends Entity {
             this.motZ = 0.0D;
         }
 
-        // this.world.methodProfiler.a("ai"); // CraftBukkit - not in production code
+        this.world.methodProfiler.a("ai");
         if (this.aX()) {
             this.bu = false;
             this.br = 0.0F;
@@ -1087,19 +1087,19 @@ public abstract class EntityLiving extends Entity {
             this.bt = 0.0F;
         } else if (this.aW()) {
             if (this.aV()) {
-                // this.world.methodProfiler.a("newAi"); // CraftBukkit - not in production code
+                this.world.methodProfiler.a("newAi");
                 this.bc();
-                // this.world.methodProfiler.b(); // CraftBukkit - not in production code
+                this.world.methodProfiler.b();
             } else {
-                // this.world.methodProfiler.a("oldAi"); // CraftBukkit - not in production code
+                this.world.methodProfiler.a("oldAi");
                 this.be();
-                // this.world.methodProfiler.b(); // CraftBukkit - not in production code
+                this.world.methodProfiler.b();
                 this.as = this.yaw;
             }
         }
 
-        // this.world.methodProfiler.b(); // CraftBukkit - not in production code
-        // this.world.methodProfiler.a("jump"); // CraftBukkit - not in production code
+        this.world.methodProfiler.b();
+        this.world.methodProfiler.a("jump");
         if (this.bu) {
             if (!this.H() && !this.J()) {
                 if (this.onGround && this.bE == 0) {
@@ -1113,8 +1113,8 @@ public abstract class EntityLiving extends Entity {
             this.bE = 0;
         }
 
-        // this.world.methodProfiler.b(); // CraftBukkit - not in production code
-        // this.world.methodProfiler.a("travel"); // CraftBukkit - not in production code
+        this.world.methodProfiler.b();
+        this.world.methodProfiler.a("travel");
         this.br *= 0.98F;
         this.bs *= 0.98F;
         this.bt *= 0.9F;
@@ -1123,8 +1123,8 @@ public abstract class EntityLiving extends Entity {
         this.aG *= this.bs();
         this.e(this.br, this.bs);
         this.aG = f;
-        // this.world.methodProfiler.b(); // CraftBukkit - not in production code
-        // this.world.methodProfiler.a("push"); // CraftBukkit - not in production code
+        this.world.methodProfiler.b();
+        this.world.methodProfiler.a("push");
         if (!this.world.isStatic) {
             List list = this.world.getEntities(this, this.boundingBox.grow(0.20000000298023224D, 0.0D, 0.20000000298023224D));
 
@@ -1141,7 +1141,7 @@ public abstract class EntityLiving extends Entity {
             }
         }
 
-        // this.world.methodProfiler.b(); // CraftBukkit - not in production code
+        this.world.methodProfiler.b();
     }
 
     protected boolean aV() {
@@ -1203,33 +1203,33 @@ public abstract class EntityLiving extends Entity {
 
     protected void bc() {
         ++this.bq;
-        // this.world.methodProfiler.a("checkDespawn"); // CraftBukkit - not in production code
+        this.world.methodProfiler.a("checkDespawn");
         this.bb();
-        // this.world.methodProfiler.b(); // CraftBukkit - not in production code
-        // this.world.methodProfiler.a("sensing"); // CraftBukkit - not in production code
+        this.world.methodProfiler.b();
+        this.world.methodProfiler.a("sensing");
         this.bA.a();
-        // this.world.methodProfiler.b(); // CraftBukkit - not in production code
-        // this.world.methodProfiler.a("targetSelector"); // CraftBukkit - not in production code
+        this.world.methodProfiler.b();
+        this.world.methodProfiler.a("targetSelector");
         this.targetSelector.a();
-        // this.world.methodProfiler.b(); // CraftBukkit - not in production code
-        // this.world.methodProfiler.a("goalSelector"); // CraftBukkit - not in production code
+        this.world.methodProfiler.b();
+        this.world.methodProfiler.a("goalSelector");
         this.goalSelector.a();
-        // this.world.methodProfiler.b(); // CraftBukkit - not in production code
-        // this.world.methodProfiler.a("navigation"); // CraftBukkit - not in production code
+        this.world.methodProfiler.b();
+        this.world.methodProfiler.a("navigation");
         this.navigation.e();
-        // this.world.methodProfiler.b(); // CraftBukkit - not in production code
-        // this.world.methodProfiler.a("mob tick"); // CraftBukkit - not in production code
+        this.world.methodProfiler.b();
+        this.world.methodProfiler.a("mob tick");
         this.bd();
-        // this.world.methodProfiler.b(); // CraftBukkit - not in production code
-        // this.world.methodProfiler.a("controls"); // CraftBukkit - not in production code
-        // this.world.methodProfiler.a("move"); // CraftBukkit - not in production code
+        this.world.methodProfiler.b();
+        this.world.methodProfiler.a("controls");
+        this.world.methodProfiler.a("move");
         this.moveController.c();
-        // this.world.methodProfiler.c("look"); // CraftBukkit - not in production code
+        this.world.methodProfiler.c("look");
         this.lookController.a();
-        // this.world.methodProfiler.c("jump"); // CraftBukkit - not in production code
+        this.world.methodProfiler.c("jump");
         this.jumpController.b();
-        // this.world.methodProfiler.b(); // CraftBukkit - not in production code
-        // this.world.methodProfiler.b(); // CraftBukkit - not in production code
+        this.world.methodProfiler.b();
+        this.world.methodProfiler.b();
     }
 
     protected void bd() {}

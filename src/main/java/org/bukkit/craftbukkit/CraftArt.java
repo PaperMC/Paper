@@ -67,7 +67,7 @@ public class CraftArt {
         return null;
     }
 
-    {
+    static {
         assert (EnumArt.values().length == 25);
         assert (Art.values().length == 25);
     }
