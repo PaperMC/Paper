@@ -26,12 +26,12 @@ public class CraftInventoryCustom extends CraftInventory {
     }
 
     static class MinecraftInventory implements IInventory {
-        private ItemStack[] items;
+        private final ItemStack[] items;
         private int maxStack = MAX_STACK;
-        private List<HumanEntity> viewers;
-        private String title;
+        private final List<HumanEntity> viewers;
+        private final String title;
         private InventoryType type;
-        private InventoryHolder owner;
+        private final InventoryHolder owner;
 
         public MinecraftInventory(InventoryHolder owner, InventoryType type) {
             this(owner, type.getDefaultSize(), type.getDefaultTitle());

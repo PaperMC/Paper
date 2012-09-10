@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.help;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Collections2;
-import org.bukkit.ChatColor;
 import org.bukkit.command.*;
 import org.bukkit.command.defaults.BukkitCommand;
 import org.bukkit.command.defaults.VanillaCommand;
@@ -107,7 +106,7 @@ public class SimpleHelpMap implements HelpMap {
         // Initialize help topics from the server's command map
         outer: for (Command command : server.getCommandMap().getCommands()) {
             if (commandInIgnoredPlugin(command, ignoredPlugins)) {
-                continue outer;
+                continue;
             }
 
             // Register a topic

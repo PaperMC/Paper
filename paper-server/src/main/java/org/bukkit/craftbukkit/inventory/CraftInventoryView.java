@@ -12,9 +12,9 @@ import org.bukkit.inventory.ItemStack;
 import net.minecraft.server.Container;
 
 public class CraftInventoryView extends InventoryView {
-    private Container container;
-    private CraftHumanEntity player;
-    private CraftInventory viewing;
+    private final Container container;
+    private final CraftHumanEntity player;
+    private final CraftInventory viewing;
 
     public CraftInventoryView(HumanEntity player, Inventory viewing, Container container) {
         // TODO: Should we make sure it really IS a CraftHumanEntity first? And a CraftInventory?

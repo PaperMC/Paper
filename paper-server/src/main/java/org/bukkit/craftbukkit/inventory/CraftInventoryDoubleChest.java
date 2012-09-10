@@ -8,7 +8,8 @@ import org.bukkit.inventory.ItemStack;
 import net.minecraft.server.InventoryLargeChest;
 
 public class CraftInventoryDoubleChest extends CraftInventory implements DoubleChestInventory {
-    private CraftInventory left, right;
+    private final CraftInventory left;
+    private final CraftInventory right;
 
     public CraftInventoryDoubleChest(CraftInventory left, CraftInventory right) {
         super(new InventoryLargeChest("Large chest", left.getInventory(), right.getInventory()));

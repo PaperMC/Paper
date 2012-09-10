@@ -53,9 +53,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     private long firstPlayed = 0;
     private long lastPlayed = 0;
     private boolean hasPlayedBefore = false;
-    private ConversationTracker conversationTracker = new ConversationTracker();
-    private Set<String> channels = new HashSet<String>();
-    private Map<String, Player> hiddenPlayers = new MapMaker().softValues().makeMap();
+    private final ConversationTracker conversationTracker = new ConversationTracker();
+    private final Set<String> channels = new HashSet<String>();
+    private final Map<String, Player> hiddenPlayers = new MapMaker().softValues().makeMap();
     private int hash = 0;
 
     public CraftPlayer(CraftServer server, EntityPlayer entity) {

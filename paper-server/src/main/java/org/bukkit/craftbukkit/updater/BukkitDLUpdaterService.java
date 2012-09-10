@@ -39,7 +39,7 @@ public class BukkitDLUpdaterService {
          return "CraftBukkit/" + BukkitDLUpdaterService.class.getPackage().getImplementationVersion() + "/" + System.getProperty("java.version");
     }
 
-    public ArtifactDetails fetchArtifact(String slug) throws UnsupportedEncodingException, IOException {
+    public ArtifactDetails fetchArtifact(String slug) throws IOException {
         URL url = new URL("http", host, API_PREFIX_ARTIFACT + slug + "/");
         InputStreamReader reader = null;
 
@@ -48,9 +48,7 @@ public class BukkitDLUpdaterService {
             connection.setRequestProperty("User-Agent", getUserAgent());
             reader = new InputStreamReader(connection.getInputStream());
             Gson gson = new GsonBuilder().registerTypeAdapter(Date.class, dateDeserializer).setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
-            ArtifactDetails fromJson = gson.fromJson(reader, ArtifactDetails.class);
-
-            return fromJson;
+            return gson.fromJson(reader, ArtifactDetails.class);
         } finally {
             if (reader != null) {
                 reader.close();
@@ -70,7 +68,7 @@ public class BukkitDLUpdaterService {
         return null;
     }
 
-    public ArtifactDetails.ChannelDetails fetchChannel(String slug) throws UnsupportedEncodingException, IOException {
+    public ArtifactDetails.ChannelDetails fetchChannel(String slug) throws IOException {
         URL url = new URL("http", host, API_PREFIX_CHANNEL + slug + "/");
         InputStreamReader reader = null;
 

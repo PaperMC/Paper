@@ -10,8 +10,7 @@ public class TextWrapper {
         String[] lines = text.split("\n");
         String lastColor = null;
 
-        for (int i = 0; i < lines.length; i++) {
-            String line = lines[i];
+        for (String line : lines) {
             if (lastColor != null) {
                 line = lastColor + line;
             }

@@ -10,7 +10,7 @@ import org.bukkit.inventory.Recipe;
 import org.bukkit.util.Java15Compat;
 
 public class CraftInventoryCrafting extends CraftInventory implements CraftingInventory {
-    private IInventory resultInventory;
+    private final IInventory resultInventory;
 
     public CraftInventoryCrafting(InventoryCrafting inventory, IInventory resultInventory) {
         super(inventory);

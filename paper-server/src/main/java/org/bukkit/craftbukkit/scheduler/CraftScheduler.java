@@ -286,9 +286,7 @@ public class CraftScheduler implements BukkitScheduler {
         }
 
         final ArrayList<BukkitTask> pending = new ArrayList<BukkitTask>();
-        final Iterator<CraftTask> it = runners.values().iterator();
-        while (it.hasNext()) {
-            final CraftTask task = it.next();
+        for (CraftTask task : runners.values()) {
             if (task.getPeriod() >= -1l) {
                 pending.add(task);
             }

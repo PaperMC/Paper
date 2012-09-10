@@ -437,7 +437,7 @@ public class CraftWorld implements World {
     }
 
     public boolean createExplosion(double x, double y, double z, float power, boolean setFire) {
-        return world.createExplosion(null, x, y, z, power, setFire).wasCanceled ? false : true;
+        return !world.createExplosion(null, x, y, z, power, setFire).wasCanceled;
     }
 
     public boolean createExplosion(Location loc, float power) {

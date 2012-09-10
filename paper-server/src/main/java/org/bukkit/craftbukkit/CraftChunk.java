@@ -20,9 +20,9 @@ import org.bukkit.ChunkSnapshot;
 
 public class CraftChunk implements Chunk {
     private WeakReference<net.minecraft.server.Chunk> weakChunk;
-    private WorldServer worldServer;
-    private int x;
-    private int z;
+    private final WorldServer worldServer;
+    private final int x;
+    private final int z;
     private static final byte[] emptyData = new byte[2048];
     private static final short[] emptyBlockIDs = new short[4096];
     private static final byte[] emptySkyLight = new byte[2048];

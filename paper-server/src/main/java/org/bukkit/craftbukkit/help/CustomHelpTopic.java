@@ -9,7 +9,7 @@ import org.bukkit.help.HelpTopic;
  */
 public class CustomHelpTopic extends HelpTopic {
     
-    private String permissionNode;
+    private final String permissionNode;
     
     public CustomHelpTopic(String name, String shortText, String fullText, String permissionNode) {
         this.permissionNode = permissionNode;

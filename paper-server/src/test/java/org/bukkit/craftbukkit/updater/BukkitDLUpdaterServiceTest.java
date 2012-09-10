@@ -11,21 +11,21 @@ import org.junit.Test;
 @Ignore ("useful tests, but not necessary to run on each compile")
 public class BukkitDLUpdaterServiceTest {
     @Test(expected=IOException.class)
-    public void testHostNotFound() throws UnsupportedEncodingException, IOException {
+    public void testHostNotFound() throws IOException {
         BukkitDLUpdaterService service = new BukkitDLUpdaterService("404.example.org");
 
         service.fetchArtifact("rb");
     }
 
     @Test(expected=FileNotFoundException.class)
-    public void testArtifactNotFound() throws UnsupportedEncodingException, IOException {
+    public void testArtifactNotFound() throws IOException {
         BukkitDLUpdaterService service = new BukkitDLUpdaterService("dl.bukkit.org");
 
         service.fetchArtifact("meep");
     }
 
     @Test
-    public void testArtifactExists() throws UnsupportedEncodingException, IOException {
+    public void testArtifactExists() throws IOException {
         BukkitDLUpdaterService service = new BukkitDLUpdaterService("dl.bukkit.org");
 
         assertNotNull(service.fetchArtifact("latest-dev"));
