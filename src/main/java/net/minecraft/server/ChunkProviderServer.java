@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.Random;
 
 import org.bukkit.Server;
+import org.bukkit.craftbukkit.util.LongHash;
 import org.bukkit.craftbukkit.util.LongHashSet;
 import org.bukkit.craftbukkit.util.LongObjectHashMap;
 import org.bukkit.event.world.ChunkUnloadEvent;
@@ -36,7 +37,7 @@ public class ChunkProviderServer implements IChunkProvider {
     }
 
     public boolean isChunkLoaded(int i, int j) {
-        return this.chunks.containsKey(i, j); // CraftBukkit
+        return this.chunks.containsKey(LongHash.toLong(i, j)); // CraftBukkit
     }
 
     public void queueUnload(int i, int j) {
@@ -50,7 +51,7 @@ public class ChunkProviderServer implements IChunkProvider {
             if (k < -short1 || k > short1 || l < -short1 || l > short1 || !(this.world.keepSpawnInMemory)) { // Added 'this.world.keepSpawnInMemory'
                 this.unloadQueue.add(i, j);
 
-                Chunk c = this.chunks.get(i, j);
+                Chunk c = this.chunks.get(LongHash.toLong(i, j));
                 if (c != null) {
                     c.mustSave = true;
                 }
@@ -60,7 +61,7 @@ public class ChunkProviderServer implements IChunkProvider {
             // CraftBukkit start
             this.unloadQueue.add(i, j);
 
-            Chunk c = this.chunks.get(i, j);
+            Chunk c = this.chunks.get(LongHash.toLong(i, j));
             if (c != null) {
                 c.mustSave = true;
             }
@@ -81,7 +82,7 @@ public class ChunkProviderServer implements IChunkProvider {
     public Chunk getChunkAt(int i, int j) {
         // CraftBukkit start
         this.unloadQueue.remove(i, j);
-        Chunk chunk = (Chunk) this.chunks.get(i, j);
+        Chunk chunk = (Chunk) this.chunks.get(LongHash.toLong(i, j));
         boolean newChunk = false;
         // CraftBukkit end
 
@@ -96,7 +97,7 @@ public class ChunkProviderServer implements IChunkProvider {
                 newChunk = true; // CraftBukkit
             }
 
-            this.chunks.put(i, j, chunk); // CraftBukkit
+            this.chunks.put(LongHash.toLong(i, j), chunk); // CraftBukkit
             if (chunk != null) {
                 chunk.addEntities();
             }
@@ -121,7 +122,7 @@ public class ChunkProviderServer implements IChunkProvider {
 
     public Chunk getOrCreateChunk(int i, int j) {
         // CraftBukkit start
-        Chunk chunk = (Chunk) this.chunks.get(i, j);
+        Chunk chunk = (Chunk) this.chunks.get(LongHash.toLong(i, j));
 
         chunk = chunk == null ? (!this.world.isLoading && !this.forceChunkLoad ? this.emptyChunk : this.getChunkAt(i, j)) : chunk;
         if (chunk == this.emptyChunk) return chunk;

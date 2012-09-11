@@ -45,6 +45,7 @@ import org.bukkit.Sound;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.plugin.messaging.StandardMessenger;
+import org.bukkit.craftbukkit.util.LongHash;
 
 public class CraftWorld implements World {
     private final WorldServer world;
@@ -174,7 +175,7 @@ public class CraftWorld implements World {
         }
 
         world.chunkProviderServer.unloadQueue.remove(x, z);
-        world.chunkProviderServer.chunks.remove(x, z);
+        world.chunkProviderServer.chunks.remove(LongHash.toLong(x, z));
 
         return true;
     }
@@ -230,7 +231,7 @@ public class CraftWorld implements World {
         }
 
         world.chunkProviderServer.unloadQueue.remove(x, z);
-        net.minecraft.server.Chunk chunk = (net.minecraft.server.Chunk) world.chunkProviderServer.chunks.get(x, z);
+        net.minecraft.server.Chunk chunk = (net.minecraft.server.Chunk) world.chunkProviderServer.chunks.get(LongHash.toLong(x, z));
 
         if (chunk == null) {
             chunk = world.chunkProviderServer.loadChunk(x, z);
@@ -243,7 +244,7 @@ public class CraftWorld implements World {
     @SuppressWarnings("unchecked")
     private void chunkLoadPostProcess(net.minecraft.server.Chunk chunk, int x, int z) {
         if (chunk != null) {
-            world.chunkProviderServer.chunks.put(x, z, chunk);
+            world.chunkProviderServer.chunks.put(LongHash.toLong(x, z), chunk);
 
             chunk.addEntities();
 

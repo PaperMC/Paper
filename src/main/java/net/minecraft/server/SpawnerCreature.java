@@ -7,14 +7,14 @@ import java.util.List;
 import java.util.Random;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.util.LongObjectHashMap;
 import org.bukkit.craftbukkit.util.LongHash;
+import org.bukkit.craftbukkit.util.LongObjectHashMap;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 // CraftBukkit end
 
 public final class SpawnerCreature {
 
-    private static LongObjectHashMap b = new LongObjectHashMap(); // CraftBukkit - HashMap -> LongObjectHashMap
+    private static LongObjectHashMap<Boolean> b = new LongObjectHashMap<Boolean>(); // CraftBukkit - HashMap -> LongObjectHashMap
     protected static final Class[] a = new Class[] { EntitySpider.class, EntityZombie.class, EntitySkeleton.class};
 
     protected static ChunkPosition getRandomPosition(World world, int i, int j) {
@@ -95,7 +95,7 @@ public final class SpawnerCreature {
                         // CraftBukkit start
                         long key = ((Long) iterator.next()).longValue();
 
-                        if (!((Boolean) b.get(key)).booleanValue()) {
+                        if (!b.get(key)) {
                             ChunkPosition chunkposition = getRandomPosition(worldserver, LongHash.msw(key), LongHash.lsw(key));
                             // CraftBukkit end
                             int k1 = chunkposition.x;
