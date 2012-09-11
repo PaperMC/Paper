@@ -601,12 +601,27 @@ public abstract class ServerConfigurationManagerAbstract {
         this.sendPacketNearby((EntityHuman) null, d0, d1, d2, d3, i, packet);
     }
 
+    // CraftBukkit start - Add support for entity who caused the packet
     public void sendPacketNearby(EntityHuman entityhuman, double d0, double d1, double d2, double d3, int i, Packet packet) {
+        this.sendPacketNearby(entityhuman, d0, d1, d2, d3, i, packet, null);
+    }
+
+    public void sendPacketNearby(double d0, double d1, double d2, double d3, int i, Packet packet, Entity sourceentity) {
+        this.sendPacketNearby(null, d0, d1, d2, d3, i, packet, sourceentity);
+    }
+    // CraftBukkit end
+
+    public void sendPacketNearby(EntityHuman entityhuman, double d0, double d1, double d2, double d3, int i, Packet packet, Entity sourceentity) { // CraftBukkit - added sourceentity
         Iterator iterator = this.players.iterator();
 
         while (iterator.hasNext()) {
             EntityPlayer entityplayer = (EntityPlayer) iterator.next();
 
+            // CraftBukkit start - Test if player receiving packet can see the source of the packet
+            if (sourceentity != null && sourceentity instanceof EntityPlayer && !entityplayer.getBukkitEntity().canSee(((EntityPlayer)sourceentity).getBukkitEntity())) {
+                continue;
+            }
+            // CraftBukkit end
             if (entityplayer != entityhuman && entityplayer.dimension == i) {
                 double d4 = d0 - entityplayer.locX;
                 double d5 = d1 - entityplayer.locY;

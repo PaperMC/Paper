@@ -22,6 +22,12 @@ public class WorldManager implements IWorldAccess {
         this.world.getTracker().untrackEntity(entity);
     }
 
+    // CraftBukkit start - Add source entity for a sound.
+    public void a(String s, double d0, double d1, double d2, float f, float f1, Entity sourceentity) {
+        this.server.getServerConfigurationManager().sendPacketNearby(d0, d1, d2, f > 1.0F ? (double) (16.0F * f) : 16.0D, this.world.dimension, new Packet62NamedSoundEffect(s, d0, d1, d2, f, f1), sourceentity);
+    }
+    // CraftBukkit end
+
     public void a(String s, double d0, double d1, double d2, float f, float f1) {
         // CraftBukkit - this.world.dimension
         this.server.getServerConfigurationManager().sendPacketNearby(d0, d1, d2, f > 1.0F ? (double) (16.0F * f) : 16.0D, this.world.dimension, new Packet62NamedSoundEffect(s, d0, d1, d2, f, f1));
