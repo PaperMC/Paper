@@ -306,11 +306,9 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
                 if (worldserver != null) {
                     if (!flag) {
                         log.info("Saving chunks for level \'" + worldserver.getWorldData().getName() + "\'/" + worldserver.worldProvider.getName());
-                        worldserver.save(true, (IProgressUpdate) null); // Perform a full save
-                    } else {
-                        worldserver.save(false, (IProgressUpdate) null); // Queue chunk saving
                     }
 
+                    worldserver.save(true, (IProgressUpdate) null);
                     worldserver.saveLevel();
 
                     WorldSaveEvent event = new WorldSaveEvent(worldserver.getWorld());
