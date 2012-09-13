@@ -35,6 +35,8 @@ public class ItemFood extends Item {
         if (!event.isCancelled()) {
             entityhuman.getFoodData().eat(event.getFoodLevel() - oldFoodLevel, this.getSaturationModifier());
         }
+
+        ((EntityPlayer) entityhuman).netServerHandler.sendPacket(new Packet8UpdateHealth(entityhuman.getHealth(), entityhuman.getFoodData().foodLevel, entityhuman.getFoodData().saturationLevel));
         // CraftBukkit end
 
         world.makeSound(entityhuman, "random.burp", 0.5F, world.random.nextFloat() * 0.1F + 0.9F);

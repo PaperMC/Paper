@@ -38,6 +38,8 @@ public class FoodMetaData {
                 if (!event.isCancelled()) {
                     this.foodLevel = event.getFoodLevel();
                 }
+
+                ((EntityPlayer) entityhuman).netServerHandler.sendPacket(new Packet8UpdateHealth(entityhuman.getHealth(), this.foodLevel, this.saturationLevel));
                 // CraftBukkit end
             }
         }
