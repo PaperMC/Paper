@@ -165,7 +165,7 @@ public class ChunkSection {
         this.b = cntb;
         this.c = cntc;
     }
-    
+
     private void old_e() {
         // CraftBukkit end
         this.b = 0;

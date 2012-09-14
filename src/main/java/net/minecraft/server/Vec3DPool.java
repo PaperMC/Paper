@@ -51,7 +51,7 @@ public class Vec3DPool {
         ++this.d;
         return vec3d;
     }
-    
+
     // CraftBukkit start - offer back vector (can save LOTS of unneeded bloat) - works about 90% of the time
     public void release(Vec3D v) {
         if (this.alloclist == v) {

@@ -23,10 +23,11 @@ public abstract class Packet {
     public boolean lowPriority = false;
     // CraftBukkit start - calculate packet ID once - used a bunch of times
     private int packetID;
-    
+
     public Packet() {
         packetID = ((Integer) a.get(this.getClass())).intValue();
-    } // CraftBukkit end
+    }
+    // CraftBukkit end
 
     static void a(int i, boolean flag, boolean flag1, Class oclass) {
         if (l.b(i)) {

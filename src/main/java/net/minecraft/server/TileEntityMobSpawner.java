@@ -2,8 +2,6 @@ package net.minecraft.server;
 
 import java.util.Iterator;
 
-import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason; // CraftBukkit
-
 public class TileEntityMobSpawner extends TileEntity {
 
     public int spawnDelay = -1;
@@ -71,7 +69,7 @@ public class TileEntityMobSpawner extends TileEntity {
                         entity.setPositionRotation(d3, d4, d5, this.world.random.nextFloat() * 360.0F, 0.0F);
                         if (entityliving == null || entityliving.canSpawn()) {
                             this.a(entity);
-                            this.world.addEntity(entity, SpawnReason.SPAWNER); // CraftBukkit
+                            this.world.addEntity(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER); // CraftBukkit
                             this.world.triggerEffect(2004, this.x, this.y, this.z, 0);
                             if (entityliving != null) {
                                 entityliving.aK();

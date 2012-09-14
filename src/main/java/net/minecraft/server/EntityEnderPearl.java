@@ -2,7 +2,6 @@ package net.minecraft.server;
 
 // CraftBukkit start
 import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 // CraftBukkit end
@@ -32,7 +31,7 @@ public class EntityEnderPearl extends EntityProjectile {
 
                 if (!entityplayer.netServerHandler.disconnected && entityplayer.world == this.world) {
                     // CraftBukkit start
-                    CraftPlayer player = entityplayer.getBukkitEntity();
+                    org.bukkit.craftbukkit.entity.CraftPlayer player = entityplayer.getBukkitEntity();
                     org.bukkit.Location location = getBukkitEntity().getLocation();
                     location.setPitch(player.getLocation().getPitch());
                     location.setYaw(player.getLocation().getYaw());

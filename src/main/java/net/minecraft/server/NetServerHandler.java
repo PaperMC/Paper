@@ -847,7 +847,7 @@ public class NetServerHandler extends NetHandler {
                             ((EntityPlayer) recipient).sendMessage(s);
                         }
                     } else {
-                        for (org.bukkit.entity.Player recipient : event.getRecipients()) {
+                        for (Player recipient : event.getRecipients()) {
                             recipient.sendMessage(s);
                         }
                     }

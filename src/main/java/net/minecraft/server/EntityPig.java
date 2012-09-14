@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
+
 public class EntityPig extends EntityAnimal {
 
     public EntityPig(World world) {
@@ -82,7 +84,7 @@ public class EntityPig extends EntityAnimal {
             }
         }
 
-        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, loot);
+        CraftEventFactory.callEntityDeathEvent(this, loot);
         // CraftBukkit end
     }
 
@@ -103,7 +105,7 @@ public class EntityPig extends EntityAnimal {
             EntityPigZombie entitypigzombie = new EntityPigZombie(this.world);
 
             // CraftBukkit start
-            if (org.bukkit.craftbukkit.event.CraftEventFactory.callPigZapEvent(this, entitylightning, entitypigzombie).isCancelled()) {
+            if (CraftEventFactory.callPigZapEvent(this, entitylightning, entitypigzombie).isCancelled()) {
                 return;
             }
             // CraftBukkit end

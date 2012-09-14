@@ -170,7 +170,7 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
                     world = new DemoWorldServer(this, new ServerNBTManager(server.getWorldContainer(), s1, true), s1, dimension, this.methodProfiler);
                 } else {
                     // CraftBukkit
-                    world = new WorldServer(this, new ServerNBTManager(server.getWorldContainer(), s1, true), s1, dimension, worldsettings, this.methodProfiler, org.bukkit.World.Environment.getEnvironment(dimension), gen);
+                    world = new WorldServer(this, new ServerNBTManager(server.getWorldContainer(), s1, true), s1, dimension, worldsettings, this.methodProfiler, Environment.getEnvironment(dimension), gen);
                 }
             } else {
                 String dim = "DIM" + dimension;
@@ -204,7 +204,7 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
                 this.c(name);
 
                 // CraftBukkit
-                world = new SecondaryWorldServer(this, new ServerNBTManager(server.getWorldContainer(), name, true), name, dimension, worldsettings, this.worlds.get(0), this.methodProfiler, org.bukkit.World.Environment.getEnvironment(dimension), gen);
+                world = new SecondaryWorldServer(this, new ServerNBTManager(server.getWorldContainer(), name, true), name, dimension, worldsettings, this.worlds.get(0), this.methodProfiler, Environment.getEnvironment(dimension), gen);
             }
 
             if (gen != null) {

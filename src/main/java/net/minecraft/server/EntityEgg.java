@@ -4,7 +4,6 @@ package net.minecraft.server;
 import org.bukkit.entity.Ageable;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
-import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.player.PlayerEggThrowEvent;
 // CraftBukkit end
 
@@ -49,7 +48,7 @@ public class EntityEgg extends EntityProjectile {
 
         if (hatching) {
             for (int k = 0; k < numHatching; k++) {
-                org.bukkit.entity.Entity entity = world.getWorld().spawn(new org.bukkit.Location(world.getWorld(), this.locX, this.locY, this.locZ, this.yaw, 0.0F), hatchingType.getEntityClass(), SpawnReason.EGG);
+                org.bukkit.entity.Entity entity = world.getWorld().spawn(new org.bukkit.Location(world.getWorld(), this.locX, this.locY, this.locZ, this.yaw, 0.0F), hatchingType.getEntityClass(), org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.EGG);
                 if (entity instanceof Ageable) {
                     ((Ageable) entity).setBaby();
                 }
