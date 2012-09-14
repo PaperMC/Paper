@@ -290,6 +290,10 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
     public void die(DamageSource damagesource) {
         // CraftBukkit start
+        if (this.dead) {
+            return;
+        }
+
         java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
 
         for (int i = 0; i < this.inventory.items.length; ++i) {
