@@ -223,9 +223,9 @@ public abstract class World implements IBlockAccess {
         Chunk result = null;
         synchronized (this.chunkLock) {
             if (this.lastChunkAccessed == null || this.lastXAccessed != i || this.lastZAccessed != j) {
+                this.lastChunkAccessed = this.chunkProvider.getOrCreateChunk(i, j);
                 this.lastXAccessed = i;
                 this.lastZAccessed = j;
-                this.lastChunkAccessed = this.chunkProvider.getOrCreateChunk(i, j);
             }
             result = this.lastChunkAccessed;
         }
