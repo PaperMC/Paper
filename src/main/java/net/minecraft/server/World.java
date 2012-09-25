@@ -1064,7 +1064,7 @@ public abstract class World implements IBlockAccess {
                 continue;
             }
 
-            ChunkProviderServer chunkProviderServer = ((WorldServer) entity.world).chunkProviderServer;
+            ChunkProviderServer chunkProviderServer = ((WorldServer) this).chunkProviderServer;
             if (chunkProviderServer.unloadQueue.contains(MathHelper.floor(entity.locX) >> 4, MathHelper.floor(entity.locZ) >> 4)) {
                 continue;
             }
@@ -1105,7 +1105,7 @@ public abstract class World implements IBlockAccess {
             entity = (Entity) this.entityList.get(i);
 
             // CraftBukkit start - don't tick entities in chunks queued for unload
-            ChunkProviderServer chunkProviderServer = ((WorldServer) entity.world).chunkProviderServer;
+            ChunkProviderServer chunkProviderServer = ((WorldServer) this).chunkProviderServer;
             if (chunkProviderServer.unloadQueue.contains(MathHelper.floor(entity.locX) >> 4, MathHelper.floor(entity.locZ) >> 4)) {
                 continue;
             }
@@ -1149,7 +1149,7 @@ public abstract class World implements IBlockAccess {
             TileEntity tileentity = (TileEntity) iterator.next();
 
             // CraftBukkit start - don't tick entities in chunks queued for unload
-            ChunkProviderServer chunkProviderServer = ((WorldServer) tileentity.world).chunkProviderServer;
+            ChunkProviderServer chunkProviderServer = ((WorldServer) this).chunkProviderServer;
             if (chunkProviderServer.unloadQueue.contains(tileentity.x >> 4, tileentity.z >> 4)) {
                 continue;
             }
