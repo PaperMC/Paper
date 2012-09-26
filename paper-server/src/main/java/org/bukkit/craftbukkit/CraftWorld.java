@@ -1171,6 +1171,6 @@ public class CraftWorld implements World {
         double y = loc.getY();
         double z = loc.getZ();
 
-        getHandle().makeSound(x, y, z, sound.getSound(), volume, pitch);
+        getHandle().makeSound(x, y, z, CraftSound.getSound(sound), volume, pitch);
     }
 }

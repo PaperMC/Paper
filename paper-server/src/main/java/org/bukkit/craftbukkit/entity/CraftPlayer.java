@@ -33,6 +33,7 @@ import org.bukkit.craftbukkit.conversations.ConversationTracker;
 import org.bukkit.craftbukkit.CraftEffect;
 import org.bukkit.craftbukkit.CraftOfflinePlayer;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.map.CraftMapView;
 import org.bukkit.craftbukkit.map.RenderData;
@@ -257,7 +258,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         double y = loc.getBlockY() + 0.5;
         double z = loc.getBlockZ() + 0.5;
 
-        Packet62NamedSoundEffect packet = new Packet62NamedSoundEffect(sound.getSound(), x, y, z, volume, pitch);
+        Packet62NamedSoundEffect packet = new Packet62NamedSoundEffect(CraftSound.getSound(sound), x, y, z, volume, pitch);
         getHandle().netServerHandler.sendPacket(packet);
     }
 
