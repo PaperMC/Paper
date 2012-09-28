@@ -30,7 +30,7 @@ class CraftAsyncDebugger {
 
     StringBuilder debugTo(final StringBuilder string) {
         for (CraftAsyncDebugger next = this; next != null; next = next.next) {
-            string.append(plugin.getDescription().getName()).append(':').append(clazz.getName()).append('@').append(expiry).append(',');
+            string.append(next.plugin.getDescription().getName()).append(':').append(next.clazz.getName()).append('@').append(next.expiry).append(',');
         }
         return string;
     }
