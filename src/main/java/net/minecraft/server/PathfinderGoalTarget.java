@@ -119,10 +119,12 @@ public abstract class PathfinderGoalTarget extends PathfinderGoal {
 
                     org.bukkit.event.entity.EntityTargetLivingEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetLivingEvent(this.d, entityliving, reason);
                     if (event.isCancelled() || event.getTarget() == null) {
+                        if (this.d instanceof EntityCreature) ((EntityCreature) this.d).target = null;
                         return false;
                     } else if (entityliving.getBukkitEntity() != event.getTarget()) {
                         this.d.b((EntityLiving) ((org.bukkit.craftbukkit.entity.CraftEntity) event.getTarget()).getHandle());
                     }
+                    if (this.d instanceof EntityCreature) ((EntityCreature) this.d).target = ((org.bukkit.craftbukkit.entity.CraftEntity) event.getTarget()).getHandle();
                     // CraftBukkit end
 
                     return true;
