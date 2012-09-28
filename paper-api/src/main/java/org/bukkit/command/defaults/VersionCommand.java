@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Bukkit;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
@@ -37,33 +36,49 @@ public class VersionCommand extends BukkitCommand {
                 name.append(arg);
             }
 
-            Plugin plugin = Bukkit.getPluginManager().getPlugin(name.toString());
+            String pluginName = name.toString();
+            Plugin exactPlugin = Bukkit.getPluginManager().getPlugin(pluginName);
+            if (exactPlugin != null) {
+                describeToSender(exactPlugin, sender);
+                return true;
+            }
 
-            if (plugin != null) {
-                PluginDescriptionFile desc = plugin.getDescription();
-                sender.sendMessage(ChatColor.GREEN + desc.getName() + ChatColor.WHITE + " version " + ChatColor.GREEN + desc.getVersion());
-
-                if (desc.getDescription() != null) {
-                    sender.sendMessage(desc.getDescription());
+            boolean found = false;
+            pluginName = pluginName.toLowerCase();
+            for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
+                if (plugin.getName().toLowerCase().contains(pluginName)) {
+                    describeToSender(plugin, sender);
+                    found = true;
                 }
+            }
 
-                if (desc.getWebsite() != null) {
-                    sender.sendMessage("Website: " + ChatColor.GREEN + desc.getWebsite());
-                }
-
-                if (!desc.getAuthors().isEmpty()) {
-                    if (desc.getAuthors().size() == 1) {
-                        sender.sendMessage("Author: " + getAuthors(desc));
-                    } else {
-                        sender.sendMessage("Authors: " + getAuthors(desc));
-                    }
-                }
-            } else {
+            if (!found) {
                 sender.sendMessage("This server is not running any plugin by that name.");
                 sender.sendMessage("Use /plugins to get a list of plugins.");
             }
         }
         return true;
+    }
+
+    private void describeToSender(Plugin plugin, CommandSender sender) {
+        PluginDescriptionFile desc = plugin.getDescription();
+        sender.sendMessage(ChatColor.GREEN + desc.getName() + ChatColor.WHITE + " version " + ChatColor.GREEN + desc.getVersion());
+
+        if (desc.getDescription() != null) {
+            sender.sendMessage(desc.getDescription());
+        }
+
+        if (desc.getWebsite() != null) {
+            sender.sendMessage("Website: " + ChatColor.GREEN + desc.getWebsite());
+        }
+
+        if (!desc.getAuthors().isEmpty()) {
+            if (desc.getAuthors().size() == 1) {
+                sender.sendMessage("Author: " + getAuthors(desc));
+            } else {
+                sender.sendMessage("Authors: " + getAuthors(desc));
+            }
+        }
     }
 
     private String getAuthors(final PluginDescriptionFile desc) {
