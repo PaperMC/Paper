@@ -481,20 +481,15 @@ public final class SimplePluginManager implements PluginManager {
                 if (plugin.isNaggable()) {
                     plugin.setNaggable(false);
 
-                    String author = "<NoAuthorGiven>";
-
-                    if (plugin.getDescription().getAuthors().size() > 0) {
-                        author = plugin.getDescription().getAuthors().get(0);
-                    }
                     server.getLogger().log(Level.SEVERE, String.format(
-                            "Nag author: '%s' of '%s' about the following: %s",
-                            author,
-                            plugin.getDescription().getName(),
+                            "Nag author(s): '%s' of '%s' about the following: %s",
+                            plugin.getDescription().getAuthors(),
+                            plugin.getDescription().getFullName(),
                             ex.getMessage()
                             ));
                 }
             } catch (Throwable ex) {
-                server.getLogger().log(Level.SEVERE, "Could not pass event " + event.getEventName() + " to " + registration.getPlugin().getDescription().getName(), ex);
+                server.getLogger().log(Level.SEVERE, "Could not pass event " + event.getEventName() + " to " + registration.getPlugin().getDescription().getFullName(), ex);
             }
         }
     }
