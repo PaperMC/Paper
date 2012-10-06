@@ -41,7 +41,10 @@ public interface BukkitScheduler {
     public int scheduleSyncRepeatingTask(Plugin plugin, Runnable task, long delay, long period);
 
     /**
-     * Schedules a once off task to occur after a delay
+     * <b>Asynchronous tasks should never access any API in Bukkit.
+     *    Great care should be taken to assure the thread-safety of asynchronous tasks.</b>
+     * <br>
+     * <br>Schedules a once off task to occur after a delay,
      * This task will be executed by a thread managed by the scheduler
      *
      * @param plugin Plugin that owns the task
@@ -52,7 +55,10 @@ public interface BukkitScheduler {
     public int scheduleAsyncDelayedTask(Plugin plugin, Runnable task, long delay);
 
     /**
-     * Schedules a once off task to occur as soon as possible
+     * <b>Asynchronous tasks should never access any API in Bukkit.
+     *    Great care should be taken to assure the thread-safety of asynchronous tasks.</b>
+     * <br>
+     * <br>Schedules a once off task to occur as soon as possible.
      * This task will be executed by a thread managed by the scheduler
      *
      * @param plugin Plugin that owns the task
@@ -62,7 +68,10 @@ public interface BukkitScheduler {
     public int scheduleAsyncDelayedTask(Plugin plugin, Runnable task);
 
     /**
-     * Schedules a repeating task
+     * <b>Asynchronous tasks should never access any API in Bukkit.
+     *    Great care should be taken to assure the thread-safety of asynchronous tasks.</b>
+     * <br>
+     * <br>Schedules a repeating task.
      * This task will be executed by a thread managed by the scheduler
      *
      * @param plugin Plugin that owns the task
@@ -148,4 +157,84 @@ public interface BukkitScheduler {
      */
     public List<BukkitTask> getPendingTasks();
 
+    /**
+     * Returns a task that will run on the next server tick.
+     *
+     * @param plugin the reference to the plugin scheduling task
+     * @param task the task to be run
+     * @return a BukkitTask that contains the id number
+     * @throws IllegalArgumentException if plugin is null
+     * @throws IllegalArgumentException if task is null
+     */
+    public BukkitTask runTask(Plugin plugin, Runnable task) throws IllegalArgumentException;
+
+    /**
+     * <b>Asynchronous tasks should never access any API in Bukkit.
+     *    Great care should be taken to assure the thread-safety of asynchronous tasks.</b>
+     * <br>
+     * <br>Returns a task that will run asynchronously.
+     *
+     * @param plugin the reference to the plugin scheduling task
+     * @param task the task to be run
+     * @return a BukkitTask that contains the id number
+     * @throws IllegalArgumentException if plugin is null
+     * @throws IllegalArgumentException if task is null
+     */
+    public BukkitTask runTaskAsynchronously(Plugin plugin, Runnable task) throws IllegalArgumentException;
+
+    /**
+     * Returns a task that will run after the specified number of server ticks.
+     *
+     * @param plugin the reference to the plugin scheduling task
+     * @param task the task to be run
+     * @param delay the ticks to wait before running the task
+     * @return a BukkitTask that contains the id number
+     * @throws IllegalArgumentException if plugin is null
+     * @throws IllegalArgumentException if task is null
+     */
+    public BukkitTask runTaskLater(Plugin plugin, Runnable task, long delay) throws IllegalArgumentException;
+
+    /**
+     * <b>Asynchronous tasks should never access any API in Bukkit.
+     *    Great care should be taken to assure the thread-safety of asynchronous tasks.</b>
+     * <br>
+     * <br>Returns a task that will run asynchronously after the specified number of server ticks.
+     *
+     * @param plugin the reference to the plugin scheduling task
+     * @param task the task to be run
+     * @param delay the ticks to wait before running the task
+     * @return a BukkitTask that contains the id number
+     * @throws IllegalArgumentException if plugin is null
+     * @throws IllegalArgumentException if task is null
+     */
+    public BukkitTask runTaskLaterAsynchronously(Plugin plugin, Runnable task, long delay) throws IllegalArgumentException;
+
+    /**
+     * Returns a task that will repeatedly run until cancelled, starting after the specified number of server ticks
+     *
+     * @param plugin the reference to the plugin scheduling task
+     * @param task the task to be run
+     * @param delay the ticks to wait before running the task
+     * @param period the ticks to wait between runs
+     * @return a BukkitTask that contains the id number
+     * @throws IllegalArgumentException if plugin is null
+     * @throws IllegalArgumentException if task is null
+     */
+    public BukkitTask runTaskTimer(Plugin plugin, Runnable task, long delay, long period) throws IllegalArgumentException;
+
+    /**
+     * <b>Asynchronous tasks should never access any API in Bukkit.
+     *    Great care should be taken to assure the thread-safety of asynchronous tasks.</b>
+     * <br>
+     * <br>Returns a task that will repeatedly run asynchronously until cancelled, starting after the specified number of server ticks.
+     *
+     * @param plugin the reference to the plugin scheduling task
+     * @param task the task to be run
+     * @param delay the ticks to wait before running the task for the first time
+     * @param period the ticks to wait between runs
+     * @return a BukkitTask that contains the id number
+     * @throws IllegalArgumentException if plugin is null
+     * @throws IllegalArgumentException if task is null
+     */
+    public BukkitTask runTaskTimerAsynchronously(Plugin plugin, Runnable task, long delay, long period) throws IllegalArgumentException;
 }
