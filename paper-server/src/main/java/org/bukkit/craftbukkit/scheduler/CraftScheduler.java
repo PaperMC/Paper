@@ -83,19 +83,39 @@ public class CraftScheduler implements BukkitScheduler {
         return this.scheduleSyncDelayedTask(plugin, task, 0l);
     }
 
+    public BukkitTask runTask(Plugin plugin, Runnable runnable) {
+        return runTaskLater(plugin, runnable, 0l);
+    }
+
     public int scheduleAsyncDelayedTask(final Plugin plugin, final Runnable task) {
         return this.scheduleAsyncDelayedTask(plugin, task, 0l);
+    }
+
+    public BukkitTask runTaskAsynchronously(Plugin plugin, Runnable runnable) {
+        return runTaskLaterAsynchronously(plugin, runnable, 0l);
     }
 
     public int scheduleSyncDelayedTask(final Plugin plugin, final Runnable task, final long delay) {
         return this.scheduleSyncRepeatingTask(plugin, task, delay, -1l);
     }
 
+    public BukkitTask runTaskLater(Plugin plugin, Runnable runnable, long delay) {
+        return runTaskTimer(plugin, runnable, delay, -1l);
+    }
+
     public int scheduleAsyncDelayedTask(final Plugin plugin, final Runnable task, final long delay) {
         return this.scheduleAsyncRepeatingTask(plugin, task, delay, -1l);
     }
 
+    public BukkitTask runTaskLaterAsynchronously(Plugin plugin, Runnable runnable, long delay) {
+        return runTaskTimer(plugin, runnable, delay, -1l);
+    }
+
     public int scheduleSyncRepeatingTask(final Plugin plugin, final Runnable runnable, long delay, long period) {
+        return runTaskTimer(plugin, runnable, delay, period).getTaskId();
+    }
+
+    public BukkitTask runTaskTimer(Plugin plugin, Runnable runnable, long delay, long period) {
         validate(plugin, runnable);
         if (delay < 0l) {
             delay = 0;
@@ -109,6 +129,10 @@ public class CraftScheduler implements BukkitScheduler {
     }
 
     public int scheduleAsyncRepeatingTask(final Plugin plugin, final Runnable runnable, long delay, long period) {
+        return runTaskTimerAsynchronously(plugin, runnable, delay, period).getTaskId();
+    }
+
+    public BukkitTask runTaskTimerAsynchronously(Plugin plugin, Runnable runnable, long delay, long period) {
         validate(plugin, runnable);
         if (delay < 0l) {
             delay = 0;
@@ -357,10 +381,10 @@ public class CraftScheduler implements BukkitScheduler {
         tailTask.setNext(task);
     }
 
-    private int handle(final CraftTask task, final long delay) {
+    private CraftTask handle(final CraftTask task, final long delay) {
         task.setNextRun(currentTick + delay);
         addTask(task);
-        return task.getTaskId();
+        return task;
     }
 
     private static void validate(final Plugin plugin, final Object task) {

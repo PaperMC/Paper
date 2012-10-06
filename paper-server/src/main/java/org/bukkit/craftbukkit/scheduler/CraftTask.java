@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.scheduler;
 
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -78,5 +79,9 @@ class CraftTask implements BukkitTask, Runnable {
 
     Class<? extends Runnable> getTaskClass() {
         return task.getClass();
+    }
+
+    public void cancel() {
+        Bukkit.getScheduler().cancelTask(id);
     }
 }
