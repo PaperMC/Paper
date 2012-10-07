@@ -13,11 +13,13 @@ import java.io.UnsupportedEncodingException;
 import java.util.logging.Level;
 import java.util.HashSet;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.LazyPlayerSet;
+import org.bukkit.craftbukkit.util.Waitable;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.entity.Player;
@@ -832,9 +834,42 @@ public class NetServerHandler extends NetHandler {
 
                 if (PlayerChatEvent.getHandlerList().getRegisteredListeners().length != 0) {
                     // Evil plugins still listening to deprecated event
-                    PlayerChatEvent queueEvent = new PlayerChatEvent(player, event.getMessage(), event.getFormat(), event.getRecipients());
+                    final PlayerChatEvent queueEvent = new PlayerChatEvent(player, event.getMessage(), event.getFormat(), event.getRecipients());
                     queueEvent.setCancelled(event.isCancelled());
-                    minecraftServer.chatQueue.add(queueEvent);
+                    Waitable waitable = new Waitable() {
+                        @Override
+                        protected Object evaluate() {
+                            Bukkit.getPluginManager().callEvent(queueEvent);
+
+                            if (queueEvent.isCancelled()) {
+                                return null;
+                            }
+
+                            String message = String.format(queueEvent.getFormat(), queueEvent.getPlayer().getDisplayName(), queueEvent.getMessage());
+                            NetServerHandler.this.minecraftServer.console.sendMessage(message);
+                            if (((LazyPlayerSet) queueEvent.getRecipients()).isLazy()) {
+                                for (Object player : NetServerHandler.this.minecraftServer.getServerConfigurationManager().players) {
+                                    ((EntityPlayer) player).sendMessage(message);
+                                }
+                            } else {
+                                for (Player player : queueEvent.getRecipients()) {
+                                    player.sendMessage(message);
+                                }
+                            }
+                            return null;
+                        }};
+                    if (async) {
+                        minecraftServer.processQueue.add(waitable);
+                    } else {
+                        waitable.run();
+                    }
+                    try {
+                        waitable.get();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt(); // This is proper habit for java. If we aren't handling it, pass it on!
+                    } catch (java.util.concurrent.ExecutionException e) {
+                        throw new RuntimeException("Exception processing chat event", e.getCause());
+                    }
                 } else {
                     if (event.isCancelled()) {
                         return;
@@ -1047,7 +1082,7 @@ public class NetServerHandler extends NetHandler {
                 PlayerPortalEvent event = new PlayerPortalEvent(this.player.getBukkitEntity(), this.player.getBukkitEntity().getLocation(), toLocation, pta, PlayerPortalEvent.TeleportCause.END_PORTAL);
                 event.useTravelAgent(false);
 
-                org.bukkit.Bukkit.getServer().getPluginManager().callEvent(event);
+                Bukkit.getServer().getPluginManager().callEvent(event);
                 this.player = this.minecraftServer.getServerConfigurationManager().moveToWorld(this.player, 0, true, event.getTo());
                 // CraftBukkit end
             } else if (this.player.q().getWorldData().isHardcore()) {

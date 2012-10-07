@@ -8,6 +8,7 @@ import java.net.URLEncoder;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.util.Waitable;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.event.player.PlayerPreLoginEvent;
 // CraftBukkit end
@@ -46,15 +47,28 @@ class ThreadLoginVerifier extends Thread {
             AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(NetLoginHandler.d(this.netLoginHandler), this.netLoginHandler.getSocket().getInetAddress());
             this.server.getPluginManager().callEvent(asyncEvent);
 
-            PlayerPreLoginEvent event = new PlayerPreLoginEvent(NetLoginHandler.d(this.netLoginHandler), this.netLoginHandler.getSocket().getInetAddress());
-            if (asyncEvent.getResult() != PlayerPreLoginEvent.Result.ALLOWED) {
-                event.disallow(asyncEvent.getResult(), asyncEvent.getKickMessage());
-            }
-            this.server.getPluginManager().callEvent(event);
+            if (PlayerPreLoginEvent.getHandlerList().getRegisteredListeners().length != 0) {
+                final PlayerPreLoginEvent event = new PlayerPreLoginEvent(NetLoginHandler.d(this.netLoginHandler), this.netLoginHandler.getSocket().getInetAddress());
+                if (asyncEvent.getResult() != PlayerPreLoginEvent.Result.ALLOWED) {
+                    event.disallow(asyncEvent.getResult(), asyncEvent.getKickMessage());
+                }
+                Waitable<PlayerPreLoginEvent.Result> waitable = new Waitable<PlayerPreLoginEvent.Result>() {
+                    @Override
+                    protected PlayerPreLoginEvent.Result evaluate() {
+                        ThreadLoginVerifier.this.server.getPluginManager().callEvent(event);
+                        return event.getResult();
+                    }};
 
-            if (event.getResult() != PlayerPreLoginEvent.Result.ALLOWED) {
-                this.netLoginHandler.disconnect(event.getKickMessage());
-                return;
+                NetLoginHandler.b(this.netLoginHandler).processQueue.add(waitable);
+                if (waitable.get() != PlayerPreLoginEvent.Result.ALLOWED) {
+                    this.netLoginHandler.disconnect(event.getKickMessage());
+                    return;
+                }
+            } else {
+                if (asyncEvent.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) {
+                    this.netLoginHandler.disconnect(asyncEvent.getKickMessage());
+                    return;
+                }
             }
             // CraftBukkit end
 

@@ -13,13 +13,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 // CraftBukkit start
+import java.util.concurrent.ExecutionException;
 import jline.console.ConsoleReader;
 import joptsimple.OptionSet;
 
 import org.bukkit.World.Environment;
+import org.bukkit.craftbukkit.util.Waitable;
 import org.bukkit.event.server.RemoteServerCommandEvent;
 import org.bukkit.event.world.WorldSaveEvent;
-import org.bukkit.event.player.PlayerChatEvent;
 // CraftBukkit end
 
 public abstract class MinecraftServer implements Runnable, IMojangStatistics, ICommandListener {
@@ -79,7 +80,7 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
     public ConsoleReader reader;
     public static int currentTick;
     public final Thread primaryThread;
-    public java.util.Queue<PlayerChatEvent> chatQueue = new java.util.concurrent.ConcurrentLinkedQueue<PlayerChatEvent>();
+    public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
     public int autosavePeriod;
     // CraftBukkit end
 
@@ -508,26 +509,9 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
         // CraftBukkit start - only send timeupdates to the people in that world
         this.server.getScheduler().mainThreadHeartbeat(this.ticks);
 
-        // Fix for old plugins still using deprecated event
-        while (!chatQueue.isEmpty()) {
-            PlayerChatEvent event = chatQueue.remove();
-            org.bukkit.Bukkit.getPluginManager().callEvent(event);
-
-            if (event.isCancelled()) {
-                continue;
-            }
-
-            String message = String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage());
-            console.sendMessage(message);
-            if (((org.bukkit.craftbukkit.util.LazyPlayerSet) event.getRecipients()).isLazy()) {
-                for (Object player : getServerConfigurationManager().players) {
-                    ((EntityPlayer) player).sendMessage(message);
-                }
-            } else {
-                for (org.bukkit.entity.Player player : event.getRecipients()) {
-                    player.sendMessage(message);
-                }
-            }
+        // Run tasks that are waiting on processing
+        while (!processQueue.isEmpty()) {
+            processQueue.remove().run();
         }
 
         // Send timeupdates to everyone, it will get the right time from the world the player is in.
@@ -782,16 +766,31 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
         // CraftBukkit end
     }
 
-    public String i(String s) {
-        RemoteControlCommandListener.instance.b();
-        // CraftBukkit start
-        RemoteServerCommandEvent event = new RemoteServerCommandEvent(this.remoteConsole, s);
-        this.server.getPluginManager().callEvent(event);
-        ServerCommand servercommand = new ServerCommand(event.getCommand(), RemoteControlCommandListener.instance);
-        // this.q.a(RemoteControlCommandListener.instance, s);
-        this.server.dispatchServerCommand(this.remoteConsole, servercommand); // CraftBukkit
+    // CraftBukkit start
+    public String i(final String s) { // CraftBukkit - final parameter
+        Waitable<String> waitable = new Waitable<String>() {
+            @Override
+            protected String evaluate() {
+                RemoteControlCommandListener.instance.b();
+                // Event changes start
+                RemoteServerCommandEvent event = new RemoteServerCommandEvent(MinecraftServer.this.remoteConsole, s);
+                MinecraftServer.this.server.getPluginManager().callEvent(event);
+                // Event changes end
+                ServerCommand servercommand = new ServerCommand(event.getCommand(), RemoteControlCommandListener.instance);
+                // this.q.a(RemoteControlCommandListener.instance, s);
+                MinecraftServer.this.server.dispatchServerCommand(MinecraftServer.this.remoteConsole, servercommand); // CraftBukkit
+                return RemoteControlCommandListener.instance.c();
+            }};
+        processQueue.add(waitable);
+        try {
+            return waitable.get();
+        } catch (ExecutionException e) {
+            throw new RuntimeException("Exception processing rcon command " + s, e.getCause());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt(); // Maintain interrupted state
+            throw new RuntimeException("Interrupted processing rcon command " + s, e);
+        }
         // CraftBukkit end
-        return RemoteControlCommandListener.instance.c();
     }
 
     public boolean isDebugging() {
