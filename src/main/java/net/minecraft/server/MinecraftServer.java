@@ -834,6 +834,8 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
     }
 
     public List a(ICommandListener icommandlistener, String s) {
+        // CraftBukkit start - Allow tab-completion of Bukkit commands
+        /*
         ArrayList arraylist = new ArrayList();
 
         if (s.startsWith("/")) {
@@ -872,6 +874,9 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
 
             return arraylist;
         }
+        */
+        return this.server.tabComplete(icommandlistener, s);
+        // CraftBukkit end
     }
 
     public static MinecraftServer getServer() {
