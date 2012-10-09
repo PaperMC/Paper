@@ -1,11 +1,20 @@
 package org.bukkit.command.defaults;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.util.StringUtil;
+
+import com.google.common.collect.ImmutableList;
 
 public class DefaultGameModeCommand extends VanillaCommand {
+    private static final List<String> GAMEMODE_NAMES = ImmutableList.of("adventure", "creative", "survival");
+
     public DefaultGameModeCommand() {
         super("defaultgamemode");
         this.description = "Set the default gamemode";
@@ -51,4 +60,17 @@ public class DefaultGameModeCommand extends VanillaCommand {
         return true;
     }
 
+    @Override
+    public List<String> tabComplete(CommandSender sender, String alias, String[] args) {
+        Validate.notNull(sender, "Sender cannot be null");
+        Validate.notNull(args, "Arguments cannot be null");
+        Validate.notNull(alias, "Alias cannot be null");
+
+        if (args.length == 1) {
+            return StringUtil.copyPartialMatches(args[0], GAMEMODE_NAMES, new ArrayList<String>(GAMEMODE_NAMES.size()));
+        } else if (args.length == 2) {
+            return super.tabComplete(sender, alias, args);
+        }
+        return ImmutableList.of();
+    }
 }

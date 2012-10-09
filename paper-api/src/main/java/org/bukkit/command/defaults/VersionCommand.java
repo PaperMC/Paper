@@ -1,13 +1,18 @@
 package org.bukkit.command.defaults;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.bukkit.ChatColor;
+import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
+import org.bukkit.util.StringUtil;
+
+import com.google.common.collect.ImmutableList;
 
 public class VersionCommand extends BukkitCommand {
     public VersionCommand(String name) {
@@ -101,5 +106,24 @@ public class VersionCommand extends BukkitCommand {
         }
 
         return result.toString();
+    }
+
+    @Override
+    public List<String> tabComplete(CommandSender sender, String alias, String[] args) {
+        Validate.notNull(sender, "Sender cannot be null");
+        Validate.notNull(args, "Arguments cannot be null");
+        Validate.notNull(alias, "Alias cannot be null");
+
+        if (args.length == 1) {
+            List<String> completions = new ArrayList<String>();
+            String toComplete = args[0].toLowerCase();
+            for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
+                if (StringUtil.startsWithIgnoreCase(plugin.getName(), toComplete)) {
+                    completions.add(plugin.getName());
+                }
+            }
+            return completions;
+        }
+        return ImmutableList.of();
     }
 }

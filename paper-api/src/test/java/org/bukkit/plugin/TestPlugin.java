@@ -2,6 +2,7 @@ package org.bukkit.plugin;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.List;
 
 import org.bukkit.Server;
 import org.bukkit.command.Command;
@@ -101,6 +102,10 @@ public class TestPlugin extends PluginBase {
     }
 
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        throw new UnsupportedOperationException("Not supported.");
+    }
+
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         throw new UnsupportedOperationException("Not supported.");
     }
 }

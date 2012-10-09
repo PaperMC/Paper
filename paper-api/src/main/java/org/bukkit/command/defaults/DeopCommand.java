@@ -1,11 +1,17 @@
 package org.bukkit.command.defaults;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.util.StringUtil;
+
+import com.google.common.collect.ImmutableList;
 
 public class DeopCommand extends VanillaCommand {
     public DeopCommand() {
@@ -35,12 +41,26 @@ public class DeopCommand extends VanillaCommand {
     }
 
     @Override
-    public List<String> tabComplete(CommandSender sender, String[] args) {
-        return args.length >= 1 ? null : EMPTY_LIST;
+    public boolean matches(String input) {
+        return input.equalsIgnoreCase("deop");
     }
 
     @Override
-    public boolean matches(String input) {
-        return input.equalsIgnoreCase("deop");
+    public List<String> tabComplete(CommandSender sender, String alias, String[] args) throws IllegalArgumentException {
+        Validate.notNull(sender, "Sender cannot be null");
+        Validate.notNull(args, "Arguments cannot be null");
+        Validate.notNull(alias, "Alias cannot be null");
+
+        if (args.length == 1) {
+            List<String> completions = new ArrayList<String>();
+            for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
+                String playerName = player.getName();
+                if (player.isOp() && StringUtil.startsWithIgnoreCase(playerName, args[0])) {
+                    completions.add(playerName);
+                }
+            }
+            return completions;
+        }
+        return ImmutableList.of();
     }
 }

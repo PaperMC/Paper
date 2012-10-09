@@ -1,13 +1,11 @@
 package org.bukkit.command.defaults;
 
-import java.util.ArrayList;
 import java.util.List;
+
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 
 public abstract class VanillaCommand extends Command {
-    static final List<String> EMPTY_LIST = new ArrayList(0);
-
     protected VanillaCommand(String name) {
         super(name);
     }

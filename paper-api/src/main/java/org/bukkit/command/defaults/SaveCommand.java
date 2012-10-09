@@ -1,9 +1,14 @@
 package org.bukkit.command.defaults;
 
+import java.util.List;
+
+import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+
+import com.google.common.collect.ImmutableList;
 
 public class SaveCommand extends VanillaCommand {
     public SaveCommand() {
@@ -33,5 +38,14 @@ public class SaveCommand extends VanillaCommand {
     @Override
     public boolean matches(String input) {
         return input.equalsIgnoreCase("save-all");
+    }
+
+    @Override
+    public List<String> tabComplete(CommandSender sender, String alias, String[] args) throws IllegalArgumentException {
+        Validate.notNull(sender, "Sender cannot be null");
+        Validate.notNull(args, "Arguments cannot be null");
+        Validate.notNull(alias, "Alias cannot be null");
+
+        return ImmutableList.of();
     }
 }

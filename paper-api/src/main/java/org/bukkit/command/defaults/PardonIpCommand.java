@@ -1,9 +1,16 @@
 package org.bukkit.command.defaults;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.util.StringUtil;
+
+import com.google.common.collect.ImmutableList;
 
 public class PardonIpCommand extends VanillaCommand {
     public PardonIpCommand() {
@@ -34,5 +41,17 @@ public class PardonIpCommand extends VanillaCommand {
     @Override
     public boolean matches(String input) {
         return input.equalsIgnoreCase("pardon-ip");
+    }
+
+    @Override
+    public List<String> tabComplete(CommandSender sender, String alias, String[] args) throws IllegalArgumentException {
+        Validate.notNull(sender, "Sender cannot be null");
+        Validate.notNull(args, "Arguments cannot be null");
+        Validate.notNull(alias, "Alias cannot be null");
+
+        if (args.length == 1) {
+            return StringUtil.copyPartialMatches(args[0], Bukkit.getIPBans(), new ArrayList<String>());
+        }
+        return ImmutableList.of();
     }
 }

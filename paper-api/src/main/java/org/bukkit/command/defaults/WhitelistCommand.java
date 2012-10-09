@@ -1,12 +1,21 @@
 package org.bukkit.command.defaults;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.util.StringUtil;
+
+import com.google.common.collect.ImmutableList;
 
 public class WhitelistCommand extends VanillaCommand {
+    private static final List<String> WHITELIST_SUBCOMMANDS = ImmutableList.of("add", "remove", "on", "off", "list", "reload");
+
     public WhitelistCommand() {
         super("whitelist");
         this.description = "Prevents the specified player from using this server";
@@ -87,5 +96,37 @@ public class WhitelistCommand extends VanillaCommand {
     @Override
     public boolean matches(String input) {
         return input.equalsIgnoreCase("whitelist");
+    }
+
+    @Override
+    public List<String> tabComplete(CommandSender sender, String alias, String[] args) {
+        Validate.notNull(sender, "Sender cannot be null");
+        Validate.notNull(args, "Arguments cannot be null");
+        Validate.notNull(alias, "Alias cannot be null");
+
+        if (args.length == 1) {
+            return StringUtil.copyPartialMatches(args[0], WHITELIST_SUBCOMMANDS, new ArrayList<String>(WHITELIST_SUBCOMMANDS.size()));
+        } else if (args.length == 2) {
+            if (args[0].equalsIgnoreCase("add")) {
+                List<String> completions = new ArrayList<String>();
+                for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
+                    String name = player.getName();
+                    if (StringUtil.startsWithIgnoreCase(name, args[1]) && !player.isWhitelisted()) {
+                        completions.add(name);
+                    }
+                }
+                return completions;
+            } else if (args[0].equalsIgnoreCase("remove")) {
+                List<String> completions = new ArrayList<String>();
+                for (OfflinePlayer player : Bukkit.getWhitelistedPlayers()) {
+                    String name = player.getName();
+                    if (StringUtil.startsWithIgnoreCase(name, args[1])) {
+                        completions.add(name);
+                    }
+                }
+                return completions;
+            }
+        }
+        return ImmutableList.of();
     }
 }

@@ -3,18 +3,25 @@ package org.bukkit.command.defaults;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredListener;
 import org.bukkit.plugin.TimedRegisteredListener;
+import org.bukkit.util.StringUtil;
+
+import com.google.common.collect.ImmutableList;
 
 public class TimingsCommand extends BukkitCommand {
+    private static final List<String> TIMINGS_SUBCOMMANDS = ImmutableList.of("merged", "reset", "separate");
+
     public TimingsCommand(String name) {
         super(name);
         this.description = "Records timings for all plugin events";
@@ -98,5 +105,17 @@ public class TimingsCommand extends BukkitCommand {
             }
         }
         return true;
+    }
+
+    @Override
+    public List<String> tabComplete(CommandSender sender, String alias, String[] args) {
+        Validate.notNull(sender, "Sender cannot be null");
+        Validate.notNull(args, "Arguments cannot be null");
+        Validate.notNull(alias, "Alias cannot be null");
+
+        if (args.length == 1) {
+            return StringUtil.copyPartialMatches(args[0], TIMINGS_SUBCOMMANDS, new ArrayList<String>(TIMINGS_SUBCOMMANDS.size()));
+        }
+        return ImmutableList.of();
     }
 }

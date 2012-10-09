@@ -1,7 +1,15 @@
 package org.bukkit.command.defaults;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.Validate;
 import org.apache.commons.lang.math.NumberUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -13,7 +21,7 @@ import org.bukkit.help.HelpTopicComparator;
 import org.bukkit.help.IndexHelpTopic;
 import org.bukkit.util.ChatPaginator;
 
-import java.util.*;
+import com.google.common.collect.ImmutableList;
 
 public class HelpCommand extends VanillaCommand {
     public HelpCommand() {
@@ -104,6 +112,27 @@ public class HelpCommand extends VanillaCommand {
     @Override
     public boolean matches(String input) {
         return input.equalsIgnoreCase("help") || input.equalsIgnoreCase("?");
+    }
+
+    @Override
+    public List<String> tabComplete(CommandSender sender, String alias, String[] args) {
+        Validate.notNull(sender, "Sender cannot be null");
+        Validate.notNull(args, "Arguments cannot be null");
+        Validate.notNull(alias, "Alias cannot be null");
+
+        if (args.length == 1) {
+            List<String> matchedTopics = new ArrayList<String>();
+            String searchString = args[0];
+            for (HelpTopic topic : Bukkit.getServer().getHelpMap().getHelpTopics()) {
+                String trimmedTopic = topic.getName().startsWith("/") ? topic.getName().substring(1) : topic.getName();
+
+                if (trimmedTopic.startsWith(searchString)) {
+                    matchedTopics.add(trimmedTopic);
+                }
+            }
+            return matchedTopics;
+        }
+        return ImmutableList.of();
     }
 
     protected HelpTopic findPossibleMatches(String searchString) {

@@ -1,12 +1,22 @@
 package org.bukkit.command.defaults;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.util.StringUtil;
+
+import com.google.common.collect.ImmutableList;
 
 public class TimeCommand extends VanillaCommand {
+    private static final List<String> TABCOMPLETE_ADD_SET = ImmutableList.of("add", "set");
+    private static final List<String> TABCOMPLETE_DAY_NIGHT = ImmutableList.of("day", "night");
+
     public TimeCommand() {
         super("time");
         this.description = "Changes the time on each world";
@@ -65,5 +75,19 @@ public class TimeCommand extends VanillaCommand {
     @Override
     public boolean matches(String input) {
         return input.equalsIgnoreCase("time");
+    }
+
+    @Override
+    public List<String> tabComplete(CommandSender sender, String alias, String[] args) {
+        Validate.notNull(sender, "Sender cannot be null");
+        Validate.notNull(args, "Arguments cannot be null");
+        Validate.notNull(alias, "Alias cannot be null");
+
+        if (args.length == 1) {
+            return StringUtil.copyPartialMatches(args[0], TABCOMPLETE_ADD_SET, new ArrayList<String>(TABCOMPLETE_ADD_SET.size()));
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("set")) {
+            return StringUtil.copyPartialMatches(args[1], TABCOMPLETE_DAY_NIGHT, new ArrayList<String>(TABCOMPLETE_DAY_NIGHT.size()));
+        }
+        return ImmutableList.of();
     }
 }

@@ -1,11 +1,19 @@
 package org.bukkit.command.defaults;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
+import org.bukkit.util.StringUtil;
+
+import com.google.common.collect.ImmutableList;
 
 public class BanListCommand extends VanillaCommand {
+    private static final List<String> BANLIST_TYPES = ImmutableList.of("ips", "players");
+
     public BanListCommand() {
         super("banlist");
         this.description = "View all players banned from this server";
@@ -38,8 +46,15 @@ public class BanListCommand extends VanillaCommand {
     }
 
     @Override
-    public List<String> tabComplete(CommandSender sender, String[] args) {
-        return args.length >= 1 ? null : EMPTY_LIST;
+    public List<String> tabComplete(CommandSender sender, String alias, String[] args) {
+        Validate.notNull(sender, "Sender cannot be null");
+        Validate.notNull(args, "Arguments cannot be null");
+        Validate.notNull(alias, "Alias cannot be null");
+
+        if (args.length == 1) {
+            return StringUtil.copyPartialMatches(args[0], BANLIST_TYPES, new ArrayList<String>(BANLIST_TYPES.size()));
+        }
+        return ImmutableList.of();
     }
 
     @Override

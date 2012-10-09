@@ -299,6 +299,13 @@ public abstract class JavaPlugin extends PluginBase {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        return null;
+    }
+
+    /**
      * Gets the command with the given name, specific to this plugin
      *
      * @param name Name or alias of the command
