@@ -58,6 +58,7 @@ import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.WorldCreator;
 import org.bukkit.command.Command;
+import org.bukkit.command.CommandException;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.command.PluginCommand;
@@ -1233,5 +1234,42 @@ public final class CraftServer implements Server {
 
     public WarningState getWarningState() {
         return warningState;
+    }
+
+    public List<String> tabComplete(net.minecraft.server.ICommandListener sender, String message) {
+        if (!(sender instanceof EntityPlayer)) {
+            return ImmutableList.of();
+        }
+
+        Player player = ((EntityPlayer) sender).getBukkitEntity();
+        if (message.startsWith("/")) {
+            return tabCompleteCommand(player, message);
+        } else {
+            return tabCompleteChat(player, message);
+        }
+    }
+
+    public List<String> tabCompleteCommand(Player player, String message) {
+        List<String> completions = null;
+        try {
+            completions = getCommandMap().tabComplete(player, message.substring(1));
+        } catch (CommandException ex) {
+            player.sendMessage(ChatColor.RED + "An internal error occurred while attempting to tab-complete this command");
+            getLogger().log(Level.SEVERE, "Exception when " + player.getName() + " attempted to tab complete " + message, ex);
+        }
+        
+        return completions == null ? ImmutableList.<String>of() : completions;
+    }
+
+    public List<String> tabCompleteChat(Player player, String message) {
+        Player[] players = getOnlinePlayers();
+        List<String> completions = new ArrayList<String>(players.length);
+        for (Player p : players) {
+            if (player.canSee(p)) {
+                completions.add(p.getName());
+            }
+        }
+
+        return completions;
     }
 }
