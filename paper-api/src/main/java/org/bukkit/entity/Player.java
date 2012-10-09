@@ -569,4 +569,27 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      * @return The current allowed speed, from -1 to 1
      */
     public float getWalkSpeed();
+
+    /**
+     * Request that the player's client download and switch texture packs.
+     * <p />
+     * The player's client will download the new texture pack asynchronously in the background, and
+     * will automatically switch to it once the download is complete. If the client has downloaded
+     * and cached the same texture pack in the past, it will perform a quick timestamp check over
+     * the network to determine if the texture pack has changed and needs to be downloaded again.
+     * When this request is sent for the very first time from a given server, the client will first
+     * display a confirmation GUI to the player before proceeding with the download.
+     * <p />
+     * Notes:
+     *   <ul>
+     *     <li>Players can disable server textures on their client, in which case this method will have no affect on them.</li>
+     *     <li>There is no concept of resetting texture packs back to default within Minecraft, so players will have to relog to do so.</li>
+     *   </ul>
+     *
+     * @param url The URL from which the client will download the texture pack. The string must contain
+     * only US-ASCII characters and should be encoded as per RFC 1738.
+     * @throws IllegalArgumentException Thrown if the URL is null.
+     * @throws IllegalArgumentException Thrown if the URL is too long.
+     */
+    public void setTexturePack(String url);
 }
