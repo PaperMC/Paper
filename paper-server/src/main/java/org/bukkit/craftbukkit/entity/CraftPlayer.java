@@ -47,6 +47,7 @@ import org.bukkit.inventory.InventoryView.Property;
 import org.bukkit.map.MapView;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.messaging.Messenger;
 import org.bukkit.plugin.messaging.StandardMessenger;
 
 @DelegateDeserialization(CraftOfflinePlayer.class)
@@ -780,6 +781,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             packet.data = message;
             getHandle().playerConnection.sendPacket(packet);
         }
+    }
+
+    public void setTexturePack(String url) {
+        Validate.notNull(url, "Texture pack URL cannot be null");
+
+        byte[] message = (url + "\0" + "16").getBytes();
+        Validate.isTrue(message.length <= Messenger.MAX_MESSAGE_SIZE, "Texture pack URL is too long");
+
+        getHandle().playerConnection.sendPacket(new Packet250CustomPayload("MC|TPack", message));
     }
 
     public void addChannel(String channel) {
