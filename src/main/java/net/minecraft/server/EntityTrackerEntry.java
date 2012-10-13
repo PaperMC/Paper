@@ -234,12 +234,14 @@ public class EntityTrackerEntry {
             if (d0 >= (double) (-this.b) && d0 <= (double) this.b && d1 >= (double) (-this.b) && d1 <= (double) this.b) {
                 if (!this.trackedPlayers.contains(entityplayer) && this.d(entityplayer)) {
                     // CraftBukkit start
-                    if (tracker instanceof EntityPlayer) {
-                        Player player = ((EntityPlayer) tracker).getBukkitEntity();
+                    if (this.tracker instanceof EntityPlayer) {
+                        Player player = ((EntityPlayer) this.tracker).getBukkitEntity();
                         if (!entityplayer.getBukkitEntity().canSee(player)) {
                             return;
                         }
                     }
+
+                    entityplayer.g.remove(Integer.valueOf(this.tracker.id)); // Should be called destroyQueue
                     // CraftBukkit end
                     this.trackedPlayers.add(entityplayer);
                     Packet packet = this.b();
