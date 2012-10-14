@@ -11,14 +11,14 @@ import org.bukkit.event.HandlerList;
  */
 public class AsyncPlayerPreLoginEvent extends Event {
     private static final HandlerList handlers = new HandlerList();
-    private PlayerPreLoginEvent.Result result;
+    private Result result;
     private String message;
     private final String name;
     private final InetAddress ipAddress;
 
     public AsyncPlayerPreLoginEvent(final String name, final InetAddress ipAddress) {
         super(true);
-        this.result = PlayerPreLoginEvent.Result.ALLOWED;
+        this.result = Result.ALLOWED;
         this.message = "";
         this.name = name;
         this.ipAddress = ipAddress;
@@ -29,8 +29,20 @@ public class AsyncPlayerPreLoginEvent extends Event {
      *
      * @return Current Result of the login
      */
-    public PlayerPreLoginEvent.Result getResult() {
+    public Result getLoginResult() {
         return result;
+    }
+
+    /**
+     * Gets the current result of the login, as an enum
+     *
+     * @return Current Result of the login
+     * @deprecated This method uses a deprecated enum from {@link PlayerPreLoginEvent}
+     * @see #getLoginResult()
+     */
+    @Deprecated
+    public PlayerPreLoginEvent.Result getResult() {
+        return result == null ? null : result.old();
     }
 
     /**
@@ -38,8 +50,20 @@ public class AsyncPlayerPreLoginEvent extends Event {
      *
      * @param result New result to set
      */
-    public void setResult(final PlayerPreLoginEvent.Result result) {
+    public void setLoginResult(final Result result) {
         this.result = result;
+    }
+
+    /**
+     * Sets the new result of the login, as an enum
+     *
+     * @param result New result to set
+     * @deprecated This method uses a deprecated enum from {@link PlayerPreLoginEvent}
+     * @see #setLoginResult(Result)
+     */
+    @Deprecated
+    public void setResult(final PlayerPreLoginEvent.Result result) {
+        this.result = result == null ? null : Result.valueOf(result.name());
     }
 
     /**
@@ -64,7 +88,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
      * Allows the player to log in
      */
     public void allow() {
-        result = PlayerPreLoginEvent.Result.ALLOWED;
+        result = Result.ALLOWED;
         message = "";
     }
 
@@ -74,8 +98,22 @@ public class AsyncPlayerPreLoginEvent extends Event {
      * @param result New result for disallowing the player
      * @param message Kick message to display to the user
      */
-    public void disallow(final PlayerPreLoginEvent.Result result, final String message) {
+    public void disallow(final Result result, final String message) {
         this.result = result;
+        this.message = message;
+    }
+
+    /**
+     * Disallows the player from logging in, with the given reason
+     *
+     * @param result New result for disallowing the player
+     * @param message Kick message to display to the user
+     * @deprecated This method uses a deprecated enum from {@link PlayerPreLoginEvent}
+     * @see #disallow(Result, String)
+     */
+    @Deprecated
+    public void disallow(final PlayerPreLoginEvent.Result result, final String message) {
+        this.result = result == null ? null : Result.valueOf(result.name());
         this.message = message;
     }
 
@@ -104,5 +142,37 @@ public class AsyncPlayerPreLoginEvent extends Event {
 
     public static HandlerList getHandlerList() {
         return handlers;
+    }
+
+    /**
+     * Basic kick reasons for communicating to plugins
+     */
+    public enum Result {
+
+        /**
+         * The player is allowed to log in
+         */
+        ALLOWED,
+        /**
+         * The player is not allowed to log in, due to the server being full
+         */
+        KICK_FULL,
+        /**
+         * The player is not allowed to log in, due to them being banned
+         */
+        KICK_BANNED,
+        /**
+         * The player is not allowed to log in, due to them not being on the white list
+         */
+        KICK_WHITELIST,
+        /**
+         * The player is not allowed to log in, for reasons undefined
+         */
+        KICK_OTHER;
+
+        @Deprecated
+        private PlayerPreLoginEvent.Result old() {
+            return PlayerPreLoginEvent.Result.valueOf(name());
+        }
     }
 }
