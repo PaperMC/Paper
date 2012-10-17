@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -86,6 +87,7 @@ import org.bukkit.craftbukkit.util.DatFileFilter;
 import org.bukkit.craftbukkit.util.Versioning;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.event.player.PlayerChatTabCompleteEvent;
 import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.world.WorldSaveEvent;
@@ -113,6 +115,7 @@ import org.bukkit.potion.Potion;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.plugin.messaging.StandardMessenger;
 import org.bukkit.scheduler.BukkitWorker;
+import org.bukkit.util.StringUtil;
 import org.bukkit.util.permissions.DefaultPermissions;
 
 import org.yaml.snakeyaml.Yaml;
@@ -1257,19 +1260,31 @@ public final class CraftServer implements Server {
             player.sendMessage(ChatColor.RED + "An internal error occurred while attempting to tab-complete this command");
             getLogger().log(Level.SEVERE, "Exception when " + player.getName() + " attempted to tab complete " + message, ex);
         }
-        
+
         return completions == null ? ImmutableList.<String>of() : completions;
     }
 
     public List<String> tabCompleteChat(Player player, String message) {
         Player[] players = getOnlinePlayers();
-        List<String> completions = new ArrayList<String>(players.length);
+        List<String> completions = new ArrayList<String>();
+        PlayerChatTabCompleteEvent event = new PlayerChatTabCompleteEvent(player, message, completions);
+        String token = event.getLastToken();
         for (Player p : players) {
-            if (player.canSee(p)) {
+            if (player.canSee(p) && StringUtil.startsWithIgnoreCase(p.getName(), token)) {
                 completions.add(p.getName());
             }
         }
+        pluginManager.callEvent(event);
 
+        Iterator<?> it = completions.iterator();
+        while (it.hasNext()) {
+            Object current = it.next();
+            if (!(current instanceof String)) {
+                // Sanity
+                it.remove();
+            }
+        }
+        Collections.sort(completions, String.CASE_INSENSITIVE_ORDER);
         return completions;
     }
 }
