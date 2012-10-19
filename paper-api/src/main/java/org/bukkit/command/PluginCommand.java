@@ -144,4 +144,12 @@ public final class PluginCommand extends Command implements PluginIdentifiableCo
         }
         return completions;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder stringBuilder = new StringBuilder(super.toString());
+        stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+        stringBuilder.append(", ").append(owningPlugin.getDescription().getFullName()).append(')');
+        return stringBuilder.toString();
+    }
 }

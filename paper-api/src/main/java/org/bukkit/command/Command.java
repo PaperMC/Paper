@@ -350,4 +350,9 @@ public abstract class Command {
             }
         }
     }
+
+    @Override
+    public String toString() {
+        return getClass().getName() + '(' + name + ')';
+    }
 }
