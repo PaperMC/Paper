@@ -38,6 +38,26 @@ public abstract class VanillaCommand extends Command {
         return i;
     }
 
+    public static double getDouble(CommandSender sender, String input) {
+        try {
+            return Double.parseDouble(input);
+        } catch (NumberFormatException ex) {
+            return -30000001;
+        }
+    }
+
+    public static double getDouble(CommandSender sender, String input, double min, double max) {
+        double result = getDouble(sender, input);
+
+        if (result < min) {
+            result = min;
+        } else if (result > max) {
+            result = max;
+        }
+
+        return result;
+    }
+
     protected String createString(String[] args, int start) {
         StringBuilder string = new StringBuilder();
 

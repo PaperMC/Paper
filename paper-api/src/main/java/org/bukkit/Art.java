@@ -29,12 +29,13 @@ public enum Art {
     STAGE(16, 2, 2),
     VOID(17, 2, 2),
     SKULL_AND_ROSES(18, 2, 2),
-    FIGHTERS(19, 4, 2),
-    POINTER(20, 4, 4),
-    PIGSCENE(21, 4, 4),
-    BURNINGSKULL(22, 4, 4),
-    SKELETON(23, 4, 3),
-    DONKEYKONG(24, 4, 3);
+    WITHER(19, 2, 2),
+    FIGHTERS(20, 4, 2),
+    POINTER(21, 4, 4),
+    PIGSCENE(22, 4, 4),
+    BURNINGSKULL(23, 4, 4),
+    SKELETON(24, 4, 3),
+    DONKEYKONG(25, 4, 3);
 
     private int id, width, height;
     private static final HashMap<String, Art> BY_NAME = Maps.newHashMap();

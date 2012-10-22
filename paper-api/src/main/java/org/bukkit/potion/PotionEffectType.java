@@ -75,7 +75,7 @@ public abstract class PotionEffectType {
     public static final PotionEffectType WATER_BREATHING = new PotionEffectTypeWrapper(13);
 
     /**
-     * Grants invisibility. NOTE: Unusable due to not being implemented by Minecraft.
+     * Grants invisibility.
      */
     @Deprecated
     public static final PotionEffectType INVISIBILITY = new PotionEffectTypeWrapper(14); // unimplemented
@@ -86,8 +86,7 @@ public abstract class PotionEffectType {
     public static final PotionEffectType BLINDNESS = new PotionEffectTypeWrapper(15);
 
     /**
-     * Allows an entity to see in the dark. NOTE: Unusable due to not being
-     * implemented by Minecraft.
+     * Allows an entity to see in the dark.
      */
     @Deprecated
     public static final PotionEffectType NIGHT_VISION = new PotionEffectTypeWrapper(16); // unimplemented
@@ -106,6 +105,11 @@ public abstract class PotionEffectType {
      * Deals damage to an entity over time.
      */
     public static final PotionEffectType POISON = new PotionEffectTypeWrapper(19);
+
+    /**
+     * Deals damage to an entity over time and gives the health to the shooter.
+     */
+    public static final PotionEffectType WITHER = new PotionEffectTypeWrapper(20);
 
     private final int id;
 
@@ -172,7 +176,7 @@ public abstract class PotionEffectType {
         return "PotionEffectType[" + id + ", " + getName() + "]";
     }
 
-    private static final PotionEffectType[] byId = new PotionEffectType[20];
+    private static final PotionEffectType[] byId = new PotionEffectType[21];
     private static final Map<String, PotionEffectType> byName = new HashMap<String, PotionEffectType>();
     // will break on updates.
     private static boolean acceptingNew = true;

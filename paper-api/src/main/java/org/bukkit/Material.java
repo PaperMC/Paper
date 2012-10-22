@@ -143,6 +143,27 @@ public enum Material {
     DRAGON_EGG(122),
     REDSTONE_LAMP_OFF(123),
     REDSTONE_LAMP_ON(124),
+    WOOD_DOUBLE_STEP(125, WoodenStep.class),
+    WOOD_STEP(126, WoodenStep.class),
+    COCOA(127, CocoaPlant.class),
+    SANDSTONE_STAIRS(128, Stairs.class),
+    EMERALD_ORE(129),
+    ENDER_CHEST(130, EnderChest.class),
+    TRIPWIRE_HOOK(131, TripwireHook.class),
+    TRIPWIRE(132, Tripwire.class),
+    EMERALD_BLOCK(133),
+    SPRUCE_WOOD_STAIRS(134, Stairs.class),
+    BIRCH_WOOD_STAIRS(135, Stairs.class),
+    JUNGLE_WOOD_STAIRS(136, Stairs.class),
+    COMMAND(137, Command.class),
+    BEACON(138),
+    COBBLE_WALL(139),
+    FLOWER_POT(140, FlowerPot.class),
+    CARROT(141),
+    POTATO(142),
+    WOOD_BUTTON(143, Button.class),
+    SKULL(144, Skull.class),
+    ANVIL(145),
     // ----- Item Separator -----
     IRON_SPADE(256, 1, 250),
     IRON_PICKAXE(257, 1, 250),
@@ -249,7 +270,7 @@ public enum Material {
     /**
      * @see MapView
      */
-    MAP(358, 1, MaterialData.class),
+    MAP(358, MaterialData.class),
     SHEARS(359, 1, 238),
     MELON(360),
     PUMPKIN_SEEDS(361),
@@ -280,6 +301,21 @@ public enum Material {
     MONSTER_EGG(383, 64, SpawnEgg.class),
     EXP_BOTTLE(384, 64),
     FIREBALL(385, 64),
+    BOOK_AND_QUILL(386, 1),
+    WRITTEN_BOOK(387, 1),
+    EMERALD(388, 64),
+    ITEM_FRAME(389),
+    FLOWER_POT_ITEM(390),
+    CARROT_ITEM(391),
+    POTATO_ITEM(392),
+    BAKED_POTATO(393),
+    POISONOUS_POTATO(394),
+    EMPTY_MAP(395),
+    GOLDEN_CARROT(396),
+    SKULL_ITEM(397),
+    CARROT_STICK(398, 1, 25),
+    NETHER_STAR(399),
+    PUMPKIN_PIE(400),
     GOLD_RECORD(2256, 1),
     GREEN_RECORD(2257, 1),
     RECORD_3(2258, 1),
@@ -291,22 +327,7 @@ public enum Material {
     RECORD_9(2264, 1),
     RECORD_10(2265, 1),
     RECORD_11(2266, 1),
-    WOOD_DOUBLE_STEP(125, WoodenStep.class),
-    WOOD_STEP(126, WoodenStep.class),
-    COCOA(127, CocoaPlant.class),
-    SANDSTONE_STAIRS(128, Stairs.class),
-    EMERALD_ORE(129),
-    ENDER_CHEST(130, EnderChest.class),
-    TRIPWIRE_HOOK(131, TripwireHook.class),
-    TRIPWIRE(132, Tripwire.class),
-    EMERALD_BLOCK(133),
-    SPRUCE_WOOD_STAIRS(134, Stairs.class),
-    BIRCH_WOOD_STAIRS(135, Stairs.class),
-    JUNGLE_WOOD_STAIRS(136, Stairs.class),
-    BOOK_AND_QUILL(386, 1),
-    WRITTEN_BOOK(387, 1),
-    EMERALD(388, 64);
-    
+    ;
 
     private final int id;
     private final Class<? extends MaterialData> data;
@@ -423,6 +444,12 @@ public enum Material {
      */
     public boolean isEdible() {
         return equals(Material.BREAD)
+                || equals(Material.CARROT_ITEM)
+                || equals(Material.BAKED_POTATO)
+                || equals(Material.POTATO_ITEM)
+                || equals(Material.POISONOUS_POTATO)
+                || equals(Material.GOLDEN_CARROT)
+                || equals(Material.PUMPKIN_PIE)
                 || equals(Material.COOKIE)
                 || equals(Material.MELON)
                 || equals(Material.MUSHROOM_SOUP)

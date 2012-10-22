@@ -93,6 +93,14 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
          */
         MAGIC_REGEN,
         /**
+         * When a wither is filling its health during spawning
+         */
+        WITHER_SPAWN,
+        /**
+         * When an entity is damaged by the Wither potion effect
+         */
+        WITHER,
+        /**
          * Any other reason not covered by the reasons above
          */
         CUSTOM

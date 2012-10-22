@@ -128,6 +128,10 @@ public class CreatureSpawnEvent extends EntityEvent implements Cancellable {
          */
         BUILD_IRONGOLEM,
         /**
+         * When a wither boss is spawned by being built
+         */
+        BUILD_WITHER,
+        /**
          * When an iron golem is spawned to defend a village
          */
         VILLAGE_DEFENSE,

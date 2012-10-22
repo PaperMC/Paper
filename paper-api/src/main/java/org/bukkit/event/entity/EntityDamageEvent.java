@@ -177,6 +177,10 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          */
         MAGIC,
         /**
+         *
+         */
+        WITHER,
+        /**
          * Custom damage.
          * <p />
          * Damage: variable
