@@ -12,41 +12,57 @@ import org.bukkit.entity.LivingEntity;
 
 public class EntityPotion extends EntityProjectile {
 
-    private int d;
+    private ItemStack d;
 
     public EntityPotion(World world) {
         super(world);
     }
 
     public EntityPotion(World world, EntityLiving entityliving, int i) {
+        this(world, entityliving, new ItemStack(Item.POTION, 1, i));
+    }
+
+    public EntityPotion(World world, EntityLiving entityliving, ItemStack itemstack) {
         super(world, entityliving);
-        this.d = i;
+        this.d = itemstack;
     }
 
-    public EntityPotion(World world, double d0, double d1, double d2, int i) {
+    public EntityPotion(World world, double d0, double d1, double d2, ItemStack itemstack) {
         super(world, d0, d1, d2);
-        this.d = i;
-    }
-
-    protected float h() {
-        return 0.05F;
-    }
-
-    protected float d() {
-        return 0.5F;
+        this.d = itemstack;
     }
 
     protected float g() {
+        return 0.05F;
+    }
+
+    protected float c() {
+        return 0.5F;
+    }
+
+    protected float d() {
         return -20.0F;
     }
 
+    public void setPotionValue(int i) {
+        if (this.d == null) {
+            this.d = new ItemStack(Item.POTION, 1, 0);
+        }
+
+        this.d.setData(i);
+    }
+
     public int getPotionValue() {
-        return this.d;
+        if (this.d == null) {
+            this.d = new ItemStack(Item.POTION, 1, 0);
+        }
+
+        return this.d.getData();
     }
 
     protected void a(MovingObjectPosition movingobjectposition) {
         if (!this.world.isStatic) {
-            List list = Item.POTION.f(this.d);
+            List list = Item.POTION.l(this.d);
 
             if (list != null && !list.isEmpty()) {
                 AxisAlignedBB axisalignedbb = this.boundingBox.grow(4.0D, 2.0D, 4.0D);
@@ -114,18 +130,28 @@ public class EntityPotion extends EntityProjectile {
                 }
             }
 
-            this.world.triggerEffect(2002, (int) Math.round(this.locX), (int) Math.round(this.locY), (int) Math.round(this.locZ), this.d);
+            this.world.triggerEffect(2002, (int) Math.round(this.locX), (int) Math.round(this.locY), (int) Math.round(this.locZ), this.getPotionValue());
             this.die();
         }
     }
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        this.d = nbttagcompound.getInt("potionValue");
+        if (nbttagcompound.hasKey("Potion")) {
+            this.d = ItemStack.a(nbttagcompound.getCompound("Potion"));
+        } else {
+            this.setPotionValue(nbttagcompound.getInt("potionValue"));
+        }
+
+        if (this.d == null) {
+            this.die();
+        }
     }
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
-        nbttagcompound.setInt("potionValue", this.d);
+        if (this.d != null) {
+            nbttagcompound.setCompound("Potion", this.d.save(new NBTTagCompound()));
+        }
     }
 }

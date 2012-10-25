@@ -35,7 +35,7 @@ public class BlockNetherWart extends BlockFlower {
         return j >= 3 ? this.textureId + 2 : (j > 0 ? this.textureId + 1 : this.textureId);
     }
 
-    public int b() {
+    public int d() {
         return 6;
     }
 

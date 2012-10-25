@@ -18,7 +18,7 @@ public class PathfinderGoalEatTile extends PathfinderGoal {
     }
 
     public boolean a() {
-        if (this.b.au().nextInt(this.b.isBaby() ? 50 : 1000) != 0) {
+        if (this.b.aA().nextInt(this.b.isBaby() ? 50 : 1000) != 0) {
             return false;
         } else {
             int i = MathHelper.floor(this.b.locX);
@@ -29,13 +29,13 @@ public class PathfinderGoalEatTile extends PathfinderGoal {
         }
     }
 
-    public void e() {
+    public void c() {
         this.a = 40;
         this.c.broadcastEntityEffect(this.b, (byte) 10);
         this.b.getNavigation().g();
     }
 
-    public void c() {
+    public void d() {
         this.a = 0;
     }
 
@@ -47,7 +47,7 @@ public class PathfinderGoalEatTile extends PathfinderGoal {
         return this.a;
     }
 
-    public void d() {
+    public void e() {
         this.a = Math.max(0, this.a - 1);
         if (this.a == 4) {
             int i = MathHelper.floor(this.b.locX);
@@ -59,7 +59,7 @@ public class PathfinderGoalEatTile extends PathfinderGoal {
                 if (!CraftEventFactory.callEntityChangeBlockEvent(this.b.getBukkitEntity(), this.b.world.getWorld().getBlockAt(i, j, k), Material.AIR).isCancelled()) {
                     this.c.triggerEffect(2001, i, j, k, Block.LONG_GRASS.id + 4096);
                     this.c.setTypeId(i, j, k, 0);
-                    this.b.aA();
+                    this.b.aG();
                 }
                 // CraftBukkit end
             } else if (this.c.getTypeId(i, j - 1, k) == Block.GRASS.id) {
@@ -67,7 +67,7 @@ public class PathfinderGoalEatTile extends PathfinderGoal {
                 if (!CraftEventFactory.callEntityChangeBlockEvent(this.b.getBukkitEntity(), this.b.world.getWorld().getBlockAt(i, j - 1, k), Material.DIRT).isCancelled()) {
                     this.c.triggerEffect(2001, i, j - 1, k, Block.GRASS.id);
                     this.c.setTypeId(i, j - 1, k, Block.DIRT.id);
-                    this.b.aA();
+                    this.b.aG();
                 }
                 // CraftBukkit end
             }

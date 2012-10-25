@@ -32,7 +32,7 @@ public class EntityTNTPrimed extends Entity {
 
     protected void a() {}
 
-    protected boolean e_() {
+    protected boolean f_() {
         return false;
     }
 
@@ -40,7 +40,7 @@ public class EntityTNTPrimed extends Entity {
         return !this.dead;
     }
 
-    public void h_() {
+    public void j_() {
         this.lastX = this.locX;
         this.lastY = this.locY;
         this.lastZ = this.locZ;
@@ -63,7 +63,7 @@ public class EntityTNTPrimed extends Entity {
             this.die();
             // CraftBukkit end
         } else {
-            this.world.a("smoke", this.locX, this.locY + 0.5D, this.locZ, 0.0D, 0.0D, 0.0D);
+            this.world.addParticle("smoke", this.locX, this.locY + 0.5D, this.locZ, 0.0D, 0.0D, 0.0D);
         }
     }
 
@@ -78,7 +78,7 @@ public class EntityTNTPrimed extends Entity {
 
         if (!event.isCancelled()) {
             // give 'this' instead of (Entity) null so we know what causes the damage
-            this.world.createExplosion(this, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire());
+            this.world.createExplosion(this, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire(), true);
         }
         // CraftBukkit end
     }

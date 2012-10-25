@@ -29,7 +29,7 @@ public class PathfinderGoalMeleeAttack extends PathfinderGoal {
     }
 
     public boolean a() {
-        EntityLiving entityliving = this.b.az();
+        EntityLiving entityliving = this.b.aF();
 
         if (entityliving == null) {
             return false;
@@ -43,17 +43,17 @@ public class PathfinderGoalMeleeAttack extends PathfinderGoal {
     }
 
     public boolean b() {
-        EntityLiving entityliving = this.b.az();
+        EntityLiving entityliving = this.b.aF();
 
-        return entityliving == null ? false : (!this.c.isAlive() ? false : (!this.f ? !this.b.getNavigation().f() : this.b.d(MathHelper.floor(this.c.locX), MathHelper.floor(this.c.locY), MathHelper.floor(this.c.locZ))));
+        return entityliving == null ? false : (!this.c.isAlive() ? false : (!this.f ? !this.b.getNavigation().f() : this.b.e(MathHelper.floor(this.c.locX), MathHelper.floor(this.c.locY), MathHelper.floor(this.c.locZ))));
     }
 
-    public void e() {
+    public void c() {
         this.b.getNavigation().a(this.g, this.e);
         this.i = 0;
     }
 
-    public void c() {
+    public void d() {
         // CraftBukkit start
         EntityTargetEvent.TargetReason reason = this.c.isAlive() ? EntityTargetEvent.TargetReason.FORGOT_TARGET : EntityTargetEvent.TargetReason.TARGET_DIED;
         org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetEvent(b, null, reason);
@@ -63,10 +63,10 @@ public class PathfinderGoalMeleeAttack extends PathfinderGoal {
         this.b.getNavigation().g();
     }
 
-    public void d() {
+    public void e() {
         this.b.getControllerLook().a(this.c, 30.0F, 30.0F);
-        if ((this.f || this.b.at().canSee(this.c)) && --this.i <= 0) {
-            this.i = 4 + this.b.au().nextInt(7);
+        if ((this.f || this.b.az().canSee(this.c)) && --this.i <= 0) {
+            this.i = 4 + this.b.aA().nextInt(7);
             this.b.getNavigation().a(this.c, this.e);
         }
 
@@ -76,7 +76,11 @@ public class PathfinderGoalMeleeAttack extends PathfinderGoal {
         if (this.b.e(this.c.locX, this.c.boundingBox.b, this.c.locZ) <= d0) {
             if (this.d <= 0) {
                 this.d = 20;
-                this.b.k(this.c);
+                if (this.b.bA() != null) {
+                    this.b.bE();
+                }
+
+                this.b.l(this.c);
             }
         }
     }

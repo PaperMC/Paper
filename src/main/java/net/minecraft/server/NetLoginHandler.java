@@ -1,10 +1,13 @@
 package net.minecraft.server;
 
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
 import javax.crypto.SecretKey;
@@ -27,7 +30,7 @@ public class NetLoginHandler extends NetHandler {
 
     public NetLoginHandler(MinecraftServer minecraftserver, Socket socket, String s) throws java.io.IOException { // CraftBukkit - throws IOException
         this.server = minecraftserver;
-        this.networkManager = new NetworkManager(socket, s, this, minecraftserver.E().getPrivate());
+        this.networkManager = new NetworkManager(socket, s, this, minecraftserver.F().getPrivate());
         this.networkManager.e = 0;
     }
 
@@ -68,10 +71,10 @@ public class NetLoginHandler extends NetHandler {
         if (!this.h.equals(StripColor.a(this.h))) {
             this.disconnect("Invalid username!");
         } else {
-            PublicKey publickey = this.server.E().getPublic();
+            PublicKey publickey = this.server.F().getPublic();
 
-            if (packet2handshake.d() != 39) {
-                if (packet2handshake.d() > 39) {
+            if (packet2handshake.d() != 47) {
+                if (packet2handshake.d() > 47) {
                     this.disconnect("Outdated server!");
                 } else {
                     this.disconnect("Outdated client!");
@@ -86,7 +89,7 @@ public class NetLoginHandler extends NetHandler {
     }
 
     public void a(Packet252KeyResponse packet252keyresponse) {
-        PrivateKey privatekey = this.server.E().getPrivate();
+        PrivateKey privatekey = this.server.F().getPrivate();
 
         this.k = packet252keyresponse.a(privatekey);
         if (!Arrays.equals(this.d, packet252keyresponse.b(privatekey))) {
@@ -141,10 +144,29 @@ public class NetLoginHandler extends NetHandler {
     public void a(Packet254GetInfo packet254getinfo) {
         if (this.networkManager.getSocket() == null) return; // CraftBukkit - fix NPE when a client queries a server that is unable to handle it.
         try {
-            // CraftBukkit start
-            org.bukkit.event.server.ServerListPingEvent pingEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callServerListPingEvent(this.server.server, getSocket().getInetAddress(), this.server.getMotd(), this.server.getServerConfigurationManager().getPlayerCount(), this.server.getServerConfigurationManager().getMaxPlayers());
-            String s = pingEvent.getMotd() + "\u00A7" + this.server.getServerConfigurationManager().getPlayerCount() + "\u00A7" + pingEvent.getMaxPlayers();
-            // CraftBukkit end
+            ServerConfigurationManagerAbstract serverconfigurationmanagerabstract = this.server.getServerConfigurationManager();
+            String s = null;
+            // CraftBukkit
+            org.bukkit.event.server.ServerListPingEvent pingEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callServerListPingEvent(this.server.server, getSocket().getInetAddress(), this.server.getMotd(), serverconfigurationmanagerabstract.getPlayerCount(), serverconfigurationmanagerabstract.getMaxPlayers());
+
+            if (packet254getinfo.a == 1) {
+                // CraftBukkit start - fix decompile issues, don't create a list from an array
+                Object[] list = new Object[] { 1, 47, this.server.getVersion(), pingEvent.getMotd(), serverconfigurationmanagerabstract.getPlayerCount(), pingEvent.getMaxPlayers() };
+
+                for (Object object : list) {
+                    if (s == null) {
+                        s = "\u00A7";
+                    } else {
+                        s = s + "\0";
+                    }
+
+                    s += org.apache.commons.lang.StringUtils.replace(object.toString(), "\0", "");
+                }
+                // CraftBukkit end
+            } else {
+                // CraftBukkit
+                s = pingEvent.getMotd() + "\u00A7" + serverconfigurationmanagerabstract.getPlayerCount() + "\u00A7" + pingEvent.getMaxPlayers();
+            }
 
             InetAddress inetaddress = null;
 
@@ -154,8 +176,8 @@ public class NetLoginHandler extends NetHandler {
 
             this.networkManager.queue(new Packet255KickDisconnect(s));
             this.networkManager.d();
-            if (inetaddress != null && this.server.ac() instanceof DedicatedServerConnection) {
-                ((DedicatedServerConnection) this.server.ac()).a(inetaddress);
+            if (inetaddress != null && this.server.ae() instanceof DedicatedServerConnection) {
+                ((DedicatedServerConnection) this.server.ae()).a(inetaddress);
             }
 
             this.c = true;

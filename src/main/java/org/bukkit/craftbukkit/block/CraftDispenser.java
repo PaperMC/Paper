@@ -32,7 +32,7 @@ public class CraftDispenser extends CraftBlockState implements Dispenser {
             if (block.getType() == Material.DISPENSER) {
                 BlockDispenser dispense = (BlockDispenser) net.minecraft.server.Block.DISPENSER;
 
-                dispense.dispense(world.getHandle(), getX(), getY(), getZ(), new Random());
+                dispense.dispense(world.getHandle(), getX(), getY(), getZ());
                 return true;
             } else {
                 return false;

@@ -42,7 +42,7 @@ public class ItemRedstone extends Item {
             }
         }
 
-        if (!entityhuman.e(i, j, k)) {
+        if (!entityhuman.a(i, j, k, l, itemstack)) {
             return false;
         } else {
             if (Block.REDSTONE_WIRE.canPlace(world, i, j, k)) {

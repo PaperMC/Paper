@@ -5,21 +5,21 @@ import org.bukkit.event.block.EntityBlockFormEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 // CraftBukkit end
 
-public class EntitySnowman extends EntityGolem {
+public class EntitySnowman extends EntityGolem implements IRangedEntity {
 
     public EntitySnowman(World world) {
         super(world);
         this.texture = "/mob/snowman.png";
         this.a(0.4F, 1.8F);
         this.getNavigation().a(true);
-        this.goalSelector.a(1, new PathfinderGoalArrowAttack(this, 0.25F, 2, 20));
+        this.goalSelector.a(1, new PathfinderGoalArrowAttack(this, 0.25F, 20, 10.0F));
         this.goalSelector.a(2, new PathfinderGoalRandomStroll(this, 0.2F));
         this.goalSelector.a(3, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 6.0F));
         this.goalSelector.a(4, new PathfinderGoalRandomLookaround(this));
-        this.targetSelector.a(1, new PathfinderGoalNearestAttackableTarget(this, EntityMonster.class, 16.0F, 0, true));
+        this.targetSelector.a(1, new PathfinderGoalNearestAttackableTarget(this, EntityLiving.class, 16.0F, 0, true, false, IMonster.a));
     }
 
-    public boolean aV() {
+    public boolean bb() {
         return true;
     }
 
@@ -27,8 +27,8 @@ public class EntitySnowman extends EntityGolem {
         return 4;
     }
 
-    public void d() {
-        super.d();
+    public void c() {
+        super.c();
         if (this.G()) {
             // CraftBukkit start
             EntityDamageEvent event = new EntityDamageEvent(this.getBukkitEntity(), EntityDamageEvent.DamageCause.DROWNING, 1);
@@ -92,5 +92,17 @@ public class EntitySnowman extends EntityGolem {
 
         org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, loot);
         // CraftBukkit end
+    }
+
+    public void d(EntityLiving entityliving) {
+        EntitySnowball entitysnowball = new EntitySnowball(this.world, this);
+        double d0 = entityliving.locX - this.locX;
+        double d1 = entityliving.locY + (double) entityliving.getHeadHeight() - 1.100000023841858D - entitysnowball.locY;
+        double d2 = entityliving.locZ - this.locZ;
+        float f = MathHelper.sqrt(d0 * d0 + d2 * d2) * 0.2F;
+
+        entitysnowball.shoot(d0, d1 + (double) f, d2, 1.6F, 12.0F);
+        this.world.makeSound(this, "random.bow", 1.0F, 1.0F / (this.aA().nextFloat() * 0.4F + 0.8F));
+        this.world.addEntity(entitysnowball);
     }
 }

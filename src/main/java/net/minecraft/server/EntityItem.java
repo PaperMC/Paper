@@ -19,6 +19,7 @@ public class EntityItem extends Entity {
         this.height = this.length / 2.0F;
         this.setPosition(d0, d1, d2);
         this.itemStack = itemstack;
+
         // CraftBukkit start - infinite item fix & nullcheck
         if (this.itemStack == null) {
             throw new IllegalArgumentException("Can't create an EntityItem for a null item");
@@ -27,13 +28,14 @@ public class EntityItem extends Entity {
             this.itemStack.count = 1;
         }
         // CraftBukkit end
+
         this.yaw = (float) (Math.random() * 360.0D);
         this.motX = (double) ((float) (Math.random() * 0.20000000298023224D - 0.10000000149011612D));
         this.motY = 0.20000000298023224D;
         this.motZ = (double) ((float) (Math.random() * 0.20000000298023224D - 0.10000000149011612D));
     }
 
-    protected boolean e_() {
+    protected boolean f_() {
         return false;
     }
 
@@ -45,8 +47,8 @@ public class EntityItem extends Entity {
 
     protected void a() {}
 
-    public void h_() {
-        super.h_();
+    public void j_() {
+        super.j_();
         // CraftBukkit start
         int currentTick = (int) (System.currentTimeMillis() / 50);
         this.pickupDelay -= (currentTick - this.lastTick);
@@ -99,7 +101,7 @@ public class EntityItem extends Entity {
         }
 
         ++this.age;
-        if (this.age >= 6000) {
+        if (!this.world.isStatic && this.age >= 6000) {
             // CraftBukkit start
             if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
                 this.age = 0;
@@ -116,34 +118,38 @@ public class EntityItem extends Entity {
         } else if (entityitem.isAlive() && this.isAlive()) {
             if (entityitem.itemStack.getItem() != this.itemStack.getItem()) {
                 return false;
-            } else if (entityitem.itemStack.getItem().k() && entityitem.itemStack.getData() != this.itemStack.getData()) {
-                return false;
-            } else if (entityitem.itemStack.count < this.itemStack.count) {
-                return entityitem.a(this);
-            } else if (entityitem.itemStack.count + this.itemStack.count > entityitem.itemStack.getMaxStackSize()) {
-                return false;
-            // CraftBukkit start - don't merge items with enchantments
-            } else if (entityitem.itemStack.hasEnchantments() || this.itemStack.hasEnchantments()) {
-                return false;
-                // CraftBukkit end
+            } else if (!entityitem.itemStack.hasTag() && !this.itemStack.hasTag()) {
+                if (entityitem.itemStack.getItem().l() && entityitem.itemStack.getData() != this.itemStack.getData()) {
+                    return false;
+                } else if (entityitem.itemStack.count < this.itemStack.count) {
+                    return entityitem.a(this);
+                } else if (entityitem.itemStack.count + this.itemStack.count > entityitem.itemStack.getMaxStackSize()) {
+                    return false;
+                // CraftBukkit start - don't merge items with enchantments
+                } else if (entityitem.itemStack.hasEnchantments() || this.itemStack.hasEnchantments()) {
+                    return false;
+                    // CraftBukkit end
+                } else {
+                    entityitem.itemStack.count += this.itemStack.count;
+                    entityitem.pickupDelay = Math.max(entityitem.pickupDelay, this.pickupDelay);
+                    entityitem.age = Math.min(entityitem.age, this.age);
+                    this.die();
+                    return true;
+                }
             } else {
-                entityitem.itemStack.count += this.itemStack.count;
-                entityitem.pickupDelay = Math.max(entityitem.pickupDelay, this.pickupDelay);
-                entityitem.age = Math.min(entityitem.age, this.age);
-                this.die();
-                return true;
+                return false;
             }
         } else {
             return false;
         }
     }
 
-    public void d() {
+    public void c() {
         this.age = 4800;
     }
 
     public boolean I() {
-        return this.world.a(this.boundingBox, Material.WATER, this);
+        return this.world.a(this.boundingBox, Material.WATER, (Entity) this);
     }
 
     protected void burn(int i) {
@@ -233,7 +239,7 @@ public class EntityItem extends Entity {
         return LocaleI18n.get("item." + this.itemStack.a());
     }
 
-    public boolean an() {
+    public boolean aq() {
         return false;
     }
 }

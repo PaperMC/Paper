@@ -39,7 +39,7 @@ public class ItemBucket extends Item {
                 }
 
                 if (this.a == 0) {
-                    if (!entityhuman.e(i, j, k)) {
+                    if (!entityhuman.a(i, j, k, movingobjectposition.face, itemstack)) {
                         return itemstack;
                     }
 
@@ -131,7 +131,7 @@ public class ItemBucket extends Item {
                         ++i;
                     }
 
-                    if (!entityhuman.e(i, j, k)) {
+                    if (!entityhuman.a(i, j, k, movingobjectposition.face, itemstack)) {
                         return itemstack;
                     }
 
@@ -170,11 +170,11 @@ public class ItemBucket extends Item {
         } else if (!world.isEmpty(i, j, k) && world.getMaterial(i, j, k).isBuildable()) {
             return false;
         } else {
-            if (world.worldProvider.d && this.a == Block.WATER.id) {
+            if (world.worldProvider.e && this.a == Block.WATER.id) {
                 world.makeSound(d0 + 0.5D, d1 + 0.5D, d2 + 0.5D, "random.fizz", 0.5F, 2.6F + (world.random.nextFloat() - world.random.nextFloat()) * 0.8F);
 
                 for (int l = 0; l < 8; ++l) {
-                    world.a("largesmoke", (double) i + Math.random(), (double) j + Math.random(), (double) k + Math.random(), 0.0D, 0.0D, 0.0D);
+                    world.addParticle("largesmoke", (double) i + Math.random(), (double) j + Math.random(), (double) k + Math.random(), 0.0D, 0.0D, 0.0D);
                 }
             } else {
                 world.setTypeIdAndData(i, j, k, this.a, 0);

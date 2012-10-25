@@ -12,7 +12,7 @@ public class ItemBlock extends Item {
         this.c(Block.byId[i + 256].a(2));
     }
 
-    public int f() {
+    public int g() {
         return this.id;
     }
 
@@ -50,7 +50,7 @@ public class ItemBlock extends Item {
 
         if (itemstack.count == 0) {
             return false;
-        } else if (!entityhuman.e(i, j, k)) {
+        } else if (!entityhuman.a(i, j, k, l, itemstack)) {
             return false;
         } else if (j == 255 && Block.byId[this.id].material.isBuildable()) {
             return false;
@@ -89,7 +89,7 @@ public class ItemBlock extends Item {
                     // CraftBukkit end
                 }
 
-                world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), block.stepSound.getName(), (block.stepSound.getVolume1() + 1.0F) / 2.0F, block.stepSound.getVolume2() * 0.8F);
+                world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), block.stepSound.b(), (block.stepSound.getVolume1() + 1.0F) / 2.0F, block.stepSound.getVolume2() * 0.8F);
                 --itemstack.count;
             }
 
@@ -99,7 +99,7 @@ public class ItemBlock extends Item {
         }
     }
 
-    public String c(ItemStack itemstack) {
+    public String c_(ItemStack itemstack) {
         return Block.byId[this.id].a();
     }
 

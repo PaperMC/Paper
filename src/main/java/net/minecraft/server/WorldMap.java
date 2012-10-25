@@ -2,6 +2,7 @@ package net.minecraft.server;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -20,10 +21,9 @@ public class WorldMap extends WorldMapBase {
     public byte map;
     public byte scale;
     public byte[] colors = new byte[16384];
-    public int f;
-    public List g = new ArrayList();
-    private Map j = new HashMap();
-    public List decorations = new ArrayList();
+    public List f = new ArrayList();
+    private Map i = new HashMap();
+    public Map g = new LinkedHashMap();
 
     // CraftBukkit start
     public final CraftMapView mapView;
@@ -133,58 +133,91 @@ public class WorldMap extends WorldMapBase {
     }
 
     public void a(EntityHuman entityhuman, ItemStack itemstack) {
-        if (!this.j.containsKey(entityhuman)) {
+        if (!this.i.containsKey(entityhuman)) {
             WorldMapHumanTracker worldmaphumantracker = new WorldMapHumanTracker(this, entityhuman);
 
-            this.j.put(entityhuman, worldmaphumantracker);
-            this.g.add(worldmaphumantracker);
+            this.i.put(entityhuman, worldmaphumantracker);
+            this.f.add(worldmaphumantracker);
         }
 
-        this.decorations.clear();
+        if (!entityhuman.inventory.c(itemstack)) {
+            this.g.remove(entityhuman.getName());
+        }
 
-        for (int i = 0; i < this.g.size(); ++i) {
-            WorldMapHumanTracker worldmaphumantracker1 = (WorldMapHumanTracker) this.g.get(i);
+        for (int i = 0; i < this.f.size(); ++i) {
+            WorldMapHumanTracker worldmaphumantracker1 = (WorldMapHumanTracker) this.f.get(i);
 
-            if (!worldmaphumantracker1.trackee.dead && worldmaphumantracker1.trackee.inventory.c(itemstack)) {
-                float f = (float) (worldmaphumantracker1.trackee.locX - (double) this.centerX) / (float) (1 << this.scale);
-                float f1 = (float) (worldmaphumantracker1.trackee.locZ - (double) this.centerZ) / (float) (1 << this.scale);
-                byte b0 = 64;
-                byte b1 = 64;
-
-                if (f >= (float) (-b0) && f1 >= (float) (-b1) && f <= (float) b0 && f1 <= (float) b1) {
-                    byte b2 = 0;
-                    byte b3 = (byte) ((int) ((double) (f * 2.0F) + 0.5D));
-                    byte b4 = (byte) ((int) ((double) (f1 * 2.0F) + 0.5D));
-                    byte b5 = (byte) ((int) ((double) worldmaphumantracker1.trackee.yaw * 16.0D / 360.0D));
-
-                    if (this.map < 0) {
-                        int j = this.f / 10;
-
-                        b5 = (byte) (j * j * 34187121 + j * 121 >> 15 & 15);
-                    }
-
-                    if (worldmaphumantracker1.trackee.dimension == this.map) {
-                        this.decorations.add(new WorldMapDecoration(this, b2, b3, b4, b5));
-                    }
+            if (!worldmaphumantracker1.trackee.dead && (worldmaphumantracker1.trackee.inventory.c(itemstack) || itemstack.y())) {
+                if (!itemstack.y() && worldmaphumantracker1.trackee.dimension == this.map) {
+                    this.a(0, worldmaphumantracker1.trackee.world, worldmaphumantracker1.trackee.getName(), worldmaphumantracker1.trackee.locX, worldmaphumantracker1.trackee.locZ, (double) worldmaphumantracker1.trackee.yaw);
                 }
             } else {
-                this.j.remove(worldmaphumantracker1.trackee);
-                this.g.remove(worldmaphumantracker1);
+                this.i.remove(worldmaphumantracker1.trackee);
+                this.f.remove(worldmaphumantracker1);
             }
+        }
+
+        if (itemstack.y()) {
+            this.a(1, entityhuman.world, "frame-" + itemstack.z().id, (double) itemstack.z().x, (double) itemstack.z().z, (double) (itemstack.z().direction * 90));
         }
     }
 
+    private void a(int i, World world, String s, double d0, double d1, double d2) {
+        int j = 1 << this.scale;
+        float f = (float) (d0 - (double) this.centerX) / (float) j;
+        float f1 = (float) (d1 - (double) this.centerZ) / (float) j;
+        byte b0 = (byte) ((int) ((double) (f * 2.0F) + 0.5D));
+        byte b1 = (byte) ((int) ((double) (f1 * 2.0F) + 0.5D));
+        byte b2 = 63;
+        byte b3;
+
+        if (f >= (float) (-b2) && f1 >= (float) (-b2) && f <= (float) b2 && f1 <= (float) b2) {
+            d2 += d2 < 0.0D ? -8.0D : 8.0D;
+            b3 = (byte) ((int) (d2 * 16.0D / 360.0D));
+            if (this.map < 0) {
+                int k = (int) (world.getWorldData().g() / 10L);
+
+                b3 = (byte) (k * k * 34187121 + k * 121 >> 15 & 15);
+            }
+        } else {
+            if (Math.abs(f) >= 320.0F || Math.abs(f1) >= 320.0F) {
+                this.g.remove(s);
+                return;
+            }
+
+            i = 6;
+            b3 = 0;
+            if (f <= (float) (-b2)) {
+                b0 = (byte) ((int) ((double) (b2 * 2) + 2.5D));
+            }
+
+            if (f1 <= (float) (-b2)) {
+                b1 = (byte) ((int) ((double) (b2 * 2) + 2.5D));
+            }
+
+            if (f >= (float) b2) {
+                b0 = (byte) (b2 * 2 + 1);
+            }
+
+            if (f1 >= (float) b2) {
+                b1 = (byte) (b2 * 2 + 1);
+            }
+        }
+
+        this.g.put(s, new WorldMapDecoration(this, (byte) i, b0, b1, b3));
+    }
+
     public byte[] getUpdatePacket(ItemStack itemstack, World world, EntityHuman entityhuman) {
-        WorldMapHumanTracker worldmaphumantracker = (WorldMapHumanTracker) this.j.get(entityhuman);
+        WorldMapHumanTracker worldmaphumantracker = (WorldMapHumanTracker) this.i.get(entityhuman);
 
         return worldmaphumantracker == null ? null : worldmaphumantracker.a(itemstack);
     }
 
     public void flagDirty(int i, int j, int k) {
-        super.a();
+        super.c();
 
-        for (int l = 0; l < this.g.size(); ++l) {
-            WorldMapHumanTracker worldmaphumantracker = (WorldMapHumanTracker) this.g.get(l);
+        for (int l = 0; l < this.f.size(); ++l) {
+            WorldMapHumanTracker worldmaphumantracker = (WorldMapHumanTracker) this.f.get(l);
 
             if (worldmaphumantracker.b[i] < 0 || worldmaphumantracker.b[i] > j) {
                 worldmaphumantracker.b[i] = j;
@@ -194,5 +227,17 @@ public class WorldMap extends WorldMapBase {
                 worldmaphumantracker.c[i] = k;
             }
         }
+    }
+
+    public WorldMapHumanTracker a(EntityHuman entityhuman) {
+        WorldMapHumanTracker worldmaphumantracker = (WorldMapHumanTracker) this.i.get(entityhuman);
+
+        if (worldmaphumantracker == null) {
+            worldmaphumantracker = new WorldMapHumanTracker(this, entityhuman);
+            this.i.put(entityhuman, worldmaphumantracker);
+            this.f.add(worldmaphumantracker);
+        }
+
+        return worldmaphumantracker;
     }
 }

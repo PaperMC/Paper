@@ -14,7 +14,7 @@ public class EntityEnderCrystal extends Entity {
         this.a = this.random.nextInt(100000);
     }
 
-    protected boolean e_() {
+    protected boolean f_() {
         return false;
     }
 
@@ -22,7 +22,7 @@ public class EntityEnderCrystal extends Entity {
         this.datawatcher.a(8, Integer.valueOf(this.b));
     }
 
-    public void h_() {
+    public void j_() {
         this.lastX = this.locX;
         this.lastY = this.locY;
         this.lastZ = this.locZ;
@@ -57,7 +57,7 @@ public class EntityEnderCrystal extends Entity {
             if (this.b <= 0) {
                 this.die();
                 if (!this.world.isStatic) {
-                    this.world.explode(this, this.locX, this.locY, this.locZ, 6.0F); // CraftBukkit - (Entity) null -> this
+                    this.world.explode(this, this.locX, this.locY, this.locZ, 6.0F, true); // CraftBukkit - (Entity) null -> this
                 }
             }
         }

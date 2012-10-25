@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.command;
 
 import java.lang.reflect.Method;
 
+import net.minecraft.server.ChunkCoordinates;
 import net.minecraft.server.ICommandListener;
 import net.minecraft.server.LocaleLanguage;
 
@@ -39,7 +40,11 @@ public class ServerCommandListener implements ICommandListener {
         return LocaleLanguage.a().a(s, aobject);
     }
 
-    public boolean b(String s) {
+    public boolean a(int i, String s) {
         return true;
+    }
+
+    public ChunkCoordinates b() {
+        return new ChunkCoordinates(0, 0, 0);
     }
 }

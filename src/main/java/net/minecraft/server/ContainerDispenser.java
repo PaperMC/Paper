@@ -45,7 +45,7 @@ public class ContainerDispenser extends Container {
         return this.items.a(entityhuman);
     }
 
-    public ItemStack b(int i) {
+    public ItemStack b(EntityHuman entityhuman, int i) {
         ItemStack itemstack = null;
         Slot slot = (Slot) this.b.get(i);
 
@@ -71,7 +71,7 @@ public class ContainerDispenser extends Container {
                 return null;
             }
 
-            slot.b(itemstack1);
+            slot.a(entityhuman, itemstack1);
         }
 
         return itemstack;

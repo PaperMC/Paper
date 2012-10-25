@@ -43,15 +43,15 @@ public class BlockCactus extends Block {
         return i == 1 ? this.textureId - 1 : (i == 0 ? this.textureId + 1 : this.textureId);
     }
 
+    public boolean b() {
+        return false;
+    }
+
     public boolean c() {
         return false;
     }
 
-    public boolean d() {
-        return false;
-    }
-
-    public int b() {
+    public int d() {
         return 13;
     }
 
@@ -83,7 +83,7 @@ public class BlockCactus extends Block {
     }
 
     public void a(World world, int i, int j, int k, Entity entity) {
-        // CraftBukkit start - ENTITY_DAMAGEBY_BLOCK event
+        // CraftBukkit start - EntityDamageByBlock event
         if (entity instanceof EntityLiving) {
             org.bukkit.block.Block damager = world.getWorld().getBlockAt(i, j, k);
             org.bukkit.entity.Entity damagee = (entity == null) ? null : entity.getBukkitEntity();

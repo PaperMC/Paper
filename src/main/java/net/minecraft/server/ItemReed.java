@@ -43,7 +43,7 @@ public class ItemReed extends Item {
             }
         }
 
-        if (!entityhuman.e(i, j, k)) {
+        if (!entityhuman.a(i, j, k, l, itemstack)) {
             return false;
         } else if (itemstack.count == 0) {
             return false;
@@ -81,7 +81,7 @@ public class ItemReed extends Item {
                         Block.byId[this.id].postPlace(world, i, j, k, entityhuman);
                     }
 
-                    world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), block.stepSound.getName(), (block.stepSound.getVolume1() + 1.0F) / 2.0F, block.stepSound.getVolume2() * 0.8F);
+                    world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), block.stepSound.b(), (block.stepSound.getVolume1() + 1.0F) / 2.0F, block.stepSound.getVolume2() * 0.8F);
                     --itemstack.count;
                 }
             }

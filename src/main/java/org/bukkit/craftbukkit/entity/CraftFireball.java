@@ -63,6 +63,6 @@ public class CraftFireball extends AbstractProjectile implements Fireball {
     }
 
     public EntityType getType() {
-        return EntityType.FIREBALL;
+        return EntityType.UNKNOWN;
     }
 }

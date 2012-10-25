@@ -4,14 +4,13 @@ public class EntityBlaze extends EntityMonster {
 
     private float d = 0.5F;
     private int e;
-    private int g;
+    private int f;
 
     public EntityBlaze(World world) {
         super(world);
         this.texture = "/mob/fire.png";
         this.fireProof = true;
-        this.damage = 6;
-        this.aV = 10;
+        this.bc = 10;
     }
 
     public int getMaxHealth() {
@@ -23,15 +22,15 @@ public class EntityBlaze extends EntityMonster {
         this.datawatcher.a(16, new Byte((byte) 0));
     }
 
-    protected String aQ() {
+    protected String aW() {
         return "mob.blaze.breathe";
     }
 
-    protected String aR() {
+    protected String aX() {
         return "mob.blaze.hit";
     }
 
-    protected String aS() {
+    protected String aY() {
         return "mob.blaze.death";
     }
 
@@ -39,7 +38,7 @@ public class EntityBlaze extends EntityMonster {
         return 1.0F;
     }
 
-    public void d() {
+    public void c() {
         if (!this.world.isStatic) {
             if (this.G()) {
                 this.damageEntity(DamageSource.DROWN, 1);
@@ -51,7 +50,7 @@ public class EntityBlaze extends EntityMonster {
                 this.d = 0.5F + (float) this.random.nextGaussian() * 3.0F;
             }
 
-            if (this.m() != null && this.m().locY + (double) this.m().getHeadHeight() > this.locY + (double) this.getHeadHeight() + (double) this.d) {
+            if (this.l() != null && this.l().locY + (double) this.l().getHeadHeight() > this.locY + (double) this.getHeadHeight() + (double) this.d) {
                 this.motY += (0.30000001192092896D - this.motY) * 0.30000001192092896D;
             }
         }
@@ -65,35 +64,35 @@ public class EntityBlaze extends EntityMonster {
         }
 
         for (int i = 0; i < 2; ++i) {
-            this.world.a("largesmoke", this.locX + (this.random.nextDouble() - 0.5D) * (double) this.width, this.locY + this.random.nextDouble() * (double) this.length, this.locZ + (this.random.nextDouble() - 0.5D) * (double) this.width, 0.0D, 0.0D, 0.0D);
+            this.world.addParticle("largesmoke", this.locX + (this.random.nextDouble() - 0.5D) * (double) this.width, this.locY + this.random.nextDouble() * (double) this.length, this.locZ + (this.random.nextDouble() - 0.5D) * (double) this.width, 0.0D, 0.0D, 0.0D);
         }
 
-        super.d();
+        super.c();
     }
 
     protected void a(Entity entity, float f) {
         if (this.attackTicks <= 0 && f < 2.0F && entity.boundingBox.e > this.boundingBox.b && entity.boundingBox.b < this.boundingBox.e) {
             this.attackTicks = 20;
-            this.k(entity);
+            this.l(entity);
         } else if (f < 30.0F) {
             double d0 = entity.locX - this.locX;
             double d1 = entity.boundingBox.b + (double) (entity.length / 2.0F) - (this.locY + (double) (this.length / 2.0F));
             double d2 = entity.locZ - this.locZ;
 
             if (this.attackTicks == 0) {
-                ++this.g;
-                if (this.g == 1) {
+                ++this.f;
+                if (this.f == 1) {
                     this.attackTicks = 60;
-                    this.e(true);
-                } else if (this.g <= 4) {
+                    this.f(true);
+                } else if (this.f <= 4) {
                     this.attackTicks = 6;
                 } else {
                     this.attackTicks = 100;
-                    this.g = 0;
-                    this.e(false);
+                    this.f = 0;
+                    this.f(false);
                 }
 
-                if (this.g > 1) {
+                if (this.f > 1) {
                     float f1 = MathHelper.c(f) * 0.5F;
 
                     this.world.a((EntityHuman) null, 1009, (int) this.locX, (int) this.locY, (int) this.locZ, 0);
@@ -119,7 +118,7 @@ public class EntityBlaze extends EntityMonster {
     }
 
     public boolean isBurning() {
-        return this.n();
+        return this.m();
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
@@ -137,11 +136,11 @@ public class EntityBlaze extends EntityMonster {
         }
     }
 
-    public boolean n() {
+    public boolean m() {
         return (this.datawatcher.getByte(16) & 1) != 0;
     }
 
-    public void e(boolean flag) {
+    public void f(boolean flag) {
         byte b0 = this.datawatcher.getByte(16);
 
         if (flag) {
@@ -153,7 +152,11 @@ public class EntityBlaze extends EntityMonster {
         this.datawatcher.watch(16, Byte.valueOf(b0));
     }
 
-    protected boolean o() {
+    protected boolean i_() {
         return true;
+    }
+
+    public int c(Entity entity) {
+        return 6;
     }
 }

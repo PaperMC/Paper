@@ -190,7 +190,7 @@ public class NetworkManager implements INetworkManager {
         boolean flag = false;
 
         try {
-            Packet packet = Packet.a(this.input, this.packetListener.a());
+            Packet packet = Packet.a(this.input, this.packetListener.a(), this.socket);
 
             if (packet != null) {
                 if (packet instanceof Packet252KeyResponse && !this.f) {

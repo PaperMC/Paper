@@ -17,7 +17,7 @@ public class Chunk {
 
     public static boolean a;
     private ChunkSection[] sections;
-    private byte[] r;
+    private byte[] s;
     public int[] b;
     public boolean[] c;
     public boolean d;
@@ -25,7 +25,7 @@ public class Chunk {
     public int[] heightMap;
     public final int x;
     public final int z;
-    private boolean s;
+    private boolean t;
     public Map tileEntities;
     public List[] entitySlices;
     public boolean done;
@@ -33,23 +33,25 @@ public class Chunk {
     public boolean m;
     public long n;
     public boolean seenByPlayer;
-    private int t;
-    boolean p;
+    public int p;
+    private int u;
+    boolean q;
 
     public Chunk(World world, int i, int j) {
         this.sections = new ChunkSection[16];
-        this.r = new byte[256];
+        this.s = new byte[256];
         this.b = new int[256];
         this.c = new boolean[256];
-        this.s = false;
+        this.t = false;
         this.tileEntities = new HashMap();
         this.done = false;
         this.l = false;
         this.m = false;
         this.n = 0L;
         this.seenByPlayer = false;
-        this.t = 4096;
-        this.p = false;
+        this.p = 0;
+        this.u = 4096;
+        this.q = false;
         this.entitySlices = new List[16];
         this.world = world;
         this.x = i;
@@ -61,7 +63,7 @@ public class Chunk {
         }
 
         Arrays.fill(this.b, -999);
-        Arrays.fill(this.r, (byte) -1);
+        Arrays.fill(this.s, (byte) -1);
 
         // CraftBukkit start
         if (!(this instanceof EmptyChunk)) {
@@ -121,6 +123,8 @@ public class Chunk {
     public void initLighting() {
         int i = this.h();
 
+        this.p = Integer.MAX_VALUE;
+
         int j;
         int k;
 
@@ -139,9 +143,12 @@ public class Chunk {
                         }
 
                         this.heightMap[k << 4 | j] = l;
+                        if (l < this.p) {
+                            this.p = l;
+                        }
                     }
 
-                    if (!this.world.worldProvider.e) {
+                    if (!this.world.worldProvider.f) {
                         l = 15;
                         int i1 = i + 16 - 1;
 
@@ -177,7 +184,7 @@ public class Chunk {
 
     private void e(int i, int j) {
         this.c[i + j * 16] = true;
-        this.s = true;
+        this.t = true;
     }
 
     private void q() {
@@ -190,10 +197,10 @@ public class Chunk {
                         int k = this.b(i, j);
                         int l = this.x * 16 + i;
                         int i1 = this.z * 16 + j;
-                        int j1 = this.world.getHighestBlockYAt(l - 1, i1);
-                        int k1 = this.world.getHighestBlockYAt(l + 1, i1);
-                        int l1 = this.world.getHighestBlockYAt(l, i1 - 1);
-                        int i2 = this.world.getHighestBlockYAt(l, i1 + 1);
+                        int j1 = this.world.g(l - 1, i1);
+                        int k1 = this.world.g(l + 1, i1);
+                        int l1 = this.world.g(l, i1 - 1);
+                        int i2 = this.world.g(l, i1 + 1);
 
                         if (k1 < j1) {
                             j1 = k1;
@@ -216,7 +223,7 @@ public class Chunk {
                 }
             }
 
-            this.s = false;
+            this.t = false;
         }
 
         this.world.methodProfiler.b();
@@ -262,7 +269,7 @@ public class Chunk {
             int l1;
             int i2;
 
-            if (!this.world.worldProvider.e) {
+            if (!this.world.worldProvider.f) {
                 ChunkSection chunksection;
 
                 if (i1 < l) {
@@ -314,7 +321,11 @@ public class Chunk {
                 j2 = l;
             }
 
-            if (!this.world.worldProvider.e) {
+            if (l1 < this.p) {
+                this.p = l1;
+            }
+
+            if (!this.world.worldProvider.f) {
                 this.d(j1 - 1, k1, i2, j2);
                 this.d(j1 + 1, k1, i2, j2);
                 this.d(j1, k1 - 1, i2, j2);
@@ -384,7 +395,7 @@ public class Chunk {
             int k2 = this.z * 16 + k;
 
             if (l1 != 0 && !this.world.isStatic) {
-                Block.byId[l1].h(this.world, j2, j, k2, i2);
+                Block.byId[l1].g(this.world, j2, j, k2, i2);
             }
 
             chunksection.a(i, j & 15, k, l);
@@ -494,7 +505,7 @@ public class Chunk {
 
         this.l = true;
         if (enumskyblock == EnumSkyBlock.SKY) {
-            if (!this.world.worldProvider.e) {
+            if (!this.world.worldProvider.f) {
                 chunksection.c(i, j & 15, k, l);
             }
         } else if (enumskyblock == EnumSkyBlock.BLOCK) {
@@ -506,9 +517,9 @@ public class Chunk {
         ChunkSection chunksection = this.sections[j >> 4];
 
         if (chunksection == null) {
-            return !this.world.worldProvider.e && l < EnumSkyBlock.SKY.c ? EnumSkyBlock.SKY.c - l : 0;
+            return !this.world.worldProvider.f && l < EnumSkyBlock.SKY.c ? EnumSkyBlock.SKY.c - l : 0;
         } else {
-            int i1 = this.world.worldProvider.e ? 0 : chunksection.c(i, j & 15, k);
+            int i1 = this.world.worldProvider.f ? 0 : chunksection.c(i, j & 15, k);
 
             if (i1 > 0) {
                 a = true;
@@ -548,15 +559,15 @@ public class Chunk {
             k = this.entitySlices.length - 1;
         }
 
-        entity.ag = true;
-        entity.ah = this.x;
-        entity.ai = k;
-        entity.aj = this.z;
+        entity.ah = true;
+        entity.ai = this.x;
+        entity.aj = k;
+        entity.ak = this.z;
         this.entitySlices[k].add(entity);
     }
 
     public void b(Entity entity) {
-        this.a(entity, entity.ai);
+        this.a(entity, entity.aj);
     }
 
     public void a(Entity entity, int i) {
@@ -582,7 +593,7 @@ public class Chunk {
         if (tileentity == null) {
             int l = this.getTypeId(i, j, k);
 
-            if (l <= 0 || !Block.byId[l].s()) {
+            if (l <= 0 || !Block.byId[l].u()) {
                 return null;
             }
 
@@ -594,7 +605,7 @@ public class Chunk {
             tileentity = (TileEntity) this.tileEntities.get(chunkposition);
         }
 
-        if (tileentity != null && tileentity.p()) {
+        if (tileentity != null && tileentity.r()) {
             this.tileEntities.remove(chunkposition);
             return null;
         } else {
@@ -616,14 +627,14 @@ public class Chunk {
     public void a(int i, int j, int k, TileEntity tileentity) {
         ChunkPosition chunkposition = new ChunkPosition(i, j, k);
 
-        tileentity.a(this.world);
+        tileentity.b(this.world);
         tileentity.x = this.x * 16 + i;
         tileentity.y = j;
         tileentity.z = this.z * 16 + k;
         if (this.getTypeId(i, j, k) != 0 && Block.byId[this.getTypeId(i, j, k)] instanceof BlockContainer) {
-            tileentity.q();
+            tileentity.s();
             this.tileEntities.put(chunkposition, tileentity);
-        // CraftBukkit start
+            // CraftBukkit start
         } else {
             System.out.println("Attempted to place a tile entity (" + tileentity + ") at " + tileentity.x + "," + tileentity.y + "," + tileentity.z
                     + " (" + org.bukkit.Material.getMaterial(getTypeId(i, j, k)) + ") where there was no entity tile!");
@@ -640,7 +651,7 @@ public class Chunk {
             TileEntity tileentity = (TileEntity) this.tileEntities.remove(chunkposition);
 
             if (tileentity != null) {
-                tileentity.j();
+                tileentity.w_();
             }
         }
     }
@@ -718,7 +729,7 @@ public class Chunk {
 
                 if (entity1 != entity && entity1.boundingBox.a(axisalignedbb)) {
                     list.add(entity1);
-                    Entity[] aentity = entity1.al();
+                    Entity[] aentity = entity1.ao();
 
                     if (aentity != null) {
                         for (int l = 0; l < aentity.length; ++l) {
@@ -733,7 +744,7 @@ public class Chunk {
         }
     }
 
-    public void a(Class oclass, AxisAlignedBB axisalignedbb, List list) {
+    public void a(Class oclass, AxisAlignedBB axisalignedbb, List list, IEntitySelector ientityselector) {
         int i = MathHelper.floor((axisalignedbb.b - 2.0D) / 16.0D);
         int j = MathHelper.floor((axisalignedbb.e + 2.0D) / 16.0D);
 
@@ -756,7 +767,7 @@ public class Chunk {
             while (iterator.hasNext()) {
                 Entity entity = (Entity) iterator.next();
 
-                if (oclass.isAssignableFrom(entity.getClass()) && entity.boundingBox.a(axisalignedbb)) {
+                if (oclass.isAssignableFrom(entity.getClass()) && entity.boundingBox.a(axisalignedbb) && (ientityselector == null || ientityselector.a(entity))) {
                     list.add(entity);
                 }
             }
@@ -828,7 +839,7 @@ public class Chunk {
     }
 
     public void k() {
-        if (this.s && !this.world.worldProvider.e) {
+        if (this.t && !this.world.worldProvider.f) {
             this.q();
         }
     }
@@ -862,41 +873,41 @@ public class Chunk {
     }
 
     public BiomeBase a(int i, int j, WorldChunkManager worldchunkmanager) {
-        int k = this.r[j << 4 | i] & 255;
+        int k = this.s[j << 4 | i] & 255;
 
         if (k == 255) {
             BiomeBase biomebase = worldchunkmanager.getBiome((this.x << 4) + i, (this.z << 4) + j);
 
             k = biomebase.id;
-            this.r[j << 4 | i] = (byte) (k & 255);
+            this.s[j << 4 | i] = (byte) (k & 255);
         }
 
         return BiomeBase.biomes[k] == null ? BiomeBase.PLAINS : BiomeBase.biomes[k];
     }
 
     public byte[] m() {
-        return this.r;
+        return this.s;
     }
 
     public void a(byte[] abyte) {
-        this.r = abyte;
+        this.s = abyte;
     }
 
     public void n() {
-        this.t = 0;
+        this.u = 0;
     }
 
     public void o() {
         for (int i = 0; i < 8; ++i) {
-            if (this.t >= 4096) {
+            if (this.u >= 4096) {
                 return;
             }
 
-            int j = this.t % 16;
-            int k = this.t / 16 % 16;
-            int l = this.t / 256;
+            int j = this.u % 16;
+            int k = this.u / 16 % 16;
+            int l = this.u / 256;
 
-            ++this.t;
+            ++this.u;
             int i1 = (this.x << 4) + k;
             int j1 = (this.z << 4) + l;
 

@@ -18,7 +18,7 @@ public class ItemBoat extends Item {
         double d0 = entityhuman.lastX + (entityhuman.locX - entityhuman.lastX) * (double) f;
         double d1 = entityhuman.lastY + (entityhuman.locY - entityhuman.lastY) * (double) f + 1.62D - (double) entityhuman.height;
         double d2 = entityhuman.lastZ + (entityhuman.locZ - entityhuman.lastZ) * (double) f;
-        Vec3D vec3d = Vec3D.a().create(d0, d1, d2);
+        Vec3D vec3d = world.getVec3DPool().create(d0, d1, d2);
         float f3 = MathHelper.cos(-f2 * 0.017453292F - 3.1415927F);
         float f4 = MathHelper.sin(-f2 * 0.017453292F - 3.1415927F);
         float f5 = -MathHelper.cos(-f1 * 0.017453292F);
@@ -35,7 +35,7 @@ public class ItemBoat extends Item {
             Vec3D vec3d2 = entityhuman.i(f);
             boolean flag = false;
             float f9 = 1.0F;
-            List list = world.getEntities(entityhuman, entityhuman.boundingBox.a(vec3d2.a * d3, vec3d2.b * d3, vec3d2.c * d3).grow((double) f9, (double) f9, (double) f9));
+            List list = world.getEntities(entityhuman, entityhuman.boundingBox.a(vec3d2.c * d3, vec3d2.d * d3, vec3d2.e * d3).grow((double) f9, (double) f9, (double) f9));
             Iterator iterator = list.iterator();
 
             while (iterator.hasNext()) {

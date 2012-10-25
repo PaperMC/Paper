@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
@@ -22,7 +23,7 @@ public class BlockPressurePlate extends Block {
         this.a(f, 0.0F, f, 1.0F - f, 0.03125F, 1.0F - f);
     }
 
-    public int p_() {
+    public int r_() {
         return 20;
     }
 
@@ -30,11 +31,11 @@ public class BlockPressurePlate extends Block {
         return null;
     }
 
-    public boolean d() {
+    public boolean c() {
         return false;
     }
 
-    public boolean c() {
+    public boolean b() {
         return false;
     }
 
@@ -94,7 +95,16 @@ public class BlockPressurePlate extends Block {
         }
 
         if (!list.isEmpty()) {
-            flag1 = true;
+            Iterator iterator = list.iterator();
+
+            while (iterator.hasNext()) {
+                Entity entity = (Entity) iterator.next();
+
+                if (!entity.au()) {
+                    flag1 = true;
+                    break;
+                }
+            }
         }
 
         // CraftBukkit start - Interact Pressure Plate
@@ -134,7 +144,7 @@ public class BlockPressurePlate extends Block {
             world.setData(i, j, k, 1);
             world.applyPhysics(i, j, k, this.id);
             world.applyPhysics(i, j - 1, k, this.id);
-            world.d(i, j, k, i, j, k);
+            world.e(i, j, k, i, j, k);
             world.makeSound((double) i + 0.5D, (double) j + 0.1D, (double) k + 0.5D, "random.click", 0.3F, 0.6F);
         }
 
@@ -142,12 +152,12 @@ public class BlockPressurePlate extends Block {
             world.setData(i, j, k, 0);
             world.applyPhysics(i, j, k, this.id);
             world.applyPhysics(i, j - 1, k, this.id);
-            world.d(i, j, k, i, j, k);
+            world.e(i, j, k, i, j, k);
             world.makeSound((double) i + 0.5D, (double) j + 0.1D, (double) k + 0.5D, "random.click", 0.3F, 0.5F);
         }
 
         if (flag1) {
-            world.a(i, j, k, this.id, this.p_());
+            world.a(i, j, k, this.id, this.r_());
         }
     }
 
@@ -171,12 +181,12 @@ public class BlockPressurePlate extends Block {
         }
     }
 
-    public boolean a(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+    public boolean b(IBlockAccess iblockaccess, int i, int j, int k, int l) {
         return iblockaccess.getData(i, j, k) > 0;
     }
 
-    public boolean c(World world, int i, int j, int k, int l) {
-        return world.getData(i, j, k) == 0 ? false : l == 1;
+    public boolean c(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+        return iblockaccess.getData(i, j, k) == 0 ? false : l == 1;
     }
 
     public boolean isPowerSource() {
@@ -191,7 +201,7 @@ public class BlockPressurePlate extends Block {
         this.a(0.5F - f, 0.5F - f1, 0.5F - f2, 0.5F + f, 0.5F + f1, 0.5F + f2);
     }
 
-    public int e() {
+    public int q_() {
         return 1;
     }
 }

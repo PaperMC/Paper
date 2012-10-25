@@ -78,7 +78,7 @@ public class WorldGenSwampTree extends WorldGenerator implements BlockSapling.Tr
                             for (int k2 = k - k1; k2 <= k + k1; ++k2) {
                                 int l2 = k2 - k;
 
-                                if ((Math.abs(i2) != k1 || Math.abs(l2) != k1 || random.nextInt(2) != 0 && j1 != 0) && !Block.n[world.getTypeId(l1, j2, k2)]) {
+                                if ((Math.abs(i2) != k1 || Math.abs(l2) != k1 || random.nextInt(2) != 0 && j1 != 0) && !Block.q[world.getTypeId(l1, j2, k2)]) {
                                     this.setType(world, l1, j2, k2, Block.LEAVES.id);
                                 }
                             }

@@ -17,14 +17,14 @@ public class ItemDye extends Item {
         this.a(CreativeModeTab.l);
     }
 
-    public String c(ItemStack itemstack) {
+    public String c_(ItemStack itemstack) {
         int i = MathHelper.a(itemstack.getData(), 0, 15);
 
         return super.getName() + "." + a[i];
     }
 
     public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l, float f, float f1, float f2) {
-        if (!entityhuman.e(i, j, k)) {
+        if (!entityhuman.a(i, j, k, l, itemstack)) {
             return false;
         } else {
             int i1;
@@ -69,13 +69,13 @@ public class ItemDye extends Item {
                     return true;
                 }
 
-                if (i1 == Block.CROPS.id) {
+                if (i1 > 0 && Block.byId[i1] instanceof BlockCrops) {
                     if (world.getData(i, j, k) == 7) {
                         return false;
                     }
 
                     if (!world.isStatic) {
-                        ((BlockCrops) Block.CROPS).c_(world, i, j, k);
+                        ((BlockCrops) Block.byId[i1]).c_(world, i, j, k);
                         --itemstack.count;
                     }
 
@@ -84,7 +84,7 @@ public class ItemDye extends Item {
 
                 if (i1 == Block.COCOA.id) {
                     if (!world.isStatic) {
-                        world.setData(i, j, k, 8 | BlockDirectional.d(world.getData(i, j, k)));
+                        world.setData(i, j, k, 8 | BlockDirectional.e(world.getData(i, j, k)));
                         --itemstack.count;
                     }
 
@@ -95,7 +95,7 @@ public class ItemDye extends Item {
                     if (!world.isStatic) {
                         --itemstack.count;
 
-                        label135:
+                        label137:
                         for (j1 = 0; j1 < 128; ++j1) {
                             int k1 = i;
                             int l1 = j + 1;
@@ -106,7 +106,7 @@ public class ItemDye extends Item {
                                 l1 += (d.nextInt(3) - 1) * d.nextInt(3) / 2;
                                 i2 += d.nextInt(3) - 1;
                                 if (world.getTypeId(k1, l1 - 1, i2) != Block.GRASS.id || world.s(k1, l1, i2)) {
-                                    continue label135;
+                                    continue label137;
                                 }
                             }
 

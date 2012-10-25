@@ -52,11 +52,11 @@ public class BlockSign extends BlockContainer {
         }
     }
 
-    public int b() {
+    public int d() {
         return -1;
     }
 
-    public boolean c() {
+    public boolean b() {
         return false;
     }
 
@@ -64,7 +64,7 @@ public class BlockSign extends BlockContainer {
         return true;
     }
 
-    public boolean d() {
+    public boolean c() {
         return false;
     }
 

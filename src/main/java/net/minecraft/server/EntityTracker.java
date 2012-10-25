@@ -59,6 +59,10 @@ public class EntityTracker {
             this.addEntity(entity, 80, 3, true);
         } else if (entity instanceof EntitySquid) {
             this.addEntity(entity, 64, 3, true);
+        } else if (entity instanceof EntityWither) {
+            this.addEntity(entity, 80, 3, false);
+        } else if (entity instanceof EntityBat) {
+            this.addEntity(entity, 80, 3, false);
         } else if (entity instanceof IAnimal) {
             this.addEntity(entity, 80, 3, true);
         } else if (entity instanceof EntityEnderDragon) {
@@ -73,6 +77,8 @@ public class EntityTracker {
             this.addEntity(entity, 160, 20, true);
         } else if (entity instanceof EntityEnderCrystal) {
             this.addEntity(entity, 256, Integer.MAX_VALUE, false);
+        } else if (entity instanceof EntityItemFrame) {
+            this.addEntity(entity, 160, Integer.MAX_VALUE, false);
         }
     }
 

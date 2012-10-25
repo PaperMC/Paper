@@ -124,7 +124,7 @@ public class InventoryMerchant implements IInventory {
     }
 
     public boolean a(EntityHuman entityhuman) {
-        return this.merchant.l_() == entityhuman;
+        return this.merchant.m_() == entityhuman;
     }
 
     public void startOpen() {}
@@ -153,12 +153,12 @@ public class InventoryMerchant implements IInventory {
             if (merchantrecipelist != null) {
                 MerchantRecipe merchantrecipe = merchantrecipelist.a(itemstack, itemstack1, this.e);
 
-                if (merchantrecipe != null) {
+                if (merchantrecipe != null && !merchantrecipe.g()) {
                     this.recipe = merchantrecipe;
                     this.setItem(2, merchantrecipe.getBuyItem3().cloneItemStack());
                 } else if (itemstack1 != null) {
                     merchantrecipe = merchantrecipelist.a(itemstack1, itemstack, this.e);
-                    if (merchantrecipe != null) {
+                    if (merchantrecipe != null && !merchantrecipe.g()) {
                         this.recipe = merchantrecipe;
                         this.setItem(2, merchantrecipe.getBuyItem3().cloneItemStack());
                     } else {

@@ -27,7 +27,7 @@ public abstract class PathfinderGoalTarget extends PathfinderGoal {
     }
 
     public boolean b() {
-        EntityLiving entityliving = this.d.az();
+        EntityLiving entityliving = this.d.aF();
 
         if (entityliving == null) {
             return false;
@@ -37,7 +37,7 @@ public abstract class PathfinderGoalTarget extends PathfinderGoal {
             return false;
         } else {
             if (this.f) {
-                if (this.d.at().canSee(entityliving)) {
+                if (this.d.az().canSee(entityliving)) {
                     this.g = 0;
                 } else if (++this.g > 60) {
                     return false;
@@ -48,13 +48,13 @@ public abstract class PathfinderGoalTarget extends PathfinderGoal {
         }
     }
 
-    public void e() {
+    public void c() {
         this.b = 0;
         this.c = 0;
         this.g = 0;
     }
 
-    public void c() {
+    public void d() {
         this.d.b((EntityLiving) null);
     }
 
@@ -65,78 +65,78 @@ public abstract class PathfinderGoalTarget extends PathfinderGoal {
             return false;
         } else if (!entityliving.isAlive()) {
             return false;
-        } else if (entityliving.boundingBox.e > this.d.boundingBox.b && entityliving.boundingBox.b < this.d.boundingBox.e) {
-            if (!this.d.a(entityliving.getClass())) {
+        } else if (!this.d.a(entityliving.getClass())) {
+            return false;
+        } else {
+            if (this.d instanceof EntityTameableAnimal && ((EntityTameableAnimal) this.d).isTamed()) {
+                if (entityliving instanceof EntityTameableAnimal && ((EntityTameableAnimal) entityliving).isTamed()) {
+                    return false;
+                }
+
+                if (entityliving == ((EntityTameableAnimal) this.d).getOwner()) {
+                    return false;
+                }
+            } else if (entityliving instanceof EntityHuman && !flag && ((EntityHuman) entityliving).abilities.isInvulnerable) {
+                return false;
+            }
+
+            if (!this.d.e(MathHelper.floor(entityliving.locX), MathHelper.floor(entityliving.locY), MathHelper.floor(entityliving.locZ))) {
+                return false;
+            } else if (this.f && !this.d.az().canSee(entityliving)) {
                 return false;
             } else {
-                if (this.d instanceof EntityTameableAnimal && ((EntityTameableAnimal) this.d).isTamed()) {
-                    if (entityliving instanceof EntityTameableAnimal && ((EntityTameableAnimal) entityliving).isTamed()) {
-                        return false;
+                if (this.a) {
+                    if (--this.c <= 0) {
+                        this.b = 0;
                     }
 
-                    if (entityliving == ((EntityTameableAnimal) this.d).getOwner()) {
+                    if (this.b == 0) {
+                        this.b = this.a(entityliving) ? 1 : 2;
+                    }
+
+                    if (this.b == 2) {
                         return false;
                     }
-                } else if (entityliving instanceof EntityHuman && !flag && ((EntityHuman) entityliving).abilities.isInvulnerable) {
-                    return false;
                 }
 
-                if (!this.d.d(MathHelper.floor(entityliving.locX), MathHelper.floor(entityliving.locY), MathHelper.floor(entityliving.locZ))) {
-                    return false;
-                } else if (this.f && !this.d.at().canSee(entityliving)) {
-                    return false;
-                } else {
-                    if (this.a) {
-                        if (--this.c <= 0) {
-                            this.b = 0;
-                        }
+                // CraftBukkit start - check all the different target goals for the reason, default to RANDOM_TARGET
+                EntityTargetEvent.TargetReason reason = EntityTargetEvent.TargetReason.RANDOM_TARGET;
 
-                        if (this.b == 0) {
-                            this.b = this.a(entityliving) ? 1 : 2;
-                        }
-
-                        if (this.b == 2) {
-                            return false;
-                        }
+                if (this instanceof PathfinderGoalDefendVillage) {
+                    reason = EntityTargetEvent.TargetReason.DEFEND_VILLAGE;
+                } else if (this instanceof PathfinderGoalHurtByTarget) {
+                    reason = EntityTargetEvent.TargetReason.TARGET_ATTACKED_ENTITY;
+                } else if (this instanceof PathfinderGoalNearestAttackableTarget) {
+                    if (entityliving instanceof EntityHuman) {
+                        reason = EntityTargetEvent.TargetReason.CLOSEST_PLAYER;
                     }
-
-                    // CraftBukkit start - check all the different target goals for the reason, default to RANDOM_TARGET
-                    EntityTargetEvent.TargetReason reason = EntityTargetEvent.TargetReason.RANDOM_TARGET;
-
-                    if (this instanceof PathfinderGoalDefendVillage) {
-                        reason = EntityTargetEvent.TargetReason.DEFEND_VILLAGE;
-                    } else if (this instanceof PathfinderGoalHurtByTarget) {
-                        reason = EntityTargetEvent.TargetReason.TARGET_ATTACKED_ENTITY;
-                    } else if (this instanceof PathfinderGoalNearestAttackableTarget) {
-                        if (entityliving instanceof EntityHuman) {
-                            reason = EntityTargetEvent.TargetReason.CLOSEST_PLAYER;
-                        }
-                    } else if (this instanceof PathfinderGoalOwnerHurtByTarget) {
-                        reason = EntityTargetEvent.TargetReason.TARGET_ATTACKED_OWNER;
-                    } else if (this instanceof PathfinderGoalOwnerHurtTarget) {
-                        reason = EntityTargetEvent.TargetReason.OWNER_ATTACKED_TARGET;
-                    }
-
-                    org.bukkit.event.entity.EntityTargetLivingEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetLivingEvent(this.d, entityliving, reason);
-                    if (event.isCancelled() || event.getTarget() == null) {
-                        if (this.d instanceof EntityCreature) ((EntityCreature) this.d).target = null;
-                        return false;
-                    } else if (entityliving.getBukkitEntity() != event.getTarget()) {
-                        this.d.b((EntityLiving) ((org.bukkit.craftbukkit.entity.CraftEntity) event.getTarget()).getHandle());
-                    }
-                    if (this.d instanceof EntityCreature) ((EntityCreature) this.d).target = ((org.bukkit.craftbukkit.entity.CraftEntity) event.getTarget()).getHandle();
-                    // CraftBukkit end
-
-                    return true;
+                } else if (this instanceof PathfinderGoalOwnerHurtByTarget) {
+                    reason = EntityTargetEvent.TargetReason.TARGET_ATTACKED_OWNER;
+                } else if (this instanceof PathfinderGoalOwnerHurtTarget) {
+                    reason = EntityTargetEvent.TargetReason.OWNER_ATTACKED_TARGET;
                 }
+
+                org.bukkit.event.entity.EntityTargetLivingEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetLivingEvent(this.d, entityliving, reason);
+                if (event.isCancelled() || event.getTarget() == null) {
+                    if (this.d instanceof EntityCreature) {
+                        ((EntityCreature) this.d).target = null;
+                    }
+                    return false;
+                } else if (entityliving.getBukkitEntity() != event.getTarget()) {
+                    this.d.b((EntityLiving) ((org.bukkit.craftbukkit.entity.CraftEntity) event.getTarget()).getHandle());
+                }
+                if (this.d instanceof EntityCreature) {
+                    ((EntityCreature) this.d).target = ((org.bukkit.craftbukkit.entity.CraftEntity) event.getTarget()).getHandle();
+                }
+                // CraftBukkit end
+
+                return true;
             }
-        } else {
-            return false;
         }
     }
 
     private boolean a(EntityLiving entityliving) {
-        this.c = 10 + this.d.au().nextInt(5);
+        this.c = 10 + this.d.aA().nextInt(5);
         PathEntity pathentity = this.d.getNavigation().a(entityliving);
 
         if (pathentity == null) {

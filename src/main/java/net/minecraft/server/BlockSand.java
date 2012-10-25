@@ -11,12 +11,16 @@ public class BlockSand extends Block {
         this.a(CreativeModeTab.b);
     }
 
+    public BlockSand(int i, int j, Material material) {
+        super(i, j, material);
+    }
+
     public void onPlace(World world, int i, int j, int k) {
-        world.a(i, j, k, this.id, this.p_());
+        world.a(i, j, k, this.id, this.r_());
     }
 
     public void doPhysics(World world, int i, int j, int k, int l) {
-        world.a(i, j, k, this.id, this.p_());
+        world.a(i, j, k, this.id, this.r_());
     }
 
     public void b(World world, int i, int j, int k, Random random) {
@@ -29,11 +33,11 @@ public class BlockSand extends Block {
         if (canFall(world, i, j - 1, k) && j >= 0) {
             byte b0 = 32;
 
-            if (!instaFall && world.c(i - b0, j - b0, k - b0, i + b0, j + b0, k + b0)) {
+            if (!instaFall && world.d(i - b0, j - b0, k - b0, i + b0, j + b0, k + b0)) {
                 if (!world.isStatic) {
-                    // CraftBukkit - change call to add data
                     EntityFallingBlock entityfallingblock = new EntityFallingBlock(world, (double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), this.id, world.getData(i, j, k));
 
+                    this.a(entityfallingblock);
                     world.addEntity(entityfallingblock);
                 }
             } else {
@@ -50,7 +54,9 @@ public class BlockSand extends Block {
         }
     }
 
-    public int p_() {
+    protected void a(EntityFallingBlock entityfallingblock) {}
+
+    public int r_() {
         return 3;
     }
 
@@ -67,4 +73,6 @@ public class BlockSand extends Block {
             return material == Material.WATER ? true : material == Material.LAVA;
         }
     }
+
+    public void a_(World world, int i, int j, int k, int l) {}
 }

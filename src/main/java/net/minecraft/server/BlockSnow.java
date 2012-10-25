@@ -17,11 +17,11 @@ public class BlockSnow extends Block {
         return l >= 3 ? AxisAlignedBB.a().a((double) i + this.minX, (double) j + this.minY, (double) k + this.minZ, (double) i + this.maxX, (double) ((float) j + 0.5F), (double) k + this.maxZ) : null;
     }
 
-    public boolean d() {
+    public boolean c() {
         return false;
     }
 
-    public boolean c() {
+    public boolean b() {
         return false;
     }
 
@@ -35,7 +35,7 @@ public class BlockSnow extends Block {
     public boolean canPlace(World world, int i, int j, int k) {
         int l = world.getTypeId(i, j - 1, k);
 
-        return l != 0 && (l == Block.LEAVES.id || Block.byId[l].d()) ? world.getMaterial(i, j - 1, k).isSolid() : false;
+        return l != 0 && (l == Block.LEAVES.id || Block.byId[l].c()) ? world.getMaterial(i, j - 1, k).isSolid() : false;
     }
 
     public void doPhysics(World world, int i, int j, int k, int l) {
@@ -55,14 +55,8 @@ public class BlockSnow extends Block {
 
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
         int i1 = Item.SNOW_BALL.id;
-        float f = 0.7F;
-        double d0 = (double) (world.random.nextFloat() * f) + (double) (1.0F - f) * 0.5D;
-        double d1 = (double) (world.random.nextFloat() * f) + (double) (1.0F - f) * 0.5D;
-        double d2 = (double) (world.random.nextFloat() * f) + (double) (1.0F - f) * 0.5D;
-        EntityItem entityitem = new EntityItem(world, (double) i + d0, (double) j + d1, (double) k + d2, new ItemStack(i1, 1, 0));
 
-        entityitem.pickupDelay = 10;
-        world.addEntity(entityitem);
+        this.a(world, i, j, k, new ItemStack(i1, 1, 0));
         world.setTypeId(i, j, k, 0);
         entityhuman.a(StatisticList.C[this.id], 1);
     }

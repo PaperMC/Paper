@@ -45,7 +45,7 @@ public class EntityTrackerEntry {
         this.zLoc = MathHelper.floor(entity.locZ * 32.0D);
         this.yRot = MathHelper.d(entity.yaw * 256.0F / 360.0F);
         this.xRot = MathHelper.d(entity.pitch * 256.0F / 360.0F);
-        this.i = MathHelper.d(entity.am() * 256.0F / 360.0F);
+        this.i = MathHelper.d(entity.ap() * 256.0F / 360.0F);
     }
 
     public boolean equals(Object object) {
@@ -72,19 +72,50 @@ public class EntityTrackerEntry {
             this.broadcast(new Packet39AttachEntity(this.tracker, this.tracker.vehicle));
         }
 
-        if (this.tracker.vehicle == null) {
-            ++this.u;
-            if (this.m++ % this.c == 0 || this.tracker.al) {
-                int i = this.tracker.am.a(this.tracker.locX);
-                int j = MathHelper.floor(this.tracker.locY * 32.0D);
-                int k = this.tracker.am.a(this.tracker.locZ);
+        if (this.tracker instanceof EntityItemFrame && this.m % 10 == 0) {
+            EntityItemFrame i4 = (EntityItemFrame) this.tracker;
+            ItemStack i5 = i4.i();
+
+            if (i5 != null && i5.getItem() instanceof ItemWorldMap) {
+                WorldMap i7 = Item.MAP.getSavedMap(i5, this.tracker.world);
+                Iterator i8 = list.iterator();
+
+                while (i8.hasNext()) {
+                    EntityHuman j0 = (EntityHuman) i8.next();
+                    EntityPlayer j1 = (EntityPlayer) j0;
+
+                    i7.a(j1, i5);
+                    if (j1.netServerHandler.lowPriorityCount() <= 5) {
+                        Packet j2 = Item.MAP.c(i5, this.tracker.world, j1);
+
+                        if (j2 != null) {
+                            j1.netServerHandler.sendPacket(j2);
+                        }
+                    }
+                }
+            }
+
+            DataWatcher i9 = this.tracker.getDataWatcher();
+
+            if (i9.a()) {
+                this.broadcastIncludingSelf(new Packet40EntityMetadata(this.tracker.id, i9, false));
+            }
+        } else if (this.m++ % this.c == 0 || this.tracker.am) {
+            int i;
+            int j;
+
+            if (this.tracker.vehicle == null) {
+                ++this.u;
+                i = this.tracker.ar.a(this.tracker.locX);
+                j = MathHelper.floor(this.tracker.locY * 32.0D);
+                int k = this.tracker.ar.a(this.tracker.locZ);
                 int l = MathHelper.d(this.tracker.yaw * 256.0F / 360.0F);
                 int i1 = MathHelper.d(this.tracker.pitch * 256.0F / 360.0F);
                 int j1 = i - this.xLoc;
                 int k1 = j - this.yLoc;
                 int l1 = k - this.zLoc;
                 Object object = null;
-                boolean flag = Math.abs(j1) >= 4 || Math.abs(k1) >= 4 || Math.abs(l1) >= 4;
+                boolean flag = Math.abs(j1) >= 4 || Math.abs(k1) >= 4 || Math.abs(l1) >= 4 || this.m % 60 == 0;
                 boolean flag1 = Math.abs(l - this.yRot) >= 4 || Math.abs(i1 - this.xRot) >= 4;
 
                 // CraftBukkit start - code moved from below
@@ -137,17 +168,10 @@ public class EntityTrackerEntry {
                     this.broadcast((Packet) object);
                 }
 
-                DataWatcher datawatcher = this.tracker.getDataWatcher();
+                DataWatcher datawatcher1 = this.tracker.getDataWatcher();
 
-                if (datawatcher.a()) {
-                    this.broadcastIncludingSelf(new Packet40EntityMetadata(this.tracker.id, datawatcher));
-                }
-
-                int i2 = MathHelper.d(this.tracker.am() * 256.0F / 360.0F);
-
-                if (Math.abs(i2 - this.i) >= 4) {
-                    this.broadcast(new Packet35EntityHeadRotation(this.tracker.id, (byte) i2));
-                    this.i = i2;
+                if (datawatcher1.a()) {
+                    this.broadcastIncludingSelf(new Packet40EntityMetadata(this.tracker.id, datawatcher1, false));
                 }
 
                 /* CraftBukkit start - code moved up
@@ -162,9 +186,29 @@ public class EntityTrackerEntry {
                     this.xRot = i1;
                 }
                 // CraftBukkit end */
+            } else {
+                i = MathHelper.d(this.tracker.yaw * 256.0F / 360.0F);
+                j = MathHelper.d(this.tracker.pitch * 256.0F / 360.0F);
+                boolean flag2 = Math.abs(i - this.yRot) >= 4 || Math.abs(j - this.xRot) >= 4;
+
+                if (flag2) {
+                    this.broadcast(new Packet32EntityLook(this.tracker.id, (byte) i, (byte) j));
+                    this.yRot = i;
+                    this.xRot = j;
+                }
+
+                this.xLoc = this.tracker.ar.a(this.tracker.locX);
+                this.yLoc = MathHelper.floor(this.tracker.locY * 32.0D);
+                this.zLoc = this.tracker.ar.a(this.tracker.locZ);
             }
 
-            this.tracker.al = false;
+            i = MathHelper.d(this.tracker.ap() * 256.0F / 360.0F);
+            if (Math.abs(i - this.i) >= 4) {
+                this.broadcast(new Packet35EntityHeadRotation(this.tracker.id, (byte) i));
+                this.i = i;
+            }
+
+            this.tracker.am = false;
         }
 
         if (this.tracker.velocityChanged) {
@@ -189,6 +233,7 @@ public class EntityTrackerEntry {
                 this.broadcastIncludingSelf((Packet) (new Packet28EntityVelocity(this.tracker)));
             }
             // CraftBukkit end
+
             this.tracker.velocityChanged = false;
         }
     }
@@ -216,12 +261,13 @@ public class EntityTrackerEntry {
         while (iterator.hasNext()) {
             EntityPlayer entityplayer = (EntityPlayer) iterator.next();
 
-            entityplayer.g.add(Integer.valueOf(this.tracker.id));
+            entityplayer.removeQueue.add(Integer.valueOf(this.tracker.id));
         }
     }
 
     public void a(EntityPlayer entityplayer) {
         if (this.trackedPlayers.contains(entityplayer)) {
+            entityplayer.removeQueue.add(Integer.valueOf(this.tracker.id));
             this.trackedPlayers.remove(entityplayer);
         }
     }
@@ -241,12 +287,17 @@ public class EntityTrackerEntry {
                         }
                     }
 
-                    entityplayer.g.remove(Integer.valueOf(this.tracker.id)); // Should be called destroyQueue
+                    entityplayer.removeQueue.remove(Integer.valueOf(this.tracker.id));
                     // CraftBukkit end
+
                     this.trackedPlayers.add(entityplayer);
                     Packet packet = this.b();
 
                     entityplayer.netServerHandler.sendPacket(packet);
+                    if (this.tracker instanceof EntityItemFrame) {
+                        entityplayer.netServerHandler.sendPacket(new Packet40EntityMetadata(this.tracker.id, this.tracker.getDataWatcher(), true));
+                    }
+
                     this.j = this.tracker.motX;
                     this.k = this.tracker.motY;
                     this.l = this.tracker.motZ;
@@ -258,11 +309,13 @@ public class EntityTrackerEntry {
                         entityplayer.netServerHandler.sendPacket(new Packet39AttachEntity(this.tracker, this.tracker.vehicle));
                     }
 
-                    ItemStack[] aitemstack = this.tracker.getEquipment();
+                    if (this.tracker instanceof EntityLiving) {
+                        for (int i = 0; i < 5; ++i) {
+                            ItemStack itemstack = ((EntityLiving) this.tracker).getEquipment(i);
 
-                    if (aitemstack != null) {
-                        for (int i = 0; i < aitemstack.length; ++i) {
-                            entityplayer.netServerHandler.sendPacket(new Packet5EntityEquipment(this.tracker.id, i, aitemstack[i]));
+                            if (itemstack != null) {
+                                entityplayer.netServerHandler.sendPacket(new Packet5EntityEquipment(this.tracker.id, i, itemstack));
+                            }
                         }
                     }
 
@@ -275,7 +328,7 @@ public class EntityTrackerEntry {
                     }
 
                     // CraftBukkit start - Fix for nonsensical head yaw
-                    this.i = MathHelper.d(this.tracker.am() * 256.0F / 360.0F); // tracker.am() should be getHeadRotation
+                    this.i = MathHelper.d(this.tracker.ap() * 256.0F / 360.0F); // tracker.am() should be getHeadRotation
                     this.broadcast(new Packet35EntityHeadRotation(this.tracker.id, (byte) i));
                     // CraftBukkit end
 
@@ -292,13 +345,13 @@ public class EntityTrackerEntry {
                 }
             } else if (this.trackedPlayers.contains(entityplayer)) {
                 this.trackedPlayers.remove(entityplayer);
-                entityplayer.g.add(Integer.valueOf(this.tracker.id));
+                entityplayer.removeQueue.add(Integer.valueOf(this.tracker.id));
             }
         }
     }
 
     private boolean d(EntityPlayer entityplayer) {
-        return entityplayer.q().getPlayerManager().a(entityplayer, this.tracker.ah, this.tracker.aj);
+        return entityplayer.p().getPlayerManager().a(entityplayer, this.tracker.ai, this.tracker.ak);
     }
 
     public void scanPlayers(List list) {
@@ -321,12 +374,12 @@ public class EntityTrackerEntry {
 
         if (this.tracker instanceof EntityItem) {
             EntityItem entityitem = (EntityItem) this.tracker;
-            Packet21PickupSpawn packet21pickupspawn = new Packet21PickupSpawn(entityitem);
+            Packet21PickupSpawn entityminecart0 = new Packet21PickupSpawn(entityitem);
 
-            entityitem.locX = (double) packet21pickupspawn.b / 32.0D;
-            entityitem.locY = (double) packet21pickupspawn.c / 32.0D;
-            entityitem.locZ = (double) packet21pickupspawn.d / 32.0D;
-            return packet21pickupspawn;
+            entityitem.locX = (double) entityminecart0.b / 32.0D;
+            entityitem.locY = (double) entityminecart0.c / 32.0D;
+            entityitem.locZ = (double) entityminecart0.d / 32.0D;
+            return entityminecart0;
         } else if (this.tracker instanceof EntityPlayer) {
             return new Packet20NamedEntitySpawn((EntityHuman) this.tracker);
         } else {
@@ -370,28 +423,22 @@ public class EntityTrackerEntry {
                 } else {
                     Packet23VehicleSpawn packet23vehiclespawn;
 
-                    if (this.tracker instanceof EntitySmallFireball) {
-                        EntitySmallFireball entitysmallfireball = (EntitySmallFireball) this.tracker;
-
-                        packet23vehiclespawn = null;
-                        if (entitysmallfireball.shooter != null) {
-                            packet23vehiclespawn = new Packet23VehicleSpawn(this.tracker, 64, entitysmallfireball.shooter.id);
-                        } else {
-                            packet23vehiclespawn = new Packet23VehicleSpawn(this.tracker, 64, 0);
-                        }
-
-                        packet23vehiclespawn.e = (int) (entitysmallfireball.dirX * 8000.0D);
-                        packet23vehiclespawn.f = (int) (entitysmallfireball.dirY * 8000.0D);
-                        packet23vehiclespawn.g = (int) (entitysmallfireball.dirZ * 8000.0D);
-                        return packet23vehiclespawn;
-                    } else if (this.tracker instanceof EntityFireball) {
+                    if (this.tracker instanceof EntityFireball) {
                         EntityFireball entityfireball = (EntityFireball) this.tracker;
 
                         packet23vehiclespawn = null;
+                        byte b0 = 63;
+
+                        if (this.tracker instanceof EntitySmallFireball) {
+                            b0 = 64;
+                        } else if (this.tracker instanceof EntityWitherSkull) {
+                            b0 = 66;
+                        }
+
                         if (entityfireball.shooter != null) {
-                            packet23vehiclespawn = new Packet23VehicleSpawn(this.tracker, 63, ((EntityFireball) this.tracker).shooter.id);
+                            packet23vehiclespawn = new Packet23VehicleSpawn(this.tracker, b0, ((EntityFireball) this.tracker).shooter.id);
                         } else {
-                            packet23vehiclespawn = new Packet23VehicleSpawn(this.tracker, 63, 0);
+                            packet23vehiclespawn = new Packet23VehicleSpawn(this.tracker, b0, 0);
                         }
 
                         packet23vehiclespawn.e = (int) (entityfireball.dirX * 8000.0D);
@@ -410,6 +457,14 @@ public class EntityTrackerEntry {
                         return new Packet23VehicleSpawn(this.tracker, 70, entityfallingblock.id | entityfallingblock.data << 16);
                     } else if (this.tracker instanceof EntityPainting) {
                         return new Packet25EntityPainting((EntityPainting) this.tracker);
+                    } else if (this.tracker instanceof EntityItemFrame) {
+                        EntityItemFrame entityitemframe = (EntityItemFrame) this.tracker;
+
+                        packet23vehiclespawn = new Packet23VehicleSpawn(this.tracker, 71, entityitemframe.direction);
+                        packet23vehiclespawn.b = MathHelper.d((float) (entityitemframe.x * 32));
+                        packet23vehiclespawn.c = MathHelper.d((float) (entityitemframe.y * 32));
+                        packet23vehiclespawn.d = MathHelper.d((float) (entityitemframe.z * 32));
+                        return packet23vehiclespawn;
                     } else if (this.tracker instanceof EntityExperienceOrb) {
                         return new Packet26AddExpOrb((EntityExperienceOrb) this.tracker);
                     } else {
@@ -417,7 +472,7 @@ public class EntityTrackerEntry {
                     }
                 }
             } else {
-                this.i = MathHelper.d(this.tracker.am() * 256.0F / 360.0F);
+                this.i = MathHelper.d(this.tracker.ap() * 256.0F / 360.0F);
                 return new Packet24MobSpawn((EntityLiving) this.tracker);
             }
         }
@@ -426,7 +481,7 @@ public class EntityTrackerEntry {
     public void clear(EntityPlayer entityplayer) {
         if (this.trackedPlayers.contains(entityplayer)) {
             this.trackedPlayers.remove(entityplayer);
-            entityplayer.g.add(Integer.valueOf(this.tracker.id));
+            entityplayer.removeQueue.add(Integer.valueOf(this.tracker.id));
         }
     }
 }

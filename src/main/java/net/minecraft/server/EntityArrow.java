@@ -10,7 +10,7 @@ import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 // CraftBukkit end
 
-public class EntityArrow extends Entity {
+public class EntityArrow extends Entity implements IProjectile {
 
     private int d = -1;
     private int e = -1;
@@ -22,9 +22,9 @@ public class EntityArrow extends Entity {
     public int shake = 0;
     public Entity shooter;
     private int j;
-    private int an = 0;
+    private int as = 0;
     private double damage = 2.0D;
-    private int ap;
+    private int au;
 
     public EntityArrow(World world) {
         super(world);
@@ -111,8 +111,8 @@ public class EntityArrow extends Entity {
         this.j = 0;
     }
 
-    public void h_() {
-        super.h_();
+    public void j_() {
+        super.j_();
         if (this.lastPitch == 0.0F && this.lastYaw == 0.0F) {
             float f = MathHelper.sqrt(this.motX * this.motX + this.motZ * this.motZ);
 
@@ -126,7 +126,7 @@ public class EntityArrow extends Entity {
             Block.byId[i].updateShape(this.world, this.d, this.e, this.f);
             AxisAlignedBB axisalignedbb = Block.byId[i].e(this.world, this.d, this.e, this.f);
 
-            if (axisalignedbb != null && axisalignedbb.a(Vec3D.a().create(this.locX, this.locY, this.locZ))) {
+            if (axisalignedbb != null && axisalignedbb.a(this.world.getVec3DPool().create(this.locX, this.locY, this.locZ))) {
                 this.inGround = true;
             }
         }
@@ -150,18 +150,18 @@ public class EntityArrow extends Entity {
                 this.motY *= (double) (this.random.nextFloat() * 0.2F);
                 this.motZ *= (double) (this.random.nextFloat() * 0.2F);
                 this.j = 0;
-                this.an = 0;
+                this.as = 0;
             }
         } else {
-            ++this.an;
-            Vec3D vec3d = Vec3D.a().create(this.locX, this.locY, this.locZ);
-            Vec3D vec3d1 = Vec3D.a().create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
+            ++this.as;
+            Vec3D vec3d = this.world.getVec3DPool().create(this.locX, this.locY, this.locZ);
+            Vec3D vec3d1 = this.world.getVec3DPool().create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
             MovingObjectPosition movingobjectposition = this.world.rayTrace(vec3d, vec3d1, false, true);
 
-            vec3d = Vec3D.a().create(this.locX, this.locY, this.locZ);
-            vec3d1 = Vec3D.a().create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
+            vec3d = this.world.getVec3DPool().create(this.locX, this.locY, this.locZ);
+            vec3d1 = this.world.getVec3DPool().create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
             if (movingobjectposition != null) {
-                vec3d1 = Vec3D.a().create(movingobjectposition.pos.a, movingobjectposition.pos.b, movingobjectposition.pos.c);
+                vec3d1 = this.world.getVec3DPool().create(movingobjectposition.pos.c, movingobjectposition.pos.d, movingobjectposition.pos.e);
             }
 
             Entity entity = null;
@@ -174,7 +174,7 @@ public class EntityArrow extends Entity {
             while (iterator.hasNext()) {
                 Entity entity1 = (Entity) iterator.next();
 
-                if (entity1.L() && (entity1 != this.shooter || this.an >= 5)) {
+                if (entity1.L() && (entity1 != this.shooter || this.as >= 5)) {
                     f1 = 0.3F;
                     AxisAlignedBB axisalignedbb1 = entity1.boundingBox.grow((double) f1, (double) f1, (double) f1);
                     MovingObjectPosition movingobjectposition1 = axisalignedbb1.a(vec3d, vec3d1);
@@ -206,7 +206,7 @@ public class EntityArrow extends Entity {
                     f2 = MathHelper.sqrt(this.motX * this.motX + this.motY * this.motY + this.motZ * this.motZ);
                     int l = MathHelper.f((double) f2 * this.damage);
 
-                    if (this.g()) {
+                    if (this.d()) {
                         l += this.random.nextInt(l / 2 + 2);
                     }
 
@@ -232,12 +232,12 @@ public class EntityArrow extends Entity {
 
                     // if (movingobjectposition.entity.damageEntity(damagesource, l)) { // CraftBukkit - moved up
                         if (movingobjectposition.entity instanceof EntityLiving) {
-                            ++((EntityLiving) movingobjectposition.entity).bd;
-                            if (this.ap > 0) {
+                            ++((EntityLiving) movingobjectposition.entity).bk;
+                            if (this.au > 0) {
                                 float f3 = MathHelper.sqrt(this.motX * this.motX + this.motZ * this.motZ);
 
                                 if (f3 > 0.0F) {
-                                    movingobjectposition.entity.g(this.motX * (double) this.ap * 0.6000000238418579D / (double) f3, 0.1D, this.motZ * (double) this.ap * 0.6000000238418579D / (double) f3);
+                                    movingobjectposition.entity.g(this.motX * (double) this.au * 0.6000000238418579D / (double) f3, 0.1D, this.motZ * (double) this.au * 0.6000000238418579D / (double) f3);
                                 }
                             }
                         }
@@ -250,7 +250,7 @@ public class EntityArrow extends Entity {
                         this.motZ *= -0.10000000149011612D;
                         this.yaw += 180.0F;
                         this.lastYaw += 180.0F;
-                        this.an = 0;
+                        this.as = 0;
                     }
                 } else {
                     this.d = movingobjectposition.b;
@@ -258,9 +258,9 @@ public class EntityArrow extends Entity {
                     this.f = movingobjectposition.d;
                     this.g = this.world.getTypeId(this.d, this.e, this.f);
                     this.h = this.world.getData(this.d, this.e, this.f);
-                    this.motX = (double) ((float) (movingobjectposition.pos.a - this.locX));
-                    this.motY = (double) ((float) (movingobjectposition.pos.b - this.locY));
-                    this.motZ = (double) ((float) (movingobjectposition.pos.c - this.locZ));
+                    this.motX = (double) ((float) (movingobjectposition.pos.c - this.locX));
+                    this.motY = (double) ((float) (movingobjectposition.pos.d - this.locY));
+                    this.motZ = (double) ((float) (movingobjectposition.pos.e - this.locZ));
                     f2 = MathHelper.sqrt(this.motX * this.motX + this.motY * this.motY + this.motZ * this.motZ);
                     this.locX -= this.motX / (double) f2 * 0.05000000074505806D;
                     this.locY -= this.motY / (double) f2 * 0.05000000074505806D;
@@ -268,13 +268,13 @@ public class EntityArrow extends Entity {
                     this.world.makeSound(this, "random.bowhit", 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
                     this.inGround = true;
                     this.shake = 7;
-                    this.d(false);
+                    this.e(false);
                 }
             }
 
-            if (this.g()) {
+            if (this.d()) {
                 for (int i1 = 0; i1 < 4; ++i1) {
-                    this.world.a("crit", this.locX + this.motX * (double) i1 / 4.0D, this.locY + this.motY * (double) i1 / 4.0D, this.locZ + this.motZ * (double) i1 / 4.0D, -this.motX, -this.motY + 0.2D, -this.motZ);
+                    this.world.addParticle("crit", this.locX + this.motX * (double) i1 / 4.0D, this.locY + this.motY * (double) i1 / 4.0D, this.locZ + this.motZ * (double) i1 / 4.0D, -this.motX, -this.motY + 0.2D, -this.motZ);
                 }
             }
 
@@ -309,7 +309,7 @@ public class EntityArrow extends Entity {
                 for (int j1 = 0; j1 < 4; ++j1) {
                     float f5 = 0.25F;
 
-                    this.world.a("bubble", this.locX - this.motX * (double) f5, this.locY - this.motY * (double) f5, this.locZ - this.motZ * (double) f5, this.motX, this.motY, this.motZ);
+                    this.world.addParticle("bubble", this.locX - this.motX * (double) f5, this.locY - this.motY * (double) f5, this.locZ - this.motZ * (double) f5, this.motX, this.motY, this.motZ);
                 }
 
                 f4 = 0.8F;
@@ -359,7 +359,7 @@ public class EntityArrow extends Entity {
         if (!this.world.isStatic && this.inGround && this.shake <= 0) {
             // CraftBukkit start
             ItemStack itemstack = new ItemStack(Item.ARROW);
-            if (this.inGround && this.fromPlayer == 1 && this.shake <= 0 && entityhuman.inventory.canHold(itemstack) > 0) {
+            if (this.fromPlayer == 1 && entityhuman.inventory.canHold(itemstack) > 0) {
                 EntityItem item = new EntityItem(this.world, this.locX, this.locY, this.locZ, itemstack);
 
                 PlayerPickupItemEvent event = new PlayerPickupItemEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), new org.bukkit.craftbukkit.entity.CraftItem(this.world.getServer(), this, item), 0);
@@ -385,23 +385,27 @@ public class EntityArrow extends Entity {
         }
     }
 
+    protected boolean f_() {
+        return false;
+    }
+
     public void b(double d0) {
         this.damage = d0;
     }
 
-    public double d() {
+    public double c() {
         return this.damage;
     }
 
     public void a(int i) {
-        this.ap = i;
+        this.au = i;
     }
 
-    public boolean an() {
+    public boolean aq() {
         return false;
     }
 
-    public void d(boolean flag) {
+    public void e(boolean flag) {
         byte b0 = this.datawatcher.getByte(16);
 
         if (flag) {
@@ -411,7 +415,7 @@ public class EntityArrow extends Entity {
         }
     }
 
-    public boolean g() {
+    public boolean d() {
         byte b0 = this.datawatcher.getByte(16);
 
         return (b0 & 1) != 0;

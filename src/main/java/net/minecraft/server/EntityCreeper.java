@@ -7,8 +7,10 @@ import org.bukkit.event.entity.ExplosionPrimeEvent;
 
 public class EntityCreeper extends EntityMonster {
 
-    int fuseTicks;
-    int e;
+    private int d;
+    private int fuseTicks;
+    private int maxFuseTicks = 30;
+    private int explosionRadius = 3;
     private int record = -1; // CraftBukkit
 
     public EntityCreeper(World world) {
@@ -25,8 +27,20 @@ public class EntityCreeper extends EntityMonster {
         this.targetSelector.a(2, new PathfinderGoalHurtByTarget(this, false));
     }
 
-    public boolean aV() {
+    public boolean bb() {
         return true;
+    }
+
+    public int as() {
+        return this.aF() == null ? 3 : 3 + (this.health - 1);
+    }
+
+    protected void a(float f) {
+        super.a(f);
+        this.fuseTicks = (int) ((float) this.fuseTicks + f * 1.5F);
+        if (this.fuseTicks > this.maxFuseTicks - 5) {
+            this.fuseTicks = this.maxFuseTicks - 5;
+        }
     }
 
     public int getMaxHealth() {
@@ -44,17 +58,27 @@ public class EntityCreeper extends EntityMonster {
         if (this.datawatcher.getByte(17) == 1) {
             nbttagcompound.setBoolean("powered", true);
         }
+
+        nbttagcompound.setShort("Fuse", (short) this.maxFuseTicks);
+        nbttagcompound.setByte("ExplosionRadius", (byte) this.explosionRadius);
     }
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
         this.datawatcher.watch(17, Byte.valueOf((byte) (nbttagcompound.getBoolean("powered") ? 1 : 0)));
+        if (nbttagcompound.hasKey("Fuse")) {
+            this.maxFuseTicks = nbttagcompound.getShort("Fuse");
+        }
+
+        if (nbttagcompound.hasKey("ExplosionRadius")) {
+            this.explosionRadius = nbttagcompound.getByte("ExplosionRadius");
+        }
     }
 
-    public void h_() {
+    public void j_() {
         if (this.isAlive()) {
-            this.e = this.fuseTicks;
-            int i = this.p();
+            this.d = this.fuseTicks;
+            int i = this.o();
 
             if (i > 0 && this.fuseTicks == 0) {
                 this.world.makeSound(this, "random.fuse", 1.0F, 0.5F);
@@ -65,16 +89,17 @@ public class EntityCreeper extends EntityMonster {
                 this.fuseTicks = 0;
             }
 
-            if (this.fuseTicks >= 30) {
-                this.fuseTicks = 30;
+            if (this.fuseTicks >= this.maxFuseTicks) {
+                this.fuseTicks = this.maxFuseTicks;
                 if (!this.world.isStatic) {
+                    boolean flag = this.world.getGameRules().getBoolean("mobGriefing");
                     // CraftBukkit start
                     float radius = this.isPowered() ? 6.0F : 3.0F;
 
                     ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), radius, false);
                     this.world.getServer().getPluginManager().callEvent(event);
                     if (!event.isCancelled()) {
-                        this.world.createExplosion(this, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire());
+                        this.world.createExplosion(this, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire(), flag);
                         this.die();
                     } else {
                         this.fuseTicks = 0;
@@ -84,15 +109,15 @@ public class EntityCreeper extends EntityMonster {
             }
         }
 
-        super.h_();
+        super.j_();
     }
 
-    protected String aR() {
-        return "mob.creeper";
+    protected String aX() {
+        return "mob.creeper.say";
     }
 
-    protected String aS() {
-        return "mob.creeperdeath";
+    protected String aY() {
+        return "mob.creeper.death";
     }
 
     public void die(DamageSource damagesource) {
@@ -134,7 +159,7 @@ public class EntityCreeper extends EntityMonster {
     }
     // CraftBukkit end
 
-    public boolean k(Entity entity) {
+    public boolean l(Entity entity) {
         return true;
     }
 
@@ -146,7 +171,7 @@ public class EntityCreeper extends EntityMonster {
         return Item.SULPHUR.id;
     }
 
-    public int p() {
+    public int o() {
         return this.datawatcher.getByte(16);
     }
 

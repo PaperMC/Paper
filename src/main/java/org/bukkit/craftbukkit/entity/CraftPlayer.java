@@ -266,7 +266,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (getHandle().netServerHandler == null) return;
 
         int packetData = effect.getId();
-        Packet61WorldEvent packet = new Packet61WorldEvent(packetData, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), data);
+        Packet61WorldEvent packet = new Packet61WorldEvent(packetData, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), data, false);
         getHandle().netServerHandler.sendPacket(packet);
     }
 
@@ -598,7 +598,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void setBedSpawnLocation(Location location) {
-        getHandle().setRespawnPosition(new ChunkCoordinates(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
+        setBedSpawnLocation(location, false);
+    }
+
+    public void setBedSpawnLocation(Location location, boolean override) {
+        getHandle().setRespawnPosition(new ChunkCoordinates(location.getBlockX(), location.getBlockY(), location.getBlockZ()), override);
         getHandle().spawnWorld = location.getWorld().getName();
     }
 

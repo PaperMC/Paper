@@ -4,25 +4,24 @@ import org.bukkit.event.entity.EntityTargetEvent; // CraftBukkit
 
 public abstract class EntityMonster extends EntityCreature implements IMonster {
 
-    protected int damage = 2;
-
     public EntityMonster(World world) {
         super(world);
-        this.aV = 5;
+        this.bc = 5;
     }
 
-    public void d() {
+    public void c() {
+        this.bl();
         float f = this.c(1.0F);
 
         if (f > 0.5F) {
-            this.bq += 2;
+            this.bC += 2;
         }
 
-        super.d();
+        super.c();
     }
 
-    public void h_() {
-        super.h_();
+    public void j_() {
+        super.j_();
         if (!this.world.isStatic && this.world.difficulty == 0) {
             this.die();
         }
@@ -31,7 +30,7 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
     protected Entity findTarget() {
         EntityHuman entityhuman = this.world.findNearbyVulnerablePlayer(this, 16.0D);
 
-        return entityhuman != null && this.l(entityhuman) ? entityhuman : null;
+        return entityhuman != null && this.m(entityhuman) ? entityhuman : null;
     }
 
     public boolean damageEntity(DamageSource damagesource, int i) {
@@ -66,8 +65,8 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
         }
     }
 
-    public boolean k(Entity entity) {
-        int i = this.damage;
+    public boolean l(Entity entity) {
+        int i = this.c(entity);
 
         if (this.hasEffect(MobEffectList.INCREASE_DAMAGE)) {
             i += 3 << this.getEffect(MobEffectList.INCREASE_DAMAGE).getAmplifier();
@@ -77,13 +76,36 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
             i -= 2 << this.getEffect(MobEffectList.WEAKNESS).getAmplifier();
         }
 
-        return entity.damageEntity(DamageSource.mobAttack(this), i);
+        int j = 0;
+
+        if (entity instanceof EntityLiving) {
+            i += EnchantmentManager.a((EntityLiving) this, (EntityLiving) entity);
+            j += EnchantmentManager.getKnockbackEnchantmentLevel(this, (EntityLiving) entity);
+        }
+
+        boolean flag = entity.damageEntity(DamageSource.mobAttack(this), i);
+
+        if (flag) {
+            if (j > 0) {
+                entity.g((double) (-MathHelper.sin(this.yaw * 3.1415927F / 180.0F) * (float) j * 0.5F), 0.1D, (double) (MathHelper.cos(this.yaw * 3.1415927F / 180.0F) * (float) j * 0.5F));
+                this.motX *= 0.6D;
+                this.motZ *= 0.6D;
+            }
+
+            int k = EnchantmentManager.getFireAspectEnchantmentLevel(this, (EntityLiving) entity);
+
+            if (k > 0) {
+                entity.setOnFire(k * 4);
+            }
+        }
+
+        return flag;
     }
 
     protected void a(Entity entity, float f) {
         if (this.attackTicks <= 0 && f < 2.0F && entity.boundingBox.e > this.boundingBox.b && entity.boundingBox.b < this.boundingBox.e) {
             this.attackTicks = 20;
-            this.k(entity);
+            this.l(entity);
         }
     }
 
@@ -91,7 +113,7 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
         return 0.5F - this.world.o(i, j, k);
     }
 
-    protected boolean o() {
+    protected boolean i_() {
         int i = MathHelper.floor(this.locX);
         int j = MathHelper.floor(this.boundingBox.b);
         int k = MathHelper.floor(this.locZ);
@@ -101,12 +123,12 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
         } else {
             int l = this.world.getLightLevel(i, j, k);
 
-            if (this.world.I()) {
-                int i1 = this.world.k;
+            if (this.world.L()) {
+                int i1 = this.world.j;
 
-                this.world.k = 10;
+                this.world.j = 10;
                 l = this.world.getLightLevel(i, j, k);
-                this.world.k = i1;
+                this.world.j = i1;
             }
 
             return l <= this.random.nextInt(8);
@@ -114,6 +136,10 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
     }
 
     public boolean canSpawn() {
-        return this.o() && super.canSpawn();
+        return this.i_() && super.canSpawn();
+    }
+
+    public int c(Entity entity) {
+        return 2;
     }
 }

@@ -32,8 +32,8 @@ public class CraftMapRenderer extends MapRenderer {
         while (cursors.size() > 0) {
             cursors.removeCursor(cursors.getCursor(0));
         }
-        for (int i = 0; i < worldMap.decorations.size(); ++i) {
-            WorldMapDecoration decoration = (WorldMapDecoration) worldMap.decorations.get(i);
+        for (Object object : worldMap.g.values()) {
+            WorldMapDecoration decoration = (WorldMapDecoration) object;
             cursors.addCursor(decoration.locX, decoration.locY, (byte) (decoration.rotation & 15), (byte) (decoration.type));
         }
     }

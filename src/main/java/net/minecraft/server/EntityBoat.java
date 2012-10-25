@@ -53,7 +53,7 @@ public class EntityBoat extends Entity {
         this.height = this.length / 2.0F;
     }
 
-    protected boolean e_() {
+    protected boolean f_() {
         return false;
     }
 
@@ -107,8 +107,8 @@ public class EntityBoat extends Entity {
             // i = event.getDamage(); // TODO Why don't we do this?
             // CraftBukkit end
 
-            this.c(-this.i());
-            this.b(10);
+            this.h(-this.h());
+            this.g(10);
             this.setDamage(this.getDamage() + i * 10);
             this.K();
             if (damagesource.getEntity() instanceof EntityHuman && ((EntityHuman) damagesource.getEntity()).abilities.canInstantlyBuild) {
@@ -144,7 +144,7 @@ public class EntityBoat extends Entity {
         return !this.dead;
     }
 
-    public void h_() {
+    public void j_() {
         // CraftBukkit start
         double prevX = this.locX;
         double prevY = this.locY;
@@ -153,9 +153,9 @@ public class EntityBoat extends Entity {
         float prevPitch = this.pitch;
         // CraftBukkit end
 
-        super.h_();
-        if (this.h() > 0) {
-            this.b(this.h() - 1);
+        super.j_();
+        if (this.g() > 0) {
+            this.g(this.g() - 1);
         }
 
         if (this.getDamage() > 0) {
@@ -195,11 +195,11 @@ public class EntityBoat extends Entity {
                 if (this.random.nextBoolean()) {
                     d8 = this.locX - d4 * d6 * 0.8D + d5 * d7;
                     d9 = this.locZ - d5 * d6 * 0.8D - d4 * d7;
-                    this.world.a("splash", d8, this.locY - 0.125D, d9, this.motX, this.motY, this.motZ);
+                    this.world.addParticle("splash", d8, this.locY - 0.125D, d9, this.motX, this.motY, this.motZ);
                 } else {
                     d8 = this.locX + d4 + d5 * d6 * 0.7D;
                     d9 = this.locZ + d5 - d4 * d6 * 0.7D;
-                    this.world.a("splash", d8, this.locY - 0.125D, d9, this.motX, this.motY, this.motZ);
+                    this.world.addParticle("splash", d8, this.locY - 0.125D, d9, this.motX, this.motY, this.motZ);
                 }
             }
         }
@@ -428,19 +428,19 @@ public class EntityBoat extends Entity {
         return this.datawatcher.getInt(19);
     }
 
-    public void b(int i) {
+    public void g(int i) {
         this.datawatcher.watch(17, Integer.valueOf(i));
     }
 
-    public int h() {
+    public int g() {
         return this.datawatcher.getInt(17);
     }
 
-    public void c(int i) {
+    public void h(int i) {
         this.datawatcher.watch(18, Integer.valueOf(i));
     }
 
-    public int i() {
+    public int h() {
         return this.datawatcher.getInt(18);
     }
 }

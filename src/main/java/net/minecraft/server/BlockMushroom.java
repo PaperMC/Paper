@@ -82,7 +82,7 @@ public class BlockMushroom extends BlockFlower {
     }
 
     protected boolean d_(int i) {
-        return Block.n[i];
+        return Block.q[i];
     }
 
     public boolean d(World world, int i, int j, int k) {

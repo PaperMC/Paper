@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 public class NBTTagCompound extends NBTBase {
 
@@ -116,55 +117,116 @@ public class NBTTagCompound extends NBTBase {
     }
 
     public byte getByte(String s) {
-        return !this.map.containsKey(s) ? 0 : ((NBTTagByte) this.map.get(s)).data;
+        try {
+            return !this.map.containsKey(s) ? 0 : ((NBTTagByte) this.map.get(s)).data;
+        } catch (ClassCastException classcastexception) {
+            throw new ReportedException(this.a(s, 1, classcastexception));
+        }
     }
 
     public short getShort(String s) {
-        return !this.map.containsKey(s) ? 0 : ((NBTTagShort) this.map.get(s)).data;
+        try {
+            return !this.map.containsKey(s) ? 0 : ((NBTTagShort) this.map.get(s)).data;
+        } catch (ClassCastException classcastexception) {
+            throw new ReportedException(this.a(s, 2, classcastexception));
+        }
     }
 
     public int getInt(String s) {
-        return !this.map.containsKey(s) ? 0 : ((NBTTagInt) this.map.get(s)).data;
+        try {
+            return !this.map.containsKey(s) ? 0 : ((NBTTagInt) this.map.get(s)).data;
+        } catch (ClassCastException classcastexception) {
+            throw new ReportedException(this.a(s, 3, classcastexception));
+        }
     }
 
     public long getLong(String s) {
-        return !this.map.containsKey(s) ? 0L : ((NBTTagLong) this.map.get(s)).data;
+        try {
+            return !this.map.containsKey(s) ? 0L : ((NBTTagLong) this.map.get(s)).data;
+        } catch (ClassCastException classcastexception) {
+            throw new ReportedException(this.a(s, 4, classcastexception));
+        }
     }
 
     public float getFloat(String s) {
-        return !this.map.containsKey(s) ? 0.0F : ((NBTTagFloat) this.map.get(s)).data;
+        try {
+            return !this.map.containsKey(s) ? 0.0F : ((NBTTagFloat) this.map.get(s)).data;
+        } catch (ClassCastException classcastexception) {
+            throw new ReportedException(this.a(s, 5, classcastexception));
+        }
     }
 
     public double getDouble(String s) {
-        return !this.map.containsKey(s) ? 0.0D : ((NBTTagDouble) this.map.get(s)).data;
+        try {
+            return !this.map.containsKey(s) ? 0.0D : ((NBTTagDouble) this.map.get(s)).data;
+        } catch (ClassCastException classcastexception) {
+            throw new ReportedException(this.a(s, 6, classcastexception));
+        }
     }
 
     public String getString(String s) {
-        return !this.map.containsKey(s) ? "" : ((NBTTagString) this.map.get(s)).data;
+        try {
+            return !this.map.containsKey(s) ? "" : ((NBTTagString) this.map.get(s)).data;
+        } catch (ClassCastException classcastexception) {
+            throw new ReportedException(this.a(s, 8, classcastexception));
+        }
     }
 
     public byte[] getByteArray(String s) {
-        return !this.map.containsKey(s) ? new byte[0] : ((NBTTagByteArray) this.map.get(s)).data;
+        try {
+            return !this.map.containsKey(s) ? new byte[0] : ((NBTTagByteArray) this.map.get(s)).data;
+        } catch (ClassCastException classcastexception) {
+            throw new ReportedException(this.a(s, 7, classcastexception));
+        }
     }
 
     public int[] getIntArray(String s) {
-        return !this.map.containsKey(s) ? new int[0] : ((NBTTagIntArray) this.map.get(s)).data;
+        try {
+            return !this.map.containsKey(s) ? new int[0] : ((NBTTagIntArray) this.map.get(s)).data;
+        } catch (ClassCastException classcastexception) {
+            throw new ReportedException(this.a(s, 11, classcastexception));
+        }
     }
 
     public NBTTagCompound getCompound(String s) {
-        return !this.map.containsKey(s) ? new NBTTagCompound(s) : (NBTTagCompound) this.map.get(s);
+        try {
+            return !this.map.containsKey(s) ? new NBTTagCompound(s) : (NBTTagCompound) this.map.get(s);
+        } catch (ClassCastException classcastexception) {
+            throw new ReportedException(this.a(s, 10, classcastexception));
+        }
     }
 
     public NBTTagList getList(String s) {
-        return !this.map.containsKey(s) ? new NBTTagList(s) : (NBTTagList) this.map.get(s);
+        try {
+            return !this.map.containsKey(s) ? new NBTTagList(s) : (NBTTagList) this.map.get(s);
+        } catch (ClassCastException classcastexception) {
+            throw new ReportedException(this.a(s, 9, classcastexception));
+        }
     }
 
     public boolean getBoolean(String s) {
         return this.getByte(s) != 0;
     }
 
+    public void o(String s) {
+        this.map.remove(s);
+    }
+
     public String toString() {
         return "" + this.map.size() + " entries";
+    }
+
+    public boolean d() {
+        return this.map.isEmpty();
+    }
+
+    private CrashReport a(String s, int i, ClassCastException classcastexception) {
+        CrashReport crashreport = new CrashReport("Reading NBT data", classcastexception);
+
+        crashreport.a("Corrupt tag type found", (Callable) (new CrashReportCorruptNBTTag(this, s)));
+        crashreport.a("Corrupt tag type expected", (Callable) (new CrashReportCorruptNBTTag2(this, i)));
+        crashreport.a("Corrupt tag name", s);
+        return crashreport;
     }
 
     public NBTBase clone() {
@@ -192,5 +254,9 @@ public class NBTTagCompound extends NBTBase {
 
     public int hashCode() {
         return super.hashCode() ^ this.map.hashCode();
+    }
+
+    static Map a(NBTTagCompound nbttagcompound) {
+        return nbttagcompound.map;
     }
 }

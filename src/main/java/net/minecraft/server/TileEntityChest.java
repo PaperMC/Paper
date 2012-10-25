@@ -271,9 +271,9 @@ public class TileEntityChest extends TileEntity implements IInventory {
         this.world.playNote(this.x, this.y, this.z, Block.CHEST.id, 1, this.h);
     }
 
-    public void j() {
+    public void w_() {
         this.h();
         this.i();
-        super.j();
+        super.w_();
     }
 }

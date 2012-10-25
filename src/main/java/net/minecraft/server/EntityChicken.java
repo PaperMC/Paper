@@ -20,14 +20,14 @@ public class EntityChicken extends EntityAnimal {
         this.goalSelector.a(0, new PathfinderGoalFloat(this));
         this.goalSelector.a(1, new PathfinderGoalPanic(this, 0.38F));
         this.goalSelector.a(2, new PathfinderGoalBreed(this, f));
-        this.goalSelector.a(3, new PathfinderGoalTempt(this, 0.25F, Item.WHEAT.id, false));
+        this.goalSelector.a(3, new PathfinderGoalTempt(this, 0.25F, Item.SEEDS.id, false));
         this.goalSelector.a(4, new PathfinderGoalFollowParent(this, 0.28F));
         this.goalSelector.a(5, new PathfinderGoalRandomStroll(this, f));
         this.goalSelector.a(6, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 6.0F));
         this.goalSelector.a(7, new PathfinderGoalRandomLookaround(this));
     }
 
-    public boolean aV() {
+    public boolean bb() {
         return true;
     }
 
@@ -35,8 +35,8 @@ public class EntityChicken extends EntityAnimal {
         return 4;
     }
 
-    public void d() {
-        super.d();
+    public void c() {
+        super.c();
         this.h = this.e;
         this.g = this.f;
         this.f = (float) ((double) this.f + (double) (this.onGround ? -1 : 4) * 0.3D);
@@ -59,7 +59,7 @@ public class EntityChicken extends EntityAnimal {
 
         this.e += this.i * 2.0F;
         if (!this.isBaby() && !this.world.isStatic && --this.j <= 0) {
-            this.world.makeSound(this, "mob.chickenplop", 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
+            this.world.makeSound(this, "mob.chicken.plop", 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
             this.b(Item.EGG.id, 1);
             this.j = this.random.nextInt(6000) + 6000;
         }
@@ -67,16 +67,20 @@ public class EntityChicken extends EntityAnimal {
 
     protected void a(float f) {}
 
-    protected String aQ() {
-        return "mob.chicken";
+    protected String aW() {
+        return "mob.chicken.say";
     }
 
-    protected String aR() {
-        return "mob.chickenhurt";
+    protected String aX() {
+        return "mob.chicken.hurt";
     }
 
-    protected String aS() {
-        return "mob.chickenhurt";
+    protected String aY() {
+        return "mob.chicken.hurt";
+    }
+
+    protected void a(int i, int j, int k, int l) {
+        this.world.makeSound(this, "mob.chicken.step", 0.15F, 1.0F);
     }
 
     protected int getLootId() {
@@ -104,5 +108,9 @@ public class EntityChicken extends EntityAnimal {
 
     public EntityAnimal createChild(EntityAnimal entityanimal) {
         return new EntityChicken(this.world);
+    }
+
+    public boolean c(ItemStack itemstack) {
+        return itemstack != null && itemstack.getItem() instanceof ItemSeeds;
     }
 }

@@ -35,6 +35,7 @@ public class CrashReport {
         this.a("Java VM Version", (Callable) (new CrashReportJavaVMVersion(this)));
         this.a("Memory", (Callable) (new CrashReportMemory(this)));
         this.a("JVM Flags", (Callable) (new CrashReportJVMFlags(this)));
+        this.a("AABB Pool Size", (Callable) (new CrashReportAABBPoolSize(this)));
         this.a("CraftBukkit Information", (Callable) (new org.bukkit.craftbukkit.CraftCrashReport())); // CraftBukkit
     }
 

@@ -19,7 +19,7 @@ public class ItemStep extends ItemBlock {
         return i;
     }
 
-    public String c(ItemStack itemstack) {
+    public String c_(ItemStack itemstack) {
         return this.b.d(itemstack.getData());
     }
 
@@ -28,7 +28,7 @@ public class ItemStep extends ItemBlock {
             return super.interactWith(itemstack, entityhuman, world, i, j, k, l, f, f1, f2);
         } else if (itemstack.count == 0) {
             return false;
-        } else if (!entityhuman.e(i, j, k)) {
+        } else if (!entityhuman.a(i, j, k, l, itemstack)) {
             return false;
         } else {
             int i1 = world.getTypeId(i, j, k);

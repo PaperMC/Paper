@@ -25,7 +25,7 @@ public class BlockMobSpawner extends BlockContainer {
         /* CraftBukkit start - delegate to getExpDrop
         int j1 = 15 + world.random.nextInt(15) + world.random.nextInt(15);
 
-        this.g(world, i, j, k, j1); */
+        this.f(world, i, j, k, j1);*/
     }
 
     public int getExpDrop(World world, int data, int enchantmentLevel) {
@@ -35,7 +35,7 @@ public class BlockMobSpawner extends BlockContainer {
         // CraftBukkit end
     }
 
-    public boolean d() {
+    public boolean c() {
         return false;
     }
 }

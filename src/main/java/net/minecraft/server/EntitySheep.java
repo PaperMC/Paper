@@ -31,21 +31,21 @@ public class EntitySheep extends EntityAnimal {
         this.goalSelector.a(8, new PathfinderGoalRandomLookaround(this));
     }
 
-    protected boolean aV() {
+    protected boolean bb() {
         return true;
     }
 
-    protected void bc() {
+    protected void bi() {
         this.e = this.f.f();
-        super.bc();
+        super.bi();
     }
 
-    public void d() {
+    public void c() {
         if (this.world.isStatic) {
             this.e = Math.max(0, this.e - 1);
         }
 
-        super.d();
+        super.c();
     }
 
     public int getMaxHealth() {
@@ -100,6 +100,7 @@ public class EntitySheep extends EntityAnimal {
             }
 
             itemstack.damage(1, entityhuman);
+            this.world.makeSound(this, "mob.sheep.shear", 1.0F, 1.0F);
         }
 
         return super.c(entityhuman);
@@ -117,16 +118,20 @@ public class EntitySheep extends EntityAnimal {
         this.setColor(nbttagcompound.getByte("Color"));
     }
 
-    protected String aQ() {
-        return "mob.sheep";
+    protected String aW() {
+        return "mob.sheep.say";
     }
 
-    protected String aR() {
-        return "mob.sheep";
+    protected String aX() {
+        return "mob.sheep.say";
     }
 
-    protected String aS() {
-        return "mob.sheep";
+    protected String aY() {
+        return "mob.sheep.say";
+    }
+
+    protected void a(int i, int j, int k, int l) {
+        this.world.makeSound(this, "mob.sheep.step", 0.15F, 1.0F);
     }
 
     public int getColor() {
@@ -172,7 +177,7 @@ public class EntitySheep extends EntityAnimal {
         return entitysheep1;
     }
 
-    public void aA() {
+    public void aG() {
         // CraftBukkit start
         SheepRegrowWoolEvent event = new SheepRegrowWoolEvent((org.bukkit.entity.Sheep) this.getBukkitEntity());
         this.world.getServer().getPluginManager().callEvent(event);
@@ -191,5 +196,9 @@ public class EntitySheep extends EntityAnimal {
 
             this.setAge(i);
         }
+    }
+
+    public void bD() {
+        this.setColor(a(this.world.random));
     }
 }

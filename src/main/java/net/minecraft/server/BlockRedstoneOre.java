@@ -17,7 +17,7 @@ public class BlockRedstoneOre extends Block {
         this.a = flag;
     }
 
-    public int p_() {
+    public int r_() {
         return 30;
     }
 
@@ -81,7 +81,7 @@ public class BlockRedstoneOre extends Block {
         if (this.getDropType(l, world.random, i1) != this.id) {
             int j1 = 1 + world.random.nextInt(5);
 
-            this.g(world, i, j, k, j1);
+            this.f(world, i, j, k, j1);
         } */
     }
 
@@ -130,12 +130,12 @@ public class BlockRedstoneOre extends Block {
             }
 
             if (d1 < (double) i || d1 > (double) (i + 1) || d2 < 0.0D || d2 > (double) (j + 1) || d3 < (double) k || d3 > (double) (k + 1)) {
-                world.a("reddust", d1, d2, d3, 0.0D, 0.0D, 0.0D);
+                world.addParticle("reddust", d1, d2, d3, 0.0D, 0.0D, 0.0D);
             }
         }
     }
 
-    protected ItemStack c_(int i) {
+    protected ItemStack f_(int i) {
         return new ItemStack(Block.REDSTONE_ORE);
     }
 }

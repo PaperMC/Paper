@@ -20,8 +20,9 @@ import org.bukkit.Location;
 public class Explosion {
 
     public boolean a = false;
-    private int h = 16;
-    private Random i = new Random();
+    public boolean b = true;
+    private int i = 16;
+    private Random j = new Random();
     private World world;
     public double posX;
     public double posY;
@@ -29,7 +30,7 @@ public class Explosion {
     public Entity source;
     public float size;
     public List blocks = new ArrayList();
-    private Map k = new HashMap();
+    private Map l = new HashMap();
     public boolean wasCanceled = false; // CraftBukkit
 
     public Explosion(World world, Entity entity, double d0, double d1, double d2, float f) {
@@ -58,13 +59,13 @@ public class Explosion {
         double d1;
         double d2;
 
-        for (i = 0; i < this.h; ++i) {
-            for (j = 0; j < this.h; ++j) {
-                for (k = 0; k < this.h; ++k) {
-                    if (i == 0 || i == this.h - 1 || j == 0 || j == this.h - 1 || k == 0 || k == this.h - 1) {
-                        double d3 = (double) ((float) i / ((float) this.h - 1.0F) * 2.0F - 1.0F);
-                        double d4 = (double) ((float) j / ((float) this.h - 1.0F) * 2.0F - 1.0F);
-                        double d5 = (double) ((float) k / ((float) this.h - 1.0F) * 2.0F - 1.0F);
+        for (i = 0; i < this.i; ++i) {
+            for (j = 0; j < this.i; ++j) {
+                for (k = 0; k < this.i; ++k) {
+                    if (i == 0 || i == this.i - 1 || j == 0 || j == this.i - 1 || k == 0 || k == this.i - 1) {
+                        double d3 = (double) ((float) i / ((float) this.i - 1.0F) * 2.0F - 1.0F);
+                        double d4 = (double) ((float) j / ((float) this.i - 1.0F) * 2.0F - 1.0F);
+                        double d5 = (double) ((float) k / ((float) this.i - 1.0F) * 2.0F - 1.0F);
                         double d6 = Math.sqrt(d3 * d3 + d4 * d4 + d5 * d5);
 
                         d3 /= d6;
@@ -83,7 +84,10 @@ public class Explosion {
                             int k1 = this.world.getTypeId(l, i1, j1);
 
                             if (k1 > 0) {
-                                f1 -= (Block.byId[k1].a(this.source) + 0.3F) * f2;
+                                Block block = Block.byId[k1];
+                                float f3 = this.source != null ? this.source.a(this, block, l, i1, j1) : block.a(this.source);
+
+                                f1 -= (f3 + 0.3F) * f2;
                             }
 
                             if (f1 > 0.0F && i1 < 256 && i1 >= 0) { // CraftBukkit - don't wrap explosions
@@ -108,7 +112,7 @@ public class Explosion {
         int i2 = MathHelper.floor(this.posZ - (double) this.size - 1.0D);
         int j2 = MathHelper.floor(this.posZ + (double) this.size + 1.0D);
         List list = this.world.getEntities(this.source, AxisAlignedBB.a().a((double) i, (double) k, (double) i2, (double) j, (double) l1, (double) j2));
-        Vec3D vec3d = Vec3D.a().create(this.posX, this.posY, this.posZ);
+        Vec3D vec3d = this.world.getVec3DPool().create(this.posX, this.posY, this.posZ);
 
         for (int k2 = 0; k2 < list.size(); ++k2) {
             Entity entity = (Entity) list.get(k2);
@@ -145,7 +149,7 @@ public class Explosion {
                             entity.motY += d1 * d10;
                             entity.motZ += d2 * d10;
                             if (entity instanceof EntityHuman) {
-                                this.k.put((EntityHuman) entity, Vec3D.a().create(d0 * d10, d1 * d10, d2 * d10));
+                                this.l.put((EntityHuman) entity, this.world.getVec3DPool().create(d0 * d10, d1 * d10, d2 * d10));
                             }
                         }
                     } else {
@@ -169,7 +173,7 @@ public class Explosion {
                             entity.motY += d1 * d10;
                             entity.motZ += d2 * d10;
                             if (entity instanceof EntityHuman) {
-                                this.k.put((EntityHuman) entity, Vec3D.a().create(d0 * d10, d1 * d10, d2 * d10));
+                                this.l.put((EntityHuman) entity, this.world.getVec3DPool().create(d0 * d10, d1 * d10, d2 * d10));
                             }
                         }
                     }
@@ -183,83 +187,91 @@ public class Explosion {
 
     public void a(boolean flag) {
         this.world.makeSound(this.posX, this.posY, this.posZ, "random.explode", 4.0F, (1.0F + (this.world.random.nextFloat() - this.world.random.nextFloat()) * 0.2F) * 0.7F);
-        this.world.a("hugeexplosion", this.posX, this.posY, this.posZ, 0.0D, 0.0D, 0.0D);
-
-        // CraftBukkit start
-        org.bukkit.World bworld = this.world.getWorld();
-        org.bukkit.entity.Entity explode = this.source == null ? null : this.source.getBukkitEntity();
-        Location location = new Location(bworld, this.posX, this.posY, this.posZ);
-
-        List<org.bukkit.block.Block> blockList = new ArrayList<org.bukkit.block.Block>();
-        for (int j = blocks.size() - 1; j >= 0; j--) {
-            ChunkPosition cpos = (ChunkPosition) blocks.get(j);
-            org.bukkit.block.Block block = bworld.getBlockAt(cpos.x, cpos.y, cpos.z);
-            if (block.getType() != org.bukkit.Material.AIR) {
-                blockList.add(block);
-            }
+        if (this.size >= 2.0F && this.b) {
+            this.world.addParticle("hugeexplosion", this.posX, this.posY, this.posZ, 1.0D, 0.0D, 0.0D);
+        } else {
+            this.world.addParticle("largeexplode", this.posX, this.posY, this.posZ, 1.0D, 0.0D, 0.0D);
         }
 
-        EntityExplodeEvent event = new EntityExplodeEvent(explode, location, blockList, 0.3F);
-        this.world.getServer().getPluginManager().callEvent(event);
-
-        blocks.clear();
-
-        for (org.bukkit.block.Block block : event.blockList()) {
-            ChunkPosition coords = new ChunkPosition(block.getX(), block.getY(), block.getZ());
-            blocks.add(coords);
-        }
-
-        if (event.isCancelled()) {
-            this.wasCanceled = true;
-            return;
-        }
-
-        Iterator iterator = this.blocks.iterator();
-        // CraftBukkit end
-
+        Iterator iterator;
         ChunkPosition chunkposition;
         int i;
         int j;
         int k;
         int l;
 
-        while (iterator.hasNext()) {
-            chunkposition = (ChunkPosition) iterator.next();
-            i = chunkposition.x;
-            j = chunkposition.y;
-            k = chunkposition.z;
-            l = this.world.getTypeId(i, j, k);
-            if (flag) {
-                double d0 = (double) ((float) i + this.world.random.nextFloat());
-                double d1 = (double) ((float) j + this.world.random.nextFloat());
-                double d2 = (double) ((float) k + this.world.random.nextFloat());
-                double d3 = d0 - this.posX;
-                double d4 = d1 - this.posY;
-                double d5 = d2 - this.posZ;
-                double d6 = (double) MathHelper.sqrt(d3 * d3 + d4 * d4 + d5 * d5);
+        if (this.b) {
+            // CraftBukkit start
+            org.bukkit.World bworld = this.world.getWorld();
+            org.bukkit.entity.Entity explode = this.source == null ? null : this.source.getBukkitEntity();
+            Location location = new Location(bworld, this.posX, this.posY, this.posZ);
 
-                d3 /= d6;
-                d4 /= d6;
-                d5 /= d6;
-                double d7 = 0.5D / (d6 / (double) this.size + 0.1D);
-
-                d7 *= (double) (this.world.random.nextFloat() * this.world.random.nextFloat() + 0.3F);
-                d3 *= d7;
-                d4 *= d7;
-                d5 *= d7;
-                this.world.a("explode", (d0 + this.posX * 1.0D) / 2.0D, (d1 + this.posY * 1.0D) / 2.0D, (d2 + this.posZ * 1.0D) / 2.0D, d3, d4, d5);
-                this.world.a("smoke", d0, d1, d2, d3, d4, d5);
+            List<org.bukkit.block.Block> blockList = new ArrayList<org.bukkit.block.Block>();
+            for (int i1 = this.blocks.size() - 1; i1 >= 0; i1--) {
+                ChunkPosition cpos = (ChunkPosition) this.blocks.get(i1);
+                org.bukkit.block.Block block = bworld.getBlockAt(cpos.x, cpos.y, cpos.z);
+                if (block.getType() != org.bukkit.Material.AIR) {
+                    blockList.add(block);
+                }
             }
 
-            // CraftBukkit - stop explosions from putting out fire
-            if (l > 0 && l != Block.FIRE.id) {
-                // CraftBukkit
-                Block.byId[l].dropNaturally(this.world, i, j, k, this.world.getData(i, j, k), event.getYield(), 0);
-                if (this.world.setRawTypeIdAndData(i, j, k, 0, 0, this.world.isStatic)) {
-                    this.world.applyPhysics(i, j, k, 0);
+            EntityExplodeEvent event = new EntityExplodeEvent(explode, location, blockList, 0.3F);
+            this.world.getServer().getPluginManager().callEvent(event);
+
+            this.blocks.clear();
+
+            for (org.bukkit.block.Block block : event.blockList()) {
+                ChunkPosition coords = new ChunkPosition(block.getX(), block.getY(), block.getZ());
+                blocks.add(coords);
+            }
+
+            if (event.isCancelled()) {
+                this.wasCanceled = true;
+                return;
+            }
+            // CraftBukkit end
+
+            iterator = this.blocks.iterator();
+
+            while (iterator.hasNext()) {
+                chunkposition = (ChunkPosition) iterator.next();
+                i = chunkposition.x;
+                j = chunkposition.y;
+                k = chunkposition.z;
+                l = this.world.getTypeId(i, j, k);
+                if (flag) {
+                    double d0 = (double) ((float) i + this.world.random.nextFloat());
+                    double d1 = (double) ((float) j + this.world.random.nextFloat());
+                    double d2 = (double) ((float) k + this.world.random.nextFloat());
+                    double d3 = d0 - this.posX;
+                    double d4 = d1 - this.posY;
+                    double d5 = d2 - this.posZ;
+                    double d6 = (double) MathHelper.sqrt(d3 * d3 + d4 * d4 + d5 * d5);
+
+                    d3 /= d6;
+                    d4 /= d6;
+                    d5 /= d6;
+                    double d7 = 0.5D / (d6 / (double) this.size + 0.1D);
+
+                    d7 *= (double) (this.world.random.nextFloat() * this.world.random.nextFloat() + 0.3F);
+                    d3 *= d7;
+                    d4 *= d7;
+                    d5 *= d7;
+                    this.world.addParticle("explode", (d0 + this.posX * 1.0D) / 2.0D, (d1 + this.posY * 1.0D) / 2.0D, (d2 + this.posZ * 1.0D) / 2.0D, d3, d4, d5);
+                    this.world.addParticle("smoke", d0, d1, d2, d3, d4, d5);
                 }
 
-                Block.byId[l].wasExploded(this.world, i, j, k);
+
+                // CraftBukkit - stop explosions from putting out fire
+                if (l > 0 && l != Block.FIRE.id) {
+                    // CraftBukkit
+                    Block.byId[l].dropNaturally(this.world, i, j, k, this.world.getData(i, j, k), event.getYield(), 0);
+                    if (this.world.setRawTypeIdAndData(i, j, k, 0, 0, this.world.isStatic)) {
+                        this.world.applyPhysics(i, j, k, 0);
+                    }
+
+                    Block.byId[l].wasExploded(this.world, i, j, k);
+                }
             }
         }
 
@@ -274,7 +286,7 @@ public class Explosion {
                 l = this.world.getTypeId(i, j, k);
                 int i1 = this.world.getTypeId(i, j - 1, k);
 
-                if (l == 0 && Block.n[i1] && this.i.nextInt(3) == 0) {
+                if (l == 0 && Block.q[i1] && this.j.nextInt(3) == 0) {
                     this.world.setTypeId(i, j, k, Block.FIRE.id);
                 }
             }
@@ -282,6 +294,6 @@ public class Explosion {
     }
 
     public Map b() {
-        return this.k;
+        return this.l;
     }
 }

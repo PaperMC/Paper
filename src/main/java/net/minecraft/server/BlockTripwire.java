@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
@@ -13,7 +14,7 @@ public class BlockTripwire extends Block {
         this.b(true);
     }
 
-    public int p_() {
+    public int r_() {
         return 10;
     }
 
@@ -21,15 +22,15 @@ public class BlockTripwire extends Block {
         return null;
     }
 
-    public boolean d() {
-        return false;
-    }
-
     public boolean c() {
         return false;
     }
 
-    public int b() {
+    public boolean b() {
+        return false;
+    }
+
+    public int d() {
         return 30;
     }
 
@@ -66,22 +67,22 @@ public class BlockTripwire extends Block {
         int l = world.t(i, j - 1, k) ? 0 : 2;
 
         world.setData(i, j, k, l);
-        this.e(world, i, j, k, l);
+        this.d(world, i, j, k, l);
     }
 
     public void remove(World world, int i, int j, int k, int l, int i1) {
-        this.e(world, i, j, k, i1 | 1);
+        this.d(world, i, j, k, i1 | 1);
     }
 
     public void a(World world, int i, int j, int k, int l, EntityHuman entityhuman) {
         if (!world.isStatic) {
-            if (entityhuman.bC() != null && entityhuman.bC().id == Item.SHEARS.id) {
+            if (entityhuman.bP() != null && entityhuman.bP().id == Item.SHEARS.id) {
                 world.setData(i, j, k, l | 8);
             }
         }
     }
 
-    private void e(World world, int i, int j, int k, int l) {
+    private void d(World world, int i, int j, int k, int l) {
         int i1 = 0;
 
         while (i1 < 2) {
@@ -96,7 +97,7 @@ public class BlockTripwire extends Block {
                     if (i2 == Block.TRIPWIRE_SOURCE.id) {
                         int j2 = world.getData(k1, j, l1) & 3;
 
-                        if (j2 == Direction.e[i1]) {
+                        if (j2 == Direction.f[i1]) {
                             Block.TRIPWIRE_SOURCE.a(world, k1, j, l1, i2, world.getData(k1, j, l1), true, j1, l);
                         }
                     } else if (i2 == Block.TRIPWIRE.id) {
@@ -134,7 +135,16 @@ public class BlockTripwire extends Block {
         List list = world.getEntities((Entity) null, AxisAlignedBB.a().a((double) i + this.minX, (double) j + this.minY, (double) k + this.minZ, (double) i + this.maxX, (double) j + this.maxY, (double) k + this.maxZ));
 
         if (!list.isEmpty()) {
-            flag1 = true;
+            Iterator iterator = list.iterator();
+
+            while (iterator.hasNext()) {
+                Entity entity = (Entity) iterator.next();
+
+                if (!entity.au()) {
+                    flag1 = true;
+                    break;
+                }
+            }
         }
 
         // CraftBukkit start
@@ -175,11 +185,11 @@ public class BlockTripwire extends Block {
 
         if (flag1 != flag) {
             world.setData(i, j, k, l);
-            this.e(world, i, j, k, l);
+            this.d(world, i, j, k, l);
         }
 
         if (flag1) {
-            world.a(i, j, k, this.id, this.p_());
+            world.a(i, j, k, this.id, this.r_());
         }
     }
 }

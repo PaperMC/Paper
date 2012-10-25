@@ -372,7 +372,7 @@ public class CraftBlock implements Block {
             for (int i = 0; i < count; ++i) {
                 int item = block.getDropType(data, chunk.getHandle().world.random, 0);
                 if (item > 0) {
-                    drops.add(new ItemStack(item, 1, (short) net.minecraft.server.Block.getDropData(block, data)));
+                    drops.add(new ItemStack(item, 1, (short) block.getDropData(data)));
                 }
             }
         }

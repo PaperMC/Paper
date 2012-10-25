@@ -32,8 +32,8 @@ public abstract class EntityAgeable extends EntityCreature {
         this.ageLocked = nbttagcompound.getBoolean("AgeLocked"); // CraftBukkit
     }
 
-    public void d() {
-        super.d();
+    public void c() {
+        super.c();
         int i = this.getAge();
 
         if (ageLocked) return; // CraftBukkit

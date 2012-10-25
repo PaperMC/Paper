@@ -12,7 +12,7 @@ public class BlockMinecartDetector extends BlockMinecartTrack {
         this.b(true);
     }
 
-    public int p_() {
+    public int r_() {
         return 20;
     }
 
@@ -25,7 +25,7 @@ public class BlockMinecartDetector extends BlockMinecartTrack {
             int l = world.getData(i, j, k);
 
             if ((l & 8) == 0) {
-                this.e(world, i, j, k, l);
+                this.d(world, i, j, k, l);
             }
         }
     }
@@ -35,20 +35,20 @@ public class BlockMinecartDetector extends BlockMinecartTrack {
             int l = world.getData(i, j, k);
 
             if ((l & 8) != 0) {
-                this.e(world, i, j, k, l);
+                this.d(world, i, j, k, l);
             }
         }
     }
 
-    public boolean a(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+    public boolean b(IBlockAccess iblockaccess, int i, int j, int k, int l) {
         return (iblockaccess.getData(i, j, k) & 8) != 0;
     }
 
-    public boolean c(World world, int i, int j, int k, int l) {
-        return (world.getData(i, j, k) & 8) == 0 ? false : l == 1;
+    public boolean c(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+        return (iblockaccess.getData(i, j, k) & 8) == 0 ? false : l == 1;
     }
 
-    private void e(World world, int i, int j, int k, int l) {
+    private void d(World world, int i, int j, int k, int l) {
         boolean flag = (l & 8) != 0;
         boolean flag1 = false;
         float f = 0.125F;
@@ -73,18 +73,18 @@ public class BlockMinecartDetector extends BlockMinecartTrack {
             world.setData(i, j, k, l | 8);
             world.applyPhysics(i, j, k, this.id);
             world.applyPhysics(i, j - 1, k, this.id);
-            world.d(i, j, k, i, j, k);
+            world.e(i, j, k, i, j, k);
         }
 
         if (!flag1 && flag) {
             world.setData(i, j, k, l & 7);
             world.applyPhysics(i, j, k, this.id);
             world.applyPhysics(i, j - 1, k, this.id);
-            world.d(i, j, k, i, j, k);
+            world.e(i, j, k, i, j, k);
         }
 
         if (flag1) {
-            world.a(i, j, k, this.id, this.p_());
+            world.a(i, j, k, this.id, this.r_());
         }
     }
 }

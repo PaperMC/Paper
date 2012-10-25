@@ -20,7 +20,7 @@ public class PathfinderGoalBreed extends PathfinderGoal {
     }
 
     public boolean a() {
-        if (!this.d.s()) {
+        if (!this.d.r()) {
             return false;
         } else {
             this.e = this.f();
@@ -29,20 +29,20 @@ public class PathfinderGoalBreed extends PathfinderGoal {
     }
 
     public boolean b() {
-        return this.e.isAlive() && this.e.s() && this.b < 60;
+        return this.e.isAlive() && this.e.r() && this.b < 60;
     }
 
-    public void c() {
+    public void d() {
         this.e = null;
         this.b = 0;
     }
 
-    public void d() {
-        this.d.getControllerLook().a(this.e, 10.0F, (float) this.d.bf());
+    public void e() {
+        this.d.getControllerLook().a(this.e, 10.0F, (float) this.d.bm());
         this.d.getNavigation().a((EntityLiving) this.e, this.c);
         ++this.b;
         if (this.b == 60) {
-            this.i();
+            this.g();
         }
     }
 
@@ -64,26 +64,28 @@ public class PathfinderGoalBreed extends PathfinderGoal {
         return entityanimal;
     }
 
-    private void i() {
+    private void g() {
         EntityAnimal entityanimal = this.d.createChild(this.e);
 
         if (entityanimal != null) {
             this.d.setAge(6000);
             this.e.setAge(6000);
-            this.d.t();
-            this.e.t();
+            this.d.s();
+            this.e.s();
             entityanimal.setAge(-24000);
             entityanimal.setPositionRotation(this.d.locX, this.d.locY, this.d.locZ, 0.0F, 0.0F);
             this.a.addEntity(entityanimal, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING); // CraftBukkit - added SpawnReason
-            Random random = this.d.au();
+            Random random = this.d.aA();
 
             for (int i = 0; i < 7; ++i) {
                 double d0 = random.nextGaussian() * 0.02D;
                 double d1 = random.nextGaussian() * 0.02D;
                 double d2 = random.nextGaussian() * 0.02D;
 
-                this.a.a("heart", this.d.locX + (double) (random.nextFloat() * this.d.width * 2.0F) - (double) this.d.width, this.d.locY + 0.5D + (double) (random.nextFloat() * this.d.length), this.d.locZ + (double) (random.nextFloat() * this.d.width * 2.0F) - (double) this.d.width, d0, d1, d2);
+                this.a.addParticle("heart", this.d.locX + (double) (random.nextFloat() * this.d.width * 2.0F) - (double) this.d.width, this.d.locY + 0.5D + (double) (random.nextFloat() * this.d.length), this.d.locZ + (double) (random.nextFloat() * this.d.width * 2.0F) - (double) this.d.width, d0, d1, d2);
             }
+
+            this.a.addEntity(new EntityExperienceOrb(this.a, this.d.locX, this.d.locY, this.d.locZ, random.nextInt(4) + 1));
         }
     }
 }

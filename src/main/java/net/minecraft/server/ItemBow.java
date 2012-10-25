@@ -28,13 +28,13 @@ public class ItemBow extends Item {
             EntityArrow entityarrow = new EntityArrow(world, entityhuman, f * 2.0F);
 
             if (f == 1.0F) {
-                entityarrow.d(true);
+                entityarrow.e(true);
             }
 
             int k = EnchantmentManager.getEnchantmentLevel(Enchantment.ARROW_DAMAGE.id, itemstack);
 
             if (k > 0) {
-                entityarrow.b(entityarrow.d() + (double) k * 0.5D + 0.5D);
+                entityarrow.b(entityarrow.c() + (double) k * 0.5D + 0.5D);
             }
 
             int l = EnchantmentManager.getEnchantmentLevel(Enchantment.ARROW_KNOCKBACK.id, itemstack);

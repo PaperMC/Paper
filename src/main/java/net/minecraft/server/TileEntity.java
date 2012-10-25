@@ -28,11 +28,11 @@ public class TileEntity {
         }
     }
 
-    public void a(World world) {
+    public void b(World world) {
         this.world = world;
     }
 
-    public boolean m() {
+    public boolean o() {
         return this.world != null;
     }
 
@@ -79,7 +79,7 @@ public class TileEntity {
         return tileentity;
     }
 
-    public int n() {
+    public int p() {
         if (this.p == -1) {
             this.p = this.world.getData(this.x, this.y, this.z);
         }
@@ -94,19 +94,27 @@ public class TileEntity {
         }
     }
 
-    public Packet e() {
+    public Block q() {
+        if (this.q == null) {
+            this.q = Block.byId[this.world.getTypeId(this.x, this.y, this.z)];
+        }
+
+        return this.q;
+    }
+
+    public Packet l() {
         return null;
     }
 
-    public boolean p() {
+    public boolean r() {
         return this.o;
     }
 
-    public void j() {
+    public void w_() {
         this.o = true;
     }
 
-    public void q() {
+    public void s() {
         this.o = false;
     }
 
@@ -130,6 +138,9 @@ public class TileEntity {
         a(TileEntityBrewingStand.class, "Cauldron");
         a(TileEntityEnchantTable.class, "EnchantTable");
         a(TileEntityEnderPortal.class, "Airportal");
+        a(TileEntityCommand.class, "Control");
+        a(TileEntityBeacon.class, "Beacon");
+        a(TileEntitySkull.class, "Skull");
     }
 
     // CraftBukkit start

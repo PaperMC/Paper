@@ -429,16 +429,20 @@ public class CraftWorld implements World {
             CraftPlayer cp = (CraftPlayer) p;
             if (cp.getHandle().netServerHandler == null) continue;
 
-            cp.getHandle().netServerHandler.sendPacket(new Packet4UpdateTime(cp.getHandle().getPlayerTime()));
+            cp.getHandle().netServerHandler.sendPacket(new Packet4UpdateTime(cp.getHandle().getPlayerTime(), cp.getHandle().world.F()));
         }
     }
 
     public boolean createExplosion(double x, double y, double z, float power) {
-        return createExplosion(x, y, z, power, false);
+        return createExplosion(x, y, z, power, false, true);
     }
 
     public boolean createExplosion(double x, double y, double z, float power, boolean setFire) {
-        return !world.createExplosion(null, x, y, z, power, setFire).wasCanceled;
+        return createExplosion(x, y, z, power, setFire, true);
+    }
+
+    public boolean createExplosion(double x, double y, double z, float power, boolean setFire, boolean breakBlocks) {
+        return !world.createExplosion(null, x, y, z, power, setFire, breakBlocks).wasCanceled;
     }
 
     public boolean createExplosion(Location loc, float power) {
@@ -755,7 +759,7 @@ public class CraftWorld implements World {
         Validate.notNull(effect, "Effect cannot be null");
         Validate.notNull(location.getWorld(), "World cannot be null");
         int packetData = effect.getId();
-        Packet61WorldEvent packet = new Packet61WorldEvent(packetData, location.getBlockX(), location.getBlockY(), location.getBlockZ(), data);
+        Packet61WorldEvent packet = new Packet61WorldEvent(packetData, location.getBlockX(), location.getBlockY(), location.getBlockZ(), data, false);
         int distance;
         radius *= radius;
 
@@ -834,7 +838,7 @@ public class CraftWorld implements World {
                 if (SmallFireball.class.isAssignableFrom(clazz)) {
                     entity = new EntitySmallFireball(world);
                 } else {
-                    entity = new EntityFireball(world);
+                    entity = new EntityLargeFireball(world);
                 }
                 ((EntityFireball) entity).setPositionRotation(x, y, z, yaw, pitch);
                 Vector direction = location.getDirection().multiply(10);

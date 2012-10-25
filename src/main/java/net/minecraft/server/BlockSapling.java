@@ -62,7 +62,7 @@ public class BlockSapling extends BlockFlower {
         } else if (l == 3) {
             for (i1 = 0; i1 >= -1; --i1) {
                 for (j1 = 0; j1 >= -1; --j1) {
-                    if (this.e(world, i + i1, j, k + j1, 3) && this.e(world, i + i1 + 1, j, k + j1, 3) && this.e(world, i + i1, j, k + j1 + 1, 3) && this.e(world, i + i1 + 1, j, k + j1 + 1, 3)) {
+                    if (this.d(world, i + i1, j, k + j1, 3) && this.d(world, i + i1 + 1, j, k + j1, 3) && this.d(world, i + i1, j, k + j1 + 1, 3) && this.d(world, i + i1 + 1, j, k + j1 + 1, 3)) {
                         treeType = TreeType.JUNGLE;
                         gen = new WorldGenMegaTree(false, 10 + random.nextInt(20), 3, 3);
                         flag = true;
@@ -128,11 +128,11 @@ public class BlockSapling extends BlockFlower {
         // CraftBukkit end
     }
 
-    public boolean e(World world, int i, int j, int k, int l) {
+    public boolean d(World world, int i, int j, int k, int l) {
         return world.getTypeId(i, j, k) == this.id && (world.getData(i, j, k) & 3) == l;
     }
 
-    protected int getDropData(int i) {
+    public int getDropData(int i) {
         return i & 3;
     }
 

@@ -15,7 +15,7 @@ public class ItemHoe extends Item {
     }
 
     public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l, float f, float f1, float f2) {
-        if (!entityhuman.e(i, j, k)) {
+        if (!entityhuman.a(i, j, k, l, itemstack)) {
             return false;
         } else {
             int i1 = world.getTypeId(i, j, k);
@@ -50,7 +50,7 @@ public class ItemHoe extends Item {
         }
     }
 
-    public String f() {
+    public String g() {
         return this.a.toString();
     }
 }

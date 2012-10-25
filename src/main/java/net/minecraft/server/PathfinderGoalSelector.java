@@ -41,14 +41,14 @@ public class PathfinderGoalSelector {
                         continue;
                     }
 
-                    pathfindergoalselectoritem.a.c();
+                    pathfindergoalselectoritem.a.d();
                     this.b.remove(pathfindergoalselectoritem);
                 }
 
                 if (this.b(pathfindergoalselectoritem) && pathfindergoalselectoritem.a.a()) {
                     // CraftBukkit start - call method now instead of queueing
                     // arraylist.add(pathfindergoalselectoritem);
-                    pathfindergoalselectoritem.a.e();
+                    pathfindergoalselectoritem.a.c();
                     // CraftBukkit end
                     this.b.add(pathfindergoalselectoritem);
                 }
@@ -59,7 +59,7 @@ public class PathfinderGoalSelector {
             while (iterator.hasNext()) {
                 pathfindergoalselectoritem = (PathfinderGoalSelectorItem) iterator.next();
                 if (!pathfindergoalselectoritem.a.b()) {
-                    pathfindergoalselectoritem.a.c();
+                    pathfindergoalselectoritem.a.d();
                     iterator.remove();
                 }
             }
@@ -72,7 +72,7 @@ public class PathfinderGoalSelector {
         while (iterator.hasNext()) {
             pathfindergoalselectoritem = (PathfinderGoalSelectorItem) iterator.next();
             this.c.a(pathfindergoalselectoritem.a.getClass().getSimpleName());
-            pathfindergoalselectoritem.a.e();
+            pathfindergoalselectoritem.a.c();
             this.c.b();
         }*/
         // CraftBukkit end
@@ -83,9 +83,7 @@ public class PathfinderGoalSelector {
 
         while (iterator.hasNext()) {
             pathfindergoalselectoritem = (PathfinderGoalSelectorItem) iterator.next();
-            // this.c.a(pathfindergoalselectoritem.a.getClass().getSimpleName()); // CraftBukkit - getSimpleName is expensive
-            pathfindergoalselectoritem.a.d();
-            // this.c.b(); // CraftBukkit - paired with above comment
+            pathfindergoalselectoritem.a.e();
         }
 
         this.c.b();
@@ -115,7 +113,7 @@ public class PathfinderGoalSelector {
                         return false;
                     }
                 // CraftBukkit - switch order
-                } else if (!pathfindergoalselectoritem1.a.g() && this.b.contains(pathfindergoalselectoritem1)) {
+                } else if (!pathfindergoalselectoritem1.a.i() && this.b.contains(pathfindergoalselectoritem1)) {
                     this.c.b();
                     ((UnsafeList.Itr) iterator).valid = false; // CraftBukkit - mark iterator for reuse
                     return false;
@@ -128,6 +126,6 @@ public class PathfinderGoalSelector {
     }
 
     private boolean a(PathfinderGoalSelectorItem pathfindergoalselectoritem, PathfinderGoalSelectorItem pathfindergoalselectoritem1) {
-        return (pathfindergoalselectoritem.a.h() & pathfindergoalselectoritem1.a.h()) == 0;
+        return (pathfindergoalselectoritem.a.j() & pathfindergoalselectoritem1.a.j()) == 0;
     }
 }

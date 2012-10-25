@@ -70,8 +70,8 @@ public class EntityLightning extends EntityWeather {
         }
     }
 
-    public void h_() {
-        super.h_();
+    public void j_() {
+        super.j_();
         if (this.lifeTicks == 2) {
             this.world.makeSound(this.locX, this.locY, this.locZ, "ambient.weather.thunder", 10000.0F, 0.8F + this.random.nextFloat() * 0.2F);
             this.world.makeSound(this.locX, this.locY, this.locZ, "random.explode", 2.0F, 0.5F + this.random.nextFloat() * 0.2F);
@@ -118,7 +118,7 @@ public class EntityLightning extends EntityWeather {
                 entity.a(this);
             }
 
-            this.world.s = 2;
+            this.world.r = 2;
         }
     }
 

@@ -146,6 +146,9 @@ public class ChunkProviderServer implements IChunkProvider {
 
                 if (chunk != null) {
                     chunk.n = this.world.getTime();
+                    if (this.chunkProvider != null) {
+                        this.chunkProvider.recreateStructures(i, j);
+                    }
                 }
 
                 return chunk;
@@ -249,7 +252,7 @@ public class ChunkProviderServer implements IChunkProvider {
         if (!this.world.savingDisabled) {
             // CraftBukkit start
             Server server = this.world.getServer();
-            for (int i = 0; i < 50 && !this.unloadQueue.isEmpty(); i++) {
+            for (int i = 0; i < 100 && !this.unloadQueue.isEmpty(); i++) {
                 long chunkcoordinates = this.unloadQueue.popFirst();
                 Chunk chunk = this.chunks.get(chunkcoordinates);
                 if (chunk == null) continue;
@@ -293,4 +296,6 @@ public class ChunkProviderServer implements IChunkProvider {
     public int getLoadedChunks() {
         return this.chunks.values().size(); // CraftBukkit
     }
+
+    public void recreateStructures(int i, int j) {}
 }

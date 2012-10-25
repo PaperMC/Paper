@@ -56,7 +56,7 @@ public class ContainerWorkbench extends Container {
     public void a(IInventory iinventory) {
         // CraftBukkit start
         CraftingManager.getInstance().lastCraftView = getBukkitView();
-        ItemStack craftResult = CraftingManager.getInstance().craft(this.craftInventory);
+        ItemStack craftResult = CraftingManager.getInstance().craft(this.craftInventory, this.g);
         this.resultInventory.setItem(0, craftResult);
         if (super.listeners.size() < 1) {
             return;
@@ -85,7 +85,7 @@ public class ContainerWorkbench extends Container {
         return this.g.getTypeId(this.h, this.i, this.j) != Block.WORKBENCH.id ? false : entityhuman.e((double) this.h + 0.5D, (double) this.i + 0.5D, (double) this.j + 0.5D) <= 64.0D;
     }
 
-    public ItemStack b(int i) {
+    public ItemStack b(EntityHuman entityhuman, int i) {
         ItemStack itemstack = null;
         Slot slot = (Slot) this.b.get(i);
 
@@ -121,7 +121,7 @@ public class ContainerWorkbench extends Container {
                 return null;
             }
 
-            slot.b(itemstack1);
+            slot.a(entityhuman, itemstack1);
         }
 
         return itemstack;

@@ -54,7 +54,7 @@ public class TileEntityBrewingStand extends TileEntity implements IInventory {
         if (this.brewTime > 0) {
             --this.brewTime;
             if (this.brewTime == 0) {
-                this.r();
+                this.t();
                 this.update();
             } else if (!this.k()) {
                 this.brewTime = 0;
@@ -78,7 +78,7 @@ public class TileEntityBrewingStand extends TileEntity implements IInventory {
         super.g();
     }
 
-    public int t_() {
+    public int x_() {
         return this.brewTime;
     }
 
@@ -86,7 +86,7 @@ public class TileEntityBrewingStand extends TileEntity implements IInventory {
         if (this.items[3] != null && this.items[3].count > 0) {
             ItemStack itemstack = this.items[3];
 
-            if (!Item.byId[itemstack.id].u()) {
+            if (!Item.byId[itemstack.id].v()) {
                 return false;
             } else {
                 boolean flag = false;
@@ -118,7 +118,7 @@ public class TileEntityBrewingStand extends TileEntity implements IInventory {
         }
     }
 
-    private void r() {
+    private void t() {
         if (this.k()) {
             ItemStack itemstack = this.items[3];
 
@@ -149,8 +149,8 @@ public class TileEntityBrewingStand extends TileEntity implements IInventory {
                 }
             }
 
-            if (Item.byId[itemstack.id].r()) {
-                this.items[3] = new ItemStack(Item.byId[itemstack.id].q());
+            if (Item.byId[itemstack.id].s()) {
+                this.items[3] = new ItemStack(Item.byId[itemstack.id].r());
             } else {
                 --this.items[3].count;
                 if (this.items[3].count <= 0) {
@@ -161,7 +161,7 @@ public class TileEntityBrewingStand extends TileEntity implements IInventory {
     }
 
     private int b(int i, ItemStack itemstack) {
-        return itemstack == null ? i : (Item.byId[itemstack.id].u() ? PotionBrewer.a(i, Item.byId[itemstack.id].t()) : i);
+        return itemstack == null ? i : (Item.byId[itemstack.id].v() ? PotionBrewer.a(i, Item.byId[itemstack.id].u()) : i);
     }
 
     public void a(NBTTagCompound nbttagcompound) {

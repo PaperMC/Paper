@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.bukkit.event.entity.ProjectileHitEvent; // CraftBukkit
 
-public abstract class EntityProjectile extends Entity {
+public abstract class EntityProjectile extends Entity implements IProjectile {
 
     private int blockX = -1;
     private int blockY = -1;
@@ -38,8 +38,8 @@ public abstract class EntityProjectile extends Entity {
 
         this.motX = (double) (-MathHelper.sin(this.yaw / 180.0F * 3.1415927F) * MathHelper.cos(this.pitch / 180.0F * 3.1415927F) * f);
         this.motZ = (double) (MathHelper.cos(this.yaw / 180.0F * 3.1415927F) * MathHelper.cos(this.pitch / 180.0F * 3.1415927F) * f);
-        this.motY = (double) (-MathHelper.sin((this.pitch + this.g()) / 180.0F * 3.1415927F) * f);
-        this.c(this.motX, this.motY, this.motZ, this.d(), 1.0F);
+        this.motY = (double) (-MathHelper.sin((this.pitch + this.d()) / 180.0F * 3.1415927F) * f);
+        this.shoot(this.motX, this.motY, this.motZ, this.c(), 1.0F);
     }
 
     public EntityProjectile(World world, double d0, double d1, double d2) {
@@ -50,15 +50,15 @@ public abstract class EntityProjectile extends Entity {
         this.height = 0.0F;
     }
 
-    protected float d() {
+    protected float c() {
         return 1.5F;
     }
 
-    protected float g() {
+    protected float d() {
         return 0.0F;
     }
 
-    public void c(double d0, double d1, double d2, float f, float f1) {
+    public void shoot(double d0, double d1, double d2, float f, float f1) {
         float f2 = MathHelper.sqrt(d0 * d0 + d1 * d1 + d2 * d2);
 
         d0 /= (double) f2;
@@ -80,11 +80,11 @@ public abstract class EntityProjectile extends Entity {
         this.h = 0;
     }
 
-    public void h_() {
-        this.S = this.locX;
-        this.T = this.locY;
-        this.U = this.locZ;
-        super.h_();
+    public void j_() {
+        this.T = this.locX;
+        this.U = this.locY;
+        this.V = this.locZ;
+        super.j_();
         if (this.shake > 0) {
             --this.shake;
         }
@@ -111,14 +111,14 @@ public abstract class EntityProjectile extends Entity {
             ++this.i;
         }
 
-        Vec3D vec3d = Vec3D.a().create(this.locX, this.locY, this.locZ);
-        Vec3D vec3d1 = Vec3D.a().create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
+        Vec3D vec3d = this.world.getVec3DPool().create(this.locX, this.locY, this.locZ);
+        Vec3D vec3d1 = this.world.getVec3DPool().create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
         MovingObjectPosition movingobjectposition = this.world.a(vec3d, vec3d1);
 
-        vec3d = Vec3D.a().create(this.locX, this.locY, this.locZ);
-        vec3d1 = Vec3D.a().create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
+        vec3d = this.world.getVec3DPool().create(this.locX, this.locY, this.locZ);
+        vec3d1 = this.world.getVec3DPool().create(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
         if (movingobjectposition != null) {
-            vec3d1 = Vec3D.a().create(movingobjectposition.pos.a, movingobjectposition.pos.b, movingobjectposition.pos.c);
+            vec3d1 = this.world.getVec3DPool().create(movingobjectposition.pos.c, movingobjectposition.pos.d, movingobjectposition.pos.e);
         }
 
         if (!this.world.isStatic) {
@@ -152,13 +152,17 @@ public abstract class EntityProjectile extends Entity {
         }
 
         if (movingobjectposition != null) {
-            this.a(movingobjectposition);
-            // CraftBukkit start
-            if (this.dead) {
-                ProjectileHitEvent hitEvent = new ProjectileHitEvent((org.bukkit.entity.Projectile) this.getBukkitEntity());
-                org.bukkit.Bukkit.getPluginManager().callEvent(hitEvent);
+            if (movingobjectposition.type == EnumMovingObjectType.TILE && this.world.getTypeId(movingobjectposition.b, movingobjectposition.c, movingobjectposition.d) == Block.PORTAL.id) {
+                this.aa();
+            } else {
+                this.a(movingobjectposition);
+                // CraftBukkit start
+                if (this.dead) {
+                    ProjectileHitEvent hitEvent = new ProjectileHitEvent((org.bukkit.entity.Projectile) this.getBukkitEntity());
+                    org.bukkit.Bukkit.getPluginManager().callEvent(hitEvent);
+                }
+                // CraftBukkit end
             }
-            // CraftBukkit end
         }
 
         this.locX += this.motX;
@@ -187,13 +191,13 @@ public abstract class EntityProjectile extends Entity {
         this.pitch = this.lastPitch + (this.pitch - this.lastPitch) * 0.2F;
         this.yaw = this.lastYaw + (this.yaw - this.lastYaw) * 0.2F;
         float f2 = 0.99F;
-        float f3 = this.h();
+        float f3 = this.g();
 
         if (this.H()) {
             for (int j = 0; j < 4; ++j) {
                 float f4 = 0.25F;
 
-                this.world.a("bubble", this.locX - this.motX * (double) f4, this.locY - this.motY * (double) f4, this.locZ - this.motZ * (double) f4, this.motX, this.motY, this.motZ);
+                this.world.addParticle("bubble", this.locX - this.motX * (double) f4, this.locY - this.motY * (double) f4, this.locZ - this.motZ * (double) f4, this.motX, this.motY, this.motZ);
             }
 
             f2 = 0.8F;
@@ -206,7 +210,7 @@ public abstract class EntityProjectile extends Entity {
         this.setPosition(this.locX, this.locY, this.locZ);
     }
 
-    protected float h() {
+    protected float g() {
         return 0.03F;
     }
 

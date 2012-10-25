@@ -24,7 +24,11 @@ public class BlockPortal extends BlockHalfTransparant {
             }
 
             if (l > 0 && !world.s(i, l + 1, k)) {
-                ItemMonsterEgg.a(world, 57, (double) i + 0.5D, (double) l + 1.1D, (double) k + 0.5D);
+                Entity entity = ItemMonsterEgg.a(world, 57, (double) i + 0.5D, (double) l + 1.1D, (double) k + 0.5D);
+
+                if (entity != null) {
+                    entity.an = entity.ab();
+                }
             }
         }
     }
@@ -48,11 +52,11 @@ public class BlockPortal extends BlockHalfTransparant {
         }
     }
 
-    public boolean d() {
+    public boolean c() {
         return false;
     }
 
-    public boolean c() {
+    public boolean b() {
         return false;
     }
 

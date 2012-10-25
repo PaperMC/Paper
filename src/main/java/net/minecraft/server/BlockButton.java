@@ -1,30 +1,34 @@
 package net.minecraft.server;
 
+import java.util.List;
 import java.util.Random;
 
 import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
 
 public class BlockButton extends Block {
 
-    protected BlockButton(int i, int j) {
+    private final boolean a;
+
+    protected BlockButton(int i, int j, boolean flag) {
         super(i, j, Material.ORIENTABLE);
         this.b(true);
         this.a(CreativeModeTab.d);
+        this.a = flag;
     }
 
     public AxisAlignedBB e(World world, int i, int j, int k) {
         return null;
     }
 
-    public int p_() {
-        return 20;
-    }
-
-    public boolean d() {
-        return false;
+    public int r_() {
+        return this.a ? 30 : 20;
     }
 
     public boolean c() {
+        return false;
+    }
+
+    public boolean b() {
         return false;
     }
 
@@ -100,8 +104,13 @@ public class BlockButton extends Block {
 
     public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
         int l = iblockaccess.getData(i, j, k);
-        int i1 = l & 7;
-        boolean flag = (l & 8) > 0;
+
+        this.e(l);
+    }
+
+    private void e(int i) {
+        int j = i & 7;
+        boolean flag = (i & 8) > 0;
         float f = 0.375F;
         float f1 = 0.625F;
         float f2 = 0.1875F;
@@ -111,20 +120,18 @@ public class BlockButton extends Block {
             f3 = 0.0625F;
         }
 
-        if (i1 == 1) {
+        if (j == 1) {
             this.a(0.0F, f, 0.5F - f2, f3, f1, 0.5F + f2);
-        } else if (i1 == 2) {
+        } else if (j == 2) {
             this.a(1.0F - f3, f, 0.5F - f2, 1.0F, f1, 0.5F + f2);
-        } else if (i1 == 3) {
+        } else if (j == 3) {
             this.a(0.5F - f2, f, 0.0F, 0.5F + f2, f1, f3);
-        } else if (i1 == 4) {
+        } else if (j == 4) {
             this.a(0.5F - f2, f, 1.0F - f3, 0.5F + f2, f1, 1.0F);
         }
     }
 
-    public void attack(World world, int i, int j, int k, EntityHuman entityhuman) {
-        this.interact(world, i, j, k, entityhuman, 0, 0.0F, 0.0F, 0.0F);
-    }
+    public void attack(World world, int i, int j, int k, EntityHuman entityhuman) {}
 
     public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman, int l, float f, float f1, float f2) {
         int i1 = world.getData(i, j, k);
@@ -148,53 +155,30 @@ public class BlockButton extends Block {
             // CraftBukkit end
 
             world.setData(i, j, k, j1 + k1);
-            world.d(i, j, k, i, j, k);
+            world.e(i, j, k, i, j, k);
             world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.click", 0.3F, 0.6F);
-            world.applyPhysics(i, j, k, this.id);
-            if (j1 == 1) {
-                world.applyPhysics(i - 1, j, k, this.id);
-            } else if (j1 == 2) {
-                world.applyPhysics(i + 1, j, k, this.id);
-            } else if (j1 == 3) {
-                world.applyPhysics(i, j, k - 1, this.id);
-            } else if (j1 == 4) {
-                world.applyPhysics(i, j, k + 1, this.id);
-            } else {
-                world.applyPhysics(i, j - 1, k, this.id);
-            }
-
-            world.a(i, j, k, this.id, this.p_());
+            this.d(world, i, j, k, j1);
+            world.a(i, j, k, this.id, this.r_());
             return true;
         }
     }
 
     public void remove(World world, int i, int j, int k, int l, int i1) {
         if ((i1 & 8) > 0) {
-            world.applyPhysics(i, j, k, this.id);
             int j1 = i1 & 7;
 
-            if (j1 == 1) {
-                world.applyPhysics(i - 1, j, k, this.id);
-            } else if (j1 == 2) {
-                world.applyPhysics(i + 1, j, k, this.id);
-            } else if (j1 == 3) {
-                world.applyPhysics(i, j, k - 1, this.id);
-            } else if (j1 == 4) {
-                world.applyPhysics(i, j, k + 1, this.id);
-            } else {
-                world.applyPhysics(i, j - 1, k, this.id);
-            }
+            this.d(world, i, j, k, j1);
         }
 
         super.remove(world, i, j, k, l, i1);
     }
 
-    public boolean a(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+    public boolean b(IBlockAccess iblockaccess, int i, int j, int k, int l) {
         return (iblockaccess.getData(i, j, k) & 8) > 0;
     }
 
-    public boolean c(World world, int i, int j, int k, int l) {
-        int i1 = world.getData(i, j, k);
+    public boolean c(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+        int i1 = iblockaccess.getData(i, j, k);
 
         if ((i1 & 8) == 0) {
             return false;
@@ -225,24 +209,16 @@ public class BlockButton extends Block {
                 }
                 // CraftBukkit end
 
-                world.setData(i, j, k, l & 7);
-                world.applyPhysics(i, j, k, this.id);
-                int i1 = l & 7;
-
-                if (i1 == 1) {
-                    world.applyPhysics(i - 1, j, k, this.id);
-                } else if (i1 == 2) {
-                    world.applyPhysics(i + 1, j, k, this.id);
-                } else if (i1 == 3) {
-                    world.applyPhysics(i, j, k - 1, this.id);
-                } else if (i1 == 4) {
-                    world.applyPhysics(i, j, k + 1, this.id);
+                if (this.a) {
+                    this.o(world, i, j, k);
                 } else {
-                    world.applyPhysics(i, j - 1, k, this.id);
-                }
+                    world.setData(i, j, k, l & 7);
+                    int i1 = l & 7;
 
-                world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.click", 0.3F, 0.5F);
-                world.d(i, j, k, i, j, k);
+                    this.d(world, i, j, k, i1);
+                    world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.click", 0.3F, 0.5F);
+                    world.e(i, j, k, i, j, k);
+                }
             }
         }
     }
@@ -253,5 +229,58 @@ public class BlockButton extends Block {
         float f2 = 0.125F;
 
         this.a(0.5F - f, 0.5F - f1, 0.5F - f2, 0.5F + f, 0.5F + f1, 0.5F + f2);
+    }
+
+    public void a(World world, int i, int j, int k, Entity entity) {
+        if (!world.isStatic) {
+            if (this.a) {
+                if ((world.getData(i, j, k) & 8) == 0) {
+                    this.o(world, i, j, k);
+                }
+            }
+        }
+    }
+
+    private void o(World world, int i, int j, int k) {
+        int l = world.getData(i, j, k);
+        int i1 = l & 7;
+        boolean flag = (l & 8) != 0;
+
+        this.e(l);
+        List list = world.a(EntityArrow.class, AxisAlignedBB.a().a((double) i + this.minX, (double) j + this.minY, (double) k + this.minZ, (double) i + this.maxX, (double) j + this.maxY, (double) k + this.maxZ));
+        boolean flag1 = !list.isEmpty();
+
+        if (flag1 && !flag) {
+            world.setData(i, j, k, i1 | 8);
+            this.d(world, i, j, k, i1);
+            world.e(i, j, k, i, j, k);
+            world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.click", 0.3F, 0.6F);
+        }
+
+        if (!flag1 && flag) {
+            world.setData(i, j, k, i1);
+            this.d(world, i, j, k, i1);
+            world.e(i, j, k, i, j, k);
+            world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.click", 0.3F, 0.5F);
+        }
+
+        if (flag1) {
+            world.a(i, j, k, this.id, this.r_());
+        }
+    }
+
+    private void d(World world, int i, int j, int k, int l) {
+        world.applyPhysics(i, j, k, this.id);
+        if (l == 1) {
+            world.applyPhysics(i - 1, j, k, this.id);
+        } else if (l == 2) {
+            world.applyPhysics(i + 1, j, k, this.id);
+        } else if (l == 3) {
+            world.applyPhysics(i, j, k - 1, this.id);
+        } else if (l == 4) {
+            world.applyPhysics(i, j, k + 1, this.id);
+        } else {
+            world.applyPhysics(i, j - 1, k, this.id);
+        }
     }
 }

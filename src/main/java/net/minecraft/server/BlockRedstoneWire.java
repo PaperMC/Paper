@@ -26,15 +26,15 @@ public class BlockRedstoneWire extends Block {
         return null;
     }
 
-    public boolean d() {
-        return false;
-    }
-
     public boolean c() {
         return false;
     }
 
-    public int b() {
+    public boolean b() {
+        return false;
+    }
+
+    public int d() {
         return 5;
     }
 
@@ -122,7 +122,7 @@ public class BlockRedstoneWire extends Block {
         if (k1 != l1) {
             world.suppressPhysics = true;
             world.setData(i, j, k, l1);
-            world.d(i, j, k, i, j, k);
+            world.e(i, j, k, i, j, k);
             world.suppressPhysics = false;
 
             for (i2 = 0; i2 < 4; ++i2) {
@@ -305,11 +305,11 @@ public class BlockRedstoneWire extends Block {
         return Item.REDSTONE.id;
     }
 
-    public boolean c(World world, int i, int j, int k, int l) {
-        return !this.a ? false : this.a(world, i, j, k, l);
+    public boolean c(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+        return !this.a ? false : this.b(iblockaccess, i, j, k, l);
     }
 
-    public boolean a(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+    public boolean b(IBlockAccess iblockaccess, int i, int j, int k, int l) {
         if (!this.a) {
             return false;
         } else if (iblockaccess.getData(i, j, k) == 0) {
@@ -317,25 +317,25 @@ public class BlockRedstoneWire extends Block {
         } else if (l == 1) {
             return true;
         } else {
-            boolean flag = f(iblockaccess, i - 1, j, k, 1) || !iblockaccess.s(i - 1, j, k) && f(iblockaccess, i - 1, j - 1, k, -1);
-            boolean flag1 = f(iblockaccess, i + 1, j, k, 3) || !iblockaccess.s(i + 1, j, k) && f(iblockaccess, i + 1, j - 1, k, -1);
-            boolean flag2 = f(iblockaccess, i, j, k - 1, 2) || !iblockaccess.s(i, j, k - 1) && f(iblockaccess, i, j - 1, k - 1, -1);
-            boolean flag3 = f(iblockaccess, i, j, k + 1, 0) || !iblockaccess.s(i, j, k + 1) && f(iblockaccess, i, j - 1, k + 1, -1);
+            boolean flag = g(iblockaccess, i - 1, j, k, 1) || !iblockaccess.s(i - 1, j, k) && g(iblockaccess, i - 1, j - 1, k, -1);
+            boolean flag1 = g(iblockaccess, i + 1, j, k, 3) || !iblockaccess.s(i + 1, j, k) && g(iblockaccess, i + 1, j - 1, k, -1);
+            boolean flag2 = g(iblockaccess, i, j, k - 1, 2) || !iblockaccess.s(i, j, k - 1) && g(iblockaccess, i, j - 1, k - 1, -1);
+            boolean flag3 = g(iblockaccess, i, j, k + 1, 0) || !iblockaccess.s(i, j, k + 1) && g(iblockaccess, i, j - 1, k + 1, -1);
 
             if (!iblockaccess.s(i, j + 1, k)) {
-                if (iblockaccess.s(i - 1, j, k) && f(iblockaccess, i - 1, j + 1, k, -1)) {
+                if (iblockaccess.s(i - 1, j, k) && g(iblockaccess, i - 1, j + 1, k, -1)) {
                     flag = true;
                 }
 
-                if (iblockaccess.s(i + 1, j, k) && f(iblockaccess, i + 1, j + 1, k, -1)) {
+                if (iblockaccess.s(i + 1, j, k) && g(iblockaccess, i + 1, j + 1, k, -1)) {
                     flag1 = true;
                 }
 
-                if (iblockaccess.s(i, j, k - 1) && f(iblockaccess, i, j + 1, k - 1, -1)) {
+                if (iblockaccess.s(i, j, k - 1) && g(iblockaccess, i, j + 1, k - 1, -1)) {
                     flag2 = true;
                 }
 
-                if (iblockaccess.s(i, j, k + 1) && f(iblockaccess, i, j + 1, k + 1, -1)) {
+                if (iblockaccess.s(i, j, k + 1) && g(iblockaccess, i, j + 1, k + 1, -1)) {
                     flag3 = true;
                 }
             }
@@ -348,7 +348,7 @@ public class BlockRedstoneWire extends Block {
         return this.a;
     }
 
-    public static boolean e(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+    public static boolean f(IBlockAccess iblockaccess, int i, int j, int k, int l) {
         int i1 = iblockaccess.getTypeId(i, j, k);
 
         if (i1 == Block.REDSTONE_WIRE.id) {
@@ -360,12 +360,12 @@ public class BlockRedstoneWire extends Block {
         } else {
             int j1 = iblockaccess.getData(i, j, k);
 
-            return l == (j1 & 3) || l == Direction.e[j1 & 3];
+            return l == (j1 & 3) || l == Direction.f[j1 & 3];
         }
     }
 
-    public static boolean f(IBlockAccess iblockaccess, int i, int j, int k, int l) {
-        if (e(iblockaccess, i, j, k, l)) {
+    public static boolean g(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+        if (f(iblockaccess, i, j, k, l)) {
             return true;
         } else {
             int i1 = iblockaccess.getTypeId(i, j, k);

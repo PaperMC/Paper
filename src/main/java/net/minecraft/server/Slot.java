@@ -4,15 +4,15 @@ public class Slot {
 
     public final int index; // CraftBukkit - private -> public
     public final IInventory inventory;
-    public int d;
-    public int e;
-    public int f;
+    public int g;
+    public int h;
+    public int i;
 
     public Slot(IInventory iinventory, int i, int j, int k) {
         this.inventory = iinventory;
         this.index = i;
-        this.e = j;
-        this.f = k;
+        this.h = j;
+        this.i = k;
     }
 
     public void a(ItemStack itemstack, ItemStack itemstack1) {
@@ -29,9 +29,9 @@ public class Slot {
 
     protected void a(ItemStack itemstack, int i) {}
 
-    protected void c(ItemStack itemstack) {}
+    protected void b(ItemStack itemstack) {}
 
-    public void b(ItemStack itemstack) {
+    public void a(EntityHuman entityhuman, ItemStack itemstack) {
         this.e();
     }
 
@@ -66,5 +66,9 @@ public class Slot {
 
     public boolean a(IInventory iinventory, int i) {
         return iinventory == this.inventory && i == this.index;
+    }
+
+    public boolean a(EntityHuman entityhuman) {
+        return true;
     }
 }

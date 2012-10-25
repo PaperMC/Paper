@@ -11,11 +11,11 @@ public class BlockDragonEgg extends Block {
     }
 
     public void onPlace(World world, int i, int j, int k) {
-        world.a(i, j, k, this.id, this.p_());
+        world.a(i, j, k, this.id, this.r_());
     }
 
     public void doPhysics(World world, int i, int j, int k, int l) {
-        world.a(i, j, k, this.id, this.p_());
+        world.a(i, j, k, this.id, this.r_());
     }
 
     public void b(World world, int i, int j, int k, Random random) {
@@ -26,7 +26,7 @@ public class BlockDragonEgg extends Block {
         if (BlockSand.canFall(world, i, j - 1, k) && j >= 0) {
             byte b0 = 32;
 
-            if (!BlockSand.instaFall && world.c(i - b0, j - b0, k - b0, i + b0, j + b0, k + b0)) {
+            if (!BlockSand.instaFall && world.d(i - b0, j - b0, k - b0, i + b0, j + b0, k + b0)) {
                 // CraftBukkit - added data
                 EntityFallingBlock entityfallingblock = new EntityFallingBlock(world, (double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), this.id, world.getData(i, j, k));
 
@@ -91,7 +91,7 @@ public class BlockDragonEgg extends Block {
                             double d2 = (double) j1 + (double) (j - j1) * d0 + world.random.nextDouble() * 1.0D - 0.5D;
                             double d3 = (double) k1 + (double) (k - k1) * d0 + (world.random.nextDouble() - 0.5D) * 1.0D + 0.5D;
 
-                            world.a("portal", d1, d2, d3, (double) f, (double) f1, (double) f2);
+                            world.addParticle("portal", d1, d2, d3, (double) f, (double) f1, (double) f2);
                         }
 
                         return;
@@ -101,19 +101,19 @@ public class BlockDragonEgg extends Block {
         }
     }
 
-    public int p_() {
+    public int r_() {
         return 3;
-    }
-
-    public boolean d() {
-        return false;
     }
 
     public boolean c() {
         return false;
     }
 
-    public int b() {
+    public boolean b() {
+        return false;
+    }
+
+    public int d() {
         return 27;
     }
 }

@@ -10,11 +10,11 @@ public class PathfinderGoalBreakDoor extends PathfinderGoalDoorInteract {
     }
 
     public boolean a() {
-        return !super.a() ? false : !this.e.a_(this.a.world, this.b, this.c, this.d);
+        return !super.a() ? false : (!this.a.world.getGameRules().getBoolean("mobGriefing") ? false : !this.e.a_(this.a.world, this.b, this.c, this.d));
     }
 
-    public void e() {
-        super.e();
+    public void c() {
+        super.c();
         this.i = 0;
     }
 
@@ -24,14 +24,14 @@ public class PathfinderGoalBreakDoor extends PathfinderGoalDoorInteract {
         return this.i <= 240 && !this.e.a_(this.a.world, this.b, this.c, this.d) && d0 < 4.0D;
     }
 
-    public void c() {
-        super.c();
-        this.a.world.f(this.a.id, this.b, this.c, this.d, -1);
-    }
-
     public void d() {
         super.d();
-        if (this.a.au().nextInt(20) == 0) {
+        this.a.world.g(this.a.id, this.b, this.c, this.d, -1);
+    }
+
+    public void e() {
+        super.e();
+        if (this.a.aA().nextInt(20) == 0) {
             this.a.world.triggerEffect(1010, this.b, this.c, this.d, 0);
         }
 
@@ -39,7 +39,7 @@ public class PathfinderGoalBreakDoor extends PathfinderGoalDoorInteract {
         int i = (int) ((float) this.i / 240.0F * 10.0F);
 
         if (i != this.j) {
-            this.a.world.f(this.a.id, this.b, this.c, this.d, i);
+            this.a.world.g(this.a.id, this.b, this.c, this.d, i);
             this.j = i;
         }
 

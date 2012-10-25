@@ -27,7 +27,7 @@ public class EntityExperienceOrb extends Entity {
         this.value = i;
     }
 
-    protected boolean e_() {
+    protected boolean f_() {
         return false;
     }
 
@@ -39,8 +39,8 @@ public class EntityExperienceOrb extends Entity {
 
     protected void a() {}
 
-    public void h_() {
-        super.h_();
+    public void j_() {
+        super.j_();
         if (this.c > 0) {
             --this.c;
         }
@@ -115,7 +115,7 @@ public class EntityExperienceOrb extends Entity {
     }
 
     public boolean I() {
-        return this.world.a(this.boundingBox, Material.WATER, this);
+        return this.world.a(this.boundingBox, Material.WATER, (Entity) this);
     }
 
     protected void burn(int i) {
@@ -146,8 +146,8 @@ public class EntityExperienceOrb extends Entity {
 
     public void b_(EntityHuman entityhuman) {
         if (!this.world.isStatic) {
-            if (this.c == 0 && entityhuman.bL == 0) {
-                entityhuman.bL = 2;
+            if (this.c == 0 && entityhuman.bU == 0) {
+                entityhuman.bU = 2;
                 this.world.makeSound(this, "random.orb", 0.1F, 0.5F * ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.8F));
                 entityhuman.receive(this, 1);
                 entityhuman.giveExp(CraftEventFactory.callPlayerExpChangeEvent(entityhuman, this.value).getAmount()); // CraftBukkit - this.value to event.getAmount()
@@ -156,7 +156,7 @@ public class EntityExperienceOrb extends Entity {
         }
     }
 
-    public int d() {
+    public int c() {
         return this.value;
     }
 
@@ -183,7 +183,7 @@ public class EntityExperienceOrb extends Entity {
         return i >= 2477 ? 2477 : (i >= 1237 ? 1237 : (i >= 617 ? 617 : (i >= 307 ? 307 : (i >= 149 ? 149 : (i >= 73 ? 73 : (i >= 37 ? 37 : (i >= 17 ? 17 : (i >= 7 ? 7 : (i >= 3 ? 3 : 1)))))))));
     }
 
-    public boolean an() {
+    public boolean aq() {
         return false;
     }
 }

@@ -137,7 +137,7 @@ class PlayerInstance {
 
     private void sendTileEntity(TileEntity tileentity) {
         if (tileentity != null) {
-            Packet packet = tileentity.e();
+            Packet packet = tileentity.l();
 
             if (packet != null) {
                 this.sendAll(packet);

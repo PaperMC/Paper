@@ -12,6 +12,9 @@ public class TileEntityMobSpawner extends TileEntity {
     private int minSpawnDelay = 200;
     private int maxSpawnDelay = 800;
     private int spawnCount = 4;
+    private int maxNearbyEntities = 6;
+    private int requiredPlayerRange = 16;
+    private int spawnRange = 4;
 
     public TileEntityMobSpawner() {
         this.spawnDelay = 20;
@@ -22,7 +25,7 @@ public class TileEntityMobSpawner extends TileEntity {
     }
 
     public boolean b() {
-        return this.world.findNearbyPlayer((double) this.x + 0.5D, (double) this.y + 0.5D, (double) this.z + 0.5D, 16.0D) != null;
+        return this.world.findNearbyPlayer((double) this.x + 0.5D, (double) this.y + 0.5D, (double) this.z + 0.5D, (double) this.requiredPlayerRange) != null;
     }
 
     public void g() {
@@ -32,13 +35,17 @@ public class TileEntityMobSpawner extends TileEntity {
                 double d1 = (double) ((float) this.y + this.world.random.nextFloat());
                 double d2 = (double) ((float) this.z + this.world.random.nextFloat());
 
-                this.world.a("smoke", d0, d1, d2, 0.0D, 0.0D, 0.0D);
-                this.world.a("flame", d0, d1, d2, 0.0D, 0.0D, 0.0D);
-                this.c = this.b % 360.0D;
-                this.b += 4.545454502105713D;
+                this.world.addParticle("smoke", d0, d1, d2, 0.0D, 0.0D, 0.0D);
+                this.world.addParticle("flame", d0, d1, d2, 0.0D, 0.0D, 0.0D);
+                if (this.spawnDelay > 0) {
+                    --this.spawnDelay;
+                }
+
+                this.c = this.b;
+                this.b = (this.b + (double) (1000.0F / ((float) this.spawnDelay + 200.0F))) % 360.0D;
             } else {
                 if (this.spawnDelay == -1) {
-                    this.f();
+                    this.e();
                 }
 
                 if (this.spawnDelay > 0) {
@@ -53,17 +60,17 @@ public class TileEntityMobSpawner extends TileEntity {
                         return;
                     }
 
-                    int j = this.world.a(entity.getClass(), AxisAlignedBB.a().a((double) this.x, (double) this.y, (double) this.z, (double) (this.x + 1), (double) (this.y + 1), (double) (this.z + 1)).grow(8.0D, 4.0D, 8.0D)).size();
+                    int j = this.world.a(entity.getClass(), AxisAlignedBB.a().a((double) this.x, (double) this.y, (double) this.z, (double) (this.x + 1), (double) (this.y + 1), (double) (this.z + 1)).grow((double) (this.spawnRange * 2), 4.0D, (double) (this.spawnRange * 2))).size();
 
-                    if (j >= 6) {
-                        this.f();
+                    if (j >= this.maxNearbyEntities) {
+                        this.e();
                         return;
                     }
 
                     if (entity != null) {
-                        double d3 = (double) this.x + (this.world.random.nextDouble() - this.world.random.nextDouble()) * 4.0D;
+                        double d3 = (double) this.x + (this.world.random.nextDouble() - this.world.random.nextDouble()) * (double) this.spawnRange;
                         double d4 = (double) (this.y + this.world.random.nextInt(3) - 1);
-                        double d5 = (double) this.z + (this.world.random.nextDouble() - this.world.random.nextDouble()) * 4.0D;
+                        double d5 = (double) this.z + (this.world.random.nextDouble() - this.world.random.nextDouble()) * (double) this.spawnRange;
                         EntityLiving entityliving = entity instanceof EntityLiving ? (EntityLiving) entity : null;
 
                         entity.setPositionRotation(d3, d4, d5, this.world.random.nextFloat() * 360.0F, 0.0F);
@@ -72,10 +79,10 @@ public class TileEntityMobSpawner extends TileEntity {
                             this.world.addEntity(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER); // CraftBukkit
                             this.world.triggerEffect(2004, this.x, this.y, this.z, 0);
                             if (entityliving != null) {
-                                entityliving.aK();
+                                entityliving.aQ();
                             }
 
-                            this.f();
+                            this.e();
                         }
                     }
                 }
@@ -99,11 +106,14 @@ public class TileEntityMobSpawner extends TileEntity {
             }
 
             entity.e(nbttagcompound);
+        } else if (entity instanceof EntityLiving && entity.world != null) {
+            ((EntityLiving) entity).bD();
         }
     }
 
-    private void f() {
+    private void e() {
         this.spawnDelay = this.minSpawnDelay + this.world.random.nextInt(this.maxSpawnDelay - this.minSpawnDelay);
+        this.world.playNote(this.x, this.y, this.z, this.q().id, 1, 0);
     }
 
     public void a(NBTTagCompound nbttagcompound) {
@@ -121,6 +131,15 @@ public class TileEntityMobSpawner extends TileEntity {
             this.maxSpawnDelay = nbttagcompound.getShort("MaxSpawnDelay");
             this.spawnCount = nbttagcompound.getShort("SpawnCount");
         }
+
+        if (nbttagcompound.hasKey("MaxNearbyEntities")) {
+            this.maxNearbyEntities = nbttagcompound.getShort("MaxNearbyEntities");
+            this.requiredPlayerRange = nbttagcompound.getShort("RequiredPlayerRange");
+        }
+
+        if (nbttagcompound.hasKey("SpawnRange")) {
+            this.spawnRange = nbttagcompound.getShort("SpawnRange");
+        }
     }
 
     public void b(NBTTagCompound nbttagcompound) {
@@ -130,15 +149,24 @@ public class TileEntityMobSpawner extends TileEntity {
         nbttagcompound.setShort("MinSpawnDelay", (short) this.minSpawnDelay);
         nbttagcompound.setShort("MaxSpawnDelay", (short) this.maxSpawnDelay);
         nbttagcompound.setShort("SpawnCount", (short) this.spawnCount);
+        nbttagcompound.setShort("MaxNearbyEntities", (short) this.maxNearbyEntities);
+        nbttagcompound.setShort("RequiredPlayerRange", (short) this.requiredPlayerRange);
+        nbttagcompound.setShort("SpawnRange", (short) this.spawnRange);
         if (this.spawnData != null) {
             nbttagcompound.setCompound("SpawnData", this.spawnData);
         }
     }
 
-    public Packet e() {
+    public Packet l() {
         NBTTagCompound nbttagcompound = new NBTTagCompound();
 
         this.b(nbttagcompound);
         return new Packet132TileEntityData(this.x, this.y, this.z, 1, nbttagcompound);
+    }
+
+    public void b(int i, int j) {
+        if (i == 1 && this.world.isStatic) {
+            this.spawnDelay = this.minSpawnDelay;
+        }
     }
 }

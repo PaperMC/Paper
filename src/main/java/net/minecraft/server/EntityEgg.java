@@ -57,7 +57,7 @@ public class EntityEgg extends EntityProjectile {
         // CraftBukkit end
 
         for (int j = 0; j < 8; ++j) {
-            this.world.a("snowballpoof", this.locX, this.locY, this.locZ, 0.0D, 0.0D, 0.0D);
+            this.world.addParticle("snowballpoof", this.locX, this.locY, this.locZ, 0.0D, 0.0D, 0.0D);
         }
 
         if (!this.world.isStatic) {

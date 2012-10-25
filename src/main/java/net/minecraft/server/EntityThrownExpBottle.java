@@ -14,15 +14,15 @@ public class EntityThrownExpBottle extends EntityProjectile {
         super(world, d0, d1, d2);
     }
 
-    protected float h() {
+    protected float g() {
         return 0.07F;
     }
 
-    protected float d() {
+    protected float c() {
         return 0.7F;
     }
 
-    protected float g() {
+    protected float d() {
         return -20.0F;
     }
 

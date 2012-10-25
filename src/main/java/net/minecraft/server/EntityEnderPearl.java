@@ -22,7 +22,7 @@ public class EntityEnderPearl extends EntityProjectile {
         }
 
         for (int i = 0; i < 32; ++i) {
-            this.world.a("portal", this.locX, this.locY + this.random.nextDouble() * 2.0D, this.locZ, this.random.nextGaussian(), 0.0D, this.random.nextGaussian());
+            this.world.addParticle("portal", this.locX, this.locY + this.random.nextDouble() * 2.0D, this.locZ, this.random.nextGaussian(), 0.0D, this.random.nextGaussian());
         }
 
         if (!this.world.isStatic) {

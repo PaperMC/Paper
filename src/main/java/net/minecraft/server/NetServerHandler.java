@@ -152,7 +152,7 @@ public class NetServerHandler extends NetHandler {
             s = event.getReason();
             // CraftBukkit end
 
-            this.player.m();
+            this.player.l();
             this.sendPacket(new Packet255KickDisconnect(s));
             this.networkManager.d();
 
@@ -347,7 +347,7 @@ public class NetServerHandler extends NetHandler {
                 }
 
                 this.player.g();
-                this.player.V = 0.0F;
+                this.player.W = 0.0F;
                 this.player.setLocation(this.y, this.z, this.q, f2, f3);
                 if (!this.checkMovement) {
                     return;
@@ -363,7 +363,7 @@ public class NetServerHandler extends NetHandler {
                 // CraftBukkit end
                 double d11 = d8 * d8 + d9 * d9 + d10 * d10;
 
-                if (d11 > 100.0D && this.checkMovement && (!this.minecraftServer.H() || !this.minecraftServer.G().equals(this.player.name))) { // CraftBukkit - Added this.checkMovement condition to solve this check being triggered by teleports
+                if (d11 > 100.0D && this.checkMovement && (!this.minecraftServer.I() || !this.minecraftServer.H().equals(this.player.name))) { // CraftBukkit - Added this.checkMovement condition to solve this check being triggered by teleports
                     logger.warning(this.player.name + " moved too quickly! " + d4 + "," + d6 + "," + d7 + " (" + d8 + ", " + d9 + ", " + d10 + ")");
                     this.a(this.y, this.z, this.q, this.player.yaw, this.player.pitch);
                     return;
@@ -497,11 +497,11 @@ public class NetServerHandler extends NetHandler {
                 }
             }
             // CraftBukkit end
-            this.player.bB();
+            this.player.bN();
         } else if (packet14blockdig.e == 5) {
-            this.player.by();
+            this.player.bK();
         } else {
-            boolean flag = worldserver.weirdIsOpCache = worldserver.dimension != 0 || this.minecraftServer.getServerConfigurationManager().isOp(this.player.name) || this.minecraftServer.H(); // CraftBukkit
+            boolean flag = worldserver.worldProvider.dimension != 0 || this.minecraftServer.getServerConfigurationManager().getOPs().isEmpty() || this.minecraftServer.getServerConfigurationManager().isOp(this.player.name) || this.minecraftServer.I();
             boolean flag1 = false;
 
             if (packet14blockdig.e == 0) {
@@ -568,8 +568,6 @@ public class NetServerHandler extends NetHandler {
                     this.player.netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, worldserver));
                 }
             }
-
-            worldserver.weirdIsOpCache = false;
         }
     }
 
@@ -610,7 +608,7 @@ public class NetServerHandler extends NetHandler {
         int j = packet15place.f();
         int k = packet15place.g();
         int l = packet15place.getFace();
-        boolean flag1 = worldserver.weirdIsOpCache = worldserver.worldProvider.dimension != 0 || this.minecraftServer.getServerConfigurationManager().isOp(this.player.name) || this.minecraftServer.H();
+        boolean flag1 = worldserver.worldProvider.dimension != 0 || this.minecraftServer.getServerConfigurationManager().getOPs().isEmpty() || this.minecraftServer.getServerConfigurationManager().isOp(this.player.name) || this.minecraftServer.I();
 
         if (packet15place.getFace() == 255) {
             if (itemstack == null) {
@@ -647,7 +645,7 @@ public class NetServerHandler extends NetHandler {
                 return;
             }
             flag1 = true; // spawn protection moved to ItemBlock!!!
-            if (j1 > 16 || flag1) {
+            if (j1 > this.minecraftServer.getSpawnProtection() || flag1) {
                 // CraftBukkit end
                 this.player.itemInWorldManager.interact(this.player, worldserver, itemstack, i, j, k, l, packet15place.j(), packet15place.l(), packet15place.m());
             }
@@ -699,11 +697,9 @@ public class NetServerHandler extends NetHandler {
             this.player.h = false;
             // CraftBukkit - TODO CHECK IF NEEDED -- new if structure might not need 'always'. Kept it in for now, but may be able to remove in future
             if (!ItemStack.matches(this.player.inventory.getItemInHand(), packet15place.getItemStack()) || always) {
-                this.sendPacket(new Packet103SetSlot(this.player.activeContainer.windowId, slot.d, this.player.inventory.getItemInHand()));
+                this.sendPacket(new Packet103SetSlot(this.player.activeContainer.windowId, slot.g, this.player.inventory.getItemInHand()));
             }
         }
-
-        worldserver.weirdIsOpCache = false;
     }
 
     public void a(String s, Object[] aobject) {
@@ -717,7 +713,7 @@ public class NetServerHandler extends NetHandler {
         }
         // CraftBukkit end
         this.disconnected = true;
-        if (this.minecraftServer.H() && this.player.name.equals(this.minecraftServer.G())) {
+        if (this.minecraftServer.I() && this.player.name.equals(this.minecraftServer.H())) {
             logger.info("Stopping singleplayer server as player logged out");
             this.minecraftServer.safeShutdown();
         }
@@ -938,7 +934,7 @@ public class NetServerHandler extends NetHandler {
             double d0 = this.player.lastX + (this.player.locX - this.player.lastX) * (double) f;
             double d1 = this.player.lastY + (this.player.locY - this.player.lastY) * (double) f + 1.62D - (double) this.player.height;
             double d2 = this.player.lastZ + (this.player.locZ - this.player.lastZ) * (double) f;
-            Vec3D vec3d = Vec3D.a().create(d0, d1, d2);
+            Vec3D vec3d = this.player.world.getVec3DPool().create(d0, d1, d2);
 
             float f3 = MathHelper.cos(-f2 * 0.017453292F - 3.1415927F);
             float f4 = MathHelper.sin(-f2 * 0.017453292F - 3.1415927F);
@@ -961,7 +957,7 @@ public class NetServerHandler extends NetHandler {
             if (event.isCancelled()) return;
             // CraftBukkit end
 
-            this.player.i();
+            this.player.bE();
         }
     }
 
@@ -1020,7 +1016,7 @@ public class NetServerHandler extends NetHandler {
         Entity entity = worldserver.getEntity(packet7useentity.target);
 
         if (entity != null) {
-            boolean flag = this.player.l(entity);
+            boolean flag = this.player.m(entity);
             double d0 = 36.0D;
 
             if (!flag) {
@@ -1038,7 +1034,7 @@ public class NetServerHandler extends NetHandler {
                         return;
                     }
                     // CraftBukkit end
-                    this.player.m(entity);
+                    this.player.o(entity);
                     // CraftBukkit start - update the client if the item is an infinite one
                     if (itemInHand != null && itemInHand.count <= -1) {
                         this.player.updateInventory(this.player.activeContainer);
@@ -1085,10 +1081,10 @@ public class NetServerHandler extends NetHandler {
                 Bukkit.getServer().getPluginManager().callEvent(event);
                 this.player = this.minecraftServer.getServerConfigurationManager().moveToWorld(this.player, 0, true, event.getTo());
                 // CraftBukkit end
-            } else if (this.player.q().getWorldData().isHardcore()) {
-                if (this.minecraftServer.H() && this.player.name.equals(this.minecraftServer.G())) {
+            } else if (this.player.p().getWorldData().isHardcore()) {
+                if (this.minecraftServer.I() && this.player.name.equals(this.minecraftServer.H())) {
                     this.player.netServerHandler.disconnect("You have died. Game over, man, it\'s game over!");
-                    this.minecraftServer.O();
+                    this.minecraftServer.P();
                 } else {
                     BanEntry banentry = new BanEntry(this.player.name);
 
@@ -1121,7 +1117,7 @@ public class NetServerHandler extends NetHandler {
         this.player.activeContainer.transferTo(this.player.defaultContainer, getPlayer());
         // CraftBukkit end
 
-        this.player.l();
+        this.player.k();
     }
 
     public void a(Packet102WindowClick packet102windowclick) {
@@ -1132,12 +1128,12 @@ public class NetServerHandler extends NetHandler {
             InventoryView inventory = this.player.activeContainer.getBukkitView();
             SlotType type = CraftInventoryView.getSlotType(inventory, packet102windowclick.slot);
 
-            InventoryClickEvent event = new InventoryClickEvent(inventory, type, packet102windowclick.slot, packet102windowclick.button != 0, packet102windowclick.shift);
+            InventoryClickEvent event = new InventoryClickEvent(inventory, type, packet102windowclick.slot, packet102windowclick.button != 0, packet102windowclick.shift == 1);
             org.bukkit.inventory.Inventory top = inventory.getTopInventory();
             if (packet102windowclick.slot == 0 && top instanceof CraftingInventory) {
                 org.bukkit.inventory.Recipe recipe = ((CraftingInventory) top).getRecipe();
                 if (recipe != null) {
-                    event = new CraftItemEvent(recipe, inventory, type, packet102windowclick.slot, packet102windowclick.button != 0, packet102windowclick.shift);
+                    event = new CraftItemEvent(recipe, inventory, type, packet102windowclick.slot, packet102windowclick.button != 0, packet102windowclick.shift == 1);
                 }
             }
             server.getPluginManager().callEvent(event);
@@ -1267,7 +1263,7 @@ public class NetServerHandler extends NetHandler {
                 EntityItem entityitem = this.player.drop(itemstack);
 
                 if (entityitem != null) {
-                    entityitem.d();
+                    entityitem.c();
                 }
             }
         }
@@ -1438,22 +1434,86 @@ public class NetServerHandler extends NetHandler {
                 // exception1.printStackTrace();
                 // CraftBukkit end
             }
-        } else if ("MC|TrSel".equals(packet250custompayload.tag)) {
-            try {
-                datainputstream = new DataInputStream(new ByteArrayInputStream(packet250custompayload.data));
-                int i = datainputstream.readInt();
-                Container container = this.player.activeContainer;
+        } else {
+            int i;
 
-                if (container instanceof ContainerMerchant) {
-                    ((ContainerMerchant) container).c(i);
+            if ("MC|TrSel".equals(packet250custompayload.tag)) {
+                try {
+                    datainputstream = new DataInputStream(new ByteArrayInputStream(packet250custompayload.data));
+                    i = datainputstream.readInt();
+                    Container container = this.player.activeContainer;
+
+                    if (container instanceof ContainerMerchant) {
+                        ((ContainerMerchant) container).b(i);
+                    }
+                } catch (Exception exception2) {
+                    exception2.printStackTrace();
                 }
-            } catch (Exception exception2) {
-                exception2.printStackTrace();
+            } else {
+                int j;
+
+                if ("MC|AdvCdm".equals(packet250custompayload.tag)) {
+                    if (!this.minecraftServer.getEnableCommandBlock()) {
+                        this.player.sendMessage(this.player.a("advMode.notEnabled", new Object[0]));
+                    } else if (this.player.a(2, "") && this.player.abilities.canInstantlyBuild) {
+                        try {
+                            datainputstream = new DataInputStream(new ByteArrayInputStream(packet250custompayload.data));
+                            i = datainputstream.readInt();
+                            j = datainputstream.readInt();
+                            int k = datainputstream.readInt();
+                            String s = Packet.a(datainputstream, 256);
+                            TileEntity tileentity = this.player.world.getTileEntity(i, j, k);
+
+                            if (tileentity != null && tileentity instanceof TileEntityCommand) {
+                                ((TileEntityCommand) tileentity).b(s);
+                                this.player.world.notify(i, j, k);
+                                this.player.sendMessage("Command set: " + s);
+                            }
+                        } catch (Exception exception3) {
+                            exception3.printStackTrace();
+                        }
+                    } else {
+                        this.player.sendMessage(this.player.a("advMode.notAllowed", new Object[0]));
+                    }
+                } else if ("MC|Beacon".equals(packet250custompayload.tag)) {
+                    if (this.player.activeContainer instanceof ContainerBeacon) {
+                        try {
+                            datainputstream = new DataInputStream(new ByteArrayInputStream(packet250custompayload.data));
+                            i = datainputstream.readInt();
+                            j = datainputstream.readInt();
+                            ContainerBeacon containerbeacon = (ContainerBeacon) this.player.activeContainer;
+                            Slot slot = containerbeacon.getSlot(0);
+
+                            if (slot.d()) {
+                                slot.a(1);
+                                TileEntityBeacon tileentitybeacon = containerbeacon.d();
+
+                                tileentitybeacon.d(i);
+                                tileentitybeacon.e(j);
+                                tileentitybeacon.update();
+                            }
+                        } catch (Exception exception4) {
+                            exception4.printStackTrace();
+                        }
+                    }
+                } else if ("MC|ItemName".equals(packet250custompayload.tag) && this.player.activeContainer instanceof ContainerAnvil) {
+                    ContainerAnvil containeranvil = (ContainerAnvil) this.player.activeContainer;
+
+                    if (packet250custompayload.data != null && packet250custompayload.data.length >= 1) {
+                        String s1 = SharedConstants.a(new String(packet250custompayload.data));
+
+                        if (s1.length() <= 30) {
+                            containeranvil.a(s1);
+                        }
+                    } else {
+                        containeranvil.a("");
+                    }
+                }
             }
         }
 
         // CraftBukkit start
-        else if (packet250custompayload.tag.equals("REGISTER")) {
+        if (packet250custompayload.tag.equals("REGISTER")) {
             try {
                 String channels = new String(packet250custompayload.data, "UTF8");
                 for (String channel : channels.split("\0")) {

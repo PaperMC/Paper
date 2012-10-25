@@ -16,19 +16,19 @@ public class BlockTripwireHook extends Block {
         return null;
     }
 
-    public boolean d() {
-        return false;
-    }
-
     public boolean c() {
         return false;
     }
 
-    public int b() {
+    public boolean b() {
+        return false;
+    }
+
+    public int d() {
         return 29;
     }
 
-    public int p_() {
+    public int r_() {
         return 10;
     }
 
@@ -117,7 +117,7 @@ public class BlockTripwireHook extends Block {
             j3 = world.getTypeId(l2, j, k3);
             if (j3 == Block.TRIPWIRE_SOURCE.id) {
                 l3 = world.getData(l2, j, k3);
-                if ((l3 & 3) == Direction.e[l1]) {
+                if ((l3 & 3) == Direction.f[l1]) {
                     k2 = i3;
                 }
                 break;
@@ -136,7 +136,7 @@ public class BlockTripwireHook extends Block {
                 flag4 |= flag6 && flag7;
                 aint[i3] = l3;
                 if (i3 == j1) {
-                    world.a(i, j, k, l, this.p_());
+                    world.a(i, j, k, l, this.r_());
                     flag3 &= flag6;
                 }
             }
@@ -149,9 +149,9 @@ public class BlockTripwireHook extends Block {
         if (k2 > 0) {
             l2 = i + i2 * k2;
             k3 = k + j2 * k2;
-            j3 = Direction.e[l1];
+            j3 = Direction.f[l1];
             world.setData(l2, j, k3, j3 | i3);
-            this.e(world, l2, j, k3, j3);
+            this.d(world, l2, j, k3, j3);
             this.a(world, l2, j, k3, flag3, flag4, flag1, flag2);
         }
 
@@ -170,7 +170,7 @@ public class BlockTripwireHook extends Block {
         if (l > 0) {
             world.setData(i, j, k, i1);
             if (flag) {
-                this.e(world, i, j, k, l1);
+                this.d(world, i, j, k, l1);
             }
         }
 
@@ -208,7 +208,7 @@ public class BlockTripwireHook extends Block {
         }
     }
 
-    private void e(World world, int i, int j, int k, int l) {
+    private void d(World world, int i, int j, int k, int l) {
         world.applyPhysics(i, j, k, this.id);
         if (l == 3) {
             world.applyPhysics(i - 1, j, k, this.id);
@@ -272,12 +272,12 @@ public class BlockTripwireHook extends Block {
         super.remove(world, i, j, k, l, i1);
     }
 
-    public boolean a(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+    public boolean b(IBlockAccess iblockaccess, int i, int j, int k, int l) {
         return (iblockaccess.getData(i, j, k) & 8) == 8;
     }
 
-    public boolean c(World world, int i, int j, int k, int l) {
-        int i1 = world.getData(i, j, k);
+    public boolean c(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+        int i1 = iblockaccess.getData(i, j, k);
 
         if ((i1 & 8) != 8) {
             return false;

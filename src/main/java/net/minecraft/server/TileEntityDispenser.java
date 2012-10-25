@@ -106,7 +106,7 @@ public class TileEntityDispenser extends TileEntity implements IInventory {
         this.update();
     }
 
-    public int a(ItemStack itemstack) {
+    public int addItem(ItemStack itemstack) {
         for (int i = 0; i < this.items.length; ++i) {
             if (this.items[i] == null || this.items[i].id == 0) {
                 this.items[i] = itemstack;

@@ -26,11 +26,11 @@ public class BlockPiston extends Block {
         return k > 5 ? this.textureId : (i == k ? (!f(j) && this.minX <= 0.0D && this.minY <= 0.0D && this.minZ <= 0.0D && this.maxX >= 1.0D && this.maxY >= 1.0D && this.maxZ >= 1.0D ? this.textureId : 110) : (i == Facing.OPPOSITE_FACING[k] ? 109 : 108));
     }
 
-    public int b() {
+    public int d() {
         return 16;
     }
 
-    public boolean d() {
+    public boolean c() {
         return false;
     }
 
@@ -64,14 +64,13 @@ public class BlockPiston extends Block {
         int i1 = e(l);
 
         if (i1 != 7) {
-            boolean flag = this.e(world, i, j, k, i1);
+            boolean flag = this.d(world, i, j, k, i1);
 
             if (flag && !f(l)) {
                 // CraftBukkit start
-                int length = i(world, i, j, k, i1);
+                int length = h(world, i, j, k, i1);
                 if (length >= 0) {
                     org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
-
                     BlockPistonExtendEvent event = new BlockPistonExtendEvent(block, length, CraftBlock.notchToBlockFace(i1));
                     world.getServer().getPluginManager().callEvent(event);
 
@@ -85,7 +84,6 @@ public class BlockPiston extends Block {
             } else if (!flag && f(l)) {
                 // CraftBukkit start
                 org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
-
                 BlockPistonRetractEvent event = new BlockPistonRetractEvent(block, CraftBlock.notchToBlockFace(i1));
                 world.getServer().getPluginManager().callEvent(event);
 
@@ -99,7 +97,7 @@ public class BlockPiston extends Block {
         }
     }
 
-    private boolean e(World world, int i, int j, int k, int l) {
+    private boolean d(World world, int i, int j, int k, int l) {
         return l != 0 && world.isBlockFaceIndirectlyPowered(i, j - 1, k, 0) ? true : (l != 1 && world.isBlockFaceIndirectlyPowered(i, j + 1, k, 1) ? true : (l != 2 && world.isBlockFaceIndirectlyPowered(i, j, k - 1, 2) ? true : (l != 3 && world.isBlockFaceIndirectlyPowered(i, j, k + 1, 3) ? true : (l != 5 && world.isBlockFaceIndirectlyPowered(i + 1, j, k, 5) ? true : (l != 4 && world.isBlockFaceIndirectlyPowered(i - 1, j, k, 4) ? true : (world.isBlockFaceIndirectlyPowered(i, j, k, 0) ? true : (world.isBlockFaceIndirectlyPowered(i, j + 2, k, 1) ? true : (world.isBlockFaceIndirectlyPowered(i, j + 1, k - 1, 2) ? true : (world.isBlockFaceIndirectlyPowered(i, j + 1, k + 1, 3) ? true : (world.isBlockFaceIndirectlyPowered(i - 1, j + 1, k, 4) ? true : world.isBlockFaceIndirectlyPowered(i + 1, j + 1, k, 5)))))))))));
     }
 
@@ -111,7 +109,7 @@ public class BlockPiston extends Block {
         }
 
         if (l == 0) {
-            if (this.j(world, i, j, k, i1)) {
+            if (this.i(world, i, j, k, i1)) {
                 world.setData(i, j, k, i1 | 8);
                 world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "tile.piston.out", 0.5F, world.random.nextFloat() * 0.25F + 0.6F);
             } else {
@@ -121,7 +119,7 @@ public class BlockPiston extends Block {
             TileEntity tileentity = world.getTileEntity(i + Facing.b[i1], j + Facing.c[i1], k + Facing.d[i1]);
 
             if (tileentity instanceof TileEntityPiston) {
-                ((TileEntityPiston) tileentity).i();
+                ((TileEntityPiston) tileentity).f();
             }
 
             world.setRawTypeIdAndData(i, j, k, Block.PISTON_MOVING.id, i1);
@@ -141,15 +139,15 @@ public class BlockPiston extends Block {
                         TileEntityPiston tileentitypiston = (TileEntityPiston) tileentity1;
 
                         if (tileentitypiston.c() == i1 && tileentitypiston.b()) {
-                            tileentitypiston.i();
+                            tileentitypiston.f();
                             i2 = tileentitypiston.a();
-                            j2 = tileentitypiston.n();
+                            j2 = tileentitypiston.p();
                             flag = true;
                         }
                     }
                 }
 
-                if (!flag && i2 > 0 && a(i2, world, j1, k1, l1, false) && (Block.byId[i2].e() == 0 || i2 == Block.PISTON.id || i2 == Block.PISTON_STICKY.id)) {
+                if (!flag && i2 > 0 && a(i2, world, j1, k1, l1, false) && (Block.byId[i2].q_() == 0 || i2 == Block.PISTON.id || i2 == Block.PISTON_STICKY.id)) {
                     i += Facing.b[i1];
                     j += Facing.c[i1];
                     k += Facing.d[i1];
@@ -214,7 +212,7 @@ public class BlockPiston extends Block {
         return super.e(world, i, j, k);
     }
 
-    public boolean c() {
+    public boolean b() {
         return false;
     }
 
@@ -254,11 +252,11 @@ public class BlockPiston extends Block {
                     return false;
                 }
 
-                if (Block.byId[i].e() == 2) {
+                if (Block.byId[i].q_() == 2) {
                     return false;
                 }
 
-                if (!flag && Block.byId[i].e() == 1) {
+                if (!flag && Block.byId[i].q_() == 1) {
                     return false;
                 }
             } else if (f(world.getData(j, k, l))) {
@@ -269,8 +267,8 @@ public class BlockPiston extends Block {
         }
     }
 
-    // CraftBukkit - change return from boolean to int
-    private static int i(World world, int i, int j, int k, int l) {
+    // CraftBukkit - boolean -> int return
+    private static int h(World world, int i, int j, int k, int l) {
         int i1 = i + Facing.b[l];
         int j1 = j + Facing.c[l];
         int k1 = k + Facing.d[l];
@@ -289,7 +287,7 @@ public class BlockPiston extends Block {
                         return -1; // CraftBukkit
                     }
 
-                    if (Block.byId[i2].e() != 1) {
+                    if (Block.byId[i2].q_() != 1) {
                         if (l1 == 12) {
                             return -1; // CraftBukkit
                         }
@@ -307,7 +305,7 @@ public class BlockPiston extends Block {
         }
     }
 
-    private boolean j(World world, int i, int j, int k, int l) {
+    private boolean i(World world, int i, int j, int k, int l) {
         int i1 = i + Facing.b[l];
         int j1 = j + Facing.c[l];
         int k1 = k + Facing.d[l];
@@ -327,7 +325,7 @@ public class BlockPiston extends Block {
                         return false;
                     }
 
-                    if (Block.byId[i2].e() != 1) {
+                    if (Block.byId[i2].q_() != 1) {
                         if (l1 == 12) {
                             return false;
                         }

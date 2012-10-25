@@ -12,6 +12,10 @@ public class BlockCrops extends BlockFlower {
 
         this.a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, 0.25F, 0.5F + f);
         this.a((CreativeModeTab) null);
+        this.c(0.0F);
+        this.a(g);
+        this.D();
+        this.r();
     }
 
     protected boolean d_(int i) {
@@ -86,32 +90,35 @@ public class BlockCrops extends BlockFlower {
         return this.textureId + j;
     }
 
-    public int b() {
+    public int d() {
         return 6;
+    }
+
+    protected int h() {
+        return Item.SEEDS.id;
+    }
+
+    protected int j() {
+        return Item.WHEAT.id;
     }
 
     public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {
         super.dropNaturally(world, i, j, k, l, f, 0);
         if (!world.isStatic) {
-            int j1 = 3 + i1;
+            if (l >= 7) {
+                int j1 = 3 + i1;
 
-            for (int k1 = 0; k1 < j1; ++k1) {
-                if (world.random.nextInt(15) <= l) {
-                    float f1 = 0.7F;
-                    float f2 = world.random.nextFloat() * f1 + (1.0F - f1) * 0.5F;
-                    float f3 = world.random.nextFloat() * f1 + (1.0F - f1) * 0.5F;
-                    float f4 = world.random.nextFloat() * f1 + (1.0F - f1) * 0.5F;
-                    EntityItem entityitem = new EntityItem(world, (double) ((float) i + f2), (double) ((float) j + f3), (double) ((float) k + f4), new ItemStack(Item.SEEDS));
-
-                    entityitem.pickupDelay = 10;
-                    world.addEntity(entityitem);
+                for (int k1 = 0; k1 < j1; ++k1) {
+                    if (world.random.nextInt(15) <= l) {
+                        this.a(world, i, j, k, new ItemStack(this.h(), 1, 0));
+                    }
                 }
             }
         }
     }
 
     public int getDropType(int i, Random random, int j) {
-        return i == 7 ? Item.WHEAT.id : -1;
+        return i == 7 ? this.j() : this.h();
     }
 
     public int a(Random random) {

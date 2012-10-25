@@ -21,7 +21,7 @@ public class BlockFlowing extends BlockFluids {
         int l = world.getData(i, j, k);
 
         world.setRawTypeIdAndData(i, j, k, this.id + 1, l);
-        world.d(i, j, k, i, j, k);
+        world.e(i, j, k, i, j, k);
     }
 
     public boolean c(IBlockAccess iblockaccess, int i, int j, int k) {
@@ -38,7 +38,7 @@ public class BlockFlowing extends BlockFluids {
         int l = this.f_(world, i, j, k);
         byte b0 = 1;
 
-        if (this.material == Material.LAVA && !world.worldProvider.d) {
+        if (this.material == Material.LAVA && !world.worldProvider.e) {
             b0 = 2;
         }
 
@@ -49,11 +49,11 @@ public class BlockFlowing extends BlockFluids {
             byte b1 = -100;
 
             this.a = 0;
-            int j1 = this.e(world, i - 1, j, k, b1);
+            int j1 = this.d(world, i - 1, j, k, b1);
 
-            j1 = this.e(world, i + 1, j, k, j1);
-            j1 = this.e(world, i, j, k - 1, j1);
-            j1 = this.e(world, i, j, k + 1, j1);
+            j1 = this.d(world, i + 1, j, k, j1);
+            j1 = this.d(world, i, j, k - 1, j1);
+            j1 = this.d(world, i, j, k + 1, j1);
             i1 = j1 + b0;
             if (i1 >= 8 || j1 < 0) {
                 i1 = -1;
@@ -92,7 +92,7 @@ public class BlockFlowing extends BlockFluids {
                     world.setTypeId(i, j, k, 0);
                 } else {
                     world.setData(i, j, k, i1);
-                    world.a(i, j, k, this.id, this.p_());
+                    world.a(i, j, k, this.id, this.r_());
                     world.applyPhysics(i, j, k, this.id);
                 }
             }
@@ -279,7 +279,7 @@ public class BlockFlowing extends BlockFluids {
         }
     }
 
-    protected int e(World world, int i, int j, int k, int l) {
+    protected int d(World world, int i, int j, int k, int l) {
         int i1 = this.f_(world, i, j, k);
 
         if (i1 < 0) {
@@ -306,7 +306,11 @@ public class BlockFlowing extends BlockFluids {
     public void onPlace(World world, int i, int j, int k) {
         super.onPlace(world, i, j, k);
         if (world.getTypeId(i, j, k) == this.id) {
-            world.a(i, j, k, this.id, this.p_());
+            world.a(i, j, k, this.id, this.r_());
         }
+    }
+
+    public boolean l() {
+        return false;
     }
 }

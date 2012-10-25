@@ -53,7 +53,7 @@ public class BlockTNT extends Block {
     }
 
     public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman, int l, float f, float f1, float f2) {
-        if (entityhuman.bC() != null && entityhuman.bC().id == Item.FLINT_AND_STEEL.id) {
+        if (entityhuman.bP() != null && entityhuman.bP().id == Item.FLINT_AND_STEEL.id) {
             this.postBreak(world, i, j, k, 1);
             world.setTypeId(i, j, k, 0);
             return true;
@@ -62,7 +62,14 @@ public class BlockTNT extends Block {
         }
     }
 
-    protected ItemStack c_(int i) {
-        return null;
+    public void a(World world, int i, int j, int k, Entity entity) {
+        if (entity instanceof EntityArrow && !world.isStatic) {
+            EntityArrow entityarrow = (EntityArrow) entity;
+
+            if (entityarrow.isBurning()) {
+                this.postBreak(world, i, j, k, 1);
+                world.setTypeId(i, j, k, 0);
+            }
+        }
     }
 }

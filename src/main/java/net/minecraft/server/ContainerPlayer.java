@@ -7,25 +7,22 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 
 public class ContainerPlayer extends Container {
 
-    public InventoryCrafting craftInventory;
-    public IInventory resultInventory;
-    public boolean g;
+    public InventoryCrafting craftInventory = new InventoryCrafting(this, 2, 2);
+    public IInventory resultInventory = new InventoryCraftResult();
+    public boolean g = false;
+    private final EntityHuman h;
     // CraftBukkit start
     private CraftInventoryView bukkitEntity = null;
     private PlayerInventory player;
     // CraftBukkit end
 
-    public ContainerPlayer(PlayerInventory playerinventory) {
-        this(playerinventory, true);
-    }
-
-    public ContainerPlayer(PlayerInventory playerinventory, boolean flag) {
+    public ContainerPlayer(PlayerInventory playerinventory, boolean flag, EntityHuman entityhuman) {
+        this.g = flag;
+        this.h = entityhuman;
         this.resultInventory = new InventoryCraftResult(); // CraftBukkit - moved to before InventoryCrafting construction
         this.craftInventory = new InventoryCrafting(this, 2, 2, playerinventory.player); // CraftBukkit - pass player
         this.craftInventory.resultInventory = this.resultInventory; // CraftBukkit - let InventoryCrafting know about its result slot
         this.player = playerinventory; // CraftBukkit - save player
-        this.g = false;
-        this.g = flag;
         this.a((Slot) (new SlotResult(playerinventory.player, this.craftInventory, this.resultInventory, 0, 144, 36)));
 
         int i;
@@ -57,7 +54,7 @@ public class ContainerPlayer extends Container {
     public void a(IInventory iinventory) {
         // CraftBukkit start (Note: the following line would cause an error if called during construction)
         CraftingManager.getInstance().lastCraftView = getBukkitView();
-        ItemStack craftResult = CraftingManager.getInstance().craft(this.craftInventory);
+        ItemStack craftResult = CraftingManager.getInstance().craft(this.craftInventory, this.h.world);
         this.resultInventory.setItem(0, craftResult);
         if (super.listeners.size() < 1) {
             return;
@@ -86,7 +83,7 @@ public class ContainerPlayer extends Container {
         return true;
     }
 
-    public ItemStack b(int i) {
+    public ItemStack b(EntityHuman entityhuman, int i) {
         ItemStack itemstack = null;
         Slot slot = (Slot) this.b.get(i);
 
@@ -136,7 +133,7 @@ public class ContainerPlayer extends Container {
                 return null;
             }
 
-            slot.b(itemstack1);
+            slot.a(entityhuman, itemstack1);
         }
 
         return itemstack;

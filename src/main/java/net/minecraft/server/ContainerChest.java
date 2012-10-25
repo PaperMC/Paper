@@ -67,7 +67,7 @@ public class ContainerChest extends Container {
         return this.container.a(entityhuman);
     }
 
-    public ItemStack b(int i) {
+    public ItemStack b(EntityHuman entityhuman, int i) {
         ItemStack itemstack = null;
         Slot slot = (Slot) this.b.get(i);
 

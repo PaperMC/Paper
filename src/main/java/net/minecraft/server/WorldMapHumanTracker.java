@@ -1,13 +1,17 @@
 package net.minecraft.server;
 
+import java.util.Iterator;
+
 public class WorldMapHumanTracker {
 
     public final EntityHuman trackee;
     public int[] b;
     public int[] c;
-    private int e;
     private int f;
-    private byte[] g;
+    private int g;
+    private byte[] h;
+    public int d;
+    private boolean i;
 
     final WorldMap worldMap;
 
@@ -15,8 +19,9 @@ public class WorldMapHumanTracker {
         this.worldMap = worldmap;
         this.b = new int[128];
         this.c = new int[128];
-        this.e = 0;
         this.f = 0;
+        this.g = 0;
+        this.i = false;
         this.trackee = entityhuman;
 
         for (int i = 0; i < this.b.length; ++i) {
@@ -26,70 +31,78 @@ public class WorldMapHumanTracker {
     }
 
     public byte[] a(ItemStack itemstack) {
-        int i;
-        int j;
+        byte[] abyte;
 
-        org.bukkit.craftbukkit.map.RenderData render = this.worldMap.mapView.render((org.bukkit.craftbukkit.entity.CraftPlayer) trackee.getBukkitEntity()); // CraftBukkit
+        if (!this.i) {
+            abyte = new byte[] { (byte) 2, this.worldMap.scale};
+            this.i = true;
+            return abyte;
+        } else {
+            int i;
+            int j;
 
-        if (--this.f < 0) {
-            this.f = 4;
-            byte[] abyte = new byte[render.cursors.size() * 3 + 1]; // CraftBukkit
+            org.bukkit.craftbukkit.map.RenderData render = this.worldMap.mapView.render((org.bukkit.craftbukkit.entity.CraftPlayer) trackee.getBukkitEntity()); // CraftBukkit
 
-            abyte[0] = 1;
+            if (--this.g < 0) {
+                this.g = 4;
+                abyte = new byte[render.cursors.size() * 3 + 1]; // CraftBukkit
+                abyte[0] = 1;
+                i = 0;
 
-            // CraftBukkit start
-            for (i = 0; i < render.cursors.size(); ++i) {
-                org.bukkit.map.MapCursor cursor = render.cursors.get(i);
-                if (!cursor.isVisible()) continue;
+                // CraftBukkit start
+                for (i = 0; i < render.cursors.size(); ++i) {
+                    org.bukkit.map.MapCursor cursor = render.cursors.get(i);
+                    if (!cursor.isVisible()) continue;
 
-                byte value = (byte) (((cursor.getRawType() == 0 || cursor.getDirection() < 8 ? cursor.getDirection() : cursor.getDirection() - 1) & 15) * 16);
-                abyte[i * 3 + 1] = (byte) (value | (cursor.getRawType() != 0 && value < 0 ? 16 - cursor.getRawType() : cursor.getRawType()));
-                abyte[i * 3 + 2] = (byte) cursor.getX();
-                abyte[i * 3 + 3] = (byte) cursor.getY();
-            }
-            // CraftBukkit end
+                    byte value = (byte) (((cursor.getRawType() == 0 || cursor.getDirection() < 8 ? cursor.getDirection() : cursor.getDirection() - 1) & 15) * 16);
+                    abyte[i * 3 + 1] = (byte) (value | (cursor.getRawType() != 0 && value < 0 ? 16 - cursor.getRawType() : cursor.getRawType()));
+                    abyte[i * 3 + 2] = (byte) cursor.getX();
+                    abyte[i * 3 + 3] = (byte) cursor.getY();
+                }
+                // CraftBukkit end
 
-            boolean flag = true;
+                boolean flag = !itemstack.y();
 
-            if (this.g != null && this.g.length == abyte.length) {
-                for (j = 0; j < abyte.length; ++j) {
-                    if (abyte[j] != this.g[j]) {
-                        flag = false;
-                        break;
+                if (this.h != null && this.h.length == abyte.length) {
+                    for (j = 0; j < abyte.length; ++j) {
+                        if (abyte[j] != this.h[j]) {
+                            flag = false;
+                            break;
+                        }
                     }
-                }
-            } else {
-                flag = false;
-            }
-
-            if (!flag) {
-                this.g = abyte;
-                return abyte;
-            }
-        }
-
-        for (int k = 0; k < 10; ++k) {
-            i = this.e * 11 % 128;
-            ++this.e;
-            if (this.b[i] >= 0) {
-                j = this.c[i] - this.b[i] + 1;
-                int l = this.b[i];
-                byte[] abyte1 = new byte[j + 3];
-
-                abyte1[0] = 0;
-                abyte1[1] = (byte) i;
-                abyte1[2] = (byte) l;
-
-                for (int i1 = 0; i1 < abyte1.length - 3; ++i1) {
-                    abyte1[i1 + 3] = render.buffer[(i1 + l) * 128 + i]; // CraftBukkit
+                } else {
+                    flag = false;
                 }
 
-                this.c[i] = -1;
-                this.b[i] = -1;
-                return abyte1;
+                if (!flag) {
+                    this.h = abyte;
+                    return abyte;
+                }
             }
-        }
 
-        return null;
+            for (int k = 0; k < 1; ++k) {
+                i = this.f++ * 11 % 128;
+                if (this.b[i] >= 0) {
+                    int l = this.c[i] - this.b[i] + 1;
+
+                    j = this.b[i];
+                    byte[] abyte1 = new byte[l + 3];
+
+                    abyte1[0] = 0;
+                    abyte1[1] = (byte) i;
+                    abyte1[2] = (byte) j;
+
+                    for (int i1 = 0; i1 < abyte1.length - 3; ++i1) {
+                        abyte1[i1 + 3] = render.buffer[(i1 + j) * 128 + i]; // CraftBukkit
+                    }
+
+                    this.c[i] = -1;
+                    this.b[i] = -1;
+                    return abyte1;
+                }
+            }
+
+            return null;
+        }
     }
 }

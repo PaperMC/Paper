@@ -70,7 +70,7 @@ public class WorldGenForest extends WorldGenerator implements BlockSapling.TreeG
                             for (int k2 = k - k1; k2 <= k + k1; ++k2) {
                                 int l2 = k2 - k;
 
-                                if ((Math.abs(j2) != k1 || Math.abs(l2) != k1 || random.nextInt(2) != 0 && j1 != 0) && !Block.n[world.getTypeId(l1, i2, k2)]) {
+                                if ((Math.abs(j2) != k1 || Math.abs(l2) != k1 || random.nextInt(2) != 0 && j1 != 0) && !Block.q[world.getTypeId(l1, i2, k2)]) {
                                     this.setTypeAndData(world, l1, i2, k2, Block.LEAVES.id, 2);
                                 }
                             }

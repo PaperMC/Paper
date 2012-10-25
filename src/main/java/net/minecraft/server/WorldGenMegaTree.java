@@ -167,7 +167,7 @@ public class WorldGenMegaTree extends WorldGenerator implements BlockSapling.Tre
                 for (int j2 = j - k1; j2 <= j + k1 + 1; ++j2) {
                     int k2 = j2 - j;
 
-                    if ((i2 >= 0 || k2 >= 0 || i2 * i2 + k2 * k2 <= k1 * k1) && (i2 <= 0 && k2 <= 0 || i2 * i2 + k2 * k2 <= (k1 + 1) * (k1 + 1)) && (random.nextInt(4) != 0 || i2 * i2 + k2 * k2 <= (k1 - 1) * (k1 - 1)) && !Block.n[world.getTypeId(l1, i1, j2)]) {
+                    if ((i2 >= 0 || k2 >= 0 || i2 * i2 + k2 * k2 <= k1 * k1) && (i2 <= 0 && k2 <= 0 || i2 * i2 + k2 * k2 <= (k1 + 1) * (k1 + 1)) && (random.nextInt(4) != 0 || i2 * i2 + k2 * k2 <= (k1 - 1) * (k1 - 1)) && !Block.q[world.getTypeId(l1, i1, j2)]) {
                         this.setTypeAndData(world, l1, i1, j2, Block.LEAVES.id, this.c);
                     }
                 }

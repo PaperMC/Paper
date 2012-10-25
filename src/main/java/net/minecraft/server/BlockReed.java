@@ -63,15 +63,15 @@ public class BlockReed extends Block {
         return Item.SUGAR_CANE.id;
     }
 
-    public boolean d() {
-        return false;
-    }
-
     public boolean c() {
         return false;
     }
 
-    public int b() {
+    public boolean b() {
+        return false;
+    }
+
+    public int d() {
         return 1;
     }
 }

@@ -13,15 +13,15 @@ public class BlockLever extends Block {
         return null;
     }
 
-    public boolean d() {
-        return false;
-    }
-
     public boolean c() {
         return false;
     }
 
-    public int b() {
+    public boolean b() {
+        return false;
+    }
+
+    public int d() {
         return 12;
     }
 
@@ -173,9 +173,7 @@ public class BlockLever extends Block {
         }
     }
 
-    public void attack(World world, int i, int j, int k, EntityHuman entityhuman) {
-        this.interact(world, i, j, k, entityhuman, 0, 0.0F, 0.0F, 0.0F);
-    }
+    public void attack(World world, int i, int j, int k, EntityHuman entityhuman) {}
 
     public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman, int l, float f, float f1, float f2) {
         if (world.isStatic) {
@@ -199,7 +197,7 @@ public class BlockLever extends Block {
             // CraftBukkit end
 
             world.setData(i, j, k, j1 + k1);
-            world.d(i, j, k, i, j, k);
+            world.e(i, j, k, i, j, k);
             world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.click", 0.3F, k1 > 0 ? 0.6F : 0.5F);
             world.applyPhysics(i, j, k, this.id);
             if (j1 == 1) {
@@ -247,12 +245,12 @@ public class BlockLever extends Block {
         super.remove(world, i, j, k, l, i1);
     }
 
-    public boolean a(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+    public boolean b(IBlockAccess iblockaccess, int i, int j, int k, int l) {
         return (iblockaccess.getData(i, j, k) & 8) > 0;
     }
 
-    public boolean c(World world, int i, int j, int k, int l) {
-        int i1 = world.getData(i, j, k);
+    public boolean c(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+        int i1 = iblockaccess.getData(i, j, k);
 
         if ((i1 & 8) == 0) {
             return false;

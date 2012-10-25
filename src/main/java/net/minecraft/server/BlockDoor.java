@@ -19,7 +19,7 @@ public class BlockDoor extends Block {
         this.a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, f1, 0.5F + f);
     }
 
-    public boolean d() {
+    public boolean c() {
         return false;
     }
 
@@ -29,11 +29,11 @@ public class BlockDoor extends Block {
         return (l & 4) != 0;
     }
 
-    public boolean c() {
+    public boolean b() {
         return false;
     }
 
-    public int b() {
+    public int d() {
         return 7;
     }
 
@@ -105,9 +105,7 @@ public class BlockDoor extends Block {
         }
     }
 
-    public void attack(World world, int i, int j, int k, EntityHuman entityhuman) {
-        this.interact(world, i, j, k, entityhuman, 0, 0.0F, 0.0F, 0.0F);
-    }
+    public void attack(World world, int i, int j, int k, EntityHuman entityhuman) {}
 
     public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman, int l, float f, float f1, float f2) {
         if (this.material == Material.ORE) {
@@ -119,10 +117,10 @@ public class BlockDoor extends Block {
             j1 ^= 4;
             if ((i1 & 8) == 0) {
                 world.setData(i, j, k, j1);
-                world.d(i, j, k, i, j, k);
+                world.e(i, j, k, i, j, k);
             } else {
                 world.setData(i, j - 1, k, j1);
-                world.d(i, j - 1, k, i, j, k);
+                world.e(i, j - 1, k, i, j, k);
             }
 
             world.a(entityhuman, 1003, i, j, k, 0);
@@ -140,10 +138,10 @@ public class BlockDoor extends Block {
             i1 ^= 4;
             if ((l & 8) == 0) {
                 world.setData(i, j, k, i1);
-                world.d(i, j, k, i, j, k);
+                world.e(i, j, k, i, j, k);
             } else {
                 world.setData(i, j - 1, k, i1);
-                world.d(i, j - 1, k, i, j, k);
+                world.e(i, j - 1, k, i, j, k);
             }
 
             world.a((EntityHuman) null, 1003, i, j, k, 0);
@@ -215,7 +213,7 @@ public class BlockDoor extends Block {
         return j >= 255 ? false : world.t(i, j - 1, k) && super.canPlace(world, i, j, k) && super.canPlace(world, i, j + 1, k);
     }
 
-    public int e() {
+    public int q_() {
         return 1;
     }
 

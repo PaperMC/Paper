@@ -33,8 +33,8 @@ public class BlockStationary extends BlockFluids {
 
         world.suppressPhysics = true;
         world.setRawTypeIdAndData(i, j, k, this.id - 1, l);
-        world.d(i, j, k, i, j, k);
-        world.a(i, j, k, this.id - 1, this.p_());
+        world.e(i, j, k, i, j, k);
+        world.a(i, j, k, this.id - 1, this.r_());
         world.suppressPhysics = false;
     }
 

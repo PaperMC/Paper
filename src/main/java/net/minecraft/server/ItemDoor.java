@@ -26,7 +26,7 @@ public class ItemDoor extends Item {
                 block = Block.IRON_DOOR_BLOCK;
             }
 
-            if (entityhuman.e(i, j, k) && entityhuman.e(i, j + 1, k)) {
+            if (entityhuman.a(i, j, k, l, itemstack) && entityhuman.a(i, j + 1, k, l, itemstack)) {
                 if (!block.canPlace(world, i, j, k)) {
                     return false;
                 } else {

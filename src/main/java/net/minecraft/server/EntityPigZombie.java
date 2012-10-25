@@ -12,27 +12,25 @@ public class EntityPigZombie extends EntityZombie {
 
     public int angerLevel = 0; // CraftBukkit - private -> public
     private int soundDelay = 0;
-    private static final ItemStack g = new ItemStack(Item.GOLD_SWORD, 1);
 
     public EntityPigZombie(World world) {
         super(world);
         this.texture = "/mob/pigzombie.png";
-        this.bw = 0.5F;
-        this.damage = 5;
+        this.bI = 0.5F;
         this.fireProof = true;
     }
 
-    protected boolean aV() {
+    protected boolean bb() {
         return false;
     }
 
-    public void h_() {
-        this.bw = this.target != null ? 0.95F : 0.5F;
+    public void j_() {
+        this.bI = this.target != null ? 0.95F : 0.5F;
         if (this.soundDelay > 0 && --this.soundDelay == 0) {
-            this.world.makeSound(this, "mob.zombiepig.zpigangry", this.aP() * 2.0F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 1.8F);
+            this.world.makeSound(this, "mob.zombiepig.zpigangry", this.aV() * 2.0F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 1.8F);
         }
 
-        super.h_();
+        super.j_();
     }
 
     public boolean canSpawn() {
@@ -66,17 +64,17 @@ public class EntityPigZombie extends EntityZombie {
                 if (entity1 instanceof EntityPigZombie) {
                     EntityPigZombie entitypigzombie = (EntityPigZombie) entity1;
 
-                    entitypigzombie.c(entity);
+                    entitypigzombie.o(entity);
                 }
             }
 
-            this.c(entity);
+            this.o(entity);
         }
 
         return super.damageEntity(damagesource, i);
     }
 
-    private void c(Entity entity) {
+    private void o(Entity entity) {
         // CraftBukkit start
         org.bukkit.entity.Entity bukkitTarget = entity == null ? null : entity.getBukkitEntity();
 
@@ -99,15 +97,15 @@ public class EntityPigZombie extends EntityZombie {
         this.soundDelay = this.random.nextInt(40);
     }
 
-    protected String aQ() {
+    protected String aW() {
         return "mob.zombiepig.zpig";
     }
 
-    protected String aR() {
+    protected String aX() {
         return "mob.zombiepig.zpighurt";
     }
 
-    protected String aS() {
+    protected String aY() {
         return "mob.zombiepig.zpigdeath";
     }
 
@@ -142,30 +140,36 @@ public class EntityPigZombie extends EntityZombie {
         // CraftBukkit end
     }
 
+    public boolean c(EntityHuman entityhuman) {
+        return false;
+    }
+
     // CraftBukkit start - return rare dropped item instead of dropping it
     protected ItemStack l(int i) {
-        if (i > 0) {
-            ItemStack itemstack = new ItemStack(Item.GOLD_SWORD);
-
-            EnchantmentManager.a(this.random, itemstack, 5);
-            return itemstack;
-        } else {
-            int j = this.random.nextInt(3);
-
-            if (j == 0) {
-                return new ItemStack(Item.GOLD_INGOT.id, 1, 0);
-            } else if (j == 1) {
-                return new ItemStack(Item.GOLD_SWORD.id, 1, 0);
-            } else if (j == 2) {
-                return new ItemStack(Item.GOLD_HELMET.id, 1, 0);
-            } else {
-                return null;
-            }
-        }
+        return new ItemStack(Item.GOLD_INGOT.id, 1, 0);
     }
-    // CraftBukkit end
 
     protected int getLootId() {
         return Item.ROTTEN_FLESH.id;
+    }
+
+    protected void bB() {
+        this.setEquipment(0, new ItemStack(Item.GOLD_SWORD));
+    }
+
+    public void bD() {
+        super.bD();
+        this.setVillager(false);
+    }
+
+    public int c(Entity entity) {
+        ItemStack itemstack = this.bA();
+        int i = 5;
+
+        if (itemstack != null) {
+            i += itemstack.a((Entity) this);
+        }
+
+        return i;
     }
 }

@@ -51,7 +51,7 @@ public class BlockRedstoneTorch extends BlockTorch {
         this.a((CreativeModeTab) null);
     }
 
-    public int p_() {
+    public int r_() {
         return 2;
     }
 
@@ -81,7 +81,7 @@ public class BlockRedstoneTorch extends BlockTorch {
         }
     }
 
-    public boolean a(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+    public boolean b(IBlockAccess iblockaccess, int i, int j, int k, int l) {
         if (!this.isOn) {
             return false;
         } else {
@@ -134,7 +134,7 @@ public class BlockRedstoneTorch extends BlockTorch {
                         double d1 = (double) j + random.nextDouble() * 0.6D + 0.2D;
                         double d2 = (double) k + random.nextDouble() * 0.6D + 0.2D;
 
-                        world.a("smoke", d0, d1, d2, 0.0D, 0.0D, 0.0D);
+                        world.addParticle("smoke", d0, d1, d2, 0.0D, 0.0D, 0.0D);
                     }
                 }
             }
@@ -155,11 +155,11 @@ public class BlockRedstoneTorch extends BlockTorch {
 
     public void doPhysics(World world, int i, int j, int k, int l) {
         super.doPhysics(world, i, j, k, l);
-        world.a(i, j, k, this.id, this.p_());
+        world.a(i, j, k, this.id, this.r_());
     }
 
-    public boolean c(World world, int i, int j, int k, int l) {
-        return l == 0 ? this.a(world, i, j, k, l) : false;
+    public boolean c(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+        return l == 0 ? this.b(iblockaccess, i, j, k, l) : false;
     }
 
     public int getDropType(int i, Random random, int j) {
@@ -168,16 +168,5 @@ public class BlockRedstoneTorch extends BlockTorch {
 
     public boolean isPowerSource() {
         return true;
-    }
-
-    public void a(World world, long i, long j) {
-        List list = (List) b.get(world);
-        RedstoneUpdateInfo redstoneupdateinfo;
-
-        if (list != null) {
-            for (Iterator iterator = list.iterator(); iterator.hasNext(); redstoneupdateinfo.d += i) {
-                redstoneupdateinfo = (RedstoneUpdateInfo) iterator.next();
-            }
-        }
     }
 }

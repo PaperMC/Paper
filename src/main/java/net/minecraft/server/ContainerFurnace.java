@@ -86,7 +86,7 @@ public class ContainerFurnace extends Container {
         return this.furnace.a(entityhuman);
     }
 
-    public ItemStack b(int i) {
+    public ItemStack b(EntityHuman entityhuman, int i) {
         ItemStack itemstack = null;
         Slot slot = (Slot) this.b.get(i);
 
@@ -130,7 +130,7 @@ public class ContainerFurnace extends Container {
                 return null;
             }
 
-            slot.b(itemstack1);
+            slot.a(entityhuman, itemstack1);
         }
 
         return itemstack;

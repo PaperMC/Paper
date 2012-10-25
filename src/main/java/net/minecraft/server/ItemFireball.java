@@ -40,7 +40,7 @@ public class ItemFireball extends Item {
                 ++i;
             }
 
-            if (!entityhuman.e(i, j, k)) {
+            if (!entityhuman.a(i, j, k, l, itemstack)) {
                 return false;
             } else {
                 int i1 = world.getTypeId(i, j, k);

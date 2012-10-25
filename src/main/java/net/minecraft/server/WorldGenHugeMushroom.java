@@ -162,7 +162,7 @@ public class WorldGenHugeMushroom extends WorldGenerator implements BlockSapling
                                     l2 = 0;
                                 }
 
-                                if ((l2 != 0 || j >= j + i1 - 1) && !Block.n[world.getTypeId(i2, k1, k2)]) {
+                                if ((l2 != 0 || j >= j + i1 - 1) && !Block.q[world.getTypeId(i2, k1, k2)]) {
                                     // CraftBukkit start
                                     if (event == null) {
                                        this.setTypeAndData(world, i2, k1, k2, Block.BIG_MUSHROOM_1.id + l, l2);
@@ -180,7 +180,7 @@ public class WorldGenHugeMushroom extends WorldGenerator implements BlockSapling
 
                     for (k1 = 0; k1 < i1; ++k1) {
                         l1 = world.getTypeId(i, j + k1, k);
-                        if (!Block.n[l1]) {
+                        if (!Block.q[l1]) {
                             // CraftBukkit start
                             if (event == null) {
                                 this.setTypeAndData(world, i, j + k1, k, Block.BIG_MUSHROOM_1.id + l, 10);

@@ -23,13 +23,13 @@ public class MobEffectList {
     public static final MobEffectList RESISTANCE = (new MobEffectList(11, false, 10044730)).b("potion.resistance").b(6, 1);
     public static final MobEffectList FIRE_RESISTANCE = (new MobEffectList(12, false, 14981690)).b("potion.fireResistance").b(7, 1);
     public static final MobEffectList WATER_BREATHING = (new MobEffectList(13, false, 3035801)).b("potion.waterBreathing").b(0, 2);
-    public static final MobEffectList INVISIBILITY = (new MobEffectList(14, false, 8356754)).b("potion.invisibility").b(0, 1).h();
+    public static final MobEffectList INVISIBILITY = (new MobEffectList(14, false, 8356754)).b("potion.invisibility").b(0, 1);
     public static final MobEffectList BLINDNESS = (new MobEffectList(15, true, 2039587)).b("potion.blindness").b(5, 1).a(0.25D);
-    public static final MobEffectList NIGHT_VISION = (new MobEffectList(16, false, 2039713)).b("potion.nightVision").b(4, 1).h();
+    public static final MobEffectList NIGHT_VISION = (new MobEffectList(16, false, 2039713)).b("potion.nightVision").b(4, 1);
     public static final MobEffectList HUNGER = (new MobEffectList(17, true, 5797459)).b("potion.hunger").b(1, 1);
     public static final MobEffectList WEAKNESS = (new MobEffectList(18, true, 4738376)).b("potion.weakness").b(5, 0);
     public static final MobEffectList POISON = (new MobEffectList(19, true, 5149489)).b("potion.poison").b(6, 0).a(0.25D);
-    public static final MobEffectList v = null;
+    public static final MobEffectList WITHER = (new MobEffectList(20, true, 3484199)).b("potion.wither").b(1, 2).a(0.25D);
     public static final MobEffectList w = null;
     public static final MobEffectList x = null;
     public static final MobEffectList y = null;
@@ -88,10 +88,18 @@ public class MobEffectList {
                 }
                 // CraftBukkit end
             }
+        } else if (this.id == WITHER.id) {
+            // CraftBukkit start
+            EntityDamageEvent event = CraftEventFactory.callEntityDamageEvent(null, entityliving, EntityDamageEvent.DamageCause.WITHER, 1);
+
+            if (!event.isCancelled() && event.getDamage() > 0) {
+                entityliving.damageEntity(DamageSource.WITHER, event.getDamage());
+            }
+            // CraftBukkit end
         } else if (this.id == HUNGER.id && entityliving instanceof EntityHuman) {
             ((EntityHuman) entityliving).j(0.025F * (float) (i + 1));
-        } else if ((this.id != HEAL.id || entityliving.br()) && (this.id != HARM.id || !entityliving.br())) {
-            if (this.id == HARM.id && !entityliving.br() || this.id == HEAL.id && entityliving.br()) {
+        } else if ((this.id != HEAL.id || entityliving.bx()) && (this.id != HARM.id || !entityliving.bx())) {
+            if (this.id == HARM.id && !entityliving.bx() || this.id == HEAL.id && entityliving.bx()) {
                 // CraftBukkit start
                 EntityDamageEvent event = CraftEventFactory.callEntityDamageEvent(null, entityliving, EntityDamageEvent.DamageCause.MAGIC, 6 << i);
 
@@ -114,8 +122,8 @@ public class MobEffectList {
         // CraftBukkit end
         int j;
 
-        if ((this.id != HEAL.id || entityliving1.br()) && (this.id != HARM.id || !entityliving1.br())) {
-            if (this.id == HARM.id && !entityliving1.br() || this.id == HEAL.id && entityliving1.br()) {
+        if ((this.id != HEAL.id || entityliving1.bx()) && (this.id != HARM.id || !entityliving1.bx())) {
+            if (this.id == HARM.id && !entityliving1.bx() || this.id == HEAL.id && entityliving1.bx()) {
                 j = (int) (d0 * (double) (6 << i) + 0.5D);
                 if (entityliving == null) {
                     entityliving1.damageEntity(DamageSource.MAGIC, j);
@@ -135,11 +143,17 @@ public class MobEffectList {
     }
 
     public boolean a(int i, int j) {
-        if (this.id != REGENERATION.id && this.id != POISON.id) {
-            return this.id == HUNGER.id;
-        } else {
-            int k = 25 >> j;
+        int k;
 
+        if (this.id != REGENERATION.id && this.id != POISON.id) {
+            if (this.id == WITHER.id) {
+                k = 40 >> j;
+                return k > 0 ? i % k == 0 : true;
+            } else {
+                return this.id == HUNGER.id;
+            }
+        } else {
+            k = 25 >> j;
             return k > 0 ? i % k == 0 : true;
         }
     }
@@ -160,11 +174,6 @@ public class MobEffectList {
 
     public double getDurationModifier() {
         return this.L;
-    }
-
-    public MobEffectList h() {
-        this.M = true;
-        return this;
     }
 
     public boolean i() {

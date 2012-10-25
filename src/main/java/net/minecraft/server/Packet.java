@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
+import java.net.Socket;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -81,25 +82,30 @@ public abstract class Packet {
         return packetID; // ((Integer) a.get(this.getClass())).intValue(); // CraftBukkit
     }
 
-    public static Packet a(DataInputStream datainputstream, boolean flag) throws IOException { // CraftBukkit - throws IOException
+    public static Packet a(DataInputStream datainputstream, boolean flag, Socket socket) throws IOException { // CraftBukkit - throws IOException
         boolean flag1 = false;
         Packet packet = null;
+        int i = socket.getSoTimeout();
 
-        int i;
+        int j;
 
         try {
-            i = datainputstream.read();
-            if (i == -1) {
+            j = datainputstream.read();
+            if (j == -1) {
                 return null;
             }
 
-            if (flag && !c.contains(Integer.valueOf(i)) || !flag && !b.contains(Integer.valueOf(i))) {
-                throw new IOException("Bad packet id " + i);
+            if (flag && !c.contains(Integer.valueOf(j)) || !flag && !b.contains(Integer.valueOf(j))) {
+                throw new IOException("Bad packet id " + j);
             }
 
-            packet = d(i);
+            packet = d(j);
             if (packet == null) {
-                throw new IOException("Bad packet id " + i);
+                throw new IOException("Bad packet id " + j);
+            }
+
+            if (packet instanceof Packet254GetInfo) {
+                socket.setSoTimeout(1500);
             }
 
             packet.a(datainputstream);
@@ -121,9 +127,10 @@ public abstract class Packet {
         // CraftBukkit end
 
 
-        PacketCounter.a(i, (long) packet.a());
+        PacketCounter.a(j, (long) packet.a());
         ++n;
         o += (long) packet.a();
+        socket.setSoTimeout(i);
         return packet;
     }
 
@@ -211,7 +218,7 @@ public abstract class Packet {
             dataoutputstream.writeShort(itemstack.getData());
             NBTTagCompound nbttagcompound = null;
 
-            if (itemstack.getItem().m() || itemstack.getItem().p()) {
+            if (itemstack.getItem().n() || itemstack.getItem().q()) {
                 nbttagcompound = itemstack.tag;
             }
 

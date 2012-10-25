@@ -60,7 +60,7 @@ public class BlockPumpkin extends BlockDirectional {
             }
 
             for (int l = 0; l < 120; ++l) {
-                world.a("snowshovel", (double) i + world.random.nextDouble(), (double) (j - 2) + world.random.nextDouble() * 2.5D, (double) k + world.random.nextDouble(), 0.0D, 0.0D, 0.0D);
+                world.addParticle("snowshovel", (double) i + world.random.nextDouble(), (double) (j - 2) + world.random.nextDouble() * 2.5D, (double) k + world.random.nextDouble(), 0.0D, 0.0D, 0.0D);
             }
         } else if (world.getTypeId(i, j - 1, k) == Block.IRON_BLOCK.id && world.getTypeId(i, j - 2, k) == Block.IRON_BLOCK.id) {
             boolean flag = world.getTypeId(i - 1, j - 1, k) == Block.IRON_BLOCK.id && world.getTypeId(i + 1, j - 1, k) == Block.IRON_BLOCK.id;
@@ -84,11 +84,11 @@ public class BlockPumpkin extends BlockDirectional {
 
                 EntityIronGolem entityirongolem = new EntityIronGolem(world);
 
-                entityirongolem.f(true);
+                entityirongolem.setPlayerCreated(true);
                 entityirongolem.setPositionRotation((double) i + 0.5D, (double) j - 1.95D, (double) k + 0.5D, 0.0F, 0.0F);
                 if (world.addEntity(entityirongolem, SpawnReason.BUILD_IRONGOLEM)) {
                     for (int i1 = 0; i1 < 120; ++i1) {
-                        world.a("snowballpoof", (double) i + world.random.nextDouble(), (double) (j - 2) + world.random.nextDouble() * 3.9D, (double) k + world.random.nextDouble(), 0.0D, 0.0D, 0.0D);
+                        world.addParticle("snowballpoof", (double) i + world.random.nextDouble(), (double) (j - 2) + world.random.nextDouble() * 3.9D, (double) k + world.random.nextDouble(), 0.0D, 0.0D, 0.0D);
                     }
 
                     blockList.updateList();

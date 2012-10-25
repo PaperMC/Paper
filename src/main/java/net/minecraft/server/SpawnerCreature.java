@@ -21,12 +21,12 @@ public final class SpawnerCreature {
         Chunk chunk = world.getChunkAt(i, j);
         int k = i * 16 + world.random.nextInt(16);
         int l = j * 16 + world.random.nextInt(16);
-        int i1 = world.random.nextInt(chunk == null ? world.L() : chunk.h() + 16 - 1);
+        int i1 = world.random.nextInt(chunk == null ? world.O() : chunk.h() + 16 - 1);
 
         return new ChunkPosition(k, i1, l);
     }
 
-    public static final int spawnEntities(WorldServer worldserver, boolean flag, boolean flag1) {
+    public static final int spawnEntities(WorldServer worldserver, boolean flag, boolean flag1, boolean flag2) {
         if (!flag && !flag1) {
             return 0;
         } else {
@@ -44,12 +44,12 @@ public final class SpawnerCreature {
 
                 for (int l = -b0; l <= b0; ++l) {
                     for (int i1 = -b0; i1 <= b0; ++i1) {
-                        boolean flag2 = l == -b0 || l == b0 || i1 == -b0 || i1 == b0;
+                        boolean flag3 = l == -b0 || l == b0 || i1 == -b0 || i1 == b0;
 
                         // CraftBukkit start
                         long chunkCoords = LongHash.toLong(l + k, i1 + j);
 
-                        if (!flag2) {
+                        if (!flag3) {
                             b.put(chunkCoords, false);
                         } else if (!b.containsKey(chunkCoords)) {
                             b.put(chunkCoords, true);
@@ -87,10 +87,10 @@ public final class SpawnerCreature {
                 }
                 // CraftBukkit end
 
-                if ((!enumcreaturetype.d() || flag1) && (enumcreaturetype.d() || flag) && worldserver.a(enumcreaturetype.a()) <= limit * b.size() / 256) { // CraftBukkit - use per-world limits
+                if ((!enumcreaturetype.d() || flag1) && (enumcreaturetype.d() || flag) && (!enumcreaturetype.e() || flag2) && worldserver.a(enumcreaturetype.a()) <= limit * b.size() / 256) { // CraftBukkit - use per-world limits
                     Iterator iterator = b.keySet().iterator();
 
-                    label108:
+                    label110:
                     while (iterator.hasNext()) {
                         // CraftBukkit start
                         long key = ((Long) iterator.next()).longValue();
@@ -116,7 +116,7 @@ public final class SpawnerCreature {
 
                                     while (true) {
                                         if (k3 < 4) {
-                                            label101: {
+                                            label103: {
                                                 l2 += worldserver.random.nextInt(b1) - worldserver.random.nextInt(b1);
                                                 i3 += worldserver.random.nextInt(1) - worldserver.random.nextInt(1);
                                                 j3 += worldserver.random.nextInt(b1) - worldserver.random.nextInt(b1);
@@ -135,7 +135,7 @@ public final class SpawnerCreature {
                                                             if (biomemeta == null) {
                                                                 biomemeta = worldserver.a(enumcreaturetype, l2, i3, j3);
                                                                 if (biomemeta == null) {
-                                                                    break label101;
+                                                                    break label103;
                                                                 }
                                                             }
 
@@ -154,8 +154,8 @@ public final class SpawnerCreature {
                                                                 // CraftBukkit - added a reason for spawning this creature
                                                                 worldserver.addEntity(entityliving, SpawnReason.NATURAL);
                                                                 a(entityliving, worldserver, f, f1, f2);
-                                                                if (j2 >= entityliving.bl()) {
-                                                                    continue label108;
+                                                                if (j2 >= entityliving.bs()) {
+                                                                    continue label110;
                                                                 }
                                                             }
 
@@ -197,24 +197,7 @@ public final class SpawnerCreature {
 
     private static void a(EntityLiving entityliving, World world, float f, float f1, float f2) {
         if (entityliving.dead) return; // CraftBukkit
-        if (entityliving instanceof EntitySpider && world.random.nextInt(100) == 0) {
-            EntitySkeleton entityskeleton = new EntitySkeleton(world);
-
-            entityskeleton.setPositionRotation((double) f, (double) f1, (double) f2, entityliving.yaw, 0.0F);
-            // CraftBukkit - added a reason for spawning this creature
-            world.addEntity(entityskeleton, SpawnReason.JOCKEY);
-            entityskeleton.mount(entityliving);
-        } else if (entityliving instanceof EntitySheep) {
-            ((EntitySheep) entityliving).setColor(EntitySheep.a(world.random));
-        } else if (entityliving instanceof EntityOcelot && world.random.nextInt(7) == 0) {
-            for (int i = 0; i < 2; ++i) {
-                EntityOcelot entityocelot = new EntityOcelot(world);
-
-                entityocelot.setPositionRotation((double) f, (double) f1, (double) f2, entityliving.yaw, 0.0F);
-                entityocelot.setAge(-24000);
-                world.addEntity(entityocelot, SpawnReason.NATURAL); // CraftBukkit - added SpawnReason
-            }
-        }
+        entityliving.bD();
     }
 
     public static void a(World world, BiomeBase biomebase, int i, int j, int k, int l, Random random) {
@@ -233,7 +216,7 @@ public final class SpawnerCreature {
                     boolean flag = false;
 
                     for (int k2 = 0; !flag && k2 < 4; ++k2) {
-                        int l2 = world.h(j1, k1);
+                        int l2 = world.i(j1, k1);
 
                         if (a(EnumCreatureType.CREATURE, world, j1, l2, k1)) {
                             float f = (float) j1 + 0.5F;

@@ -5,7 +5,6 @@ import net.minecraft.server.EnumArt;
 import net.minecraft.server.WorldServer;
 
 import org.bukkit.Art;
-import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.CraftArt;
 import org.bukkit.craftbukkit.CraftServer;
@@ -13,7 +12,7 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Painting;
 
-public class CraftPainting extends CraftEntity implements Painting {
+public class CraftPainting extends CraftHanging implements Painting {
 
     public CraftPainting(CraftServer server, EntityPainting entity) {
         super(server, entity);
@@ -43,60 +42,13 @@ public class CraftPainting extends CraftEntity implements Painting {
         return true;
     }
 
-    public BlockFace getAttachedFace() {
-        return getFacing().getOppositeFace();
-    }
-
-    public void setFacingDirection(BlockFace face) {
-        setFacingDirection(face, false);
-    }
-
     public boolean setFacingDirection(BlockFace face, boolean force) {
-        Block block = getLocation().getBlock().getRelative(getAttachedFace()).getRelative(face.getOppositeFace()).getRelative(getFacing());
-        EntityPainting painting = getHandle();
-        int x = painting.x, y = painting.y, z = painting.z, dir = painting.direction;
-        painting.x = block.getX();
-        painting.y = block.getY();
-        painting.z = block.getZ();
-        switch (face) {
-        case EAST:
-        default:
-            getHandle().setDirection(0);
-            break;
-        case NORTH:
-            getHandle().setDirection(1);
-            break;
-        case WEST:
-            getHandle().setDirection(2);
-            break;
-        case SOUTH:
-            getHandle().setDirection(3);
-            break;
+        if (super.setFacingDirection(face, force)) {
+            update();
+            return true;
         }
-        if (!force && !painting.survives()) {
-            // Revert painting since it doesn't fit
-            painting.x = x;
-            painting.y = y;
-            painting.z = z;
-            painting.setDirection(dir);
-            return false;
-        }
-        this.update();
-        return true;
-    }
 
-    public BlockFace getFacing() {
-        switch (this.getHandle().direction) {
-        case 0:
-        default:
-            return BlockFace.EAST;
-        case 1:
-            return BlockFace.NORTH;
-        case 2:
-            return BlockFace.WEST;
-        case 3:
-            return BlockFace.SOUTH;
-        }
+        return false;
     }
 
     private void update() {

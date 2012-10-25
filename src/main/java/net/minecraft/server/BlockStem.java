@@ -142,7 +142,7 @@ public class BlockStem extends BlockFlower {
         this.a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, (float) this.maxY, 0.5F + f);
     }
 
-    public int b() {
+    public int d() {
         return 19;
     }
 
@@ -161,14 +161,7 @@ public class BlockStem extends BlockFlower {
 
             for (int j1 = 0; j1 < 3; ++j1) {
                 if (world.random.nextInt(15) <= l) {
-                    float f1 = 0.7F;
-                    float f2 = world.random.nextFloat() * f1 + (1.0F - f1) * 0.5F;
-                    float f3 = world.random.nextFloat() * f1 + (1.0F - f1) * 0.5F;
-                    float f4 = world.random.nextFloat() * f1 + (1.0F - f1) * 0.5F;
-                    EntityItem entityitem = new EntityItem(world, (double) ((float) i + f2), (double) ((float) j + f3), (double) ((float) k + f4), new ItemStack(item));
-
-                    entityitem.pickupDelay = 10;
-                    world.addEntity(entityitem);
+                    this.a(world, i, j, k, new ItemStack(item));
                 }
             }
         }

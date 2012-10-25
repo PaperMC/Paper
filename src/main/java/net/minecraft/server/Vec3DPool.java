@@ -8,18 +8,16 @@ public class Vec3DPool {
     private final int a;
     private final int b;
     // CraftBukkit start
-    // private final List c = new ArrayList();
+    // private final List pool = new ArrayList();
     private Vec3D freelist = null;
     private Vec3D alloclist = null;
     private Vec3D freelisthead = null;
     private Vec3D alloclisthead = null;
     private int total_size = 0;
-    private int hit;
-    private int miss;
     // CraftBukkit end
-    private int d = 0;
-    private int e = 0;
-    private int f = 0;
+    private int position = 0;
+    private int largestSize = 0;
+    private int resizeTime = 0;
 
     public Vec3DPool(int i, int j) {
         this.a = i;
@@ -27,11 +25,11 @@ public class Vec3DPool {
     }
 
     public final Vec3D create(double d0, double d1, double d2) { // CraftBukkit - add final
-        if (this.f == 0) return new Vec3D(d0, d1, d2); // CraftBukkit - don't pool objects indefinitely if thread doesn't adhere to contract
+        if (this.resizeTime == 0) return Vec3D.a(d0, d1, d2); // CraftBukkit - don't pool objects indefinitely if thread doesn't adhere to contract
         Vec3D vec3d;
 
         if (this.freelist == null) { // CraftBukkit
-            vec3d = new Vec3D(d0, d1, d2);
+            vec3d = new Vec3D(this, d0, d1, d2);
             this.total_size++; // CraftBukkit
         } else {
             // CraftBukkit start
@@ -48,7 +46,7 @@ public class Vec3DPool {
         vec3d.next = this.alloclist; // add to allocated list
         this.alloclist = vec3d;
         // CraftBukkit end
-        ++this.d;
+        ++this.position;
         return vec3d;
     }
 
@@ -60,14 +58,14 @@ public class Vec3DPool {
             if (this.freelist == null) this.freelisthead = v;
             v.next = this.freelist;
             this.freelist = v;
-            this.d--;
+            this.position--;
         }
     }
     // CraftBukkit end
 
     public void a() {
-        if (this.d > this.e) {
-            this.e = this.d;
+        if (this.position > this.largestSize) {
+            this.largestSize = this.position;
         }
 
         // CraftBukkit start - intelligent cache
@@ -84,19 +82,31 @@ public class Vec3DPool {
             }
             this.alloclist = null;
         }
-        if ((this.f++ & 0xff) == 0) {
+        if ((this.resizeTime++ & 0xff) == 0) {
             int newSize = total_size - (total_size >> 3);
-            if (newSize > this.e) { // newSize will be 87.5%, but if we were not in that range, we clear some of the cache
+            if (newSize > this.largestSize) { // newSize will be 87.5%, but if we were not in that range, we clear some of the cache
                 for (int i = total_size; i > newSize; i--) {
                     freelist = freelist.next;
                 }
                 total_size = newSize;
             }
-            this.e = 0;
+            this.largestSize = 0;
             // this.f = 0; // We do not reset to zero; it doubles for a flag
         }
         // CraftBukkit end
 
-        this.d = 0;
+        this.position = 0;
+    }
+
+    public int c() {
+        return this.total_size; // CraftBukkit
+    }
+
+    public int d() {
+        return this.position;
+    }
+
+    private boolean e() {
+        return this.b < 0 || this.a < 0;
     }
 }

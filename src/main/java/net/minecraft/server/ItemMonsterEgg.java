@@ -8,8 +8,19 @@ public class ItemMonsterEgg extends Item {
         this.a(CreativeModeTab.f);
     }
 
+    public String j(ItemStack itemstack) {
+        String s = ("" + LocaleI18n.get(this.getName() + ".name")).trim();
+        String s1 = EntityTypes.a(itemstack.getData());
+
+        if (s1 != null) {
+            s = s + " " + LocaleI18n.get("entity." + s1 + ".name");
+        }
+
+        return s;
+    }
+
     public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l, float f, float f1, float f2) {
-        if (world.isStatic || itemstack.getData() == 48 || itemstack.getData() == 49 || itemstack.getData() == 63) { // CraftBukkit
+        if (world.isStatic || itemstack.getData() == 48 || itemstack.getData() == 49 || itemstack.getData() == 63 || itemstack.getData() == 64) { // CraftBukkit
             return true;
         } else {
             int i1 = world.getTypeId(i, j, k);
@@ -23,7 +34,7 @@ public class ItemMonsterEgg extends Item {
                 d0 = 0.5D;
             }
 
-            if (a(world, itemstack.getData(), (double) i + 0.5D, (double) j + d0, (double) k + 0.5D) && !entityhuman.abilities.canInstantlyBuild) {
+            if (a(world, itemstack.getData(), (double) i + 0.5D, (double) j + d0, (double) k + 0.5D) != null && !entityhuman.abilities.canInstantlyBuild) {
                 --itemstack.count;
             }
 
@@ -31,27 +42,23 @@ public class ItemMonsterEgg extends Item {
         }
     }
 
-    public static boolean a(World world, int i, double d0, double d1, double d2) {
+    public static Entity a(World world, int i, double d0, double d1, double d2) {
         if (!EntityTypes.a.containsKey(Integer.valueOf(i))) {
-            return false;
+            return null;
         } else {
-            Entity entity = EntityTypes.a(i, world);
+            Entity entity = null;
 
-            if (entity != null && entity instanceof EntityLiving) { // CraftBukkit
-                entity.setPositionRotation(d0, d1, d2, world.random.nextFloat() * 360.0F, 0.0F);
-                if (entity instanceof EntityVillager) {
-                    EntityVillager entityvillager = (EntityVillager) entity;
-
-                    entityvillager.setProfession(entityvillager.au().nextInt(5));
-                    world.addEntity(entityvillager);
-                    return true;
+            for (int j = 0; j < 1; ++j) {
+                entity = EntityTypes.a(i, world);
+                if (entity != null && entity instanceof EntityLiving) { // CraftBukkit
+                    entity.setPositionRotation(d0, d1, d2, world.random.nextFloat() * 360.0F, 0.0F);
+                    ((EntityLiving) entity).bD();
+                    world.addEntity(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // CraftBukkit
+                    ((EntityLiving) entity).aN();
                 }
-
-                world.addEntity(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // CraftBukkit
-                ((EntityLiving) entity).aH();
             }
 
-            return entity != null;
+            return entity;
         }
     }
 }

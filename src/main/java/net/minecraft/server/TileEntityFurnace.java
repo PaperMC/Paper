@@ -189,7 +189,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
                     if (this.items[1] != null) {
                         --this.items[1].count;
                         if (this.items[1].count == 0) {
-                            Item item = this.items[1].getItem().q();
+                            Item item = this.items[1].getItem().r();
 
                             this.items[1] = item != null ? new ItemStack(item) : null;
                         }
@@ -285,8 +285,7 @@ public class TileEntityFurnace extends TileEntity implements IInventory {
                 }
             }
 
-            return item instanceof ItemTool && ((ItemTool) item).e().equals("WOOD") ? 200 : (item instanceof ItemSword && ((ItemSword) item).f().equals("WOOD") ? 200 : (item instanceof ItemHoe && ((ItemHoe) item).f().equals("WOOD") ? 200 : (i == Item.STICK.id ? 100 : (i == Item.COAL.id ? 1600 : (i == Item.LAVA_BUCKET.id ? 20000 : (i == Block.SAPLING.id ? 100 : (i == Item.BLAZE_ROD.id ? 2400 : 0)))))));
-        }
+            return item instanceof ItemTool && ((ItemTool) item).g().equals("WOOD") ? 200 : (item instanceof ItemSword && ((ItemSword) item).h().equals("WOOD") ? 200 : (item instanceof ItemHoe && ((ItemHoe) item).g().equals("WOOD") ? 200 : (i == Item.STICK.id ? 100 : (i == Item.COAL.id ? 1600 : (i == Item.LAVA_BUCKET.id ? 20000 : (i == Block.SAPLING.id ? 100 : (i == Item.BLAZE_ROD.id ? 2400 : 0)))))));        }
     }
 
     public static boolean isFuel(ItemStack itemstack) {

@@ -2,9 +2,9 @@ package net.minecraft.server;
 
 public interface IRecipe {
 
-    boolean a(InventoryCrafting inventorycrafting);
+    boolean a(InventoryCrafting inventorycrafting, World world);
 
-    ItemStack b(InventoryCrafting inventorycrafting);
+    ItemStack a(InventoryCrafting inventorycrafting);
 
     int a();
 

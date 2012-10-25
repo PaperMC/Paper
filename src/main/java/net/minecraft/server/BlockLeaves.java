@@ -6,13 +6,13 @@ import org.bukkit.event.block.LeavesDecayEvent; // CraftBukkit
 
 public class BlockLeaves extends BlockTransparant {
 
-    private int cr;
+    private int cD;
     public static final String[] a = new String[] { "oak", "spruce", "birch", "jungle"};
     int[] b;
 
     protected BlockLeaves(int i, int j) {
         super(i, j, Material.LEAVES, false);
-        this.cr = j;
+        this.cD = j;
         this.b(true);
         this.a(CreativeModeTab.c);
     }
@@ -21,7 +21,7 @@ public class BlockLeaves extends BlockTransparant {
         byte b0 = 1;
         int j1 = b0 + 1;
 
-        if (world.c(i - j1, j - j1, k - j1, i + j1, j + j1, k + j1)) {
+        if (world.d(i - j1, j - j1, k - j1, i + j1, j + j1, k + j1)) {
             for (int k1 = -b0; k1 <= b0; ++k1) {
                 for (int l1 = -b0; l1 <= b0; ++l1) {
                     for (int i2 = -b0; i2 <= b0; ++i2) {
@@ -55,7 +55,7 @@ public class BlockLeaves extends BlockTransparant {
 
                 int l1;
 
-                if (world.c(i - i1, j - i1, k - i1, i + i1, j + i1, k + i1)) {
+                if (world.d(i - i1, j - i1, k - i1, i + i1, j + i1, k + i1)) {
                     int i2;
                     int j2;
                     int k2;
@@ -163,7 +163,7 @@ public class BlockLeaves extends BlockTransparant {
     }
 
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
-        if (!world.isStatic && entityhuman.bC() != null && entityhuman.bC().id == Item.SHEARS.id) {
+        if (!world.isStatic && entityhuman.bP() != null && entityhuman.bP().id == Item.SHEARS.id) {
             entityhuman.a(StatisticList.C[this.id], 1);
             this.a(world, i, j, k, new ItemStack(Block.LEAVES.id, 1, l & 3));
         } else {
@@ -171,11 +171,11 @@ public class BlockLeaves extends BlockTransparant {
         }
     }
 
-    protected int getDropData(int i) {
+    public int getDropData(int i) {
         return i & 3;
     }
 
-    public boolean d() {
+    public boolean c() {
         return !this.c;
     }
 

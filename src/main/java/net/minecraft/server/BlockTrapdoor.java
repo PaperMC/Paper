@@ -18,11 +18,11 @@ public class BlockTrapdoor extends Block {
         this.a(CreativeModeTab.d);
     }
 
-    public boolean d() {
+    public boolean c() {
         return false;
     }
 
-    public boolean c() {
+    public boolean b() {
         return false;
     }
 
@@ -30,7 +30,7 @@ public class BlockTrapdoor extends Block {
         return !g(iblockaccess.getData(i, j, k));
     }
 
-    public int b() {
+    public int d() {
         return 0;
     }
 
@@ -52,7 +52,12 @@ public class BlockTrapdoor extends Block {
     public void e(int i) {
         float f = 0.1875F;
 
-        this.a(0.0F, 0.0F, 0.0F, 1.0F, f, 1.0F);
+        if ((i & 8) != 0) {
+            this.a(0.0F, 1.0F - f, 0.0F, 1.0F, 1.0F, 1.0F);
+        } else {
+            this.a(0.0F, 0.0F, 0.0F, 1.0F, f, 1.0F);
+        }
+
         if (g(i)) {
             if ((i & 3) == 0) {
                 this.a(0.0F, 0.0F, 1.0F - f, 1.0F, 1.0F, 1.0F);
@@ -72,9 +77,7 @@ public class BlockTrapdoor extends Block {
         }
     }
 
-    public void attack(World world, int i, int j, int k, EntityHuman entityhuman) {
-        this.interact(world, i, j, k, entityhuman, 0, 0.0F, 0.0F, 0.0F);
-    }
+    public void attack(World world, int i, int j, int k, EntityHuman entityhuman) {}
 
     public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman, int l, float f, float f1, float f2) {
         if (this.material == Material.ORE) {
@@ -150,25 +153,31 @@ public class BlockTrapdoor extends Block {
     }
 
     public void postPlace(World world, int i, int j, int k, int l, float f, float f1, float f2) {
-        byte b0 = 0;
+        int i1 = 0;
 
         if (l == 2) {
-            b0 = 0;
+            i1 = 0;
         }
 
         if (l == 3) {
-            b0 = 1;
+            i1 = 1;
         }
 
         if (l == 4) {
-            b0 = 2;
+            i1 = 2;
         }
 
         if (l == 5) {
-            b0 = 3;
+            i1 = 3;
         }
 
-        world.setData(i, j, k, b0);
+        int j1 = Block.TRAP_DOOR.id;
+
+        if (l != 1 && l != 0 && f1 > 0.5F) {
+            i1 |= 8;
+        }
+
+        world.setTypeIdAndData(i, j, k, j1, i1);
         doPhysics(world, i, j, k, Block.REDSTONE_WIRE.id); // CraftBukkit
     }
 
@@ -208,7 +217,7 @@ public class BlockTrapdoor extends Block {
         } else {
             Block block = Block.byId[i];
 
-            return block != null && block.material.k() && block.c() || block == Block.GLOWSTONE;
+            return block != null && block.material.k() && block.b() || block == Block.GLOWSTONE;
         }
     }
 }

@@ -14,19 +14,19 @@ public class BlockIce extends BlockHalfTransparant {
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
         entityhuman.a(StatisticList.C[this.id], 1);
         entityhuman.j(0.025F);
-        if (this.q_() && EnchantmentManager.hasSilkTouchEnchantment(entityhuman.inventory)) {
-            ItemStack itemstack = this.c_(l);
+        if (this.s_() && EnchantmentManager.hasSilkTouchEnchantment(entityhuman)) {
+            ItemStack itemstack = this.f_(l);
 
             if (itemstack != null) {
                 this.a(world, i, j, k, itemstack);
             }
         } else {
-            if (world.worldProvider.d) {
+            if (world.worldProvider.e) {
                 world.setTypeId(i, j, k, 0);
                 return;
             }
 
-            int i1 = EnchantmentManager.getBonusBlockLootEnchantmentLevel(entityhuman.inventory);
+            int i1 = EnchantmentManager.getBonusBlockLootEnchantmentLevel(entityhuman);
 
             this.c(world, i, j, k, l, i1);
             Material material = world.getMaterial(i, j - 1, k);
@@ -49,7 +49,7 @@ public class BlockIce extends BlockHalfTransparant {
             }
             // CraftBukkit end
 
-            if (world.worldProvider.d) {
+            if (world.worldProvider.e) {
                 world.setTypeId(i, j, k, 0);
                 return;
             }
@@ -59,7 +59,7 @@ public class BlockIce extends BlockHalfTransparant {
         }
     }
 
-    public int e() {
+    public int q_() {
         return 0;
     }
 }
