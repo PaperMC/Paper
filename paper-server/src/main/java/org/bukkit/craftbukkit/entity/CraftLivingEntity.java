@@ -8,10 +8,11 @@ import java.util.List;
 
 import net.minecraft.server.DamageSource;
 import net.minecraft.server.EntityArrow;
-import net.minecraft.server.EntityComplex;
 import net.minecraft.server.EntityEgg;
+import net.minecraft.server.EntityEnderDragon;
 import net.minecraft.server.EntityEnderPearl;
 import net.minecraft.server.EntityFireball;
+import net.minecraft.server.EntityLargeFireball;
 import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntitySmallFireball;
 import net.minecraft.server.EntitySnowball;
@@ -160,8 +161,8 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             reason = DamageSource.mobAttack(((CraftLivingEntity) source).getHandle());
         }
 
-        if (entity instanceof EntityComplex) {
-            ((EntityComplex) entity).dealDamage(reason, amount);
+        if (entity instanceof EntityEnderDragon) {
+            ((EntityEnderDragon) entity).dealDamage(reason, amount);
         } else {
             entity.damageEntity(reason, amount);
         }
@@ -279,7 +280,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             if (SmallFireball.class.isAssignableFrom(projectile)) {
                 launch = new EntitySmallFireball(world);
             } else {
-                launch = new EntityFireball(world);
+                launch = new EntityLargeFireball(world);
             }
 
             Location location = getEyeLocation();
@@ -300,6 +301,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public boolean hasLineOfSight(Entity other) {
-        return getHandle().at().canSee(((CraftEntity) other).getHandle()); // am should be getEntitySenses
+        return getHandle().az().canSee(((CraftEntity) other).getHandle()); // az should be getEntitySenses
     }
 }

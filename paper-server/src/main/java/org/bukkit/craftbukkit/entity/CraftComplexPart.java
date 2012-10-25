@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntityComplexPart;
+import net.minecraft.server.EntityEnderDragon;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.ComplexEntityPart;
 import org.bukkit.entity.ComplexLivingEntity;
@@ -13,7 +14,7 @@ public class CraftComplexPart extends CraftEntity implements ComplexEntityPart {
     }
 
     public ComplexLivingEntity getParent() {
-        return (ComplexLivingEntity) getHandle().owner.getBukkitEntity();
+        return (ComplexLivingEntity) ((EntityEnderDragon) getHandle().owner).getBukkitEntity();
     }
 
     @Override

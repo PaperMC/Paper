@@ -22,9 +22,9 @@ public class ArtTest {
 
         for (EnumArt enumArt : EnumArt.values()) {
             int id = enumArt.ordinal();
-            String name = enumArt.A;
-            int width = enumArt.B / UNIT_MULTIPLIER;
-            int height = enumArt.C / UNIT_MULTIPLIER;
+            String name = enumArt.B;
+            int width = enumArt.C / UNIT_MULTIPLIER;
+            int height = enumArt.D / UNIT_MULTIPLIER;
 
             Art subject = Art.getById(id);
 
