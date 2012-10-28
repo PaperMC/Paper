@@ -315,7 +315,7 @@ public class ItemInWorldManager {
 
             // CraftBukkit start - drop event experience
             if (flag && event != null) {
-                Block.byId[l].g(this.world, i, j, k, event.getExpToDrop());
+                Block.byId[l].f(this.world, i, j, k, event.getExpToDrop());
             }
             // CraftBukkit end
 
