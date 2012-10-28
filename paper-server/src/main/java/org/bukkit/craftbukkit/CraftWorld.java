@@ -837,6 +837,8 @@ public class CraftWorld implements World {
             } else if (Fireball.class.isAssignableFrom(clazz)) {
                 if (SmallFireball.class.isAssignableFrom(clazz)) {
                     entity = new EntitySmallFireball(world);
+                } else if (WitherSkull.class.isAssignableFrom(clazz)) {
+                    entity = new EntityWitherSkull(world);
                 } else {
                     entity = new EntityLargeFireball(world);
                 }
@@ -918,16 +920,24 @@ public class CraftWorld implements World {
                 entity = new EntityBlaze(world);
             } else if (Villager.class.isAssignableFrom(clazz)) {
                 entity = new EntityVillager(world);
+            } else if (Witch.class.isAssignableFrom(clazz)) {
+                entity = new EntityWitch(world);
+            } else if (Wither.class.isAssignableFrom(clazz)) {
+                entity = new EntityWither(world);
             } else if (ComplexLivingEntity.class.isAssignableFrom(clazz)) {
                 if (EnderDragon.class.isAssignableFrom(clazz)) {
                     entity = new EntityEnderDragon(world);
+                }
+            } else if (Ambient.class.isAssignableFrom(clazz)) {
+                if (Bat.class.isAssignableFrom(clazz)) {
+                    entity = new EntityBat(world);
                 }
             }
 
             if (entity != null) {
                 entity.setLocation(x, y, z, pitch, yaw);
             }
-        } else if (Painting.class.isAssignableFrom(clazz)) {
+        } else if (Hanging.class.isAssignableFrom(clazz)) {
             Block block = getBlockAt(location);
             BlockFace face = BlockFace.SELF;
             if (block.getRelative(BlockFace.EAST).getTypeId() == 0) {
@@ -955,8 +965,14 @@ public class CraftWorld implements World {
                 dir = 3;
                 break;
             }
-            entity = new EntityPainting(world, (int) x, (int) y, (int) z, dir);
-            if (!((EntityPainting) entity).survives()) {
+
+            if (Painting.class.isAssignableFrom(clazz)) {
+                entity = new EntityPainting(world, (int) x, (int) y, (int) z, dir);
+            } else if (ItemFrame.class.isAssignableFrom(clazz)) {
+                entity = new EntityItemFrame(world, (int) x, (int) y, (int) z, dir);
+            }
+
+            if (entity != null && !((EntityHanging) entity).survives()) {
                 entity = null;
             }
         } else if (TNTPrimed.class.isAssignableFrom(clazz)) {
