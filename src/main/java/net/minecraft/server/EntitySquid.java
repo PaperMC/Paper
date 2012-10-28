@@ -101,7 +101,7 @@ public class EntitySquid extends EntityWaterAnimal {
 
             if (!this.world.isStatic) {
                 this.motX = (double) (this.bO * this.bL);
-                this.motY = (double) (this.bN * this.bL);
+                this.motY = (double) (this.bP * this.bL);
                 this.motZ = (double) (this.bQ * this.bL);
             }
 
