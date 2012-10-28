@@ -1407,7 +1407,7 @@ public class NetServerHandler extends NetHandler {
 
                 itemstack1 = this.player.inventory.getItemInHand();
                 if (itemstack != null && itemstack.id == Item.BOOK_AND_QUILL.id && itemstack.id == itemstack1.id) {
-                    itemstack1.setTag(itemstack.getTag());
+                    itemstack1.a("pages", itemstack.getTag().getList("pages")); // CraftBukkit
                 }
             } catch (Exception exception) {
                 exception.printStackTrace();
