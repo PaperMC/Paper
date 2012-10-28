@@ -1509,31 +1509,30 @@ public class NetServerHandler extends NetHandler {
                         containeranvil.a("");
                     }
                 }
+                // CraftBukkit start
+                else if (packet250custompayload.tag.equals("REGISTER")) {
+                    try {
+                        String channels = new String(packet250custompayload.data, "UTF8");
+                        for (String channel : channels.split("\0")) {
+                            getPlayer().addChannel(channel);
+                        }
+                    } catch (UnsupportedEncodingException ex) {
+                        Logger.getLogger(NetServerHandler.class.getName()).log(Level.SEVERE, "Could not parse REGISTER payload in plugin message packet", ex);
+                    }
+                } else if (packet250custompayload.tag.equals("UNREGISTER")) {
+                    try {
+                        String channels = new String(packet250custompayload.data, "UTF8");
+                        for (String channel : channels.split("\0")) {
+                            getPlayer().removeChannel(channel);
+                        }
+                    } catch (UnsupportedEncodingException ex) {
+                        Logger.getLogger(NetServerHandler.class.getName()).log(Level.SEVERE, "Could not parse UNREGISTER payload in plugin message packet", ex);
+                    }
+                } else {
+                    server.getMessenger().dispatchIncomingMessage(player.getBukkitEntity(), packet250custompayload.tag, packet250custompayload.data);
+                }
+                // CraftBukkit end
             }
         }
-
-        // CraftBukkit start
-        if (packet250custompayload.tag.equals("REGISTER")) {
-            try {
-                String channels = new String(packet250custompayload.data, "UTF8");
-                for (String channel : channels.split("\0")) {
-                    getPlayer().addChannel(channel);
-                }
-            } catch (UnsupportedEncodingException ex) {
-                Logger.getLogger(NetServerHandler.class.getName()).log(Level.SEVERE, "Could not parse REGISTER payload in plugin message packet", ex);
-            }
-        } else if (packet250custompayload.tag.equals("UNREGISTER")) {
-            try {
-                String channels = new String(packet250custompayload.data, "UTF8");
-                for (String channel : channels.split("\0")) {
-                    getPlayer().removeChannel(channel);
-                }
-            } catch (UnsupportedEncodingException ex) {
-                Logger.getLogger(NetServerHandler.class.getName()).log(Level.SEVERE, "Could not parse UNREGISTER payload in plugin message packet", ex);
-            }
-        } else {
-            server.getMessenger().dispatchIncomingMessage(player.getBukkitEntity(), packet250custompayload.tag, packet250custompayload.data);
-        }
-        // CraftBukkit end
     }
 }
