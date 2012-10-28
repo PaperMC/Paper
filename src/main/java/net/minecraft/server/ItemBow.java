@@ -78,7 +78,7 @@ public class ItemBow extends Item {
         return 72000;
     }
 
-    public EnumAnimation b(ItemStack itemstack) {
+    public EnumAnimation d_(ItemStack itemstack) {
         return EnumAnimation.e;
     }
 
@@ -90,7 +90,7 @@ public class ItemBow extends Item {
         return itemstack;
     }
 
-    public int b() {
+    public int c() {
         return 1;
     }
 }
