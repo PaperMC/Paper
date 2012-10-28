@@ -154,7 +154,7 @@ public final class ItemStack {
     }
 
     public void setData(int i) {
-        this.damage = (this.id > 0) && (this.id < 256) ? Item.byId[this.id].filterData(i) : i; // CraftBukkit
+        this.damage = (this.id > 0) && (this.id < 256) && (this.id != Block.ANVIL.id) ? Item.byId[this.id].filterData(i) : i; // CraftBukkit
     }
 
     public int k() {
