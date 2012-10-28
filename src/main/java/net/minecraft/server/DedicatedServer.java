@@ -157,10 +157,11 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
         }
 
         // CraftBukkit start
-        if (this.propertyManager.properties.containsKey("spawn-protection")) {
-            log.info("'spawn-protection' in server.properties has been moved to 'settings.spawn-radius' in bukkit.yml. I will move your config for you.");
-            this.server.setSpawnRadius(this.propertyManager.getInt("spawn-protection", 16));
+        if (this.server.getBukkitSpawnRadius() > -1) {
+            log.info("'settings.spawn-radius' in bukkit.yml has been moved to 'spawn-protection' in server.properties. I will move your config for you.");
             this.propertyManager.properties.remove("spawn-protection");
+            this.propertyManager.getInt("spawn-protection", this.server.getBukkitSpawnRadius());
+            this.server.removeBukkitSpawnRadius();
             this.propertyManager.savePropertiesFile();
         }
 
