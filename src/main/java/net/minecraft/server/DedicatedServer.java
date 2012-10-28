@@ -182,7 +182,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
     }
 
     public int getDifficulty() {
-        return this.propertyManager.getInt("difficulty", 1);
+        return Math.max(0, Math.min(3, this.propertyManager.getInt("difficulty", 1))); // CraftBukkit - clamp values
     }
 
     public boolean isHardcore() {
