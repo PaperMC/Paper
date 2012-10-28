@@ -329,4 +329,14 @@ public final class ItemStack {
     public boolean hasEnchantments() {
         return this.tag != null && this.tag.hasKey("ench");
     }
+
+    // CraftBukkit start - temporary method for book fix
+    public void a(String s, NBTBase nbtbase) {
+        if (this.tag == null) {
+            this.setTag(new NBTTagCompound());
+        }
+
+        this.tag.set(s, nbtbase);
+    }
+    // CraftBukkit end
 }

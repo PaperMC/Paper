@@ -1426,7 +1426,11 @@ public class NetServerHandler extends NetHandler {
 
                 itemstack1 = this.player.inventory.getItemInHand();
                 if (itemstack != null && itemstack.id == Item.WRITTEN_BOOK.id && itemstack1.id == Item.BOOK_AND_QUILL.id) {
-                    itemstack1.setTag(itemstack.getTag());
+                    // CraftBukkit start
+                    itemstack1.a("author", new NBTTagString("author", this.player.name));
+                    itemstack1.a("title", new NBTTagString("title", itemstack.getTag().getString("title")));
+                    itemstack1.a("pages", itemstack.getTag().getList("pages"));
+                    // CraftBukkit end
                     itemstack1.id = Item.WRITTEN_BOOK.id;
                 }
             } catch (Exception exception1) {
