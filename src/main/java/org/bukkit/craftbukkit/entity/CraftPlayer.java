@@ -539,6 +539,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         getHandle().giveExp(exp);
     }
 
+    public void giveExpLevels(int levels) {
+        getHandle().levelDown(levels);
+    }
+
     public float getExp() {
         return getHandle().exp;
     }
