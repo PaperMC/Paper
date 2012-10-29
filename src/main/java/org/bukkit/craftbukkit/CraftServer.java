@@ -946,6 +946,10 @@ public final class CraftServer implements Server {
         return console.getAllowFlight();
     }
 
+    public boolean isHardcore() {
+        return console.isHardcore();
+    }
+
     public boolean useExactLoginLocation() {
         return configuration.getBoolean("settings.use-exact-login-location");
     }
