@@ -55,6 +55,7 @@ public class SimpleCommandMap implements CommandMap {
         fallbackCommands.add(new SeedCommand());
         fallbackCommands.add(new DifficultyCommand());
         fallbackCommands.add(new WeatherCommand());
+        fallbackCommands.add(new SpawnpointCommand());
     }
 
     public SimpleCommandMap(final Server server) {
