@@ -1055,6 +1055,12 @@ public abstract class EntityLiving extends Entity {
     }
 
     public void b(NBTTagCompound nbttagcompound) {
+        // CraftBukkit start
+        if (this.health < -32768) {
+            this.health = -32768;
+        }
+        // CraftBukkit end
+
         nbttagcompound.setShort("Health", (short) this.health);
         nbttagcompound.setShort("HurtTime", (short) this.hurtTicks);
         nbttagcompound.setShort("DeathTime", (short) this.deathTicks);
@@ -1100,10 +1106,6 @@ public abstract class EntityLiving extends Entity {
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        if (this.health < -32768) {
-            this.health = -32768;
-        }
-
         this.health = nbttagcompound.getShort("Health");
         if (!nbttagcompound.hasKey("Health")) {
             this.health = this.getMaxHealth();
