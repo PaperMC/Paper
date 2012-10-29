@@ -78,7 +78,8 @@ public class BlockSkull extends BlockContainer {
         return i;
     }
 
-    public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {}
+    // CraftBukkit - drop the item like every other block
+    // public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {}
 
     public void a(World world, int i, int j, int k, int l, EntityHuman entityhuman) {
         if (entityhuman.abilities.canInstantlyBuild) {
@@ -91,9 +92,11 @@ public class BlockSkull extends BlockContainer {
 
     public void remove(World world, int i, int j, int k, int l, int i1) {
         if (!world.isStatic) {
+            /* CraftBukkit start - don't special code dropping the item
             if ((i1 & 8) == 0) {
                 this.a(world, i, j, k, new ItemStack(Item.SKULL.id, 1, this.getDropData(world, i, j, k)));
             }
+            // CraftBukkit end */
 
             super.remove(world, i, j, k, l, i1);
         }
