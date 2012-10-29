@@ -342,15 +342,22 @@ public class CraftBlock implements Block {
     }
 
     public boolean breakNaturally() {
+        // Order matters here, need to drop before setting to air so skulls can get their data
         net.minecraft.server.Block block = net.minecraft.server.Block.byId[this.getTypeId()];
         byte data = getData();
+        boolean result = false;
+
+        if (block != null) {
+            if (block.id == net.minecraft.server.Block.SKULL.id) {
+                data = (byte) block.getDropData(chunk.getHandle().world, x, y, z);
+            }
+
+            block.dropNaturally(chunk.getHandle().world, x, y, z, data, 1.0F, 0);
+            result = true;
+        }
 
         setTypeId(Material.AIR.getId());
-        if (block != null) {
-            block.dropNaturally(chunk.getHandle().world, x, y, z, data, 1.0F, 0);
-            return true;
-        }
-        return false;
+        return result;
     }
 
     public boolean breakNaturally(ItemStack item) {

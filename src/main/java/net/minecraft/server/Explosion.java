@@ -264,8 +264,14 @@ public class Explosion {
 
                 // CraftBukkit - stop explosions from putting out fire
                 if (l > 0 && l != Block.FIRE.id) {
-                    // CraftBukkit
-                    Block.byId[l].dropNaturally(this.world, i, j, k, this.world.getData(i, j, k), event.getYield(), 0);
+                    // CraftBukkit start - special case skulls, add yield
+                    int data = this.world.getData(i, j, k);
+                    if (l == Block.SKULL.id) {
+                        data = Block.SKULL.getDropData(this.world, i, j, k);
+                    }
+
+                    Block.byId[l].dropNaturally(this.world, i, j, k, data, event.getYield(), 0);
+                    // CraftBukkit end
                     if (this.world.setRawTypeIdAndData(i, j, k, 0, 0, this.world.isStatic)) {
                         this.world.applyPhysics(i, j, k, 0);
                     }
