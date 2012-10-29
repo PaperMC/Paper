@@ -68,9 +68,8 @@ public class DefaultGameModeCommand extends VanillaCommand {
 
         if (args.length == 1) {
             return StringUtil.copyPartialMatches(args[0], GAMEMODE_NAMES, new ArrayList<String>(GAMEMODE_NAMES.size()));
-        } else if (args.length == 2) {
-            return super.tabComplete(sender, alias, args);
         }
+
         return ImmutableList.of();
     }
 }
