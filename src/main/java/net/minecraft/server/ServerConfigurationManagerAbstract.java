@@ -344,7 +344,7 @@ public abstract class ServerConfigurationManagerAbstract {
             boolean isBedSpawn = false;
             CraftWorld cworld = (CraftWorld) this.server.server.getWorld(entityplayer.spawnWorld);
             if (cworld != null && chunkcoordinates != null) {
-                chunkcoordinates1 = EntityHuman.getBed(cworld.getHandle(), chunkcoordinates, flag);
+                chunkcoordinates1 = EntityHuman.getBed(cworld.getHandle(), chunkcoordinates, flag1);
                 if (chunkcoordinates1 != null) {
                     isBedSpawn = true;
                     location = new Location(cworld, chunkcoordinates1.x + 0.5, chunkcoordinates1.y, chunkcoordinates1.z + 0.5);
