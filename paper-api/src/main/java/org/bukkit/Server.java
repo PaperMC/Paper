@@ -476,6 +476,13 @@ public interface Server extends PluginMessageRecipient {
     public boolean getAllowFlight();
 
     /**
+     * Gets whether the server is in hardcore mode or not.
+     *
+     * @return Whether this server is in hardcore mode or not.
+     */
+    public boolean isHardcore();
+
+    /**
      * Gets whether to use vanilla (false) or exact behaviour (true).
      *
      * Vanilla behaviour: check for collisions and move the player if needed.

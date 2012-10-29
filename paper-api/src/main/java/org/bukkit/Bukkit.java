@@ -243,6 +243,10 @@ public final class Bukkit {
         return server.getAllowFlight();
     }
 
+    public static boolean isHardcore() {
+        return server.isHardcore();
+    }
+
     public static void shutdown() {
         server.shutdown();
     }
