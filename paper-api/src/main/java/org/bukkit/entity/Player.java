@@ -371,6 +371,13 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     public void giveExp(int amount);
 
     /**
+     * Gives the player the amount of experience levels specified. Levels can be taken by specifying a negative amount.
+     *
+     * @param amount amount of experience levels to give or take
+     */
+    public void giveExpLevels(int amount);
+
+    /**
      * Gets the players current experience points towards the next level.
      * <p />
      * This is a percentage value. 0 is "no progress" and 1 is "next level".

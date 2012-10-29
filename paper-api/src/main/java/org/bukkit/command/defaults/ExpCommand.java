@@ -14,35 +14,65 @@ import com.google.common.collect.ImmutableList;
 public class ExpCommand extends VanillaCommand {
     public ExpCommand() {
         super("xp");
-        this.description = "Gives the specified player a certain amount of experience";
-        this.usageMessage = "/xp <amount> [player]";
+        this.description = "Gives the specified player a certain amount of experience. Specify <amount>L to give levels instead, with a negative amount resulting in taking levels.";
+        this.usageMessage = "/xp <amount> [player] OR /xp <amount>L [player]";
         this.setPermission("bukkit.command.xp");
     }
 
     @Override
     public boolean execute(CommandSender sender, String currentAlias, String[] args) {
         if (!testPermission(sender)) return true;
-        if (args.length < 1) {
-            sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
-            return false;
-        }
-        int exp = getInteger(sender, args[0], 0, 5000);
-        Player player = null;
 
-        if (args.length > 1) {
-            player = Bukkit.getPlayer(args[1]);
-        } else if (sender instanceof Player) {
-            player = (Player) sender;
+        if (args.length > 0) {
+            String inputAmount = args[0];
+            Player player = null;
+
+            boolean isLevel = inputAmount.endsWith("l") || inputAmount.endsWith("L");
+            if (isLevel && inputAmount.length() > 1) {
+                inputAmount = inputAmount.substring(0, inputAmount.length() - 1);
+            }
+
+            int amount = getInteger(sender, inputAmount, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            boolean isTaking = amount < 0;
+
+            if (isTaking) {
+                amount *= -1;
+            }
+
+            if (args.length > 1) {
+                player = Bukkit.getPlayer(args[1]);
+            } else if (sender instanceof Player) {
+                player = (Player) sender;
+            }
+
+            if (player != null) {
+                if (isLevel) {
+                    if (isTaking) {
+                        player.giveExpLevels(-amount);
+                        sender.sendMessage("Taken " + amount + " level(s) from " + player.getName());
+                    } else {
+                        player.giveExpLevels(amount);
+                        sender.sendMessage("Given " + amount + " level(s) to " + player.getName());
+                    }
+                } else {
+                    if (isTaking) {
+                        sender.sendMessage(ChatColor.RED + "Taking experience can only be done by levels, cannot give players negative experience points");
+                        return false;
+                    } else {
+                        player.giveExp(amount);
+                        sender.sendMessage("Given " + amount + " experience to " + player.getName());
+                    }
+                }
+            } else {
+                sender.sendMessage("Can't find user, was one provided?\n" + ChatColor.RED + "Usage: " + usageMessage);
+                return false;
+            }
+
+            return true;
         }
 
-        if (player != null) {
-            player.giveExp(exp);
-            Command.broadcastCommandMessage(sender, "Given " + exp + " exp to " + player.getName());
-        } else {
-            sender.sendMessage("Can't find user, was one provided?\n" + ChatColor.RED + "Usage: " + usageMessage);
-        }
-
-        return true;
+        sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
+        return false;
     }
 
     @Override
