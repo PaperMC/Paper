@@ -261,6 +261,9 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         }
 
         this.closeInventory();
+
+        // Update effects on player death
+        this.updateEffects = true;
         // CraftBukkit end
     }
 
