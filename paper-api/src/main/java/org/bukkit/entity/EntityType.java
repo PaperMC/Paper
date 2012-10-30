@@ -13,7 +13,7 @@ public enum EntityType {
     PAINTING("Painting", Painting.class, 9),
     ARROW("Arrow", Arrow.class, 10),
     SNOWBALL("Snowball", Snowball.class, 11),
-    LARGE_FIREBALL("Fireball", LargeFireball.class, 12),
+    FIREBALL("Fireball", LargeFireball.class, 12),
     SMALL_FIREBALL("SmallFireball", SmallFireball.class, 13),
     ENDER_PEARL("ThrownEnderpearl", EnderPearl.class, 14),
     ENDER_SIGNAL("EyeOfEnderSignal", EnderSignal.class, 15),
