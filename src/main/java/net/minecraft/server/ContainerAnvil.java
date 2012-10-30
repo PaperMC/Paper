@@ -246,7 +246,7 @@ public class ContainerAnvil extends Container {
             }
 
             if (j == i && j > 0 && this.e >= 40) {
-                System.out.println("Naming an item only, cost too high; giving discount to cap cost to 39 levels");
+                //System.out.println("Naming an item only, cost too high; giving discount to cap cost to 39 levels"); // CraftBukkit -remove debug
                 this.e = 39;
             }
 
