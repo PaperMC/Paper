@@ -248,7 +248,7 @@ public abstract class Entity {
 
             i = this.z();
             if (this.ao) {
-                // if (minecraftserver.getAllowNether()) { // CraftBukkit
+                if (minecraftserver.getAllowNether()) {
                     if (this.vehicle == null && this.h++ >= i) {
                         this.h = i;
                         this.an = this.ab();
@@ -264,7 +264,7 @@ public abstract class Entity {
                     }
 
                     this.ao = false;
-                // } // CraftBukkit
+                }
             } else {
                 if (this.h > 0) {
                     this.h -= 4;
@@ -1681,7 +1681,7 @@ public abstract class Entity {
     }
 
     public void b(int i) {
-        if (!this.world.isStatic && !this.dead) {
+        if (false && !this.world.isStatic && !this.dead) { // CraftBukkit - disable entity portal support for now.
             MinecraftServer minecraftserver = MinecraftServer.getServer();
             int j = this.dimension;
             WorldServer worldserver = minecraftserver.getWorldServer(j);
