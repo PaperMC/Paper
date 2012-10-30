@@ -21,6 +21,6 @@ public class CraftLargeFireball extends CraftFireball implements LargeFireball {
     }
 
     public EntityType getType() {
-        return EntityType.LARGE_FIREBALL;
+        return EntityType.FIREBALL;
     }
 }
