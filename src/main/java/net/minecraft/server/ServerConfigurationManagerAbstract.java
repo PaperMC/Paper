@@ -387,7 +387,7 @@ public abstract class ServerConfigurationManagerAbstract {
         entityplayer1.spawnIn(worldserver);
         entityplayer1.dead = false;
         entityplayer1.netServerHandler.teleport(new Location(worldserver.getWorld(), entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch));
-
+        entityplayer1.setSneaking(false);
         chunkcoordinates1 = worldserver.getSpawn();
         // CraftBukkit end
         entityplayer1.netServerHandler.sendPacket(new Packet6SpawnPosition(chunkcoordinates1.x, chunkcoordinates1.y, chunkcoordinates1.z));
