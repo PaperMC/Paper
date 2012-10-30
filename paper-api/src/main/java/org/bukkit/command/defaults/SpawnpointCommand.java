@@ -36,6 +36,10 @@ public class SpawnpointCommand extends VanillaCommand {
             }
         } else {
             player = Bukkit.getPlayerExact(args[0]);
+            if (player == null) {
+                sender.sendMessage("Can't find user " + args[0]);
+                return true;
+            }
         }
 
         World world = player.getWorld();
