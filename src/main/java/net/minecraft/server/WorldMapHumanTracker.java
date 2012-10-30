@@ -54,8 +54,7 @@ public class WorldMapHumanTracker {
                     org.bukkit.map.MapCursor cursor = render.cursors.get(i);
                     if (!cursor.isVisible()) continue;
 
-                    byte value = (byte) (((cursor.getRawType() == 0 || cursor.getDirection() < 8 ? cursor.getDirection() : cursor.getDirection() - 1) & 15) * 16);
-                    abyte[i * 3 + 1] = (byte) (value | (cursor.getRawType() != 0 && value < 0 ? 16 - cursor.getRawType() : cursor.getRawType()));
+                    abyte[i * 3 + 1] = (byte) (cursor.getRawType() << 4 | cursor.getDirection() & 15);
                     abyte[i * 3 + 2] = (byte) cursor.getX();
                     abyte[i * 3 + 3] = (byte) cursor.getY();
                 }
