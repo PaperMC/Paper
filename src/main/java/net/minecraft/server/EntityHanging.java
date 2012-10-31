@@ -210,21 +210,10 @@ public abstract class EntityHanging extends Entity {
             PaintingBreakEvent paintingEvent = null;
             if (damagesource.getEntity() != null) {
                 event = new HangingBreakByEntityEvent((Hanging) this.getBukkitEntity(), damagesource.getEntity() == null ? null : damagesource.getEntity().getBukkitEntity());
-            } else {
-                if (damagesource == DamageSource.FIRE) {
-                    event = new HangingBreakEvent((Hanging) this.getBukkitEntity(), HangingBreakEvent.RemoveCause.FIRE);
-                }
-                // TODO: Could put other stuff here?
-            }
 
-            if (this instanceof EntityPainting) {
-                // Fire old painting event until it can be removed
-                if (damagesource.getEntity() != null) {
+                if (this instanceof EntityPainting) {
+                    // Fire old painting event until it can be removed
                     paintingEvent = new org.bukkit.event.painting.PaintingBreakByEntityEvent((Painting) this.getBukkitEntity(), damagesource.getEntity() == null ? null : damagesource.getEntity().getBukkitEntity());
-                } else {
-                    if (damagesource == DamageSource.FIRE) {
-                        paintingEvent = new PaintingBreakEvent((Painting) this.getBukkitEntity(), PaintingBreakEvent.RemoveCause.valueOf(HangingBreakEvent.RemoveCause.FIRE.name()));
-                    }
                 }
             }
 
