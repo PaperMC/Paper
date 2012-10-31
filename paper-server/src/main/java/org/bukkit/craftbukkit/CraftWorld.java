@@ -57,6 +57,7 @@ public class CraftWorld implements World {
     private int monsterSpawn = -1;
     private int animalSpawn = -1;
     private int waterAnimalSpawn = -1;
+    private int ambientSpawn = -1;
 
     private static final Random rand = new Random();
 
@@ -1187,6 +1188,19 @@ public class CraftWorld implements World {
     public void setWaterAnimalSpawnLimit(int limit) {
         waterAnimalSpawn = limit;
     }
+
+    public int getAmbientSpawnLimit() {
+        if (ambientSpawn < 0) {
+            return server.getAmbientSpawnLimit();
+        }
+
+        return ambientSpawn;
+    }
+
+    public void setAmbientSpawnLimit(int limit) {
+        ambientSpawn = limit;
+    }
+
 
     public void playSound(Location loc, Sound sound, float volume, float pitch) {
         if (loc == null || sound == null) return;
