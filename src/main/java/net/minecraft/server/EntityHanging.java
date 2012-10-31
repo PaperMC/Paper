@@ -206,7 +206,7 @@ public abstract class EntityHanging extends Entity {
     public boolean damageEntity(DamageSource damagesource, int i) {
         if (!this.dead && !this.world.isStatic) {
             // CraftBukkit start
-            HangingBreakEvent event = null;
+            HangingBreakEvent event = new HangingBreakEvent((Hanging) this.getBukkitEntity(), HangingBreakEvent.RemoveCause.DEFAULT);
             PaintingBreakEvent paintingEvent = null;
             if (damagesource.getEntity() != null) {
                 event = new HangingBreakByEntityEvent((Hanging) this.getBukkitEntity(), damagesource.getEntity() == null ? null : damagesource.getEntity().getBukkitEntity());
@@ -215,18 +215,18 @@ public abstract class EntityHanging extends Entity {
                     // Fire old painting event until it can be removed
                     paintingEvent = new org.bukkit.event.painting.PaintingBreakByEntityEvent((Painting) this.getBukkitEntity(), damagesource.getEntity() == null ? null : damagesource.getEntity().getBukkitEntity());
                 }
+            } else if (damagesource == DamageSource.EXPLOSION || damagesource == DamageSource.EXPLOSION2) {
+                event = new HangingBreakEvent((Hanging) this.getBukkitEntity(), HangingBreakEvent.RemoveCause.EXPLOSION);
             }
 
-            if (event != null) {
-                this.world.getServer().getPluginManager().callEvent(event);
-            }
+            this.world.getServer().getPluginManager().callEvent(event);
 
             if (paintingEvent != null) {
-                paintingEvent.setCancelled(event != null && event.isCancelled());
+                paintingEvent.setCancelled(event.isCancelled());
                 this.world.getServer().getPluginManager().callEvent(paintingEvent);
             }
 
-            if (dead || (event != null && event.isCancelled()) || (paintingEvent != null && paintingEvent.isCancelled())) {
+            if (dead || event.isCancelled() || (paintingEvent != null && paintingEvent.isCancelled())) {
                 return true;
             }
             // CraftBukkit end
