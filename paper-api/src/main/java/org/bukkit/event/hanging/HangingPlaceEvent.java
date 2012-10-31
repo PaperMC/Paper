@@ -1,55 +1,51 @@
-package org.bukkit.event.painting;
+package org.bukkit.event.hanging;
 
-import org.bukkit.Warning;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.entity.Painting;
+import org.bukkit.entity.Hanging;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 
 /**
- * Triggered when a painting is created in the world
- * @deprecated Use {@link org.bukkit.event.hanging.HangingPlaceEvent} instead.
+ * Triggered when a hanging entity is created in the world
  */
-@Deprecated
-@Warning(reason="This event has been replaced by HangingPlaceEvent")
-public class PaintingPlaceEvent extends PaintingEvent implements Cancellable {
+public class HangingPlaceEvent extends HangingEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancelled;
     private final Player player;
     private final Block block;
     private final BlockFace blockFace;
 
-    public PaintingPlaceEvent(final Painting painting, final Player player, final Block block, final BlockFace blockFace) {
-        super(painting);
+    public HangingPlaceEvent(final Hanging hanging, final Player player, final Block block, final BlockFace blockFace) {
+        super(hanging);
         this.player = player;
         this.block = block;
         this.blockFace = blockFace;
     }
 
     /**
-     * Returns the player placing the painting
+     * Returns the player placing the hanging entity
      *
-     * @return Entity returns the player placing the painting
+     * @return the player placing the hanging entity
      */
     public Player getPlayer() {
         return player;
     }
 
     /**
-     * Returns the block that the painting was placed on
+     * Returns the block that the hanging entity was placed on
      *
-     * @return Block returns the block painting placed on
+     * @return the block that the hanging entity was placed on
      */
     public Block getBlock() {
         return block;
     }
 
     /**
-     * Returns the face of the block that the painting was placed on
+     * Returns the face of the block that the hanging entity was placed on
      *
-     * @return BlockFace returns the face of the block the painting was placed on
+     * @return the face of the block that the hanging entity was placed on
      */
     public BlockFace getBlockFace() {
         return blockFace;

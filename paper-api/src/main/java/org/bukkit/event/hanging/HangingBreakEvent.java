@@ -1,32 +1,28 @@
-package org.bukkit.event.painting;
+package org.bukkit.event.hanging;
 
-import org.bukkit.Warning;
-import org.bukkit.entity.Painting;
+import org.bukkit.entity.Hanging;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 
 /**
- * Triggered when a painting is removed
- * @deprecated Use {@link org.bukkit.event.hanging.HangingBreakEvent} instead.
+ * Triggered when a hanging entity is removed
  */
-@Deprecated
-@Warning(reason="This event has been replaced by HangingBreakEvent")
-public class PaintingBreakEvent extends PaintingEvent implements Cancellable {
+public class HangingBreakEvent extends HangingEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancelled;
-    private final RemoveCause cause;
+    private final HangingBreakEvent.RemoveCause cause;
 
-    public PaintingBreakEvent(final Painting painting, final RemoveCause cause) {
-        super(painting);
+    public HangingBreakEvent(final Hanging hanging, final HangingBreakEvent.RemoveCause cause) {
+        super(hanging);
         this.cause = cause;
     }
 
     /**
-     * Gets the cause for the painting's removal
+     * Gets the cause for the hanging entity's removal
      *
-     * @return the RemoveCause for the painting's removal
+     * @return the RemoveCause for the hanging entity's removal
      */
-    public RemoveCause getCause() {
+    public HangingBreakEvent.RemoveCause getCause() {
         return cause;
     }
 
@@ -47,17 +43,9 @@ public class PaintingBreakEvent extends PaintingEvent implements Cancellable {
          */
         ENTITY,
         /**
-         * Removed by fire
-         */
-        FIRE,
-        /**
          * Removed by placing a block on it
          */
         OBSTRUCTION,
-        /**
-         * Removed by water flowing over it
-         */
-        WATER,
         /**
          * Removed by destroying the block behind it, etc
          */
