@@ -27,7 +27,7 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
 
     public org.bukkit.inventory.ItemStack getItem() {
         ItemStack i = getHandle().i();
-        return i == null ? new org.bukkit.inventory.ItemStack(Material.AIR) : new CraftItemStack(i);
+        return i == null ? new org.bukkit.inventory.ItemStack(Material.AIR) : CraftItemStack.asBukkitStack(i);
     }
 
     public Rotation getRotation() {
