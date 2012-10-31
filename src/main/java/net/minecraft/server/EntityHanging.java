@@ -226,7 +226,7 @@ public abstract class EntityHanging extends Entity {
                 this.world.getServer().getPluginManager().callEvent(paintingEvent);
             }
 
-            if (dead || event.isCancelled() || (paintingEvent != null && paintingEvent.isCancelled())) {
+            if (dead || (event != null && event.isCancelled()) || (paintingEvent != null && paintingEvent.isCancelled())) {
                 return true;
             }
             // CraftBukkit end
