@@ -47,7 +47,16 @@ public enum InventoryType {
     /**
      * The ender chest inventory, with 27 slots.
      */
-    ENDER_CHEST(27,"Ender Chest");
+    ENDER_CHEST(27,"Ender Chest"),
+    /**
+     * An anvil inventory, with 2 CRAFTING slots and 1 RESULT slot
+     */
+    ANVIL(3, "Repairing"),
+    /**
+     * A beacon inventory, with 1 CRAFTING slot
+     */
+    BEACON(1, "container.beacon"),
+    ;
 
     private final int size;
     private final String title;
