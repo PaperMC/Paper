@@ -371,6 +371,10 @@ public final class Bukkit {
         return server.getWaterAnimalSpawnLimit();
     }
 
+    public static int getAmbientSpawnLimit() {
+        return server.getAmbientSpawnLimit();
+    }
+
     public static boolean isPrimaryThread() {
         return server.isPrimaryThread();
     }

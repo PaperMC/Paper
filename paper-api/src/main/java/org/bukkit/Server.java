@@ -649,6 +649,12 @@ public interface Server extends PluginMessageRecipient {
     int getWaterAnimalSpawnLimit();
 
     /**
+     * Gets user-specified limit for number of ambient mobs that can spawn in a chunk
+     * @returns The ambient spawn limit
+     */
+    int getAmbientSpawnLimit();
+
+    /**
      * Returns true if the current {@link Thread} is the server's primary thread
      */
     boolean isPrimaryThread();

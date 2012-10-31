@@ -984,6 +984,20 @@ public interface World extends PluginMessageRecipient, Metadatable {
     void setWaterAnimalSpawnLimit(int limit);
 
     /**
+     * Gets the limit for number of ambient mobs that can spawn in a chunk in this world
+     * @returns The ambient spawn limit
+     */
+    int getAmbientSpawnLimit();
+
+    /**
+     * Sets the limit for number of ambient mobs that can spawn in a chunk in this world
+     * <p />
+     * <b>Note:</b>
+     * If set to a negative number the world will use the server-wide spawn limit instead.
+     */
+    void setAmbientSpawnLimit(int limit);
+
+    /**
      * Play a Sound at the provided Location in the World
      * <p />
      * This function will fail silently if Location or Sound are null.
