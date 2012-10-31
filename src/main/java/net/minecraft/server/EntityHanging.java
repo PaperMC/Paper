@@ -4,8 +4,10 @@ import java.util.Iterator;
 import java.util.List;
 
 // CraftBukkit start
+import org.bukkit.entity.Hanging;
 import org.bukkit.entity.Painting;
-import org.bukkit.event.painting.PaintingBreakEvent.RemoveCause;
+import org.bukkit.event.hanging.HangingBreakByEntityEvent;
+import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.painting.PaintingBreakEvent;
 // CraftBukkit end
 
@@ -104,25 +106,29 @@ public abstract class EntityHanging extends Entity {
             this.e = 0;
             if (!this.dead && !this.survives()) {
                 // CraftBukkit start
+                Material material = this.world.getMaterial((int) this.locX, (int) this.locY, (int) this.locZ);
+                HangingBreakEvent.RemoveCause cause;
+
+                if (!material.equals(Material.AIR)) {
+                    // TODO: This feels insufficient to catch 100% of suffocation cases
+                    cause = HangingBreakEvent.RemoveCause.OBSTRUCTION;
+                } else {
+                    cause = HangingBreakEvent.RemoveCause.PHYSICS;
+                }
+
+                HangingBreakEvent event = new HangingBreakEvent((Hanging) this.getBukkitEntity(), cause);
+                this.world.getServer().getPluginManager().callEvent(event);
+
+                PaintingBreakEvent paintingEvent = null;
                 if (this instanceof EntityPainting) {
-                    Material material = this.world.getMaterial((int) this.locX, (int) this.locY, (int) this.locZ);
-                    RemoveCause cause;
+                    // Fire old painting event until it can be removed
+                    paintingEvent = new PaintingBreakEvent((Painting) this.getBukkitEntity(), PaintingBreakEvent.RemoveCause.valueOf(cause.name()));
+                    paintingEvent.setCancelled(event.isCancelled());
+                    this.world.getServer().getPluginManager().callEvent(paintingEvent);
+                }
 
-                    if (material.equals(Material.WATER)) {
-                        cause = RemoveCause.WATER;
-                    } else if (!material.equals(Material.AIR)) {
-                        // TODO: This feels insufficient to catch 100% of suffocation cases
-                        cause = RemoveCause.OBSTRUCTION;
-                    } else {
-                        cause = RemoveCause.PHYSICS;
-                    }
-
-                    PaintingBreakEvent event = new PaintingBreakEvent((Painting) this.getBukkitEntity(), cause);
-                    this.world.getServer().getPluginManager().callEvent(event);
-
-                    if (event.isCancelled() || dead) {
-                        return;
-                    }
+                if (dead || event.isCancelled() || (paintingEvent != null && paintingEvent.isCancelled())) {
+                    return;
                 }
                 // CraftBukkit end
 
@@ -200,28 +206,39 @@ public abstract class EntityHanging extends Entity {
     public boolean damageEntity(DamageSource damagesource, int i) {
         if (!this.dead && !this.world.isStatic) {
             // CraftBukkit start
+            HangingBreakEvent event = null;
+            PaintingBreakEvent paintingEvent = null;
+            if (damagesource.getEntity() != null) {
+                event = new HangingBreakByEntityEvent((Hanging) this.getBukkitEntity(), damagesource.getEntity() == null ? null : damagesource.getEntity().getBukkitEntity());
+            } else {
+                if (damagesource == DamageSource.FIRE) {
+                    event = new HangingBreakEvent((Hanging) this.getBukkitEntity(), HangingBreakEvent.RemoveCause.FIRE);
+                }
+                // TODO: Could put other stuff here?
+            }
+
             if (this instanceof EntityPainting) {
-                PaintingBreakEvent event = null;
+                // Fire old painting event until it can be removed
                 if (damagesource.getEntity() != null) {
-                    event = new org.bukkit.event.painting.PaintingBreakByEntityEvent((Painting) this.getBukkitEntity(), damagesource.getEntity() == null ? null : damagesource.getEntity().getBukkitEntity());
+                    paintingEvent = new org.bukkit.event.painting.PaintingBreakByEntityEvent((Painting) this.getBukkitEntity(), damagesource.getEntity() == null ? null : damagesource.getEntity().getBukkitEntity());
                 } else {
                     if (damagesource == DamageSource.FIRE) {
-                        event = new PaintingBreakEvent((Painting) this.getBukkitEntity(), RemoveCause.FIRE);
-                    }
-                    // TODO: Could put other stuff here?
-                }
-
-                if (event != null) {
-                    this.world.getServer().getPluginManager().callEvent(event);
-
-                    if (event.isCancelled()) {
-                        return true;
+                        paintingEvent = new PaintingBreakEvent((Painting) this.getBukkitEntity(), PaintingBreakEvent.RemoveCause.valueOf(HangingBreakEvent.RemoveCause.FIRE.name()));
                     }
                 }
+            }
 
-                if (this.dead) {
-                    return true;
-                }
+            if (event != null) {
+                this.world.getServer().getPluginManager().callEvent(event);
+            }
+
+            if (paintingEvent != null) {
+                paintingEvent.setCancelled(event != null && event.isCancelled());
+                this.world.getServer().getPluginManager().callEvent(paintingEvent);
+            }
+
+            if (dead || event.isCancelled() || (paintingEvent != null && paintingEvent.isCancelled())) {
+                return true;
             }
             // CraftBukkit end
 

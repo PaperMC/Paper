@@ -2,6 +2,7 @@ package net.minecraft.server;
 
 // CraftBukkit start
 import org.bukkit.entity.Player;
+import org.bukkit.event.hanging.HangingPlaceEvent;
 import org.bukkit.event.painting.PaintingPlaceEvent;
 // CraftBukkit end
 
@@ -30,17 +31,23 @@ public class ItemHanging extends Item {
                 if (entityhanging != null && entityhanging.survives()) {
                     if (!world.isStatic) {
                         // CraftBukkit start
-                        if (entityhanging instanceof EntityPainting) {
-                            Player who = (entityhuman == null) ? null : (Player) entityhuman.getBukkitEntity();
-                            org.bukkit.block.Block blockClicked = world.getWorld().getBlockAt(i, j, k);
-                            org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(l);
+                        Player who = (entityhuman == null) ? null : (Player) entityhuman.getBukkitEntity();
+                        org.bukkit.block.Block blockClicked = world.getWorld().getBlockAt(i, j, k);
+                        org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(l);
 
-                            PaintingPlaceEvent event = new PaintingPlaceEvent((org.bukkit.entity.Painting) entityhanging.getBukkitEntity(), who, blockClicked, blockFace);
-                            world.getServer().getPluginManager().callEvent(event);
+                        HangingPlaceEvent event = new HangingPlaceEvent((org.bukkit.entity.Hanging) entityhanging.getBukkitEntity(), who, blockClicked, blockFace);
+                        world.getServer().getPluginManager().callEvent(event);
 
-                            if (event.isCancelled()) {
-                                return false;
-                            }
+                        PaintingPlaceEvent paintingEvent = null;
+                        if(entityhanging instanceof EntityPainting) {
+                            // Fire old painting event until it can be removed
+                            paintingEvent = new PaintingPlaceEvent((org.bukkit.entity.Painting) entityhanging.getBukkitEntity(), who, blockClicked, blockFace);
+                            paintingEvent.setCancelled(event.isCancelled());
+                            world.getServer().getPluginManager().callEvent(paintingEvent);
+                        }
+
+                        if (event.isCancelled() || (paintingEvent != null && paintingEvent.isCancelled())) {
+                            return false;
                         }
                         // CraftBukkit end
 
