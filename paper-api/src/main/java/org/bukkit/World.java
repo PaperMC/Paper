@@ -996,6 +996,45 @@ public interface World extends PluginMessageRecipient, Metadatable {
     void playSound(Location loc, Sound sound, float volume, float pitch);
 
     /**
+     * Get existing rules
+     *
+     * @return An array of rules
+     */
+    public String[] getGameRules();
+
+    /**
+     * Gets the current state of the specified rule
+     * <p />
+     * Will return null if rule passed is null
+     *
+     * @param rule Rule to look up value of
+     * @return String value of rule
+     */
+    public String getGameRuleValue(String rule);
+
+    /**
+     * Set the specified gamerule to specified value.
+     * <p />
+     * The rule may attempt to validate the value passed, will return true if
+     * value was set.
+     * <p />
+     * If rule is null, the function will return false.
+     *
+     * @param rule Rule to set
+     * @param value Value to set rule to
+     * @return True if rule was set
+     */
+    public boolean setGameRuleValue(String rule, String value);
+
+    /**
+     * Checks if string is a valid game rule
+     *
+     * @param rule Rule to check
+     * @return True if rule exists
+     */
+    public boolean isGameRule(String rule);
+
+    /**
      * Represents various map environment types that a world may be
      */
     public enum Environment {
