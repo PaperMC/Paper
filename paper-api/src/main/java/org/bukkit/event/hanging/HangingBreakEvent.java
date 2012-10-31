@@ -43,6 +43,10 @@ public class HangingBreakEvent extends HangingEvent implements Cancellable {
          */
         ENTITY,
         /**
+         * Removed by an explosion
+         */
+        EXPLOSION,
+        /**
          * Removed by placing a block on it
          */
         OBSTRUCTION,
@@ -50,6 +54,10 @@ public class HangingBreakEvent extends HangingEvent implements Cancellable {
          * Removed by destroying the block behind it, etc
          */
         PHYSICS,
+        /**
+         * Removed by an uncategorised cause
+         */
+        DEFAULT,
     }
 
     @Override
