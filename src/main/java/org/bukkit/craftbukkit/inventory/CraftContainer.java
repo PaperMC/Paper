@@ -109,6 +109,12 @@ public class CraftContainer extends Container {
         case BREWING:
             typeID = 5;
             break;
+        case BEACON:
+            typeID = 7;
+            break;
+        case ANVIL:
+            typeID = 8;
+            break;
         default:
             typeID = 0;
             break;
