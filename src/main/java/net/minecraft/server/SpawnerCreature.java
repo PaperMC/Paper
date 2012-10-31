@@ -69,7 +69,7 @@ public final class SpawnerCreature {
                 EnumCreatureType enumcreaturetype = aenumcreaturetype[j1];
 
                 // CraftBukkit start - use per-world spawn limits
-                int limit = 0;
+                int limit = enumcreaturetype.b();
                 switch (enumcreaturetype) {
                     case MONSTER:
                         limit = worldserver.getWorld().getMonsterSpawnLimit();
@@ -79,6 +79,9 @@ public final class SpawnerCreature {
                         break;
                     case WATER_CREATURE:
                         limit = worldserver.getWorld().getWaterAnimalSpawnLimit();
+                        break;
+                    case AMBIENT:
+                        limit = worldserver.getWorld().getAmbientSpawnLimit();
                         break;
                 }
 

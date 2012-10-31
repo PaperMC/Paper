@@ -155,6 +155,7 @@ public final class CraftServer implements Server {
     private int monsterSpawn = -1;
     private int animalSpawn = -1;
     private int waterAnimalSpawn = -1;
+    private int ambientSpawn = -1;
     private File container;
     private WarningState warningState = WarningState.DEFAULT;
 
@@ -190,6 +191,7 @@ public final class CraftServer implements Server {
         monsterSpawn = configuration.getInt("spawn-limits.monsters");
         animalSpawn = configuration.getInt("spawn-limits.animals");
         waterAnimalSpawn = configuration.getInt("spawn-limits.water-animals");
+        ambientSpawn = configuration.getInt("spawn-limits.ambient");
         console.autosavePeriod = configuration.getInt("ticks-per.autosave");
         warningState = WarningState.value(configuration.getString("settings.deprecated-verbose"));
 
@@ -526,6 +528,7 @@ public final class CraftServer implements Server {
         monsterSpawn = configuration.getInt("spawn-limits.monsters");
         animalSpawn = configuration.getInt("spawn-limits.animals");
         waterAnimalSpawn = configuration.getInt("spawn-limits.water-animals");
+        ambientSpawn = configuration.getInt("spawn-limits.ambient");
         warningState = WarningState.value(configuration.getString("settings.deprecated-verbose"));
         console.autosavePeriod = configuration.getInt("ticks-per.autosave");
 
@@ -1234,6 +1237,10 @@ public final class CraftServer implements Server {
 
     public int getWaterAnimalSpawnLimit() {
         return waterAnimalSpawn;
+    }
+
+    public int getAmbientSpawnLimit() {
+        return ambientSpawn;
     }
 
     public boolean isPrimaryThread() {
