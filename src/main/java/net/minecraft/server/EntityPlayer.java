@@ -230,16 +230,19 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         }
 
         java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
+        boolean keepInventory = this.world.getGameRules().getBoolean("keepInventory");
 
-        for (int i = 0; i < this.inventory.items.length; ++i) {
-            if (this.inventory.items[i] != null) {
-                loot.add(new CraftItemStack(this.inventory.items[i]));
+        if (!keepInventory) {
+            for (int i = 0; i < this.inventory.items.length; ++i) {
+                if (this.inventory.items[i] != null) {
+                    loot.add(new CraftItemStack(this.inventory.items[i]));
+                }
             }
-        }
 
-        for (int i = 0; i < this.inventory.armor.length; ++i) {
-            if (this.inventory.armor[i] != null) {
-                loot.add(new CraftItemStack(this.inventory.armor[i]));
+            for (int i = 0; i < this.inventory.armor.length; ++i) {
+                if (this.inventory.armor[i] != null) {
+                    loot.add(new CraftItemStack(this.inventory.armor[i]));
+                }
             }
         }
 
@@ -252,12 +255,14 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         }
 
         // CraftBukkit - we clean the player's inventory after the EntityDeathEvent is called so plugins can get the exact state of the inventory.
-        for (int i = 0; i < this.inventory.items.length; ++i) {
-            this.inventory.items[i] = null;
-        }
+        if (!keepInventory) {
+            for (int i = 0; i < this.inventory.items.length; ++i) {
+                this.inventory.items[i] = null;
+            }
 
-        for (int i = 0; i < this.inventory.armor.length; ++i) {
-            this.inventory.armor[i] = null;
+            for (int i = 0; i < this.inventory.armor.length; ++i) {
+                this.inventory.armor[i] = null;
+            }
         }
 
         this.closeInventory();

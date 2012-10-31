@@ -767,11 +767,12 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
         explosion.b = flag1;
         explosion.a();
         explosion.a(false);
+        */
+        // CraftBukkit end - TODO: Check if explosions are still properly implemented
+
         if (!flag1) {
             explosion.blocks.clear();
         }
-        */
-        // CraftBukkit end - TODO: Check if explosions are still properly implemented
 
         Iterator iterator = this.players.iterator();
 

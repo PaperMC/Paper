@@ -1197,4 +1197,26 @@ public class CraftWorld implements World {
 
         getHandle().makeSound(x, y, z, CraftSound.getSound(sound), volume, pitch);
     }
+
+    public String getGameRuleValue(String rule) {
+        return getHandle().getGameRules().get(rule);
+    }
+
+    public boolean setGameRuleValue(String rule, String value) {
+        // No null values allowed
+        if (rule == null || value == null) return false;
+
+        if (!isGameRule(rule)) return false;
+
+        getHandle().getGameRules().set(rule, value);
+        return true;
+    }
+
+    public String[] getGameRules() {
+        return getHandle().getGameRules().b();
+    }
+
+    public boolean isGameRule(String rule) {
+        return getHandle().getGameRules().e(rule);
+    }
 }
