@@ -169,6 +169,10 @@ public class CraftItemStack extends ItemStack {
 
     @Override
     public Map<Enchantment, Integer> getEnchantments() {
+        return getEnchantments(item);
+    }
+
+    public static Map<Enchantment, Integer> getEnchantments(net.minecraft.server.ItemStack item) {
         Map<Enchantment, Integer> result = new HashMap<Enchantment, Integer>();
         NBTTagList list = (item == null) ? null : item.getEnchantments();
 
@@ -232,5 +236,14 @@ public class CraftItemStack extends ItemStack {
             return ((CraftItemStack) original).getHandle();
         }
         return new CraftItemStack(original).getHandle();
+    }
+
+    /**
+     * Copies the NMS stack to return as a strictly-Bukkit stack
+     */
+    public static ItemStack asBukkitStack(net.minecraft.server.ItemStack original) {
+        ItemStack stack = new ItemStack(original.id, original.count, (short) original.getData());
+        stack.addUnsafeEnchantments(getEnchantments(original));
+        return stack;
     }
 }
