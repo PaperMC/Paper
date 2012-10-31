@@ -77,8 +77,7 @@ public abstract class PotionEffectType {
     /**
      * Grants invisibility.
      */
-    @Deprecated
-    public static final PotionEffectType INVISIBILITY = new PotionEffectTypeWrapper(14); // unimplemented
+    public static final PotionEffectType INVISIBILITY = new PotionEffectTypeWrapper(14);
 
     /**
      * Blinds an entity.
@@ -88,8 +87,7 @@ public abstract class PotionEffectType {
     /**
      * Allows an entity to see in the dark.
      */
-    @Deprecated
-    public static final PotionEffectType NIGHT_VISION = new PotionEffectTypeWrapper(16); // unimplemented
+    public static final PotionEffectType NIGHT_VISION = new PotionEffectTypeWrapper(16);
 
     /**
      * Increases hunger.

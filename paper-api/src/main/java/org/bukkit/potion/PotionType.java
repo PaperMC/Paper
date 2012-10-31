@@ -7,10 +7,13 @@ public enum PotionType {
     FIRE_RESISTANCE(3, PotionEffectType.FIRE_RESISTANCE, 1),
     POISON(4, PotionEffectType.POISON, 2),
     INSTANT_HEAL(5, PotionEffectType.HEAL, 2),
-    WEAKNESS(8, PotionEffectType.SPEED, 1),
+    NIGHT_VISION(6, PotionEffectType.NIGHT_VISION, 1),
+    WEAKNESS(8, PotionEffectType.WEAKNESS, 1),
     STRENGTH(9, PotionEffectType.INCREASE_DAMAGE, 2),
     SLOWNESS(10, PotionEffectType.SLOW, 1),
-    INSTANT_DAMAGE(12, PotionEffectType.HARM, 2);
+    INSTANT_DAMAGE(12, PotionEffectType.HARM, 2),
+    INVISIBILTY(14, PotionEffectType.INVISIBILITY, 1),
+    ;
 
     private final int damageValue, maxLevel;
     private final PotionEffectType effect;
