@@ -6,6 +6,10 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 
 public abstract class VanillaCommand extends Command {
+    static final int MAX_COORD = 30000000;
+    static final int MIN_COORD_MINUS_ONE = -30000001;
+    static final int MIN_COORD = -30000000;
+
     protected VanillaCommand(String name) {
         super(name);
     }
@@ -42,7 +46,7 @@ public abstract class VanillaCommand extends Command {
         try {
             return Double.parseDouble(input);
         } catch (NumberFormatException ex) {
-            return -30000001;
+            return MIN_COORD_MINUS_ONE;
         }
     }
 
