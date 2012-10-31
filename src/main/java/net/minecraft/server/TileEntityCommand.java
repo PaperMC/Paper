@@ -9,8 +9,11 @@ import com.google.common.base.Joiner;
 public class TileEntityCommand extends TileEntity implements ICommandListener {
 
     private String a = "";
+    private final org.bukkit.command.BlockCommandSender sender;
 
-    public TileEntityCommand() {}
+    public TileEntityCommand() {
+        sender = new org.bukkit.craftbukkit.command.CraftBlockCommandSender(this);
+    }
 
     public void b(String s) {
         this.a = s;
@@ -23,15 +26,12 @@ public class TileEntityCommand extends TileEntity implements ICommandListener {
 
             if (minecraftserver != null && minecraftserver.getEnableCommandBlock()) {
                 // CraftBukkit start - handle command block as console TODO: add new CommandSender for this
-                // Commands in command block must start with /
-                if (!this.a.startsWith("/")) {
-                    return;
-                }
-
                 org.bukkit.command.SimpleCommandMap commandMap = minecraftserver.server.getCommandMap();
-                org.bukkit.command.ConsoleCommandSender sender = minecraftserver.server.getConsoleSender();
                 Joiner joiner = Joiner.on(" ");
-                String command = this.a.substring(1);
+                String command = this.a;
+                if (this.a.startsWith("/")) {
+                    command = this.a.substring(1);
+                }
                 String[] args = command.split(" ");
                 ArrayList<String[]> commands = new ArrayList<String[]>();
 
@@ -50,13 +50,16 @@ public class TileEntityCommand extends TileEntity implements ICommandListener {
                 commands.add(args);
 
                 // find positions of command block syntax, if any
+                ArrayList<String[]> newCommands = new ArrayList<String[]>();
                 for (int i = 0; i < args.length; i++) {
                     if (PlayerSelector.isPattern(args[i])) {
-                        ArrayList<String[]> newCommands = new ArrayList<String[]>();
                         for (int j = 0; j < commands.size(); j++) {
                             newCommands.addAll(this.buildCommands(commands.get(j), i));
                         }
+                        ArrayList<String[]> temp = commands;
                         commands = newCommands;
+                        newCommands = temp;
+                        newCommands.clear();
                     }
                 }
 

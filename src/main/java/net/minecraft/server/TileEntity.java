@@ -9,7 +9,7 @@ public class TileEntity {
 
     private static Map a = new HashMap();
     private static Map b = new HashMap();
-    protected World world;
+    public World world; // CraftBukkit - protected -> public
     public int x;
     public int y;
     public int z;
