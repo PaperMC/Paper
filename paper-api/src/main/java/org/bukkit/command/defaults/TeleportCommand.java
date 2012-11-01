@@ -55,20 +55,24 @@ public class TeleportCommand extends VanillaCommand {
                 return true;
             }
             player.teleport(target, TeleportCause.COMMAND);
-            Command.broadcastCommandMessage(sender, "Teleported " + player.getName() + " to " + target.getName());
+            Command.broadcastCommandMessage(sender, "Teleported " + player.getDisplayName() + " to " + target.getDisplayName());
         } else if (player.getWorld() != null) {
-            double x = getCoordinate(sender, player.getLocation().getX(), args[args.length - 3]);
-            double y = getCoordinate(sender,player.getLocation().getY(), args[args.length - 2], 0, 0);
-            double z = getCoordinate(sender, player.getLocation().getZ(), args[args.length - 1]);
+            Location playerLocation = player.getLocation();
+            double x = getCoordinate(sender, playerLocation.getX(), args[args.length - 3]);
+            double y = getCoordinate(sender, playerLocation.getY(), args[args.length - 2], 0, 0);
+            double z = getCoordinate(sender, playerLocation.getZ(), args[args.length - 1]);
 
             if (x == MIN_COORD_MINUS_ONE || y == MIN_COORD_MINUS_ONE || z == MIN_COORD_MINUS_ONE) {
                 sender.sendMessage("Please provide a valid location!");
                 return true;
             }
 
-            Location location = new Location(player.getWorld(), x, y, z);
-            player.teleport(location);
-            Command.broadcastCommandMessage(sender, "Teleported " + player.getName() + " to " + + x + "," + y + "," + z);
+            playerLocation.setX(x);
+            playerLocation.setY(y);
+            playerLocation.setZ(z);
+
+            player.teleport(playerLocation);
+            Command.broadcastCommandMessage(sender, String.format("Teleported %s to %.2f, %.2f, %.2f", player.getDisplayName(), x, y, z));
         }
         return true;
     }
