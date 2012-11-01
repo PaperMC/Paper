@@ -5,6 +5,7 @@ import org.bukkit.Art;
 
 // Safety class, will break if either side changes
 public class CraftArt {
+
     public static Art NotchToBukkit(EnumArt art) {
         switch (art) {
             case KEBAB: return Art.KEBAB;
@@ -32,8 +33,10 @@ public class CraftArt {
             case BURNINGSKULL: return Art.BURNINGSKULL;
             case SKELETON: return Art.SKELETON;
             case DONKEYKONG: return Art.DONKEYKONG;
+            case WITHER: return Art.WITHER;
+            default:
+                throw new AssertionError(art);
         }
-        return null;
     }
 
     public static EnumArt BukkitToNotch(Art art) {
@@ -63,12 +66,9 @@ public class CraftArt {
             case BURNINGSKULL: return EnumArt.BURNINGSKULL;
             case SKELETON: return EnumArt.SKELETON;
             case DONKEYKONG: return EnumArt.DONKEYKONG;
+            case WITHER: return EnumArt.WITHER;
+            default:
+                throw new AssertionError(art);
         }
-        return null;
-    }
-
-    static {
-        assert (EnumArt.values().length == 25);
-        assert (Art.values().length == 25);
     }
 }
