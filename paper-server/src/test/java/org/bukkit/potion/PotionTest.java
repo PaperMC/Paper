@@ -1,6 +1,11 @@
 package org.bukkit.potion;
 
 import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.*;
+
+import java.lang.reflect.Field;
+import java.util.EnumMap;
+import java.util.Map;
 
 import org.bukkit.craftbukkit.potion.CraftPotionBrewer;
 import org.junit.BeforeClass;
@@ -9,6 +14,7 @@ import org.junit.Test;
 import net.minecraft.server.MobEffectList;
 
 public class PotionTest {
+
     @BeforeClass
     public static void setUp() {
         Potion.setPotionBrewer(new CraftPotionBrewer());
@@ -20,8 +26,32 @@ public class PotionTest {
     public void getEffects() {
         for (PotionType type : PotionType.values()) {
             for (PotionEffect effect : new Potion(type).getEffects()) {
-                assertTrue(effect.getType() == PotionEffectType.getById(effect.getType().getId()));
+                PotionEffectType potionType = effect.getType();
+                assertThat(effect.getType(), is(sameInstance(PotionEffectType.getById(potionType.getId()))));
+
+                assertNotNull(potionType.getName(), PotionType.getByEffect(potionType));
             }
         }
+    }
+
+    @Test
+    public void testEffectCompleteness() throws SecurityException, IllegalAccessException, NoSuchFieldException {
+        Field durationsField = net.minecraft.server.PotionBrewer.class.getDeclaredField("effectDurations");
+        durationsField.setAccessible(true);
+        Map<Integer, ?> effectDurations = (Map<Integer, ?>) durationsField.get(null);
+
+        Map<PotionType, String> effects = new EnumMap(PotionType.class);
+        for (int id : effectDurations.keySet()) {
+            PotionEffectType type = PotionEffectType.getById(id);
+            assertNotNull(String.valueOf(id), PotionEffectType.getById(id));
+
+            PotionType enumType = PotionType.getByEffect(type);
+            assertNotNull(type.getName(), enumType);
+
+            assertThat(enumType.name(), effects.put(enumType, enumType.name()), is((String)null));
+        }
+
+        assertThat(effects.entrySet(), hasSize(effectDurations.size()));
+        assertThat(effectDurations.entrySet(), hasSize(PotionType.values().length - /* WATER */ 1));
     }
 }
