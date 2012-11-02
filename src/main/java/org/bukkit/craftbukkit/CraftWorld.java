@@ -419,7 +419,7 @@ public class CraftWorld implements World {
     }
 
     public long getFullTime() {
-        return world.getTime();
+        return world.F();
     }
 
     public void setFullTime(long time) {
@@ -430,7 +430,7 @@ public class CraftWorld implements World {
             CraftPlayer cp = (CraftPlayer) p;
             if (cp.getHandle().netServerHandler == null) continue;
 
-            cp.getHandle().netServerHandler.sendPacket(new Packet4UpdateTime(cp.getHandle().getPlayerTime(), cp.getHandle().world.F()));
+            cp.getHandle().netServerHandler.sendPacket(new Packet4UpdateTime(cp.getHandle().world.getTime(), cp.getHandle().getPlayerTime()));
         }
     }
 

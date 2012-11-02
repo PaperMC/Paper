@@ -530,7 +530,7 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
         if (this.ticks % 20 == 0) {
             for (int i = 0; i < this.getServerConfigurationManager().players.size(); ++i) {
                 EntityPlayer entityplayer = (EntityPlayer) this.getServerConfigurationManager().players.get(i);
-                entityplayer.netServerHandler.sendPacket(new Packet4UpdateTime(entityplayer.getPlayerTime(), entityplayer.world.F())); // Add support for per player time
+                entityplayer.netServerHandler.sendPacket(new Packet4UpdateTime(entityplayer.world.getTime(), entityplayer.getPlayerTime())); // Add support for per player time
             }
         }
 

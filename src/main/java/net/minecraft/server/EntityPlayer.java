@@ -739,10 +739,10 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public long getPlayerTime() {
         if (this.relativeTime) {
             // Adds timeOffset to the current server time.
-            return this.world.getTime() + this.timeOffset;
+            return this.world.F() + this.timeOffset;
         } else {
             // Adds timeOffset to the beginning of this day.
-            return this.world.getTime() - (this.world.getTime() % 24000) + this.timeOffset;
+            return this.world.F() - (this.world.F() % 24000) + this.timeOffset;
         }
     }
 
