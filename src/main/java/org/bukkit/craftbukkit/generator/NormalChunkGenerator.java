@@ -69,6 +69,11 @@ public class NormalChunkGenerator extends InternalChunkGenerator {
         return provider.findNearestMapFeature(world, string, i, i1, i2);
     }
 
+    public void recreateStructures(int i, int j) {
+        provider.recreateStructures(i, j);
+    }
+
+    // n.m.s implementations always return 0. (The true implementation is in ChunkProviderServer)
     public int getLoadedChunks() {
         return 0;
     }
