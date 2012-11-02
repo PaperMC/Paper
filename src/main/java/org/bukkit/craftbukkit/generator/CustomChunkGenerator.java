@@ -216,6 +216,8 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
         return "Stronghold".equals(type) && this.strongholdGen != null ? this.strongholdGen.getNearestGeneratedFeature(world, x, y, z) : null;
     }
 
+    public void recreateStructures(int i, int j) {}
+
     public int getLoadedChunks() {
         return 0;
     }
