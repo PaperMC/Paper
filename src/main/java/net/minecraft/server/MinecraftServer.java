@@ -14,6 +14,9 @@ import java.util.logging.Logger;
 
 // CraftBukkit start
 import java.util.concurrent.ExecutionException;
+import java.io.IOException;
+
+import com.google.common.io.Files;
 import jline.console.ConsoleReader;
 import joptsimple.OptionSet;
 
@@ -213,6 +216,12 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
                     } else if (newWorld.getParentFile().mkdirs()) {
                         if (oldWorld.renameTo(newWorld)) {
                             log.info("Success! To restore " + worldType + " in the future, simply move " + newWorld + " to " + oldWorld);
+                            // Migrate world data too.
+                            try {
+                                Files.copy(new File(new File(s), "level.dat"), new File(new File(name), "level.dat"));
+                            } catch (IOException exception) {
+                                log.severe("Unable to migrate world data.");
+                            }
                             log.info("---- Migration of old " + worldType + " folder complete ----");
                         } else {
                             log.severe("Could not move folder " + oldWorld + " to " + newWorld + "!");
