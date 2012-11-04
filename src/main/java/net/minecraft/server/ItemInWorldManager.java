@@ -131,10 +131,6 @@ public class ItemInWorldManager {
                 float f = 1.0F;
                 int i1 = this.world.getTypeId(i, j, k);
                 // CraftBukkit start - Swings at air do *NOT* exist.
-                if (i1 <= 0) {
-                    return;
-                }
-
                 if (event.useInteractedBlock() == Event.Result.DENY) {
                     // If we denied a door from opening, we need to send a correcting update to the client, as it already opened the door.
                     if (i1 == Block.WOODEN_DOOR.id) {
@@ -145,22 +141,25 @@ public class ItemInWorldManager {
                     } else if (i1 == Block.TRAP_DOOR.id) {
                         ((EntityPlayer) this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
                     }
-                } else {
+                } else if (i1 > 0) {
                     Block.byId[i1].attack(this.world, i, j, k, this.player);
                     // Allow fire punching to be blocked
                     this.world.douseFire((EntityHuman) null, i, j, k, l);
                 }
 
                 // Handle hitting a block
-                float toolDamage = Block.byId[i1].getDamage(this.player, this.world, i, j, k);
+                if (i1 > 0) {
+                    f = Block.byId[i1].getDamage(this.player, this.world, i, j, k);
+                }
+
                 if (event.useItemInHand() == Event.Result.DENY) {
                     // If we 'insta destroyed' then the client needs to be informed.
-                    if (toolDamage > 1.0f) {
+                    if (f > 1.0f) {
                         ((EntityPlayer) this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
                     }
                     return;
                 }
-                org.bukkit.event.block.BlockDamageEvent blockEvent = CraftEventFactory.callBlockDamageEvent(this.player, i, j, k, this.player.inventory.getItemInHand(), toolDamage >= 1.0f);
+                org.bukkit.event.block.BlockDamageEvent blockEvent = CraftEventFactory.callBlockDamageEvent(this.player, i, j, k, this.player.inventory.getItemInHand(), f >= 1.0f);
 
                 if (blockEvent.isCancelled()) {
                     // Let the client know the block still exists
@@ -169,11 +168,11 @@ public class ItemInWorldManager {
                 }
 
                 if (blockEvent.getInstaBreak()) {
-                    toolDamage = 2.0f;
+                    f = 2.0f;
                 }
+                // CraftBukkit end
 
-                if (toolDamage >= 1.0F) {
-                    // CraftBukkit end
+                if (i1 > 0 && f >= 1.0F) {
                     this.breakBlock(i, j, k);
                 } else {
                     this.d = true;
