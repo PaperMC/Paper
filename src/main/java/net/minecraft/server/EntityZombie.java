@@ -61,7 +61,7 @@ public class EntityZombie extends EntityMonster {
     }
 
     public void setBaby(boolean flag) {
-        this.getDataWatcher().watch(12, Byte.valueOf((byte) 1));
+        this.getDataWatcher().watch(12, Byte.valueOf((byte) (flag ? 1 : 0))); // CraftBukkit - added flag
     }
 
     public boolean isVillager() {
