@@ -25,4 +25,20 @@ public class CraftZombie extends CraftMonster implements Zombie {
     public EntityType getType() {
         return EntityType.ZOMBIE;
     }
+
+    public boolean isBaby() {
+        return getHandle().isBaby();
+    }
+
+    public void setBaby(boolean flag) {
+        getHandle().setBaby(flag);
+    }
+
+    public boolean isVillager() {
+        return getHandle().isVillager();
+    }
+
+    public void setVillager(boolean flag) {
+        getHandle().setVillager(flag);
+    }
 }
