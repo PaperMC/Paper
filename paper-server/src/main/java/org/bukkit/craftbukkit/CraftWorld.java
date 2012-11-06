@@ -419,11 +419,11 @@ public class CraftWorld implements World {
     }
 
     public long getFullTime() {
-        return world.F();
+        return world.getDayTime();
     }
 
     public void setFullTime(long time) {
-        world.setTime(time);
+        world.setDayTime(time);
 
         // Forces the client to update to the new time immediately
         for (Player p : getPlayers()) {
