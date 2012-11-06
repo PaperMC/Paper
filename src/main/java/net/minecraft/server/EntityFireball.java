@@ -1,6 +1,5 @@
 package net.minecraft.server;
 
-import java.util.Iterator;
 import java.util.List;
 
 import org.bukkit.event.entity.ProjectileHitEvent; // CraftBukkit
@@ -105,10 +104,9 @@ public abstract class EntityFireball extends Entity {
             Entity entity = null;
             List list = this.world.getEntities(this, this.boundingBox.a(this.motX, this.motY, this.motZ).grow(1.0D, 1.0D, 1.0D));
             double d0 = 0.0D;
-            Iterator iterator = list.iterator();
 
-            while (iterator.hasNext()) {
-                Entity entity1 = (Entity) iterator.next();
+            for (int j = 0; j < list.size(); ++j) {
+                Entity entity1 = (Entity) list.get(j);
 
                 if (entity1.L() && (!entity1.i(this.shooter) || this.as >= 25)) {
                     float f = 0.3F;
@@ -169,7 +167,7 @@ public abstract class EntityFireball extends Entity {
             float f2 = this.c();
 
             if (this.H()) {
-                for (int j = 0; j < 4; ++j) {
+                for (int k = 0; k < 4; ++k) {
                     float f3 = 0.25F;
 
                     this.world.addParticle("bubble", this.locX - this.motX * (double) f3, this.locY - this.motY * (double) f3, this.locZ - this.motZ * (double) f3, this.motX, this.motY, this.motZ);
@@ -230,26 +228,30 @@ public abstract class EntityFireball extends Entity {
     }
 
     public boolean damageEntity(DamageSource damagesource, int i) {
-        this.K();
-        if (damagesource.getEntity() != null) {
-            Vec3D vec3d = damagesource.getEntity().Z();
-
-            if (vec3d != null) {
-                this.motX = vec3d.c;
-                this.motY = vec3d.d;
-                this.motZ = vec3d.e;
-                this.dirX = this.motX * 0.1D;
-                this.dirY = this.motY * 0.1D;
-                this.dirZ = this.motZ * 0.1D;
-            }
-
-            if (damagesource.getEntity() instanceof EntityLiving) {
-                this.shooter = (EntityLiving) damagesource.getEntity();
-            }
-
-            return true;
-        } else {
+        if (this.isInvulnerable()) {
             return false;
+        } else {
+            this.K();
+            if (damagesource.getEntity() != null) {
+                Vec3D vec3d = damagesource.getEntity().Z();
+
+                if (vec3d != null) {
+                    this.motX = vec3d.c;
+                    this.motY = vec3d.d;
+                    this.motZ = vec3d.e;
+                    this.dirX = this.motX * 0.1D;
+                    this.dirY = this.motY * 0.1D;
+                    this.dirZ = this.motZ * 0.1D;
+                }
+
+                if (damagesource.getEntity() instanceof EntityLiving) {
+                    this.shooter = (EntityLiving) damagesource.getEntity();
+                }
+
+                return true;
+            } else {
+                return false;
+            }
         }
     }
 

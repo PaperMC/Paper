@@ -203,50 +203,58 @@ public abstract class EntityHanging extends Entity {
         return true;
     }
 
+    public boolean j(Entity entity) {
+        return entity instanceof EntityHuman ? this.damageEntity(DamageSource.playerAttack((EntityHuman) entity), 0) : false;
+    }
+
     public boolean damageEntity(DamageSource damagesource, int i) {
-        if (!this.dead && !this.world.isStatic) {
-            // CraftBukkit start
-            HangingBreakEvent event = new HangingBreakEvent((Hanging) this.getBukkitEntity(), HangingBreakEvent.RemoveCause.DEFAULT);
-            PaintingBreakEvent paintingEvent = null;
-            if (damagesource.getEntity() != null) {
-                event = new HangingBreakByEntityEvent((Hanging) this.getBukkitEntity(), damagesource.getEntity() == null ? null : damagesource.getEntity().getBukkitEntity());
+        if (this.isInvulnerable()) {
+            return false;
+        } else {
+            if (!this.dead && !this.world.isStatic) {
+                // CraftBukkit start
+                HangingBreakEvent event = new HangingBreakEvent((Hanging) this.getBukkitEntity(), HangingBreakEvent.RemoveCause.DEFAULT);
+                PaintingBreakEvent paintingEvent = null;
+                if (damagesource.getEntity() != null) {
+                    event = new HangingBreakByEntityEvent((Hanging) this.getBukkitEntity(), damagesource.getEntity() == null ? null : damagesource.getEntity().getBukkitEntity());
 
-                if (this instanceof EntityPainting) {
-                    // Fire old painting event until it can be removed
-                    paintingEvent = new org.bukkit.event.painting.PaintingBreakByEntityEvent((Painting) this.getBukkitEntity(), damagesource.getEntity() == null ? null : damagesource.getEntity().getBukkitEntity());
+                    if (this instanceof EntityPainting) {
+                        // Fire old painting event until it can be removed
+                        paintingEvent = new org.bukkit.event.painting.PaintingBreakByEntityEvent((Painting) this.getBukkitEntity(), damagesource.getEntity() == null ? null : damagesource.getEntity().getBukkitEntity());
+                    }
+                } else if (damagesource == DamageSource.EXPLOSION || damagesource == DamageSource.EXPLOSION2) {
+                    event = new HangingBreakEvent((Hanging) this.getBukkitEntity(), HangingBreakEvent.RemoveCause.EXPLOSION);
                 }
-            } else if (damagesource == DamageSource.EXPLOSION || damagesource == DamageSource.EXPLOSION2) {
-                event = new HangingBreakEvent((Hanging) this.getBukkitEntity(), HangingBreakEvent.RemoveCause.EXPLOSION);
+
+                this.world.getServer().getPluginManager().callEvent(event);
+
+                if (paintingEvent != null) {
+                    paintingEvent.setCancelled(event.isCancelled());
+                    this.world.getServer().getPluginManager().callEvent(paintingEvent);
+                }
+
+                if (dead || event.isCancelled() || (paintingEvent != null && paintingEvent.isCancelled())) {
+                    return true;
+                }
+                // CraftBukkit end
+
+                this.die();
+                this.K();
+                EntityHuman entityhuman = null;
+
+                if (damagesource.getEntity() instanceof EntityHuman) {
+                    entityhuman = (EntityHuman) damagesource.getEntity();
+                }
+
+                if (entityhuman != null && entityhuman.abilities.canInstantlyBuild) {
+                    return true;
+                }
+
+                this.h();
             }
 
-            this.world.getServer().getPluginManager().callEvent(event);
-
-            if (paintingEvent != null) {
-                paintingEvent.setCancelled(event.isCancelled());
-                this.world.getServer().getPluginManager().callEvent(paintingEvent);
-            }
-
-            if (dead || event.isCancelled() || (paintingEvent != null && paintingEvent.isCancelled())) {
-                return true;
-            }
-            // CraftBukkit end
-
-            this.die();
-            this.K();
-            EntityHuman entityhuman = null;
-
-            if (damagesource.getEntity() instanceof EntityHuman) {
-                entityhuman = (EntityHuman) damagesource.getEntity();
-            }
-
-            if (entityhuman != null && entityhuman.abilities.canInstantlyBuild) {
-                return true;
-            }
-
-            this.h();
+            return true;
         }
-
-        return true;
     }
 
     public void move(double d0, double d1, double d2) {

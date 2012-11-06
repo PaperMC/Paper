@@ -44,7 +44,7 @@ public class FoodMetaData {
             }
         }
 
-        if (this.foodLevel >= 18 && entityhuman.ca()) {
+        if (this.foodLevel >= 18 && entityhuman.ce()) {
             ++this.foodTickTimer;
             if (this.foodTickTimer >= 80) {
                 // CraftBukkit - added RegainReason

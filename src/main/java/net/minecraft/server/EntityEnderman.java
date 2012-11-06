@@ -15,7 +15,7 @@ public class EntityEnderman extends EntityMonster {
     public EntityEnderman(World world) {
         super(world);
         this.texture = "/mob/enderman.png";
-        this.bI = 0.2F;
+        this.bG = 0.2F;
         this.a(0.6F, 2.9F);
         this.X = 1.0F;
     }
@@ -78,7 +78,7 @@ public class EntityEnderman extends EntityMonster {
             vec3d1 = vec3d1.a();
             double d1 = vec3d.b(vec3d1);
 
-            return d1 > 1.0D - 0.025D / d0 ? entityhuman.m(this) : false;
+            return d1 > 1.0D - 0.025D / d0 ? entityhuman.n(this) : false;
         }
     }
 
@@ -87,7 +87,7 @@ public class EntityEnderman extends EntityMonster {
             this.damageEntity(DamageSource.DROWN, 1);
         }
 
-        this.bI = this.target != null ? 6.5F : 0.3F;
+        this.bG = this.target != null ? 6.5F : 0.3F;
         int i;
 
         if (!this.world.isStatic && this.world.getGameRules().getBoolean("mobGriefing")) {
@@ -135,10 +135,10 @@ public class EntityEnderman extends EntityMonster {
             this.world.addParticle("portal", this.locX + (this.random.nextDouble() - 0.5D) * (double) this.width, this.locY + this.random.nextDouble() * (double) this.length - 0.25D, this.locZ + (this.random.nextDouble() - 0.5D) * (double) this.width, (this.random.nextDouble() - 0.5D) * 2.0D, -this.random.nextDouble(), (this.random.nextDouble() - 0.5D) * 2.0D);
         }
 
-        if (this.world.t() && !this.world.isStatic) {
+        if (this.world.u() && !this.world.isStatic) {
             float f = this.c(1.0F);
 
-            if (f > 0.5F && this.world.j(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ)) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
+            if (f > 0.5F && this.world.k(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ)) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
                 this.target = null;
                 this.f(false);
                 this.m();
@@ -151,7 +151,7 @@ public class EntityEnderman extends EntityMonster {
             this.m();
         }
 
-        this.bG = false;
+        this.bE = false;
         if (this.target != null) {
             this.a(this.target, 100.0F, 100.0F);
         }
@@ -159,14 +159,14 @@ public class EntityEnderman extends EntityMonster {
         if (!this.world.isStatic && this.isAlive()) {
             if (this.target != null) {
                 if (this.target instanceof EntityHuman && this.d((EntityHuman) this.target)) {
-                    this.bD = this.bE = 0.0F;
-                    this.bI = 0.0F;
+                    this.bB = this.bC = 0.0F;
+                    this.bG = 0.0F;
                     if (this.target.e((Entity) this) < 16.0D) {
                         this.m();
                     }
 
                     this.e = 0;
-                } else if (this.target.e((Entity) this) > 256.0D && this.e++ >= 30 && this.o(this.target)) {
+                } else if (this.target.e((Entity) this) > 256.0D && this.e++ >= 30 && this.p(this.target)) {
                     this.e = 0;
                 }
             } else {
@@ -186,7 +186,7 @@ public class EntityEnderman extends EntityMonster {
         return this.j(d0, d1, d2);
     }
 
-    protected boolean o(Entity entity) {
+    protected boolean p(Entity entity) {
         Vec3D vec3d = this.world.getVec3DPool().create(this.locX - entity.locX, this.boundingBox.b + (double) (this.length / 2.0F) - entity.locY + (double) entity.getHeadHeight(), this.locZ - entity.locZ);
 
         vec3d = vec3d.a();
@@ -262,20 +262,20 @@ public class EntityEnderman extends EntityMonster {
             }
 
             this.world.makeSound(d3, d4, d5, "mob.endermen.portal", 1.0F, 1.0F);
-            this.world.makeSound(this, "mob.endermen.portal", 1.0F, 1.0F);
+            this.makeSound("mob.endermen.portal", 1.0F, 1.0F);
             return true;
         }
     }
 
-    protected String aW() {
+    protected String aY() {
         return this.q() ? "mob.endermen.scream" : "mob.endermen.idle";
     }
 
-    protected String aX() {
+    protected String aZ() {
         return "mob.endermen.hit";
     }
 
-    protected String aY() {
+    protected String ba() {
         return "mob.endermen.death";
     }
 
@@ -317,7 +317,9 @@ public class EntityEnderman extends EntityMonster {
     }
 
     public boolean damageEntity(DamageSource damagesource, int i) {
-        if (damagesource instanceof EntityDamageSourceIndirect) {
+        if (this.isInvulnerable()) {
+            return false;
+        } else if (damagesource instanceof EntityDamageSourceIndirect) {
             for (int j = 0; j < 64; ++j) {
                 if (this.m()) {
                     return true;

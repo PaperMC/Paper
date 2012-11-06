@@ -72,7 +72,7 @@ public class Village {
     }
 
     private boolean b(int i, int j, int k, int l, int i1, int j1) {
-        if (!this.world.t(i, j - 1, k)) {
+        if (!this.world.v(i, j - 1, k)) {
             return false;
         } else {
             int k1 = i - l / 2;
@@ -81,7 +81,7 @@ public class Village {
             for (int i2 = k1; i2 < k1 + l; ++i2) {
                 for (int j2 = j; j2 < j + i1; ++j2) {
                     for (int k2 = l1; k2 < l1 + j1; ++k2) {
-                        if (this.world.s(i2, j2, k2)) {
+                        if (this.world.t(i2, j2, k2)) {
                             return false;
                         }
                     }
@@ -230,10 +230,9 @@ public class Village {
     public EntityLiving b(EntityLiving entityliving) {
         double d0 = Double.MAX_VALUE;
         VillageAggressor villageaggressor = null;
-        Iterator iterator = this.aggressors.iterator();
 
-        while (iterator.hasNext()) {
-            VillageAggressor villageaggressor1 = (VillageAggressor) iterator.next();
+        for (int i = 0; i < this.aggressors.size(); ++i) {
+            VillageAggressor villageaggressor1 = (VillageAggressor) this.aggressors.get(i);
             double d1 = villageaggressor1.a.e(entityliving);
 
             if (d1 <= d0) {

@@ -24,6 +24,24 @@ public class PathfinderGoalSelector {
         this.a.add(new PathfinderGoalSelectorItem(this, i, pathfindergoal));
     }
 
+    public void a(PathfinderGoal pathfindergoal) {
+        Iterator iterator = this.a.iterator();
+
+        while (iterator.hasNext()) {
+            PathfinderGoalSelectorItem pathfindergoalselectoritem = (PathfinderGoalSelectorItem) iterator.next();
+            PathfinderGoal pathfindergoal1 = pathfindergoalselectoritem.a;
+
+            if (pathfindergoal1 == pathfindergoal) {
+                if (this.b.contains(pathfindergoalselectoritem)) {
+                    pathfindergoal1.d();
+                    this.b.remove(pathfindergoalselectoritem);
+                }
+
+                iterator.remove();
+            }
+        }
+    }
+
     public void a() {
         // ArrayList arraylist = new ArrayList(); // CraftBukkit - remove usage
         Iterator iterator;

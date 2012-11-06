@@ -403,16 +403,12 @@ public class PlayerInventory implements IInventory {
 
     public int k() {
         int i = 0;
-        ItemStack[] aitemstack = this.armor;
-        int j = aitemstack.length;
 
-        for (int k = 0; k < j; ++k) {
-            ItemStack itemstack = aitemstack[k];
+        for (int j = 0; j < this.armor.length; ++j) {
+            if (this.armor[j] != null && this.armor[j].getItem() instanceof ItemArmor) {
+                int k = ((ItemArmor) this.armor[j].getItem()).b;
 
-            if (itemstack != null && itemstack.getItem() instanceof ItemArmor) {
-                int l = ((ItemArmor) itemstack.getItem()).b;
-
-                i += l;
+                i += k;
             }
         }
 
@@ -470,30 +466,21 @@ public class PlayerInventory implements IInventory {
         return this.g;
     }
 
-    public boolean a(EntityHuman entityhuman) {
+    public boolean a_(EntityHuman entityhuman) {
         return this.player.dead ? false : entityhuman.e(this.player) <= 64.0D;
     }
 
     public boolean c(ItemStack itemstack) {
-        ItemStack[] aitemstack = this.armor;
-        int i = aitemstack.length;
+        int i;
 
-        int j;
-        ItemStack itemstack1;
-
-        for (j = 0; j < i; ++j) {
-            itemstack1 = aitemstack[j];
-            if (itemstack1 != null && itemstack1.doMaterialsMatch(itemstack)) {
+        for (i = 0; i < this.armor.length; ++i) {
+            if (this.armor[i] != null && this.armor[i].doMaterialsMatch(itemstack)) {
                 return true;
             }
         }
 
-        aitemstack = this.items;
-        i = aitemstack.length;
-
-        for (j = 0; j < i; ++j) {
-            itemstack1 = aitemstack[j];
-            if (itemstack1 != null && itemstack1.doMaterialsMatch(itemstack)) {
+        for (i = 0; i < this.items.length; ++i) {
+            if (this.items[i] != null && this.items[i].doMaterialsMatch(itemstack)) {
                 return true;
             }
         }

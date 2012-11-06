@@ -68,11 +68,13 @@ public class ItemBlock extends Item {
 
         if (id != this.id || world.mayPlace(this.id, i, j, k, false, l, entityhuman)) {
             Block block = Block.byId[id];
+            int j1 = this.filterData(itemstack.getData());
+            int k1 = Block.byId[this.id].getPlacedData(world, i, j, k, l, f, f1, f2, j1);
 
             CraftBlockState replacedBlockState = CraftBlockState.getBlockState(world, i, j, k);
 
             world.suppressPhysics = true;
-            world.setTypeIdAndData(i, j, k, id, this.filterData(itemstack.getData()));
+            world.setTypeIdAndData(i, j, k, id, k1);
             org.bukkit.event.block.BlockPlaceEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(world, entityhuman, replacedBlockState, clickedX, clickedY, clickedZ);
             id = world.getTypeId(i, j, k);
             int data = world.getData(i, j, k);
@@ -84,12 +86,12 @@ public class ItemBlock extends Item {
             }
             if (world.setTypeIdAndData(i, j, k, id, data)) {
                 if (world.getTypeId(i, j, k) == id && Block.byId[id] != null) {
-                    Block.byId[id].postPlace(world, i, j, k, l, f, f1, f2);
                     Block.byId[id].postPlace(world, i, j, k, entityhuman);
+                    Block.byId[this.id].postPlace(world, i, j, k, data);
                     // CraftBukkit end
                 }
 
-                world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), block.stepSound.b(), (block.stepSound.getVolume1() + 1.0F) / 2.0F, block.stepSound.getVolume2() * 0.8F);
+                world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), block.stepSound.getPlaceSound(), (block.stepSound.getVolume1() + 1.0F) / 2.0F, block.stepSound.getVolume2() * 0.8F);
                 --itemstack.count;
             }
 

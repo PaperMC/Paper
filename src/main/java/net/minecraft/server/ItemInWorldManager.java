@@ -303,13 +303,13 @@ public class ItemInWorldManager {
             if (this.isCreative()) {
                 this.player.netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
             } else {
-                ItemStack itemstack = this.player.bP();
+                ItemStack itemstack = this.player.bT();
                 boolean flag1 = this.player.b(Block.byId[l]);
 
                 if (itemstack != null) {
                     itemstack.a(this.world, l, i, j, k, this.player);
                     if (itemstack.count == 0) {
-                        this.player.bQ();
+                        this.player.bU();
                     }
                 }
 
@@ -348,7 +348,7 @@ public class ItemInWorldManager {
                 entityhuman.inventory.items[entityhuman.inventory.itemInHandIndex] = null;
             }
 
-            if (!entityhuman.bI()) {
+            if (!entityhuman.bM()) {
                 ((EntityPlayer) entityhuman).updateInventory(entityhuman.defaultContainer);
             }
 
@@ -356,7 +356,6 @@ public class ItemInWorldManager {
         }
     }
 
-    // CraftBukkit - TODO: Review this code, it changed in 1.8 but I'm not sure if we need to update or not
     public boolean interact(EntityHuman entityhuman, World world, ItemStack itemstack, int i, int j, int k, int l, float f, float f1, float f2) {
         int i1 = world.getTypeId(i, j, k);
 

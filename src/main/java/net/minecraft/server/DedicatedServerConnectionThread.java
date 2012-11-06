@@ -27,9 +27,9 @@ public class DedicatedServerConnectionThread extends Thread {
     public DedicatedServerConnectionThread(ServerConnection serverconnection, InetAddress inetaddress, int i) throws IOException { // CraftBukkit - added throws
         super("Listen thread");
         this.f = serverconnection;
-        this.g = inetaddress;
         this.h = i;
         this.e = new ServerSocket(i, 0, inetaddress);
+        this.g = inetaddress == null ? this.e.getInetAddress() : inetaddress;
         this.e.setPerformancePreferences(0, 2, 1);
     }
 
@@ -44,7 +44,7 @@ public class DedicatedServerConnectionThread extends Thread {
                     netloginhandler.c();
                 } catch (Exception exception) {
                     netloginhandler.disconnect("Internal server error");
-                    a.log(Level.WARNING, "Failed to handle packet: " + exception, exception);
+                    a.log(Level.WARNING, "Failed to handle packet for " + netloginhandler.getName() + ": " + exception, exception);
                 }
 
                 if (netloginhandler.c) {

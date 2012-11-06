@@ -29,13 +29,9 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
 
         synchronized (this.c) {
             if (this.b.contains(chunkcoordintpair)) {
-                Iterator iterator = this.a.iterator();
-
-                while (iterator.hasNext()) {
-                    PendingChunkToSave pendingchunktosave = (PendingChunkToSave) iterator.next();
-
-                    if (pendingchunktosave.a.equals(chunkcoordintpair)) {
-                        nbttagcompound = pendingchunktosave.b;
+                for (int k = 0; k < this.a.size(); ++k) {
+                    if (((PendingChunkToSave) this.a.get(k)).a.equals(chunkcoordintpair)) {
+                        nbttagcompound = ((PendingChunkToSave) this.a.get(k)).b;
                         break;
                     }
                 }
@@ -79,7 +75,7 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
     public void a(World world, Chunk chunk) {
         // CraftBukkit start - "handle" exception
         try {
-            world.C();
+            world.D();
         } catch (ExceptionWorldConflict ex) {
             ex.printStackTrace();
         }

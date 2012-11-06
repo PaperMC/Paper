@@ -7,6 +7,28 @@ public abstract class EntityAgeable extends EntityCreature {
         super(world);
     }
 
+    public abstract EntityAgeable createChild(EntityAgeable entityageable);
+
+    public boolean a(EntityHuman entityhuman) {
+        ItemStack itemstack = entityhuman.inventory.getItemInHand();
+
+        if (itemstack != null && itemstack.id == Item.MONSTER_EGG.id && !this.world.isStatic) {
+            Class oclass = EntityTypes.a(itemstack.getData());
+
+            if (oclass != null && oclass.isAssignableFrom(this.getClass())) {
+                EntityAgeable entityageable = this.createChild(this);
+
+                if (entityageable != null) {
+                    entityageable.setAge(-24000);
+                    entityageable.setPositionRotation(this.locX, this.locY, this.locZ, 0.0F, 0.0F);
+                    this.world.addEntity(entityageable);
+                }
+            }
+        }
+
+        return super.a(entityhuman);
+    }
+
     protected void a() {
         super.a();
         this.datawatcher.a(12, new Integer(0));

@@ -31,7 +31,7 @@ public class BlockSoil extends Block {
     }
 
     public void b(World world, int i, int j, int k, Random random) {
-        if (!this.n(world, i, j, k) && !world.B(i, j + 1, k)) {
+        if (!this.n(world, i, j, k) && !world.D(i, j + 1, k)) {
             int l = world.getData(i, j, k);
 
             if (l > 0) {
@@ -71,7 +71,7 @@ public class BlockSoil extends Block {
             for (int i1 = k - b0; i1 <= k + b0; ++i1) {
                 int j1 = world.getTypeId(l, j + 1, i1);
 
-                if (j1 == Block.CROPS.id || j1 == Block.MELON_STEM.id || j1 == Block.PUMPKIN_STEM.id) {
+                if (j1 == Block.CROPS.id || j1 == Block.MELON_STEM.id || j1 == Block.PUMPKIN_STEM.id || j1 == Block.POTATOES.id || j1 == Block.CARROTS.id) {
                     return true;
                 }
             }

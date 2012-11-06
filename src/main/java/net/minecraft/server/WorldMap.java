@@ -175,7 +175,7 @@ public class WorldMap extends WorldMapBase {
             d2 += d2 < 0.0D ? -8.0D : 8.0D;
             b3 = (byte) ((int) (d2 * 16.0D / 360.0D));
             if (this.map < 0) {
-                int k = (int) (world.getWorldData().g() / 10L);
+                int k = (int) (world.getWorldData().getDayTime() / 10L);
 
                 b3 = (byte) (k * k * 34187121 + k * 121 >> 15 & 15);
             }

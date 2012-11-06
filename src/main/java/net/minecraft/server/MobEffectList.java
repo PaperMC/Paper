@@ -98,8 +98,8 @@ public class MobEffectList {
             // CraftBukkit end
         } else if (this.id == HUNGER.id && entityliving instanceof EntityHuman) {
             ((EntityHuman) entityliving).j(0.025F * (float) (i + 1));
-        } else if ((this.id != HEAL.id || entityliving.bx()) && (this.id != HARM.id || !entityliving.bx())) {
-            if (this.id == HARM.id && !entityliving.bx() || this.id == HEAL.id && entityliving.bx()) {
+        } else if ((this.id != HEAL.id || entityliving.bA()) && (this.id != HARM.id || !entityliving.bA())) {
+            if (this.id == HARM.id && !entityliving.bA() || this.id == HEAL.id && entityliving.bA()) {
                 // CraftBukkit start
                 EntityDamageEvent event = CraftEventFactory.callEntityDamageEvent(null, entityliving, EntityDamageEvent.DamageCause.MAGIC, 6 << i);
 
@@ -122,8 +122,8 @@ public class MobEffectList {
         // CraftBukkit end
         int j;
 
-        if ((this.id != HEAL.id || entityliving1.bx()) && (this.id != HARM.id || !entityliving1.bx())) {
-            if (this.id == HARM.id && !entityliving1.bx() || this.id == HEAL.id && entityliving1.bx()) {
+        if ((this.id != HEAL.id || entityliving1.bA()) && (this.id != HARM.id || !entityliving1.bA())) {
+            if (this.id == HARM.id && !entityliving1.bA() || this.id == HEAL.id && entityliving1.bA()) {
                 j = (int) (d0 * (double) (6 << i) + 0.5D);
                 if (entityliving == null) {
                     entityliving1.damageEntity(DamageSource.MAGIC, j);

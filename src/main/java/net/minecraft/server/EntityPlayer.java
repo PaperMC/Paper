@@ -27,14 +27,14 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public double e;
     public final List chunkCoordIntPairQueue = new LinkedList();
     public final List removeQueue = new LinkedList();
-    private int cn = -99999999;
-    private int co = -99999999;
-    private boolean cp = true;
+    private int ck = -99999999;
+    private int cl = -99999999;
+    private boolean cm = true;
     public int lastSentExp = -99999999; // CraftBukkit - private -> public
     public int invulnerableTicks = 60; // CraftBukkit - private -> public
-    private int cs = 0;
-    private int ct = 0;
-    private boolean cu = true;
+    private int cp = 0;
+    private int cq = 0;
+    private boolean cr = true;
     private int containerCounter = 0;
     public boolean h;
     public int ping;
@@ -53,7 +53,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         super(world);
         iteminworldmanager.player = this;
         this.itemInWorldManager = iteminworldmanager;
-        this.cs = minecraftserver.getServerConfigurationManager().o();
+        this.cp = minecraftserver.getServerConfigurationManager().o();
         ChunkCoordinates chunkcoordinates = world.getSpawn();
         int i = chunkcoordinates.x;
         int j = chunkcoordinates.z;
@@ -136,15 +136,30 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         this.itemInWorldManager.a();
         --this.invulnerableTicks;
         this.activeContainer.b();
+
+        while (!this.removeQueue.isEmpty()) {
+            int i = Math.min(this.removeQueue.size(), 127);
+            int[] aint = new int[i];
+            Iterator iterator = this.removeQueue.iterator();
+            int j = 0;
+
+            while (iterator.hasNext() && j < i) {
+                aint[j++] = ((Integer) iterator.next()).intValue();
+                iterator.remove();
+            }
+
+            this.netServerHandler.sendPacket(new Packet29DestroyEntity(aint));
+        }
+
         if (!this.chunkCoordIntPairQueue.isEmpty()) {
             ArrayList arraylist = new ArrayList();
-            Iterator iterator = this.chunkCoordIntPairQueue.iterator();
+            Iterator iterator1 = this.chunkCoordIntPairQueue.iterator();
             ArrayList arraylist1 = new ArrayList();
 
-            while (iterator.hasNext() && arraylist.size() < 5) {
-                ChunkCoordIntPair chunkcoordintpair = (ChunkCoordIntPair) iterator.next();
+            while (iterator1.hasNext() && arraylist.size() < 5) {
+                ChunkCoordIntPair chunkcoordintpair = (ChunkCoordIntPair) iterator1.next();
 
-                iterator.remove();
+                iterator1.remove();
                 if (chunkcoordintpair != null && this.world.isLoaded(chunkcoordintpair.x << 4, 0, chunkcoordintpair.z << 4)) {
                     arraylist.add(this.world.getChunkAt(chunkcoordintpair.x, chunkcoordintpair.z));
                     arraylist1.addAll(((WorldServer) this.world).getTileEntities(chunkcoordintpair.x * 16, 0, chunkcoordintpair.z * 16, chunkcoordintpair.x * 16 + 16, 256, chunkcoordintpair.z * 16 + 16));
@@ -152,35 +167,24 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             }
 
             if (!arraylist.isEmpty()) {
-                // CraftBukkit start - don't use map chunk bulk for now TODO: fix this
-                for (Object object : arraylist) {
-                    this.netServerHandler.sendPacket(new Packet51MapChunk((Chunk) object, true, 0xffff));
-                }
-                // this.netServerHandler.sendPacket(new Packet56MapChunkBulk(arraylist));
-                // CraftBukkit end
+                this.netServerHandler.sendPacket(new Packet56MapChunkBulk(arraylist));
 
-                Iterator iterator1 = arraylist1.iterator();
+                Iterator iterator2 = arraylist1.iterator();
 
-                while (iterator1.hasNext()) {
-                    TileEntity tileentity = (TileEntity) iterator1.next();
+                while (iterator2.hasNext()) {
+                    TileEntity tileentity = (TileEntity) iterator2.next();
 
                     this.b(tileentity);
                 }
+
+                iterator2 = arraylist.iterator();
+
+                while (iterator2.hasNext()) {
+                    Chunk chunk = (Chunk) iterator2.next();
+
+                    this.p().getTracker().a(this, chunk);
+                }
             }
-        }
-
-        if (!this.removeQueue.isEmpty()) {
-            int i = Math.min(this.removeQueue.size(), 127);
-            int[] aint = new int[i];
-            Iterator iterator2 = this.removeQueue.iterator();
-            int j = 0;
-
-            while (iterator2.hasNext() && j < i) {
-                aint[j++] = ((Integer) iterator2.next()).intValue();
-                iterator2.remove();
-            }
-
-            this.netServerHandler.sendPacket(new Packet29DestroyEntity(aint));
         }
     }
 
@@ -199,11 +203,11 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             }
         }
 
-        if (this.getHealth() != this.cn || this.co != this.foodData.a() || this.foodData.e() == 0.0F != this.cp) {
+        if (this.getHealth() != this.ck || this.cl != this.foodData.a() || this.foodData.e() == 0.0F != this.cm) {
             this.netServerHandler.sendPacket(new Packet8UpdateHealth(this.getHealth(), this.foodData.a(), this.foodData.e()));
-            this.cn = this.getHealth();
-            this.co = this.foodData.a();
-            this.cp = this.foodData.e() == 0.0F;
+            this.ck = this.getHealth();
+            this.cl = this.foodData.a();
+            this.cm = this.foodData.e() == 0.0F;
         }
 
         if (this.expTotal != this.lastSentExp) {
@@ -273,27 +277,34 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     }
 
     public boolean damageEntity(DamageSource damagesource, int i) {
-        if (this.invulnerableTicks > 0) {
+        if (this.isInvulnerable()) {
             return false;
         } else {
             // CraftBukkit - this.server.getPvP() -> this.world.pvpMode
-            if (!this.world.pvpMode && damagesource instanceof EntityDamageSource) {
-                Entity entity = damagesource.getEntity();
+            boolean flag = this.server.T() && this.world.pvpMode && "fall".equals(damagesource.translationIndex);
 
-                if (entity instanceof EntityHuman) {
-                    return false;
-                }
+            if (!flag && this.invulnerableTicks > 0) {
+                return false;
+            } else {
+                // CraftBukkit - this.server.getPvP() -> this.world.pvpMode
+                if (!this.world.pvpMode && damagesource instanceof EntityDamageSource) {
+                    Entity entity = damagesource.getEntity();
 
-                if (entity instanceof EntityArrow) {
-                    EntityArrow entityarrow = (EntityArrow) entity;
-
-                    if (entityarrow.shooter instanceof EntityHuman) {
+                    if (entity instanceof EntityHuman) {
                         return false;
                     }
-                }
-            }
 
-            return super.damageEntity(damagesource, i);
+                    if (entity instanceof EntityArrow) {
+                        EntityArrow entityarrow = (EntityArrow) entity;
+
+                        if (entityarrow.shooter instanceof EntityHuman) {
+                            return false;
+                        }
+                    }
+                }
+
+                return super.damageEntity(damagesource, i);
+            }
         }
     }
 
@@ -324,14 +335,14 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
             this.server.getServerConfigurationManager().changeDimension(this, i);
             this.lastSentExp = -1;
-            this.cn = -1;
-            this.co = -1;
+            this.ck = -1;
+            this.cl = -1;
         }
     }
 
     private void b(TileEntity tileentity) {
         if (tileentity != null) {
-            Packet packet = tileentity.l();
+            Packet packet = tileentity.getUpdatePacket();
 
             if (packet != null) {
                 this.netServerHandler.sendPacket(packet);
@@ -350,7 +361,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         if (enumbedresult == EnumBedResult.OK) {
             Packet17EntityLocationAction packet17entitylocationaction = new Packet17EntityLocationAction(this, 0, i, j, k);
 
-            this.p().getTracker().a(this, packet17entitylocationaction);
+            this.p().getTracker().a((Entity) this, (Packet) packet17entitylocationaction);
             this.netServerHandler.a(this.locX, this.locY, this.locZ, this.yaw, this.pitch);
             this.netServerHandler.sendPacket(packet17entitylocationaction);
         }
@@ -573,7 +584,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     }
 
     public void k() {
-        this.activeContainer.a((EntityHuman) this);
+        this.activeContainer.b(this);
         this.activeContainer = this.defaultContainer;
     }
 
@@ -605,7 +616,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     }
 
     public void m() {
-        this.cn = -99999999;
+        this.ck = -99999999;
         this.lastSentExp = -1; // CraftBukkit - Added to reset
     }
 
@@ -631,8 +642,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public void copyTo(EntityHuman entityhuman, boolean flag) {
         super.copyTo(entityhuman, flag);
         this.lastSentExp = -1;
-        this.cn = -1;
-        this.co = -1;
+        this.ck = -1;
+        this.cl = -1;
         this.removeQueue.addAll(((EntityPlayer) entityhuman).removeQueue);
     }
 
@@ -702,11 +713,11 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         int i = 256 >> packet204localeandviewdistance.f();
 
         if (i > 3 && i < 15) {
-            this.cs = i;
+            this.cp = i;
         }
 
-        this.ct = packet204localeandviewdistance.g();
-        this.cu = packet204localeandviewdistance.h();
+        this.cq = packet204localeandviewdistance.g();
+        this.cr = packet204localeandviewdistance.h();
         if (this.server.I() && this.server.H().equals(this.name)) {
             this.server.c(packet204localeandviewdistance.i());
         }
@@ -719,7 +730,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     }
 
     public int getChatFlags() {
-        return this.ct;
+        return this.cq;
     }
 
     public void a(String s, int i) {
@@ -739,10 +750,10 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public long getPlayerTime() {
         if (this.relativeTime) {
             // Adds timeOffset to the current server time.
-            return this.world.F() + this.timeOffset;
+            return this.world.getDayTime() + this.timeOffset;
         } else {
             // Adds timeOffset to the beginning of this day.
-            return this.world.F() - (this.world.F() % 24000) + this.timeOffset;
+            return this.world.getDayTime() - (this.world.getDayTime() % 24000) + this.timeOffset;
         }
     }
 

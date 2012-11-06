@@ -10,7 +10,7 @@ public class EntityMushroomCow extends EntityCow {
         this.a(0.9F, 1.3F);
     }
 
-    public boolean c(EntityHuman entityhuman) {
+    public boolean a(EntityHuman entityhuman) {
         ItemStack itemstack = entityhuman.inventory.getItemInHand();
 
         if (itemstack != null && itemstack.id == Item.BOWL.id && this.getAge() >= 0) {
@@ -52,11 +52,19 @@ public class EntityMushroomCow extends EntityCow {
 
             return true;
         } else {
-            return super.c(entityhuman);
+            return super.a(entityhuman);
         }
     }
 
-    public EntityAnimal createChild(EntityAnimal entityanimal) {
+    public EntityMushroomCow c(EntityAgeable entityageable) {
         return new EntityMushroomCow(this.world);
+    }
+
+    public EntityCow b(EntityAgeable entityageable) {
+        return this.c(entityageable);
+    }
+
+    public EntityAgeable createChild(EntityAgeable entityageable) {
+        return this.c(entityageable);
     }
 }

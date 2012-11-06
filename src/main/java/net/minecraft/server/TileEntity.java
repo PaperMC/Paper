@@ -2,6 +2,7 @@ package net.minecraft.server;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 import org.bukkit.inventory.InventoryHolder; // CraftBukkit
 
@@ -102,7 +103,7 @@ public class TileEntity {
         return this.q;
     }
 
-    public Packet l() {
+    public Packet getUpdatePacket() {
         return null;
     }
 
@@ -123,6 +124,15 @@ public class TileEntity {
     public void h() {
         this.q = null;
         this.p = -1;
+    }
+
+    public void a(CrashReportSystemDetails crashreportsystemdetails) {
+        crashreportsystemdetails.a("Name", (Callable) (new CrashReportTileEntityName(this)));
+        CrashReportSystemDetails.a(crashreportsystemdetails, this.x, this.y, this.z, this.q.id, this.p);
+    }
+
+    static Map t() {
+        return b;
     }
 
     static {

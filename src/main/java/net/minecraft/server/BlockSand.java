@@ -57,7 +57,7 @@ public class BlockSand extends Block {
     protected void a(EntityFallingBlock entityfallingblock) {}
 
     public int r_() {
-        return 3;
+        return 5;
     }
 
     public static boolean canFall(World world, int i, int j, int k) {

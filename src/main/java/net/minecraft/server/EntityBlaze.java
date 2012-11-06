@@ -22,15 +22,15 @@ public class EntityBlaze extends EntityMonster {
         this.datawatcher.a(16, new Byte((byte) 0));
     }
 
-    protected String aW() {
+    protected String aY() {
         return "mob.blaze.breathe";
     }
 
-    protected String aX() {
+    protected String aZ() {
         return "mob.blaze.hit";
     }
 
-    protected String aY() {
+    protected String ba() {
         return "mob.blaze.death";
     }
 
@@ -73,7 +73,7 @@ public class EntityBlaze extends EntityMonster {
     protected void a(Entity entity, float f) {
         if (this.attackTicks <= 0 && f < 2.0F && entity.boundingBox.e > this.boundingBox.b && entity.boundingBox.b < this.boundingBox.e) {
             this.attackTicks = 20;
-            this.l(entity);
+            this.m(entity);
         } else if (f < 30.0F) {
             double d0 = entity.locX - this.locX;
             double d1 = entity.boundingBox.b + (double) (entity.length / 2.0F) - (this.locY + (double) (this.length / 2.0F));

@@ -56,7 +56,7 @@ public class BlockSnow extends Block {
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
         int i1 = Item.SNOW_BALL.id;
 
-        this.a(world, i, j, k, new ItemStack(i1, 1, 0));
+        this.b(world, i, j, k, new ItemStack(i1, 1, 0));
         world.setTypeId(i, j, k, 0);
         entityhuman.a(StatisticList.C[this.id], 1);
     }

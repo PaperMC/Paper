@@ -27,7 +27,7 @@ public class EntityChicken extends EntityAnimal {
         this.goalSelector.a(7, new PathfinderGoalRandomLookaround(this));
     }
 
-    public boolean bb() {
+    public boolean be() {
         return true;
     }
 
@@ -59,7 +59,7 @@ public class EntityChicken extends EntityAnimal {
 
         this.e += this.i * 2.0F;
         if (!this.isBaby() && !this.world.isStatic && --this.j <= 0) {
-            this.world.makeSound(this, "mob.chicken.plop", 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
+            this.makeSound("mob.chicken.plop", 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
             this.b(Item.EGG.id, 1);
             this.j = this.random.nextInt(6000) + 6000;
         }
@@ -67,20 +67,20 @@ public class EntityChicken extends EntityAnimal {
 
     protected void a(float f) {}
 
-    protected String aW() {
+    protected String aY() {
         return "mob.chicken.say";
     }
 
-    protected String aX() {
+    protected String aZ() {
         return "mob.chicken.hurt";
     }
 
-    protected String aY() {
+    protected String ba() {
         return "mob.chicken.hurt";
     }
 
     protected void a(int i, int j, int k, int l) {
-        this.world.makeSound(this, "mob.chicken.step", 0.15F, 1.0F);
+        this.makeSound("mob.chicken.step", 0.15F, 1.0F);
     }
 
     protected int getLootId() {
@@ -106,11 +106,15 @@ public class EntityChicken extends EntityAnimal {
         // CraftBukkit end
     }
 
-    public EntityAnimal createChild(EntityAnimal entityanimal) {
+    public EntityChicken b(EntityAgeable entityageable) {
         return new EntityChicken(this.world);
     }
 
     public boolean c(ItemStack itemstack) {
         return itemstack != null && itemstack.getItem() instanceof ItemSeeds;
+    }
+
+    public EntityAgeable createChild(EntityAgeable entityageable) {
+        return this.b(entityageable);
     }
 }

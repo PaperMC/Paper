@@ -33,35 +33,35 @@ public class BlockButton extends Block {
     }
 
     public boolean canPlace(World world, int i, int j, int k, int l) {
-        return l == 2 && world.s(i, j, k + 1) ? true : (l == 3 && world.s(i, j, k - 1) ? true : (l == 4 && world.s(i + 1, j, k) ? true : l == 5 && world.s(i - 1, j, k)));
+        return l == 2 && world.t(i, j, k + 1) ? true : (l == 3 && world.t(i, j, k - 1) ? true : (l == 4 && world.t(i + 1, j, k) ? true : l == 5 && world.t(i - 1, j, k)));
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
-        return world.s(i - 1, j, k) ? true : (world.s(i + 1, j, k) ? true : (world.s(i, j, k - 1) ? true : world.s(i, j, k + 1)));
+        return world.t(i - 1, j, k) ? true : (world.t(i + 1, j, k) ? true : (world.t(i, j, k - 1) ? true : world.t(i, j, k + 1)));
     }
 
-    public void postPlace(World world, int i, int j, int k, int l, float f, float f1, float f2) {
-        int i1 = world.getData(i, j, k);
-        int j1 = i1 & 8;
+    public int getPlacedData(World world, int i, int j, int k, int l, float f, float f1, float f2, int i1) {
+        int j1 = world.getData(i, j, k);
+        int k1 = j1 & 8;
 
-        i1 &= 7;
-        if (l == 2 && world.s(i, j, k + 1)) {
-            i1 = 4;
-        } else if (l == 3 && world.s(i, j, k - 1)) {
-            i1 = 3;
-        } else if (l == 4 && world.s(i + 1, j, k)) {
-            i1 = 2;
-        } else if (l == 5 && world.s(i - 1, j, k)) {
-            i1 = 1;
+        j1 &= 7;
+        if (l == 2 && world.t(i, j, k + 1)) {
+            j1 = 4;
+        } else if (l == 3 && world.t(i, j, k - 1)) {
+            j1 = 3;
+        } else if (l == 4 && world.t(i + 1, j, k)) {
+            j1 = 2;
+        } else if (l == 5 && world.t(i - 1, j, k)) {
+            j1 = 1;
         } else {
-            i1 = this.l(world, i, j, k);
+            j1 = this.l(world, i, j, k);
         }
 
-        world.setData(i, j, k, i1 + j1);
+        return j1 + k1;
     }
 
     private int l(World world, int i, int j, int k) {
-        return world.s(i - 1, j, k) ? 1 : (world.s(i + 1, j, k) ? 2 : (world.s(i, j, k - 1) ? 3 : (world.s(i, j, k + 1) ? 4 : 1)));
+        return world.t(i - 1, j, k) ? 1 : (world.t(i + 1, j, k) ? 2 : (world.t(i, j, k - 1) ? 3 : (world.t(i, j, k + 1) ? 4 : 1)));
     }
 
     public void doPhysics(World world, int i, int j, int k, int l) {
@@ -69,19 +69,19 @@ public class BlockButton extends Block {
             int i1 = world.getData(i, j, k) & 7;
             boolean flag = false;
 
-            if (!world.s(i - 1, j, k) && i1 == 1) {
+            if (!world.t(i - 1, j, k) && i1 == 1) {
                 flag = true;
             }
 
-            if (!world.s(i + 1, j, k) && i1 == 2) {
+            if (!world.t(i + 1, j, k) && i1 == 2) {
                 flag = true;
             }
 
-            if (!world.s(i, j, k - 1) && i1 == 3) {
+            if (!world.t(i, j, k - 1) && i1 == 3) {
                 flag = true;
             }
 
-            if (!world.s(i, j, k + 1) && i1 == 4) {
+            if (!world.t(i, j, k + 1) && i1 == 4) {
                 flag = true;
             }
 

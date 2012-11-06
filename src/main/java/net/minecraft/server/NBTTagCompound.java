@@ -221,11 +221,16 @@ public class NBTTagCompound extends NBTBase {
     }
 
     private CrashReport a(String s, int i, ClassCastException classcastexception) {
-        CrashReport crashreport = new CrashReport("Reading NBT data", classcastexception);
+        CrashReport crashreport = CrashReport.a(classcastexception, "Reading NBT data");
+        CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Corrupt NBT tag", 1);
 
-        crashreport.a("Corrupt tag type found", (Callable) (new CrashReportCorruptNBTTag(this, s)));
-        crashreport.a("Corrupt tag type expected", (Callable) (new CrashReportCorruptNBTTag2(this, i)));
-        crashreport.a("Corrupt tag name", s);
+        crashreportsystemdetails.a("Tag type found", (Callable) (new CrashReportCorruptNBTTag(this, s)));
+        crashreportsystemdetails.a("Tag type expected", (Callable) (new CrashReportCorruptNBTTag2(this, i)));
+        crashreportsystemdetails.a("Tag name", s);
+        if (this.getName() != null && this.getName().length() > 0) {
+            crashreportsystemdetails.a("Tag parent", this.getName());
+        }
+
         return crashreport;
     }
 

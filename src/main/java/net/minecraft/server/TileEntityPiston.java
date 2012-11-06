@@ -79,7 +79,7 @@ public class TileEntityPiston extends TileEntity {
     public void f() {
         if (this.g < 1.0F && this.world != null) {
             this.g = this.f = 1.0F;
-            this.world.q(this.x, this.y, this.z);
+            this.world.r(this.x, this.y, this.z);
             this.w_();
             if (this.world.getTypeId(this.x, this.y, this.z) == Block.PISTON_MOVING.id) {
                 this.world.setTypeIdAndData(this.x, this.y, this.z, this.a, this.b);
@@ -93,7 +93,7 @@ public class TileEntityPiston extends TileEntity {
         this.g = this.f;
         if (this.g >= 1.0F) {
             this.a(1.0F, 0.25F);
-            this.world.q(this.x, this.y, this.z);
+            this.world.r(this.x, this.y, this.z);
             this.w_();
             if (this.world.getTypeId(this.x, this.y, this.z) == Block.PISTON_MOVING.id) {
                 this.world.setTypeIdAndData(this.x, this.y, this.z, this.a, this.b);

@@ -17,7 +17,7 @@ public class ContainerAnvil extends Container {
     private int i;
     private int j;
     private int k;
-    public int e = 0;
+    public int a = 0;
     private int l = 0;
     private String m;
     private final EntityHuman n;
@@ -60,14 +60,14 @@ public class ContainerAnvil extends Container {
     public void d() {
         ItemStack itemstack = this.g.getItem(0);
 
-        this.e = 0;
+        this.a = 0;
         int i = 0;
         byte b0 = 0;
         int j = 0;
 
         if (itemstack == null) {
             this.f.setItem(0, (ItemStack) null);
-            this.e = 0;
+            this.a = 0;
         } else {
             ItemStack itemstack1 = itemstack.cloneItemStack();
             ItemStack itemstack2 = this.g.getItem(1);
@@ -87,7 +87,7 @@ public class ContainerAnvil extends Container {
                     l = Math.min(itemstack1.i(), itemstack1.k() / 4);
                     if (l <= 0) {
                         this.f.setItem(0, (ItemStack) null);
-                        this.e = 0;
+                        this.a = 0;
                         return;
                     }
 
@@ -102,7 +102,7 @@ public class ContainerAnvil extends Container {
                 } else {
                     if (itemstack1.id != itemstack2.id || !itemstack1.f()) {
                         this.f.setItem(0, (ItemStack) null);
-                        this.e = 0;
+                        this.a = 0;
                         return;
                     }
 
@@ -240,17 +240,17 @@ public class ContainerAnvil extends Container {
                 }
             }
 
-            this.e = k + i;
+            this.a = k + i;
             if (i <= 0) {
                 itemstack1 = null;
             }
 
-            if (j == i && j > 0 && this.e >= 40) {
+            if (j == i && j > 0 && this.a >= 40) {
                 //System.out.println("Naming an item only, cost too high; giving discount to cap cost to 39 levels"); // CraftBukkit -remove debug
-                this.e = 39;
+                this.a = 39;
             }
 
-            if (this.e >= 40 && !this.n.abilities.canInstantlyBuild) {
+            if (this.a >= 40 && !this.n.abilities.canInstantlyBuild) {
                 itemstack1 = null;
             }
 
@@ -261,7 +261,7 @@ public class ContainerAnvil extends Container {
                 }
 
                 if (itemstack1.s()) {
-                    i1 -= 5;
+                    i1 -= 9;
                 }
 
                 if (i1 < 0) {
@@ -280,11 +280,11 @@ public class ContainerAnvil extends Container {
 
     public void addSlotListener(ICrafting icrafting) {
         super.addSlotListener(icrafting);
-        icrafting.setContainerData(this, 0, this.e);
+        icrafting.setContainerData(this, 0, this.a);
     }
 
-    public void a(EntityHuman entityhuman) {
-        super.a(entityhuman);
+    public void b(EntityHuman entityhuman) {
+        super.b(entityhuman);
         if (!this.h.isStatic) {
             for (int i = 0; i < this.g.getSize(); ++i) {
                 ItemStack itemstack = this.g.splitWithoutUpdate(i);
@@ -296,14 +296,14 @@ public class ContainerAnvil extends Container {
         }
     }
 
-    public boolean c(EntityHuman entityhuman) {
+    public boolean a(EntityHuman entityhuman) {
         if (!this.checkReachable) return true; // CraftBukkit
         return this.h.getTypeId(this.i, this.j, this.k) != Block.ANVIL.id ? false : entityhuman.e((double) this.i + 0.5D, (double) this.j + 0.5D, (double) this.k + 0.5D) <= 64.0D;
     }
 
     public ItemStack b(EntityHuman entityhuman, int i) {
         ItemStack itemstack = null;
-        Slot slot = (Slot) this.b.get(i);
+        Slot slot = (Slot) this.c.get(i);
 
         if (slot != null && slot.d()) {
             ItemStack itemstack1 = slot.getItem();

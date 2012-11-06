@@ -10,6 +10,7 @@ import java.util.logging.Logger;
 
 // CraftBukkit start
 import java.io.UnsupportedEncodingException;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.logging.Level;
 import java.util.HashSet;
 
@@ -51,7 +52,7 @@ public class NetServerHandler extends NetHandler {
     public INetworkManager networkManager;
     public boolean disconnected = false;
     private MinecraftServer minecraftServer;
-    public EntityPlayer player; // CraftBukkit - private -> public
+    public EntityPlayer player;
     private int f;
     private int g;
     private boolean h;
@@ -59,7 +60,7 @@ public class NetServerHandler extends NetHandler {
     private long j;
     private static Random k = new Random();
     private long l;
-    private int m = 0;
+    private volatile int m = 0; private static final AtomicIntegerFieldUpdater chatSpamField = AtomicIntegerFieldUpdater.newUpdater(NetServerHandler.class, "m"); // CraftBukkit - multithreaded field
     private int x = 0;
     private double y;
     private double z;
@@ -117,22 +118,20 @@ public class NetServerHandler extends NetHandler {
             this.sendPacket(new Packet0KeepAlive(this.i));
         }
 
+        // CraftBukkit start
+        for (int spam; (spam = this.m) > 0 && !chatSpamField.compareAndSet(this, spam, spam - 1); ) ;
+        /* Use thread-safe field access instead
         if (this.m > 0) {
             --this.m;
         }
+        */
+        // CraftBukkit end
 
         if (this.x > 0) {
             --this.x;
         }
 
         this.minecraftServer.methodProfiler.c("playerTick");
-        if (!this.h && !this.player.viewingCredits) {
-            this.player.g();
-            if (this.player.vehicle == null) {
-                this.player.setPositionRotation(this.y, this.z, this.q, this.player.yaw, this.player.pitch);
-            }
-        }
-
         this.minecraftServer.methodProfiler.b();
     }
 
@@ -497,14 +496,14 @@ public class NetServerHandler extends NetHandler {
                 }
             }
             // CraftBukkit end
-            this.player.bN();
+            this.player.bR();
         } else if (packet14blockdig.e == 5) {
-            this.player.bK();
+            this.player.bO();
         } else {
             boolean flag = worldserver.worldProvider.dimension != 0 || this.minecraftServer.getServerConfigurationManager().getOPs().isEmpty() || this.minecraftServer.getServerConfigurationManager().isOp(this.player.name) || this.minecraftServer.I();
             boolean flag1 = false;
 
-            if (packet14blockdig.e == 0) {
+            if (packet14blockdig.e == 0 || packet14blockdig.e == 1) { // CraftBukkit - check cancelled
                 flag1 = true;
             }
 
@@ -559,6 +558,11 @@ public class NetServerHandler extends NetHandler {
                     this.player.netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, worldserver));
                 }
             } else if (packet14blockdig.e == 3) {
+                // CraftBukkit start
+                logger.warning(this.player.name + " is using a modded client!");
+                this.disconnect("Nope!");
+                return;
+                /*
                 double d4 = this.player.locX - ((double) i + 0.5D);
                 double d5 = this.player.locY - ((double) j + 0.5D);
                 double d6 = this.player.locZ - ((double) k + 0.5D);
@@ -567,6 +571,7 @@ public class NetServerHandler extends NetHandler {
                 if (d7 < 256.0D) {
                     this.player.netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, worldserver));
                 }
+                // CraftBukkit end */
             }
         }
     }
@@ -753,10 +758,6 @@ public class NetServerHandler extends NetHandler {
         } else if (packet instanceof Packet6SpawnPosition) {
             Packet6SpawnPosition packet6 = (Packet6SpawnPosition) packet;
             this.player.compassTarget = new Location(this.getPlayer().getWorld(), packet6.x, packet6.y, packet6.z);
-        } else if (packet.lowPriority == true) {
-            // Reroute all low-priority packets through to compression thread.
-            org.bukkit.craftbukkit.ChunkCompressionThread.sendPacket(this.player, packet);
-            return;
         }
         // CraftBukkit end
 
@@ -786,13 +787,13 @@ public class NetServerHandler extends NetHandler {
             String s = packet3chat.message;
 
             if (s.length() > 100) {
-                this.disconnect("Chat message too long");
+                this.networkManager.a("Chat message too long"); // CraftBukkit disconnect client asynchronously
             } else {
                 s = s.trim();
 
                 for (int i = 0; i < s.length(); ++i) {
                     if (!SharedConstants.isAllowedChatCharacter(s.charAt(i))) {
-                        this.disconnect("Illegal characters in chat");
+                        this.networkManager.a("Illegal characters in chat"); // CraftBukkit disconnect client asynchronously
                         return;
                     }
                 }
@@ -804,6 +805,11 @@ public class NetServerHandler extends NetHandler {
                 }
 
                 this.chat(s, packet3chat.a_());
+
+                // This section stays because it is only applicable to packets
+                if (chatSpamField.addAndGet(this, 20) > 200 && !this.minecraftServer.getServerConfigurationManager().isOp(this.player.name)) { // CraftBukkit use thread-safe spam
+                    this.networkManager.a("disconnect.spam"); // CraftBukkit disconnect client asynchronously
+                }
             }
         }
     }
@@ -884,11 +890,6 @@ public class NetServerHandler extends NetHandler {
                     }
                 }
             }
-
-            this.m += 20;
-            if (this.m > 200 && !this.minecraftServer.getServerConfigurationManager().isOp(this.player.name)) {
-                this.disconnect("disconnect.spam");
-            }
         }
 
         return;
@@ -957,7 +958,7 @@ public class NetServerHandler extends NetHandler {
             if (event.isCancelled()) return;
             // CraftBukkit end
 
-            this.player.bE();
+            this.player.bH();
         }
     }
 
@@ -1016,7 +1017,7 @@ public class NetServerHandler extends NetHandler {
         Entity entity = worldserver.getEntity(packet7useentity.target);
 
         if (entity != null) {
-            boolean flag = this.player.m(entity);
+            boolean flag = this.player.n(entity);
             double d0 = 36.0D;
 
             if (!flag) {
@@ -1034,7 +1035,7 @@ public class NetServerHandler extends NetHandler {
                         return;
                     }
                     // CraftBukkit end
-                    this.player.o(entity);
+                    this.player.p(entity);
                     // CraftBukkit start - update the client if the item is an infinite one
                     if (itemInHand != null && itemInHand.count <= -1) {
                         this.player.updateInventory(this.player.activeContainer);
@@ -1123,7 +1124,7 @@ public class NetServerHandler extends NetHandler {
     public void a(Packet102WindowClick packet102windowclick) {
         if (this.player.dead) return; // CraftBukkit
 
-        if (this.player.activeContainer.windowId == packet102windowclick.a && this.player.activeContainer.b(this.player)) {
+        if (this.player.activeContainer.windowId == packet102windowclick.a && this.player.activeContainer.c(this.player)) {
             // CraftBukkit start - fire InventoryClickEvent
             InventoryView inventory = this.player.activeContainer.getBukkitView();
             SlotType type = CraftInventoryView.getSlotType(inventory, packet102windowclick.slot);
@@ -1182,8 +1183,8 @@ public class NetServerHandler extends NetHandler {
                 this.player.activeContainer.a(this.player, false);
                 ArrayList arraylist = new ArrayList();
 
-                for (int i = 0; i < this.player.activeContainer.b.size(); ++i) {
-                    arraylist.add(((Slot) this.player.activeContainer.b.get(i)).getItem());
+                for (int i = 0; i < this.player.activeContainer.c.size(); ++i) {
+                    arraylist.add(((Slot) this.player.activeContainer.c.get(i)).getItem());
                 }
 
                 this.player.a(this.player.activeContainer, arraylist);
@@ -1197,7 +1198,7 @@ public class NetServerHandler extends NetHandler {
     }
 
     public void a(Packet108ButtonClick packet108buttonclick) {
-        if (this.player.activeContainer.windowId == packet108buttonclick.a && this.player.activeContainer.b(this.player)) {
+        if (this.player.activeContainer.windowId == packet108buttonclick.a && this.player.activeContainer.c(this.player)) {
             this.player.activeContainer.a((EntityHuman) this.player, packet108buttonclick.b);
             this.player.activeContainer.b();
         }
@@ -1273,7 +1274,7 @@ public class NetServerHandler extends NetHandler {
         if (this.player.dead) return; // CraftBukkit
         Short oshort = (Short) this.s.get(this.player.activeContainer.windowId);
 
-        if (oshort != null && packet106transaction.b == oshort.shortValue() && this.player.activeContainer.windowId == packet106transaction.a && !this.player.activeContainer.b(this.player)) {
+        if (oshort != null && packet106transaction.b == oshort.shortValue() && this.player.activeContainer.windowId == packet106transaction.a && !this.player.activeContainer.c(this.player)) {
             this.player.activeContainer.a(this.player, true);
         }
     }
@@ -1407,7 +1408,7 @@ public class NetServerHandler extends NetHandler {
 
                 itemstack1 = this.player.inventory.getItemInHand();
                 if (itemstack != null && itemstack.id == Item.BOOK_AND_QUILL.id && itemstack.id == itemstack1.id) {
-                    itemstack1.a("pages", itemstack.getTag().getList("pages")); // CraftBukkit
+                    itemstack1.a("pages", (NBTBase) itemstack.getTag().getList("pages"));
                 }
             } catch (Exception exception) {
                 exception.printStackTrace();
@@ -1422,11 +1423,9 @@ public class NetServerHandler extends NetHandler {
 
                 itemstack1 = this.player.inventory.getItemInHand();
                 if (itemstack != null && itemstack.id == Item.WRITTEN_BOOK.id && itemstack1.id == Item.BOOK_AND_QUILL.id) {
-                    // CraftBukkit start
-                    itemstack1.a("author", new NBTTagString("author", this.player.name));
-                    itemstack1.a("title", new NBTTagString("title", itemstack.getTag().getString("title")));
-                    itemstack1.a("pages", itemstack.getTag().getList("pages"));
-                    // CraftBukkit end
+                    itemstack1.a("author", (NBTBase) (new NBTTagString("author", this.player.name)));
+                    itemstack1.a("title", (NBTBase) (new NBTTagString("title", itemstack.getTag().getString("title"))));
+                    itemstack1.a("pages", (NBTBase) itemstack.getTag().getList("pages"));
                     itemstack1.id = Item.WRITTEN_BOOK.id;
                 }
             } catch (Exception exception1) {

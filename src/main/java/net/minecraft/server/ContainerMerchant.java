@@ -64,13 +64,13 @@ public class ContainerMerchant extends Container {
         this.f.c(i);
     }
 
-    public boolean c(EntityHuman entityhuman) {
+    public boolean a(EntityHuman entityhuman) {
         return this.merchant.m_() == entityhuman;
     }
 
     public ItemStack b(EntityHuman entityhuman, int i) {
         ItemStack itemstack = null;
-        Slot slot = (Slot) this.b.get(i);
+        Slot slot = (Slot) this.c.get(i);
 
         if (slot != null && slot.d()) {
             ItemStack itemstack1 = slot.getItem();
@@ -110,10 +110,10 @@ public class ContainerMerchant extends Container {
         return itemstack;
     }
 
-    public void a(EntityHuman entityhuman) {
-        super.a(entityhuman);
-        this.merchant.a_((EntityHuman) null);
-        super.a(entityhuman);
+    public void b(EntityHuman entityhuman) {
+        super.b(entityhuman);
+        this.merchant.b_((EntityHuman) null);
+        super.b(entityhuman);
         if (!this.g.isStatic) {
             ItemStack itemstack = this.f.splitWithoutUpdate(0);
 

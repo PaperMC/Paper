@@ -47,12 +47,12 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
 
     public void g() {
         if (this.world.getTime() % 80L == 0L) {
+            this.v();
             this.u();
-            this.t();
         }
     }
 
-    private void t() {
+    private void u() {
         if (this.d && this.e > 0 && !this.world.isStatic && this.f > 0) {
             double d0 = (double) (this.e * 8 + 8);
             byte b0 = 0;
@@ -83,8 +83,8 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
         }
     }
 
-    private void u() {
-        if (!this.world.j(this.x, this.y + 1, this.z)) {
+    private void v() {
+        if (!this.world.k(this.x, this.y + 1, this.z)) {
             this.d = false;
             this.e = 0;
         } else {
@@ -171,7 +171,7 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
         }
     }
 
-    public Packet l() {
+    public Packet getUpdatePacket() {
         NBTTagCompound nbttagcompound = new NBTTagCompound();
 
         this.b(nbttagcompound);
@@ -241,7 +241,7 @@ public class TileEntityBeacon extends TileEntity implements IInventory {
         return maxStack; // CraftBukkit
     }
 
-    public boolean a(EntityHuman entityhuman) {
+    public boolean a_(EntityHuman entityhuman) {
         return this.world.getTileEntity(this.x, this.y, this.z) != this ? false : entityhuman.e((double) this.x + 0.5D, (double) this.y + 0.5D, (double) this.z + 0.5D) <= 64.0D;
     }
 

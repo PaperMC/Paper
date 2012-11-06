@@ -152,33 +152,30 @@ public class BlockTrapdoor extends Block {
         return super.a(world, i, j, k, vec3d, vec3d1);
     }
 
-    public void postPlace(World world, int i, int j, int k, int l, float f, float f1, float f2) {
-        int i1 = 0;
+    public int getPlacedData(World world, int i, int j, int k, int l, float f, float f1, float f2, int i1) {
+        int j1 = 0;
 
         if (l == 2) {
-            i1 = 0;
+            j1 = 0;
         }
 
         if (l == 3) {
-            i1 = 1;
+            j1 = 1;
         }
 
         if (l == 4) {
-            i1 = 2;
+            j1 = 2;
         }
 
         if (l == 5) {
-            i1 = 3;
+            j1 = 3;
         }
-
-        int j1 = Block.TRAP_DOOR.id;
 
         if (l != 1 && l != 0 && f1 > 0.5F) {
-            i1 |= 8;
+            j1 |= 8;
         }
 
-        world.setTypeIdAndData(i, j, k, j1, i1);
-        doPhysics(world, i, j, k, Block.REDSTONE_WIRE.id); // CraftBukkit
+        return j1;
     }
 
     public boolean canPlace(World world, int i, int j, int k, int l) {
@@ -217,7 +214,7 @@ public class BlockTrapdoor extends Block {
         } else {
             Block block = Block.byId[i];
 
-            return block != null && block.material.k() && block.b() || block == Block.GLOWSTONE;
+            return block != null && block.material.k() && block.b() || block == Block.GLOWSTONE || block instanceof BlockStepAbstract || block instanceof BlockStairs;
         }
     }
 }

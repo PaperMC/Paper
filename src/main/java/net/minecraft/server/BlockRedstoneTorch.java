@@ -2,7 +2,6 @@ package net.minecraft.server;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -23,15 +22,16 @@ public class BlockRedstoneTorch extends BlockTorch {
             b.put(world, new ArrayList());
         }
 
+        List list = (List) b.get(world);
+
         if (flag) {
-            ((List) b.get(world)).add(new RedstoneUpdateInfo(i, j, k, world.getTime()));
+            list.add(new RedstoneUpdateInfo(i, j, k, world.getTime()));
         }
 
         int l = 0;
-        Iterator iterator = ((List) b.get(world)).iterator();
 
-        while (iterator.hasNext()) {
-            RedstoneUpdateInfo redstoneupdateinfo = (RedstoneUpdateInfo) iterator.next();
+        for (int i1 = 0; i1 < list.size(); ++i1) {
+            RedstoneUpdateInfo redstoneupdateinfo = (RedstoneUpdateInfo) list.get(i1);
 
             if (redstoneupdateinfo.a == i && redstoneupdateinfo.b == j && redstoneupdateinfo.c == k) {
                 ++l;

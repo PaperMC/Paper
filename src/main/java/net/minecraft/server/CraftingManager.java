@@ -3,7 +3,6 @@ package net.minecraft.server;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 
 import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
@@ -142,16 +141,12 @@ public class CraftingManager {
         int i = 0;
         int j = 0;
         int k = 0;
-        int l;
 
         if (aobject[i] instanceof String[]) {
             String[] astring = (String[]) ((String[]) aobject[i++]);
-            String[] astring1 = astring;
 
-            l = astring.length;
-
-            for (int i1 = 0; i1 < l; ++i1) {
-                String s1 = astring1[i1];
+            for (int l = 0; l < astring.length; ++l) {
+                String s1 = astring[l];
 
                 ++k;
                 j = s1.length();
@@ -186,13 +181,13 @@ public class CraftingManager {
 
         ItemStack[] aitemstack = new ItemStack[j * k];
 
-        for (l = 0; l < j * k; ++l) {
-            char c0 = s.charAt(l);
+        for (int i1 = 0; i1 < j * k; ++i1) {
+            char c0 = s.charAt(i1);
 
             if (hashmap.containsKey(Character.valueOf(c0))) {
-                aitemstack[l] = ((ItemStack) hashmap.get(Character.valueOf(c0))).cloneItemStack();
+                aitemstack[i1] = ((ItemStack) hashmap.get(Character.valueOf(c0))).cloneItemStack();
             } else {
-                aitemstack[l] = null;
+                aitemstack[i1] = null;
             }
         }
 
@@ -229,7 +224,9 @@ public class CraftingManager {
         ItemStack itemstack = null;
         ItemStack itemstack1 = null;
 
-        for (int j = 0; j < inventorycrafting.getSize(); ++j) {
+        int j;
+
+        for (j = 0; j < inventorycrafting.getSize(); ++j) {
             ItemStack itemstack2 = inventorycrafting.getItem(j);
 
             if (itemstack2 != null) {
@@ -267,23 +264,19 @@ public class CraftingManager {
             return result;
             // CraftBukkit end
         } else {
-            Iterator iterator = this.recipes.iterator();
+            for (j = 0; j < this.recipes.size(); ++j) {
+                IRecipe irecipe = (IRecipe) this.recipes.get(j);
 
-            IRecipe irecipe;
-
-            do {
-                if (!iterator.hasNext()) {
-                    return null;
+                if (irecipe.a(inventorycrafting, world)) {
+                    // CraftBukkit start - INVENTORY_PRE_CRAFT event
+                    inventorycrafting.currentRecipe = irecipe;
+                    ItemStack result = irecipe.a(inventorycrafting);
+                    return CraftEventFactory.callPreCraftEvent(inventorycrafting, result, lastCraftView, false);
+                    // CraftBukkit end
                 }
+            }
 
-                irecipe = (IRecipe) iterator.next();
-            } while (!irecipe.a(inventorycrafting, world));
-
-            // CraftBukkit start - INVENTORY_PRE_CRAFT event
-            inventorycrafting.currentRecipe = irecipe;
-            ItemStack result = irecipe.a(inventorycrafting);
-            return CraftEventFactory.callPreCraftEvent(inventorycrafting, result, lastCraftView, false);
-            // CraftBukkit end
+            return null;
         }
     }
 

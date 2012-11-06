@@ -1,5 +1,8 @@
 package net.minecraft.server;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 
 // CraftBukkit start
@@ -14,15 +17,21 @@ import java.util.Random;
 
 public class PortalTravelAgent {
 
-    private Random a = new Random();
+    private final WorldServer a;
+    private final Random b;
+    private final LongHashMap c = new LongHashMap();
+    private final List d = new ArrayList();
 
-    public PortalTravelAgent() {}
+    public PortalTravelAgent(WorldServer worldserver) {
+        this.a = worldserver;
+        this.b = new Random(worldserver.getSeed());
+    }
 
-    public void a(World world, Entity entity, double d0, double d1, double d2, float f) {
-        if (world.worldProvider.dimension != 1) {
-            if (!this.b(world, entity, d0, d1, d2, f)) {
-                this.a(world, entity);
-                this.b(world, entity, d0, d1, d2, f);
+    public void a(Entity entity, double d0, double d1, double d2, float f) {
+        if (this.a.worldProvider.dimension != 1) {
+            if (!this.b(entity, d0, d1, d2, f)) {
+                this.a(entity);
+                this.b(entity, d0, d1, d2, f);
             }
         } else {
             int i = MathHelper.floor(entity.locX);
@@ -39,7 +48,7 @@ public class PortalTravelAgent {
                         int i2 = k + i1 * b1 - l * b0;
                         boolean flag = j1 < 0;
 
-                        world.setTypeId(k1, l1, i2, flag ? Block.OBSIDIAN.id : 0);
+                        this.a.setTypeId(k1, l1, i2, flag ? Block.OBSIDIAN.id : 0);
                     }
                 }
             }
@@ -49,7 +58,7 @@ public class PortalTravelAgent {
         }
     }
 
-    public boolean b(World world, Entity entity, double d0, double d1, double d2, float f) {
+    public boolean b(Entity entity, double d0, double d1, double d2, float f) {
         short short1 = 128;
         double d3 = -1.0D;
         int i = 0;
@@ -57,113 +66,128 @@ public class PortalTravelAgent {
         int k = 0;
         int l = MathHelper.floor(entity.locX);
         int i1 = MathHelper.floor(entity.locZ);
-
-        int j1;
+        long j1 = ChunkCoordIntPair.a(l, i1);
+        boolean flag = true;
         double d4;
+        int k1;
 
-        for (j1 = l - short1; j1 <= l + short1; ++j1) {
-            double d5 = (double) j1 + 0.5D - entity.locX;
+        if (this.c.contains(j1)) {
+            ChunkCoordinatesPortal chunkcoordinatesportal = (ChunkCoordinatesPortal) this.c.getEntry(j1);
 
-            for (int k1 = i1 - short1; k1 <= i1 + short1; ++k1) {
-                double d6 = (double) k1 + 0.5D - entity.locZ;
+            d3 = 0.0D;
+            i = chunkcoordinatesportal.x;
+            j = chunkcoordinatesportal.y;
+            k = chunkcoordinatesportal.z;
+            chunkcoordinatesportal.d = this.a.getTime();
+            flag = false;
+        } else {
+            for (k1 = l - short1; k1 <= l + short1; ++k1) {
+                double d5 = (double) k1 + 0.5D - entity.locX;
 
-                for (int l1 = world.O() - 1; l1 >= 0; --l1) {
-                    if (world.getTypeId(j1, l1, k1) == Block.PORTAL.id) {
-                        while (world.getTypeId(j1, l1 - 1, k1) == Block.PORTAL.id) {
-                            --l1;
-                        }
+                for (int l1 = i1 - short1; l1 <= i1 + short1; ++l1) {
+                    double d6 = (double) l1 + 0.5D - entity.locZ;
 
-                        d4 = (double) l1 + 0.5D - entity.locY;
-                        double d7 = d5 * d5 + d4 * d4 + d6 * d6;
+                    for (int i2 = this.a.P() - 1; i2 >= 0; --i2) {
+                        if (this.a.getTypeId(k1, i2, l1) == Block.PORTAL.id) {
+                            while (this.a.getTypeId(k1, i2 - 1, l1) == Block.PORTAL.id) {
+                                --i2;
+                            }
 
-                        if (d3 < 0.0D || d7 < d3) {
-                            d3 = d7;
-                            i = j1;
-                            j = l1;
-                            k = k1;
+                            d4 = (double) i2 + 0.5D - entity.locY;
+                            double d7 = d5 * d5 + d4 * d4 + d6 * d6;
+
+                            if (d3 < 0.0D || d7 < d3) {
+                                d3 = d7;
+                                i = k1;
+                                j = i2;
+                                k = l1;
+                            }
                         }
                     }
                 }
             }
         }
 
-        if (d3 < 0.0D) {
-            return false;
-        } else {
+        if (d3 >= 0.0D) {
+            if (flag) {
+                this.c.put(j1, new ChunkCoordinatesPortal(this, i, j, k, this.a.getTime()));
+                this.d.add(Long.valueOf(j1));
+            }
+
             double d8 = (double) i + 0.5D;
             double d9 = (double) j + 0.5D;
 
             d4 = (double) k + 0.5D;
-            int i2 = -1;
+            int j2 = -1;
 
-            if (world.getTypeId(i - 1, j, k) == Block.PORTAL.id) {
-                i2 = 2;
+            if (this.a.getTypeId(i - 1, j, k) == Block.PORTAL.id) {
+                j2 = 2;
             }
 
-            if (world.getTypeId(i + 1, j, k) == Block.PORTAL.id) {
-                i2 = 0;
+            if (this.a.getTypeId(i + 1, j, k) == Block.PORTAL.id) {
+                j2 = 0;
             }
 
-            if (world.getTypeId(i, j, k - 1) == Block.PORTAL.id) {
-                i2 = 3;
+            if (this.a.getTypeId(i, j, k - 1) == Block.PORTAL.id) {
+                j2 = 3;
             }
 
-            if (world.getTypeId(i, j, k + 1) == Block.PORTAL.id) {
-                i2 = 1;
+            if (this.a.getTypeId(i, j, k + 1) == Block.PORTAL.id) {
+                j2 = 1;
             }
 
-            int j2 = entity.at();
+            int k2 = entity.at();
 
-            if (i2 > -1) {
-                int k2 = Direction.h[i2];
-                int l2 = Direction.a[i2];
-                int i3 = Direction.b[i2];
-                int j3 = Direction.a[k2];
-                int k3 = Direction.b[k2];
-                boolean flag = !world.isEmpty(i + l2 + j3, j, k + i3 + k3) || !world.isEmpty(i + l2 + j3, j + 1, k + i3 + k3);
-                boolean flag1 = !world.isEmpty(i + l2, j, k + i3) || !world.isEmpty(i + l2, j + 1, k + i3);
+            if (j2 > -1) {
+                int l2 = Direction.h[j2];
+                int i3 = Direction.a[j2];
+                int j3 = Direction.b[j2];
+                int k3 = Direction.a[l2];
+                int l3 = Direction.b[l2];
+                boolean flag1 = !this.a.isEmpty(i + i3 + k3, j, k + j3 + l3) || !this.a.isEmpty(i + i3 + k3, j + 1, k + j3 + l3);
+                boolean flag2 = !this.a.isEmpty(i + i3, j, k + j3) || !this.a.isEmpty(i + i3, j + 1, k + j3);
 
-                if (flag && flag1) {
-                    i2 = Direction.f[i2];
-                    k2 = Direction.f[k2];
-                    l2 = Direction.a[i2];
-                    i3 = Direction.b[i2];
-                    j3 = Direction.a[k2];
-                    k3 = Direction.b[k2];
-                    j1 = i - j3;
-                    d8 -= (double) j3;
-                    int l3 = k - k3;
+                if (flag1 && flag2) {
+                    j2 = Direction.f[j2];
+                    l2 = Direction.f[l2];
+                    i3 = Direction.a[j2];
+                    j3 = Direction.b[j2];
+                    k3 = Direction.a[l2];
+                    l3 = Direction.b[l2];
+                    k1 = i - k3;
+                    d8 -= (double) k3;
+                    int i4 = k - l3;
 
-                    d4 -= (double) k3;
-                    flag = !world.isEmpty(j1 + l2 + j3, j, l3 + i3 + k3) || !world.isEmpty(j1 + l2 + j3, j + 1, l3 + i3 + k3);
-                    flag1 = !world.isEmpty(j1 + l2, j, l3 + i3) || !world.isEmpty(j1 + l2, j + 1, l3 + i3);
+                    d4 -= (double) l3;
+                    flag1 = !this.a.isEmpty(k1 + i3 + k3, j, i4 + j3 + l3) || !this.a.isEmpty(k1 + i3 + k3, j + 1, i4 + j3 + l3);
+                    flag2 = !this.a.isEmpty(k1 + i3, j, i4 + j3) || !this.a.isEmpty(k1 + i3, j + 1, i4 + j3);
                 }
 
                 float f1 = 0.5F;
                 float f2 = 0.5F;
 
-                if (!flag && flag1) {
+                if (!flag1 && flag2) {
                     f1 = 1.0F;
-                } else if (flag && !flag1) {
+                } else if (flag1 && !flag2) {
                     f1 = 0.0F;
-                } else if (flag && flag1) {
+                } else if (flag1 && flag2) {
                     f2 = 0.0F;
                 }
 
-                d8 += (double) ((float) j3 * f1 + f2 * (float) l2);
-                d4 += (double) ((float) k3 * f1 + f2 * (float) i3);
+                d8 += (double) ((float) k3 * f1 + f2 * (float) i3);
+                d4 += (double) ((float) l3 * f1 + f2 * (float) j3);
                 float f3 = 0.0F;
                 float f4 = 0.0F;
                 float f5 = 0.0F;
                 float f6 = 0.0F;
 
-                if (i2 == j2) {
+                if (j2 == k2) {
                     f3 = 1.0F;
                     f4 = 1.0F;
-                } else if (i2 == Direction.f[j2]) {
+                } else if (j2 == Direction.f[k2]) {
                     f3 = -1.0F;
                     f4 = -1.0F;
-                } else if (i2 == Direction.g[j2]) {
+                } else if (j2 == Direction.g[k2]) {
                     f5 = 1.0F;
                     f6 = -1.0F;
                 } else {
@@ -176,17 +200,19 @@ public class PortalTravelAgent {
 
                 entity.motX = d10 * (double) f3 + d11 * (double) f6;
                 entity.motZ = d10 * (double) f5 + d11 * (double) f4;
-                entity.yaw = f - (float) (j2 * 90) + (float) (i2 * 90);
+                entity.yaw = f - (float) (k2 * 90) + (float) (j2 * 90);
             } else {
                 entity.motX = entity.motY = entity.motZ = 0.0D;
             }
 
             entity.setPositionRotation(d8, d9, d4, entity.yaw, entity.pitch);
             return true;
+        } else {
+            return false;
         }
     }
 
-    public boolean a(World world, Entity entity) {
+    public boolean a(Entity entity) {
         byte b0 = 16;
         double d0 = -1.0D;
         int i = MathHelper.floor(entity.locX);
@@ -196,12 +222,12 @@ public class PortalTravelAgent {
         int i1 = j;
         int j1 = k;
         int k1 = 0;
-        int l1 = this.a.nextInt(4);
+        int l1 = this.b.nextInt(4);
 
         int i2;
         double d1;
-        int j2;
         double d2;
+        int j2;
         int k2;
         int l2;
         int i3;
@@ -221,42 +247,42 @@ public class PortalTravelAgent {
                 d2 = (double) j2 + 0.5D - entity.locZ;
 
                 label274:
-                for (l2 = world.O() - 1; l2 >= 0; --l2) {
-                    if (world.isEmpty(i2, l2, j2)) {
-                        while (l2 > 0 && world.isEmpty(i2, l2 - 1, j2)) {
-                            --l2;
+                for (k2 = this.a.P() - 1; k2 >= 0; --k2) {
+                    if (this.a.isEmpty(i2, k2, j2)) {
+                        while (k2 > 0 && this.a.isEmpty(i2, k2 - 1, j2)) {
+                            --k2;
                         }
 
-                        for (k2 = l1; k2 < l1 + 4; ++k2) {
-                            j3 = k2 % 2;
-                            i3 = 1 - j3;
-                            if (k2 % 4 >= 2) {
-                                j3 = -j3;
-                                i3 = -i3;
+                        for (i3 = l1; i3 < l1 + 4; ++i3) {
+                            l2 = i3 % 2;
+                            k3 = 1 - l2;
+                            if (i3 % 4 >= 2) {
+                                l2 = -l2;
+                                k3 = -k3;
                             }
 
-                            for (l3 = 0; l3 < 3; ++l3) {
-                                for (k3 = 0; k3 < 4; ++k3) {
-                                    for (j4 = -1; j4 < 4; ++j4) {
-                                        i4 = i2 + (k3 - 1) * j3 + l3 * i3;
-                                        k4 = l2 + j4;
-                                        int l4 = j2 + (k3 - 1) * i3 - l3 * j3;
+                            for (j3 = 0; j3 < 3; ++j3) {
+                                for (i4 = 0; i4 < 4; ++i4) {
+                                    for (l3 = -1; l3 < 4; ++l3) {
+                                        k4 = i2 + (i4 - 1) * l2 + j3 * k3;
+                                        j4 = k2 + l3;
+                                        int l4 = j2 + (i4 - 1) * k3 - j3 * l2;
 
-                                        if (j4 < 0 && !world.getMaterial(i4, k4, l4).isBuildable() || j4 >= 0 && !world.isEmpty(i4, k4, l4)) {
+                                        if (l3 < 0 && !this.a.getMaterial(k4, j4, l4).isBuildable() || l3 >= 0 && !this.a.isEmpty(k4, j4, l4)) {
                                             continue label274;
                                         }
                                     }
                                 }
                             }
 
-                            d3 = (double) l2 + 0.5D - entity.locY;
+                            d3 = (double) k2 + 0.5D - entity.locY;
                             d4 = d1 * d1 + d3 * d3 + d2 * d2;
                             if (d0 < 0.0D || d4 < d0) {
                                 d0 = d4;
                                 l = i2;
-                                i1 = l2;
+                                i1 = k2;
                                 j1 = j2;
-                                k1 = k2 % 4;
+                                k1 = i3 % 4;
                             }
                         }
                     }
@@ -272,35 +298,35 @@ public class PortalTravelAgent {
                     d2 = (double) j2 + 0.5D - entity.locZ;
 
                     label222:
-                    for (l2 = world.O() - 1; l2 >= 0; --l2) {
-                        if (world.isEmpty(i2, l2, j2)) {
-                            while (l2 > 0 && world.isEmpty(i2, l2 - 1, j2)) {
-                                --l2;
+                    for (k2 = this.a.P() - 1; k2 >= 0; --k2) {
+                        if (this.a.isEmpty(i2, k2, j2)) {
+                            while (k2 > 0 && this.a.isEmpty(i2, k2 - 1, j2)) {
+                                --k2;
                             }
 
-                            for (k2 = l1; k2 < l1 + 2; ++k2) {
-                                j3 = k2 % 2;
-                                i3 = 1 - j3;
+                            for (i3 = l1; i3 < l1 + 2; ++i3) {
+                                l2 = i3 % 2;
+                                k3 = 1 - l2;
 
-                                for (l3 = 0; l3 < 4; ++l3) {
-                                    for (k3 = -1; k3 < 4; ++k3) {
-                                        j4 = i2 + (l3 - 1) * j3;
-                                        i4 = l2 + k3;
-                                        k4 = j2 + (l3 - 1) * i3;
-                                        if (k3 < 0 && !world.getMaterial(j4, i4, k4).isBuildable() || k3 >= 0 && !world.isEmpty(j4, i4, k4)) {
+                                for (j3 = 0; j3 < 4; ++j3) {
+                                    for (i4 = -1; i4 < 4; ++i4) {
+                                        l3 = i2 + (j3 - 1) * l2;
+                                        k4 = k2 + i4;
+                                        j4 = j2 + (j3 - 1) * k3;
+                                        if (i4 < 0 && !this.a.getMaterial(l3, k4, j4).isBuildable() || i4 >= 0 && !this.a.isEmpty(l3, k4, j4)) {
                                             continue label222;
                                         }
                                     }
                                 }
 
-                                d3 = (double) l2 + 0.5D - entity.locY;
+                                d3 = (double) k2 + 0.5D - entity.locY;
                                 d4 = d1 * d1 + d3 * d3 + d2 * d2;
                                 if (d0 < 0.0D || d4 < d0) {
                                     d0 = d4;
                                     l = i2;
-                                    i1 = l2;
+                                    i1 = k2;
                                     j1 = j2;
-                                    k1 = k2 % 2;
+                                    k1 = i3 % 2;
                                 }
                             }
                         }
@@ -328,50 +354,67 @@ public class PortalTravelAgent {
                 i1 = 70;
             }
 
-            if (i1 > world.O() - 10) {
-                i1 = world.O() - 10;
+            if (i1 > this.a.P() - 10) {
+                i1 = this.a.P() - 10;
             }
 
             j5 = i1;
 
-            for (l2 = -1; l2 <= 1; ++l2) {
-                for (k2 = 1; k2 < 3; ++k2) {
-                    for (j3 = -1; j3 < 3; ++j3) {
-                        i3 = i5 + (k2 - 1) * k5 + l2 * l5;
-                        l3 = j5 + j3;
-                        k3 = j2 + (k2 - 1) * l5 - l2 * k5;
-                        flag = j3 < 0;
-                        world.setTypeId(i3, l3, k3, flag ? Block.OBSIDIAN.id : 0);
+            for (k2 = -1; k2 <= 1; ++k2) {
+                for (i3 = 1; i3 < 3; ++i3) {
+                    for (l2 = -1; l2 < 3; ++l2) {
+                        k3 = i5 + (i3 - 1) * k5 + k2 * l5;
+                        j3 = j5 + l2;
+                        i4 = j2 + (i3 - 1) * l5 - k2 * k5;
+                        flag = l2 < 0;
+                        this.a.setTypeId(k3, j3, i4, flag ? Block.OBSIDIAN.id : 0);
                     }
                 }
             }
         }
 
-        for (l2 = 0; l2 < 4; ++l2) {
-            world.suppressPhysics = true;
+        for (k2 = 0; k2 < 4; ++k2) {
+            this.a.suppressPhysics = true;
 
-            for (k2 = 0; k2 < 4; ++k2) {
-                for (j3 = -1; j3 < 4; ++j3) {
-                    i3 = i5 + (k2 - 1) * k5;
-                    l3 = j5 + j3;
-                    k3 = j2 + (k2 - 1) * l5;
-                    flag = k2 == 0 || k2 == 3 || j3 == -1 || j3 == 3;
-                    world.setTypeId(i3, l3, k3, flag ? Block.OBSIDIAN.id : Block.PORTAL.id);
+            for (i3 = 0; i3 < 4; ++i3) {
+                for (l2 = -1; l2 < 4; ++l2) {
+                    k3 = i5 + (i3 - 1) * k5;
+                    j3 = j5 + l2;
+                    i4 = j2 + (i3 - 1) * l5;
+                    flag = i3 == 0 || i3 == 3 || l2 == -1 || l2 == 3;
+                    this.a.setTypeId(k3, j3, i4, flag ? Block.OBSIDIAN.id : Block.PORTAL.id);
                 }
             }
 
-            world.suppressPhysics = false;
+            this.a.suppressPhysics = false;
 
-            for (k2 = 0; k2 < 4; ++k2) {
-                for (j3 = -1; j3 < 4; ++j3) {
-                    i3 = i5 + (k2 - 1) * k5;
-                    l3 = j5 + j3;
-                    k3 = j2 + (k2 - 1) * l5;
-                    world.applyPhysics(i3, l3, k3, world.getTypeId(i3, l3, k3));
+            for (i3 = 0; i3 < 4; ++i3) {
+                for (l2 = -1; l2 < 4; ++l2) {
+                    k3 = i5 + (i3 - 1) * k5;
+                    j3 = j5 + l2;
+                    i4 = j2 + (i3 - 1) * l5;
+                    this.a.applyPhysics(k3, j3, i4, this.a.getTypeId(k3, j3, i4));
                 }
             }
         }
 
         return true;
+    }
+
+    public void a(long i) {
+        if (i % 100L == 0L) {
+            Iterator iterator = this.d.iterator();
+            long j = i - 600L;
+
+            while (iterator.hasNext()) {
+                Long olong = (Long) iterator.next();
+                ChunkCoordinatesPortal chunkcoordinatesportal = (ChunkCoordinatesPortal) this.c.getEntry(olong.longValue());
+
+                if (chunkcoordinatesportal == null || chunkcoordinatesportal.d < j) {
+                    iterator.remove();
+                    this.c.remove(olong.longValue());
+                }
+            }
+        }
     }
 }

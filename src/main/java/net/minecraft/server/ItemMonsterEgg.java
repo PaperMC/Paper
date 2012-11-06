@@ -10,7 +10,7 @@ public class ItemMonsterEgg extends Item {
 
     public String j(ItemStack itemstack) {
         String s = ("" + LocaleI18n.get(this.getName() + ".name")).trim();
-        String s1 = EntityTypes.a(itemstack.getData());
+        String s1 = EntityTypes.b(itemstack.getData());
 
         if (s1 != null) {
             s = s + " " + LocaleI18n.get("entity." + s1 + ".name");
@@ -30,7 +30,7 @@ public class ItemMonsterEgg extends Item {
             k += Facing.d[l];
             double d0 = 0.0D;
 
-            if (l == 1 && i1 == Block.FENCE.id || i1 == Block.NETHER_FENCE.id) {
+            if (l == 1 && Block.byId[i1] != null && Block.byId[i1].d() == 11) {
                 d0 = 0.5D;
             }
 
@@ -52,9 +52,9 @@ public class ItemMonsterEgg extends Item {
                 entity = EntityTypes.a(i, world);
                 if (entity != null && entity instanceof EntityLiving) { // CraftBukkit
                     entity.setPositionRotation(d0, d1, d2, world.random.nextFloat() * 360.0F, 0.0F);
-                    ((EntityLiving) entity).bD();
+                    ((EntityLiving) entity).bG();
                     world.addEntity(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // CraftBukkit
-                    ((EntityLiving) entity).aN();
+                    ((EntityLiving) entity).aO();
                 }
             }
 

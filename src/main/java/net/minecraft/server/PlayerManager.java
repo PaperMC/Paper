@@ -1,10 +1,12 @@
 package net.minecraft.server;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
-import java.util.Queue; // CraftBukkit
+// CraftBukkit start
+import java.util.Queue;
+import java.util.Iterator;
+// CraftBukkit end
 
 public class PlayerManager {
 
@@ -32,15 +34,15 @@ public class PlayerManager {
     }
 
     public void flush() {
+        // CraftBukkit start - use iterator
         Iterator iterator = this.d.iterator();
 
         while (iterator.hasNext()) {
             PlayerInstance playerinstance = (PlayerInstance) iterator.next();
-
             playerinstance.a();
-
-            iterator.remove(); // CraftBukkit - remove to insure we are the consumer
+            iterator.remove();
         }
+        // CraftBukkit end
 
         // this.d.clear(); // CraftBukkit - removals are already covered
         if (this.managedPlayers.isEmpty()) {

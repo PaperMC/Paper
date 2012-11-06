@@ -26,49 +26,43 @@ public class BlockLever extends Block {
     }
 
     public boolean canPlace(World world, int i, int j, int k, int l) {
-        return l == 0 && world.s(i, j + 1, k) ? true : (l == 1 && world.t(i, j - 1, k) ? true : (l == 2 && world.s(i, j, k + 1) ? true : (l == 3 && world.s(i, j, k - 1) ? true : (l == 4 && world.s(i + 1, j, k) ? true : l == 5 && world.s(i - 1, j, k)))));
+        return l == 0 && world.t(i, j + 1, k) ? true : (l == 1 && world.v(i, j - 1, k) ? true : (l == 2 && world.t(i, j, k + 1) ? true : (l == 3 && world.t(i, j, k - 1) ? true : (l == 4 && world.t(i + 1, j, k) ? true : l == 5 && world.t(i - 1, j, k)))));
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
-        return world.s(i - 1, j, k) ? true : (world.s(i + 1, j, k) ? true : (world.s(i, j, k - 1) ? true : (world.s(i, j, k + 1) ? true : (world.t(i, j - 1, k) ? true : world.s(i, j + 1, k)))));
+        return world.t(i - 1, j, k) ? true : (world.t(i + 1, j, k) ? true : (world.t(i, j, k - 1) ? true : (world.t(i, j, k + 1) ? true : (world.v(i, j - 1, k) ? true : world.t(i, j + 1, k)))));
     }
 
-    public void postPlace(World world, int i, int j, int k, int l, float f, float f1, float f2) {
-        int i1 = world.getData(i, j, k);
+    public int getPlacedData(World world, int i, int j, int k, int l, float f, float f1, float f2, int i1) {
         int j1 = i1 & 8;
+        int k1 = i1 & 7;
 
-        i1 &= 7;
-        i1 = -1;
-        if (l == 0 && world.s(i, j + 1, k)) {
-            i1 = world.random.nextBoolean() ? 0 : 7;
+        k1 = -1;
+        if (l == 0 && world.t(i, j + 1, k)) {
+            k1 = world.random.nextBoolean() ? 0 : 7;
         }
 
-        if (l == 1 && world.t(i, j - 1, k)) {
-            i1 = 5 + world.random.nextInt(2);
+        if (l == 1 && world.v(i, j - 1, k)) {
+            k1 = 5 + world.random.nextInt(2);
         }
 
-        if (l == 2 && world.s(i, j, k + 1)) {
-            i1 = 4;
+        if (l == 2 && world.t(i, j, k + 1)) {
+            k1 = 4;
         }
 
-        if (l == 3 && world.s(i, j, k - 1)) {
-            i1 = 3;
+        if (l == 3 && world.t(i, j, k - 1)) {
+            k1 = 3;
         }
 
-        if (l == 4 && world.s(i + 1, j, k)) {
-            i1 = 2;
+        if (l == 4 && world.t(i + 1, j, k)) {
+            k1 = 2;
         }
 
-        if (l == 5 && world.s(i - 1, j, k)) {
-            i1 = 1;
+        if (l == 5 && world.t(i - 1, j, k)) {
+            k1 = 1;
         }
 
-        if (i1 == -1) {
-            this.c(world, i, j, k, world.getData(i, j, k), 0);
-            world.setTypeId(i, j, k, 0);
-        } else {
-            world.setData(i, j, k, i1 + j1);
-        }
+        return k1 + j1;
     }
 
     public static int d(int i) {
@@ -101,35 +95,35 @@ public class BlockLever extends Block {
             int i1 = world.getData(i, j, k) & 7;
             boolean flag = false;
 
-            if (!world.s(i - 1, j, k) && i1 == 1) {
+            if (!world.t(i - 1, j, k) && i1 == 1) {
                 flag = true;
             }
 
-            if (!world.s(i + 1, j, k) && i1 == 2) {
+            if (!world.t(i + 1, j, k) && i1 == 2) {
                 flag = true;
             }
 
-            if (!world.s(i, j, k - 1) && i1 == 3) {
+            if (!world.t(i, j, k - 1) && i1 == 3) {
                 flag = true;
             }
 
-            if (!world.s(i, j, k + 1) && i1 == 4) {
+            if (!world.t(i, j, k + 1) && i1 == 4) {
                 flag = true;
             }
 
-            if (!world.t(i, j - 1, k) && i1 == 5) {
+            if (!world.v(i, j - 1, k) && i1 == 5) {
                 flag = true;
             }
 
-            if (!world.t(i, j - 1, k) && i1 == 6) {
+            if (!world.v(i, j - 1, k) && i1 == 6) {
                 flag = true;
             }
 
-            if (!world.s(i, j + 1, k) && i1 == 0) {
+            if (!world.t(i, j + 1, k) && i1 == 0) {
                 flag = true;
             }
 
-            if (!world.s(i, j + 1, k) && i1 == 7) {
+            if (!world.t(i, j + 1, k) && i1 == 7) {
                 flag = true;
             }
 

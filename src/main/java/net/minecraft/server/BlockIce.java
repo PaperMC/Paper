@@ -18,7 +18,7 @@ public class BlockIce extends BlockHalfTransparant {
             ItemStack itemstack = this.f_(l);
 
             if (itemstack != null) {
-                this.a(world, i, j, k, itemstack);
+                this.b(world, i, j, k, itemstack);
             }
         } else {
             if (world.worldProvider.e) {

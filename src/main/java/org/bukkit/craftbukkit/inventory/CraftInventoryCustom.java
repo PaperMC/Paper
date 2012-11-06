@@ -108,7 +108,7 @@ public class CraftInventoryCustom extends CraftInventory {
 
         public void update() {}
 
-        public boolean a(EntityHuman entityhuman) {
+        public boolean a_(EntityHuman entityhuman) {
             return true;
         }
 

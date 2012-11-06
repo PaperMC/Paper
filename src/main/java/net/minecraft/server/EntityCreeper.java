@@ -27,12 +27,12 @@ public class EntityCreeper extends EntityMonster {
         this.targetSelector.a(2, new PathfinderGoalHurtByTarget(this, false));
     }
 
-    public boolean bb() {
+    public boolean be() {
         return true;
     }
 
     public int as() {
-        return this.aF() == null ? 3 : 3 + (this.health - 1);
+        return this.aG() == null ? 3 : 3 + (this.health - 1);
     }
 
     protected void a(float f) {
@@ -81,7 +81,7 @@ public class EntityCreeper extends EntityMonster {
             int i = this.o();
 
             if (i > 0 && this.fuseTicks == 0) {
-                this.world.makeSound(this, "random.fuse", 1.0F, 0.5F);
+                this.makeSound("random.fuse", 1.0F, 0.5F);
             }
 
             this.fuseTicks += i;
@@ -112,19 +112,21 @@ public class EntityCreeper extends EntityMonster {
         super.j_();
     }
 
-    protected String aX() {
+    protected String aZ() {
         return "mob.creeper.say";
     }
 
-    protected String aY() {
+    protected String ba() {
         return "mob.creeper.death";
     }
 
     public void die(DamageSource damagesource) {
         // CraftBukkit start - rearranged the method (super call to end, drop to dropDeathLoot)
         if (damagesource.getEntity() instanceof EntitySkeleton) {
-            // this.b(Item.RECORD_1.id + this.random.nextInt(10), 1); // CraftBukkit
-            this.record = Item.RECORD_1.id + this.random.nextInt(10);
+            int i = Item.RECORD_1.id + this.random.nextInt(Item.RECORD_12.id - Item.RECORD_1.id + 1);
+
+            // this.b(i, 1); // CraftBukkit
+            this.record = i;
         }
 
         super.die(damagesource);
@@ -159,7 +161,7 @@ public class EntityCreeper extends EntityMonster {
     }
     // CraftBukkit end
 
-    public boolean l(Entity entity) {
+    public boolean m(Entity entity) {
         return true;
     }
 

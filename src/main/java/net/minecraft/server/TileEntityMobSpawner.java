@@ -79,7 +79,7 @@ public class TileEntityMobSpawner extends TileEntity {
                             this.world.addEntity(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER); // CraftBukkit
                             this.world.triggerEffect(2004, this.x, this.y, this.z, 0);
                             if (entityliving != null) {
-                                entityliving.aQ();
+                                entityliving.aR();
                             }
 
                             this.e();
@@ -107,12 +107,17 @@ public class TileEntityMobSpawner extends TileEntity {
 
             entity.e(nbttagcompound);
         } else if (entity instanceof EntityLiving && entity.world != null) {
-            ((EntityLiving) entity).bD();
+            ((EntityLiving) entity).bG();
         }
     }
 
     private void e() {
-        this.spawnDelay = this.minSpawnDelay + this.world.random.nextInt(this.maxSpawnDelay - this.minSpawnDelay);
+        if (this.maxSpawnDelay <= this.minSpawnDelay) {
+            this.spawnDelay = this.minSpawnDelay;
+        } else {
+            this.spawnDelay = this.minSpawnDelay + this.world.random.nextInt(this.maxSpawnDelay - this.minSpawnDelay);
+        }
+
         this.world.playNote(this.x, this.y, this.z, this.q().id, 1, 0);
     }
 
@@ -157,7 +162,7 @@ public class TileEntityMobSpawner extends TileEntity {
         }
     }
 
-    public Packet l() {
+    public Packet getUpdatePacket() {
         NBTTagCompound nbttagcompound = new NBTTagCompound();
 
         this.b(nbttagcompound);

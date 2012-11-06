@@ -54,7 +54,7 @@ public class TileEntityBrewingStand extends TileEntity implements IInventory {
         if (this.brewTime > 0) {
             --this.brewTime;
             if (this.brewTime == 0) {
-                this.t();
+                this.u();
                 this.update();
             } else if (!this.k()) {
                 this.brewTime = 0;
@@ -118,7 +118,7 @@ public class TileEntityBrewingStand extends TileEntity implements IInventory {
         }
     }
 
-    private void t() {
+    private void u() {
         if (this.k()) {
             ItemStack itemstack = this.items[3];
 
@@ -236,7 +236,7 @@ public class TileEntityBrewingStand extends TileEntity implements IInventory {
         return this.maxStack; // CraftBukkit
     }
 
-    public boolean a(EntityHuman entityhuman) {
+    public boolean a_(EntityHuman entityhuman) {
         return this.world.getTileEntity(this.x, this.y, this.z) != this ? false : entityhuman.e((double) this.x + 0.5D, (double) this.y + 0.5D, (double) this.z + 0.5D) <= 64.0D;
     }
 

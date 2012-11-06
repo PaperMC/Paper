@@ -5,18 +5,18 @@ public class ItemFood extends Item {
     public final int a;
     private final int b;
     private final float c;
-    private final boolean ck;
-    private boolean cl;
-    private int cm;
+    private final boolean cl;
+    private boolean cm;
     private int cn;
     private int co;
-    private float cp;
+    private int cp;
+    private float cq;
 
     public ItemFood(int i, int j, float f, boolean flag) {
         super(i);
         this.a = 32;
         this.b = j;
-        this.ck = flag;
+        this.cl = flag;
         this.c = f;
         this.a(CreativeModeTab.h);
     }
@@ -45,8 +45,8 @@ public class ItemFood extends Item {
     }
 
     protected void c(ItemStack itemstack, World world, EntityHuman entityhuman) {
-        if (!world.isStatic && this.cm > 0 && world.random.nextFloat() < this.cp) {
-            entityhuman.addEffect(new MobEffect(this.cm, this.cn * 20, this.co));
+        if (!world.isStatic && this.cn > 0 && world.random.nextFloat() < this.cq) {
+            entityhuman.addEffect(new MobEffect(this.cn, this.co * 20, this.cp));
         }
     }
 
@@ -59,7 +59,7 @@ public class ItemFood extends Item {
     }
 
     public ItemStack a(ItemStack itemstack, World world, EntityHuman entityhuman) {
-        if (entityhuman.f(this.cl)) {
+        if (entityhuman.f(this.cm)) {
             entityhuman.a(itemstack, this.a(itemstack));
         }
 
@@ -75,19 +75,19 @@ public class ItemFood extends Item {
     }
 
     public boolean i() {
-        return this.ck;
+        return this.cl;
     }
 
     public ItemFood a(int i, int j, int k, float f) {
-        this.cm = i;
-        this.cn = j;
-        this.co = k;
-        this.cp = f;
+        this.cn = i;
+        this.co = j;
+        this.cp = k;
+        this.cq = f;
         return this;
     }
 
     public ItemFood j() {
-        this.cl = true;
+        this.cm = true;
         return this;
     }
 }

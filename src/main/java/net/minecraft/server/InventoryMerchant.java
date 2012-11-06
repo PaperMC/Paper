@@ -123,7 +123,7 @@ public class InventoryMerchant implements IInventory {
         return maxStack; // CraftBukkit
     }
 
-    public boolean a(EntityHuman entityhuman) {
+    public boolean a_(EntityHuman entityhuman) {
         return this.merchant.m_() == entityhuman;
     }
 

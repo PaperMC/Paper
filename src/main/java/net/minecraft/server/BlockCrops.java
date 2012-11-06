@@ -110,7 +110,7 @@ public class BlockCrops extends BlockFlower {
 
                 for (int k1 = 0; k1 < j1; ++k1) {
                     if (world.random.nextInt(15) <= l) {
-                        this.a(world, i, j, k, new ItemStack(this.h(), 1, 0));
+                        this.b(world, i, j, k, new ItemStack(this.h(), 1, 0));
                     }
                 }
             }

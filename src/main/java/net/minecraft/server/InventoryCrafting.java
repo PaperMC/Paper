@@ -131,7 +131,7 @@ public class InventoryCrafting implements IInventory {
 
     public void update() {}
 
-    public boolean a(EntityHuman entityhuman) {
+    public boolean a_(EntityHuman entityhuman) {
         return true;
     }
 

@@ -33,6 +33,10 @@ public class WorldManager implements IWorldAccess {
         this.server.getServerConfigurationManager().sendPacketNearby(d0, d1, d2, f > 1.0F ? (double) (16.0F * f) : 16.0D, this.world.dimension, new Packet62NamedSoundEffect(s, d0, d1, d2, f, f1));
     }
 
+    public void a(EntityHuman entityhuman, String s, double d0, double d1, double d2, float f, float f1) {
+        this.server.getServerConfigurationManager().sendPacketNearby(entityhuman, d0, d1, d2, f > 1.0F ? (double) (16.0F * f) : 16.0D, this.world.worldProvider.dimension, new Packet62NamedSoundEffect(s, d0, d1, d2, f, f1));
+    }
+
     public void a(int i, int j, int k, int l, int i1, int j1) {}
 
     public void a(int i, int j, int k) {

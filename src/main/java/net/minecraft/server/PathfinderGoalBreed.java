@@ -38,7 +38,7 @@ public class PathfinderGoalBreed extends PathfinderGoal {
     }
 
     public void e() {
-        this.d.getControllerLook().a(this.e, 10.0F, (float) this.d.bm());
+        this.d.getControllerLook().a(this.e, 10.0F, (float) this.d.bp());
         this.d.getNavigation().a((EntityLiving) this.e, this.c);
         ++this.b;
         if (this.b == 60) {
@@ -65,17 +65,17 @@ public class PathfinderGoalBreed extends PathfinderGoal {
     }
 
     private void g() {
-        EntityAnimal entityanimal = this.d.createChild(this.e);
+        EntityAgeable entityageable = this.d.createChild(this.e);
 
-        if (entityanimal != null) {
+        if (entityageable != null) {
             this.d.setAge(6000);
             this.e.setAge(6000);
             this.d.s();
             this.e.s();
-            entityanimal.setAge(-24000);
-            entityanimal.setPositionRotation(this.d.locX, this.d.locY, this.d.locZ, 0.0F, 0.0F);
-            this.a.addEntity(entityanimal, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING); // CraftBukkit - added SpawnReason
-            Random random = this.d.aA();
+            entityageable.setAge(-24000);
+            entityageable.setPositionRotation(this.d.locX, this.d.locY, this.d.locZ, 0.0F, 0.0F);
+            this.a.addEntity(entityageable, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING); // CraftBukkit - added SpawnReason
+            Random random = this.d.aB();
 
             for (int i = 0; i < 7; ++i) {
                 double d0 = random.nextGaussian() * 0.02D;

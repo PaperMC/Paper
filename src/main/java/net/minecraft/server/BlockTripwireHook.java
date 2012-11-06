@@ -33,14 +33,14 @@ public class BlockTripwireHook extends Block {
     }
 
     public boolean canPlace(World world, int i, int j, int k, int l) {
-        return l == 2 && world.s(i, j, k + 1) ? true : (l == 3 && world.s(i, j, k - 1) ? true : (l == 4 && world.s(i + 1, j, k) ? true : l == 5 && world.s(i - 1, j, k)));
+        return l == 2 && world.t(i, j, k + 1) ? true : (l == 3 && world.t(i, j, k - 1) ? true : (l == 4 && world.t(i + 1, j, k) ? true : l == 5 && world.t(i - 1, j, k)));
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
-        return world.s(i - 1, j, k) ? true : (world.s(i + 1, j, k) ? true : (world.s(i, j, k - 1) ? true : world.s(i, j, k + 1)));
+        return world.t(i - 1, j, k) ? true : (world.t(i + 1, j, k) ? true : (world.t(i, j, k - 1) ? true : world.t(i, j, k + 1)));
     }
 
-    public void postPlace(World world, int i, int j, int k, int l, float f, float f1, float f2) {
+    public int getPlacedData(World world, int i, int j, int k, int l, float f, float f1, float f2, int i1) {
         byte b0 = 0;
 
         if (l == 2 && world.b(i, j, k + 1, true)) {
@@ -59,7 +59,11 @@ public class BlockTripwireHook extends Block {
             b0 = 3;
         }
 
-        this.a(world, i, j, k, this.id, b0, false, -1, 0);
+        return b0;
+    }
+
+    public void postPlace(World world, int i, int j, int k, int l) {
+        this.a(world, i, j, k, this.id, l, false, -1, 0);
     }
 
     public void doPhysics(World world, int i, int j, int k, int l) {
@@ -69,19 +73,19 @@ public class BlockTripwireHook extends Block {
                 int j1 = i1 & 3;
                 boolean flag = false;
 
-                if (!world.s(i - 1, j, k) && j1 == 3) {
+                if (!world.t(i - 1, j, k) && j1 == 3) {
                     flag = true;
                 }
 
-                if (!world.s(i + 1, j, k) && j1 == 1) {
+                if (!world.t(i + 1, j, k) && j1 == 1) {
                     flag = true;
                 }
 
-                if (!world.s(i, j, k - 1) && j1 == 0) {
+                if (!world.t(i, j, k - 1) && j1 == 0) {
                     flag = true;
                 }
 
-                if (!world.s(i, j, k + 1) && j1 == 2) {
+                if (!world.t(i, j, k + 1) && j1 == 2) {
                     flag = true;
                 }
 
@@ -99,7 +103,7 @@ public class BlockTripwireHook extends Block {
         boolean flag2 = (i1 & 8) == 8;
         boolean flag3 = l == Block.TRIPWIRE_SOURCE.id;
         boolean flag4 = false;
-        boolean flag5 = !world.t(i, j - 1, k);
+        boolean flag5 = !world.v(i, j - 1, k);
         int i2 = Direction.a[l1];
         int j2 = Direction.b[l1];
         int k2 = 0;

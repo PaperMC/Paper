@@ -64,7 +64,7 @@ public class CraftContainer extends Container {
     }
 
     @Override
-    public boolean b(EntityHuman entityhuman) {
+    public boolean c(EntityHuman entityhuman) {
         if (cachedType == view.getType() && cachedSize == getSize() && cachedTitle.equals(view.getTitle())) {
             return true;
         }
@@ -79,8 +79,8 @@ public class CraftContainer extends Container {
             int type = getNotchInventoryType(cachedType);
             IInventory top = ((CraftInventory)view.getTopInventory()).getInventory();
             IInventory bottom = ((CraftInventory)view.getBottomInventory()).getInventory();
-            this.a.clear();
             this.b.clear();
+            this.c.clear();
             if (typeChanged) {
                 setupSlots(top, bottom);
             }
@@ -281,7 +281,7 @@ public class CraftContainer extends Container {
         // End copy from ContainerBrewingStand
     }
 
-    public boolean c(EntityHuman entity) {
+    public boolean a(EntityHuman entity) {
         return true;
     }
 }

@@ -79,4 +79,14 @@ public abstract class Enchantment {
         this.name = s;
         return this;
     }
+
+    public String a() {
+        return "enchantment." + this.name;
+    }
+
+    public String c(int i) {
+        String s = LocaleI18n.get(this.a());
+
+        return s + " " + LocaleI18n.get("enchantment.level." + i);
+    }
 }

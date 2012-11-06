@@ -1,7 +1,5 @@
 package net.minecraft.server;
 
-import java.util.Iterator;
-
 // CraftBukkit start
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
@@ -45,10 +43,9 @@ public class ContainerBrewingStand extends Container {
 
     public void b() {
         super.b();
-        Iterator iterator = this.listeners.iterator();
 
-        while (iterator.hasNext()) {
-            ICrafting icrafting = (ICrafting) iterator.next();
+        for (int i = 0; i < this.listeners.size(); ++i) {
+            ICrafting icrafting = (ICrafting) this.listeners.get(i);
 
             if (this.g != this.brewingStand.x_()) {
                 icrafting.setContainerData(this, 0, this.brewingStand.x_());
@@ -58,14 +55,14 @@ public class ContainerBrewingStand extends Container {
         this.g = this.brewingStand.x_();
     }
 
-    public boolean c(EntityHuman entityhuman) {
+    public boolean a(EntityHuman entityhuman) {
         if (!this.checkReachable) return true; // CraftBukkit
-        return this.brewingStand.a(entityhuman);
+        return this.brewingStand.a_(entityhuman);
     }
 
     public ItemStack b(EntityHuman entityhuman, int i) {
         ItemStack itemstack = null;
-        Slot slot = (Slot) this.b.get(i);
+        Slot slot = (Slot) this.c.get(i);
 
         if (slot != null && slot.d()) {
             ItemStack itemstack1 = slot.getItem();

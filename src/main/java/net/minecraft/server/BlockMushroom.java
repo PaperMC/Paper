@@ -89,7 +89,7 @@ public class BlockMushroom extends BlockFlower {
         if (j >= 0 && j < 256) {
             int l = world.getTypeId(i, j - 1, k);
 
-            return l == Block.MYCEL.id || world.k(i, j, k) < 13 && this.d_(l);
+            return l == Block.MYCEL.id || world.l(i, j, k) < 13 && this.d_(l);
         } else {
             return false;
         }

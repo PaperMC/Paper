@@ -73,8 +73,8 @@ public class NetLoginHandler extends NetHandler {
         } else {
             PublicKey publickey = this.server.F().getPublic();
 
-            if (packet2handshake.d() != 47) {
-                if (packet2handshake.d() > 47) {
+            if (packet2handshake.d() != 49) {
+                if (packet2handshake.d() > 49) {
                     this.disconnect("Outdated server!");
                 } else {
                     this.disconnect("Outdated client!");
@@ -151,7 +151,7 @@ public class NetLoginHandler extends NetHandler {
 
             if (packet254getinfo.a == 1) {
                 // CraftBukkit start - fix decompile issues, don't create a list from an array
-                Object[] list = new Object[] { 1, 47, this.server.getVersion(), pingEvent.getMotd(), serverconfigurationmanagerabstract.getPlayerCount(), pingEvent.getMaxPlayers() };
+                Object[] list = new Object[] { 1, 49, this.server.getVersion(), pingEvent.getMotd(), serverconfigurationmanagerabstract.getPlayerCount(), pingEvent.getMaxPlayers() };
 
                 for (Object object : list) {
                     if (s == null) {

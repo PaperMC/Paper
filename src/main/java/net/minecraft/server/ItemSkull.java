@@ -65,8 +65,8 @@ public class ItemSkull extends Item {
                         s = itemstack.getTag().getString("SkullOwner");
                     }
 
-                    ((TileEntitySkull) tileentity).a(itemstack.getData(), s);
-                    ((TileEntitySkull) tileentity).a(i1);
+                    ((TileEntitySkull) tileentity).setSkullType(itemstack.getData(), s);
+                    ((TileEntitySkull) tileentity).setRotation(i1);
                     ((BlockSkull) Block.SKULL).a(world, i, j, k, (TileEntitySkull) tileentity);
                 }
 

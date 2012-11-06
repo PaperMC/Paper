@@ -68,6 +68,10 @@ public class InventoryLargeChest implements IInventory {
         return this.left.getSize() + this.right.getSize();
     }
 
+    public boolean a(IInventory iinventory) {
+        return this.left == iinventory || this.right == iinventory;
+    }
+
     public String getName() {
         return this.a;
     }
@@ -101,8 +105,8 @@ public class InventoryLargeChest implements IInventory {
         this.right.update();
     }
 
-    public boolean a(EntityHuman entityhuman) {
-        return this.left.a(entityhuman) && this.right.a(entityhuman);
+    public boolean a_(EntityHuman entityhuman) {
+        return this.left.a_(entityhuman) && this.right.a_(entityhuman);
     }
 
     public void startOpen() {

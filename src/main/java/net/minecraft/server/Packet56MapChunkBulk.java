@@ -14,11 +14,17 @@ public class Packet56MapChunkBulk extends Packet {
     private int[] d;
     public int[] a;
     public int[] b;
-    // CraftBukkit start - private -> public
-    public byte[] buffer;
+    private byte[] buffer;
     private byte[][] inflatedBuffers;
-    public int size;
-    public byte[] buildBuffer = new byte[0]; // - static
+    private int size;
+    private byte[] buildBuffer = new byte[0]; // CraftBukkit - remove static
+    // CraftBukkit start
+    static final ThreadLocal<Deflater> localDeflater = new ThreadLocal<Deflater>() {
+        @Override
+        protected Deflater initialValue() {
+            return new Deflater(Deflater.BEST_COMPRESSION);
+        }
+    };
     // CraftBukkit end
 
     public Packet56MapChunkBulk() {}
@@ -53,7 +59,7 @@ public class Packet56MapChunkBulk extends Packet {
             this.inflatedBuffers[k] = chunkmap.a;
         }
 
-        /* CraftBukkit start
+        /* CraftBukkit start - moved to compress()
         Deflater deflater = new Deflater(-1);
 
         try {
@@ -65,9 +71,23 @@ public class Packet56MapChunkBulk extends Packet {
             deflater.end();
         }
         */
-        this.lowPriority = true;
-        // CraftBukkit end
     }
+
+    // Add compression method
+    public void compress() {
+        if (this.buffer != null) {
+            return;
+        }
+
+        Deflater deflater = localDeflater.get();
+        deflater.reset();
+        deflater.setInput(this.buildBuffer);
+        deflater.finish();
+
+        this.buffer = new byte[this.buildBuffer.length + 100];
+        this.size = deflater.deflate(this.buffer);
+    }
+    // CraftBukkit end
 
     public void a(DataInputStream datainputstream) throws IOException { // CraftBukkit - throws IOException
         short short1 = datainputstream.readShort();
@@ -119,6 +139,7 @@ public class Packet56MapChunkBulk extends Packet {
     }
 
     public void a(DataOutputStream dataoutputstream) throws IOException { // CraftBukkit - throws IOException
+        compress(); // CraftBukkit
         dataoutputstream.writeShort(this.c.length);
         dataoutputstream.writeInt(this.size);
         dataoutputstream.write(this.buffer, 0, this.size);

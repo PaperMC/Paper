@@ -92,7 +92,17 @@ public class ChunkProviderServer implements IChunkProvider {
                 if (this.chunkProvider == null) {
                     chunk = this.emptyChunk;
                 } else {
-                    chunk = this.chunkProvider.getOrCreateChunk(i, j);
+                    try {
+                        chunk = this.chunkProvider.getOrCreateChunk(i, j);
+                    } catch (Throwable throwable) {
+                        CrashReport crashreport = CrashReport.a(throwable, "Exception generating new chunk");
+                        CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Chunk to be generated");
+
+                        crashreportsystemdetails.a("Location", String.format("%d,%d", new Object[] { Integer.valueOf(i), Integer.valueOf(j)}));
+                        crashreportsystemdetails.a("Position hash", Long.valueOf(LongHash.toLong(i, j)));
+                        crashreportsystemdetails.a("Generator", this.chunkProvider.getName());
+                        throw new ReportedException(crashreport);
+                    }
                 }
                 newChunk = true; // CraftBukkit
             }
@@ -218,10 +228,12 @@ public class ChunkProviderServer implements IChunkProvider {
 
     public boolean saveChunks(boolean flag, IProgressUpdate iprogressupdate) {
         int i = 0;
-        Iterator iterator = this.chunks.values().iterator(); // CraftBukkit
+        // CraftBukkit start
+        Iterator iterator = this.chunks.values().iterator();
 
         while (iterator.hasNext()) {
             Chunk chunk = (Chunk) iterator.next();
+            // CraftBukkit end
 
             if (flag) {
                 this.saveChunkNOP(chunk);

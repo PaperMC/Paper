@@ -153,19 +153,19 @@ public class BlockLeaves extends BlockTransparant {
             if (world.random.nextInt(b0) == 0) {
                 int j1 = this.getDropType(l, world.random, i1);
 
-                this.a(world, i, j, k, new ItemStack(j1, 1, this.getDropData(l)));
+                this.b(world, i, j, k, new ItemStack(j1, 1, this.getDropData(l)));
             }
 
             if ((l & 3) == 0 && world.random.nextInt(200) == 0) {
-                this.a(world, i, j, k, new ItemStack(Item.APPLE, 1, 0));
+                this.b(world, i, j, k, new ItemStack(Item.APPLE, 1, 0));
             }
         }
     }
 
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
-        if (!world.isStatic && entityhuman.bP() != null && entityhuman.bP().id == Item.SHEARS.id) {
+        if (!world.isStatic && entityhuman.bT() != null && entityhuman.bT().id == Item.SHEARS.id) {
             entityhuman.a(StatisticList.C[this.id], 1);
-            this.a(world, i, j, k, new ItemStack(Block.LEAVES.id, 1, l & 3));
+            this.b(world, i, j, k, new ItemStack(Block.LEAVES.id, 1, l & 3));
         } else {
             super.a(world, entityhuman, i, j, k, l);
         }

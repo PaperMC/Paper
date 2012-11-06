@@ -12,7 +12,7 @@ import org.bukkit.entity.LivingEntity;
 
 public class EntityPotion extends EntityProjectile {
 
-    private ItemStack d;
+    private ItemStack c;
 
     public EntityPotion(World world) {
         super(world);
@@ -24,12 +24,12 @@ public class EntityPotion extends EntityProjectile {
 
     public EntityPotion(World world, EntityLiving entityliving, ItemStack itemstack) {
         super(world, entityliving);
-        this.d = itemstack;
+        this.c = itemstack;
     }
 
     public EntityPotion(World world, double d0, double d1, double d2, ItemStack itemstack) {
         super(world, d0, d1, d2);
-        this.d = itemstack;
+        this.c = itemstack;
     }
 
     protected float g() {
@@ -45,24 +45,24 @@ public class EntityPotion extends EntityProjectile {
     }
 
     public void setPotionValue(int i) {
-        if (this.d == null) {
-            this.d = new ItemStack(Item.POTION, 1, 0);
+        if (this.c == null) {
+            this.c = new ItemStack(Item.POTION, 1, 0);
         }
 
-        this.d.setData(i);
+        this.c.setData(i);
     }
 
     public int getPotionValue() {
-        if (this.d == null) {
-            this.d = new ItemStack(Item.POTION, 1, 0);
+        if (this.c == null) {
+            this.c = new ItemStack(Item.POTION, 1, 0);
         }
 
-        return this.d.getData();
+        return this.c.getData();
     }
 
     protected void a(MovingObjectPosition movingobjectposition) {
         if (!this.world.isStatic) {
-            List list = Item.POTION.l(this.d);
+            List list = Item.POTION.l(this.c);
 
             if (list != null && !list.isEmpty()) {
                 AxisAlignedBB axisalignedbb = this.boundingBox.grow(4.0D, 2.0D, 4.0D);
@@ -108,7 +108,7 @@ public class EntityPotion extends EntityProjectile {
                                 int i = mobeffect.getEffectId();
 
                                 // CraftBukkit start - abide by PVP settings
-                                if (!this.world.pvpMode && entityliving instanceof EntityPlayer && entityliving != this.shooter) {
+                                if (!this.world.pvpMode && entityliving instanceof EntityPlayer && entityliving != this.getShooter()) {
                                     // Block SLOWER_MOVEMENT, SLOWER_DIG, HARM, BLINDNESS, HUNGER, WEAKNESS and POISON potions
                                     if (i == 2 || i == 4 || i == 7 || i == 15 || i == 17 || i == 18 || i == 19) continue;
                                 }
@@ -116,7 +116,7 @@ public class EntityPotion extends EntityProjectile {
 
                                 if (MobEffectList.byId[i].isInstant()) {
                                     // CraftBukkit - added 'this'
-                                    MobEffectList.byId[i].applyInstantEffect(this.shooter, entityliving, mobeffect.getAmplifier(), d1, this);
+                                    MobEffectList.byId[i].applyInstantEffect(this.getShooter(), entityliving, mobeffect.getAmplifier(), d1, this);
                                 } else {
                                     int j = (int) (d1 * (double) mobeffect.getDuration() + 0.5D);
 
@@ -138,20 +138,20 @@ public class EntityPotion extends EntityProjectile {
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
         if (nbttagcompound.hasKey("Potion")) {
-            this.d = ItemStack.a(nbttagcompound.getCompound("Potion"));
+            this.c = ItemStack.a(nbttagcompound.getCompound("Potion"));
         } else {
             this.setPotionValue(nbttagcompound.getInt("potionValue"));
         }
 
-        if (this.d == null) {
+        if (this.c == null) {
             this.die();
         }
     }
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
-        if (this.d != null) {
-            nbttagcompound.setCompound("Potion", this.d.save(new NBTTagCompound()));
+        if (this.c != null) {
+            nbttagcompound.setCompound("Potion", this.c.save(new NBTTagCompound()));
         }
     }
 }

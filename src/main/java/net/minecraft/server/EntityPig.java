@@ -25,7 +25,7 @@ public class EntityPig extends EntityAnimal {
         this.goalSelector.a(8, new PathfinderGoalRandomLookaround(this));
     }
 
-    public boolean bb() {
+    public boolean be() {
         return true;
     }
 
@@ -33,12 +33,12 @@ public class EntityPig extends EntityAnimal {
         return 10;
     }
 
-    protected void bi() {
-        super.bi();
+    protected void bl() {
+        super.bl();
     }
 
-    public boolean bF() {
-        ItemStack itemstack = ((EntityHuman) this.passenger).bA();
+    public boolean bI() {
+        ItemStack itemstack = ((EntityHuman) this.passenger).bD();
 
         return itemstack != null && itemstack.id == Item.CARROT_STICK.id;
     }
@@ -58,24 +58,24 @@ public class EntityPig extends EntityAnimal {
         this.setSaddle(nbttagcompound.getBoolean("Saddle"));
     }
 
-    protected String aW() {
-        return "mob.pig.say";
-    }
-
-    protected String aX() {
-        return "mob.pig.say";
-    }
-
     protected String aY() {
+        return "mob.pig.say";
+    }
+
+    protected String aZ() {
+        return "mob.pig.say";
+    }
+
+    protected String ba() {
         return "mob.pig.death";
     }
 
     protected void a(int i, int j, int k, int l) {
-        this.world.makeSound(this, "mob.pig.step", 0.15F, 1.0F);
+        this.makeSound("mob.pig.step", 0.15F, 1.0F);
     }
 
-    public boolean c(EntityHuman entityhuman) {
-        if (super.c(entityhuman)) {
+    public boolean a(EntityHuman entityhuman) {
+        if (super.a(entityhuman)) {
             return true;
         } else if (this.hasSaddle() && !this.world.isStatic && (this.passenger == null || this.passenger == entityhuman)) {
             entityhuman.mount(this);
@@ -146,7 +146,7 @@ public class EntityPig extends EntityAnimal {
         }
     }
 
-    public EntityAnimal createChild(EntityAnimal entityanimal) {
+    public EntityPig b(EntityAgeable entityageable) {
         return new EntityPig(this.world);
     }
 
@@ -156,5 +156,9 @@ public class EntityPig extends EntityAnimal {
 
     public PathfinderGoalPassengerCarrotStick n() {
         return this.d;
+    }
+
+    public EntityAgeable createChild(EntityAgeable entityageable) {
+        return this.b(entityageable);
     }
 }

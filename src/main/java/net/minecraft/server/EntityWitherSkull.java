@@ -28,7 +28,7 @@ public class EntityWitherSkull extends EntityFireball {
     public float a(Explosion explosion, Block block, int i, int j, int k) {
         float f = super.a(explosion, block, i, j, k);
 
-        if (this.d() && block != Block.BEDROCK) {
+        if (this.d() && block != Block.BEDROCK && block != Block.ENDER_PORTAL && block != Block.ENDER_PORTAL_FRAME) {
             f = Math.min(0.8F, f);
         }
 

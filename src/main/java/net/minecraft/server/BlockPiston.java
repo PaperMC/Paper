@@ -68,7 +68,7 @@ public class BlockPiston extends Block {
 
             if (flag && !f(l)) {
                 // CraftBukkit start
-                int length = h(world, i, j, k, i1);
+                int length = i(world, i, j, k, i1);
                 if (length >= 0) {
                     org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
                     BlockPistonExtendEvent event = new BlockPistonExtendEvent(block, length, CraftBlock.notchToBlockFace(i1));
@@ -109,7 +109,7 @@ public class BlockPiston extends Block {
         }
 
         if (l == 0) {
-            if (this.i(world, i, j, k, i1)) {
+            if (this.j(world, i, j, k, i1)) {
                 world.setData(i, j, k, i1 | 8);
                 world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "tile.piston.out", 0.5F, world.random.nextFloat() * 0.25F + 0.6F);
             } else {
@@ -268,7 +268,7 @@ public class BlockPiston extends Block {
     }
 
     // CraftBukkit - boolean -> int return
-    private static int h(World world, int i, int j, int k, int l) {
+    private static int i(World world, int i, int j, int k, int l) {
         int i1 = i + Facing.b[l];
         int j1 = j + Facing.c[l];
         int k1 = k + Facing.d[l];
@@ -305,7 +305,7 @@ public class BlockPiston extends Block {
         }
     }
 
-    private boolean i(World world, int i, int j, int k, int l) {
+    private boolean j(World world, int i, int j, int k, int l) {
         int i1 = i + Facing.b[l];
         int j1 = j + Facing.c[l];
         int k1 = k + Facing.d[l];

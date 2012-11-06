@@ -1,6 +1,5 @@
 package net.minecraft.server;
 
-import java.util.Iterator;
 import java.util.List;
 
 // CraftBukkit start
@@ -93,7 +92,9 @@ public class EntityBoat extends Entity {
     }
 
     public boolean damageEntity(DamageSource damagesource, int i) {
-        if (!this.world.isStatic && !this.dead) {
+        if (this.isInvulnerable()) {
+            return false;
+        } else if (!this.world.isStatic && !this.dead) {
             // CraftBukkit start
             Vehicle vehicle = (Vehicle) this.getBukkitEntity();
             org.bukkit.entity.Entity attacker = (damagesource.getEntity() == null) ? null : damagesource.getEntity().getBukkitEntity();
@@ -356,12 +357,11 @@ public class EntityBoat extends Entity {
 
             if (!this.world.isStatic) {
                 List list = this.world.getEntities(this, this.boundingBox.grow(0.20000000298023224D, 0.0D, 0.20000000298023224D));
+                int l;
 
                 if (list != null && !list.isEmpty()) {
-                    Iterator iterator = list.iterator();
-
-                    while (iterator.hasNext()) {
-                        Entity entity = (Entity) iterator.next();
+                    for (l = 0; l < list.size(); ++l) {
+                        Entity entity = (Entity) list.get(l);
 
                         if (entity != this.passenger && entity.M() && entity instanceof EntityBoat) {
                             entity.collide(this);
@@ -369,7 +369,7 @@ public class EntityBoat extends Entity {
                     }
                 }
 
-                for (int l = 0; l < 4; ++l) {
+                for (l = 0; l < 4; ++l) {
                     int i1 = MathHelper.floor(this.locX + ((double) (l % 2) - 0.5D) * 0.8D);
                     int j1 = MathHelper.floor(this.locZ + ((double) (l / 2) - 0.5D) * 0.8D);
 
@@ -408,7 +408,7 @@ public class EntityBoat extends Entity {
 
     protected void a(NBTTagCompound nbttagcompound) {}
 
-    public boolean c(EntityHuman entityhuman) {
+    public boolean a(EntityHuman entityhuman) {
         if (this.passenger != null && this.passenger instanceof EntityHuman && this.passenger != entityhuman) {
             return true;
         } else {

@@ -10,11 +10,11 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
     }
 
     public void c() {
-        this.bl();
+        this.bo();
         float f = this.c(1.0F);
 
         if (f > 0.5F) {
-            this.bC += 2;
+            this.bA += 2;
         }
 
         super.c();
@@ -30,11 +30,13 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
     protected Entity findTarget() {
         EntityHuman entityhuman = this.world.findNearbyVulnerablePlayer(this, 16.0D);
 
-        return entityhuman != null && this.m(entityhuman) ? entityhuman : null;
+        return entityhuman != null && this.n(entityhuman) ? entityhuman : null;
     }
 
     public boolean damageEntity(DamageSource damagesource, int i) {
-        if (super.damageEntity(damagesource, i)) {
+        if (this.isInvulnerable()) {
+            return false;
+        } else if (super.damageEntity(damagesource, i)) {
             Entity entity = damagesource.getEntity();
 
             if (this.passenger != entity && this.vehicle != entity) {
@@ -65,7 +67,7 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
         }
     }
 
-    public boolean l(Entity entity) {
+    public boolean m(Entity entity) {
         int i = this.c(entity);
 
         if (this.hasEffect(MobEffectList.INCREASE_DAMAGE)) {
@@ -92,7 +94,7 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
                 this.motZ *= 0.6D;
             }
 
-            int k = EnchantmentManager.getFireAspectEnchantmentLevel(this, (EntityLiving) entity);
+            int k = EnchantmentManager.getFireAspectEnchantmentLevel(this);
 
             if (k > 0) {
                 entity.setOnFire(k * 4);
@@ -105,12 +107,12 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
     protected void a(Entity entity, float f) {
         if (this.attackTicks <= 0 && f < 2.0F && entity.boundingBox.e > this.boundingBox.b && entity.boundingBox.b < this.boundingBox.e) {
             this.attackTicks = 20;
-            this.l(entity);
+            this.m(entity);
         }
     }
 
     public float a(int i, int j, int k) {
-        return 0.5F - this.world.o(i, j, k);
+        return 0.5F - this.world.p(i, j, k);
     }
 
     protected boolean i_() {
@@ -123,7 +125,7 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
         } else {
             int l = this.world.getLightLevel(i, j, k);
 
-            if (this.world.L()) {
+            if (this.world.M()) {
                 int i1 = this.world.j;
 
                 this.world.j = 10;

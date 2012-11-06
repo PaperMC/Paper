@@ -29,6 +29,7 @@ public class ItemDye extends Item {
         } else {
             int i1;
             int j1;
+            int k1;
 
             if (itemstack.getData() == 15) {
                 i1 = world.getTypeId(i, j, k);
@@ -95,9 +96,9 @@ public class ItemDye extends Item {
                     if (!world.isStatic) {
                         --itemstack.count;
 
-                        label137:
+                        label133:
                         for (j1 = 0; j1 < 128; ++j1) {
-                            int k1 = i;
+                            k1 = i;
                             int l1 = j + 1;
                             int i2 = k;
 
@@ -105,8 +106,8 @@ public class ItemDye extends Item {
                                 k1 += d.nextInt(3) - 1;
                                 l1 += (d.nextInt(3) - 1) * d.nextInt(3) / 2;
                                 i2 += d.nextInt(3) - 1;
-                                if (world.getTypeId(k1, l1 - 1, i2) != Block.GRASS.id || world.s(k1, l1, i2)) {
-                                    continue label137;
+                                if (world.getTypeId(k1, l1 - 1, i2) != Block.GRASS.id || world.t(k1, l1, i2)) {
+                                    continue label133;
                                 }
                             }
 
@@ -157,11 +158,8 @@ public class ItemDye extends Item {
                     }
 
                     if (world.isEmpty(i, j, k)) {
-                        world.setTypeId(i, j, k, Block.COCOA.id);
-                        if (world.getTypeId(i, j, k) == Block.COCOA.id) {
-                            Block.byId[Block.COCOA.id].postPlace(world, i, j, k, l, f, f1, f2);
-                        }
-
+                        k1 = Block.byId[Block.COCOA.id].getPlacedData(world, i, j, k, l, f, f1, f2, 0);
+                        world.setTypeIdAndData(i, j, k, Block.COCOA.id, k1);
                         if (!entityhuman.abilities.canInstantlyBuild) {
                             --itemstack.count;
                         }

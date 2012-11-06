@@ -161,7 +161,7 @@ public class BlockStem extends BlockFlower {
 
             for (int j1 = 0; j1 < 3; ++j1) {
                 if (world.random.nextInt(15) <= l) {
-                    this.a(world, i, j, k, new ItemStack(item));
+                    this.b(world, i, j, k, new ItemStack(item));
                 }
             }
         }

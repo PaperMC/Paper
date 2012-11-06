@@ -1,6 +1,5 @@
 package net.minecraft.server;
 
-import java.util.Iterator;
 import java.util.List;
 
 // CraftBukkit start
@@ -93,7 +92,7 @@ public class EntityFishingHook extends Entity {
             this.b(this.yaw, this.pitch);
         } else {
             if (!this.world.isStatic) {
-                ItemStack itemstack = this.owner.bP();
+                ItemStack itemstack = this.owner.bT();
 
                 if (this.owner.dead || !this.owner.isAlive() || itemstack == null || itemstack.getItem() != Item.FISHING_ROD || this.e(this.owner) > 1024.0D) {
                     this.die();
@@ -152,12 +151,11 @@ public class EntityFishingHook extends Entity {
             Entity entity = null;
             List list = this.world.getEntities(this, this.boundingBox.a(this.motX, this.motY, this.motZ).grow(1.0D, 1.0D, 1.0D));
             double d4 = 0.0D;
-            Iterator iterator = list.iterator();
 
             double d5;
 
-            while (iterator.hasNext()) {
-                Entity entity1 = (Entity) iterator.next();
+            for (int j = 0; j < list.size(); ++j) {
+                Entity entity1 = (Entity) list.get(j);
 
                 if (entity1.L() && (entity1 != this.owner || this.j >= 5)) {
                     float f = 0.3F;
@@ -221,9 +219,9 @@ public class EntityFishingHook extends Entity {
                 byte b0 = 5;
                 double d6 = 0.0D;
 
-                for (int j = 0; j < b0; ++j) {
-                    double d7 = this.boundingBox.b + (this.boundingBox.e - this.boundingBox.b) * (double) (j + 0) / (double) b0 - 0.125D + 0.125D;
-                    double d8 = this.boundingBox.b + (this.boundingBox.e - this.boundingBox.b) * (double) (j + 1) / (double) b0 - 0.125D + 0.125D;
+                for (int k = 0; k < b0; ++k) {
+                    double d7 = this.boundingBox.b + (this.boundingBox.e - this.boundingBox.b) * (double) (k + 0) / (double) b0 - 0.125D + 0.125D;
+                    double d8 = this.boundingBox.b + (this.boundingBox.e - this.boundingBox.b) * (double) (k + 1) / (double) b0 - 0.125D + 0.125D;
                     AxisAlignedBB axisalignedbb1 = AxisAlignedBB.a().a(this.boundingBox.a, d7, this.boundingBox.c, this.boundingBox.d, d8, this.boundingBox.f);
 
                     if (this.world.b(axisalignedbb1, Material.WATER)) {
@@ -237,27 +235,27 @@ public class EntityFishingHook extends Entity {
                     } else {
                         short short1 = 500;
 
-                        if (this.world.B(MathHelper.floor(this.locX), MathHelper.floor(this.locY) + 1, MathHelper.floor(this.locZ))) {
+                        if (this.world.D(MathHelper.floor(this.locX), MathHelper.floor(this.locY) + 1, MathHelper.floor(this.locZ))) {
                             short1 = 300;
                         }
 
                         if (this.random.nextInt(short1) == 0) {
                             this.as = this.random.nextInt(30) + 10;
                             this.motY -= 0.20000000298023224D;
-                            this.world.makeSound(this, "random.splash", 0.25F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
+                            this.makeSound("random.splash", 0.25F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
                             float f3 = (float) MathHelper.floor(this.boundingBox.b);
 
                             float f4;
-                            int k;
+                            int l;
                             float f5;
 
-                            for (k = 0; (float) k < 1.0F + this.width * 20.0F; ++k) {
+                            for (l = 0; (float) l < 1.0F + this.width * 20.0F; ++l) {
                                 f5 = (this.random.nextFloat() * 2.0F - 1.0F) * this.width;
                                 f4 = (this.random.nextFloat() * 2.0F - 1.0F) * this.width;
                                 this.world.addParticle("bubble", this.locX + (double) f5, (double) (f3 + 1.0F), this.locZ + (double) f4, this.motX, this.motY - (double) (this.random.nextFloat() * 0.2F), this.motZ);
                             }
 
-                            for (k = 0; (float) k < 1.0F + this.width * 20.0F; ++k) {
+                            for (l = 0; (float) l < 1.0F + this.width * 20.0F; ++l) {
                                 f5 = (this.random.nextFloat() * 2.0F - 1.0F) * this.width;
                                 f4 = (this.random.nextFloat() * 2.0F - 1.0F) * this.width;
                                 this.world.addParticle("splash", this.locX + (double) f5, (double) (f3 + 1.0F), this.locZ + (double) f4, this.motX, this.motY, this.motZ);

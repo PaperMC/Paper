@@ -23,7 +23,7 @@ public class EntityEgg extends EntityProjectile {
 
     protected void a(MovingObjectPosition movingobjectposition) {
         if (movingobjectposition.entity != null) {
-            movingobjectposition.entity.damageEntity(DamageSource.projectile(this, this.shooter), 0);
+            movingobjectposition.entity.damageEntity(DamageSource.projectile(this, this.getShooter()), 0);
         }
 
         // CraftBukkit start
@@ -35,8 +35,9 @@ public class EntityEgg extends EntityProjectile {
 
         EntityType hatchingType = EntityType.CHICKEN;
 
-        if (this.shooter instanceof EntityPlayer) {
-            Player player = (this.shooter == null) ? null : (Player) this.shooter.getBukkitEntity();
+        Entity shooter = this.getShooter();
+        if (shooter instanceof EntityPlayer) {
+            Player player = (shooter == null) ? null : (Player) shooter.getBukkitEntity();
 
             PlayerEggThrowEvent event = new PlayerEggThrowEvent(player, (org.bukkit.entity.Egg) this.getBukkitEntity(), hatching, (byte) numHatching, hatchingType);
             this.world.getServer().getPluginManager().callEvent(event);

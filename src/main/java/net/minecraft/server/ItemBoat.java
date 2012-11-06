@@ -1,6 +1,5 @@
 package net.minecraft.server;
 
-import java.util.Iterator;
 import java.util.List;
 
 public class ItemBoat extends Item {
@@ -36,10 +35,11 @@ public class ItemBoat extends Item {
             boolean flag = false;
             float f9 = 1.0F;
             List list = world.getEntities(entityhuman, entityhuman.boundingBox.a(vec3d2.c * d3, vec3d2.d * d3, vec3d2.e * d3).grow((double) f9, (double) f9, (double) f9));
-            Iterator iterator = list.iterator();
 
-            while (iterator.hasNext()) {
-                Entity entity = (Entity) iterator.next();
+            int i;
+
+            for (i = 0; i < list.size(); ++i) {
+                Entity entity = (Entity) list.get(i);
 
                 if (entity.L()) {
                     float f10 = entity.Y();
@@ -55,24 +55,30 @@ public class ItemBoat extends Item {
                 return itemstack;
             } else {
                 if (movingobjectposition.type == EnumMovingObjectType.TILE) {
-                    int i = movingobjectposition.b;
+                    i = movingobjectposition.b;
                     int j = movingobjectposition.c;
                     int k = movingobjectposition.d;
 
+                    // CraftBukkit start - Boat placement
+                    org.bukkit.event.player.PlayerInteractEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent(entityhuman, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, i, j, k, movingobjectposition.face, itemstack);
+
+                    if (event.isCancelled()) {
+                        return itemstack;
+                    }
+                    // CraftBukkit end
+
+                    if (world.getTypeId(i, j, k) == Block.SNOW.id) {
+                        --j;
+                    }
+
+                    EntityBoat entityboat = new EntityBoat(world, (double) ((float) i + 0.5F), (double) ((float) j + 1.0F), (double) ((float) k + 0.5F));
+
+                    if (!world.getCubes(entityboat, entityboat.boundingBox.grow(-0.1D, -0.1D, -0.1D)).isEmpty()) {
+                        return itemstack;
+                    }
+
                     if (!world.isStatic) {
-                        // CraftBukkit start - Boat placement
-                        org.bukkit.event.player.PlayerInteractEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent(entityhuman, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, i, j, k, movingobjectposition.face, itemstack);
-
-                        if (event.isCancelled()) {
-                            return itemstack;
-                        }
-                        // CraftBukkit end
-
-                        if (world.getTypeId(i, j, k) == Block.SNOW.id) {
-                            --j;
-                        }
-
-                        world.addEntity(new EntityBoat(world, (double) ((float) i + 0.5F), (double) ((float) j + 1.0F), (double) ((float) k + 0.5F)));
+                        world.addEntity(entityboat);
                     }
 
                     if (!entityhuman.abilities.canInstantlyBuild) {

@@ -377,14 +377,14 @@ public class Block {
                     int l1 = this.getDropType(l, world.random, i1);
 
                     if (l1 > 0) {
-                        this.a(world, i, j, k, new ItemStack(l1, 1, this.getDropData(l)));
+                        this.b(world, i, j, k, new ItemStack(l1, 1, this.getDropData(l)));
                     }
                 }
             }
         }
     }
 
-    protected void a(World world, int i, int j, int k, ItemStack itemstack) {
+    protected void b(World world, int i, int j, int k, ItemStack itemstack) {
         if (!world.isStatic && world.getGameRules().getBoolean("doTileDrops")) {
             float f = 0.7F;
             double d0 = (double) (world.random.nextFloat() * f) + (double) (1.0F - f) * 0.5D;
@@ -540,7 +540,9 @@ public class Block {
 
     public void b(World world, int i, int j, int k, Entity entity) {}
 
-    public void postPlace(World world, int i, int j, int k, int l, float f, float f1, float f2) {}
+    public int getPlacedData(World world, int i, int j, int k, int l, float f, float f1, float f2, int i1) {
+        return i1;
+    }
 
     public void attack(World world, int i, int j, int k, EntityHuman entityhuman) {}
 
@@ -595,7 +597,7 @@ public class Block {
             ItemStack itemstack = this.f_(l);
 
             if (itemstack != null) {
-                this.a(world, i, j, k, itemstack);
+                this.b(world, i, j, k, itemstack);
             }
         } else {
             int i1 = EnchantmentManager.getBonusBlockLootEnchantmentLevel(entityhuman);
@@ -627,6 +629,8 @@ public class Block {
     }
 
     public void postPlace(World world, int i, int j, int k, EntityLiving entityliving) {}
+
+    public void postPlace(World world, int i, int j, int k, int l) {}
 
     public Block b(String s) {
         this.name = "tile." + s;
@@ -669,11 +673,15 @@ public class Block {
 
     public void a(World world, int i, int j, int k, int l, EntityHuman entityhuman) {}
 
-    public void g(World world, int i, int j, int k, int l) {}
+    public void h(World world, int i, int j, int k, int l) {}
 
     public void f(World world, int i, int j, int k) {}
 
     public boolean l() {
+        return true;
+    }
+
+    public boolean a(Explosion explosion) {
         return true;
     }
 

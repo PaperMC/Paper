@@ -66,7 +66,13 @@ public class RecipesMapClone extends ShapelessRecipes implements IRecipe { // Cr
         }
 
         if (itemstack != null && i >= 1) {
-            return new ItemStack(Item.MAP, i + 1, itemstack.getData());
+            ItemStack itemstack2 = new ItemStack(Item.MAP, i + 1, itemstack.getData());
+
+            if (itemstack.s()) {
+                itemstack2.c(itemstack.r());
+            }
+
+            return itemstack2;
         } else {
             return null;
         }

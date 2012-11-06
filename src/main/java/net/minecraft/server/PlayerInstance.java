@@ -1,7 +1,6 @@
 package net.minecraft.server;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 class PlayerInstance {
@@ -70,10 +69,8 @@ class PlayerInstance {
     }
 
     public void sendAll(Packet packet) {
-        Iterator iterator = this.b.iterator();
-
-        while (iterator.hasNext()) {
-            EntityPlayer entityplayer = (EntityPlayer) iterator.next();
+        for (int i = 0; i < this.b.size(); ++i) {
+            EntityPlayer entityplayer = (EntityPlayer) this.b.get(i);
 
             if (!entityplayer.chunkCoordIntPairQueue.contains(this.location)) {
                 entityplayer.netServerHandler.sendPacket(packet);
@@ -107,12 +104,9 @@ class PlayerInstance {
                         if ((this.f & 1 << k) != 0) {
                             l = k << 4;
                             List list = PlayerManager.a(this.playerManager).getTileEntities(i, l, j, i + 16, l + 16, j + 16);
-                            Iterator iterator = list.iterator();
 
-                            while (iterator.hasNext()) {
-                                TileEntity tileentity = (TileEntity) iterator.next();
-
-                                this.sendTileEntity(tileentity);
+                            for (int i1 = 0; i1 < list.size(); ++i1) {
+                                this.sendTileEntity((TileEntity) list.get(i1));
                             }
                         }
                     }
@@ -137,7 +131,7 @@ class PlayerInstance {
 
     private void sendTileEntity(TileEntity tileentity) {
         if (tileentity != null) {
-            Packet packet = tileentity.l();
+            Packet packet = tileentity.getUpdatePacket();
 
             if (packet != null) {
                 this.sendAll(packet);

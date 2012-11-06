@@ -47,7 +47,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
         System.setErr(new PrintStream(new LoggerOutputStream(log, Level.SEVERE), true));
         // CraftBukkit end
 
-        log.info("Starting minecraft server version 1.4.2");
+        log.info("Starting minecraft server version 1.4.4");
         if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
             log.warning("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
         }
@@ -67,6 +67,12 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
         this.setAllowFlight(this.propertyManager.getBoolean("allow-flight", false));
         this.setTexturePack(this.propertyManager.getString("texture-pack", ""));
         this.setMotd(this.propertyManager.getString("motd", "A Minecraft Server"));
+        if (this.propertyManager.getInt("difficulty", 1) < 0) {
+            this.propertyManager.a("difficulty", Integer.valueOf(0));
+        } else if (this.propertyManager.getInt("difficulty", 1) > 3) {
+            this.propertyManager.a("difficulty", Integer.valueOf(3));
+        }
+
         this.generateStructures = this.propertyManager.getBoolean("generate-structures", true);
         int i = this.propertyManager.getInt("gamemode", EnumGamemode.SURVIVAL.a());
 
@@ -203,7 +209,8 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
 
     public CrashReport b(CrashReport crashreport) {
         crashreport = super.b(crashreport);
-        crashreport.a("Type", (Callable) (new CrashReportType(this)));
+        crashreport.g().a("Is Modded", (Callable) (new CrashReportModded(this)));
+        crashreport.g().a("Type", (Callable) (new CrashReportType(this)));
         return crashreport;
     }
 

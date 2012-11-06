@@ -75,7 +75,7 @@ public class ItemStep extends ItemBlock {
 
         if (i1 == this.b.id && k1 == itemstack.getData()) {
             if (world.b(this.c.e(world, i, j, k)) && world.setTypeIdAndData(i, j, k, this.c.id, k1)) {
-                world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), this.c.stepSound.getName(), (this.c.stepSound.getVolume1() + 1.0F) / 2.0F, this.c.stepSound.getVolume2() * 0.8F);
+                world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), this.c.stepSound.getPlaceSound(), (this.c.stepSound.getVolume1() + 1.0F) / 2.0F, this.c.stepSound.getVolume2() * 0.8F);
                 --itemstack.count;
             }
 

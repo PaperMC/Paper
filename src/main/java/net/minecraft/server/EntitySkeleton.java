@@ -6,18 +6,24 @@ import org.bukkit.event.entity.EntityCombustEvent; // CraftBukkit
 
 public class EntitySkeleton extends EntityMonster implements IRangedEntity {
 
+    private PathfinderGoalArrowAttack d = new PathfinderGoalArrowAttack(this, 0.25F, 60, 10.0F);
+    private PathfinderGoalMeleeAttack e = new PathfinderGoalMeleeAttack(this, EntityHuman.class, 0.31F, false);
+
     public EntitySkeleton(World world) {
         super(world);
         this.texture = "/mob/skeleton.png";
-        this.bI = 0.25F;
+        this.bG = 0.25F;
         this.goalSelector.a(1, new PathfinderGoalFloat(this));
         this.goalSelector.a(2, new PathfinderGoalRestrictSun(this));
-        this.goalSelector.a(3, new PathfinderGoalFleeSun(this, this.bI));
-        this.goalSelector.a(5, new PathfinderGoalRandomStroll(this, this.bI));
+        this.goalSelector.a(3, new PathfinderGoalFleeSun(this, this.bG));
+        this.goalSelector.a(5, new PathfinderGoalRandomStroll(this, this.bG));
         this.goalSelector.a(6, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 8.0F));
         this.goalSelector.a(6, new PathfinderGoalRandomLookaround(this));
         this.targetSelector.a(1, new PathfinderGoalHurtByTarget(this, false));
         this.targetSelector.a(2, new PathfinderGoalNearestAttackableTarget(this, EntityHuman.class, 16.0F, 0, true));
+        if (world != null && !world.isStatic) {
+            this.m();
+        }
     }
 
     protected void a() {
@@ -25,7 +31,7 @@ public class EntitySkeleton extends EntityMonster implements IRangedEntity {
         this.datawatcher.a(13, new Byte((byte) 0));
     }
 
-    public boolean bb() {
+    public boolean be() {
         return true;
     }
 
@@ -33,24 +39,24 @@ public class EntitySkeleton extends EntityMonster implements IRangedEntity {
         return 20;
     }
 
-    protected String aW() {
+    protected String aY() {
         return "mob.skeleton.say";
     }
 
-    protected String aX() {
+    protected String aZ() {
         return "mob.skeleton.hurt";
     }
 
-    protected String aY() {
+    protected String ba() {
         return "mob.skeleton.death";
     }
 
     protected void a(int i, int j, int k, int l) {
-        this.world.makeSound(this, "mob.skeleton.step", 0.15F, 1.0F);
+        this.makeSound("mob.skeleton.step", 0.15F, 1.0F);
     }
 
-    public boolean l(Entity entity) {
-        if (super.l(entity)) {
+    public boolean m(Entity entity) {
+        if (super.m(entity)) {
             if (this.getSkeletonType() == 1 && entity instanceof EntityLiving) {
                 ((EntityLiving) entity).addEffect(new MobEffect(MobEffectList.WITHER.id, 200));
             }
@@ -63,7 +69,7 @@ public class EntitySkeleton extends EntityMonster implements IRangedEntity {
 
     public int c(Entity entity) {
         if (this.getSkeletonType() == 1) {
-            ItemStack itemstack = this.bA();
+            ItemStack itemstack = this.bD();
             int i = 4;
 
             if (itemstack != null) {
@@ -81,10 +87,10 @@ public class EntitySkeleton extends EntityMonster implements IRangedEntity {
     }
 
     public void c() {
-        if (this.world.t() && !this.world.isStatic) {
+        if (this.world.u() && !this.world.isStatic) {
             float f = this.c(1.0F);
 
-            if (f > 0.5F && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F && this.world.j(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ))) {
+            if (f > 0.5F && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F && this.world.k(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ))) {
                 boolean flag = true;
                 ItemStack itemstack = this.getEquipment(4);
 
@@ -179,25 +185,29 @@ public class EntitySkeleton extends EntityMonster implements IRangedEntity {
         return null;
     }
 
-    protected void bB() {
-        super.bB();
+    protected void bE() {
+        super.bD();
         this.setEquipment(0, new ItemStack(Item.BOW));
     }
 
-    public void bD() {
-        if (this.world.worldProvider instanceof WorldProviderHell && this.aA().nextInt(5) > 0) {
-            this.goalSelector.a(4, new PathfinderGoalMeleeAttack(this, EntityHuman.class, this.bI, false));
+    public void bG() {
+        if (this.world.worldProvider instanceof WorldProviderHell && this.aB().nextInt(5) > 0) {
+            this.goalSelector.a(4, this.e);
             this.setSkeletonType(1);
             this.setEquipment(0, new ItemStack(Item.STONE_SWORD));
         } else {
-            this.goalSelector.a(4, new PathfinderGoalArrowAttack(this, this.bI, 60, 10.0F));
-            this.bB();
-            this.bC();
+            this.goalSelector.a(4, this.d);
+            this.bE();
+            this.bF();
         }
 
-        this.canPickUpLoot = this.random.nextFloat() < as[this.world.difficulty];
+        if (this.random.nextFloat() >= as[this.world.difficulty]) {
+            ;
+        }
+
+        this.canPickUpLoot = true;
         if (this.getEquipment(4) == null) {
-            Calendar calendar = this.world.S();
+            Calendar calendar = this.world.T();
 
             if (calendar.get(2) + 1 == 10 && calendar.get(5) == 31 && this.random.nextFloat() < 0.25F) {
                 this.setEquipment(4, new ItemStack(this.random.nextFloat() < 0.1F ? Block.JACK_O_LANTERN : Block.PUMPKIN));
@@ -206,10 +216,22 @@ public class EntitySkeleton extends EntityMonster implements IRangedEntity {
         }
     }
 
+    public void m() {
+        this.goalSelector.a((PathfinderGoal) this.e);
+        this.goalSelector.a((PathfinderGoal) this.d);
+        ItemStack itemstack = this.bD();
+
+        if (itemstack != null && itemstack.id == Item.BOW.id) {
+            this.goalSelector.a(4, this.d);
+        } else {
+            this.goalSelector.a(4, this.e);
+        }
+    }
+
     public void d(EntityLiving entityliving) {
         EntityArrow entityarrow = new EntityArrow(this.world, this, entityliving, 1.6F, 12.0F);
-        int i = EnchantmentManager.getEnchantmentLevel(Enchantment.ARROW_DAMAGE.id, this.bA());
-        int j = EnchantmentManager.getEnchantmentLevel(Enchantment.ARROW_KNOCKBACK.id, this.bA());
+        int i = EnchantmentManager.getEnchantmentLevel(Enchantment.ARROW_DAMAGE.id, this.bD());
+        int j = EnchantmentManager.getEnchantmentLevel(Enchantment.ARROW_KNOCKBACK.id, this.bD());
 
         if (i > 0) {
             entityarrow.b(entityarrow.c() + (double) i * 0.5D + 0.5D);
@@ -219,11 +241,11 @@ public class EntitySkeleton extends EntityMonster implements IRangedEntity {
             entityarrow.a(j);
         }
 
-        if (EnchantmentManager.getEnchantmentLevel(Enchantment.ARROW_FIRE.id, this.bA()) > 0 || this.getSkeletonType() == 1) {
+        if (EnchantmentManager.getEnchantmentLevel(Enchantment.ARROW_FIRE.id, this.bD()) > 0 || this.getSkeletonType() == 1) {
             entityarrow.setOnFire(100);
         }
 
-        this.world.makeSound(this, "random.bow", 1.0F, 1.0F / (this.aA().nextFloat() * 0.4F + 0.8F));
+        this.makeSound("random.bow", 1.0F, 1.0F / (this.aB().nextFloat() * 0.4F + 0.8F));
         this.world.addEntity(entityarrow);
     }
 
@@ -249,15 +271,18 @@ public class EntitySkeleton extends EntityMonster implements IRangedEntity {
             this.setSkeletonType(b0);
         }
 
-        if (this.getSkeletonType() == 1) {
-            this.goalSelector.a(4, new PathfinderGoalMeleeAttack(this, EntityHuman.class, this.bI, false));
-        } else {
-            this.goalSelector.a(4, new PathfinderGoalArrowAttack(this, this.bI, 60, 10.0F));
-        }
+        this.m();
     }
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
         nbttagcompound.setByte("SkeletonType", (byte) this.getSkeletonType());
+    }
+
+    public void setEquipment(int i, ItemStack itemstack) {
+        super.setEquipment(i, itemstack);
+        if (!this.world.isStatic && i == 0) {
+            this.m();
+        }
     }
 }

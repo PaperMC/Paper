@@ -28,7 +28,7 @@ public class VillageSiege {
                 return;
             }
         } else {
-            if (this.world.t()) {
+            if (this.world.u()) {
                 this.c = 0;
                 return;
             }
@@ -139,7 +139,7 @@ public class VillageSiege {
 
             try {
                 entityzombie = new EntityZombie(this.world);
-                entityzombie.bD();
+                entityzombie.bG();
                 entityzombie.setVillager(false);
             } catch (Exception exception) {
                 exception.printStackTrace();

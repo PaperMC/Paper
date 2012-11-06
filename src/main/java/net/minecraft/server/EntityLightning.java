@@ -1,6 +1,5 @@
 package net.minecraft.server;
 
-import java.util.Iterator;
 import java.util.List;
 
 import org.bukkit.event.block.BlockIgniteEvent; // CraftBukkit
@@ -35,7 +34,7 @@ public class EntityLightning extends EntityWeather {
         this.c = this.random.nextInt(3) + 1;
 
         // CraftBukkit
-        if (!isEffect && world.difficulty >= 2 && world.areChunksLoaded(MathHelper.floor(d0), MathHelper.floor(d1), MathHelper.floor(d2), 10)) {
+        if (!isEffect && !world.isStatic && world.difficulty >= 2 && world.areChunksLoaded(MathHelper.floor(d0), MathHelper.floor(d1), MathHelper.floor(d2), 10)) {
             int i = MathHelper.floor(d0);
             int j = MathHelper.floor(d1);
             int k = MathHelper.floor(d2);
@@ -86,7 +85,7 @@ public class EntityLightning extends EntityWeather {
                 this.lifeTicks = 1;
                 this.a = this.random.nextLong();
                 // CraftBukkit
-                if (!this.isEffect && this.world.areChunksLoaded(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ), 10)) {
+                if (!this.isEffect && !this.world.isStatic && this.world.areChunksLoaded(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ), 10)) {
                     int i = MathHelper.floor(this.locX);
                     int j = MathHelper.floor(this.locY);
                     int k = MathHelper.floor(this.locZ);
@@ -105,15 +104,12 @@ public class EntityLightning extends EntityWeather {
             }
         }
 
-        if (this.lifeTicks >= 0 && !this.isEffect) { // CraftBukkit
+        if (!this.world.isStatic && this.lifeTicks >= 0 && !this.isEffect) { // CraftBukkit
             double d0 = 3.0D;
-            // CraftBukkit start - switch to array copy of list to avoid CMEs
-            Object[] array = this.world.getEntities(this, AxisAlignedBB.a().a(this.locX - d0, this.locY - d0, this.locZ - d0, this.locX + d0, this.locY + 6.0D + d0, this.locZ + d0)).toArray();
-            Iterator iterator = com.google.common.collect.Iterators.forArray(array);
-            // CraftBukkit end
+            List list = this.world.getEntities(this, AxisAlignedBB.a().a(this.locX - d0, this.locY - d0, this.locZ - d0, this.locX + d0, this.locY + 6.0D + d0, this.locZ + d0));
 
-            while (iterator.hasNext()) {
-                Entity entity = (Entity) iterator.next();
+            for (int l = 0; l < list.size(); ++l) {
+                Entity entity = (Entity) list.get(l);
 
                 entity.a(this);
             }

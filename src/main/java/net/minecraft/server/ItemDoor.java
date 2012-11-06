@@ -73,8 +73,8 @@ public class ItemDoor extends Item {
             b0 = 1;
         }
 
-        int i1 = (world.s(i - b0, j, k - b1) ? 1 : 0) + (world.s(i - b0, j + 1, k - b1) ? 1 : 0);
-        int j1 = (world.s(i + b0, j, k + b1) ? 1 : 0) + (world.s(i + b0, j + 1, k + b1) ? 1 : 0);
+        int i1 = (world.t(i - b0, j, k - b1) ? 1 : 0) + (world.t(i - b0, j + 1, k - b1) ? 1 : 0);
+        int j1 = (world.t(i + b0, j, k + b1) ? 1 : 0) + (world.t(i + b0, j + 1, k + b1) ? 1 : 0);
         boolean flag = world.getTypeId(i - b0, j, k - b1) == block.id || world.getTypeId(i - b0, j + 1, k - b1) == block.id;
         boolean flag1 = world.getTypeId(i + b0, j, k + b1) == block.id || world.getTypeId(i + b0, j + 1, k + b1) == block.id;
         boolean flag2 = false;

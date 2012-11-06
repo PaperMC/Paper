@@ -2,7 +2,6 @@ package net.minecraft.server;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -13,10 +12,10 @@ import org.bukkit.inventory.InventoryView;
 
 public abstract class Container {
 
-    public List a = new ArrayList();
     public List b = new ArrayList();
+    public List c = new ArrayList();
     public int windowId = 0;
-    private short e = 0;
+    private short a = 0;
     protected List listeners = new ArrayList();
     private Set f = new HashSet();
 
@@ -35,9 +34,9 @@ public abstract class Container {
     public Container() {}
 
     protected Slot a(Slot slot) {
-        slot.g = this.b.size();
-        this.b.add(slot);
-        this.a.add(null);
+        slot.g = this.c.size();
+        this.c.add(slot);
+        this.b.add(null);
         return slot;
     }
 
@@ -53,31 +52,25 @@ public abstract class Container {
 
     public List a() {
         ArrayList arraylist = new ArrayList();
-        Iterator iterator = this.b.iterator();
 
-        while (iterator.hasNext()) {
-            Slot slot = (Slot) iterator.next();
-
-            arraylist.add(slot.getItem());
+        for (int i = 0; i < this.c.size(); ++i) {
+            arraylist.add(((Slot) this.c.get(i)).getItem());
         }
 
         return arraylist;
     }
 
     public void b() {
-        for (int i = 0; i < this.b.size(); ++i) {
-            ItemStack itemstack = ((Slot) this.b.get(i)).getItem();
-            ItemStack itemstack1 = (ItemStack) this.a.get(i);
+        for (int i = 0; i < this.c.size(); ++i) {
+            ItemStack itemstack = ((Slot) this.c.get(i)).getItem();
+            ItemStack itemstack1 = (ItemStack) this.b.get(i);
 
             if (!ItemStack.matches(itemstack1, itemstack)) {
                 itemstack1 = itemstack == null ? null : itemstack.cloneItemStack();
-                this.a.set(i, itemstack1);
-                Iterator iterator = this.listeners.iterator();
+                this.b.set(i, itemstack1);
 
-                while (iterator.hasNext()) {
-                    ICrafting icrafting = (ICrafting) iterator.next();
-
-                    icrafting.a(this, i, itemstack1);
+                for (int j = 0; j < this.listeners.size(); ++j) {
+                    ((ICrafting) this.listeners.get(j)).a(this, i, itemstack1);
                 }
             }
         }
@@ -88,27 +81,23 @@ public abstract class Container {
     }
 
     public Slot a(IInventory iinventory, int i) {
-        Iterator iterator = this.b.iterator();
+        for (int j = 0; j < this.c.size(); ++j) {
+            Slot slot = (Slot) this.c.get(j);
 
-        Slot slot;
-
-        do {
-            if (!iterator.hasNext()) {
-                return null;
+            if (slot.a(iinventory, i)) {
+                return slot;
             }
+        }
 
-            slot = (Slot) iterator.next();
-        } while (!slot.a(iinventory, i));
-
-        return slot;
+        return null;
     }
 
     public Slot getSlot(int i) {
-        return (Slot) this.b.get(i);
+        return (Slot) this.c.get(i);
     }
 
     public ItemStack b(EntityHuman entityhuman, int i) {
-        Slot slot = (Slot) this.b.get(i);
+        Slot slot = (Slot) this.c.get(i);
 
         return slot != null ? slot.getItem() : null;
     }
@@ -143,7 +132,7 @@ public abstract class Container {
                     }
                 }
             } else if (k == 1) {
-                slot = (Slot) this.b.get(i);
+                slot = (Slot) this.c.get(i);
                 if (slot != null && slot.a(entityhuman)) {
                     itemstack1 = this.b(entityhuman, i);
                     if (itemstack1 != null) {
@@ -160,7 +149,7 @@ public abstract class Container {
                     return null;
                 }
 
-                slot = (Slot) this.b.get(i);
+                slot = (Slot) this.c.get(i);
                 if (slot != null) {
                     itemstack1 = slot.getItem();
                     ItemStack itemstack3 = playerinventory.getCarried();
@@ -235,7 +224,7 @@ public abstract class Container {
                 }
             }
         } else if (k == 2 && j >= 0 && j < 9) {
-            slot = (Slot) this.b.get(i);
+            slot = (Slot) this.c.get(i);
             if (slot.a(entityhuman)) {
                 itemstack1 = playerinventory.getItem(j);
                 boolean flag = itemstack1 == null || slot.inventory == playerinventory && slot.isAllowed(itemstack1);
@@ -264,8 +253,8 @@ public abstract class Container {
                     slot.set(itemstack1);
                 }
             }
-        } else if (k == 3 && entityhuman.abilities.canInstantlyBuild && playerinventory.getCarried() == null && i > 0) {
-            slot = (Slot) this.b.get(i);
+        } else if (k == 3 && entityhuman.abilities.canInstantlyBuild && playerinventory.getCarried() == null && i >= 0) {
+            slot = (Slot) this.c.get(i);
             if (slot != null && slot.d()) {
                 itemstack1 = slot.getItem().cloneItemStack();
                 itemstack1.count = itemstack1.getMaxStackSize();
@@ -280,7 +269,7 @@ public abstract class Container {
         this.clickItem(i, j, 1, entityhuman);
     }
 
-    public void a(EntityHuman entityhuman) {
+    public void b(EntityHuman entityhuman) {
         PlayerInventory playerinventory = entityhuman.inventory;
 
         if (playerinventory.getCarried() != null) {
@@ -297,7 +286,7 @@ public abstract class Container {
         this.getSlot(i).set(itemstack);
     }
 
-    public boolean b(EntityHuman entityhuman) {
+    public boolean c(EntityHuman entityhuman) {
         return !this.f.contains(entityhuman);
     }
 
@@ -309,7 +298,7 @@ public abstract class Container {
         }
     }
 
-    public abstract boolean c(EntityHuman entityhuman);
+    public abstract boolean a(EntityHuman entityhuman);
 
     protected boolean a(ItemStack itemstack, int i, int j, boolean flag) {
         boolean flag1 = false;
@@ -324,7 +313,7 @@ public abstract class Container {
 
         if (itemstack.isStackable()) {
             while (itemstack.count > 0 && (!flag && k < j || flag && k >= i)) {
-                slot = (Slot) this.b.get(k);
+                slot = (Slot) this.c.get(k);
                 itemstack1 = slot.getItem();
                 if (itemstack1 != null && itemstack1.id == itemstack.id && (!itemstack.usesData() || itemstack.getData() == itemstack1.getData()) && ItemStack.equals(itemstack, itemstack1)) {
                     int l = itemstack1.count + itemstack.count;
@@ -358,7 +347,7 @@ public abstract class Container {
             }
 
             while (!flag && k < j || flag && k >= i) {
-                slot = (Slot) this.b.get(k);
+                slot = (Slot) this.c.get(k);
                 itemstack1 = slot.getItem();
                 if (itemstack1 == null) {
                     slot.set(itemstack.cloneItemStack());

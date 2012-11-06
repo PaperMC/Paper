@@ -65,10 +65,9 @@ public class ContainerEnchantTable extends Container {
 
     public void b() {
         super.b();
-        Iterator iterator = this.listeners.iterator();
 
-        while (iterator.hasNext()) {
-            ICrafting icrafting = (ICrafting) iterator.next();
+        for (int i = 0; i < this.listeners.size(); ++i) {
+            ICrafting icrafting = (ICrafting) this.listeners.get(i);
 
             icrafting.setContainerData(this, 0, this.costs[0]);
             icrafting.setContainerData(this, 1, this.costs[1]);
@@ -191,8 +190,8 @@ public class ContainerEnchantTable extends Container {
         }
     }
 
-    public void a(EntityHuman entityhuman) {
-        super.a(entityhuman);
+    public void b(EntityHuman entityhuman) {
+        super.b(entityhuman);
         if (!this.world.isStatic) {
             ItemStack itemstack = this.enchantSlots.splitWithoutUpdate(0);
 
@@ -202,14 +201,14 @@ public class ContainerEnchantTable extends Container {
         }
     }
 
-    public boolean c(EntityHuman entityhuman) {
+    public boolean a(EntityHuman entityhuman) {
         if (!this.checkReachable) return true; // CraftBukkit
         return this.world.getTypeId(this.x, this.y, this.z) != Block.ENCHANTMENT_TABLE.id ? false : entityhuman.e((double) this.x + 0.5D, (double) this.y + 0.5D, (double) this.z + 0.5D) <= 64.0D;
     }
 
     public ItemStack b(EntityHuman entityhuman, int i) {
         ItemStack itemstack = null;
-        Slot slot = (Slot) this.b.get(i);
+        Slot slot = (Slot) this.c.get(i);
 
         if (slot != null && slot.d()) {
             ItemStack itemstack1 = slot.getItem();
@@ -220,15 +219,15 @@ public class ContainerEnchantTable extends Container {
                     return null;
                 }
             } else {
-                if (((Slot) this.b.get(0)).d() || !((Slot) this.b.get(0)).isAllowed(itemstack1)) {
+                if (((Slot) this.c.get(0)).d() || !((Slot) this.c.get(0)).isAllowed(itemstack1)) {
                     return null;
                 }
 
                 if (itemstack1.hasTag() && itemstack1.count == 1) {
-                    ((Slot) this.b.get(0)).set(itemstack1.cloneItemStack());
+                    ((Slot) this.c.get(0)).set(itemstack1.cloneItemStack());
                     itemstack1.count = 0;
                 } else if (itemstack1.count >= 1) {
-                    ((Slot) this.b.get(0)).set(new ItemStack(itemstack1.id, 1, itemstack1.getData()));
+                    ((Slot) this.c.get(0)).set(new ItemStack(itemstack1.id, 1, itemstack1.getData()));
                     --itemstack1.count;
                 }
             }

@@ -93,7 +93,7 @@ public abstract class ServerConfigurationManagerAbstract {
         this.c(entityplayer);
         netserverhandler.a(entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
         this.server.ae().a(netserverhandler);
-        netserverhandler.sendPacket(new Packet4UpdateTime(worldserver.getTime(), worldserver.F()));
+        netserverhandler.sendPacket(new Packet4UpdateTime(worldserver.getTime(), worldserver.getDayTime()));
         if (this.server.getTexturePack().length() > 0) {
             entityplayer.a(this.server.getTexturePack(), this.server.S());
         }
@@ -149,15 +149,6 @@ public abstract class ServerConfigurationManagerAbstract {
         this.players.add(entityplayer);
         WorldServer worldserver = this.server.getWorldServer(entityplayer.dimension);
 
-        // CraftBukkit start
-        if (!cserver.useExactLoginLocation()) {
-            while (!worldserver.getCubes(entityplayer, entityplayer.boundingBox).isEmpty()) {
-                entityplayer.setPosition(entityplayer.locX, entityplayer.locY + 1.0D, entityplayer.locZ);
-            }
-        } else {
-            entityplayer.setPosition(entityplayer.locX, entityplayer.locY + entityplayer.getBukkitEntity().getEyeHeight(), entityplayer.locZ);
-        }
-
         PlayerJoinEvent playerJoinEvent = new PlayerJoinEvent(this.cserver.getPlayer(entityplayer), "\u00A7e" + entityplayer.name + " joined the game.");
         this.cserver.getPluginManager().callEvent(playerJoinEvent);
 
@@ -171,7 +162,6 @@ public abstract class ServerConfigurationManagerAbstract {
 
         worldserver.addEntity(entityplayer);
         this.a(entityplayer, (WorldServer) null);
-        Iterator iterator = this.players.iterator();
 
         // CraftBukkit start - sendAll above replaced with this loop
         Packet201PlayerInfo packet = new Packet201PlayerInfo(entityplayer.listName, true, 1000);
@@ -184,8 +174,8 @@ public abstract class ServerConfigurationManagerAbstract {
         }
         // CraftBukkit end
 
-        while (iterator.hasNext()) {
-            EntityPlayer entityplayer1 = (EntityPlayer) iterator.next();
+        for (int i = 0; i < this.players.size(); ++i) {
+            EntityPlayer entityplayer1 = (EntityPlayer) this.players.get(i);
 
             // CraftBukkit start - .name -> .listName
             if (entityplayer.getBukkitEntity().canSee(entityplayer1.getBukkitEntity())) {
@@ -284,18 +274,17 @@ public abstract class ServerConfigurationManagerAbstract {
     public EntityPlayer processLogin(EntityPlayer player) { // CraftBukkit - String -> EntityPlayer
         String s = player.name; // CraftBukkit
         ArrayList arraylist = new ArrayList();
-        Iterator iterator = this.players.iterator();
 
         EntityPlayer entityplayer;
 
-        while (iterator.hasNext()) {
-            entityplayer = (EntityPlayer) iterator.next();
+        for (int i = 0; i < this.players.size(); ++i) {
+            entityplayer = (EntityPlayer) this.players.get(i);
             if (entityplayer.name.equalsIgnoreCase(s)) {
                 arraylist.add(entityplayer);
             }
         }
 
-        iterator = arraylist.iterator();
+        Iterator iterator = arraylist.iterator();
 
         while (iterator.hasNext()) {
             entityplayer = (EntityPlayer) iterator.next();
@@ -497,6 +486,7 @@ public abstract class ServerConfigurationManagerAbstract {
         double d5 = entity.locZ;
         float f = entity.yaw;
 
+        worldserver.methodProfiler.a("moving");
         if (entity.dimension == -1) {
             d0 /= d2;
             d1 /= d2;
@@ -529,15 +519,19 @@ public abstract class ServerConfigurationManagerAbstract {
             }
         }
 
+        worldserver.methodProfiler.b();
         if (i != 1) {
+            worldserver.methodProfiler.a("placing");
             d0 = (double) MathHelper.a((int) d0, -29999872, 29999872);
             d1 = (double) MathHelper.a((int) d1, -29999872, 29999872);
             if (entity.isAlive()) {
                 worldserver1.addEntity(entity);
                 entity.setPositionRotation(d0, entity.locY, d1, entity.yaw, entity.pitch);
                 worldserver1.entityJoinedWorld(entity, false);
-                (new PortalTravelAgent()).a(worldserver1, entity, d3, d4, d5, f);
+                worldserver1.s().a(entity, d3, d4, d5, f);
             }
+
+            worldserver.methodProfiler.b();
         }
 
         entity.spawnIn(worldserver1);
@@ -564,10 +558,8 @@ public abstract class ServerConfigurationManagerAbstract {
     }
 
     public void a(Packet packet, int i) {
-        Iterator iterator = this.players.iterator();
-
-        while (iterator.hasNext()) {
-            EntityPlayer entityplayer = (EntityPlayer) iterator.next();
+        for (int j = 0; j < this.players.size(); ++j) {
+            EntityPlayer entityplayer = (EntityPlayer) this.players.get(j);
 
             if (entityplayer.dimension == i) {
                 entityplayer.netServerHandler.sendPacket(packet);
@@ -713,10 +705,8 @@ public abstract class ServerConfigurationManagerAbstract {
     // CraftBukkit end
 
     public void sendPacketNearby(EntityHuman entityhuman, double d0, double d1, double d2, double d3, int i, Packet packet, Entity sourceentity) { // CraftBukkit - added sourceentity
-        Iterator iterator = this.players.iterator();
-
-        while (iterator.hasNext()) {
-            EntityPlayer entityplayer = (EntityPlayer) iterator.next();
+        for (int j = 0; j < this.players.size(); ++j) {
+            EntityPlayer entityplayer = (EntityPlayer) this.players.get(j);
 
             // CraftBukkit start - Test if player receiving packet can see the source of the packet
             if (sourceentity != null && sourceentity instanceof EntityPlayer && !entityplayer.getBukkitEntity().canSee(((EntityPlayer)sourceentity).getBukkitEntity())) {
@@ -736,12 +726,8 @@ public abstract class ServerConfigurationManagerAbstract {
     }
 
     public void savePlayers() {
-        Iterator iterator = this.players.iterator();
-
-        while (iterator.hasNext()) {
-            EntityPlayer entityplayer = (EntityPlayer) iterator.next();
-
-            this.b(entityplayer);
+        for (int i = 0; i < this.players.size(); ++i) {
+            this.b((EntityPlayer) this.players.get(i));
         }
     }
 
@@ -764,8 +750,8 @@ public abstract class ServerConfigurationManagerAbstract {
     public void reloadWhitelist() {}
 
     public void b(EntityPlayer entityplayer, WorldServer worldserver) {
-        entityplayer.netServerHandler.sendPacket(new Packet4UpdateTime(worldserver.getTime(), worldserver.F()));
-        if (worldserver.M()) {
+        entityplayer.netServerHandler.sendPacket(new Packet4UpdateTime(worldserver.getTime(), worldserver.getDayTime()));
+        if (worldserver.N()) {
             entityplayer.netServerHandler.sendPacket(new Packet70Bed(1, 0));
         }
     }

@@ -18,7 +18,7 @@ public class EntityEnderPearl extends EntityProjectile {
 
     protected void a(MovingObjectPosition movingobjectposition) {
         if (movingobjectposition.entity != null) {
-            movingobjectposition.entity.damageEntity(DamageSource.projectile(this, this.shooter), 0);
+            movingobjectposition.entity.damageEntity(DamageSource.projectile(this, this.getShooter()), 0);
         }
 
         for (int i = 0; i < 32; ++i) {
@@ -26,8 +26,8 @@ public class EntityEnderPearl extends EntityProjectile {
         }
 
         if (!this.world.isStatic) {
-            if (this.shooter != null && this.shooter instanceof EntityPlayer) {
-                EntityPlayer entityplayer = (EntityPlayer) this.shooter;
+            if (this.getShooter() != null && this.getShooter() instanceof EntityPlayer) {
+                EntityPlayer entityplayer = (EntityPlayer) this.getShooter();
 
                 if (!entityplayer.netServerHandler.disconnected && entityplayer.world == this.world) {
                     // CraftBukkit start
@@ -41,7 +41,7 @@ public class EntityEnderPearl extends EntityProjectile {
 
                     if (!teleEvent.isCancelled() && !entityplayer.netServerHandler.disconnected) {
                         entityplayer.netServerHandler.teleport(teleEvent.getTo());
-                        this.shooter.fallDistance = 0.0F;
+                        this.getShooter().fallDistance = 0.0F;
 
                         EntityDamageByEntityEvent damageEvent = new EntityDamageByEntityEvent(this.getBukkitEntity(), player, EntityDamageByEntityEvent.DamageCause.FALL, 5);
                         Bukkit.getPluginManager().callEvent(damageEvent);

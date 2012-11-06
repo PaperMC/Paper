@@ -19,15 +19,15 @@ public class BlockPortal extends BlockHalfTransparant {
         if (world.worldProvider.d() && random.nextInt(2000) < world.difficulty) {
             int l;
 
-            for (l = j; !world.t(i, l, k) && l > 0; --l) {
+            for (l = j; !world.v(i, l, k) && l > 0; --l) {
                 ;
             }
 
-            if (l > 0 && !world.s(i, l + 1, k)) {
+            if (l > 0 && !world.t(i, l + 1, k)) {
                 Entity entity = ItemMonsterEgg.a(world, 57, (double) i + 0.5D, (double) l + 1.1D, (double) k + 0.5D);
 
                 if (entity != null) {
-                    entity.an = entity.ab();
+                    entity.portalCooldown = entity.ab();
                 }
             }
         }

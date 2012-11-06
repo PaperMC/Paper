@@ -28,7 +28,7 @@ public class TileEntitySign extends TileEntity {
         }
     }
 
-    public Packet l() {
+    public Packet getUpdatePacket() {
         String[] astring = new String[4];
 
         // CraftBukkit start - limit sign text to 15 chars per line

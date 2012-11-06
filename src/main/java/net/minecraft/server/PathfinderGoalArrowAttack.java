@@ -22,12 +22,13 @@ public class PathfinderGoalArrowAttack extends PathfinderGoal {
             this.e = f;
             this.g = i;
             this.h = f1 * f1;
+            this.d = i / 2;
             this.a(3);
         }
     }
 
     public boolean a() {
-        EntityLiving entityliving = this.a.aF();
+        EntityLiving entityliving = this.a.aG();
 
         if (entityliving == null) {
             return false;
@@ -48,11 +49,12 @@ public class PathfinderGoalArrowAttack extends PathfinderGoal {
         // CraftBukkit end
         this.c = null;
         this.f = 0;
+        this.d = this.g / 2;
     }
 
     public void e() {
         double d0 = this.a.e(this.c.locX, this.c.boundingBox.b, this.c.locZ);
-        boolean flag = this.a.az().canSee(this.c);
+        boolean flag = this.a.aA().canSee(this.c);
 
         if (flag) {
             ++this.f;

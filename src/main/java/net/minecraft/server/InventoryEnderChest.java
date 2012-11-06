@@ -87,8 +87,8 @@ public class InventoryEnderChest extends InventorySubcontainer {
         return nbttaglist;
     }
 
-    public boolean a(EntityHuman entityhuman) {
-        return this.a != null && !this.a.a(entityhuman) ? false : super.a(entityhuman);
+    public boolean a_(EntityHuman entityhuman) {
+        return this.a != null && !this.a.a(entityhuman) ? false : super.a_(entityhuman);
     }
 
     public void startOpen() {

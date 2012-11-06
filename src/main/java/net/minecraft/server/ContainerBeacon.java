@@ -8,7 +8,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 
 public class ContainerBeacon extends Container {
 
-    private TileEntityBeacon e;
+    private TileEntityBeacon a;
     private final SlotBeacon f;
     private int g;
     private int h;
@@ -20,7 +20,7 @@ public class ContainerBeacon extends Container {
 
     public ContainerBeacon(PlayerInventory playerinventory, TileEntityBeacon tileentitybeacon) {
         player = playerinventory; // CraftBukkit
-        this.e = tileentitybeacon;
+        this.a = tileentitybeacon;
         this.a(this.f = new SlotBeacon(this, tileentitybeacon, 0, 136, 110));
         byte b0 = 36;
         short short1 = 137;
@@ -54,17 +54,17 @@ public class ContainerBeacon extends Container {
     }
 
     public TileEntityBeacon d() {
-        return this.e;
+        return this.a;
     }
 
-    public boolean c(EntityHuman entityhuman) {
+    public boolean a(EntityHuman entityhuman) {
         if (!this.checkReachable) return true; // CraftBukkit
-        return this.e.a(entityhuman);
+        return this.a.a_(entityhuman);
     }
 
     public ItemStack b(EntityHuman entityhuman, int i) {
         ItemStack itemstack = null;
-        Slot slot = (Slot) this.b.get(i);
+        Slot slot = (Slot) this.c.get(i);
 
         if (slot != null && slot.d()) {
             ItemStack itemstack1 = slot.getItem();
@@ -114,7 +114,7 @@ public class ContainerBeacon extends Container {
             return bukkitEntity;
         }
 
-        CraftInventory inventory = new CraftInventoryBeacon(this.e);
+        CraftInventory inventory = new CraftInventoryBeacon(this.a);
         bukkitEntity = new CraftInventoryView(this.player.player.getBukkitEntity(), inventory, this);
         return bukkitEntity;
     }

@@ -270,13 +270,17 @@ public class Explosion {
                         data = Block.SKULL.getDropData(this.world, i, j, k);
                     }
 
-                    Block.byId[l].dropNaturally(this.world, i, j, k, data, event.getYield(), 0);
+                    Block block = Block.byId[l];
+
+                    if (block.a(this)) {
+                        block.dropNaturally(this.world, i, j, k, data, event.getYield(), 0);
+                    }
                     // CraftBukkit end
                     if (this.world.setRawTypeIdAndData(i, j, k, 0, 0, this.world.isStatic)) {
                         this.world.applyPhysics(i, j, k, 0);
                     }
 
-                    Block.byId[l].wasExploded(this.world, i, j, k);
+                    block.wasExploded(this.world, i, j, k);
                 }
             }
         }

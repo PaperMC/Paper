@@ -1,8 +1,9 @@
 package net.minecraft.server;
 
-// CraftBukkit start
+import java.util.Iterator;
 import java.util.List;
 
+// CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.entity.HumanEntity;
 // CraftBukkit end
@@ -139,7 +140,7 @@ public class TileEntityChest extends TileEntity implements IInventory {
         return maxStack; // CraftBukkit
     }
 
-    public boolean a(EntityHuman entityhuman) {
+    public boolean a_(EntityHuman entityhuman) {
         if (this.world == null) return true; // CraftBukkit
         return this.world.getTileEntity(this.x, this.y, this.z) != this ? false : entityhuman.e((double) this.x + 0.5D, (double) this.y + 0.5D, (double) this.z + 0.5D) <= 64.0D;
     }
@@ -147,6 +148,37 @@ public class TileEntityChest extends TileEntity implements IInventory {
     public void h() {
         super.h();
         this.a = false;
+    }
+
+    private void a(TileEntityChest tileentitychest, int i) {
+        if (tileentitychest.r()) {
+            this.a = false;
+        } else if (this.a) {
+            switch (i) {
+                case 0:
+                    if (this.e != tileentitychest) {
+                        this.a = false;
+                    }
+                    break;
+
+                case 1:
+                    if (this.d != tileentitychest) {
+                        this.a = false;
+                    }
+                    break;
+
+                case 2:
+                    if (this.b != tileentitychest) {
+                        this.a = false;
+                    }
+                    break;
+
+                case 3:
+                    if (this.c != tileentitychest) {
+                        this.a = false;
+                    }
+            }
+        }
     }
 
     public void i() {
@@ -173,19 +205,19 @@ public class TileEntityChest extends TileEntity implements IInventory {
             }
 
             if (this.b != null) {
-                this.b.h();
+                this.b.a(this, 0);
             }
 
             if (this.e != null) {
-                this.e.h();
+                this.e.a(this, 1);
             }
 
             if (this.c != null) {
-                this.c.h();
+                this.c.a(this, 2);
             }
 
             if (this.d != null) {
-                this.d.h();
+                this.d.a(this, 3);
             }
         }
     }
@@ -194,12 +226,30 @@ public class TileEntityChest extends TileEntity implements IInventory {
         super.g();
         if (this.world == null) return; // CraftBukkit
         this.i();
-        if (++this.ticks % (20 * 4) == 0) { // CraftBukkit
-            ;
+        ++this.ticks;
+        float f;
+
+        if (!this.world.isStatic && this.h != 0 && (this.ticks + this.x + this.y + this.z) % 200 == 0) {
+            this.h = 0;
+            f = 5.0F;
+            List list = this.world.a(EntityHuman.class, AxisAlignedBB.a().a((double) ((float) this.x - f), (double) ((float) this.y - f), (double) ((float) this.z - f), (double) ((float) (this.x + 1) + f), (double) ((float) (this.y + 1) + f), (double) ((float) (this.z + 1) + f)));
+            Iterator iterator = list.iterator();
+
+            while (iterator.hasNext()) {
+                EntityHuman entityhuman = (EntityHuman) iterator.next();
+
+                if (entityhuman.activeContainer instanceof ContainerChest) {
+                    IInventory iinventory = ((ContainerChest) entityhuman.activeContainer).d();
+
+                    if (iinventory == this || iinventory instanceof InventoryLargeChest && ((InventoryLargeChest) iinventory).a(this)) {
+                        ++this.h;
+                    }
+                }
+            }
         }
 
         this.g = this.f;
-        float f = 0.1F;
+        f = 0.1F;
         double d0;
 
         if (this.h > 0 && this.f == 0.0F && this.b == null && this.d == null) {
@@ -272,8 +322,8 @@ public class TileEntityChest extends TileEntity implements IInventory {
     }
 
     public void w_() {
+        super.w_();
         this.h();
         this.i();
-        super.w_();
     }
 }

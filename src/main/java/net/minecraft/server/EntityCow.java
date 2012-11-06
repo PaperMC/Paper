@@ -22,7 +22,7 @@ public class EntityCow extends EntityAnimal {
         this.goalSelector.a(7, new PathfinderGoalRandomLookaround(this));
     }
 
-    public boolean bb() {
+    public boolean be() {
         return true;
     }
 
@@ -30,23 +30,23 @@ public class EntityCow extends EntityAnimal {
         return 10;
     }
 
-    protected String aW() {
+    protected String aY() {
         return "mob.cow.say";
     }
 
-    protected String aX() {
+    protected String aZ() {
         return "mob.cow.hurt";
     }
 
-    protected String aY() {
+    protected String ba() {
         return "mob.cow.hurt";
     }
 
     protected void a(int i, int j, int k, int l) {
-        this.world.makeSound(this, "mob.cow.step", 0.15F, 1.0F);
+        this.makeSound("mob.cow.step", 0.15F, 1.0F);
     }
 
-    protected float aV() {
+    protected float aX() {
         return 0.4F;
     }
 
@@ -75,7 +75,7 @@ public class EntityCow extends EntityAnimal {
         // CraftBukkit end
     }
 
-    public boolean c(EntityHuman entityhuman) {
+    public boolean a(EntityHuman entityhuman) {
         ItemStack itemstack = entityhuman.inventory.getItemInHand();
 
         if (itemstack != null && itemstack.id == Item.BUCKET.id) {
@@ -96,11 +96,15 @@ public class EntityCow extends EntityAnimal {
 
             return true;
         } else {
-            return super.c(entityhuman);
+            return super.a(entityhuman);
         }
     }
 
-    public EntityAnimal createChild(EntityAnimal entityanimal) {
+    public EntityCow b(EntityAgeable entityageable) {
         return new EntityCow(this.world);
+    }
+
+    public EntityAgeable createChild(EntityAgeable entityageable) {
+        return this.b(entityageable);
     }
 }

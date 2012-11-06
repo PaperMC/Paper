@@ -71,7 +71,7 @@ public class BlockSkull extends BlockContainer {
     public int getDropData(World world, int i, int j, int k) {
         TileEntity tileentity = world.getTileEntity(i, j, k);
 
-        return tileentity != null && tileentity instanceof TileEntitySkull ? ((TileEntitySkull) tileentity).a() : super.getDropData(world, i, j, k);
+        return tileentity != null && tileentity instanceof TileEntitySkull ? ((TileEntitySkull) tileentity).getSkullType() : super.getDropData(world, i, j, k);
     }
 
     public int getDropData(int i) {
@@ -94,7 +94,15 @@ public class BlockSkull extends BlockContainer {
         if (!world.isStatic) {
             /* CraftBukkit start - don't special code dropping the item
             if ((i1 & 8) == 0) {
-                this.a(world, i, j, k, new ItemStack(Item.SKULL.id, 1, this.getDropData(world, i, j, k)));
+                ItemStack itemstack = new ItemStack(Item.SKULL.id, 1, this.getDropData(world, i, j, k));
+                TileEntitySkull tileentityskull = (TileEntitySkull) world.getTileEntity(i, j, k);
+
+                if (tileentityskull.getSkullType() == 3 && tileentityskull.getExtraType() != null && tileentityskull.getExtraType().length() > 0) {
+                    itemstack.setTag(new NBTTagCompound());
+                    itemstack.getTag().setString("SkullOwner", tileentityskull.getExtraType());
+                }
+
+                this.b(world, i, j, k, itemstack);
             }
             // CraftBukkit end */
 
@@ -107,7 +115,7 @@ public class BlockSkull extends BlockContainer {
     }
 
     public void a(World world, int i, int j, int k, TileEntitySkull tileentityskull) {
-        if (tileentityskull.a() == 1 && j >= 2) {
+        if (tileentityskull.getSkullType() == 1 && j >= 2 && world.difficulty > 0) {
             int l = Block.SOUL_SAND.id;
 
             int i1;
@@ -195,7 +203,7 @@ public class BlockSkull extends BlockContainer {
         } else {
             TileEntity tileentity = world.getTileEntity(i, j, k);
 
-            return tileentity != null && tileentity instanceof TileEntitySkull ? ((TileEntitySkull) tileentity).a() == l : false;
+            return tileentity != null && tileentity instanceof TileEntitySkull ? ((TileEntitySkull) tileentity).getSkullType() == l : false;
         }
     }
 }

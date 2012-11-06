@@ -159,7 +159,7 @@ public class BlockDoor extends Block {
                 flag = true;
             }
 
-            if (!world.t(i, j - 1, k)) {
+            if (!world.v(i, j - 1, k)) {
                 world.setTypeId(i, j, k, 0);
                 flag = true;
                 if (world.getTypeId(i, j + 1, k) == this.id) {
@@ -210,7 +210,7 @@ public class BlockDoor extends Block {
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
-        return j >= 255 ? false : world.t(i, j - 1, k) && super.canPlace(world, i, j, k) && super.canPlace(world, i, j + 1, k);
+        return j >= 255 ? false : world.v(i, j - 1, k) && super.canPlace(world, i, j, k) && super.canPlace(world, i, j + 1, k);
     }
 
     public int q_() {
@@ -234,5 +234,11 @@ public class BlockDoor extends Block {
         boolean flag1 = (j1 & 1) != 0;
 
         return i1 & 7 | (flag ? 8 : 0) | (flag1 ? 16 : 0);
+    }
+
+    public void a(World world, int i, int j, int k, int l, EntityHuman entityhuman) {
+        if (entityhuman.abilities.canInstantlyBuild && (l & 8) != 0 && world.getTypeId(i, j - 1, k) == this.id) {
+            world.setTypeId(i, j - 1, k, 0);
+        }
     }
 }

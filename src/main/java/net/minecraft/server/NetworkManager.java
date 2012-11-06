@@ -3,6 +3,7 @@ package net.minecraft.server;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.InputStream;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
@@ -78,11 +79,7 @@ public class NetworkManager implements INetworkManager {
 
             synchronized (this.h) {
                 this.y += packet.a() + 1;
-                if (packet.lowPriority) {
-                    this.lowPriorityQueue.add(packet);
-                } else {
-                    this.highPriorityQueue.add(packet);
-                }
+                this.highPriorityQueue.add(packet);
             }
         }
     }
@@ -95,7 +92,7 @@ public class NetworkManager implements INetworkManager {
             int i;
             int[] aint;
 
-            if (this.e == 0 || System.currentTimeMillis() - ((Packet) this.highPriorityQueue.get(0)).timestamp >= (long) this.e) {
+            if (this.e == 0 || !this.highPriorityQueue.isEmpty() && System.currentTimeMillis() - ((Packet) this.highPriorityQueue.get(0)).timestamp >= (long) this.e) {
                 packet = this.a(false);
                 if (packet != null) {
                     Packet.a(packet, this.output);
@@ -244,14 +241,25 @@ public class NetworkManager implements INetworkManager {
 
             try {
                 this.input.close();
-                this.input = null;
-                this.output.close();
-                this.output = null;
-                this.socket.close();
-                this.socket = null;
             } catch (Throwable throwable) {
                 ;
             }
+
+            try {
+                this.output.close();
+            } catch (Throwable throwable1) {
+                ;
+            }
+
+            try {
+                this.socket.close();
+            } catch (Throwable throwable2) {
+                ;
+            }
+
+            this.input = null;
+            this.output = null;
+            this.socket = null;
         }
     }
 
@@ -303,13 +311,17 @@ public class NetworkManager implements INetworkManager {
 
     private void j() throws IOException { // CraftBukkit - throws IOException
         this.f = true;
-        this.input = new DataInputStream(MinecraftEncryption.a(this.z, this.socket.getInputStream()));
+        InputStream inputstream = this.socket.getInputStream();
+
+        this.input = new DataInputStream(MinecraftEncryption.a(this.z, inputstream));
     }
 
     private void k() throws IOException { // CraftBukkit - throws IOException
         this.output.flush();
         this.g = true;
-        this.output = new DataOutputStream(new BufferedOutputStream(MinecraftEncryption.a(this.z, this.socket.getOutputStream()), 5120));
+        BufferedOutputStream bufferedoutputstream = new BufferedOutputStream(MinecraftEncryption.a(this.z, this.socket.getOutputStream()), 5120);
+
+        this.output = new DataOutputStream(bufferedoutputstream);
     }
 
     public int e() {
