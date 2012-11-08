@@ -33,7 +33,8 @@ public abstract class DispenseBehaviorProjectile extends DispenseBehaviorItem {
         if (!event.getItem().equals(bukkitItem)) {
             itemstack.count++;
             // Chain to handler for new item
-            IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.a.a(itemstack.getItem());
+            ItemStack eventStack = CraftItemStack.createNMSItemStack(event.getItem());
+            IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.a.a(eventStack.getItem());
             if (idispensebehavior != IDispenseBehavior.a && idispensebehavior != this) {
                 idispensebehavior.a(isourceblock, CraftItemStack.createNMSItemStack(event.getItem()));
                 return itemstack;

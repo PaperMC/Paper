@@ -42,9 +42,10 @@ public class DispenseBehaviorFilledBucket extends DispenseBehaviorItem {
 
             if (!event.getItem().equals(bukkitItem)) {
                 // Chain to handler for new item
-                IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.a.a(itemstack.getItem());
+                ItemStack eventStack = CraftItemStack.createNMSItemStack(event.getItem());
+                IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.a.a(eventStack.getItem());
                 if (idispensebehavior != IDispenseBehavior.a && idispensebehavior != this) {
-                    idispensebehavior.a(isourceblock, CraftItemStack.createNMSItemStack(event.getItem()));
+                    idispensebehavior.a(isourceblock, eventStack);
                     return itemstack;
                 }
             }

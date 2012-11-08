@@ -65,29 +65,20 @@ public class DispenseBehaviorItem implements IDispenseBehavior {
         entityitem.motX = event.getVelocity().getX();
         entityitem.motY = event.getVelocity().getY();
         entityitem.motZ = event.getVelocity().getZ();
-        // CraftBukkit end
 
-        world.addEntity(entityitem);
-
-        // CraftBukkit start
         if (!event.getItem().equals(bukkitItem)) {
-            if (event.getItem().getTypeId() == Item.BUCKET.id) {
-                int x = isourceblock.getBlockX() + enumfacing.c();
-                int y = isourceblock.getBlockY();
-                int z = isourceblock.getBlockZ() + enumfacing.e();
-                Material material = world.getMaterial(x, y, z);
-                int data = world.getData(x, y, z);
-                if (!(Material.WATER.equals(material) || Material.LAVA.equals(material)) || data != 0) {
-                    return true;
-                }
-            }
             // Chain to handler for new item
-            IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.a.a(itemstack.getItem());
+            ItemStack eventStack = CraftItemStack.createNMSItemStack(event.getItem());
+            IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.a.a(eventStack.getItem());
             if (idispensebehavior != IDispenseBehavior.a && idispensebehavior.getClass() != DispenseBehaviorItem.class) {
-                idispensebehavior.a(isourceblock, CraftItemStack.createNMSItemStack(event.getItem()));
+                idispensebehavior.a(isourceblock, eventStack);
+            } else {
+                world.addEntity(entityitem);
             }
             return false;
         }
+
+        world.addEntity(entityitem);
 
         return true;
         // CraftBukkit end
