@@ -57,7 +57,7 @@ public abstract class JavaPlugin extends PluginBase {
      *
      * @return The folder.
      */
-    public File getDataFolder() {
+    public final File getDataFolder() {
         return dataFolder;
     }
 
@@ -102,7 +102,7 @@ public abstract class JavaPlugin extends PluginBase {
      *
      * @return Contents of the plugin.yaml file
      */
-    public PluginDescriptionFile getDescription() {
+    public final PluginDescriptionFile getDescription() {
         return description;
     }
 
@@ -128,12 +128,12 @@ public abstract class JavaPlugin extends PluginBase {
         try {
             getConfig().save(configFile);
         } catch (IOException ex) {
-            getLogger().log(Level.SEVERE, "Could not save config to " + configFile, ex);
+            logger.log(Level.SEVERE, "Could not save config to " + configFile, ex);
         }
     }
 
     public void saveDefaultConfig() {
-        if (!new File(getDataFolder(), "config.yml").exists()) {
+        if (!configFile.exists()) {
             saveResource("config.yml", false);
         }
     }
@@ -146,12 +146,12 @@ public abstract class JavaPlugin extends PluginBase {
         resourcePath = resourcePath.replace('\\', '/');
         InputStream in = getResource(resourcePath);
         if (in == null) {
-            throw new IllegalArgumentException("The embedded resource '" + resourcePath + "' cannot be found in " + getFile());
+            throw new IllegalArgumentException("The embedded resource '" + resourcePath + "' cannot be found in " + file);
         }
 
-        File outFile = new File(getDataFolder(), resourcePath);
+        File outFile = new File(dataFolder, resourcePath);
         int lastIndex = resourcePath.lastIndexOf('/');
-        File outDir = new File(getDataFolder(), resourcePath.substring(0, lastIndex >= 0 ? lastIndex : 0));
+        File outDir = new File(dataFolder, resourcePath.substring(0, lastIndex >= 0 ? lastIndex : 0));
 
         if (!outDir.exists()) {
             outDir.mkdirs();
@@ -168,10 +168,10 @@ public abstract class JavaPlugin extends PluginBase {
                 out.close();
                 in.close();
             } else {
-                getLogger().log(Level.WARNING, "Could not save " + outFile.getName() + " to " + outFile + " because " + outFile.getName() + " already exists.");
+                logger.log(Level.WARNING, "Could not save " + outFile.getName() + " to " + outFile + " because " + outFile.getName() + " already exists.");
             }
         } catch (IOException ex) {
-            getLogger().log(Level.SEVERE, "Could not save " + outFile.getName() + " to " + outFile, ex);
+            logger.log(Level.SEVERE, "Could not save " + outFile.getName() + " to " + outFile, ex);
         }
     }
 
@@ -200,7 +200,7 @@ public abstract class JavaPlugin extends PluginBase {
      *
      * @return ClassLoader holding this plugin
      */
-    protected ClassLoader getClassLoader() {
+    protected final ClassLoader getClassLoader() {
         return classLoader;
     }
 
@@ -209,7 +209,7 @@ public abstract class JavaPlugin extends PluginBase {
      *
      * @param enabled true if enabled, otherwise false
      */
-    protected void setEnabled(final boolean enabled) {
+    protected final void setEnabled(final boolean enabled) {
         if (isEnabled != enabled) {
             isEnabled = enabled;
 
@@ -243,6 +243,7 @@ public abstract class JavaPlugin extends PluginBase {
             this.dataFolder = dataFolder;
             this.classLoader = classLoader;
             this.configFile = new File(dataFolder, "config.yml");
+            this.logger = new PluginLogger(this);
 
             if (description.isDatabaseEnabled()) {
                 ServerConfig db = new ServerConfig();
@@ -256,7 +257,7 @@ public abstract class JavaPlugin extends PluginBase {
                 DataSourceConfig ds = db.getDataSourceConfig();
 
                 ds.setUrl(replaceDatabaseString(ds.getUrl()));
-                getDataFolder().mkdirs();
+                dataFolder.mkdirs();
 
                 ClassLoader previous = Thread.currentThread().getContextClassLoader();
 
@@ -277,8 +278,8 @@ public abstract class JavaPlugin extends PluginBase {
     }
 
     private String replaceDatabaseString(String input) {
-        input = input.replaceAll("\\{DIR\\}", getDataFolder().getPath().replaceAll("\\\\", "/") + "/");
-        input = input.replaceAll("\\{NAME\\}", getDescription().getName().replaceAll("[^\\w_-]", ""));
+        input = input.replaceAll("\\{DIR\\}", dataFolder.getPath().replaceAll("\\\\", "/") + "/");
+        input = input.replaceAll("\\{NAME\\}", description.getName().replaceAll("[^\\w_-]", ""));
         return input;
     }
 
@@ -287,7 +288,7 @@ public abstract class JavaPlugin extends PluginBase {
      *
      * @return true if this plugin is initialized, otherwise false
      */
-    public boolean isInitialized() {
+    public final boolean isInitialized() {
         return initialized;
     }
 
@@ -316,7 +317,7 @@ public abstract class JavaPlugin extends PluginBase {
         PluginCommand command = getServer().getPluginCommand(alias);
 
         if ((command != null) && (command.getPlugin() != this)) {
-            command = getServer().getPluginCommand(getDescription().getName().toLowerCase() + ":" + alias);
+            command = getServer().getPluginCommand(description.getName().toLowerCase() + ":" + alias);
         }
 
         if ((command != null) && (command.getPlugin() == this)) {
@@ -333,7 +334,7 @@ public abstract class JavaPlugin extends PluginBase {
     public void onEnable() {}
 
     public ChunkGenerator getDefaultWorldGenerator(String worldName, String id) {
-        getServer().getLogger().severe("Plugin " + getDescription().getFullName() + " does not contain any generators that may be used in the default world!");
+        getServer().getLogger().severe("Plugin " + description.getFullName() + " does not contain any generators that may be used in the default world!");
         return null;
     }
 
@@ -363,15 +364,12 @@ public abstract class JavaPlugin extends PluginBase {
         gen.runScript(true, gen.generateDropDdl());
     }
 
-    public Logger getLogger() {
-        if (logger == null) {
-            logger = new PluginLogger(this);
-        }
+    public final Logger getLogger() {
         return logger;
     }
 
     @Override
     public String toString() {
-        return getDescription().getFullName();
+        return description.getFullName();
     }
 }
