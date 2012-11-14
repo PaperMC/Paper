@@ -219,6 +219,20 @@ public class ChunkSection {
     }
 
     public void a(NibbleArray nibblearray) {
+        // CraftBukkit start - don't hang on to an empty nibble array
+        boolean empty = true;
+        for (int i = 0; i < nibblearray.a.length; i++) {
+            if (nibblearray.a[i] != 0) {
+                empty = false;
+                break;
+            }
+        }
+
+        if (empty) {
+            return;
+        }
+        // CraftBukkit end
+
         this.extBlockIds = nibblearray;
     }
 
