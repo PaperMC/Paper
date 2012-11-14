@@ -108,7 +108,7 @@ public class CraftScheduler implements BukkitScheduler {
     }
 
     public BukkitTask runTaskLaterAsynchronously(Plugin plugin, Runnable runnable, long delay) {
-        return runTaskTimer(plugin, runnable, delay, -1l);
+        return runTaskTimerAsynchronously(plugin, runnable, delay, -1l);
     }
 
     public int scheduleSyncRepeatingTask(final Plugin plugin, final Runnable runnable, long delay, long period) {
@@ -158,7 +158,7 @@ public class CraftScheduler implements BukkitScheduler {
         }
         CraftTask task = runners.get(taskId);
         if (task != null) {
-            cancelTask(task);
+            task.cancel0();
         }
         task = new CraftTask(
                 new Runnable() {
@@ -172,7 +172,7 @@ public class CraftScheduler implements BukkitScheduler {
                         while (tasks.hasNext()) {
                             final CraftTask task = tasks.next();
                             if (task.getTaskId() == taskId) {
-                                cancelTask(task);
+                                task.cancel0();
                                 tasks.remove();
                                 if (task.isSync()) {
                                     runners.remove(taskId);
@@ -188,7 +188,7 @@ public class CraftScheduler implements BukkitScheduler {
                 return;
             }
             if (taskPending.getTaskId() == taskId) {
-                cancelTask(taskPending);
+                taskPending.cancel0();
             }
         }
     }
@@ -206,7 +206,7 @@ public class CraftScheduler implements BukkitScheduler {
                         while (tasks.hasNext()) {
                             final CraftTask task = tasks.next();
                             if (task.getOwner().equals(plugin)) {
-                                cancelTask(task);
+                                task.cancel0();
                                 tasks.remove();
                                 if (task.isSync()) {
                                     runners.remove(task.getTaskId());
@@ -222,12 +222,12 @@ public class CraftScheduler implements BukkitScheduler {
                 return;
             }
             if (taskPending.getTaskId() != -1 && taskPending.getOwner().equals(plugin)) {
-                cancelTask(taskPending);
+                taskPending.cancel0();
             }
         }
         for (CraftTask runner : runners.values()) {
             if (runner.getOwner().equals(plugin)) {
-                cancelTask(runner);
+                runner.cancel0();
             }
         }
     }
@@ -239,7 +239,7 @@ public class CraftScheduler implements BukkitScheduler {
                         Iterator<CraftTask> it = CraftScheduler.this.runners.values().iterator();
                         while (it.hasNext()) {
                             CraftTask task = it.next();
-                            cancelTask(task);
+                            task.cancel0();
                             if (task.isSync()) {
                                 it.remove();
                             }
@@ -253,10 +253,10 @@ public class CraftScheduler implements BukkitScheduler {
             if (taskPending == task) {
                 break;
             }
-            cancelTask(taskPending);
+            taskPending.cancel0();
         }
         for (CraftTask runner : runners.values()) {
-            cancelTask(runner);
+            runner.cancel0();
         }
     }
 
@@ -419,35 +419,6 @@ public class CraftScheduler implements BukkitScheduler {
 
     private boolean isReady(final int currentTick) {
         return !pending.isEmpty() && pending.peek().getNextRun() <= currentTick;
-    }
-
-    /**
-     * This method is important to make sure the code is consistent everywhere.
-     * Synchronizing is needed for future and async to prevent race conditions,
-     * main thread or otherwise.
-     * @return True if cancelled
-     */
-    private boolean cancelTask(final CraftTask task) {
-        if (task.isSync()) {
-            if (task instanceof CraftFuture) {
-                synchronized (task) {
-                    if (task.getPeriod() != -1l) {
-                        return false;
-                    }
-                    // This needs to be set INSIDE of the synchronized block
-                    task.setPeriod(-2l);
-                    task.notifyAll();
-                }
-            } else {
-                task.setPeriod(-2l);
-            }
-        } else {
-            synchronized (((CraftAsyncTask) task).getWorkers()) {
-                // Synchronizing here prevents race condition for a completing task
-                task.setPeriod(-2l);
-            }
-        }
-        return true;
     }
 
     @Override

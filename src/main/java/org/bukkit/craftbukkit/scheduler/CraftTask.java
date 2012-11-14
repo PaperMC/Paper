@@ -84,4 +84,14 @@ class CraftTask implements BukkitTask, Runnable {
     public void cancel() {
         Bukkit.getScheduler().cancelTask(id);
     }
+
+    /**
+     * This method properly sets the status to cancelled, synchronizing when required.
+     *
+     * @return false if it is a craft future task that has already begun execution, true otherwise
+     */
+    boolean cancel0() {
+        setPeriod(-2l);
+        return true;
+    }
 }

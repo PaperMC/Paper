@@ -95,4 +95,12 @@ class CraftAsyncTask extends CraftTask {
     LinkedList<BukkitWorker> getWorkers() {
         return workers;
     }
+
+    boolean cancel0() {
+        synchronized (workers) {
+            // Synchronizing here prevents race condition for a completing task
+            setPeriod(-2l);
+        }
+        return true;
+    }
 }
