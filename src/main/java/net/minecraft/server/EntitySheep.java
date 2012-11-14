@@ -32,6 +32,7 @@ public class EntitySheep extends EntityAnimal {
         this.goalSelector.a(8, new PathfinderGoalRandomLookaround(this));
         this.e.setItem(0, new ItemStack(Item.INK_SACK, 1, 0));
         this.e.setItem(1, new ItemStack(Item.INK_SACK, 1, 0));
+        this.e.resultInventory = new InventoryCraftResult(); // CraftBukkit - add result slot for event
     }
 
     protected boolean be() {
