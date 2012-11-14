@@ -83,6 +83,7 @@ public class EntityFallingBlock extends Entity {
                         this.world.setTypeId(i, j, k, 0);
                     } else {
                         this.die();
+                        return; // CraftBukkit
                     }
                 }
 
