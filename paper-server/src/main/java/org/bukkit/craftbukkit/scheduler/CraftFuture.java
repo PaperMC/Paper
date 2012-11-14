@@ -96,4 +96,13 @@ class CraftFuture<T> extends CraftTask implements Future<T> {
             }
         }
     }
+
+    synchronized boolean cancel0() {
+        if (getPeriod() != -1l) {
+            return false;
+        }
+        setPeriod(-2l);
+        notifyAll();
+        return true;
+    }
 }
