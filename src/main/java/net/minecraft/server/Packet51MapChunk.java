@@ -15,17 +15,9 @@ public class Packet51MapChunk extends Packet {
     public int d;
     private byte[] buffer;
     private byte[] inflatedBuffer;
-    private boolean e;
+    public boolean e;
     private int size;
     private static byte[] buildBuffer = new byte[196864];
-    // CraftBukkit start
-    static final ThreadLocal<Deflater> localDeflater = new ThreadLocal<Deflater>() {
-        @Override
-        protected Deflater initialValue() {
-            return new Deflater(Deflater.DEFAULT_COMPRESSION);
-        }
-    };
-    // CraftBukkit end
 
     public Packet51MapChunk() {
         this.lowPriority = true;
@@ -37,12 +29,11 @@ public class Packet51MapChunk extends Packet {
         this.b = chunk.z;
         this.e = flag;
         ChunkMap chunkmap = a(chunk, flag, i);
-        // Deflater deflater = new Deflater(-1); // CraftBukkit
+        Deflater deflater = new Deflater(-1);
 
         this.d = chunkmap.c;
         this.c = chunkmap.b;
 
-        /* CraftBukkit start - moved to compress()
         try {
             this.inflatedBuffer = chunkmap.a;
             deflater.setInput(chunkmap.a, 0, chunkmap.a.length);
@@ -52,28 +43,9 @@ public class Packet51MapChunk extends Packet {
         } finally {
             deflater.end();
         }
-        */
-        this.inflatedBuffer = chunkmap.a;
     }
 
-    // Add compression method
-    public void compress() {
-        if (this.buffer != null) {
-            return;
-        }
-
-        Deflater deflater = localDeflater.get();
-        deflater.reset();
-        deflater.setInput(this.inflatedBuffer);
-        deflater.finish();
-
-        this.buffer = new byte[this.inflatedBuffer.length + 100];
-
-        this.size = deflater.deflate(this.buffer);
-    }
-    // CraftBukkit end
-
-    public void a(DataInputStream datainputstream) throws IOException {
+    public void a(DataInputStream datainputstream) throws IOException { // CraftBukkit - throws IOException
         this.a = datainputstream.readInt();
         this.b = datainputstream.readInt();
         this.e = datainputstream.readBoolean();
@@ -113,7 +85,6 @@ public class Packet51MapChunk extends Packet {
     }
 
     public void a(DataOutputStream dataoutputstream) throws IOException { // CraftBukkit - throws IOException
-        compress(); // CraftBukkit
         dataoutputstream.writeInt(this.a);
         dataoutputstream.writeInt(this.b);
         dataoutputstream.writeBoolean(this.e);
