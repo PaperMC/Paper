@@ -78,8 +78,21 @@ public class BlockSkull extends BlockContainer {
         return i;
     }
 
-    // CraftBukkit - drop the item like every other block
-    // public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {}
+    // CraftBukkit start - special case dropping so we can get info from the tile entity
+    public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {
+        if (world.random.nextFloat() < f) {
+            ItemStack itemstack = new ItemStack(Item.SKULL.id, 1, this.getDropData(world, i, j, k));
+            TileEntitySkull tileentityskull = (TileEntitySkull) world.getTileEntity(i, j, k);
+
+            if (tileentityskull.getSkullType() == 3 && tileentityskull.getExtraType() != null && tileentityskull.getExtraType().length() > 0) {
+                itemstack.setTag(new NBTTagCompound());
+                itemstack.getTag().setString("SkullOwner", tileentityskull.getExtraType());
+            }
+
+            this.b(world, i, j, k, itemstack);
+        }
+    }
+    // CraftBukkit end
 
     public void a(World world, int i, int j, int k, int l, EntityHuman entityhuman) {
         if (entityhuman.abilities.canInstantlyBuild) {
@@ -92,7 +105,7 @@ public class BlockSkull extends BlockContainer {
 
     public void remove(World world, int i, int j, int k, int l, int i1) {
         if (!world.isStatic) {
-            /* CraftBukkit start - don't special code dropping the item
+            /* CraftBukkit start - drop item in code above, not here
             if ((i1 & 8) == 0) {
                 ItemStack itemstack = new ItemStack(Item.SKULL.id, 1, this.getDropData(world, i, j, k));
                 TileEntitySkull tileentityskull = (TileEntitySkull) world.getTileEntity(i, j, k);
