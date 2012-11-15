@@ -348,10 +348,6 @@ public class CraftBlock implements Block {
         boolean result = false;
 
         if (block != null) {
-            if (block.id == net.minecraft.server.Block.SKULL.id) {
-                data = (byte) block.getDropData(chunk.getHandle().world, x, y, z);
-            }
-
             block.dropNaturally(chunk.getHandle().world, x, y, z, data, 1.0F, 0);
             result = true;
         }
