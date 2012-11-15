@@ -542,8 +542,13 @@ public class NetServerHandler extends NetHandler {
                 // CraftBukkit start
                 if (i1 < this.server.getSpawnRadius() && !flag) {
                     CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, i, j, k, l, this.player.inventory.getItemInHand());
-                    // CraftBukkit end
                     this.player.netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, worldserver));
+                    // Update any tile entity data for this block
+                    TileEntity tileentity = worldserver.getTileEntity(i, j, k);
+                    if (tileentity != null) {
+                        this.player.netServerHandler.sendPacket(tileentity.getUpdatePacket());
+                    }
+                    // CraftBukkit end
                 } else {
                     this.player.itemInWorldManager.dig(i, j, k, packet14blockdig.face);
                 }
