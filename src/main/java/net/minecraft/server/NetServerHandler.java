@@ -1458,6 +1458,12 @@ public class NetServerHandler extends NetHandler {
         ItemStack itemstack;
         ItemStack itemstack1;
 
+        // CraftBukkit start - ignore empty payloads
+        if (packet250custompayload.length <= 0) {
+            return;
+        }
+        // CraftBukkit end
+
         if ("MC|BEdit".equals(packet250custompayload.tag)) {
             try {
                 datainputstream = new DataInputStream(new ByteArrayInputStream(packet250custompayload.data));
