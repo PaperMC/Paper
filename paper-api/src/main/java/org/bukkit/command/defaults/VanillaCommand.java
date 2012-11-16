@@ -42,6 +42,14 @@ public abstract class VanillaCommand extends Command {
         return i;
     }
 
+    Integer getInteger(String value) {
+        try {
+            return Integer.valueOf(value);
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
     public static double getDouble(CommandSender sender, String input) {
         try {
             return Double.parseDouble(input);
