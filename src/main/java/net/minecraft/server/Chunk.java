@@ -437,6 +437,12 @@ public class Chunk {
                     }
 
                     if (Block.byId[l] instanceof BlockContainer) {
+                        // CraftBukkit start - don't create tile entity if placement failed
+                        if (this.getTypeId(i, j, k) != l) {
+                            return false;
+                        }
+                        // CraftBukkit end
+
                         tileentity = this.e(i, j, k);
                         if (tileentity == null) {
                             tileentity = ((BlockContainer) Block.byId[l]).a(this.world);
