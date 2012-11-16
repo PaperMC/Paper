@@ -37,7 +37,7 @@ public class GameRuleCommand extends VanillaCommand {
                     String value = args[1];
 
                     world.setGameRuleValue(rule, value);
-                    Command.broadcastCommandMessage(sender, "Game rule has been updated");
+                    Command.broadcastCommandMessage(sender, "Game rule " + rule + " has been set to: " + value);
                 } else {
                     String value = world.getGameRuleValue(rule);
                     sender.sendMessage(rule + " = " + value);

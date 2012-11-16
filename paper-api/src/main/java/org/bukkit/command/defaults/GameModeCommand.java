@@ -67,16 +67,16 @@ public class GameModeCommand extends VanillaCommand {
                     sender.sendMessage("Game mode change for " + player.getName() + " failed!");
                 } else {
                     if (player == sender) {
-                        Command.broadcastCommandMessage(sender, "Set own game mode to " + mode.toString() + " mode", false);
+                        Command.broadcastCommandMessage(sender, "Set own game mode to " + mode.toString() + " mode");
                     } else {
-                        Command.broadcastCommandMessage(sender, "Set " + player.getName() + "'s game mode to " + mode.toString() + " mode", false);
+                        Command.broadcastCommandMessage(sender, "Set " + player.getName() + "'s game mode to " + mode.toString() + " mode");
                     }
                 }
             } else {
                 sender.sendMessage(player.getName() + " already has game mode " + mode.getValue());
             }
         } else {
-            sender.sendMessage("Can't find user " + playerArg);
+            sender.sendMessage("Can't find player " + playerArg);
         }
 
         return true;

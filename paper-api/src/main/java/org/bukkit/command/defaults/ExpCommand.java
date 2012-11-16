@@ -49,10 +49,10 @@ public class ExpCommand extends VanillaCommand {
                 if (isLevel) {
                     if (isTaking) {
                         player.giveExpLevels(-amount);
-                        sender.sendMessage("Taken " + amount + " level(s) from " + player.getName());
+                        Command.broadcastCommandMessage(sender, "Taken " + amount + " level(s) from " + player.getName());
                     } else {
                         player.giveExpLevels(amount);
-                        sender.sendMessage("Given " + amount + " level(s) to " + player.getName());
+                        Command.broadcastCommandMessage(sender, "Given " + amount + " level(s) to " + player.getName());
                     }
                 } else {
                     if (isTaking) {
@@ -60,11 +60,11 @@ public class ExpCommand extends VanillaCommand {
                         return false;
                     } else {
                         player.giveExp(amount);
-                        sender.sendMessage("Given " + amount + " experience to " + player.getName());
+                        Command.broadcastCommandMessage(sender, "Given " + amount + " experience to " + player.getName());
                     }
                 }
             } else {
-                sender.sendMessage("Can't find user, was one provided?\n" + ChatColor.RED + "Usage: " + usageMessage);
+                sender.sendMessage("Can't find player, was one provided?\n" + ChatColor.RED + "Usage: " + usageMessage);
                 return false;
             }
 

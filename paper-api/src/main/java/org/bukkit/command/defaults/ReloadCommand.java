@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 
 public class ReloadCommand extends BukkitCommand {
@@ -20,7 +21,7 @@ public class ReloadCommand extends BukkitCommand {
         if (!testPermission(sender)) return true;
 
         Bukkit.reload();
-        sender.sendMessage(ChatColor.GREEN + "Reload complete.");
+        Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Reload complete.");
 
         return true;
     }

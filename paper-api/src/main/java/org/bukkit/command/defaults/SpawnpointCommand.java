@@ -6,6 +6,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -36,7 +37,7 @@ public class SpawnpointCommand extends VanillaCommand {
         } else {
             player = Bukkit.getPlayerExact(args[0]);
             if (player == null) {
-                sender.sendMessage("Can't find user " + args[0]);
+                sender.sendMessage("Can't find player " + args[0]);
                 return true;
             }
         }
@@ -51,12 +52,12 @@ public class SpawnpointCommand extends VanillaCommand {
                 int z = getInteger(sender, args[pos], MIN_COORD, MAX_COORD);
 
                 player.setBedSpawnLocation(new Location(world, x, y, z), true);
-                sender.sendMessage("Set " + player.getDisplayName() + "'s spawnpoint to " + x + ", " + y + ", " + z);
+                Command.broadcastCommandMessage(sender, "Set " + player.getDisplayName() + "'s spawnpoint to " + x + ", " + y + ", " + z);
             }
         } else if (args.length <= 1) {
             Location location = player.getLocation();
             player.setBedSpawnLocation(location, true);
-            sender.sendMessage("Set " + player.getDisplayName() + "'s spawnpoint to " + location.getX() + ", " + location.getY() + ", " + location.getZ());
+            Command.broadcastCommandMessage(sender, "Set " + player.getDisplayName() + "'s spawnpoint to " + location.getX() + ", " + location.getY() + ", " + location.getZ());
         } else {
             sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
             return false;

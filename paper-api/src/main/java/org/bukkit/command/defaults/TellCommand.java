@@ -41,6 +41,7 @@ public class TellCommand extends VanillaCommand {
                 Bukkit.getLogger().info("[" + sender.getName() + "->" + player.getName() + "] " + message);
             }
 
+            sender.sendMessage("[" + sender.getName() + "->" + player.getName() + "] " + message);
             player.sendMessage(result);
         }
 
