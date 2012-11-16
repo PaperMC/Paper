@@ -67,11 +67,6 @@ public class SpawnpointCommand extends VanillaCommand {
     }
 
     @Override
-    public boolean matches(String input) {
-        return input.equalsIgnoreCase("spawnpoint");
-    }
-
-    @Override
     public List<String> tabComplete(CommandSender sender, String alias, String[] args) {
         Validate.notNull(sender, "Sender cannot be null");
         Validate.notNull(args, "Arguments cannot be null");

@@ -32,9 +32,4 @@ public class MeCommand extends VanillaCommand {
 
         return true;
     }
-
-    @Override
-    public boolean matches(String input) {
-        return input.equalsIgnoreCase("me");
-    }
 }

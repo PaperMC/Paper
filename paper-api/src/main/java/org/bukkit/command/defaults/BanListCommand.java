@@ -56,9 +56,4 @@ public class BanListCommand extends VanillaCommand {
         }
         return ImmutableList.of();
     }
-
-    @Override
-    public boolean matches(String input) {
-        return input.equalsIgnoreCase("banlist");
-    }
 }

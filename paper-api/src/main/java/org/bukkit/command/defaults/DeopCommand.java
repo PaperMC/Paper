@@ -42,11 +42,6 @@ public class DeopCommand extends VanillaCommand {
     }
 
     @Override
-    public boolean matches(String input) {
-        return input.equalsIgnoreCase("deop");
-    }
-
-    @Override
     public List<String> tabComplete(CommandSender sender, String alias, String[] args) throws IllegalArgumentException {
         Validate.notNull(sender, "Sender cannot be null");
         Validate.notNull(args, "Arguments cannot be null");

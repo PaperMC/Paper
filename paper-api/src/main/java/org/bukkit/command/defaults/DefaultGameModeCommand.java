@@ -23,11 +23,6 @@ public class DefaultGameModeCommand extends VanillaCommand {
     }
 
     @Override
-    public boolean matches(String input) {
-        return input.equalsIgnoreCase(this.getName());
-    }
-
-    @Override
     public boolean execute(CommandSender sender, String commandLabel, String[] args) {
         if (!testPermission(sender)) return true;
         if (args.length == 0) {
