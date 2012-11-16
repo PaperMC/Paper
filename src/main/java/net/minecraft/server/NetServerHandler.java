@@ -10,6 +10,7 @@ import java.util.logging.Logger;
 
 // CraftBukkit start
 import java.io.UnsupportedEncodingException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.logging.Level;
 import java.util.HashSet;
@@ -792,13 +793,49 @@ public class NetServerHandler extends NetHandler {
             String s = packet3chat.message;
 
             if (s.length() > 100) {
-                this.networkManager.a("Chat message too long"); // CraftBukkit disconnect client asynchronously
+                // CraftBukkit start
+                Waitable waitable = new Waitable() {
+                    @Override
+                    protected Object evaluate() {
+                        NetServerHandler.this.disconnect("Chat message too long");
+                        return null;
+                    }
+                };
+
+                this.minecraftServer.processQueue.add(waitable);
+
+                try {
+                    waitable.get();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } catch (ExecutionException e) {
+                    throw new RuntimeException(e);
+                }
+                // CraftBukkit end
             } else {
                 s = s.trim();
 
                 for (int i = 0; i < s.length(); ++i) {
                     if (!SharedConstants.isAllowedChatCharacter(s.charAt(i))) {
-                        this.networkManager.a("Illegal characters in chat"); // CraftBukkit disconnect client asynchronously
+                        // CraftBukkit start
+                        Waitable waitable = new Waitable() {
+                            @Override
+                            protected Object evaluate() {
+                                NetServerHandler.this.disconnect("Illegal characters in chat");
+                                return null;
+                            }
+                        };
+
+                        this.minecraftServer.processQueue.add(waitable);
+
+                        try {
+                            waitable.get();
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        } catch (ExecutionException e) {
+                            throw new RuntimeException(e);
+                        }
+                        // CraftBukkit end
                         return;
                     }
                 }
@@ -813,7 +850,25 @@ public class NetServerHandler extends NetHandler {
 
                 // This section stays because it is only applicable to packets
                 if (chatSpamField.addAndGet(this, 20) > 200 && !this.minecraftServer.getServerConfigurationManager().isOp(this.player.name)) { // CraftBukkit use thread-safe spam
-                    this.networkManager.a("disconnect.spam"); // CraftBukkit disconnect client asynchronously
+                    // CraftBukkit start
+                    Waitable waitable = new Waitable() {
+                        @Override
+                        protected Object evaluate() {
+                            NetServerHandler.this.disconnect("disconnect.spam");
+                            return null;
+                        }
+                    };
+
+                    this.minecraftServer.processQueue.add(waitable);
+
+                    try {
+                        waitable.get();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    } catch (ExecutionException e) {
+                        throw new RuntimeException(e);
+                    }
+                    // CraftBukkit end
                 }
             }
         }
@@ -874,7 +929,7 @@ public class NetServerHandler extends NetHandler {
                         waitable.get();
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt(); // This is proper habit for java. If we aren't handling it, pass it on!
-                    } catch (java.util.concurrent.ExecutionException e) {
+                    } catch (ExecutionException e) {
                         throw new RuntimeException("Exception processing chat event", e.getCause());
                     }
                 } else {
