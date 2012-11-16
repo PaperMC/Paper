@@ -795,6 +795,9 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
 
                     // CraftBukkit start - Return when the damage fails so that the item will not lose durability
                     if (!flag2) {
+                        if (flag1) {
+                            entity.extinguish();
+                        }
                         return;
                     }
                     // CraftBukkit end
