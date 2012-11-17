@@ -794,22 +794,26 @@ public class NetServerHandler extends NetHandler {
 
             if (s.length() > 100) {
                 // CraftBukkit start
-                Waitable waitable = new Waitable() {
-                    @Override
-                    protected Object evaluate() {
-                        NetServerHandler.this.disconnect("Chat message too long");
-                        return null;
+                if (packet3chat.a_()) {
+                    Waitable waitable = new Waitable() {
+                        @Override
+                        protected Object evaluate() {
+                            NetServerHandler.this.disconnect("Chat message too long");
+                            return null;
+                        }
+                    };
+
+                    this.minecraftServer.processQueue.add(waitable);
+
+                    try {
+                        waitable.get();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    } catch (ExecutionException e) {
+                        throw new RuntimeException(e);
                     }
-                };
-
-                this.minecraftServer.processQueue.add(waitable);
-
-                try {
-                    waitable.get();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                } catch (ExecutionException e) {
-                    throw new RuntimeException(e);
+                } else {
+                    this.disconnect("Chat message too long");
                 }
                 // CraftBukkit end
             } else {
@@ -818,22 +822,26 @@ public class NetServerHandler extends NetHandler {
                 for (int i = 0; i < s.length(); ++i) {
                     if (!SharedConstants.isAllowedChatCharacter(s.charAt(i))) {
                         // CraftBukkit start
-                        Waitable waitable = new Waitable() {
-                            @Override
-                            protected Object evaluate() {
-                                NetServerHandler.this.disconnect("Illegal characters in chat");
-                                return null;
+                        if (packet3chat.a_()) {
+                            Waitable waitable = new Waitable() {
+                                @Override
+                                protected Object evaluate() {
+                                    NetServerHandler.this.disconnect("Illegal characters in chat");
+                                    return null;
+                                }
+                            };
+
+                            this.minecraftServer.processQueue.add(waitable);
+
+                            try {
+                                waitable.get();
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                            } catch (ExecutionException e) {
+                                throw new RuntimeException(e);
                             }
-                        };
-
-                        this.minecraftServer.processQueue.add(waitable);
-
-                        try {
-                            waitable.get();
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                        } catch (ExecutionException e) {
-                            throw new RuntimeException(e);
+                        } else {
+                            this.disconnect("Illegal characters in chat");
                         }
                         // CraftBukkit end
                         return;
@@ -851,22 +859,26 @@ public class NetServerHandler extends NetHandler {
                 // This section stays because it is only applicable to packets
                 if (chatSpamField.addAndGet(this, 20) > 200 && !this.minecraftServer.getServerConfigurationManager().isOp(this.player.name)) { // CraftBukkit use thread-safe spam
                     // CraftBukkit start
-                    Waitable waitable = new Waitable() {
-                        @Override
-                        protected Object evaluate() {
-                            NetServerHandler.this.disconnect("disconnect.spam");
-                            return null;
+                    if (packet3chat.a_()) {
+                        Waitable waitable = new Waitable() {
+                            @Override
+                            protected Object evaluate() {
+                                NetServerHandler.this.disconnect("disconnect.spam");
+                                return null;
+                            }
+                        };
+
+                        this.minecraftServer.processQueue.add(waitable);
+
+                        try {
+                            waitable.get();
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        } catch (ExecutionException e) {
+                            throw new RuntimeException(e);
                         }
-                    };
-
-                    this.minecraftServer.processQueue.add(waitable);
-
-                    try {
-                        waitable.get();
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    } catch (ExecutionException e) {
-                        throw new RuntimeException(e);
+                    } else {
+                        this.disconnect("disconnect.spam");
                     }
                     // CraftBukkit end
                 }
