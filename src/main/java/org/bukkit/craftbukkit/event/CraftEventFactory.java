@@ -288,6 +288,19 @@ public class CraftEventFactory {
         return event;
     }
 
+    public static void handleBlockSpreadEvent(Block block, Block source, int type, int data) {
+        BlockState state = block.getState();
+        state.setTypeId(type);
+        state.setRawData((byte) data);
+
+        BlockSpreadEvent event = new BlockSpreadEvent(block, source, state);
+        Bukkit.getPluginManager().callEvent(event);
+
+        if (!event.isCancelled()) {
+            state.update(true);
+        }
+    }
+
     public static EntityDeathEvent callEntityDeathEvent(EntityLiving victim) {
         return callEntityDeathEvent(victim, new ArrayList<org.bukkit.inventory.ItemStack>(0));
     }
