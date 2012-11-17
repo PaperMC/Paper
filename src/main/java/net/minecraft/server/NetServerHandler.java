@@ -336,7 +336,8 @@ public class NetServerHandler extends NetHandler {
                     }
 
                     if (Math.abs(packet10flying.x) > 3.2E7D || Math.abs(packet10flying.z) > 3.2E7D) {
-                        this.disconnect("Illegal position");
+                        // CraftBukkit - teleport to previous position instead of kicking, players get stuck
+                        this.a(this.y, this.z, this.q, this.player.yaw, this.player.pitch);
                         return;
                     }
                 }
