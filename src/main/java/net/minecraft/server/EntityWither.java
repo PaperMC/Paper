@@ -227,7 +227,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
                         for (int i1 = 0; i1 < 10 && !list.isEmpty(); ++i1) {
                             EntityLiving entityliving = (EntityLiving) list.get(this.random.nextInt(list.size()));
 
-                            if (entityliving != this && entityliving.isAlive() && this.m(entityliving)) {
+                            if (entityliving != this && entityliving.isAlive() && this.n(entityliving)) {
                                 if (entityliving instanceof EntityHuman) {
                                     if (!((EntityHuman) entityliving).abilities.isInvulnerable) {
                                         this.c(i, entityliving.id);
