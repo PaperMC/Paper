@@ -22,7 +22,8 @@ public class Packet56MapChunkBulk extends Packet {
     static final ThreadLocal<Deflater> localDeflater = new ThreadLocal<Deflater>() {
         @Override
         protected Deflater initialValue() {
-            return new Deflater(Deflater.BEST_COMPRESSION);
+            // Don't use higher compression level, slows things down too much
+            return new Deflater(6);
         }
     };
     // CraftBukkit end
