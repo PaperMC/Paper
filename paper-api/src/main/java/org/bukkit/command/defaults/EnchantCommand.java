@@ -25,7 +25,7 @@ public class EnchantCommand extends VanillaCommand {
     public EnchantCommand() {
         super("enchant");
         this.description = "Adds enchantments to the item the player is currently holding. Specify 0 for the level to remove an enchantment. Specify force to ignore normal enchantment restrictions";
-        this.usageMessage = "/enchant <player> <enchantment> [level|0] [force]";
+        this.usageMessage = "/enchant <player> <enchantment> [level|max|0] [force]";
         this.setPermission("bukkit.command.enchant");
     }
 
@@ -66,11 +66,10 @@ public class EnchantCommand extends VanillaCommand {
                         int level = 1;
                         if (args.length > 2) {
                             Integer integer = getInteger(args[2]);
+                            int minLevel = enchantment.getStartLevel();
+                            int maxLevel = force ? Short.MAX_VALUE : enchantment.getMaxLevel();
 
                             if (integer != null) {
-                                int minLevel = enchantment.getStartLevel();
-                                int maxLevel = force ? Short.MAX_VALUE : enchantment.getMaxLevel();
-
                                 if (integer == 0) {
                                     item.removeEnchantment(enchantment);
                                     Command.broadcastCommandMessage(sender, String.format("Removed %s on %s's %s", enchantmentName, player.getName(), itemName));
@@ -84,6 +83,10 @@ public class EnchantCommand extends VanillaCommand {
                                 }
 
                                 level = integer;
+                            }
+
+                            if ("max".equals(args[2])) {
+                                level = maxLevel;
                             }
                         }
 
