@@ -764,7 +764,9 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
     public void reset() {
         float exp = 0;
-        if (this.keepLevel) {
+        boolean keepInventory = this.world.getGameRules().getBoolean("keepInventory");
+
+        if (this.keepLevel || keepInventory) {
             exp = this.exp;
             this.newTotalExp = this.expTotal;
             this.newLevel = this.expLevel;
@@ -781,7 +783,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         effects.clear();
         this.activeContainer = this.defaultContainer;
         this.lastSentExp = -1;
-        if (this.keepLevel) {
+        if (this.keepLevel || keepInventory) {
             this.exp = exp;
         } else {
             this.giveExp(this.newExp);
