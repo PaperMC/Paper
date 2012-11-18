@@ -1178,7 +1178,7 @@ public final class CraftServer implements Server {
         Set<OfflinePlayer> players = new HashSet<OfflinePlayer>();
 
         for (String file : files) {
-            players.add(getOfflinePlayer(file.substring(0, file.length() - 4)));
+            players.add(getOfflinePlayer(file.substring(0, file.length() - 4), false));
         }
         players.addAll(Arrays.asList(getOnlinePlayers()));
 
