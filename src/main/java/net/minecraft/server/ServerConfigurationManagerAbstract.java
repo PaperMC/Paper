@@ -160,8 +160,12 @@ public abstract class ServerConfigurationManagerAbstract {
         this.cserver.onPlayerJoin(playerJoinEvent.getPlayer());
         // CraftBukkit end
 
-        worldserver.addEntity(entityplayer);
-        this.a(entityplayer, (WorldServer) null);
+        // CraftBukkit start - only add if the player wasn't moved in the event
+        if (entityplayer.world == worldserver && !worldserver.players.contains(entityplayer)) {
+            worldserver.addEntity(entityplayer);
+            this.a(entityplayer, (WorldServer) null);
+        }
+        // CraftBukkit end
 
         // CraftBukkit start - sendAll above replaced with this loop
         Packet201PlayerInfo packet = new Packet201PlayerInfo(entityplayer.listName, true, 1000);
