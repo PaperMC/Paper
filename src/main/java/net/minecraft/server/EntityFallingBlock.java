@@ -3,6 +3,8 @@ package net.minecraft.server;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.bukkit.event.entity.EntityDamageEvent; // CraftBukkit
+
 public class EntityFallingBlock extends Entity {
 
     public int id;
@@ -124,7 +126,16 @@ public class EntityFallingBlock extends Entity {
                 while (iterator.hasNext()) {
                     Entity entity = (Entity) iterator.next();
 
-                    entity.damageEntity(damagesource, Math.min(MathHelper.d((float) i * this.fallHurtAmount), this.fallHurtMax));
+                    // CraftBukkit start
+                    int damage = Math.min(MathHelper.d((float) i * this.fallHurtAmount), this.fallHurtMax);
+
+                    EntityDamageEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDamageEvent(this, entity, EntityDamageEvent.DamageCause.FALLING_BLOCK, damage);
+                    if (event.isCancelled()) {
+                        continue;
+                    }
+
+                    entity.damageEntity(damagesource, event.getDamage());
+                    // CraftBukkit end
                 }
 
                 if (this.id == Block.ANVIL.id && (double) this.random.nextFloat() < 0.05000000074505806D + (double) i * 0.05D) {
