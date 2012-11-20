@@ -345,7 +345,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public boolean teleport(Location location, PlayerTeleportEvent.TeleportCause cause) {
-        if (getHandle().netServerHandler == null) return false;
+        EntityPlayer entity = getHandle();
+        if (entity.netServerHandler == null || entity.netServerHandler.disconnected) return false;
 
         // From = Players current Location
         Location from = this.getLocation();
@@ -365,8 +366,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         // Grab the To and From World Handles.
         WorldServer fromWorld = ((CraftWorld) from.getWorld()).getHandle();
         WorldServer toWorld = ((CraftWorld) to.getWorld()).getHandle();
-        // Grab the EntityPlayer
-        EntityPlayer entity = getHandle();
 
         // Check if the fromWorld and toWorld are the same.
         if (fromWorld == toWorld) {
