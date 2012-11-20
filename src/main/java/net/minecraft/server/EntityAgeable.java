@@ -21,7 +21,7 @@ public abstract class EntityAgeable extends EntityCreature {
                 if (entityageable != null) {
                     entityageable.setAge(-24000);
                     entityageable.setPositionRotation(this.locX, this.locY, this.locZ, 0.0F, 0.0F);
-                    this.world.addEntity(entityageable);
+                    this.world.addEntity(entityageable, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // CraftBukkit
 
                     // CraftBukkit start
                     if (!entityhuman.abilities.canInstantlyBuild) {
