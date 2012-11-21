@@ -346,7 +346,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public boolean teleport(Location location, PlayerTeleportEvent.TeleportCause cause) {
         EntityPlayer entity = getHandle();
-        if (entity.netServerHandler == null || entity.netServerHandler.disconnected) return false;
+
+        if (entity.netServerHandler == null || entity.netServerHandler.disconnected) {
+            return false;
+        }
+
+        if (entity.vehicle != null || entity.passenger != null) {
+            return false;
+        }
 
         // From = Players current Location
         Location from = this.getLocation();
@@ -355,10 +362,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         // Create & Call the Teleport Event.
         PlayerTeleportEvent event = new PlayerTeleportEvent((Player) this, from, to, cause);
         server.getPluginManager().callEvent(event);
+
         // Return False to inform the Plugin that the Teleport was unsuccessful/cancelled.
-        if (event.isCancelled() == true) {
+        if (event.isCancelled()) {
             return false;
         }
+
         // Update the From Location
         from = event.getFrom();
         // Grab the new To Location dependent on whether the event was cancelled.
