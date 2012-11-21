@@ -18,8 +18,11 @@ public class ItemMapEmpty extends ItemWorldMapBase {
 
         worldmap.centerX = (int) (Math.round(entityhuman.locX / (double) i) * (long) i);
         worldmap.centerZ = (int) (Math.round(entityhuman.locZ / (double) i) * (long) i);
-        worldmap.map = (byte) world.worldProvider.dimension;
+        worldmap.map = (byte) ((WorldServer) world).dimension; // CraftBukkit - use bukkit dimension
         worldmap.c();
+
+        org.bukkit.craftbukkit.event.CraftEventFactory.callEvent(new org.bukkit.event.server.MapInitializeEvent(worldmap.mapView)); // CraftBukkit
+
         --itemstack.count;
         if (itemstack.count <= 0) {
             return itemstack1;
