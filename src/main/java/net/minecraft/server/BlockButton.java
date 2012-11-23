@@ -3,7 +3,10 @@ package net.minecraft.server;
 import java.util.List;
 import java.util.Random;
 
-import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
+// CraftBukkit start
+import org.bukkit.event.block.BlockRedstoneEvent;
+import org.bukkit.event.entity.EntityInteractEvent;
+// CraftBukkit end
 
 public class BlockButton extends Block {
 
@@ -235,6 +238,14 @@ public class BlockButton extends Block {
         if (!world.isStatic) {
             if (this.a) {
                 if ((world.getData(i, j, k) & 8) == 0) {
+                    // CraftBukkit start - Call interaction when entities (currently arrows) hit wooden buttons
+                    EntityInteractEvent event = new EntityInteractEvent(entity.getBukkitEntity(), world.getWorld().getBlockAt(i, j, k));
+                    world.getServer().getPluginManager().callEvent(event);
+
+                    if (event.isCancelled()) {
+                        return;
+                    }
+                    // CraftBukkit end
                     this.o(world, i, j, k);
                 }
             }
