@@ -26,6 +26,10 @@ public abstract class EntityAgeable extends EntityCreature {
                     // CraftBukkit start
                     if (!entityhuman.abilities.canInstantlyBuild) {
                         itemstack.count--;
+
+                        if (itemstack.count == 0) {
+                            entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, null);
+                        }
                     }
                     // CraftBukkit end
                 }
