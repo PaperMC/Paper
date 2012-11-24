@@ -536,6 +536,6 @@ public enum Material {
      * @return True if this material represents a playable music disk.
      */
     public boolean isRecord() {
-        return id >= GOLD_RECORD.id && id <= RECORD_11.id;
+        return id >= GOLD_RECORD.id && id <= RECORD_12.id;
     }
 }
