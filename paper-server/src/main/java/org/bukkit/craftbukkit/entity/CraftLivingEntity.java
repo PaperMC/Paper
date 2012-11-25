@@ -289,10 +289,29 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
-    public void setArrowsInBody(int count) {
+    public void setArrowsInBody(final int count, final boolean fireEvent) { // Paper
         Preconditions.checkArgument(count >= 0, "New arrow amount must be >= 0");
+        if (!fireEvent) { // Paper
         this.getHandle().getEntityData().set(net.minecraft.world.entity.LivingEntity.DATA_ARROW_COUNT_ID, count);
+        // Paper start
+        } else {
+            this.getHandle().setArrowCount(count);
+        }
+        // Paper end
     }
+
+    // Paper start - Add methods for working with arrows stuck in living entities
+    @Override
+    public void setNextArrowRemoval(final int ticks) {
+        Preconditions.checkArgument(ticks >= 0, "New amount of ticks before next arrow removal must be >= 0");
+        this.getHandle().removeArrowTime = ticks;
+    }
+
+    @Override
+    public int getNextArrowRemoval() {
+        return this.getHandle().removeArrowTime;
+    }
+    // Paper end - Add methods for working with arrows stuck in living entities
 
     @Override
     public boolean isInvulnerable() {
@@ -833,4 +852,16 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         this.getHandle().persistentInvisibility = invisible;
         this.getHandle().setSharedFlag(5, invisible);
     }
+
+    // Paper start
+    @Override
+    public int getArrowsStuck() {
+        return this.getHandle().getArrowCount();
+    }
+
+    @Override
+    public void setArrowsStuck(final int arrows) {
+        this.getHandle().setArrowCount(arrows);
+    }
+    // Paper end
 }
