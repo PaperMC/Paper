@@ -243,12 +243,44 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      */
     public int getArrowsInBody();
 
+    // Paper start
+    /**
+     * Set the amount of arrows in the entity's body.
+     * <p>
+     * Does not fire the {@link org.bukkit.event.entity.ArrowBodyCountChangeEvent}.
+     *
+     * @param count amount of arrows in entity's body
+     */
+    default void setArrowsInBody(final int count) {
+        this.setArrowsInBody(count, false);
+    }
+    // Paper end
+
     /**
      * Set the amount of arrows in the entity's body.
      *
      * @param count amount of arrows in entity's body
+     * @param fireEvent whether to fire the {@link org.bukkit.event.entity.ArrowBodyCountChangeEvent} event
      */
-    public void setArrowsInBody(int count);
+    void setArrowsInBody(int count, boolean fireEvent); // Paper
+
+    // Paper start - Add methods for working with arrows stuck in living entities
+    /**
+     * Sets the amount of ticks before the next arrow gets removed from the entities body.
+     * <p>
+     * A value of 0 will cause the server to re-calculate the amount of ticks on the next tick.
+     *
+     * @param ticks Amount of ticks
+     */
+    void setNextArrowRemoval(@org.jetbrains.annotations.Range(from = 0, to = Integer.MAX_VALUE) int ticks);
+
+    /**
+     * Gets the amount of ticks before the next arrow gets removed from the entities body.
+     *
+     * @return ticks Amount of ticks
+     */
+    int getNextArrowRemoval();
+    // Paper end - Add methods for working with arrows stuck in living entities
 
     /**
      * Returns the living entity's current maximum no damage ticks.
@@ -787,4 +819,24 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @return Whether the entity is invisible
      */
     public boolean isInvisible();
+
+    // Paper start
+    /**
+     * Get the number of arrows stuck in this entity
+     * @return Number of arrows stuck
+     * @deprecated use {@link #getArrowsInBody()}
+     */
+    @Deprecated
+    int getArrowsStuck();
+
+    /**
+     * Set the number of arrows stuck in this entity
+     *
+     * @param arrows Number of arrows to stick in this entity
+     * @deprecated use {@link #setArrowsInBody(int, boolean)}. <b>This method previously fired {@link org.bukkit.event.entity.ArrowBodyCountChangeEvent} so if
+     * you want to retain exact functionality, pass {@code true} for {@code fireEvent}.</b>
+     */
+    @Deprecated
+    void setArrowsStuck(int arrows);
+    // Paper end
 }
