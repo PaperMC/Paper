@@ -689,4 +689,16 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         getHandle().persistentInvisibility = invisible;
         getHandle().setFlag(5, invisible);
     }
+
+    // Paper start
+    @Override
+    public int getArrowsStuck() {
+        return getHandle().getArrowCount();
+    }
+
+    @Override
+    public void setArrowsStuck(int arrows) {
+        getHandle().setArrowCount(arrows);
+    }
+    // Paper end
 }
