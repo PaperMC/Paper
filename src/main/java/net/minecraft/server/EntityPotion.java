@@ -107,8 +107,8 @@ public class EntityPotion extends EntityProjectile {
                                 MobEffect mobeffect = (MobEffect) iterator1.next();
                                 int i = mobeffect.getEffectId();
 
-                                // CraftBukkit start - abide by PVP settings
-                                if (!this.world.pvpMode && entityliving instanceof EntityPlayer && entityliving != this.getShooter()) {
+                                // CraftBukkit start - abide by PVP settings - for players only!
+                                if (!this.world.pvpMode && this.getShooter() instanceof EntityPlayer && entityliving instanceof EntityPlayer && entityliving != this.getShooter()) {
                                     // Block SLOWER_MOVEMENT, SLOWER_DIG, HARM, BLINDNESS, HUNGER, WEAKNESS and POISON potions
                                     if (i == 2 || i == 4 || i == 7 || i == 15 || i == 17 || i == 18 || i == 19) continue;
                                 }
