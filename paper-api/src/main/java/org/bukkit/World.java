@@ -561,6 +561,20 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public boolean createExplosion(double x, double y, double z, float power, boolean setFire);
 
     /**
+     * Creates explosion at given coordinates with given power and optionally setting
+     * blocks on fire or breaking blocks.
+     *
+     * @param x X coordinate
+     * @param y Y coordinate
+     * @param z Z coordinate
+     * @param power The power of explosion, where 4F is TNT
+     * @param setFire Whether or not to set blocks on fire
+     * @param breakBlocks Whether or not to have blocks be destroyed
+     * @return false if explosion was canceled, otherwise true
+     */
+    public boolean createExplosion(double x, double y, double z, float power, boolean setFire, boolean breakBlocks);
+
+    /**
      * Creates explosion at given coordinates with given power
      *
      * @param loc Location to blow up
