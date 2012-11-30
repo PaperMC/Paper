@@ -441,29 +441,31 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static EntityChangeBlockEvent callEntityChangeBlockEvent(org.bukkit.entity.Entity entity, Block block, Material material) {
-        EntityChangeBlockEvent event = new EntityChangeBlockEvent((LivingEntity) entity, block, material);
-        entity.getServer().getPluginManager().callEvent(event);
-        return event;
-    }
-
     public static PigZapEvent callPigZapEvent(Entity pig, Entity lightning, Entity pigzombie) {
         PigZapEvent event = new PigZapEvent((Pig) pig.getBukkitEntity(), (LightningStrike) lightning.getBukkitEntity(), (PigZombie) pigzombie.getBukkitEntity());
         pig.getBukkitEntity().getServer().getPluginManager().callEvent(event);
         return event;
     }
 
-    public static EntityChangeBlockEvent callEntityChangeBlockEvent(Entity entity, Block block, Material material) {
-        EntityChangeBlockEvent event = new EntityChangeBlockEvent((LivingEntity) entity.getBukkitEntity(), block, material);
-        entity.getBukkitEntity().getServer().getPluginManager().callEvent(event);
-        return event;
+    public static EntityChangeBlockEvent callEntityChangeBlockEvent(org.bukkit.entity.Entity entity, Block block, Material material) {
+        return callEntityChangeBlockEvent(entity, block, material, 0);
     }
 
-    public static EntityChangeBlockEvent callEntityChangeBlockEvent(Entity entity, int x, int y, int z, int type) {
+    public static EntityChangeBlockEvent callEntityChangeBlockEvent(Entity entity, Block block, Material material) {
+        return callEntityChangeBlockEvent(entity.getBukkitEntity(), block, material, 0);
+    }
+
+    public static EntityChangeBlockEvent callEntityChangeBlockEvent(Entity entity, int x, int y, int z, int type, int data) {
         Block block = entity.world.getWorld().getBlockAt(x, y, z);
         Material material = Material.getMaterial(type);
 
-        return callEntityChangeBlockEvent(entity, block, material);
+        return callEntityChangeBlockEvent(entity.getBukkitEntity(), block, material, data);
+    }
+
+    public static EntityChangeBlockEvent callEntityChangeBlockEvent(org.bukkit.entity.Entity entity, Block block, Material material, int data) {
+        EntityChangeBlockEvent event = new EntityChangeBlockEvent((LivingEntity) entity, block, material, (byte) data);
+        entity.getServer().getPluginManager().callEvent(event);
+        return event;
     }
 
     public static CreeperPowerEvent callCreeperPowerEvent(Entity creeper, Entity lightning, CreeperPowerEvent.PowerCause cause) {

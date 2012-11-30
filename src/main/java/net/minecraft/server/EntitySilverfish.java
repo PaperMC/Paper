@@ -94,7 +94,7 @@ public class EntitySilverfish extends EntityMonster {
 
                                 if (k1 == Block.MONSTER_EGGS.id) {
                                     // CraftBukkit start
-                                    if (CraftEventFactory.callEntityChangeBlockEvent(this, i + i1, j + l, k + j1, 0).isCancelled()) {
+                                    if (CraftEventFactory.callEntityChangeBlockEvent(this, i + i1, j + l, k + j1, 0, 0).isCancelled()) {
                                         continue;
                                     }
                                     // CraftBukkit end
@@ -122,7 +122,7 @@ public class EntitySilverfish extends EntityMonster {
                 l = this.world.getTypeId(i + Facing.b[l1], j + Facing.c[l1], k + Facing.d[l1]);
                 if (BlockMonsterEggs.e(l)) {
                     // CraftBukkit start
-                    if (CraftEventFactory.callEntityChangeBlockEvent(this, i + Facing.b[l1], j + Facing.c[l1], k + Facing.d[l1], Block.MONSTER_EGGS.id).isCancelled()) {
+                    if (CraftEventFactory.callEntityChangeBlockEvent(this, i + Facing.b[l1], j + Facing.c[l1], k + Facing.d[l1], Block.MONSTER_EGGS.id, BlockMonsterEggs.f(l)).isCancelled()) {
                         return;
                     }
                     // CraftBukkit end

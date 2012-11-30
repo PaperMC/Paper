@@ -120,9 +120,7 @@ public class EntityEnderman extends EntityMonster {
 
                 if (l == 0 && i1 > 0 && Block.byId[i1].b()) {
                     // CraftBukkit start - place event
-                    org.bukkit.block.Block bblock = this.world.getWorld().getBlockAt(i, j, k);
-
-                    if (!CraftEventFactory.callEntityChangeBlockEvent(this, bblock, this.getCarriedId()).isCancelled()) {
+                    if (!CraftEventFactory.callEntityChangeBlockEvent(this, i, j, k, this.getCarriedId(), this.getCarriedData()).isCancelled()) {
                         this.world.setTypeIdAndData(i, j, k, this.getCarriedId(), this.getCarriedData());
                         this.setCarriedId(0);
                     }
