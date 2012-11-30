@@ -533,6 +533,8 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
             processQueue.remove().run();
         }
 
+        org.bukkit.craftbukkit.chunkio.ChunkIOExecutor.tick();
+
         // Send timeupdates to everyone, it will get the right time from the world the player is in.
         if (this.ticks % 20 == 0) {
             for (int i = 0; i < this.getServerConfigurationManager().players.size(); ++i) {

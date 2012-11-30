@@ -87,6 +87,45 @@ public class RegionFile {
         }
     }
 
+    // CraftBukkit start - this is a copy (sort of) of the method below it, make sure they stay in sync
+    public synchronized boolean chunkExists(int i, int j) {
+        if (this.d(i, j)) {
+            return false;
+        } else {
+            try {
+                int k = this.e(i, j);
+
+                if (k == 0) {
+                    return false;
+                } else {
+                    int l = k >> 8;
+                    int i1 = k & 255;
+
+                    if (l + i1 > this.f.size()) {
+                        return false;
+                    }
+
+                    this.c.seek((long) (l * 4096));
+                    int j1 = this.c.readInt();
+
+                    if (j1 > 4096 * i1 || j1 <= 0) {
+                        return false;
+                    }
+
+                    byte b0 = this.c.readByte();
+                    if (b0 == 1 || b0 == 2) {
+                        return true;
+                    }
+                }
+            } catch (IOException ioexception) {
+                return false;
+            }
+        }
+
+        return false;
+    }
+    // CraftBukkit end
+
     public synchronized DataInputStream a(int i, int j) {
         if (this.d(i, j)) {
             return null;
@@ -211,7 +250,7 @@ public class RegionFile {
         }
     }
 
-    private void a(int i, byte[] abyte, int j) {
+    private void a(int i, byte[] abyte, int j) throws IOException { // CraftBukkit - added throws
         this.c.seek((long) (i * 4096));
         this.c.writeInt(j + 1);
         this.c.writeByte(2);
@@ -230,19 +269,19 @@ public class RegionFile {
         return this.e(i, j) != 0;
     }
 
-    private void a(int i, int j, int k) {
+    private void a(int i, int j, int k) throws IOException { // CraftBukkit - added throws
         this.d[i + j * 32] = k;
         this.c.seek((long) ((i + j * 32) * 4));
         this.c.writeInt(k);
     }
 
-    private void b(int i, int j, int k) {
+    private void b(int i, int j, int k) throws IOException { // CraftBukkit - added throws
         this.e[i + j * 32] = k;
         this.c.seek((long) (4096 + (i + j * 32) * 4));
         this.c.writeInt(k);
     }
 
-    public void c() {
+    public void c() throws IOException { // CraftBukkit - added throws
         if (this.c != null) {
             this.c.close();
         }

@@ -10,6 +10,7 @@ class PlayerInstance {
     private short[] dirtyBlocks;
     private int dirtyCount;
     private int f;
+    private boolean loaded = false; // CraftBukkit
 
     final PlayerManager playerManager;
 
@@ -19,15 +20,33 @@ class PlayerInstance {
         this.dirtyBlocks = new short[64];
         this.dirtyCount = 0;
         this.location = new ChunkCoordIntPair(i, j);
-        playermanager.a().chunkProviderServer.getChunkAt(i, j);
+        // CraftBukkit start
+        playermanager.a().chunkProviderServer.getChunkAt(i, j, new Runnable() {
+            public void run() {
+                PlayerInstance.this.loaded = true;
+            }
+        });
+        // CraftBukkit end
     }
 
-    public void a(EntityPlayer entityplayer) {
+    public void a(final EntityPlayer entityplayer) { // CraftBukkit - added final to argument
         if (this.b.contains(entityplayer)) {
             throw new IllegalStateException("Failed to add player. " + entityplayer + " already is in chunk " + this.location.x + ", " + this.location.z);
         } else {
             this.b.add(entityplayer);
-            entityplayer.chunkCoordIntPairQueue.add(this.location);
+
+            // CraftBukkit start
+            if (this.loaded) {
+                entityplayer.chunkCoordIntPairQueue.add(this.location);
+            } else {
+                // Abuse getChunkAt to add another callback
+                this.playerManager.a().chunkProviderServer.getChunkAt(this.location.x, this.location.z, new Runnable() {
+                    public void run() {
+                        entityplayer.chunkCoordIntPairQueue.add(PlayerInstance.this.location);
+                    }
+                });
+            }
+            // CraftBukkit end
         }
     }
 

@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.chunkio.ChunkIOExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
@@ -149,6 +150,7 @@ public abstract class ServerConfigurationManagerAbstract {
         this.players.add(entityplayer);
         WorldServer worldserver = this.server.getWorldServer(entityplayer.dimension);
 
+        // CraftBukkit start
         PlayerJoinEvent playerJoinEvent = new PlayerJoinEvent(this.cserver.getPlayer(entityplayer), "\u00A7e" + entityplayer.name + " joined the game.");
         this.cserver.getPluginManager().callEvent(playerJoinEvent);
 
@@ -158,6 +160,8 @@ public abstract class ServerConfigurationManagerAbstract {
             this.server.getServerConfigurationManager().sendAll(new Packet3Chat(joinMessage));
         }
         this.cserver.onPlayerJoin(playerJoinEvent.getPlayer());
+
+        ChunkIOExecutor.adjustPoolSize(this.getPlayerCount());
         // CraftBukkit end
 
         // CraftBukkit start - only add if the player wasn't moved in the event
@@ -207,6 +211,7 @@ public abstract class ServerConfigurationManagerAbstract {
         worldserver.kill(entityplayer);
         worldserver.getPlayerManager().removePlayer(entityplayer);
         this.players.remove(entityplayer);
+        ChunkIOExecutor.adjustPoolSize(this.getPlayerCount()); // CraftBukkit
 
         // CraftBukkit start - .name -> .listName, replace sendAll with loop
         Packet201PlayerInfo packet = new Packet201PlayerInfo(entityplayer.listName, false, 9999);

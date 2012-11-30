@@ -22,7 +22,39 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
         this.d = file1;
     }
 
+    // CraftBukkit start
+    public boolean chunkExists(World world, int i, int j) {
+        ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i, j);
+
+        synchronized (this.c) {
+            if (this.b.contains(chunkcoordintpair)) {
+                for (int k = 0; k < this.a.size(); ++k) {
+                    if (((PendingChunkToSave) this.a.get(k)).a.equals(chunkcoordintpair)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return RegionFileCache.a(this.d, i, j).chunkExists(i & 31, j & 31);
+    }
+    // CraftBukkit end
+
+    // CraftBukkit start - add async variant, provide compatibility
     public Chunk a(World world, int i, int j) {
+        Object[] data = this.loadChunk(world, i, j);
+        if (data != null) {
+            Chunk chunk = (Chunk) data[0];
+            NBTTagCompound nbttagcompound = (NBTTagCompound) data[1];
+            this.loadEntities(chunk, nbttagcompound.getCompound("Level"), world);
+            return chunk;
+        }
+
+        return null;
+    }
+
+    public Object[] loadChunk(World world, int i, int j) {
+        // CraftBukkit end
         NBTTagCompound nbttagcompound = null;
         ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i, j);
         Object object = this.c;
@@ -51,7 +83,7 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
         return this.a(world, i, j, nbttagcompound);
     }
 
-    protected Chunk a(World world, int i, int j, NBTTagCompound nbttagcompound) {
+    protected Object[] a(World world, int i, int j, NBTTagCompound nbttagcompound) { // CraftBukkit - return Chunk -> Object[]
         if (!nbttagcompound.hasKey("Level")) {
             System.out.println("Chunk file at " + i + "," + j + " is missing level data, skipping");
             return null;
@@ -68,7 +100,12 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
                 chunk = this.a(world, nbttagcompound.getCompound("Level"));
             }
 
-            return chunk;
+            // CraftBukkit start
+            Object[] data = new Object[2];
+            data[0] = chunk;
+            data[1] = nbttagcompound;
+            return data;
+            // CraftBukkit end
         }
     }
 
@@ -271,6 +308,13 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
             chunk.a(nbttagcompound.getByteArray("Biomes"));
         }
 
+        // CraftBukkit start - end this method here and split off entity loading to another method
+        return chunk;
+    }
+
+    public void loadEntities(Chunk chunk, NBTTagCompound nbttagcompound, World world) {
+        // CraftBukkit end
+
         NBTTagList nbttaglist1 = nbttagcompound.getList("Entities");
 
         if (nbttaglist1 != null) {
@@ -310,6 +354,6 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
             }
         }
 
-        return chunk;
+        // return chunk; // CraftBukkit
     }
 }
