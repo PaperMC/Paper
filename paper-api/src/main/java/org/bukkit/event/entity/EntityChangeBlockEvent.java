@@ -16,12 +16,18 @@ public class EntityChangeBlockEvent extends EntityEvent implements Cancellable {
     private final Block block;
     private boolean cancel;
     private final Material to;
+    private final byte data;
 
     public EntityChangeBlockEvent(final LivingEntity what, final Block block, final Material to) {
+        this (what, block, to, (byte) 0);
+    }
+
+    public EntityChangeBlockEvent(final LivingEntity what, final Block block, final Material to, final byte data) {
         super(what);
         this.block = block;
         this.cancel = false;
         this.to = to;
+        this.data = data;
     }
 
     @Override
@@ -53,6 +59,15 @@ public class EntityChangeBlockEvent extends EntityEvent implements Cancellable {
      */
     public Material getTo() {
         return to;
+    }
+
+    /**
+     * Gets the data for the block that would be changed into
+     *
+     * @return the data for the block that would be changed into
+     */
+    public byte getData() {
+        return data;
     }
 
     @Override
