@@ -270,7 +270,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
                                     int j3 = this.world.getData(j2, k2, l2);
 
                                     // CraftBukkit start
-                                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this, j2, k2, l2, 0).isCancelled()) {
+                                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this, j2, k2, l2, 0, 0).isCancelled()) {
                                         continue;
                                     }
                                     // CraftBukkit end
