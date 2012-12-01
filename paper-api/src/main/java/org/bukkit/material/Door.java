@@ -81,15 +81,15 @@ public class Door extends MaterialData implements Directional, Openable {
     public void setFacingDirection(BlockFace face) {
         byte data = (byte) (getData() & 0x12);
         switch (face) {
-        case EAST:
+        case NORTH:
             data |= 0x1;
             break;
 
-        case SOUTH:
+        case EAST:
             data |= 0x2;
             break;
 
-        case WEST:
+        case SOUTH:
             data |= 0x3;
             break;
         }
@@ -105,16 +105,16 @@ public class Door extends MaterialData implements Directional, Openable {
         byte data = (byte) (getData() & 0x3);
         switch (data) {
         case 0:
-            return BlockFace.NORTH;
+            return BlockFace.WEST;
 
         case 1:
-            return BlockFace.EAST;
+            return BlockFace.NORTH;
 
         case 2:
-            return BlockFace.SOUTH;
+            return BlockFace.EAST;
 
         case 3:
-            return BlockFace.WEST;
+            return BlockFace.SOUTH;
         }
         return null; // shouldn't happen
     }

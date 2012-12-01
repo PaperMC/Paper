@@ -30,16 +30,16 @@ public class PistonBaseMaterial extends MaterialData implements Directional, Red
         case UP:
             data |= 1;
             break;
-        case EAST:
+        case NORTH:
             data |= 2;
             break;
-        case WEST:
+        case SOUTH:
             data |= 3;
             break;
-        case NORTH:
+        case WEST:
             data |= 4;
             break;
-        case SOUTH:
+        case EAST:
             data |= 5;
             break;
         }
@@ -55,13 +55,13 @@ public class PistonBaseMaterial extends MaterialData implements Directional, Red
         case 1:
             return BlockFace.UP;
         case 2:
-            return BlockFace.EAST;
-        case 3:
-            return BlockFace.WEST;
-        case 4:
             return BlockFace.NORTH;
-        case 5:
+        case 3:
             return BlockFace.SOUTH;
+        case 4:
+            return BlockFace.WEST;
+        case 5:
+            return BlockFace.EAST;
         default:
             return BlockFace.SELF;
         }

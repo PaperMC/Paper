@@ -48,16 +48,16 @@ public class TrapDoor extends SimpleAttachableMaterialData implements Openable {
 
         switch (data) {
             case 0x0:
-                return BlockFace.WEST;
-
-            case 0x1:
-                return BlockFace.EAST;
-
-            case 0x2:
                 return BlockFace.SOUTH;
 
-            case 0x3:
+            case 0x1:
                 return BlockFace.NORTH;
+
+            case 0x2:
+                return BlockFace.EAST;
+
+            case 0x3:
+                return BlockFace.WEST;
         }
 
         return null;
@@ -68,13 +68,13 @@ public class TrapDoor extends SimpleAttachableMaterialData implements Openable {
         byte data = (byte) (getData() & 0x4);
 
         switch (face) {
-            case WEST:
+            case SOUTH:
                 data |= 0x1;
                 break;
-            case NORTH:
+            case WEST:
                 data |= 0x2;
                 break;
-            case SOUTH:
+            case EAST:
                 data |= 0x3;
                 break;
         }

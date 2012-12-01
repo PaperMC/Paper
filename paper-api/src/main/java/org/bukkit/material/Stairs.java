@@ -33,16 +33,16 @@ public class Stairs extends MaterialData implements Directional {
         switch (data & 0x3) {
         case 0x0:
         default:
-            return BlockFace.SOUTH;
+            return BlockFace.EAST;
 
         case 0x1:
-            return BlockFace.NORTH;
-
-        case 0x2:
             return BlockFace.WEST;
 
+        case 0x2:
+            return BlockFace.SOUTH;
+
         case 0x3:
-            return BlockFace.EAST;
+            return BlockFace.NORTH;
         }
     }
 
@@ -60,20 +60,20 @@ public class Stairs extends MaterialData implements Directional {
         byte data;
 
         switch (face) {
-        case NORTH:
+        case WEST:
         default:
             data = 0x0;
             break;
 
-        case SOUTH:
+        case EAST:
             data = 0x1;
             break;
 
-        case EAST:
+        case NORTH:
             data = 0x2;
             break;
 
-        case WEST:
+        case SOUTH:
             data = 0x3;
             break;
         }
@@ -95,7 +95,7 @@ public class Stairs extends MaterialData implements Directional {
     public boolean isInverted() {
         return ((getData() & 0x4) != 0);
     }
-    
+
     /**
      * Set step inverted state
      * @param inv - true if step is inverted (top half), false if step is normal (bottom half)

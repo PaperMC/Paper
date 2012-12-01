@@ -59,8 +59,8 @@ public class Tree extends MaterialData {
 
     /**
      * Get direction of the log
-     * 
-     * @return BlockFace.TOP for upright (default), BlockFace.EAST (east-west), BlockFace.NORTH (north-sout), BlockFace.SELF (directionless)
+     *
+     * @return BlockFace.TOP for upright (default), BlockFace.NORTH (east-west), BlockFace.WEST (north-sout), BlockFace.SELF (directionless)
      */
     public BlockFace getDirection() {
         switch ((getData() >> 2) & 0x3) {
@@ -68,9 +68,9 @@ public class Tree extends MaterialData {
             default:
                 return BlockFace.UP;
             case 1: // North-south
-                return BlockFace.NORTH;
+                return BlockFace.WEST;
             case 2: // East-west
-                return BlockFace.EAST;
+                return BlockFace.NORTH;
             case 3: // Directionless (bark on all sides)
                 return BlockFace.SELF;
         }
@@ -87,12 +87,12 @@ public class Tree extends MaterialData {
             default:
                 dat = 0;
                 break;
-            case NORTH:
-            case SOUTH:
+            case WEST:
+            case EAST:
                 dat = 1;
                 break;
-            case EAST:
-            case WEST:
+            case NORTH:
+            case SOUTH:
                 dat = 2;
                 break;
             case SELF:

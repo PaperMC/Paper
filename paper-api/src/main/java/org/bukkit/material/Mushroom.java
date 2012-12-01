@@ -63,13 +63,13 @@ public class Mushroom extends MaterialData {
         }
 
         switch (face) {
-            case NORTH:
-                return data < NORTH_LIMIT;
-            case SOUTH:
-                return data > SOUTH_LIMIT;
-            case EAST:
-                return data % EAST_WEST_LIMIT == EAST_REMAINDER;
             case WEST:
+                return data < NORTH_LIMIT;
+            case EAST:
+                return data > SOUTH_LIMIT;
+            case NORTH:
+                return data % EAST_WEST_LIMIT == EAST_REMAINDER;
+            case SOUTH:
                 return data % EAST_WEST_LIMIT == WEST_REMAINDER;
             case UP:
                 return true;
@@ -96,23 +96,23 @@ public class Mushroom extends MaterialData {
         }
 
         switch (face) {
-            case NORTH:
+            case WEST:
                 if (painted) {
                     data -= NORTH_SOUTH_MOD;
                 } else {
                     data += NORTH_SOUTH_MOD;
-                }
-
-                break;
-            case SOUTH:
-                if (painted) {
-                    data += NORTH_SOUTH_MOD;
-                } else {
-                    data -= NORTH_SOUTH_MOD;
                 }
 
                 break;
             case EAST:
+                if (painted) {
+                    data += NORTH_SOUTH_MOD;
+                } else {
+                    data -= NORTH_SOUTH_MOD;
+                }
+
+                break;
+            case NORTH:
                 if (painted) {
                     data += EAST_WEST_MOD;
                 } else {
@@ -120,7 +120,7 @@ public class Mushroom extends MaterialData {
                 }
 
                 break;
-            case WEST:
+            case SOUTH:
                 if (painted) {
                     data -= EAST_WEST_MOD;
                 } else {
@@ -147,20 +147,20 @@ public class Mushroom extends MaterialData {
     public Set<BlockFace> getPaintedFaces() {
         EnumSet<BlockFace> faces = EnumSet.noneOf(BlockFace.class);
 
-        if (isFacePainted(BlockFace.NORTH)) {
-            faces.add(BlockFace.NORTH);
-        }
-
-        if (isFacePainted(BlockFace.EAST)) {
-            faces.add(BlockFace.EAST);
-        }
-
         if (isFacePainted(BlockFace.WEST)) {
             faces.add(BlockFace.WEST);
         }
 
+        if (isFacePainted(BlockFace.NORTH)) {
+            faces.add(BlockFace.NORTH);
+        }
+
         if (isFacePainted(BlockFace.SOUTH)) {
             faces.add(BlockFace.SOUTH);
+        }
+
+        if (isFacePainted(BlockFace.EAST)) {
+            faces.add(BlockFace.EAST);
         }
 
         if (isFacePainted(BlockFace.UP)) {

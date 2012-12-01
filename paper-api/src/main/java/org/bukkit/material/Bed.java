@@ -67,19 +67,19 @@ public class Bed extends MaterialData implements Directional {
         byte data;
 
         switch (face) {
-        case WEST:
+        case SOUTH:
             data = 0x0;
             break;
 
-        case NORTH:
+        case WEST:
             data = 0x1;
             break;
 
-        case EAST:
+        case NORTH:
             data = 0x2;
             break;
 
-        case SOUTH:
+        case EAST:
         default:
             data = 0x3;
         }
@@ -101,17 +101,17 @@ public class Bed extends MaterialData implements Directional {
 
         switch (data) {
         case 0x0:
-            return BlockFace.WEST;
+            return BlockFace.SOUTH;
 
         case 0x1:
-            return BlockFace.NORTH;
+            return BlockFace.WEST;
 
         case 0x2:
-            return BlockFace.EAST;
+            return BlockFace.NORTH;
 
         case 0x3:
         default:
-            return BlockFace.SOUTH;
+            return BlockFace.EAST;
         }
     }
 
