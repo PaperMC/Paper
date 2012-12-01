@@ -18,7 +18,7 @@ public class CraftEffect {
             datavalue = ((Material) data).getId();
             break;
         case SMOKE:
-            switch((BlockFace)data) {
+            switch((BlockFace) data) { // TODO: Verify (Where did these values come from...?)
             case SOUTH_EAST:
                 datavalue = 0;
                 break;
