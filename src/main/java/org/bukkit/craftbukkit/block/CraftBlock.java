@@ -174,7 +174,7 @@ public class CraftBlock implements Block {
     }
 
     /**
-     * Notch uses a 0-5 to mean DOWN, UP, EAST, WEST, NORTH, SOUTH
+     * Notch uses a 0-5 to mean DOWN, UP, NORTH, SOUTH, WEST, EAST
      * in that order all over. This method is convenience to convert for us.
      *
      * @return BlockFace the BlockFace represented by this number
@@ -186,13 +186,13 @@ public class CraftBlock implements Block {
         case 1:
             return BlockFace.UP;
         case 2:
-            return BlockFace.EAST;
-        case 3:
-            return BlockFace.WEST;
-        case 4:
             return BlockFace.NORTH;
-        case 5:
+        case 3:
             return BlockFace.SOUTH;
+        case 4:
+            return BlockFace.WEST;
+        case 5:
+            return BlockFace.EAST;
         default:
             return BlockFace.SELF;
         }
@@ -204,13 +204,13 @@ public class CraftBlock implements Block {
             return 0;
         case UP:
             return 1;
-        case EAST:
-            return 2;
-        case WEST:
-            return 3;
         case NORTH:
-            return 4;
+            return 2;
         case SOUTH:
+            return 3;
+        case WEST:
+            return 4;
+        case EAST:
             return 5;
         default:
             return 7; // Good as anything here, but technically invalid
@@ -312,10 +312,10 @@ public class CraftBlock implements Block {
         net.minecraft.server.World world = chunk.getHandle().world;
         if ((face == BlockFace.DOWN || face == BlockFace.SELF) && world.isBlockFacePowered(x, y - 1, z, 0)) power = wire.getPower(world, x, y - 1, z, power);
         if ((face == BlockFace.UP || face == BlockFace.SELF) && world.isBlockFacePowered(x, y + 1, z, 1)) power = wire.getPower(world, x, y + 1, z, power);
-        if ((face == BlockFace.EAST || face == BlockFace.SELF) && world.isBlockFacePowered(x, y, z - 1, 2)) power = wire.getPower(world, x, y, z - 1, power);
-        if ((face == BlockFace.WEST || face == BlockFace.SELF) && world.isBlockFacePowered(x, y, z + 1, 3)) power = wire.getPower(world, x, y, z + 1, power);
-        if ((face == BlockFace.NORTH || face == BlockFace.SELF) && world.isBlockFacePowered(x - 1, y, z, 4)) power = wire.getPower(world, x - 1, y, z, power);
-        if ((face == BlockFace.SOUTH || face == BlockFace.SELF) && world.isBlockFacePowered(x + 1, y, z, 5)) power = wire.getPower(world, x + 1, y, z, power);
+        if ((face == BlockFace.EAST || face == BlockFace.SELF) && world.isBlockFacePowered(x + 1, y, z, 2)) power = wire.getPower(world, x + 1, y, z, power);
+        if ((face == BlockFace.WEST || face == BlockFace.SELF) && world.isBlockFacePowered(x - 1, y, z, 3)) power = wire.getPower(world, x - 1, y, z, power);
+        if ((face == BlockFace.NORTH || face == BlockFace.SELF) && world.isBlockFacePowered(x, y, z - 1, 4)) power = wire.getPower(world, x, y, z - 1, power);
+        if ((face == BlockFace.SOUTH || face == BlockFace.SELF) && world.isBlockFacePowered(x, y, z + 1, 5)) power = wire.getPower(world, x, y, z - 1, power);
         return power > 0 ? power : (face == BlockFace.SELF ? isBlockIndirectlyPowered() : isBlockFaceIndirectlyPowered(face)) ? 15 : 0;
     }
 

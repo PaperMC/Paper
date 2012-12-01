@@ -134,7 +134,7 @@ public class BlockFlowing extends BlockFluids {
             }
 
             // CraftBukkit start - all four cardinal directions. Do not change the order!
-            BlockFace[] faces = new BlockFace[] { BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST };
+            BlockFace[] faces = new BlockFace[] { BlockFace.WEST, BlockFace.EAST, BlockFace.SOUTH, BlockFace.NORTH };
             int index = 0;
 
             for (BlockFace currentFace : faces) {
