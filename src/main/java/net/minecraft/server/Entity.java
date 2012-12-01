@@ -638,9 +638,9 @@ public abstract class Entity {
                 } else if (d6 < d0) {
                     block = block.getRelative(BlockFace.WEST);
                 } else if (d8 > d2) {
-                    block = block.getRelative(BlockFace.NORTH);
-                } else if (d8 < d2) {
                     block = block.getRelative(BlockFace.SOUTH);
+                } else if (d8 < d2) {
+                    block = block.getRelative(BlockFace.NORTH);
                 }
 
                 VehicleBlockCollisionEvent event = new VehicleBlockCollisionEvent(vehicle, block);
