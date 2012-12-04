@@ -824,7 +824,7 @@ public abstract class ServerConfigurationManagerAbstract {
 
     public void r() {
         while (!this.players.isEmpty()) {
-            ((EntityPlayer) this.players.get(0)).netServerHandler.disconnect("Server closed");
+            ((EntityPlayer) this.players.get(0)).netServerHandler.disconnect(this.server.server.getShutdownMessage()); // CraftBukkit - add custom shutdown message
         }
     }
 }

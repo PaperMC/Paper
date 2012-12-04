@@ -142,7 +142,10 @@ public class NetServerHandler extends NetHandler {
             String leaveMessage = "\u00A7e" + this.player.name + " left the game.";
 
             PlayerKickEvent event = new PlayerKickEvent(this.server.getPlayer(this.player), s, leaveMessage);
-            this.server.getPluginManager().callEvent(event);
+
+            if (this.server.getServer().isRunning()) {
+                this.server.getPluginManager().callEvent(event);
+            }
 
             if (event.isCancelled()) {
                 // Do not kick the player
