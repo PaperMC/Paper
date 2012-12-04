@@ -930,6 +930,10 @@ public final class CraftServer implements Server {
         return configuration.getInt("settings.spawn-radius", -1);
     }
 
+    public String getShutdownMessage() {
+        return configuration.getString("settings.shutdown-message");
+    }
+
     public int getSpawnRadius() {
         return ((DedicatedServer) console).propertyManager.getInt("spawn-protection", 16);
     }
