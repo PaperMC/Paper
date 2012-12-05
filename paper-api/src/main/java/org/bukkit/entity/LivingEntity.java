@@ -278,4 +278,19 @@ public interface LivingEntity extends Entity {
      * @return true if there is a line of sight, false if not.
      */
     public boolean hasLineOfSight(Entity other);
+
+    /**
+     * Returns if the entity despawns when away from players or not.<br />
+     * By default animals are not removed while other mobs are.
+     *
+     * @return true if the entity is removed when away from players
+     */
+    public boolean getRemoveWhenFarAway();
+
+    /**
+     * Sets whether or not the entity despawns when away from players or not.
+     *
+     * @param remove The remove status
+     */
+    public void setRemoveWhenFarAway(boolean remove);
 }
