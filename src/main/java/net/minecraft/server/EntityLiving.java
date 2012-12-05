@@ -87,7 +87,7 @@ public abstract class EntityLiving extends Entity {
     public boolean bp = false;
     public int bq = 0;
     protected boolean canPickUpLoot = false;
-    private boolean persistent = false;
+    public boolean persistent = (this instanceof EntityAnimal); // CraftBukkit - private -> public, change value
     protected int bs;
     protected double bt;
     protected double bu;
@@ -1394,11 +1394,11 @@ public abstract class EntityLiving extends Entity {
                 double d2 = entityhuman.locZ - this.locZ;
                 double d3 = d0 * d0 + d1 * d1 + d2 * d2;
 
-                if (this.bj() && d3 > 16384.0D) {
+                if (d3 > 16384.0D) { // CraftBukkit - remove this.bj() check
                     this.die();
                 }
 
-                if (this.bA > 600 && this.random.nextInt(800) == 0 && d3 > 1024.0D && this.bj()) {
+                if (this.bA > 600 && this.random.nextInt(800) == 0 && d3 > 1024.0D) { // CraftBukkit - remove this.bj() check
                     this.die();
                 } else if (d3 < 1024.0D) {
                     this.bA = 0;
