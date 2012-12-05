@@ -1087,6 +1087,7 @@ public abstract class EntityLiving extends Entity {
         nbttagcompound.setShort("AttackTime", (short) this.attackTicks);
         nbttagcompound.setBoolean("CanPickUpLoot", this.canPickUpLoot);
         nbttagcompound.setBoolean("PersistenceRequired", this.persistent);
+        nbttagcompound.setBoolean("Bukkit.PersistenceUpdated", true); // CraftBukkit
         NBTTagList nbttaglist = new NBTTagList();
 
         for (int i = 0; i < this.equipment.length; ++i) {
@@ -1134,7 +1135,13 @@ public abstract class EntityLiving extends Entity {
         this.deathTicks = nbttagcompound.getShort("DeathTime");
         this.attackTicks = nbttagcompound.getShort("AttackTime");
         this.canPickUpLoot = nbttagcompound.getBoolean("CanPickUpLoot");
-        this.persistent = nbttagcompound.getBoolean("PersistenceRequired");
+        // CraftBukkit start - if persistence is false only use it if it was set after we started using it
+        boolean data = nbttagcompound.getBoolean("PersistenceRequired");
+        if (nbttagcompound.hasKey("Bukkit.PersistenceUpdated") || data) {
+            this.persistent = data;
+        }
+        // CraftBukkit end
+
         NBTTagList nbttaglist;
         int i;
 
