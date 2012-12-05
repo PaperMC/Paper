@@ -383,6 +383,10 @@ public final class Bukkit {
         return server.getMotd();
     }
 
+    public static String getShutdownMessage() {
+        return server.getShutdownMessage();
+    }
+
     public static WarningState getWarningState() {
         return server.getWarningState();
     }

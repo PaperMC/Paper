@@ -667,6 +667,13 @@ public interface Server extends PluginMessageRecipient {
     String getMotd();
 
     /**
+     * Gets the default message that is displayed when the server is stopped
+     *
+     * @return the shutdown message
+     */
+    String getShutdownMessage();
+
+    /**
      * Gets the current warning state for the server
      *
      * @return The configured WarningState
