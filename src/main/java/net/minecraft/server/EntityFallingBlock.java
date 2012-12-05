@@ -3,7 +3,10 @@ package net.minecraft.server;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import org.bukkit.event.entity.EntityDamageEvent; // CraftBukkit
+//CraftBukkit start
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.entity.EntityDamageEvent;
+// CraftBukkit end
 
 public class EntityFallingBlock extends Entity {
 
@@ -81,7 +84,7 @@ public class EntityFallingBlock extends Entity {
                 int k = MathHelper.floor(this.locZ);
 
                 if (this.c == 1) {
-                    if (this.c == 1 && this.world.getTypeId(i, j, k) == this.id) {
+                    if (this.c == 1 && this.world.getTypeId(i, j, k) == this.id && this.world.getData(i, j, k) == this.data && !CraftEventFactory.callEntityChangeBlockEvent(this, i, j, k, 0, 0).isCancelled()) { // CraftBukkit - compare data and call event
                         this.world.setTypeId(i, j, k, 0);
                     } else {
                         this.die();
@@ -95,7 +98,13 @@ public class EntityFallingBlock extends Entity {
                     this.motY *= -0.5D;
                     if (this.world.getTypeId(i, j, k) != Block.PISTON_MOVING.id) {
                         this.die();
-                        if (!this.e && this.world.mayPlace(this.id, i, j, k, true, 1, (Entity) null) && !BlockSand.canFall(this.world, i, j - 1, k) && this.world.setTypeIdAndData(i, j, k, this.id, this.data)) {
+                        // CraftBukkit start
+                        if (!this.e && this.world.mayPlace(this.id, i, j, k, true, 1, (Entity) null) && !BlockSand.canFall(this.world, i, j - 1, k) /* mimic the false conditions of setTypeIdAndData */ && i >= -30000000 && k >= -30000000 && i < 30000000 && k < 30000000 && j > 0 && j < 256 && !(this.world.getTypeId(i, j, k) == this.id && this.world.getData(i, j, k) == this.data)) {
+                            if (CraftEventFactory.callEntityChangeBlockEvent(this, i, j, k, this.id, this.data).isCancelled()) {
+                                return;
+                            }
+                            this.world.setTypeIdAndData(i, j, k, this.id, this.data);
+                            // CraftBukkit end
                             if (Block.byId[this.id] instanceof BlockSand) {
                                 ((BlockSand) Block.byId[this.id]).a_(this.world, i, j, k, this.data);
                             }
@@ -129,7 +138,7 @@ public class EntityFallingBlock extends Entity {
                     // CraftBukkit start
                     int damage = Math.min(MathHelper.d((float) i * this.fallHurtAmount), this.fallHurtMax);
 
-                    EntityDamageEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDamageEvent(this, entity, EntityDamageEvent.DamageCause.FALLING_BLOCK, damage);
+                    EntityDamageEvent event = CraftEventFactory.callEntityDamageEvent(this, entity, EntityDamageEvent.DamageCause.FALLING_BLOCK, damage);
                     if (event.isCancelled()) {
                         continue;
                     }

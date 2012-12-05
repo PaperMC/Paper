@@ -463,7 +463,7 @@ public class CraftEventFactory {
     }
 
     public static EntityChangeBlockEvent callEntityChangeBlockEvent(org.bukkit.entity.Entity entity, Block block, Material material, int data) {
-        EntityChangeBlockEvent event = new EntityChangeBlockEvent((LivingEntity) entity, block, material, (byte) data);
+        EntityChangeBlockEvent event = new EntityChangeBlockEvent(entity, block, material, (byte) data);
         entity.getServer().getPluginManager().callEvent(event);
         return event;
     }
