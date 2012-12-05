@@ -25,7 +25,7 @@ public class TileEntityCommand extends TileEntity implements ICommandListener {
             MinecraftServer minecraftserver = MinecraftServer.getServer();
 
             if (minecraftserver != null && minecraftserver.getEnableCommandBlock()) {
-                // CraftBukkit start - handle command block as console TODO: add new CommandSender for this
+                // CraftBukkit start - handle command block as console
                 org.bukkit.command.SimpleCommandMap commandMap = minecraftserver.server.getCommandMap();
                 Joiner joiner = Joiner.on(" ");
                 String command = this.a;
@@ -44,6 +44,11 @@ public class TileEntityCommand extends TileEntity implements ICommandListener {
 
                 // make sure this is a valid command
                 if (commandMap.getCommand(args[0]) == null) {
+                    return;
+                }
+
+                // if the world has no players don't run
+                if (this.world.players.isEmpty()) {
                     return;
                 }
 
