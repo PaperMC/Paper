@@ -87,7 +87,7 @@ public abstract class EntityLiving extends Entity {
     public boolean bp = false;
     public int bq = 0;
     protected boolean canPickUpLoot = false;
-    public boolean persistent = (this instanceof EntityAnimal); // CraftBukkit - private -> public, change value
+    public boolean persistent = !this.bj(); // CraftBukkit - private -> public, change value
     protected int bs;
     protected double bt;
     protected double bu;
@@ -1139,6 +1139,8 @@ public abstract class EntityLiving extends Entity {
         boolean data = nbttagcompound.getBoolean("PersistenceRequired");
         if (nbttagcompound.hasKey("Bukkit.PersistenceUpdated") || data) {
             this.persistent = data;
+        } else {
+            this.persistent = !this.bj();
         }
         // CraftBukkit end
 
