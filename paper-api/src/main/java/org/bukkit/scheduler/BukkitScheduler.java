@@ -51,7 +51,9 @@ public interface BukkitScheduler {
      * @param task Task to be executed
      * @param delay Delay in server ticks before executing task
      * @return Task id number (-1 if scheduling failed)
+     * @deprecated This name is misleading, as it does not schedule "a sync" task, but rather, "an async" task
      */
+    @Deprecated
     public int scheduleAsyncDelayedTask(Plugin plugin, Runnable task, long delay);
 
     /**
@@ -64,7 +66,9 @@ public interface BukkitScheduler {
      * @param plugin Plugin that owns the task
      * @param task Task to be executed
      * @return Task id number (-1 if scheduling failed)
+     * @deprecated This name is misleading, as it does not schedule "a sync" task, but rather, "an async" task
      */
+    @Deprecated
     public int scheduleAsyncDelayedTask(Plugin plugin, Runnable task);
 
     /**
@@ -79,7 +83,9 @@ public interface BukkitScheduler {
      * @param delay Delay in server ticks before executing first repeat
      * @param period Period in server ticks of the task
      * @return Task id number (-1 if scheduling failed)
+     * @deprecated This name is misleading, as it does not schedule "a sync" task, but rather, "an async" task
      */
+    @Deprecated
     public int scheduleAsyncRepeatingTask(Plugin plugin, Runnable task, long delay, long period);
 
     /**
