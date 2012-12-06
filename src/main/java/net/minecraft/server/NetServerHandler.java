@@ -853,7 +853,7 @@ public class NetServerHandler extends NetHandler {
                 }
 
                 // CraftBukkit start
-                if (this.player.getChatFlags() == 1) {
+                if (this.player.getChatFlags() == 1 && !s.startsWith("/")) {
                     this.sendPacket(new Packet3Chat("Cannot send chat message."));
                     return;
                 }
