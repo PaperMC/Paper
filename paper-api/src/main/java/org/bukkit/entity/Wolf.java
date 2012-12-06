@@ -1,5 +1,7 @@
 package org.bukkit.entity;
 
+import org.bukkit.DyeColor;
+
 /**
  * Represents a Wolf
  */
@@ -35,4 +37,17 @@ public interface Wolf extends Animals, Tameable {
      */
     public void setSitting(boolean sitting);
 
+    /**
+     * Get the collar color of this wolf
+     *
+     * @return the color of the collar
+     */
+    public DyeColor getCollarColor();
+
+    /**
+     * Set the collar color of this wolf
+     *
+     * @param color the color to apply
+     */
+    public void setCollarColor(DyeColor color);
 }
