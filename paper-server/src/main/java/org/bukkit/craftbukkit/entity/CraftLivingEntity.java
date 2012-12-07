@@ -11,7 +11,6 @@ import net.minecraft.server.EntityArrow;
 import net.minecraft.server.EntityEgg;
 import net.minecraft.server.EntityEnderDragon;
 import net.minecraft.server.EntityEnderPearl;
-import net.minecraft.server.EntityFireball;
 import net.minecraft.server.EntityLargeFireball;
 import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntitySmallFireball;
@@ -278,19 +277,18 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         } else if (Arrow.class.isAssignableFrom(projectile)) {
             launch = new EntityArrow(world, getHandle(), 1);
         } else if (Fireball.class.isAssignableFrom(projectile)) {
-            if (SmallFireball.class.isAssignableFrom(projectile)) {
-                launch = new EntitySmallFireball(world);
-            } else if (WitherSkull.class.isAssignableFrom(projectile)) {
-                launch = new EntityWitherSkull(world);
-            } else {
-                launch = new EntityLargeFireball(world);
-            }
-
             Location location = getEyeLocation();
             Vector direction = location.getDirection().multiply(10);
 
+            if (SmallFireball.class.isAssignableFrom(projectile)) {
+                launch = new EntitySmallFireball(world, getHandle(), direction.getX(), direction.getY(), direction.getZ());
+            } else if (WitherSkull.class.isAssignableFrom(projectile)) {
+                launch = new EntityWitherSkull(world, getHandle(), direction.getX(), direction.getY(), direction.getZ());
+            } else {
+                launch = new EntityLargeFireball(world, getHandle(), direction.getX(), direction.getY(), direction.getZ());
+            }
+
             launch.setPositionRotation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
-            ((EntityFireball) launch).setDirection(direction.getX(), direction.getY(), direction.getZ());
         }
 
         Validate.notNull(launch, "Projectile not supported");
