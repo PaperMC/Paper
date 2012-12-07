@@ -304,10 +304,13 @@ public class CraftWorld implements World {
     }
 
     public Arrow spawnArrow(Location loc, Vector velocity, float speed, float spread) {
+        Validate.notNull(loc, "Can not spawn arrow with a null location");
+        Validate.notNull(velocity, "Can not spawn arrow with a null velocity");
+
         EntityArrow arrow = new EntityArrow(world);
-        arrow.setPositionRotation(loc.getX(), loc.getY(), loc.getZ(), 0, 0);
-        world.addEntity(arrow);
+        arrow.setPositionRotation(loc.getX(), loc.getY(), loc.getZ(), loc.getPitch(), loc.getYaw());
         arrow.shoot(velocity.getX(), velocity.getY(), velocity.getZ(), speed, spread);
+        world.addEntity(arrow);
         return (Arrow) arrow.getBukkitEntity();
     }
 
