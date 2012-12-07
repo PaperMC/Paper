@@ -12,6 +12,7 @@ import org.bukkit.Note;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Sound;
 import org.bukkit.Statistic;
+import org.bukkit.WeatherType;
 import org.bukkit.command.CommandSender;
 import org.bukkit.conversations.Conversable;
 import org.bukkit.map.MapView;
@@ -362,6 +363,29 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      * Equivalent to calling setPlayerTime(0, true).
      */
     public void resetPlayerTime();
+
+    /**
+     * Sets the type of weather the player will see.  When used, the weather
+     * status of the player is locked until {@link #resetPlayerWeather()} is
+     * used.
+     *
+     * @param type The WeatherType enum type the player should experience
+     */
+    public void setPlayerWeather(WeatherType type);
+
+    /**
+     * Returns the type of weather the player is currently experiencing.
+     *
+     * @return The WeatherType that the player is currently experiencing or
+     * null if player is seeing server weather.
+     */
+    public WeatherType getPlayerWeather();
+
+    /**
+     * Restores the normal condition where the player's weather is controlled
+     * by server conditions.
+     */
+    public void resetPlayerWeather();
 
     /**
      * Gives the player the amount of experience specified.
