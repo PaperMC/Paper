@@ -1413,7 +1413,11 @@ public abstract class EntityLiving extends Entity {
                     this.bA = 0;
                 }
             }
+        // CraftBukkit start
+        } else {
+            this.bA = 0;
         }
+        // CraftBukkit end
     }
 
     protected void bl() {
