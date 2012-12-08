@@ -148,6 +148,19 @@ public class CraftBlockState implements BlockState {
         return new Location(world, x, y, z);
     }
 
+    public Location getLocation(Location loc) {
+        if (loc != null) {
+            loc.setWorld(world);
+            loc.setX(x);
+            loc.setY(y);
+            loc.setZ(z);
+            loc.setYaw(0);
+            loc.setPitch(0);
+        }
+
+        return loc;
+    }
+
     public void setRawData(byte data) {
         this.data.setData(data);
     }

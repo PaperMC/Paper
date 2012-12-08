@@ -156,6 +156,19 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         return new Location(getWorld(), entity.locX, entity.locY, entity.locZ, entity.yaw, entity.pitch);
     }
 
+    public Location getLocation(Location loc) {
+        if (loc != null) {
+            loc.setWorld(getWorld());
+            loc.setX(entity.locX);
+            loc.setY(entity.locY);
+            loc.setZ(entity.locZ);
+            loc.setYaw(entity.yaw);
+            loc.setPitch(entity.pitch);
+        }
+
+        return loc;
+    }
+
     public Vector getVelocity() {
         return new Vector(entity.motX, entity.motY, entity.motZ);
     }
