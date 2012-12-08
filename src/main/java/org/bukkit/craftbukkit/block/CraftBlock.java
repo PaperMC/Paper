@@ -48,6 +48,19 @@ public class CraftBlock implements Block {
         return new Location(getWorld(), x, y, z);
     }
 
+    public Location getLocation(Location loc) {
+        if (loc != null) {
+            loc.setWorld(getWorld());
+            loc.setX(x);
+            loc.setY(y);
+            loc.setZ(z);
+            loc.setYaw(0);
+            loc.setPitch(0);
+        }
+
+        return loc;
+    }
+
     public BlockVector getVector() {
         return new BlockVector(x, y, z);
     }
