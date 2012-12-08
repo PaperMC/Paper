@@ -23,15 +23,13 @@ import org.bukkit.event.HandlerList;
  * <p />
  * If a Block Break event is cancelled, the block will not break and experience will not drop.
  */
-public class BlockBreakEvent extends BlockEvent implements Cancellable {
-
-    private static final HandlerList handlers = new HandlerList();
+public class BlockBreakEvent extends BlockExpEvent implements Cancellable {
     private final Player player;
     private boolean cancel;
-    private int exp;
 
     public BlockBreakEvent(final Block theBlock, final Player player) {
-        super(theBlock);
+        super(theBlock, 0);
+
         this.player = player;
     }
 
@@ -44,38 +42,11 @@ public class BlockBreakEvent extends BlockEvent implements Cancellable {
         return player;
     }
 
-    /**
-     * Get the experience to drop after the block is broken.
-     *
-     * @return The experience to drop
-     */
-    public int getExpToDrop() {
-        return exp;
-    }
-
-    /**
-     * Set the amount of experience to drop after the block is broken.
-     *
-     * @param exp 1 or higher to drop experience, or else nothing will drop
-     */
-    public void setExpToDrop(int exp) {
-        this.exp = exp;
-    }
-
     public boolean isCancelled() {
         return cancel;
     }
 
     public void setCancelled(boolean cancel) {
         this.cancel = cancel;
-    }
-
-    @Override
-    public HandlerList getHandlers() {
-        return handlers;
-    }
-
-    public static HandlerList getHandlerList() {
-        return handlers;
     }
 }
