@@ -88,6 +88,14 @@ public interface BlockState extends Metadatable {
     Location getLocation();
 
     /**
+     * Stores the location of this block in the provided Location object.<br />
+     * If the provided Location is null this method does nothing and returns null.
+     *
+     * @return The Location object provided or null
+     */
+    Location getLocation(Location loc);
+
+    /**
      * Gets the chunk which contains this block
      *
      * @return Containing Chunk

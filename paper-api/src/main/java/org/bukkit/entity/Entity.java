@@ -25,6 +25,14 @@ public interface Entity extends Metadatable {
     public Location getLocation();
 
     /**
+     * Stores the entity's current position in the provided Location object.<br />
+     * If the provided Location is null this method does nothing and returns null.
+     *
+     * @return The Location object provided or null
+     */
+    public Location getLocation(Location loc);
+
+    /**
      * Sets this entity's velocity
      *
      * @param velocity New velocity to travel with
