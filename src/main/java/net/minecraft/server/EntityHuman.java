@@ -1094,6 +1094,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
         } else {
             this.c = null;
             this.d = false;
+            this.spawnWorld = ""; // CraftBukkit
         }
     }
 

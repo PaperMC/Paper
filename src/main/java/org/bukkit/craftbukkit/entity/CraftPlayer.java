@@ -614,8 +614,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void setBedSpawnLocation(Location location, boolean override) {
-        getHandle().setRespawnPosition(new ChunkCoordinates(location.getBlockX(), location.getBlockY(), location.getBlockZ()), override);
-        getHandle().spawnWorld = location.getWorld().getName();
+        if (location == null) {
+            getHandle().setRespawnPosition(null, override);
+        } else {
+            getHandle().setRespawnPosition(new ChunkCoordinates(location.getBlockX(), location.getBlockY(), location.getBlockZ()), override);
+            getHandle().spawnWorld = location.getWorld().getName();
+        }
     }
 
     public void hidePlayer(Player player) {
