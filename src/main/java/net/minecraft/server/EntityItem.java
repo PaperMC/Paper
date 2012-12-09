@@ -204,6 +204,7 @@ public class EntityItem extends Entity {
             if (this.pickupDelay <= 0 && canHold > 0) {
                 this.itemStack.count = canHold;
                 PlayerPickupItemEvent event = new PlayerPickupItemEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
+                event.setCancelled(!entityhuman.canPickUpLoot);
                 this.world.getServer().getPluginManager().callEvent(event);
                 this.itemStack.count = canHold + remaining;
 

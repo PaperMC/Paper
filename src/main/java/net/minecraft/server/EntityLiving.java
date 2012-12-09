@@ -82,11 +82,11 @@ public abstract class EntityLiving extends Entity {
     private ChunkCoordinates bP = new ChunkCoordinates(0, 0, 0);
     private float bQ = -1.0F;
     private ItemStack[] equipment = new ItemStack[5];
-    protected float[] dropChances = new float[5];
+    public float[] dropChances = new float[5]; // CraftBukkit - protected -> public
     private ItemStack[] bS = new ItemStack[5];
     public boolean bp = false;
     public int bq = 0;
-    protected boolean canPickUpLoot = false;
+    public boolean canPickUpLoot = false; // CraftBukkit - protected -> public
     public boolean persistent = !this.bj(); // CraftBukkit - private -> public, change value
     protected int bs;
     protected double bt;
