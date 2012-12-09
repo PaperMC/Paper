@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.bukkit.Location;
 import org.bukkit.block.Block;
+import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -293,4 +294,25 @@ public interface LivingEntity extends Entity {
      * @param remove The remove status
      */
     public void setRemoveWhenFarAway(boolean remove);
+
+    /**
+     *  Gets the inventory with the equipment worn by this entity.
+     *
+     *  @return the entities inventory.
+     */
+    public EntityEquipment getEquipment();
+
+    /**
+     * Sets whether or not the entity can pick up items
+     *
+     * @param pickup Whether or not the entity can pick up items
+     */
+    public void setCanPickupItems(boolean pickup);
+
+    /**
+     * Gets if the entity can pick up items
+     *
+     * @return whether or not the entity can pick up items
+     */
+    public boolean getCanPickupItems();
 }
