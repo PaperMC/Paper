@@ -27,6 +27,7 @@ import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.inventory.CraftEntityEquipment;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Egg;
 import org.bukkit.entity.Entity;
@@ -40,14 +41,21 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.entity.SmallFireball;
 import org.bukkit.entity.Snowball;
 import org.bukkit.entity.WitherSkull;
+import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.BlockIterator;
 import org.bukkit.util.Vector;
 
 public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+    private CraftEntityEquipment equipment;
+
     public CraftLivingEntity(final CraftServer server, final EntityLiving entity) {
         super(server, entity);
+
+        if (!(this instanceof HumanEntity)) {
+            equipment = new CraftEntityEquipment(this);
+        }
     }
 
     public int getHealth() {
@@ -311,5 +319,17 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     public void setRemoveWhenFarAway(boolean remove) {
         getHandle().persistent = !remove;
+    }
+
+    public EntityEquipment getEquipment() {
+        return equipment;
+    }
+
+    public void setCanPickupItems(boolean pickup) {
+        getHandle().canPickUpLoot = pickup;
+    }
+
+    public boolean canPickupItems() {
+        return getHandle().canPickUpLoot;
     }
 }

@@ -3,9 +3,10 @@ package org.bukkit.craftbukkit.inventory;
 import net.minecraft.server.PlayerInventory;
 
 import org.bukkit.entity.HumanEntity;
+import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 
-public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.inventory.PlayerInventory {
+public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.inventory.PlayerInventory, EntityEquipment {
     public CraftInventoryPlayer(net.minecraft.server.PlayerInventory inventory) {
         super(inventory);
     }
@@ -119,5 +120,45 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
     @Override
     public HumanEntity getHolder() {
         return (HumanEntity) inventory.getOwner();
+    }
+
+    public float getItemInHandDropChance() {
+        return 1;
+    }
+
+    public void setItemInHandDropChance(float chance) {
+        throw new UnsupportedOperationException();
+    }
+
+    public float getHelmetDropChance() {
+        return 1;
+    }
+
+    public void setHelmetDropChance(float chance) {
+        throw new UnsupportedOperationException();
+    }
+
+    public float getChestPlateDropChance() {
+        return 1;
+    }
+
+    public void setChestPlateDropChance(float chance) {
+        throw new UnsupportedOperationException();
+    }
+
+    public float getLeggingsDropChance() {
+        return 1;
+    }
+
+    public void setLeggingsDropChance(float chance) {
+        throw new UnsupportedOperationException();
+    }
+
+    public float getBootsDropChance() {
+        return 1;
+    }
+
+    public void setBootsDropChance(float chance) {
+        throw new UnsupportedOperationException();
     }
 }

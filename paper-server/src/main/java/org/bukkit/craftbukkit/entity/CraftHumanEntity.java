@@ -28,6 +28,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryPlayer;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.permissions.PermissibleBase;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionAttachment;
@@ -53,6 +54,10 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     public PlayerInventory getInventory() {
+        return inventory;
+    }
+
+    public EntityEquipment getEquipment() {
         return inventory;
     }
 
