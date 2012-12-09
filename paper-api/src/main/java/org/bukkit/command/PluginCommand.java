@@ -61,7 +61,7 @@ public final class PluginCommand extends Command implements PluginIdentifiableCo
      * @param executor New executor to run
      */
     public void setExecutor(CommandExecutor executor) {
-        this.executor = executor;
+        this.executor = executor == null ? owningPlugin : executor;
     }
 
     /**
