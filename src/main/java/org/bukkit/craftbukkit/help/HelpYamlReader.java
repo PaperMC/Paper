@@ -23,7 +23,7 @@ public class HelpYamlReader {
 
     public HelpYamlReader(Server server) {
         this.server = server;
-        
+
         File helpYamlFile = new File("help.yml");
         YamlConfiguration defaultConfig = YamlConfiguration.loadConfiguration(getClass().getClassLoader().getResourceAsStream("configurations/help.yml"));
 
@@ -56,9 +56,9 @@ public class HelpYamlReader {
         if (generalTopics != null) {
             for (String topicName : generalTopics.getKeys(false)) {
                 ConfigurationSection section = generalTopics.getConfigurationSection(topicName);
-                String shortText = ChatColor.translateAlternateColorCodes(ALT_COLOR_CODE, section.getString("shortText"));
-                String fullText = ChatColor.translateAlternateColorCodes(ALT_COLOR_CODE, section.getString("fullText"));
-                String permission = section.getString("permission");
+                String shortText = ChatColor.translateAlternateColorCodes(ALT_COLOR_CODE, section.getString("shortText", ""));
+                String fullText = ChatColor.translateAlternateColorCodes(ALT_COLOR_CODE, section.getString("fullText", ""));
+                String permission = section.getString("permission", "");
                 topics.add(new CustomHelpTopic(topicName, shortText, fullText, permission));
             }
         }
@@ -76,9 +76,9 @@ public class HelpYamlReader {
         if (indexTopics != null) {
             for (String topicName : indexTopics.getKeys(false)) {
                 ConfigurationSection section = indexTopics.getConfigurationSection(topicName);
-                String shortText = ChatColor.translateAlternateColorCodes(ALT_COLOR_CODE, section.getString("shortText"));
-                String preamble = ChatColor.translateAlternateColorCodes(ALT_COLOR_CODE, section.getString("preamble"));
-                String permission = ChatColor.translateAlternateColorCodes(ALT_COLOR_CODE, section.getString("permission"));
+                String shortText = ChatColor.translateAlternateColorCodes(ALT_COLOR_CODE, section.getString("shortText", ""));
+                String preamble = ChatColor.translateAlternateColorCodes(ALT_COLOR_CODE, section.getString("preamble", ""));
+                String permission = ChatColor.translateAlternateColorCodes(ALT_COLOR_CODE, section.getString("permission", ""));
                 List<String> commands = section.getStringList("commands");
                 topics.add(new CustomIndexHelpTopic(server.getHelpMap(), topicName, shortText, permission, commands, preamble));
             }
@@ -97,9 +97,9 @@ public class HelpYamlReader {
         if (commandTopics != null) {
             for (String topicName : commandTopics.getKeys(false)) {
                 ConfigurationSection section = commandTopics.getConfigurationSection(topicName);
-                String description = ChatColor.translateAlternateColorCodes(ALT_COLOR_CODE, section.getString("shortText"));
-                String usage = ChatColor.translateAlternateColorCodes(ALT_COLOR_CODE, section.getString("fullText"));
-                String permission = section.getString("permission");
+                String description = ChatColor.translateAlternateColorCodes(ALT_COLOR_CODE, section.getString("shortText", ""));
+                String usage = ChatColor.translateAlternateColorCodes(ALT_COLOR_CODE, section.getString("fullText", ""));
+                String permission = section.getString("permission", "");
                 amendments.add(new HelpTopicAmendment(topicName, description, usage, permission));
             }
         }
