@@ -80,7 +80,7 @@ public class SimpleHelpMap implements HelpMap {
         for (HelpTopic topic : yaml.getGeneralTopics()) {
             addTopic(topic);
         }
-        
+
         // Initialize index help topics from the help.yml file
         for (HelpTopic topic : yaml.getIndexTopics()) {
             if (topic.getName().equals("Default")) {
@@ -97,7 +97,7 @@ public class SimpleHelpMap implements HelpMap {
     public synchronized void initializeCommands() {
         // ** Load topics from highest to lowest priority order **
         Set<String> ignoredPlugins = new HashSet<String>(yaml.getIgnoredPlugins());
-        
+
         // Don't load any automatic help topics if All is ignored
         if (ignoredPlugins.contains("All")) {
             return;
@@ -145,7 +145,10 @@ public class SimpleHelpMap implements HelpMap {
         }
 
         // Add alias sub-index
-        addTopic(new IndexHelpTopic("Aliases", "Lists command aliases", null, Collections2.filter(helpTopics.values(), Predicates.instanceOf(CommandAliasHelpTopic.class))));
+        Collection<HelpTopic> filteredTopics = Collections2.<HelpTopic>filter(helpTopics.values(), Predicates.instanceOf(CommandAliasHelpTopic.class));
+        if (!filteredTopics.isEmpty()) {
+            addTopic(new IndexHelpTopic("Aliases", "Lists command aliases", null, filteredTopics));
+        }
 
         // Initialize plugin-level sub-topics
         Map<String, Set<HelpTopic>> pluginIndexes = new HashMap<String, Set<HelpTopic>>();
