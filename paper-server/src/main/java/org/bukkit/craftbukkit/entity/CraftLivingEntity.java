@@ -81,7 +81,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public double getEyeHeight() {
-        return 1.0D;
+        return getHandle().getHeadHeight();
     }
 
     public double getEyeHeight(boolean ignoreSneaking) {
