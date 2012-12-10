@@ -181,6 +181,8 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
         this.P.a(this.getTime());
         this.methodProfiler.b();
         this.V();
+
+        this.getWorld().processChunkGC(); // CraftBukkit
     }
 
     public BiomeMeta a(EnumCreatureType enumcreaturetype, int i, int j, int k) {

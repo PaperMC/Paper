@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit;
 
 import java.io.File;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -58,6 +59,8 @@ public class CraftWorld implements World {
     private int animalSpawn = -1;
     private int waterAnimalSpawn = -1;
     private int ambientSpawn = -1;
+    private int chunkLoadCount = 0;
+    private int chunkGCTickCount;
 
     private static final Random rand = new Random();
 
@@ -66,6 +69,10 @@ public class CraftWorld implements World {
         this.generator = gen;
 
         environment = env;
+
+        if (server.chunkGCPeriod > 0) {
+            chunkGCTickCount = rand.nextInt(server.chunkGCPeriod);
+        }
     }
 
     public Block getBlockAt(int x, int y, int z) {
@@ -226,6 +233,7 @@ public class CraftWorld implements World {
     }
 
     public boolean loadChunk(int x, int z, boolean generate) {
+        chunkLoadCount++;
         if (generate) {
             // Use the default variant of loadChunk when generate == true.
             return world.chunkProviderServer.getChunkAt(x, z) != null;
@@ -1232,5 +1240,35 @@ public class CraftWorld implements World {
 
     public boolean isGameRule(String rule) {
         return getHandle().getGameRules().e(rule);
+    }
+
+    public void processChunkGC() {
+        chunkGCTickCount++;
+
+        if (chunkLoadCount >= server.chunkGCLoadThresh && server.chunkGCLoadThresh > 0) {
+            chunkLoadCount = 0;
+        } else if (chunkGCTickCount >= server.chunkGCPeriod && server.chunkGCPeriod > 0) {
+            chunkGCTickCount = 0;
+        } else {
+            return;
+        }
+
+        ChunkProviderServer cps = world.chunkProviderServer;
+        Iterator<net.minecraft.server.Chunk> iter = cps.chunks.values().iterator();
+        while (iter.hasNext()) {
+            net.minecraft.server.Chunk chunk = iter.next();
+            // If in use, skip it
+            if (isChunkInUse(chunk.x, chunk.z)) {
+                continue;
+            }
+
+            // Already unloading?
+            if (cps.unloadQueue.contains(chunk.x, chunk.z)) {
+                continue;
+            }
+
+            // Add unload request
+            cps.queueUnload(chunk.x,  chunk.z);
+        }
     }
 }
