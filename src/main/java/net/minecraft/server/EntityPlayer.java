@@ -74,6 +74,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         this.height = 0.0F;
         this.displayName = this.name; // CraftBukkit
         this.listName = this.name; // CraftBukkit
+        this.canPickUpLoot = true; // CraftBukkit
     }
 
     public void a(NBTTagCompound nbttagcompound) {
