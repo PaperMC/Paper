@@ -29,6 +29,13 @@ import org.bukkit.plugin.PluginManager;
 
 public abstract class Entity {
 
+    // CraftBukkit start
+    private static final int CURRENT_LEVEL = 1;
+    static boolean isLevelAtLeast(NBTTagCompound tag, int level) {
+        return tag.hasKey("Bukkit.updateLevel") && tag.getInt("Bukkit.updateLevel") >= level;
+    }
+    // CraftBukkit end
+
     private static int entityCount = 0;
     public int id;
     public double l;
@@ -1087,6 +1094,7 @@ public abstract class Entity {
             nbttagcompound.setLong("WorldUUIDMost", this.world.getDataManager().getUUID().getMostSignificantBits());
             nbttagcompound.setLong("UUIDLeast", this.uniqueId.getLeastSignificantBits());
             nbttagcompound.setLong("UUIDMost", this.uniqueId.getMostSignificantBits());
+            nbttagcompound.setInt("Bukkit.updateLevel", CURRENT_LEVEL);
             // CraftBukkit end
             this.b(nbttagcompound);
         } catch (Throwable throwable) {
