@@ -1274,7 +1274,8 @@ public abstract class EntityLiving extends Entity {
 
         this.world.methodProfiler.b();
         this.world.methodProfiler.a("looting");
-        if (!this.world.isStatic && this.canPickUpLoot && !this.bb && this.world.getGameRules().getBoolean("mobGriefing")) {
+        // CraftBukkit - Don't run mob pickup code on players
+        if (!this.world.isStatic && !(this instanceof EntityPlayer) && this.canPickUpLoot && !this.bb && this.world.getGameRules().getBoolean("mobGriefing")) {
             List list = this.world.a(EntityItem.class, this.boundingBox.grow(1.0D, 0.0D, 1.0D));
             Iterator iterator = list.iterator();
 
