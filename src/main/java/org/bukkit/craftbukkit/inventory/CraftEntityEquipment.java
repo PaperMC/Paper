@@ -7,10 +7,10 @@ import org.bukkit.inventory.ItemStack;
 
 public class CraftEntityEquipment implements EntityEquipment {
     private static final int WEAPON_SLOT = 0;
-    private static final int HELMET_SLOT = 1;
-    private static final int CHEST_SLOT = 2;
-    private static final int LEG_SLOT = 3;
-    private static final int BOOT_SLOT = 4;
+    private static final int HELMET_SLOT = 4;
+    private static final int CHEST_SLOT = 3;
+    private static final int LEG_SLOT = 2;
+    private static final int BOOT_SLOT = 1;
     private static final int INVENTORY_SLOTS = 5;
 
     private final CraftLivingEntity entity;
@@ -61,14 +61,14 @@ public class CraftEntityEquipment implements EntityEquipment {
 
     public ItemStack[] getArmorContents() {
         ItemStack[] armor = new ItemStack[INVENTORY_SLOTS - 1];
-        for(int slot = HELMET_SLOT; slot < INVENTORY_SLOTS; slot++) {
+        for(int slot = WEAPON_SLOT + 1; slot < INVENTORY_SLOTS; slot++) {
             armor[slot - 1] = getEquipment(slot);
         }
         return armor;
     }
 
     public void setArmorContents(ItemStack[] items) {
-        for(int slot = HELMET_SLOT; slot < INVENTORY_SLOTS; slot++) {
+        for(int slot = WEAPON_SLOT + 1; slot < INVENTORY_SLOTS; slot++) {
             ItemStack equipment = items != null && slot <= items.length ? items[slot - 1] : null;
             setEquipment(slot, equipment);
         }
