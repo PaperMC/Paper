@@ -443,28 +443,33 @@ public enum Material {
      * @return true if this Material is edible.
      */
     public boolean isEdible() {
-        return equals(Material.BREAD)
-                || equals(Material.CARROT_ITEM)
-                || equals(Material.BAKED_POTATO)
-                || equals(Material.POTATO_ITEM)
-                || equals(Material.POISONOUS_POTATO)
-                || equals(Material.GOLDEN_CARROT)
-                || equals(Material.PUMPKIN_PIE)
-                || equals(Material.COOKIE)
-                || equals(Material.MELON)
-                || equals(Material.MUSHROOM_SOUP)
-                || equals(Material.RAW_CHICKEN)
-                || equals(Material.COOKED_CHICKEN)
-                || equals(Material.RAW_BEEF)
-                || equals(Material.COOKED_BEEF)
-                || equals(Material.RAW_FISH)
-                || equals(Material.COOKED_FISH)
-                || equals(Material.PORK)
-                || equals(Material.GRILLED_PORK)
-                || equals(Material.APPLE)
-                || equals(Material.GOLDEN_APPLE)
-                || equals(Material.ROTTEN_FLESH)
-                || equals(Material.SPIDER_EYE);
+        switch (this) {
+            case BREAD:
+            case CARROT_ITEM:
+            case BAKED_POTATO:
+            case POTATO_ITEM:
+            case POISONOUS_POTATO:
+            case GOLDEN_CARROT:
+            case PUMPKIN_PIE:
+            case COOKIE:
+            case MELON:
+            case MUSHROOM_SOUP:
+            case RAW_CHICKEN:
+            case COOKED_CHICKEN:
+            case RAW_BEEF:
+            case COOKED_BEEF:
+            case RAW_FISH:
+            case COOKED_FISH:
+            case PORK:
+            case GRILLED_PORK:
+            case APPLE:
+            case GOLDEN_APPLE:
+            case ROTTEN_FLESH:
+            case SPIDER_EYE:
+                return true;
+            default:
+                return false;
+        }
     }
 
     /**
@@ -651,6 +656,211 @@ public enum Material {
             case BEACON:
             case COBBLE_WALL:
             case ANVIL:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Check if the material is a block and does not block any light
+     *
+     * @return True if this material is a block and does not block any light
+     */
+    public boolean isTransparent() {
+        if (!isBlock()) {
+            return false;
+        }
+        switch (this) {
+            case AIR:
+            case SAPLING:
+            case POWERED_RAIL:
+            case DETECTOR_RAIL:
+            case LONG_GRASS:
+            case DEAD_BUSH:
+            case YELLOW_FLOWER:
+            case RED_ROSE:
+            case BROWN_MUSHROOM:
+            case RED_MUSHROOM:
+            case TORCH:
+            case FIRE:
+            case REDSTONE_WIRE:
+            case CROPS:
+            case LADDER:
+            case RAILS:
+            case LEVER:
+            case REDSTONE_TORCH_OFF:
+            case REDSTONE_TORCH_ON:
+            case STONE_BUTTON:
+            case SNOW:
+            case SUGAR_CANE_BLOCK:
+            case PORTAL:
+            case DIODE_BLOCK_OFF:
+            case DIODE_BLOCK_ON:
+            case PUMPKIN_STEM:
+            case MELON_STEM:
+            case VINE:
+            case WATER_LILY:
+            case NETHER_WARTS:
+            case ENDER_PORTAL:
+            case COCOA:
+            case TRIPWIRE_HOOK:
+            case TRIPWIRE:
+            case FLOWER_POT:
+            case CARROT:
+            case POTATO:
+            case WOOD_BUTTON:
+            case SKULL:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Check if the material is a block and can catch fire
+     *
+     * @return True if this material is a block and can catch fire
+     */
+    public boolean isFlammable() {
+        if (!isBlock()) {
+            return false;
+        }
+        switch (this) {
+            case WOOD:
+            case LOG:
+            case LEAVES:
+            case NOTE_BLOCK:
+            case BED_BLOCK:
+            case LONG_GRASS:
+            case DEAD_BUSH:
+            case WOOL:
+            case TNT:
+            case BOOKSHELF:
+            case WOOD_STAIRS:
+            case CHEST:
+            case WORKBENCH:
+            case SIGN_POST:
+            case WOODEN_DOOR:
+            case WALL_SIGN:
+            case WOOD_PLATE:
+            case JUKEBOX:
+            case FENCE:
+            case LOCKED_CHEST:
+            case TRAP_DOOR:
+            case HUGE_MUSHROOM_1:
+            case HUGE_MUSHROOM_2:
+            case VINE:
+            case FENCE_GATE:
+            case WOOD_DOUBLE_STEP:
+            case WOOD_STEP:
+            case SPRUCE_WOOD_STAIRS:
+            case BIRCH_WOOD_STAIRS:
+            case JUNGLE_WOOD_STAIRS:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Check if the material is a block and can burn away
+     *
+     * @return True if this material is a block and can burn away
+     */
+    public boolean isBurnable() {
+        if (!isBlock()) {
+            return false;
+        }
+        switch (this) {
+            case WOOD:
+            case LOG:
+            case LEAVES:
+            case LONG_GRASS:
+            case WOOL:
+            case TNT:
+            case BOOKSHELF:
+            case WOOD_STAIRS:
+            case FENCE:
+            case VINE:
+            case WOOD_DOUBLE_STEP:
+            case WOOD_STEP:
+            case SPRUCE_WOOD_STAIRS:
+            case BIRCH_WOOD_STAIRS:
+            case JUNGLE_WOOD_STAIRS:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Check if the material is a block and completely blocks vision
+     *
+     * @return True if this material is a block and completely blocks vision
+     */
+    public boolean isOccluding() {
+        if (!isBlock()) {
+            return false;
+        }
+        switch (this) {
+            case STONE:
+            case GRASS:
+            case DIRT:
+            case COBBLESTONE:
+            case WOOD:
+            case BEDROCK:
+            case SAND:
+            case GRAVEL:
+            case GOLD_ORE:
+            case IRON_ORE:
+            case COAL_ORE:
+            case LOG:
+            case SPONGE:
+            case LAPIS_ORE:
+            case LAPIS_BLOCK:
+            case DISPENSER:
+            case SANDSTONE:
+            case NOTE_BLOCK:
+            case WOOL:
+            case GOLD_BLOCK:
+            case IRON_BLOCK:
+            case DOUBLE_STEP:
+            case BRICK:
+            case BOOKSHELF:
+            case MOSSY_COBBLESTONE:
+            case OBSIDIAN:
+            case MOB_SPAWNER:
+            case DIAMOND_ORE:
+            case DIAMOND_BLOCK:
+            case WORKBENCH:
+            case FURNACE:
+            case BURNING_FURNACE:
+            case REDSTONE_ORE:
+            case GLOWING_REDSTONE_ORE:
+            case SNOW_BLOCK:
+            case CLAY:
+            case JUKEBOX:
+            case PUMPKIN:
+            case NETHERRACK:
+            case SOUL_SAND:
+            case JACK_O_LANTERN:
+            case LOCKED_CHEST:
+            case MONSTER_EGGS:
+            case SMOOTH_BRICK:
+            case HUGE_MUSHROOM_1:
+            case HUGE_MUSHROOM_2:
+            case MELON_BLOCK:
+            case MYCEL:
+            case NETHER_BRICK:
+            case ENDER_PORTAL_FRAME:
+            case ENDER_STONE:
+            case REDSTONE_LAMP_OFF:
+            case REDSTONE_LAMP_ON:
+            case WOOD_DOUBLE_STEP:
+            case EMERALD_ORE:
+            case EMERALD_BLOCK:
+            case COMMAND:
                 return true;
             default:
                 return false;
