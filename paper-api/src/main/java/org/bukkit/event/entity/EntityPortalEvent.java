@@ -1,25 +1,22 @@
-package org.bukkit.event.player;
+package org.bukkit.event.entity;
 
 import org.bukkit.Location;
 import org.bukkit.TravelAgent;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.Entity;
 import org.bukkit.event.HandlerList;
 
 /**
- * Called when a player is about to teleport because it is in contact with a portal
+ * Called when a non-player entity is about to teleport because it is in contact with a portal
+ * <p />
+ * For players see {@link org.bukkit.event.player.PlayerPortalEvent PlayerPortalEvent}
  */
-public class PlayerPortalEvent extends PlayerTeleportEvent {
+public class EntityPortalEvent extends EntityTeleportEvent {
     private static final HandlerList handlers = new HandlerList();
     protected boolean useTravelAgent = true;
     protected TravelAgent travelAgent;
 
-    public PlayerPortalEvent(final Player player, final Location from, final Location to, final TravelAgent pta) {
-        super(player, from, to);
-        this.travelAgent = pta;
-    }
-
-    public PlayerPortalEvent(Player player, Location from, Location to, TravelAgent pta, TeleportCause cause) {
-        super(player, from, to, cause);
+    public EntityPortalEvent(final Entity entity, final Location from, final Location to, final TravelAgent pta) {
+        super(entity, from, to);
         this.travelAgent = pta;
     }
 

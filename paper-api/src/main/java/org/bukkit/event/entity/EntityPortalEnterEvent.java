@@ -5,7 +5,7 @@ import org.bukkit.Location;
 import org.bukkit.event.HandlerList;
 
 /**
- * Stores data for entities standing inside a portal block
+ * Called when an entity comes into contact with a portal
  */
 public class EntityPortalEnterEvent extends EntityEvent {
     private static final HandlerList handlers = new HandlerList();
