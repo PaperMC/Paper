@@ -3,11 +3,11 @@ package org.bukkit.potion;
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
 
-import java.lang.reflect.Field;
 import java.util.EnumMap;
 import java.util.Map;
 
 import org.bukkit.craftbukkit.potion.CraftPotionBrewer;
+import org.bukkit.support.Util;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -36,9 +36,7 @@ public class PotionTest {
 
     @Test
     public void testEffectCompleteness() throws SecurityException, IllegalAccessException, NoSuchFieldException {
-        Field durationsField = net.minecraft.server.PotionBrewer.class.getDeclaredField("effectDurations");
-        durationsField.setAccessible(true);
-        Map<Integer, ?> effectDurations = (Map<Integer, ?>) durationsField.get(null);
+        Map<Integer, ?> effectDurations = Util.getInternalState(net.minecraft.server.PotionBrewer.class, null, "effectDurations");
 
         Map<PotionType, String> effects = new EnumMap(PotionType.class);
         for (int id : effectDurations.keySet()) {
