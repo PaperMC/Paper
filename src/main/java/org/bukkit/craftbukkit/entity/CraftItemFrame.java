@@ -1,10 +1,9 @@
 package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntityItemFrame;
-import net.minecraft.server.ItemStack;
 
 import org.apache.commons.lang.Validate;
-import org.bukkit.Material;
+
 import org.bukkit.Rotation;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -26,8 +25,7 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
     }
 
     public org.bukkit.inventory.ItemStack getItem() {
-        ItemStack i = getHandle().i();
-        return i == null ? new org.bukkit.inventory.ItemStack(Material.AIR) : CraftItemStack.asBukkitStack(i);
+        return CraftItemStack.asBukkitStack(getHandle().i());
     }
 
     public Rotation getRotation() {
