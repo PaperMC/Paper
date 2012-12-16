@@ -49,10 +49,9 @@ public class Torch extends SimpleAttachableMaterialData {
             return BlockFace.SOUTH;
 
         case 0x5:
+        default:
             return BlockFace.DOWN;
         }
-
-        return null;
     }
 
     public void setFacingDirection(BlockFace face) {

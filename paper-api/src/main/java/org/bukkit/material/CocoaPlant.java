@@ -6,7 +6,7 @@ import org.bukkit.block.BlockFace;
 /**
  * Represents the cocoa plant
  */
-public class CocoaPlant extends MaterialData implements Directional {
+public class CocoaPlant extends MaterialData implements Directional, Attachable {
 
     public enum CocoaPlantSize {
         SMALL,
@@ -71,9 +71,14 @@ public class CocoaPlant extends MaterialData implements Directional {
         setData((byte) dat);
     }
 
+    public BlockFace getAttachedFace() {
+        return getFacing().getOppositeFace();
+    }
+
     public void setFacingDirection(BlockFace face) {
         int dat = getData() & 0xC;
         switch (face) {
+            default:
             case SOUTH:
                 break;
             case WEST:
@@ -84,8 +89,6 @@ public class CocoaPlant extends MaterialData implements Directional {
                 break;
             case EAST:
                 dat |= 0x3;
-                break;
-            default:
                 break;
         }
         setData((byte) dat);

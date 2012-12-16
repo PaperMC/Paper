@@ -80,49 +80,49 @@ public class Sign extends MaterialData implements Attachable {
                 return BlockFace.SOUTH;
 
             case 0x1:
-                return BlockFace.WEST_NORTH_WEST;
+                return BlockFace.SOUTH_SOUTH_WEST;
 
             case 0x2:
-                return BlockFace.NORTH_WEST;
+                return BlockFace.SOUTH_WEST;
 
             case 0x3:
-                return BlockFace.NORTH_NORTH_WEST;
+                return BlockFace.WEST_SOUTH_WEST;
 
             case 0x4:
                 return BlockFace.WEST;
 
             case 0x5:
-                return BlockFace.NORTH_NORTH_EAST;
+                return BlockFace.WEST_NORTH_WEST;
 
             case 0x6:
-                return BlockFace.NORTH_EAST;
+                return BlockFace.NORTH_WEST;
 
             case 0x7:
-                return BlockFace.EAST_NORTH_EAST;
+                return BlockFace.NORTH_NORTH_WEST;
 
             case 0x8:
                 return BlockFace.NORTH;
 
             case 0x9:
-                return BlockFace.EAST_SOUTH_EAST;
+                return BlockFace.NORTH_NORTH_EAST;
 
             case 0xA:
-                return BlockFace.SOUTH_EAST;
+                return BlockFace.NORTH_EAST;
 
             case 0xB:
-                return BlockFace.SOUTH_SOUTH_EAST;
+                return BlockFace.EAST_NORTH_EAST;
 
             case 0xC:
                 return BlockFace.EAST;
 
             case 0xD:
-                return BlockFace.SOUTH_SOUTH_WEST;
+                return BlockFace.EAST_SOUTH_EAST;
 
             case 0xE:
-                return BlockFace.SOUTH_WEST;
+                return BlockFace.SOUTH_EAST;
 
             case 0xF:
-                return BlockFace.WEST_SOUTH_WEST;
+                return BlockFace.SOUTH_SOUTH_EAST;
             }
 
             return null;
@@ -158,15 +158,15 @@ public class Sign extends MaterialData implements Attachable {
                 data = 0x0;
                 break;
 
-            case WEST_NORTH_WEST:
+            case SOUTH_SOUTH_WEST:
                 data = 0x1;
                 break;
 
-            case NORTH_WEST:
+            case SOUTH_WEST:
                 data = 0x2;
                 break;
 
-            case NORTH_NORTH_WEST:
+            case WEST_SOUTH_WEST:
                 data = 0x3;
                 break;
 
@@ -174,15 +174,15 @@ public class Sign extends MaterialData implements Attachable {
                 data = 0x4;
                 break;
 
-            case NORTH_NORTH_EAST:
+            case WEST_NORTH_WEST:
                 data = 0x5;
                 break;
 
-            case NORTH_EAST:
+            case NORTH_WEST:
                 data = 0x6;
                 break;
 
-            case EAST_NORTH_EAST:
+            case NORTH_NORTH_WEST:
                 data = 0x7;
                 break;
 
@@ -190,15 +190,15 @@ public class Sign extends MaterialData implements Attachable {
                 data = 0x8;
                 break;
 
-            case EAST_SOUTH_EAST:
+            case NORTH_NORTH_EAST:
                 data = 0x9;
                 break;
 
-            case SOUTH_EAST:
+            case NORTH_EAST:
                 data = 0xA;
                 break;
 
-            case SOUTH_SOUTH_EAST:
+            case EAST_NORTH_EAST:
                 data = 0xB;
                 break;
 
@@ -206,15 +206,15 @@ public class Sign extends MaterialData implements Attachable {
                 data = 0xC;
                 break;
 
-            case SOUTH_SOUTH_WEST:
+            case EAST_SOUTH_EAST:
                 data = 0xD;
                 break;
 
-            case WEST_SOUTH_WEST:
+            case SOUTH_SOUTH_EAST:
                 data = 0xF;
                 break;
 
-            case SOUTH_WEST:
+            case SOUTH_EAST:
             default:
                 data = 0xE;
             }

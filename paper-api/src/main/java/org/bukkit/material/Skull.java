@@ -41,12 +41,17 @@ public class Skull extends MaterialData implements Directional {
         int data;
 
         switch (face) {
-            case NORTH:
+            case SELF:
+            default:
                 data = 0x1;
                 break;
 
-            case EAST:
+            case NORTH:
                 data = 0x2;
+                break;
+
+            case EAST:
+                data = 0x4;
                 break;
 
             case SOUTH:
@@ -54,29 +59,31 @@ public class Skull extends MaterialData implements Directional {
                 break;
 
             case WEST:
-            default:
-                data = 0x4;
+                data = 0x5;
         }
 
-        setData((byte) (data & 3));
+        setData((byte) data);
     }
 
     public BlockFace getFacing() {
-        int data = getData() & 7;
+        int data = getData();
 
         switch (data) {
             case 0x1:
-                return BlockFace.NORTH;
+            default:
+                return BlockFace.SELF;
 
             case 0x2:
-                return BlockFace.EAST;
+                return BlockFace.NORTH;
 
             case 0x3:
                 return BlockFace.SOUTH;
 
             case 0x4:
-            default:
                 return BlockFace.EAST;
+
+            case 0x5:
+                return BlockFace.WEST;
         }
     }
 
