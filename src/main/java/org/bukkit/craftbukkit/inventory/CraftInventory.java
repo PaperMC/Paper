@@ -16,6 +16,7 @@ import net.minecraft.server.TileEntityBrewingStand;
 import net.minecraft.server.TileEntityDispenser;
 import net.minecraft.server.TileEntityFurnace;
 
+import org.apache.commons.lang.Validate;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
@@ -88,6 +89,7 @@ public class CraftInventory implements Inventory {
     }
 
     public boolean contains(Material material) {
+        Validate.notNull(material, "Material cannot be null");
         return contains(material.getId());
     }
 
@@ -104,16 +106,21 @@ public class CraftInventory implements Inventory {
     }
 
     public boolean contains(int materialId, int amount) {
-        int amt = 0;
+        if (amount <= 0) {
+            return true;
+        }
         for (ItemStack item : getContents()) {
             if (item != null && item.getTypeId() == materialId) {
-                amt += item.getAmount();
+                if ((amount -= item.getAmount()) <= 0) {
+                    return true;
+                }
             }
         }
-        return amt >= amount;
+        return false;
     }
 
     public boolean contains(Material material, int amount) {
+        Validate.notNull(material, "Material cannot be null");
         return contains(material.getId(), amount);
     }
 
@@ -121,13 +128,30 @@ public class CraftInventory implements Inventory {
         if (item == null) {
             return false;
         }
-        int amt = 0;
+        if (amount <= 0) {
+            return true;
+        }
         for (ItemStack i : getContents()) {
-            if (item.equals(i)) {
-                amt += item.getAmount();
+            if (item.equals(i) && --amount <= 0) {
+                return true;
             }
         }
-        return amt >= amount;
+        return false;
+    }
+
+    public boolean containsAtLeast(ItemStack item, int amount) {
+        if (item == null) {
+            return false;
+        }
+        if (amount <= 0) {
+            return true;
+        }
+        for (ItemStack i : getContents()) {
+            if (i != null && item.getTypeId() == i.getTypeId() && item.getDurability() == i.getDurability() && item.getEnchantments().equals(i.getEnchantments()) && (amount -= i.getAmount()) <= 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public HashMap<Integer, ItemStack> all(int materialId) {
@@ -144,6 +168,7 @@ public class CraftInventory implements Inventory {
     }
 
     public HashMap<Integer, ItemStack> all(Material material) {
+        Validate.notNull(material, "Material cannot be null");
         return all(material.getId());
     }
 
@@ -172,6 +197,7 @@ public class CraftInventory implements Inventory {
     }
 
     public int first(Material material) {
+        Validate.notNull(material, "Material cannot be null");
         return first(material.getId());
     }
 
@@ -179,7 +205,7 @@ public class CraftInventory implements Inventory {
         return first(item, true);
     }
 
-    public int first(ItemStack item, boolean withAmount) {
+    private int first(ItemStack item, boolean withAmount) {
         if (item == null) {
             return -1;
         }
@@ -224,10 +250,11 @@ public class CraftInventory implements Inventory {
     }
 
     public int firstPartial(Material material) {
+        Validate.notNull(material, "Material cannot be null");
         return firstPartial(material.getId());
     }
 
-    public int firstPartial(ItemStack item) {
+    private int firstPartial(ItemStack item) {
         ItemStack[] inventory = getContents();
         ItemStack filteredItem = CraftItemStack.asCraftCopy(item);
         if (item == null) {
@@ -243,6 +270,7 @@ public class CraftInventory implements Inventory {
     }
 
     public HashMap<Integer, ItemStack> addItem(ItemStack... items) {
+        Validate.noNullElements(items, "Item cannot be null");
         HashMap<Integer, ItemStack> leftover = new HashMap<Integer, ItemStack>();
 
         /* TODO: some optimization
@@ -302,6 +330,7 @@ public class CraftInventory implements Inventory {
     }
 
     public HashMap<Integer, ItemStack> removeItem(ItemStack... items) {
+        Validate.notNull(items, "Items cannot be null");
         HashMap<Integer, ItemStack> leftover = new HashMap<Integer, ItemStack>();
 
         // TODO: optimization
@@ -357,6 +386,7 @@ public class CraftInventory implements Inventory {
     }
 
     public void remove(Material material) {
+        Validate.notNull(material, "Material cannot be null");
         remove(material.getId());
     }
 
