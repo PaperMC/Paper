@@ -9,7 +9,7 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryType;
 
 /**
- * Interface to the various inventories
+ * Interface to the various inventories. Behavior relating to {@link Material#AIR} is unspecified.
  */
 public interface Inventory extends Iterable<ItemStack> {
 
@@ -70,8 +70,9 @@ public interface Inventory extends Iterable<ItemStack> {
      *
      * @param items The ItemStacks to add
      * @return The items that didn't fit.
+     * @throws IllegalArgumentException if items or any element in it is null
      */
-    public HashMap<Integer, ItemStack> addItem(ItemStack... items);
+    public HashMap<Integer, ItemStack> addItem(ItemStack... items) throws IllegalArgumentException;
 
     /**
      * Removes the given ItemStacks from the inventory.
@@ -81,26 +82,27 @@ public interface Inventory extends Iterable<ItemStack> {
      *
      * @param items The ItemStacks to remove
      * @return The items that couldn't be removed.
+     * @throws IllegalArgumentException if items is null
      */
-    public HashMap<Integer, ItemStack> removeItem(ItemStack... items);
+    public HashMap<Integer, ItemStack> removeItem(ItemStack... items) throws IllegalArgumentException;
 
     /**
-     * Get all ItemStacks from the inventory
+     * Gets all ItemStacks from the inventory.
      *
      * @return All the ItemStacks from all slots
      */
     public ItemStack[] getContents();
 
     /**
-     * Set the inventory's contents
+     * Set the inventory's contents.
      *
      * @param items A complete replacement for the contents; the length must be less than or equal to {@link #getSize()}.
      * @throws IllegalArgumentException If the array has more items than the inventory.
      */
-    public void setContents(ItemStack[] items);
+    public void setContents(ItemStack[] items) throws IllegalArgumentException;
 
     /**
-     * Check if the inventory contains any ItemStacks with the given materialId
+     * Check if the inventory contains any ItemStacks with the given materialId.
      *
      * @param materialId The materialId to check for
      * @return If any ItemStacks were found
@@ -108,52 +110,63 @@ public interface Inventory extends Iterable<ItemStack> {
     public boolean contains(int materialId);
 
     /**
-     * Check if the inventory contains any ItemStacks with the given material
+     * Check if the inventory contains any ItemStacks with the given material.
      *
      * @param material The material to check for
      * @return If any ItemStacks were found
+     * @throws IllegalArgumentException if material is null
      */
-    public boolean contains(Material material);
+    public boolean contains(Material material) throws IllegalArgumentException;
 
     /**
-     * Check if the inventory contains any ItemStacks matching the given ItemStack
-     * This will only match if both the type and the amount of the stack match
+     * Check if the inventory contains any ItemStacks matching the given ItemStack.
+     * This will only match if both the type and the amount of the stack match.
      *
      * @param item The ItemStack to match against
-     * @return If any matching ItemStacks were found
+     * @return false if item is null, true if any exactly matching ItemStacks were found
      */
     public boolean contains(ItemStack item);
 
     /**
-     * Check if the inventory contains any ItemStacks with the given materialId and at least the minimum amount specified
+     * Check if the inventory contains any ItemStacks with the given materialId, adding to at least the minimum amount specified.
      *
      * @param materialId The materialId to check for
      * @param amount The minimum amount to look for
-     * @return If any ItemStacks were found
+     * @return true if amount is less than 1, true if enough ItemStacks were found to add to the given amount
      */
     public boolean contains(int materialId, int amount);
 
     /**
-     * Check if the inventory contains any ItemStacks with the given material and at least the minimum amount specified
+     * Check if the inventory contains any ItemStacks with the given material, adding to at least the minimum amount specified.
      *
      * @param material The material to check for
      * @param amount The minimum amount
-     * @return If any ItemStacks were found
+     * @return true if amount is less than 1, true if enough ItemStacks were found to add to the given amount
+     * @throws IllegalArgumentException if material is null
      */
-    public boolean contains(Material material, int amount);
+    public boolean contains(Material material, int amount) throws IllegalArgumentException;
 
     /**
-     * Check if the inventory contains any ItemStacks matching the given ItemStack and at least the minimum amount specified
-     * This will only match if both the type and the amount of the stack match
+     * Check if the inventory contains the amount of ItemStacks exactly matching the given ItemStack.
      *
      * @param item The ItemStack to match against
-     * @param amount The minimum amount
-     * @return If any matching ItemStacks were found
+     * @param amount The amount of stacks to find
+     * @return false if item is null, true if amount less than 1, true if amount of exactly matching ItemStacks were found.
      */
     public boolean contains(ItemStack item, int amount);
 
     /**
-     * Find all slots in the inventory containing any ItemStacks with the given materialId
+     * Check if the inventory contains the specified amount of a similar ItemStack.
+     * This ignores the size of the stack, using the {@link ItemStack#isSimilar(ItemStack)} method.
+     *
+     * @param item The ItemStack to match against
+     * @param amount The minimum amount
+     * @return false if item is null, true if amount less than 1, true if enough ItemStacks were found to add to the given amount
+     */
+    public boolean containsAtLeast(ItemStack item, int amount);
+
+    /**
+     * Find all slots in the inventory containing any ItemStacks with the given materialId.
      *
      * @param materialId The materialId to look for
      * @return The Slots found.
@@ -161,24 +174,24 @@ public interface Inventory extends Iterable<ItemStack> {
     public HashMap<Integer, ? extends ItemStack> all(int materialId);
 
     /**
-     * Find all slots in the inventory containing any ItemStacks with the given material
+     * Find all slots in the inventory containing any ItemStacks with the given material.
      *
      * @param material The material to look for
-     * @return The Slots found.
+     * @return A map from slot indexes to item at index
+     * @throws IllegalArgumentException if material is null
      */
-    public HashMap<Integer, ? extends ItemStack> all(Material material);
+    public HashMap<Integer, ? extends ItemStack> all(Material material) throws IllegalArgumentException;
 
     /**
-     * Find all slots in the inventory containing any ItemStacks with the given ItemStack
-     * This will only match slots if both the type and the amount of the stack match
+     * Find all slots in the inventory containing the exact ItemStack specified.
      *
      * @param item The ItemStack to match against
-     * @return The Slots found.
+     * @return A map from slot indexes to item at index
      */
     public HashMap<Integer, ? extends ItemStack> all(ItemStack item);
 
     /**
-     * Find the first slot in the inventory containing an ItemStack with the given materialId
+     * Find the first slot in the inventory containing an ItemStack with the given materialId.
      *
      * @param materialId The materialId to look for
      * @return The Slot found.
@@ -190,8 +203,9 @@ public interface Inventory extends Iterable<ItemStack> {
      *
      * @param material The material to look for
      * @return The Slot found.
+     * @throws IllegalArgumentException if material is null
      */
-    public int first(Material material);
+    public int first(Material material) throws IllegalArgumentException;
 
     /**
      * Find the first slot in the inventory containing an ItemStack with the given stack
@@ -220,8 +234,9 @@ public interface Inventory extends Iterable<ItemStack> {
      * Remove all stacks in the inventory matching the given material.
      *
      * @param material The material to remove
+     * @throws IllegalArgumentException if material is null
      */
-    public void remove(Material material);
+    public void remove(Material material) throws IllegalArgumentException;
 
     /**
      * Remove all stacks in the inventory matching the given stack.
