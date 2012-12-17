@@ -147,7 +147,7 @@ public class CraftInventory implements Inventory {
             return true;
         }
         for (ItemStack i : getContents()) {
-            if (i != null && item.getTypeId() == i.getTypeId() && item.getDurability() == i.getDurability() && item.getEnchantments().equals(i.getEnchantments()) && (amount -= i.getAmount()) <= 0) {
+            if (item.isSimilar(i) && (amount -= i.getAmount()) <= 0) {
                 return true;
             }
         }
@@ -213,15 +213,7 @@ public class CraftInventory implements Inventory {
         for (int i = 0; i < inventory.length; i++) {
             if (inventory[i] == null) continue;
 
-            boolean equals = false;
-
-            if (withAmount) {
-                equals = item.equals(inventory[i]);
-            } else {
-                equals = item.getTypeId() == inventory[i].getTypeId() && item.getDurability() == inventory[i].getDurability() && item.getEnchantments().equals(inventory[i].getEnchantments());
-            }
-
-            if (equals) {
+            if (withAmount ? item.equals(inventory[i]) : item.isSimilar(inventory[i])) {
                 return i;
             }
         }
@@ -262,7 +254,7 @@ public class CraftInventory implements Inventory {
         }
         for (int i = 0; i < inventory.length; i++) {
             ItemStack cItem = inventory[i];
-            if (cItem != null && cItem.getTypeId() == filteredItem.getTypeId() && cItem.getAmount() < cItem.getMaxStackSize() && cItem.getDurability() == filteredItem.getDurability() && cItem.getEnchantments().equals(filteredItem.getEnchantments())) {
+            if (cItem != null && cItem.getAmount() < cItem.getMaxStackSize() && cItem.isSimilar(filteredItem)) {
                 return i;
             }
         }
