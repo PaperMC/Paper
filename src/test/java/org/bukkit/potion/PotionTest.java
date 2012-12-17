@@ -6,21 +6,11 @@ import static org.hamcrest.Matchers.*;
 import java.util.EnumMap;
 import java.util.Map;
 
-import org.bukkit.craftbukkit.potion.CraftPotionBrewer;
+import org.bukkit.support.AbstractTestingBase;
 import org.bukkit.support.Util;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
-import net.minecraft.server.MobEffectList;
-
-public class PotionTest {
-
-    @BeforeClass
-    public static void setUp() {
-        Potion.setPotionBrewer(new CraftPotionBrewer());
-        MobEffectList.BLINDNESS.getClass();
-        PotionEffectType.stopAcceptingRegistrations();
-    }
+public class PotionTest extends AbstractTestingBase {
 
     @Test
     public void getEffects() {
@@ -35,7 +25,7 @@ public class PotionTest {
     }
 
     @Test
-    public void testEffectCompleteness() throws SecurityException, IllegalAccessException, NoSuchFieldException {
+    public void testEffectCompleteness() throws Throwable {
         Map<Integer, ?> effectDurations = Util.getInternalState(net.minecraft.server.PotionBrewer.class, null, "effectDurations");
 
         Map<PotionType, String> effects = new EnumMap(PotionType.class);
@@ -46,7 +36,7 @@ public class PotionTest {
             PotionType enumType = PotionType.getByEffect(type);
             assertNotNull(type.getName(), enumType);
 
-            assertThat(enumType.name(), effects.put(enumType, enumType.name()), is((String)null));
+            assertThat(enumType.name(), effects.put(enumType, enumType.name()), is(nullValue()));
         }
 
         assertThat(effects.entrySet(), hasSize(effectDurations.size()));

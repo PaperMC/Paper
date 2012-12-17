@@ -35,12 +35,8 @@ public class NBTTagCompound extends NBTBase {
         } catch (java.io.IOException ex) {
             ex.printStackTrace();
         }
+        // CraftBukkit end
     }
-
-    public void remove(String name) {
-        map.remove(name);
-    }
-    // CraftBukkit end
 
     void load(DataInput datainput) {
         this.map.clear();

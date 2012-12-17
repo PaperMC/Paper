@@ -38,9 +38,9 @@ public class DispenseBehaviorEmptyBucket extends DispenseBehaviorItem {
 
         // CraftBukkit start
         org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
-        org.bukkit.inventory.ItemStack bukkitItem = new CraftItemStack(itemstack).clone();
+        CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack);
 
-        BlockDispenseEvent event = new BlockDispenseEvent(block, bukkitItem, new org.bukkit.util.Vector(0, 0, 0));
+        BlockDispenseEvent event = new BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector(0, 0, 0));
         if (!BlockDispenser.eventFired) {
             world.getServer().getPluginManager().callEvent(event);
         }
@@ -49,9 +49,9 @@ public class DispenseBehaviorEmptyBucket extends DispenseBehaviorItem {
             return itemstack;
         }
 
-        if (!event.getItem().equals(bukkitItem)) {
+        if (!event.getItem().equals(craftItem)) {
             // Chain to handler for new item
-            ItemStack eventStack = CraftItemStack.createNMSItemStack(event.getItem());
+            ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
             IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.a.a(eventStack.getItem());
             if (idispensebehavior != IDispenseBehavior.a && idispensebehavior != this) {
                 idispensebehavior.a(isourceblock, eventStack);

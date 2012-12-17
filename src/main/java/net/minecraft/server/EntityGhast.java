@@ -208,13 +208,13 @@ public class EntityGhast extends EntityFlying implements IMonster {
         int k;
 
         if (j > 0) {
-            loot.add(new CraftItemStack(Item.GHAST_TEAR.id, j));
+            loot.add(CraftItemStack.asNewCraftStack(Item.GHAST_TEAR, j));
         }
 
         j = this.random.nextInt(3) + this.random.nextInt(1 + i);
 
         if (j > 0) {
-            loot.add(new CraftItemStack(Item.SULPHUR.id, j));
+            loot.add(CraftItemStack.asNewCraftStack(Item.SULPHUR, j));
         }
 
         org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, loot);

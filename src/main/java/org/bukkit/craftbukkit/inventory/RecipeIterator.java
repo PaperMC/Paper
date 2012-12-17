@@ -34,7 +34,7 @@ public class RecipeIterator implements Iterator<Recipe> {
         } else {
             removeFrom = smelting;
             int id = smelting.next();
-            CraftItemStack stack = new CraftItemStack(RecipesFurnace.getInstance().getResult(id));
+            CraftItemStack stack = CraftItemStack.asCraftMirror(RecipesFurnace.getInstance().getResult(id));
             CraftFurnaceRecipe recipe = new CraftFurnaceRecipe(stack, new ItemStack(id, 1, (short) -1));
             return recipe;
         }

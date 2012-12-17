@@ -75,11 +75,11 @@ public class CraftEntityEquipment implements EntityEquipment {
     }
 
     private ItemStack getEquipment(int slot) {
-        return CraftItemStack.asBukkitStack(entity.getHandle().getEquipment(slot));
+        return CraftItemStack.asBukkitCopy(entity.getHandle().getEquipment(slot));
     }
 
     private void setEquipment(int slot, ItemStack stack) {
-        entity.getHandle().setEquipment(slot, CraftItemStack.createNMSItemStack(stack));
+        entity.getHandle().setEquipment(slot, CraftItemStack.asNMSCopy(stack));
     }
 
     public void clear() {

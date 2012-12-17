@@ -1230,11 +1230,11 @@ public class NetServerHandler extends NetHandler {
                 if (cursor == null) {
                     this.player.inventory.setCarried((ItemStack) null);
                 } else {
-                    this.player.inventory.setCarried(CraftItemStack.createNMSItemStack(cursor));
+                    this.player.inventory.setCarried(CraftItemStack.asNMSCopy(cursor));
                 }
                 org.bukkit.inventory.ItemStack item = event.getCurrentItem();
                 if (item != null) {
-                    itemstack = CraftItemStack.createNMSItemStack(item);
+                    itemstack = CraftItemStack.asNMSCopy(item);
                     if (packet102windowclick.slot == -999) {
                         this.player.drop(itemstack);
                     } else {
@@ -1307,16 +1307,16 @@ public class NetServerHandler extends NetHandler {
                     if (item == null) {
                         this.player.defaultContainer.setItem(packet107setcreativeslot.slot, (ItemStack) null);
                     } else {
-                        this.player.defaultContainer.setItem(packet107setcreativeslot.slot, CraftItemStack.createNMSItemStack(item));
+                        this.player.defaultContainer.setItem(packet107setcreativeslot.slot, CraftItemStack.asNMSCopy(item));
                     }
                 } else if (item != null) {
-                    this.player.drop(CraftItemStack.createNMSItemStack(item));
+                    this.player.drop(CraftItemStack.asNMSCopy(item));
                 }
                 return;
             case DENY:
                 // TODO: Will this actually work?
                 if (packet107setcreativeslot.slot > -1) {
-                    this.player.netServerHandler.sendPacket(new Packet103SetSlot(this.player.defaultContainer.windowId, packet107setcreativeslot.slot, CraftItemStack.createNMSItemStack(item)));
+                    this.player.netServerHandler.sendPacket(new Packet103SetSlot(this.player.defaultContainer.windowId, packet107setcreativeslot.slot, CraftItemStack.asNMSCopy(item)));
                 }
                 return;
             case DEFAULT:

@@ -150,13 +150,13 @@ public class EntityIronGolem extends EntityGolem {
         int k;
 
         if (j > 0) {
-            loot.add(new CraftItemStack(Block.RED_ROSE.id, j));
+            loot.add(CraftItemStack.asNewCraftStack(Item.byId[Block.RED_ROSE.id], j));
         }
 
         k = 3 + this.random.nextInt(3);
 
         if (k > 0) {
-            loot.add(new CraftItemStack(Item.IRON_INGOT.id, k));
+            loot.add(CraftItemStack.asNewCraftStack(Item.IRON_INGOT, k));
         }
 
         org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, loot);

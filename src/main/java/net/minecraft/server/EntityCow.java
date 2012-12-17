@@ -88,9 +88,9 @@ public class EntityCow extends EntityAnimal {
             }
 
             if (--itemstack.count <= 0) {
-                entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, CraftItemStack.createNMSItemStack(event.getItemStack()));
+                entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, CraftItemStack.asNMSCopy(event.getItemStack()));
             } else if (!entityhuman.inventory.pickup(new ItemStack(Item.MILK_BUCKET))) {
-                entityhuman.drop(CraftItemStack.createNMSItemStack(event.getItemStack()));
+                entityhuman.drop(CraftItemStack.asNMSCopy(event.getItemStack()));
             }
             // CraftBukkit end
 

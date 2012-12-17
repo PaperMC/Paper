@@ -56,13 +56,13 @@ public class ItemBucket extends Item {
                             return itemstack;
                         }
 
-                        ItemStack result = CraftItemStack.createNMSItemStack(event.getItemStack()); // CraftBukkit - TODO: Check this stuff later... Not sure how this behavior should work
+                        ItemStack result = CraftItemStack.asNMSCopy(event.getItemStack()); // CraftBukkit - TODO: Check this stuff later... Not sure how this behavior should work
                         if (--itemstack.count <= 0) {
                             return result; // CraftBukkit
                         }
 
                         if (!entityhuman.inventory.pickup(result)) { // CraftBukkit
-                            entityhuman.drop(CraftItemStack.createNMSItemStack(event.getItemStack())); // CraftBukkit
+                            entityhuman.drop(CraftItemStack.asNMSCopy(event.getItemStack())); // CraftBukkit
                         }
 
                         return itemstack;
@@ -81,13 +81,13 @@ public class ItemBucket extends Item {
                             return itemstack;
                         }
 
-                        ItemStack result = CraftItemStack.createNMSItemStack(event.getItemStack()); // CraftBukkit - TODO: Check this stuff later... Not sure how this behavior should work
+                        ItemStack result = CraftItemStack.asNMSCopy(event.getItemStack()); // CraftBukkit - TODO: Check this stuff later... Not sure how this behavior should work
                         if (--itemstack.count <= 0) {
                             return result; // CraftBukkit
                         }
 
                         if (!entityhuman.inventory.pickup(result)) { // CraftBukkit
-                            entityhuman.drop(CraftItemStack.createNMSItemStack(event.getItemStack())); // CraftBukkit
+                            entityhuman.drop(CraftItemStack.asNMSCopy(event.getItemStack())); // CraftBukkit
                         }
 
                         return itemstack;
@@ -101,7 +101,7 @@ public class ItemBucket extends Item {
                             return itemstack;
                         }
 
-                        return CraftItemStack.createNMSItemStack(event.getItemStack());
+                        return CraftItemStack.asNMSCopy(event.getItemStack());
                     }
 
                     int clickedX = i, clickedY = j, clickedZ = k;
@@ -144,7 +144,7 @@ public class ItemBucket extends Item {
                     // CraftBukkit end
 
                     if (this.a(world, d0, d1, d2, i, j, k) && !entityhuman.abilities.canInstantlyBuild) {
-                        return CraftItemStack.createNMSItemStack(event.getItemStack()); // CraftBukkit
+                        return CraftItemStack.asNMSCopy(event.getItemStack()); // CraftBukkit
                     }
                 }
             } else if (this.a == 0 && movingobjectposition.entity instanceof EntityCow) {
@@ -156,7 +156,7 @@ public class ItemBucket extends Item {
                     return itemstack;
                 }
 
-                return CraftItemStack.createNMSItemStack(event.getItemStack());
+                return CraftItemStack.asNMSCopy(event.getItemStack());
                 // CraftBukkit end
             }
 

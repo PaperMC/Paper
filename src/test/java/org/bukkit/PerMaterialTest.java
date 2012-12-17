@@ -11,6 +11,8 @@ import net.minecraft.server.Item;
 import net.minecraft.server.ItemFood;
 import net.minecraft.server.ItemRecord;
 
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.support.AbstractTestingBase;
 import org.bukkit.support.Util;
 import org.junit.BeforeClass;
@@ -74,10 +76,17 @@ public class PerMaterialTest extends AbstractTestingBase {
 
     @Test
     public void maxStackSize() {
+        final ItemStack bukkit = new ItemStack(material);
+        final CraftItemStack craft = CraftItemStack.asCraftCopy(bukkit);
         if (material == Material.AIR) {
-            assertThat(material.getMaxStackSize(), is(64 /* Why can't I hold all of these AIR? */));
+            final int MAX_AIR_STACK = 0 /* Why can't I hold all of these AIR? */;
+            assertThat(material.getMaxStackSize(), is(MAX_AIR_STACK));
+            assertThat(bukkit.getMaxStackSize(), is(MAX_AIR_STACK));
+            assertThat(craft.getMaxStackSize(), is(MAX_AIR_STACK));
         } else {
             assertThat(material.getMaxStackSize(), is(Item.byId[material.getId()].getMaxStackSize()));
+            assertThat(bukkit.getMaxStackSize(), is(material.getMaxStackSize()));
+            assertThat(craft.getMaxStackSize(), is(material.getMaxStackSize()));
         }
     }
 

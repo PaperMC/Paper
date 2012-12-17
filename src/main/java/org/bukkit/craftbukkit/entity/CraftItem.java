@@ -22,11 +22,11 @@ public class CraftItem extends CraftEntity implements Item {
     }
 
     public ItemStack getItemStack() {
-        return new CraftItemStack(item.itemStack);
+        return CraftItemStack.asCraftMirror(item.itemStack);
     }
 
     public void setItemStack(ItemStack stack) {
-        item.itemStack = CraftItemStack.createNMSItemStack(stack);
+        item.itemStack = CraftItemStack.asNMSCopy(stack);
     }
 
     public int getPickupDelay() {

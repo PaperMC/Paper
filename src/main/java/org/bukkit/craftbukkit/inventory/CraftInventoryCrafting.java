@@ -47,13 +47,13 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
 
         int i = 0;
         for (i = 0; i < mcResultItems.length; i++ ) {
-            items[i] = new CraftItemStack(mcResultItems[i]);
+            items[i] = CraftItemStack.asCraftMirror(mcResultItems[i]);
         }
 
         net.minecraft.server.ItemStack[] mcItems = getMatrixInventory().getContents();
 
         for (int j = 0; j < mcItems.length; j++) {
-            items[i + j] = new CraftItemStack(mcItems[j]);
+            items[i + j] = CraftItemStack.asCraftMirror(mcItems[j]);
         }
 
         return items;
@@ -68,19 +68,19 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
     public CraftItemStack getItem(int index) {
         if (index < getResultInventory().getSize()) {
             net.minecraft.server.ItemStack item = getResultInventory().getItem(index);
-            return item == null ? null : new CraftItemStack(item);
+            return item == null ? null : CraftItemStack.asCraftMirror(item);
         } else {
             net.minecraft.server.ItemStack item = getMatrixInventory().getItem(index - getResultInventory().getSize());
-            return item == null ? null : new CraftItemStack(item);
+            return item == null ? null : CraftItemStack.asCraftMirror(item);
         }
     }
 
     @Override
     public void setItem(int index, ItemStack item) {
         if (index < getResultInventory().getSize()) {
-            getResultInventory().setItem(index, (item == null ? null : CraftItemStack.createNMSItemStack(item)));
+            getResultInventory().setItem(index, (item == null ? null : CraftItemStack.asNMSCopy(item)));
         } else {
-            getMatrixInventory().setItem((index - getResultInventory().getSize()), (item == null ? null : CraftItemStack.createNMSItemStack(item)));
+            getMatrixInventory().setItem((index - getResultInventory().getSize()), (item == null ? null : CraftItemStack.asNMSCopy(item)));
         }
     }
 
@@ -89,7 +89,7 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
         net.minecraft.server.ItemStack[] matrix = getMatrixInventory().getContents();
 
         for (int i = 0; i < matrix.length; i++ ) {
-            items[i] = new CraftItemStack(matrix[i]);
+            items[i] = CraftItemStack.asCraftMirror(matrix[i]);
         }
 
         return items;
@@ -97,7 +97,7 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
 
     public ItemStack getResult() {
         net.minecraft.server.ItemStack item = getResultInventory().getItem(0);
-        if(item != null) return new CraftItemStack(item);
+        if(item != null) return CraftItemStack.asCraftMirror(item);
         return null;
     }
 
@@ -114,7 +114,7 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
                 if (item == null || item.getTypeId() <= 0) {
                     mcItems[i] = null;
                 } else {
-                    mcItems[i] = CraftItemStack.createNMSItemStack(item);
+                    mcItems[i] = CraftItemStack.asNMSCopy(item);
                 }
             } else {
                 mcItems[i] = null;
@@ -127,7 +127,7 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
         if (item == null || item.getTypeId() <= 0) {
             contents[0] = null;
         } else {
-            contents[0] = CraftItemStack.createNMSItemStack(item);
+            contents[0] = CraftItemStack.asNMSCopy(item);
         }
     }
 

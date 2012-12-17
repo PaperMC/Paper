@@ -23,7 +23,7 @@ public class ShapedRecipes implements IRecipe {
 
     // CraftBukkit start
     public org.bukkit.inventory.ShapedRecipe toBukkitRecipe() {
-        CraftItemStack result = new CraftItemStack(this.result);
+        CraftItemStack result = CraftItemStack.asCraftMirror(this.result);
         CraftShapedRecipe recipe = new CraftShapedRecipe(result, this);
         switch (this.height) {
         case 1:

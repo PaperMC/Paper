@@ -50,9 +50,9 @@ public class DispenseBehaviorItem implements IDispenseBehavior {
 
         // CraftBukkit start
         org.bukkit.block.Block block = world.getWorld().getBlockAt(isourceblock.getBlockX(), isourceblock.getBlockY(), isourceblock.getBlockZ());
-        org.bukkit.inventory.ItemStack bukkitItem = new CraftItemStack(itemstack).clone();
+        CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack);
 
-        BlockDispenseEvent event = new BlockDispenseEvent(block, bukkitItem, new org.bukkit.util.Vector(entityitem.motX, entityitem.motY, entityitem.motZ));
+        BlockDispenseEvent event = new BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector(entityitem.motX, entityitem.motY, entityitem.motZ));
         if (!BlockDispenser.eventFired) {
             world.getServer().getPluginManager().callEvent(event);
         }
@@ -61,14 +61,14 @@ public class DispenseBehaviorItem implements IDispenseBehavior {
             return false;
         }
 
-        entityitem.itemStack = CraftItemStack.createNMSItemStack(event.getItem());
+        entityitem.itemStack = CraftItemStack.asNMSCopy(event.getItem());
         entityitem.motX = event.getVelocity().getX();
         entityitem.motY = event.getVelocity().getY();
         entityitem.motZ = event.getVelocity().getZ();
 
-        if (!event.getItem().equals(bukkitItem)) {
+        if (!event.getItem().equals(craftItem)) {
             // Chain to handler for new item
-            ItemStack eventStack = CraftItemStack.createNMSItemStack(event.getItem());
+            ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
             IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.a.a(eventStack.getItem());
             if (idispensebehavior != IDispenseBehavior.a && idispensebehavior.getClass() != DispenseBehaviorItem.class) {
                 idispensebehavior.a(isourceblock, eventStack);

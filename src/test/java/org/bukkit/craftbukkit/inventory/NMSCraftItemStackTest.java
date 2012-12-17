@@ -9,13 +9,13 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.Test;
 
-public class CraftItemStackTest extends AbstractTestingBase {
+public class NMSCraftItemStackTest extends AbstractTestingBase {
 
     @Test
     public void testCloneEnchantedItem() throws Exception {
         net.minecraft.server.ItemStack nmsItemStack = new net.minecraft.server.ItemStack(net.minecraft.server.Item.POTION);
         nmsItemStack.addEnchantment(Enchantment.DAMAGE_ALL, 1);
-        ItemStack itemStack = new CraftItemStack(nmsItemStack);
+        ItemStack itemStack = CraftItemStack.asCraftMirror(nmsItemStack);
         ItemStack clone = itemStack.clone();
         assertThat(clone.getType(), is(itemStack.getType()));
         assertThat(clone.getAmount(), is(itemStack.getAmount()));
@@ -29,7 +29,7 @@ public class CraftItemStackTest extends AbstractTestingBase {
     @Test
     public void testCloneNullItem() throws Exception {
         net.minecraft.server.ItemStack nmsItemStack = null;
-        ItemStack itemStack = new CraftItemStack(nmsItemStack);
+        ItemStack itemStack = CraftItemStack.asCraftMirror(nmsItemStack);
         ItemStack clone = itemStack.clone();
         assertThat(clone, is(itemStack));
     }

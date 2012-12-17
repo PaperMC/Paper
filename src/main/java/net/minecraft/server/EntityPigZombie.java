@@ -117,13 +117,13 @@ public class EntityPigZombie extends EntityZombie {
         int j = this.random.nextInt(2 + i);
 
         if (j > 0) {
-            loot.add(new CraftItemStack(Item.ROTTEN_FLESH.id, j));
+            loot.add(CraftItemStack.asNewCraftStack(Item.ROTTEN_FLESH, j));
         }
 
         j = this.random.nextInt(2 + i);
 
         if (j > 0) {
-            loot.add(new CraftItemStack(Item.GOLD_NUGGET.id, j));
+            loot.add(CraftItemStack.asNewCraftStack(Item.GOLD_NUGGET, j));
         }
 
         // Determine rare item drops and add them to the loot
@@ -133,7 +133,7 @@ public class EntityPigZombie extends EntityZombie {
             if (k < 5) {
                 ItemStack itemstack = this.l(k <= 0 ? 1 : 0);
                 if (itemstack != null) {
-                    loot.add(new CraftItemStack(itemstack));
+                    loot.add(CraftItemStack.asCraftMirror(itemstack));
                 }
             }
         }

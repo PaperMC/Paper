@@ -42,6 +42,6 @@ public class CraftShapelessRecipe extends ShapelessRecipe implements CraftRecipe
             data[i] = new net.minecraft.server.ItemStack(id, 1, dmg);
             i++;
         }
-        CraftingManager.getInstance().registerShapelessRecipe(CraftItemStack.createNMSItemStack(this.getResult()), data);
+        CraftingManager.getInstance().registerShapelessRecipe(CraftItemStack.asNMSCopy(this.getResult()), data);
     }
 }

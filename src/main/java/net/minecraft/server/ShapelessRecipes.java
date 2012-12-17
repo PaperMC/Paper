@@ -22,7 +22,7 @@ public class ShapelessRecipes implements IRecipe {
     // CraftBukkit start
     @SuppressWarnings("unchecked")
     public org.bukkit.inventory.ShapelessRecipe toBukkitRecipe() {
-        CraftItemStack result = new CraftItemStack(this.result);
+        CraftItemStack result = CraftItemStack.asCraftMirror(this.result);
         CraftShapelessRecipe recipe = new CraftShapelessRecipe(result, this);
         for (ItemStack stack : (List<ItemStack>) this.ingredients) {
             if (stack != null) {

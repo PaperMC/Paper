@@ -23,9 +23,9 @@ public class DispenseBehaviorMonsterEgg extends DispenseBehaviorItem {
         World world = isourceblock.k();
         ItemStack itemstack1 = itemstack.a(1);
         org.bukkit.block.Block block = world.getWorld().getBlockAt(isourceblock.getBlockX(), isourceblock.getBlockY(), isourceblock.getBlockZ());
-        org.bukkit.inventory.ItemStack bukkitItem = new CraftItemStack(itemstack1).clone();
+        CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
 
-        BlockDispenseEvent event = new BlockDispenseEvent(block, bukkitItem, new org.bukkit.util.Vector(d0, d1, d2));
+        BlockDispenseEvent event = new BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector(d0, d1, d2));
         if (!BlockDispenser.eventFired) {
             world.getServer().getPluginManager().callEvent(event);
         }
@@ -35,10 +35,10 @@ public class DispenseBehaviorMonsterEgg extends DispenseBehaviorItem {
             return itemstack;
         }
 
-        if (!event.getItem().equals(bukkitItem)) {
+        if (!event.getItem().equals(craftItem)) {
             itemstack.count++;
             // Chain to handler for new item
-            ItemStack eventStack = CraftItemStack.createNMSItemStack(event.getItem());
+            ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
             IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.a.a(eventStack.getItem());
             if (idispensebehavior != IDispenseBehavior.a && idispensebehavior != this) {
                 idispensebehavior.a(isourceblock, eventStack);
@@ -46,7 +46,7 @@ public class DispenseBehaviorMonsterEgg extends DispenseBehaviorItem {
             }
         }
 
-        itemstack1 = CraftItemStack.createNMSItemStack(event.getItem());
+        itemstack1 = CraftItemStack.asNMSCopy(event.getItem());
         ItemMonsterEgg.a(isourceblock.k(), itemstack1.getData(), event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ());
         // itemstack.a(1); // Handled during event processing
         // CraftBukkit end
