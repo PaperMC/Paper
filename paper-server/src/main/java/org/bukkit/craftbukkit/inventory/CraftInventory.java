@@ -44,7 +44,7 @@ public class CraftInventory implements Inventory {
 
     public ItemStack getItem(int index) {
         net.minecraft.server.ItemStack item = getInventory().getItem(index);
-        return item == null ? null : new CraftItemStack(item);
+        return item == null ? null : CraftItemStack.asCraftMirror(item);
     }
 
     public ItemStack[] getContents() {
@@ -52,7 +52,7 @@ public class CraftInventory implements Inventory {
         net.minecraft.server.ItemStack[] mcItems = getInventory().getContents();
 
         for (int i = 0; i < mcItems.length; i++) {
-            items[i] = mcItems[i] == null ? null : new CraftItemStack(mcItems[i]);
+            items[i] = mcItems[i] == null ? null : CraftItemStack.asCraftMirror(mcItems[i]);
         }
 
         return items;
@@ -69,13 +69,13 @@ public class CraftInventory implements Inventory {
             if (i >= items.length) {
                 mcItems[i] = null;
             } else {
-                mcItems[i] = CraftItemStack.createNMSItemStack(items[i]);
+                mcItems[i] = CraftItemStack.asNMSCopy(items[i]);
             }
         }
     }
 
     public void setItem(int index, ItemStack item) {
-        getInventory().setItem(index, ((item == null || item.getTypeId() == 0) ? null : CraftItemStack.createNMSItemStack(item)));
+        getInventory().setItem(index, ((item == null || item.getTypeId() == 0) ? null : CraftItemStack.asNMSCopy(item)));
     }
 
     public boolean contains(int materialId) {
@@ -229,7 +229,7 @@ public class CraftInventory implements Inventory {
 
     public int firstPartial(ItemStack item) {
         ItemStack[] inventory = getContents();
-        ItemStack filteredItem = new CraftItemStack(item);
+        ItemStack filteredItem = CraftItemStack.asCraftCopy(item);
         if (item == null) {
             return -1;
         }
@@ -269,8 +269,7 @@ public class CraftInventory implements Inventory {
                     } else {
                         // More than a single stack!
                         if (item.getAmount() > getMaxItemStack()) {
-                            CraftItemStack stack = new CraftItemStack(item.getTypeId(), getMaxItemStack(), item.getDurability());
-                            stack.addUnsafeEnchantments(item.getEnchantments());
+                            CraftItemStack stack = CraftItemStack.asCraftCopy(item);
                             setItem(firstFree, stack);
                             item.setAmount(item.getAmount() - getMaxItemStack());
                         } else {

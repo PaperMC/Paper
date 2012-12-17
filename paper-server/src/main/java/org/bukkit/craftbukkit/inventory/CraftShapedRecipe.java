@@ -59,6 +59,6 @@ public class CraftShapedRecipe extends ShapedRecipe implements CraftRecipe {
             data[i] = new net.minecraft.server.ItemStack(id, 1, dmg);
             i++;
         }
-        CraftingManager.getInstance().registerShapedRecipe(CraftItemStack.createNMSItemStack(this.getResult()), data);
+        CraftingManager.getInstance().registerShapedRecipe(CraftItemStack.asNMSCopy(this.getResult()), data);
     }
 }

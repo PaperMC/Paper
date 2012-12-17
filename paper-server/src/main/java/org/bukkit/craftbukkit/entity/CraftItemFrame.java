@@ -20,12 +20,12 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
             getHandle().getDataWatcher().a(2, 5);
             getHandle().getDataWatcher().h(2);
         } else {
-            getHandle().a(CraftItemStack.createNMSItemStack(item));
+            getHandle().a(CraftItemStack.asNMSCopy(item));
         }
     }
 
     public org.bukkit.inventory.ItemStack getItem() {
-        return CraftItemStack.asBukkitStack(getHandle().i());
+        return CraftItemStack.asBukkitCopy(getHandle().i());
     }
 
     public Rotation getRotation() {

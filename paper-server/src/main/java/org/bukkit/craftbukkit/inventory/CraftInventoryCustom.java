@@ -66,7 +66,7 @@ public class CraftInventoryCustom extends CraftInventory {
                 this.setItem(i, null);
                 result = stack;
             } else {
-                result = new ItemStack(stack.id, j, stack.getData(), stack.getEnchantments());
+                result = CraftItemStack.copyNMSStack(stack, j);
                 stack.count -= j;
             }
             this.update();
@@ -81,7 +81,7 @@ public class CraftInventoryCustom extends CraftInventory {
                 this.setItem(i, null);
                 result = stack;
             } else {
-                result = new ItemStack(stack.id, 1, stack.getData(), stack.getEnchantments());
+                result = CraftItemStack.copyNMSStack(stack, 1);
                 stack.count -= 1;
             }
             return result;

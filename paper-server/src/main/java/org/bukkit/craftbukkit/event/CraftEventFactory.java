@@ -115,7 +115,7 @@ public class CraftEventFactory {
 
     private static PlayerEvent getPlayerBucketEvent(boolean isFilling, EntityHuman who, int clickedX, int clickedY, int clickedZ, int clickedFace, ItemStack itemstack, net.minecraft.server.Item item) {
         Player player = (who == null) ? null : (Player) who.getBukkitEntity();
-        CraftItemStack itemInHand = new CraftItemStack(new ItemStack(item));
+        CraftItemStack itemInHand = CraftItemStack.asNewCraftStack(item);
         Material bucket = Material.getMaterial(itemstack.id);
 
         CraftWorld craftWorld = (CraftWorld) player.getWorld();
@@ -150,7 +150,7 @@ public class CraftEventFactory {
 
     public static PlayerInteractEvent callPlayerInteractEvent(EntityHuman who, Action action, int clickedX, int clickedY, int clickedZ, int clickedFace, ItemStack itemstack) {
         Player player = (who == null) ? null : (Player) who.getBukkitEntity();
-        CraftItemStack itemInHand = new CraftItemStack(itemstack);
+        CraftItemStack itemInHand = CraftItemStack.asCraftMirror(itemstack);
 
         CraftWorld craftWorld = (CraftWorld) player.getWorld();
         CraftServer craftServer = (CraftServer) player.getServer();
@@ -185,7 +185,7 @@ public class CraftEventFactory {
      */
     public static EntityShootBowEvent callEntityShootBowEvent(EntityLiving who, ItemStack itemstack, EntityArrow entityArrow, float force) {
         LivingEntity shooter = (LivingEntity) who.getBukkitEntity();
-        CraftItemStack itemInHand = new CraftItemStack(itemstack);
+        CraftItemStack itemInHand = CraftItemStack.asCraftMirror(itemstack);
         Arrow arrow = (Arrow) entityArrow.getBukkitEntity();
 
         if (itemInHand != null && (itemInHand.getType() == Material.AIR || itemInHand.getAmount() == 0)) {
@@ -203,7 +203,7 @@ public class CraftEventFactory {
      */
     public static BlockDamageEvent callBlockDamageEvent(EntityHuman who, int x, int y, int z, ItemStack itemstack, boolean instaBreak) {
         Player player = (who == null) ? null : (Player) who.getBukkitEntity();
-        CraftItemStack itemInHand = new CraftItemStack(itemstack);
+        CraftItemStack itemInHand = CraftItemStack.asCraftMirror(itemstack);
 
         CraftWorld craftWorld = (CraftWorld) player.getWorld();
         CraftServer craftServer = (CraftServer) player.getServer();
@@ -317,13 +317,7 @@ public class CraftEventFactory {
         for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
             if (stack == null || stack.getType() == Material.AIR) continue;
 
-            if (stack instanceof CraftItemStack) {
-                // Use the internal item to preserve possible data.
-                victim.a(((CraftItemStack) stack).getHandle(), 0.0f);
-            }
-            else {
-                world.dropItemNaturally(entity.getLocation(), stack);
-            }
+            world.dropItemNaturally(entity.getLocation(), stack);
         }
 
         return event;
@@ -344,12 +338,7 @@ public class CraftEventFactory {
         for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
             if (stack == null || stack.getType() == Material.AIR) continue;
 
-            if (stack instanceof CraftItemStack) {
-                // Use the internal item to preserve possible data.
-                victim.a(((CraftItemStack) stack).getHandle(), 0.0f);
-            } else {
-                world.dropItemNaturally(entity.getLocation(), stack);
-            }
+            world.dropItemNaturally(entity.getLocation(), stack);
         }
 
         return event;
@@ -519,14 +508,14 @@ public class CraftEventFactory {
 
     public static ItemStack callPreCraftEvent(InventoryCrafting matrix, ItemStack result, InventoryView lastCraftView, boolean isRepair) {
         CraftInventoryCrafting inventory = new CraftInventoryCrafting(matrix, matrix.resultInventory);
-        inventory.setResult(new CraftItemStack(result));
+        inventory.setResult(CraftItemStack.asCraftMirror(result));
 
         PrepareItemCraftEvent event = new PrepareItemCraftEvent(inventory, lastCraftView, isRepair);
         Bukkit.getPluginManager().callEvent(event);
 
         org.bukkit.inventory.ItemStack bitem = event.getInventory().getResult();
 
-        return CraftItemStack.createNMSItemStack(bitem);
+        return CraftItemStack.asNMSCopy(bitem);
     }
 
     public static ProjectileLaunchEvent callProjectileLaunchEvent(Entity entity) {
@@ -556,7 +545,7 @@ public class CraftEventFactory {
     }
 
     public static void callPlayerItemBreakEvent(EntityHuman human, ItemStack brokenItem) {
-        CraftItemStack item = new CraftItemStack(brokenItem);
+        CraftItemStack item = CraftItemStack.asCraftMirror(brokenItem);
         PlayerItemBreakEvent event = new PlayerItemBreakEvent((Player) human.getBukkitEntity(), item);
         Bukkit.getPluginManager().callEvent(event);
     }
