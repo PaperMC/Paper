@@ -403,7 +403,7 @@ public abstract class ConfigurationSectionTest {
         map.put("two", "two");
         map.put("three", 3.14);
 
-        List<Object> value = Arrays.asList((Object) "One", "Two", "Three", 4, "5", 6.0, true, "false", map);
+        List<Object> value = Arrays.asList("One", "Two", "Three", 4, "5", 6.0, true, "false", map);
 
         section.set(key, value);
 

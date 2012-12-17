@@ -115,6 +115,14 @@ public abstract class PotionEffectType {
         this.id = id;
     }
 
+    /**
+     * Creates a PotionEffect from this PotionEffectType, applying duration modifiers and checks.
+     *
+     * @see PotionBrewer#createEffect(PotionEffectType, int, int)
+     * @param duration time in ticks
+     * @param amplifier the effect's amplifier
+     * @return a resulting potion effect
+     */
     public PotionEffect createEffect(int duration, int amplifier) {
         return Potion.getBrewer().createEffect(this, duration, amplifier);
     }

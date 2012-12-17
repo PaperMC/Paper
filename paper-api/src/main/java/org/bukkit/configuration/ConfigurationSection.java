@@ -3,6 +3,8 @@ package org.bukkit.configuration;
 import java.util.Map;
 import java.util.Set;
 import java.util.List;
+
+import org.bukkit.Color;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.util.Vector;
 import org.bukkit.inventory.ItemStack;
@@ -663,6 +665,43 @@ public interface ConfigurationSection {
      * @return Whether or not the specified path is an ItemStack.
      */
     public boolean isItemStack(String path);
+
+    /**
+     * Gets the requested Color by path.
+     * <p />
+     * If the Color does not exist but a default value has been specified, this
+     * will return the default value. If the Color does not exist and no default
+     * value was specified, this will return null.
+     *
+     * @param path Path of the Color to get.
+     * @return Requested Color.
+     */
+    public Color getColor(String path);
+
+    /**
+     * Gets the requested {@link Color} by path, returning a default value if not found.
+     * <p />
+     * If the Color does not exist then the specified default value will returned
+     * regardless of if a default has been identified in the root {@link Configuration}.
+     *
+     * @param path Path of the Color to get.
+     * @param def The default value to return if the path is not found or is not an Color.
+     * @return Requested Color.
+     */
+    public Color getColor(String path, Color def);
+
+    /**
+     * Checks if the specified path is a Color.
+     * <p />
+     * If the path exists but is not a Color, this will return false. If the path does not
+     * exist, this will return false. If the path does not exist but a default value
+     * has been specified, this will check if that default value is a Color and return
+     * appropriately.
+     *
+     * @param path Path of the Color to check.
+     * @return Whether or not the specified path is an Color.
+     */
+    public boolean isColor(String path);
 
     /**
      * Gets the requested ConfigurationSection by path.

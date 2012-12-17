@@ -1,16 +1,19 @@
 package org.bukkit.configuration;
 
+import static org.bukkit.util.NumberConversions.*;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.apache.commons.lang.Validate;
+import org.bukkit.Color;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
-import static org.bukkit.util.NumberConversions.*;
 
 /**
  * A type of {@link ConfigurationSection} that is stored in memory.
@@ -651,6 +654,21 @@ public class MemorySection implements ConfigurationSection {
     public boolean isItemStack(String path) {
         Object val = get(path);
         return val instanceof ItemStack;
+    }
+
+    public Color getColor(String path) {
+        Object def = getDefault(path);
+        return getColor(path, (def instanceof Color) ? (Color) def : null);
+    }
+
+    public Color getColor(String path, Color def) {
+        Object val = get(path, def);
+        return (val instanceof Color) ? (Color) val : def;
+    }
+
+    public boolean isColor(String path) {
+        Object val = get(path);
+        return val instanceof Color;
     }
 
     public ConfigurationSection getConfigurationSection(String path) {

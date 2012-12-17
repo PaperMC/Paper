@@ -26,6 +26,7 @@ import org.bukkit.plugin.messaging.Messenger;
 import org.bukkit.scheduler.BukkitScheduler;
 
 import com.avaje.ebean.config.ServerConfig;
+import org.bukkit.inventory.ItemFactory;
 
 /**
  * Represents the Bukkit core, for version and Server singleton handling
@@ -389,5 +390,9 @@ public final class Bukkit {
 
     public static WarningState getWarningState() {
         return server.getWarningState();
+    }
+
+    public static ItemFactory getItemFactory() {
+        return server.getItemFactory();
     }
 }

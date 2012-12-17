@@ -15,7 +15,7 @@ import com.google.common.collect.Maps;
  * An enum of all material ids accepted by the official server + client
  */
 public enum Material {
-    AIR(0),
+    AIR(0, 0),
     STONE(1),
     GRASS(2),
     DIRT(3),
