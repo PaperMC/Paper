@@ -330,8 +330,14 @@ public abstract class Command {
     }
 
     public static void broadcastCommandMessage(CommandSender source, String message, boolean sendToSource) {
-        Set<Permissible> users = Bukkit.getPluginManager().getPermissionSubscriptions(Server.BROADCAST_CHANNEL_ADMINISTRATIVE);
         String result = source.getName() + ": " + message;
+
+        if (source instanceof BlockCommandSender && ((BlockCommandSender) source).getBlock().getWorld().getGameRuleValue("commandBlockOutput").equalsIgnoreCase("false")) {
+            Bukkit.getConsoleSender().sendMessage(result);
+            return;
+        }
+
+        Set<Permissible> users = Bukkit.getPluginManager().getPermissionSubscriptions(Server.BROADCAST_CHANNEL_ADMINISTRATIVE);
         String colored = ChatColor.GRAY + "" + ChatColor.ITALIC + "[" + result + "]";
 
         if (sendToSource && !(source instanceof ConsoleCommandSender)) {
