@@ -700,25 +700,15 @@ public abstract class ServerConfigurationManagerAbstract {
     }
 
     public void sendPacketNearby(double d0, double d1, double d2, double d3, int i, Packet packet) {
-        this.sendPacketNearby(d0, d1, d2, d3, i, packet, null); // CraftBukkit
+        this.sendPacketNearby((EntityHuman) null, d0, d1, d2, d3, i, packet);
     }
 
-    // CraftBukkit start - Add support for entity who caused the packet
     public void sendPacketNearby(EntityHuman entityhuman, double d0, double d1, double d2, double d3, int i, Packet packet) {
-        this.sendPacketNearby(entityhuman, d0, d1, d2, d3, i, packet, null);
-    }
-
-    public void sendPacketNearby(double d0, double d1, double d2, double d3, int i, Packet packet, Entity sourceentity) {
-        this.sendPacketNearby(null, d0, d1, d2, d3, i, packet, sourceentity);
-    }
-    // CraftBukkit end
-
-    public void sendPacketNearby(EntityHuman entityhuman, double d0, double d1, double d2, double d3, int i, Packet packet, Entity sourceentity) { // CraftBukkit - added sourceentity
         for (int j = 0; j < this.players.size(); ++j) {
             EntityPlayer entityplayer = (EntityPlayer) this.players.get(j);
 
             // CraftBukkit start - Test if player receiving packet can see the source of the packet
-            if (sourceentity != null && sourceentity instanceof EntityPlayer && !entityplayer.getBukkitEntity().canSee(((EntityPlayer)sourceentity).getBukkitEntity())) {
+            if (entityhuman != null && entityhuman instanceof EntityPlayer && !entityplayer.getBukkitEntity().canSee(((EntityPlayer) entityhuman).getBukkitEntity())) {
                 continue;
             }
             // CraftBukkit end
