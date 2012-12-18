@@ -138,11 +138,11 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
         throw new UnsupportedOperationException();
     }
 
-    public float getChestPlateDropChance() {
+    public float getChestplateDropChance() {
         return 1;
     }
 
-    public void setChestPlateDropChance(float chance) {
+    public void setChestplateDropChance(float chance) {
         throw new UnsupportedOperationException();
     }
 

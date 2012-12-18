@@ -108,11 +108,11 @@ public class CraftEntityEquipment implements EntityEquipment {
         setDropChance(HELMET_SLOT, chance);
     }
 
-    public float getChestPlateDropChance() {
+    public float getChestplateDropChance() {
         return getDropChance(CHEST_SLOT);
     }
 
-    public void setChestPlateDropChance(float chance) {
+    public void setChestplateDropChance(float chance) {
         setDropChance(CHEST_SLOT, chance);
     }
 
