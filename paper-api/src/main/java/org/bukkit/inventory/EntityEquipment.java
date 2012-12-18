@@ -145,7 +145,7 @@ public interface EntityEquipment {
      *
      * @return the chance of the chest plate being dropped (1 for players)
      */
-    float getChestPlateDropChance();
+    float getChestplateDropChance();
 
     /**
      * Sets the chance of the chest plate being dropped upon this creature's death
@@ -156,7 +156,7 @@ public interface EntityEquipment {
      * @param chance of the chest plate being dropped
      * @throws UnsupportedOperationException when called on players
      */
-    void setChestPlateDropChance(float chance);
+    void setChestplateDropChance(float chance);
 
     /**
      * Gets the chance of the leggings being dropped upon this creature's death
