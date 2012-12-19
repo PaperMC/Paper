@@ -25,7 +25,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
     static final ItemMetaKey AMBIENT = new ItemMetaKey("Ambient", "ambient");
     static final ItemMetaKey DURATION = new ItemMetaKey("Duration", "duration");
     static final ItemMetaKey POTION_EFFECTS = new ItemMetaKey("CustomPotionEffects", "custom-effects");
-    static final ItemMetaKey ID = new ItemMetaKey("ID", "potion-id");
+    static final ItemMetaKey ID = new ItemMetaKey("Id", "potion-id");
 
     private List<PotionEffect> customEffects;
 
