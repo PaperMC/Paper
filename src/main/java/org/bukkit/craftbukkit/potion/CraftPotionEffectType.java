@@ -62,6 +62,8 @@ public class CraftPotionEffectType extends PotionEffectType {
             return "WEAKNESS";
         case 19:
             return "POISON";
+        case 20:
+            return "WITHER";
         default:
             return "UNKNOWN_EFFECT_TYPE_" + handle.id;
         }
