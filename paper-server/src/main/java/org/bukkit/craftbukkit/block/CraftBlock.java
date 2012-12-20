@@ -3,10 +3,13 @@ package org.bukkit.craftbukkit.block;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 import net.minecraft.server.BiomeBase;
 import net.minecraft.server.BlockRedstoneWire;
 import net.minecraft.server.EnumSkyBlock;
+import net.minecraft.server.NBTTagCompound;
+import net.minecraft.server.TileEntitySkull;
 
 import org.bukkit.Chunk;
 import org.bukkit.Location;
@@ -18,12 +21,11 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.craftbukkit.CraftChunk;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.BlockVector;
-
-import java.util.List;
 
 public class CraftBlock implements Block {
     private final CraftChunk chunk;
@@ -388,7 +390,20 @@ public class CraftBlock implements Block {
             for (int i = 0; i < count; ++i) {
                 int item = block.getDropType(data, chunk.getHandle().world.random, 0);
                 if (item > 0) {
-                    drops.add(new ItemStack(item, 1, (short) block.getDropData(data)));
+                    // Skulls are special, their data is based on the tile entity
+                    if (net.minecraft.server.Block.SKULL.id == this.getTypeId()) {
+                        net.minecraft.server.ItemStack nmsStack = new net.minecraft.server.ItemStack(item, 1, block.getDropData(chunk.getHandle().world, x, y, z));
+                        TileEntitySkull tileentityskull = (TileEntitySkull) chunk.getHandle().world.getTileEntity(x, y, z);
+
+                        if (tileentityskull.getSkullType() == 3 && tileentityskull.getExtraType() != null && tileentityskull.getExtraType().length() > 0) {
+                            nmsStack.setTag(new NBTTagCompound());
+                            nmsStack.getTag().setString("SkullOwner", tileentityskull.getExtraType());
+                        }
+
+                        drops.add(CraftItemStack.asBukkitCopy(nmsStack));
+                    } else {
+                        drops.add(new ItemStack(item, 1, (short) block.getDropData(data)));
+                    }
                 }
             }
         }
